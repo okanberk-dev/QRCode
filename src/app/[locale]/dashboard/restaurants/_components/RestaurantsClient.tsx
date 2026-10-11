@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ExternalLink, Loader2, Plus, Search, Store } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ExternalLink, Plus, Search, Store } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, Badge, EmptyState, ErrorState, PageHeader, Tabs, type TabItem } from '@/components/ui';
+import { AlertBanner, Badge, EmptyState, PageHeader, Tabs, type TabItem } from '@/components/ui';
 import {
   isSuspendedByAdminError,
   restaurantSaveErrorMessage,
@@ -53,13 +54,15 @@ export default function RestaurantsClient({
 }: RestaurantsClientProps) {
   const isTeamMember = role === 'team_member';
   const canMutate = !viewerMode;
-  const didBootstrapRef = useRef(false);
+  const router = useRouter();
+  // The server render already returns every business in scope (active and
+  // disabled, oldest first). The status tabs filter this one list locally —
+  // refetching per tab used to show disabled businesses under "Aktif" on
+  // first load, flip the order and cap the list at 20.
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'all' | 'passive'>('active');
-  const [loading, setLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-  const [fetchError, setFetchError] = useState('');
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; text: string } | null>(null);
 
   useEffect(() => {
@@ -122,42 +125,6 @@ export default function RestaurantsClient({
         pausedByAdmin: 'Paused by Buaze',
       };
 
-  const fetchRestaurants = async () => {
-    setLoading(true);
-    setFetchError('');
-    try {
-      // §22 — Sayfa scope-blind. Switcher seçimi (?restaurantId=) bu listede
-      // filter etmez; owner/team_member kendi tüm scope'unu görür. Status
-      // filter (active/passive/all) tek query param.
-      const params = new URLSearchParams({ status: statusFilter });
-      const response = await fetch(`/api/restaurants?${params.toString()}`);
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        setFetchError(errData.error || `Sunucu hatası (${response.status})`);
-        return;
-      }
-
-      const data = await response.json();
-      setRestaurants(Array.isArray(data) ? data : (data?.data || []));
-    } catch (err) {
-      console.error(err);
-      setFetchError('Bağlantı hatası. Lütfen sayfayı yenileyin.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!didBootstrapRef.current) {
-      didBootstrapRef.current = true;
-      if (statusFilter === 'active') return;
-    }
-    fetchRestaurants();
-    // fetchRestaurants captures statusFilter; sayfa scope-blind olduğu için
-    // selectedRestaurantId dependency'si kaldırıldı.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
-
   const toggleActive = async (id: string, currentStatus: boolean) => {
     setActionLoadingId(id);
     setNotice(null);
@@ -192,7 +159,12 @@ export default function RestaurantsClient({
           ? locale === 'tr' ? 'İşletme tekrar aktifleştirildi.' : 'Location reactivated.'
           : locale === 'tr' ? 'İşletme devre dışı bırakıldı.' : 'Location disabled.',
       });
-      await fetchRestaurants();
+      // Update the card in place, then resync from the server (keeps order
+      // and every business — no 20-item API page).
+      setRestaurants((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, isActive: !currentStatus } : r)),
+      );
+      router.refresh();
     } catch (error) {
       console.error(error);
       setNotice({
@@ -204,35 +176,19 @@ export default function RestaurantsClient({
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
-      </div>
-    );
-  }
-
-  if (fetchError) {
-    return (
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
-        <ErrorState
-          title={locale === 'tr' ? 'Hata' : 'Error'}
-          body={fetchError}
-          onRetry={fetchRestaurants}
-          retryLabel={locale === 'tr' ? 'Tekrar dene' : 'Retry'}
-        />
-      </div>
-    );
-  }
-
   // §22 — Sayfa scope-blind. Sahibi/yönettiği TÜM restoranlar her zaman
   // listelenir. Sidebar switcher seçimi (?restaurantId=) sadece downstream
   // context-scoped sayfalarda (dashboard / feedbacks / analytics) etkili;
   // bu sayfada owner tüm portföyü gözlemleyip yönetmek istediğini seçer.
-  const filtered = restaurants.filter(
+  const statusFiltered = restaurants.filter((r) =>
+    statusFilter === 'all' ? true : statusFilter === 'active' ? r.isActive : !r.isActive,
+  );
+  const query = searchTerm.trim().toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US');
+  const filtered = statusFiltered.filter(
     (r) =>
-      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.category.toLowerCase().includes(searchTerm.toLowerCase()),
+      !query ||
+      r.name.toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US').includes(query) ||
+      r.category.toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US').includes(query),
   );
   const newBusinessHref = `/${locale}/dashboard/restaurants/new`;
   // Absolute public link for the copy button — env app URL (stable on server
@@ -298,7 +254,7 @@ export default function RestaurantsClient({
         </div>
       </div>
 
-      {restaurants.length === 0 ? (
+      {statusFiltered.length === 0 ? (
         <EmptyState
           icon={<Store size={22} />}
           title={emptyTitle}
@@ -363,7 +319,9 @@ export default function RestaurantsClient({
                       <circle cx="100" cy="50" r="5" fill="#0A0A0A" />
                     </svg>
                     <span className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded bg-white/85 px-2 py-1 pulse-eyebrow text-[#737373]">
-                      {restaurant.isActive ? copy.activeStatus.toUpperCase() : copy.inactiveStatus.toUpperCase()}
+                      {(restaurant.isActive ? copy.activeStatus : copy.inactiveStatus).toLocaleUpperCase(
+                        locale === 'tr' ? 'tr-TR' : 'en-US',
+                      )}
                     </span>
                   </div>
 
@@ -443,7 +401,11 @@ export default function RestaurantsClient({
                       href={`/r/${restaurant.slug}`}
                       target="_blank"
                       className="inline-flex items-center justify-center gap-1.5 bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] bz-motion-spring hover:border-[#C6F24E]"
-                      aria-label="Open public page"
+                      aria-label={
+                        locale === 'tr'
+                          ? `${restaurant.name} müşteri sayfasını yeni sekmede aç`
+                          : `Open the ${restaurant.name} customer page in a new tab`
+                      }
                     >
                       <ExternalLink size={14} strokeWidth={2} />
                       {locale === 'tr' ? 'Aç' : 'Open'}

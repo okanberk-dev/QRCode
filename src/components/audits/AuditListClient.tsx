@@ -2,7 +2,7 @@
 
 // CLAUDE.md §42 Phase 2 — Owner audit list client component.
 
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ClipboardCheck,
@@ -24,6 +24,7 @@ import {
   PulseSelect,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { useActiveBusinessSelection } from './useActiveBusinessSelection';
 import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
 import {
   parseAuditErrorResponse,
@@ -81,6 +82,13 @@ const SCORE_LABEL_KEYS: Record<AuditScoringMode, 'audits_score_mode_percentage' 
 type SectorFilter = 'all' | AuditSector;
 type StatusFilter = 'all' | 'published' | 'draft' | 'archived';
 
+// Count unit after a number. Turkish nouns stay singular after a numeral
+// ("4 soru", "0 atama"); English pluralises.
+function countUnit(locale: Locale, n: number, tr: string, enOne: string, enMany: string) {
+  if (locale === 'tr') return tr;
+  return n === 1 ? enOne : enMany;
+}
+
 // Inline filter pill — bu sayfada 14 instance (sektör 7 + durum 4 + arşiv +
 // extras). 3+ tekrarlı abstraction kaçınma ilkesi (CLAUDE.md §7) ihlal değil
 // çünkü tek dosya. Aynı pattern başka audit sayfasında çıkarsa
@@ -115,9 +123,14 @@ function FilterPill({
 export default function AuditListClient({ locale, restaurants, initialActiveRestaurantId }: Props) {
   const t = getTranslations(locale);
   const restaurantSelectId = useId();
-  const [activeRestaurantId, setActiveRestaurantId] = useState<string>(
-    initialActiveRestaurantId ?? restaurants[0]?.id ?? '',
-  );
+  // Follows the shell's business switcher (topbar / sidebar).
+  const business = useActiveBusinessSelection(restaurants, initialActiveRestaurantId);
+  const activeRestaurantId = business.activeId ?? '';
+  const businessReady = business.ready;
+  const selectBusiness = business.select;
+  // Guards against a slow response for the previous business overwriting
+  // the list after a switch.
+  const loadSeqRef = useRef(0);
   const [templates, setTemplates] = useState<TemplateRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +160,7 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
   }, [filters.values.q]);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     if (!activeRestaurantId) {
       setTemplates([]);
       setLoading(false);
@@ -158,23 +172,27 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
       const res = await fetch(
         `/api/restaurants/${activeRestaurantId}/audits/templates?drafts=true`,
       );
+      if (seq !== loadSeqRef.current) return;
       if (!res.ok) {
         const parsed = await parseAuditErrorResponse(res, locale);
-        setError(summarizeAuditError(parsed));
+        if (seq === loadSeqRef.current) setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
-      setTemplates(json.data);
+      if (seq === loadSeqRef.current) setTemplates(json.data);
     } catch {
-      setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
+      if (seq === loadSeqRef.current) {
+        setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
+      }
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
   }, [activeRestaurantId, locale]);
 
   useEffect(() => {
+    if (!businessReady) return;
     load();
-  }, [load]);
+  }, [load, businessReady]);
 
   const counts = useMemo(() => {
     if (!templates) return { total: 0, published: 0, draft: 0 };
@@ -197,6 +215,13 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
       return true;
     });
   }, [templates, filters.values.sector, filters.values.status, filters.values.q]);
+
+  // Carry the active business into the catalog / create pages.
+  const businessQuery = activeRestaurantId
+    ? `?restaurantId=${encodeURIComponent(activeRestaurantId)}`
+    : '';
+  const catalogHref = `/${locale}/dashboard/audits/catalog${businessQuery}`;
+  const newAuditHref = `/${locale}/dashboard/audits/new${businessQuery}`;
 
   const hasFilters =
     filters.values.sector !== 'all' || filters.values.status !== 'all' || filters.values.q.trim() !== '';
@@ -227,15 +252,14 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={locale === 'tr' ? 'DENETİM MERKEZİ' : 'AUDIT CENTER'}
-        eyebrowColor="#C6F24E"
         title={t.audits_title}
         description={t.audits_subtitle}
         actions={
           <div className="flex gap-2">
-            <Link href={`/${locale}/dashboard/audits/catalog`} className="bz-btn-ghost">
+            <Link href={catalogHref} className="bz-btn-ghost">
               <Sparkles size={14} /> {t.audits_my_list_cta_catalog}
             </Link>
-            <Link href={`/${locale}/dashboard/audits/new`} className="bz-btn-primary">
+            <Link href={newAuditHref} className="bz-btn-primary">
               <Plus size={14} /> {t.audits_my_list_cta_new}
             </Link>
           </div>
@@ -251,7 +275,7 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
             id={restaurantSelectId}
             className="w-full"
             value={activeRestaurantId}
-            onChange={setActiveRestaurantId}
+            onChange={selectBusiness}
             options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
           />
         </div>
@@ -310,7 +334,7 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
                 type="button"
                 className="bz-btn-ghost self-start lg:self-auto"
                 onClick={() => {
-                  filters.reset();
+                  filters.setMany({ sector: 'all', status: 'all', q: '' });
                   setSearchInput('');
                 }}
               >
@@ -389,10 +413,10 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
           body={t.audits_empty_cta}
           action={
             <div className="flex gap-2">
-              <Link href={`/${locale}/dashboard/audits/catalog`} className="bz-btn-ghost">
+              <Link href={catalogHref} className="bz-btn-ghost">
                 {t.audits_my_list_cta_catalog}
               </Link>
-              <Link href={`/${locale}/dashboard/audits/new`} className="bz-btn-primary">
+              <Link href={newAuditHref} className="bz-btn-primary">
                 <Plus size={14} /> {t.audits_my_list_cta_new}
               </Link>
             </div>
@@ -408,7 +432,7 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
               type="button"
               className="bz-btn-ghost"
               onClick={() => {
-                filters.reset();
+                filters.setMany({ sector: 'all', status: 'all', q: '' });
                 setSearchInput('');
               }}
             >
@@ -448,11 +472,11 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
               <div className="flex items-center justify-between text-[12px] text-[#737373] pt-1 mt-auto border-t border-[#EDEDED]">
                 <span>
                   <span className="bz-mono">{tpl._count.questions}</span>{' '}
-                  {t.audits_admin_questions.toLowerCase()} ·{' '}
+                  {countUnit(locale, tpl._count.questions, 'soru', 'question', 'questions')} ·{' '}
                   <span className="bz-mono">{tpl._count.assignments}</span>{' '}
-                  {t.audits_assignments.toLowerCase()} ·{' '}
+                  {countUnit(locale, tpl._count.assignments, 'atama', 'assignment', 'assignments')} ·{' '}
                   <span className="bz-mono">{tpl._count.responses}</span>{' '}
-                  {t.audits_responses.toLowerCase()}
+                  {countUnit(locale, tpl._count.responses, 'yanıt', 'response', 'responses')}
                 </span>
                 <button
                   type="button"

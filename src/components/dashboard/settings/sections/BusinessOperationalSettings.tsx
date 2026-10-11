@@ -242,7 +242,7 @@ const COPY = {
     closedOn: "Geçici olarak kapalı",
     closedOff: "Açık",
     reasonLabel: "Kapatma sebebi",
-    reasonHint: (n: number, max: number) => `${n}/${max} karakter — public sayfada görünür.`,
+    reasonHint: (n: number, max: number) => `${n}/${max} karakter — müşteri sayfasında görünür.`,
     reasonPlaceholder: "Yıllık tatildeyiz, 15 Ekim'de tekrar açıyoruz.",
   },
   en: {
@@ -261,7 +261,7 @@ const COPY = {
     closedOn: "Temporarily closed",
     closedOff: "Open",
     reasonLabel: "Closure reason",
-    reasonHint: (n: number, max: number) => `${n}/${max} characters — shown on the public page.`,
+    reasonHint: (n: number, max: number) => `${n}/${max} characters — shown on your customer page.`,
     reasonPlaceholder: "We're on our annual break and reopen on 15 October.",
   },
 };

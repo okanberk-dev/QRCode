@@ -7,6 +7,7 @@ import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import type { Locale } from '@/lib/translations';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { Badge, EmptyState, Eyebrow, PageHeader } from '@/components/ui';
 
 export async function generateMetadata({
@@ -84,6 +85,9 @@ export default async function DashboardMenuPage({
     role: payload.role,
     email: payload.email,
   });
+  // Team members cannot create businesses (create POST gate) — hide the CTA
+  // instead of sending them to a page that bounces them back.
+  const canCreateBusiness = payload.role !== 'team_member';
   const restaurants = await prisma.restaurant.findMany({
     where: { id: { in: scopedIds } },
     select: {
@@ -121,13 +125,15 @@ export default async function DashboardMenuPage({
               : 'Once you add a business, you can manage your menu, categories, and items from a single screen.'
           }
           action={
-            <Link
-              href={`/${locale}/dashboard/restaurants`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
-            >
-              <Plus size={14} strokeWidth={2} />
-              {isTr ? 'İşletme ekle' : 'Add business'}
-            </Link>
+            canCreateBusiness ? (
+              <Link
+                href={`/${locale}/dashboard/restaurants/new`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
+              >
+                <Plus size={14} strokeWidth={2} />
+                {isTr ? 'İşletme ekle' : 'Add business'}
+              </Link>
+            ) : undefined
           }
         />
       </div>
@@ -161,13 +167,15 @@ export default async function DashboardMenuPage({
             : 'Pick which business menu you want to manage.'
         }
         actions={
-          <Link
-            href={`/${locale}/dashboard/restaurants`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] hover:bg-[#FAFAFA] transition-all"
-          >
-            <Plus size={14} strokeWidth={2} />
-            {isTr ? 'İşletme ekle' : 'Add business'}
-          </Link>
+          canCreateBusiness ? (
+            <Link
+              href={`/${locale}/dashboard/restaurants/new`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] hover:bg-[#FAFAFA] transition-all"
+            >
+              <Plus size={14} strokeWidth={2} />
+              {isTr ? 'İşletme ekle' : 'Add business'}
+            </Link>
+          ) : undefined
         }
       />
 
@@ -269,6 +277,8 @@ function RestaurantMenuCard({
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
+                // Server render — pin the business timezone (§46), not UTC.
+                timeZone: resolveDisplayTimeZone(),
               })}`
             : isTr
             ? 'Henüz güncellenmemiş'

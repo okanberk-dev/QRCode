@@ -1,7 +1,8 @@
 'use client';
 
-import { Smartphone, ExternalLink } from 'lucide-react';
+import { Smartphone, ExternalLink, Maximize2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import type {
   MenuCategoryView,
   RestaurantView,
@@ -33,17 +34,23 @@ interface MenuLivePreviewProps {
   restaurant: RestaurantView;
   categories: MenuCategoryView[];
   locale: 'tr' | 'en';
+  /** Public menu is live (`menuEnabled && menuPublished`). Drafts have no
+   *  public page yet, so the header link opens the in-panel preview. */
+  published: boolean;
 }
 
-export function MenuLivePreview({ restaurant, categories, locale }: MenuLivePreviewProps) {
+export function MenuLivePreview({ restaurant, categories, locale, published }: MenuLivePreviewProps) {
   const isTr = locale === 'tr';
-  const publicHref = `/${locale}/menu/${restaurant.slug}`;
+  // Public menu route is locale-less (`src/app/menu/[slug]`).
+  const publicHref = `/menu/${restaurant.slug}`;
+  const previewHref = `/${locale}/dashboard/restaurants/${restaurant.id}/menu?preview=1`;
 
   return (
     <aside
       // Masaüstü shell topbar'ı (~71px) da sticky; top-4 önizlemenin üst
-      // kısmını onun altına sokuyordu → topbar + 16px boşluk.
-      className="sticky top-[87px] hidden lg:block"
+      // kısmını onun altına sokuyordu → topbar + 16px boşluk. `self-start`:
+      // a stretched grid item is as tall as the row and has no room to stick.
+      className="sticky top-[87px] hidden self-start lg:block"
       aria-label={isTr ? 'Menü canlı önizlemesi' : 'Live menu preview'}
     >
       <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
@@ -55,15 +62,27 @@ export function MenuLivePreview({ restaurant, categories, locale }: MenuLivePrev
               {isTr ? 'CANLI ÖNİZLEME' : 'LIVE PREVIEW'}
             </p>
           </div>
-          <a
-            href={publicHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-2 py-0.5 text-[10px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
-          >
-            <ExternalLink size={10} strokeWidth={2.25} />
-            {isTr ? 'Aç' : 'Open'}
-          </a>
+          {published ? (
+            <a
+              href={publicHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={isTr ? 'Yayındaki menüyü yeni sekmede aç' : 'Open the live menu in a new tab'}
+              className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-2 py-0.5 text-[10px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
+            >
+              <ExternalLink size={10} strokeWidth={2.25} />
+              {isTr ? 'Aç' : 'Open'}
+            </a>
+          ) : (
+            <Link
+              href={previewHref}
+              aria-label={isTr ? 'Taslak menüyü tam ekran önizle' : 'Preview the draft menu full screen'}
+              className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-2 py-0.5 text-[10px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
+            >
+              <Maximize2 size={10} strokeWidth={2.25} />
+              {isTr ? 'Tam ekran' : 'Full screen'}
+            </Link>
+          )}
         </header>
 
         {/* Device stage — subtle gradient backdrop, like Vercel/Figma previews */}

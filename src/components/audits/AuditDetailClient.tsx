@@ -46,6 +46,7 @@ import {
   summarizeAuditError,
 } from '@/lib/audits/error-humanizer';
 import AuditAssignmentModal from './AuditAssignmentModal';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 interface TeamMemberRef {
   id: string;
@@ -368,7 +369,6 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
 
       <PageHeader
         eyebrow={locale === 'tr' ? 'DENETİM DETAYI' : 'AUDIT DETAIL'}
-        eyebrowColor="#C6F24E"
         title={template.title}
         description={template.description ?? undefined}
         actions={
@@ -585,7 +585,9 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
                     <Badge kind="info">{assigneeLabel[a.assigneeType]}</Badge>
                     {a.dueAt && (
                       <Badge kind="ghost">
-                        ⏰ {new Date(a.dueAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')}
+                        ⏰ {new Date(a.dueAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', {
+                          timeZone: resolveDisplayTimeZone(),
+                        })}
                       </Badge>
                     )}
                   </div>

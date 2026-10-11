@@ -188,34 +188,37 @@ export function BusinessWebsiteSettings({
           </div>
         </div>
 
-        {/* Code block */}
-        <div className="mt-4">
-          <div className="relative rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-3">
-            <pre
-              className="overflow-x-auto whitespace-pre-wrap break-all text-[12px] leading-[1.55] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              {embedSnippet}
-            </pre>
+        {/* Code block — the copy button sits in its own header row so it
+            never covers the first line of the snippet. */}
+        <div className="mt-4 overflow-hidden rounded-lg border border-[#EDEDED] bg-[#FAFAFA]">
+          <div className="flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white px-3 py-2">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'YERLEŞTİRME KODU' : 'EMBED CODE'}
+            </span>
             <button
               type="button"
               onClick={handleCopy}
-              className="bz-btn bz-btn-sm absolute right-2 top-2"
-              aria-label={isTr ? 'Kodu kopyala' : 'Copy code'}
+              className="bz-btn bz-btn-sm shrink-0"
             >
               {copied ? (
                 <>
-                  <Check size={12} className="text-[#16A34A]" />
-                  {isTr ? 'Kopyalandı' : 'Copied'}
+                  <Check size={12} className="text-[#16A34A]" aria-hidden="true" />
+                  <span aria-live="polite">{isTr ? 'Kopyalandı' : 'Copied'}</span>
                 </>
               ) : (
                 <>
-                  <Copy size={12} />
-                  {isTr ? 'Kopyala' : 'Copy'}
+                  <Copy size={12} aria-hidden="true" />
+                  <span aria-live="polite">{isTr ? 'Kodu kopyala' : 'Copy code'}</span>
                 </>
               )}
             </button>
           </div>
+          <pre
+            className="overflow-x-auto whitespace-pre-wrap break-all p-3 text-[12px] leading-[1.55] text-[#0A0A0A]"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            {embedSnippet}
+          </pre>
         </div>
 
         {/* Privacy disclosure */}

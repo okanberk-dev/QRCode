@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { getTranslations, type Locale } from '@/lib/translations';
 import { AlertBanner, APSwitch, Badge, Field, PageHeader, PulseSelect } from '@/components/ui';
+import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 import {
   OPTIONS_MAX,
   OPTIONS_MIN,
@@ -125,7 +126,10 @@ export default function SurveyWizardClient({
   const router = useRouter();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [restaurantId, setRestaurantId] = useState(initialRestaurantId);
+  // Follows the shell's business switcher; a pick here is written back.
+  const business = useActiveBusinessSelection(restaurants, initialRestaurantId);
+  const restaurantId = business.activeId ?? initialRestaurantId;
+  const setRestaurantId = business.select;
   const [type, setType] = useState<SurveyType>('multi_step');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

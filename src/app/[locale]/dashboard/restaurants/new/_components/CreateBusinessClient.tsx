@@ -29,6 +29,14 @@ import { getSectorPlatforms } from '@/lib/sector-platforms';
 import { getSectorByLabel, SECTORS } from '@/lib/sectors';
 import { ACTIVE_BUSINESS_STORAGE_KEY } from '@/lib/active-business';
 import { isValidBusinessSlug } from '@/lib/create-business-wizard';
+import {
+  checkProviderUrl,
+  describeDomainError,
+  PROVIDER_DOMAINS,
+  PROVIDER_LABELS,
+  type DomainCheckReason,
+  type IntegrationProvider,
+} from '@/lib/integration-domains';
 import type { Locale } from '@/lib/translations';
 
 interface Props {
@@ -78,6 +86,59 @@ function createEmptyForm(notificationEmail: string) {
 type CreateFormData = ReturnType<typeof createEmptyForm>;
 type CreateFormField = keyof CreateFormData;
 
+// Platform link fields → provider used by the shared URL check. Google is
+// keyed on both names: the form field is `googlePlaceId`, the API reports
+// errors on `googleReviewUrl` (it accepts a Place ID or a link).
+const PLATFORM_FIELD_PROVIDER: Partial<Record<string, IntegrationProvider>> = {
+  googlePlaceId: 'google',
+  googleReviewUrl: 'google',
+  yemekSepetiUrl: 'yemeksepeti',
+  getirYemekUrl: 'getir',
+  trendyolYemekUrl: 'trendyol_go',
+  tripAdvisorUrl: 'tripadvisor',
+  airbnbUrl: 'airbnb',
+  bookingUrl: 'booking',
+  yandexUrl: 'yandex',
+};
+
+// Which wizard step owns each field — a server error jumps back there.
+const FIELD_STEP: Partial<Record<string, CreateStep>> = {
+  name: 0,
+  slug: 0,
+  category: 0,
+  notificationEmail: 2,
+  address: 2,
+  phone: 2,
+  primaryColor: 2,
+};
+
+const FIELD_LABEL: Partial<Record<string, { tr: string; en: string }>> = {
+  name: { tr: 'İşletme adı', en: 'Business name' },
+  slug: { tr: 'Sayfa adresi', en: 'URL slug' },
+  category: { tr: 'Sektör', en: 'Sector' },
+  notificationEmail: { tr: 'Bildirim e-postası', en: 'Notification email' },
+  address: { tr: 'Adres', en: 'Address' },
+  phone: { tr: 'Telefon', en: 'Phone' },
+  primaryColor: { tr: 'Tema rengi', en: 'Theme color' },
+};
+
+/** Hard-error URL check for the non-Google platform fields (Google accepts a
+ *  bare Place ID, which the server normalises). */
+function findPlatformLinkErrors(form: CreateFormData, locale: Locale): Partial<Record<CreateFormField, string>> {
+  const errors: Partial<Record<CreateFormField, string>> = {};
+  for (const input of PLATFORM_INPUTS) {
+    if (input.id === 'google') continue;
+    const value = form[input.field as CreateFormField];
+    const provider = PLATFORM_FIELD_PROVIDER[input.field];
+    if (!provider || !value.trim()) continue;
+    const result = checkProviderUrl(provider, value);
+    if (!result.ok && result.severity === 'error') {
+      errors[input.field as CreateFormField] = describeDomainError(provider, result, locale === 'en' ? 'en' : 'tr');
+    }
+  }
+  return errors;
+}
+
 interface PlaceResult {
   placeId: string;
   displayName: string;
@@ -108,6 +169,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<CreateFormField, string>>>({});
   const [creating, setCreating] = useState(false);
 
   // Google Places search (Channels step)
@@ -138,6 +200,111 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
 
   const setFormField = (field: CreateFormField, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  // Block on wrong-domain / malformed platform links before leaving the
+  // Channels step (or submitting after jumping ahead via the step tabs).
+  const platformLinksValid = (): boolean => {
+    const errors = findPlatformLinkErrors(formData, locale);
+    if (Object.keys(errors).length === 0) return true;
+    setFieldErrors((prev) => ({ ...prev, ...errors }));
+    setCreateStep(1);
+    setCreateError(
+      isTr
+        ? 'Bazı platform bağlantıları hatalı. İşaretli alanları düzelt.'
+        : 'Some platform links are invalid. Fix the highlighted fields.',
+    );
+    return false;
+  };
+
+  // Turn an API error into owner-facing text, and jump to the step that holds
+  // the offending field. The API returns field names / codes, not copy.
+  const applyServerError = (status: number, data: Record<string, unknown> | null) => {
+    const code = typeof data?.code === 'string' ? data.code : '';
+    const lang = isTr ? 'tr' : 'en';
+
+    if (code === 'INVALID_PLATFORM_URL') {
+      const match = typeof data?.error === 'string' ? /^(\w+)\s+geçersiz:\s+(\w+)/.exec(data.error) : null;
+      const apiField = match?.[1] ?? '';
+      const reason = (match?.[2] ?? 'invalid_url') as DomainCheckReason;
+      const provider = PLATFORM_FIELD_PROVIDER[apiField];
+      const formField = (apiField === 'googleReviewUrl' ? 'googlePlaceId' : apiField) as CreateFormField;
+      const message = provider
+        ? describeDomainError(
+            provider,
+            { ok: false, severity: 'error', reason, expected: PROVIDER_DOMAINS[provider] ?? undefined },
+            lang,
+          )
+        : isTr ? 'Bağlantı geçersiz.' : 'The link is invalid.';
+      if (provider && formField in formData) setFieldErrors((prev) => ({ ...prev, [formField]: message }));
+      setCreateStep(1);
+      // The field itself shows the detailed reason; the banner names it.
+      setCreateError(
+        provider
+          ? isTr
+            ? `${PROVIDER_LABELS[provider]} bağlantısı geçersiz. İşaretli alanı düzelt.`
+            : `The ${PROVIDER_LABELS[provider]} link is invalid. Fix the highlighted field.`
+          : isTr ? 'Platform bağlantılarından biri geçersiz.' : 'One of the platform links is invalid.',
+      );
+      return;
+    }
+
+    if (data?.error === 'validation_error') {
+      const issues = Array.isArray(data.issues) ? (data.issues as Array<{ path?: string }>) : [];
+      const field = String(issues[0]?.path ?? '').split('.')[0];
+      const provider = PLATFORM_FIELD_PROVIDER[field];
+      const label = provider ? PROVIDER_LABELS[provider] : FIELD_LABEL[field]?.[lang];
+      setCreateStep(provider ? 1 : FIELD_STEP[field] ?? createStep);
+      setCreateError(
+        label
+          ? isTr
+            ? `${label} alanı geçersiz ya da çok uzun. Kontrol edip tekrar dene.`
+            : `${label} is invalid or too long. Check it and try again.`
+          : isTr
+            ? 'Bazı alanlar geçersiz. Kontrol edip tekrar dene.'
+            : 'Some fields are invalid. Check them and try again.',
+      );
+      return;
+    }
+
+    if (code === 'INVALID_PRIMARY_COLOR') {
+      setCreateStep(2);
+      setCreateError(isTr ? 'Tema rengi geçersiz. Renk seçiciden bir renk seç.' : 'The theme color is invalid. Pick a color.');
+      return;
+    }
+    if (code === 'INVALID_NOTIFICATION_EMAIL') {
+      setCreateStep(2);
+      setFieldErrors((prev) => ({
+        ...prev,
+        notificationEmail: isTr ? 'Geçerli bir e-posta adresi gir.' : 'Enter a valid email address.',
+      }));
+      setCreateError(isTr ? 'Bildirim e-postası geçersiz.' : 'The notification email is invalid.');
+      return;
+    }
+    if (status === 409) {
+      setCreateStep(0);
+      setCreateError(
+        isTr
+          ? `buaze.com/r/${formData.slug} adresi başka bir işletmede kullanılıyor. Farklı bir sayfa adresi seç.`
+          : `buaze.com/r/${formData.slug} is already taken. Choose a different URL slug.`,
+      );
+      return;
+    }
+    if (status === 403) {
+      setCreateError(
+        isTr ? 'Bu hesapla yeni işletme oluşturamazsın.' : 'This account cannot create businesses.',
+      );
+      return;
+    }
+    setCreateError(
+      isTr ? 'İşletme oluşturulamadı. Tekrar dene.' : 'Could not create the business. Please try again.',
+    );
   };
 
   async function runPlacesSearch() {
@@ -209,10 +376,11 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
   const continueTo = (step: CreateStep) => {
     if (createStep === 0 && !canContinueIdentity) {
       setCreateError(
-        isTr ? 'İşletme adı ve geçerli URL slug alanlarını doldurun.' : 'Add a business name and valid URL slug.',
+        isTr ? 'İşletme adı ve geçerli sayfa adresi alanlarını doldurun.' : 'Add a business name and valid URL slug.',
       );
       return;
     }
+    if (createStep === 1 && !platformLinksValid()) return;
     setCreateError('');
     setCreateStep(step);
   };
@@ -224,6 +392,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
       return;
     }
     event.preventDefault();
+    if (!platformLinksValid()) return;
     setCreating(true);
     setCreateError('');
     try {
@@ -232,9 +401,9 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, googleReviewUrl: formData.googlePlaceId }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       if (!response.ok) {
-        setCreateError(data.error || (isTr ? 'İşletme oluşturulamadı.' : 'Could not create business.'));
+        applyServerError(response.status, data);
         return;
       }
       if (typeof data?.id === 'string' && typeof window !== 'undefined') {
@@ -336,7 +505,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label className="space-y-2 sm:col-span-2">
+              <label className="flex flex-col gap-2 sm:col-span-2">
                 <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'İşletme adı' : 'Business name'}</span>
                 <input
                   type="text"
@@ -348,8 +517,8 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                 />
               </label>
 
-              <label className="space-y-2 sm:col-span-2">
-                <span className="ml-1 pulse-eyebrow text-[#737373]">URL Slug</span>
+              <label className="flex flex-col gap-2 sm:col-span-2">
+                <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Sayfa adresi' : 'URL Slug'}</span>
                 <div
                   className={`flex items-center gap-2 rounded-2xl border bg-white px-4 transition-colors ${
                     formData.slug && !slugValid ? 'border-[#FCA5A5]' : 'border-[#EDEDED] focus-within:border-[#C6F24E]'
@@ -375,7 +544,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                 {formData.slug && !slugValid ? (
                   <p className="ml-1 text-[11.5px] text-[#B91C1C]">
                     {isTr
-                      ? 'Slug küçük harf, rakam ve tek tire gruplarından oluşmalı.'
+                      ? 'Adres yalnız küçük harf, rakam ve tire içerebilir.'
                       : 'Use lowercase letters, numbers, and hyphen groups only.'}
                   </p>
                 ) : null}
@@ -467,7 +636,8 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                     type="button"
                     onClick={() => setShowGoogleInfo((v) => !v)}
                     className="bz-btn-icon shrink-0"
-                    aria-label="Info"
+                    aria-label={isTr ? 'Google araması hakkında ipucu' : 'Tip about Google search'}
+                    aria-expanded={showGoogleInfo}
                   >
                     <Info size={15} strokeWidth={2} />
                   </button>
@@ -572,8 +742,14 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                         value={formData.googlePlaceId}
                         onChange={(event) => setFormField('googlePlaceId', event.target.value)}
                         placeholder={isTr ? PLATFORM_INPUTS[0].placeholder : PLATFORM_INPUTS[0].placeholder.replace('veya', 'or')}
-                        className="bz-input mt-1.5"
+                        className={`bz-input mt-1.5 ${fieldErrors.googlePlaceId ? 'border-[#FCA5A5]' : ''}`}
+                        aria-invalid={fieldErrors.googlePlaceId ? true : undefined}
                       />
+                      {fieldErrors.googlePlaceId && (
+                        <p className="ml-1 mt-1.5 text-[11.5px] text-[#B91C1C]" role="alert">
+                          {fieldErrors.googlePlaceId}
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
@@ -605,8 +781,15 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                       value={formData[field]}
                       onChange={(event) => setFormField(field, event.target.value)}
                       placeholder={isTr ? input.placeholder : input.placeholder.replace('veya', 'or')}
-                      className="bz-input"
+                      className={`bz-input ${fieldErrors[field] ? 'border-[#FCA5A5]' : ''}`}
+                      aria-label={input.label}
+                      aria-invalid={fieldErrors[field] ? true : undefined}
                     />
+                    {fieldErrors[field] && (
+                      <p className="ml-1 mt-1.5 text-[11.5px] text-[#B91C1C]" role="alert">
+                        {fieldErrors[field]}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -617,17 +800,27 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
         {createStep === 2 && (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
-              <label className="space-y-2">
+              <label className="flex flex-col gap-2">
                 <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Bildirim e-postası' : 'Notification email'}</span>
                 <input
                   type="email"
                   value={formData.notificationEmail}
                   onChange={(event) => setFormField('notificationEmail', event.target.value)}
-                  className="bz-input"
+                  className={`bz-input ${fieldErrors.notificationEmail ? 'border-[#FCA5A5]' : ''}`}
+                  aria-invalid={fieldErrors.notificationEmail ? true : undefined}
+                  inputMode="email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                 />
+                {fieldErrors.notificationEmail && (
+                  <p className="ml-1 text-[11.5px] text-[#B91C1C]" role="alert">
+                    {fieldErrors.notificationEmail}
+                  </p>
+                )}
               </label>
 
-              <label className="space-y-2">
+              <label className="flex flex-col gap-2">
                 <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Adres' : 'Address'}</span>
                 <input
                   type="text"
@@ -639,7 +832,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
               </label>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="space-y-2">
+                <label className="flex flex-col gap-2">
                   <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Telefon' : 'Phone'}</span>
                   <input
                     type="text"
@@ -649,7 +842,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   />
                 </label>
 
-                <label className="space-y-2">
+                <label className="flex flex-col gap-2">
                   <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Tema rengi' : 'Theme color'}</span>
                   <div className="flex h-[46px] items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4">
                     <input
@@ -693,7 +886,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-[12px]">
-                  <span className="text-white/55">Public URL</span>
+                  <span className="text-white/55">{isTr ? 'Müşteri sayfası' : 'Customer page'}</span>
                   <span className="truncate font-mono text-white">/r/{formData.slug || 'slug'}</span>
                 </div>
               </div>

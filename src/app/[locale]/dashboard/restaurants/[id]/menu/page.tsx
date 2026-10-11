@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   AlertTriangle, ArrowLeft, ArrowDown, ArrowUp, BarChart3, BedDouble, Check, ChevronRight, Coffee,
   Croissant, Download, Edit2, Eye, EyeOff, GripVertical, Image as ImageIcon, Info, Loader2,
-  PartyPopper, Pizza, Plus, QrCode, Save, ShieldAlert, Sparkles, Trash2, Truck, UtensilsCrossed,
+  PartyPopper, Pizza, Plus, QrCode, RefreshCw, Save, ShieldAlert, Sparkles, Trash2, Truck, UtensilsCrossed,
   Wine, X,
 } from 'lucide-react';
 import {
@@ -18,11 +18,13 @@ import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { Modal, PulseSelect, useConfirmDialog } from '@/components/ui';
 import { MenuLivePreview } from './_components/MenuLivePreview';
+import MenuBuilderSkeleton from './loading';
 import { MENU_THEMES, type MenuAllergen, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner } from '@/components/ui';
+import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 
 interface RestaurantShape extends RestaurantView {
   menuEnabled: boolean;
@@ -335,8 +337,11 @@ export default function RestaurantMenuBuilderPage() {
     [isTr],
   );
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
+  // `initial` (first load / retry) shows the page skeleton. Every other call
+  // — after a category or item save, a preset, a failed reorder — refreshes
+  // silently so the builder stays mounted and keeps its scroll position.
+  const fetchAll = useCallback(async (opts: { initial?: boolean } = {}) => {
+    if (opts.initial) setLoading(true);
     setError(null);
     try {
       const [rRes, cRes] = await Promise.all([
@@ -377,7 +382,7 @@ export default function RestaurantMenuBuilderPage() {
   }, [id, isTr]);
 
   useEffect(() => {
-    if (id) fetchAll();
+    if (id) fetchAll({ initial: true });
   }, [id, fetchAll]);
 
   const activeCategory = categories.find((c) => c.id === activeCategoryId) || null;
@@ -743,15 +748,41 @@ export default function RestaurantMenuBuilderPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
-      </div>
-    );
+    // Same skeleton as the segment loading.tsx — no second loading layer.
+    return <MenuBuilderSkeleton />;
   }
   if (!restaurant) {
     return (
-      <div className="p-10 text-center text-sm font-bold text-[#DC2626]">{error ?? 'Yüklenemedi'}</div>
+      <div className="mx-auto max-w-[640px] px-4 sm:px-7 py-12 lg:py-16">
+        <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-6 sm:p-8">
+          <div className="flex items-start gap-3">
+            <span className="shrink-0 rounded-full bg-[#DC2626]/10 p-2">
+              <AlertTriangle size={20} strokeWidth={2} className="text-[#DC2626]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h1 className="bz-h-tight text-[20px] text-[#0A0A0A] sm:text-[22px]">
+                {isTr ? 'Menü yüklenemedi' : 'Menu could not be loaded'}
+              </h1>
+              <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">
+                {error ??
+                  (isTr
+                    ? 'Menü verileri alınırken bir sorun oluştu.'
+                    : 'Something went wrong while loading the menu.')}
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={() => fetchAll({ initial: true })} className="bz-btn-primary">
+              <RefreshCw size={14} strokeWidth={2} />
+              {isTr ? 'Tekrar dene' : 'Try again'}
+            </button>
+            <Link href={`/${locale}/dashboard/restaurants/${id}`} className="bz-btn-ghost">
+              <ArrowLeft size={14} strokeWidth={2} />
+              {copy.backToMenus}
+            </Link>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -858,7 +889,7 @@ export default function RestaurantMenuBuilderPage() {
                 {restaurant.menuUpdatedAt && (
                   <>
                     <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
-                    <span>{copy.lastUpdated}: {new Date(restaurant.menuUpdatedAt).toLocaleString(isTr ? 'tr-TR' : 'en-US')}</span>
+                    <span>{copy.lastUpdated}: {formatFullDateTimeInTimeZone(restaurant.menuUpdatedAt, locale === 'en' ? 'en' : 'tr')}</span>
                   </>
                 )}
               </div>
@@ -937,6 +968,7 @@ export default function RestaurantMenuBuilderPage() {
           restaurant={restaurant}
           categories={categories}
           locale={locale}
+          published={restaurant.menuEnabled && restaurant.menuPublished}
         />
       </div>
 
@@ -1732,10 +1764,10 @@ function SortableCategoryRow({
       </button>
       <div // §38.238 — same hover-only trap as the item rows above.
                   className="flex shrink-0 items-center gap-0.5 transition-opacity md:[@media(hover:hover)]:opacity-0 md:[@media(hover:hover)]:group-hover:opacity-100">
-        <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title="Up" aria-label="Up">
+        <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title={isTr ? 'Yukarı taşı' : 'Move up'} aria-label={isTr ? 'Yukarı taşı' : 'Move up'}>
           <ArrowUp size={14} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title="Down" aria-label="Down">
+        <button onClick={onMoveDown} disabled={isLast} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title={isTr ? 'Aşağı taşı' : 'Move down'} aria-label={isTr ? 'Aşağı taşı' : 'Move down'}>
           <ArrowDown size={14} strokeWidth={2} />
         </button>
         <button
@@ -1882,10 +1914,10 @@ function SortableItemRow({
                     // right edge of a row silently deleted an item. Gate the hover-reveal on
                     // an actual hover-capable pointer.
                     className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#F5F5F5] pt-2 transition-opacity sm:border-t-0 sm:pt-0 md:[@media(hover:hover)]:opacity-0 md:[@media(hover:hover)]:group-hover:opacity-100">
-        <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Up">
+        <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label={isTr ? 'Yukarı taşı' : 'Move up'}>
           <ArrowUp size={16} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Down">
+        <button onClick={onMoveDown} disabled={isLast} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label={isTr ? 'Aşağı taşı' : 'Move down'}>
           <ArrowDown size={16} strokeWidth={2} />
         </button>
         <button

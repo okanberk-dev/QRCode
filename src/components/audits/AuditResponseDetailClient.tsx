@@ -13,6 +13,7 @@ import {
   PageHeader,
 } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
+import { formatFullDateTimeInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
 import type { AuditQuestionType, AuditScoringMode } from '@/lib/audits/types';
 import {
   parseAuditErrorResponse,
@@ -218,14 +219,13 @@ export default function AuditResponseDetailClient({
 
       <PageHeader
         eyebrow={locale === 'tr' ? 'YANIT İNCELEMESİ' : 'RESPONSE REVIEW'}
-        eyebrowColor="#C6F24E"
         title={data.respondentName || (locale === 'tr' ? 'Anonim katılımcı' : 'Anonymous respondent')}
         description={
           [
             data.respondentEmail,
             data.respondentPhone,
             data.completedAt
-              ? new Date(data.completedAt).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US')
+              ? formatFullDateTimeInTimeZone(data.completedAt, locale === 'en' ? 'en' : 'tr')
               : null,
           ]
             .filter(Boolean)
@@ -272,6 +272,7 @@ export default function AuditResponseDetailClient({
             {data.reviewedAt
               ? new Date(data.reviewedAt).toLocaleDateString(
                   locale === 'tr' ? 'tr-TR' : 'en-US',
+                  { timeZone: resolveDisplayTimeZone() },
                 )
               : locale === 'tr'
                 ? 'Henüz yok'

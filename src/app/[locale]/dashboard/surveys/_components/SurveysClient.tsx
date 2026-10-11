@@ -4,11 +4,12 @@
 // Fetches /api/surveys, lets owner pick restaurant scope, lists surveys
 // with status badges + key stats. Links to /new wizard and detail pages.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ClipboardList, Eye, Loader2, Plus } from 'lucide-react';
+import { ClipboardList, Eye, Loader2, MessageSquare, PencilLine, Plus } from 'lucide-react';
 import { getTranslations, type Locale } from '@/lib/translations';
 import { AlertBanner, Badge, EmptyState, PageHeader, PulseSelect, StatCard } from '@/components/ui';
+import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 
 interface Restaurant {
   id: string;
@@ -45,38 +46,47 @@ export default function SurveysClient({
   initialActiveRestaurantId,
 }: Props) {
   const t = getTranslations(locale);
-  const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(
-    initialActiveRestaurantId,
-  );
+  // Follows the shell's business switcher; `null` = "Tüm işletmeler".
+  const {
+    activeId: activeRestaurantId,
+    ready: businessReady,
+    select: setActiveRestaurantId,
+  } = useActiveBusinessSelection(restaurants, initialActiveRestaurantId);
   const [surveys, setSurveys] = useState<SurveyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSurveys = useCallback(async () => {
+  useEffect(() => {
+    if (!businessReady) return;
+    // Drop a response that arrives after the business changed again.
+    let cancelled = false;
     setLoading(true);
     setError(null);
-    try {
-      const url = activeRestaurantId
-        ? `/api/surveys?restaurantId=${activeRestaurantId}`
-        : '/api/surveys';
-      const res = await fetch(url, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch_failed');
-      const json = await res.json();
-      setSurveys(json.surveys || []);
-    } catch {
-      setError(
-        locale === 'tr'
-          ? 'Anketler yüklenemedi. Tekrar deneyin.'
-          : 'Could not load surveys. Please try again.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [activeRestaurantId, locale]);
-
-  useEffect(() => {
-    fetchSurveys();
-  }, [fetchSurveys]);
+    const url = activeRestaurantId
+      ? `/api/surveys?restaurantId=${encodeURIComponent(activeRestaurantId)}`
+      : '/api/surveys';
+    (async () => {
+      try {
+        const res = await fetch(url, { credentials: 'include' });
+        if (!res.ok) throw new Error('fetch_failed');
+        const json = await res.json();
+        if (!cancelled) setSurveys(json.surveys || []);
+      } catch {
+        if (!cancelled) {
+          setError(
+            locale === 'tr'
+              ? 'Anketler yüklenemedi. Tekrar deneyin.'
+              : 'Could not load surveys. Please try again.',
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeRestaurantId, businessReady, locale]);
 
   const totalsBy = useMemo(() => {
     return surveys.reduce(
@@ -151,11 +161,12 @@ export default function SurveysClient({
       )}
 
       <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Every card carries an icon so the header rows share one height and
+            the four values line up across the row. */}
         <StatCard
           label={locale === 'tr' ? 'Toplam anket' : 'Total surveys'}
           value={String(totalsBy.total)}
           icon={<ClipboardList size={14} />}
-          accent="#C6F24E"
         />
         <StatCard
           label={locale === 'tr' ? 'Yayında' : 'Live'}
@@ -165,10 +176,12 @@ export default function SurveysClient({
         <StatCard
           label={locale === 'tr' ? 'Taslak' : 'Drafts'}
           value={String(totalsBy.drafts)}
+          icon={<PencilLine size={14} />}
         />
         <StatCard
           label={t.surveys_total_responses}
           value={String(totalsBy.responses)}
+          icon={<MessageSquare size={14} />}
         />
       </div>
 
@@ -233,10 +246,12 @@ export default function SurveysClient({
                     </div>
                     <div className="mt-1 flex flex-wrap gap-3 text-xs text-[#737373]">
                       <span>
-                        {s._count.questions} {t.surveys_questions_count.toLowerCase()}
+                        {s._count.questions}{' '}
+                        {locale === 'tr' ? 'soru' : s._count.questions === 1 ? 'question' : 'questions'}
                       </span>
                       <span>
-                        {s._count.responses} {t.surveys_total_responses.toLowerCase()}
+                        {s._count.responses}{' '}
+                        {locale === 'tr' ? 'yanıt' : s._count.responses === 1 ? 'response' : 'responses'}
                       </span>
                       {s.restaurant && (
                         <span>{s.restaurant.name}</span>

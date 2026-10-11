@@ -26,6 +26,9 @@ interface RestaurantData {
   city: string | null;
   phone: string | null;
   googlePlaceId: string | null;
+  /** Review link (Platform links / Places search). Shown in the Google field
+   *  when no Place ID is stored, so a linked business doesn't look unlinked. */
+  googleReviewUrl?: string | null;
   notificationEmail: string | null;
   /** Phase 8c+ §38.26 — Owner-tanımlı hedef puan, Analytics 14-haftalık trend
    *  chart için. null = henüz ayarlanmadı (chart 4.0 fallback). */
@@ -57,6 +60,21 @@ interface FormState {
   targetRating: string;
 }
 
+/** Google field value: stored Place ID → `placeid` from the review link →
+ *  the review link itself. */
+function googleInputFrom(r: RestaurantData): string {
+  if (r.googlePlaceId?.trim()) return r.googlePlaceId;
+  const url = r.googleReviewUrl?.trim();
+  if (!url) return "";
+  try {
+    const placeId = new URL(url).searchParams.get("placeid");
+    if (placeId) return placeId;
+  } catch {
+    /* not a URL — show as stored */
+  }
+  return url;
+}
+
 function toForm(r: RestaurantData): FormState {
   return {
     name: r.name ?? "",
@@ -67,7 +85,7 @@ function toForm(r: RestaurantData): FormState {
     address: r.address ?? "",
     city: r.city ?? "",
     phone: r.phone ?? "",
-    googlePlaceId: r.googlePlaceId ?? "",
+    googlePlaceId: googleInputFrom(r),
     notificationEmail: r.notificationEmail ?? "",
     targetRating:
       typeof r.targetRating === "number" ? r.targetRating.toFixed(1) : "",
@@ -188,9 +206,16 @@ export function BusinessGeneralSettings({
         address: form.address.trim() || null,
         city: form.city.trim() || null,
         phone: form.phone.trim() || null,
-        googlePlaceId: form.googlePlaceId.trim() || null,
         notificationEmail: form.notificationEmail.trim() || null,
         targetRating: targetRatingValue,
+        // Google is sent only when the owner edited it: the field may be
+        // showing the existing review link, and re-sending it on every save
+        // would rewrite that link. Clearing the field removes the link.
+        ...(form.googlePlaceId.trim() !== initial.googlePlaceId.trim()
+          ? form.googlePlaceId.trim()
+            ? { googlePlaceId: form.googlePlaceId.trim() }
+            : { googlePlaceId: null, googleReviewUrl: null }
+          : {}),
       };
       const res = await fetch(`/api/restaurants/${restaurant.id}`, {
         method: "PUT",
@@ -451,11 +476,11 @@ const COPY = {
     identityTitle: "Kimlik",
     identityDesc: "Müşteri sayfanda ve panelde görünen temel bilgiler.",
     name: "İşletme adı",
-    slug: "URL slug",
+    slug: "Sayfa adresi",
     slugHint: (slug: string) => `/r/${slug} — değiştirirsen QR linkleri tazelenir.`,
     sector: "Sektör",
     description: "Kısa açıklama",
-    descHint: (n: number, max: number) => `${n}/${max} karakter — public sayfada görünür.`,
+    descHint: (n: number, max: number) => `${n}/${max} karakter — müşteri sayfasında görünür.`,
     sectorPlatforms: "Bu sektörde görünecek platformlar:",
     contactTitle: "İletişim ve adres",
     contactDesc: "Müşterilerin sana ulaşması için kullanılacak bilgiler.",
@@ -474,9 +499,9 @@ const COPY = {
     placeIdPlaceholder: "ChIJ... veya https://maps.app.goo.gl/...",
     targetTitle: "Performans hedefi",
     targetDesc:
-      "Analytics 14-haftalık trend grafiğinde hedef puan çizgisi olarak görünür. Ayarlamazsan 4.0 endüstri ortalaması kullanılır.",
+      "Analitik sayfasındaki 14 haftalık trend grafiğinde hedef puan çizgisi olarak görünür. Ayarlamazsan 4.0 endüstri ortalaması kullanılır.",
     targetLabel: "Hedef ortalama puan",
-    targetHint: "1.0 – 5.0 arası (örn. 4.5). Boş bırakırsan 4.0 fallback.",
+    targetHint: "1.0 – 5.0 arası (örn. 4.5). Boş bırakırsan 4.0 kullanılır.",
   },
   en: {
     nameRequired: "Business name is required.",

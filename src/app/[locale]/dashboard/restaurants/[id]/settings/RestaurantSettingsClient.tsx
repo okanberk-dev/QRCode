@@ -239,11 +239,13 @@ export default function RestaurantSettingsClient({
         danger: 0,
       };
     }
+    // The website URL is edited in Genel › "Web ve haritalar"; the Website
+    // tab is only the embed-widget generator, so the gap is counted here.
     const generalMissing =
       (restaurant.address ? 0 : 1) +
       (restaurant.phone ? 0 : 1) +
-      (restaurant.notificationEmail ? 0 : 1);
-    const websiteMissing = restaurant.website ? 0 : 1;
+      (restaurant.notificationEmail ? 0 : 1) +
+      (restaurant.website ? 0 : 1);
     // workingHours stored as JSON string — empty / null both count as
     // unset. We don't try to parse or validate the JSON shape here;
     // a non-null non-empty value is treated as "owner touched it".
@@ -254,7 +256,7 @@ export default function RestaurantSettingsClient({
       // connected (customers have nowhere to be offered).
       platforms: reviewLinkSummary && reviewLinkSummary.connected === 0 ? 1 : 0,
       brand: 0,
-      website: websiteMissing,
+      website: 0,
       operations: operationsMissing,
       security: 0,
       danger: 0,
@@ -561,7 +563,7 @@ export default function RestaurantSettingsClient({
         title={isTr ? "Marka Kimliği" : "Brand identity"}
         description={
           isTr
-            ? "Logo, kapak, renk paleti, font ve slogan — public sayfanın görsel dili."
+            ? "Logo, kapak, renk paleti, font ve slogan — müşteri sayfasının görsel dili."
             : "Logo, cover, colour palette, font and tagline — the look of your public page."
         }
         actions={
