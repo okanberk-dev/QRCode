@@ -1,67 +1,65 @@
-import { SkBox, SkPageHeader } from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
+import { FeedbackListSkeletonRow } from './_components/FeedbackList';
+import { FeedbackDetailSkeleton } from './_components/FeedbackDetail';
 
 /**
- * Owner feedbacks inbox skeleton.
- *
- * §38.238 — this used to render `<SkPageShell max={1600}>`, i.e. a centered,
- * padded, 1600px-capped shell wrapping three `bz-card` boxes in a
- * `lg:grid-cols-[240px_1fr_360px] gap-4` grid. The real page (page.tsx:855) is
- * deliberately FULL-BLEED: no outer wrapper, padding only on the header, and a
- * zero-gap `xl:grid-cols-[260px_360px_minmax(0,1fr)]` split with border
- * dividers so the filter rail butts against the sidebar.
- *
- * The two shared no layout, so hydration moved the rail from 240px@x≈28 to
- * 260px@x=0, resized the list, collapsed the gaps and re-centered the page — a
- * large horizontal CLS spike on the panel's busiest screen. §40.10 requires the
- * skeleton to clone the page wrapper exactly; this now does.
+ * Owner reviews inbox skeleton — §40.10: a structural clone of page.tsx so
+ * nothing moves on hydration. Full-bleed root (§38.62), the same header and
+ * toolbar padding, and the same 2-column split tracks (360 / 420 / 480 list +
+ * minmax(0,1fr) detail). The list rows and the detail placeholder are the
+ * very components the page renders while its own fetch is in flight.
  */
 export default function Loading() {
   return (
-    <div className="min-h-full bg-white lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-      {/* Header — padded wrapper only, matching page.tsx. */}
-      <div className="px-4 sm:px-7 py-6 lg:py-8 border-b border-[#EDEDED]">
-        <SkPageHeader withActions titleWidth="w-44" />
+    <div className="flex min-h-full w-full min-w-0 flex-col bg-white lg:min-h-0 lg:flex-1">
+      {/* Header */}
+      <div className="px-4 pb-3 pt-5 sm:px-7 lg:pb-4 lg:pt-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <div className="flex h-9 items-center lg:hidden">
+              <SkBox className="h-6 w-40" />
+            </div>
+            <div className="mt-0.5 flex min-h-[20px] items-center">
+              <SkBox className="h-4 w-64 max-w-full" />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <SkBox className="h-[38px] w-28 rounded-full sm:h-[34px]" />
+            <SkBox className="h-[38px] w-32 rounded-full sm:h-[34px]" />
+          </div>
+        </div>
       </div>
 
-      {/* Columns — same track definition as the page, zero gap, border dividers. */}
-      <div className="flex min-h-0 flex-1 flex-col bg-white lg:flex-row lg:overflow-hidden xl:grid xl:grid-cols-[260px_360px_minmax(0,1fr)] 2xl:grid-cols-[300px_400px_minmax(0,1fr)]">
-        {/* Filter rail — xl+ only, mirroring FeedbackFiltersRail. */}
-        <div className="hidden xl:block border-r border-[#EDEDED] p-4 space-y-3">
-          <SkBox className="h-3 w-20" />
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <SkBox key={i} className="h-8 w-full" />
-            ))}
-          </div>
-          <SkBox className="h-3 w-24" />
-          <div className="space-y-2">
-            <SkBox className="h-7 w-full" />
-            <SkBox className="h-7 w-full" />
-          </div>
-        </div>
-
-        {/* List column. */}
-        <div className="w-full border-b border-[#EDEDED] lg:w-[380px] lg:border-b-0 lg:border-r xl:w-auto">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="border-b border-[#F5F5F5] p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <SkBox className="h-4 w-32" />
-                <SkBox className="h-3 w-16" />
-              </div>
-              <SkBox className="h-3 w-24" />
-              <SkBox className="h-4 w-5/6" />
-            </div>
+      {/* Toolbar */}
+      <div className="border-y border-[#EDEDED] bg-white px-4 py-3 sm:px-7">
+        <div className="flex gap-1.5 overflow-hidden">
+          {['w-20', 'w-28', 'w-28', 'w-28', 'w-28'].map((w, i) => (
+            <SkBox key={i} className={`h-9 shrink-0 rounded-full ${w}`} />
           ))}
         </div>
+        <div className="mt-2.5 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+          <div className="flex items-center gap-2 md:contents">
+            <SkBox className="h-10 min-w-0 flex-1 rounded-full md:h-[34px] md:flex-[1_1_240px] xl:max-w-[340px]" />
+            <SkBox className="h-10 w-10 shrink-0 rounded-full md:hidden" />
+          </div>
+          <div className="hidden items-center gap-2 md:flex">
+            <SkBox className="h-[34px] w-[150px] rounded-[10px]" />
+            <SkBox className="h-[34px] w-[150px] rounded-[10px]" />
+            <SkBox className="h-[34px] w-[150px] rounded-[10px]" />
+            <SkBox className="h-[34px] w-32 rounded-full" />
+          </div>
+        </div>
+      </div>
 
-        {/* Detail pane — lg+ only, no card chrome (the page has none). */}
-        <div className="hidden min-w-0 flex-1 space-y-3 p-5 sm:p-8 lg:block">
-          <SkBox className="h-3 w-20" />
-          <SkBox className="h-6 w-48" />
-          <SkBox className="h-4 w-full" />
-          <SkBox className="h-4 w-3/4" />
-          <SkBox className="h-32 w-full" />
-          <SkBox className="h-9 w-full" />
+      {/* Split — same tracks as the page. */}
+      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
+        <div className="min-h-0 lg:overflow-hidden lg:border-r lg:border-[#EDEDED]">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <FeedbackListSkeletonRow key={i} />
+          ))}
+        </div>
+        <div className="hidden min-w-0 lg:block">
+          <FeedbackDetailSkeleton />
         </div>
       </div>
     </div>

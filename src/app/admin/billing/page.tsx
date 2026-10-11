@@ -23,17 +23,23 @@ interface BillingSummary {
   tier?: { id: string; name: string | null; isFeatured: boolean } | null;
 }
 
-function formatCurrency(value: number | null | undefined, currency: string | null | undefined, isTr: boolean): string {
+function formatCurrency(
+  value: number | null | undefined,
+  currency: string | null | undefined,
+  isTr: boolean,
+  fractionDigits = 0,
+): string {
   if (value == null) return '';
-  const cur = currency || 'TRY';
+  const cur = currency || 'USD';
   try {
     return new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US', {
       style: 'currency',
       currency: cur,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
     }).format(value);
   } catch {
-    return `${cur} ${value.toFixed(0)}`;
+    return `${cur} ${value.toFixed(fractionDigits)}`;
   }
 }
 
@@ -41,8 +47,23 @@ interface Invoice {
   id: string;
   date: string;
   amount: number;
-  status: 'paid' | 'pending' | 'failed';
+  /** ISO 4217 — invoices carry their own currency (USD since §38.225). */
+  currency?: string | null;
+  status: 'paid' | 'pending' | 'failed' | 'refunded';
   url?: string;
+}
+
+function invoiceStatusLabel(status: Invoice['status'], isTr: boolean): string {
+  if (status === 'paid') return isTr ? 'ÖDENDİ' : 'PAID';
+  if (status === 'pending') return isTr ? 'BEKLİYOR' : 'PENDING';
+  if (status === 'refunded') return isTr ? 'İADE EDİLDİ' : 'REFUNDED';
+  return isTr ? 'BAŞARISIZ' : 'FAILED';
+}
+
+function invoiceStatusClass(status: Invoice['status']): string {
+  if (status === 'paid') return 'bg-[#EAF9B8] text-[#0A0A0A]';
+  if (status === 'pending' || status === 'refunded') return 'bg-[#F5F5F5] text-[#737373]';
+  return 'bg-red-50 text-red-700';
 }
 
 export default function AdminBillingPage() {
@@ -219,33 +240,15 @@ function AdminBillingBody() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="text-[14px] font-semibold text-[#0A0A0A]">
-                          ₺{inv.amount.toFixed(2)}
+                          {formatCurrency(inv.amount, inv.currency, isTr, 2)}
                         </div>
                         <div className="mt-1 text-[11px] text-[#737373]">
                           {new Date(inv.date).toLocaleDateString(isTr ? 'tr-TR' : 'en-US')}
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
-                        <span
-                          className={`pulse-eyebrow rounded px-2 py-1 ${
-                            inv.status === 'paid'
-                              ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                              : inv.status === 'pending'
-                                ? 'bg-[#F5F5F5] text-[#737373]'
-                                : 'bg-red-50 text-red-700'
-                          }`}
-                        >
-                          {inv.status === 'paid'
-                            ? isTr
-                              ? 'ÖDENDİ'
-                              : 'PAID'
-                            : inv.status === 'pending'
-                              ? isTr
-                                ? 'BEKLİYOR'
-                                : 'PENDING'
-                              : isTr
-                                ? 'BAŞARISIZ'
-                                : 'FAILED'}
+                        <span className={`pulse-eyebrow rounded px-2 py-1 ${invoiceStatusClass(inv.status)}`}>
+                          {invoiceStatusLabel(inv.status, isTr)}
                         </span>
                         {inv.url ? (
                           <a
@@ -276,28 +279,10 @@ function AdminBillingBody() {
                     {invoices.map((inv) => (
                       <tr key={inv.id} className="border-b border-[#EDEDED] last:border-0">
                         <td className="px-5 py-3 whitespace-nowrap">{new Date(inv.date).toLocaleDateString(isTr ? 'tr-TR' : 'en-US')}</td>
-                        <td className="px-5 py-3 whitespace-nowrap font-medium text-[#0A0A0A]">₺{inv.amount.toFixed(2)}</td>
+                        <td className="px-5 py-3 whitespace-nowrap font-medium text-[#0A0A0A]">{formatCurrency(inv.amount, inv.currency, isTr, 2)}</td>
                         <td className="px-5 py-3 whitespace-nowrap">
-                          <span
-                            className={`pulse-eyebrow rounded px-2 py-1 ${
-                              inv.status === 'paid'
-                                ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                                : inv.status === 'pending'
-                                  ? 'bg-[#F5F5F5] text-[#737373]'
-                                  : 'bg-red-50 text-red-700'
-                            }`}
-                          >
-                            {inv.status === 'paid'
-                              ? isTr
-                                ? 'ÖDENDİ'
-                                : 'PAID'
-                              : inv.status === 'pending'
-                                ? isTr
-                                  ? 'BEKLİYOR'
-                                  : 'PENDING'
-                                : isTr
-                                  ? 'BAŞARISIZ'
-                                  : 'FAILED'}
+                          <span className={`pulse-eyebrow rounded px-2 py-1 ${invoiceStatusClass(inv.status)}`}>
+                            {invoiceStatusLabel(inv.status, isTr)}
                           </span>
                         </td>
                         <td className="px-5 py-3 text-right whitespace-nowrap">

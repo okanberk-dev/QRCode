@@ -51,6 +51,8 @@ interface NpsBucket {
   detractors: number;
   total: number;
   score: number;
+  /** Window length in days (older cached snapshots may omit it). */
+  windowDays?: number;
 }
 interface CohortPoint {
   cohortMonth: string;
@@ -76,14 +78,9 @@ const RANGE_LABELS: Record<Range, string> = {
   '1y': '1Y',
 };
 
-const PLAN_KEYS = ['pro', 'growth', 'starter', 'monthly', 'yearly'] as const;
-const PLAN_COLORS: Record<string, string> = {
-  pro: '#0A0A0A',
-  growth: '#525252',
-  starter: '#A3A3A3',
-  monthly: '#737373',
-  yearly: '#C6F24E',
-};
+// Tier palette — stacked area order follows the snapshot keys (tier sort
+// order from the server), `other` = paid subscriptions without a tier link.
+const TIER_AREA_COLORS = ['#0A0A0A', '#525252', '#A3A3A3', '#C6F24E', '#737373', '#D4D4D4'];
 
 const NPS_PIE_COLORS = {
   promoters: '#A8D62E',
@@ -91,26 +88,41 @@ const NPS_PIE_COLORS = {
   detractors: '#FB7185',
 };
 
-interface MrrFlatRow {
-  month: string;
-  total: number;
-  pro: number;
-  growth: number;
-  starter: number;
-  monthly: number;
-  yearly: number;
+type MrrFlatRow = { month: string; total: number } & Record<string, number | string>;
+
+/** Stable tier key order across the whole window (first appearance wins). */
+function mrrPlanKeys(rows: MrrPoint[]): string[] {
+  const keys: string[] = [];
+  for (const row of rows) {
+    for (const key of Object.keys(row.byPlan)) {
+      if (!keys.includes(key)) keys.push(key);
+    }
+  }
+  // Untiered revenue last so tier stacks stay at the bottom.
+  return [...keys.filter((k) => k !== 'other'), ...keys.filter((k) => k === 'other')];
 }
 
-function flattenMrr(rows: MrrPoint[]): MrrFlatRow[] {
-  return rows.map((r) => ({
-    month: r.month,
-    total: r.total,
-    pro: r.byPlan.pro || 0,
-    growth: r.byPlan.growth || 0,
-    starter: r.byPlan.starter || 0,
-    monthly: r.byPlan.monthly || 0,
-    yearly: r.byPlan.yearly || 0,
-  }));
+function mrrPlanLabel(key: string): string {
+  if (key === 'other') return 'Diğer';
+  return key.charAt(0).toLocaleUpperCase('tr-TR') + key.slice(1);
+}
+
+function flattenMrr(rows: MrrPoint[], keys: string[]): MrrFlatRow[] {
+  return rows.map((r) => {
+    const flat: MrrFlatRow = { month: r.month, total: r.total };
+    for (const key of keys) flat[key] = r.byPlan[key] || 0;
+    return flat;
+  });
+}
+
+function formatUsd(value: number): string {
+  const whole = Math.abs(value - Math.round(value)) < 0.005;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(value);
 }
 
 export function AdminBiSection() {
@@ -128,7 +140,7 @@ export function AdminBiSection() {
         const res = await fetch(`/api/admin/analytics/bi?range=${range}`);
         if (cancelled) return;
         if (res.status === 403) {
-          setError('Bu görünüm için yetki yok (analytics:read).');
+          setError('Bu görünümü açma yetkiniz yok.');
           setSnapshot(null);
           return;
         }
@@ -151,14 +163,17 @@ export function AdminBiSection() {
     window.location.href = `/api/admin/analytics/bi/export?range=${range}`;
   };
 
+  const mrrKeys = snapshot ? mrrPlanKeys(snapshot.mrr) : [];
+
   return (
     <section className="hidden sm:block mt-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EDEDED] pt-6">
         <div>
-          <Eyebrow color="#525252">CROSS-WORKSPACE BI</Eyebrow>
+          <Eyebrow color="#525252">TÜM İŞLETMELER</Eyebrow>
           <h2 className="bz-h-tight mt-1 text-[18px]">İş zekası göstergeleri</h2>
           <p className="mt-1 text-[12px] text-[#737373]">
-            MRR, churn, NPS ve kohort retention — tüm workspace toplamı.
+            Aylık gelir, kayıp oranı, NPS ve kayıt kohortları — tüm işletmelerin toplamı.
+            Bu bölüm kendi tarih aralığını kullanır.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -202,55 +217,64 @@ export function AdminBiSection() {
 
       {snapshot && !loading && (
         <div className="grid gap-4 lg:grid-cols-2">
-          {/* 1. MRR TREND — area chart, plan stacked */}
+          {/* 1. MRR TREND — area chart, tier stacked (USD, §15.2 canonical billing) */}
           <div className="bz-card p-5">
             <div className="flex items-center justify-between gap-2">
               <Eyebrow>MRR TRENDİ</Eyebrow>
               <span className="bz-mono text-[10px] text-[#737373]">
-                ₺{snapshot.mrr[snapshot.mrr.length - 1]?.total.toLocaleString('tr-TR') || 0}
+                {formatUsd(snapshot.mrr[snapshot.mrr.length - 1]?.total ?? 0)}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">{snapshot.months} ay (sentinel ücret)</p>
-            <div className="mt-4 h-[200px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={flattenMrr(snapshot.mrr)} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="#F5F5F5" vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 10, fill: '#737373' }}
-                    axisLine={{ stroke: '#EDEDED' }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: '#737373' }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={40}
-                  />
-                  <Tooltip
-                    contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
-                    formatter={(v) => `₺${Number(v ?? 0).toLocaleString('tr-TR')}`}
-                  />
-                  {PLAN_KEYS.map((p) => (
-                    <Area
-                      key={p}
-                      type="monotone"
-                      dataKey={p}
-                      stackId="1"
-                      stroke={PLAN_COLORS[p]}
-                      fill={PLAN_COLORS[p]}
-                      fillOpacity={0.7}
+            <p className="mt-1 text-[11px] text-[#737373]">
+              Son {snapshot.months} ay · tahmini, aktif aboneliklerin paket fiyatlarından (USD)
+            </p>
+            {mrrKeys.length === 0 ? (
+              <div className="mt-4 flex h-[200px] w-full items-center justify-center text-[12px] text-[#737373]">
+                Henüz gelir yok
+              </div>
+            ) : (
+              <div className="mt-4 h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={flattenMrr(snapshot.mrr, mrrKeys)} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="#F5F5F5" vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 10, fill: '#737373' }}
+                      axisLine={{ stroke: '#EDEDED' }}
+                      tickLine={false}
                     />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+                    <YAxis
+                      tick={{ fontSize: 10, fill: '#737373' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={40}
+                      tickFormatter={(v) => `$${Number(v ?? 0).toLocaleString('en-US')}`}
+                    />
+                    <Tooltip
+                      contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
+                      formatter={(v, name) => [formatUsd(Number(v ?? 0)), mrrPlanLabel(String(name ?? ''))]}
+                    />
+                    {mrrKeys.map((key, i) => (
+                      <Area
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stackId="1"
+                        stroke={TIER_AREA_COLORS[i % TIER_AREA_COLORS.length]}
+                        fill={TIER_AREA_COLORS[i % TIER_AREA_COLORS.length]}
+                        fillOpacity={0.7}
+                      />
+                    ))}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* 2. CHURN RATE — bar chart, churned + ratePct */}
           <div className="bz-card p-5">
             <div className="flex items-center justify-between gap-2">
-              <Eyebrow>CHURN ORANI</Eyebrow>
+              <Eyebrow>KAYIP ORANI</Eyebrow>
               {snapshot.churn.length > 0 && (
                 <span className="bz-mono inline-flex items-center gap-1 text-[10px]">
                   {snapshot.churn[snapshot.churn.length - 1].ratePct >= 5 ? (
@@ -303,7 +327,10 @@ export function AdminBiSection() {
                 Skor: {snapshot.nps.score}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">{snapshot.nps.total} yorum (cross-workspace)</p>
+            <p className="mt-1 text-[11px] text-[#737373]">
+              {snapshot.nps.windowDays ? `Son ${snapshot.nps.windowDays} gün · ` : ''}
+              {snapshot.nps.total} yorum · tüm işletmeler
+            </p>
             {snapshot.nps.total === 0 ? (
               <p className="mt-12 text-center text-[12px] text-[#737373]">Veri yok</p>
             ) : (
@@ -313,8 +340,8 @@ export function AdminBiSection() {
                     <Pie
                       data={[
                         { name: 'Destekçi (5★)', value: snapshot.nps.promoters, color: NPS_PIE_COLORS.promoters },
-                        { name: 'Nötr (3-4★)', value: snapshot.nps.passives, color: NPS_PIE_COLORS.passives },
-                        { name: 'Eleştiren (1-2★)', value: snapshot.nps.detractors, color: NPS_PIE_COLORS.detractors },
+                        { name: 'Nötr (4★)', value: snapshot.nps.passives, color: NPS_PIE_COLORS.passives },
+                        { name: 'Eleştiren (1-3★)', value: snapshot.nps.detractors, color: NPS_PIE_COLORS.detractors },
                       ]}
                       dataKey="value"
                       nameKey="name"
@@ -340,13 +367,13 @@ export function AdminBiSection() {
           {/* 4. COHORT RETENTION — bar chart stacked */}
           <div className="bz-card p-5">
             <div className="flex items-center justify-between gap-2">
-              <Eyebrow>KOHORT RETENTION</Eyebrow>
+              <Eyebrow>KOHORT ELDE TUTMA</Eyebrow>
               <span className="bz-mono inline-flex items-center gap-1 text-[10px] text-[#737373]">
                 <Users size={11} />
                 {snapshot.cohort.reduce((acc, p) => acc + p.signups, 0)}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#737373]">Signup ayı bazlı, bugün hâlâ aktif/trial</p>
+            <p className="mt-1 text-[11px] text-[#737373]">Kayıt ayına göre, bugün hâlâ aktif veya denemede olanlar</p>
             <div className="mt-4 h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={snapshot.cohort} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
@@ -367,7 +394,7 @@ export function AdminBiSection() {
                     contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
                   />
                   <Bar dataKey="retainedActive" stackId="a" fill="#0A0A0A" name="Aktif" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="retainedTrial" stackId="a" fill="#C6F24E" name="Trial" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="retainedTrial" stackId="a" fill="#C6F24E" name="Deneme" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

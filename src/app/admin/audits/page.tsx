@@ -28,7 +28,7 @@ const SECTIONS = [
     icon: Tag,
     title: 'Kategoriler',
     description:
-      'Şablonları sektör ve konuya göre gruplayan taksonomi. Owner kullanıcı şablon seçerken bu listeden filtreler.',
+      'Şablonları sektör ve konuya göre gruplayan taksonomi. İşletme sahipleri şablon seçerken bu listeden filtreler.',
     badge: 'Taksonomi',
   },
   {
@@ -48,7 +48,7 @@ export default function AdminAuditsHubPage() {
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
         eyebrowColor="#C6F24E"
         title="Denetim Merkezi"
-        description="Hazır şablon kataloğu, kategori taksonomisi ve sistem genelinde kullanım istatistikleri. Owner panelinde aynı şablonları operatör müşterileri kendi denetimleri için fork eder."
+        description="Hazır şablon kataloğu, kategori taksonomisi ve sistem genelinde kullanım istatistikleri. İşletme sahipleri bu şablonları kopyalayıp kendi denetimlerine uyarlar."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -87,8 +87,8 @@ export default function AdminAuditsHubPage() {
           <Link href="/admin/audits/templates" className="text-[#0A0A0A] underline">
             Şablonlar sayfasındaki
           </Link>{' '}
-          <em>“Varsayılan içeriği yükle”</em> butonuyla 6 sektör için hazır 18 kategori + 25 şablon
-          + ~120 soru tek tıkla oluşturulur. İşlem idempotent — admin elle eklediğin satırlar
+          <em>“Varsayılan içeriği yükle”</em> butonuyla 6 sektör için hazır 18 kategori + 24 şablon
+          + ~120 soru tek tıkla oluşturulur. İşlem tekrarlanabilir — elle eklediğin kayıtlara
           dokunulmaz.
         </p>
       </div>

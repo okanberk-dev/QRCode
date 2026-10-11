@@ -32,45 +32,54 @@ export interface NpsResult {
   promoterPct: number;
 }
 
-export function calculateNPS(feedbacks: NpsInput[]): NpsResult {
-  const empty: NpsResult = {
-    npsScore: 0,
-    promoters: 0,
-    passives: 0,
-    detractors: 0,
-    total: 0,
-    promoterPct: 0,
-  };
-  if (feedbacks.length === 0) return empty;
+export type NpsBucketKind = 'promoter' | 'passive' | 'detractor';
 
+/**
+ * Tek bir puanın NPS kovası — admin BI dağılımı + KPI aynı tanımı kullanır
+ * (5★ promoter, 4★ passive, 1-3★ detractor). Geçersiz/0 puan → null.
+ */
+export function npsBucketForRating(rating: number): NpsBucketKind | null {
+  if (!Number.isFinite(rating) || rating <= 0) return null;
+  if (rating >= 5) return 'promoter';
+  if (rating >= 4) return 'passive';
+  return 'detractor';
+}
+
+/**
+ * Puan başına sayım listesinden NPS (ör. `prisma.feedback.groupBy({ by:
+ * ['rating'] })` çıktısı). `calculateNPS` ile birebir aynı sonucu verir;
+ * büyük pencerelerde satır satır dizi kurmadan hesaplamak için.
+ */
+export function calculateNPSFromCounts(
+  counts: Array<{ rating: number; count: number }>,
+): NpsResult {
   let promoters = 0;
   let passives = 0;
   let detractors = 0;
-  let total = 0;
-
-  for (const f of feedbacks) {
-    const r = f.rating;
-    // rating 0 / null / NaN — feedback rating taşımıyor, NPS hesabına dahil değil
-    if (!Number.isFinite(r) || r <= 0) continue;
-    total += 1;
-    if (r >= 5) promoters += 1;
-    else if (r >= 4) passives += 1;
-    else detractors += 1; // 1-3
+  for (const { rating, count } of counts) {
+    if (!Number.isFinite(count) || count <= 0) continue;
+    const bucket = npsBucketForRating(rating);
+    if (bucket === 'promoter') promoters += count;
+    else if (bucket === 'passive') passives += count;
+    else if (bucket === 'detractor') detractors += count;
   }
-
-  if (total === 0) return empty;
-
+  const total = promoters + passives + detractors;
+  if (total === 0) {
+    return { npsScore: 0, promoters: 0, passives: 0, detractors: 0, total: 0, promoterPct: 0 };
+  }
   const promoterPct = (promoters / total) * 100;
   const detractorPct = (detractors / total) * 100;
   // NPS klasik formülü: P% - D% (passives ignore edilir)
-  const npsScore = Math.round(promoterPct - detractorPct);
-
   return {
-    npsScore,
+    npsScore: Math.round(promoterPct - detractorPct),
     promoters,
     passives,
     detractors,
     total,
     promoterPct: Math.round(promoterPct),
   };
+}
+
+export function calculateNPS(feedbacks: NpsInput[]): NpsResult {
+  return calculateNPSFromCounts(feedbacks.map((f) => ({ rating: f.rating, count: 1 })));
 }

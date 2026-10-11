@@ -1,25 +1,15 @@
-import {
-  SkBox,
-  SkCardGrid,
-  SkPageHeader,
-  SkPageShell,
-} from '@/components/ui/skeletons/PageSkeleton';
+import { SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
+import { PlatformsOverviewSkeleton } from '@/components/dashboard/platforms/PlatformSkeletons';
 
 /**
- * Owner platform links — header + restaurant selector + 12-card
- * platform grid. (CLAUDE.md §40.10)
+ * Owner platform links — back link + header + business context card +
+ * review-platform list + routing card. Mirrors page.tsx (max-w-[1280px],
+ * space-y-5). (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440}>
-      <SkPageHeader withActions titleWidth="w-52" />
-
-      <div className="flex items-center gap-3">
-        <SkBox className="h-3 w-32" />
-        <SkBox className="h-9 w-64" />
-      </div>
-
-      <SkCardGrid count={9} cols={3} />
+    <SkPageShell max={1280}>
+      <PlatformsOverviewSkeleton />
     </SkPageShell>
   );
 }

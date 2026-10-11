@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import type { Locale } from "@/lib/translations";
+import { PLAN_LABELS } from "@/lib/constants";
+import { resolveDisplayTimeZone } from "@/lib/timezone";
 
 // §38.37 — Hesabım sağ rail Plan widget. Tasarım .design-owner-2026/
 // page-account.jsx:169-205 birebir: graphite dark hero + lime accent + plan
@@ -19,7 +21,8 @@ import type { Locale } from "@/lib/translations";
 interface UsageBar {
   label: string;
   used: number;
-  limit: number;
+  /** null → no plan limit exists for this metric; render the count only. */
+  limit: number | null;
   unit?: string;
 }
 
@@ -34,6 +37,7 @@ interface BillingSummary {
   amount: number | null;
   currency: string;
   billingCycle: string | null;
+  tier?: { id: string; name: string } | null;
 }
 
 export interface AccountPlanWidgetProps {
@@ -41,10 +45,16 @@ export interface AccountPlanWidgetProps {
   /** Workspace-level usage: team count + restaurant count. Caller fetches. */
   teamCount?: number;
   restaurantCount?: number;
-  // Plan tier'ına göre limit (UI runtime — schema'da yok). Pulse Pro 8 ekip,
-  // Growth 4, Starter 2, Trial 2.
+  /**
+   * Optional real limits. Plans carry no location / team caps in the schema
+   * (SubscriptionPlan has none), so by default only the counts are shown —
+   * the old hard-coded "trial = 1 location" rendered "2 / 1" as a red
+   * over-limit bar for owners who were never limited.
+   */
   teamLimit?: number;
   restaurantLimit?: number;
+  /** "Manage" action — the account hub opens its billing tab in place. */
+  onManage?: () => void;
 }
 
 function ProgressBar({ used, limit }: { used: number; limit: number }) {
@@ -72,6 +82,7 @@ export function AccountPlanWidget({
   restaurantCount = 0,
   teamLimit,
   restaurantLimit,
+  onManage,
 }: AccountPlanWidgetProps) {
   const isTr = locale === "tr";
   const intLocale = isTr ? "tr-TR" : "en-US";
@@ -107,10 +118,14 @@ export function AccountPlanWidget({
     return null;
   }
 
-  // Plan tier defaults (UI runtime — schema'da yok). Caller override edebilir.
-  const teamMax = teamLimit ?? (data.plan === "yearly" ? 8 : data.plan === "monthly" ? 4 : 2);
-  const restaurantMax =
-    restaurantLimit ?? (data.plan === "yearly" ? 5 : data.plan === "monthly" ? 3 : 1);
+  // Location / team caps only when the caller passes a real limit — no
+  // invented per-plan defaults (see AccountPlanWidgetProps).
+  const teamMax = teamLimit ?? null;
+  const restaurantMax = restaurantLimit ?? null;
+  // The summary's planLabel follows the user's saved language, not the page
+  // URL — resolve the legacy plan bucket label for the locale on screen.
+  const planName =
+    data.tier?.name ?? PLAN_LABELS[data.plan]?.[isTr ? "tr" : "en"] ?? data.planLabel;
 
   // §38.51 — Tasarım birebir 3 bar: Konum + Ekip + AI yanıt (Yorum bar silindi,
   // AI yanıt eklendi). Kullanıcı kararı (CLAUDE.md §38.51): API çağrısı bar skip.
@@ -129,7 +144,7 @@ export function AccountPlanWidget({
     {
       label: isTr ? "AI yanıt / ay" : "AI replies / mo",
       used: data.aiReplies?.used ?? 0,
-      limit: data.aiReplies?.limit ?? 500,
+      limit: data.aiReplies?.limit ?? null,
     },
   ];
 
@@ -139,6 +154,7 @@ export function AccountPlanWidget({
         day: "numeric",
         month: "long",
         year: "numeric",
+        timeZone: resolveDisplayTimeZone(),
       })
     : null;
 
@@ -164,15 +180,17 @@ export function AccountPlanWidget({
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="inline-flex items-center gap-1.5">
           <span className="bz-pulse-dot" aria-hidden />
+          {/* Plan name sits in the eyebrow only when the hero shows a price;
+              otherwise the hero already is the plan name ("Deneme" twice). */}
           <span className="pulse-eyebrow text-[#C6F24E]">
-            {data.planLabel || (isTr ? "PLAN" : "PLAN")}
+            {priceMain ? planName : isTr ? "MEVCUT PLAN" : "CURRENT PLAN"}
           </span>
         </div>
         {data.trialDaysLeft != null && data.trialDaysLeft > 0 && (
           <span className="text-[10px] font-mono text-white/60 uppercase tracking-wider">
             {isTr
-              ? `${data.trialDaysLeft} gün deneme`
-              : `${data.trialDaysLeft}d trial`}
+              ? `${data.trialDaysLeft} gün kaldı`
+              : `${data.trialDaysLeft} days left`}
           </span>
         )}
       </div>
@@ -189,7 +207,7 @@ export function AccountPlanWidget({
         </div>
       ) : (
         <div className="bz-h-tight text-[20px] leading-tight text-white mb-1">
-          {data.planLabel}
+          {planName}
         </div>
       )}
 
@@ -205,17 +223,19 @@ export function AccountPlanWidget({
       <div className="space-y-3">
         {usageBars.map((bar) => (
           <div key={bar.label}>
-            <div className="flex items-baseline justify-between mb-1.5">
+            <div className={`flex items-baseline justify-between ${bar.limit != null ? "mb-1.5" : ""}`}>
               <span className="text-[11px] text-white/70">{bar.label}</span>
               <span className="bz-mono tabular-nums text-[11px] text-white/90">
                 {bar.used.toLocaleString(intLocale)}
-                <span className="text-white/40">
-                  {" "}
-                  / {bar.limit.toLocaleString(intLocale)}
-                </span>
+                {bar.limit != null && (
+                  <span className="text-white/40">
+                    {" "}
+                    / {bar.limit.toLocaleString(intLocale)}
+                  </span>
+                )}
               </span>
             </div>
-            <ProgressBar used={bar.used} limit={bar.limit} />
+            {bar.limit != null && <ProgressBar used={bar.used} limit={bar.limit} />}
           </div>
         ))}
       </div>
@@ -233,12 +253,21 @@ export function AccountPlanWidget({
         >
           {isTr ? "Yükselt" : "Upgrade"}
         </Link>
-        <Link
-          href={`/${locale}/pricing`}
-          className="bz-btn-on-dark bz-btn-sm"
-        >
-          {isTr ? "Yönet" : "Manage"}
-        </Link>
+        {/* "Yönet" used to link to /pricing too (same target as "Yükselt").
+            It now opens the billing tab: plan details, invoices and the
+            subscription portal live there. */}
+        {onManage ? (
+          <button type="button" onClick={onManage} className="bz-btn-on-dark bz-btn-sm">
+            {isTr ? "Yönet" : "Manage"}
+          </button>
+        ) : (
+          <Link
+            href={`/${locale}/dashboard/account?section=billing`}
+            className="bz-btn-on-dark bz-btn-sm"
+          >
+            {isTr ? "Yönet" : "Manage"}
+          </Link>
+        )}
       </div>
     </div>
   );

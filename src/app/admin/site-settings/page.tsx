@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { Loader2, Save, Upload, Image as ImageIcon, Check, AlertCircle, X, Globe, Sparkles, ShieldCheck, Home } from 'lucide-react';
 import { AlertBanner, Badge, PageHeader } from '@/components/ui';
+import SiteSettingsSkeleton from './loading';
 
 type Lang = 'tr' | 'en';
 
@@ -40,12 +41,25 @@ export default function SiteSettingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [uploading, setUploading] = useState<'logo' | 'favicon' | null>(null);
+  const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
+    // Only 401/403 is a permission problem; a 500 or network error used to
+    // be reported as "Sadece Superadmin" too.
     fetch('/api/admin/site-settings')
-      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-      .then((data) => setSettings(data.settings))
-      .catch(() => setError('Ayarlar yüklenemedi. Superadmin yetkisi gerekli.'))
+      .then(async (r) => {
+        if (r.status === 401 || r.status === 403) {
+          setForbidden(true);
+          return;
+        }
+        if (!r.ok) {
+          setError('Ayarlar yüklenemedi. Lütfen sayfayı yenileyip tekrar dene.');
+          return;
+        }
+        const data = await r.json();
+        setSettings(data.settings);
+      })
+      .catch(() => setError('Bağlantı hatası. Ayarlar yüklenemedi.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -85,7 +99,7 @@ export default function SiteSettingsPage() {
       fd.append('file', file);
       fd.append('kind', kind);
       const res = await fetch('/api/admin/site-settings/upload', { method: 'POST', body: fd });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
       if (kind === 'logo') update('logoUrl', data.url);
       if (kind === 'favicon') update('faviconUrl', data.url);
@@ -103,14 +117,9 @@ export default function SiteSettingsPage() {
     if (kind === 'favicon') update('faviconUrl', null);
   };
 
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center gap-3 text-[#1A1A1A]">
-        <Loader2 className="animate-spin" size={18} />
-        <span className="font-bold">Yükleniyor…</span>
-      </div>
-    );
-  }
+  // Same shape as loading.tsx — no second (spinner) loading state after the
+  // route skeleton (CLAUDE.md §40.10).
+  if (loading) return <SiteSettingsSkeleton />;
 
   if (!settings) {
     // §38.76 — Page-level 403/404 guard. Site-settings superadmin-only
@@ -120,7 +129,7 @@ export default function SiteSettingsPage() {
     // için tasarlandı) burada uygun değil; site-settings için bu inline
     // pattern yeterli — SuperadminRequired wrapper ileride 3+ callsite çıkar
     // ise extract edilir (CLAUDE.md §7).
-    const isPermissionError = error.toLowerCase().includes('superadmin') || error.includes('Yetkisiz');
+    const isPermissionError = forbidden;
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4 py-10">
         <div className="bz-card w-full max-w-md p-6 sm:p-8 text-center">
@@ -150,7 +159,7 @@ export default function SiteSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 pb-32">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       {/* §38.75 — Eyebrow'a SUPERADMIN scope prefix eklendi (CLAUDE.md §11.4
           dashboard SUPERADMIN eyebrow paterni reuse). Page-level scope net;
           actions slot'undaki lime badge ek visual cue. */}
@@ -158,7 +167,7 @@ export default function SiteSettingsPage() {
         eyebrow="SUPERADMIN · SİTE AYARLARI"
         eyebrowPulse
         title="Site ayarları"
-        description="SEO metadatası, logo ve favicon — her değişiklik tüm site genelinde yansır."
+        description="Arama motoru bilgileri, logo ve favicon — her değişiklik tüm siteye yansır."
         actions={
           <Badge kind="lime">
             <Sparkles size={11} strokeWidth={2} />
@@ -183,13 +192,15 @@ export default function SiteSettingsPage() {
       <div className={CARD}>
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">SEO Metadata</h2>
+            <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">SEO bilgileri</h2>
             <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">Başlık, açıklama ve anahtar kelimeler — dil başına.</p>
           </div>
-          <div className="flex gap-1 bg-[#FFFFFF] p-1 rounded-xl border border-[#EDEDED]">
+          <div className="flex gap-1 bg-[#FFFFFF] p-1 rounded-xl border border-[#EDEDED]" role="group" aria-label="Düzenlenen dil">
             {(['tr', 'en'] as Lang[]).map((l) => (
               <button
                 key={l}
+                type="button"
+                aria-pressed={activeLang === l}
                 onClick={() => setActiveLang(l)}
                 className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold uppercase tracking-wider transition-colors ${
                   activeLang === l ? 'bg-[#0A0A0A] text-white' : 'text-[#1A1A1A] hover:bg-white'
@@ -204,8 +215,9 @@ export default function SiteSettingsPage() {
 
         <div className="space-y-5">
           <div>
-            <label className={LABEL}>Varsayılan Başlık ({activeLang.toUpperCase()})</label>
+            <label htmlFor="ss-title-default" className={LABEL}>Varsayılan Başlık ({activeLang.toUpperCase()})</label>
             <input
+              id="ss-title-default"
               type="text"
               className={INPUT}
               value={activeLang === 'tr' ? settings.titleDefaultTr : settings.titleDefaultEn}
@@ -216,12 +228,13 @@ export default function SiteSettingsPage() {
               }
               placeholder="Buaze | Dijital İtibar ve Geri Bildirim Yönetimi"
             />
-            <p className={HINT}>Alt sayfaların override etmediği durumlarda görünür.</p>
+            <p className={HINT}>Kendi başlığı tanımlanmamış sayfalarda görünür.</p>
           </div>
 
           <div>
-            <label className={LABEL}>Başlık Şablonu</label>
+            <label htmlFor="ss-title-template" className={LABEL}>Başlık Şablonu</label>
             <input
+              id="ss-title-template"
               type="text"
               className={INPUT}
               value={settings.titleTemplate}
@@ -234,8 +247,9 @@ export default function SiteSettingsPage() {
           </div>
 
           <div>
-            <label className={LABEL}>Varsayılan Açıklama ({activeLang.toUpperCase()})</label>
+            <label htmlFor="ss-description" className={LABEL}>Varsayılan Açıklama ({activeLang.toUpperCase()})</label>
             <textarea
+              id="ss-description"
               className={`${INPUT} min-h-[90px] resize-y`}
               value={activeLang === 'tr' ? settings.descriptionTr : settings.descriptionEn}
               onChange={(e) =>
@@ -251,8 +265,9 @@ export default function SiteSettingsPage() {
           </div>
 
           <div>
-            <label className={LABEL}>Anahtar Kelimeler ({activeLang.toUpperCase()})</label>
+            <label htmlFor="ss-keywords" className={LABEL}>Anahtar Kelimeler ({activeLang.toUpperCase()})</label>
             <textarea
+              id="ss-keywords"
               className={`${INPUT} min-h-[90px] resize-y`}
               value={(activeLang === 'tr' ? settings.keywordsTr : settings.keywordsEn).join(', ')}
               onChange={(e) => {
@@ -281,7 +296,7 @@ export default function SiteSettingsPage() {
             url={settings.logoUrl}
             label="Logo"
             accept="image/png,image/svg+xml,image/webp"
-            aspect="Transparent PNG/SVG — max 2MB"
+            aspect="Şeffaf arka planlı PNG/SVG — en fazla 2 MB"
             onUpload={(f) => handleUpload(f, 'logo')}
             onRemove={() => handleRemove('logo')}
             uploading={uploading === 'logo'}
@@ -307,68 +322,77 @@ export default function SiteSettingsPage() {
             Varlık Profili URL&apos;leri
           </h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
-            Buaze&apos;in dış kaynak profillerine bağlantı. Doluysa ana sayfadaki Organization JSON-LD&apos;ye <code className="bg-[#FAFAFA] px-1 rounded text-[11px]">sameAs</code> olarak girer ve <Link className="underline" href="/tr/press">basın kiti</Link> sayfasında gösterilir. Boş alanlar atlanır.
+            Buaze&apos;in dış platformlardaki profillerine bağlantılar. Doldurulan bağlantılar arama motorlarına şirket profili olarak bildirilir ve <Link className="underline" href="/tr/press">basın kiti</Link> sayfasında gösterilir. Boş alanlar atlanır.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className={LABEL}>G2 Listing</label>
+            <label htmlFor="ss-g2" className={LABEL}>G2 sayfası</label>
             <input
+              id="ss-g2"
               type="url"
               className={INPUT}
               value={settings.g2Url ?? ''}
               onChange={(e) => update('g2Url', e.target.value || null)}
               placeholder="https://www.g2.com/products/buaze"
             />
-            <p className={HINT}>SaaS karşılaştırma sayfaları + AI search.</p>
+            <p className={HINT}>Yazılım karşılaştırma siteleri ve yapay zekâ aramaları için.</p>
           </div>
 
           <div>
-            <label className={LABEL}>Wikidata Q-ID URL</label>
+            <label htmlFor="ss-wikidata" className={LABEL}>Wikidata Q-ID URL</label>
             <input
+              id="ss-wikidata"
               type="url"
               className={INPUT}
               value={settings.wikidataUrl ?? ''}
               onChange={(e) => update('wikidataUrl', e.target.value || null)}
               placeholder="https://www.wikidata.org/wiki/Q123456789"
             />
-            <p className={HINT}>Knowledge Graph + LLM eğitim datası.</p>
+            <p className={HINT}>Arama motorlarının şirket bilgi kartı için.</p>
           </div>
 
           <div>
-            <label className={LABEL}>Crunchbase</label>
+            <label htmlFor="ss-crunchbase" className={LABEL}>Crunchbase</label>
             <input
+              id="ss-crunchbase"
               type="url"
               className={INPUT}
               value={settings.crunchbaseUrl ?? ''}
               onChange={(e) => update('crunchbaseUrl', e.target.value || null)}
               placeholder="https://www.crunchbase.com/organization/buaze"
             />
-            <p className={HINT}>Şirket entity sinyali.</p>
+            <p className={HINT}>Şirket profili bağlantısı.</p>
           </div>
 
           <div>
-            <label className={LABEL}>Capterra</label>
+            <label htmlFor="ss-capterra" className={LABEL}>Capterra</label>
             <input
+              id="ss-capterra"
               type="url"
               className={INPUT}
               value={settings.capterraUrl ?? ''}
               onChange={(e) => update('capterraUrl', e.target.value || null)}
               placeholder="https://www.capterra.com/p/123456/Buaze"
             />
-            <p className={HINT}>SaaS yazılım dizini.</p>
+            <p className={HINT}>Yazılım dizini profili.</p>
           </div>
         </div>
       </div>
 
-      {/* ─── Sticky Save Bar ─── */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-[#EDEDED] shadow-lg z-30 p-4">
-        <div className="mx-auto max-w-[1280px] flex items-center justify-between gap-3">
+      {/* ─── Sticky Save Bar ───
+          In-flow sticky instead of `fixed bottom-0 lg:left-64`: on mobile the
+          fixed bar sat under the floating bottom nav (Save was not
+          clickable), and on desktop its hard-coded 256px offset ignored the
+          248px / collapsed sidebar. Below lg it parks above the nav pill. */}
+      <div className="sticky bottom-[calc(96px+env(safe-area-inset-bottom,0px))] z-20 rounded-2xl border border-[#EDEDED] bg-white/95 p-4 shadow-lg backdrop-blur lg:bottom-4">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-[12px] text-[#6B7280] font-medium hidden sm:block">
             Değişiklikler tüm site genelinde yansır.
           </p>
           <button
+            type="button"
             onClick={handleSave}
             disabled={saving}
             className="bz-btn-lime ml-auto disabled:opacity-60"

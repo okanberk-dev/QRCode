@@ -22,6 +22,7 @@ import {
   StatCard,
 } from '@/components/ui';
 import { AUDIT_SECTORS, type AuditSector } from '@/lib/audits/types';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import {
   parseAuditErrorResponse,
   summarizeAuditError,
@@ -76,13 +77,18 @@ interface StatsData {
   }>;
 }
 
+// §46 — day boundaries resolved in the business display timezone, not the
+// viewer's device timezone.
 function fmtDate(iso: string | null): string {
   if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
-  } catch {
-    return '—';
-  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('tr-TR', {
+    timeZone: resolveDisplayTimeZone(),
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(d);
 }
 
 function fmtScore(value: number | null): string {
@@ -169,7 +175,10 @@ export default function AuditStatsPage() {
           <StatCard
             label="Ortalama puan"
             value={data.totals.avgScore != null ? `${data.totals.avgScore.toFixed(1)}` : '—'}
-            deltaSuffix="100 üzerinden"
+            // StatCard renders the suffix only next to a delta, so the scale
+            // hint never appeared; show it as the neutral delta line.
+            delta="100 üzerinden"
+            deltaKind="neutral"
           />
         </div>
       ) : null}
@@ -179,7 +188,7 @@ export default function AuditStatsPage() {
         <div className="bz-card-soft p-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1 text-[13px] text-[#525252] leading-relaxed">
             <strong className="text-[#0A0A0A]">Sistem boş.</strong> Henüz şablon veya yanıt yok.
-            6 sektör için hazır 18 kategori + 25 şablon + ~120 soru ile başlamak için{' '}
+            6 sektör için hazır 18 kategori + 24 şablon + ~120 soru ile başlamak için{' '}
             <em>“Varsayılan içeriği yükle”</em> butonuna git.
           </div>
           <Link href="/admin/audits/templates" className="bz-btn-primary shrink-0">

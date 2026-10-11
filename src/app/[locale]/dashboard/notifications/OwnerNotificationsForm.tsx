@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Bell, Loader2, Mail, Clock } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, APSwitch } from '@/components/ui';
@@ -158,8 +159,9 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
       key: 'weeklyReport',
       label: { tr: 'Haftalık rapor', en: 'Weekly report' },
       desc: {
-        tr: 'Pazartesi sabahı haftalık puan trendi, en çok tıklanan platform ve öne çıkan yorumlarla özet e-posta.',
-        en: 'Monday email with weekly rating trend, top-redirected platform, and standout reviews from the past week.',
+        // Cron `0 9 * * 1` UTC → Monday ~12:00 Istanbul, not "morning".
+        tr: 'Her pazartesi öğle saatlerinde (Türkiye saati) haftalık puan trendi, en çok tıklanan platform ve öne çıkan yorumlarla özet e-posta.',
+        en: 'Every Monday around noon (Istanbul time): an email with your weekly rating trend, top platform and standout reviews.',
       },
       icon: Bell,
       accent: '#C6F24E',
@@ -173,7 +175,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
       key: 'receiveTrialReminders',
       label: { tr: 'Deneme süresi hatırlatmaları', en: 'Trial reminders' },
       desc: {
-        tr: 'Deneme bitimine 3 gün ve 1 gün kala bilgilendirme e-postası. Sustur dersen hiçbir hatırlatma gönderilmez.',
+        tr: 'Deneme bitimine 3 gün ve 1 gün kala bilgilendirme e-postası. Kapatırsan hiçbir hatırlatma gönderilmez.',
         en: 'Heads-up email at 3 days and 1 day before your trial ends. Switch off to silence both reminders.',
       },
       icon: Clock,
@@ -279,8 +281,17 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
 
       <p className="text-[11.5px] leading-[1.55] text-[#737373]">
         {isTr
-          ? 'Bildirim e-posta adresini değiştirmek için ilgili işletmenin Ayarlar → Genel sekmesine git.'
-          : 'To change the recipient email, open the relevant business → Settings → General.'}
+          ? 'Bildirim e-posta adresini değiştirmek için '
+          : 'To change the recipient email, open '}
+        <Link
+          href={`/${locale}/dashboard/restaurants`}
+          className="font-medium text-[#0A0A0A] underline underline-offset-2"
+        >
+          {isTr ? 'İşletmeler' : 'Locations'}
+        </Link>
+        {isTr
+          ? ' sayfasından ilgili işletmenin Ayarlar → Genel sekmesini aç.'
+          : ', then the business → Settings → General.'}
       </p>
     </div>
   );

@@ -1,23 +1,24 @@
 import {
   SkBox,
-  SkCardGrid,
   SkPageHeader,
   SkPageShell,
 } from '@/components/ui/skeletons/PageSkeleton';
+import { LegalDocGroupsSkeleton } from './LegalDocGroupsSkeleton';
 
 /**
- * Admin legal documents (KVKK / Terms / Cookie) list — PageHeader +
- * card grid by document type. (CLAUDE.md §40.10)
+ * Admin legal documents — PageHeader + search/status row + draft notice +
+ * document-group cards. Mirrors page.tsx (CLAUDE.md §40.10).
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440}>
-      <SkPageHeader withActions titleWidth="w-56" />
-      <div className="flex flex-wrap items-center gap-2">
-        <SkBox className="h-9 w-40" />
-        <SkBox className="h-9 w-28" />
+    <SkPageShell max={1440} space={5}>
+      <SkPageHeader withActions titleWidth="w-72" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SkBox className="h-10 w-full sm:max-w-[320px]" />
+        <SkBox className="h-9 w-72 max-w-full" />
       </div>
-      <SkCardGrid count={6} cols={3} />
+      <SkBox className="h-20 w-full rounded-xl" />
+      <LegalDocGroupsSkeleton />
     </SkPageShell>
   );
 }

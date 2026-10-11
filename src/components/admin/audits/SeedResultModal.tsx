@@ -25,7 +25,7 @@ interface Props {
 
 export default function SeedResultModal({ result, onClose }: Props) {
   return (
-    <Modal onClose={onClose} size={520} ariaLabel="Seed yükleme sonucu">
+    <Modal onClose={onClose} size={520} ariaLabel="Varsayılan içerik yükleme sonucu">
       <div className="space-y-5">
         <div className="flex items-start gap-3">
           <div
@@ -37,7 +37,7 @@ export default function SeedResultModal({ result, onClose }: Props) {
           <div className="flex-1 min-w-0">
             <h2 className="bz-h-tight text-[18px]">Varsayılan içerik yüklendi</h2>
             <p className="text-[13px] text-[#525252] mt-1">
-              Denetim Merkezi kategorileri ve şablonları güncellendi. Owner panelinde aynı şablon
+              Denetim Merkezi kategorileri ve şablonları güncellendi. İşletme panelinde aynı şablon
               kataloğu görünür.
             </p>
           </div>
@@ -59,9 +59,9 @@ export default function SeedResultModal({ result, onClose }: Props) {
         </div>
 
         <div className="flex items-center gap-2 text-[12px] text-[#737373]">
-          <span className="bz-mono">{result.durationMs}ms</span>
+          <span className="bz-mono">{(result.durationMs / 1000).toFixed(1)} sn</span>
           <span>·</span>
-          <span>Idempotent — tekrar tıklarsan aynı sayılar, duplicate yok.</span>
+          <span>Tekrar yüklersen mevcut içerik güncellenir, kopya oluşmaz.</span>
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">

@@ -1,19 +1,22 @@
 'use client';
 
-import { ArrowLeft, Bookmark, Flag, Loader2, Mail, MessageSquare, Plus, Sparkles } from 'lucide-react';
-import { AlertBanner, Avatar } from '@/components/ui';
+import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, Star } from 'lucide-react';
+import { AlertBanner, PlatformChip } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
-import type {
-  AiSource,
-  AiTone,
-  FeedbackRow,
-  ReplyTone,
-  SentReply,
-} from './types';
-import { formatDateTime, formatStamp, initials, timeAgo } from './utils';
-import { FeedbackReplyComposer } from './FeedbackReplyComposer';
+import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
+import { FeedbackStatusChips } from '@/components/dashboard/feedbacks/FeedbackStatusChips';
 import FeedbackTimeline from '@/components/dashboard/feedbacks/FeedbackTimeline';
 import { buildFeedbackTimeline } from '@/lib/feedback-timeline';
+import type { AiSource, AiTone, FeedbackRow, ReplyTone, SentReply } from './types';
+import {
+  formatDateTime,
+  formatStamp,
+  platformIconId,
+  platformLabel,
+  timeAgoLabel,
+} from './utils';
+import { PulseAiSuggestionCard, ReplyComposerCard, focusReplyTextarea } from './FeedbackReplyComposer';
 import { AiSummaryCard } from './AiSummaryCard';
 
 interface FeedbackDetailProps {
@@ -26,12 +29,7 @@ interface FeedbackDetailProps {
 
   /** Flag toggle */
   onFlag: () => void;
-
-  /**
-   * Stage 13 (CLAUDE.md §38.83) — Beklemede toggle. PATCH
-   * /api/feedback/{id} { isPending: !current } + optimistic state.
-   * Page tarafında bulkNotice surface'ında 3.5s success/error notice.
-   */
+  /** Stage 13 (§38.83) — Beklemede toggle (optimistic + revert in the page). */
   onTogglePending: () => void;
 
   /** Sent replies thread */
@@ -63,341 +61,334 @@ interface FeedbackDetailProps {
   replyNotice: { msg: string; tone: ReplyTone } | null;
 }
 
-const ASPECT_LABEL_TR = { service: 'Servis', food: 'Yemek', price: 'Fiyat', atmosphere: 'Atmosfer' };
-const ASPECT_LABEL_EN = { service: 'Service', food: 'Food', price: 'Price', atmosphere: 'Atmosphere' };
+/** Detail-pane placeholder while the list loads (rating box, title, comment). */
+export function FeedbackDetailSkeleton() {
+  return (
+    <div className="px-5 py-5 sm:px-8 sm:py-6" aria-hidden="true">
+      <div className="flex items-start gap-4">
+        <SkBox className="h-12 w-12 shrink-0 rounded-2xl" />
+        <div className="min-w-0 flex-1 space-y-2 pt-1">
+          <SkBox className="h-6 w-48 max-w-full" />
+          <SkBox className="h-4 w-64 max-w-full" />
+          <SkBox className="h-3 w-36" />
+        </div>
+      </div>
+      <SkBox className="mt-5 h-24 w-full rounded-2xl" />
+      <SkBox className="mt-5 h-32 w-full rounded-2xl" />
+    </div>
+  );
+}
 
 export function FeedbackDetail(props: FeedbackDetailProps) {
-  const { feedback: active, locale, showBackButton, onBack, onFlag, onTogglePending, sentReplies, sentLoading } = props;
+  const {
+    feedback: active,
+    locale,
+    showBackButton,
+    onBack,
+    onFlag,
+    onTogglePending,
+    sentReplies,
+    sentLoading,
+  } = props;
   const isTr = locale === 'tr';
-  const aspectLabel = isTr ? ASPECT_LABEL_TR : ASPECT_LABEL_EN;
-  const customerAspects = active.aspects ?? null;
+  const titleId = `feedback-detail-title-${active.id}`;
+  const pLabel = platformLabel(active.platform, isTr);
+  const iconId = platformIconId(active.platform);
+  const isPending = active.isPending === true;
+  const isFlagged = active.isFlagged === true;
+
+  // A failed e-mail still creates a reply row (isReplied = true). Keep the
+  // composer available so "Yeniden dene" can refill and resend.
+  const lastReplyFailed =
+    sentReplies.length > 0 && sentReplies[sentReplies.length - 1]?.status === 'failed';
+  const isHigh = active.rating >= 4;
+  const canReply = !isHigh && (!active.isReplied || lastReplyFailed);
+  const showAiCard = !isHigh && !active.isReplied;
+
+  const aspects = [
+    { key: 'food', label: isTr ? 'Yemek' : 'Food', value: active.foodRating },
+    { key: 'service', label: isTr ? 'Servis' : 'Service', value: active.serviceRating },
+    { key: 'atmosphere', label: isTr ? 'Atmosfer' : 'Atmosphere', value: active.atmosphereRating },
+  ].filter((a): a is { key: string; label: string; value: number } => typeof a.value === 'number');
+
+  const pendingLabel = isTr
+    ? isPending
+      ? 'Beklemeden çıkar'
+      : 'Beklemeye al'
+    : isPending
+      ? 'Remove from pending'
+      : 'Mark pending';
+  const flagLabel = isTr
+    ? isFlagged
+      ? 'İşareti kaldır'
+      : 'İşaretle'
+    : isFlagged
+      ? 'Unflag'
+      : 'Flag';
 
   return (
     <section
-      className="flex flex-col bg-white lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+      className="flex flex-col bg-white lg:min-h-0 lg:flex-1"
       role="region"
-      aria-labelledby={`feedback-detail-title-${active.id}`}
+      aria-labelledby={titleId}
     >
-      {/* Mobile sticky top — back button. Shell mobil topbar'ı (~61px, z-40)
-          da sticky; top-0 bu barı onun altına kaydırıyordu. */}
+      {/* Mobile sticky back bar — under the 61px shell topbar. */}
       {showBackButton && (
-        <div className="sticky top-[61px] z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 backdrop-blur px-4 py-3 lg:hidden">
+        <div className="sticky top-[61px] z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
           <button
             type="button"
             onClick={onBack}
             className="bz-btn bz-btn-sm"
             aria-label={isTr ? 'Yorumlar listesine dön' : 'Back to reviews'}
           >
-            <ArrowLeft size={16} strokeWidth={2} />
+            <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
             {isTr ? 'Yorumlar' : 'Reviews'}
           </button>
           <div className="flex items-center gap-1.5">
-            {/* Stage 13 — Beklemede toggle (mobile sticky-top). Amber palette
-                Pulse warn token (CLAUDE.md §38.39). active.isPending true ise
-                fill + amber background, false ise outline + neutral. */}
             <button
               type="button"
               onClick={onTogglePending}
-              className={`${active.isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
-              title={
-                isTr
-                  ? active.isPending
-                    ? 'Beklemeden çıkar'
-                    : 'Beklemeye al'
-                  : active.isPending
-                    ? 'Remove from pending'
-                    : 'Mark as pending'
-              }
-              aria-pressed={active.isPending === true}
+              className={`${isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
+              aria-pressed={isPending}
+              aria-label={pendingLabel}
+              title={pendingLabel}
             >
               <Bookmark
-                size={12}
+                size={14}
                 strokeWidth={2}
-                fill={active.isPending ? '#92400E' : 'none'}
+                fill={isPending ? '#92400E' : 'none'}
+                aria-hidden="true"
               />
-              {isTr
-                ? active.isPending
-                  ? 'Beklemede'
-                  : 'Beklemeye al'
-                : active.isPending
-                  ? 'Pending'
-                  : 'Mark pending'}
+              <span className="hidden sm:inline">{pendingLabel}</span>
             </button>
             <button
               type="button"
               onClick={onFlag}
-              className="bz-btn bz-btn-sm"
-              title={isTr ? 'Bayrakla işaretle' : 'Flag'}
+              className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm`}
+              aria-pressed={isFlagged}
+              aria-label={flagLabel}
+              title={flagLabel}
             >
-              <Flag size={12} strokeWidth={2} />
-              {isTr ? 'İşaretle' : 'Flag'}
+              <Flag size={14} strokeWidth={2} fill={isFlagged ? 'currentColor' : 'none'} aria-hidden="true" />
+              <span className="hidden sm:inline">{flagLabel}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Mobile alt padding: UserDashboardShell mobile bottom nav (~64px,
-          z-40 lg:hidden) son button'u/composer'ı kapatmasın diye 80px
-          ekstra alt boşluk. Desktop'ta scroll açıldığı için composer'ın
-          rahat görünmesi için lg:pb-12 (48px) — eski lg:pb-8 (32px) son
-          satır button'u panel kenarına sıkıştırıyordu. */}
-      <div className="flex-1 p-5 pb-24 sm:p-8 sm:pb-24 lg:pb-12">
-        {/* Header card */}
-        <div className="flex items-start gap-4">
-          <Avatar
-            name={initials(active.customerName)}
-            size={56}
-            color={active.rating >= 4 ? '#0A0A0A' : active.rating <= 2 ? '#DC2626' : '#737373'}
-            fg={active.rating >= 4 ? '#C6F24E' : '#FFFFFF'}
-          />
-          <div className="flex-1 min-w-0">
-            <h2
-              id={`feedback-detail-title-${active.id}`}
-              className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
-            >
-              {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
-            </h2>
-            <p className="pulse-eyebrow text-[#737373] mt-1">
-              {(active.platform || 'BUAZE').toUpperCase()}
-              {active.restaurant?.name ? ` · ${active.restaurant.name.toUpperCase()}` : ''}
-              {` · ${timeAgo(active.createdAt, locale).toUpperCase()} ${isTr ? 'ÖNCE' : 'AGO'}`}
-            </p>
-            {/* §38.237 — mutlak damga. Göreli süre üstte kalır; işletme
-                sahibi yorumun tam tarih + saatini burada görür. */}
-            <p className="mt-0.5 text-[11px] text-[#A3A3A3] tabular-nums">
-              <time dateTime={active.createdAt}>
-                {formatDateTime(active.createdAt, locale)}
-              </time>
-            </p>
-            <div className="mt-2 flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <span
-                  key={i}
-                  className={`${i <= active.rating ? 'text-[#C6F24E]' : 'text-[#EDEDED]'} text-[16px]`}
+      <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <div className="px-5 py-5 sm:px-8 sm:py-6 lg:pb-8">
+          {/* Header. The badge + text block keeps at least 260px; when the
+              pane is narrower than that plus the desktop actions (lg–xl, ~340px
+              detail pane at 1024), the actions wrap onto their own line
+              instead of squeezing the name into a one-letter column. */}
+          <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
+            <div className="flex min-w-0 flex-[1_1_260px] items-start gap-4">
+              <RatingBadge rating={active.rating} isTr={isTr} size="lg" />
+              <div className="min-w-0 flex-1">
+                <h2
+                  id={titleId}
+                  tabIndex={-1}
+                  className="bz-h-tight break-words text-[20px] text-[#0A0A0A] outline-none sm:text-[22px]"
                 >
-                  ★
-                </span>
-              ))}
-              <span className="ml-2 text-[13px] font-semibold text-[#0A0A0A]">
-                {active.rating.toFixed(1)}
-              </span>
+                  {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
+                </h2>
+                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
+                  <span className="inline-flex items-center gap-1.5">
+                    {iconId ? (
+                      <span aria-hidden="true" className="inline-flex">
+                        <PlatformChip id={iconId} size={16} />
+                      </span>
+                    ) : (
+                      <QrCode size={14} strokeWidth={2} aria-hidden="true" />
+                    )}
+                    {pLabel}
+                  </span>
+                  {active.restaurant?.name && (
+                    <>
+                      <span aria-hidden="true" className="text-[#D4D4D4]">
+                        ·
+                      </span>
+                      <span className="min-w-0 break-words">{active.restaurant.name}</span>
+                    </>
+                  )}
+                  <span aria-hidden="true" className="text-[#D4D4D4]">
+                    ·
+                  </span>
+                  <time dateTime={active.createdAt} title={formatDateTime(active.createdAt, locale)}>
+                    {timeAgoLabel(active.createdAt, locale)}
+                  </time>
+                </p>
+                {/* §38.237 / §46 — exact stamp in the business timezone. */}
+                <p className="mt-0.5 text-[12px] tabular-nums text-[#737373]">
+                  <time dateTime={active.createdAt}>{formatDateTime(active.createdAt, locale)}</time>
+                </p>
+                {/* Stars + status chips share one wrapping row (keeps the
+                    header short so the body shows more above the docked
+                    composer). */}
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <span className="inline-flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                        className={i <= active.rating ? 'fill-[#0A0A0A] text-[#0A0A0A]' : 'text-[#D4D4D4]'}
+                      />
+                    ))}
+                    <span className="ml-1.5 text-[13px] font-semibold text-[#0A0A0A]">
+                      {active.rating} / 5
+                    </span>
+                  </span>
+                  <FeedbackStatusChips feedback={active} isTr={isTr} />
+                </div>
+              </div>
             </div>
-          </div>
-          {/* Desktop flag + pending toggle (mobile sticky-top'ta zaten var) */}
-          {!showBackButton && (
-            <div className="hidden lg:flex shrink-0 gap-1.5">
+            {/* Desktop actions (mobile copies live in the sticky back bar). */}
+            <div className="hidden shrink-0 flex-wrap justify-end gap-1.5 lg:flex">
               <button
                 type="button"
                 onClick={onTogglePending}
-                className={`${active.isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
-                title={
-                  isTr
-                    ? active.isPending
-                      ? 'Beklemeden çıkar'
-                      : 'Beklemeye al'
-                    : active.isPending
-                      ? 'Remove from pending'
-                      : 'Mark as pending'
-                }
-                aria-pressed={active.isPending === true}
+                className={`${isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
+                aria-pressed={isPending}
               >
                 <Bookmark
                   size={12}
                   strokeWidth={2}
-                  fill={active.isPending ? '#92400E' : 'none'}
+                  fill={isPending ? '#92400E' : 'none'}
+                  aria-hidden="true"
                 />
-                {isTr
-                  ? active.isPending
-                    ? 'Beklemede'
-                    : 'Beklemeye al'
-                  : active.isPending
-                    ? 'Pending'
-                    : 'Mark pending'}
+                {pendingLabel}
               </button>
               <button
                 type="button"
                 onClick={onFlag}
-                className="bz-btn bz-btn-sm"
-                title={isTr ? 'Bayrakla işaretle' : 'Flag'}
+                className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm`}
+                aria-pressed={isFlagged}
               >
-                <Flag size={12} strokeWidth={2} />
-                {isTr ? 'İşaretle' : 'Flag'}
+                <Flag size={12} strokeWidth={2} fill={isFlagged ? 'currentColor' : 'none'} aria-hidden="true" />
+                {flagLabel}
               </button>
             </div>
+          </div>
+
+          {/* Comment */}
+          {active.comment ? (
+            <blockquote className="mt-5 whitespace-pre-line break-words rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-[15px] leading-[1.7] text-[#0A0A0A]">
+              {active.comment}
+            </blockquote>
+          ) : (
+            <p className="mt-5 text-[14px] italic text-[#737373]">
+              {isTr
+                ? 'Müşteri yorum yazmadı, yalnızca puan verdi.'
+                : 'The customer left a rating without a comment.'}
+            </p>
           )}
-        </div>
 
-        {/* Comment */}
-        <div /* §38.238 — break-words: müşteri serbest metnindeki uzun URL
-              taşıp kırpılıyordu. */
-            className="mt-6 rounded-xl bg-[#FAFAFA] p-5 text-[15px] leading-[1.65] text-[#0A0A0A] break-words">
-          {active.comment ? `"${active.comment}"` : isTr ? 'Yorum bırakılmadı.' : 'No comment.'}
-        </div>
-
-        {/* §38.53 — AI ÖZET (3-sinyal: Pozitif/İyileştirme/Tekrar gelme niyeti).
-            Tasarım birebir parity. Empty/fallback durumda kart gizlenir. */}
-        {active.comment && active.comment.trim().length >= 10 && (
-          <div className="mt-3">
-            <AiSummaryCard
-              feedbackId={active.id}
-              isTr={isTr}
-              locale={isTr ? 'tr' : 'en'}
-            />
-          </div>
-        )}
-
-        {/* Aspect tags */}
-        {customerAspects && Object.entries(customerAspects).some(([, v]) => v) && (
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {Object.entries(customerAspects).map(([k, v]) =>
-              v ? (
-                <span
-                  key={k}
-                  className="rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[11px] font-medium text-[#0A0A0A]"
-                >
-                  {aspectLabel[k as keyof typeof aspectLabel] ?? k} · +{v}
-                </span>
-              ) : null,
-            )}
-            <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#A3A3A3] px-2.5 py-1 text-[11px] text-[#737373]">
-              <Plus size={10} strokeWidth={2} />
-              {isTr ? 'Etiket' : 'Tag'}
-            </span>
-          </div>
-        )}
-
-        {/* Sent reply thread */}
-        {sentReplies.length > 0 && (
-          <div className="mt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} />
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr
-                  ? `GÖNDERİLEN YANITLAR (${sentReplies.length})`
-                  : `SENT REPLIES (${sentReplies.length})`}
-              </span>
+          {/* §38.53 — AI özet (fallback / kısa yorumda kart gizlenir). */}
+          {active.comment && active.comment.trim().length >= 10 && (
+            <div className="mt-3">
+              <AiSummaryCard feedbackId={active.id} isTr={isTr} locale={isTr ? 'tr' : 'en'} />
             </div>
-            <ol className="flex flex-col gap-2.5">
-              {sentReplies.map((rep) => {
-                const channelLabel =
-                  rep.channel === 'email'
-                    ? isTr
-                      ? 'E-posta'
-                      : 'Email'
-                    : isTr
-                      ? 'Dahili'
-                      : 'Internal';
-                const tone =
-                  rep.status === 'failed'
-                    ? 'border-[#FCA5A5] bg-[#FFFBFB]'
-                    : 'border-[#EDEDED] bg-white';
-                return (
-                  <li key={rep.id} className={`rounded-xl border ${tone} p-3.5`}>
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-1.5">
-                        {rep.channel === 'email' && <Mail size={10} strokeWidth={2.2} />}
-                        {channelLabel}
-                        {rep.status === 'failed' && (
-                          <span className="text-[#991B1B]">
-                            · {isTr ? 'iletilemedi' : 'failed'}
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        className="pulse-eyebrow text-[#A3A3A3] tabular-nums"
-                        title={formatDateTime(rep.createdAt, locale)}
-                      >
-                        {timeAgo(rep.createdAt, locale)} · {formatStamp(rep.createdAt, locale)}
-                      </span>
-                    </div>
-                    <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line break-words">
-                      {rep.body}
-                    </p>
-                    {rep.status === 'failed' && (
-                      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg bg-[#FEF2F2] border border-[#FECACA] px-2.5 py-1.5 text-[11px] text-[#991B1B]">
-                        <span>
-                          {isTr
-                            ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
-                            : 'This reply could not be sent. Edit and re-send?'}
+          )}
+
+          {/* Aspect ratings the customer gave on the public form. */}
+          {aspects.length > 0 && (
+            <ul className="mt-4 flex flex-wrap gap-1.5" aria-label={isTr ? 'Detaylı puanlar' : 'Detailed ratings'}>
+              {aspects.map((a) => (
+                <li
+                  key={a.key}
+                  className="rounded-full bg-[#F5F5F5] px-2.5 py-1 text-[12px] text-[#0A0A0A]"
+                >
+                  {a.label} {a.value}/5
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Sent reply thread */}
+          {sentReplies.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-2 flex items-center gap-2">
+                <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} aria-hidden="true" />
+                <span className="text-[12px] font-semibold text-[#525252]">
+                  {isTr
+                    ? `Gönderilen yanıtlar (${sentReplies.length})`
+                    : `Sent replies (${sentReplies.length})`}
+                </span>
+              </div>
+              <ol className="flex flex-col gap-2.5">
+                {sentReplies.map((rep) => {
+                  const channelLabel =
+                    rep.channel === 'email'
+                      ? isTr
+                        ? 'E-posta'
+                        : 'Email'
+                      : isTr
+                        ? 'Dahili kayıt'
+                        : 'Internal note';
+                  const tone =
+                    rep.status === 'failed'
+                      ? 'border-[#FCA5A5] bg-[#FFFBFB]'
+                      : 'border-[#EDEDED] bg-white';
+                  return (
+                    <li key={rep.id} className={`rounded-xl border ${tone} p-3.5`}>
+                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[12px]">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#525252]">
+                          {rep.channel === 'email' && <Mail size={11} strokeWidth={2.2} aria-hidden="true" />}
+                          {channelLabel}
+                          {rep.status === 'failed' && (
+                            <span className="text-[#991B1B]">· {isTr ? 'iletilemedi' : 'failed'}</span>
+                          )}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            props.setReplyDraft(rep.body);
-                            // Composer textarea'ya scroll + focus
-                            requestAnimationFrame(() => {
-                              const textarea = document.getElementById(
-                                'reply-textarea-input',
-                              ) as HTMLTextAreaElement | null;
-                              if (textarea) {
-                                textarea.focus();
-                                textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                // Cursor textarea sonuna
-                                const len = textarea.value.length;
-                                textarea.setSelectionRange(len, len);
-                              }
-                            });
-                          }}
-                          className="bz-btn-primary bz-btn-sm shrink-0 text-[10.5px]"
+                        <time
+                          dateTime={rep.createdAt}
+                          className="tabular-nums text-[#A3A3A3]"
+                          title={formatDateTime(rep.createdAt, locale)}
                         >
-                          {isTr ? 'Yeniden dene' : 'Retry'}
-                        </button>
+                          {formatStamp(rep.createdAt, locale)}
+                        </time>
                       </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        )}
+                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-[#0A0A0A]">
+                        {rep.body}
+                      </p>
+                      {rep.status === 'failed' && (
+                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
+                          <span>
+                            {isTr
+                              ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
+                              : 'This reply could not be sent. Edit and re-send?'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              props.setReplyDraft(rep.body);
+                              focusReplyTextarea();
+                            }}
+                            className="bz-btn-primary bz-btn-sm shrink-0"
+                          >
+                            {isTr ? 'Yeniden dene' : 'Retry'}
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
 
-        {sentLoading && sentReplies.length === 0 && (
-          <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
-            <Loader2 size={12} className="animate-spin" />
-            {isTr ? 'Yanıtlar yükleniyor…' : 'Loading replies…'}
-          </div>
-        )}
+          {sentLoading && sentReplies.length === 0 && (
+            <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
+              <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+              {isTr ? 'Yanıtlar yükleniyor…' : 'Loading replies…'}
+            </div>
+          )}
 
-        {/* High-rating reply gate (4-5★) */}
-        {active.rating >= 4 ? (
-          <div className="mt-6">
-            <AlertBanner
-              kind="lime"
-              icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}
-            >
-              <span className="block font-semibold text-[#0A0A0A]">
-                {isTr ? 'Yanıt yazmaya gerek yok' : 'No reply needed'}
-              </span>
-              <span className="block mt-0.5 text-[#525252]">
-                {isTr
-                  ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz İşaretle aksiyonuyla bu yorumu ekibinizle takip edebilirsiniz.`
-                  : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag this review to keep track with your team.`}
-              </span>
-            </AlertBanner>
-          </div>
-        ) : active.isReplied ? (
-          /* Yanıtlanmış düşük puanlı yorumlar — AI yeniden öneri üretmesin
-             (kullanıcı şikayeti: "AI iki defa cevap üretiyor"). Sent thread
-             zaten yukarıda görünür; tekrar yanıt isterse "Yeni yanıt yaz"
-             butonu ile manuel açar. */
-          <div className="mt-6">
-            <AlertBanner
-              kind="info"
-              icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}
-            >
-              <span className="block font-semibold text-[#0A0A0A]">
-                {isTr ? 'Yanıtlandı' : 'Replied'}
-              </span>
-              <span className="block mt-0.5 text-[#525252]">
-                {isTr
-                  ? 'Bu yoruma daha önce yanıt verildi. Yukarıdaki gönderilen yanıtı görebilirsin.'
-                  : 'This review has already been replied to. See the sent reply above.'}
-              </span>
-            </AlertBanner>
-          </div>
-        ) : (
-          <div className="mt-6">
-            <FeedbackReplyComposer
+          {/* Pulse AI suggestion (low rating, not replied) or a gate. */}
+          {showAiCard ? (
+            <PulseAiSuggestionCard
               feedback={active}
               locale={locale}
               aiLoading={props.aiLoading}
@@ -411,67 +402,103 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               onRegenerateAi={props.onRegenerateAi}
               onUseAiAndSend={props.onUseAiAndSend}
               onCopyAiToDraft={props.onCopyAiToDraft}
-              replyDraft={props.replyDraft}
-              setReplyDraft={props.setReplyDraft}
-              sendEmail={props.sendEmail}
-              setSendEmail={props.setSendEmail}
               confirmResponsibility={props.confirmResponsibility}
-              setConfirmResponsibility={props.setConfirmResponsibility}
               sendingReply={props.sendingReply}
-              onSendReply={props.onSendReply}
-              replyNotice={props.replyNotice}
+            />
+          ) : isHigh ? (
+            <div className="mt-6">
+              <AlertBanner
+                kind="lime"
+                icon={<Sparkles size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2} />}
+              >
+                <span className="block text-[#525252]">
+                  <strong className="font-semibold text-[#0A0A0A]">
+                    {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
+                  </strong>{' '}
+                  {active.platform
+                    ? isTr
+                      ? `Bu ${pLabel} yorumu yüksek puanlı; müşteri paylaşımını platformda yaptı. Takip etmek isterseniz yorumu işaretleyebilirsiniz.`
+                      : `This ${pLabel} review is high-rated and the customer already posted it on the platform. You can still flag it to follow up.`
+                    : isTr
+                      ? 'Yüksek puanlı bir Buaze QR yorumu. Takip etmek isterseniz işaretleyebilirsiniz.'
+                      : 'This is a high-rated Buaze QR review. You can still flag it to follow up.'}
+                </span>
+              </AlertBanner>
+            </div>
+          ) : !lastReplyFailed ? (
+            // Right after a successful send the composer unmounts (the review
+            // is now replied), so its status line would vanish with it — the
+            // gate carries the confirmation instead.
+            <div className="mt-6">
+              <AlertBanner
+                kind={props.replyNotice?.tone === 'success' ? 'success' : 'info'}
+                icon={<Check size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2.2} />}
+              >
+                <span className="block text-[#525252]">
+                  <strong className="font-semibold text-[#0A0A0A]">
+                    {props.replyNotice?.tone === 'success'
+                      ? props.replyNotice.msg + '.'
+                      : isTr
+                        ? 'Yanıtlandı.'
+                        : 'Replied.'}
+                  </strong>{' '}
+                  {isTr
+                    ? 'Gönderilen yanıtı yukarıda görebilirsiniz.'
+                    : 'You can see the sent reply above.'}
+                </span>
+              </AlertBanner>
+            </div>
+          ) : null}
+
+          {/* §38.33 — Zaman çizelgesi (received + replies). */}
+          <div className="mt-6">
+            <FeedbackTimeline
+              events={buildFeedbackTimeline({
+                feedback: {
+                  id: active.id,
+                  createdAt: new Date(active.createdAt),
+                  platform: active.platform,
+                },
+                replies: sentReplies.map((r) => ({
+                  id: r.id,
+                  createdAt: new Date(r.createdAt),
+                  source: null, // FeedbackReply.source feedbacks API'de exposed değil
+                  channel: r.channel,
+                })),
+                isTr,
+              })}
+              isTr={isTr}
             />
           </div>
-        )}
-
-        {/* §38.33 — PLATFORM/KAYNAK metadata grid (tasarım page-reviews.jsx
-            line 177-186). 2-col, mute eyebrow + value. Tasarımdaki "Masa 7"
-            gibi spesifik kaynak bilgisi schema'da yok — platform fallback. */}
-        <div className="mt-8 grid grid-cols-2 gap-2.5 rounded-xl border border-[#EDEDED] p-4">
-          <div>
-            <div className="pulse-eyebrow text-[10px] text-[#737373]">
-              {isTr ? 'PLATFORM' : 'PLATFORM'}
-            </div>
-            <div className="bz-h-tight mt-1 text-[14px] text-[#0A0A0A]">
-              {(active.platform || 'BUAZE').toUpperCase()}
-            </div>
-          </div>
-          <div>
-            <div className="pulse-eyebrow text-[10px] text-[#737373]">
-              {isTr ? 'KAYNAK' : 'SOURCE'}
-            </div>
-            <div className="bz-h-tight mt-1 text-[14px] text-[#0A0A0A]">
-              {active.restaurant?.name || (isTr ? 'İşletme' : 'Location')}
-            </div>
-          </div>
-        </div>
-
-        {/* §38.33 — ZAMAN ÇİZELGESİ. Tasarım page-reviews.jsx line 223-243.
-            Mevcut data'dan derive: feedback.createdAt + sentReplies
-            (FeedbackReply.createdAt). FeedbackAiDraft + LifecycleEmailLog
-            client-side fetch'te exposed değil; future enhancement (backend
-            API genişletme gerekir). Tasarım 3-event minimum, mevcut 2-event
-            (received + replied) görünür. */}
-        <div className="mt-6">
-          <FeedbackTimeline
-            events={buildFeedbackTimeline({
-              feedback: {
-                id: active.id,
-                createdAt: new Date(active.createdAt),
-                platform: active.platform,
-              },
-              replies: sentReplies.map((r) => ({
-                id: r.id,
-                createdAt: new Date(r.createdAt),
-                source: null, // FeedbackReply.source feedbacks API'de exposed değil
-                channel: r.channel,
-              })),
-              isTr,
-            })}
-            isTr={isTr}
-          />
         </div>
       </div>
+
+      {/* Reply composer — docked on lg, OUTSIDE the scroll area so it can
+          never cover the body (the old `lg:sticky` card slid over the AI
+          card). Inline at the end of the body on mobile.
+          lg sizing: a column flex box capped at 48% of the pane, with a
+          floor so the whole composer (label → Send) fits even on 720–768px
+          tall screens with the trial banner, and a little more room while
+          the owner is typing. Only the textarea shrinks (ReplyComposerCard),
+          so a long draft scrolls inside the textarea and Send never drops
+          out of view; the dock itself only scrolls as a last resort. */}
+      {canReply && (
+        <div className="border-t border-[#EDEDED] bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
+          <ReplyComposerCard
+            feedback={active}
+            locale={locale}
+            replyDraft={props.replyDraft}
+            setReplyDraft={props.setReplyDraft}
+            sendEmail={props.sendEmail}
+            setSendEmail={props.setSendEmail}
+            confirmResponsibility={props.confirmResponsibility}
+            setConfirmResponsibility={props.setConfirmResponsibility}
+            sendingReply={props.sendingReply}
+            onSendReply={props.onSendReply}
+            replyNotice={props.replyNotice}
+          />
+        </div>
+      )}
     </section>
   );
 }

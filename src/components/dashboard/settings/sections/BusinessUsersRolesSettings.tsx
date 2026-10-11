@@ -95,6 +95,21 @@ function isOnlineByLastSeen(iso: string | null): boolean {
 }
 
 /**
+ * /api/team* answer with machine codes ("validation_error", "forbidden",
+ * "invalid_locations"…) and a few Turkish-only sentences. Showing `data.error`
+ * verbatim put raw codes in the banner and Turkish text on the English page.
+ */
+function describeTeamError(data: unknown, copy: TeamCopy, fallback: string): string {
+  const body = (data && typeof data === "object" ? data : {}) as { error?: unknown; code?: unknown };
+  const raw = typeof body.error === "string" ? body.error : null;
+  const code =
+    typeof body.code === "string" ? body.code : raw && /^[a-z_]+$/.test(raw) ? raw : null;
+  if (code && copy.errors[code]) return copy.errors[code];
+  if (raw && !/^[a-z_]+$/.test(raw) && copy === COPY.tr) return raw;
+  return fallback;
+}
+
+/**
  * Section 5 — Kullanıcılar & Roller (Faz 4 — workspace level).
  *
  * TeamMember CRUD UI:
@@ -206,8 +221,8 @@ export function BusinessUsersRolesSettings({
           locations: inviteLocations.length > 0 ? inviteLocations : undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t.inviteFailed);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(describeTeamError(data, t, t.inviteFailed));
       setSuccess(t.inviteSent(inviteEmail.trim()));
       setInviteOpen(false);
       setInviteEmail("");
@@ -244,7 +259,7 @@ export function BusinessUsersRolesSettings({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || t.updateFailed);
+        throw new Error(describeTeamError(data, t, t.updateFailed));
       }
       setSuccess(t.updated(editOpen.email));
       setEditOpen(null);
@@ -265,13 +280,13 @@ export function BusinessUsersRolesSettings({
         setResendingId(m.id);
         try {
           const res = await fetch(`/api/team/${m.id}/resend-invite`, { method: "POST" });
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
           if (!res.ok) {
             if (res.status === 429 && data.retryAfterSeconds) {
               const min = Math.ceil(data.retryAfterSeconds / 60);
               throw new Error(t.tooSoon(min));
             }
-            throw new Error(data.error || t.resendFailed);
+            throw new Error(describeTeamError(data, t, t.resendFailed));
           }
           setSuccess(t.resent(m.email));
           await load();
@@ -326,11 +341,12 @@ export function BusinessUsersRolesSettings({
         description={t.cardDesc}
         actions={
           canManageTeam ? (
+            // Phones get a full-width button in the body instead: in this
+            // header slot it squeezed the description to 2–3 words a line.
             <button
               type="button"
               onClick={() => setInviteOpen(true)}
-              className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
-              style={{ height: 28, padding: "0 12px", borderRadius: 999 }}
+              className="bz-btn-primary hidden h-8 items-center gap-1.5 rounded-full px-3 text-[12px] sm:inline-flex"
             >
               <Plus size={12} />
               {t.invite}
@@ -338,6 +354,16 @@ export function BusinessUsersRolesSettings({
           ) : null
         }
       >
+        {canManageTeam && (
+          <button
+            type="button"
+            onClick={() => setInviteOpen(true)}
+            className="bz-btn-primary mb-3 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[13px] sm:hidden"
+          >
+            <Plus size={14} />
+            {t.invite}
+          </button>
+        )}
         {/* Owner row (kendisi) */}
         <div
           className="flex items-center gap-3 p-3 mb-3"
@@ -381,7 +407,7 @@ export function BusinessUsersRolesSettings({
               return (
                 <div
                   key={m.id}
-                  className="flex items-center gap-3 p-3"
+                  className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap"
                   style={{
                     background: "#FAFAFA",
                     border: "1px solid #EDEDED",
@@ -411,7 +437,7 @@ export function BusinessUsersRolesSettings({
                       </Badge>
                     </div>
                     <div className="text-[11.5px] text-[#737373] mt-0.5 flex items-center gap-2 flex-wrap">
-                      <span className="bz-mono">{m.email}</span>
+                      <span className="bz-mono break-all">{m.email}</span>
                       <span>·</span>
                       <span>{locLabel}</span>
                       {m.lastSeenAt && (
@@ -423,12 +449,11 @@ export function BusinessUsersRolesSettings({
                     </div>
                   </div>
                   {canManageTeam && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex w-full items-center justify-end gap-1 sm:w-auto">
                       <button
                         type="button"
                         onClick={() => openEdit(m)}
-                        className="bz-btn-ghost text-[12px]"
-                        style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
+                        className="bz-btn-ghost h-10 rounded-full px-3 text-[12px] sm:h-7 sm:px-2.5"
                       >
                         {t.edit}
                       </button>
@@ -437,7 +462,7 @@ export function BusinessUsersRolesSettings({
                           type="button"
                           onClick={() => handleResend(m)}
                           disabled={resendingId === m.id}
-                          className="bz-btn-icon"
+                          className="bz-btn-icon h-10 w-10 sm:h-8 sm:w-8"
                           aria-label={t.resendAria}
                           title={t.resendAria}
                         >
@@ -452,7 +477,7 @@ export function BusinessUsersRolesSettings({
                         type="button"
                         onClick={() => handleRemove(m)}
                         disabled={busyId === m.id}
-                        className="bz-btn-icon"
+                        className="bz-btn-icon h-10 w-10 sm:h-8 sm:w-8"
                         aria-label={t.removeConfirm}
                         title={t.removeConfirm}
                       >
@@ -505,15 +530,15 @@ export function BusinessUsersRolesSettings({
                 ariaLabel={t.inviteRoleAria}
               />
             </Field>
-            <div>
-              <label className="block text-[12px] text-[#525252] mb-2">{t.locationAccess}</label>
+            <fieldset>
+              <legend className="block text-[12px] font-semibold text-[#0A0A0A] mb-1.5">{t.locationAccess}</legend>
               <p className="text-[11.5px] text-[#737373] mb-2">{t.locationHint}</p>
               {restaurants.length === 0 ? (
                 <p className="text-[12px] text-[#737373]">{t.noBusiness}</p>
               ) : (
                 <div className="space-y-1 max-h-[180px] overflow-y-auto">
                   {restaurants.map((r) => (
-                    <label key={r.id} className="flex items-center gap-2 text-[13px]">
+                    <label key={r.id} className="flex min-h-[36px] items-center gap-2 text-[13px]">
                       <input
                         type="checkbox"
                         checked={inviteLocations.includes(r.id)}
@@ -530,7 +555,7 @@ export function BusinessUsersRolesSettings({
                   ))}
                 </div>
               )}
-            </div>
+            </fieldset>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -579,14 +604,15 @@ export function BusinessUsersRolesSettings({
                 ariaLabel={t.memberRoleAria}
               />
             </Field>
-            <div>
-              <label className="block text-[12px] text-[#525252] mb-2">{t.locationAccess}</label>
+            <fieldset>
+              <legend className="block text-[12px] font-semibold text-[#0A0A0A] mb-1.5">{t.locationAccess}</legend>
+              <p className="text-[11.5px] text-[#737373] mb-2">{t.locationHint}</p>
               {restaurants.length === 0 ? (
                 <p className="text-[12px] text-[#737373]">{t.noBusiness}</p>
               ) : (
                 <div className="space-y-1 max-h-[180px] overflow-y-auto">
                   {restaurants.map((r) => (
-                    <label key={r.id} className="flex items-center gap-2 text-[13px]">
+                    <label key={r.id} className="flex min-h-[36px] items-center gap-2 text-[13px]">
                       <input
                         type="checkbox"
                         checked={editLocations.includes(r.id)}
@@ -603,7 +629,7 @@ export function BusinessUsersRolesSettings({
                   ))}
                 </div>
               )}
-            </div>
+            </fieldset>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -674,6 +700,19 @@ const COPY = {
     sendInvite: "Daveti gönder",
     editTitle: "Üyeyi düzenle",
     save: "Kaydet",
+    errors: {
+      validation_error: "Geçerli bir e-posta adresi gir.",
+      invalid_json: "İstek okunamadı. Lütfen tekrar dene.",
+      invalid_role: "Geçersiz rol seçimi.",
+      invalid_locations: "Seçilen işletmeler bulunamadı.",
+      invalid_status: "Bu üyenin durumu değiştirilemez.",
+      already_active: "Bu kişi zaten ekibinde aktif.",
+      cooldown: "Bu adrese son 1 saat içinde davet gönderildi.",
+      rate_limited: "Çok fazla davet gönderildi. Lütfen daha sonra tekrar dene.",
+      forbidden: "Bu işlem için yetkin yok. Ekibi yalnızca hesap sahibi yönetebilir.",
+      unauthorized: "Oturumun sona ermiş. Lütfen tekrar giriş yap.",
+      not_found: "Üye bulunamadı.",
+    } as Record<string, string>,
   },
   en: {
     loadFailed: "Could not load the team list.",
@@ -719,7 +758,22 @@ const COPY = {
     sendInvite: "Send invite",
     editTitle: "Edit member",
     save: "Save",
+    errors: {
+      validation_error: "Enter a valid email address.",
+      invalid_json: "The request could not be read. Please try again.",
+      invalid_role: "Invalid role.",
+      invalid_locations: "The selected businesses could not be found.",
+      invalid_status: "This member's status can't be changed.",
+      already_active: "This person is already an active member of your team.",
+      cooldown: "An invite was sent to this address within the last hour.",
+      rate_limited: "Too many invites sent. Please try again later.",
+      forbidden: "You don't have permission for this. Only the account owner can manage the team.",
+      unauthorized: "Your session has expired. Please sign in again.",
+      not_found: "Member not found.",
+    } as Record<string, string>,
   },
 };
+
+type TeamCopy = (typeof COPY)["tr"] | (typeof COPY)["en"];
 
 export default BusinessUsersRolesSettings;

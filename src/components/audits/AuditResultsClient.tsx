@@ -22,6 +22,7 @@ import {
   TableSkeleton,
 } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import type { AuditScoringMode } from '@/lib/audits/types';
 import {
   parseAuditErrorResponse,
@@ -187,7 +188,6 @@ export default function AuditResultsClient({ locale, template }: Props) {
 
       <PageHeader
         eyebrow={locale === 'tr' ? 'DENETİM SONUÇLARI' : 'AUDIT RESULTS'}
-        eyebrowColor="#C6F24E"
         title={template.title}
         description={
           locale === 'tr'
@@ -402,7 +402,7 @@ export default function AuditResultsClient({ locale, template }: Props) {
                       {r.completedAt
                         ? new Date(r.completedAt).toLocaleDateString(
                             locale === 'tr' ? 'tr-TR' : 'en-US',
-                            { day: '2-digit', month: 'short', year: 'numeric' },
+                            { day: '2-digit', month: 'short', year: 'numeric', timeZone: resolveDisplayTimeZone() },
                           )
                         : '—'}
                     </td>
@@ -410,7 +410,7 @@ export default function AuditResultsClient({ locale, template }: Props) {
                       {r.reviewedAt
                         ? new Date(r.reviewedAt).toLocaleDateString(
                             locale === 'tr' ? 'tr-TR' : 'en-US',
-                            { day: '2-digit', month: 'short' },
+                            { day: '2-digit', month: 'short', timeZone: resolveDisplayTimeZone() },
                           )
                         : ''}
                     </td>

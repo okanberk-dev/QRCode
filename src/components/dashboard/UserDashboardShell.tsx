@@ -13,6 +13,8 @@ import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { PulseSelect } from '@/components/ui';
 import ViewportMount from '@/components/ui/ViewportMount';
 import { detectSector } from '@/lib/sector-platforms';
+import { getSectorByLabel } from '@/lib/sectors';
+import { getManagedPlatform } from '@/lib/platform-management';
 import {
   ACTIVE_BUSINESS_STORAGE_KEY,
   resolveActiveRestaurantId,
@@ -103,20 +105,54 @@ const ACCOUNT_SECTION_SUFFIX: Record<string, { tr: string; en: string }> = {
   legal: { tr: 'KVKK & YASAL', en: 'PRIVACY & LEGAL' },
 };
 
+// The menu builder lives under the business it edits
+// (`/restaurants/<id>/menu[/analytics]`), but in the navigation it belongs to
+// "Menü", not "İşletmeler".
+const MENU_BUILDER_REST_RE = /^\/restaurants\/[^/]+\/menu(\/|$)/;
+
+// Shell-resolved active business, published for client pages whose own data
+// fetch would otherwise run before the shell has put `?restaurantId` in the
+// URL (child effects run before the shell's). `undefined` = no owner shell
+// mounted; `null` = the workspace has no active business.
+let ownerShellActiveRestaurantId: string | null | undefined;
+
+export function getOwnerShellActiveRestaurantId(): string | null | undefined {
+  return ownerShellActiveRestaurantId;
+}
+
 function useTopBar(locale: Locale, pathname: string | null, section?: string | null) {
   const isTr = locale === 'tr';
   if (!pathname) return null;
   const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
   if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
-  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorum gelen kutusu' : 'Review inbox' };
+  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorumlar' : 'Reviews' };
   if (rest.startsWith('/google-reviews')) return { breadcrumb: isTr ? 'PANEL / GOOGLE YORUMLARI' : 'PANEL / GOOGLE REVIEWS', title: isTr ? 'Google\'a Yapılan Yorumlar' : 'Google Reviews' };
-  if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'QR OLUŞTUR / YENİ KAMPANYA' : 'QR / NEW CAMPAIGN', title: isTr ? 'QR kodu oluştur' : 'Create QR code' };
+  if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'PANEL / QR KODLARI' : 'PANEL / QR CODES', title: isTr ? 'QR kodları' : 'QR codes' };
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
+  if (rest.startsWith('/surveys')) return { breadcrumb: isTr ? 'CRM / ANKETLER' : 'CRM / SURVEYS', title: isTr ? 'Anketler' : 'Surveys' };
+  if (rest.startsWith('/audits')) return { breadcrumb: isTr ? 'CRM / DENETİM MERKEZİ' : 'CRM / AUDIT CENTER', title: isTr ? 'Denetim Merkezi' : 'Audit Center' };
+  if (MENU_BUILDER_REST_RE.test(rest)) {
+    const isAnalytics = /\/menu\/analytics(\/|$)/.test(rest);
+    return {
+      breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU',
+      title: isAnalytics ? (isTr ? 'Menü analitiği' : 'Menu analytics') : (isTr ? 'Menü' : 'Menu'),
+    };
+  }
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / İŞLETMELER' : 'PANEL / BUSINESSES', title: isTr ? 'İşletmeler' : 'Businesses' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
-  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform Bağlantıları' : 'Platform Links' };
+  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
   if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİLER' : 'CRM / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
-  if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
+  if (rest.startsWith('/platforms/')) {
+    // Provider page: "PLATFORM BAĞLANTILARI / YEMEKSEPETI" + platform name.
+    const platformName = getManagedPlatform(rest.slice('/platforms/'.length).split('/')[0])?.name;
+    if (platformName) {
+      return {
+        breadcrumb: `${isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'} / ${platformName.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}`,
+        title: platformName,
+      };
+    }
+  }
+  if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
   if (rest.startsWith('/account')) {
@@ -187,10 +223,23 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     [workspace?.restaurants],
   );
   const queryRestaurantId = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
+  // `/restaurants/<id>/…` pages are about the business in the path. That id
+  // must win over `?restaurantId` and the remembered business, otherwise the
+  // topbar showed business A while the page edited business B.
+  // `/restaurants/new` (create-business form) is a reserved segment, not an
+  // id — switching business there must keep the form and only update the query.
+  const pathRestaurantIdRaw =
+    pathname?.match(
+      new RegExp(`^/${locale}/dashboard/restaurants/(?!new(?:/|$))([^/]+)`),
+    )?.[1] ?? null;
+  const pathRestaurantId =
+    pathRestaurantIdRaw && workspaceRestaurants.some((restaurant) => restaurant.id === pathRestaurantIdRaw)
+      ? pathRestaurantIdRaw
+      : null;
   const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(() =>
     resolveActiveRestaurantId({
       restaurants: workspaceRestaurants,
-      queryRestaurantId,
+      queryRestaurantId: pathRestaurantId ?? queryRestaurantId,
       storedRestaurantId: null,
     }),
   );
@@ -201,11 +250,29 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     [workspaceRestaurants, activeRestaurantId],
   );
   const isClinicMode = activeRestaurant ? detectSector(activeRestaurant.category) === 'clinic' : false;
+  // The dashboard root (`/{locale}/dashboard`) is a prefix of every panel
+  // route, so prefix matching would light "Panel" up on every page next to
+  // the real item. The root matches exactly; everything else matches itself
+  // and its sub-routes.
+  const dashboardRootHref = `/${locale}/dashboard`;
+  // The menu builder (`/restaurants/<id>/menu…`) lights up "Menü"; "İşletmeler"
+  // keeps it only in clinic mode, where there is no menu entry to light.
+  const onMenuBuilder =
+    !!pathname && !isClinicMode && MENU_BUILDER_REST_RE.test(pathname.slice(dashboardRootHref.length));
+  const isPathActive = (href: string): boolean => {
+    if (!pathname) return false;
+    if (href === dashboardRootHref) return pathname === href;
+    if (onMenuBuilder) {
+      if (href === `${dashboardRootHref}/menu`) return true;
+      if (href === `${dashboardRootHref}/restaurants`) return false;
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
   const matchHref = (href: string): boolean => {
     if (!pathname) return false;
     const [hrefPath, hrefQuery] = href.split('?');
     if (!hrefQuery) {
-      return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);
+      return isPathActive(hrefPath);
     }
     if (pathname !== hrefPath) return false;
     const expected = new URLSearchParams(hrefQuery);
@@ -308,28 +375,58 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     setIsCollapsed(collapsed);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const storedRestaurantId = window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY);
-    const next = resolveActiveRestaurantId({
-      restaurants: workspaceRestaurants,
-      queryRestaurantId,
-      storedRestaurantId,
-    });
-    setActiveRestaurantId(next);
-    if (next) {
-      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, next);
-      if (pathname && isBusinessScopedHref(pathname) && queryRestaurantId !== next) {
-        const nextSearch = setRestaurantParam(searchParams.toString(), next);
-        router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
-      }
+  // Active business resolution: path id (`/restaurants/<id>/…`) → ?restaurantId
+  // → remembered business → first business. Runs as a layout effect so the
+  // switcher label and the published scope are correct before paint and
+  // before any page's own (passive) fetch effect reads them.
+  const resolvedScopeRef = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    let storedRestaurantId: string | null = null;
+    try {
+      storedRestaurantId = window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY);
+    } catch {
+      /* storage blocked */
     }
-    // Effect intentionally re-runs only when workspace list or ?restaurantId
-    // query changes. pathname/searchParams/router are point-in-time reads —
-    // adding them would re-fire on every navigation and conflict with the
-    // router.replace() this effect issues (potential loop).
+    const next =
+      pathRestaurantId ??
+      resolveActiveRestaurantId({
+        restaurants: workspaceRestaurants,
+        queryRestaurantId,
+        storedRestaurantId,
+      });
+    resolvedScopeRef.current = next;
+    ownerShellActiveRestaurantId = next;
+    setActiveRestaurantId(next);
+    try {
+      if (next) window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, next);
+      else window.localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
+    } catch {
+      /* storage blocked */
+    }
+  }, [workspaceRestaurants, queryRestaurantId, pathRestaurantId]);
+
+  useEffect(() => () => {
+    ownerShellActiveRestaurantId = undefined;
+  }, []);
+
+  // Keep ?restaurantId in the URL in sync so server pages render the same
+  // business the shell shows.
+  useEffect(() => {
+    const next = resolvedScopeRef.current;
+    if (!next || !pathname || !isBusinessScopedHref(pathname)) return;
+    // On `/restaurants/<id>/…` the path is the source of truth and no page
+    // there reads the query — only fix a query that contradicts the path.
+    if (pathRestaurantIdRaw && (!queryRestaurantId || !pathRestaurantId)) return;
+    if (queryRestaurantId === next) return;
+    const nextSearch = setRestaurantParam(searchParams.toString(), next);
+    router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
+    // Effect intentionally re-runs only when the workspace list, the
+    // ?restaurantId query or the path business changes. pathname/
+    // searchParams/router are point-in-time reads — adding them would re-fire
+    // on every navigation and conflict with the router.replace() this effect
+    // issues (potential loop).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceRestaurants, queryRestaurantId]);
+  }, [workspaceRestaurants, queryRestaurantId, pathRestaurantId]);
 
   useEffect(() => {
     if (!workspaceMenuOpen) return;
@@ -408,6 +505,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       `${base}/google-reviews`,
       `${base}/analytics`,
       `${base}/customers`,
+      `${base}/surveys`,
+      `${base}/audits`,
       `${base}/qr`,
       `${base}/menu`,
       `${base}/restaurants`,
@@ -424,16 +523,29 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
   const selectRestaurantScope = (restaurantId: string) => {
     setActiveRestaurantId(restaurantId);
+    ownerShellActiveRestaurantId = restaurantId;
     setWorkspaceMenuOpen(false);
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+      try {
+        window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+      } catch {
+        /* storage blocked */
+      }
       window.dispatchEvent(
         new CustomEvent('buaze:active-restaurant-change', {
           detail: { restaurantId },
         }),
       );
     }
-    const currentPath = pathname || `/${locale}/dashboard`;
+    let currentPath = pathname || `/${locale}/dashboard`;
+    // On a business's own page (settings, menu builder…) switching business
+    // opens the same page for the newly picked business.
+    if (pathRestaurantIdRaw) {
+      currentPath = currentPath.replace(
+        `/${locale}/dashboard/restaurants/${pathRestaurantIdRaw}`,
+        `/${locale}/dashboard/restaurants/${restaurantId}`,
+      );
+    }
     const nextSearch = setRestaurantParam(searchParams.toString(), restaurantId);
     router.push(nextSearch ? `${currentPath}?${nextSearch}` : currentPath, { scroll: false });
   };
@@ -465,13 +577,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     const isTr = locale === 'tr';
     return {
       dashboard: isTr ? 'Panel' : 'Dashboard',
-      feedbacks: isClinicMode ? (isTr ? 'Hasta geri bildirimleri' : 'Patient feedback') : (isTr ? 'Yorumlar' : 'Feedbacks'),
+      feedbacks: isClinicMode ? (isTr ? 'Hasta geri bildirimleri' : 'Patient feedback') : (isTr ? 'Yorumlar' : 'Reviews'),
       googleReviews: isTr ? 'Google Yorumları' : 'Google Reviews',
       analytics: isTr ? 'Analitik' : 'Analytics',
       restaurants: isClinicMode ? (isTr ? 'Klinikler' : 'Clinics') : (isTr ? 'İşletmeler' : 'Locations'),
       qr: 'QR',
       menu: isClinicMode ? (isTr ? 'Hizmetler' : 'Services') : (isTr ? 'Menü' : 'Menu'),
-      integrations: isTr ? 'Platform Bağlantıları' : 'Platform Links',
+      integrations: isTr ? 'Platform bağlantıları' : 'Platform links',
       guide: isTr ? 'Kılavuz' : 'Guide',
       account: isTr ? 'Hesabım' : 'Account',
       logout: isTr ? 'Çıkış' : 'Logout',
@@ -479,7 +591,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       trialLeft: isTr ? 'gün kaldı' : 'days left',
       more: isTr ? 'Daha fazla' : 'More',
       customers: isClinicMode ? (isTr ? 'Hastalar' : 'Patients') : (isTr ? 'Müşteriler' : 'Customers'),
-      platforms: isTr ? 'Platform bağlantıları' : 'Review platforms',
+      platforms: isTr ? 'Platform bağlantıları' : 'Platform links',
       announcements: isTr ? 'Duyurular' : 'Announcements',
       notifications: isTr ? 'Bildirimler' : 'Notifications',
       // Stage 98 — Surveys (CLAUDE.md §42). Anketler nav entry,
@@ -623,9 +735,15 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       : []),
     { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
   ];
-  const moreActive = moreSheetItems.some(
-    (i) => pathname === i.href || pathname?.startsWith(`${i.href}/`),
-  );
+  const moreActive = moreSheetItems.some((i) => isPathActive(i.href));
+
+  // Business category as an eyebrow. `Restaurant.category` holds the Turkish
+  // label ("Restoran"); English pages show the sector's English name.
+  // Locale-aware uppercase: "Klinik" → "KLİNİK" in Turkish.
+  const categoryEyebrow = (category: string) => {
+    const text = locale === 'en' ? getSectorByLabel(category)?.display.en ?? category : category;
+    return text.toLocaleUpperCase(locale === 'tr' ? 'tr-TR' : 'en-US');
+  };
 
   const displayName = user.name?.trim() || user.email.split('@')[0];
   const initial = displayName.charAt(0).toUpperCase();
@@ -655,7 +773,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   // returns JSX (not a component) keeps reconciliation in place: only the
   // active-state classes are diffed and patched.
   const renderSidebar = (forwardedNavRef?: React.MutableRefObject<HTMLElement | null>) => (
-    <div className="flex h-full flex-col bg-white text-[#0A0A0A]">
+    // `w-full min-w-0`: as a flex item of the <aside> row this column would
+    // otherwise grow to its min-content width (e.g. a long business name) and
+    // paint past the 248px sidebar over the main column.
+    <div className="flex h-full w-full min-w-0 flex-col bg-white text-[#0A0A0A]">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="flex items-center gap-2.5">
@@ -694,7 +815,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   {activeRestaurant
                     ? detectSector(activeRestaurant.category) === 'clinic'
                       ? locale === 'tr' ? 'KLİNİK MODU' : 'CLINIC MODE'
-                      : activeRestaurant.category.toUpperCase()
+                      : categoryEyebrow(activeRestaurant.category)
                     : `${locationCount} ${locale === 'tr' ? 'KONUM' : 'LOCATIONS'}`}
                 </p>
               </div>
@@ -733,7 +854,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-semibold text-[#0A0A0A]">{restaurant.name}</span>
                     <span className="pulse-eyebrow mt-0.5 block !text-[#A3A3A3]">
-                      {clinic ? (locale === 'tr' ? 'KLİNİK' : 'CLINIC') : restaurant.category.toUpperCase()} · {restaurant.feedbackCount}
+                      {clinic ? (locale === 'tr' ? 'KLİNİK' : 'CLINIC') : categoryEyebrow(restaurant.category)} · {restaurant.feedbackCount}
                     </span>
                   </span>
                   {selected && <Check size={14} strokeWidth={2.4} className="!text-[#A8D62E]" />}
@@ -779,7 +900,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
           if (item.type === 'item') {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            const isActive = isPathActive(item.href);
             return (
               <Link
                 key={item.href}
@@ -829,7 +950,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             const cIsAccountBase = c.href.endsWith('/dashboard/account');
             if (cHasQuery) return matchHref(c.href);
             if (cIsAccountBase) return matchAccountBase(c.href);
-            return pathname === c.href || pathname?.startsWith(`${c.href}/`);
+            return isPathActive(c.href);
           });
           const isExpanded = childActive || expandedGroups[item.id] === true;
           return (
@@ -892,7 +1013,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                         ? matchHref(child.href)
                         : isAccountBase
                           ? matchAccountBase(child.href)
-                          : pathname === child.href || pathname?.startsWith(`${child.href}/`);
+                          : isPathActive(child.href);
                       return (
                         <Link
                           key={child.href}
@@ -1074,7 +1195,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <a href="#panel-main-content" className="bz-skip-link">
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
-      <div className="flex-1 lg:flex lg:min-h-0 lg:overflow-hidden">
+      {/* `flex flex-col` below lg too: as a plain block this row never
+          stretched, so on short pages the grey <main> stopped mid-screen and
+          the white shell showed underneath. */}
+      <div className="flex flex-1 flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden">
       {/* Desktop sidebar */}
       <aside className={`relative hidden h-full shrink-0 border-r border-[#EDEDED] lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}>
         {renderSidebar(navRef)}
@@ -1130,7 +1254,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             )}
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
               <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] px-3 py-1 pulse-eyebrow text-[#0A0A0A]">
-                <Crown size={10} /> {trialDaysLeft}g
+                <Crown size={10} /> {trialDaysLeft}{' '}
+                {locale === 'tr' ? 'gün' : trialDaysLeft === 1 ? 'day' : 'days'}
               </span>
             )}
             <ViewportMount
@@ -1147,7 +1272,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               />
             </ViewportMount>
             <button
+              type="button"
               onClick={() => setDrawerOpen((v) => !v)}
+              aria-expanded={drawerOpen}
+              aria-label={
+                drawerOpen
+                  ? locale === 'tr' ? 'Menüyü kapat' : 'Close menu'
+                  : locale === 'tr' ? 'Menüyü aç' : 'Open menu'
+              }
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E] bz-h-tight"
             >
               {drawerOpen ? <X size={18} strokeWidth={2} /> : <span>{initial}</span>}
@@ -1175,9 +1307,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             {topBar ? (
               <>
                 <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
-                <h1 className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight">
+                {/* Not an <h1>: every page renders its own <PageHeader> h1, so a
+                    second one here gave each page two (often conflicting) h1s. */}
+                <p className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight">
                   {topBar.title}
-                </h1>
+                </p>
               </>
             ) : (
               <p className="pulse-eyebrow text-[#737373]">{copy.workspace}</p>
@@ -1265,7 +1399,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           // scroll column already carries `lg:overflow-x-hidden`
           // (§42.5.1, line ~1115). Dropping it here restores sticky without
           // reopening horizontal scroll.
-          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+          //
+          // `[&>*]:w-full` — page wrappers are `mx-auto max-w-[N]`. As items of
+          // this flex column, auto side margins switch off stretch, so without
+          // an explicit width each page shrank to its content: narrow strips on
+          // desktop, sideways overflow on mobile (customers 565px at 390). Full
+          // width + max-w + mx-auto centres them as intended (§42.3).
+          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 [&>*]:w-full"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />
@@ -1293,7 +1433,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           {children}
         </main>
       </div>
-      </div>{/* §38.158 — close new wrapper (`flex-1 lg:flex lg:min-h-0`) */}
+      </div>{/* §38.158 — close new wrapper (`flex flex-1 flex-col lg:flex-row`) */}
 
       {/* Mobile drawer — §38.63 Admin paneli (AdminSidebar.tsx:577) paterniyle
           uyumlu hale getirildi: role="dialog" aria-modal aria-label + safe-area
@@ -1306,7 +1446,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           className="fixed inset-0 z-50 flex lg:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label={locale === 'tr' ? 'Owner navigation' : 'Owner navigation'}
+          aria-label={locale === 'tr' ? 'Panel menüsü' : 'Panel menu'}
         >
           <div
             className="h-full w-[280px] max-w-[85vw] bg-white border-r border-[#EDEDED] bz-elev-3 flex flex-col text-[#0A0A0A] overflow-y-auto"
@@ -1371,7 +1511,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <ul className="flex h-[72px] items-stretch px-2">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              const isActive = isPathActive(item.href);
               const isFeedbacks = item.href === `/${locale}/dashboard/feedbacks`;
               return (
                 <li key={item.href} className="min-w-0 flex-1">
@@ -1473,7 +1613,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={copy.more}>
           <button
             type="button"
-            aria-label="close"
+            aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
             className="absolute inset-0 bg-[#000000]/60 backdrop-blur-sm"
             onClick={() => setMoreOpen(false)}
           />
@@ -1501,7 +1641,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
-                aria-label="close"
+                aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
                 className="bz-btn-icon"
               >
                 <X size={18} strokeWidth={2} />
@@ -1510,7 +1650,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             <ul className="space-y-0.5">
               {moreSheetItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+                const isActive = isPathActive(item.href);
                 return (
                   <li key={item.href}>
                     <Link

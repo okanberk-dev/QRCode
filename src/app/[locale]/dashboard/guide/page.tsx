@@ -5,8 +5,8 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
+  BookOpen,
   Building2,
-  CalendarDays,
   CheckCircle2,
   Clock,
   Inbox,
@@ -69,16 +69,16 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       titleTr: 'İşletmeni ekle ve platformları bağla',
       titleEn: 'Add your business and connect platforms',
       bodyTr:
-        'Çoklu konum yönetebilirsin. İşletmeyi ekledikten sonra Ayarlar → Platform Bağlantıları sekmesinden Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor ve listemizde olmayan diğer platformların review URL\'lerini yapıştır.',
+        'Birden fazla işletme yönetebilirsin. İşletmeyi ekledikten sonra sol menüdeki Platform bağlantıları sayfasından Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor ve diğer platformlardaki yorum sayfalarının bağlantılarını ekle.',
       bodyEn:
-        'You can manage multiple locations. After adding a business, paste your Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor — or any custom platform — review URLs from Settings → Platform Links.',
+        'You can manage multiple businesses. After adding one, open Platform links in the sidebar and add the review page links for Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor and other platforms.',
       bulletsTr: [
-        'Marka rengini de buradan ayarla — QR sihirbazında otomatik öne çıkar.',
-        '"Tümünü yeniden test et" ile bağlı linklerin canlı sağlığını gör.',
+        'Marka rengini işletme ayarlarından belirle — QR sihirbazında hazır şablon olarak çıkar.',
+        'Platform bağlantıları sayfasındaki "Tümünü kontrol et" ile bağlantıların çalışıp çalışmadığını gör.',
       ],
       bulletsEn: [
-        'Set your brand colour here too — it shows up in the QR wizard automatically.',
-        'Use "Retest all" to verify every linked URL in seconds.',
+        'Set your brand colour in the business settings — it appears as a preset in the QR wizard.',
+        'Use "Check all" on the Platform links page to see whether every link still works.',
       ],
       link: `/${locale}/dashboard/restaurants`,
       linkLabelTr: 'İşletmeleri yönet',
@@ -90,16 +90,16 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       titleTr: 'QR sihirbazıyla 3 adımda kod oluştur',
       titleEn: 'Create a QR in 3 wizard steps',
       bodyTr:
-        'Sol menüdeki "QR oluştur" butonuna tıkla. Sihirbaz seni Hedef → Renk → Önizle adımlarından geçirir. Renk adımında 6 hazır şablon, marka rengin ve özel HEX seçici var; canlı önizleme her tıklamada güncellenir.',
+        'Sol menüdeki "QR oluştur" butonuna tıkla. Sihirbaz seni Hedef → Renk → Önizle adımlarından geçirir. Renk adımında 6 hazır şablon, marka rengin ve özel renk seçici var; önizleme her seçimde güncellenir.',
       bodyEn:
-        'Tap "Create QR" in the sidebar. The wizard walks you through Target → Colour → Preview. The colour step ships 6 presets, your brand colour and a custom HEX picker — live preview updates on every tap.',
+        'Tap "Create QR" in the sidebar. The wizard walks you through Target → Colour → Preview. The colour step offers 6 presets, your brand colour and a custom colour picker — the preview updates with every choice.',
       bulletsTr: [
-        'Yüksek puan yönlendirmesi: varsayılan platform veya tek-platform sabit pin.',
-        'WCAG kontrast kontrolü 3:1 altında otomatik blok — basılan QR taranabilir kalır.',
+        'Hangi platformun yorum bağlantısının sunulacağını seç: varsayılan platform veya tek bir platform.',
+        'Renk kontrastı çok düşükse sihirbaz uyarır — basılan QR taranabilir kalır.',
       ],
       bulletsEn: [
-        'High-rating redirect: default platform or pin to a single platform.',
-        'WCAG contrast guard auto-blocks below 3:1 — printed QRs stay scannable.',
+        'Choose which platform\'s review link is offered: your default platform or a single platform.',
+        'The wizard warns you when colour contrast is too low — printed QRs stay scannable.',
       ],
       link: `/${locale}/dashboard/qr?new=1`,
       linkLabelTr: 'QR sihirbazını aç',
@@ -111,9 +111,9 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       titleTr: 'Düşük puan yorumlarını Pulse AI ile yanıtla',
       titleEn: 'Reply to low-rating reviews with Pulse AI',
       bodyTr:
-        '1–3 yıldız müşteri yorumları gelen kutuna düşer. "Pulse AI önerisi" otomatik bir taslak hazırlar; "Kullan & gönder" ile tek tıkla iletebilir veya "Düzenle" ile metni özelleştirebilirsin. Yüksek puanlar zaten platforma yönlendirilir.',
+        'Müşterilerin bıraktığı yorumlar Yorumlar sayfasında toplanır. Pulse AI yeni gelen yorumlar için yanıt taslağı hazırlar; önce düşük puanlılara bak, metni gözden geçirip istersen düzenle, sonra gönder.',
       bodyEn:
-        '1–3 star reviews land in your inbox. "Pulse AI suggestion" prepares a draft automatically; click "Use & send" to ship in one tap or "Edit" to personalize. High ratings already redirect to the platform.',
+        'Customer feedback collects on the Reviews page. Pulse AI prepares reply drafts for new reviews; start with the low-rating ones, review the text, edit it if you like, then send it.',
       bulletsTr: [
         'Tonu Hesabım → Pulse AI sekmesinden seç (samimi / resmi / özür).',
         'Hesabım → Pulse AI sekmesinden taslak otomasyonunu kapatabilirsin.',
@@ -123,8 +123,8 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         'Disable auto-drafts from Account → Pulse AI when you want manual control.',
       ],
       link: `/${locale}/dashboard/feedbacks`,
-      linkLabelTr: 'Gelen kutusunu aç',
-      linkLabelEn: 'Open inbox',
+      linkLabelTr: 'Yorumları aç',
+      linkLabelEn: 'Open reviews',
     },
     {
       num: '04',
@@ -132,16 +132,16 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       titleTr: 'Analitik ve AI içgörüleri incele',
       titleEn: 'Review analytics and AI inferences',
       bodyTr:
-        'Dönüşüm oranı, yanıt performansı, saat-bazlı dağılım ve aspect kırılımı (yemek/servis/atmosfer). "Müşterinin en sık dile getirdiği" bölümünde Pulse AI yorumlarından ortak temaları çıkarır ve haftalık çıkarım yapar.',
+        'Yanıt performansı, saatlik dağılım ve konu kırılımı (yemek/servis/atmosfer). "En çok bahsedilenler" bölümünde Pulse AI yorumlardaki ortak konuları çıkarır ve haftalık bir özet sunar.',
       bodyEn:
-        'Conversion rate, response performance, hourly distribution and aspect breakdown (food/service/atmosphere). "Most-mentioned themes" pulls common patterns from comments via Pulse AI with a weekly synthesis.',
+        'Response performance, hourly distribution and topic breakdown (food/service/atmosphere). In "Top mentions", Pulse AI pulls out common topics from the comments and adds a weekly summary.',
       bulletsTr: [
-        'Müşteriler sekmesinde sık dönen müşteri (LTV, segment, churn) görünür.',
-        '14-haftalık trend ve gün × saat ısı haritası en yoğun dönemleri ortaya çıkarır.',
+        'Müşteriler sayfasında tekrar gelen müşterileri ve kaybetme riski olanları görürsün.',
+        '14 haftalık trend ve gün × saat ısı haritası en yoğun dönemleri gösterir.',
       ],
       bulletsEn: [
-        'The Customers tab surfaces returning customers (LTV, segment, churn).',
-        '14-week trend and day × hour heatmap reveal your busiest windows.',
+        'The Customers page shows returning customers and those you are at risk of losing.',
+        'The 14-week trend and day × hour heatmap show your busiest times.',
       ],
       link: `/${locale}/dashboard/analytics`,
       linkLabelTr: 'Analitiği aç',
@@ -150,12 +150,12 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
     {
       num: '05',
       icon: <Mail size={18} strokeWidth={2} />,
-      titleTr: 'Haftalık raporu Pazartesi sabahı al',
-      titleEn: 'Get the weekly report on Monday morning',
+      titleTr: 'Haftalık raporu her pazartesi al',
+      titleEn: 'Get the weekly report every Monday',
       bodyTr:
-        'Pazartesi 09:00 UTC\'de haftalık özet maili gelir: yorum sayısı, ortalama puan, dağılım, aspect ortalamaları + Pulse AI çıkarımı (haftanın ana sinyali) ve önümüzdeki hafta için somut öneri. Hesap → Bildirim sekmesinden açıp/kapatabilirsin.',
+        'Her pazartesi öğle saatlerinde (Türkiye saati) haftalık özet e-postası gelir: yorum sayısı, ortalama puan, puan dağılımı, Pulse AI\'ın haftanın öne çıkan konusu ve önümüzdeki hafta için somut bir öneri. Hesabım → Bildirimler sekmesinden açıp kapatabilirsin.',
       bodyEn:
-        'Every Monday 09:00 UTC the weekly digest arrives: review count, average rating, distribution, aspect averages + a Pulse AI inference (key signal) and a concrete recommendation for next week. Toggle from Account → Notifications.',
+        'Every Monday around noon (Istanbul time) the weekly summary email arrives: review count, average rating, rating distribution, Pulse AI\'s key topic of the week and a concrete tip for next week. Turn it on or off in Account → Notifications.',
       link: `/${locale}/dashboard/account?section=notifications`,
       linkLabelTr: 'Bildirim ayarları',
       linkLabelEn: 'Notification settings',
@@ -166,9 +166,9 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       titleTr: 'Hesabını ve ekibini ayarla',
       titleEn: 'Set up your account and team',
       bodyTr:
-        'Hesabım sayfasında plan durumu, üyelik tarihi ve aktivite özeti. Pulse AI sekmesinden taslakların varsayılan tonunu (samimi/resmi/özür) seç. Ekip → davetiye ile yöneticiler ekleyip rol ata.',
+        'Hesabım sayfasında plan durumu, üyelik tarihi ve aktivite özeti yer alır. Pulse AI sekmesinden taslakların varsayılan tonunu (samimi/resmi/özür) seç. Ekip & Roller sekmesinden ekip arkadaşlarını davet edip rol ata.',
       bodyEn:
-        'Account page shows plan status, member since date and activity summary. Pulse AI tab lets you pick the default tone (warm/formal/apologetic). Team → invite to add managers with roles.',
+        'The Account page shows your plan, member-since date and an activity summary. Pick the default draft tone (warm/formal/apologetic) in the Pulse AI tab. Invite teammates and assign roles in Team & roles.',
       link: `/${locale}/dashboard/account`,
       linkLabelTr: 'Hesabıma git',
       linkLabelEn: 'Open account',
@@ -181,54 +181,54 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       titleTr: 'İlk 24 saatte yanıtla',
       titleEn: 'Respond within 24 hours',
       bodyTr:
-        'Düşük puan yorumlara hızlı dönüş müşteri sadakatini güçlendirir. Pulse AI taslağı hazır geldiği için tek tıkla gönderebilirsin.',
+        'Düşük puanlı yorumlara hızlı dönüş müşteri sadakatini güçlendirir. Pulse AI taslağı hazır beklediği için yanıtlaman dakikalar sürer.',
       bodyEn:
-        'Quick replies on low ratings boost customer loyalty. With Pulse AI drafts ready, you can ship in one click.',
+        'Quick replies to low ratings build customer loyalty. With a Pulse AI draft waiting, replying takes minutes.',
     },
     {
       icon: <Palette size={14} strokeWidth={2} />,
       titleTr: 'QR\'da marka rengini kullan',
       titleEn: 'Use your brand colour on the QR',
       bodyTr:
-        'Sihirbazda "Marka" şablonu işletme renginle dolar. Kontrast 3:1 altına düşerse otomatik uyarı gelir; yüksek kontrast = daha güvenli tarama.',
+        'Sihirbazdaki "Marka" şablonu işletmenin rengini kullanır. Kontrast düşükse sihirbaz uyarır; yüksek kontrast daha kolay tarama demektir.',
       bodyEn:
-        'The wizard\'s "Brand" preset uses your workspace colour. Contrast below 3:1 triggers an auto-warning; higher contrast = safer scans.',
+        'The wizard\'s "Brand" preset uses your business colour. It warns you when contrast is low; higher contrast means easier scanning.',
     },
     {
       icon: <Link2 size={14} strokeWidth={2} />,
       titleTr: 'Platform linklerini doğrula',
       titleEn: 'Verify your platform links',
       bodyTr:
-        '"Tümünü yeniden test et" butonu tüm bağlı platformların erişilebilirliğini saniyeler içinde kontrol eder. Bozuk link kaybedilen yönlendirme demek.',
+        'Platform bağlantıları sayfasındaki "Tümünü kontrol et" butonu bağlı tüm platformları saniyeler içinde kontrol eder. Bozuk bir bağlantı, kaçan bir yorum demektir.',
       bodyEn:
-        'The "Retest all" button checks reachability of every linked platform in seconds. A broken link is a lost redirect.',
+        'The "Check all" button on the Platform links page checks every linked platform in seconds. A broken link means a missed review.',
     },
     {
       icon: <Star size={14} strokeWidth={2} />,
-      titleTr: 'Yüksek puanları platformlara yönlendir',
-      titleEn: 'Route high ratings to platforms',
+      titleTr: 'Varsayılan platformunu seç',
+      titleEn: 'Pick a default platform',
       bodyTr:
-        'Varsayılan platform seçilince 4–5 yıldızlı müşteriler doğrudan Google / Yemeksepeti gibi seçtiğin yere gider. Müşteriye yorum yazma özgürlüğü her zaman korunur.',
+        'Memnun kalan müşterilere Google veya Yemeksepeti gibi seçtiğin platformun yorum bağlantısı sunulur. Her müşteri istediği yere yorum yazma hakkını korur.',
       bodyEn:
-        'When a default platform is set, 4–5 star customers go straight to Google / Yemeksepeti or your chosen target. The customer always keeps the right to write the review wherever they want.',
+        'Happy customers are offered the review link of the platform you choose, such as Google or Yemeksepeti. Every customer keeps the right to post a review wherever they want.',
     },
     {
       icon: <ShieldCheck size={14} strokeWidth={2} />,
       titleTr: 'KVKK rızası açık olsun',
       titleEn: 'Keep KVKK consent transparent',
       bodyTr:
-        'Müşteri formunda açık rıza checkbox\'ı her zaman opt-in. Bildirim e-posta adresini Ayarlar → Genel\'den güncel tut.',
+        'Müşteri formundaki pazarlama izni her zaman isteğe bağlıdır; kutu işaretsiz gelir. Bildirim e-posta adresini işletme Ayarlar → Genel sekmesinden güncel tut.',
       bodyEn:
-        'The consent checkbox on the customer form is always opt-in. Keep your notification email up-to-date in Settings → General.',
+        'Marketing consent on the customer form is always optional — the box starts unticked. Keep your notification email up to date in the business Settings → General tab.',
     },
     {
       icon: <MessageSquare size={14} strokeWidth={2} />,
       titleTr: 'Müşteriye direkt e-posta yaz',
       titleEn: 'Email customers directly',
       bodyTr:
-        'Müşteri e-posta bıraktıysa yanıt formunda "E-posta gönder" seçeneği aktif olur — müşteri inbox\'ında ekibinin sesini duyar.',
+        'Müşteri e-posta adresi bıraktıysa yanıt formunda "Müşteriye e-posta gönder" seçeneği açılır — yanıtın doğrudan müşterinin gelen kutusuna gider.',
       bodyEn:
-        'If the customer left an email, the reply form unlocks "Send email" — the response lands directly in their inbox.',
+        'If the customer left an email address, the reply form offers "Email the customer" — your reply goes straight to their inbox.',
     },
   ];
 
@@ -276,8 +276,8 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
               </h2>
               <p className="mt-1.5 text-[13px] leading-[1.55] text-[#525252]">
                 {isTr
-                  ? 'Sihirbazda 3 adımda QR çıkar (renk + önizleme dahil). Masaya/menüye yapıştır. Müşteri 4–5★ verirse seçtiğin platforma gider, düşük puan gelen kutuna düşer ve Pulse AI yanıt taslağını hazırlar.'
-                  : 'Spin a QR in 3 wizard steps (colour + preview included). Stick it on the table or menu. 4–5★ goes to your platform, lower scores hit the inbox where Pulse AI prepares a reply draft.'}
+                  ? 'Sihirbazda 3 adımda QR oluştur (renk ve önizleme dahil), masaya veya menüye yapıştır. Memnun müşterilere seçtiğin platformun yorum bağlantısı sunulur; düşük puan verenler önce sana özel geri bildirim bırakabilir ve Pulse AI yanıt taslağını hazırlar.'
+                  : 'Create a QR in 3 wizard steps (colour and preview included) and stick it on the table or menu. Happy customers are offered your chosen platform\'s review link; lower scores can leave private feedback first, and Pulse AI drafts your reply.'}
               </p>
             </div>
           </div>
@@ -374,11 +374,14 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
           {tips.map((tip, i) => (
             <div
               key={tip.titleEn}
-              className={`flex flex-col gap-2 p-5 sm:p-6 ${
-                i % 2 === 1 ? 'sm:border-l sm:border-white/10' : ''
-              } ${i % 3 === 2 ? 'lg:border-l lg:border-white/10' : ''} ${
-                i >= 2 ? 'border-t border-white/10' : ''
-              }`}
+              // Dividers per breakpoint: 1 col → top lines, 2 cols (sm) and
+              // 3 cols (lg) → top line from the 2nd row + left line between
+              // columns. The old mix left row 2 at lg without its divider.
+              className={`flex flex-col gap-2 border-white/10 p-5 sm:p-6 ${i > 0 ? 'border-t' : ''} ${
+                i < 2 ? 'sm:border-t-0' : 'sm:border-t'
+              } ${i % 2 === 1 ? 'sm:border-l' : 'sm:border-l-0'} ${
+                i < 3 ? 'lg:border-t-0' : 'lg:border-t'
+              } ${i % 3 !== 0 ? 'lg:border-l' : 'lg:border-l-0'}`}
             >
               <span className="inline-flex items-center gap-1.5 text-[#C6F24E]">
                 {tip.icon}
@@ -411,8 +414,8 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             </p>
             <p className="mt-0.5 text-[12.5px] leading-[1.55] text-[#525252]">
               {isTr
-                ? 'Restoran, otel, klinik, salon — sektörünün operasyon ipuçları yardım merkezinde.'
-                : 'Restaurant, hotel, clinic, salon — operational tips per sector live in the help center.'}
+                ? 'Restoran, otel, klinik, salon — sektörüne özel ipuçlarını sektör sayfalarında bulabilirsin.'
+                : 'Restaurant, hotel, clinic, salon — find tips for your sector on the sector pages.'}
             </p>
           </div>
         </div>
@@ -442,8 +445,8 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             </p>
             <p className="mt-0.5 text-[12.5px] leading-[1.55] text-[#525252]">
               {isTr
-                ? 'Yardım merkezi makaleleri ve sektör-özel kılavuzlar elinin altında.'
-                : 'Help center articles and sector-specific guides are at hand.'}
+                ? 'Yardım merkezindeki makalelere göz at veya ekibimize yaz.'
+                : 'Browse the help center articles or write to our team.'}
             </p>
           </div>
         </div>
@@ -452,7 +455,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             href={`/${locale}/help`}
             className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
           >
-            <CalendarDays size={12} strokeWidth={2} />
+            <BookOpen size={12} strokeWidth={2} />
             {isTr ? 'Yardım merkezi' : 'Help center'}
           </Link>
           <Link

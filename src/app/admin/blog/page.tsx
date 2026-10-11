@@ -25,20 +25,28 @@ export default async function AdminBlogPage() {
   // double-skeleton flash (loading.tsx → page mount → internal skeleton).
   // Defensive select per §14.1 (no Date drift, no oversize content blob).
   let initialPosts: Awaited<ReturnType<typeof loadInitialPosts>> = [];
+  let initialTotal = 0;
   try {
-    initialPosts = await loadInitialPosts();
+    // §40.1 — single pooled connection: batch the reads in one transaction.
+    [initialPosts, initialTotal] = await prisma.$transaction([
+      loadInitialPosts(),
+      prisma.blogPost.count(),
+    ]);
   } catch (error) {
     console.error('[AdminBlogPage] initial posts hydration failed', error);
     // Soft-fail: client refetches via /api/admin/blog if list is empty.
   }
 
-  return <AdminBlogClient initialPosts={initialPosts} />;
+  return <AdminBlogClient initialPosts={initialPosts} initialTotal={initialTotal} />;
 }
 
-async function loadInitialPosts() {
+// Plain (non-async) so it returns a PrismaPromise for $transaction.
+function loadInitialPosts() {
   return prisma.blogPost.findMany({
     orderBy: { createdAt: 'desc' },
-    take: 20,
+    // Matches the client page size (/api/admin/blog?limit=100); the list
+    // offers "Daha fazla yükle" when the total is larger.
+    take: 100,
     select: {
       id: true,
       slug: true,

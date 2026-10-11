@@ -34,10 +34,16 @@ import {
   X,
 } from 'lucide-react';
 
+type AdminRole = 'superadmin' | 'manager' | 'restaurant_owner' | 'staff';
+
 interface NavItem {
   href: string;
   label: string;
   keywords: string[];
+  /** Roles that see this page in AdminSidebar (same gates, kept in sync). */
+  roles: AdminRole[];
+  /** Staff-only RBAC grant (`resource:action`), mirroring the sidebar. */
+  permission?: string;
 }
 
 interface RestaurantHit {
@@ -60,33 +66,56 @@ type Hit =
   | RestaurantHit
   | CustomerHit;
 
-// Static admin route catalog — synced with AdminSidebar entries.
+// Static admin route catalog — synced with AdminSidebar entries, including
+// its role / staff-permission gates. Without the gates the palette offered
+// superadmins workspace-only pages (Kampanyalar, Faturalandırma) that land on
+// the "Yönetici için değil" card.
+const ALL_ROLES: AdminRole[] = ['superadmin', 'manager', 'restaurant_owner', 'staff'];
+const SUPER_AND_STAFF: AdminRole[] = ['superadmin', 'staff'];
+const SUPER_ONLY: AdminRole[] = ['superadmin'];
+const OWNER_ONLY: AdminRole[] = ['restaurant_owner'];
+
 const ADMIN_NAV: NavItem[] = [
-  { href: '/admin/dashboard', label: 'Dashboard', keywords: ['ana sayfa', 'home', 'genel görünüm'] },
-  { href: '/admin/restaurants', label: 'İşletmeler', keywords: ['restoran', 'restaurant', 'business', 'list'] },
-  { href: '/admin/reviews', label: 'Yorumlar', keywords: ['feedback', 'review', 'puan'] },
-  { href: '/admin/customers', label: 'Müşteriler', keywords: ['customer', 'son müşteriler'] },
-  { href: '/admin/qr', label: 'QR Yönetimi', keywords: ['qr', 'code', 'kod'] },
-  { href: '/admin/analytics', label: 'Analitik & Raporlar', keywords: ['analytics', 'reports', 'rapor', 'istatistik'] },
-  { href: '/admin/members', label: 'İşletme Sahipleri', keywords: ['owner', 'members', 'sahip'] },
-  { href: '/admin/users', label: 'Yöneticiler', keywords: ['admin users', 'staff', 'yönetici'] },
-  { href: '/admin/billing', label: 'Faturalandırma', keywords: ['billing', 'fatura', 'ödeme'] },
-  { href: '/admin/plans', label: 'Abonelikler / Paketler', keywords: ['plans', 'subscription', 'fiyat', 'tier'] },
-  { href: '/admin/campaigns', label: 'Kampanyalar', keywords: ['campaigns', 'qr'] },
-  { href: '/admin/newsletters', label: 'Bülten Aboneleri', keywords: ['newsletter', 'subscribers'] },
-  { href: '/admin/newsletters/campaigns', label: 'Bülten Kampanyaları', keywords: ['newsletter campaigns'] },
-  { href: '/admin/mail-templates', label: 'Mail İçerikleri', keywords: ['mail templates', 'email content'] },
-  { href: '/admin/audits/templates', label: 'Denetim Şablonları', keywords: ['audit templates', 'checklist'] },
-  { href: '/admin/audits/categories', label: 'Denetim Kategorileri', keywords: ['audit categories'] },
-  { href: '/admin/audits/stats', label: 'Denetim İstatistikleri', keywords: ['audit stats', 'analytics'] },
-  { href: '/admin/blog', label: 'Blog', keywords: ['blog', 'content', 'yazı'] },
-  { href: '/admin/announcements', label: 'Duyurular', keywords: ['announcements', 'banner'] },
-  { href: '/admin/legal-documents', label: 'Hukuki Metinler', keywords: ['legal', 'kvkk', 'gizlilik'] },
-  { href: '/admin/site-settings', label: 'Site Ayarları', keywords: ['settings', 'site config'] },
-  { href: '/admin/api', label: 'API & Webhooks', keywords: ['api', 'webhooks', 'integration'] },
-  { href: '/admin/audit-logs', label: 'Audit Log', keywords: ['audit log', 'history', 'activity'] },
-  { href: '/admin/profile', label: 'Profil', keywords: ['profile', 'hesap'] },
+  { href: '/admin/dashboard', label: 'Dashboard', keywords: ['ana sayfa', 'home', 'genel görünüm'], roles: ALL_ROLES },
+  { href: '/admin/restaurants', label: 'İşletmeler', keywords: ['restoran', 'restaurant', 'business', 'list'], roles: SUPER_ONLY },
+  { href: '/admin/reviews', label: 'Yorumlar', keywords: ['feedback', 'review', 'puan'], roles: ALL_ROLES, permission: 'reviews:read' },
+  { href: '/admin/customers', label: 'Müşteriler', keywords: ['customer', 'son müşteriler'], roles: SUPER_AND_STAFF, permission: 'customers:read' },
+  { href: '/admin/qr', label: 'QR Yönetimi', keywords: ['qr', 'code', 'kod'], roles: ['superadmin', 'manager', 'restaurant_owner'] },
+  { href: '/admin/analytics', label: 'Analitik & Raporlar', keywords: ['analytics', 'reports', 'rapor', 'istatistik'], roles: ALL_ROLES, permission: 'analytics:read' },
+  { href: '/admin/members', label: 'İşletme Sahipleri', keywords: ['owner', 'members', 'sahip'], roles: SUPER_AND_STAFF, permission: 'members:read' },
+  { href: '/admin/users', label: 'Yöneticiler', keywords: ['admin users', 'staff', 'yönetici'], roles: SUPER_AND_STAFF, permission: 'users:read' },
+  { href: '/admin/billing', label: 'Faturalandırma', keywords: ['billing', 'fatura', 'ödeme'], roles: OWNER_ONLY },
+  { href: '/admin/plans', label: 'Abonelikler / Paketler', keywords: ['plans', 'subscription', 'fiyat', 'tier'], roles: SUPER_AND_STAFF, permission: 'plans:read' },
+  { href: '/admin/campaigns', label: 'Kampanyalar', keywords: ['campaigns', 'qr'], roles: OWNER_ONLY },
+  { href: '/admin/newsletters', label: 'Bülten Aboneleri', keywords: ['newsletter', 'subscribers'], roles: SUPER_AND_STAFF, permission: 'mail_templates:read' },
+  { href: '/admin/newsletters/campaigns', label: 'Bülten Kampanyaları', keywords: ['newsletter campaigns'], roles: SUPER_AND_STAFF, permission: 'mail_templates:read' },
+  { href: '/admin/mail-templates', label: 'Mail İçerikleri', keywords: ['mail templates', 'email content'], roles: SUPER_AND_STAFF, permission: 'mail_templates:read' },
+  { href: '/admin/audits/templates', label: 'Denetim Şablonları', keywords: ['audit templates', 'checklist'], roles: SUPER_ONLY },
+  { href: '/admin/audits/categories', label: 'Denetim Kategorileri', keywords: ['audit categories'], roles: SUPER_ONLY },
+  { href: '/admin/audits/stats', label: 'Denetim İstatistikleri', keywords: ['audit stats', 'analytics'], roles: SUPER_ONLY },
+  { href: '/admin/blog', label: 'Blog', keywords: ['blog', 'content', 'yazı'], roles: SUPER_AND_STAFF, permission: 'blog:read' },
+  { href: '/admin/announcements', label: 'Duyurular', keywords: ['announcements', 'banner'], roles: SUPER_AND_STAFF, permission: 'announcements:read' },
+  { href: '/admin/legal-documents', label: 'Hukuki Metinler', keywords: ['legal', 'kvkk', 'gizlilik'], roles: SUPER_ONLY },
+  { href: '/admin/site-settings', label: 'Site Ayarları', keywords: ['settings', 'site config'], roles: SUPER_AND_STAFF, permission: 'site_settings:read' },
+  { href: '/admin/api', label: 'API & Webhook', keywords: ['api', 'webhooks', 'integration', 'anahtar'], roles: SUPER_ONLY },
+  { href: '/admin/audit-logs', label: 'Denetim Kaydı', keywords: ['audit log', 'history', 'activity', 'kayıt'], roles: SUPER_ONLY },
+  { href: '/admin/google', label: 'Google Entegrasyonları', keywords: ['google', 'business profile', 'entegrasyon', 'integration'], roles: SUPER_ONLY },
+  { href: '/admin/profile', label: 'Profil', keywords: ['profile', 'hesap'], roles: ALL_ROLES },
 ];
+
+/** Same visibility rule as AdminSidebar: role gate, then staff grant. */
+function navAllowed(item: NavItem, role: AdminRole, permissions: Set<string>): boolean {
+  if (!item.roles.includes(role)) return false;
+  if (role !== 'staff') return true;
+  // Staff sees only what an explicit grant opens (dashboard/profile have no gate).
+  return item.permission ? permissions.has(item.permission) : true;
+}
+
+function toAdminRole(value: unknown): AdminRole {
+  return value === 'superadmin' || value === 'restaurant_owner' || value === 'staff'
+    ? value
+    : 'manager';
+}
 
 function normalize(s: string): string {
   return s
@@ -112,6 +141,9 @@ export default function AdminCommandPalette() {
   }>({ restaurants: [], customers: [] });
   const [recentLoading, setRecentLoading] = useState(false);
   const [recentLoaded, setRecentLoaded] = useState(false);
+  // Actor role + staff grants (from /api/admin/me) — nav entries are hidden
+  // until known so a superadmin never sees workspace-only pages.
+  const [access, setAccess] = useState<{ role: AdminRole; permissions: Set<string> } | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -151,11 +183,37 @@ export default function AdminCommandPalette() {
     }
   }, [open]);
 
-  // Lazy load recent restaurants/customers on first open.
+  // Lazy load actor access + recent restaurants/customers on first open.
+  //
+  // Guarded by a ref instead of `recentLoading` in the deps: the previous
+  // version re-ran the effect when it flipped `recentLoading` to true, whose
+  // cleanup cancelled the in-flight load — so the list (and now the role
+  // gate) never resolved and the palette sat on "Yükleniyor…". `mountedRef`
+  // only guards against setting state after unmount.
+  const loadStartedRef = useRef(false);
+  const mountedRef = useRef(true);
   useEffect(() => {
-    if (!open || recentLoaded || recentLoading) return;
-    let cancelled = false;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!open || loadStartedRef.current) return;
+    loadStartedRef.current = true;
     setRecentLoading(true);
+    // Role gate resolves on its own so nav entries appear as soon as
+    // /api/admin/me answers, without waiting for the recent-list fetches.
+    fetch('/api/admin/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then((me) => {
+        if (!mountedRef.current) return;
+        setAccess({
+          role: toAdminRole(me?.role),
+          permissions: new Set(Array.isArray(me?.permissions) ? (me.permissions as string[]) : []),
+        });
+      });
     (async () => {
       try {
         const [restRes, custRes] = await Promise.all([
@@ -165,7 +223,7 @@ export default function AdminCommandPalette() {
           fetch('/api/restaurants?limit=8', { cache: 'no-store' }).catch(() => null),
           fetch('/api/admin/customers?limit=8', { cache: 'no-store' }).catch(() => null),
         ]);
-        if (cancelled) return;
+        if (!mountedRef.current) return;
         const restaurants: RestaurantHit[] = [];
         if (restRes && restRes.ok) {
           const data = await restRes.json().catch(() => null);
@@ -192,18 +250,15 @@ export default function AdminCommandPalette() {
             }
           }
         }
-        if (!cancelled) {
+        if (mountedRef.current) {
           setRecent({ restaurants, customers });
           setRecentLoaded(true);
         }
       } finally {
-        if (!cancelled) setRecentLoading(false);
+        if (mountedRef.current) setRecentLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [open, recentLoaded, recentLoading]);
+  }, [open]);
 
   // Body scroll lock.
   useEffect(() => {
@@ -217,7 +272,10 @@ export default function AdminCommandPalette() {
 
   const filteredHits = useMemo<Hit[]>(() => {
     const q = query.trim();
-    const navHits: Hit[] = ADMIN_NAV.filter((it) => navMatches(it, q)).map((it) => ({
+    const allowedNav = access
+      ? ADMIN_NAV.filter((it) => navAllowed(it, access.role, access.permissions))
+      : [];
+    const navHits: Hit[] = allowedNav.filter((it) => navMatches(it, q)).map((it) => ({
       kind: 'nav' as const,
       href: it.href,
       label: it.label,
@@ -238,7 +296,7 @@ export default function AdminCommandPalette() {
       return false;
     });
     return [...navHits, ...restHits, ...custHits];
-  }, [query, recent]);
+  }, [query, recent, access]);
 
   const navigate = useCallback(
     (hit: Hit) => {
@@ -328,9 +386,11 @@ export default function AdminCommandPalette() {
             </div>
           )}
           {filteredHits.length === 0 ? (
-            <p className="px-3 py-6 text-center text-[13px] text-[#737373]">
-              Eşleşen sonuç yok.
-            </p>
+            recentLoading && !recentLoaded ? null : (
+              <p className="px-3 py-6 text-center text-[13px] text-[#737373]">
+                Eşleşen sonuç yok.
+              </p>
+            )
           ) : (
             <PaletteList hits={filteredHits} activeIdx={activeIdx} onClick={navigate} onHover={setActiveIdx} />
           )}

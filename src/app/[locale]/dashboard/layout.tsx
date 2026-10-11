@@ -110,13 +110,13 @@ export default async function DashboardLayout({
           <div className="border-b border-[#EDEDED] bg-[#0A0A0A] text-white">
             <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-7">
               <p className="text-[11px] pulse-eyebrow">
-                Admin görünümü — {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
+                {locale === 'en' ? 'Admin view' : 'Admin görünümü'} — {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
               </p>
               <Link
                 href="/admin/restaurants"
                 className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-[10px] pulse-eyebrow text-white transition-colors hover:bg-white/20"
               >
-                ← Admin paneli
+                {locale === 'en' ? '← Admin panel' : '← Admin paneli'}
               </Link>
             </div>
           </div>

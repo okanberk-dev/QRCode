@@ -415,23 +415,33 @@ export function GoogleBusinessIntegrationPanel({
             returnTo'su; callback success/failure'i burada da görünür. */}
         <GoogleConnectFlashBanner locale={locale} />
 
-        {statusLoading ? (
-          <div className="flex items-center gap-2 text-[13px] text-[#737373]">
-            <Loader2 size={14} className="animate-spin" />
-            {isTr ? "Google durumu kontrol ediliyor..." : "Checking Google status..."}
-          </div>
-        ) : null}
-
         <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-end">
             <Field
               label={isTr ? "Google'da işletme ara" : "Search business on Google"}
               hint={
-                status?.placesConfigured
-                  ? isTr
-                    ? "Ad + adres ile ara; doğru sonucu seçince yorum linki otomatik kaydedilir."
-                    : "Search by name + address; selecting a result saves the review link."
-                  : "GOOGLE_MAPS_API_KEY missing"
+                statusLoading ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                    {isTr ? "Google durumu kontrol ediliyor…" : "Checking Google…"}
+                  </span>
+                ) : !status?.placesConfigured ? (
+                  // Never surface env-var names to the owner. The "Link" field
+                  // only exists on the platform page (the caller passing returnTo).
+                  returnTo ? (
+                    isTr
+                      ? 'Google araması şu an kullanılamıyor. Linki aşağıdaki "Link" alanına elle yapıştırabilirsiniz.'
+                      : 'Google search is unavailable right now. You can paste the link into the "Link" field below.'
+                  ) : isTr ? (
+                    "Google araması şu an kullanılamıyor."
+                  ) : (
+                    "Google search is unavailable right now."
+                  )
+                ) : isTr ? (
+                  "Ad + adres ile ara; doğru sonucu seçince yorum linki otomatik kaydedilir."
+                ) : (
+                  "Search by name + address; selecting a result saves the review link."
+                )
               }
             >
               <input
@@ -445,7 +455,7 @@ export function GoogleBusinessIntegrationPanel({
             <button
               type="button"
               className="bz-btn-primary inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
-              style={{ minHeight: 42 }}
+              style={{ minHeight: 44 }}
               onClick={searchPlaces}
               disabled={!status?.placesConfigured || placesLoading || query.trim().length < 2 || dirty}
             >

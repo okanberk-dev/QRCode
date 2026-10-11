@@ -1,38 +1,20 @@
 import {
-  SkBox,
   SkCardGrid,
   SkPageHeader,
   SkPageShell,
 } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
- * Owner QR wizard + history list — header + form rows + 3-col QR card
- * grid. (CLAUDE.md §40.10)
+ * Owner QR codes — header (+ "Liste" / "Yeni QR oluştur" actions) and the
+ * 3-col QR card grid. The create wizard is a modal, so there is no inline
+ * form here; QrClient renders the same <SkCardGrid> while QR history loads,
+ * so the route skeleton and the in-page load look like one state.
+ * (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440}>
-      <SkPageHeader withActions titleWidth="w-32" />
-
-      {/* Wizard form */}
-      <div className="bz-card p-5 space-y-4">
-        <SkBox className="h-5 w-44" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <SkBox className="h-10 w-full" />
-          <SkBox className="h-10 w-full" />
-          <SkBox className="h-10 w-full" />
-          <SkBox className="h-10 w-full" />
-        </div>
-        <div className="flex justify-end">
-          <SkBox className="h-9 w-32" />
-        </div>
-      </div>
-
-      {/* History header */}
-      <div className="flex items-center justify-between">
-        <SkBox className="h-5 w-40" />
-        <SkBox className="h-8 w-24" />
-      </div>
+    <SkPageShell max={1440} space={4}>
+      <SkPageHeader withActions titleWidth="w-48" />
 
       <SkCardGrid count={6} cols={3} />
     </SkPageShell>

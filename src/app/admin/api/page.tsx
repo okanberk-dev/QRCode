@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   ActivitySquare,
   Copy,
@@ -15,7 +16,6 @@ import {
 } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { PageHeader, Badge, Modal } from '@/components/ui';
-import SuperadminBlock from '@/components/admin/SuperadminBlock';
 
 interface ApiKey {
   id: string;
@@ -42,15 +42,11 @@ interface ActivityRow {
   status: 'ok' | 'fail' | 'pending';
 }
 
+// API keys are actor-scoped (`/api/api-keys` → `admin:<id>`), so the page is
+// safe for every admin role. The sidebar lists it under "Sistem" for
+// superadmin — it must not be wrapped in SuperadminBlock (that gate hid the
+// whole tool from the only role that can reach it, §38.233).
 export default function AdminApiPage() {
-  return (
-    <SuperadminBlock>
-      <AdminApiBody />
-    </SuperadminBlock>
-  );
-}
-
-function AdminApiBody() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
 
@@ -273,7 +269,7 @@ function AdminApiBody() {
               <div className="flex items-center justify-between gap-4 border-b border-[#EDEDED] p-5">
                 <div className="flex items-center gap-2">
                   <Webhook size={14} className="text-[#0A0A0A]" />
-                  <p className="pulse-eyebrow text-[#737373]">WEBHOOKS</p>
+                  <p className="pulse-eyebrow text-[#737373]">{isTr ? 'WEBHOOK' : 'WEBHOOKS'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge kind="ghost">{isTr ? 'Yakında' : 'Coming soon'}</Badge>
@@ -283,7 +279,7 @@ function AdminApiBody() {
                     aria-disabled="true"
                     className="bz-btn bz-btn-sm cursor-not-allowed opacity-50"
                   >
-                    <Plus size={12} /> {isTr ? 'Endpoint ekle' : 'Add endpoint'}
+                    <Plus size={12} /> {isTr ? 'Adres ekle' : 'Add endpoint'}
                   </button>
                 </div>
               </div>
@@ -292,11 +288,11 @@ function AdminApiBody() {
                   <div className="flex flex-col items-center gap-1.5 p-8 text-center">
                     <Webhook size={18} className="text-[#A3A3A3]" />
                     <p className="text-[13px] font-medium text-[#0A0A0A]">
-                      {isTr ? 'Henüz webhook endpoint’i yok' : 'No webhook endpoints yet'}
+                      {isTr ? 'Henüz webhook adresi yok' : 'No webhook endpoints yet'}
                     </p>
                     <p className="max-w-sm text-[12px] text-[#737373]">
                       {isTr
-                        ? 'Webhook teslimatı (event → dış URL) yakında. Şu an aktif endpoint yok.'
+                        ? 'Olayları dış bir adrese iletme özelliği yakında geliyor. Şu an kayıtlı adres yok.'
                         : 'Webhook delivery (event → external URL) is coming soon. No active endpoints yet.'}
                     </p>
                   </div>
@@ -342,12 +338,16 @@ function AdminApiBody() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-semibold text-[#0A0A0A]">
-                    {isTr ? 'OAuth sağlayıcılar' : 'OAuth providers'}
+                    {isTr ? 'Google bağlantıları' : 'Google connections'}
                   </p>
                   <p className="mt-1 text-[12px] text-[#525252]">
                     {isTr
-                      ? 'Google Business Profile ve Slack OAuth bağlantıları Ayarlar → Entegrasyonlar sekmesinden yönetilecek. Backend gelince bu kart kaybolur.'
-                      : 'Google Business Profile and Slack OAuth connections will live in Settings → Integrations once the backend ships.'}
+                      ? 'İşletmelerin Google Business Profile bağlantıları '
+                      : "Businesses' Google Business Profile connections are tracked on the "}
+                    <Link href="/admin/google" className="font-medium text-[#0A0A0A] underline underline-offset-2">
+                      {isTr ? 'Google Entegrasyonları' : 'Google Integrations'}
+                    </Link>
+                    {isTr ? ' sayfasından izlenir.' : ' page.'}
                   </p>
                 </div>
               </div>
@@ -369,8 +369,8 @@ function AdminApiBody() {
                   </p>
                   <p className="max-w-xs text-[12px] text-[#737373]">
                     {isTr
-                      ? 'Gerçek teslimat günlüğü webhook backend’i ile gelecek.'
-                      : 'A real delivery log arrives with the webhook backend.'}
+                      ? 'Teslimat günlüğü webhook desteğiyle birlikte gelecek.'
+                      : 'A delivery log will arrive together with webhook support.'}
                   </p>
                 </li>
               )}
@@ -420,8 +420,8 @@ function AdminApiBody() {
           </label>
           <p className="mt-3 text-[11px] text-[#737373]">
             {isTr
-              ? 'Varsayılan scope\'lar: feedback:read. Scope yönetimi backend bağlandığında eklenir.'
-              : "Default scope: feedback:read. Granular scope management ships with the backend."}
+              ? 'Yeni anahtarlar yalnızca yorumları okuma yetkisiyle oluşturulur (feedback:read).'
+              : 'New keys are created with read-only access to reviews (feedback:read).'}
           </p>
           <div className="mt-5 flex items-center justify-end gap-2">
             <button

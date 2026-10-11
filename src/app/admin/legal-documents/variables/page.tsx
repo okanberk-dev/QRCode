@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Save, RotateCcw } from 'lucide-react';
 import { AlertBanner, Badge, PageHeader } from '@/components/ui';
+import { VariableGroupsSkeleton } from './VariableGroupsSkeleton';
 
 interface VariableRow {
   key: string;
@@ -175,19 +176,20 @@ export default function LegalVariablesPage() {
         <div className="text-[12.5px] leading-[1.6]">
           Hukuki metinler içinde <code className="rounded bg-white px-1 py-0.5 text-[11px]">{'{{COMPANY_NAME}}'}</code>
           {' '}gibi placeholder yazıldığında, public sayfa render edildiğinde buradaki değerle değiştirilir.
-          Değer boş bırakıldığında varsayılan kullanılır. Yeni placeholder eklemek için kod tarafında
-          <code className="rounded bg-white px-1 py-0.5 text-[11px]">src/lib/legal/variables.ts</code>
-          {' '}güncellenmelidir.
+          Değer boş bırakıldığında varsayılan kullanılır. Yeni bir değişken türü eklemek geliştirici
+          desteği gerektirir.
         </div>
       </AlertBanner>
 
-      {loading ? (
-        <div className="flex items-center gap-2 text-[#737373]">
-          <Loader2 size={18} className="animate-spin" />
-          Yükleniyor...
-        </div>
+      {loading && rows.length === 0 ? (
+        // Same group-card skeleton as loading.tsx (§40.10). After a save the
+        // reload keeps the rows on screen instead of swapping in a spinner.
+        <VariableGroupsSkeleton />
       ) : (
-        <div className="space-y-5">
+        <div
+          aria-busy={loading}
+          className={`space-y-5 transition-opacity ${loading ? 'opacity-60' : ''}`}
+        >
           {grouped.map((g) =>
             g.items.length === 0 ? null : (
               <div key={g.group} className="bz-card overflow-hidden">
@@ -223,6 +225,7 @@ export default function LegalVariablesPage() {
                         <div>
                           <input
                             type="text"
+                            aria-label={row.label.tr}
                             value={live}
                             onChange={(e) => onChange(row.key, e.target.value, row.value)}
                             className="bz-input w-full"

@@ -87,8 +87,10 @@ function KpiCard({ kpi }: { kpi: KpiSpec }) {
           />
         </div>
       )}
+      {/* mt-auto: KPIs without a sparkline keep their subtitle on the same
+          baseline as the ones that have one (grid rows stretch cards). */}
       {kpi.subtitle && (
-        <div className="bz-mono text-[10.5px] text-[#737373] tabular-nums">
+        <div className="mt-auto bz-mono text-[10.5px] text-[#737373] tabular-nums">
           {kpi.subtitle}
         </div>
       )}

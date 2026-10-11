@@ -407,7 +407,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
         <div>
           <h2 className="bz-h-tight text-[20px] sm:text-[22px]">Paket yönetimi</h2>
           <p className="text-[13px] text-[#737373]">
-            Public fiyatlandırma sayfasında görünen paketler. Değişiklikler anında yansır.
+            Fiyatlandırma sayfasında görünen paketler. Değişiklikler anında yansır.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

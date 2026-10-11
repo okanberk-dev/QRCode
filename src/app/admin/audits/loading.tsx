@@ -1,27 +1,30 @@
-import {
-  SkBox,
-  SkCard,
-  SkPageHeader,
-  SkPageShell,
-} from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox, SkPageHeader, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
- * Admin audit hub — PageHeader + 3-card grid (templates / categories /
- * stats). (CLAUDE.md §40.10)
+ * Admin audit hub — PageHeader + 3 section cards (templates / categories /
+ * stats) + quick-start hint. Mirrors page.tsx (CLAUDE.md §40.10).
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440}>
-      <SkPageHeader titleWidth="w-44" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <SkCard titleWidth="w-32" lines={2} />
-        <SkCard titleWidth="w-32" lines={2} />
-        <SkCard titleWidth="w-32" lines={2} />
+    <SkPageShell max={1440} space={5}>
+      <SkPageHeader titleWidth="w-56" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bz-card flex flex-col gap-3 p-5">
+            <div className="flex items-center justify-between gap-2">
+              <SkBox className="h-10 w-10 rounded-xl" />
+              <SkBox className="h-3 w-24" />
+            </div>
+            <SkBox className="h-5 w-28" />
+            <SkBox className="h-3 w-full" />
+            <SkBox className="h-3 w-3/4" />
+            <SkBox className="mt-2 h-3 w-10" />
+          </div>
+        ))}
       </div>
-      <div className="bz-card p-5 space-y-3 bg-[#FAFAFA]">
-        <SkBox className="h-4 w-32" />
+      <div className="bz-card-soft space-y-2 p-4">
         <SkBox className="h-3 w-full" />
-        <SkBox className="h-3 w-3/4" />
+        <SkBox className="h-3 w-2/3" />
       </div>
     </SkPageShell>
   );

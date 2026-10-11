@@ -51,7 +51,7 @@ export default function ImpersonateButton({
       return;
     }
     if (!consent) {
-      setError('Devam etmek için KVKK disclosure onayı zorunlu.');
+      setError('Devam etmek için KVKK bilgilendirmesini onaylaman gerekiyor.');
       return;
     }
     setSubmitting(true);
@@ -65,14 +65,17 @@ export default function ImpersonateButton({
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (res.status === 403) {
-          setError('Bu işlem için yetkiniz yok (impersonation:write).');
+          setError('Bu işlem için yetkiniz yok.');
         } else if (res.status === 429) {
           const retry = j.retryAfter ? Math.ceil(j.retryAfter / 60) : 60;
           setError(`Saatte 3 oturumdan fazla açılamaz. ${retry} dk sonra tekrar dene.`);
         } else if (res.status === 400 && j.error === 'target_inactive') {
           setError('Bu hesap pasifleştirilmiş — önce aktive edin.');
+        } else if (res.status === 404) {
+          setError('Hesap bulunamadı. Sayfayı yenileyip tekrar dene.');
         } else {
-          setError(j.error || 'Oturum başlatılamadı.');
+          // Raw API codes (impersonate_failed, invalid_json…) are not shown.
+          setError('Oturum başlatılamadı. Lütfen tekrar dene.');
         }
         setSubmitting(false);
         return;
@@ -93,11 +96,11 @@ export default function ImpersonateButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={disabled}
-        className="bz-btn-ghost w-full justify-start disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
         title={
           disabled
             ? 'Pasifleştirilmiş hesap için kullanılamaz'
-            : 'Hesap sahibi gibi panel\'i görüntüle (support workflow)'
+            : 'Hesap sahibinin panelini onun gözünden görüntüle'
         }
       >
         <Eye size={14} strokeWidth={2} />
@@ -109,14 +112,16 @@ export default function ImpersonateButton({
           size={560}
           onClose={handleClose}
           title={
-            <div>
-              <p className="pulse-eyebrow text-[#737373]">SUPPORT WORKFLOW</p>
+            // The Modal title slot truncates to one line; this header is a
+            // multi-line block, so let it wrap.
+            <div className="whitespace-normal">
+              <p className="pulse-eyebrow text-[#737373]">DESTEK OTURUMU</p>
               <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
                 {targetName || targetEmail} olarak görüntüle
               </h2>
               <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
-                Hesap sahibinin panel&apos;ine 30 dakikalık geçici erişim açılacak.
-                İşlem audit log&apos;a kaydedilir, müşteriye bilgilendirme maili gider.
+                Hesap sahibinin paneline 30 dakikalık geçici erişim açılacak.
+                Oturum işlem kaydına yazılır, müşteriye bilgilendirme maili gider.
               </p>
             </div>
           }
@@ -130,18 +135,17 @@ export default function ImpersonateButton({
           >
             {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
-            {/* KVKK + audit disclosure */}
+            {/* KVKK disclosure — plain-language summary of what happens */}
             <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E]">
               <div className="flex items-start gap-2">
                 <ShieldAlert size={14} strokeWidth={2} className="shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <strong>KVKK + audit transparency</strong>
+                  <strong>Bu oturumda neler olur?</strong>
                   <ul className="list-disc list-inside space-y-0.5 opacity-90">
-                    <li>30 dakika sonra otomatik kapanır (manuel çıkış da yapılabilir)</li>
-                    <li>Müşteriye anlık mail bildirimi gider (KVKK §13.9)</li>
-                    <li>AdminAuditLog&apos;a 2 entry: start + end</li>
-                    <li>Sentry tag&apos;li (ops monitoring)</li>
-                    <li>Saatte 3 oturum üst sınırı (abuse önleme)</li>
+                    <li>30 dakika sonra otomatik kapanır, istediğin an da çıkabilirsin</li>
+                    <li>Müşteriye bilgilendirme maili gider</li>
+                    <li>Başlangıç ve bitiş işlem kaydına yazılır</li>
+                    <li>Saatte en fazla 3 oturum açılabilir</li>
                   </ul>
                 </div>
               </div>
@@ -152,7 +156,7 @@ export default function ImpersonateButton({
                 htmlFor="impersonate-reason"
                 className="text-[11px] font-semibold text-[#6B7280] ml-1"
               >
-                Sebep (min 20 karakter, audit log&apos;a kaydedilir) *
+                Sebep (en az 20 karakter, işlem kaydına yazılır) *
               </label>
               <textarea
                 id="impersonate-reason"
@@ -160,7 +164,7 @@ export default function ImpersonateButton({
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Örn: Customer support ticket #4521 — owner QR kod indirme akışında 500 hatası raporladı, kontrol etmek için."
+                placeholder="Örn: Destek talebi #4521 — işletme sahibi QR kodunu indirirken hata aldığını bildirdi, kontrol etmek için."
                 maxLength={500}
                 className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] resize-none"
               />
@@ -177,8 +181,8 @@ export default function ImpersonateButton({
                 className="mt-0.5 h-4 w-4 rounded border-[#EDEDED] text-[#0A0A0A] focus:ring-[#C6F24E]"
               />
               <span>
-                Bu işlem KVKK transparency disipline&apos;e uygun yapılacaktır. Müşteriye anlık
-                mail bildirimi gönderileceğini, audit log&apos;a kaydedileceğini onaylıyorum.
+                Bu oturumun KVKK kapsamında müşteriye mail ile bildirileceğini ve işlem
+                kaydına yazılacağını onaylıyorum.
               </span>
             </label>
 

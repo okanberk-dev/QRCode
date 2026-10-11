@@ -4,7 +4,7 @@
 // SurveyWizardClient paterniyle uyumlu: state local, step number, navigate
 // next/prev, final submit POST'ler.
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -71,6 +71,7 @@ import {
   type ParsedAuditError,
 } from '@/lib/audits/error-humanizer';
 import AuditQuestionEditor, { makeQuestionId } from './AuditQuestionEditor';
+import { useActiveBusinessSelection } from './useActiveBusinessSelection';
 
 interface Restaurant {
   id: string;
@@ -344,6 +345,16 @@ export default function AuditWizardClient({
     }
     return base;
   });
+  // The audit is created for the business picked in the shell switcher;
+  // follow it (and write a page-level pick back to the shell).
+  const business = useActiveBusinessSelection(restaurants, initialRestaurantId);
+  const shellBusinessId = business.activeId;
+  useEffect(() => {
+    if (!shellBusinessId) return;
+    setState((prev) =>
+      prev.restaurantId === shellBusinessId ? prev : { ...prev, restaurantId: shellBusinessId },
+    );
+  }, [shellBusinessId]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingDraft, setEditingDraft] = useState<AuditQuestionDraft | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -515,7 +526,6 @@ export default function AuditWizardClient({
     <div className="mx-auto max-w-[920px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={isFork ? (locale === 'tr' ? 'ŞABLON KOPYASI' : 'TEMPLATE COPY') : (locale === 'tr' ? 'YENİ DENETİM' : 'NEW AUDIT')}
-        eyebrowColor="#C6F24E"
         title={isFork ? state.title || t.audits_create : t.audits_create}
         description={
           isFork
@@ -551,7 +561,7 @@ export default function AuditWizardClient({
                 <PulseSelect
                   className="w-full"
                   value={state.restaurantId}
-                  onChange={(v) => setState({ ...state, restaurantId: v })}
+                  onChange={(v) => business.select(v)}
                   options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
                 />
               </Field>

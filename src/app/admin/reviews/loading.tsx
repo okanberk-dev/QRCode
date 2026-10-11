@@ -1,27 +1,15 @@
-import {
-  SkBox,
-  SkPageHeader,
-  SkPageShell,
-  SkStatGrid,
-  SkTable,
-} from '@/components/ui/skeletons/PageSkeleton';
+'use client';
+
+import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { AdminReviewsSkeleton } from './_components/AdminReviewsChrome';
 
 /**
- * Admin reviews moderation — PageHeader + KPI + filter strip + table.
- * (CLAUDE.md §40.10)
+ * Admin reviews inbox skeleton — §40.10: a structural clone of page.tsx
+ * (full-bleed header + toolbar + list/detail split), not the old KPI + table
+ * skeleton, so nothing jumps on hydration. Client component only to read the
+ * admin locale for the static header copy.
  */
 export default function Loading() {
-  return (
-    <SkPageShell max={1600}>
-      <SkPageHeader withActions titleWidth="w-44" />
-      <SkStatGrid count={4} />
-      <div className="flex flex-wrap items-center gap-2">
-        <SkBox className="h-9 w-56" />
-        <SkBox className="h-9 w-32" />
-        <SkBox className="h-9 w-32" />
-        <SkBox className="h-9 w-28" />
-      </div>
-      <SkTable rows={8} cols={5} />
-    </SkPageShell>
-  );
+  const { locale } = useAdminTranslation();
+  return <AdminReviewsSkeleton isTr={locale === 'tr'} />;
 }

@@ -46,6 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       auditTemplateCount,
       auditResponseAgg,
       failingLinkChecks,
+      latestLinkCheck,
       qrCount,
     ] = await prisma.$transaction([
       prisma.survey.findMany({
@@ -74,6 +75,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         distinct: ['provider'],
         select: { provider: true },
         take: 20,
+      }),
+      // Most recent link test of any outcome — lets the UI tell "no failures"
+      // apart from "never tested" (an empty failing list alone looked healthy).
+      prisma.platformLinkCheck.findFirst({
+        where: { restaurantId: id },
+        orderBy: { checkedAt: 'desc' },
+        select: { checkedAt: true },
       }),
       prisma.qrGeneration.count({ where: { restaurantId: id } }),
     ]);
@@ -156,7 +164,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         },
         team,
         google,
-        platformLinks: { failingProviders: failingLinkChecks.map((c) => c.provider) },
+        platformLinks: {
+          failingProviders: failingLinkChecks.map((c) => c.provider),
+          lastCheckedAt: latestLinkCheck?.checkedAt.toISOString() ?? null,
+        },
         qrCount,
         owner,
       },

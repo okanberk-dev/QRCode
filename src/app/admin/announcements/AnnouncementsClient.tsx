@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { Plus, Pencil, Trash2, Megaphone, Save, Loader2 } from 'lucide-react';
 import {
   AlertBanner,
@@ -116,7 +116,11 @@ export default function AnnouncementsClient({
   const skipFirstFetchRef = useRef(initialAnnouncements !== undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // Save/validation errors live inside the modal — the page-level banner
+  // sits behind the modal backdrop, so 'Kaydet' looked like it did nothing.
+  const [formError, setFormError] = useState('');
   const [success, setSuccess] = useState('');
+  const fid = useId();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -148,7 +152,7 @@ export default function AnnouncementsClient({
     setEditing(null);
     setForm(EMPTY_FORM);
     setShowForm(true);
-    setError('');
+    setFormError('');
   };
 
   const openEdit = (a: Announcement) => {
@@ -167,13 +171,21 @@ export default function AnnouncementsClient({
       isDismissible: a.isDismissible,
     });
     setShowForm(true);
-    setError('');
+    setFormError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+    if (form.startDate && form.endDate && new Date(form.endDate) < new Date(form.startDate)) {
+      setFormError('Bitiş tarihi başlangıç tarihinden önce olamaz.');
+      return;
+    }
+    if (form.ctaText.trim() && !form.ctaLink.trim()) {
+      setFormError('CTA metni için bir bağlantı gerekli.');
+      return;
+    }
     setSaving(true);
-    setError('');
     try {
       const url = editing ? `/api/admin/announcements/${editing.id}` : '/api/admin/announcements';
       const method = editing ? 'PATCH' : 'POST';
@@ -190,9 +202,16 @@ export default function AnnouncementsClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data.error || 'İşlem başarısız.');
+        const err = data?.error;
+        setFormError(
+          typeof err === 'string' && err
+            ? err
+            : typeof err?.message === 'string' && err.message
+              ? err.message
+              : 'İşlem başarısız.',
+        );
         return;
       }
       setSuccess(editing ? 'Duyuru güncellendi!' : 'Duyuru oluşturuldu!');
@@ -200,7 +219,7 @@ export default function AnnouncementsClient({
       fetchAnnouncements();
       setTimeout(() => setSuccess(''), 3000);
     } catch {
-      setError('Kaydetme sırasında hata oluştu.');
+      setFormError('Kaydetme sırasında hata oluştu.');
     } finally {
       setSaving(false);
     }
@@ -314,7 +333,7 @@ export default function AnnouncementsClient({
                       )}
                       {/* Audience chip — design 1:1 (locale-bazlı) */}
                       <Badge kind="ghost">
-                        {a.locale === 'all' ? 'all' : a.locale.toLowerCase()}
+                        {a.locale === 'all' ? 'Tüm diller' : a.locale.toUpperCase()}
                       </Badge>
                       {/* Severity badge sadece 'critical' ise göster (vurgu) */}
                       {a.severity === 'critical' && (
@@ -407,8 +426,9 @@ export default function AnnouncementsClient({
             <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               {/* Title */}
               <div>
-                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
+                <label htmlFor={`${fid}-title`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
                 <input
+                  id={`${fid}-title`}
                   type="text"
                   required
                   maxLength={160}
@@ -421,8 +441,9 @@ export default function AnnouncementsClient({
 
               {/* Message */}
               <div>
-                <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">MESAJ</label>
+                <label htmlFor={`${fid}-message`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">MESAJ</label>
                 <textarea
+                  id={`${fid}-message`}
                   required
                   rows={4}
                   maxLength={2000}
@@ -436,12 +457,13 @@ export default function AnnouncementsClient({
               {/* Severity & Locale */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">ÖNEM DERECESİ</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
+                  <p id={`${fid}-severity`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">ÖNEM DERECESİ</p>
+                  <div role="group" aria-labelledby={`${fid}-severity`} className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
                     {(Object.keys(SEVERITY_META) as Severity[]).map(s => (
                       <button
                         key={s}
                         type="button"
+                        aria-pressed={form.severity === s}
                         onClick={() => setForm(f => ({ ...f, severity: s }))}
                         className={`py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all ${
                           form.severity === s ? 'bg-[#0A0A0A] text-white shadow-lg' : 'text-[#6B7280] hover:text-[#0A0A0A]'
@@ -453,12 +475,13 @@ export default function AnnouncementsClient({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">DİL</label>
-                  <div className="grid grid-cols-3 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
+                  <p id={`${fid}-locale`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">DİL</p>
+                  <div role="group" aria-labelledby={`${fid}-locale`} className="grid grid-cols-3 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
                     {(['all', 'tr', 'en'] as Locale[]).map(l => (
                       <button
                         key={l}
                         type="button"
+                        aria-pressed={form.locale === l}
                         onClick={() => setForm(f => ({ ...f, locale: l }))}
                         className={`py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all ${
                           form.locale === l ? 'bg-[#0A0A0A] text-white shadow-lg' : 'text-[#6B7280] hover:text-[#0A0A0A]'
@@ -474,8 +497,9 @@ export default function AnnouncementsClient({
               {/* Dates & Priority */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLANGIÇ</label>
+                  <label htmlFor={`${fid}-start`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLANGIÇ</label>
                   <input
+                    id={`${fid}-start`}
                     type="datetime-local"
                     value={form.startDate}
                     onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
@@ -483,8 +507,9 @@ export default function AnnouncementsClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BİTİŞ</label>
+                  <label htmlFor={`${fid}-end`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BİTİŞ</label>
                   <input
+                    id={`${fid}-end`}
                     type="datetime-local"
                     value={form.endDate}
                     onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
@@ -492,8 +517,9 @@ export default function AnnouncementsClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">ÖNCELİK</label>
+                  <label htmlFor={`${fid}-priority`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">ÖNCELİK</label>
                   <input
+                    id={`${fid}-priority`}
                     type="number"
                     value={form.priority}
                     onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))}
@@ -505,8 +531,9 @@ export default function AnnouncementsClient({
               {/* CTA */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">CTA METNİ (OPSİYONEL)</label>
+                  <label htmlFor={`${fid}-ctatext`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">CTA METNİ (OPSİYONEL)</label>
                   <input
+                    id={`${fid}-ctatext`}
                     type="text"
                     maxLength={60}
                     value={form.ctaText}
@@ -516,8 +543,9 @@ export default function AnnouncementsClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">CTA BAĞLANTISI</label>
+                  <label htmlFor={`${fid}-ctalink`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">CTA BAĞLANTISI</label>
                   <input
+                    id={`${fid}-ctalink`}
                     type="url"
                     value={form.ctaLink}
                     onChange={e => setForm(f => ({ ...f, ctaLink: e.target.value }))}
@@ -536,6 +564,9 @@ export default function AnnouncementsClient({
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={form.isDismissible}
+                    aria-label="Kullanıcı duyuruyu kapatabilsin"
                     onClick={() => setForm(f => ({ ...f, isDismissible: !f.isDismissible }))}
                     className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isDismissible ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
                   >
@@ -546,10 +577,13 @@ export default function AnnouncementsClient({
                 <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-xl border border-[#EDEDED]">
                   <div className="space-y-0.5">
                     <p className="text-[#0A0A0A] text-[13px] font-semibold uppercase tracking-tight">{form.status === 'published' ? 'YAYINDA' : 'TASLAK'}</p>
-                    <p className="text-[#6B7280] text-[11px] font-bold">{form.status === 'published' ? 'Tüm restoranlarda görünür.' : 'Sadece admin panelinde.'}</p>
+                    <p className="text-[#6B7280] text-[11px] font-bold">{form.status === 'published' ? 'Tüm işletme panellerinde görünür.' : 'Sadece admin panelinde.'}</p>
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={form.status === 'published'}
+                    aria-label="Duyuruyu yayınla"
                     onClick={() => setForm(f => ({ ...f, status: f.status === 'published' ? 'draft' : 'published' }))}
                     className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
                   >
@@ -557,6 +591,12 @@ export default function AnnouncementsClient({
                   </button>
                 </div>
               </div>
+
+              {formError && (
+                <AlertBanner kind="danger" onDismiss={() => setFormError('')}>
+                  {formError}
+                </AlertBanner>
+              )}
 
               {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-5 border-t border-[#EDEDED]">

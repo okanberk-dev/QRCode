@@ -8,6 +8,7 @@ import FormConfirmationEditor from './FormConfirmationEditor';
 import MailRevisionHistory from './MailRevisionHistory';
 import { useConfirmDialog } from '@/components/ui';
 import { MAIL_PLACEHOLDERS } from '@/lib/email/placeholders';
+import { MAIL_TEMPLATE_LABELS } from './mailTemplateLabels';
 
 // Schema-aware fields per template. Only string copy fields the admin
 // should edit; structural arrays (steps, resources, quickActions, quotes)
@@ -467,39 +468,8 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
   ],
 };
 
-const TEMPLATE_LABELS: Record<string, string> = {
-  welcome: 'Hoş geldin',
-  newsletter: 'Aylık bülten',
-  'trial-ending': 'Deneme bitiyor',
-  'forgot-password': 'Şifre sıfırlama',
-  'low-rating-alert': 'Düşük puan uyarısı',
-  'new-review': 'Yeni 5★ yorum',
-  'weekly-report': 'Haftalık rapor',
-  'customer-reply': 'Müşteri yanıtı',
-  'form-confirmation': 'Form onayı',
-  'verify-email': 'E-posta onayı',
-  'roi-customer-report': 'ROI raporu (müşteri)',
-  'roi-admin-notification': 'ROI lead (admin)',
-  'qr-not-downloaded': 'QR indirilmedi',
-  'first-feedback-tips': 'İlk yorum rehberi',
-  'upgrade-suggestion': 'Plan yükseltme önerisi',
-  'inactive-reactivation': 'Tekrar canlandırma',
-  // Wave B (CLAUDE.md §38.B)
-  'password-changed': 'Şifre değişti (güvenlik)',
-  'team-member-joined': 'Yeni ekip üyesi',
-  'team-member-removed': 'Ekip üyesi çıkarıldı',
-  'first-feedback-celebration': 'İlk yorum kutlaması',
-  // Wave B4 (CLAUDE.md §38.193)
-  'account-deletion-scheduled': 'Hesap silme planlandı',
-  'account-deletion-canceled': 'Hesap silme iptal',
-  // Wave C (CLAUDE.md §38.194)
-  'qr-no-scans-reminder': 'QR taranmıyor (hatırlatma)',
-  'rating-drop-alert': 'Puan düşüşü uyarısı',
-  'first-reply-celebration': 'İlk Google yanıt kutlama',
-  'data-export-confirmation': 'KVKK veri indirme onayı',
-  // Wave D (CLAUDE.md §38.195)
-  'new-device-login': 'Yeni cihazdan giriş (güvenlik)',
-};
+// Display names live in a shared module (also used by the list page).
+const TEMPLATE_LABELS = MAIL_TEMPLATE_LABELS;
 
 interface Props {
   templateKey: string;

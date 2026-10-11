@@ -244,9 +244,10 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(adminParams.get('page') || '1', 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(adminParams.get('limit') || '20', 10) || 20));
     const status = adminParams.get('status') || 'active';
-    // Optional plan filter (Pulse 2026-04 design AdminBusinesses tab — pro |
-    // growth | starter | trial | all). Joins through `user.plan` because
-    // plan lives on the owner User row, not on Restaurant. 'all' = unfiltered.
+    // Optional plan filter (admin businesses list). Joins through `user.plan`
+    // because the plan lives on the owner User row, not on Restaurant.
+    // User.plan is the lifecycle bucket: trial | monthly | yearly | enterprise
+    // | free (CLAUDE.md §15.2). 'all' = unfiltered.
     const planFilter = adminParams.get('plan') || 'all';
     // Admin "Needs attention" deeplink filter (CLAUDE.md §11.36).
     // - quota_full           → trial restaurants whose feedback count ≥ TRIAL_QUOTA × 0.9
@@ -312,7 +313,10 @@ export async function GET(req: NextRequest) {
     // Plan filter — join user.plan. Restaurants without a user (orphans) are
     // excluded from any specific plan filter; 'all' still includes them.
     if (planFilter !== 'all') {
-      const ALLOWED_PLANS = new Set(['pro', 'growth', 'starter', 'trial', 'monthly', 'yearly', 'free']);
+      // Legacy tier ids (pro/growth/starter) are no longer accepted: User.plan
+      // never holds them, so they only ever produced an empty list. Unknown
+      // values fall through to "no plan filter".
+      const ALLOWED_PLANS = new Set(['trial', 'monthly', 'yearly', 'enterprise', 'free']);
       if (ALLOWED_PLANS.has(planFilter)) {
         where.user = { plan: planFilter };
       }

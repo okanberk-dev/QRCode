@@ -20,6 +20,7 @@ import {
   ArrowDown,
   Edit3,
   Plug,
+  Lock,
 } from 'lucide-react';
 import { AlertBanner, PageHeader, PulseSelect } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
@@ -908,9 +909,30 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ returnTo }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setConnectError(data?.message || data?.error || (isTr ? 'Google OAuth başlatılamadı.' : 'Failed to start Google OAuth.'));
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) {
+        // Backend `message` is an operator-facing English string (e.g. the
+        // missing env var name) — never show it to the owner. Map the known
+        // cases to plain localized copy instead.
+        if (data?.configured === false || data?.error === 'missing_google_client_id') {
+          setConnectError(
+            isTr
+              ? 'Google hesabı bağlama şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin veya destek ekibimize yazın.'
+              : 'Connecting a Google account is not available right now. Please try again later or contact our support team.',
+          );
+        } else if (res.status === 401) {
+          setConnectError(
+            isTr
+              ? 'Oturumunuzun süresi doldu. Lütfen tekrar giriş yapıp yeniden deneyin.'
+              : 'Your session has expired. Please sign in again and retry.',
+          );
+        } else {
+          setConnectError(
+            isTr
+              ? 'Google bağlantısı başlatılamadı. Lütfen tekrar deneyin.'
+              : 'Could not start the Google connection. Please try again.',
+          );
+        }
         return;
       }
       window.location.href = data.url;
@@ -1057,6 +1079,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   useEffect(() => {
     if (
       status?.connected &&
+      // Admin switch off → the locations endpoint only returns
+      // GOOGLE_REVIEW_MANAGEMENT_DISABLED (and the page shows the
+      // "not enabled" state instead), so do not fire it.
+      status.googleReviewManagementEnabled &&
       !status.selectedLocation &&
       activeRestaurantId &&
       inlineLocations.length === 0 &&
@@ -1069,7 +1095,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // Deliberately not depending on loadInlineLocations / loadingLocations
     // to avoid re-run loop after fetch completes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status?.connected, status?.selectedLocation, activeRestaurantId]);
+  }, [status?.connected, status?.googleReviewManagementEnabled, status?.selectedLocation, activeRestaurantId]);
 
   // §38.211 — Auto-retry KALDIRILDI (anti-pattern for shared API quota).
   // Google quota proje-geneli (1 req/min/proje, §5.1.1): TÜM Buaze
@@ -1390,10 +1416,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         <span>
           {isTr ? 'Diğer platformları da yönetmek için ' : 'Manage other platforms in '}
           <Link
-            href={`/${locale}/dashboard/platforms`}
-            className="font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+            href={`/${locale}/dashboard/platforms${
+              activeRestaurantId ? `?restaurantId=${encodeURIComponent(activeRestaurantId)}` : ''
+            }`}
+            className="rounded font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
           >
-            {isTr ? 'Platform Bağlantıları' : 'Platform Links'}
+            {isTr ? 'Platform bağlantıları' : 'Platform links'}
           </Link>
           {isTr ? ' sayfasına git.' : '.'}
         </span>
@@ -1439,6 +1467,56 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             <RefreshCw size={13} />
             {isTr ? "Tekrar dene" : "Try again"}
           </button>
+        </div>
+      ) : status && !status.googleReviewManagementEnabled ? (
+        // Admin master switch off (Restaurant.googleReviewManagementEnabled,
+        // CLAUDE.md §5.1 / §5.2). Every Google Business call returns
+        // GOOGLE_REVIEW_MANAGEMENT_DISABLED, so offering "Connect" would only
+        // send the owner through OAuth into a dead end. The Google review
+        // link used by QR redirects is independent of this switch.
+        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
+          <Lock size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
+          <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
+            {isTr
+              ? 'Google yorum yönetimi bu işletmede henüz açık değil'
+              : 'Google review management is not enabled for this business yet'}
+          </h3>
+          <p className="text-[14px] text-[#525252] max-w-md mx-auto">
+            {isTr
+              ? 'Google yorumlarını bu sayfadan okumak ve yanıtlamak bu işletmenin paketinde henüz etkin değil. Açtırmak için destek ekibimizle iletişime geçebilirsiniz.'
+              : "Reading and replying to Google reviews from this page is not enabled in this business's plan yet. Contact our support team to have it turned on."}
+          </p>
+          <p className="text-[12.5px] text-[#737373] max-w-md mx-auto mt-3">
+            {isTr
+              ? 'QR kodlarınız müşterileri Google yorum sayfanıza yönlendirmeye devam eder.'
+              : 'Your QR codes still send customers to your Google review page.'}
+          </p>
+          <a
+            href="mailto:support@buaze.com"
+            className="bz-btn-ghost mt-5 inline-flex items-center gap-2 rounded-full text-[13px]"
+          >
+            {isTr ? 'Destek ekibine yaz' : 'Contact support'}
+          </a>
+        </div>
+      ) : status && !status.connected && !status.oauthConfigured ? (
+        // Google sign-in is not configured on this deployment — the connect
+        // endpoint would only return a missing-configuration error.
+        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
+          <Plug size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
+          <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
+            {isTr ? 'Google bağlantısı şu an kullanılamıyor' : 'Google connection is not available right now'}
+          </h3>
+          <p className="text-[14px] text-[#525252] max-w-md mx-auto">
+            {isTr
+              ? 'Google hesabınızı bağlama özelliği şu an hazırlanıyor. Lütfen daha sonra tekrar deneyin veya destek ekibimizle iletişime geçin.'
+              : 'Connecting your Google account is being set up. Please try again later or contact our support team.'}
+          </p>
+          <a
+            href="mailto:support@buaze.com"
+            className="bz-btn-ghost mt-5 inline-flex items-center gap-2 rounded-full text-[13px]"
+          >
+            {isTr ? 'Destek ekibine yaz' : 'Contact support'}
+          </a>
         </div>
       ) : !status?.connected ? (
         // STEP 1 — Google bağlı değil. Inline Connect butonu.

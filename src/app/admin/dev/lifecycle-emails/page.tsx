@@ -22,6 +22,22 @@ const TYPE_LABEL: Record<LifecycleType, string> = {
   inactive_reactivation: 'Tekrar Canlandırma',
 };
 
+// The log table and the run summary also carry the newer lifecycle mail
+// types (sent by their own crons / sync triggers). Without labels the run
+// summary rendered blank tiles and the log showed raw keys.
+const ALL_TYPE_LABEL: Record<string, string> = {
+  ...TYPE_LABEL,
+  monthly_health_report: 'Aylık Sağlık Raporu',
+  first_feedback_celebration: 'İlk Yorum Kutlaması',
+  qr_no_scans_reminder: 'QR Taranmıyor',
+  rating_drop_alert: 'Puan Düşüşü Uyarısı',
+  first_reply_celebration: 'İlk Yanıt Kutlaması',
+};
+
+function typeLabel(type: string): string {
+  return ALL_TYPE_LABEL[type] ?? type;
+}
+
 interface LogEntry {
   id: string;
   type: string;
@@ -45,7 +61,7 @@ interface LogsResponse {
 interface TriggerSummary {
   usersChecked: number;
   contextsProcessed: number;
-  sent: Record<LifecycleType, number>;
+  sent: Record<string, number>;
   skipped: number;
   failures: number;
   durationMs: number;
@@ -80,7 +96,7 @@ export default function LifecycleEmailsAdmin() {
       if (filterType) params.set('type', filterType);
       params.set('days', String(filterDays));
       const res = await fetch(`/api/admin/lifecycle-emails/logs?${params.toString()}`);
-      if (!res.ok) throw new Error('Loglar yüklenemedi');
+      if (!res.ok) throw new Error('Gönderim geçmişi yüklenemedi.');
       const body = (await res.json()) as LogsResponse;
       setData(body);
     } catch (e) {
@@ -101,42 +117,45 @@ export default function LifecycleEmailsAdmin() {
     setTriggerResult(null);
     try {
       const res = await fetch('/api/admin/lifecycle-emails/trigger', { method: 'POST' });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || 'Trigger başarısız');
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          res.status === 429
+            ? 'Çok sık çalıştırıldı. Bir dakika sonra tekrar dene.'
+            : body.error || 'Çalıştırılamadı.',
+        );
+      }
       setTriggerResult(body as TriggerSummary);
       // Logs reload — yeni gönderimler görünür
       await loadLogs();
     } catch (e) {
-      setTriggerError((e as Error).message);
+      setTriggerError(e instanceof Error && e.message ? e.message : 'Bağlantı hatası.');
     } finally {
       setTriggering(false);
     }
   };
 
   const totalSentInTrigger = triggerResult
-    ? triggerResult.sent.qr_not_downloaded +
-      triggerResult.sent.first_feedback_tips +
-      triggerResult.sent.upgrade_suggestion +
-      triggerResult.sent.inactive_reactivation
+    ? Object.values(triggerResult.sent).reduce((sum, n) => sum + (Number(n) || 0), 0)
     : 0;
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
       <PageHeader
-        eyebrow="LIFECYCLE EMAIL"
+        eyebrow="YAŞAM DÖNGÜSÜ"
         title="Yaşam Döngüsü Mailleri"
-        description="Cron schedule (her gün 08:00 UTC) elle tetikle + gönderim geçmişi."
+        description="Hatırlatma e-postaları her gün 11:00'de (TSİ) otomatik gönderilir. Buradan elle çalıştırabilir ve son gönderimleri görebilirsin."
       />
 
       {/* Trigger Now */}
       <section className="bz-card p-5 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0">
-            <Eyebrow className="mb-1.5">CRON TETİKLEME</Eyebrow>
+            <Eyebrow className="mb-1.5">ELLE ÇALIŞTIR</Eyebrow>
             <h2 className="bz-h-tight text-[16px]">Tüm aktif kullanıcılar için 4 kuralı şimdi çalıştır</h2>
             <p className="text-[12px] text-[#737373] mt-1">
-              `runLifecycleEmails()` doğrudan çağrılır. Idempotent — cooldown uygulanan kayıtlar atlanır.
-              Rate limit: 5/dk.
+              Daha önce gönderilmiş ve bekleme süresi dolmamış e-postalar tekrar gönderilmez.
+              Dakikada en fazla 5 kez çalıştırılabilir.
             </p>
           </div>
           <button
@@ -162,7 +181,7 @@ export default function LifecycleEmailsAdmin() {
             <div className="flex items-center gap-2 mb-2">
               <Send size={14} className="text-[#0A0A0A]" />
               <span className="bz-h-tight text-[14px]">Çalışma sonucu</span>
-              <Badge kind="lime">{`${triggerResult.durationMs}ms`}</Badge>
+              <Badge kind="lime">{`${(triggerResult.durationMs / 1000).toFixed(1)} sn`}</Badge>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[12px]">
               <div>
@@ -185,9 +204,9 @@ export default function LifecycleEmailsAdmin() {
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-              {(Object.entries(triggerResult.sent) as Array<[LifecycleType, number]>).map(([k, v]) => (
+              {Object.entries(triggerResult.sent).map(([k, v]) => (
                 <div key={k} className="rounded-lg bg-white border border-[#EDEDED] px-2 py-1.5">
-                  <div className="text-[#737373]">{TYPE_LABEL[k]}</div>
+                  <div className="text-[#737373]">{typeLabel(k)}</div>
                   <div className="bz-h-tight text-[12.5px]">{v}</div>
                 </div>
               ))}
@@ -216,14 +235,16 @@ export default function LifecycleEmailsAdmin() {
         <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
           <Eyebrow className="mb-2">SON 30 GÜN — TÜR DAĞILIMI</Eyebrow>
           <div className="space-y-1 text-[11.5px]">
-            {(['qr_not_downloaded', 'first_feedback_tips', 'upgrade_suggestion', 'inactive_reactivation'] as LifecycleType[]).map(
-              (t) => (
+            {/* The four cron types always show; the other types only when
+                they were sent in the window, so the card keeps its height. */}
+            {Object.keys(ALL_TYPE_LABEL)
+              .filter((t) => t in TYPE_LABEL || (data?.stats.byType[t] ?? 0) > 0)
+              .map((t) => (
                 <div key={t} className="flex justify-between">
-                  <span className="text-[#525252]">{TYPE_LABEL[t]}</span>
+                  <span className="text-[#525252]">{typeLabel(t)}</span>
                   <span className="bz-mono text-[#0A0A0A]">{data?.stats.byType[t] ?? 0}</span>
                 </div>
-              ),
-            )}
+              ))}
           </div>
         </div>
       </div>
@@ -232,24 +253,25 @@ export default function LifecycleEmailsAdmin() {
       <section className="bz-card p-5 sm:p-6 space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="bz-h-tight text-[15px]">Son gönderimler</h2>
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* .bz-input is width:100%; without w-auto each select took a full
+              row, stacking the filters vertically next to the title. */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="bz-input"
+              className="bz-input w-full sm:w-auto"
               style={{ minWidth: 160 }}
               aria-label="Mail türü filtresi"
             >
               <option value="">Tüm türler</option>
-              <option value="qr_not_downloaded">{TYPE_LABEL.qr_not_downloaded}</option>
-              <option value="first_feedback_tips">{TYPE_LABEL.first_feedback_tips}</option>
-              <option value="upgrade_suggestion">{TYPE_LABEL.upgrade_suggestion}</option>
-              <option value="inactive_reactivation">{TYPE_LABEL.inactive_reactivation}</option>
+              {Object.entries(ALL_TYPE_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
             <select
               value={filterDays}
               onChange={(e) => setFilterDays(Number(e.target.value))}
-              className="bz-input"
+              className="bz-input w-full sm:w-auto"
               style={{ minWidth: 100 }}
               aria-label="Tarih aralığı"
             >
@@ -289,11 +311,10 @@ export default function LifecycleEmailsAdmin() {
               </thead>
               <tbody>
                 {data.logs.map((log) => {
-                  const t = log.type as LifecycleType;
                   return (
                     <tr key={log.id}>
                       <td>
-                        <Badge kind="ghost">{TYPE_LABEL[t] ?? log.type}</Badge>
+                        <Badge kind="ghost">{typeLabel(log.type)}</Badge>
                       </td>
                       <td>
                         {log.user ? (

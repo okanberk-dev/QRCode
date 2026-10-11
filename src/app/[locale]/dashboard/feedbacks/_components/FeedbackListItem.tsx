@@ -1,42 +1,40 @@
 'use client';
 
-import { Bookmark } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { QrCode } from 'lucide-react';
+import { PlatformChip } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
+import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
+import { FeedbackStatusChips } from '@/components/dashboard/feedbacks/FeedbackStatusChips';
 import type { FeedbackRow } from './types';
-import { formatDateTime, formatStamp, initials, timeAgo } from './utils';
+import { formatDateTime, platformIconId, platformLabel, timeAgoLabel } from './utils';
 
 interface FeedbackListItemProps {
   feedback: FeedbackRow;
   isActive: boolean;
   isPulsed: boolean;
   locale: Locale;
+  /** Show the business name — only when the owner is viewing all businesses. */
+  showBusiness: boolean;
   onSelect: (id: string) => void;
 }
 
+/**
+ * Review row: rating badge · name + age · two-line comment · platform /
+ * business / status chips. The coloured rating badge replaces the initials
+ * avatar and the 10px star strip, so the rating reads at a glance.
+ */
 export function FeedbackListItem({
   feedback: r,
   isActive,
   isPulsed,
   locale,
+  showBusiness,
   onSelect,
 }: FeedbackListItemProps) {
   const isTr = locale === 'tr';
-  // Avatar tonu rating ile semantik ipucu — koyu/lime = pozitif, kırmızı = düşük puan.
-  const avatarBg =
-    r.rating === 5
-      ? 'bg-[#0A0A0A] text-[#C6F24E]'
-      : r.rating <= 2
-        ? 'bg-[#FEE2E2] text-[#DC2626]'
-        : 'bg-[#F5F5F5] text-[#0A0A0A]';
-
-  // Stage 13 (CLAUDE.md §38.83) — okunmamış sinyali. Backend
-  // Feedback.isRead default false (migration 20260505230000); eski
-  // feedback'ler de undefined → false sayılır, mavi dot görünür.
-  // Page'in onSelectFeedback handler'ı tıklamada PATCH atar + optimistic
-  // state update yapar, dot anında kaybolur.
+  // Stage 13 (§38.83) — eski feedback'lerde isRead undefined → okunmamış.
   const isUnread = r.isRead === false || r.isRead === undefined;
-  const customerLabel = r.customerName || (isTr ? 'Anonim' : 'Anonymous');
+  const customerLabel = r.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer');
   const stateLabel = r.isReplied
     ? isTr
       ? 'yanıtlandı'
@@ -52,6 +50,8 @@ export function FeedbackListItem({
         : isTr
           ? 'yanıt bekliyor'
           : 'awaiting reply';
+  const iconId = platformIconId(r.platform);
+  const pLabel = platformLabel(r.platform, isTr);
 
   return (
     <li data-feedback-id={r.id}>
@@ -60,105 +60,61 @@ export function FeedbackListItem({
         type="button"
         role="option"
         aria-selected={isActive}
-        aria-label={`${customerLabel}, ${r.rating} ${isTr ? 'yıldız' : 'stars'}, ${stateLabel}`}
+        aria-label={`${customerLabel}, ${r.rating}/5, ${stateLabel}`}
         onClick={() => onSelect(r.id)}
-        className={`flex w-full flex-col gap-1.5 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${
-          isActive
-            ? 'bg-[#EAF9B8] shadow-[inset_3px_0_0_#0A0A0A]'
-            : 'hover:bg-[#FAFAFA]'
-        } ${isPulsed ? 'animate-pulse ring-2 ring-[#C6F24E]' : ''}`}
-        aria-current={isActive ? 'true' : undefined}
+        className={`group flex w-full items-start gap-3 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E] sm:px-5 ${
+          isActive ? 'bg-[#EAF9B8]/60 shadow-[inset_3px_0_0_#0A0A0A]' : 'hover:bg-[#FAFAFA]'
+        } ${isPulsed ? 'animate-pulse ring-2 ring-inset ring-[#C6F24E]' : ''}`}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            {/* Stage 13 — unread dot (Pulse info palette §11). aria-label
-                screen reader için "Okunmamış" sinyali. */}
+        <RatingBadge rating={r.rating} isTr={isTr} size="md" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
             {isUnread && (
               <span
-                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2563EB]"
-                role="img"
-                aria-label={isTr ? 'Okunmamış' : 'Unread'}
+                aria-hidden="true"
+                className="h-2 w-2 shrink-0 self-center rounded-full bg-[#2563EB]"
                 title={isTr ? 'Okunmamış' : 'Unread'}
               />
             )}
             <span
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-heading text-[10px] font-semibold ${avatarBg}`}
-            >
-              {initials(r.customerName)}
-            </span>
-            <span
-              className={`truncate text-[13px] text-[#0A0A0A] ${
-                isUnread ? 'font-bold' : 'font-semibold'
-              }`}
+              className={`truncate text-[14px] text-[#0A0A0A] ${isUnread ? 'font-bold' : 'font-semibold'}`}
             >
               {customerLabel}
             </span>
+            <time
+              dateTime={r.createdAt}
+              title={formatDateTime(r.createdAt, locale)}
+              className="ml-auto shrink-0 text-[12px] tabular-nums text-[#737373]"
+            >
+              {timeAgoLabel(r.createdAt, locale)}
+            </time>
           </div>
-          <span
-            className="pulse-eyebrow text-[#737373] shrink-0"
-            title={formatDateTime(r.createdAt, locale)}
-          >
-            {timeAgo(r.createdAt, locale)}
-          </span>
-        </div>
-        <p className="line-clamp-2 text-[12px] text-[#525252] leading-[1.4]">
-          {r.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
-        </p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span
-            className="pulse-eyebrow rounded bg-[#0A0A0A] text-[#C6F24E] px-1.5 py-0.5"
-            role="img"
-            aria-label={`${r.rating} ${isTr ? 'yıldız' : 'stars'}`}
-          >
-            {'★'.repeat(r.rating)}
-          </span>
-          <span className="text-[10px] text-[#737373]">
-            {(r.platform || 'buaze').toUpperCase()}
-            {r.restaurant?.name ? ` · ${r.restaurant.name}` : ''}
-          </span>
-          {/* §38.237 — mutlak saat. Göreli damga üst satırda kalır; burada
-              işletme sahibi yorumun tam saatini görür. */}
-          <span
-            className="text-[10px] text-[#A3A3A3] tabular-nums"
-            title={formatDateTime(r.createdAt, locale)}
-          >
-            {formatStamp(r.createdAt, locale)}
-          </span>
-          <span className="ml-auto flex items-center gap-1">
-            {/* Stage 13 — Beklemede badge (Bookmark icon, amber palette).
-                Owner manuel "Beklemeye al" toggle'ladığında görünür; tab
-                "Beklemede" filter ile birebir parite. */}
-            {r.isPending && (
-              <span title={isTr ? 'Beklemede' : 'Pending'}>
-                <Badge kind="warn">
-                  <Bookmark
-                    size={10}
-                    strokeWidth={2.2}
-                    fill="#92400E"
-                    aria-hidden="true"
-                  />
-                </Badge>
-              </span>
+          <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#525252]">
+            {r.comment || (
+              <span className="italic text-[#A3A3A3]">{isTr ? 'Yorum yazılmadı' : 'No comment'}</span>
             )}
-            {r.hasPendingAiDraft && !r.isReplied && r.rating <= 3 && (
-              <span title={isTr ? 'Pulse AI taslağı hazır' : 'Pulse AI draft ready'}>
-                <Badge kind="lime">
-                  <span className="hidden sm:inline">PULSE AI</span>
-                  <span className="sm:hidden" aria-hidden="true">AI</span>
-                </Badge>
-              </span>
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] text-[#737373]">
+            <span className="inline-flex items-center gap-1.5">
+              {iconId ? (
+                <span aria-hidden="true" className="inline-flex">
+                  <PlatformChip id={iconId} size={14} />
+                </span>
+              ) : (
+                <QrCode size={13} strokeWidth={2} aria-hidden="true" />
+              )}
+              {pLabel}
+            </span>
+            {showBusiness && r.restaurant?.name && (
+              <>
+                <span aria-hidden="true" className="text-[#D4D4D4]">
+                  ·
+                </span>
+                <span className="max-w-[160px] truncate">{r.restaurant.name}</span>
+              </>
             )}
-            {r.isReplied && (
-              <span title={isTr ? 'Yanıtlandı' : 'Replied'}>
-                <Badge kind="ok">✓</Badge>
-              </span>
-            )}
-            {r.rating <= 2 && !r.isReplied && !r.hasPendingAiDraft && (
-              <span title={isTr ? 'Düşük puan' : 'Low rating'}>
-                <Badge kind="danger">!</Badge>
-              </span>
-            )}
-          </span>
+            <FeedbackStatusChips feedback={r} isTr={isTr} max={2} className="ml-auto" />
+          </div>
         </div>
       </button>
     </li>

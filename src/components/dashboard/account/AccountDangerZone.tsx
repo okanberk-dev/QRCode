@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertTriangle, Loader2, Undo2 } from "lucide-react";
 import type { Locale } from "@/lib/translations";
 import { AlertBanner } from "@/components/ui";
+import { resolveDisplayTimeZone } from "@/lib/timezone";
 
 // Wave B4 (CLAUDE.md §38.B + §38.193) — Account Danger Zone card.
 // Originally removed in Stage 79 §38.159 because backend was a placeholder;
@@ -72,7 +73,7 @@ export function AccountDangerZone({
         setNotice({
           kind: "success",
           text: isTr
-            ? "Hesap silme planlandı. Onay maili inbox'una geldi. 30 gün içinde istediğin zaman vazgeçebilirsin."
+            ? "Hesap silme planlandı. Onay e-postası gelen kutuna gönderildi. 30 gün içinde istediğin zaman vazgeçebilirsin."
             : "Account deletion scheduled. A confirmation mail is on its way. You can cancel anytime in the next 30 days.",
         });
         // CLAUDE.md §37.2.A — every session was revoked server-side. The
@@ -112,7 +113,7 @@ export function AccountDangerZone({
         setNotice({
           kind: "success",
           text: isTr
-            ? "Hesap silme iptal edildi. Bilgilendirme maili inbox'una geliyor."
+            ? "Hesap silme iptal edildi. Bilgilendirme e-postası gelen kutuna gönderildi."
             : "Account deletion canceled. A confirmation mail is on its way.",
         });
       } else {
@@ -151,8 +152,8 @@ export function AccountDangerZone({
               </p>
               <p className="mt-1 max-w-[520px] text-[13px] leading-[1.55] text-[#525252]">
                 {isTr
-                  ? "Hesabını silmek tüm restoran, yorum, QR, abonelik ve oturum geçmişini kalıcı olarak kaldırır. KVKK m.7 gereği mali kayıtlar anonim biçimde 10 yıl saklanır. Sileceğin gün 30 günlük bekleme süresinin sonudur — bu süre içinde her an vazgeçebilirsin."
-                  : "Deleting your account permanently removes all restaurants, reviews, QR codes, subscription and session history. Per KVKK Article 7 financial records are retained anonymised for 10 years. The wipe runs at the end of a 30-day grace window — you can cancel any time during that window."}
+                  ? "Hesabını silmek tüm işletme, yorum, QR, abonelik ve oturum geçmişini kalıcı olarak kaldırır. Yasal zorunluluk gereği mali kayıtlar anonimleştirilerek 10 yıl saklanır. Silme işlemi 30 günlük bekleme süresinin sonunda yapılır; bu süre içinde istediğin an vazgeçebilirsin."
+                  : "Deleting your account permanently removes all businesses, reviews, QR codes, subscription and session history. Financial records are kept anonymised for 10 years as required by law. The deletion runs at the end of a 30-day waiting period — you can cancel at any time before then."}
               </p>
             </div>
           </div>
@@ -187,8 +188,8 @@ export function AccountDangerZone({
             </p>
             <p className="mt-2 text-[13px] text-[#0A0A0A]">
               {isTr
-                ? `Hesabın ${new Date(scheduled).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} tarihinde silinecek (${formatDaysRemaining(new Date(scheduled))} gün kaldı).`
-                : `Your account will be deleted on ${new Date(scheduled).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })} (${formatDaysRemaining(new Date(scheduled))} days remaining).`}
+                ? `Hesabın ${new Date(scheduled).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", timeZone: resolveDisplayTimeZone() })} tarihinde silinecek (${formatDaysRemaining(new Date(scheduled))} gün kaldı).`
+                : `Your account will be deleted on ${new Date(scheduled).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: resolveDisplayTimeZone() })} (${formatDaysRemaining(new Date(scheduled))} days remaining).`}
             </p>
           </div>
         )}

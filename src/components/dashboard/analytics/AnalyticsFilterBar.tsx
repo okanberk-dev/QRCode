@@ -49,11 +49,13 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
   const customStart = params.get('customStart') ?? '';
   const customEnd = params.get('customEnd') ?? '';
 
+  // `restaurantId` is the shell's business scope (the topbar switcher always
+  // writes it on this page), not a filter — so it must not keep "Temizle"
+  // permanently visible, and resetting must not drop it.
   const hasActiveFilter =
     range !== '30d' ||
     platform !== 'all' ||
-    branch !== 'all' ||
-    restaurantId !== 'all';
+    branch !== 'all';
 
   const update = (key: string, value: string | null) => {
     const next = new URLSearchParams(params.toString());
@@ -79,8 +81,10 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
   };
 
   const reset = () => {
+    const scoped = params.get('restaurantId');
+    const next = scoped ? `${pathname}?${new URLSearchParams({ restaurantId: scoped }).toString()}` : pathname;
     startTransition(() => {
-      router.replace(pathname, { scroll: false });
+      router.replace(next, { scroll: false });
     });
   };
 
@@ -211,7 +215,12 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
             value={restaurantId}
             onChange={(v) => update('restaurantId', v)}
             options={[
-              { value: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses' },
+              // "Tüm işletmeler" only while no business is in the URL: once the
+              // shell has a scope, clearing it just made the shell re-add the
+              // stored business, so the option snapped straight back.
+              ...(restaurantId === 'all'
+                ? [{ value: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses' }]
+                : []),
               ...restaurants.map((r) => ({ value: r.id, label: r.name })),
             ]}
             ariaLabel={isTr ? 'İşletme' : 'Business'}

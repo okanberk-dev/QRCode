@@ -1,14 +1,29 @@
 'use client';
 
-import { Flag, Mail, RotateCcw, UserPlus } from 'lucide-react';
-import { Modal, PlatformChip, PLATFORMS } from '@/components/ui';
+import { Flag, Mail, QrCode, RotateCcw, UserPlus } from 'lucide-react';
+import { Modal, PlatformChip, PulseSelect } from '@/components/ui';
+import {
+  dateFilterOptions,
+  ratingFilterOptions,
+} from '@/components/dashboard/feedbacks/InboxToolbar';
 import type { HasReplyFilter, PlatformFilter } from './types';
-import { PLATFORM_OPTIONS } from './utils';
+import { INBOX_PLATFORM_FILTER_IDS, platformIconId, platformLabel } from './utils';
 
 interface AdminFeedbackFiltersModalProps {
   open: boolean;
   onClose: () => void;
   isTr: boolean;
+  /**
+   * md+ "Diğer filtreler": the toolbar already shows the date / rating /
+   * platform selects, so the modal only carries the state toggles.
+   */
+  compact?: boolean;
+
+  daysFilter: string;
+  setDaysFilter: (v: string) => void;
+
+  ratingFilter: string;
+  setRatingFilter: (v: string) => void;
 
   platformFilter: PlatformFilter;
   setPlatformFilter: (v: PlatformFilter) => void;
@@ -30,6 +45,11 @@ export function AdminFeedbackFiltersModal({
   open,
   onClose,
   isTr,
+  compact = false,
+  daysFilter,
+  setDaysFilter,
+  ratingFilter,
+  setRatingFilter,
   platformFilter,
   setPlatformFilter,
   hasReplyFilter,
@@ -45,19 +65,15 @@ export function AdminFeedbackFiltersModal({
 
   return (
     <Modal
-      title={isTr ? 'Filtreler' : 'Filters'}
+      title={compact ? (isTr ? 'Diğer filtreler' : 'More filters') : isTr ? 'Filtreler' : 'Filters'}
       onClose={onClose}
       size={460}
       footer={
         <>
           {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={onResetFilters}
-              className="bz-btn-ghost inline-flex items-center gap-1.5"
-            >
-              <RotateCcw size={12} strokeWidth={2.2} />
-              {isTr ? 'Temizle' : 'Reset'}
+            <button type="button" onClick={onResetFilters} className="bz-btn-ghost">
+              <RotateCcw size={12} strokeWidth={2.2} aria-hidden="true" />
+              {isTr ? 'Temizle' : 'Clear'}
             </button>
           )}
           <button type="button" onClick={onClose} className="bz-btn-primary">
@@ -67,51 +83,87 @@ export function AdminFeedbackFiltersModal({
       }
     >
       <div className="space-y-5">
-        {/* Platform — visual chip grid */}
-        <div className="space-y-1.5">
-          <span className="pulse-eyebrow text-[#737373]">{isTr ? 'PLATFORM' : 'PLATFORM'}</span>
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => setPlatformFilter('all')}
-              className={`${platformFilter === 'all' ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
-              aria-pressed={platformFilter === 'all'}
-            >
-              {isTr ? 'Tümü' : 'All'}
-            </button>
-            {PLATFORM_OPTIONS.map((pid) => {
-              const isActive = platformFilter === pid;
-              return (
-                <button
-                  key={pid}
-                  type="button"
-                  onClick={() => setPlatformFilter(isActive ? 'all' : pid)}
-                  className={`${isActive ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm`}
-                  aria-pressed={isActive}
-                  title={PLATFORMS[pid].label}
-                >
-                  <PlatformChip id={pid} size={14} />
-                  <span>{PLATFORMS[pid].label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {!compact && (
+          <>
+            {/* Date + rating */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <span id="admin-feedback-filter-date-label" className="text-[12px] font-semibold text-[#525252]">
+                  {isTr ? 'Tarih' : 'Date'}
+                </span>
+                <PulseSelect
+                  value={daysFilter}
+                  onChange={setDaysFilter}
+                  aria-labelledby="admin-feedback-filter-date-label"
+                  className="w-full"
+                  options={dateFilterOptions(isTr)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span id="admin-feedback-filter-rating-label" className="text-[12px] font-semibold text-[#525252]">
+                  {isTr ? 'Puan' : 'Rating'}
+                </span>
+                <PulseSelect
+                  value={ratingFilter}
+                  onChange={setRatingFilter}
+                  aria-labelledby="admin-feedback-filter-rating-label"
+                  className="w-full"
+                  options={ratingFilterOptions(isTr)}
+                />
+              </div>
+            </div>
 
-        {/* State — yanıt + işaret + bana atanan */}
+            {/* Platform — chip grid with storage ids (incl. Buaze QR, trendyol_go). */}
+            <div className="space-y-1.5">
+              <span className="block text-[12px] font-semibold text-[#525252]">Platform</span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPlatformFilter('all')}
+                  className={`${platformFilter === 'all' ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
+                  aria-pressed={platformFilter === 'all'}
+                >
+                  {isTr ? 'Tümü' : 'All'}
+                </button>
+                {INBOX_PLATFORM_FILTER_IDS.map((pid) => {
+                  const isActive = platformFilter === pid;
+                  const iconId = platformIconId(pid);
+                  return (
+                    <button
+                      key={pid}
+                      type="button"
+                      onClick={() => setPlatformFilter(isActive ? 'all' : (pid as PlatformFilter))}
+                      className={`${isActive ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm`}
+                      aria-pressed={isActive}
+                    >
+                      {iconId ? (
+                        <span aria-hidden="true" className="inline-flex">
+                          <PlatformChip id={iconId} size={14} />
+                        </span>
+                      ) : (
+                        <QrCode size={13} strokeWidth={2} aria-hidden="true" />
+                      )}
+                      <span>{platformLabel(pid, isTr)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* State — reply / flag / assigned to me */}
         <div className="space-y-1.5">
-          <span className="pulse-eyebrow text-[#737373]">{isTr ? 'DURUM' : 'STATE'}</span>
+          <span className="block text-[12px] font-semibold text-[#525252]">{isTr ? 'Durum' : 'State'}</span>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
-              onClick={() =>
-                setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')
-              }
+              onClick={() => setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')}
               className={`${hasReplyFilter === 'pending' ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm`}
               aria-pressed={hasReplyFilter === 'pending'}
             >
-              <Mail size={12} strokeWidth={2.2} />
-              {isTr ? 'Yanıt bekleyen' : 'Pending reply'}
+              <Mail size={12} strokeWidth={2.2} aria-hidden="true" />
+              {isTr ? 'Yanıtı olmayanlar' : 'Without a reply'}
             </button>
             <button
               type="button"
@@ -119,8 +171,8 @@ export function AdminFeedbackFiltersModal({
               className={`${flaggedOnly ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm`}
               aria-pressed={flaggedOnly}
             >
-              <Flag size={12} strokeWidth={2.2} />
-              {isTr ? 'İşaretli' : 'Flagged'}
+              <Flag size={12} strokeWidth={2.2} aria-hidden="true" />
+              {isTr ? 'Yalnız işaretliler' : 'Flagged only'}
             </button>
             <button
               type="button"
@@ -128,8 +180,8 @@ export function AdminFeedbackFiltersModal({
               className={`${assignedToMe ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
               aria-pressed={assignedToMe}
             >
-              <UserPlus size={12} strokeWidth={2.2} />
-              {isTr ? 'Bana atanan' : 'Assigned to me'}
+              <UserPlus size={12} strokeWidth={2.2} aria-hidden="true" />
+              {isTr ? 'Bana atananlar' : 'Assigned to me'}
             </button>
           </div>
         </div>

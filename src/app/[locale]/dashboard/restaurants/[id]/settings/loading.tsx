@@ -16,7 +16,10 @@ import {
 export default function Loading() {
   return (
     <SkPageShell max={1440}>
-      <SkBox className="h-3 w-40" />
+      {/* Back link: 44px tap target below sm, 32px above. */}
+      <div className="flex h-11 items-center sm:h-8">
+        <SkBox className="h-3 w-40" />
+      </div>
       <SkPageHeader withActions titleWidth="w-72" />
 
       <div className="flex flex-wrap gap-2">
@@ -28,12 +31,12 @@ export default function Loading() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
         <div className="hidden md:block">
           <div className="hidden lg:block bz-card p-3 space-y-2">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 7 }).map((_, i) => (
               <SkBox key={i} className="h-8 w-full" />
             ))}
           </div>
           <div className="lg:hidden">
-            <SkTabStrip count={6} />
+            <SkTabStrip count={7} />
           </div>
         </div>
 

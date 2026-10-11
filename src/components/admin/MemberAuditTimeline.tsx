@@ -8,6 +8,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
+import { actionLabel as sharedActionLabel } from '@/lib/audit-log';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 interface AuditEntry {
   id: string;
@@ -35,11 +37,39 @@ const ACTION_LABELS: Record<string, string> = {
   'admin.invoice.delete': 'Fatura silindi',
   'admin.users.update': 'Yönetici hesabı güncellendi',
   'admin.users.delete': 'Yönetici hesabı silindi',
+  'admin.members.update': 'İşletme sahibi güncellendi',
+  'admin.restaurants.feature_access': 'Paket özellik erişimi güncellendi',
+  'admin.restaurants.menu_settings': 'İşletme menü erişimi değiştirildi',
+  'admin.restaurants.menu_theme_update': 'İşletme menü teması güncellendi',
+  'admin.impersonate.start': 'İşletme sahibi gözünden görüntüleme başladı',
+  'admin.impersonate.end': 'İşletme sahibi gözünden görüntüleme bitti',
+  'owner.restaurant.update': 'İşletme bilgileri güncellendi',
+  'owner.account.deletion_scheduled': 'Hesap silme planlandı',
+  'owner.account.deletion_canceled': 'Hesap silme talebi iptal edildi',
+  'owner.account.security_update': 'Hesap güvenlik ayarları güncellendi',
+  'owner.google.disconnect': 'Google bağlantısı kaldırıldı',
+  'owner.team.invite': 'Ekip üyesi davet edildi',
+  'owner.team.update': 'Ekip üyesi güncellendi',
+  'owner.team.remove': 'Ekip üyesi çıkarıldı',
+  'restaurant.delete': 'İşletme silindi',
 };
 
+/** Human label for an audit action key. Unknown keys fall back to the shared
+ *  catalog (src/lib/audit-log.ts), then to a generic label — the raw key is
+ *  never shown as a title. */
 function actionLabel(action: string): string {
-  return ACTION_LABELS[action] || action;
+  if (ACTION_LABELS[action]) return ACTION_LABELS[action];
+  const shared = sharedActionLabel(action, 'tr');
+  return shared !== action ? shared : 'Hesapta değişiklik yapıldı';
 }
+
+// §46 — dates render in the business display timezone, not the device's.
+const DATE_FORMAT = new Intl.DateTimeFormat('tr-TR', {
+  timeZone: resolveDisplayTimeZone(),
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+});
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -50,7 +80,7 @@ function timeAgo(iso: string): string {
   if (hr < 24) return `${hr} sa önce`;
   const day = Math.floor(hr / 24);
   if (day < 30) return `${day} gün önce`;
-  return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+  return DATE_FORMAT.format(new Date(iso));
 }
 
 export default function MemberAuditTimeline({ userId, max }: Props) {
@@ -124,12 +154,12 @@ export default function MemberAuditTimeline({ userId, max }: Props) {
               className="absolute left-[10px] top-2 flex h-3 w-3 items-center justify-center rounded-full bg-white border-2 border-[#0A0A0A] z-10"
             />
             <div className="rounded-xl border border-[#EDEDED] bg-white p-3.5">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-[#0A0A0A]">{actionLabel(e.action)}</p>
-                  <p className="mt-0.5 text-[11px] text-[#737373]">
-                    <span className="font-mono">{e.action}</span>
-                    <span className="mx-1.5 text-[#A3A3A3]">·</span>
+                  <p className="text-[13px] font-medium text-[#0A0A0A] [overflow-wrap:anywhere]">
+                    {actionLabel(e.action)}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-[#737373] [overflow-wrap:anywhere]">
                     {actorName}
                     <span className="mx-1.5 text-[#A3A3A3]">·</span>
                     {timeAgo(e.createdAt)}
@@ -139,7 +169,7 @@ export default function MemberAuditTimeline({ userId, max }: Props) {
                   <button
                     type="button"
                     onClick={() => toggle(e.id)}
-                    className="text-[11px] text-[#737373] hover:text-[#0A0A0A] flex items-center gap-1"
+                    className="shrink-0 text-[11px] text-[#737373] hover:text-[#0A0A0A] flex items-center gap-1"
                   >
                     {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                     {isOpen ? 'Gizle' : 'Detay'}

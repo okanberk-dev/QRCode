@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPanelActorFromRequest } from '@/lib/auth';
+import { getPanelActorFromRequest, signJwt, verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
@@ -89,10 +89,18 @@ export async function PUT(req: NextRequest) {
     const updateData: {
       passwordHash?: string;
       email?: string | null;
+      passwordChangedAt?: Date;
     } = {};
 
+    // §37.3 — a password change must revoke every other admin session.
+    // `getAdminFromRequest` rejects tokens whose `iat` predates
+    // `passwordChangedAt`. JWT `iat` has 1-second resolution, so the stamp
+    // is truncated to the second; the cookie re-issued below then carries
+    // an `iat` that is not older than it and keeps this browser signed in.
+    const passwordChangedAt = new Date(Math.floor(Date.now() / 1000) * 1000);
     if (wantsPasswordChange) {
       updateData.passwordHash = await bcrypt.hash(body.newPassword, BCRYPT_COST);
+      updateData.passwordChangedAt = passwordChangedAt;
     }
     if (wantsEmailChange) {
       updateData.email = normalizedEmail!;
@@ -115,7 +123,29 @@ export async function PUT(req: NextRequest) {
       throw err;
     }
 
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    if (wantsPasswordChange) {
+      // Re-issue this admin's own cookie with the same claims so only the
+      // OTHER sessions are revoked by the new passwordChangedAt.
+      const current = await verifyJwt(req.cookies.get('admin_token')?.value ?? '');
+      if (current) {
+        const { iat: _iat, exp, ...claims } = current;
+        void _iat;
+        const token = await signJwt(claims);
+        const remaining = typeof exp === 'number' ? exp - Math.floor(Date.now() / 1000) : 0;
+        const isSecure =
+          process.env.NODE_ENV === 'production' &&
+          (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');
+        response.cookies.set('admin_token', token, {
+          httpOnly: true,
+          secure: isSecure,
+          sameSite: 'lax',
+          maxAge: remaining > 0 ? remaining : 60 * 60 * 24,
+          path: '/',
+        });
+      }
+    }
+    return response;
   } catch (error) {
     console.error('[ADMIN_PROFILE_UPDATE_ERROR]', error);
     return NextResponse.json({ error: 'Güncelleme sırasında bir hata oluştu.' }, { status: 500 });

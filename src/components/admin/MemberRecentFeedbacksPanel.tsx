@@ -9,7 +9,7 @@ import {
   Star,
   Store,
 } from 'lucide-react';
-import { Badge, EmptyState } from '@/components/ui';
+import { Badge, EmptyState, PLATFORMS } from '@/components/ui';
 import { formatFullDateTimeInTimeZone, formatStampInTimeZone } from '@/lib/timezone';
 
 // CLAUDE.md §38.93 (Stage A1) — last 10 feedbacks across all owner restaurants
@@ -69,16 +69,28 @@ function ratingBadgeKind(rating: number) {
 export default function MemberRecentFeedbacksPanel({ userId }: Props) {
   const [data, setData] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed request used to fall through to "Henüz yorum yok" — wrong for
+  // an owner with reviews. Surface it with a retry instead.
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setFailed(false);
     fetch(`/api/admin/members/${userId}/recent-feedbacks`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((res) => {
-        if (!cancelled) setData(res.data || []);
+        if (!cancelled) setData(Array.isArray(res?.data) ? res.data : []);
       })
       .catch(() => {
-        if (!cancelled) setData([]);
+        if (!cancelled) {
+          setData([]);
+          setFailed(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -86,13 +98,24 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, reloadKey]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-[#737373]">
         <Loader2 size={14} className="animate-spin" />
         Yorumlar yükleniyor…
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-center text-[13px] text-[#525252]">
+        <p>Son yorumlar yüklenemedi.</p>
+        <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="bz-btn-ghost">
+          Tekrar dene
+        </button>
       </div>
     );
   }
@@ -135,7 +158,9 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
                   <span className="text-[11px] text-[#737373]">· {f.branch}</span>
                 )}
                 {f.platform && (
-                  <Badge kind="ghost">{f.platform}</Badge>
+                  <Badge kind="ghost">
+                    {(PLATFORMS as Record<string, { label: string }>)[f.platform]?.label ?? f.platform}
+                  </Badge>
                 )}
               </div>
               {f.comment ? (

@@ -120,8 +120,12 @@ export function SettingsLayout({
             `bz-card` + 12px padding, grouped under eyebrows). With a rail
             stacked under the content (lg–xl) the nav spans both rows so it
             stays sticky while the rail scrolls by. */}
+        {/* Sticky lives on the aside itself: it is a `self-start` grid item
+            exactly as tall as its content, so a sticky child inside it had no
+            room to stick. md: pinned under the 64px mobile topbar; lg: the
+            vertical card at `stickyTopClass`. */}
         <aside
-          className={`hidden self-start md:block lg:sticky ${stickyTopClass} ${
+          className={`hidden self-start md:sticky md:top-16 md:z-20 md:block lg:z-auto ${stickyTopClass} ${
             rightRail ? "lg:row-span-2 2xl:row-span-1" : ""
           }`}
         >
@@ -175,7 +179,7 @@ export function SettingsLayout({
           {/* Stage 80 §38.160 — md horizontal tab strip pinned under the 64px
               topbar while scrolling. Negative margins mirror the canonical
               page gutter (`px-4 sm:px-7`, §42.4) so the strip runs edge to edge. */}
-          <div className="lg:hidden -mx-4 px-4 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur md:border-b md:border-[#EDEDED] md:py-2">
+          <div className="lg:hidden -mx-4 px-4 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar md:bg-white/95 md:backdrop-blur md:border-b md:border-[#EDEDED] md:py-2">
             <Tabs
               items={tabItems}
               active={active}

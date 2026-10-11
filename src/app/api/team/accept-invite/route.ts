@@ -4,7 +4,7 @@ import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { prisma } from '@/lib/prisma';
 import { getClientIp, rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isStrongPassword } from '@/lib/validations';
-import { issueLoginSession } from '@/app/api/auth/login/route';
+import { issueLoginSession } from '@/lib/login-session';
 import { sendTeamMemberJoinedEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';

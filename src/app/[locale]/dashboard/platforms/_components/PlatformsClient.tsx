@@ -1,491 +1,495 @@
 'use client';
 
-// Workspace `/dashboard/platforms` filter island — Stage 56 §38.137
-// + Stage 82a §38.162 (restoran odaklı default refactor).
+// Owner `/dashboard/platforms` — simplified platform links overview.
 //
-// Sektör-bazlı platform filtresi + restoran selector. Tek-restoran owner
-// otomatik o restorana bind; çoklu owner empty state + dropdown ile seçim
-// yapar. Workspace summary ("Tüm işletmeler") + "Tüm platformları göster"
-// override toggle KALDIRILDI — sektör filter her zaman zorunlu.
+// One business at a time (the page-level PlatformBusinessContext card is the
+// only business control on the page), one list of review platforms with a
+// single action per row, the business-level customer routing pickers in one
+// place, and the contact channels. All data for every scoped business is in
+// props, so switching business never needs a server round trip and never
+// shows another business's numbers.
 //
-// Logo render: mevcut `/public/platforms/{id}.svg` envanteri reuse;
-// dosya yoksa PlatformChip-style initials fallback (brand color + monogram).
-//
-// CLAUDE.md disipline:
-// - §5.1 sector → platform whitelist (`SECTOR_PLATFORMS` reuse)
-// - §38.45 + §38.52 + §38.117 mevcut PLATFORM_DEFS taksonomisi
-// - §38.138 Stage 57 sektör filter mantığı (review category whitelist;
-//   social/message/api evrensel)
-// - §38.162 Stage 82a restoran odaklı default + workspace summary kaldırma
-// - §11 + §23.3 Pulse design tokens (`bz-card`, `bz-btn-*`, `pulse-eyebrow`)
+// Hydration: nothing reads localStorage during render. When the URL has no
+// ?restaurantId and the owner has more than one business, a skeleton renders
+// until the remembered business is resolved after mount (the shell's
+// active-business effect and this page then agree on the same id).
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, ChevronRight, Download, Loader2, RefreshCw } from 'lucide-react';
+import { AlertBanner, PageHeader } from '@/components/ui';
+import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
+import RedirectThresholdPicker from '@/components/dashboard/RedirectThresholdPicker';
+import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
 import {
-  Building2,
-  Layers,
-  Plug,
-  Settings,
-} from 'lucide-react';
-import { Badge, PulseSelect } from '@/components/ui';
-import { detectSector, SECTOR_PLATFORMS } from '@/lib/sector-platforms';
-import type { ManagedPlatformDef } from '@/lib/platform-management';
-import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
+  PlatformBusinessContext,
+  settingsPlatformsHref,
+} from '@/components/dashboard/platforms/PlatformBusinessContext';
+import { PlatformLinkRow } from '@/components/dashboard/platforms/PlatformLinkRow';
+import { useFocusClearance } from '@/components/dashboard/platforms/useFocusClearance';
+import {
+  PlatformBackLinkSkeleton,
+  PlatformsOverviewBodySkeleton,
+} from '@/components/dashboard/platforms/PlatformSkeletons';
+import {
+  ACTIVE_BUSINESS_STORAGE_KEY,
+  resolveActiveRestaurantId,
+  setRestaurantParam,
+} from '@/lib/active-business';
+import {
+  PLATFORM_LINKS_LABEL,
+  type PlatformEnabledField,
+  type PlatformUrlField,
+} from '@/lib/platform-management';
+import {
+  computePlatformLinkStatuses,
+  countTestableLinks,
+  defaultPickerPlatformIds,
+  isPlatformLinkVisible,
+  sortPlatformLinkStatuses,
+  summarizePlatformLinks,
+  type LatestCheckLite,
+} from '@/lib/platform-link-status';
 
-export interface RestaurantInfo {
+export type PlatformsRestaurant = {
   id: string;
   name: string;
   category: string;
-  address: string | null;
-  city: string | null;
-  googlePlaceId: string | null;
-  googleReviewUrl: string | null;
-  googleEnabled: boolean;
-  yemekSepetiUrl: string | null;
-  yemekSepetiEnabled: boolean;
-  getirYemekUrl: string | null;
-  getirEnabled: boolean;
-  trendyolYemekUrl: string | null;
-  trendyolEnabled: boolean;
-  tripAdvisorUrl: string | null;
-  tripAdvisorEnabled: boolean;
-  airbnbUrl: string | null;
-  airbnbEnabled: boolean;
-  bookingUrl: string | null;
-  bookingEnabled: boolean;
-  yandexUrl: string | null;
-  yandexEnabled: boolean;
-  yelpUrl: string | null;
-  yelpEnabled: boolean;
-  foursquareUrl: string | null;
-  foursquareEnabled: boolean;
   externalPlatformsEnabled: boolean;
   defaultRedirectPlatform: string | null;
-  instagramUrl: string | null;
-  facebookUrl: string | null;
-  whatsappUrl: string | null;
-  reservationUrl: string | null;
-  website: string | null;
-  otherPlatformUrl: string | null;
-  otherPlatformLabel: string | null;
-  otherPlatformEnabled: boolean;
-}
-
-export interface PlatformSummaryRow extends ManagedPlatformDef {
-  connected: number;
-  urlSet: number;
-  total: number;
-}
+  redirectMinRating: number | null;
+} & Record<PlatformUrlField, string | null> &
+  Record<PlatformEnabledField, boolean>;
 
 interface PlatformsClientProps {
   locale: 'tr' | 'en';
-  restaurants: RestaurantInfo[];
-  platformSummaries: PlatformSummaryRow[];
-  selectedRestaurantId?: string | null;
+  restaurants: PlatformsRestaurant[];
+  checksByRestaurant: Record<string, Record<string, LatestCheckLite>>;
+  initialRestaurantId: string;
+  /** Server render time — first client render uses the same reference so
+   *  "son kontrol 2 sa önce" text hydrates identically. */
+  serverNow: number;
 }
 
-// Logo source resolver: mevcut /public/platforms/ envanterinden file path
-// türetir. uiPlatformId enum varsa onu, yoksa logoFile (instagram/facebook/
-// whatsapp social platforms için), hiçbiri yoksa null → initials fallback.
-function getPlatformLogoSrc(platform: ManagedPlatformDef): string | null {
-  if (platform.uiPlatformId) {
-    // PlatformChip §38.117'de trendyol/trendyol_go ikisi de trendyol-go.svg
-    // dosyasına map ediliyor — aynı paterni reuse et.
-    const fileName =
-      platform.uiPlatformId === 'trendyol' || platform.uiPlatformId === 'trendyol_go'
-        ? 'trendyol-go'
-        : platform.uiPlatformId;
-    return `/platforms/${fileName}.svg`;
-  }
-  if (platform.logoFile) {
-    return `/platforms/${platform.logoFile}.svg`;
-  }
-  return null;
+interface RetestResult {
+  provider: string;
+  ok: boolean;
+  statusCode?: number | null;
+  error?: string | null;
+  checkedAt?: string;
 }
 
-const SECTOR_LABELS: Record<string, { tr: string; en: string }> = {
-  food: { tr: 'Yemek & Restoran', en: 'Food & Restaurant' },
-  delivery: { tr: 'Paket Servis', en: 'Delivery' },
-  hospitality: { tr: 'Konaklama', en: 'Hospitality' },
-  clinic: { tr: 'Sağlık & Klinik', en: 'Health & Clinic' },
-  legal: { tr: 'Hukuk', en: 'Legal' },
-  spa: { tr: 'Güzellik & Spa', en: 'Beauty & Spa' },
-  retail: { tr: 'Perakende', en: 'Retail' },
-  fitness: { tr: 'Fitness & Spor', en: 'Fitness & Sports' },
-  education: { tr: 'Eğitim', en: 'Education' },
-  other: { tr: 'Diğer', en: 'Other' },
-};
+const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2';
+
+function readStoredRestaurantId(): string | null {
+  try {
+    return window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 export default function PlatformsClient({
   locale,
   restaurants,
-  platformSummaries,
-  selectedRestaurantId: initialSelectedRestaurantId = null,
+  checksByRestaurant,
+  initialRestaurantId,
+  serverNow,
 }: PlatformsClientProps) {
   const isTr = locale === 'tr';
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlRestaurantId = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
-  const [restaurantRows, setRestaurantRows] = useState<RestaurantInfo[]>(restaurants);
+  const queryRestaurantId = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
 
+  const [rows, setRows] = useState<PlatformsRestaurant[]>(restaurants);
+  const [checks, setChecks] = useState(checksByRestaurant);
+  const [selectedId, setSelectedId] = useState<string>(initialRestaurantId);
+  // Skeleton (not the first business's data) until the remembered business
+  // is known — only needed when the URL does not already name one.
+  const [resolved, setResolved] = useState<boolean>(() => Boolean(queryRestaurantId) || restaurants.length <= 1);
+  const [nowMs, setNowMs] = useState<number>(serverNow);
+  const [retesting, setRetesting] = useState(false);
+  const [retestNotice, setRetestNotice] = useState<string>('');
+  const [retestError, setRetestError] = useState<string | null>(null);
+  useFocusClearance();
+
+  useEffect(() => setRows(restaurants), [restaurants]);
+  useEffect(() => setChecks(checksByRestaurant), [checksByRestaurant]);
+  useEffect(() => setNowMs(Date.now()), []);
+
+  // Resolve the active business after mount: ?restaurantId → remembered
+  // business → first. Keep the URL in sync with replaceState (no server
+  // round trip — all businesses' data is already here). Next 15 syncs
+  // useSearchParams from replaceState, so the shell sees the same id and does
+  // not issue its own router.replace for it.
   useEffect(() => {
-    setRestaurantRows(restaurants);
-  }, [restaurants]);
-
-  // Default state (CLAUDE.md §38.162 Stage 82a):
-  // - Tek-restoran owner → otomatik o restorana bind (dropdown gizli)
-  // - Çoklu owner → null → empty state ("Bir işletme seçin") +
-  //   dropdown ile seçim
-  // - "all" workspace summary KALDIRILDI (kullanıcı kararı, §38.162)
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(
-    () => {
-      const stored =
-        typeof window !== 'undefined'
-          ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
-          : initialSelectedRestaurantId;
-      return resolveActiveRestaurantId({
-        restaurants: restaurantRows,
-        queryRestaurantId: urlRestaurantId,
-        storedRestaurantId: stored,
-      });
-    },
-  );
-
-  useEffect(() => {
-    const stored =
-      typeof window !== 'undefined'
-        ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
-        : null;
     const next = resolveActiveRestaurantId({
-      restaurants: restaurantRows,
-      queryRestaurantId: urlRestaurantId,
-      storedRestaurantId: stored,
+      restaurants: rows,
+      queryRestaurantId,
+      storedRestaurantId: readStoredRestaurantId(),
     });
-    setSelectedRestaurantId(next);
-    // The server rendered KPI cards + `connected/total` counts for the
-    // restaurant IT resolved (query param only — it can't see localStorage).
-    // If the remembered business differs, push it into the URL so the server
-    // re-renders and the numbers describe the business the cards show.
-    if (next && next !== initialSelectedRestaurantId && !urlRestaurantId) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete('restaurant');
-      params.set('restaurantId', next);
-      router.replace(`?${params.toString()}`, { scroll: false });
+    if (!next) return;
+    setSelectedId(next);
+    setResolved(true);
+    if (queryRestaurantId !== next) {
+      const search = setRestaurantParam(window.location.search, next);
+      window.history.replaceState(null, '', `${window.location.pathname}?${search}${window.location.hash}`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantRows, urlRestaurantId, initialSelectedRestaurantId]);
+  }, [queryRestaurantId, rows]);
 
-  const selectRestaurant = (restaurantId: string) => {
-    setSelectedRestaurantId(restaurantId);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+  // "Değiştir" links from the provider page and settings land on
+  // #yonlendirme. On client navigation Next applies the hash scroll while
+  // loading.tsx is still on screen (the section does not exist yet), and
+  // when the URL names no business the skeleton is up until `resolved`. So
+  // scroll once the real content is rendered. scrollIntoView also scrolls
+  // the lg panel scroll container (§42.5.1); the section has scroll-mt-24.
+  useEffect(() => {
+    if (!resolved || window.location.hash !== '#yonlendirme') return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('yonlendirme')?.scrollIntoView({ block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resolved]);
+
+  const restaurant = rows.find((row) => row.id === selectedId) ?? rows[0];
+  const restaurantChecks = useMemo(() => checks[restaurant.id] ?? {}, [checks, restaurant.id]);
+
+  const statuses = useMemo(
+    () => computePlatformLinkStatuses(restaurant, restaurantChecks),
+    [restaurant, restaurantChecks],
+  );
+  const reviewStatuses = statuses.filter((status) => status.platform.category === 'review');
+  const reviewVisible = sortPlatformLinkStatuses(reviewStatuses.filter(isPlatformLinkVisible), restaurant.category);
+  const reviewOther = sortPlatformLinkStatuses(
+    reviewStatuses.filter((status) => !isPlatformLinkVisible(status)),
+    restaurant.category,
+  );
+  const contactStatuses = statuses.filter((status) => status.platform.category !== 'review');
+  const summary = summarizePlatformLinks(reviewVisible);
+  const testableCount = countTestableLinks(statuses);
+  const pickerIds = useMemo(() => defaultPickerPlatformIds(restaurant), [restaurant]);
+
+  const updateRow = useCallback((id: string, patch: Partial<PlatformsRestaurant>) => {
+    setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }, []);
+
+  const selectRestaurant = (id: string) => {
+    if (id === selectedId) return;
+    setSelectedId(id);
+    setRetestNotice('');
+    setRetestError(null);
+    try {
+      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, id);
+    } catch {
+      /* storage blocked — URL still carries the selection */
     }
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('restaurant');
-    params.set('restaurantId', restaurantId);
-    router.replace(`?${params.toString()}`, { scroll: false });
+    window.dispatchEvent(new CustomEvent('buaze:active-restaurant-change', { detail: { restaurantId: id } }));
+    const search = setRestaurantParam(window.location.search, id);
+    window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
   };
 
-  const isSingleRestaurant = restaurantRows.length === 1;
-  const selectedRestaurant = selectedRestaurantId
-    ? restaurantRows.find((r) => r.id === selectedRestaurantId) ?? null
-    : null;
+  const runRetestAll = async () => {
+    if (retesting || testableCount === 0) return;
+    const id = restaurant.id;
+    setRetesting(true);
+    setRetestNotice('');
+    setRetestError(null);
+    try {
+      const response = await fetch(`/api/restaurants/${id}/integrations/retest?locale=${locale}`, {
+        method: 'POST',
+      });
+      if (response.status === 429) {
+        const retryAfter = Number(response.headers.get('Retry-After') || '0');
+        setRetestNotice(
+          isTr
+            ? `Çok sık denendi. ${retryAfter > 0 ? `${retryAfter} sn sonra` : 'Biraz sonra'} tekrar deneyin.`
+            : `Too many checks. Try again ${retryAfter > 0 ? `in ${retryAfter}s` : 'shortly'}.`,
+        );
+        return;
+      }
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || (isTr ? 'Kontrol yapılamadı.' : 'Could not run the check.'));
+      }
+      const results: RetestResult[] = Array.isArray(data?.results) ? data.results : [];
+      setChecks((current) => {
+        const nextForRestaurant = { ...(current[id] ?? {}) };
+        for (const result of results) {
+          nextForRestaurant[result.provider] = {
+            ok: Boolean(result.ok),
+            checkedAt: result.checkedAt ?? new Date().toISOString(),
+            error: result.error ?? null,
+            statusCode: typeof result.statusCode === 'number' ? result.statusCode : null,
+          };
+        }
+        return { ...current, [id]: nextForRestaurant };
+      });
+      setNowMs(Date.now());
+      const okCount = results.filter((result) => result.ok).length;
+      const failCount = results.length - okCount;
+      setRetestNotice(
+        isTr
+          ? `${results.length} link kontrol edildi: ${okCount} çalışıyor, ${failCount} sorunlu.`
+          : `${results.length} links checked: ${okCount} working, ${failCount} need attention.`,
+      );
+      router.refresh();
+    } catch (err) {
+      setRetestError(
+        err instanceof Error && err.message
+          ? err.message
+          : isTr
+            ? 'Kontrol yapılamadı. Bağlantınızı kontrol edip tekrar deneyin.'
+            : 'Could not run the check. Check your connection and try again.',
+      );
+    } finally {
+      setRetesting(false);
+    }
+  };
 
-  const detectedSector = selectedRestaurant ? detectSector(selectedRestaurant.category) : null;
-  const sectorLabel = detectedSector
-    ? isTr
-      ? SECTOR_LABELS[detectedSector]?.tr ?? detectedSector
-      : SECTOR_LABELS[detectedSector]?.en ?? detectedSector
-    : null;
+  const title = isTr ? PLATFORM_LINKS_LABEL.tr : PLATFORM_LINKS_LABEL.en;
+  const header = (
+    <PageHeader
+      eyebrow={title.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}
+      title={title}
+      description={
+        isTr
+          ? 'Yüksek puan veren müşterilerinize önerilen yorum platformu linkleri. Her işletme için ayrı ayarlanır.'
+          : 'Review-platform links offered to your happy customers. Set separately for each business.'
+      }
+    />
+  );
 
-  // Sector filtering only applies to review platforms — social/message/api
-  // are sector-agnostic (every owner can use Instagram/Facebook/WhatsApp/
-  // Webhook regardless of business type). Sektör filter zorunlu (Stage 82a
-  // — `showAllPlatforms` override toggle silindi).
-  const filteredPlatforms = useMemo(() => {
-    if (!detectedSector) return platformSummaries;
-    const sectorAllowedIds = new Set(SECTOR_PLATFORMS[detectedSector]);
-    return platformSummaries.filter((p) => {
-      if (p.category !== 'review') return true; // social/message/api always show
-      if (!p.uiPlatformId) return true; // no enum mapping — keep visible (defensive)
-      return sectorAllowedIds.has(p.uiPlatformId);
-    });
-  }, [detectedSector, platformSummaries]);
-
-  // Empty state: çoklu owner + restoran seçilmemiş.
-  // Pulse §11 layout — lime icon + h2 + p sub + büyük center dropdown.
-  if (!selectedRestaurantId) {
+  if (!resolved) {
     return (
-      <div className="bz-card flex flex-col items-center gap-4 p-10 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
-          <Building2 size={20} strokeWidth={1.8} />
+      <>
+        <div>
+          <PlatformBackLinkSkeleton />
+          {header}
         </div>
-        <div className="space-y-1.5">
-          <h2 className="bz-h-tight text-[18px] font-semibold text-[#0A0A0A]">
-            {isTr ? 'Bir işletme seçin' : 'Select a business'}
-          </h2>
-          <p className="max-w-[420px] text-[13px] leading-[1.6] text-[#525252]">
-            {isTr
-              ? 'Sektörünüze özgü platform bağlantılarını burada yönetin. İşletme seçtiğinizde sektörünüze uygun yorum kanalları + sosyal medya + mesajlaşma platformları otomatik filtrelenir.'
-              : 'Manage sector-specific platform links from here. Once you pick a business, review channels matching your sector + social + messaging platforms appear automatically.'}
-          </p>
-        </div>
-        <div className="flex w-full max-w-[360px] flex-col items-stretch gap-1.5">
-          <span className="pulse-eyebrow text-[10.5px] text-[#737373]">
-            {isTr ? 'İŞLETME' : 'BUSINESS'}
-          </span>
-          <PulseSelect
-            value=""
-            onChange={(v) => {
-              if (v) selectRestaurant(v);
-            }}
-            options={[
-              {
-                value: '',
-                label: isTr ? 'İşletme seçin…' : 'Choose a business…',
-              },
-              ...restaurantRows.map((r) => ({ value: r.id, label: r.name })),
-            ]}
-            ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
-            className="w-full"
-          />
-        </div>
-      </div>
+        <PlatformsOverviewBodySkeleton />
+      </>
     );
   }
 
+  const exportHref = `/api/dashboard/platforms/log/export?locale=${locale}&restaurantId=${encodeURIComponent(restaurant.id)}`;
+
   return (
-    <div className="space-y-4">
-      {/* Filter bar — restoran selector (çoklu owner) + sektör hint.
-          Tek-restoran owner için dropdown gizli, sadece sektör hint
-          görünür (kullanıcı zaten o restorana bind'lı). */}
-      {!isSingleRestaurant && (
-        <div
-          className="bz-card flex flex-wrap items-center gap-3 p-3.5"
-          role="group"
-          aria-label={isTr ? 'İşletme seçici' : 'Business selector'}
+    <>
+      <div>
+        <Link
+          href={settingsPlatformsHref(locale, restaurant.id)}
+          className={`bz-mono mb-3 inline-flex min-h-[44px] items-center sm:min-h-[32px] gap-1 rounded text-[11px] text-[#737373] hover:text-[#0A0A0A] ${FOCUS_RING}`}
         >
-          <div className="flex items-center gap-2">
-            <span className="pulse-eyebrow text-[10.5px] text-[#737373]">
-              {isTr ? 'İŞLETME' : 'BUSINESS'}
-            </span>
-            <PulseSelect
-              value={selectedRestaurantId}
-              onChange={selectRestaurant}
-              options={restaurantRows.map((r) => ({ value: r.id, label: r.name }))}
-              ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
-              className="min-w-[200px]"
-            />
+          <ArrowLeft size={12} aria-hidden="true" />
+          {isTr ? `${restaurant.name} ayarları` : `${restaurant.name} settings`}
+        </Link>
+        {header}
+      </div>
+
+      <PlatformBusinessContext
+        locale={locale}
+        restaurant={restaurant}
+        restaurants={rows}
+        summary={summary}
+        onSelect={selectRestaurant}
+      />
+
+      {restaurant.externalPlatformsEnabled === false && (
+        <AlertBanner kind="info">
+          {isTr
+            ? 'Google dışındaki yorum platformları bu işletme için kapalı. Kayıtlı linkler korunur.'
+            : 'Review platforms other than Google are off for this business. Saved links are kept.'}
+        </AlertBanner>
+      )}
+
+      {/* ── Review platforms ─────────────────────────────────────────── */}
+      <section aria-labelledby="pl-review-title" className="space-y-3">
+        <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <h2 id="pl-review-title" className="bz-h-tight text-[18px] text-[#0A0A0A]">
+                {isTr ? 'Yorum platformları' : 'Review platforms'}
+              </h2>
+              <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+                {isTr
+                  ? 'Puanı eşiği geçen müşteriye bu platformlardan biri önerilir.'
+                  : 'Customers above your rating threshold are offered one of these.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={runRetestAll}
+              // Not `disabled` while running: disabling the focused button
+              // would drop keyboard focus to <body>. The handler guards re-entry.
+              disabled={testableCount === 0}
+              aria-disabled={retesting || undefined}
+              aria-busy={retesting || undefined}
+              title={
+                testableCount === 0
+                  ? isTr
+                    ? 'Kontrol edilecek aktif link yok.'
+                    : 'No active links to check.'
+                  : undefined
+              }
+              className={`bz-btn-ghost inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[38px] sm:w-auto ${FOCUS_RING}`}
+            >
+              {retesting ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <RefreshCw size={14} aria-hidden="true" />
+              )}
+              {retesting
+                ? isTr
+                  ? 'Kontrol ediliyor…'
+                  : 'Checking…'
+                : isTr
+                  ? 'Tümünü kontrol et'
+                  : 'Check all'}
+            </button>
           </div>
+          {/* Always mounted (live regions must exist before their text changes). */}
+          <p role="status" aria-live="polite" className="text-[12px] leading-[1.5] text-[#525252] [&:not(:empty)]:mt-2">
+            {retestNotice}
+          </p>
+        </div>
+        {retestError && (
+          <AlertBanner kind="danger" onDismiss={() => setRetestError(null)}>
+            {retestError}
+          </AlertBanner>
+        )}
 
-          {sectorLabel && (
-            <span className="bz-mono ml-auto text-[11px] text-[#737373]">
+        <ul role="list" className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0">
+          {reviewVisible.map((status) => (
+            <PlatformLinkRow
+              key={status.platform.slug}
+              status={status}
+              locale={locale}
+              restaurantId={restaurant.id}
+              nowMs={nowMs}
+            />
+          ))}
+        </ul>
+
+        {reviewOther.length > 0 && (
+          <details className="group">
+            <summary
+              className={`flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 rounded-lg px-1 text-[13px] font-medium text-[#0A0A0A] [&::-webkit-details-marker]:hidden ${FOCUS_RING}`}
+            >
+              <ChevronRight
+                size={14}
+                aria-hidden="true"
+                className="text-[#525252] transition-transform group-open:rotate-90"
+              />
+              {isTr ? `Diğer platformlar (${reviewOther.length})` : `Other platforms (${reviewOther.length})`}
+            </summary>
+            <p className="mb-2 mt-1 px-1 text-[12px] leading-[1.5] text-[#525252]">
               {isTr
-                ? `${filteredPlatforms.length}/${platformSummaries.length} platform · ${sectorLabel}`
-                : `${filteredPlatforms.length}/${platformSummaries.length} platforms · ${sectorLabel}`}
-            </span>
-          )}
-        </div>
-      )}
+                ? 'Bu platformlar sektörünüz için tipik değil; yine de link ekleyebilirsiniz.'
+                : 'These are not typical for your sector, but you can still add a link.'}
+            </p>
+            <ul role="list" className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0">
+              {reviewOther.map((status) => (
+                <PlatformLinkRow
+                  key={status.platform.slug}
+                  status={status}
+                  locale={locale}
+                  restaurantId={restaurant.id}
+                  nowMs={nowMs}
+                />
+              ))}
+            </ul>
+          </details>
+        )}
 
-      {/* Sector hint banner — selected restaurant + sektör match. */}
-      {sectorLabel && selectedRestaurant && (
-        <div className="flex items-start gap-3 rounded-[14px] border border-[#EAF9B8] bg-[#F7FAEF] p-3.5">
-          <Layers size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-[#525252]" />
-          <p className="flex-1 text-[12.5px] leading-[1.55] text-[#525252]">
-            {isTr ? (
-              <>
-                <strong className="text-[#0A0A0A]">{selectedRestaurant.name}</strong> için{' '}
-                <strong className="text-[#0A0A0A]">{sectorLabel}</strong> sektörüne uygun platformlar
-                gösteriliyor. Sosyal medya ve mesajlaşma platformları her sektör için aktiftir.
-              </>
-            ) : (
-              <>
-                Showing platforms for{' '}
-                <strong className="text-[#0A0A0A]">{selectedRestaurant.name}</strong> in the{' '}
-                <strong className="text-[#0A0A0A]">{sectorLabel}</strong> sector. Social and messaging
-                platforms are active for every sector.
-              </>
-            )}
-          </p>
-        </div>
-      )}
+        <p className="text-[11.5px] leading-[1.55] text-[#525252]">
+          {isTr
+            ? 'Bazı platformlar otomatik kontrolü engelleyebilir; "Sorunlu" görünen bir link tarayıcıda yine de açılabilir.'
+            : 'Some platforms block automated checks; a link marked "Needs attention" may still open in a browser.'}
+        </p>
+      </section>
 
-      {/* Empty state — sektör filter sonrası 0 platform (defansif edge case;
-          mevcut SECTOR_PLATFORMS map her sektör için ≥1 platform tutuyor). */}
-      {filteredPlatforms.length === 0 && (
-        <div className="bz-card flex flex-col items-center gap-3 p-10 text-center">
-          <Plug size={22} strokeWidth={1.5} className="text-[#A3A3A3]" />
-          <p className="text-[13.5px] text-[#525252]">
+      {/* ── Customer routing (business-level) ────────────────────────── */}
+      <section id="yonlendirme" aria-labelledby="pl-routing-title" className="scroll-mt-24 space-y-3">
+        <div>
+          <h2 id="pl-routing-title" className="bz-h-tight text-[18px] text-[#0A0A0A]">
+            {isTr ? 'Müşteri yönlendirme' : 'Customer routing'}
+          </h2>
+          <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
             {isTr
-              ? 'Bu sektör için henüz platform tanımlı değil.'
-              : 'No platforms configured for this sector yet.'}
+              ? 'Bu ayarlar işletmenin tüm yorum platformları için geçerlidir.'
+              : 'These settings apply to all review platforms of this business.'}
           </p>
         </div>
-      )}
+        <SettingsCard>
+          <div className="space-y-6 pt-4 sm:pt-5">
+            <div className="space-y-3">
+              <h3 id="pl-threshold-label" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+                {isTr ? 'Hangi puandan itibaren platform önerilsin?' : 'From which rating should a platform be suggested?'}
+              </h3>
+              <RedirectThresholdPicker
+                key={`threshold-${restaurant.id}`}
+                restaurantId={restaurant.id}
+                initialValue={restaurant.redirectMinRating}
+                locale={locale}
+                labelId="pl-threshold-label"
+                onSaved={(next) => updateRow(restaurant.id, { redirectMinRating: next })}
+              />
+            </div>
+            <div className="space-y-3 border-t border-[#EDEDED] pt-5">
+              <h3 id="pl-default-label" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+                {isTr ? 'Varsayılan platform' : 'Default platform'}
+              </h3>
+              <DefaultRedirectPicker
+                key={`default-${restaurant.id}`}
+                restaurantId={restaurant.id}
+                enabledPlatforms={pickerIds}
+                initialValue={restaurant.defaultRedirectPlatform}
+                locale={locale}
+                labelId="pl-default-label"
+                onSaved={(next) => updateRow(restaurant.id, { defaultRedirectPlatform: next })}
+              />
+            </div>
+          </div>
+        </SettingsCard>
+      </section>
 
-      {/* Platform card grid (filtered) */}
-      {filteredPlatforms.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredPlatforms.map((platform) => {
-            const isConnected = platform.connected > 0;
-            const isPartial = platform.urlSet > platform.connected;
-            // Admin master flag (CLAUDE.md §5.2) — external review platforms
-            // are locked for this business. Mirror the wizard's "Kilitli"
-            // state on the card instead of teasing a "Yönet" flow that lands
-            // on a disabled form.
-            const isLocked =
-              platform.externalReview === true &&
-              selectedRestaurant?.externalPlatformsEnabled === false;
-            const status = platform.comingSoon
-              ? 'coming_soon'
-              : isLocked
-                ? 'locked'
-                : isConnected
-                  ? 'connected'
-                  : isPartial
-                    ? 'inactive'
-                    : 'available';
-            const statusBadgeKind: 'ok' | 'warn' | 'ghost' | 'info' =
-              status === 'connected'
-                ? 'ok'
-                : status === 'inactive' || status === 'locked'
-                  ? 'warn'
-                  : status === 'coming_soon'
-                    ? 'info'
-                    : 'ghost';
-            const statusLabel = isTr
-              ? status === 'connected'
-                ? 'Bağlı'
-                : status === 'inactive'
-                  ? 'Pasif'
-                  : status === 'locked'
-                    ? 'Kilitli'
-                    : status === 'coming_soon'
-                      ? 'Yakında'
-                      : 'Hazır'
-              : status === 'connected'
-                ? 'Connected'
-                : status === 'inactive'
-                  ? 'Inactive'
-                  : status === 'locked'
-                    ? 'Locked'
-                    : status === 'coming_soon'
-                      ? 'Coming soon'
-                      : 'Available';
-
-            const logoSrc = getPlatformLogoSrc(platform);
-
-            return (
-              <div
-                key={platform.slug}
-                className={`bz-card flex flex-col gap-3.5 p-4 transition-shadow hover:shadow-[0_18px_40px_-28px_rgba(10,10,10,0.35)] ${
-                  isLocked ? 'opacity-75' : ''
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {logoSrc ? (
-                    // Mevcut /public/platforms/{id}.svg envanteri (CLAUDE.md
-                    // §38.45 + §38.52). raw <img> base64 image disipline
-                    // dışı (CLAUDE.md §3 menü ürün görselleri base64-in-DB);
-                    // platform logoları static asset → next/image gerekmez.
-                    <img
-                      src={logoSrc}
-                      alt={platform.name}
-                      className="h-10 w-10 shrink-0 rounded-[10px] border object-cover"
-                      style={{
-                        backgroundColor: `${platform.accent}14`,
-                        borderColor: `${platform.accent}30`,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      className="bz-h-tight flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border text-[13px] font-semibold"
-                      style={{
-                        backgroundColor: `${platform.accent}14`,
-                        color: platform.accent,
-                        borderColor: `${platform.accent}30`,
-                      }}
-                      aria-hidden
-                    >
-                      {platform.initials}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">
-                      {platform.name}
-                    </div>
-                    <div className="bz-mono mt-0.5 text-[10.5px] uppercase tracking-[0.08em] text-[#737373]">
-                      {isTr ? platform.categoryLabel.tr : platform.categoryLabel.en}
-                    </div>
-                  </div>
-                  <Badge kind={statusBadgeKind}>{statusLabel}</Badge>
-                </div>
-
-                {platform.comingSoon ? (
-                  <div className="rounded-[10px] border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-3">
-                    <div className="pulse-eyebrow mb-1 text-[9.5px] text-[#737373]">
-                      {isTr ? 'BACKEND HAZIR' : 'BACKEND READY'}
-                    </div>
-                    <p className="text-[11.5px] leading-[1.5] text-[#525252]">
-                      {isTr
-                        ? 'AutomationRule schema mevcut; arayüz bir sonraki fazda açılacak.'
-                        : 'AutomationRule schema is in place; UI opens in the next phase.'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[10px] border border-[#EDEDED]">
-                    <div className="bg-white p-2.5">
-                      <div className="pulse-eyebrow mb-0.5 text-[9.5px] text-[#737373]">
-                        {isTr ? 'BAĞLI' : 'CONNECTED'}
-                      </div>
-                      <div className="bz-mono text-[12px] font-semibold tabular-nums text-[#0A0A0A]">
-                        {platform.connected}/{platform.total}
-                      </div>
-                    </div>
-                    <div className="border-l border-[#EDEDED] bg-white p-2.5">
-                      <div className="pulse-eyebrow mb-0.5 text-[9.5px] text-[#737373]">
-                        {isTr ? 'URL VAR' : 'URL SET'}
-                      </div>
-                      <div className="bz-mono text-[12px] font-semibold tabular-nums text-[#0A0A0A]">
-                        {platform.urlSet}/{platform.total}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  {platform.comingSoon ? (
-                    <button
-                      type="button"
-                      disabled
-                      aria-disabled="true"
-                      className="bz-btn flex-1 cursor-not-allowed opacity-50"
-                      title={isTr ? 'Yakında bağlanacak' : 'Coming soon'}
-                    >
-                      {isTr ? 'Yakında' : 'Coming soon'}
-                    </button>
-                  ) : (
-                    <Link
-                      href={`/${locale}/dashboard/platforms/${platform.slug}?restaurantId=${encodeURIComponent(selectedRestaurantId)}`}
-                      className="bz-btn-ghost inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 text-[12px]"
-                      aria-label={
-                        isTr
-                          ? `${platform.name} bağlantısını yönet`
-                          : `Manage ${platform.name} connection`
-                      }
-                    >
-                      <Settings size={11} strokeWidth={2} />
-                      {isLocked ? (isTr ? 'Detay' : 'Details') : isTr ? 'Yönet' : 'Manage'}
-                    </Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+      {/* ── Contact channels ─────────────────────────────────────────── */}
+      <section aria-labelledby="pl-contact-title" className="space-y-3">
+        <div>
+          <h2 id="pl-contact-title" className="bz-h-tight text-[18px] text-[#0A0A0A]">
+            {isTr ? 'İletişim kanalları' : 'Contact channels'}
+          </h2>
+          <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+            {isTr
+              ? 'Müşteri sayfanızda gösterilen sosyal medya ve mesaj linkleri.'
+              : 'Social and messaging links shown on your customer page.'}
+          </p>
         </div>
-      )}
-    </div>
+        <ul role="list" className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0">
+          {contactStatuses.map((status) => (
+            <PlatformLinkRow
+              key={status.platform.slug}
+              status={status}
+              locale={locale}
+              restaurantId={restaurant.id}
+              nowMs={nowMs}
+            />
+          ))}
+        </ul>
+      </section>
+
+      <div>
+        <a
+          href={exportHref}
+          download
+          className={`inline-flex min-h-[44px] items-center gap-1.5 rounded text-[12.5px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline sm:min-h-[32px] ${FOCUS_RING}`}
+        >
+          <Download size={13} aria-hidden="true" />
+          {isTr ? 'Kontrol geçmişini indir (CSV)' : 'Download check history (CSV)'}
+        </a>
+      </div>
+    </>
   );
 }

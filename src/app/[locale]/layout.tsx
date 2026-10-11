@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { getSiteSettings } from '@/lib/site-settings';
+import DocumentLang from '@/components/providers/DocumentLang';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
@@ -232,6 +233,7 @@ export default async function LocaleLayout({
 
   return (
     <div className="antialiased bg-white text-[#0A0A0A] min-h-dvh flex flex-col">
+      <DocumentLang lang={locale} />
       <script
         type="application/ld+json"
         // JSON-LD is safe to inject — it's a static, server-generated object.

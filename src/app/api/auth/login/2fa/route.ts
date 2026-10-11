@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/totp';
 import { rateLimit, maybeSweep, getClientIp } from '@/lib/rate-limit';
 import { getSecret } from '@/lib/auth';
 import * as jose from 'jose';
-import { issueLoginSession } from '../route';
+import { issueLoginSession } from '@/lib/login-session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

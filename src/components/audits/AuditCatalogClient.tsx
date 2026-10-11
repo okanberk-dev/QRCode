@@ -25,6 +25,7 @@ import {
   parseAuditErrorResponse,
   summarizeAuditError,
 } from '@/lib/audits/error-humanizer';
+import { useActiveBusinessSelection } from './useActiveBusinessSelection';
 
 interface Restaurant {
   id: string;
@@ -91,9 +92,12 @@ export default function AuditCatalogClient({
   const t = getTranslations(locale);
   const router = useRouter();
   const restaurantSelectId = useId();
-  const [activeRestaurantId, setActiveRestaurantId] = useState<string>(
-    initialActiveRestaurantId ?? restaurants[0]?.id ?? '',
-  );
+  // Follows the shell's business switcher (topbar / sidebar).
+  const business = useActiveBusinessSelection(restaurants, initialActiveRestaurantId);
+  const activeRestaurantId = business.activeId ?? '';
+  const businessQuery = activeRestaurantId
+    ? `?restaurantId=${encodeURIComponent(activeRestaurantId)}`
+    : '';
   const [sectorFilter, setSectorFilter] = useState<AuditSector | 'all'>('all');
   const [rows, setRows] = useState<CatalogRow[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -158,11 +162,10 @@ export default function AuditCatalogClient({
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={locale === 'tr' ? 'HAZIR ŞABLONLAR' : 'READY-MADE TEMPLATES'}
-        eyebrowColor="#C6F24E"
         title={t.audits_catalog_title}
         description={t.audits_catalog_subtitle}
         actions={
-          <Link href={`/${locale}/dashboard/audits`} className="bz-btn-ghost">
+          <Link href={`/${locale}/dashboard/audits${businessQuery}`} className="bz-btn-ghost">
             {locale === 'tr' ? 'Listeye dön' : 'Back to list'}
           </Link>
         }
@@ -180,7 +183,7 @@ export default function AuditCatalogClient({
               id={restaurantSelectId}
               className="w-full"
               value={activeRestaurantId}
-              onChange={setActiveRestaurantId}
+              onChange={business.select}
               options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
             />
           </div>
@@ -231,7 +234,7 @@ export default function AuditCatalogClient({
           title={t.audits_catalog_empty}
           body={locale === 'tr' ? 'Filtre değiştir veya sıfırdan oluştur.' : 'Adjust filter or start from scratch.'}
           action={
-            <Link href={`/${locale}/dashboard/audits/new`} className="bz-btn-primary">
+            <Link href={`/${locale}/dashboard/audits/new${businessQuery}`} className="bz-btn-primary">
               {t.audits_my_list_cta_new}
             </Link>
           }
@@ -251,7 +254,7 @@ export default function AuditCatalogClient({
                 <span className="flex items-center gap-1">
                   <ClipboardCheck size={12} />
                   <span className="bz-mono">{row._count.questions}</span>{' '}
-                  {t.audits_admin_questions.toLowerCase()}
+                  {locale === 'tr' ? 'soru' : row._count.questions === 1 ? 'question' : 'questions'}
                 </span>
                 <button
                   type="button"
