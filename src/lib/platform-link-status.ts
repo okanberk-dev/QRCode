@@ -33,6 +33,7 @@ import {
   type PlatformUrlField,
 } from '@/lib/platform-management';
 import { detectSector, getSectorPlatforms, SECTOR_PLATFORMS } from '@/lib/sector-platforms';
+import { localizeCheckError } from '@/lib/platform-link-messages';
 
 export type PlatformLinkState = 'connected' | 'issue' | 'missing' | 'off' | 'locked';
 
@@ -281,7 +282,8 @@ export function describePlatformLinkStatus(
     case 'untested':
       return isTr ? 'Link kayıtlı · henüz kontrol edilmedi' : 'Link saved · not checked yet';
     case 'test_failed': {
-      const error = shortError(status.lastCheck?.error ?? null);
+      const stored = status.lastCheck?.error ?? null;
+      const error = shortError(stored ? localizeCheckError(stored, locale) : null);
       if (isTr) return error ? `Son kontrol başarısız (${rel}): ${error}` : `Son kontrol başarısız (${rel})`;
       return error ? `Last check failed (${rel}): ${error}` : `Last check failed (${rel})`;
     }

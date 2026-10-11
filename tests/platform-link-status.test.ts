@@ -292,3 +292,11 @@ test('platform-management: provider lookup + canonical label', () => {
   assert.equal(getManageablePlatformByProvider(null), null);
   assert.equal(PLATFORM_LINKS_LABEL.tr.toLocaleUpperCase('tr-TR'), 'PLATFORM BAĞLANTILARI');
 });
+
+test('localizeCheckError shows a stored check message in the viewer language', async () => {
+  const { localizeCheckError } = await import('../src/lib/platform-link-messages');
+  assert.equal(localizeCheckError('Erişilemedi.', 'en'), 'Unreachable.');
+  assert.equal(localizeCheckError('Unreachable.', 'tr'), 'Erişilemedi.');
+  assert.equal(localizeCheckError('5 saniyede yanıt alınamadı.', 'en'), 'No response within 5 seconds.');
+  assert.equal(localizeCheckError('Some custom provider text', 'en'), 'Some custom provider text');
+});

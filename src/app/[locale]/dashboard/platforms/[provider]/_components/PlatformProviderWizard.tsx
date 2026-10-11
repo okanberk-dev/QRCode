@@ -61,6 +61,7 @@ import {
   summarizePlatformLinks,
   type LatestCheckLite,
 } from '@/lib/platform-link-status';
+import { localizeCheckError } from '@/lib/platform-link-messages';
 
 export type ProviderRestaurantInfo = {
   id: string;
@@ -138,7 +139,7 @@ function CheckResultLine({
           <strong>{isTr ? 'Son kontrol başarısız' : 'Last check failed'}</strong>
           <span className="ml-1">· {relative}</span>
         </div>
-        {check.error && <div className="mt-0.5 break-words text-[12px] text-[#7F1D1D]">{check.error}</div>}
+        {check.error && <div className="mt-0.5 break-words text-[12px] text-[#7F1D1D]">{localizeCheckError(check.error, locale)}</div>}
         <div className="mt-1 text-[11.5px] text-[#7F1D1D]">
           {isTr
             ? 'Bazı platformlar otomatik kontrolü engelleyebilir; link tarayıcıda yine de açılabilir.'

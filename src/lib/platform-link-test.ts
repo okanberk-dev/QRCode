@@ -21,6 +21,7 @@ import {
   type IntegrationProvider,
 } from '@/lib/integration-domains';
 import { assertPublicHttpUrl, type SsrfBlockReason } from '@/lib/ssrf-guard';
+import { PLATFORM_LINK_MESSAGES } from '@/lib/platform-link-messages';
 
 export type PlatformLinkTestSource = 'manual' | 'cron' | 'retest_all';
 export type PlatformLinkTestLocale = 'tr' | 'en';
@@ -58,40 +59,9 @@ const USER_AGENT =
 
 const ERROR_MAX_LEN = 500;
 
-const MESSAGES = {
-  emptyUrl: {
-    tr: 'URL boş — önce kaydet, sonra test et.',
-    en: 'URL is empty — save it first, then test.',
-  },
-  invalidUrl: { tr: 'Geçersiz URL formatı.', en: 'Invalid URL format.' },
-  notFound: {
-    tr: 'Sayfa bulunamadı (404). Bağlantı kaldırılmış ya da yanlış olabilir.',
-    en: 'Page not found (404). The link may have been removed or is incorrect.',
-  },
-  gone: {
-    tr: 'Sayfa kalıcı olarak kaldırılmış (410).',
-    en: 'Page permanently removed (410).',
-  },
-  blocked: {
-    tr: 'Bağlantı sunucu tarafından reddedildi.',
-    en: 'The server refused the request.',
-  },
-  serverError: {
-    tr: 'Platform sunucusu hata döndürdü. Birazdan tekrar deneyin.',
-    en: 'The platform server returned an error. Try again shortly.',
-  },
-  unverified: { tr: 'Bağlantı doğrulanamadı.', en: 'The link could not be verified.' },
-  timeout: (seconds: number) => ({
-    tr: `${seconds} saniyede yanıt alınamadı.`,
-    en: `No response within ${seconds} seconds.`,
-  }),
-  unreachable: { tr: 'Erişilemedi.', en: 'Unreachable.' },
-  // SSRF guard (src/lib/ssrf-guard.ts) — özel / iç ağ adresleri test edilmez.
-  privateAddress: {
-    tr: 'Bu adres herkese açık bir web adresi değil (yerel / iç ağ adresleri test edilemez).',
-    en: 'This is not a public web address (local / internal network addresses cannot be tested).',
-  },
-} as const;
+// Owner-facing check messages live in a client-safe module so stored
+// results can be shown in the viewer's language (platform-link-messages.ts).
+const MESSAGES = PLATFORM_LINK_MESSAGES;
 
 // Kaç redirect hop'u elle takip edilir. Her hop SSRF guard'dan yeniden geçer;
 // limit aşılırsa son 3xx status raporlanır (sunucu yanıt verdi → link canlı).
