@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { Check, Loader2, Star } from 'lucide-react';
 import { AlertBanner } from '@/components/ui';
 import {
@@ -15,7 +15,13 @@ interface RedirectThresholdPickerProps {
   /** Stored threshold. NULL / drifted values fall back to the default (5). */
   initialValue: number | null;
   locale: 'tr' | 'en';
+  /** Id of a visible label element; falls back to an aria-label. */
+  labelId?: string;
+  /** Fires after a successful PUT so the parent can keep its row in sync. */
+  onSaved?: (next: RedirectMinRating) => void;
 }
+
+const SAVED_NOTICE_MS = 2500;
 
 const COPY = {
   tr: {
@@ -26,7 +32,10 @@ const COPY = {
         ? '1-2-3-4 yıldız işletmene özel forma düşer'
         : '1-2-3 yıldız işletmene özel forma düşer',
     saving: 'Kaydediliyor…',
+    saved: 'Kaydedildi',
     saveError: 'Eşik kaydedilemedi. Tekrar dene.',
+    groupLabel: 'Yönlendirme eşiği',
+    defaultTag: 'VARSAYILAN',
     note:
       'Bu eşik yalnızca hangi müşteriye herkese açık platform bağlantısının önerileceğini belirler. Her müşteri istediği yere yorum yazma hakkını korur; düşük puan veren müşteriler önce ekibinle özel paylaşım yapmayı tercih edebilir.',
   },
@@ -37,7 +46,10 @@ const COPY = {
         ? '1-2-3-4 stars land in your own feedback form'
         : '1-2-3 stars land in your own feedback form',
     saving: 'Saving…',
+    saved: 'Saved',
     saveError: 'Could not save the threshold. Try again.',
+    groupLabel: 'Redirect threshold',
+    defaultTag: 'DEFAULT',
     note:
       'This threshold only decides who is offered the public platform link. Every customer keeps the right to post wherever they want; lower-rating customers may prefer to share with your team privately first.',
   },
@@ -48,27 +60,44 @@ const COPY = {
  * that is handed the public review-platform link. Default 5.
  *
  * Self-persisting like `<DefaultRedirectPicker>`: optimistic update, PUT to
- * /api/restaurants/[id], revert + inline error on failure.
+ * /api/restaurants/[id], revert + inline error on failure, "Kaydedildi"
+ * announced through a polite live region on success.
+ *
+ * Keyboard: WAI-ARIA radio group — roving tabindex (only the checked option
+ * is in the tab order), arrow keys move + select.
  */
 export default function RedirectThresholdPicker({
   restaurantId,
   initialValue,
   locale,
+  labelId,
+  onSaved,
 }: RedirectThresholdPickerProps) {
   const copy = COPY[locale] ?? COPY.tr;
   const [selected, setSelected] = useState<RedirectMinRating>(
     normalizeRedirectMinRating(initialValue),
   );
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState<RedirectMinRating | null>(null);
   const [isPending, startTransition] = useTransition();
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const savedTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (savedTimer.current) window.clearTimeout(savedTimer.current);
+    },
+    [],
+  );
 
   const persist = (next: RedirectMinRating) => {
-    if (next === selected) return;
+    if (next === selected || isPending) return;
     const previous = selected;
     setSelected(next); // optimistic
     setPending(next);
     setError(null);
+    setSaved(false);
 
     startTransition(async () => {
       try {
@@ -80,7 +109,12 @@ export default function RedirectThresholdPicker({
         if (!res.ok) {
           setSelected(previous); // revert — never leave the UI claiming a save that failed
           setError(copy.saveError);
+          return;
         }
+        onSaved?.(next);
+        setSaved(true);
+        if (savedTimer.current) window.clearTimeout(savedTimer.current);
+        savedTimer.current = window.setTimeout(() => setSaved(false), SAVED_NOTICE_MS);
       } catch {
         setSelected(previous);
         setError(copy.saveError);
@@ -90,25 +124,46 @@ export default function RedirectThresholdPicker({
     });
   };
 
+  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const count = REDIRECT_MIN_RATING_OPTIONS.length;
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % count;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + count) % count;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = count - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    optionRefs.current[nextIndex]?.focus();
+    persist(REDIRECT_MIN_RATING_OPTIONS[nextIndex]);
+  };
+
   return (
     <div className="space-y-3">
       <div
         role="radiogroup"
-        aria-label={locale === 'tr' ? 'Yönlendirme eşiği' : 'Redirect threshold'}
+        aria-labelledby={labelId}
+        aria-label={labelId ? undefined : copy.groupLabel}
         className="grid gap-2.5 sm:grid-cols-2"
       >
-        {REDIRECT_MIN_RATING_OPTIONS.map((option) => {
+        {REDIRECT_MIN_RATING_OPTIONS.map((option, index) => {
           const active = selected === option;
           const busy = isPending && pending === option;
           return (
             <button
               key={option}
+              ref={(node) => {
+                optionRefs.current[index] = node;
+              }}
               type="button"
               role="radio"
               aria-checked={active}
-              disabled={isPending}
+              tabIndex={active ? 0 : -1}
+              // aria-disabled (not `disabled`) while saving: a disabled button
+              // would drop keyboard focus mid arrow-key navigation.
+              aria-disabled={isPending || undefined}
               onClick={() => persist(option)}
-              className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+              onKeyDown={(event) => onKeyDown(event, index)}
+              className={`flex min-h-[44px] items-start gap-3 rounded-2xl border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 aria-disabled:cursor-wait ${
                 active
                   ? 'border-[#0A0A0A] bg-[#EAF9B8]/40'
                   : 'border-[#EDEDED] bg-white hover:border-[#A3A3A3]'
@@ -117,7 +172,7 @@ export default function RedirectThresholdPicker({
               <span
                 aria-hidden
                 className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                  active ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#737373]'
+                  active ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#525252]'
                 }`}
               >
                 {busy ? (
@@ -130,12 +185,13 @@ export default function RedirectThresholdPicker({
               </span>
               <span className="min-w-0">
                 <span className="bz-h-tight block text-[13.5px]">{copy.label(option)}</span>
-                <span className="mt-0.5 block text-[11.5px] leading-[1.5] text-[#737373]">
+                <span className="mt-0.5 block text-[11.5px] leading-[1.5] text-[#525252]">
                   {copy.sub(option)}
                 </span>
                 {option === DEFAULT_REDIRECT_MIN_RATING && (
-                  <span className="pulse-eyebrow mt-1.5 block text-[9.5px] text-[#A8D62E]">
-                    {locale === 'tr' ? 'VARSAYILAN' : 'DEFAULT'}
+                  <span className="pulse-eyebrow mt-1.5 inline-flex items-center gap-1.5 text-[9.5px] text-[#525252]">
+                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#A8D62E]" />
+                    {copy.defaultTag}
                   </span>
                 )}
               </span>
@@ -150,7 +206,23 @@ export default function RedirectThresholdPicker({
         </AlertBanner>
       )}
 
-      <p className="text-[11.5px] leading-[1.55] text-[#737373]">{copy.note}</p>
+      <div>
+        {/* Always mounted so the "Kaydedildi" change is announced; empty it
+            takes no space. */}
+        <p
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-1 text-[12px] font-medium text-[#166534] [&:not(:empty)]:mb-2"
+        >
+          {saved && (
+            <>
+              <Check size={12} strokeWidth={2.5} aria-hidden="true" />
+              {copy.saved}
+            </>
+          )}
+        </p>
+        <p className="text-[11.5px] leading-[1.55] text-[#525252]">{copy.note}</p>
+      </div>
     </div>
   );
 }

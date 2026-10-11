@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   AlertOctagon,
@@ -14,6 +14,7 @@ import {
   Link2,
   Lock,
   Palette,
+  Plug,
   QrCode,
 } from "lucide-react";
 import { AlertBanner, BusinessStatusBadge, PageHeader } from "@/components/ui";
@@ -25,27 +26,29 @@ import { BusinessWebsiteSettings } from "@/components/dashboard/settings/section
 import { BusinessOperationalSettings } from "@/components/dashboard/settings/sections/BusinessOperationalSettings";
 import { BusinessSecuritySettings } from "@/components/dashboard/settings/sections/BusinessSecuritySettings";
 import { DangerZone } from "@/components/dashboard/settings/sections/DangerZone";
+import { BusinessPlatformLinksSummary } from "@/components/dashboard/settings/sections/BusinessPlatformLinksSummary";
+import {
+  parseLatestChecksPayload,
+  summarizeReviewPlatformLinks,
+  type LatestCheckLite,
+} from "@/lib/platform-link-status";
 import SettingsLoading from "./loading";
 
 /**
  * Amber dot rendered next to a tab label when that section has unfilled
  * fields the owner should know about. Reuses the warning palette
  * (#D97706 / #FFFBEB) to stay consistent with `<AlertBanner kind="warn">`.
+ * `label` overrides the default "N eksik alan" text for sections whose
+ * issue is not a field count (e.g. no review platform connected).
  */
-function IncompleteDot({ count, isTr }: { count: number; isTr: boolean }) {
+function IncompleteDot({ count, isTr, label }: { count: number; isTr: boolean; label?: string }) {
+  const text =
+    label ?? (isTr ? `${count} eksik alan` : `${count} field${count > 1 ? 's' : ''} missing`);
   return (
     <span
       role="status"
-      aria-label={
-        isTr
-          ? `${count} eksik alan`
-          : `${count} field${count > 1 ? 's' : ''} missing`
-      }
-      title={
-        isTr
-          ? `${count} eksik alan`
-          : `${count} field${count > 1 ? 's' : ''} missing`
-      }
+      aria-label={text}
+      title={text}
       className="inline-block h-1.5 w-1.5 rounded-full bg-[#D97706]"
     />
   );
@@ -106,12 +109,37 @@ export interface RestaurantPayload {
   targetRating: number | null;
 }
 
-const SECTION_IDS = ["general", "brand", "website", "operations", "security", "danger"] as const;
+const SECTION_IDS = [
+  "general",
+  "platforms",
+  "brand",
+  "website",
+  "operations",
+  "security",
+  "danger",
+] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 const VALID_SECTION_IDS = new Set<string>(SECTION_IDS);
+// Legacy deep links (`?section=integrations` — old "Entegrasyonlar" tab,
+// still used by onboarding mails / bookmarks) open the platforms tab.
+const SECTION_ALIASES: Record<string, SectionId> = { integrations: "platforms" };
+
+function resolveSectionId(raw: string | null): SectionId {
+  if (!raw) return "general";
+  const aliased = Object.prototype.hasOwnProperty.call(SECTION_ALIASES, raw) ? SECTION_ALIASES[raw] : raw;
+  return VALID_SECTION_IDS.has(aliased) ? (aliased as SectionId) : "general";
+}
 
 interface RestaurantSettingsClientProps {
   initialRestaurant?: RestaurantPayload | null;
+  /**
+   * Latest link check per provider, loaded with the restaurant on the owner
+   * direct-load path. `undefined` → the client fetches
+   * `GET /integrations/checks` itself (impersonation / team-member path).
+   */
+  initialPlatformChecks?: Record<string, LatestCheckLite>;
+  /** Server render time — keeps "son kontrol 2 sa önce" SSR-stable. */
+  serverNow?: number;
 }
 
 /**
@@ -120,8 +148,9 @@ interface RestaurantSettingsClientProps {
  * workspace-level (faturalandırma / kullanıcılar / bildirim) `/dashboard/account`
  * rotasında yer alacak.
  *
- * URL sync: `?section=general|brand` — `<SettingsLayout>` aktif tab'ı kontrol
- * eder, `replaceState` ile geri buton hijack'i önlenir.
+ * URL sync: `?section=general|platforms|brand|…` — `<SettingsLayout>` aktif
+ * tab'ı kontrol eder, `replaceState` ile geri buton hijack'i önlenir.
+ * `?section=integrations` (eski entegrasyon sekmesi) platforms sekmesini açar.
  *
  * §40.10 server-hydration: parent server component restoran payload'ını
  * `initialRestaurant` prop'uyla geçirir. Owner direct-load yolunda fetch
@@ -130,13 +159,13 @@ interface RestaurantSettingsClientProps {
  */
 export default function RestaurantSettingsClient({
   initialRestaurant,
+  initialPlatformChecks,
+  serverNow,
 }: RestaurantSettingsClientProps) {
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const locale = params.locale === "en" ? "en" : "tr";
   const id = params.id as string;
-  const requestedSection = searchParams.get("section");
 
   // §40.10 server-hydration:
   // - initialRestaurant === undefined → admin/impersonation veya cross-token
@@ -150,13 +179,45 @@ export default function RestaurantSettingsClient({
   const [error, setError] = useState<string | null>(null);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
-  const initialSection = useMemo<string>(() => {
-    const fromUrl = searchParams.get("section");
-    if (fromUrl && VALID_SECTION_IDS.has(fromUrl)) return fromUrl;
-    return "general";
-  }, [searchParams]);
+  const initialSection = useMemo<string>(
+    () => resolveSectionId(searchParams.get("section")),
+    [searchParams],
+  );
 
   const [active, setActive] = useState<string>(initialSection);
+
+  // Platform link checks power the "Platform bağlantıları" tab (summary +
+  // tab dot). `null` = still loading → untested until the response lands.
+  const [platformChecks, setPlatformChecks] = useState<Record<string, LatestCheckLite> | null>(
+    initialPlatformChecks ?? null,
+  );
+  const checksRequestedRef = useRef(initialPlatformChecks !== undefined);
+  const [nowMs, setNowMs] = useState<number>(serverNow ?? 0);
+  useEffect(() => setNowMs(Date.now()), []);
+
+  useEffect(() => {
+    if (checksRequestedRef.current) return;
+    checksRequestedRef.current = true;
+    let cancelled = false;
+    fetch(`/api/restaurants/${id}/integrations/checks`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setPlatformChecks(parseLatestChecksPayload(data));
+      })
+      .catch(() => {
+        // Checks are advisory: a failed read shows links as "not checked yet".
+        if (!cancelled) setPlatformChecks({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  // Same review-link summary the platforms overview shows for this business.
+  const reviewLinkSummary = useMemo(
+    () => (restaurant ? summarizeReviewPlatformLinks(restaurant, platformChecks ?? {}) : null),
+    [restaurant, platformChecks],
+  );
 
   /**
    * Per-section "missing field" count derived from the loaded restaurant
@@ -170,6 +231,7 @@ export default function RestaurantSettingsClient({
     if (!restaurant) {
       return {
         general: 0,
+        platforms: 0,
         brand: 0,
         website: 0,
         operations: 0,
@@ -188,18 +250,22 @@ export default function RestaurantSettingsClient({
     const operationsMissing = restaurant.workingHours && restaurant.workingHours.trim().length > 0 ? 0 : 1;
     return {
       general: generalMissing,
+      // Not a field count: flag the tab while no review platform is
+      // connected (customers have nowhere to be offered).
+      platforms: reviewLinkSummary && reviewLinkSummary.connected === 0 ? 1 : 0,
       brand: 0,
       website: websiteMissing,
       operations: operationsMissing,
       security: 0,
       danger: 0,
     };
-  }, [restaurant]);
+  }, [restaurant, reviewLinkSummary]);
 
   const sectionTabs = useMemo<SettingsTab[]>(() => {
     const isTrLabel = locale === "tr";
     const labels: Record<SectionId, { tr: string; en: string }> = {
       general: { tr: "Genel", en: "General" },
+      platforms: { tr: "Platform bağlantıları", en: "Platform links" },
       brand: { tr: "Marka", en: "Brand" },
       website: { tr: "Web sitesi", en: "Website" },
       operations: { tr: "Operasyonel", en: "Operations" },
@@ -211,16 +277,23 @@ export default function RestaurantSettingsClient({
       return {
         id,
         label: isTrLabel ? labels[id].tr : labels[id].en,
-        badge: issues > 0 ? <IncompleteDot count={issues} isTr={isTrLabel} /> : undefined,
+        badge:
+          issues > 0 ? (
+            <IncompleteDot
+              count={issues}
+              isTr={isTrLabel}
+              label={
+                id === "platforms"
+                  ? isTrLabel
+                    ? "Yorum platformu bağlı değil"
+                    : "No review platform connected"
+                  : undefined
+              }
+            />
+          ) : undefined,
       };
     });
   }, [locale, sectionIssues]);
-
-  useEffect(() => {
-    if (requestedSection === "integrations") {
-      router.replace(`/${locale}/dashboard/platforms?restaurantId=${id}`);
-    }
-  }, [id, locale, requestedSection, router]);
 
   useEffect(() => {
     // §40.10 server-hydration — SSR data hazırsa ilk mount'taki fetch'i atla.
@@ -373,7 +446,7 @@ export default function RestaurantSettingsClient({
     <div>
       <Link
         href={`/${locale}/dashboard/restaurants/${id}`}
-        className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1 mb-3"
+        className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex min-h-[44px] items-center gap-1 mb-3 sm:min-h-[32px]"
       >
         <ArrowLeft size={12} />
         {locale === "tr" ? "İşletme özetine dön" : "Back to business summary"}
@@ -400,7 +473,7 @@ export default function RestaurantSettingsClient({
           className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
         >
           <ExternalLink size={12} strokeWidth={2.2} />
-          {locale === "tr" ? "Public sayfayı gör" : "View public page"}
+          {locale === "tr" ? "Müşteri sayfasını gör" : "View customer page"}
         </a>
         <button
           type="button"
@@ -458,9 +531,33 @@ export default function RestaurantSettingsClient({
       </SettingsSection>
 
       <SettingsSection
+        id="platforms"
+        active={active === "platforms"}
+        eyebrow={isTr ? "02 — PLATFORMLAR" : "02 — PLATFORMS"}
+        title={isTr ? "Platform bağlantıları" : "Platform links"}
+        description={
+          isTr
+            ? "Bu işletmenin yorum platformu linkleri ve müşteri yönlendirmesi."
+            : "This business's review-platform links and customer routing."
+        }
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <Plug size={18} />
+          </span>
+        }
+      >
+        <BusinessPlatformLinksSummary
+          restaurant={restaurant}
+          locale={locale}
+          checks={platformChecks}
+          nowMs={nowMs}
+        />
+      </SettingsSection>
+
+      <SettingsSection
         id="brand"
         active={active === "brand"}
-        eyebrow={isTr ? "02 — MARKA" : "02 — BRAND"}
+        eyebrow={isTr ? "03 — MARKA" : "03 — BRAND"}
         title={isTr ? "Marka Kimliği" : "Brand identity"}
         description={
           isTr
@@ -483,7 +580,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="website"
         active={active === "website"}
-        eyebrow={isTr ? "03 — WEB SİTESİ" : "03 — WEBSITE"}
+        eyebrow={isTr ? "04 — WEB SİTESİ" : "04 — WEBSITE"}
         title={isTr ? "Web sitesi entegrasyonu" : "Website integration"}
         description={
           isTr
@@ -508,7 +605,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="operations"
         active={active === "operations"}
-        eyebrow={isTr ? "04 — OPERASYONEL" : "04 — OPERATIONS"}
+        eyebrow={isTr ? "05 — OPERASYONEL" : "05 — OPERATIONS"}
         title={isTr ? "Operasyonel ayarlar" : "Operational settings"}
         description={
           isTr ? "Çalışma saatleri ve geçici kapalı durumu." : "Opening hours and temporary closure."
@@ -525,7 +622,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="security"
         active={active === "security"}
-        eyebrow={isTr ? "05 — GÜVENLİK" : "05 — SECURITY"}
+        eyebrow={isTr ? "06 — GÜVENLİK" : "06 — SECURITY"}
         title={isTr ? "Güvenlik & erişim" : "Security & access"}
         description={isTr ? "İşletme aktiflik durumu." : "Whether the business is active."}
         actions={
@@ -540,7 +637,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="danger"
         active={active === "danger"}
-        eyebrow={isTr ? "06 — TEHLİKELİ BÖLGE" : "06 — DANGER ZONE"}
+        eyebrow={isTr ? "07 — TEHLİKELİ BÖLGE" : "07 — DANGER ZONE"}
         title={isTr ? "Tehlikeli bölge" : "Danger zone"}
         description={
           isTr

@@ -1390,10 +1390,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         <span>
           {isTr ? 'Diğer platformları da yönetmek için ' : 'Manage other platforms in '}
           <Link
-            href={`/${locale}/dashboard/platforms`}
-            className="font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+            href={`/${locale}/dashboard/platforms${
+              activeRestaurantId ? `?restaurantId=${encodeURIComponent(activeRestaurantId)}` : ''
+            }`}
+            className="rounded font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
           >
-            {isTr ? 'Platform Bağlantıları' : 'Platform Links'}
+            {isTr ? 'Platform bağlantıları' : 'Platform links'}
           </Link>
           {isTr ? ' sayfasına git.' : '.'}
         </span>

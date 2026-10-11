@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ExternalLink,
   MessageSquare,
+  Plug,
   QrCode,
   Settings as SettingsIcon,
   Sparkles,
@@ -24,6 +25,13 @@ import {
   PageHeader,
   StatCard,
 } from '@/components/ui';
+import { PlatformSummaryLine } from '@/components/dashboard/platforms/PlatformBusinessContext';
+import { PLATFORM_LINKS_LABEL } from '@/lib/platform-management';
+import {
+  parseLatestChecksPayload,
+  summarizeReviewPlatformLinks,
+  type PlatformLinkSummary,
+} from '@/lib/platform-link-status';
 import DetailLoading from './loading';
 
 /**
@@ -59,6 +67,8 @@ interface RestaurantSummary {
   feedbacks: number;
   menuItems: number;
   qrGenerations: number;
+  /** Review-link summary for the "Platform bağlantıları" strip. */
+  platformLinks: PlatformLinkSummary;
 }
 
 interface RestaurantDetailClientProps {
@@ -86,12 +96,19 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch(`/api/restaurants/${id}`);
+        // Link checks are advisory — a failed read only means "not checked yet".
+        const [res, checksRes] = await Promise.all([
+          fetch(`/api/restaurants/${id}`),
+          fetch(`/api/restaurants/${id}/integrations/checks`).catch(() => null),
+        ]);
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || (isTr ? 'İşletme yüklenemedi.' : 'Failed to load.'));
         }
         const json = await res.json();
+        const checks = parseLatestChecksPayload(
+          checksRes && checksRes.ok ? await checksRes.json().catch(() => null) : null,
+        );
         if (cancelled) return;
         setData({
           id: json.id,
@@ -105,6 +122,10 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           feedbacks: json._count?.feedbacks ?? 0,
           menuItems: json._count?.menuItems ?? 0,
           qrGenerations: json._count?.qrGenerations ?? 0,
+          platformLinks: summarizeReviewPlatformLinks(
+            { ...json, category: json.category ?? null },
+            checks,
+          ),
         });
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'error');
@@ -121,7 +142,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
   const backLink = (
     <Link
       href={`/${locale}/dashboard/restaurants`}
-      className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1 mb-3"
+      className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex min-h-[44px] items-center gap-1 mb-3 sm:min-h-[32px]"
     >
       <ArrowLeft size={12} />
       {isTr ? 'İşletmelere dön' : 'Back to businesses'}
@@ -185,8 +206,8 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
       id: 'settings',
       label: isTr ? 'Ayarlar' : 'Settings',
       description: isTr
-        ? 'Genel, marka, entegrasyon, operasyonel, güvenlik'
-        : 'General, brand, integrations, operations, security',
+        ? 'Genel, platform bağlantıları, marka, operasyon, güvenlik'
+        : 'General, platform links, brand, operations, security',
       href: `/${locale}/dashboard/restaurants/${id}/settings`,
       icon: SettingsIcon,
       accent: true,
@@ -320,6 +341,32 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           </a>
         </div>
       </div>
+
+      {/* Platform links strip — status at a glance, one tap to the editor
+          for THIS business (the overview opens on it via ?restaurantId). */}
+      <Link
+        href={`/${locale}/dashboard/platforms?restaurantId=${encodeURIComponent(data.id)}`}
+        className="bz-card mt-3 flex min-h-[56px] items-center gap-3 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+      >
+        <span
+          aria-hidden="true"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#EDEDED] bg-[#FAFAFA] text-[#0A0A0A]"
+        >
+          <Plug size={14} strokeWidth={2} />
+        </span>
+        <span className="min-w-0 flex-1 text-[12.5px] text-[#525252]">
+          <PlatformSummaryLine
+            summary={data.platformLinks}
+            locale={locale}
+            lead={
+              <span className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                {isTr ? PLATFORM_LINKS_LABEL.tr : PLATFORM_LINKS_LABEL.en}
+              </span>
+            }
+          />
+        </span>
+        <ChevronRight size={14} strokeWidth={2} aria-hidden="true" className="shrink-0 text-[#737373]" />
+      </Link>
 
       {/* Quick actions — 2×2 equal-weight grid. */}
       <div className="mt-6">

@@ -13,6 +13,7 @@ import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { PulseSelect } from '@/components/ui';
 import ViewportMount from '@/components/ui/ViewportMount';
 import { detectSector } from '@/lib/sector-platforms';
+import { getManagedPlatform } from '@/lib/platform-management';
 import {
   ACTIVE_BUSINESS_STORAGE_KEY,
   resolveActiveRestaurantId,
@@ -116,6 +117,16 @@ function useTopBar(locale: Locale, pathname: string | null, section?: string | n
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
   if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
   if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİLER' : 'CRM / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  if (rest.startsWith('/platforms/')) {
+    // Provider page: "PLATFORM BAĞLANTILARI / YEMEKSEPETI" + platform name.
+    const platformName = getManagedPlatform(rest.slice('/platforms/'.length).split('/')[0])?.name;
+    if (platformName) {
+      return {
+        breadcrumb: `${isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'} / ${platformName.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}`,
+        title: platformName,
+      };
+    }
+  }
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };

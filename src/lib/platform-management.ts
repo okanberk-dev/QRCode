@@ -271,3 +271,21 @@ export function getManageablePlatform(slug: string | null | undefined) {
   const platform = getManagedPlatform(slug);
   return platform && isManageablePlatform(platform) ? platform : null;
 }
+
+/**
+ * Canonical owner-facing name of the platform links area (sidebar, topbar,
+ * page headers, settings tab). Eyebrows use
+ * `.toLocaleUpperCase('tr-TR')` → `PLATFORM BAĞLANTILARI`.
+ */
+export const PLATFORM_LINKS_LABEL = { tr: 'Platform bağlantıları', en: 'Platform links' } as const;
+
+/**
+ * Look a platform up by its provider id (DB / API / defaultRedirectPlatform
+ * vocabulary) instead of its URL slug. Only `trendyol_go` differs from its
+ * slug (`trendyol`); the provider page uses this to redirect
+ * `/platforms/trendyol_go` → `/platforms/trendyol`.
+ */
+export function getManageablePlatformByProvider(provider: string | null | undefined) {
+  if (!provider) return null;
+  return MANAGEABLE_PLATFORM_DEFS.find((platform) => platform.provider === provider) ?? null;
+}

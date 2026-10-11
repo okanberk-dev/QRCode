@@ -1,35 +1,15 @@
-import {
-  SkBox,
-  SkPageHeader,
-  SkPageShell,
-  SkStatGrid,
-} from '@/components/ui/skeletons/PageSkeleton';
+import { SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
+import { PlatformProviderSkeleton } from '@/components/dashboard/platforms/PlatformSkeletons';
 
 /**
- * Platform provider detail — back link + PageHeader + KPI + recent
- * events list. (CLAUDE.md §40.10)
+ * Platform provider page — back link + header + link card (field, switch
+ * row, action row) + routing summary. No stat grid: the page has none.
+ * Mirrors page.tsx (max-w-[1280px], space-y-5). (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440}>
-      <SkBox className="h-3 w-40" />
-      <SkPageHeader withActions titleWidth="w-56" />
-
-      <SkStatGrid count={3} />
-
-      <div className="bz-card p-5 space-y-3">
-        <SkBox className="h-5 w-44" />
-        <div className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <SkBox className="h-3 w-3 rounded-full" />
-              <SkBox className="h-4 w-32" />
-              <SkBox className="h-4 flex-1" />
-              <SkBox className="h-3 w-20" />
-            </div>
-          ))}
-        </div>
-      </div>
+    <SkPageShell max={1280}>
+      <PlatformProviderSkeleton />
     </SkPageShell>
   );
 }

@@ -34,6 +34,8 @@ import { buildPlatformDailyTrend, type PlatformDailyPoint } from '@/lib/analytic
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
+import { providerColumnsSelect } from '@/lib/platform-link-test';
+import { computePlatformLinkStatuses } from '@/lib/platform-link-status';
 import { isSameDayInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
@@ -142,6 +144,10 @@ async function renderDashboardPage({
           currentGoogleRating: true,
           // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
           aiAnalyticsEnabled: true,
+          // Onboarding step 4 ("Yorum platformu linki ekle") — done once a
+          // review-platform link is connected (§14.1 defensive select).
+          externalPlatformsEnabled: true,
+          ...providerColumnsSelect(),
           _count: { select: { feedbacks: true } },
         },
       },
@@ -739,6 +745,11 @@ async function renderDashboardPage({
   const hasRestaurant = user.restaurants.length > 0;
   const hasActiveRestaurant = user.restaurants.some((r) => r.isActive);
   const hasReviews = totalReviews > 0;
+  // A saved, enabled, well-formed review-platform link on any business —
+  // checks are not needed to call the setup step done.
+  const hasReviewPlatformLink = user.restaurants.some((r) =>
+    computePlatformLinkStatuses(r, {}, { categories: ['review'] }).some((s) => s.state === 'connected'),
+  );
   const scopedHref = (href: string) => {
     if (!selectedRestaurantId) return href;
     const [path, query = ''] = href.split('?');
@@ -768,8 +779,8 @@ async function renderDashboardPage({
     },
     {
       id: 4,
-      label: isTr ? 'Yorum platform bağlantılarını ekle' : 'Add review platform links',
-      done: hasReviews,
+      label: isTr ? 'Yorum platformu linki ekle' : 'Add a review-platform link',
+      done: hasReviewPlatformLink,
       href: scopedHref(`/${locale}/dashboard/platforms`),
     },
     {
@@ -837,7 +848,7 @@ async function renderDashboardPage({
     {
       id: 'platforms',
       icon: <ShieldCheck size={18} strokeWidth={2} />,
-      label: isTr ? 'Platform' : 'Links',
+      label: isTr ? 'Platformlar' : 'Platforms',
       href: scopedHref(`/${locale}/dashboard/platforms`),
     },
   ];

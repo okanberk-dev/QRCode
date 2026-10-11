@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { latestChecksByProvider } from '@/lib/platform-link-test';
+import type { LatestCheckLite } from '@/lib/platform-link-status';
 import RestaurantSettingsClient, { type RestaurantPayload } from './RestaurantSettingsClient';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +30,10 @@ export default async function RestaurantSettingsPage({
   const adminToken = cookieStore.get('admin_token')?.value;
 
   let initialRestaurant: RestaurantPayload | null | undefined;
+  // Platform link checks for the "Platform bağlantıları" tab — loaded with
+  // the restaurant so the tab (and its dot) render final states on first
+  // paint. Left undefined on every other path → the client fetches them.
+  let initialPlatformChecks: Record<string, LatestCheckLite> | undefined;
 
   if (userToken && !adminToken) {
     try {
@@ -38,59 +44,74 @@ export default async function RestaurantSettingsPage({
         // userId doesn't match restaurant.userId → findFirst returns null
         // → client falls back to its own fetch with proper IDOR via the
         // API route (`getPanelActorFromRequest` + `canAccessRestaurant`).
-        const r = await prisma.restaurant.findFirst({
-          where: { id, userId },
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            category: true,
-            description: true,
-            website: true,
-            address: true,
-            city: true,
-            phone: true,
-            googlePlaceId: true,
-            notificationEmail: true,
-            isActive: true,
-            suspendedByAdmin: true,
-            googleReviewUrl: true,
-            googleEnabled: true,
-            yemekSepetiUrl: true,
-            yemekSepetiEnabled: true,
-            getirYemekUrl: true,
-            getirEnabled: true,
-            trendyolYemekUrl: true,
-            trendyolEnabled: true,
-            tripAdvisorUrl: true,
-            tripAdvisorEnabled: true,
-            airbnbUrl: true,
-            airbnbEnabled: true,
-            bookingUrl: true,
-            bookingEnabled: true,
-            yandexUrl: true,
-            yandexEnabled: true,
-            yelpUrl: true,
-            yelpEnabled: true,
-            foursquareUrl: true,
-            foursquareEnabled: true,
-            externalPlatformsEnabled: true,
-            defaultRedirectPlatform: true,
-            redirectMinRating: true,
-            otherPlatformUrl: true,
-            otherPlatformLabel: true,
-            otherPlatformEnabled: true,
-            instagramUrl: true,
-            facebookUrl: true,
-            whatsappUrl: true,
-            reservationUrl: true,
-            workingHours: true,
-            temporarilyClosed: true,
-            closedReason: true,
-            targetRating: true,
-          },
-        });
+        // One connection, one snapshot (CLAUDE.md §40.1 — pooler
+        // connection_limit=1). The checks read is discarded below when the
+        // ownership check fails.
+        const [r, checkRows] = await prisma.$transaction([
+          prisma.restaurant.findFirst({
+            where: { id, userId },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              category: true,
+              description: true,
+              website: true,
+              address: true,
+              city: true,
+              phone: true,
+              googlePlaceId: true,
+              notificationEmail: true,
+              isActive: true,
+              suspendedByAdmin: true,
+              googleReviewUrl: true,
+              googleEnabled: true,
+              yemekSepetiUrl: true,
+              yemekSepetiEnabled: true,
+              getirYemekUrl: true,
+              getirEnabled: true,
+              trendyolYemekUrl: true,
+              trendyolEnabled: true,
+              tripAdvisorUrl: true,
+              tripAdvisorEnabled: true,
+              airbnbUrl: true,
+              airbnbEnabled: true,
+              bookingUrl: true,
+              bookingEnabled: true,
+              yandexUrl: true,
+              yandexEnabled: true,
+              yelpUrl: true,
+              yelpEnabled: true,
+              foursquareUrl: true,
+              foursquareEnabled: true,
+              externalPlatformsEnabled: true,
+              defaultRedirectPlatform: true,
+              redirectMinRating: true,
+              otherPlatformUrl: true,
+              otherPlatformLabel: true,
+              otherPlatformEnabled: true,
+              instagramUrl: true,
+              facebookUrl: true,
+              whatsappUrl: true,
+              reservationUrl: true,
+              workingHours: true,
+              temporarilyClosed: true,
+              closedReason: true,
+              targetRating: true,
+            },
+          }),
+          latestChecksByProvider(id),
+        ]);
         if (r) {
+          initialPlatformChecks = {};
+          for (const check of checkRows) {
+            initialPlatformChecks[check.provider] = {
+              ok: check.ok,
+              checkedAt: new Date(check.checkedAt).toISOString(),
+              error: check.error,
+              statusCode: check.statusCode,
+            };
+          }
           initialRestaurant = {
             id: r.id,
             name: r.name,
@@ -152,8 +173,15 @@ export default async function RestaurantSettingsPage({
       console.error('[RestaurantSettingsPage] hydration failed', error);
       // Soft-fail: client refetches on mount.
       initialRestaurant = undefined;
+      initialPlatformChecks = undefined;
     }
   }
 
-  return <RestaurantSettingsClient initialRestaurant={initialRestaurant} />;
+  return (
+    <RestaurantSettingsClient
+      initialRestaurant={initialRestaurant}
+      initialPlatformChecks={initialPlatformChecks}
+      serverNow={Date.now()}
+    />
+  );
 }

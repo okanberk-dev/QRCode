@@ -7,12 +7,16 @@ import {
 
 /**
  * Owner restaurant detail — back link + PageHeader + 3-stat KPI +
- * public preview row + 2×2 quick actions. (CLAUDE.md §40.10)
+ * public preview row + platform links strip + 2×2 quick actions.
+ * (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
     <SkPageShell max={1280}>
-      <SkBox className="h-3 w-32" />
+      {/* Back link: 44px tap target below sm, 32px above. */}
+      <div className="flex h-11 items-center sm:h-8">
+        <SkBox className="h-3 w-32" />
+      </div>
       <SkPageHeader withActions titleWidth="w-72" />
 
       <SkStatGrid count={3} />
@@ -27,6 +31,9 @@ export default function Loading() {
           </div>
         </div>
       </div>
+
+      {/* Platform links strip */}
+      <SkBox className="h-14 w-full rounded-2xl" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
