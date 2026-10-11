@@ -8,6 +8,7 @@ import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { getOwnerShellActiveRestaurantId } from '@/components/dashboard/UserDashboardShell';
 import { InboxToolbar } from '@/components/dashboard/feedbacks/InboxToolbar';
 import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';
 
@@ -230,6 +231,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // ============================================================
   const listReqRef = useRef(0);
   const prevScopeRef = useRef<string | null | undefined>(undefined);
+  // Business the list is loaded for. Without ?restaurantId in the URL this is
+  // the business the owner shell has already resolved — the shell only adds
+  // the param a moment later, and fetching "all businesses" meanwhile flashed
+  // (and could mark read) another business's reviews.
+  const listScopeRef = useRef<string | null>(null);
+  const lastListKeyRef = useRef<string | null>(null);
 
   const buildListQuery = (targetPage: number) => {
     const query = new URLSearchParams({
@@ -241,18 +248,25 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (platform !== 'all') query.append('platform', String(platform));
     if (hasReply === 'pending') query.append('hasReply', 'false');
     if (flagged) query.append('isFlagged', 'true');
-    if (scopedRestaurantId) query.append('restaurantId', scopedRestaurantId);
+    if (listScopeRef.current) query.append('restaurantId', listScopeRef.current);
     return query;
   };
 
   useEffect(() => {
+    const scope = scopedRestaurantId ?? getOwnerShellActiveRestaurantId() ?? null;
+    // The URL catching up with the business this list was already loaded for
+    // is not a new query.
+    const listKey = [scope ?? '', days, rating, platform, hasReply, flagged, listReloadKey].join('|');
+    if (listKey === lastListKeyRef.current) return;
+    lastListKeyRef.current = listKey;
+    listScopeRef.current = scope;
     const req = ++listReqRef.current;
     // A business switch must never keep the previous business's rows on
     // screen while the new list loads.
-    if (prevScopeRef.current !== undefined && prevScopeRef.current !== scopedRestaurantId) {
+    if (prevScopeRef.current !== undefined && prevScopeRef.current !== scope) {
       setFeedbacks([]);
     }
-    prevScopeRef.current = scopedRestaurantId;
+    prevScopeRef.current = scope;
     setLoading(true);
     setPage(1);
     setHasMore(false);
@@ -1134,8 +1148,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
-            {/* Desktop uses the shell topbar h1 — one h1 per breakpoint. */}
-            <h1 className="bz-h-tight text-[24px] text-[#0A0A0A] lg:hidden">
+            {/* Desktop shows the title in the shell topbar; keep the h1 in the
+                accessibility tree there (sr-only) so the page always has one. */}
+            <h1 className="bz-h-tight text-[24px] text-[#0A0A0A] lg:sr-only">
               {isTr ? 'Yorumlar' : 'Reviews'}
             </h1>
             <div className="mt-0.5 flex min-h-[20px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">

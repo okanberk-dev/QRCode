@@ -55,14 +55,13 @@ export default function TrialBanner({
 
   const message = (() => {
     if (daysLeft === 0) {
-      return isTr ? 'Bugün trial son günü.' : 'Trial ends today.';
-    }
-    if (daysLeft === 1) {
-      return isTr ? 'Trial 1 gün sonra bitiyor.' : 'Trial ends in 1 day.';
+      return isTr ? 'Deneme süren bugün bitiyor.' : 'Your trial ends today.';
     }
     return isTr
-      ? `Trial ${daysLeft} gün sonra bitiyor.`
-      : `Trial ends in ${daysLeft} days.`;
+      ? `Deneme sürende ${daysLeft} gün kaldı.`
+      : daysLeft === 1
+        ? '1 day left in your trial.'
+        : `${daysLeft} days left in your trial.`;
   })();
 
   const dismiss = () => {
@@ -80,7 +79,9 @@ export default function TrialBanner({
       style={{ background: palette.bg, borderColor: palette.border, color: palette.text }}
     >
       <Crown size={14} strokeWidth={2.2} className="shrink-0" />
-      <span className="flex-1 truncate">
+      {/* Wraps instead of truncating: on a phone the ellipsis cut off the
+          number of days, the one thing the banner is for. */}
+      <span className="min-w-0 flex-1 leading-snug">
         {message}{' '}
         <span className="hidden sm:inline opacity-80">
           {isTr ? 'Aboneliğe geç, kesintisiz devam et.' : 'Upgrade to keep going.'}
@@ -96,7 +97,7 @@ export default function TrialBanner({
       <button
         type="button"
         onClick={dismiss}
-        aria-label={isTr ? 'Banner\'ı kapat' : 'Dismiss banner'}
+        aria-label={isTr ? 'Uyarıyı kapat' : 'Dismiss notice'}
         className="bz-btn-icon shrink-0"
       >
         <X size={14} strokeWidth={2} />

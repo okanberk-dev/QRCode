@@ -112,6 +112,11 @@ export interface ActivityFeedProps {
    * sonradan realtime INSERT'leri tepe'ye prepend eder.
    */
   events: ActivityEvent[];
+  /**
+   * Businesses the feed covers; live pushes outside them are ignored. Key the
+   * component by the same scope so a business switch also resets the list.
+   */
+  restaurantIds?: string[];
   /** "Tüm aktiviteyi gör" CTA href; default /tr/dashboard/feedbacks. */
   viewAllHref?: string;
   isTr?: boolean;
@@ -226,12 +231,13 @@ function NewEventsToast({
 
 export function ActivityFeed({
   events: initialEvents,
+  restaurantIds,
   isTr = true,
   viewAllHref = isTr ? '/tr/dashboard/feedbacks' : '/en/dashboard/feedbacks',
   className = '',
 }: ActivityFeedProps) {
   const { events, status, newEventIds, pendingToastCount, acknowledgeToast } =
-    useRealtimeActivity({ initialEvents, isTr });
+    useRealtimeActivity({ initialEvents, restaurantIds, isTr });
 
   // §46 — mutlak saat artık sabit bir saat diliminde (işletmenin yerel
   // saati) üretiliyor, yani sunucu ve tarayıcı aynı string'i basıyor.

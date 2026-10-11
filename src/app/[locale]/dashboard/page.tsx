@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { extractThemes, getCachedThemes } from '@/lib/analytics-themes';
 // §38.32 — deriveCustomerFields + CustomerSegment + SegmentChip artık
 // dashboard'da kullanılmıyor (BUGÜN BEKLEYEN feedback-detail render kaldırıldı).
@@ -129,37 +130,52 @@ async function renderDashboardPage({
   const payload = await verifyJwt(token);
   if (!payload) redirect(`/${locale}/auth/login`);
 
-  // User + restaurants (single fetch, scoped via include).
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId as string },
-    include: {
-      restaurants: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          category: true,
-          isActive: true,
-          initialGoogleRating: true,
-          currentGoogleRating: true,
-          // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
-          aiAnalyticsEnabled: true,
-          // Onboarding step 4 ("Yorum platformu linki ekle") — done once a
-          // review-platform link is connected (§14.1 defensive select).
-          externalPlatformsEnabled: true,
-          ...providerColumnsSelect(),
-          _count: { select: { feedbacks: true } },
-        },
-      },
-    },
+  // User + the businesses this account can see. Same scope + order as the
+  // dashboard layout (getScopedRestaurantIds, createdAt asc), so team members
+  // get their assigned businesses instead of an empty dashboard (§38.240).
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId as string,
+    role: payload.role,
+    email: payload.email,
   });
-  if (!user) redirect(`/${locale}/auth/login`);
+  const [userRow, scopedRestaurants] = await prisma.$transaction([
+    prisma.user.findUnique({
+      where: { id: payload.userId as string },
+      select: { id: true, name: true },
+    }),
+    prisma.restaurant.findMany({
+      where: { id: { in: scopedIds } },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        category: true,
+        isActive: true,
+        initialGoogleRating: true,
+        currentGoogleRating: true,
+        // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
+        aiAnalyticsEnabled: true,
+        // Onboarding step 4 ("Yorum platformu linki ekle") — done once a
+        // review-platform link is connected (§14.1 defensive select).
+        externalPlatformsEnabled: true,
+        ...providerColumnsSelect(),
+        _count: { select: { feedbacks: true } },
+      },
+    }),
+  ]);
+  if (!userRow) redirect(`/${locale}/auth/login`);
+  const user = { ...userRow, restaurants: scopedRestaurants };
 
+  // The panel always works on one business. Without a valid ?restaurantId
+  // this is the first active business — the one the shell selects (and labels)
+  // by default — not "every business", which showed totals for all of them
+  // under the first business's name until the shell rewrote the URL.
   const ownedRestaurantIds = user.restaurants.map((r) => r.id);
   const selectedRestaurantId =
     typeof sp.restaurantId === 'string' && ownedRestaurantIds.includes(sp.restaurantId)
       ? sp.restaurantId
-      : null;
+      : user.restaurants.find((restaurant) => restaurant.isActive)?.id ?? null;
   const restIds = selectedRestaurantId ? [selectedRestaurantId] : ownedRestaurantIds;
   const selectedRestaurant = selectedRestaurantId
     ? user.restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null
@@ -855,6 +871,9 @@ async function renderDashboardPage({
 
   // ---- Google Rating Impact ----
   const impactStats = user.restaurants
+    // Only the business(es) on screen — the Google card must not show another
+    // business's rating change.
+    .filter((r) => restIds.includes(r.id))
     .filter((r) => r.initialGoogleRating !== null && r.currentGoogleRating !== null)
     .map((r) => ({
       id: r.id,
@@ -961,7 +980,7 @@ async function renderDashboardPage({
       ? `Bugün ${pendingCount} yorum yanıt bekliyor.`
       : 'Bugün yanıtsız yorumun yok 🎉'
     : pendingCount > 0
-      ? `Today ${pendingCount} review${pendingCount > 1 ? 's' : ''} await reply.`
+      ? `Today ${pendingCount} ${pendingCount > 1 ? 'reviews await' : 'review awaits'} a reply.`
       : "You're all caught up today 🎉";
   const primaryRestaurantName = selectedRestaurant?.name ?? user.restaurants[0]?.name ?? '';
 
@@ -1077,8 +1096,11 @@ async function renderDashboardPage({
                 KPI window'ları (Toplam yorum / Yanıt oranı / Yeni müşteri)
                 + delta + AI banner kapsam değişir. Default '7d'. */}
             <ScopeDropdown current={scopeUrlValue} isTr={isTr} />
+            {/* "Yorum iste" = create a QR customers scan to leave a review
+                (same flow as the sidebar "QR oluştur"); the inbox has its own
+                nav item. */}
             <Link
-              href={scopedHref(`/${locale}/dashboard/feedbacks`)}
+              href={scopedHref(`/${locale}/dashboard/qr?new=1`)}
               className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
             >
               <Plus size={13} strokeWidth={2} />
@@ -1181,6 +1203,9 @@ async function renderDashboardPage({
         <div className="hidden sm:block">
           <ViewportMount query="(min-width: 640px)">
             <ActivationChecklistCard
+              // Seeded once from initialResult — remount per business so a
+              // switch does not keep the previous business's checklist.
+              key={(selectedRestaurant ?? user.restaurants[0]).id}
               restaurantId={(selectedRestaurant ?? user.restaurants[0]).id}
               locale={locale}
               initialResult={initialActivation}
@@ -1224,7 +1249,9 @@ async function renderDashboardPage({
           label={isTr ? 'Yanıt oranı' : 'Response rate'}
           value={
             lowRated30dCount > 0
-              ? `%${Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100)}`
+              ? isTr
+                ? `%${Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100)}`
+                : `${Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100)}%`
               : '—'
           }
           deltaSuffix={
@@ -1478,7 +1505,12 @@ async function renderDashboardPage({
           list + Upgrade CTA section'ları da bu PR'da kaldırıldı (kullanıcı
           talebi: "tasarımda yoksa sil"). */}
       <ActivityFeed
+        // Keyed by business scope: the feed keeps its own list after mount
+        // (live pushes), so a business switch must remount it — otherwise the
+        // previous business's activity stayed on screen.
+        key={restIds.join(',')}
         events={activityEvents}
+        restaurantIds={restIds}
         isTr={isTr}
         viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks`)}
       />

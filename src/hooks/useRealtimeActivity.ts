@@ -44,6 +44,11 @@ interface TokenResponse {
 
 interface UseRealtimeActivityOptions {
   initialEvents: ActivityEvent[];
+  /**
+   * Businesses the feed is showing. Live INSERTs are limited to these (the
+   * token covers the whole workspace). Omitted → every business in the token.
+   */
+  restaurantIds?: string[];
   isTr?: boolean;
   /** Buffer cap (default 50). */
   maxBufferSize?: number;
@@ -83,11 +88,15 @@ async function fetchRealtimeToken(): Promise<TokenResponse | null> {
 
 export function useRealtimeActivity({
   initialEvents,
+  restaurantIds,
   isTr = true,
   maxBufferSize = 50,
   flushDebounceMs = 200,
 }: UseRealtimeActivityOptions): UseRealtimeActivityResult {
   const [events, setEvents] = useState<ActivityEvent[]>(initialEvents);
+  // Stable dep for the subscription effect (callers pass a fresh array on
+  // every server render).
+  const scopeKey = restaurantIds ? [...restaurantIds].sort().join(',') : '';
   const [status, setStatus] = useState<RealtimeStatus>('idle');
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
   const [pendingToastCount, setPendingToastCount] = useState(0);
@@ -153,7 +162,13 @@ export function useRealtimeActivity({
       setStatus('connecting');
       const tokenResponse = await fetchRealtimeToken();
       if (canceled) return;
-      if (!tokenResponse || !tokenResponse.token || tokenResponse.restaurantIds.length === 0) {
+      // Only the businesses this feed shows — otherwise a review for another
+      // business would be pushed into the selected business's feed.
+      const wanted = scopeKey ? new Set(scopeKey.split(',')) : null;
+      const feedRestaurantIds = (tokenResponse?.restaurantIds ?? []).filter(
+        (id) => !wanted || wanted.has(id),
+      );
+      if (!tokenResponse || !tokenResponse.token || feedRestaurantIds.length === 0) {
         setStatus('disabled');
         return;
       }
@@ -163,9 +178,9 @@ export function useRealtimeActivity({
       // CSV value (no surrounding parens). We cap to 50 ids; owner panel
       // typically has 1-5 restaurants, but defensive cap avoids URL/header
       // bloat if scope grows unexpectedly.
-      const idsForFilter = tokenResponse.restaurantIds.slice(0, 50).join(',');
+      const idsForFilter = feedRestaurantIds.slice(0, 50).join(',');
       const channel = client
-        .channel(`activity-feed:${tokenResponse.restaurantIds[0]}`, {
+        .channel(`activity-feed:${feedRestaurantIds[0]}`, {
           config: {
             // Acknowledgement değeri INSERT event'lerine gerekmiyor; default
             // ack:false. Broadcast self yok (server push).
@@ -243,9 +258,9 @@ export function useRealtimeActivity({
       }
     };
     // initialEvents kasten dep listinde değil — yalnız mount'ta okunur.
-    // Sonradan parent yeniden fetch ederse setEvents zaten o liste ile
-    // başlatılmıştı; realtime push üst pencerede kalır.
-  }, [enqueueEvent, isTr]);
+    // A business switch must remount the feed (ActivityFeed is keyed by its
+    // business scope on the dashboard) so the seed list is replaced too.
+  }, [enqueueEvent, isTr, scopeKey]);
 
   return {
     events,

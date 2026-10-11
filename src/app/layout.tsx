@@ -149,8 +149,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr" className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
+    // `suppressHydrationWarning`: the inline script below may switch `lang`
+    // to "en" before hydration (see DocumentLang); React would otherwise flag
+    // the attribute mismatch on <html>.
+    <html
+      lang="tr"
+      suppressHydrationWarning
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}
+    >
       <head>
+        {/* English pages live under /en. The root layout cannot know the
+            locale without reading headers() (that would make the ISR
+            marketing tree dynamic), so the path decides `lang` here, before
+            the first paint. CSS uppercase follows `lang`: under "tr" English
+            eyebrows read "BUSİNESS". Client-side locale switches are handled
+            by DocumentLang in the [locale] layout. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if(/^\\/en(\\/|$)/.test(location.pathname))document.documentElement.lang='en';",
+          }}
+        />
         {/* Resource hints — `preconnect` opens the TLS handshake ahead of
             time (DNS + TCP + TLS) and was promoted from the previous
             `dns-prefetch`-only setup after PageSpeed flagged the
