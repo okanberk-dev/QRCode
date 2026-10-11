@@ -63,41 +63,8 @@ const SOURCE_BADGE: Record<string, { label: string; kind: BadgeKind }> = {
   cron: { label: 'Otomatik görev', kind: 'ghost' },
 };
 
-// Actions written by newer routes that have no entry in the shared
-// ACTION_LABELS map yet — without these the viewer printed the raw key
-// (e.g. "owner.restaurant.update") as the row title.
-const EXTRA_ACTION_LABELS: Record<string, string> = {
-  'admin.audits.categories.create': 'Denetim kategorisi oluşturuldu',
-  'admin.audits.categories.update': 'Denetim kategorisi güncellendi',
-  'admin.audits.categories.delete': 'Denetim kategorisi silindi',
-  'admin.audits.templates.create': 'Denetim şablonu oluşturuldu',
-  'admin.audits.templates.update': 'Denetim şablonu güncellendi',
-  'admin.audits.templates.delete': 'Denetim şablonu silindi',
-  'admin.audits.templates.publish': 'Denetim şablonu yayınlandı',
-  'admin.audits.templates.unpublish': 'Denetim şablonu yayından kaldırıldı',
-  'admin.customers.hard_delete': 'Müşteri kaydı kalıcı olarak silindi',
-  'admin.impersonate.start': 'İşletme sahibi gözünden görüntüleme başladı',
-  'admin.impersonate.end': 'İşletme sahibi gözünden görüntüleme bitti',
-  'admin.members.update': 'İşletme sahibi güncellendi',
-  'admin.members.hard_delete': 'İşletme sahibi kalıcı olarak silindi',
-  'admin.newsletters.trigger': 'Bülten gönderimi elle başlatıldı',
-  'admin.restaurants.menu_settings': 'İşletme menü erişimi değiştirildi',
-  'admin.restaurants.menu_theme_update': 'İşletme menü teması güncellendi',
-  'cron.account.scheduled_delete': 'Planlanan hesap silme uygulandı',
-  'owner.account.deletion_scheduled': 'Hesap silme planlandı',
-  'owner.account.deletion_canceled': 'Hesap silme talebi iptal edildi',
-  'owner.account.security_update': 'Hesap güvenlik ayarları güncellendi',
-  'owner.google.disconnect': 'Google bağlantısı kaldırıldı',
-  'owner.restaurant.update': 'İşletme bilgileri güncellendi',
-  'owner.team.invite': 'Ekip üyesi davet edildi',
-  'owner.team.update': 'Ekip üyesi güncellendi',
-  'owner.team.remove': 'Ekip üyesi çıkarıldı',
-  'restaurant.delete': 'İşletme silindi',
-};
-
 function describeAction(action: string): string {
-  const label = actionLabel(action, 'tr');
-  return label !== action ? label : EXTRA_ACTION_LABELS[action] ?? action;
+  return actionLabel(action, 'tr');
 }
 
 // §46 — render in the business display timezone, not the device timezone.

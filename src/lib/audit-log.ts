@@ -287,6 +287,35 @@ export const ACTION_LABELS: Record<string, { tr: string; en: string }> = {
     tr: 'Kampanya gönderildi (admin)',
     en: 'Campaign sent (admin)',
   },
+  // Actions written by newer routes (audits, impersonation, owner-side
+  // writes via writePanelAuditLog). Shared here so the admin viewer, the
+  // CSV export and the owner activity log all show the same text.
+  'admin.audits.categories.create': { tr: 'Denetim kategorisi oluşturuldu', en: 'Audit category created' },
+  'admin.audits.categories.update': { tr: 'Denetim kategorisi güncellendi', en: 'Audit category updated' },
+  'admin.audits.categories.delete': { tr: 'Denetim kategorisi silindi', en: 'Audit category deleted' },
+  'admin.audits.templates.create': { tr: 'Denetim şablonu oluşturuldu', en: 'Audit template created' },
+  'admin.audits.templates.update': { tr: 'Denetim şablonu güncellendi', en: 'Audit template updated' },
+  'admin.audits.templates.delete': { tr: 'Denetim şablonu silindi', en: 'Audit template deleted' },
+  'admin.audits.templates.publish': { tr: 'Denetim şablonu yayınlandı', en: 'Audit template published' },
+  'admin.audits.templates.unpublish': { tr: 'Denetim şablonu yayından kaldırıldı', en: 'Audit template unpublished' },
+  'admin.customers.hard_delete': { tr: 'Müşteri kaydı kalıcı olarak silindi', en: 'Customer record permanently deleted' },
+  'admin.impersonate.start': { tr: 'İşletme sahibi gözünden görüntüleme başladı', en: 'Viewing as owner started' },
+  'admin.impersonate.end': { tr: 'İşletme sahibi gözünden görüntüleme bitti', en: 'Viewing as owner ended' },
+  'admin.members.update': { tr: 'İşletme sahibi güncellendi', en: 'Owner updated' },
+  'admin.members.hard_delete': { tr: 'İşletme sahibi kalıcı olarak silindi', en: 'Owner permanently deleted' },
+  'admin.newsletters.trigger': { tr: 'Bülten gönderimi elle başlatıldı', en: 'Newsletter send started manually' },
+  'admin.restaurants.menu_settings': { tr: 'İşletme menü erişimi değiştirildi', en: 'Business menu access changed' },
+  'admin.restaurants.menu_theme_update': { tr: 'İşletme menü teması güncellendi', en: 'Business menu theme updated' },
+  'cron.account.scheduled_delete': { tr: 'Planlanan hesap silme uygulandı', en: 'Scheduled account deletion applied' },
+  'owner.account.deletion_scheduled': { tr: 'Hesap silme planlandı', en: 'Account deletion scheduled' },
+  'owner.account.deletion_canceled': { tr: 'Hesap silme talebi iptal edildi', en: 'Account deletion canceled' },
+  'owner.account.security_update': { tr: 'Hesap güvenlik ayarları güncellendi', en: 'Account security settings updated' },
+  'owner.google.disconnect': { tr: 'Google bağlantısı kaldırıldı', en: 'Google connection removed' },
+  'owner.restaurant.update': { tr: 'İşletme bilgileri güncellendi', en: 'Business details updated' },
+  'owner.team.invite': { tr: 'Ekip üyesi davet edildi', en: 'Team member invited' },
+  'owner.team.update': { tr: 'Ekip üyesi güncellendi', en: 'Team member updated' },
+  'owner.team.remove': { tr: 'Ekip üyesi çıkarıldı', en: 'Team member removed' },
+  'restaurant.delete': { tr: 'İşletme silindi', en: 'Business deleted' },
 };
 
 export function actionLabel(action: string, locale: 'tr' | 'en' = 'tr'): string {

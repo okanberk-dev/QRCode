@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
+import type { LifecycleEmailType } from '@/lib/email/lifecycle';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -21,11 +22,18 @@ export const runtime = 'nodejs';
 // User + Restaurant FK'sı yok modelde (CLAUDE.md §21.34 — minimal) — manuel
 // enrich (Promise.all + Map lookup).
 
-const VALID_TYPES = new Set([
+// Every LifecycleEmailLog type, including the newer ones written by their
+// own crons / sync triggers — the page filter offers all of them.
+const VALID_TYPES = new Set<LifecycleEmailType>([
   'qr_not_downloaded',
   'first_feedback_tips',
   'upgrade_suggestion',
   'inactive_reactivation',
+  'monthly_health_report',
+  'first_feedback_celebration',
+  'qr_no_scans_reminder',
+  'rating_drop_alert',
+  'first_reply_celebration',
 ]);
 
 const VALID_DAYS = new Set([7, 30, 90]);
@@ -46,7 +54,7 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const typeParam = url.searchParams.get('type');
-  const type = typeParam && VALID_TYPES.has(typeParam) ? typeParam : null;
+  const type = typeParam && VALID_TYPES.has(typeParam as LifecycleEmailType) ? typeParam : null;
   const daysParam = parseInt(url.searchParams.get('days') ?? '30', 10);
   const days = VALID_DAYS.has(daysParam) ? daysParam : 30;
 
@@ -117,12 +125,9 @@ export async function GET(req: NextRequest) {
     metadata: l.metadata,
   }));
 
-  const byType: Record<string, number> = {
-    qr_not_downloaded: 0,
-    first_feedback_tips: 0,
-    upgrade_suggestion: 0,
-    inactive_reactivation: 0,
-  };
+  const byType: Record<string, number> = Object.fromEntries(
+    [...VALID_TYPES].map((t) => [t, 0]),
+  );
   for (const row of byTypeRaw) {
     byType[row.type] = row._count._all;
   }

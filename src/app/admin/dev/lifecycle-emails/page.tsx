@@ -235,14 +235,16 @@ export default function LifecycleEmailsAdmin() {
         <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
           <Eyebrow className="mb-2">SON 30 GÜN — TÜR DAĞILIMI</Eyebrow>
           <div className="space-y-1 text-[11.5px]">
-            {(['qr_not_downloaded', 'first_feedback_tips', 'upgrade_suggestion', 'inactive_reactivation'] as LifecycleType[]).map(
-              (t) => (
+            {/* The four cron types always show; the other types only when
+                they were sent in the window, so the card keeps its height. */}
+            {Object.keys(ALL_TYPE_LABEL)
+              .filter((t) => t in TYPE_LABEL || (data?.stats.byType[t] ?? 0) > 0)
+              .map((t) => (
                 <div key={t} className="flex justify-between">
-                  <span className="text-[#525252]">{TYPE_LABEL[t]}</span>
+                  <span className="text-[#525252]">{typeLabel(t)}</span>
                   <span className="bz-mono text-[#0A0A0A]">{data?.stats.byType[t] ?? 0}</span>
                 </div>
-              ),
-            )}
+              ))}
           </div>
         </div>
       </div>
@@ -262,10 +264,9 @@ export default function LifecycleEmailsAdmin() {
               aria-label="Mail türü filtresi"
             >
               <option value="">Tüm türler</option>
-              <option value="qr_not_downloaded">{TYPE_LABEL.qr_not_downloaded}</option>
-              <option value="first_feedback_tips">{TYPE_LABEL.first_feedback_tips}</option>
-              <option value="upgrade_suggestion">{TYPE_LABEL.upgrade_suggestion}</option>
-              <option value="inactive_reactivation">{TYPE_LABEL.inactive_reactivation}</option>
+              {Object.entries(ALL_TYPE_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
             <select
               value={filterDays}
