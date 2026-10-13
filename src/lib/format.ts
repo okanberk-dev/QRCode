@@ -18,6 +18,13 @@ export function formatPrice(cents: number, currency = 'TRY', locale: string = 't
 // occurrence is treated as the decimal separator; the other becomes a
 // thousands separator. When only dots appear with multiple occurrences,
 // all dots are treated as thousands separators.
+//
+// A single dot followed by exactly three digits ("1.250", "12.345") is a
+// Turkish thousands separator: three decimals are never a valid price, so
+// reading it as a decimal could only ever produce an error. The integer part
+// must not start with a zero ("0.250" stays invalid). "1,250" (comma + three
+// digits) is deliberately NOT accepted — it is genuinely ambiguous between
+// 1,25 and 1250, so it is rejected instead of guessed.
 export function parsePriceInput(value: string): number | null {
   if (typeof value !== 'string') return null;
   let cleaned = value.replace(/\s/g, '');
@@ -48,6 +55,9 @@ export function parsePriceInput(value: string): number | null {
   } else if (dotCount > 1) {
     // Multiple dots: all thousands separators.
     cleaned = cleaned.replace(/\./g, '');
+  } else if (/^[1-9]\d{0,2}\.\d{3}$/.test(cleaned)) {
+    // Single dot + exactly three digits: TR thousands separator ("1.250").
+    cleaned = cleaned.replace('.', '');
   }
 
   if (!/^\d{1,9}(\.\d{0,2})?$/.test(cleaned)) return null;

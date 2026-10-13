@@ -59,7 +59,17 @@ export function Modal({
   closeConfirm,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
+  // The element that opened the modal. Read while rendering — i.e. before the
+  // commit, so before any child's `autoFocus` has moved focus — otherwise a
+  // modal whose input autofocuses would "restore" focus to that (by then
+  // unmounted) input on close instead of to the trigger button.
+  const previouslyFocused = useRef<HTMLElement | null>(
+    typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null,
+  );
+  // The element a child focused by itself (`<input autoFocus>`), remembered so
+  // a dev-only StrictMode effect re-run (mount → cleanup → mount, where the
+  // cleanup hands focus back to the trigger) can put it back.
+  const childFocused = useRef<HTMLElement | null>(null);
   const [confirmingClose, setConfirmingClose] = useState(false);
   const confirmCopy = closeConfirm ?? DEFAULT_CLOSE_CONFIRM;
 
@@ -87,19 +97,30 @@ export function Modal({
   };
 
   useEffect(() => {
-    // 1. Remember the element that triggered the modal so we can restore focus on close
-    previouslyFocused.current =
-      typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
+    // 1. The trigger to restore focus to on close is captured at render time
+    //    (see `previouslyFocused` above); read once here for the cleanup.
+    const toRestore = previouslyFocused.current;
 
-    // 2. Move focus into the dialog (first focusable element, or the dialog itself)
+    // 2. Move focus into the dialog (first focusable element, or the dialog
+    //    itself) — unless a child already took focus itself via `autoFocus`.
+    //    React applies `autoFocus` during commit, before this passive effect
+    //    runs, so without this check the effect always stole focus from the
+    //    field the child asked for and parked it on the header's close button.
     const dialog = dialogRef.current;
     if (dialog) {
-      const focusables = dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-      const first = focusables[0];
-      if (first) {
-        first.focus();
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== dialog && dialog.contains(active)) {
+        childFocused.current = active;
+      } else if (childFocused.current && dialog.contains(childFocused.current)) {
+        childFocused.current.focus();
       } else {
-        dialog.focus();
+        const focusables = dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+        const first = focusables[0];
+        if (first) {
+          first.focus();
+        } else {
+          dialog.focus();
+        }
       }
     }
 
@@ -140,7 +161,6 @@ export function Modal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
       // 4. Restore focus to the element that opened the modal
-      const toRestore = previouslyFocused.current;
       if (toRestore && typeof toRestore.focus === "function") {
         try {
           toRestore.focus();
