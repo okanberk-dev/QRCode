@@ -1,4 +1,11 @@
 // CLAUDE.md §42 — Audit assignments (owner: list + create).
+//
+// UI'da "Paylaşım linki" (spec §3.3). Spec §6.9:
+//   • GET: yazma yetkisi OLMAYAN (salt-okunur ekip üyesi) kullanıcılara `token`
+//     alanı HİÇ dönmez — link token'ı bir yetkidir.
+//   • POST: link oluşturma 30/dk/actor ile sınırlı. API varsayılan `recurrence`
+//     'once' kalır (geriye dönük uyum); UI "Tek seferlik olsun" kapalıyken
+//     açıkça 'daily' gönderir.
 
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
@@ -15,6 +22,8 @@ import {
 } from '@/lib/audits/types';
 import { generateAuditAssignmentToken } from '@/lib/audits/token';
 import { parseAuditDueAt } from '@/lib/audits/datetime';
+import { listAuditAssignments } from '@/lib/audits/queries';
+import { rateLimit } from '@/lib/rate-limit';
 
 type Params = { id: string };
 
@@ -43,38 +52,19 @@ export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
   const status = searchParams.get('status');
   const assigneeType = searchParams.get('assigneeType');
 
-  const where: Record<string, unknown> = { restaurantId: id };
-  if (templateId) where.templateId = templateId;
-  if (status && (AUDIT_ASSIGNMENT_STATUSES as readonly string[]).includes(status)) {
-    where.status = status;
-  }
-  if (assigneeType && (AUDIT_ASSIGNEE_TYPES as readonly string[]).includes(assigneeType)) {
-    where.assigneeType = assigneeType;
-  }
+  // Token yalnız yazma yetkisi olanlara (salt-okunur üyeler link token'ı ALMAZ).
+  const includeTokens = await canWriteRestaurant(actor, id);
 
-  const rows = await prisma.auditAssignment.findMany({
-    where,
-    orderBy: [{ createdAt: 'desc' }],
-    select: {
-      id: true,
-      templateId: true,
-      template: { select: { id: true, title: true } },
-      assigneeType: true,
-      assigneeTeamMemberId: true,
-      assigneeName: true,
-      assigneeEmail: true,
-      assigneePhone: true,
-      dueAt: true,
-      recurrence: true,
-      status: true,
-      token: true,
-      tokenRevoked: true,
-      internalNote: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: { select: { responses: true } },
-    },
-    take: 500,
+  const rows = await listAuditAssignments({
+    restaurantId: id,
+    templateId: templateId || null,
+    status:
+      status && (AUDIT_ASSIGNMENT_STATUSES as readonly string[]).includes(status) ? status : null,
+    assigneeType:
+      assigneeType && (AUDIT_ASSIGNEE_TYPES as readonly string[]).includes(assigneeType)
+        ? assigneeType
+        : null,
+    includeTokens,
   });
 
   return NextResponse.json({ data: rows });
@@ -85,6 +75,15 @@ export async function POST(req: NextRequest, ctx: { params: Promise<Params> }) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return ApiErrors.unauthorized();
   if (!(await canWriteRestaurant(actor, id))) return ApiErrors.forbidden();
+
+  // Privileged write — burst koruması (CLAUDE.md §40.4.C).
+  const rl = await rateLimit(`audits:asg:${actor.id}`, 30, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfter: rl.retryAfterSeconds || 60 },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds || 60) } },
+    );
+  }
 
   const body = await req.json().catch(() => null);
   const parsed = validateBody<z.infer<typeof Body>>(Body, body);
@@ -161,10 +160,14 @@ export async function POST(req: NextRequest, ctx: { params: Promise<Params> }) {
       },
       select: {
         id: true,
+        templateId: true,
         assigneeType: true,
+        assigneeName: true,
+        recurrence: true,
         status: true,
         token: true,
         dueAt: true,
+        createdAt: true,
       },
     });
 

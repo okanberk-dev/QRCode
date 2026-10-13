@@ -5,6 +5,17 @@
 // (completedAt dolu) UI thank-you ekranına geçer.
 //
 // Revoked/cancelled/expired durumda silent 404 (fingerprinting önleme).
+//
+// Spec §6.7 — additive alanlar:
+//   • usedUp   : tek seferlik link kullanıldı (status 'completed' + recurrence 'once')
+//   • reusable : link her yanıttan sonra yeniden kullanılabilir (recurrence ≠ 'once')
+//   • kind     : 'checklist' | 'quiz' (soru tiplerinden türetilir)
+//   `completed` geriye dönük uyum için olduğu gibi kalır. `assigneeName/Email`
+//   (sahibe özel link adı) YALNIZ tek seferlik linklerde döner — sürekli linki
+//   elinde tutan herkese ifşa edilmez, giriş ekranına da ön-doldurulmaz.
+//
+// Denetim canlı düzenlenebildiği için (spec §6.3) yanıt asla cache'lenmez:
+// personel her zaman en güncel soru setini görmeli.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -15,11 +26,15 @@ import type {
   AuditSector,
 } from '@/lib/audits/types';
 import { normalizeQuestionOptions } from '@/lib/audits/options';
+import { isReusable, isUsedUp } from '@/lib/audits/assignment-state';
+import { deriveAuditKind } from '@/lib/audits/kind';
+
+const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   if (!token || token.length < 16) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    return NextResponse.json({ error: 'not_found' }, { status: 404, headers: NO_STORE });
   }
 
   // Rate limit — 60 req/min/IP (browse + retry için yeterli, abuse'a kapalı)
@@ -28,7 +43,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'rate_limited', retryAfter: 60 },
-      { status: 429, headers: { 'Retry-After': '60' } },
+      { status: 429, headers: { 'Retry-After': '60', ...NO_STORE } },
     );
   }
 
@@ -95,20 +110,28 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
     !assignment.template.restaurant ||
     !assignment.template.restaurant.isActive
   ) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    return NextResponse.json({ error: 'not_found' }, { status: 404, headers: NO_STORE });
   }
 
-  // Tamamlanmış atama — UI thank-you state'i göstersin diye flag dön.
+  // `completed`: geriye dönük uyum (eski istemciler "teşekkürler" ekranına
+  // geçiyordu). Yeni istemci `usedUp` / `reusable` kullanır (spec §6.7).
   const completed = assignment.status === 'completed';
+  const usedUp = isUsedUp({ status: assignment.status, recurrence: assignment.recurrence });
+  const reusable = isReusable(assignment.recurrence);
+  const kind = deriveAuditKind(assignment.template.questions.map((q) => q.type));
 
   return NextResponse.json({
     completed,
+    usedUp,
+    reusable,
+    kind,
     assignment: {
       id: assignment.id,
       status: assignment.status,
       assigneeType: assignment.assigneeType,
-      assigneeName: assignment.assigneeName,
-      assigneeEmail: assignment.assigneeEmail,
+      // Link adı sahibe özeldir: sürekli linklerde ifşa etme.
+      assigneeName: reusable ? null : assignment.assigneeName,
+      assigneeEmail: reusable ? null : assignment.assigneeEmail,
       dueAt: assignment.dueAt,
       recurrence: assignment.recurrence,
     },
@@ -144,5 +167,5 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
       isRequired: q.isRequired,
       sortOrder: q.sortOrder,
     })),
-  });
+  }, { headers: NO_STORE });
 }
