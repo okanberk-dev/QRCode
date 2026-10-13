@@ -222,6 +222,85 @@ describe('normalizePlaceDetails — hostile payloads never throw and never leak'
   });
 });
 
+describe('normalizePlaceDetails — opening hours, photos and reviews edge cases', () => {
+  it('opening hours count when weekday descriptions OR periods exist, not for openNow alone', () => {
+    const hours = (regularOpeningHours: unknown) => normalizePlaceDetails({ regularOpeningHours }, ID).hasOpeningHours;
+    assert.equal(hours({ weekdayDescriptions: ['Pazartesi: 09:00–18:00'] }), true);
+    assert.equal(hours({ periods: [{ open: { day: 1, hour: 9, minute: 0 } }] }), true);
+    assert.equal(hours({ weekdayDescriptions: [], periods: [] }), false);
+    assert.equal(hours({ openNow: true }), false);
+    assert.equal(hours({}), false);
+    assert.equal(hours(null), false);
+    assert.equal(hours('Pazartesi 9-18'), false);
+    assert.equal(normalizePlaceDetails({}, ID).hasOpeningHours, false);
+  });
+
+  it('photo count is the number of photos, capped at 10, and 0 for anything that is not a list', () => {
+    const photos = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `places/x/photos/${i}` }));
+    assert.equal(normalizePlaceDetails({ photos: photos(0) }, ID).photoCount, 0);
+    assert.equal(normalizePlaceDetails({ photos: photos(3) }, ID).photoCount, 3);
+    assert.equal(normalizePlaceDetails({ photos: photos(10) }, ID).photoCount, 10);
+    assert.equal(normalizePlaceDetails({ photos: photos(25) }, ID).photoCount, 10);
+    assert.equal(normalizePlaceDetails({ photos: 12 }, ID).photoCount, 0);
+    assert.equal(normalizePlaceDetails({ photos: { length: 9 } }, ID).photoCount, 0);
+  });
+
+  it('phone falls back to the international number; blank values are ignored', () => {
+    assert.equal(normalizePlaceDetails({ internationalPhoneNumber: '+90 212 555 01 01' }, ID).phone, '+90 212 555 01 01');
+    assert.equal(normalizePlaceDetails({ nationalPhoneNumber: '   ', internationalPhoneNumber: '+90 212 555 01 01' }, ID).phone, '+90 212 555 01 01');
+    assert.equal(normalizePlaceDetails({ nationalPhoneNumber: '0212 555 01 01', internationalPhoneNumber: '+90 212 555 01 01' }, ID).phone, '0212 555 01 01');
+  });
+
+  it('keeps a review that has only stars or only words and drops one that has neither', () => {
+    const p = normalizePlaceDetails(
+      {
+        reviews: [
+          { rating: 4 },
+          { text: { text: 'Sadece yazı.' } },
+          { authorAttribution: { displayName: 'Ayşe' } },
+          { rating: 0, text: { text: '' } },
+          { rating: 5, originalText: { text: 'Orijinal' }, text: { text: 'Translated' } },
+        ],
+      },
+      ID,
+    );
+    assert.equal(p.reviews.length, 3);
+    assert.equal(p.reviews[0]!.rating, 4);
+    assert.equal(p.reviews[0]!.text, null);
+    assert.equal(p.reviews[1]!.rating, null);
+    assert.equal(p.reviews[1]!.text, 'Sadece yazı.');
+    assert.equal(p.reviews[2]!.text, 'Orijinal');
+  });
+
+  it('never returns more than five reviews, whatever the input size', () => {
+    const many = Array.from({ length: 200 }, (_, i) => ({ rating: 5, text: { text: `r${i}` } }));
+    const p = normalizePlaceDetails({ reviews: many }, ID);
+    assert.equal(p.reviews.length, 5);
+    assert.deepEqual(p.reviews.map((r) => r.text), ['r0', 'r1', 'r2', 'r3', 'r4']);
+  });
+
+  it('keeps at most three attributions and only https provider links', () => {
+    const p = normalizePlaceDetails(
+      {
+        attributions: [
+          { provider: 'A', providerUri: 'https://a.example' },
+          { provider: 'B', providerUri: 'http://b.example' },
+          { provider: '' },
+          { provider: 'C' },
+          { provider: 'D', providerUri: 'https://d.example' },
+          { provider: 'E', providerUri: 'https://e.example' },
+        ],
+      },
+      ID,
+    );
+    assert.deepEqual(p.attributions, [
+      { provider: 'A', providerUri: 'https://a.example' },
+      { provider: 'B', providerUri: null },
+      { provider: 'C', providerUri: null },
+    ]);
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────
 // 4. buildPlacesChecklist
 // ─────────────────────────────────────────────────────────────────────────
