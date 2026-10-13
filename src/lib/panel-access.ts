@@ -89,12 +89,14 @@ export async function getTeamMemberRole(actor: PanelActor): Promise<string | nul
  * the APIs behind them already accepted their scope. This resolves the same
  * scope the API layer uses.
  */
-export async function getScopedRestaurantIdsForUserPayload(payload: {
+type UserTokenPayload = {
   userId: string;
   role?: unknown;
   email?: unknown;
-}): Promise<string[]> {
-  const actor: PanelActor = {
+};
+
+function actorFromUserPayload(payload: UserTokenPayload): PanelActor {
+  return {
     id: payload.userId,
     role: typeof payload.role === 'string' && payload.role ? payload.role : 'restaurant_owner',
     restaurantId: null,
@@ -103,7 +105,35 @@ export async function getScopedRestaurantIdsForUserPayload(payload: {
     plan: null,
     source: 'user',
   };
-  return (await getScopedRestaurantIds(actor)) ?? [];
+}
+
+export async function getScopedRestaurantIdsForUserPayload(
+  payload: UserTokenPayload,
+): Promise<string[]> {
+  return (await getScopedRestaurantIds(actorFromUserPayload(payload))) ?? [];
+}
+
+/**
+ * Server-component variant of `getTeamMemberRole` for pages that only hold a
+ * verified `user_token` payload. `null` for the workspace owner (no gating).
+ */
+export async function getTeamMemberRoleForUserPayload(
+  payload: UserTokenPayload,
+): Promise<string | null> {
+  return getTeamMemberRole(actorFromUserPayload(payload));
+}
+
+/**
+ * UI gating for server pages: can this token holder change things? Workspace
+ * owners always can; a team member only when their active role is not
+ * `viewer`. The API layer (`canWriteRestaurant`) stays the real gate — this
+ * only decides which buttons the page renders.
+ */
+export async function canWriteForUserPayload(payload: UserTokenPayload): Promise<boolean> {
+  const actor = actorFromUserPayload(payload);
+  if (actor.role !== 'team_member') return true;
+  const role = await getTeamMemberRole(actor);
+  return role !== null && role !== 'viewer';
 }
 
 export async function getScopedRestaurantIds(actor: PanelActor) {
