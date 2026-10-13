@@ -10,6 +10,7 @@ import {
   parseGoogleLocationsCache,
   selectedGoogleLocation,
 } from '@/lib/google-business';
+import { getReplyAvailability } from '@/lib/google-business-availability';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,10 @@ export async function GET(
   const integration = await getGoogleIntegrationForRestaurant(actor, id);
   const cache = parseGoogleLocationsCache(integration?.locationsJson ?? null);
   const selectedLocation = selectedGoogleLocation(cache, id);
+  // Platform-level: is the optional reply sign-in worth offering at all?
+  // ('not_provisioned' = Google quota is 0 project-wide; 'disabled' = operator
+  // switch). Never a per-owner fact, so the UI hides the connect button.
+  const replyAvailability = await getReplyAvailability();
   // Cache'lenmiş accounts üzerinden hızlı flag — UI ilk render'da owner'a
   // "Business Profile yok" durumunu konum endpoint'i çağrılmadan gösterebilir.
   // null = sync henüz yapılmamış (UI: locations endpoint'ini fetch eder),
@@ -57,6 +62,7 @@ export async function GET(
       hasBusinessProfile,
       accountCount,
       locationCount,
+      replyAvailability,
     },
     {
       // Owner-scoped status barely changes between requests — `private` so

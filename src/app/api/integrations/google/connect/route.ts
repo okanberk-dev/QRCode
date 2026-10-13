@@ -4,6 +4,8 @@ import * as Sentry from '@sentry/nextjs';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
 import { GOOGLE_BUSINESS_SCOPE } from '@/lib/google-business';
+import { getLocaleFromRequest } from '@/lib/api/locale';
+import { ownerGoogleMessage } from '@/lib/google-owner-copy';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,8 +49,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: false,
       configured: false,
+      // Machine code stays; the message is owner-safe (the panel can render
+      // it) — it must never name an env var (§38.233).
       error: 'missing_google_client_id',
-      message: 'GOOGLE_CLIENT_ID env var is not configured.',
+      message: ownerGoogleMessage('missing_google_client_id', getLocaleFromRequest(req)),
     });
   }
 
