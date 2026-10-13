@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const parsed = validateBody(placesSearchBodySchema, body);
   if (!parsed.ok) return parsed.response;
+  // Language of Google's results: exactly the body `locale`, else Turkish (the
+  // contract of this route). The owner-facing error copy may also follow the
+  // request locale (query / Accept-Language).
+  const searchLocale: 'tr' | 'en' = parsed.data.locale ?? 'tr';
   locale = parsed.data.locale ?? locale;
 
   const limit = await rateLimit(`google-places-search:${actor.id}:new`, 20, 60_000);
@@ -71,7 +75,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const places = await searchGooglePlaces(parsed.data.query, locale);
+    const places = await searchGooglePlaces(parsed.data.query, searchLocale);
     const response: PlacesSearchResponse = { places };
     return NextResponse.json(response, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
