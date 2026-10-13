@@ -1,0 +1,76 @@
+{
+  "state": "ok",
+  "placeId": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+  "profile": {
+    "v": 1,
+    "placeId": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+    "name": "Mama's Burger Kadıköy",
+    "address": "Caferağa Mah. Moda Cad. No:12, 34710 Kadıköy/İstanbul, Türkiye",
+    "mapsUri": "https://maps.google.com/?cid=10000000000000000001",
+    "businessStatus": "OPERATIONAL",
+    "category": "Hamburgerci",
+    "rating": 4.6,
+    "ratingCount": 1284,
+    "phone": "0216 555 01 01",
+    "website": "http://www.mamasburger.example/kadikoy",
+    "hasOpeningHours": true,
+    "photoCount": 10,
+    "attributions": [
+      {
+        "provider": "Örnek Rehber",
+        "providerUri": "https://rehber.example/mamas-burger-kadikoy"
+      }
+    ],
+    "reviews": [
+      {
+        "rating": 5,
+        "text": "Burgerler harika, personel çok ilgili.",
+        "publishedAt": "2026-10-02T09:14:22.512Z",
+        "authorName": "Ayşe Y.",
+        "authorUri": "https://www.google.com/maps/contrib/100000000000000000001?hl=tr",
+        "authorPhotoUri": "https://lh3.googleusercontent.com/a/synthetic-author-1=s128-c0x00000000-cc-rp-mo",
+        "mapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic1"
+      },
+      {
+        "rating": 4,
+        "text": "Great atmosphere but a bit crowded.",
+        "publishedAt": "2026-09-24T18:40:00.000Z",
+        "authorName": "Daniel R.",
+        "authorUri": "https://www.google.com/maps/contrib/100000000000000000002?hl=tr",
+        "authorPhotoUri": "https://lh3.googleusercontent.com/a/synthetic-author-2=s128-c0x00000000-cc-rp-mo",
+        "mapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic2"
+      },
+      {
+        "rating": 2,
+        "text": "Sipariş çok geç geldi, patatesler soğuktu.",
+        "publishedAt": "2026-09-11T12:05:41.000Z",
+        "authorName": "Mehmet D.",
+        "authorUri": "https://www.google.com/maps/contrib/100000000000000000003?hl=tr",
+        "authorPhotoUri": "https://lh3.googleusercontent.com/a/synthetic-author-3=s128-c0x00000000-cc-rp-mo",
+        "mapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic3"
+      },
+      {
+        "rating": 5,
+        "text": "Hızlı servis, lezzetli menü. Tavsiye ederim.",
+        "publishedAt": "2026-08-30T20:22:10.000Z",
+        "authorName": "Zeynep K.",
+        "authorUri": "https://www.google.com/maps/contrib/100000000000000000004?hl=tr",
+        "authorPhotoUri": "https://lh3.googleusercontent.com/a/synthetic-author-4=s128-c0x00000000-cc-rp-mo",
+        "mapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic4"
+      },
+      {
+        "rating": 3,
+        "text": "Fiyat/performans fena değil. Mekan küçük ama temiz.",
+        "publishedAt": "2026-08-02T08:00:00.000Z",
+        "authorName": "Can B.",
+        "authorUri": "https://www.google.com/maps/contrib/100000000000000000005?hl=tr",
+        "authorPhotoUri": "https://lh3.googleusercontent.com/a/synthetic-author-5=s128-c0x00000000-cc-rp-mo",
+        "mapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic5"
+      }
+    ]
+  },
+  "fetchedAt": "2026-10-13T12:00:00.000Z",
+  "canWrite": true,
+  "hasManualLink": true,
+  "placesConfigured": true
+}

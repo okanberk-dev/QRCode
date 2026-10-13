@@ -3,6 +3,15 @@ import { prisma } from '@/lib/prisma';
 import type { PanelActor } from '@/lib/auth';
 import type { Locale } from '@/lib/translations';
 import { decryptToken, encryptToken } from '@/lib/google-token-crypto';
+import {
+  PLACES_SEARCH_FIELD_MASK,
+  PlacesApiError,
+  classifyPlacesError,
+  extractPlacesErrorMeta,
+  isAbortError,
+  normalizeSearchResults,
+  type PlacesSearchResultRow,
+} from '@/lib/google-places';
 
 const PLACES_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText';
 const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -59,29 +68,32 @@ const GOOGLE_FAILURE_MESSAGES: Record<GoogleBusinessFailureCode, Record<Locale, 
     tr: 'Google bağlantısı süresi doldu. Hesabı yeniden bağlayın.',
     en: 'Google connection expired. Reconnect the account.',
   },
+  // Owner-facing copy: no quota / API / OAuth / server vocabulary (§38.233).
+  // The owner panel maps these by `code` (google-owner-copy.ts); these strings
+  // are the safe fallback for any consumer that does render `error`.
   GOOGLE_RATE_LIMITED: {
-    tr: 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.',
-    en: 'Google API quota exhausted. Try again in a few minutes.',
+    tr: 'Google şu an yoğun. Birkaç dakika sonra tekrar dene.',
+    en: 'Google is busy right now. Please try again in a few minutes.',
   },
   GOOGLE_API_NOT_PROVISIONED: {
-    tr: 'Google İşletme Profili API erişimi henüz aktif değil. Hesabınız doğru bağlı; ek bir işlem yapmanıza gerek yok.',
-    en: 'Google Business Profile API access is not active yet. Your account is connected correctly; no action is needed on your side.',
+    tr: 'Google, yorum yanıtlama erişimini Buaze için henüz açmadı. Hesabın doğru bağlı; ek bir işlem gerekmiyor.',
+    en: "Google hasn't enabled review replies for Buaze yet. Your account is connected correctly; no action is needed.",
   },
   GOOGLE_SERVER_ERROR: {
-    tr: 'Google sunucusu geçici hata döndü. Tekrar deneyin.',
-    en: 'Google server returned a temporary error. Try again.',
+    tr: 'Google geçici bir sorun yaşıyor. Biraz sonra tekrar dene.',
+    en: 'Google is having a temporary problem. Please try again shortly.',
   },
   GOOGLE_NETWORK_ERROR: {
-    tr: 'Google API isteği ağ hatası nedeniyle başarısız.',
-    en: 'Google API request failed due to a network error.',
+    tr: "Google'a şu an ulaşılamadı. Biraz sonra tekrar dene.",
+    en: "Couldn't reach Google right now. Please try again shortly.",
   },
   GOOGLE_API_ERROR: {
-    tr: 'Google API yanıtı çözümlenemedi.',
-    en: 'Google API response could not be parsed.',
+    tr: "Google'dan beklenmeyen bir yanıt geldi. Biraz sonra tekrar dene.",
+    en: 'Google sent an unexpected response. Please try again shortly.',
   },
   GOOGLE_NOT_CONFIGURED: {
-    tr: 'Google OAuth client config eksik.',
-    en: 'Google OAuth client config is missing.',
+    tr: 'Google hesabı bağlama şu an kullanılamıyor. Lütfen daha sonra tekrar dene.',
+    en: "Connecting a Google account isn't available right now. Please try again later.",
   },
 };
 
@@ -126,13 +138,12 @@ export class GoogleBusinessApiError extends Error {
   }
 }
 
-export interface GooglePlaceSearchResult {
-  placeId: string;
-  displayName: string;
-  formattedAddress: string | null;
-  googleMapsUri: string | null;
-  businessStatus: string | null;
-}
+/**
+ * One Places text-search row. Defined once in the pure `google-places`
+ * module (client components import it from there); `category` is Google's
+ * `primaryTypeDisplayName`, which tells two branches of a chain apart.
+ */
+export type GooglePlaceSearchResult = PlacesSearchResultRow;
 
 export interface GoogleBusinessAccount {
   name: string;
@@ -491,7 +502,7 @@ export async function getFreshGoogleAccessToken(
           return {
             ok: false,
             code: 'GOOGLE_REAUTH_REQUIRED',
-            message: 'Google access token üretilemedi.',
+            message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
           };
         }
         const expiresAt = new Date(Date.now() + Math.max(60, data.expires_in ?? 3600) * 1000);
@@ -668,10 +679,11 @@ function classifyOutcome(outcome: RawFetchOutcome): GoogleBusinessFailureCode {
 }
 
 function outcomeMessage(outcome: RawFetchOutcome): string {
-  if (outcome.networkError) return googleFailureMessage('GOOGLE_NETWORK_ERROR');
-  // Body snippet may include Google's error JSON. Limit to 500 chars and never
-  // include caller-provided request body / Authorization header.
-  return outcome.text.slice(0, 500) || `Google API HTTP ${outcome.status}`;
+  // Never carry Google's raw error body: it can hold project numbers, quota
+  // metric names and other text that must not travel to a client, a log line
+  // or a cron response. The failure `code` + `status` are the diagnostic data
+  // (Sentry already gets them); the message is the fixed, owner-safe copy.
+  return googleFailureMessage(classifyOutcome(outcome));
 }
 
 /**
@@ -811,58 +823,69 @@ export async function googleBusinessFetch<T>(
   return fail;
 }
 
+/** Text Search timeout. Details uses the same 6 s ceiling. */
+const PLACES_SEARCH_TIMEOUT_MS = 6000;
+
+/**
+ * Places API (New) text search. Throws `PlacesApiError` (a fixed code string
+ * as its message — never Google's text) so routes can report the failure
+ * class without ever touching a raw error body.
+ */
 export async function searchGooglePlaces(
   query: string,
   locale: 'tr' | 'en' = 'tr',
+  opts: { timeoutMs?: number; fetchImpl?: typeof fetch; apiKey?: string } = {},
 ): Promise<GooglePlaceSearchResult[]> {
-  const key = process.env.GOOGLE_MAPS_API_KEY;
-  if (!key) throw new Error('GOOGLE_MAPS_API_KEY env var is not configured.');
+  const key = opts.apiKey ?? process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) throw new PlacesApiError({ code: 'FORBIDDEN', reason: 'NO_API_KEY' });
 
-  const res = await fetch(PLACES_SEARCH_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': key,
-      'X-Goog-FieldMask': [
-        'places.id',
-        'places.displayName',
-        'places.formattedAddress',
-        'places.googleMapsUri',
-        'places.businessStatus',
-      ].join(','),
-    },
-    body: JSON.stringify({
-      textQuery: query,
-      languageCode: locale,
-      regionCode: 'TR',
-      maxResultCount: 6,
-    }),
-  });
+  const doFetch = opts.fetchImpl ?? fetch;
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, opts.timeoutMs ?? PLACES_SEARCH_TIMEOUT_MS);
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text.slice(0, 300) || `Google Places HTTP ${res.status}`);
+  try {
+    const res = await doFetch(PLACES_SEARCH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': PLACES_SEARCH_FIELD_MASK,
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        languageCode: locale,
+        regionCode: 'TR',
+        maxResultCount: 6,
+      }),
+      signal: controller.signal,
+    });
+
+    const text = await res.text();
+    if (!res.ok) {
+      throw new PlacesApiError({
+        code: classifyPlacesError(res.status, text),
+        status: res.status,
+        ...extractPlacesErrorMeta(text),
+      });
+    }
+
+    let json: unknown;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new PlacesApiError({ code: 'BAD_RESPONSE' });
+    }
+    return normalizeSearchResults(json);
+  } catch (err) {
+    if (err instanceof PlacesApiError) throw err;
+    throw new PlacesApiError({ code: timedOut || isAbortError(err) ? 'TIMEOUT' : 'NETWORK' });
+  } finally {
+    clearTimeout(timer);
   }
-
-  const data = (await res.json()) as {
-    places?: Array<{
-      id?: string;
-      displayName?: { text?: string };
-      formattedAddress?: string;
-      googleMapsUri?: string;
-      businessStatus?: string;
-    }>;
-  };
-
-  return (data.places ?? [])
-    .filter((place) => typeof place.id === 'string' && place.id.trim())
-    .map((place) => ({
-      placeId: place.id as string,
-      displayName: place.displayName?.text || place.id || 'Google işletmesi',
-      formattedAddress: place.formattedAddress ?? null,
-      googleMapsUri: place.googleMapsUri ?? null,
-      businessStatus: place.businessStatus ?? null,
-    }));
 }
 
 function formatAddress(address: unknown): string | null {

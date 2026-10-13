@@ -1,0 +1,28 @@
+{
+  "places": [
+    {
+      "placeId": "ChIJsearchA_mamas_burger_kadikoy",
+      "displayName": "Mama's Burger Kadıköy",
+      "formattedAddress": "Caferağa Mah. Moda Cad. No:12, 34710 Kadıköy/İstanbul, Türkiye",
+      "googleMapsUri": "https://maps.google.com/?cid=10000000000000000001",
+      "businessStatus": "OPERATIONAL",
+      "category": "Hamburgerci"
+    },
+    {
+      "placeId": "ChIJsearchB_mamas_burger_moda",
+      "displayName": "Mama's Burger Moda",
+      "formattedAddress": "Moda Cad. No:101, 34710 Kadıköy/İstanbul, Türkiye",
+      "googleMapsUri": "https://maps.google.com/?cid=10000000000000000011",
+      "businessStatus": "CLOSED_TEMPORARILY",
+      "category": "Hamburgerci"
+    },
+    {
+      "placeId": "ChIJsearchC_mamas_burger_atasehir",
+      "displayName": "Mama's Burger Ataşehir",
+      "formattedAddress": "Barbaros Mah. Begonya Sk. No:3, 34746 Ataşehir/İstanbul, Türkiye",
+      "googleMapsUri": "https://maps.google.com/?cid=10000000000000000012",
+      "businessStatus": "OPERATIONAL",
+      "category": "Fast food restoranı"
+    }
+  ]
+}

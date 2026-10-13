@@ -15,6 +15,10 @@
  *      • Persistent 401 (no refresh token in integration → reauth)
  *      • Malformed JSON success → API_ERROR
  *      • Refresh token absent + access token expired → REAUTH_REQUIRED
+ *  - Owner-safe failure messages (no developer vocabulary, never Google's
+ *    own error text) and the "quota is 0" classification
+ *  - `searchGooglePlaces` against a mocked fetch: field mask (category),
+ *    request shape, abort timeout, typed errors that never carry Google text
  *
  * Run: npm test
  */
@@ -22,13 +26,20 @@
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import {
   googleBusinessFetch,
   GoogleBusinessApiError,
+  googleFailureMessage,
   maskGoogleUrl,
+  searchGooglePlaces,
   type GoogleBusinessFailure,
+  type GoogleBusinessFailureCode,
 } from '../src/lib/google-business';
 import { googleBusinessErrorResponse } from '../src/lib/google-business-response';
+import { PLACES_SEARCH_FIELD_MASK, PlacesApiError } from '../src/lib/google-places';
 
 describe('maskGoogleUrl', () => {
   it('drops query strings (pageToken etc.) but keeps host + path', () => {
@@ -125,8 +136,11 @@ describe('googleBusinessErrorResponse — controlled HTTP mapping (no 500 chain)
     const err = buildError('GOOGLE_RATE_LIMITED', false, 429);
     const res = googleBusinessErrorResponse(err, 'fallback');
     assert.equal(res.status, 429);
-    const body = (await res.json()) as { code: string };
+    const body = (await res.json()) as { code: string; error: string };
     assert.equal(body.code, 'GOOGLE_RATE_LIMITED');
+    // §38.233 — the text may reach an owner: no quota / API wording.
+    assert.doesNotMatch(body.error, /kota|quota|\bAPI\b|oauth/i);
+    assert.match(body.error, /Google şu an yoğun/);
   });
 
   it('returns 502 with the failure code for upstream Google errors', async () => {
@@ -360,5 +374,229 @@ describe('googleBusinessFetch — transport behaviour', () => {
     assert.equal(result.ok, true);
     if (!result.ok) return;
     assert.deepEqual(result.data, { ok: true, items: 2 });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Owner-safe failure messages (CLAUDE.md §38.233)
+// ─────────────────────────────────────────────────────────────────────────
+
+const DEV_WORDS: RegExp[] = [
+  /kota|quota|oauth|vercel|cloud console|GOOGLE_[A-Z]/i,
+  /\benv\b/i,
+  /\bAPI\b/,
+  /sunucu|\bserver\b/i,
+];
+
+describe('failure messages are owner-safe', () => {
+  const CODES: GoogleBusinessFailureCode[] = [
+    'GOOGLE_REAUTH_REQUIRED',
+    'GOOGLE_RATE_LIMITED',
+    'GOOGLE_API_NOT_PROVISIONED',
+    'GOOGLE_SERVER_ERROR',
+    'GOOGLE_NETWORK_ERROR',
+    'GOOGLE_API_ERROR',
+    'GOOGLE_NOT_CONFIGURED',
+  ];
+
+  beforeEach(() => {
+    realFetch = globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    mock.restoreAll();
+  });
+
+  it('googleFailureMessage has no developer vocabulary in any code or language', () => {
+    for (const code of CODES) {
+      for (const locale of ['tr', 'en'] as const) {
+        const text = googleFailureMessage(code, locale);
+        assert.ok(text.length > 0);
+        for (const re of DEV_WORDS) assert.doesNotMatch(text, re, `${code}/${locale}: ${text}`);
+      }
+    }
+  });
+
+  it('a 403 surfaces the fixed copy, not Google\'s response body', async () => {
+    globalThis.fetch = mock.fn(async () =>
+      plainResponse('Forbidden: project 000000000000 has not enabled the API', 403),
+    ) as unknown as typeof globalThis.fetch;
+    const result = await googleBusinessFetch(
+      buildIntegration(),
+      'https://mybusiness.googleapis.com/v4/accounts/123/locations/456/reviews',
+    );
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.message, googleFailureMessage('GOOGLE_API_ERROR'));
+    assert.doesNotMatch(result.message, /000000000000|Forbidden|project/);
+  });
+
+  it('a 429 surfaces the plain "busy" copy', async () => {
+    globalThis.fetch = mock.fn(async () => plainResponse('Quota exceeded for metric', 429)) as unknown as typeof globalThis.fetch;
+    const result = await googleBusinessFetch(
+      buildIntegration(),
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+    );
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.code, 'GOOGLE_RATE_LIMITED');
+    assert.equal(result.message, googleFailureMessage('GOOGLE_RATE_LIMITED'));
+    assert.doesNotMatch(result.message, /Quota/i);
+  });
+
+  it('a 429 whose quota limit is 0 is classified "not provisioned" — and says nothing about quotas', async () => {
+    const body = JSON.stringify({
+      error: {
+        code: 429,
+        status: 'RESOURCE_EXHAUSTED',
+        message: "Quota exceeded for quota metric 'Requests' of service 'mybusinessaccountmanagement.googleapis.com' for consumer 'project_number:864975573618'.",
+        details: [
+          {
+            '@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+            reason: 'RATE_LIMIT_EXCEEDED',
+            metadata: { quota_limit_value: '0', quota_unit: '1/min/{project}' },
+          },
+        ],
+      },
+    });
+    const fetchMock = mock.fn(async () => plainResponse(body, 429));
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    const result = await googleBusinessFetch(
+      buildIntegration(),
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+    );
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.code, 'GOOGLE_API_NOT_PROVISIONED');
+    assert.equal(result.message, googleFailureMessage('GOOGLE_API_NOT_PROVISIONED'));
+    assert.doesNotMatch(result.message, /864975573618|quota|kota|mybusiness/i);
+    assert.equal(fetchMock.mock.callCount(), 1, 'shared quota: never retried');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// searchGooglePlaces — Text Search with a mocked fetch
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('searchGooglePlaces', () => {
+  const KEY = 'test-api-key-0123456789';
+  const raw = (): unknown =>
+    JSON.parse(readFileSync(join(process.cwd(), 'tests/fixtures/google-places', 'search-results.json'), 'utf8'));
+
+  it('POSTs the search with the category in the field mask and the key only in a header', async () => {
+    let seenUrl = '';
+    let seenInit: RequestInit | undefined;
+    const fetchImpl = (async (url: unknown, init?: RequestInit) => {
+      seenUrl = String(url);
+      seenInit = init;
+      return jsonResponse(raw());
+    }) as typeof fetch;
+
+    const rows = await searchGooglePlaces("Mama's Burger Kadıköy", 'en', { apiKey: KEY, fetchImpl });
+
+    assert.equal(seenUrl, 'https://places.googleapis.com/v1/places:searchText');
+    assert.equal(seenInit?.method, 'POST');
+    const headers = seenInit?.headers as Record<string, string>;
+    assert.equal(headers['X-Goog-Api-Key'], KEY);
+    assert.equal(headers['X-Goog-FieldMask'], PLACES_SEARCH_FIELD_MASK);
+    assert.match(headers['X-Goog-FieldMask'] ?? '', /places\.primaryTypeDisplayName/);
+    assert.equal(seenUrl.includes(KEY), false);
+    assert.deepEqual(JSON.parse(String(seenInit?.body)), {
+      textQuery: "Mama's Burger Kadıköy",
+      languageCode: 'en',
+      regionCode: 'TR',
+      maxResultCount: 6,
+    });
+
+    // Rows carry the category, and ids that could never be selected are dropped.
+    assert.equal(rows.length, 3);
+    assert.equal(rows[0]!.category, 'Hamburgerci');
+    assert.equal(rows[0]!.displayName, "Mama's Burger Kadıköy");
+    assert.equal(rows[1]!.businessStatus, 'CLOSED_TEMPORARILY');
+  });
+
+  it('defaults to Turkish', async () => {
+    let body: { languageCode?: string } = {};
+    const fetchImpl = (async (_url: unknown, init?: RequestInit) => {
+      body = JSON.parse(String(init?.body));
+      return jsonResponse({ places: [] });
+    }) as typeof fetch;
+    assert.deepEqual(await searchGooglePlaces('kafe', undefined, { apiKey: KEY, fetchImpl }), []);
+    assert.equal(body.languageCode, 'tr');
+  });
+
+  it('passes an abort signal, and a hung request ends as TIMEOUT', async () => {
+    let signal: AbortSignal | undefined;
+    const fetchImpl = ((_url: unknown, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        signal = init?.signal ?? undefined;
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+      })) as typeof fetch;
+
+    const started = Date.now();
+    await assert.rejects(
+      () => searchGooglePlaces('kafe', 'tr', { apiKey: KEY, fetchImpl, timeoutMs: 25 }),
+      (err: unknown) => err instanceof PlacesApiError && err.code === 'TIMEOUT',
+    );
+    assert.ok(signal instanceof AbortSignal);
+    assert.equal(signal?.aborted, true);
+    assert.ok(Date.now() - started < 3000);
+  });
+
+  it('classifies failures with typed errors that never carry Google\'s text or the key', async () => {
+    const cases: Array<[number, unknown, string]> = [
+      [403, { error: { status: 'PERMISSION_DENIED', message: 'Places API (New) has not been used in project 000000000000 before.', details: [{ reason: 'SERVICE_DISABLED' }] } }, 'FORBIDDEN'],
+      [400, { error: { status: 'INVALID_ARGUMENT', message: 'API key not valid. Please pass a valid API key.', details: [{ reason: 'API_KEY_INVALID' }] } }, 'FORBIDDEN'],
+      [429, { error: { status: 'RESOURCE_EXHAUSTED', message: 'Quota exceeded' } }, 'RATE_LIMITED'],
+      [500, { error: { status: 'INTERNAL', message: 'oops' } }, 'UPSTREAM'],
+    ];
+    for (const [status, body, code] of cases) {
+      const fetchImpl = (async () => jsonResponse(body, status)) as typeof fetch;
+      await assert.rejects(
+        () => searchGooglePlaces('kafe', 'tr', { apiKey: KEY, fetchImpl }),
+        (err: unknown) => {
+          assert.ok(err instanceof PlacesApiError);
+          assert.equal(err.code, code);
+          assert.equal(err.status, status);
+          const everything = `${err.message} ${JSON.stringify(err)}`;
+          assert.equal(everything.includes('000000000000'), false);
+          assert.equal(everything.includes('Quota exceeded'), false);
+          assert.equal(everything.includes(KEY), false);
+          return true;
+        },
+        `${status}`,
+      );
+    }
+  });
+
+  it('maps a network failure to NETWORK and an unreadable 200 to BAD_RESPONSE', async () => {
+    await assert.rejects(
+      () => searchGooglePlaces('kafe', 'tr', { apiKey: KEY, fetchImpl: (async () => { throw new TypeError('fetch failed'); }) as typeof fetch }),
+      (err: unknown) => err instanceof PlacesApiError && err.code === 'NETWORK',
+    );
+    await assert.rejects(
+      () => searchGooglePlaces('kafe', 'tr', { apiKey: KEY, fetchImpl: (async () => plainResponse('<html>proxy</html>', 200)) as typeof fetch }),
+      (err: unknown) => err instanceof PlacesApiError && err.code === 'BAD_RESPONSE',
+    );
+  });
+
+  it('without a key it fails before any request is made', async () => {
+    const prev = process.env.GOOGLE_MAPS_API_KEY;
+    delete process.env.GOOGLE_MAPS_API_KEY;
+    let called = 0;
+    const fetchImpl = (async () => {
+      called++;
+      return jsonResponse({});
+    }) as typeof fetch;
+    try {
+      await assert.rejects(
+        () => searchGooglePlaces('kafe', 'tr', { fetchImpl }),
+        (err: unknown) => err instanceof PlacesApiError && err.code === 'FORBIDDEN',
+      );
+      assert.equal(called, 0);
+    } finally {
+      if (prev !== undefined) process.env.GOOGLE_MAPS_API_KEY = prev;
+    }
   });
 });

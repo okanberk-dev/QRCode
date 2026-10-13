@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ApiErrors } from '@/lib/api-errors';
 import type { GoogleBusinessApiError } from '@/lib/google-business';
+import { ownerGoogleMessage } from '@/lib/google-owner-copy';
 import type { Locale } from '@/lib/translations';
 
 /**
@@ -42,21 +43,41 @@ export function googleBusinessErrorResponse(
   }
   if (error.code === 'GOOGLE_RATE_LIMITED') {
     // Google'ın önerdiği Retry-After saniye olarak UI'a forward edilir.
-    // Yoksa konservatif default 60 saniye (Google quota dashboard'da
-    // "per minute" sınırı dolarsa tipik recovery süresi).
+    // Yoksa konservatif default 60 saniye (Google'ın dakika-bazlı sınırı
+    // dolarsa tipik recovery süresi).
+    //
+    // Owner-facing copy: no "quota" / "API" wording (§38.233). The panel maps
+    // by `code` anyway; this text is the safe fallback for other consumers.
     const retryAfter = error.retryAfterSeconds ?? 60;
     const body = isTr
       ? (retryAfter > 0
-        ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
-        : 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.')
+        ? `Google şu an yoğun. ${retryAfter} saniye sonra tekrar dene.`
+        : 'Google şu an yoğun. Birkaç dakika sonra tekrar dene.')
       : (retryAfter > 0
-        ? `Google API quota exhausted. Try again in ${retryAfter}s.`
-        : 'Google API quota exhausted. Try again in a few minutes.');
+        ? `Google is busy right now. Try again in ${retryAfter}s.`
+        : 'Google is busy right now. Please try again in a few minutes.');
     return ApiErrors.tooManyRequests(body, 'GOOGLE_RATE_LIMITED', retryAfter);
   }
   const fallback = !isTr && fallbackMessageEn ? fallbackMessageEn : fallbackMessageTr;
   return NextResponse.json(
     { error: fallback, code: error.code },
     { status: 502 },
+  );
+}
+
+/**
+ * Error response for the Places routes whose status is not covered by
+ * `ApiErrors` (422, 503 …). The `error` text is the owner-safe copy for the
+ * machine `code` — never anything that came from Google.
+ */
+export function googleOwnerErrorResponse(
+  status: number,
+  code: string,
+  locale: Locale = 'tr',
+  headers?: Record<string, string>,
+): NextResponse {
+  return NextResponse.json(
+    { error: ownerGoogleMessage(code, locale), code },
+    { status, ...(headers ? { headers } : {}) },
   );
 }

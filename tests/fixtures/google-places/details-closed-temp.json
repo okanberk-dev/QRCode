@@ -1,0 +1,184 @@
+{
+  "id": "ChIJclosed_temp_00000000002",
+  "displayName": {
+    "text": "Deniz Lokantası",
+    "languageCode": "tr"
+  },
+  "formattedAddress": "Caferağa Mah. Moda Cad. No:12, 34710 Kadıköy/İstanbul, Türkiye",
+  "googleMapsUri": "https://maps.google.com/?cid=10000000000000000001",
+  "businessStatus": "CLOSED_TEMPORARILY",
+  "primaryType": "hamburger_restaurant",
+  "primaryTypeDisplayName": {
+    "text": "Hamburgerci",
+    "languageCode": "tr"
+  },
+  "rating": 4.1,
+  "userRatingCount": 9,
+  "regularOpeningHours": {
+    "openNow": true,
+    "periods": [
+      {
+        "open": {
+          "day": 1,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 1,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 2,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 2,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 3,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 3,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 4,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 4,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 5,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 6,
+          "hour": 0,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 6,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 0,
+          "hour": 0,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 0,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 0,
+          "hour": 23,
+          "minute": 0
+        }
+      }
+    ],
+    "weekdayDescriptions": [
+      "Pazartesi: 11:00 – 23:00",
+      "Salı: 11:00 – 23:00",
+      "Çarşamba: 11:00 – 23:00",
+      "Perşembe: 11:00 – 23:00",
+      "Cuma: 11:00 – 00:00",
+      "Cumartesi: 11:00 – 00:00",
+      "Pazar: 12:00 – 22:00"
+    ]
+  },
+  "nationalPhoneNumber": "0216 555 01 01",
+  "internationalPhoneNumber": "+90 216 555 01 01",
+  "photos": [
+    {
+      "name": "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/synthetic-photo-1",
+      "widthPx": 4032,
+      "heightPx": 3024,
+      "authorAttributions": [
+        {
+          "displayName": "Synthetic Contributor",
+          "uri": "https://www.google.com/maps/contrib/100000000000000000099",
+          "photoUri": "https://lh3.googleusercontent.com/a/synthetic-photo-author"
+        }
+      ]
+    },
+    {
+      "name": "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/synthetic-photo-2",
+      "widthPx": 4032,
+      "heightPx": 3024,
+      "authorAttributions": [
+        {
+          "displayName": "Synthetic Contributor",
+          "uri": "https://www.google.com/maps/contrib/100000000000000000099",
+          "photoUri": "https://lh3.googleusercontent.com/a/synthetic-photo-author"
+        }
+      ]
+    },
+    {
+      "name": "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/synthetic-photo-3",
+      "widthPx": 4032,
+      "heightPx": 3024,
+      "authorAttributions": [
+        {
+          "displayName": "Synthetic Contributor",
+          "uri": "https://www.google.com/maps/contrib/100000000000000000099",
+          "photoUri": "https://lh3.googleusercontent.com/a/synthetic-photo-author"
+        }
+      ]
+    }
+  ],
+  "attributions": [
+    {
+      "provider": "Örnek Rehber",
+      "providerUri": "https://rehber.example/mamas-burger-kadikoy"
+    }
+  ],
+  "reviews": [
+    {
+      "name": "places/ChIJN1t_tDeuEmsRUsoyG83frY4/reviews/synthetic-review-1",
+      "relativePublishTimeDescription": "1 hafta önce",
+      "flagContentUri": "https://www.google.com/local/review/rap/report?postId=synthetic-1&authuser=0&hl=tr",
+      "googleMapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic1",
+      "rating": 5,
+      "text": {
+        "text": "Burgerler harika, personel çok ilgili.",
+        "languageCode": "tr"
+      },
+      "originalText": {
+        "text": "Burgerler harika, personel çok ilgili.",
+        "languageCode": "tr"
+      },
+      "authorAttribution": {
+        "displayName": "Ayşe Y.",
+        "uri": "https://www.google.com/maps/contrib/100000000000000000001?hl=tr",
+        "photoUri": "https://lh3.googleusercontent.com/a/synthetic-author-1=s128-c0x00000000-cc-rp-mo"
+      },
+      "publishTime": "2026-10-02T09:14:22.512345Z"
+    }
+  ]
+}

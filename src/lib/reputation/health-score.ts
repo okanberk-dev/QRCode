@@ -118,7 +118,8 @@ export function computeHealthScore(snapshot: HealthSnapshotInput): HealthScoreBr
 
 // ─── Deterministic profile recommendations ─────────────────────────────────
 //
-// Buaze kohortundan veriye dayalı kurallar (KVKK güvenli, Vision API yok).
+// Deterministik kurallar (KVKK güvenli, Vision API yok). Metinlerde Google'ın
+// sıralamasına / güvenine dair doğrulanamaz iddia veya uydurma sayı YOK (§35.8).
 // Her öneri "priority" sıralı — UI top 3-5 öner.
 
 export type RecommendationSeverity = 'critical' | 'warn' | 'tip';
@@ -152,8 +153,8 @@ export function getProfileRecommendations(
       severity: 'critical',
       title: isTr ? 'Profilini tamamla' : 'Complete your profile',
       body: isTr
-        ? 'Google Business Profile bilgilerin eksik. Title, adres, kategori, çalışma saatleri ve telefon eksiksiz olmalı — Google\'ın arama sonuçlarında daha üst sıraya çıkarmasının ilk şartı.'
-        : 'Your Google Business Profile is incomplete. Title, address, category, hours and phone must all be filled — this is the first signal Google uses to rank you in local search.',
+        ? 'Profilindeki temel bilgiler (ad, adres, kategori, çalışma saatleri, telefon) eksiksiz olduğunda müşteriler sana doğrudan ulaşabilir.'
+        : 'Customers can reach you directly when the basics on your profile (name, address, category, hours, phone) are complete.',
       ctaLabel: isTr ? 'Google\'da düzenle' : 'Edit on Google',
       ctaHref: 'https://business.google.com/locations',
     });
@@ -166,8 +167,8 @@ export function getProfileRecommendations(
       severity: 'critical',
       title: isTr ? 'İlk fotoğraflarını yükle' : 'Add your first photos',
       body: isTr
-        ? 'Henüz fotoğraf yok. Buaze kohortunda fotoğrafsız profillerin tıklanma oranı %42 daha düşük — minimum 4 kaliteli fotoğraf ekle: dış cephe, iç mekan, ürün/hizmet, ekip.'
-        : 'No photos yet. In our customer cohort, profiles without photos see ~42% fewer clicks — add at least 4 quality photos: exterior, interior, product/service, team.',
+        ? 'Henüz fotoğraf yok. En az 4 fotoğraf ekle: dış cephe, iç mekan, ürün/hizmet, ekip.'
+        : 'No photos yet. Add at least 4 photos: exterior, interior, product/service, team.',
       ctaLabel: isTr ? 'Fotoğraf ekle' : 'Add photos',
       ctaHref: 'https://business.google.com/locations',
     });
@@ -180,8 +181,8 @@ export function getProfileRecommendations(
       severity: 'warn',
       title: isTr ? `Fotoğraf sayını artır (${snapshot.googleMediaCount}/4+)` : `Add more photos (${snapshot.googleMediaCount}/4+)`,
       body: isTr
-        ? 'En az 4 fotoğraf olması Google sıralamasında belirgin etki yaratır. Önerilen: dış mekan, iç mekan, en sevilen 2 ürün/hizmet, müşteri deneyim anı.'
-        : 'Having at least 4 photos significantly affects ranking. Recommended: exterior, interior, top 2 products/services, customer experience moment.',
+        ? 'Müşteriler mekanı fotoğraflardan tanır. En az 4 fotoğraf öneriyoruz: dış mekan, iç mekan, en sevilen 2 ürün/hizmet, bir müşteri anı.'
+        : 'Customers get to know a place from its photos. We suggest at least 4: exterior, interior, your 2 favourite products/services, a customer moment.',
       ctaLabel: isTr ? 'Fotoğraf ekle' : 'Add photos',
       ctaHref: 'https://business.google.com/locations',
     });
@@ -196,8 +197,8 @@ export function getProfileRecommendations(
         ? `${snapshot.googleUnansweredQs} soru yanıt bekliyor`
         : `${snapshot.googleUnansweredQs} question${snapshot.googleUnansweredQs > 1 ? 's' : ''} awaiting reply`,
       body: isTr
-        ? 'Google\'daki Q&A bölümünde yanıtsız sorular var. Hızlı yanıt müşteriye "buraya gidilebilir" sinyali verir; cevapsız sorular yeni müşterileri caydırır.'
-        : 'There are unanswered questions in your Google Q&A. Quick answers signal trustworthiness; unanswered questions deter new customers.',
+        ? 'Google\'daki soru bölümünde yanıtsız sorular var. Hızlı yanıt, müşterinin merak ettiği şeyi öğrenmesini sağlar.'
+        : 'There are unanswered questions in your Google Q&A. A quick answer lets customers find out what they wanted to know.',
       ctaLabel: isTr ? 'Sorulara git' : 'Open Q&A',
       ctaHref: 'https://business.google.com/locations',
     });
@@ -218,8 +219,8 @@ export function getProfileRecommendations(
           ? `Yanıt oranın düşük: %${Math.round(replyRate)}`
           : `Low reply rate: ${Math.round(replyRate)}%`,
         body: isTr
-          ? 'Müşteri geri bildirimlerinin %60+\'ını yanıtlamak hem sadakat hem de Google sıralaması için önemli. Pulse AI taslakları bu işi 30 saniyeye indirebilir.'
-          : 'Replying to 60%+ of customer feedback boosts loyalty and Google ranking. Pulse AI drafts can cut reply time to ~30 seconds.',
+          ? 'Müşteri geri bildirimlerinin %60\'ından fazlasını yanıtlamak sadakati artırır. Pulse AI taslakları bu işi hızlandırır.'
+          : 'Replying to more than 60% of customer feedback builds loyalty. Pulse AI drafts speed this up.',
         ctaLabel: isTr ? 'Yorumlara git' : 'Open reviews',
       });
     }
@@ -234,8 +235,8 @@ export function getProfileRecommendations(
         ? `Sadece ${snapshot.googleReviewCount} Google yorumu`
         : `Only ${snapshot.googleReviewCount} Google reviews`,
       body: isTr
-        ? '10+ yorum, Google\'ın yıldız ortalamasını "güvenilir" saymaya başladığı eşik. QR kodla müşterilerden yorum davetiyesi sun — Buaze QR Studio bunu otomatikleştirir.'
-        : '10+ reviews is the threshold where Google starts trusting your star average. Invite customers via QR — Buaze QR Studio automates this.',
+        ? 'Yorum sayın az. QR kod, müşterilerin yorum bırakmasını kolaylaştırır.'
+        : 'You have few reviews. A QR code makes it easy for customers to leave one.',
       ctaLabel: isTr ? 'QR oluştur' : 'Create QR',
       ctaHref: '/dashboard/qr',
     });

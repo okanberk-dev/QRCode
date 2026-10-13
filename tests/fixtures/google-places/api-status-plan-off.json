@@ -1,0 +1,15 @@
+{
+  "googleReviewManagementEnabled": false,
+  "googleAiEnabled": true,
+  "placesConfigured": true,
+  "oauthConfigured": true,
+  "connected": false,
+  "expiresAt": null,
+  "hasRefreshToken": false,
+  "selectedLocation": null,
+  "syncedAt": null,
+  "hasBusinessProfile": null,
+  "accountCount": 0,
+  "locationCount": 0,
+  "replyAvailability": "available"
+}

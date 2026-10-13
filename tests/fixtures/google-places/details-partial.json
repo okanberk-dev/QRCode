@@ -1,0 +1,164 @@
+{
+  "id": "ChIJpartial_demo_000000003",
+  "displayName": {
+    "text": "Hotel Nora Boutique",
+    "languageCode": "tr"
+  },
+  "formattedAddress": "Kuloğlu Mah. Turnacıbaşı Sk. No:7, 34433 Beyoğlu/İstanbul, Türkiye",
+  "googleMapsUri": "https://maps.google.com/?cid=10000000000000000002",
+  "businessStatus": "OPERATIONAL",
+  "primaryType": "hotel",
+  "primaryTypeDisplayName": {
+    "text": "Otel",
+    "languageCode": "tr"
+  },
+  "rating": 4.2,
+  "userRatingCount": 57,
+  "regularOpeningHours": {
+    "periods": [
+      {
+        "open": {
+          "day": 1,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 1,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 2,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 2,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 3,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 3,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 4,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 4,
+          "hour": 23,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 5,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 6,
+          "hour": 0,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 6,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 0,
+          "hour": 0,
+          "minute": 0
+        }
+      },
+      {
+        "open": {
+          "day": 0,
+          "hour": 11,
+          "minute": 0
+        },
+        "close": {
+          "day": 0,
+          "hour": 23,
+          "minute": 0
+        }
+      }
+    ],
+    "weekdayDescriptions": [
+      "Pazartesi: 11:00 – 23:00",
+      "Salı: 11:00 – 23:00",
+      "Çarşamba: 11:00 – 23:00",
+      "Perşembe: 11:00 – 23:00",
+      "Cuma: 11:00 – 00:00",
+      "Cumartesi: 11:00 – 00:00",
+      "Pazar: 12:00 – 22:00"
+    ]
+  },
+  "internationalPhoneNumber": "+90 212 555 02 02",
+  "photos": [
+    {
+      "name": "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/synthetic-photo-1",
+      "widthPx": 4032,
+      "heightPx": 3024,
+      "authorAttributions": [
+        {
+          "displayName": "Synthetic Contributor",
+          "uri": "https://www.google.com/maps/contrib/100000000000000000099",
+          "photoUri": "https://lh3.googleusercontent.com/a/synthetic-photo-author"
+        }
+      ]
+    },
+    {
+      "name": "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/synthetic-photo-2",
+      "widthPx": 4032,
+      "heightPx": 3024,
+      "authorAttributions": [
+        {
+          "displayName": "Synthetic Contributor",
+          "uri": "https://www.google.com/maps/contrib/100000000000000000099",
+          "photoUri": "https://lh3.googleusercontent.com/a/synthetic-photo-author"
+        }
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "name": "places/ChIJN1t_tDeuEmsRUsoyG83frY4/reviews/synthetic-review-1",
+      "relativePublishTimeDescription": "1 hafta önce",
+      "flagContentUri": "https://www.google.com/local/review/rap/report?postId=synthetic-1&authuser=0&hl=tr",
+      "googleMapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic1",
+      "rating": 4,
+      "text": {
+        "text": "Konum çok iyi, odalar temiz.",
+        "languageCode": "tr"
+      },
+      "originalText": {
+        "text": "Konum çok iyi, odalar temiz.",
+        "languageCode": "tr"
+      },
+      "authorAttribution": {
+        "displayName": "Elif S.",
+        "uri": "https://www.google.com/maps/contrib/100000000000000000006?hl=tr",
+        "photoUri": "https://lh3.googleusercontent.com/a/synthetic-author-6=s128-c0x00000000-cc-rp-mo"
+      },
+      "publishTime": "2026-09-15T10:00:00.000000Z"
+    }
+  ]
+}

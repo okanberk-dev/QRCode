@@ -1,0 +1,11 @@
+{
+  "state": "error",
+  "placeId": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+  "canWrite": true,
+  "hasManualLink": true,
+  "placesConfigured": true,
+  "error": {
+    "reason": "limit_global",
+    "retryAfterSeconds": null
+  }
+}

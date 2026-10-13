@@ -1,0 +1,40 @@
+{
+  "state": "ok",
+  "placeId": "ChIJclosed_temp_00000000002",
+  "profile": {
+    "v": 1,
+    "placeId": "ChIJclosed_temp_00000000002",
+    "name": "Deniz Lokantası",
+    "address": "Caferağa Mah. Moda Cad. No:12, 34710 Kadıköy/İstanbul, Türkiye",
+    "mapsUri": "https://maps.google.com/?cid=10000000000000000001",
+    "businessStatus": "CLOSED_TEMPORARILY",
+    "category": "Hamburgerci",
+    "rating": 4.1,
+    "ratingCount": 9,
+    "phone": "0216 555 01 01",
+    "website": null,
+    "hasOpeningHours": true,
+    "photoCount": 3,
+    "attributions": [
+      {
+        "provider": "Örnek Rehber",
+        "providerUri": "https://rehber.example/mamas-burger-kadikoy"
+      }
+    ],
+    "reviews": [
+      {
+        "rating": 5,
+        "text": "Burgerler harika, personel çok ilgili.",
+        "publishedAt": "2026-10-02T09:14:22.512Z",
+        "authorName": "Ayşe Y.",
+        "authorUri": "https://www.google.com/maps/contrib/100000000000000000001?hl=tr",
+        "authorPhotoUri": "https://lh3.googleusercontent.com/a/synthetic-author-1=s128-c0x00000000-cc-rp-mo",
+        "mapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic1"
+      }
+    ]
+  },
+  "fetchedAt": "2026-10-13T12:00:00.000Z",
+  "canWrite": true,
+  "hasManualLink": true,
+  "placesConfigured": true
+}
