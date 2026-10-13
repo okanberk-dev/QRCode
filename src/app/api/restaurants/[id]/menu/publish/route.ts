@@ -20,11 +20,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'menuPublished zorunludur' }, { status: 400 });
   }
 
-  const restaurant = await prisma.restaurant.findUnique({ where: { id }, select: { menuEnabled: true } });
-  if (!restaurant) return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
-
-  if (b.menuPublished && !restaurant.menuEnabled) {
-    return NextResponse.json({ error: 'Menü özelliği yönetici tarafından devre dışı bırakıldı' }, { status: 403 });
+  if (b.menuPublished) {
+    // Publishing: besides the module switch, the menu must show customers at
+    // least one item — otherwise the QR leads to "Bu menüde henüz ürün yok".
+    // "Shows" mirrors the public page's own filter (visible category, available
+    // item; sold-out items are shown). One batch → one pooled connection
+    // (CLAUDE.md §40.1).
+    const [restaurant, publishableItems] = await prisma.$transaction([
+      prisma.restaurant.findUnique({ where: { id }, select: { menuEnabled: true } }),
+      prisma.menuItem.count({
+        where: {
+          restaurantId: id,
+          deletedAt: null,
+          isAvailable: true,
+          category: { isVisible: true, deletedAt: null },
+        },
+      }),
+    ]);
+    if (!restaurant) return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
+    if (!restaurant.menuEnabled) {
+      // Same machine-readable code every other menu write returns while the
+      // module is switched off, so the builder shows its "module closed" text.
+      return NextResponse.json(
+        { error: 'Menü özelliği yönetici tarafından devre dışı bırakıldı', code: 'MENU_MODULE_DISABLED' },
+        { status: 403 },
+      );
+    }
+    if (publishableItems === 0) {
+      return NextResponse.json(
+        { error: 'Yayına almak için en az bir ürün ekle.', code: 'MENU_EMPTY' },
+        { status: 409 },
+      );
+    }
+  } else {
+    // Unpublishing is always allowed (even for an empty or disabled menu).
+    const restaurant = await prisma.restaurant.findUnique({ where: { id }, select: { menuEnabled: true } });
+    if (!restaurant) return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
   }
 
   const updated = await prisma.restaurant.update({

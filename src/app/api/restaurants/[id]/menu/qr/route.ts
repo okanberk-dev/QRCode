@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireMenuModuleAccess } from '@/lib/menu-access';
 import { canWriteRestaurant } from '@/lib/panel-access';
 import { isValidHexColor } from '@/lib/validations';
+import { ensureScannableDark } from '@/lib/qr-colors';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import QRCode from 'qrcode';
 
@@ -112,12 +113,24 @@ export async function GET(
       ? normalizedEnvUrl
       : 'https://www.buaze.com';
 
+    // Canonical address the QR points at (without the attribution parameter) —
+    // the share modal shows exactly this link so it can never drift from the code.
+    const menuUrl = `${appUrl}/menu/${restaurant.slug}`;
     // Attribution: analytics pipeline reads `source=qr` from the landing URL.
-    const qrUrl = `${appUrl}/menu/${restaurant.slug}?source=qr`;
+    const qrUrl = `${menuUrl}?source=qr`;
 
     const darkRaw = searchParams.get('dark');
     const defaultDark = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#000000';
-    const dark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : defaultDark;
+    const requestedDark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : defaultDark;
+    // The accent colour is free-form (a pale lime is 1.3:1 on white and simply
+    // does not scan). Darken it just enough to scan — colours that already
+    // clear 3:1 are left exactly as the owner picked them.
+    const { color: dark, adjusted: colorAdjusted } = ensureScannableDark(requestedDark, light);
+    const qrHeaders = {
+      'Cache-Control': 'no-store',
+      'X-Menu-Url': menuUrl,
+      'X-Qr-Color-Adjusted': colorAdjusted ? '1' : '0',
+    };
 
     // History row is a write — viewers (read-only gate above) still get the
     // image but don't mutate QrGeneration.
@@ -139,7 +152,7 @@ export async function GET(
         headers: {
           'Content-Type': 'image/png',
           'Content-Disposition': `attachment; filename="menu-qr-${restaurant.slug}.png"`,
-          'Cache-Control': 'no-store',
+          ...qrHeaders,
         },
       });
     }
@@ -150,7 +163,7 @@ export async function GET(
       headers: {
         'Content-Type': 'image/svg+xml',
         'Content-Disposition': `attachment; filename="menu-qr-${restaurant.slug}.svg"`,
-        'Cache-Control': 'no-store',
+        ...qrHeaders,
       },
     });
   } catch (error) {

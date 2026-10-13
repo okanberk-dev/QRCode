@@ -44,8 +44,17 @@ function previousWindow(window: { start: Date | null; end: Date; days: number | 
   return { start: prevStart, end: prevEnd };
 }
 
+/** Keep a ratio inside 0..1 (see the note where it is used). */
+function clampRate(rate: number): number {
+  if (!Number.isFinite(rate)) return 0;
+  return Math.min(1, Math.max(0, rate));
+}
+
+// Relative change against the previous period. With nothing to compare to
+// (previous period had no events) there is no honest percentage — return null
+// so the page shows no delta instead of an invented "+100 %".
 function pctChange(current: number, previous: number): number | null {
-  if (!previous) return current > 0 ? 1 : null;
+  if (!previous) return null;
   return (current - previous) / previous;
 }
 
@@ -92,6 +101,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     };
 
     const [
+      menuState,
       menuCategories,
       menuItems,
       menuViewCount,
@@ -102,6 +112,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       productViews,
       productClicks,
     ] = await prisma.$transaction([
+      // Publish state, so an empty report can tell "menu is still a draft" from
+      // "nobody has scanned yet".
+      prisma.restaurant.findUnique({
+        where: { id },
+        select: { menuEnabled: true, menuPublished: true },
+      }),
       prisma.menuCategory.findMany({
         where: { restaurantId: id, deletedAt: null },
         select: { id: true, name: true, sortOrder: true },
@@ -151,7 +167,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const totalProductViews = totalsByType.menu_product_view ?? 0;
     const totalProductClicks = totalsByType.menu_product_click ?? 0;
     const totalUpsellClicks = upsellCount;
-    const productClickRate = totalProductViews > 0 ? totalProductClicks / totalProductViews : 0;
+    // A guest's views and taps are de-duplicated over different windows (view
+    // 5 min, tap 1 min), so taps can outnumber views — a "rate" above 100 %
+    // is meaningless to an owner. Cap every ratio at 1.
+    const productClickRate = clampRate(totalProductViews > 0 ? totalProductClicks / totalProductViews : 0);
 
     // Previous-period comparison (same filters, shifted window).
     const prev = previousWindow(window);
@@ -178,12 +197,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       for (const row of prevEvents) prevTotals[row.eventType] = row._count._all;
       const prevViews = prevTotals.menu_product_view ?? 0;
       const prevClicks = prevTotals.menu_product_click ?? 0;
-      const prevCtr = prevViews > 0 ? prevClicks / prevViews : 0;
+      const prevCtr = clampRate(prevViews > 0 ? prevClicks / prevViews : 0);
       compare = {
         menuViews: pctChange(totalMenuViews, prevMenuViews),
         productViews: pctChange(totalProductViews, prevViews),
         categoryClicks: pctChange(totalCategoryClicks, prevTotals.menu_category_click ?? 0),
-        productClickRate: productClickRate - prevCtr,
+        // Change in points, only when the previous period had product views to
+        // form a rate from.
+        productClickRate: prevViews > 0 ? productClickRate - prevCtr : null,
       };
     }
 
@@ -289,12 +310,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       trend,
       topProducts: topProducts.map((p) => ({
         ...p,
-        ctr: p.views > 0 ? p.clicks / p.views : 0,
+        ctr: clampRate(p.views > 0 ? p.clicks / p.views : 0),
       })),
       topCategories,
       lowInterest,
       insights,
       categories: menuCategories.map((c) => ({ id: c.id, name: c.name })),
+      menu: {
+        enabled: menuState?.menuEnabled ?? false,
+        published: menuState?.menuPublished ?? false,
+      },
     });
   } catch (error) {
     console.error('[MenuAnalytics] aggregation error:', error);
