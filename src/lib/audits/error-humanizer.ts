@@ -210,10 +210,35 @@ const CODE_MESSAGES_TR: Record<string, string> = {
   INVALID_QUESTION_ID: 'Bu şablona ait olmayan bir soru gönderildi.',
   UNIQUE_VIOLATION: 'Çakışan kayıt mevcut. Lütfen sayfayı yenile.',
   FK_VIOLATION: 'İlişkili bir kayıt bulunamadı.',
+  // Canlı düzenleme (spec §6.3) — yayındaki denetim linkleri kapatılmadan düzenlenir.
+  QUESTION_LOCKED:
+    'Bu maddeye yanıt verilmiş. Metnini değiştirebilirsin; türünü, seçeneklerini, doğru cevabını veya puan ağırlığını değiştirmek için denetimi kopyala.',
+  QUESTION_HAS_ANSWERS: 'Yanıt almış madde silinemez.',
+  DUPLICATE_QUESTION_ID: 'Aynı madde birden fazla kez gönderildi. Sayfayı yenileyip tekrar dene.',
+  STALE_EDIT: 'Bu denetim sen düzenlerken değişti. Sayfayı yenileyip tekrar dene.',
+  ARCHIVED: 'Bu denetim arşivlendi; düzenlenemez.',
+  // Public gönderim (spec §6.8)
+  PHOTO_TOO_LARGE: 'Fotoğraf çok büyük. Daha küçük bir fotoğraf dene.',
+  PAYLOAD_TOO_LARGE: 'Gönderilen veri çok büyük. Fotoğrafları azaltıp tekrar dene.',
+  INVALID_ANSWER: 'Bir cevap geçersiz. Cevapları kontrol edip tekrar dene.',
+  INVALID_PHOTO: 'Fotoğraf geçersiz. Yeniden çekip tekrar dene.',
   rate_limited: 'Çok hızlı denedin. Lütfen biraz bekleyip tekrar dene.',
   not_found: 'Bu denetime ulaşılamıyor.',
   already_completed: 'Bu denetim zaten tamamlandı.',
 };
+
+/** `rate_limited` + `scope: 'daily'` (link günlük sınırı) için ayrı metin. */
+const DAILY_CAP_MESSAGE_TR =
+  'Bu link bugün çok fazla yanıt aldı. Yarın tekrar dene veya işletmeyle iletişime geç.';
+const DAILY_CAP_MESSAGE_EN =
+  'This link received too many responses today. Try again tomorrow or contact the business.';
+
+/** `details.itemNumber` taşıyan hata kodları (madde numarası başlığın altına satır olarak eklenir). */
+const ITEM_NUMBER_CODES = new Set([
+  'QUESTION_LOCKED',
+  'QUESTION_HAS_ANSWERS',
+  'DUPLICATE_QUESTION_ID',
+]);
 
 const CODE_MESSAGES_EN: Record<string, string> = {
   PUBLISHED_LOCKED: 'Template is published. Unpublish it first to edit.',
@@ -226,6 +251,16 @@ const CODE_MESSAGES_EN: Record<string, string> = {
   INVALID_QUESTION_ID: 'A question that does not belong to this template was submitted.',
   UNIQUE_VIOLATION: 'A conflicting record exists. Please refresh the page.',
   FK_VIOLATION: 'A related record was not found.',
+  QUESTION_LOCKED:
+    'This item already has answers. You can edit its text; to change its type, options, correct answer or weight, copy the audit.',
+  QUESTION_HAS_ANSWERS: 'An item with answers cannot be deleted.',
+  DUPLICATE_QUESTION_ID: 'The same item was sent more than once. Refresh the page and try again.',
+  STALE_EDIT: 'This audit changed while you were editing. Refresh the page and try again.',
+  ARCHIVED: 'This audit is archived and cannot be edited.',
+  PHOTO_TOO_LARGE: 'The photo is too large. Try a smaller one.',
+  PAYLOAD_TOO_LARGE: 'The submission is too large. Remove some photos and try again.',
+  INVALID_ANSWER: 'An answer is invalid. Check your answers and try again.',
+  INVALID_PHOTO: 'The photo is invalid. Retake it and try again.',
   rate_limited: 'Too many requests. Please wait a moment and try again.',
   not_found: 'This audit is not available.',
   already_completed: 'This audit was already completed.',
@@ -285,7 +320,23 @@ export async function parseAuditErrorResponse(
 
   // Known backend code — code map'ten oku
   if (code && codeMap[code]) {
-    return { title: codeMap[code], details: [], code };
+    // 429 + scope:'daily' → link günlük sınırı için ayrı metin.
+    const daily = code === 'rate_limited' && json.scope === 'daily';
+    const title = daily ? (isTr ? DAILY_CAP_MESSAGE_TR : DAILY_CAP_MESSAGE_EN) : codeMap[code];
+    // QUESTION_LOCKED vb. `details.itemNumber` taşır → "3. madde" satırı.
+    const rawDetails =
+      json.details && typeof json.details === 'object' && !Array.isArray(json.details)
+        ? (json.details as Record<string, unknown>)
+        : null;
+    const itemNumber =
+      rawDetails && typeof rawDetails.itemNumber === 'number' && rawDetails.itemNumber > 0
+        ? Math.floor(rawDetails.itemNumber)
+        : null;
+    const details =
+      itemNumber !== null && ITEM_NUMBER_CODES.has(code)
+        ? [isTr ? `${itemNumber}. madde` : `Item ${itemNumber}`]
+        : [];
+    return { title, details, code };
   }
 
   // Plain error string ("Yayın için en az 1 soru gerekli", "Geçersiz kategori")

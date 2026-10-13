@@ -13,11 +13,17 @@ import assert from 'node:assert/strict';
 import {
   AssignmentDraftSchema,
   AuditQuestionSchema,
+  AuditTemplatePatchSchema,
   AuditTemplateSubmitSchema,
   Step1Schema,
   Step2Schema,
   Step3Schema,
+  buildShareLinkBody,
   createInitialWizardState,
+  defaultOnceForKind,
+  defaultShareAssignment,
+  deriveScoringMode,
+  recurrenceForOnce,
   toSubmitPayload,
 } from '../src/lib/audits/wizard-state';
 
@@ -294,5 +300,213 @@ describe('toSubmitPayload mapper', () => {
     state.assigneeType = null;
     const payload = toSubmitPayload(state, false);
     assert.equal(payload.assignment, undefined);
+  });
+});
+
+// ─── Spec §3.3 / §3.4 / A2 — paylaşım linki varsayılanları ──────────────
+
+describe('createInitialWizardState (A2: reusable by default)', () => {
+  it("defaults the share-link recurrence to 'daily', never 'once'", () => {
+    assert.equal(createInitialWizardState('rid').recurrence, 'daily');
+  });
+
+  it('still has no assignment enabled until the owner opts in', () => {
+    const s = createInitialWizardState('rid');
+    assert.equal(s.assignmentEnabled, false);
+    assert.equal(s.assigneeType, null);
+  });
+});
+
+describe('share link helpers', () => {
+  it('"Tek seferlik olsun" is OFF for checklists and ON for tests', () => {
+    assert.equal(defaultOnceForKind('checklist'), false);
+    assert.equal(defaultOnceForKind('quiz'), true);
+  });
+
+  it('recurrenceForOnce: off → daily (everyone can fill it again), on → once', () => {
+    assert.equal(recurrenceForOnce(false), 'daily');
+    assert.equal(recurrenceForOnce(true), 'once');
+  });
+
+  it("defaultShareAssignment: a 'link' assignment, daily, no contact fields", () => {
+    const a = defaultShareAssignment();
+    assert.deepEqual(a, {
+      enabled: true,
+      assigneeType: 'link',
+      recurrence: 'daily',
+      assigneeName: null,
+    });
+    // It must satisfy the API schema as-is.
+    assert.equal(AssignmentDraftSchema.safeParse(a).success, true);
+  });
+
+  it('defaultShareAssignment: once toggle + trimmed owner-only link name', () => {
+    const a = defaultShareAssignment({ once: true, name: '  Ayşe — kasiyer adayı ' });
+    assert.equal(a.recurrence, 'once');
+    assert.equal(a.assigneeName, 'Ayşe — kasiyer adayı');
+    assert.equal(defaultShareAssignment({ name: '   ' }).assigneeName, null);
+  });
+
+  it("buildShareLinkBody: 'link' + templateId, recurrence follows the toggle", () => {
+    assert.deepEqual(buildShareLinkBody('tpl1'), {
+      templateId: 'tpl1',
+      assigneeType: 'link',
+      recurrence: 'daily',
+      assigneeName: null,
+    });
+    const once = buildShareLinkBody('tpl1', { once: true, name: ' Mutfak tableti ' });
+    assert.equal(once.recurrence, 'once');
+    assert.equal(once.assigneeName, 'Mutfak tableti');
+  });
+});
+
+describe('deriveScoringMode (spec §5.1)', () => {
+  const plain = [{ weight: 1 }, { weight: 1 }];
+  const heavy = [{ weight: 1 }, { weight: 3 }];
+
+  it('create: weighted if any question has weight > 1, else percentage', () => {
+    assert.equal(deriveScoringMode({ questions: plain, mode: 'create' }), 'percentage');
+    assert.equal(deriveScoringMode({ questions: heavy, mode: 'create' }), 'weighted');
+    assert.equal(deriveScoringMode({ questions: [], mode: 'create' }), 'percentage');
+    assert.equal(deriveScoringMode({ questions: [{}, { weight: null }], mode: 'create' }), 'percentage');
+  });
+
+  it('edit with 0 responses re-derives (unless the stored mode is pass_fail)', () => {
+    assert.equal(
+      deriveScoringMode({ questions: heavy, mode: 'edit', storedMode: 'percentage', hasResponses: false }),
+      'weighted',
+    );
+    assert.equal(
+      deriveScoringMode({ questions: plain, mode: 'edit', storedMode: 'weighted', hasResponses: false }),
+      'percentage',
+    );
+  });
+
+  it('edit with responses NEVER re-derives — old responses keep the semantics they were scored with', () => {
+    assert.equal(
+      deriveScoringMode({ questions: heavy, mode: 'edit', storedMode: 'percentage', hasResponses: true }),
+      'percentage',
+    );
+    assert.equal(
+      deriveScoringMode({ questions: plain, mode: 'edit', storedMode: 'weighted', hasResponses: true }),
+      'weighted',
+    );
+  });
+
+  it('a stored pass_fail (seeded) mode is preserved on edit even without responses', () => {
+    assert.equal(
+      deriveScoringMode({ questions: heavy, mode: 'edit', storedMode: 'pass_fail', hasResponses: false }),
+      'pass_fail',
+    );
+    assert.equal(
+      deriveScoringMode({ questions: heavy, mode: 'edit', storedMode: 'pass_fail', hasResponses: true }),
+      'pass_fail',
+    );
+  });
+
+  it('an explicit choice under "Daha fazla ayar" always wins', () => {
+    assert.equal(
+      deriveScoringMode({ questions: plain, mode: 'create', explicitMode: 'pass_fail' }),
+      'pass_fail',
+    );
+    assert.equal(
+      deriveScoringMode({
+        questions: plain,
+        mode: 'edit',
+        storedMode: 'weighted',
+        hasResponses: true,
+        explicitMode: 'percentage',
+      }),
+      'percentage',
+    );
+  });
+
+  it('edit without a stored mode falls back to percentage', () => {
+    assert.equal(deriveScoringMode({ questions: plain, mode: 'edit', hasResponses: true }), 'percentage');
+  });
+});
+
+// ─── Spec §6.3 — PATCH schema ───────────────────────────────────────────
+
+describe('AuditTemplatePatchSchema (no silent defaults — Zod 4 .partial() gotcha)', () => {
+  const yesNo = {
+    type: 'yes_no' as const,
+    prompt: 'Eldiven var mı?',
+    options: ['Evet', 'Hayır'],
+    correctAnswer: 'Evet',
+    weight: 1,
+    isRequired: true,
+    sortOrder: 10,
+  };
+
+  it('a title-only body parses to EXACTLY that body — no injected locale/publish', () => {
+    const r = AuditTemplatePatchSchema.safeParse({ title: 'Yeni başlık' });
+    assert.equal(r.success, true);
+    if (r.success) {
+      assert.deepEqual(r.data, { title: 'Yeni başlık' });
+      assert.ok(!('locale' in r.data), 'locale must not be defaulted to tr');
+      assert.ok(!('publish' in r.data), 'publish must not be defaulted to false (it would unpublish the audit)');
+    }
+  });
+
+  it('an empty body is valid and stays empty', () => {
+    const r = AuditTemplatePatchSchema.safeParse({});
+    assert.equal(r.success, true);
+    if (r.success) assert.deepEqual(r.data, {});
+  });
+
+  it('publish:true and publish:false are both kept as sent', () => {
+    const on = AuditTemplatePatchSchema.safeParse({ publish: true });
+    const off = AuditTemplatePatchSchema.safeParse({ publish: false });
+    assert.equal(on.success && on.data.publish, true);
+    assert.equal(off.success && off.data.publish, false);
+  });
+
+  it('accepts questions with and without ids, plus expectedUpdatedAt', () => {
+    const r = AuditTemplatePatchSchema.safeParse({
+      questions: [{ ...yesNo, id: 'srv-1' }, { ...yesNo, prompt: 'Yeni madde' }],
+      expectedUpdatedAt: '2026-10-13T12:34:56.789Z',
+    });
+    assert.equal(r.success, true);
+    if (r.success) {
+      assert.equal(r.data.questions?.[0].id, 'srv-1');
+      assert.equal(r.data.questions?.[1].id, undefined);
+    }
+  });
+
+  it('rejects an invalid expectedUpdatedAt, an empty question list and unknown keys (strict)', () => {
+    assert.equal(AuditTemplatePatchSchema.safeParse({ expectedUpdatedAt: 'yesterday' }).success, false);
+    assert.equal(AuditTemplatePatchSchema.safeParse({ questions: [] }).success, false);
+    assert.equal(AuditTemplatePatchSchema.safeParse({ isActive: false }).success, false);
+    assert.equal(AuditTemplatePatchSchema.safeParse({ restaurantId: 'x' }).success, false);
+  });
+
+  it('keeps accepting (and ignoring) the legacy assignment block', () => {
+    const r = AuditTemplatePatchSchema.safeParse({ assignment: { enabled: false } });
+    assert.equal(r.success, true);
+  });
+
+  it('nullable fields can be cleared explicitly', () => {
+    const r = AuditTemplatePatchSchema.safeParse({ description: null, categoryId: null, passingScore: null });
+    assert.equal(r.success, true);
+    if (r.success) {
+      assert.equal(r.data.description, null);
+      assert.equal(r.data.categoryId, null);
+      assert.equal(r.data.passingScore, null);
+    }
+  });
+
+  it('create still defaults locale to tr and publish to false (unchanged contract)', () => {
+    const r = AuditTemplateSubmitSchema.safeParse({
+      title: 'X',
+      sector: 'food',
+      scoringMode: 'percentage',
+      questions: [yesNo],
+    });
+    assert.equal(r.success, true);
+    if (r.success) {
+      assert.equal(r.data.locale, 'tr');
+      assert.equal(r.data.publish, false);
+    }
   });
 });

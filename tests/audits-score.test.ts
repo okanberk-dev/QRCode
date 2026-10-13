@@ -11,7 +11,12 @@ import assert from 'node:assert/strict';
 
 import {
   computeAuditScore,
+  hasUsableCorrectAnswer,
+  isScorableByDefinition,
+  isScorableQuestion,
+  questionsForRecompute,
   scoreAnswer,
+  shouldRecompute,
   type AuditQuestionInput,
 } from '../src/lib/audits/score';
 
@@ -287,5 +292,293 @@ describe('computeAuditScore — edge cases', () => {
     ];
     const res = computeAuditScore(qs, [{ questionId: 'q1', value: 'A' }], 'percentage', null);
     assert.equal(res.score, 50);
+  });
+});
+
+
+// ─── Spec §5.2 (A1) — only scorable questions take part in the score ───────
+
+/** Seeded "Günlük mutfak açılış kontrol listesi": 5 × yes_no (correct Evet) + optional note. */
+function seededChecklist(): AuditQuestionInput[] {
+  return [
+    ...[1, 2, 3, 4, 5].map<AuditQuestionInput>((n) => ({
+      id: `y${n}`, type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: true,
+    })),
+    { id: 'note', type: 'text', weight: 1, isRequired: false },
+  ];
+}
+
+describe('computeAuditScore — unscorable questions are excluded (A1)', () => {
+  it('seeded checklist, every answer Evet + a note → 100 (was 83)', () => {
+    const res = computeAuditScore(
+      seededChecklist(),
+      [
+        ...[1, 2, 3, 4, 5].map((n) => ({ questionId: `y${n}`, value: 'Evet' })),
+        { questionId: 'note', value: 'Her şey yolunda' },
+      ],
+      'percentage',
+      null,
+    );
+    assert.equal(res.score, 100);
+    assert.equal(res.scorePercentage, 10000);
+    assert.equal(res.scorableCount, 5);
+  });
+
+  it('one "Hayır" on 5 scorable items → 80, the optional note does not dilute it', () => {
+    const res = computeAuditScore(
+      seededChecklist(),
+      [
+        { questionId: 'y1', value: 'Evet' },
+        { questionId: 'y2', value: 'Evet' },
+        { questionId: 'y3', value: 'Evet' },
+        { questionId: 'y4', value: 'Evet' },
+        { questionId: 'y5', value: 'Hayır' },
+        { questionId: 'note', value: null },
+      ],
+      'percentage',
+      null,
+    );
+    assert.equal(res.score, 80);
+  });
+
+  it('3 yes_no WITHOUT a correct answer, all Evet → score null / passed null (was 0)', () => {
+    const qs: AuditQuestionInput[] = ['a', 'b', 'c'].map((id) => ({
+      id, type: 'yes_no', weight: 1, isRequired: true,
+    }));
+    const res = computeAuditScore(
+      qs,
+      qs.map((q) => ({ questionId: q.id, value: 'Evet' })),
+      'percentage',
+      80,
+    );
+    assert.equal(res.score, null);
+    assert.equal(res.scorePercentage, null);
+    assert.equal(res.passed, null);
+    assert.equal(res.scorableCount, 0);
+    // every row is reported as not scorable, autoScore null (UI shows "—")
+    assert.ok(res.scoredAnswers.every((s) => s.autoScore === null && s.scorable === false));
+  });
+
+  it('2 yes_no (correct Evet) + 1 photo, all Evet → 100 (was 67)', () => {
+    const qs: AuditQuestionInput[] = [
+      { id: 'y1', type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: true },
+      { id: 'y2', type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: true },
+      { id: 'ph', type: 'file', weight: 1, isRequired: false },
+    ];
+    const res = computeAuditScore(
+      qs,
+      [
+        { questionId: 'y1', value: 'Evet' },
+        { questionId: 'y2', value: 'Evet' },
+        { questionId: 'ph', value: 'data:image/webp;base64,AAAA' },
+      ],
+      'percentage',
+      null,
+    );
+    assert.equal(res.score, 100);
+  });
+
+  it('pass_fail 90 + a note, perfect form → passed true (was "failed")', () => {
+    const res = computeAuditScore(
+      seededChecklist(),
+      [
+        ...[1, 2, 3, 4, 5].map((n) => ({ questionId: `y${n}`, value: 'Evet' })),
+        { questionId: 'note', value: 'ok' },
+      ],
+      'pass_fail',
+      90,
+    );
+    assert.equal(res.score, 100);
+    assert.equal(res.passed, true);
+  });
+
+  it('mixed: scale (no correct answer) + text (no correct answer) → only the scale counts', () => {
+    const qs: AuditQuestionInput[] = [
+      { id: 'sc', type: 'scale', weight: 1, isRequired: true },
+      { id: 'tx', type: 'text', weight: 1, isRequired: false },
+    ];
+    const res = computeAuditScore(
+      qs,
+      [
+        { questionId: 'sc', value: 4 },
+        { questionId: 'tx', value: 'lorem' },
+      ],
+      'percentage',
+      null,
+    );
+    assert.equal(res.score, 80);
+    assert.equal(res.scorableCount, 1);
+  });
+
+  it('an answer with a finite manualScore makes its (otherwise unscorable) question scorable', () => {
+    const qs: AuditQuestionInput[] = [
+      { id: 'y1', type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: true },
+      { id: 'tx', type: 'text', weight: 1, isRequired: false },
+    ];
+    const res = computeAuditScore(
+      qs,
+      [
+        { questionId: 'y1', value: 'Evet' },
+        { questionId: 'tx', value: 'lorem', manualScore: 50 },
+      ],
+      'percentage',
+      null,
+    );
+    // (100 + 50) / 2
+    assert.equal(res.score, 75);
+    const tx = res.scoredAnswers.find((s) => s.questionId === 'tx')!;
+    assert.equal(tx.autoScore, null, 'no automatic score for a question without a correct answer');
+    assert.equal(tx.appliedScore, 50);
+    assert.equal(tx.scorable, true);
+  });
+
+  it('a photo question with a manualScore also counts', () => {
+    const qs: AuditQuestionInput[] = [
+      { id: 'ph', type: 'file', weight: 1, isRequired: false },
+    ];
+    const res = computeAuditScore(qs, [{ questionId: 'ph', value: 'x', manualScore: 80 }], 'percentage', null);
+    assert.equal(res.score, 80);
+  });
+
+  it('weighted mode averages over the scorable subset only', () => {
+    const qs: AuditQuestionInput[] = [
+      { id: 'a', type: 'yes_no', correctAnswer: 'Evet', weight: 3, isRequired: true },
+      { id: 'b', type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: true },
+      { id: 'n', type: 'text', weight: 10, isRequired: false }, // unscorable, huge weight must NOT count
+    ];
+    const res = computeAuditScore(
+      qs,
+      [
+        { questionId: 'a', value: 'Evet' },
+        { questionId: 'b', value: 'Hayır' },
+        { questionId: 'n', value: 'x' },
+      ],
+      'weighted',
+      null,
+    );
+    // (100×3 + 0×1) / (3 + 1) = 75
+    assert.equal(res.score, 75);
+  });
+
+  it('a scorable question with a missing answer still counts as 0 (unchanged)', () => {
+    const qs: AuditQuestionInput[] = [
+      { id: 'a', type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: false },
+      { id: 'b', type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: false },
+    ];
+    const res = computeAuditScore(qs, [{ questionId: 'a', value: 'Evet' }], 'percentage', null);
+    assert.equal(res.score, 50);
+  });
+
+  it('empty question list is unchanged: score 0, passed=false only when a passing score is set', () => {
+    const noPass = computeAuditScore([], [], 'percentage', null);
+    assert.equal(noPass.score, 0);
+    assert.equal(noPass.passed, null);
+    const withPass = computeAuditScore([], [], 'percentage', 60);
+    assert.equal(withPass.score, 0);
+    assert.equal(withPass.passed, false);
+  });
+
+  it('threshold passes through to `passed` for a checklist without pass_fail mode', () => {
+    const ok = computeAuditScore(
+      seededChecklist(),
+      [
+        { questionId: 'y1', value: 'Evet' },
+        { questionId: 'y2', value: 'Evet' },
+        { questionId: 'y3', value: 'Evet' },
+        { questionId: 'y4', value: 'Evet' },
+        { questionId: 'y5', value: 'Hayır' },
+      ],
+      'percentage',
+      80,
+    );
+    assert.equal(ok.score, 80);
+    assert.equal(ok.passed, true);
+  });
+});
+
+describe('isScorableQuestion / isScorableByDefinition / hasUsableCorrectAnswer', () => {
+  it('file is never scorable by definition', () => {
+    assert.equal(isScorableByDefinition({ type: 'file', correctAnswer: 'x' }), false);
+  });
+
+  it('scale is always scorable (Likert fallback)', () => {
+    assert.equal(isScorableByDefinition({ type: 'scale' }), true);
+    assert.equal(isScorableByDefinition({ type: 'scale', correctAnswer: 4 }), true);
+  });
+
+  it('single / yes_no / text need a non-blank string correct answer', () => {
+    for (const type of ['single', 'yes_no', 'text'] as const) {
+      assert.equal(isScorableByDefinition({ type }), false, `${type} without correctAnswer`);
+      assert.equal(isScorableByDefinition({ type, correctAnswer: null }), false);
+      assert.equal(isScorableByDefinition({ type, correctAnswer: '' }), false, `${type} blank`);
+      assert.equal(isScorableByDefinition({ type, correctAnswer: '   ' }), false);
+      assert.equal(isScorableByDefinition({ type, correctAnswer: 'Evet' }), true);
+    }
+  });
+
+  it('multi needs a non-empty array', () => {
+    assert.equal(isScorableByDefinition({ type: 'multi' }), false);
+    assert.equal(isScorableByDefinition({ type: 'multi', correctAnswer: [] }), false);
+    assert.equal(isScorableByDefinition({ type: 'multi', correctAnswer: ['A'] }), true);
+    assert.equal(hasUsableCorrectAnswer({ type: 'multi', correctAnswer: ['A', 'B'] }), true);
+  });
+
+  it('manualScore overrides the definition, but NaN / null do not', () => {
+    const q = { type: 'text' as const, correctAnswer: null };
+    assert.equal(isScorableQuestion(q), false);
+    assert.equal(isScorableQuestion(q, { manualScore: null }), false);
+    assert.equal(isScorableQuestion(q, { manualScore: Number.NaN }), false);
+    assert.equal(isScorableQuestion(q, { manualScore: 0 }), true, '0 is a real manual score');
+    assert.equal(isScorableQuestion({ type: 'file' }, { manualScore: 70 }), true);
+  });
+});
+
+// ─── Spec §6.6 (A10) — re-score rules ───────────────────────────────────────
+
+describe('shouldRecompute — a review-note-only PATCH must not re-score', () => {
+  it('false when overrides is absent / empty / null', () => {
+    assert.equal(shouldRecompute({}), false);
+    assert.equal(shouldRecompute({ overrides: undefined }), false);
+    assert.equal(shouldRecompute({ overrides: null }), false);
+    assert.equal(shouldRecompute({ overrides: {} }), false);
+    assert.equal(shouldRecompute(null), false);
+    assert.equal(shouldRecompute(undefined), false);
+  });
+
+  it('true when at least one override key is present (including a clearing null)', () => {
+    assert.equal(shouldRecompute({ overrides: { q1: 80 } }), true);
+    assert.equal(shouldRecompute({ overrides: { q1: null } }), true);
+  });
+});
+
+describe('questionsForRecompute — only questions the response has an answer row for', () => {
+  const template = [
+    ...[1, 2, 3, 4, 5].map<AuditQuestionInput>((n) => ({
+      id: `y${n}`, type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: true,
+    })),
+    // added AFTER the response was submitted → no answer row
+    { id: 'late', type: 'yes_no', correctAnswer: 'Evet', weight: 1, isRequired: true } as AuditQuestionInput,
+  ];
+  const answered = ['y1', 'y2', 'y3', 'y4', 'y5'];
+  const answers = answered.map((id) => ({ questionId: id, value: 'Evet' }));
+
+  it('excludes a later-added question', () => {
+    const picked = questionsForRecompute(template, answered);
+    assert.deepEqual(picked.map((q) => q.id), answered);
+  });
+
+  it('a later-added scorable question does not count as 0 for an old response, and does not flip `passed`', () => {
+    const naive = computeAuditScore(template, answers, 'percentage', 90);
+    assert.equal(naive.score, 83, 'regression guard: over ALL template questions the old response would drop');
+    assert.equal(naive.passed, false);
+
+    const fixed = computeAuditScore(questionsForRecompute(template, answered), answers, 'percentage', 90);
+    assert.equal(fixed.score, 100);
+    assert.equal(fixed.passed, true);
+  });
+
+  it('keeps the order of the template questions and accepts any iterable', () => {
+    const picked = questionsForRecompute(template, new Set(['y3', 'y1']));
+    assert.deepEqual(picked.map((q) => q.id), ['y1', 'y3']);
   });
 });

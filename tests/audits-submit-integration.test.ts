@@ -1,10 +1,13 @@
 /**
  * CLAUDE.md §42 Phase 3 — Audit submit flow integration-light tests.
  *
- * DB'siz, network'siz; sadece submit-side helper invariants:
- *   1. computeAuditScore + AuditTemplateSubmitSchema kombinasyonu
- *   2. Submit zorunlu alan tutarlılığı (missing required guard)
+ * DB'siz, network'siz; submit rotasının gerçekten çağırdığı saf yardımcılar:
+ *   1. findMissingRequired (submit-guards) — zorunlu alan kontrolü
+ *   2. computeAuditScore + visibleOutcome — skor ve katılımcıya dönen sonuç
  *   3. Cross-type answer şekli (single string vs multi array vs scale number)
+ *
+ * (Eskiden zorunlu-alan kontrolü bu dosyada "aynalanıyordu"; artık rotanın
+ * kullandığı gerçek fonksiyon test ediliyor — spec §9.1 #8.)
  *
  * Çalıştır: npm test
  */
@@ -13,23 +16,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { computeAuditScore, type AuditQuestionInput } from '../src/lib/audits/score';
-
-// Helper: route içindeki zorunlu-alan guard'ı simüle eder (route içi inline
-// kontrol, dedicated helper'a çıkarılmadı — 3'ten fazla tekrar olunca extract).
-function findMissingRequired(
-  questions: AuditQuestionInput[],
-  answers: Array<{ questionId: string; value: unknown }>,
-): AuditQuestionInput[] {
-  const byQid = new Map(answers.map((a) => [a.questionId, a]));
-  return questions.filter((q) => {
-    if (!q.isRequired) return false;
-    const a = byQid.get(q.id);
-    if (!a) return true;
-    if (a.value === null || a.value === undefined || a.value === '') return true;
-    if (Array.isArray(a.value) && a.value.length === 0) return true;
-    return false;
-  });
-}
+import { deriveAuditKind } from '../src/lib/audits/kind';
+import { findMissingRequired, visibleOutcome } from '../src/lib/audits/submit-guards';
 
 describe('audit submit — missing required guard', () => {
   const questions: AuditQuestionInput[] = [
@@ -149,5 +137,73 @@ describe('audit submit — scale answer type contract', () => {
     const below = computeAuditScore([q], [{ questionId: 'q1', value: 3 }], 'percentage', null);
     assert.equal(at.score, 100);
     assert.equal(below.score, 0);
+  });
+});
+
+describe('audit submit — what the respondent is told (spec §6.8 score visibility)', () => {
+  // The seeded "Günlük mutfak açılış kontrol listesi": 5 yes/no (correct "Evet") + 1 optional note.
+  const checklist: AuditQuestionInput[] = [
+    ...['a', 'b', 'c', 'd', 'e'].map((id) => ({
+      id,
+      type: 'yes_no' as const,
+      correctAnswer: 'Evet',
+      weight: 1,
+      isRequired: true,
+    })),
+    { id: 'note', type: 'text', weight: 1, isRequired: false },
+  ];
+
+  it('all Evet + a note scores 100 and the respondent sees 100/100 (A1: was 83)', () => {
+    const kind = deriveAuditKind(checklist.map((q) => q.type));
+    assert.equal(kind, 'checklist');
+    const scoring = computeAuditScore(
+      checklist,
+      [
+        ...['a', 'b', 'c', 'd', 'e'].map((id) => ({ questionId: id, value: 'Evet' })),
+        { questionId: 'note', value: 'Her şey yolunda' },
+      ],
+      'percentage',
+      null,
+    );
+    assert.equal(scoring.score, 100);
+    const out = visibleOutcome({ ...scoring, kind });
+    assert.equal(out.score, 100);
+    assert.equal(out.scorePercentage, 100);
+  });
+
+  it('a form with nothing scorable returns null to the respondent (no "0/100" chip)', () => {
+    const notes: AuditQuestionInput[] = [
+      { id: 'n1', type: 'text', weight: 1, isRequired: false },
+      { id: 'p1', type: 'file', weight: 1, isRequired: false },
+    ];
+    const scoring = computeAuditScore(notes, [{ questionId: 'n1', value: 'x' }], 'percentage', null);
+    assert.equal(scoring.score, null);
+    const out = visibleOutcome({ ...scoring, kind: deriveAuditKind(notes.map((q) => q.type)) });
+    assert.deepEqual(out, { score: null, scorePercentage: null, passed: null });
+  });
+
+  it('a test (single/multi) is scored for the owner but hidden from the respondent', () => {
+    const test: AuditQuestionInput[] = [
+      { id: 't1', type: 'single', correctAnswer: 'A', weight: 1, isRequired: true },
+      { id: 't2', type: 'multi', correctAnswer: ['X', 'Y'], weight: 1, isRequired: true },
+    ];
+    const kind = deriveAuditKind(test.map((q) => q.type));
+    assert.equal(kind, 'quiz');
+    const scoring = computeAuditScore(
+      test,
+      [
+        { questionId: 't1', value: 'A' },
+        { questionId: 't2', value: ['X', 'Y'] },
+      ],
+      'percentage',
+      70,
+    );
+    assert.equal(scoring.score, 100, 'the owner still gets the real score');
+    assert.equal(scoring.passed, true);
+    assert.deepEqual(visibleOutcome({ ...scoring, kind }), {
+      score: null,
+      scorePercentage: null,
+      passed: null,
+    });
   });
 });
