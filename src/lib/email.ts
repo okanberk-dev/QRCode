@@ -1143,18 +1143,23 @@ export async function sendNewsletterEmail(params: {
 }
 
 /**
- * CLAUDE.md §42 Phase 3 — Audit yanıt tamamlandığında owner'a bildirim.
- * Best-effort sender; submit endpoint catch'le çağırır (mail fail → submit
- * yine başarılı dönsün).
+ * CLAUDE.md §42 Phase 3 — Audit yanıtı sorunluysa (veya denetim bir testse)
+ * owner'a bildirim. Best-effort sender; submit endpoint catch'le çağırır (mail
+ * fail → submit yine başarılı dönsün).
+ *
+ * `score` `null` olabilir (puanlanabilir soru yok): konu satırı "/100" taşımaz,
+ * skor bloğu "Puanlanmıyor" etiketi gösterir. `attentionCount > 0` ise "N madde
+ * sorunlu" satırı eklenir.
  */
 export async function sendAuditCompletedEmail(params: {
   to: string;
   restaurantName: string;
   auditTitle: string;
   respondentName?: string | null;
-  score: number;
+  score: number | null;
   passed: boolean | null;
   passingScore: number | null;
+  attentionCount?: number | null;
   panelUrl: string;
   locale?: 'tr' | 'en';
 }): Promise<boolean> {
@@ -1167,6 +1172,7 @@ export async function sendAuditCompletedEmail(params: {
       score: params.score,
       passed: params.passed,
       passingScore: params.passingScore,
+      attentionCount: params.attentionCount ?? null,
       panelUrl: params.panelUrl,
     },
     locale,
