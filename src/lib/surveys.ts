@@ -115,6 +115,24 @@ export function resolveUniqueSlug(
 }
 
 /**
+ * Müşterinin teşekkür ekranında gördüğü "Yanıt no": GERÇEK yanıt kimliğinin
+ * (`SurveyResponse.id`, cuid) son 6 karakteri, BÜYÜK harf. İşletme aynı kodla
+ * yanıtı bulur (Yanıtlar sekmesi `id endsWith` araması, CSV `id`).
+ *
+ * - ASCII-safe: yalnız [A-Za-z0-9] karakterleri değerlendirilir, çıktı
+ *   `/^[A-Z0-9]{0,6}$/`. Latin-dışı karakter (ş, ı, ß …) atılır — `ß`.toUpperCase()
+ *   iki harfe ("SS") dönüşüp uzunluğu bozabilirdi.
+ * - Deterministik + yerelden bağımsız: `toUpperCase()` (toLocaleUpperCase DEĞİL) —
+ *   tr-TR yerelinde `i` → `İ` olmaz.
+ * - Kimlik yoksa / çok kısaysa kısa (veya boş) döner; çağıran boşsa satırı hiç
+ *   göstermez, ASLA uydurma kod üretmez.
+ */
+export function surveyResponseShortId(id: string | null | undefined): string {
+  if (typeof id !== 'string') return '';
+  return id.replace(/[^A-Za-z0-9]/g, '').slice(-6).toUpperCase();
+}
+
+/**
  * Defensive select shape for public /s/[slug] reads. KVKK-clean — sadece
  * public surface'a gidecek alanlar (no `ipAddress`, no `userId`).
  */

@@ -26,7 +26,10 @@
 .bz-survey-frame {
   width: 100%;
   max-width: 440px;
+  /* 100vh first as the fallback; dvh excludes the iOS Safari address bar
+     (CLAUDE.md §42.5) so the full-bleed frame no longer overflows it. */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -90,8 +93,30 @@
   border-color: #0A0A0A;
   box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.06);
 }
+/* #6B6B66 on white = 5.36:1 (was #A3A29C, 2.56:1). Firefox dims
+   placeholders with a default opacity — pin it so the ratio holds. */
 .bz-survey-field::placeholder {
-  color: #A3A29C;
+  color: #6B6B66;
+  opacity: 1;
+}
+
+/* Consent checkbox rows: the real <input type=checkbox> is visually hidden
+   (sr-only) but stays focusable, so the whole row carries the focus ring.
+   Keyboard focus only where :has() is supported — a mouse click on the row
+   would otherwise leave a ring behind; older engines fall back to
+   :focus-within (ring after click is acceptable there). */
+.bz-survey-consent:focus-within {
+  outline: 2px solid #0A0A0A;
+  outline-offset: 3px;
+}
+@supports selector(:has(*)) {
+  .bz-survey-consent:focus-within {
+    outline: none;
+  }
+  .bz-survey-consent:has(:focus-visible) {
+    outline: 2px solid #0A0A0A;
+    outline-offset: 3px;
+  }
 }
 
 /* Page-transition animations — transform-only so frozen frames stay visible */

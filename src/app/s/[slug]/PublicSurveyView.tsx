@@ -6,8 +6,9 @@
 // reached via QR scan at /s/[slug].
 //
 // Three stages:
-//   1. intro  — dark hero with lime ambient glow, brand pill + table eyebrow,
-//               eyebrow + minutes badge, italic Space Grotesk h1, sub copy,
+//   1. intro  — dark hero with lime ambient glow, brand pill + table eyebrow
+//               (only when ?table= is present), eyebrow + minutes badge,
+//               italic Space Grotesk h1, sub copy,
 //               "NELER SORACAĞIZ" numbered list (first 4 + overflow),
 //               lime CTA with deep shadow, KVKK disclaimer.
 //   2. question — light card surface with TopBar (back + brand + masa) +
@@ -18,9 +19,18 @@
 //                  labelled fields, KVKK consent (required), marketing
 //                  consent (optional, opt-in).
 //   4. thanks — dark hero with confetti burst, lime success circle with
-//               pulsing glow, italic h2, reference number (mono BZ-XXX-XXX),
+//               pulsing glow, italic h2, response no (mono, the last 6
+//               characters of the REAL response id — never made up),
 //               optional coupon card (dashed border + scalloped cutouts +
 //               lime copy → "✓ KOPYALANDI"), "Menüye dön" button.
+//      `already` variant (server answered 409: this device already
+//      submitted) — calm copy, no confetti, no response no; the coupon still
+//      shows.
+//
+// Accent colours go through resolveSurveyAccent (lib/survey-accent.ts): every
+// fill + text pair is contrast-protected per surface (dark intro/thanks vs
+// light question/contact), so an ink-coloured survey no longer paints an
+// invisible CTA.
 //
 // Five question types are wired (rating/nps/short_text/long_text/
 // multiple_choice). The design's emoji/chips/likert/slider/datetime/contact
@@ -28,8 +38,14 @@
 //
 // All KVKK + IDOR + rate limit + sessionId discipline preserved.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { getOrCreateSessionId } from '@/lib/analytics-session';
+import { surveyResponseShortId } from '@/lib/surveys';
+import {
+  resolveSurveyAccent,
+  type AccentPair,
+  type ResolvedSurveyAccent,
+} from '@/lib/survey-accent';
 
 type QuestionType = 'rating' | 'nps' | 'short_text' | 'long_text' | 'multiple_choice';
 
@@ -88,17 +104,21 @@ const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
   multiple_choice: 'Tek seçim',
 };
 
-function generateReferenceNumber(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const pick = (n: number) =>
-    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `BZ-${pick(3)}-${pick(3)}`;
-}
+// KVKK / Açık Rıza / Ticari İleti links sit INSIDE a ConsentRow whose
+// background AND text colour flip with the checkbox (white/ink ↔ ink/white).
+// A hard-coded #0A0A0A link was ink-on-ink (1:1, unreadable) on the checked
+// row — i.e. by default, since KVKK ships pre-checked. `inherit` follows the
+// row: white on #0A0A0A when checked, ink on white otherwise (19.8:1 both).
+const LEGAL_LINK_STYLE: React.CSSProperties = {
+  color: 'inherit',
+  textDecoration: 'underline',
+};
 
 // Pull `?table=` once on mount so the brand eyebrow can show "MASA X".
-// Falls back to "—" so the chrome doesn't look broken.
-function useTableNumber(): string {
-  const [table, setTable] = useState('—');
+// `null` when the link carries no (valid) table — callers then render no
+// "MASA" text at all (hotels, clinics … have no tables; "MASA —" is noise).
+function useTableNumber(): string | null {
+  const [table, setTable] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
@@ -134,7 +154,12 @@ function isAnswered(q: Question, val: AnswerValue | undefined): boolean {
 }
 
 export default function PublicSurveyView({ survey }: { survey: Survey }) {
-  const accent = survey.accentColor || survey.restaurant.primaryColor || '#C6F24E';
+  // Contrast-protected fill + text pairs for the dark (intro/thanks) and
+  // light (question/contact) surfaces; lime stays lime (lib/survey-accent.ts).
+  const palette = useMemo(
+    () => resolveSurveyAccent(survey.accentColor || survey.restaurant.primaryColor),
+    [survey.accentColor, survey.restaurant.primaryColor],
+  );
   const brand = survey.restaurant.name;
   const table = useTableNumber();
 
@@ -158,8 +183,16 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const refNo = useMemo(generateReferenceNumber, []);
+  // Real id of the saved response (201 body). Null until a save really
+  // happened — the thank-you screen never shows a made-up reference.
+  const [responseId, setResponseId] = useState<string | null>(null);
+  // Server answered 409: this device already submitted. NOT a fresh save.
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  // Synchronous in-flight lock. `submitting` state only updates on the next
+  // render, so a same-tick double tap would POST twice: 201 for the first,
+  // 409 for our own duplicate — and the 409 would then turn a successful save
+  // into the "already answered" screen.
+  const submitLockRef = useRef(false);
 
   const currentQuestion = survey.questions[stepIdx];
   const currentValue = currentQuestion ? answers[currentQuestion.id] : undefined;
@@ -203,10 +236,12 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
 
   const doSubmit = useCallback(
     async ({ skipContactValidation = false }: { skipContactValidation?: boolean } = {}) => {
+      if (submitLockRef.current) return;
       if (!skipContactValidation && !kvkk) {
         setErrorMsg('KVKK onayı gereklidir.');
         return;
       }
+      submitLockRef.current = true;
       setSubmitting(true);
       setErrorMsg(null);
       const sessionId = getOrCreateSessionId();
@@ -234,7 +269,10 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
           }),
         });
         if (res.status === 409) {
-          setErrorMsg('Bu anketi zaten yanıtladınız. Teşekkür ederiz!');
+          // (surveyId, sessionId) already stored — nothing was saved now.
+          // Show the dedicated "already answered" state, not the normal
+          // thank-you with a fabricated reference.
+          setAlreadySubmitted(true);
           setSubmitted(true);
           setStage('thanks');
           return;
@@ -243,11 +281,17 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
           const j = await res.json().catch(() => null);
           throw new Error(j?.message || 'submit_failed');
         }
+        const saved = (await res.json().catch(() => null)) as { responseId?: unknown } | null;
+        setResponseId(
+          typeof saved?.responseId === 'string' && saved.responseId ? saved.responseId : null,
+        );
+        setAlreadySubmitted(false);
         setSubmitted(true);
         setStage('thanks');
       } catch (err) {
         setErrorMsg((err as Error).message || 'Bir hata oluştu.');
       } finally {
+        submitLockRef.current = false;
         setSubmitting(false);
       }
     },
@@ -281,10 +325,6 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
 
   const canBack = stage === 'contact' || (stage === 'question' && stepIdx > 0);
   const canContinue = currentQuestion ? isAnswered(currentQuestion, currentValue) : false;
-  // Stage B — contact stage is always reached now (KVKK consent gate);
-  // last question never goes straight to submit, so the "is this the
-  // final step before the dialog closes?" hint is permanently false.
-  const isLastBeforeSubmit = false;
 
   // ─────────────────────────────────────────────────────────────
   // Stage renderers
@@ -294,7 +334,7 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
     return (
       <SurveyFrame mode="dark">
         <IntroScreen
-          accent={accent}
+          accent={palette.onDark}
           brand={brand}
           table={table}
           survey={survey}
@@ -308,10 +348,11 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
     return (
       <SurveyFrame mode="dark">
         <ThanksScreen
-          accent={accent}
+          accent={palette.onDark}
           brand={brand}
           survey={survey}
-          refNo={refNo}
+          variant={alreadySubmitted ? 'already' : 'done'}
+          responseId={responseId}
         />
       </SurveyFrame>
     );
@@ -322,7 +363,7 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
       <div className="flex flex-1 flex-col bg-white">
         <TopBar brand={brand} table={table} onBack={goBack} canBack={canBack} />
         {isMulti && stage === 'question' && (
-          <ProgressBar current={stepIdx + 1} total={totalSteps} accent={accent} />
+          <ProgressBar current={stepIdx + 1} total={totalSteps} accent={palette.onLight.fill} />
         )}
 
         <div className="flex flex-1 flex-col overflow-auto">
@@ -332,7 +373,7 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
               q={currentQuestion}
               value={currentValue}
               onChange={(patch) => setAnswer(currentQuestion.id, patch)}
-              accent={accent}
+              palette={palette}
               direction={direction}
             />
           )}
@@ -340,7 +381,7 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
           {stage === 'contact' && (
             <ContactScreen
               direction={direction}
-              accent={accent}
+              palette={palette}
               collectContact={survey.collectContact}
               name={contactName}
               setName={setContactName}
@@ -367,9 +408,8 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
               if (currentQuestion) setAnswer(currentQuestion.id, {});
               goForward();
             }}
-            accent={accent}
+            accent={palette.onLight}
             optional={!currentQuestion?.required}
-            isLast={isLastBeforeSubmit}
           />
         )}
       </div>
@@ -394,7 +434,7 @@ function SurveyFrame({
   // floats over a slightly lighter charcoal stage.
   return (
     <main
-      className="bz-survey-stage flex min-h-screen items-center justify-center"
+      className="bz-survey-stage flex min-h-dvh items-center justify-center"
       style={{ fontFamily: 'var(--font-body)' }}
     >
       <div
@@ -420,9 +460,10 @@ function IntroScreen({
   survey,
   onStart,
 }: {
-  accent: string;
+  /** Contrast-protected fill + text for the dark (#0A0A0A) surface. */
+  accent: AccentPair;
   brand: string;
-  table: string;
+  table: string | null;
   survey: Survey;
   onStart: () => void;
 }) {
@@ -462,7 +503,7 @@ function IntroScreen({
           width: 320,
           height: 320,
           borderRadius: 999,
-          background: accent,
+          background: accent.fill,
           opacity: 0.18,
           filter: 'blur(80px)',
           pointerEvents: 'none',
@@ -477,7 +518,7 @@ function IntroScreen({
           width: 240,
           height: 240,
           borderRadius: 999,
-          background: accent,
+          background: accent.fill,
           opacity: 0.1,
           filter: 'blur(70px)',
           pointerEvents: 'none',
@@ -507,8 +548,8 @@ function IntroScreen({
                 width: 8,
                 height: 8,
                 borderRadius: 999,
-                background: accent,
-                boxShadow: `0 0 10px ${accent}`,
+                background: accent.fill,
+                boxShadow: `0 0 10px ${accent.fill}`,
               }}
             />
             <span
@@ -518,18 +559,22 @@ function IntroScreen({
               {brand}
             </span>
           </div>
-          <span
-            className="bz-survey-eyebrow"
-            style={{ color: 'rgba(255,255,255,0.45)' }}
-          >
-            MASA {table}
-          </span>
+          {/* Only when the QR link carries ?table= — hotels, clinics … have
+              no tables, and "MASA —" was meaningless noise. */}
+          {table && (
+            <span
+              className="bz-survey-eyebrow"
+              style={{ color: 'rgba(255,255,255,0.45)' }}
+            >
+              MASA {table}
+            </span>
+          )}
         </div>
 
         <div style={{ padding: '8px 0 12px' }}>
           <div
             className="bz-survey-eyebrow mb-3"
-            style={{ color: accent }}
+            style={{ color: accent.fill }}
           >
             {eyebrow} · {minutes}
           </div>
@@ -586,8 +631,8 @@ function IntroScreen({
                     width: 22,
                     height: 22,
                     borderRadius: 999,
-                    background: accent,
-                    color: '#0A0A0A',
+                    background: accent.fill,
+                    color: accent.text,
                     fontFamily: 'var(--font-mono)',
                     fontSize: 11,
                     fontWeight: 700,
@@ -640,19 +685,19 @@ function IntroScreen({
             padding: '18px 20px',
             border: 'none',
             borderRadius: 16,
-            background: accent,
-            color: '#0A0A0A',
+            background: accent.fill,
+            color: accent.text,
             fontSize: 16,
             fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: `0 12px 36px -10px ${accent}, 0 4px 12px -4px rgba(0,0,0,0.18)`,
+            boxShadow: `0 12px 36px -10px ${accent.fill}, 0 4px 12px -4px rgba(0,0,0,0.18)`,
           }}
         >
           Başlayalım
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
               d="M5 12h14M13 6l6 6-6 6"
-              stroke="#0A0A0A"
+              stroke="currentColor"
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -687,7 +732,7 @@ function TopBar({
   canBack,
 }: {
   brand: string;
-  table: string;
+  table: string | null;
   onBack: () => void;
   canBack: boolean;
 }) {
@@ -729,15 +774,24 @@ function TopBar({
         className="flex-1 text-center"
         style={{ lineHeight: 1.1 }}
       >
-        <div className="bz-survey-eyebrow" style={{ color: '#6B6B66' }}>
-          {brand}
-        </div>
+        {/* .bz-survey-eyebrow is inline-block — without display:block the
+            brand and the table text ran together on one line
+            ("KADIKÖYMASA —"). Two stacked lines; the second exists only
+            when the link carries ?table=. */}
         <div
           className="bz-survey-eyebrow"
-          style={{ fontSize: 9, color: '#A3A29C', marginTop: 2 }}
+          style={{ display: 'block', color: '#6B6B66' }}
         >
-          MASA {table} · ANKET
+          {brand}
         </div>
+        {table && (
+          <div
+            className="bz-survey-eyebrow"
+            style={{ display: 'block', fontSize: 9, color: '#6B6B66', marginTop: 2 }}
+          >
+            MASA {table}
+          </div>
+        )}
       </div>
       <div style={{ width: 40, height: 40, flexShrink: 0 }} />
     </div>
@@ -799,13 +853,13 @@ function QuestionScreen({
   q,
   value,
   onChange,
-  accent,
+  palette,
   direction,
 }: {
   q: Question;
   value: AnswerValue | undefined;
   onChange: (patch: AnswerValue) => void;
-  accent: string;
+  palette: ResolvedSurveyAccent;
   direction: 'fwd' | 'back';
 }) {
   const eyebrow = (q.text ? '' : SHORT_TYPE_LABEL[q.type] + ' · ') + 'SORU';
@@ -824,7 +878,7 @@ function QuestionScreen({
           style={{
             display: 'inline-block',
             padding: '4px 10px',
-            background: accent + '24',
+            background: palette.onLight.fill + '24',
             borderRadius: 999,
             color: '#0A0A0A',
             letterSpacing: '0.12em',
@@ -840,7 +894,7 @@ function QuestionScreen({
         {q.text}
       </h2>
       <div style={{ marginTop: 28 }}>
-        <QuestionInput q={q} value={value} onChange={onChange} accent={accent} />
+        <QuestionInput q={q} value={value} onChange={onChange} palette={palette} />
       </div>
     </div>
   );
@@ -856,14 +910,13 @@ function FooterBar({
   onSkip,
   accent,
   optional,
-  isLast,
 }: {
   canContinue: boolean;
   onContinue: () => void;
   onSkip: () => void;
-  accent: string;
+  /** Contrast-protected fill + text for the light (#FFFFFF) surface. */
+  accent: AccentPair;
   optional: boolean;
-  isLast: boolean;
 }) {
   return (
     <div
@@ -883,18 +936,18 @@ function FooterBar({
           padding: '16px 20px',
           border: 'none',
           borderRadius: 14,
-          background: canContinue ? accent : '#E5E3DC',
-          color: canContinue ? '#0A0A0A' : '#A3A29C',
+          background: canContinue ? accent.fill : '#E5E3DC',
+          color: canContinue ? accent.text : '#A3A29C',
           fontSize: 15.5,
           fontWeight: 600,
           cursor: canContinue ? 'pointer' : 'default',
           boxShadow: canContinue
-            ? `0 10px 26px -10px ${accent}, 0 4px 10px -4px rgba(0,0,0,0.14)`
+            ? `0 10px 26px -10px ${accent.fill}, 0 4px 10px -4px rgba(0,0,0,0.14)`
             : 'none',
           transition: 'background 220ms, color 220ms, box-shadow 220ms',
         }}
       >
-        {isLast ? 'Bitir ve gönder' : 'Devam et'}
+        Devam et
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path
             d="M5 12h14M13 6l6 6-6 6"
@@ -932,7 +985,7 @@ function FooterBar({
 
 function ContactScreen({
   direction,
-  accent,
+  palette,
   collectContact,
   name,
   setName,
@@ -949,7 +1002,7 @@ function ContactScreen({
   error,
 }: {
   direction: 'fwd' | 'back';
-  accent: string;
+  palette: ResolvedSurveyAccent;
   collectContact: boolean;
   name: string;
   setName: (v: string) => void;
@@ -966,6 +1019,8 @@ function ContactScreen({
   error: string | null;
 }) {
   const valid = kvkk && !submitting;
+  // Real <label htmlFor> ↔ input ids for the three contact fields.
+  const fieldId = useId();
   return (
     <div
       className={direction === 'back' ? 'anim-slideL' : 'anim-slideR'}
@@ -977,7 +1032,7 @@ function ContactScreen({
             style={{
               display: 'inline-block',
               padding: '4px 10px',
-              background: accent + '24',
+              background: palette.onLight.fill + '24',
               borderRadius: 999,
               color: '#0A0A0A',
               letterSpacing: '0.12em',
@@ -1017,8 +1072,9 @@ function ContactScreen({
         >
           {collectContact && (
             <>
-              <LabelledField label="AD">
+              <LabelledField label="AD" htmlFor={`${fieldId}-name`}>
                 <input
+                  id={`${fieldId}-name`}
                   className="bz-survey-field"
                   style={{ paddingLeft: 64 }}
                   placeholder="Adın"
@@ -1030,8 +1086,9 @@ function ContactScreen({
                 />
               </LabelledField>
               <div className="relative">
-                <LabelledField label="E-POSTA" labelWidth={80}>
+                <LabelledField label="E-POSTA" labelWidth={80} htmlFor={`${fieldId}-email`}>
                   <input
+                    id={`${fieldId}-email`}
                     className="bz-survey-field"
                     type="email"
                     style={{
@@ -1059,12 +1116,13 @@ function ContactScreen({
                     bottom: 14,
                     width: 3,
                     borderRadius: 999,
-                    background: accent,
+                    background: palette.onLight.fill,
                   }}
                 />
               </div>
-              <LabelledField label="TEL" labelWidth={48}>
+              <LabelledField label="TEL" labelWidth={48} htmlFor={`${fieldId}-phone`}>
                 <input
+                  id={`${fieldId}-phone`}
                   className="bz-survey-field"
                   type="tel"
                   style={{ paddingLeft: 64 }}
@@ -1086,7 +1144,7 @@ function ContactScreen({
           <ConsentRow
             checked={kvkk}
             onChange={setKvkk}
-            accent={accent}
+            accent={palette.onDark}
             label={
               <span>
                 Okudum, anladım —{' '}
@@ -1094,7 +1152,7 @@ function ContactScreen({
                   href="/tr/kvkk"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                  style={LEGAL_LINK_STYLE}
                 >
                   KVKK Aydınlatma Metni
                 </a>{' '}
@@ -1103,7 +1161,7 @@ function ContactScreen({
                   href="/tr/acik-riza"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                  style={LEGAL_LINK_STYLE}
                 >
                   Açık Rıza Metni
                 </a>{' '}
@@ -1115,7 +1173,7 @@ function ContactScreen({
           <ConsentRow
             checked={marketing}
             onChange={setMarketing}
-            accent={accent}
+            accent={palette.onDark}
             label={
               <span>
                 Kampanya ve duyurular için{' '}
@@ -1123,12 +1181,15 @@ function ContactScreen({
                   href="/tr/ticari-ileti"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                  style={LEGAL_LINK_STYLE}
                 >
                   Ticari Elektronik İleti İzni
                 </a>{' '}
                 kapsamında iletişim onayı veriyorum{' '}
-                <span style={{ color: '#A3A29C' }}>(opsiyonel)</span>.
+                {/* inherits the row colour (ink unchecked / white checked);
+                    opacity keeps ≥ 4.5:1 in both states — a fixed grey
+                    cannot (3.7:1 on the checked #0A0A0A row). */}
+                <span style={{ opacity: 0.7 }}>(opsiyonel)</span>.
               </span>
             }
           />
@@ -1172,12 +1233,12 @@ function ContactScreen({
             padding: '16px 20px',
             border: 'none',
             borderRadius: 14,
-            background: valid ? accent : '#E5E3DC',
-            color: valid ? '#0A0A0A' : '#A3A29C',
+            background: valid ? palette.onLight.fill : '#E5E3DC',
+            color: valid ? palette.onLight.text : '#A3A29C',
             fontSize: 15.5,
             fontWeight: 600,
             cursor: valid ? 'pointer' : 'default',
-            boxShadow: valid ? `0 10px 26px -10px ${accent}` : 'none',
+            boxShadow: valid ? `0 10px 26px -10px ${palette.onLight.fill}` : 'none',
           }}
         >
           {submitting ? 'Gönderiliyor…' : 'Anketi gönder'}
@@ -1196,28 +1257,33 @@ function ContactScreen({
   );
 }
 
+// The caption is a real <label htmlFor> (visually unchanged: it sits inside
+// the input at the left). #6B6B66 on white = 5.36:1 (was #A3A29C, 2.56:1).
 function LabelledField({
   label,
   labelWidth,
+  htmlFor,
   children,
 }: {
   label: string;
   labelWidth?: number;
+  htmlFor: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="relative">
-      <span
+      <label
+        htmlFor={htmlFor}
         className="bz-survey-eyebrow absolute"
         style={{
           left: 16,
           top: 16,
-          color: '#A3A29C',
+          color: '#6B6B66',
           width: labelWidth,
         }}
       >
         {label}
-      </span>
+      </label>
       {children}
     </div>
   );
@@ -1232,13 +1298,14 @@ function ConsentRow({
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-  accent: string;
+  /** Fill + text for the CHECKED row, which is dark (#0A0A0A) — dark-surface pair. */
+  accent: AccentPair;
   label: React.ReactNode;
   required?: boolean;
 }) {
   return (
     <label
-      className="bz-survey-tap flex cursor-pointer items-start gap-3 rounded-2xl border"
+      className="bz-survey-tap bz-survey-consent flex cursor-pointer items-start gap-3 rounded-2xl border"
       style={{
         padding: '12px 14px',
         borderColor: checked ? '#0A0A0A' : '#E5E3DC',
@@ -1247,6 +1314,17 @@ function ConsentRow({
         position: 'relative',
       }}
     >
+      {/* The real checkbox: visually hidden (sr-only) but FOCUSABLE, so
+          keyboard users reach it and survey.css draws the focus ring on the
+          whole row (.bz-survey-consent). Kept first in the DOM so Tab order
+          is checkbox → legal links. */}
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-required={required}
+      />
       <span
         aria-hidden
         className="flex shrink-0 items-center justify-center"
@@ -1254,8 +1332,8 @@ function ConsentRow({
           width: 22,
           height: 22,
           borderRadius: 6,
-          border: '1.5px solid ' + (checked ? accent : '#D4D2CC'),
-          background: checked ? accent : '#fff',
+          border: '1.5px solid ' + (checked ? accent.fill : '#D4D2CC'),
+          background: checked ? accent.fill : '#fff',
           marginTop: 1,
         }}
       >
@@ -1263,7 +1341,7 @@ function ConsentRow({
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path
               d="M5 12l5 5L20 7"
-              stroke="#0A0A0A"
+              stroke={accent.text}
               strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1275,20 +1353,13 @@ function ConsentRow({
         {label}
         {required && (
           <span
-            style={{ color: checked ? accent : '#E5484D', marginLeft: 4 }}
+            style={{ color: checked ? accent.fill : '#E5484D', marginLeft: 4 }}
             aria-hidden
           >
             *
           </span>
         )}
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
-        aria-required={required}
-      />
     </label>
   );
 }
@@ -1301,17 +1372,29 @@ function ThanksScreen({
   accent,
   brand,
   survey,
-  refNo,
+  variant,
+  responseId,
 }: {
-  accent: string;
+  /** Contrast-protected fill + text for the dark (#0A0A0A) surface. */
+  accent: AccentPair;
   brand: string;
   survey: Survey;
-  refNo: string;
+  /** `done` = the answers were just saved; `already` = server said 409. */
+  variant: 'done' | 'already';
+  /** Real id of the response saved by THIS submit (null for `already`). */
+  responseId: string | null;
 }) {
   const [copied, setCopied] = useState(false);
+  const isAlready = variant === 'already';
   const couponCode = survey.couponCode || null;
-  const couponLabel = survey.couponLabel || '10% indirim';
+  // The owner's own wording only. No invented offer: the old fallback
+  // ("10% indirim · Sonraki ziyaretinde") promised a discount the business
+  // never made. A bare code shows as just the code.
+  const couponLabel = survey.couponLabel?.trim() || null;
   const thankYou = survey.thankYouMessage;
+  // Real reference = last 6 chars of the saved response id (what the owner
+  // can look up). Empty when nothing was saved → no reference line at all.
+  const responseNo = !isAlready && responseId ? surveyResponseShortId(responseId) : '';
 
   const copy = (txt: string) => {
     try {
@@ -1339,19 +1422,19 @@ function ThanksScreen({
           width: 360,
           height: 360,
           borderRadius: 999,
-          background: accent,
+          background: accent.fill,
           opacity: 0.18,
           filter: 'blur(90px)',
           pointerEvents: 'none',
         }}
       />
 
-      {/* Confetti */}
+      {/* Confetti — a fresh save only, not the "already answered" state */}
       <div
         aria-hidden
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       >
-        {Array.from({ length: 14 }).map((_, i) => {
+        {!isAlready && Array.from({ length: 14 }).map((_, i) => {
           const angle = (Math.PI * 2 * i) / 14;
           const r = 80 + (i % 3) * 30;
           return (
@@ -1364,7 +1447,7 @@ function ThanksScreen({
                 width: 8,
                 height: 8,
                 borderRadius: i % 2 ? 999 : 2,
-                background: i % 3 === 0 ? '#FFF' : accent,
+                background: i % 3 === 0 ? '#FFF' : accent.fill,
                 ['--tx' as string]: `${Math.cos(angle) * r}px`,
                 ['--ty' as string]: `${Math.sin(angle) * r}px`,
                 animation: `bzConfettiPop 1100ms cubic-bezier(.2,.6,.3,1) ${i * 35}ms both`,
@@ -1388,17 +1471,17 @@ function ThanksScreen({
             height: 88,
             borderRadius: 999,
             marginBottom: 26,
-            background: accent,
-            color: '#0A0A0A',
+            background: accent.fill,
+            color: accent.text,
             animation:
               'bzSurveyPop 460ms cubic-bezier(.2,.65,.3,1.2) both, bzSurveyGlow 2.2s ease-out 460ms infinite',
-            boxShadow: `0 16px 40px -12px ${accent}`,
+            boxShadow: `0 16px 40px -12px ${accent.fill}`,
           }}
         >
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
               d="M5 12l5 5L20 7"
-              stroke="#0A0A0A"
+              stroke="currentColor"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1407,7 +1490,7 @@ function ThanksScreen({
         </div>
         <div
           className="bz-survey-eyebrow mb-2.5"
-          style={{ color: accent }}
+          style={{ color: accent.fill }}
         >
           TEŞEKKÜRLER
         </div>
@@ -1419,7 +1502,9 @@ function ThanksScreen({
             color: '#fff',
           }}
         >
-          {thankYou || 'Yanıtın bizi gerçekten mutlu etti.'}
+          {isAlready
+            ? 'Daha önce yanıt vermişsin'
+            : thankYou || 'Yanıtın bizi gerçekten mutlu etti.'}
         </h2>
         <p
           style={{
@@ -1430,13 +1515,24 @@ function ThanksScreen({
             color: 'rgba(255,255,255,0.6)',
           }}
         >
-          {brand} ekibi mesajını birazdan görecek.{' '}
-          <span>
-            Referans:{' '}
-            <span className="bz-survey-mono" style={{ color: '#fff' }}>
-              {refNo}
-            </span>
-          </span>
+          {isAlready ? (
+            'Bu cihazdan bu ankete zaten yanıt gönderildi. Teşekkürler!'
+          ) : (
+            <>
+              {brand} ekibi mesajını birazdan görecek.
+              {responseNo && (
+                <>
+                  {' '}
+                  <span>
+                    Yanıt no:{' '}
+                    <span className="bz-survey-mono" style={{ color: '#fff' }}>
+                      {responseNo}
+                    </span>
+                  </span>
+                </>
+              )}
+            </>
+          )}
         </p>
       </div>
 
@@ -1480,10 +1576,11 @@ function ThanksScreen({
               className="bz-survey-eyebrow mb-2"
               style={{ color: 'rgba(255,255,255,0.55)' }}
             >
-              SANA ÖZEL KUPON
+              {couponLabel ? 'SANA ÖZEL KUPON' : 'KUPONUN'}
             </div>
             <div className="flex items-center justify-between gap-3">
-              <div>
+              {/* Owner's own wording only — no label, no invented offer text. */}
+              {couponLabel && (
                 <div
                   className="bz-survey-head"
                   style={{
@@ -1493,28 +1590,21 @@ function ThanksScreen({
                 >
                   {couponLabel}
                 </div>
-                <div
-                  className="bz-survey-mono"
-                  style={{
-                    fontSize: 12,
-                    color: 'rgba(255,255,255,0.5)',
-                    marginTop: 4,
-                  }}
-                >
-                  Sonraki ziyaretinde
-                </div>
-              </div>
+              )}
               <button
                 type="button"
                 onClick={() => copy(couponCode)}
-                className="bz-survey-tap inline-flex items-center gap-2"
+                className="bz-survey-tap inline-flex items-center justify-center gap-2"
                 style={{
                   padding: '10px 14px',
+                  minHeight: 44,
+                  // Bare code: the button IS the card content — full width.
+                  ...(couponLabel ? null : { width: '100%' }),
                   borderRadius: 12,
                   border: 'none',
                   cursor: 'pointer',
-                  background: copied ? '#30A46C' : accent,
-                  color: copied ? '#fff' : '#0A0A0A',
+                  background: copied ? '#30A46C' : accent.fill,
+                  color: copied ? '#fff' : accent.text,
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 600,
                   fontSize: 13,
@@ -1562,18 +1652,18 @@ function QuestionInput({
   q,
   value,
   onChange,
-  accent,
+  palette,
 }: {
   q: Question;
   value: AnswerValue | undefined;
   onChange: (patch: AnswerValue) => void;
-  accent: string;
+  palette: ResolvedSurveyAccent;
 }) {
   if (q.type === 'rating') {
-    return <QStar value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={accent} />;
+    return <QStar value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={palette.onLight.fill} />;
   }
   if (q.type === 'nps') {
-    return <QNps value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={accent} />;
+    return <QNps value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={palette.onLight.fill} />;
   }
   if (q.type === 'short_text') {
     return (
@@ -1618,7 +1708,7 @@ function QuestionInput({
         options={q.options || []}
         value={value?.optionValue ?? null}
         onChange={(v) => onChange({ optionValue: v })}
-        accent={accent}
+        accent={palette.onDark}
       />
     );
   }
@@ -1819,7 +1909,8 @@ function QRadio({
   options: string[];
   value: string | null;
   onChange: (v: string) => void;
-  accent: string;
+  /** The selected option is painted dark (#0A0A0A), so its indicator uses the dark-surface pair. */
+  accent: AccentPair;
 }) {
   return (
     <div className="flex flex-col" style={{ gap: 10 }}>
@@ -1853,8 +1944,8 @@ function QRadio({
                 width: 22,
                 height: 22,
                 borderRadius: 999,
-                border: '1.5px solid ' + (active ? accent : '#D4D2CC'),
-                background: active ? accent : 'transparent',
+                border: '1.5px solid ' + (active ? accent.fill : '#D4D2CC'),
+                background: active ? accent.fill : 'transparent',
               }}
               aria-hidden
             >
@@ -1862,7 +1953,7 @@ function QRadio({
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M5 12l5 5L20 7"
-                    stroke="#0A0A0A"
+                    stroke={accent.text}
                     strokeWidth="3.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
