@@ -24,7 +24,7 @@ export const maxDuration = 15;
  * Business Profile sign-in, of `googleReviewManagementEnabled` and of the
  * Business Profile quota — it only needs the saved Place ID.
  *
- * Compliance (spec §4.2): Places content is fetched live and returned with
+ * Compliance: Places content is fetched live and returned with
  * `Cache-Control: private, no-store`. It is never written to the database, a
  * log line or Sentry; only the Place ID is durable.
  *

@@ -3,7 +3,8 @@
  *
  * Fixtures under tests/fixtures/google-places/ are SYNTHETIC but shape-
  * faithful (there is no outbound internet where this was written). Release
- * gate G3 (spec §7) replaces/augments them with real recordings; until then
+ * gate G3 (recorded real responses: one full Details payload, a 404, a 400
+ * API_KEY_INVALID and a 403) replaces/augments them; until then
  * these tests pin OUR behaviour, not Google's wire format.
  *
  * Run: npm test
@@ -50,7 +51,7 @@ function fixture<T = unknown>(name: string): T {
 const ID = 'ChIJN1t_tDeuEmsRUsoyG83frY4';
 const KEY = 'test-api-key-0123456789';
 
-/** Same patterns the spec's owner-copy test uses (§9.1 #9). */
+/** The developer vocabulary an owner must never read (same patterns as the owner-copy test). */
 const JARGON = [/kota|quota|oauth|vercel|cloud console|GOOGLE_[A-Z]/i, /\benv\b/i, /\bAPI\b/];
 const SECTOR_WORDS = /masa|menü|menu/i;
 

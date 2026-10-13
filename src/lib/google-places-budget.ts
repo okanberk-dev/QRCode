@@ -15,7 +15,6 @@
  * routes only as a soft per-actor burst limiter, never as the ceiling.
  *
  * The table holds a key and a count — no Places content, no personal data.
- * Spec: scratchpad feature_google.md §4.3/§4.4/§4.7.
  */
 
 import * as Sentry from '@sentry/nextjs';

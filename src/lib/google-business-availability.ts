@@ -1,6 +1,6 @@
 /**
  * Platform-level availability of the optional reply feature (Google Business
- * Profile sign-in) — spec §4.9.
+ * Profile sign-in).
  *
  * Problem: Google's Business Profile API quota is 0 project-wide until the
  * access request is approved (CLAUDE.md §38.231), and the OAuth consent

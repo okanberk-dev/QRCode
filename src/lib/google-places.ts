@@ -16,7 +16,7 @@
  *     dependencies, so budget/limit ordering is unit-tested without a DB.
  *   - The TypeScript types of every request/response the UI calls.
  *
- * Compliance stance (spec §4.2): Places content is shown live and is never
+ * Compliance stance: Places content is shown live and is never
  * persisted by Buaze. Only the Place ID is durable. Nothing in this file
  * writes anywhere.
  */
@@ -109,8 +109,8 @@ export interface PlacesReview {
 }
 
 /**
- * What the profile route returns (and what a future Phase 3 snapshot would
- * store). No locale-dependent strings: the payload is identical for every
+ * What the profile route returns (and what an optional future snapshot
+ * layer would store). No locale-dependent strings: the payload is identical for every
  * viewer; `name`/`category` come from Google in Turkish and are display-only.
  */
 export interface PlacesProfile {
@@ -416,7 +416,7 @@ export function hasManualReviewLink(row: PlacesLinkFields): boolean {
 }
 
 /**
- * Business option state (spec §6), computed from the row alone — no server
+ * Business option state, computed from the row alone — no server
  * call. `found`: a resolvable Place ID; `unmatched`: a review link is saved
  * but it does not resolve; `not-selected`: nothing saved.
  */
@@ -674,7 +674,7 @@ const REQUEST_SHAPE_RE =
   /field\s*mask|fieldmask|x-goog-fieldmask|unknown (?:field|name)|cannot find matching fields|invalid (?:field|path|language|region)|language\s*code|region\s*code/i;
 
 /**
- * Classify a failed Places response (§4.1):
+ * Classify a failed Places response:
  *   NOT_FOUND    404, or a 400 INVALID_ARGUMENT that is not a key / request-shape
  *                problem (a malformed or obsolete Place ID is a 400 or a 404).
  *   FORBIDDEN    403 / PERMISSION_DENIED / SERVICE_DISABLED / billing, or a 400
@@ -973,7 +973,7 @@ export const PLACES_PHOTOS_TARGET = 4;
 export const PLACES_FEW_REVIEWS_BELOW = 10;
 
 /**
- * The six-item profile check (§3.2 B2). A plain count of what Google shows —
+ * The six-item profile check. A plain count of what Google shows —
  * not a score, no percentage. The status item is left out of the count when
  * Google sends no usable status.
  */

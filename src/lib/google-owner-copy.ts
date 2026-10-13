@@ -58,7 +58,7 @@ const TOO_MANY: Copy = {
 
 /**
  * Failure codes, warnings, Places codes, profile states and the reply
- * section's status rows (spec §3.2 C). Keys are case-sensitive.
+ * section's status rows. Keys are case-sensitive.
  */
 const MESSAGES: Record<string, Copy> = {
   // — Business Profile failure codes (GoogleBusinessFailureCode) —
@@ -113,7 +113,7 @@ const MESSAGES: Record<string, Copy> = {
     en: 'Pulse AI is turned off for this business.',
   },
 
-  // — Places search / select (spec §3.2 A) —
+  // — Places search / select —
   GOOGLE_PLACES_NOT_CONFIGURED: SEARCH_UNAVAILABLE,
   GOOGLE_PLACES_BUSY: SEARCH_UNAVAILABLE,
   DAILY_LIMIT: {
@@ -133,7 +133,7 @@ const MESSAGES: Record<string, Copy> = {
     en: "Google couldn't verify this right now. Please try again.",
   },
 
-  // — Places profile states (spec §3.3) —
+  // — Places profile states —
   profile_not_found: {
     tr: 'Seçili Google kaydı artık bulunamıyor. İşletmeni yeniden ara.',
     en: 'The selected Google listing can no longer be found. Search for your business again.',
@@ -155,7 +155,7 @@ const MESSAGES: Record<string, Copy> = {
     en: "Google details can't be loaded right now. Please try again later.",
   },
 
-  // — Reply section status rows (spec §3.2 C) —
+  // — Reply section status rows —
   reply_badge_unavailable: { tr: 'Henüz açık değil', en: 'Not available yet' },
   reply_unavailable: {
     tr: 'Google, yorum yanıtlama erişimini Buaze için henüz açmadı. Erişim açıldığında bu bölümden Google hesabını bağlayabileceksin; profil analizin bundan etkilenmez.',

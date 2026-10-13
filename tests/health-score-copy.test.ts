@@ -38,7 +38,7 @@ function snap(overrides: Partial<HealthSnapshotInput>): HealthSnapshotInput {
   return { ...BLANK, ...overrides };
 }
 
-/** The pattern from the spec (§9.1 #10) plus the other forms those claims took. */
+/** The forbidden claims and the other forms they took (ranking, trust, invented percentages). */
 const FORBIDDEN = /%\s?42|~\s?42|ranking|\brank\b|sıralama|güvenilir|trust|~\s?30|algoritma|algorithm|kohort|cohort|fewer clicks|daha düşük/i;
 // Real (colour) emoji only: the rating glyph "★" is the product's normal text symbol.
 const EMOJI = /\p{Emoji_Presentation}|\uFE0F/u;

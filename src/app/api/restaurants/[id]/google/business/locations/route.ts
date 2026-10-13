@@ -173,7 +173,7 @@ export async function GET(
 
     // A fresh (non-cached) sync that returned at least one account proves the
     // Business Profile API is usable: lift the platform-level "not available
-    // yet" stamp (§4.9). Throttled + best effort inside the helper.
+    // yet" stamp. Throttled + best effort inside the helper.
     if (fresh.accounts.length > 0) {
       await clearBusinessApiNotProvisioned(id);
     }
@@ -223,7 +223,7 @@ export async function GET(
         // limit'ten ayrı işlenir: owner'a "farklı hesap dene" YANILTICI
         // (quota proje-geneli, hesap değiştirmek çözmez).
         const notProvisioned = error.code === 'GOOGLE_API_NOT_PROVISIONED';
-        // Platform-level signal (§4.9): quota 0 hits every owner, so remember
+        // Platform-level signal: quota 0 hits every owner, so remember
         // it and stop offering the sign-in button until it clears or expires.
         if (notProvisioned) await markBusinessApiNotProvisioned();
         const hasCache = cached.locations.length > 0 || cached.accounts.length > 0;
