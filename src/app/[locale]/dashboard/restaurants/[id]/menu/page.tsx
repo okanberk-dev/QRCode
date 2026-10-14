@@ -133,7 +133,7 @@ export default function RestaurantMenuBuilderPage() {
       title: n > 0 ? fmt.deleteCategoryWithItemsTitle(c.name, n) : fmt.deleteCategoryTitle(c.name),
       body: n > 0 ? fmt.deleteCategoryWithItemsBody() : fmt.deleteCategoryBody(),
       confirmLabel: n > 0 ? copy.deleteCategoryAndItems : copy.delete,
-      cancelLabel: copy.cancel,
+      cancelLabel: copy.keepIt,
       variant: 'danger',
       onConfirm: async () => {
         await removeCategoryById(c.id, { deleteItems: n > 0 });
@@ -159,7 +159,7 @@ export default function RestaurantMenuBuilderPage() {
       title: fmt.deleteItemTitle(item.name),
       body: fmt.deleteItemBody(),
       confirmLabel: copy.delete,
-      cancelLabel: copy.cancel,
+      cancelLabel: copy.keepIt,
       variant: 'danger',
       onConfirm: () => removeItemById(item.id),
     });
