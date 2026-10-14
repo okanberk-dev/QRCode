@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { AlertBanner } from '@/components/ui';
 import { ownerGoogleFlash, type OwnerGoogleTone } from '@/lib/google-owner-copy';
 import { BANNER_TOUCH_CLS } from './places-client';
@@ -18,10 +18,17 @@ import { BANNER_TOUCH_CLS } from './places-client';
  * status becomes the generic message: the raw reason is never echoed into the
  * page.
  *
- * The message is captured into state BEFORE the query parameter is stripped.
- * Reading it from the live URL on every render made the banner vanish the moment
- * `router.replace` finished (the parameter was gone, so the status resolved to
- * nothing), i.e. the owner saw it for a few frames at best.
+ * Two timing rules (both were real bugs):
+ * - The message is captured into state, so it survives the parameter being
+ *   stripped. Reading it from the live URL on every render made the banner
+ *   vanish the moment the URL changed.
+ * - The state starts from the FIRST render's status instead of being set in an
+ *   effect. An update scheduled in the same effect as a `router.replace` was
+ *   held back until that navigation finished (about 650 ms on a dev server,
+ *   longer on a slow connection), so the owner saw the page first and the
+ *   result of their sign-in much later. The parameter is stripped with
+ *   `history.replaceState`, which Next.js syncs into `useSearchParams` without
+ *   a server round trip.
  */
 
 interface Flash {
@@ -34,24 +41,28 @@ interface GoogleConnectFlashBannerProps {
 }
 
 export function GoogleConnectFlashBanner({ locale }: GoogleConnectFlashBannerProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const raw = searchParams.get('google');
-  const [flash, setFlash] = useState<Flash | null>(null);
+  const [flash, setFlash] = useState<Flash | null>(() => ownerGoogleFlash(raw, locale));
+  // The status the banner already shows, so a re-run of the effect (React
+  // StrictMode, a locale switch) does not set the same message twice.
+  const shownRef = useRef<string | null>(raw);
 
   useEffect(() => {
     if (!raw) return;
-    setFlash(ownerGoogleFlash(raw, locale));
+    // A different status arriving while the page stays mounted.
+    if (shownRef.current !== raw) {
+      shownRef.current = raw;
+      setFlash(ownerGoogleFlash(raw, locale));
+    }
     // Strip the parameter so a refresh does not flash again and the browser's
-    // back button does not replay the message.
-    const params = new URLSearchParams(searchParams.toString());
+    // back button does not replay the message. `null` state is the documented
+    // form: Next.js copies its own history state into the entry.
+    const params = new URLSearchParams(window.location.search);
     params.delete('google');
     const next = params.toString();
-    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
-    // `searchParams` and `router` change identity on navigation; depending on
-    // them would re-run this after our own replace.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.history.replaceState(null, '', next ? `${pathname}?${next}` : pathname);
   }, [raw, locale, pathname]);
 
   if (!flash) return null;
