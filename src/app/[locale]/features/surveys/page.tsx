@@ -217,7 +217,7 @@ export default async function SurveysPage({
     ? [
         {
           q: 'Anket sistemini Google yorumlardan farkı ne?',
-          a: 'Google yorum kamuya açık ve aramanın bir parçasıdır; anket ise işletmen için özel, derinlemesine müşteri sesidir. Buaze\'de iki akış birbirini tamamlar: müşteri QR\'dan girer, yüksek puanlısı Google\'a yönlendirilir, anket ise paralel olarak NPS/CSAT, hangi alanı iyileştirmen gerektiği gibi detayları işletme içinde tutar. Müşteri her zaman istediği platforma yazma hakkını korur.',
+          a: 'Google yorum kamuya açık ve aramanın bir parçasıdır; anket ise işletmen için özel, derinlemesine müşteri sesidir. Buaze\'de iki akış birbirini tamamlar: müşteri QR\'dan girer ve istediği platformda yorum bırakabilir; anket ise paralel olarak NPS/CSAT, hangi alanı iyileştirmen gerektiği gibi detayları işletme içinde tutar. Müşteri her zaman istediği platforma yazma hakkını korur.',
         },
         {
           q: 'Hangi soru tiplerini sunuyorsunuz?',
@@ -225,21 +225,21 @@ export default async function SurveysPage({
         },
         {
           q: 'QR yapıştırmadan paylaşabilir miyim?',
-          a: 'Evet. Her ankette `/s/[slug]` formatında benzersiz URL var; bu link\'i SMS, WhatsApp, e-posta footer\'ı, kayıt formu thank-you sayfası, sosyal medya bio\'su gibi her yere koyabilirsin. QR sadece masa içi / fiziksel ortam için ek seçenek.',
+          a: 'Evet. Her anketin kendine ait benzersiz bir linki var; bu link\'i SMS, WhatsApp, e-posta footer\'ı, kayıt formu thank-you sayfası, sosyal medya bio\'su gibi her yere koyabilirsin. QR sadece masa içi / fiziksel ortam için ek seçenek.',
         },
         {
           q: 'Kupon ödülü nasıl çalışır?',
-          a: 'Anket tasarımında "ödül kodu" alanına bir kod (örn. BUAZE10) ve etiket (%10 indirim) gir. Müşteri anketi tamamladığında thank-you ekranında bu kod + etiket görünür; müşteri ekran görüntüsünü gösterip indirim kullanır. Tamamen opsiyonel; istemezsen sadece teşekkür mesajı görünür.',
+          a: 'Anket tasarımında "kupon kodu" alanına bir kod (örn. BUAZE10) ve etiket (%10 indirim) gir. Müşteri anketi tamamladığında thank-you ekranında bu kod + etiket görünür; müşteri ekran görüntüsünü gösterip indirim kullanır. Tamamen opsiyonel; istemezsen sadece teşekkür mesajı görünür.',
         },
         {
           q: 'KVKK + GDPR uyumu nasıl?',
-          a: 'Anket formunda her müşteri açık rıza onayı verir (opt-in checkbox); rıza olmadan submit gönderilmez. IP retention 90 gün (KVKK §13.9), opt-in marketing pazarlama izni ayrı, anonim form opsiyonu var. Yanıtlardaki PII (email, telefon) opsiyonel; topladığın alanları tasarım sırasında belirlersin.',
+          a: 'Anket formunda her müşteri açık rıza onayı verir (opt-in checkbox); rıza olmadan submit gönderilmez. IP adresleri 90 gün sonra anonimleştirilir, opt-in marketing pazarlama izni ayrı, anonim form opsiyonu var. Yanıtlardaki PII (email, telefon) opsiyonel; topladığın alanları tasarım sırasında belirlersin.',
         },
       ]
     : [
         {
           q: 'How is this different from Google reviews?',
-          a: 'Google reviews are public and part of search; surveys are private, deep customer voice for your business. In Buaze the two flows complement each other: a customer scans QR, high ratings are routed to Google, while the survey holds NPS/CSAT, what to improve and similar details internally. The customer always keeps the right to post wherever they want.',
+          a: 'Google reviews are public and part of search; surveys are private, deep customer voice for your business. In Buaze the two flows complement each other: a customer scans QR and can leave a review on any platform they choose, while the survey holds NPS/CSAT, what to improve and similar details internally. The customer always keeps the right to post wherever they want.',
         },
         {
           q: 'Which question types do you support?',
@@ -247,15 +247,15 @@ export default async function SurveysPage({
         },
         {
           q: 'Can I share without sticking a QR?',
-          a: 'Yes. Each survey has a unique URL at `/s/[slug]`; share it via SMS, WhatsApp, email footer, registration thank-you page, social media bio — anywhere. QR is just an extra option for in-venue / physical settings.',
+          a: 'Yes. Each survey has its own unique link; share it via SMS, WhatsApp, email footer, registration thank-you page, social media bio — anywhere. QR is just an extra option for in-venue / physical settings.',
         },
         {
           q: 'How does the coupon reward work?',
-          a: 'When designing the survey, add a coupon code (e.g. BUAZE10) and a label (10% off) under "reward code". When the customer completes the survey, the code + label appear on the thank-you screen; the customer shows the screenshot to redeem the discount. Entirely optional; without it, only the thank-you message shows.',
+          a: 'When designing the survey, add a coupon code (e.g. BUAZE10) and a label (10% off) under "coupon code". When the customer completes the survey, the code + label appear on the thank-you screen; the customer shows the screenshot to redeem the discount. Entirely optional; without it, only the thank-you message shows.',
         },
         {
           q: 'How do you comply with KVKK + GDPR?',
-          a: 'Every customer gives explicit consent (opt-in checkbox) on the survey form; submission is blocked without it. IP retention is 90 days (KVKK §13.9), marketing consent is opt-in separately, and an anonymous form option exists. PII (email, phone) in responses is optional; you decide which fields to collect during design.',
+          a: 'Every customer gives explicit consent (opt-in checkbox) on the survey form; submission is blocked without it. IP addresses are anonymised after 90 days, marketing consent is opt-in separately, and an anonymous form option exists. PII (email, phone) in responses is optional; you decide which fields to collect during design.',
         },
       ];
 
@@ -318,13 +318,13 @@ export default async function SurveysPage({
       ? [
           { name: 'Hazır bir şablon seç', text: 'Buaze panelinde Anketler > Yeni anket altında işletmene uygun hazır şablonlardan birini seç veya boş anketle başla. Soru sayısına göre anket kendiliğinden tek ekran ya da adım adım olur.' },
           { name: 'Soruları ekle', text: '5 soru tipinden seç (yıldız, tavsiye skoru, tek seçim, kısa yazı, uzun yazı). Soruları ⋯ menüsüyle yukarı/aşağı taşı, zorunlu yap, çoğalt veya sil.' },
-          { name: 'QR + paylaşım', text: 'Anket yayınlandığında otomatik üretilen `/s/[slug]` URL\'sini SMS / WhatsApp / e-posta ile paylaş; veya PNG/SVG QR\'ı indir, masaya / faturaya / kapıya yapıştır.' },
+          { name: 'QR + paylaşım', text: 'Anket yayınlandığında otomatik oluşan linki SMS / WhatsApp / e-posta ile paylaş; veya PNG/SVG QR\'ı indir, masaya / faturaya / kapıya yapıştır.' },
           { name: 'Yanıtları analiz et', text: 'Panelde yanıt sayısı, ortalama puan, tavsiye skoru (NPS), soru bazlı dağılım ve yazılı yanıtlar görünür. CSV olarak Excel\'e indir.' },
         ]
       : [
           { name: 'Pick a ready-made template', text: 'In the Buaze panel under Surveys > New survey, pick a ready-made template that fits your business or start from a blank survey. One question shows on a single screen, more run step by step.' },
           { name: 'Add questions', text: 'Choose from 5 question types (star, recommend score, single choice, short text, long text). Move questions up or down with the ⋯ menu, mark them required, duplicate or delete them.' },
-          { name: 'QR + sharing', text: 'Once published, share the auto-generated `/s/[slug]` URL via SMS / WhatsApp / email; or download the PNG/SVG QR and stick it on the table / receipt / door.' },
+          { name: 'QR + sharing', text: 'Once published, share the link created automatically via SMS / WhatsApp / email; or download the PNG/SVG QR and stick it on the table / receipt / door.' },
           { name: 'Analyze responses', text: 'In the panel see response count, average rating, recommend score (NPS), a per-question breakdown and written answers. Export CSV to Excel.' },
         ],
   });

@@ -54,6 +54,12 @@
 }
 
 /* Italic Space Grotesk heading */
+.bz-survey-head,
+.bz-survey-scroll {
+  /* A long title, option or coupon without spaces must wrap instead of
+     being clipped at 320 px. */
+  overflow-wrap: anywhere;
+}
 .bz-survey-head {
   font-family: var(--font-heading), 'Space Grotesk', 'Inter', sans-serif;
   font-style: italic;

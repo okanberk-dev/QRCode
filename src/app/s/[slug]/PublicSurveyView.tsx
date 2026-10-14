@@ -1808,7 +1808,7 @@ function ThanksScreen({
         >
           {isAlready
             ? 'Daha önce yanıt vermişsin'
-            : thankYou || 'Yanıtın bizi gerçekten mutlu etti.'}
+            : thankYou || 'Yanıtın için teşekkürler.'}
         </h2>
         <p
           style={{
