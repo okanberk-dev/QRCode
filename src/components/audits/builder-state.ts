@@ -107,7 +107,15 @@ export function questionsFromRows(
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((row, i) => {
       const q = fromServerQuestion(row);
-      return { ...q, persistedId: opts.persisted ? row.id : null, sortOrder: (i + 1) * 10 };
+      return {
+        ...q,
+        // Sunucu ve istemci aynı anahtarı üretsin: `makeClientKey()` rastgele olduğu için
+        // ilk çizimde `data-q-key` farkı hydration uyarısı verirdi. `s_` öneki sonradan
+        // eklenen sorulardaki `q_` anahtarlarıyla çakışmaz.
+        clientKey: `s_${row.id}`,
+        persistedId: opts.persisted ? row.id : null,
+        sortOrder: (i + 1) * 10,
+      };
     });
 }
 

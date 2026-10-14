@@ -165,6 +165,22 @@ describe('initial state', () => {
   });
 });
 
+describe('initial question keys (SSR / hydration)', () => {
+  it('server rows get deterministic keys, so server and client renders agree', () => {
+    const rows = [row({ id: 'q1' }), row({ id: 'q2', sortOrder: 20 })];
+    const a = questionsFromRows(rows, { persisted: true }).map((x) => x.clientKey);
+    const b = questionsFromRows(rows, { persisted: true }).map((x) => x.clientKey);
+    assert.deepEqual(a, b);
+    assert.equal(new Set(a).size, a.length);
+  });
+
+  it('a copied ready-made template keeps deterministic keys but sends no ids', () => {
+    const keys = questionsFromRows([row({ id: 'q1' })], { persisted: false });
+    assert.equal(keys[0].clientKey, 's_q1');
+    assert.equal(keys[0].persistedId, null);
+  });
+});
+
 describe('derived values', () => {
   it('kind follows the questions, and falls back to the chosen start kind while empty', () => {
     assert.equal(effectiveKind([], 'quiz'), 'quiz');

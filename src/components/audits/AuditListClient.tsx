@@ -149,13 +149,15 @@ export default function AuditListClient({
   const nonArchived = useMemo(() => (rows ?? []).filter((r) => r.status !== 'archived'), [rows]);
   const archived = useMemo(() => (rows ?? []).filter((r) => r.status === 'archived'), [rows]);
 
-  // Sekme: `?tab=mine|ready` açık seçimdir; yoksa denetimi varsa "Denetimlerim", yoksa "Hazır şablonlar".
+  // Sekme: `?tab=mine|ready` açık seçimdir; yoksa denetimi (arşivlenmiş olsa bile) varsa
+  // "Denetimlerim", hiç yoksa "Hazır şablonlar". Son denetimi arşivleyince sayfa
+  // başka sekmeye sıçramasın: arşiv bölümü "Denetimlerim"in içinde.
   const filters = useUrlFilter({ tab: '', q: '' });
   const tabParam = filters.values.tab;
   const effectiveTab: TabId =
     tabParam === 'mine' || tabParam === 'ready'
       ? tabParam
-      : loadingRows || nonArchived.length > 0
+      : loadingRows || (rows ?? []).length > 0
         ? 'mine'
         : 'ready';
 
@@ -482,7 +484,15 @@ export default function AuditListClient({
           ) : nonArchived.length === 0 ? (
             <EmptyState
               icon={<ClipboardCheck size={20} />}
-              title={isTr ? 'Henüz denetimin yok' : 'No audits yet'}
+              title={
+                archived.length > 0
+                  ? isTr
+                    ? 'Etkin denetimin yok'
+                    : 'No active audits'
+                  : isTr
+                    ? 'Henüz denetimin yok'
+                    : 'No audits yet'
+              }
               body={
                 canWrite
                   ? isTr
