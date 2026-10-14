@@ -18,9 +18,8 @@ import {
 
 const LIME = '#C6F24E';
 
-// The wizard's swatches today (SurveyWizardClient ACCENT_SWATCHES): the 7
-// colours that stay + #0A0A0A, which the new editor drops but live surveys
-// still carry.
+// The old 5-step wizard offered these 7 swatches plus #0A0A0A; the single-page
+// editor keeps the 7 and drops the ink one, but live surveys still carry it.
 const NEW_SWATCHES = ['#C6F24E', '#1A73E8', '#F97316', '#EF4444', '#10B981', '#A855F7', '#0EA5E9'];
 const LEGACY_INK_SWATCH = '#0A0A0A';
 
