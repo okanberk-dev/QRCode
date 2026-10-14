@@ -15,34 +15,44 @@ export default function Loading() {
       {/* Back link + page header */}
       <div className="space-y-3">
         <SkBox className="h-8 w-28" />
+        {/* Heights below are PageHeader's real ones: the eyebrow sits in a 24px line
+            box, the h1 is clamp(22px, 4vw, 32px) × 1.1 line-height, and the
+            description's `mt-2` margin exists even where the text is hidden (<sm). */}
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
           <div className="min-w-0 flex-1">
-            <SkBox className="h-3 w-12" />
-            <SkBox className="mt-1 h-[35px] w-72 max-w-full" />
-            <SkBox className="mt-2 hidden h-4 w-80 max-w-full sm:block" />
+            <div className="flex h-6 items-center">
+              <SkBox className="h-3 w-12" />
+            </div>
+            <div className="mt-1" style={{ height: 'calc(clamp(22px, 4vw, 32px) * 1.1)' }}>
+              <SkBox className="h-full w-72 max-w-full" />
+            </div>
+            <div className="mt-2 sm:flex sm:h-5 sm:items-center">
+              <SkBox className="hidden h-4 w-80 max-w-full sm:block" />
+            </div>
           </div>
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
             {Array.from({ length: 4 }).map((_, i) => (
-              <SkBox key={i} className="h-11 w-full rounded-full sm:h-[34px] sm:w-28" />
+              <SkBox key={i} className="h-11 w-full rounded-full sm:h-[35px] sm:w-28" />
             ))}
           </div>
         </div>
       </div>
 
-      {/* Status strip */}
+      {/* Status strip — mirrors MenuStatusBar's draft layout (the strip is
+          lg:min-h-[96px] in every state, so 1024+ is height-stable) */}
       <div className="space-y-3">
-        <div className="bz-card p-4 sm:px-5 lg:min-h-[76px]">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
-            <div className="space-y-2">
-              <SkBox className="h-4 w-24" />
-              <SkBox className="h-3 w-56 max-w-full" />
+        <div className="bz-card p-4 sm:px-5 lg:min-h-[96px]">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
+            <div className="flex h-[22px] items-center gap-2 lg:h-auto lg:flex-col lg:items-start lg:gap-1.5">
+              <SkBox className="h-4 w-16" />
+              <SkBox className="h-3 w-40 max-w-[55%] lg:max-w-full" />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center">
               {Array.from({ length: 3 }).map((_, i) => (
-                <SkBox key={i} className="h-11 w-28 rounded-full sm:h-9" />
+                <SkBox key={i} className="h-11 w-full rounded-full sm:h-9 sm:w-28" />
               ))}
             </div>
-            <SkBox className="h-11 w-full rounded-full lg:h-[34px] lg:w-28" />
+            <SkBox className="h-11 w-full rounded-full lg:h-9 lg:w-28" />
           </div>
         </div>
       </div>
@@ -102,13 +112,20 @@ export default function Loading() {
           </div>
         </div>
 
+        {/* Preview rail = MenuLivePreview: header 46 + stage 605 (phone frame 557)
+            + footer 73 inside a 1px border = 726px, the tallest column. */}
         <div className="hidden self-start overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm min-[1400px]:block">
-          <div className="flex items-center justify-between border-b border-[#EDEDED] px-4 py-3">
+          <div className="flex h-[46px] items-center justify-between border-b border-[#EDEDED] px-4">
             <SkBox className="h-3 w-28" />
             <SkBox className="h-5 w-14 rounded-full" />
           </div>
           <div className="px-4 py-6">
-            <SkBox className="mx-auto h-[540px] w-[308px] max-w-full rounded-[40px]" />
+            <SkBox className="mx-auto h-[557px] w-[308px] max-w-full rounded-[40px]" />
+          </div>
+          <div className="flex h-[73px] flex-col justify-between border-t border-[#EDEDED] px-4 py-3">
+            <SkBox className="h-2.5 w-full" />
+            <SkBox className="h-2.5 w-full" />
+            <SkBox className="h-2.5 w-2/3" />
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ export function AnalyticsSkeleton() {
           <div className="min-w-0 flex-1 space-y-1">
             <SkBox className="h-11 w-36 sm:h-5" />
             <SkBox className="h-8 w-64 max-w-full sm:h-9" />
-            <SkBox className="h-[60px] w-full max-w-xl sm:h-5" />
+            <SkBox className="h-10 w-full max-w-xl sm:h-5" />
             <SkBox className="h-[21px] w-48 max-w-full" />
           </div>
           <SkBox className="h-11 w-[85px] shrink-0 rounded-full sm:h-[35px]" />

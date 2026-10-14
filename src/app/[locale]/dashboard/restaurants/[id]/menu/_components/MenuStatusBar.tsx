@@ -82,7 +82,7 @@ export function MenuStatusBar({
     <div className="space-y-3">
       <section
         role="status"
-        className={`bz-card p-4 sm:px-5 lg:min-h-[76px] ${tone === 'muted' ? 'bg-[#FAFAFA]' : ''}`}
+        className={`bz-card p-4 sm:px-5 lg:min-h-[96px] ${tone === 'muted' ? 'bg-[#FAFAFA]' : ''}`}
       >
         {children}
       </section>
