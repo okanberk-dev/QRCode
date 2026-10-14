@@ -28,6 +28,7 @@ import {
   resolveUniqueSlug,
   slugifyTitle,
   surveyResponseShortId,
+  surveyTypeIgnoredWarning,
   validateOptions,
   validateOptionsForWrite,
   type PlanExistingQuestion,
@@ -738,7 +739,7 @@ test('SURVEY_EDIT_SELECT: the owner select plus a per-question answer count; the
 });
 
 // ────────────────────────────────────────────────────────────────────────────
-// Contact e-mail on the public form
+// Contact e-mail on the public form + POST `type` note
 // ────────────────────────────────────────────────────────────────────────────
 
 test('isValidContactEmail: the form accepts exactly what the submit route (z.string().email().max(200)) accepts', () => {
@@ -775,4 +776,13 @@ test('isValidContactEmail: surrounding spaces are ignored (the form trims), empt
   assert.equal(isValidContactEmail(''), false);
   assert.equal(isValidContactEmail('   '), false);
   assert.equal(isValidContactEmail('abc'), false);
+});
+
+test('surveyTypeIgnoredWarning: only a type that disagrees with the stored one is reported', () => {
+  assert.equal(surveyTypeIgnoredWarning(undefined, 'multi_step'), null);
+  assert.equal(surveyTypeIgnoredWarning('multi_step', 'multi_step'), null);
+  assert.equal(surveyTypeIgnoredWarning('single', 'single'), null);
+  const w = surveyTypeIgnoredWarning('single', 'multi_step');
+  assert.equal(w?.code, 'type_ignored');
+  assert.match(w?.message ?? '', /"single" was ignored and "multi_step" was stored/);
 });

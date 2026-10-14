@@ -153,6 +153,23 @@ export function deriveSurveyType(questionCount: number): SurveyType {
   return questionCount === 1 ? 'single' : 'multi_step';
 }
 
+/**
+ * Non-fatal note for a POST that sent a `type` the server did not use. The
+ * stored type always follows the question count, so an old client that picked
+ * one ("single" with three questions) is told what was stored instead of being
+ * ignored silently. `null` when nothing was sent or the guess was right.
+ */
+export function surveyTypeIgnoredWarning(
+  sent: SurveyType | undefined,
+  stored: SurveyType,
+): { code: 'type_ignored'; message: string } | null {
+  if (!sent || sent === stored) return null;
+  return {
+    code: 'type_ignored',
+    message: `The survey type is derived from the number of questions. "${sent}" was ignored and "${stored}" was stored.`,
+  };
+}
+
 // ── Contact fields on the public form ───────────────────────────────────────
 
 /** Same limits the submit route enforces (z.string().email().max(200) / .max(40)). */

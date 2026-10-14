@@ -4,9 +4,10 @@
 // §28; slug uniqueness with retry; safe defaults for KVKK / accent.
 //
 // Phase 1: the survey `type` is derived from the question count (a client
-// `type` is still accepted and ignored), a coupon code needs a description,
-// the write is rate limited and audited, and the list carries the time of each
-// survey's latest response.
+// `type` is still accepted and ignored — when it disagrees with the stored one
+// the 201 body carries a `warnings` entry saying so), a coupon code needs a
+// description, the write is rate limited and audited, and the list carries the
+// time of each survey's latest response.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -30,6 +31,7 @@ import {
   OPTIONS_DUPLICATE_MESSAGE,
   deriveSurveyType,
   isCouponLabelMissing,
+  surveyTypeIgnoredWarning,
   validateOptions,
   validateOptionsForWrite,
   SURVEY_OWNER_SELECT,
@@ -50,7 +52,8 @@ const CreateBody = z
   .object({
     restaurantId: z.string().min(1),
     // Accepted for old clients and IGNORED: the type is derived from the
-    // question count (deriveSurveyType), never chosen.
+    // question count (deriveSurveyType), never chosen. A value that differs from
+    // what gets stored is reported back in `warnings` (never silent).
     type: z.enum(SURVEY_TYPES).optional(),
     title: z.string().trim().min(1).max(TITLE_MAX),
     description: z.string().max(DESCRIPTION_MAX).optional().nullable(),
@@ -204,5 +207,11 @@ export async function POST(req: NextRequest) {
     restaurantId: data.restaurantId,
   });
 
-  return NextResponse.json({ survey }, { status: 201 });
+  // Not an error — the survey was created. Tells an old client that picked a
+  // `type` what the server stored instead.
+  const typeWarning = surveyTypeIgnoredWarning(data.type, deriveSurveyType(questions.length));
+  return NextResponse.json(
+    typeWarning ? { survey, warnings: [typeWarning] } : { survey },
+    { status: 201 },
+  );
 }
