@@ -1,5 +1,6 @@
-// Stage 98 — Survey detail page (CLAUDE.md §42). Manage tab + analytics
-// preview + QR + delete. SSR auth + fetch; client component renders tabs.
+// Survey detail page (CLAUDE.md §42): header actions + Share / Results tabs.
+// SSR auth + data; the client component renders the tabs and loads the results
+// numbers when that tab opens.
 
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
@@ -7,8 +8,8 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
-import { SURVEY_OWNER_SELECT } from '@/lib/surveys';
+import { canWriteForUserPayload, getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { getSurveyPublicBaseUrl, SURVEY_OWNER_SELECT } from '@/lib/surveys';
 import SurveyDetailClient from '../_components/SurveyDetailClient';
 
 export const dynamic = 'force-dynamic';
@@ -27,11 +28,13 @@ export async function generateMetadata({
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ tab?: string; new?: string }>;
 }
 
-export default async function SurveyDetailPage({ params }: PageProps) {
+export default async function SurveyDetailPage({ params, searchParams }: PageProps) {
   const { locale: localeParam, id } = await params;
   const locale: Locale = localeParam === 'en' ? 'en' : 'tr';
+  const sp = await searchParams;
 
   const cookieStore = await cookies();
   const token = cookieStore.get('user_token')?.value;
@@ -51,29 +54,20 @@ export default async function SurveyDetailPage({ params }: PageProps) {
   });
   if (!survey) notFound();
 
-  // IDOR: confirm restaurant belongs to user.
+  const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
+  // IDOR: the survey's business must be one this user may see (team members
+  // included — same scope as the survey APIs).
+  const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
+  if (!scopedIds.includes(survey.restaurantId)) notFound();
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: survey.restaurantId },
-    select: { id: true, name: true, userId: true },
+    select: { id: true, name: true, slug: true, primaryColor: true, isActive: true, surveysEnabled: true },
   });
-  // Team members included (same scope as the survey APIs).
-  const scopedIds = await getScopedRestaurantIdsForUserPayload({
-    userId: payload.userId,
-    role: payload.role,
-    email: payload.email,
-  });
-  if (!restaurant || !scopedIds.includes(restaurant.id)) notFound();
+  if (!restaurant) notFound();
+  // Viewer = read-only team member: no edit / publish / duplicate / delete.
+  const canWrite = await canWriteForUserPayload(tokenPayload);
 
-  const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  const normalizedEnvUrl = envAppUrl?.replace(/\/+$/, '');
-  const hasLocalhostEnv = normalizedEnvUrl
-    ? /localhost|127\.0\.0\.1/i.test(normalizedEnvUrl)
-    : false;
-  const appUrl =
-    !hasLocalhostEnv && normalizedEnvUrl ? normalizedEnvUrl : 'https://www.buaze.com';
-  const publicUrl = `${appUrl}/s/${survey.slug}`;
-
-  // Serialize Date instances → ISO strings for client component.
+  // Serialize Date instances → ISO strings for the client component.
   // `type` is a free-form string in DB; narrow to the literal union the
   // client component expects (legacy rows could theoretically carry an
   // unknown value, fall back to 'multi_step').
@@ -97,12 +91,20 @@ export default async function SurveyDetailPage({ params }: PageProps) {
     })),
   };
 
+  // Default tab: right after creating → Share; otherwise Results as soon as the
+  // survey has ever had a response (all time, not the 30-day window), else Share.
+  const requestedTab = sp.tab === 'share' || sp.tab === 'results' ? sp.tab : null;
+  const initialTab = requestedTab ?? (sp.new === '1' ? 'share' : survey._count.responses > 0 ? 'results' : 'share');
+
   return (
     <SurveyDetailClient
       locale={locale}
       survey={serialized}
-      restaurantName={restaurant.name}
-      publicUrl={publicUrl}
+      restaurant={restaurant}
+      publicBaseUrl={getSurveyPublicBaseUrl()}
+      canWrite={canWrite}
+      initialTab={initialTab}
+      justCreated={sp.new === '1'}
     />
   );
 }

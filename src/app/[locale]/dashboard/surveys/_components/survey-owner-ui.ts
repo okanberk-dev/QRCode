@@ -71,3 +71,51 @@ export function connectionErrorMessage(locale: Locale): string {
     ? 'Bağlantı hatası. İnternetini kontrol edip tekrar dene.'
     : 'Connection error. Check your internet and try again.';
 }
+
+// ── Detail page shapes (page.tsx → SurveyDetailClient → tabs) ──────────────
+
+export type DetailQuestionType =
+  | 'rating'
+  | 'nps'
+  | 'short_text'
+  | 'long_text'
+  | 'multiple_choice';
+
+export interface DetailSurvey {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  type: 'single' | 'multi_step';
+  isActive: boolean;
+  isPublished: boolean;
+  publishedAt: string | null;
+  accentColor: string | null;
+  thankYouMessage: string | null;
+  collectContact: boolean;
+  couponCode: string | null;
+  couponLabel: string | null;
+  restaurantId: string;
+  createdAt: string;
+  updatedAt: string;
+  questions: Array<{
+    id: string;
+    text: string;
+    type: DetailQuestionType;
+    options: string[] | null;
+    required: boolean;
+    sortOrder: number;
+  }>;
+  /** `responses` = all time, not the selected range. */
+  _count: { responses: number };
+}
+
+export interface DetailRestaurant {
+  id: string;
+  name: string;
+  slug: string;
+  primaryColor: string;
+  isActive: boolean;
+  /** Admin master switch (feature-access). */
+  surveysEnabled: boolean;
+}
