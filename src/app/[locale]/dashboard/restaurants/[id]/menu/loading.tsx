@@ -51,7 +51,7 @@ export default function Loading() {
       <div className="-mx-4 border-b border-[#EDEDED] px-4 sm:-mx-7 sm:px-7 lg:hidden">
         <div className="flex gap-2 overflow-hidden py-2.5">
           {Array.from({ length: 4 }).map((_, i) => (
-            <SkBox key={i} className="h-10 w-24 shrink-0 rounded-full" />
+            <SkBox key={i} className="h-11 w-24 shrink-0 rounded-full" />
           ))}
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function Loading() {
           <div className="divide-y divide-[#F5F5F5]">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-2.5 px-3 py-2">
-                <SkBox className="h-11 w-9" />
+                <SkBox className="h-11 w-11" />
                 <SkBox className="h-12 w-12 rounded-xl sm:h-14 sm:w-14" />
                 <div className="flex-1 space-y-2">
                   <SkBox className="h-4 w-1/3" />

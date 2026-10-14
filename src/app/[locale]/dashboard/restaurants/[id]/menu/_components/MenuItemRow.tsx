@@ -75,7 +75,7 @@ export function MenuItemRow({
           {...attributes}
           {...listeners}
           aria-label={`${copy.dragToReorder}: ${item.name}`}
-          className="flex h-11 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#737373] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] active:cursor-grabbing sm:w-11"
+          className="flex h-11 w-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#737373] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] active:cursor-grabbing"
         >
           <GripVertical size={16} strokeWidth={2} />
         </button>

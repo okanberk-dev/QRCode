@@ -62,13 +62,23 @@ export function ItemList({
   };
 
   const addButton = (
-    <button type="button" onClick={onAddItem} className="bz-btn-primary h-11 flex-1 sm:h-auto sm:flex-none">
+    <button
+      type="button"
+      onClick={onAddItem}
+      disabled={readOnly}
+      className="bz-btn-primary h-11 flex-1 sm:h-auto sm:flex-none"
+    >
       <Plus size={14} strokeWidth={2.25} />
       {copy.addItem}
     </button>
   );
   const pasteButton = onBulkAdd ? (
-    <button type="button" onClick={onBulkAdd} className="bz-btn-ghost h-11 flex-1 sm:h-auto sm:flex-none">
+    <button
+      type="button"
+      onClick={onBulkAdd}
+      disabled={readOnly}
+      className="bz-btn-ghost h-11 flex-1 sm:h-auto sm:flex-none disabled:opacity-50"
+    >
       <ClipboardList size={14} strokeWidth={2} />
       {copy.pasteList}
     </button>
@@ -97,12 +107,10 @@ export function ItemList({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {headerExtra}
-            {!readOnly && (
-              <div className="hidden items-center gap-2 sm:flex">
-                {pasteButton}
-                {addButton}
-              </div>
-            )}
+            <div className="hidden items-center gap-2 sm:flex">
+              {pasteButton}
+              {addButton}
+            </div>
             <CategoryMenu
               category={category}
               index={categoryIndex}
@@ -120,7 +128,7 @@ export function ItemList({
             />
           </div>
         </div>
-        {!readOnly && items.length > 0 && (
+        {items.length > 0 && (
           <div className="mt-3 flex gap-2 sm:hidden">
             {addButton}
             {pasteButton}
@@ -135,20 +143,18 @@ export function ItemList({
             title={fmt.emptyCategoryTitle(category.name)}
             body={copy.emptyCategoryBody}
             action={
-              readOnly ? undefined : (
-                <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center">
-                  <button type="button" onClick={onAddItem} className="bz-btn-primary">
-                    <Plus size={14} strokeWidth={2.25} />
-                    {copy.addFirstItem}
+              <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center">
+                <button type="button" onClick={onAddItem} disabled={readOnly} className="bz-btn-primary">
+                  <Plus size={14} strokeWidth={2.25} />
+                  {copy.addFirstItem}
+                </button>
+                {onBulkAdd && (
+                  <button type="button" onClick={onBulkAdd} disabled={readOnly} className="bz-btn-ghost disabled:opacity-50">
+                    <ClipboardList size={14} strokeWidth={2} />
+                    {copy.pasteList}
                   </button>
-                  {onBulkAdd && (
-                    <button type="button" onClick={onBulkAdd} className="bz-btn-ghost">
-                      <ClipboardList size={14} strokeWidth={2} />
-                      {copy.pasteList}
-                    </button>
-                  )}
-                </div>
-              )
+                )}
+              </div>
             }
           />
         </div>

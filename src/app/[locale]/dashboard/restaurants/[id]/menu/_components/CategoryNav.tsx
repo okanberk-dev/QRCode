@@ -85,14 +85,12 @@ export function CategoryColumn({
           </ul>
         </SortableContext>
       </DndContext>
-      {!readOnly && (
-        <div className="border-t border-[#F5F5F5] p-3">
-          <button type="button" onClick={onAdd} className="bz-btn-ghost w-full">
-            <Plus size={14} strokeWidth={2.25} />
-            {copy.addCategory}
-          </button>
-        </div>
-      )}
+      <div className="border-t border-[#F5F5F5] p-3">
+        <button type="button" onClick={onAdd} disabled={readOnly} className="bz-btn-ghost w-full">
+          <Plus size={14} strokeWidth={2.25} />
+          {copy.addCategory}
+        </button>
+      </div>
     </section>
   );
 }
@@ -131,7 +129,7 @@ export function CategoryChips({ categories, activeId, readOnly, copy, fmt, onSel
               onClick={() => onSelect(c.id)}
               aria-current={active ? 'true' : undefined}
               aria-label={fmt.categoryChipLabel(c.name, c.items.length)}
-              className={`inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[13px] font-medium transition-colors ${
+              className={`inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[13px] font-medium transition-colors ${
                 active
                   ? 'bg-[#0A0A0A] text-white'
                   : c.isVisible
@@ -148,16 +146,15 @@ export function CategoryChips({ categories, activeId, readOnly, copy, fmt, onSel
             </button>
           );
         })}
-        {!readOnly && (
-          <button
-            type="button"
-            onClick={onAdd}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#C6F24E] px-4 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
-          >
-            <Plus size={14} strokeWidth={2.25} />
-            {copy.addCategory}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={readOnly}
+          className="inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#C6F24E] px-4 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] disabled:cursor-not-allowed disabled:bg-[#EDEDED] disabled:text-[#6B7280]"
+        >
+          <Plus size={14} strokeWidth={2.25} />
+          {copy.addCategory}
+        </button>
       </div>
     </div>
   );
