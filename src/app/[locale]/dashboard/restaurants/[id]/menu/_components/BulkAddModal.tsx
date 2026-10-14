@@ -100,7 +100,7 @@ export function BulkAddModal({
           </Field>
         )}
 
-        <Field label={copy.pasteList} hint={copy.bulkHelp}>
+        <Field label={copy.items} hint={copy.bulkHelp}>
           <textarea
             autoFocus={autoFocus}
             value={text}

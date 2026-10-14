@@ -324,7 +324,7 @@ export function MenuDesignModal({
           {/* Always rendered so screen readers announce the state change. */}
           <p
             aria-live="polite"
-            className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#525252] empty:hidden sm:mr-auto"
+            className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#525252] empty:hidden sm:order-first sm:mr-auto"
           >
             {busy ? (
               <>
@@ -354,16 +354,19 @@ export function MenuDesignModal({
           />
         </div>
       )}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         {showSettings && settings}
         {showPreview && (
-          <MenuLivePreview
-            variant="inline"
-            restaurant={restaurant}
-            categories={categories}
-            locale={locale}
-            published={restaurant.menuEnabled && restaurant.menuPublished}
-          />
+          // Stays in view while the controls scroll past it (wide layout only).
+          <div className="lg:sticky lg:top-0 lg:self-start">
+            <MenuLivePreview
+              variant="inline"
+              restaurant={restaurant}
+              categories={categories}
+              locale={locale}
+              published={restaurant.menuEnabled && restaurant.menuPublished}
+            />
+          </div>
         )}
       </div>
     </Modal>

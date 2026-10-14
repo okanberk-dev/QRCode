@@ -149,7 +149,40 @@ export function MenuShareModal({
   const draft = !restaurant.menuPublished;
 
   return (
-    <Modal size={520} title={copy.shareAndQr} onClose={onClose}>
+    <Modal
+      size={520}
+      title={copy.shareAndQr}
+      onClose={onClose}
+      footer={
+        // In the footer so the main action is on screen on a short phone too.
+        <div className="flex w-full flex-col-reverse items-stretch gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          <button
+            type="button"
+            onClick={() => void download('svg')}
+            disabled={downloading !== null || preview.state !== 'ready'}
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-[#525252] underline-offset-2 hover:text-[#0A0A0A] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:opacity-50"
+          >
+            {downloading === 'svg' && <Loader2 size={13} className="animate-spin" />}
+            {downloaded === 'svg' ? copy.downloaded : copy.downloadPrint}
+          </button>
+          <button
+            type="button"
+            onClick={() => void download('png')}
+            disabled={downloading !== null || preview.state !== 'ready'}
+            className="bz-btn-lime h-12 w-full text-[14px] sm:w-auto sm:px-6"
+          >
+            {downloading === 'png' ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : downloaded === 'png' ? (
+              <Check size={15} strokeWidth={2.5} aria-hidden="true" />
+            ) : (
+              <Download size={15} strokeWidth={2} aria-hidden="true" />
+            )}
+            <span aria-live="polite">{downloaded === 'png' ? copy.downloaded : copy.downloadQr}</span>
+          </button>
+        </div>
+      }
+    >
       <div className="space-y-5">
         {draft && (
           <AlertBanner kind="warn" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
@@ -233,34 +266,6 @@ export function MenuShareModal({
             {downloadError}
           </AlertBanner>
         )}
-
-        {/* Downloads */}
-        <div className="flex flex-col items-stretch gap-1">
-          <button
-            type="button"
-            onClick={() => void download('png')}
-            disabled={downloading !== null || preview.state !== 'ready'}
-            className="bz-btn-lime h-12 w-full text-[14px]"
-          >
-            {downloading === 'png' ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : downloaded === 'png' ? (
-              <Check size={15} strokeWidth={2.5} aria-hidden="true" />
-            ) : (
-              <Download size={15} strokeWidth={2} aria-hidden="true" />
-            )}
-            <span aria-live="polite">{downloaded === 'png' ? copy.downloaded : copy.downloadQr}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => void download('svg')}
-            disabled={downloading !== null || preview.state !== 'ready'}
-            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-[#525252] underline-offset-2 hover:text-[#0A0A0A] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:opacity-50"
-          >
-            {downloading === 'svg' && <Loader2 size={13} className="animate-spin" />}
-            {downloaded === 'svg' ? copy.downloaded : copy.downloadPrint}
-          </button>
-        </div>
 
         <p className="text-[12.5px] leading-relaxed text-[#737373]">
           {copy.shareTip}{' '}

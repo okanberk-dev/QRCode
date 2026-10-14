@@ -243,9 +243,12 @@ export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
    */
   const uploadPhoto = async (file: File, kind: 'item' | 'logo'): Promise<PhotoUploadResult> => {
     const generic = mapMenuApiError(null, isTr);
-    // Raw server text and codes never reach the owner; an unknown failure
-    // gets the photo-specific sentence instead of the generic one.
-    const sentence = (message: string) => (message === generic ? copy.photoFailed : message);
+    // Raw server text and codes never reach the owner. Known causes keep their
+    // own sentence (too large, can't be processed, no permission, too many
+    // requests); everything else — a dropped connection included — is the
+    // photo-specific "Upload failed. Try again."
+    const sentence = (message: string, network = false) =>
+      network || message === generic ? copy.photoFailed : message;
     try {
       const compressed = await compressImage(
         file,
@@ -258,12 +261,12 @@ export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
       fd.append('file', compressed);
       fd.append('kind', kind);
       const r = await apiCall(`/api/restaurants/${id}/menu/upload`, { method: 'POST', body: fd }, isTr);
-      if (!r.ok) return { ok: false, message: sentence(r.message) };
+      if (!r.ok) return { ok: false, message: sentence(r.message, r.status === 0) };
       const url = r.data?.url;
       if (!url) return { ok: false, message: copy.photoFailed };
       return { ok: true, url };
     } catch (e) {
-      return { ok: false, message: sentence(mapMenuApiError(e as Error, isTr)) };
+      return { ok: false, message: sentence(mapMenuApiError(e as Error, isTr), true) };
     }
   };
 
