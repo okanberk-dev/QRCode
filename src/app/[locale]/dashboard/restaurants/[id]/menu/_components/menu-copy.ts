@@ -1,58 +1,142 @@
-// Builder UI copy (TR/EN). Moved verbatim out of page.tsx.
+// Builder UI copy (TR/EN). Plain strings live in `buildMenuCopy` (the modals
+// that still take `Record<string, string>` can receive it as is); anything that
+// needs a number or a name lives in `menuFmt`.
+//
+// Owner-facing wording only: no developer terms, no promise of a plan upgrade
+// (the menu switch is an admin setting, not a plan feature), no raw server text
+// (errors go through `mapMenuApiError`).
 export function buildMenuCopy(isTr: boolean) {
   return {
     title: isTr ? 'Menü' : 'Menu',
-    // §38.73 — Editor PageHeader Pulse pattern (eyebrow + pageDescription).
-    // Custom hero korunur, sadece copy hint inline ekleniyor.
-    // (`description` adı form label'ı için zaten kullanılıyor — line 276.)
     eyebrow: isTr ? 'MENÜ' : 'MENU',
     pageDescription: isTr
-      ? 'Kategoriler ve ürünleri düzenle. Sağ taraftaki canlı önizlemede değişiklikleri anında gör.'
-      : 'Manage categories and items. Watch changes live in the preview on the right.',
-    backToMenus: isTr ? 'İşletmeye Dön' : 'Back to Business',
+      ? 'Değişiklikler kaydedilir kaydedilmez menüne yansır.'
+      : 'Changes appear on your menu as soon as you save them.',
+    backToMenus: isTr ? 'İşletmeye dön' : 'Back to business',
+
+    // ── header actions ──
+    preview: isTr ? 'Önizle' : 'Preview',
+    exitPreview: isTr ? 'Önizlemeden çık' : 'Exit preview',
+    design: isTr ? 'Görünüm' : 'Design',
+    shareAndQr: isTr ? 'Paylaş ve QR' : 'Share & QR',
+    shareShort: 'QR',
+    analytics: isTr ? 'Analitik' : 'Analytics',
+    previewRail: isTr ? 'Önizleme' : 'Preview',
+    previewFull: isTr ? 'Tam ekran' : 'Full screen',
+
+    // ── status strip ──
+    draft: isTr ? 'Taslak' : 'Draft',
+    draftHint: isTr ? 'Müşteriler menünü henüz göremiyor.' : "Customers can't see your menu yet.",
+    published: isTr ? 'Yayında' : 'Live',
+    liveHint: isTr ? 'Değişiklikler anında yansır.' : 'Changes go live instantly.',
+    liveButEmpty: isTr
+      ? 'Menün yayında ama müşterilere gösterilecek ürün yok.'
+      : 'Your menu is live but has no items to show customers.',
+    stepCategory: isTr ? 'Kategori ekle' : 'Add categories',
+    stepItems: isTr ? 'Ürün ekle' : 'Add items',
+    stepPublish: isTr ? 'Yayına al' : 'Publish',
+    stepCategoryShort: isTr ? 'Kategori' : 'Categories',
+    stepItemsShort: isTr ? 'Ürün' : 'Items',
+    stepPublishShort: isTr ? 'Yayın' : 'Publish',
+    publish: isTr ? 'Yayına al' : 'Publish',
+    publishNeedsItem: isTr ? 'Yayına almak için en az bir ürün ekle.' : 'Add at least one item to publish.',
+    unpublish: isTr ? 'Yayından kaldır' : 'Unpublish',
+    unpublishTitle: isTr ? 'Menü yayından kaldırılsın mı?' : 'Take the menu offline?',
+    unpublishBody: isTr
+      ? 'Menü bağlantısı ve basılı QR kodlar çalışmayı durdurur; müşteriler "Menü bulunamadı" sayfasını görür. İstediğin zaman yeniden yayına alabilirsin.'
+      : 'The menu link and printed QR codes stop working; customers see a "Menu not found" page. You can publish again any time.',
+    keepIt: isTr ? 'Vazgeç' : 'Cancel',
+    justPublished: isTr
+      ? 'Menün yayında! Linki kopyala ya da QR’ı indirip masalara koy.'
+      : 'Your menu is live! Copy the link or download the QR and put it on your tables.',
+    copyLink: isTr ? 'Linki kopyala' : 'Copy link',
+    copied: isTr ? 'Kopyalandı' : 'Copied',
+    downloadQrShort: isTr ? 'QR indir' : 'Download QR',
+    openMenu: isTr ? 'Menüyü aç' : 'Open menu',
+    moreActions: isTr ? 'Diğer işlemler' : 'More actions',
+    lastUpdated: isTr ? 'Son güncelleme' : 'Last updated',
+    lockedTitle: isTr ? 'Menü düzenleme bu işletme için kapalı.' : 'Menu editing is turned off for this business.',
+    lockedBody: isTr
+      ? 'Mevcut menünü görüntüleyebilirsin. Düzenlemeyi açtırmak için bize yaz.'
+      : 'You can view your menu. Write to us to have it turned on.',
+    contactUs: isTr ? 'Bize yaz' : 'Contact us',
+    contactSubject: isTr ? 'Menü modülü' : 'Menu module',
+    viewerOnly: isTr
+      ? 'Bu menüyü yalnızca görüntüleyebilirsin (izleyici rolü).'
+      : 'You have view-only access to this menu.',
+
+    // ── starter (empty menu) ──
+    starterTitle: isTr ? 'Menünü birkaç adımda hazırla' : 'Set up your menu in a few steps',
+    starterBody: isTr
+      ? 'İşletmene en yakın şablonu seç; kategorileri biz ekleyelim. Ürünlerini sonra eklersin.'
+      : 'Pick the template closest to your business; we add the categories. You add items later.',
+    moreTemplates: isTr ? 'Diğer şablonlar' : 'More templates',
+    lessTemplates: isTr ? 'Daha az göster' : 'Show fewer',
+    startEmpty: isTr ? 'Boş kategoriyle başla' : 'Start with an empty category',
+    or: isTr ? 'veya' : 'or',
+
+    // ── categories ──
     categories: isTr ? 'Kategoriler' : 'Categories',
+    addCategory: isTr ? 'Kategori ekle' : 'Add category',
+    editCategory: isTr ? 'Kategoriyi düzenle' : 'Edit category',
+    categoryName: isTr ? 'Kategori adı' : 'Category name',
+    categoryVisibleHint: isTr
+      ? 'Kapatırsan kategori ve ürünleri müşterilere görünmez.'
+      : 'If off, the category and its items are hidden from customers.',
+    categoryNamePlaceholder: isTr ? 'Örn. Burgerler' : 'e.g. Burgers',
+    noCategorySelected: isTr ? 'Soldan bir kategori seç.' : 'Select a category from the left.',
+    rename: isTr ? 'Yeniden adlandır' : 'Rename',
+    hideFromMenu: isTr ? 'Menüde gizle' : 'Hide from menu',
+    showOnMenu: isTr ? 'Menüde göster' : 'Show on menu',
+    moveUp: isTr ? 'Yukarı taşı' : 'Move up',
+    moveDown: isTr ? 'Aşağı taşı' : 'Move down',
+    moveLeft: isTr ? 'Sola taşı' : 'Move left',
+    moveRight: isTr ? 'Sağa taşı' : 'Move right',
+    hiddenBadge: isTr ? 'Gizli' : 'Hidden',
+    dragToReorder: isTr ? 'Sırala' : 'Reorder',
+    dragHint: isTr
+      ? 'Sıralamak için boşluk tuşuna bas, ok tuşlarıyla taşı, bırakmak için tekrar boşluk, vazgeçmek için Esc.'
+      : 'Press space to pick up, arrow keys to move, space to drop, Escape to cancel.',
+    deleteCategoryButton: isTr ? 'Kategoriyi sil' : 'Delete category',
+    deleteCategoryAndItems: isTr ? 'Kategoriyi ve ürünleri sil' : 'Delete category and items',
+    categoryGroupLabel: isTr ? 'Kategoriler' : 'Categories',
+
+    // ── items ──
     items: isTr ? 'Ürünler' : 'Items',
-    addCategory: isTr ? 'Kategori Ekle' : 'Add Category',
-    addItem: isTr ? 'Ürün Ekle' : 'Add Item',
-    editCategory: isTr ? 'Kategori Düzenle' : 'Edit Category',
-    editItem: isTr ? 'Ürün Düzenle' : 'Edit Item',
-    noCategories: isTr ? 'Henüz kategori yok. Başlamak için ekleyin.' : 'No categories yet. Add one to begin.',
-    noItems: isTr ? 'Bu kategoride henüz ürün yok.' : 'No items in this category yet.',
-    noCategorySelected: isTr ? 'Soldan bir kategori seçin.' : 'Select a category from the left.',
-    categoryName: isTr ? 'Kategori Adı' : 'Category Name',
-    description: isTr ? 'Açıklama' : 'Description',
-    visible: isTr ? 'Görünür' : 'Visible',
-    hidden: isTr ? 'Gizli' : 'Hidden',
-    itemName: isTr ? 'Ürün Adı' : 'Item Name',
-    price: isTr ? 'Fiyat (₺)' : 'Price (₺)',
-    imageUrl: isTr ? 'Görsel URL (opsiyonel)' : 'Image URL (optional)',
-    badges: isTr ? 'Etiketler' : 'Badges',
-    available: isTr ? 'Satışta' : 'Available',
-    outOfStock: isTr ? 'Tükendi' : 'Out of stock',
+    itemsEyebrow: isTr ? 'ÜRÜNLER' : 'ITEMS',
+    addItem: isTr ? 'Ürün ekle' : 'Add item',
+    editItem: isTr ? 'Ürünü düzenle' : 'Edit item',
+    pasteList: isTr ? 'Liste yapıştır' : 'Paste a list',
+    addFirstItem: isTr ? 'İlk ürünü ekle' : 'Add first item',
+    emptyCategoryBody: isTr
+      ? 'Ürün adı ve fiyatıyla başla. Fotoğraf ve açıklamayı sonra ekleyebilirsin.'
+      : 'Start with a name and a price. Add a photo and description later.',
+    sellable: isTr ? 'Satışta' : 'Available',
+    soldOut: isTr ? 'Tükendi' : 'Sold out',
+    hiddenOnMenu: isTr ? 'Menüde gizli' : 'Hidden',
+    rowEdit: isTr ? 'Düzenle' : 'Edit',
+    markSoldOut: isTr ? 'Tükendi olarak işaretle' : 'Mark as sold out',
+    backInStock: isTr ? 'Tekrar satışa al' : 'Back in stock',
+    hideItem: isTr ? 'Menüden gizle' : 'Hide from menu',
+    showItem: isTr ? 'Menüde göster' : 'Show on menu',
+    switchHint: isTr ? 'Kapalıysa menüde “Tükendi” görünür.' : 'If off, it shows as “Sold out” on the menu.',
+    delete: isTr ? 'Sil' : 'Delete',
     cancel: isTr ? 'İptal' : 'Cancel',
     save: isTr ? 'Kaydet' : 'Save',
-    delete: isTr ? 'Sil' : 'Delete',
-    deleteCategoryConfirm: isTr
-      ? 'Bu kategori silinecek. Emin misiniz? (Aktif ürünler varsa silinemez.)'
-      : 'Delete this category? (Cannot delete if it has active items.)',
-    deleteItemConfirm: isTr ? 'Bu ürün silinsin mi?' : 'Delete this item?',
-    publish: isTr ? 'Yayına Al' : 'Publish',
-    unpublish: isTr ? 'Yayından Kaldır' : 'Unpublish',
-    preview: isTr ? 'Önizle' : 'Preview',
-    exitPreview: isTr ? 'Önizlemeden Çık' : 'Exit Preview',
-    viewPublic: isTr ? 'Genel Sayfa' : 'Public Page',
-    // §38.73 — Copy güçlendirildi: sadece publish değil, edit (kategori/ürün
-    // ekle/değiştir) de POST endpoint tarafında 403 dönüyor (CLAUDE.md §5.2).
-    // UI'da edit butonları disabled state'e geçer (aşağıda); banner read-only
-    // moda işaret eder.
-    disabledByAdmin: isTr
-      ? 'Bu paket plan menü düzenlemeyi kapsamıyor. Sadece görüntüleme modu — kategori, ürün ekleyemez ve menü yayınlayamazsınız.'
-      : 'Menu editing is not included in this plan. View-only mode — you cannot add categories, items, or publish the menu.',
-    published: isTr ? 'Yayında' : 'Published',
-    draft: isTr ? 'Taslak' : 'Draft',
-    disabled: isTr ? 'Kapalı' : 'Disabled',
-    lastUpdated: isTr ? 'Son güncelleme' : 'Last updated',
-    menuDesign: isTr ? 'Menü Tasarımı' : 'Menu Design',
+    deleteItemButton: isTr ? 'Ürünü sil' : 'Delete item',
+    itemsWillShow: isTr ? 'menüde' : 'on menu',
+
+    // ── legacy item / design / QR modals (until their rewrite) ──
+    description: isTr ? 'Açıklama' : 'Description',
+    visible: isTr ? 'Menüde göster' : 'Show on menu',
+    hidden: isTr ? 'Gizli' : 'Hidden',
+    itemName: isTr ? 'Ürün adı' : 'Item name',
+    price: isTr ? 'Fiyat (₺)' : 'Price (₺)',
+    imageUrl: isTr ? 'Fotoğraf bağlantısı (isteğe bağlı)' : 'Photo link (optional)',
+    badges: isTr ? 'Etiketler' : 'Labels',
+    available: isTr ? 'Satışta' : 'Available',
+    outOfStock: isTr ? 'Tükendi' : 'Sold out',
+    menuDesign: isTr ? 'Menü görünümü' : 'Menu design',
     themeLabel: isTr ? 'Tema' : 'Theme',
     themeClassic: isTr ? 'Klasik' : 'Classic',
     themeModern: isTr ? 'Modern' : 'Modern',
@@ -61,21 +145,72 @@ export function buildMenuCopy(isTr: boolean) {
     themeMinimal: isTr ? 'Minimal' : 'Minimal',
     themeBistro: isTr ? 'Bistro' : 'Bistro',
     themePulse: isTr ? 'Pulse' : 'Pulse',
-    accentColor: isTr ? 'Renk' : 'Accent Color',
-    menuQr: isTr ? 'Menü QR' : 'Menu QR',
-    downloadQr: isTr ? 'İndir' : 'Download',
-    qrFormat: isTr ? 'Format' : 'Format',
-    dragToReorder: isTr ? 'Sırala' : 'Reorder',
-    analytics: isTr ? 'Analitik' : 'Analytics',
-    logo: isTr ? 'Menü Logosu' : 'Menu Logo',
-    logoHint: isTr ? 'Kare görsel önerilir. PNG veya WebP, 5 MB altı.' : 'Square image recommended. PNG or WebP, under 5 MB.',
-    uploadImage: isTr ? 'Görsel Yükle' : 'Upload Image',
+    accentColor: isTr ? 'Vurgu rengi' : 'Accent color',
+    menuQr: isTr ? 'Paylaş ve QR' : 'Share & QR',
+    downloadQr: isTr ? 'QR’ı indir' : 'Download QR',
+    qrFormat: isTr ? 'Dosya türü' : 'File type',
+    logo: isTr ? 'Menü logosu' : 'Menu logo',
+    logoHint: isTr
+      ? 'Kare görsel önerilir (PNG, JPG veya WebP).'
+      : 'Square image recommended (PNG, JPG or WebP).',
+    uploadImage: isTr ? 'Görsel yükle' : 'Upload image',
     uploading: isTr ? 'Yükleniyor…' : 'Uploading…',
     removeImage: isTr ? 'Kaldır' : 'Remove',
-    orUrl: isTr ? 'veya URL' : 'or URL',
-    toggleVisible: isTr ? 'Görünürlüğü değiştir' : 'Toggle visibility',
-    toggleOutOfStock: isTr ? 'Stok durumunu değiştir' : 'Toggle out of stock',
-    saving: isTr ? 'Kaydediliyor' : 'Saving',
+    orUrl: isTr ? 'veya bağlantı' : 'or link',
+    saving: isTr ? 'Kaydediliyor…' : 'Saving…',
     resetAccent: isTr ? 'Sıfırla' : 'Reset',
+
+    // ── dialogs ──
+    leaveTitle: isTr ? 'Kaydetmeden çıkılsın mı?' : 'Leave without saving?',
+    leaveBody: isTr ? 'Yazdıkların kaydedilmeyecek.' : "Your changes won't be saved.",
+    leave: isTr ? 'Çık' : 'Leave',
+    keepEditing: isTr ? 'Devam et' : 'Keep editing',
   };
 }
+
+export type MenuCopy = ReturnType<typeof buildMenuCopy>;
+
+/** English noun agreement: "1 item" / "2 items". Turkish has no plural here. */
+function count(n: number, tr: string, enOne: string, enMany: string, isTr: boolean): string {
+  return isTr ? `${n} ${tr}` : `${n} ${n === 1 ? enOne : enMany}`;
+}
+
+/** Copy that needs a number or a name. */
+export function menuFmt(isTr: boolean) {
+  return {
+    categoryCount: (n: number) => count(n, 'kategori', 'category', 'categories', isTr),
+    itemCount: (n: number) => count(n, 'ürün', 'item', 'items', isTr),
+    hiddenCount: (n: number) => (isTr ? `${n} menüde gizli` : `${n} hidden`),
+
+    deleteCategoryTitle: (name: string) => (isTr ? `“${name}” silinsin mi?` : `Delete “${name}”?`),
+    deleteCategoryBody: () =>
+      isTr ? 'Bu kategori menüden kaldırılır.' : 'This category is removed from your menu.',
+    deleteCategoryWithItemsTitle: (name: string, n: number) =>
+      isTr
+        ? `“${name}” ve içindeki ${n} ürün silinsin mi?`
+        : `Delete “${name}” and its ${n} ${n === 1 ? 'item' : 'items'}?`,
+    deleteCategoryWithItemsBody: () => (isTr ? 'Bu işlem geri alınamaz.' : "This can't be undone."),
+    deleteItemTitle: (name: string) => (isTr ? `“${name}” silinsin mi?` : `Delete “${name}”?`),
+    deleteItemBody: () => (isTr ? 'Ürün menüden kaldırılır.' : 'This item is removed from your menu.'),
+
+    presetAdded: (n: number) =>
+      isTr
+        ? `${n} kategori eklendi. Şimdi ürünlerini ekle.`
+        : `${n} ${n === 1 ? 'category' : 'categories'} added. Now add your items.`,
+    presetPartial: () =>
+      isTr ? 'Bazı kategoriler eklenemedi. Tekrar dene.' : "Some categories couldn't be added. Try again.",
+
+    emptyCategoryTitle: (name: string) => (isTr ? `${name} henüz boş` : `${name} is empty`),
+    itemRowLabel: (name: string, price: string) =>
+      isTr ? `${name}, ${price}. Düzenle` : `${name}, ${price}. Edit`,
+    switchLabel: (name: string) => (isTr ? `${name}: satışta` : `${name}: available`),
+    itemActionsLabel: (name: string) => (isTr ? `${name} için işlemler` : `Actions for ${name}`),
+    categoryActionsLabel: (name: string) => (isTr ? `${name} kategorisi için işlemler` : `Actions for category ${name}`),
+    categoryChipLabel: (name: string, n: number) =>
+      isTr ? `${name}, ${n} ürün` : `${name}, ${n} ${n === 1 ? 'item' : 'items'}`,
+    stepCategoryDone: (n: number) => count(n, 'kategori', 'category', 'categories', isTr),
+    stepItemsDone: (n: number) => count(n, 'ürün', 'item', 'items', isTr),
+  };
+}
+
+export type MenuFmt = ReturnType<typeof menuFmt>;

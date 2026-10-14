@@ -1,68 +1,115 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  AlertTriangle, ArrowLeft, BarChart3, ChevronRight, Eye, EyeOff, Image as ImageIcon, Loader2,
-  Plus, QrCode, RefreshCw, UtensilsCrossed, X,
+  AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, Eye, Palette, QrCode, RefreshCw, Smartphone, X,
 } from 'lucide-react';
-import {
-  DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import PublicMenuView, { type MenuItemView } from '@/components/menu/PublicMenuView';
-import { AlertBanner, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, Modal, PageHeader, useConfirmDialog } from '@/components/ui';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { getMenuReadiness } from '@/lib/menu-readiness';
+import { detectSector } from '@/lib/sector-platforms';
 import type { Locale } from '@/lib/translations';
-import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 import MenuBuilderSkeleton from './loading';
 import { CategoryModal } from './_components/CategoryModal';
+import { CategoryChips, CategoryColumn } from './_components/CategoryNav';
+import { ItemList } from './_components/ItemList';
 import { ItemModal } from './_components/ItemModal';
 import { MenuLivePreview } from './_components/MenuLivePreview';
 import { MenuQrModal } from './_components/MenuQrModal';
 import { MenuStarter } from './_components/MenuStarter';
-import { SortableCategoryRow } from './_components/SortableCategoryRow';
-import { SortableItemRow } from './_components/SortableItemRow';
+import { MenuStatusBar, type MenuLockReason, type MenuStepId } from './_components/MenuStatusBar';
 import { ThemePanel } from './_components/ThemePanel';
-import { buildMenuCopy } from './_components/menu-copy';
 import type { CategoryShape } from './_components/menu-types';
+import { useIsDesktop } from './_components/menu-ui';
 import { useMenuBuilder } from './_components/useMenuBuilder';
+
+type ItemDraft = Partial<MenuItemView> & { categoryId?: string };
 
 export default function RestaurantMenuBuilderPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const id = params?.id as string;
   const locale = (params?.locale as Locale) ?? 'tr';
   const isTr = locale === 'tr';
   const previewMode = searchParams?.get('preview') === '1';
 
-  // State + data layer (restaurant, categories, every mutation). Modal, confirm
-  // and drag-and-drop state stay here.
+  // State + data layer (restaurant, categories, every mutation). Modal and
+  // confirm state stay here.
   const {
     restaurant, categories, activeCategory, activeCategoryId, setActiveCategoryId,
-    loading, error, busy, publishBusy, themeSaving, presetBusy,
+    loading, error, setError, notice, setNotice, busy, publishBusy, themeSaving, presetBusy,
     fetchAll, saveTheme, uploadLogo,
     toggleCategoryVisibility, toggleItemAvailability, toggleItemOutOfStock,
     applyStarterPreset,
     saveCategory: persistCategory, deleteCategory: removeCategoryById, reorderCategories, moveCategory,
     saveItem: persistItem, deleteItem: removeItemById, reorderItems, moveItem,
-    togglePublish,
+    togglePublish, copy, fmt,
   } = useMenuBuilder({ id, isTr });
 
+  const { isViewer, loading: roleLoading } = useCurrentRole();
+  const isDesktop = useIsDesktop();
+
   const [categoryModal, setCategoryModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<CategoryShape> }>(null);
-  const [itemModal, setItemModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<MenuItemView> & { categoryId?: string } }>(null);
-  const [qrModal, setQrModal] = useState(false);
+  const [itemModal, setItemModal] = useState<null | { mode: 'create' | 'edit'; data: ItemDraft }>(null);
+  const [designOpen, setDesignOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [justPublished, setJustPublished] = useState(false);
   const [confirmDialog, askConfirm] = useConfirmDialog();
 
-  const copy = useMemo(() => buildMenuCopy(isTr), [isTr]);
+  const readiness = useMemo(() => getMenuReadiness(categories), [categories]);
 
-  // ── DnD sensors ──
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
-  );
+  // Admin switch off → the whole editing surface is locked. A viewer role is
+  // read-only too, and so is everything until the role has loaded (a viewer
+  // must never see editable controls that would answer 403).
+  const menuEnabled = restaurant?.menuEnabled ?? true;
+  const readOnly = !menuEnabled || isViewer || roleLoading;
+  const lockReason: MenuLockReason = !menuEnabled ? 'locked' : isViewer ? 'viewer' : null;
+
+  // `?edit=<itemId>` (from analytics) opens that item once; `?share=1` opens the
+  // QR dialog once. Both are removed from the URL afterwards. An unknown item
+  // (deleted since, other business) is ignored without a word.
+  const paramsHandled = useRef(false);
+  useEffect(() => {
+    if (paramsHandled.current || loading || !restaurant || roleLoading || previewMode) return;
+    paramsHandled.current = true;
+    const editId = searchParams?.get('edit') ?? null;
+    const wantsShare = searchParams?.get('share') === '1';
+    if (!editId && !wantsShare) return;
+
+    if (editId && !readOnly) {
+      const owner = categories.find((c) => c.items.some((i) => i.id === editId));
+      const item = owner?.items.find((i) => i.id === editId);
+      if (owner && item) {
+        setActiveCategoryId(owner.id);
+        setItemModal({ mode: 'edit', data: { ...item, categoryId: owner.id } });
+      }
+    }
+    if (wantsShare && restaurant.menuEnabled) setShareOpen(true);
+
+    const rest = new URLSearchParams(searchParams?.toString() ?? '');
+    rest.delete('edit');
+    rest.delete('share');
+    const query = rest.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [loading, restaurant, roleLoading, previewMode, readOnly, categories, searchParams, pathname, router, setActiveCategoryId]);
+
+  // ── Open dialogs ──
+  const openCategoryCreate = () => setCategoryModal({ mode: 'create', data: { isVisible: true } });
+  const openItemCreate = () => {
+    if (!activeCategory) return openCategoryCreate();
+    setItemModal({
+      mode: 'create',
+      data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 },
+    });
+  };
+  const openItemEdit = (item: MenuItemView) =>
+    setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory?.id } });
 
   // ── Category ops ──
   const saveCategory = async (payload: Partial<CategoryShape>): Promise<string | null> => {
@@ -72,56 +119,71 @@ export default function RestaurantMenuBuilderPage() {
     return err;
   };
 
-  const deleteCategory = (categoryId: string) => {
+  const askDeleteCategory = (c: CategoryShape) => {
+    const n = c.items.length;
     askConfirm({
-      title: isTr ? 'Kategori silinsin mi?' : 'Delete category?',
-      body: copy.deleteCategoryConfirm,
-      confirmLabel: isTr ? 'Sil' : 'Delete',
-      cancelLabel: isTr ? 'İptal' : 'Cancel',
+      title: n > 0 ? fmt.deleteCategoryWithItemsTitle(c.name, n) : fmt.deleteCategoryTitle(c.name),
+      body: n > 0 ? fmt.deleteCategoryWithItemsBody() : fmt.deleteCategoryBody(),
+      confirmLabel: n > 0 ? copy.deleteCategoryAndItems : copy.delete,
+      cancelLabel: copy.cancel,
       variant: 'danger',
-      onConfirm: () => removeCategoryById(categoryId),
+      onConfirm: async () => {
+        await removeCategoryById(c.id, { deleteItems: n > 0 });
+      },
     });
   };
 
-  const onCategoryDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = categories.findIndex((c) => c.id === active.id);
-    const newIndex = categories.findIndex((c) => c.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    await reorderCategories(arrayMove(categories, oldIndex, newIndex));
-  };
-
   // ── Item ops ──
-  const saveItem = async (
-    payload: Partial<MenuItemView> & { categoryId?: string },
-  ): Promise<string | null> => {
+  const saveItem = async (payload: ItemDraft): Promise<string | null> => {
     if (!itemModal) return null;
     const err = await persistItem(itemModal.mode, itemModal.data.id, payload);
     if (!err) setItemModal(null);
     return err;
   };
 
-  const deleteItem = (itemId: string) => {
+  const askDeleteItem = (item: MenuItemView) => {
     askConfirm({
-      title: isTr ? 'Ürün silinsin mi?' : 'Delete item?',
-      body: copy.deleteItemConfirm,
-      confirmLabel: isTr ? 'Sil' : 'Delete',
-      cancelLabel: isTr ? 'İptal' : 'Cancel',
+      title: fmt.deleteItemTitle(item.name),
+      body: fmt.deleteItemBody(),
+      confirmLabel: copy.delete,
+      cancelLabel: copy.cancel,
       variant: 'danger',
-      onConfirm: () => removeItemById(itemId),
+      onConfirm: () => removeItemById(item.id),
     });
   };
 
-  const onItemDragEnd = async (event: DragEndEvent) => {
-    if (!activeCategory) return;
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const items = activeCategory.items;
-    const oldIndex = items.findIndex((it) => it.id === active.id);
-    const newIndex = items.findIndex((it) => it.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    await reorderItems(activeCategory.id, arrayMove(items, oldIndex, newIndex));
+  // ── Publish ──
+  const publish = async () => {
+    const result = await togglePublish();
+    if (result === 'published') setJustPublished(true);
+  };
+  const askUnpublish = () => {
+    askConfirm({
+      title: copy.unpublishTitle,
+      body: copy.unpublishBody,
+      confirmLabel: copy.unpublish,
+      cancelLabel: copy.keepIt,
+      variant: 'danger',
+      onConfirm: async () => {
+        setJustPublished(false);
+        await togglePublish();
+      },
+    });
+  };
+
+  const onStep = (step: MenuStepId) => {
+    if (step === 'category') openCategoryCreate();
+    else if (step === 'items') openItemCreate();
+    else void publish();
+  };
+
+  const onApplyPreset = async (preset: Parameters<typeof applyStarterPreset>[0]) => {
+    const result = await applyStarterPreset(preset);
+    if (result.created > 0 && typeof window !== 'undefined' && window.innerWidth < 1024) {
+      requestAnimationFrame(() =>
+        document.getElementById('menu-items-pane')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      );
+    }
   };
 
   if (loading) {
@@ -163,12 +225,6 @@ export default function RestaurantMenuBuilderPage() {
     );
   }
 
-  const status = !restaurant.menuEnabled
-    ? { label: copy.disabled, dot: 'bg-[#737373]', text: 'text-[#737373]' }
-    : restaurant.menuPublished
-    ? { label: copy.published, dot: 'bg-[#16A34A]', text: 'text-[#166534]' }
-    : { label: copy.draft, dot: 'bg-[#D97706]', text: 'text-[#92400E]' };
-
   if (previewMode) {
     return (
       <div className="min-h-full">
@@ -197,341 +253,189 @@ export default function RestaurantMenuBuilderPage() {
     );
   }
 
+  const menuHref = `/${locale}/dashboard/restaurants/${id}/menu`;
+  const activeIndex = activeCategory ? categories.findIndex((c) => c.id === activeCategory.id) : -1;
+  const canDesign = restaurant.menuEnabled && !isViewer;
+
+  const previewButton = (
+    <button
+      type="button"
+      onClick={() => setPreviewOpen(true)}
+      className="bz-btn-ghost hidden lg:inline-flex min-[1400px]:hidden"
+    >
+      <Smartphone size={14} strokeWidth={2} />
+      {copy.previewRail}
+    </button>
+  );
+
   return (
     // Mobil bottom-nav boşluğu zaten shell <main>'de; burada tekrarlamak ~190px
     // boşluk bırakıyordu.
     <div className="mx-auto max-w-[1600px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
-        {restaurant.menuPublished && (
-          <div className="absolute inset-x-0 top-0 h-[3px] bg-[#C6F24E]" aria-hidden />
-        )}
-        {/* Soft accent halo + dotted texture so the header doesn't read as a flat
-            white card. Pure decoration — pointer-events-none + aria-hidden. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-[0.18] blur-3xl"
-          style={{ backgroundColor: restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#C6F24E' }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 1px 1px, #0A0A0A 1px, transparent 0)',
-            backgroundSize: '14px 14px',
-          }}
-        />
-        <div className="relative flex flex-col gap-5 p-6 sm:p-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 space-y-3">
-              {/* §38.72 — Back link target değişti: hub yerine restoran detail.
-                  1-restoran owner'da hub redirect'i (line 132) infinite loop
-                  riski yaratıyordu (`/menu` → `/restaurants/[id]/menu`).
-                  Detail page evrensel doğru parent — hub picker sidebar'dan
-                  erişilebilir kalır. Copy backToMenus → "İşletmeye Dön". */}
-              <Link
-                href={`/${locale}/dashboard/restaurants/${id}`}
-                className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
-              >
-                <ArrowLeft size={12} strokeWidth={2.25} />
-                {copy.backToMenus}
-              </Link>
-              {/* §38.73 — Pulse pattern eyebrow (Stage 1 §38.71 13 sayfada
-                  uygulanan disipline). Custom hero korunur (kullanıcı kararı),
-                  sadece eyebrow + description copy hint inline. */}
-              <div className="pulse-eyebrow text-[#525252]">{copy.eyebrow}</div>
-              <div className="flex items-center gap-3">
-                <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E] shadow-sm">
-                  <UtensilsCrossed size={20} strokeWidth={2} />
-                  {restaurant.menuPublished && (
-                    <span
-                      aria-hidden
-                      className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#16A34A] ring-2 ring-white"
-                    />
-                  )}
-                </span>
-                <h1 className="truncate text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A] sm:text-[32px]">
-                  {restaurant.name}
-                </h1>
-              </div>
-              <p className="text-[13px] leading-relaxed text-[#525252] max-w-[640px]">
-                {copy.pageDescription}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#737373]">
-                <span className={`inline-flex items-center gap-1.5 ${status.text}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} aria-hidden />
-                  <span className="font-medium">{status.label}</span>
-                </span>
-                {restaurant.menuUpdatedAt && (
-                  <>
-                    <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
-                    <span>{copy.lastUpdated}: {formatFullDateTimeInTimeZone(restaurant.menuUpdatedAt, locale === 'en' ? 'en' : 'tr')}</span>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
-                className="bz-btn"
-              >
+      <div className="space-y-3">
+        {/* Back goes to the business page (not the menu hub: with one business
+            the hub redirects straight back here). */}
+        <Link
+          href={`/${locale}/dashboard/restaurants/${id}`}
+          className="pulse-eyebrow inline-flex min-h-[32px] items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
+        >
+          <ArrowLeft size={12} strokeWidth={2.25} />
+          {copy.backToMenus}
+        </Link>
+        <PageHeader
+          className="!mb-0"
+          eyebrow={copy.eyebrow}
+          title={restaurant.name}
+          titleScale="compact"
+          description={<span className="hidden sm:inline">{copy.pageDescription}</span>}
+          actions={
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+              <Link href={`${menuHref}?preview=1`} className="bz-btn">
                 <Eye size={14} strokeWidth={2} />
                 {copy.preview}
               </Link>
-              <button
-                onClick={() => setQrModal(true)}
-                className="bz-btn"
-              >
-                <QrCode size={14} strokeWidth={2} />
-                {copy.menuQr}
-              </button>
-              <Link
-                href={`/${locale}/dashboard/restaurants/${id}/menu/analytics`}
-                className="bz-btn"
-              >
+              {canDesign && (
+                <button type="button" onClick={() => setDesignOpen(true)} disabled={roleLoading} className="bz-btn">
+                  <Palette size={14} strokeWidth={2} />
+                  {copy.design}
+                </button>
+              )}
+              {restaurant.menuEnabled && (
+                <button type="button" onClick={() => setShareOpen(true)} className="bz-btn">
+                  <QrCode size={14} strokeWidth={2} />
+                  <span className="sm:hidden">{copy.shareShort}</span>
+                  <span className="hidden sm:inline">{copy.shareAndQr}</span>
+                </button>
+              )}
+              <Link href={`${menuHref}/analytics`} className="bz-btn">
                 <BarChart3 size={14} strokeWidth={2} />
                 {copy.analytics}
               </Link>
-              {restaurant.menuPublished && (
-                <Link
-                  href={`/menu/${restaurant.slug}`}
-                  target="_blank"
-                  className="bz-btn"
-                >
-                  <ChevronRight size={14} strokeWidth={2} />
-                  {copy.viewPublic}
-                </Link>
-              )}
-              <button
-                onClick={togglePublish}
-                disabled={publishBusy || !restaurant.menuEnabled}
-                className={`${restaurant.menuPublished ? 'bz-btn-warn' : 'bz-btn-lime'} disabled:opacity-50`}
-              >
-                {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
-                {restaurant.menuPublished ? copy.unpublish : copy.publish}
-              </button>
             </div>
-          </div>
-          {!restaurant.menuEnabled && (
-            <AlertBanner kind="warn" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
-              {copy.disabledByAdmin}
+          }
+        />
+      </div>
+
+      <MenuStatusBar
+        isTr={isTr}
+        copy={copy}
+        fmt={fmt}
+        restaurant={restaurant}
+        readiness={readiness}
+        lockReason={lockReason}
+        readOnly={readOnly}
+        publishBusy={publishBusy}
+        justPublished={justPublished}
+        analyticsHref={`${menuHref}/analytics`}
+        onDismissPublished={() => setJustPublished(false)}
+        onPublish={publish}
+        onUnpublish={askUnpublish}
+        onOpenShare={() => setShareOpen(true)}
+        onStep={onStep}
+      />
+
+      {(error || notice) && (
+        <div className="space-y-3">
+          {error && (
+            <AlertBanner
+              kind="danger"
+              icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}
+              onDismiss={() => setError(null)}
+            >
+              {error}
+            </AlertBanner>
+          )}
+          {notice && (
+            <AlertBanner
+              kind="success"
+              icon={<CheckCircle2 size={14} strokeWidth={2} className="mt-0.5" />}
+              onDismiss={() => setNotice(null)}
+            >
+              <span aria-live="polite">{notice}</span>
             </AlertBanner>
           )}
         </div>
-      </div>
-
-      {error && (
-        <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
-          {error}
-        </AlertBanner>
       )}
 
-      {/* Menu Design (theme + accent color + logo) — yan panelde canlı
-          önizleme: tema/accent/logo değiştirildiğinde anlık müşteri
-          görünümü, save-and-see loop'u kaldırır. Mobile'da preview
-          panel gizli (340px phone mockup mobile'da kafa karıştırır).
-          Column 340px: 308 bezel + 16 stage padding + ~16 breathing. */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-        <ThemePanel
-          restaurant={restaurant}
+      {categories.length === 0 ? (
+        <MenuStarter
+          isTr={isTr}
           copy={copy}
-          locale={locale}
-          saving={themeSaving}
-          onChange={saveTheme}
-          onUploadLogo={uploadLogo}
+          sector={restaurant.category ? detectSector(restaurant.category) : null}
+          presetBusy={presetBusy}
+          readOnly={readOnly}
+          onApplyPreset={onApplyPreset}
+          onStartEmpty={openCategoryCreate}
         />
-        <MenuLivePreview
-          restaurant={restaurant}
-          categories={categories}
-          locale={locale}
-          published={restaurant.menuEnabled && restaurant.menuPublished}
-        />
-      </div>
+      ) : (
+        <>
+          <CategoryChips
+            categories={categories}
+            activeId={activeCategoryId}
+            readOnly={readOnly}
+            isTr={isTr}
+            copy={copy}
+            fmt={fmt}
+            onSelect={setActiveCategoryId}
+            onAdd={openCategoryCreate}
+          />
+          <div className="grid items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)] min-[1400px]:grid-cols-[240px_minmax(0,1fr)_320px]">
+            <CategoryColumn
+              categories={categories}
+              activeId={activeCategoryId}
+              readOnly={readOnly}
+              isTr={isTr}
+              copy={copy}
+              fmt={fmt}
+              onSelect={setActiveCategoryId}
+              onAdd={openCategoryCreate}
+              onRename={(c) => setCategoryModal({ mode: 'edit', data: c })}
+              onToggleVisible={toggleCategoryVisibility}
+              onMove={moveCategory}
+              onDelete={askDeleteCategory}
+              onReorder={reorderCategories}
+            />
 
-      {/* §38.73 — Mobile preview hint. MenuLivePreview lg:block; mobile owner
-          "preview nereye gitti?" diye düşünmesin diye küçük inline info card. */}
-      <div className="lg:hidden flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-2.5 text-[12px] text-[#525252]">
-        <Eye size={13} strokeWidth={2} className="shrink-0 text-[#737373]" />
-        <span>
-          {isTr
-            ? 'Canlı menü önizlemesi masaüstünde sağ tarafta görünür.'
-            : 'Live menu preview is shown on the right side on desktop.'}
-        </span>
-      </div>
-
-      {/* Two-pane builder */}
-      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
-        {/* Categories */}
-        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-[#EDEDED] px-5 py-4">
-            <div className="min-w-0">
-              <p className="pulse-eyebrow text-[#737373]">{copy.categories}</p>
-              <p className="mt-0.5 text-[11px] text-[#737373]">{categories.length} {isTr ? 'toplam' : 'total'}</p>
-            </div>
-            <button
-              onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-              disabled={!restaurant.menuEnabled}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3.5 py-1.5 text-[12px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus size={14} strokeWidth={2.25} />
-              {copy.addCategory}
-            </button>
-          </div>
-          {categories.length === 0 ? (
-            <div className="px-4 py-5">
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
-                  <UtensilsCrossed size={18} strokeWidth={2} />
-                </span>
-                <p className="max-w-[260px] text-[12px] leading-relaxed text-[#525252]">{copy.noCategories}</p>
-              </div>
-              {/* §38.73 — Boş state CTA Lime PRIMARY (header ile birebir).
-                  Eski graphite stil "neden farklı?" mental drift yaratıyordu;
-                  aynı semantik aksiyon = aynı görsel hiyerarşi (Pulse §11). */}
-              <button
-                onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-                disabled={!restaurant.menuEnabled}
-                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 text-[12px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Plus size={12} strokeWidth={2.25} />
-                {copy.addCategory}
-              </button>
-            </div>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onCategoryDragEnd}>
-              <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                <ul className="divide-y divide-[#F5F5F5]">
-                  {categories.map((c, idx) => (
-                    <SortableCategoryRow
-                      key={c.id}
-                      category={c}
-                      isActive={c.id === activeCategoryId}
-                      isFirst={idx === 0}
-                      isLast={idx === categories.length - 1}
-                      isTr={isTr}
-                      copy={copy}
-                      onSelect={() => {
-                        setActiveCategoryId(c.id);
-                        // Mobile UX: kategori değiştirince items pane'ne
-                        // smooth scroll yap (lg+'da two-pane zaten yan yana,
-                        // scroll gereksiz). Eskiden mobilde kategori
-                        // tıklayınca items pane görünmüyordu, kullanıcı
-                        // sayfayı manuel scroll etmek zorundaydı.
-                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                          requestAnimationFrame(() => {
-                            document
-                              .getElementById('menu-items-pane')
-                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          });
-                        }
-                      }}
-                      onMoveUp={() => moveCategory(idx, -1)}
-                      onMoveDown={() => moveCategory(idx, 1)}
-                      onToggleVisible={() => toggleCategoryVisibility(c)}
-                      onEdit={() => setCategoryModal({ mode: 'edit', data: c })}
-                      onDelete={() => deleteCategory(c.id)}
-                    />
-                  ))}
-                </ul>
-              </SortableContext>
-            </DndContext>
-          )}
-        </section>
-
-        {/* Items */}
-        <section
-          id="menu-items-pane"
-          className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm scroll-mt-20"
-        >
-          <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] px-5 py-4 sm:px-6">
-            <div className="min-w-0">
-              <p className="pulse-eyebrow text-[#737373]">{activeCategory ? copy.items : copy.categories}</p>
-              <h2 className="mt-1 truncate text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
-                {activeCategory ? activeCategory.name : copy.items}
-              </h2>
-              {activeCategory?.description && (
-                <p className="mt-1 line-clamp-1 text-[12px] text-[#737373]">{activeCategory.description}</p>
-              )}
-              {activeCategory && (
-                <p className="mt-1 text-[11px] text-[#737373]">
-                  {activeCategory.items.length} {isTr ? 'ürün' : 'items'}
-                </p>
-              )}
-            </div>
-            {activeCategory && (
-              <button
-                onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                disabled={!restaurant.menuEnabled}
-                className="bz-btn-primary bz-btn-sm shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Plus size={14} strokeWidth={2.25} />
-                {copy.addItem}
-              </button>
-            )}
-          </div>
-          {!activeCategory ? (
-            categories.length === 0 ? (
-              <MenuStarter
+            {activeCategory ? (
+              <ItemList
+                category={activeCategory}
+                categoryIndex={activeIndex}
+                categoryTotal={categories.length}
                 isTr={isTr}
-                presetBusy={presetBusy}
-                menuEnabled={restaurant.menuEnabled}
-                onApplyPreset={applyStarterPreset}
-                onStartEmpty={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
+                locale={locale}
+                readOnly={readOnly}
+                isDesktop={isDesktop}
+                copy={copy}
+                fmt={fmt}
+                headerExtra={previewButton}
+                onAddItem={openItemCreate}
+                onEditItem={openItemEdit}
+                onToggleSoldOut={toggleItemOutOfStock}
+                onToggleHidden={toggleItemAvailability}
+                onMoveItem={moveItem}
+                onDeleteItem={askDeleteItem}
+                onReorderItems={reorderItems}
+                onRenameCategory={() => setCategoryModal({ mode: 'edit', data: activeCategory })}
+                onToggleCategoryVisible={() => toggleCategoryVisibility(activeCategory)}
+                onMoveCategory={(dir) => moveCategory(activeIndex, dir)}
+                onDeleteCategory={() => askDeleteCategory(activeCategory)}
               />
             ) : (
-              <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#737373]">
-                  <ChevronRight size={24} strokeWidth={2} />
-                </span>
-                <p className="max-w-[260px] text-[13px] leading-relaxed text-[#525252]">{copy.noCategorySelected}</p>
-              </div>
-            )
-          ) : activeCategory.items.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
-                <ImageIcon size={24} strokeWidth={2} />
-              </span>
-              <p className="max-w-[280px] text-[13px] leading-relaxed text-[#525252]">{copy.noItems}</p>
-              <button
-                onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                disabled={!restaurant.menuEnabled}
-                className="bz-btn-primary bz-btn-sm mt-1 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Plus size={12} strokeWidth={2.25} />
-                {copy.addItem}
-              </button>
-            </div>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onItemDragEnd}>
-              <SortableContext items={activeCategory.items.map((it) => it.id)} strategy={verticalListSortingStrategy}>
-                <ul className="divide-y divide-[#F5F5F5]">
-                  {activeCategory.items.map((item, idx) => (
-                    <SortableItemRow
-                      key={item.id}
-                      item={item}
-                      idx={idx}
-                      isFirst={idx === 0}
-                      isLast={idx === activeCategory.items.length - 1}
-                      isTr={isTr}
-                      locale={locale}
-                      copy={copy}
-                      onMoveUp={() => moveItem(idx, -1)}
-                      onMoveDown={() => moveItem(idx, 1)}
-                      onToggleAvailable={() => toggleItemAvailability(item)}
-                      onToggleOutOfStock={() => toggleItemOutOfStock(item)}
-                      onEdit={() => setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory.id } })}
-                      onDelete={() => deleteItem(item.id)}
-                    />
-                  ))}
-                </ul>
-              </SortableContext>
-            </DndContext>
-          )}
-        </section>
-      </div>
+              <p className="rounded-3xl border border-[#EDEDED] bg-white px-6 py-16 text-center text-[13px] text-[#525252] shadow-sm">
+                {copy.noCategorySelected}
+              </p>
+            )}
 
-      {/* Category Modal */}
+            <MenuLivePreview
+              restaurant={restaurant}
+              categories={categories}
+              locale={locale}
+              published={restaurant.menuEnabled && restaurant.menuPublished}
+            />
+          </div>
+        </>
+      )}
+
       {categoryModal && (
         <CategoryModal
           mode={categoryModal.mode}
@@ -543,7 +447,6 @@ export default function RestaurantMenuBuilderPage() {
         />
       )}
 
-      {/* Item Modal */}
       {itemModal && (
         <ItemModal
           mode={itemModal.mode}
@@ -558,17 +461,46 @@ export default function RestaurantMenuBuilderPage() {
         />
       )}
 
-      {/* Menu QR Modal */}
-      {qrModal && (
-        <MenuQrModal
-          restaurantId={id}
-          slug={restaurant.slug}
-          copy={copy}
-          onClose={() => setQrModal(false)}
-        />
+      {/* The design panel and the QR dialog keep their current form until
+          they are rebuilt; here they only open from the header. */}
+      {designOpen && canDesign && (
+        <Modal size={760} title={copy.menuDesign} onClose={() => setDesignOpen(false)}>
+          <div className="space-y-4">
+            {error && (
+              <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+                {error}
+              </AlertBanner>
+            )}
+            <ThemePanel
+              restaurant={restaurant}
+              copy={copy}
+              locale={locale}
+              saving={themeSaving}
+              onChange={saveTheme}
+              onUploadLogo={uploadLogo}
+            />
+          </div>
+        </Modal>
       )}
 
-      {/* Imperative confirm dialog (deleteCategory + deleteItem) */}
+      {shareOpen && restaurant.menuEnabled && (
+        <MenuQrModal restaurantId={id} slug={restaurant.slug} copy={copy} onClose={() => setShareOpen(false)} />
+      )}
+
+      {/* 1024–1399px: no side column, so the live preview opens in a dialog. */}
+      {previewOpen && (
+        <Modal size={420} title={copy.previewRail} onClose={() => setPreviewOpen(false)}>
+          <MenuLivePreview
+            variant="inline"
+            restaurant={restaurant}
+            categories={categories}
+            locale={locale}
+            published={restaurant.menuEnabled && restaurant.menuPublished}
+          />
+        </Modal>
+      )}
+
+      {/* Imperative confirm dialog (delete category / item, take offline) */}
       {confirmDialog}
     </div>
   );

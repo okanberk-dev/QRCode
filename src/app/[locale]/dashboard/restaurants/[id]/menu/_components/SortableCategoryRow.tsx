@@ -1,26 +1,36 @@
-import { ArrowDown, ArrowUp, Edit2, Eye, EyeOff, GripVertical, Trash2 } from 'lucide-react';
+import { EyeOff, GripVertical } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { CategoryMenu } from './CategoryMenu';
+import type { MenuCopy, MenuFmt } from './menu-copy';
 import type { CategoryShape } from './menu-types';
 
+/**
+ * One row of the category column (desktop). The drag handle and the "⋯" are
+ * always visible — nothing hides behind hover — and the whole name area selects
+ * the category.
+ */
 export function SortableCategoryRow({
-  category, isActive, isFirst, isLast, isTr, copy,
-  onSelect, onMoveUp, onMoveDown, onToggleVisible, onEdit, onDelete,
+  category, index, total, isActive, readOnly, copy, fmt,
+  onSelect, onRename, onToggleVisible, onMove, onDelete,
 }: {
   category: CategoryShape;
+  index: number;
+  total: number;
   isActive: boolean;
-  isFirst: boolean;
-  isLast: boolean;
-  isTr: boolean;
-  copy: Record<string, string>;
+  readOnly: boolean;
+  copy: MenuCopy;
+  fmt: MenuFmt;
   onSelect: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  onRename: () => void;
   onToggleVisible: () => void;
-  onEdit: () => void;
+  onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: category.id,
+    disabled: readOnly,
+  });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -30,63 +40,54 @@ export function SortableCategoryRow({
     <li
       ref={setNodeRef}
       style={style}
-      className={`group relative flex items-center gap-1 px-3 py-2.5 text-sm transition-colors ${
+      className={`relative flex items-center gap-0.5 py-1.5 pl-1 pr-1.5 transition-colors ${
         isActive ? 'bg-[#EAF9B8]/40' : 'hover:bg-[#FAFAFA]'
       } ${isDragging ? 'z-10 rounded-xl bg-white shadow-lg ring-1 ring-[#EDEDED]' : ''}`}
     >
-      {isActive && (
-        <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-[#C6F24E]" aria-hidden />
+      {isActive && <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-[#C6F24E]" aria-hidden />}
+      {readOnly ? (
+        <span className="w-2 shrink-0" aria-hidden />
+      ) : (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label={`${copy.dragToReorder}: ${category.name}`}
+          className="flex h-9 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#737373] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] active:cursor-grabbing"
+        >
+          <GripVertical size={15} strokeWidth={2} />
+        </button>
       )}
       <button
-        {...attributes}
-        {...listeners}
-        aria-label={copy.dragToReorder}
-        className="flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-[#A3A3A3] opacity-0 transition-all hover:bg-[#EDEDED] hover:text-[#525252] group-hover:opacity-100 active:cursor-grabbing"
+        type="button"
+        onClick={onSelect}
+        aria-current={isActive ? 'true' : undefined}
+        className="flex min-h-[44px] min-w-0 flex-1 flex-col justify-center rounded-lg px-1.5 text-left"
       >
-        <GripVertical size={14} strokeWidth={2} />
+        <span className={`truncate text-[14px] ${isActive ? 'font-medium' : ''} text-[#0A0A0A]`}>{category.name}</span>
+        <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#737373]">
+          <span>{fmt.itemCount(category.items.length)}</span>
+          {!category.isVisible && (
+            <span className="inline-flex items-center gap-1 text-[#92400E]">
+              <EyeOff size={10} strokeWidth={2.25} />
+              {copy.hiddenBadge}
+            </span>
+          )}
+        </span>
       </button>
-      <button onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left">
-        <div className="min-w-0 flex-1">
-          <p className={`truncate text-[14px] ${isActive ? 'font-medium text-[#0A0A0A]' : 'text-[#0A0A0A]'}`}>
-            {category.name}
-          </p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#737373]">
-            <span>{category.items.length} {isTr ? 'ürün' : 'items'}</span>
-            {!category.isVisible && (
-              <>
-                <span className="h-0.5 w-0.5 rounded-full bg-[#EDEDED]" aria-hidden />
-                <span className="inline-flex items-center gap-1 text-[#92400E]">
-                  <EyeOff size={10} strokeWidth={2.25} />
-                  {copy.hidden}
-                </span>
-              </>
-            )}
-          </p>
-        </div>
-      </button>
-      <div // §38.238 — same hover-only trap as the item rows above.
-                  className="flex shrink-0 items-center gap-0.5 transition-opacity md:[@media(hover:hover)]:opacity-0 md:[@media(hover:hover)]:group-hover:opacity-100">
-        <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title={isTr ? 'Yukarı taşı' : 'Move up'} aria-label={isTr ? 'Yukarı taşı' : 'Move up'}>
-          <ArrowUp size={14} strokeWidth={2} />
-        </button>
-        <button onClick={onMoveDown} disabled={isLast} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title={isTr ? 'Aşağı taşı' : 'Move down'} aria-label={isTr ? 'Aşağı taşı' : 'Move down'}>
-          <ArrowDown size={14} strokeWidth={2} />
-        </button>
-        <button
-          onClick={onToggleVisible}
-          className={`bz-btn-icon ${category.isVisible ? '' : 'text-[#D97706]'}`}
-          title={copy.toggleVisible}
-          aria-label={copy.toggleVisible}
-        >
-          {category.isVisible ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
-        </button>
-        <button onClick={onEdit} className="bz-btn-icon" title={copy.editCategory} aria-label={copy.editCategory}>
-          <Edit2 size={14} strokeWidth={2} />
-        </button>
-        <button onClick={onDelete} className="bz-btn-icon text-[#DC2626] hover:bg-[#FEF2F2]" title={copy.delete} aria-label={copy.delete}>
-          <Trash2 size={14} strokeWidth={2} />
-        </button>
-      </div>
+      <CategoryMenu
+        category={category}
+        index={index}
+        total={total}
+        horizontal={false}
+        disabled={readOnly}
+        copy={copy}
+        fmt={fmt}
+        onRename={onRename}
+        onToggleVisible={onToggleVisible}
+        onMove={onMove}
+        onDelete={onDelete}
+      />
     </li>
   );
 }

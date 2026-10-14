@@ -37,22 +37,30 @@ interface MenuLivePreviewProps {
   /** Public menu is live (`menuEnabled && menuPublished`). Drafts have no
    *  public page yet, so the header link opens the in-panel preview. */
   published: boolean;
+  /**
+   * `rail` — the sticky side column of the builder (only from 1400px up).
+   * `inline` — plain block for use inside a modal (no sticky, no breakpoint).
+   */
+  variant?: 'rail' | 'inline';
 }
 
-export function MenuLivePreview({ restaurant, categories, locale, published }: MenuLivePreviewProps) {
+export function MenuLivePreview({ restaurant, categories, locale, published, variant = 'rail' }: MenuLivePreviewProps) {
   const isTr = locale === 'tr';
   // Public menu route is locale-less (`src/app/menu/[slug]`).
   const publicHref = `/menu/${restaurant.slug}`;
   const previewHref = `/${locale}/dashboard/restaurants/${restaurant.id}/menu?preview=1`;
 
+  const label = isTr ? 'Menü canlı önizlemesi' : 'Live menu preview';
+  // Masaüstü shell topbar'ı (~71px) da sticky; top-4 önizlemenin üst kısmını
+  // onun altına sokuyordu → topbar + 16px boşluk. `self-start`: a stretched
+  // grid item is as tall as the row and has no room to stick. The side column
+  // exists only from 1400px up (narrower, the item list would shrink to
+  // ~376px); between 1024 and 1399 the preview opens in a modal instead.
+  const Tag = variant === 'inline' ? 'div' : 'aside';
+  const wrapperClass = variant === 'inline' ? '' : 'sticky top-[87px] hidden self-start min-[1400px]:block';
+
   return (
-    <aside
-      // Masaüstü shell topbar'ı (~71px) da sticky; top-4 önizlemenin üst
-      // kısmını onun altına sokuyordu → topbar + 16px boşluk. `self-start`:
-      // a stretched grid item is as tall as the row and has no room to stick.
-      className="sticky top-[87px] hidden self-start lg:block"
-      aria-label={isTr ? 'Menü canlı önizlemesi' : 'Live menu preview'}
-    >
+    <Tag className={wrapperClass} aria-label={label} role={variant === 'inline' ? 'group' : undefined}>
       <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         {/* Header — eyebrow + spec + new-tab open shortcut */}
         <header className="flex items-center justify-between gap-2 border-b border-[#EDEDED] px-4 py-3">
@@ -167,7 +175,7 @@ export function MenuLivePreview({ restaurant, categories, locale, published }: M
           </p>
         </footer>
       </div>
-    </aside>
+    </Tag>
   );
 }
 
