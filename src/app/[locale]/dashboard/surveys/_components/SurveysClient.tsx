@@ -58,6 +58,7 @@ import { SECTORS } from '@/lib/sectors';
 import { estimateSurveySeconds, formatSurveyDuration } from '@/lib/surveys';
 import { templatesForSector, type SurveyTemplate, type SurveyTemplateIcon } from '@/lib/survey-templates';
 import type { SurveyListRow } from '@/lib/surveys-query';
+import { MENU_TOUCH } from './menu-touch';
 import {
   connectionErrorMessage,
   copyText,
@@ -619,7 +620,7 @@ export default function SurveysClient({
                           <MoreHorizontal size={18} aria-hidden="true" />
                         </button>
                       }
-                      className="min-w-[220px]"
+                      className={`min-w-[220px] ${MENU_TOUCH}`}
                     >
                       <PulseMenuItem
                         icon={<BarChart3 size={14} />}

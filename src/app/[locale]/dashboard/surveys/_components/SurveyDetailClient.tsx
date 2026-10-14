@@ -39,6 +39,7 @@ import type { PublicSurveyData } from '@/app/s/[slug]/PublicSurveyView';
 // dashboard, so it brings the same sheet along.
 import '@/app/s/[slug]/survey.css';
 import SurveyShareTab from './SurveyShareTab';
+import { MENU_TOUCH } from './menu-touch';
 import SurveyResultsTab from './SurveyResultsTab';
 import {
   connectionErrorMessage,
@@ -329,7 +330,7 @@ export default function SurveyDetailClient({
                   <MoreHorizontal size={18} aria-hidden="true" />
                 </button>
               }
-              className="min-w-[200px]"
+              className={`min-w-[200px] ${MENU_TOUCH}`}
             >
               <PulseMenuItem icon={<Smartphone size={14} />} onSelect={() => setPreviewOpen(true)}>
                 {isTr ? 'Önizle' : 'Preview'}

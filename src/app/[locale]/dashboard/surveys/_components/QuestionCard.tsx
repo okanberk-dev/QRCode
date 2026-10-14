@@ -34,6 +34,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { APSwitch, PulseMenu, PulseMenuItem, PulseMenuLabel } from '@/components/ui';
+import { MENU_TOUCH } from './menu-touch';
 import type { SurveyQuestionType } from '@/lib/surveys';
 import {
   OPTIONS_MAX,
@@ -78,10 +79,6 @@ interface QuestionCardProps {
   onDuplicate: () => void;
   onDelete: () => void;
 }
-
-// PulseMenu items are 35 px tall; on touch-sized screens every row gets the
-// 44 px target (the primitive takes no per-item class, so it is set on the menu).
-const MENU_TOUCH = 'max-lg:[&_.bz-menu-item]:min-h-11';
 
 const ICON_BTN =
   'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Copy, Download, Eye, Loader2, MessageCircle } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, PulseMenu, PulseMenuItem } from '@/components/ui';
+import { MENU_TOUCH } from './menu-touch';
 import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 import { copyText, type DetailSurvey } from './survey-owner-ui';
 
@@ -196,7 +197,7 @@ export default function SurveyShareTab({
                     {isTr ? 'Diğer biçimler' : 'Other formats'}
                   </button>
                 }
-                className="min-w-[260px]"
+                className={`min-w-[260px] ${MENU_TOUCH}`}
               >
                 <PulseMenuItem
                   icon={<Download size={14} />}
