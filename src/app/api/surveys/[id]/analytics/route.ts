@@ -4,7 +4,11 @@
 //  - totals: { responses, completed, completionRate } — kept for old clients
 //  - perQuestion: per-question aggregate (rating avg, nps score + segments,
 //      option distribution, text answers newest first)
-//  - trend: daily response count (chart)
+//
+// There is deliberately no day-by-day series here: nothing displays one, and
+// an in-memory version (oldest 5000 rows, UTC day buckets) would be wrong for
+// busy surveys and for the owner's local midnight. If a chart is ever added,
+// bucket in the database in the display time zone (CLAUDE.md §46).
 //
 // All arithmetic lives in lib/survey-analytics.ts; this route only fetches.
 
@@ -125,26 +129,6 @@ export async function GET(
     lastResponseAt: latestResponse?.createdAt ?? null,
   });
 
-  // Trend — daily count last N days. Group in memory (simpler than groupBy date_trunc).
-  const trendResponses = await prisma.surveyResponse.findMany({
-    where: responseWhere,
-    select: { createdAt: true, completedAt: true },
-    take: 5000,
-    orderBy: { createdAt: 'asc' },
-  });
-
-  const trendMap = new Map<string, { total: number; completed: number }>();
-  trendResponses.forEach((r) => {
-    const day = r.createdAt.toISOString().slice(0, 10);
-    const entry = trendMap.get(day) ?? { total: 0, completed: 0 };
-    entry.total += 1;
-    if (r.completedAt) entry.completed += 1;
-    trendMap.set(day, entry);
-  });
-  const trend = Array.from(trendMap.entries())
-    .map(([date, v]) => ({ date, total: v.total, completed: v.completed }))
-    .sort((a, b) => a.date.localeCompare(b.date));
-
   return NextResponse.json(
     {
       range,
@@ -160,7 +144,6 @@ export async function GET(
       },
       summary,
       perQuestion,
-      trend,
     },
     {
       headers: {
