@@ -51,10 +51,11 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 
 ### Görsel işleme akışı (menü)
 - Endpoint: `POST /api/restaurants/[id]/menu/upload` (scoped, IDOR-safe, `requireRestaurantAccess` ile korunur)
-- `sharp` ile resize + WebP dönüşüm: ürün görseli 1200px max, logo 512x512 cover
-- Quality 80 → boyut aşarsa otomatik 60'a düşürür → hala aşarsa 413 döner
+- `sharp` ile resize + WebP dönüşüm: ürün görseli **720px** max (kalite 72 → 55, tavan **90 KB**), logo 512x512 cover, kapak 1600x900
+- Hata kodları: `IMAGE_TOO_LARGE` / `IMAGE_UNPROCESSABLE` (UI ham sunucu metnini göstermez, `mapMenuApiError`)
 - Response: `{ url: 'data:image/webp;base64,...', bytes, kind }`
 - İstemci bu data URL'i `imageUrl` / `menuLogoUrl` alanına doğrudan kaydeder
+- **Herkese açık menü** data URL'i HTML/RSC yükünde taşımaz: görseller `GET /api/menu/[slug]/img/[itemId]` (`itemId=logo` dahil, uzun public immutable cache, yayında olmayan menü 404 no-store, `?v=` cache buster) üzerinden servis edilir; JSON-LD'de de data URL yok
 
 ### Validation
 - `src/lib/validations.ts` — `imageUrl` hem `http(s)://` URL'i hem `data:image/` prefix'li data URL kabul eder
@@ -465,6 +466,7 @@ Menü yapısı tek tip modern builder etrafında toplandı. Legacy `MenuEditor.t
 - **Quick toggle'lar:** Kategori satırında `isVisible` eye, ürün satırında `isAvailable` eye + `isOutOfStock` AlertTriangle. Modal açmadan tek tıkla değiştir — optimistic state + revert on failure.
 - **Menü QR:** `/api/restaurants/[id]/menu/qr?format=png|svg` → PNG/SVG indir. URL'de `?source=qr` attribution parametresi taşır (analytics attribution için kritik).
 - **Reorder perf:** `reorderCategories` / `reorderItems` sadece **error** durumunda `fetchAll()` çağırır (önceden her reorder'da yapıyordu — 2x network). Optimistic state zaten doğru.
+- **Yapı (2026-10, §38.243):** `page.tsx` ince orkestratör; durum/veri mantığı `_components/useMenuBuilder.ts` (başarılı create/update/delete yanıtı `menu-merge.ts` ile yerelde uygulanır, `fetchAll` yalnız ilk yükleme / starter / başarısız reorder / retry), bileşenler `_components/` altında: `MenuStatusBar` (taslak / yayında / kilitli tek şerit; boş menü yayını 409 `MENU_EMPTY`), `MenuStarter` (sektöre göre sıralı hazır başlangıçlar), `CategoryNav` + `CategoryMenu` (masaüstü sütun, mobil chip), `ItemList` + `MenuItemRow` (satır anahtarı = tükendi; "menüden gizle" satır menüsünde), `ItemEditorModal`, `BulkAddModal` ("liste yapıştır", `POST .../menu/items/bulk`), `MenuDesignModal`, `MenuShareModal` (QR renk uyarısı `X-Qr-Color-Adjusted`). Salt okunur durum (`!menuEnabled || viewer`): kontroller gizlenmez, devre dışı bırakılır, "paketi yükselt" vaadi yok. Dolu kategori silme: 409 `CATEGORY_NOT_EMPTY` + `itemCount`, onaydan sonra `?deleteItems=true`. URL: `?edit=<itemId>` ve `?share=1` bir kez işlenip `router.replace` ile temizlenir. `qr-colors.ts` `ensureScannableDark` (kontrast tabanı 3.0) QR'ın taranabilir kalmasını garanti eder.
 
 ### 12.2 Public menü & PublicMenuView
 
