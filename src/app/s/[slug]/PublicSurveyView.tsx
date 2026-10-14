@@ -209,8 +209,8 @@ function useTableNumber(enabled: boolean): string | null {
   return table;
 }
 
-function isAnswered(q: Question, val: AnswerValue | undefined): boolean {
-  if (!q.required) return true;
+/** The customer actually gave a value for this question (required or not). */
+function hasAnswerValue(q: Question, val: AnswerValue | undefined): boolean {
   if (!val) return false;
   switch (q.type) {
     case 'rating':
@@ -222,6 +222,10 @@ function isAnswered(q: Question, val: AnswerValue | undefined): boolean {
     case 'long_text':
       return !!val.textValue?.trim();
   }
+}
+
+function isAnswered(q: Question, val: AnswerValue | undefined): boolean {
+  return !q.required || hasAnswerValue(q, val);
 }
 
 export default function PublicSurveyView({
@@ -504,7 +508,14 @@ export default function PublicSurveyView({
 
   // Back is offered from the second question on and from the contact screen.
   const canBack = stage === 'contact' || (stage === 'question' && activeIdx > 0);
-  const canContinue = currentQuestion ? isAnswered(currentQuestion, currentValue) : false;
+  // A survey whose questions are ALL optional could otherwise be sent with
+  // nothing filled in. On the last question, with nothing answered anywhere,
+  // "continue"/"skip" stay closed until the customer answers something (the
+  // Back button still lets them answer an earlier question instead).
+  const hasAnyAnswer = survey.questions.some((q) => hasAnswerValue(q, answers[q.id]));
+  const needsOneAnswer = stage === 'question' && activeIdx + 1 >= totalSteps && !hasAnyAnswer;
+  const canContinue =
+    currentQuestion && !needsOneAnswer ? isAnswered(currentQuestion, currentValue) : false;
 
   // One-question surveys: the survey title sits above the question as a small
   // grey line — unless it only repeats the question.
@@ -622,7 +633,8 @@ export default function PublicSurveyView({
               goForward();
             }}
             accent={palette.onLight}
-            optional={!currentQuestion?.required}
+            optional={!currentQuestion?.required && !needsOneAnswer}
+            hint={needsOneAnswer ? 'Göndermeden önce en az bir soruyu yanıtla.' : null}
             compact={isPreview}
           />
         )}
@@ -1177,6 +1189,7 @@ function FooterBar({
   onSkip,
   accent,
   optional,
+  hint,
   compact,
 }: {
   canContinue: boolean;
@@ -1185,6 +1198,8 @@ function FooterBar({
   /** Contrast-protected fill + text for the light (#FFFFFF) surface. */
   accent: AccentPair;
   optional: boolean;
+  /** Short reason the button is closed (nothing answered yet). */
+  hint?: string | null;
   compact?: boolean;
 }) {
   return (
@@ -1229,6 +1244,15 @@ function FooterBar({
           />
         </svg>
       </button>
+      {hint && (
+        <p
+          role="status"
+          aria-live="polite"
+          style={{ margin: 0, textAlign: 'center', fontSize: 13, lineHeight: 1.45, color: '#6B6B66' }}
+        >
+          {hint}
+        </p>
+      )}
       {optional && (
         <button
           type="button"
