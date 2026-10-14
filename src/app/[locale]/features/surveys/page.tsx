@@ -154,7 +154,7 @@ export default async function SurveysPage({
         {
           icon: ClipboardList,
           title: '5 soru tipi',
-          body: 'Tek seçim, çoktan seçim, skala (1-5), yıldız (1-5), NPS (0-10), kısa metin, uzun metin, e-posta + telefon toplama. Zorunluluk + sıralama drag-drop ile yönetilir.',
+          body: 'Yıldız (1-5), tavsiye skoru (NPS, 0-10), tek seçim, kısa yazı ve uzun yazı. Soruları ⋯ menüsüyle yukarı/aşağı taşı, zorunlu yap, çoğalt veya sil.',
         },
         {
           icon: QrCode,
@@ -169,14 +169,14 @@ export default async function SurveysPage({
         {
           icon: Smile,
           title: 'Analiz + CSV',
-          body: 'Yanıt sayısı, tamamlanma oranı, soru başına NPS dağılımı, yıldız ortalaması, açık metinlerden örnek alıntılar. Excel\'e CSV indir; ek tool gerekmez.',
+          body: 'Yanıt sayısı, ortalama puan, tavsiye skoru (NPS) ve soru bazlı dağılım; yazılı yanıtlar soru soru görünür. Excel\'e CSV indir; ek tool gerekmez.',
         },
       ]
     : [
         {
           icon: ClipboardList,
           title: '5 question types',
-          body: 'Single choice, multi choice, scale (1-5), star (1-5), NPS (0-10), short text, long text, email + phone capture. Required flag + drag-drop ordering.',
+          body: 'Star (1-5), recommend score (NPS, 0-10), single choice, short text and long text. Move questions up or down with the ⋯ menu, make them required, duplicate or delete them.',
         },
         {
           icon: QrCode,
@@ -191,24 +191,24 @@ export default async function SurveysPage({
         {
           icon: Smile,
           title: 'Analytics + CSV',
-          body: 'Response count, completion rate, NPS distribution per question, star averages, sample quotes from open answers. CSV export to Excel; no extra tool required.',
+          body: 'Response count, average rating, recommend score (NPS) and a per-question breakdown; written answers are listed question by question. CSV export to Excel; no extra tool required.',
         },
       ];
 
   const featureList = isTr
     ? [
-        'Tek adımlık ve çok adımlı (multi-step) anket türleri',
-        '5 soru tipi: yıldız, NPS 0-10, skala 1-5, çoktan seçim, kısa/uzun metin',
+        '1 soruysa tek ekran, daha fazlaysa adım adım — anket kendiliğinden uyum sağlar',
+        '5 soru tipi: yıldız (1-5), tavsiye skoru (NPS 0-10), tek seçim, kısa yazı, uzun yazı',
         'QR ile dağıtım — her anket için ayrı slug + statik PNG/SVG',
-        'Mobil-first form (max-w-920px wizard), KVKK açık rıza onayı',
+        'Mobil-first, adım adım ilerleyen müşteri formu; iletişim bilgisi alırken KVKK açık rıza onayı',
         'Opsiyonel kupon ödülü + teşekkür mesajı, marka aksent rengi',
         'Yanıt analitiği + CSV dışa aktarım, IP retention 90 gün',
       ]
     : [
-        'Single-step and multi-step survey types',
-        '5 question types: star, NPS 0-10, scale 1-5, multi choice, short/long text',
+        'One question shows on a single screen, more run step by step — the survey adapts by itself',
+        '5 question types: star (1-5), recommend score (NPS 0-10), single choice, short text, long text',
         'QR distribution — per-survey slug + static PNG/SVG',
-        'Mobile-first form (max-w-920px wizard), KVKK explicit consent',
+        'Mobile-first, step-by-step customer form; KVKK explicit consent when contact details are collected',
         'Optional coupon reward + thank-you message, brand accent color',
         'Response analytics + CSV export, IP retention 90 days',
       ];
@@ -221,7 +221,7 @@ export default async function SurveysPage({
         },
         {
           q: 'Hangi soru tiplerini sunuyorsunuz?',
-          a: 'Yıldız (1-5), NPS (0-10), skala (1-5), çoktan seçim (tek veya çoklu), kısa metin, uzun metin, e-posta + telefon. Tek-adımlık (kısa anket) veya çok-adımlı (multi-step wizard) iki ana tip. Her soruda zorunluluk + sıralama drag-drop ile yönetilir.',
+          a: 'Yıldız (1-5), tavsiye skoru / NPS (0-10), tek seçim, kısa yazı ve uzun yazı. Tür seçmen gerekmez: 1 soru varsa anket tek ekranda, daha fazlaysa adım adım açılır. Her soruda zorunluluğu işaretler, soruları ⋯ menüsüyle yukarı/aşağı taşırsın. İletişim bilgisi bir soru tipi değil, isteğe bağlı son adımdır.',
         },
         {
           q: 'QR yapıştırmadan paylaşabilir miyim?',
@@ -243,7 +243,7 @@ export default async function SurveysPage({
         },
         {
           q: 'Which question types do you support?',
-          a: 'Star (1-5), NPS (0-10), scale (1-5), multiple choice (single or multi), short text, long text, email + phone. Single-step (short survey) or multi-step (wizard) as the two main types. Required flag + drag-drop ordering per question.',
+          a: 'Star (1-5), recommend score / NPS (0-10), single choice, short text and long text. You don\'t pick a survey type: one question shows on a single screen, more run step by step. Mark each question required and move questions up or down with the ⋯ menu. Contact details are not a question type, they are an optional last step.',
         },
         {
           q: 'Can I share without sticking a QR?',
@@ -269,8 +269,8 @@ export default async function SurveysPage({
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
     description: isTr
-      ? 'Müşteri memnuniyetini Google\'dan bağımsız ölçen Buaze anket modülü. NPS, CSAT, yıldız, çoktan seçim ve metin soruları; QR ile dağıtım, opsiyonel kupon teşviki, KVKK uyumu.'
-      : 'The Buaze survey module measures customer satisfaction independently of Google. NPS, CSAT, star, multiple-choice and text questions; QR distribution, optional coupon reward, KVKK compliance.',
+      ? 'Müşteri memnuniyetini Google\'dan bağımsız ölçen Buaze anket modülü. NPS, CSAT, yıldız, tek seçim ve metin soruları; QR ile dağıtım, opsiyonel kupon teşviki, KVKK uyumu.'
+      : 'The Buaze survey module measures customer satisfaction independently of Google. NPS, CSAT, star, single-choice and text questions; QR distribution, optional coupon reward, KVKK compliance.',
     offers: {
       '@type': 'Offer',
       price: '0',
@@ -316,16 +316,16 @@ export default async function SurveysPage({
     url: canonicalUrl,
     steps: isTr
       ? [
-          { name: 'Anket türünü seç', text: 'Buaze owner panelinde Anketler > Yeni anket altında tek-adımlık (kısa NPS) veya çok-adımlık (wizard) tipini seç.' },
-          { name: 'Soruları ekle', text: '5 soru tipinden seç (yıldız, NPS, skala, çoktan seçim, metin). Drag-drop ile sırala, zorunlu işaretle, soruyu çoğalt veya sil.' },
+          { name: 'Hazır bir şablon seç', text: 'Buaze panelinde Anketler > Yeni anket altında işletmene uygun hazır şablonlardan birini seç veya boş anketle başla. Soru sayısına göre anket kendiliğinden tek ekran ya da adım adım olur.' },
+          { name: 'Soruları ekle', text: '5 soru tipinden seç (yıldız, tavsiye skoru, tek seçim, kısa yazı, uzun yazı). Soruları ⋯ menüsüyle yukarı/aşağı taşı, zorunlu yap, çoğalt veya sil.' },
           { name: 'QR + paylaşım', text: 'Anket yayınlandığında otomatik üretilen `/s/[slug]` URL\'sini SMS / WhatsApp / e-posta ile paylaş; veya PNG/SVG QR\'ı indir, masaya / faturaya / kapıya yapıştır.' },
-          { name: 'Yanıtları analiz et', text: 'Owner panelde yanıt sayısı, tamamlanma oranı, soru başına NPS dağılımı, yıldız ortalaması ve açık metin alıntıları görünür. CSV olarak Excel\'e indir.' },
+          { name: 'Yanıtları analiz et', text: 'Panelde yanıt sayısı, ortalama puan, tavsiye skoru (NPS), soru bazlı dağılım ve yazılı yanıtlar görünür. CSV olarak Excel\'e indir.' },
         ]
       : [
-          { name: 'Pick a survey type', text: 'In the Buaze owner panel under Surveys > New survey, pick single-step (short NPS) or multi-step (wizard).' },
-          { name: 'Add questions', text: 'Choose from 5 question types (star, NPS, scale, multiple choice, text). Drag-drop to reorder, mark required, duplicate or delete a question.' },
+          { name: 'Pick a ready-made template', text: 'In the Buaze panel under Surveys > New survey, pick a ready-made template that fits your business or start from a blank survey. One question shows on a single screen, more run step by step.' },
+          { name: 'Add questions', text: 'Choose from 5 question types (star, recommend score, single choice, short text, long text). Move questions up or down with the ⋯ menu, mark them required, duplicate or delete them.' },
           { name: 'QR + sharing', text: 'Once published, share the auto-generated `/s/[slug]` URL via SMS / WhatsApp / email; or download the PNG/SVG QR and stick it on the table / receipt / door.' },
-          { name: 'Analyze responses', text: 'In the owner panel see response count, completion rate, NPS distribution per question, star average and open-text quotes. Export CSV to Excel.' },
+          { name: 'Analyze responses', text: 'In the panel see response count, average rating, recommend score (NPS), a per-question breakdown and written answers. Export CSV to Excel.' },
         ],
   });
 
@@ -494,8 +494,8 @@ export default async function SurveysPage({
                 </p>
                 <p>
                   {isTr
-                    ? 'Buaze\'in anket wizard\'ı bu kuralları default olarak uygular: drag-drop sıralama, zorunluluk işaretleme, marka aksent rengi, KVKK açık rıza onayı, opsiyonel kupon ödülü ve teşekkür mesajı. Tasarımdan yayına 5 dakika; tasarım dosyası, ek tool, başka login yok.'
-                    : 'Buaze\'s survey wizard applies these rules by default: drag-drop ordering, required flag, brand accent color, KVKK explicit consent, optional coupon reward and thank-you message. From design to publish in 5 minutes; no design files, no extra tool, no separate login.'}
+                    ? 'Buaze\'in anket editörü bu kuralları default olarak uygular: soru sıralama, zorunluluk işaretleme, marka aksent rengi, KVKK açık rıza onayı, opsiyonel kupon ödülü ve teşekkür mesajı. Tasarımdan yayına 5 dakika; tasarım dosyası, ek tool, başka login yok.'
+                    : 'Buaze\'s survey editor applies these rules by default: question ordering, required flag, brand accent color, KVKK explicit consent, optional coupon reward and thank-you message. From design to publish in 5 minutes; no design files, no extra tool, no separate login.'}
                 </p>
               </div>
             </div>
@@ -538,17 +538,17 @@ export default async function SurveysPage({
             {[
               {
                 l: isTr ? 'SORU TİPİ' : 'QUESTION TYPES',
-                v: '5+',
+                v: '5',
                 sub: isTr
-                  ? 'Yıldız, NPS, skala, çoktan seçim, metin (kısa + uzun)'
-                  : 'Star, NPS, scale, multiple choice, text (short + long)',
+                  ? 'Yıldız, tavsiye skoru (NPS), tek seçim, kısa yazı, uzun yazı'
+                  : 'Star, recommend score (NPS), single choice, short text, long text',
               },
               {
                 l: isTr ? 'HEDEF SÜRE' : 'TARGET TIME',
                 v: '<60sn',
                 sub: isTr
-                  ? 'Mobil-first wizard, 4-5 soru ile 60 saniyenin altında tamamlanır'
-                  : 'Mobile-first wizard finishes in under 60 seconds with 4-5 questions',
+                  ? 'Mobil-first form, 4-5 soru ile 60 saniyenin altında tamamlanır'
+                  : 'Mobile-first form finishes in under 60 seconds with 4-5 questions',
               },
               {
                 l: isTr ? 'DAĞITIM' : 'DISTRIBUTION',
