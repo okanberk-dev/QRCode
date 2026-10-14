@@ -171,14 +171,19 @@ export function MenuItemRow({
       </button>
 
       {hidden ? (
+        // Icon-only on phones: the labelled button left the name ~50px (cut to
+        // "Marg…") and pushed the row to ~107px. The "Hidden" chip beside the price
+        // and the "⋯" menu still say what it is; the label returns from sm up.
         <button
           type="button"
           onClick={onToggleHidden}
           disabled={readOnly}
-          className="bz-btn-ghost shrink-0 px-3 text-[12px] disabled:opacity-50"
+          aria-label={copy.showItem}
+          title={copy.showItem}
+          className="bz-btn-ghost h-11 w-11 shrink-0 px-0 text-[12px] disabled:opacity-50 sm:h-auto sm:w-auto sm:px-3"
         >
-          <Eye size={13} strokeWidth={2} />
-          {copy.showItem}
+          <Eye size={14} strokeWidth={2} />
+          <span className="hidden sm:inline">{copy.showItem}</span>
         </button>
       ) : (
         // 44px-tall hit area around the 28px switch; a tap beside the switch
