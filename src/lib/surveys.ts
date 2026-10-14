@@ -153,6 +153,27 @@ export function deriveSurveyType(questionCount: number): SurveyType {
   return questionCount === 1 ? 'single' : 'multi_step';
 }
 
+// ── Contact fields on the public form ───────────────────────────────────────
+
+/** Same limits the submit route enforces (z.string().email().max(200) / .max(40)). */
+export const CONTACT_EMAIL_MAX = 200;
+export const CONTACT_PHONE_MAX = 40;
+
+/**
+ * Identical to the pattern Zod's `z.string().email()` applies in the submit
+ * route (zod/v4/core/regexes `email`), so the form never accepts an address the
+ * server would reject and never blocks one it would accept. Pinned against Zod
+ * itself in tests/survey-helpers.test.ts.
+ */
+const CONTACT_EMAIL_PATTERN =
+  /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
+
+/** Surrounding spaces are ignored — the form trims before it sends. */
+export function isValidContactEmail(value: string): boolean {
+  const email = value.trim();
+  return email.length > 0 && email.length <= CONTACT_EMAIL_MAX && CONTACT_EMAIL_PATTERN.test(email);
+}
+
 // ── Duration shown to owners and customers (one function, 3.5-17) ───────────
 
 /** ~9 s per question plus 12 s to read the intro and send. */

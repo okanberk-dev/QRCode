@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { z } from 'zod';
 import {
+  CONTACT_EMAIL_MAX,
   COUPON_LABEL_REQUIRED_MESSAGE,
   OPTIONS_COUNT_MESSAGE,
   OPTIONS_DUPLICATE_MESSAGE,
@@ -17,6 +19,7 @@ import {
   formatSurveyDuration,
   getSurveyPublicBaseUrl,
   isCouponLabelMissing,
+  isValidContactEmail,
   isOptionLocked,
   isQuestionTypeLocked,
   optionKey,
@@ -732,4 +735,44 @@ test('SURVEY_EDIT_SELECT: the owner select plus a per-question answer count; the
   assert.equal(SURVEY_EDIT_SELECT._count.select.responses, true);
   // the shared select must not grow a per-question count
   assert.equal('_count' in SURVEY_OWNER_SELECT.questions.select, false);
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Contact e-mail on the public form
+// ────────────────────────────────────────────────────────────────────────────
+
+test('isValidContactEmail: the form accepts exactly what the submit route (z.string().email().max(200)) accepts', () => {
+  const route = z.string().email().max(CONTACT_EMAIL_MAX);
+  const samples = [
+    'ad@ornek.com',
+    'ad.soyad@ornek.com.tr',
+    'ad+etiket@ornek.com',
+    "o'neil@ornek.com",
+    'a@b.co',
+    'abc',
+    'abc@',
+    '@ornek.com',
+    'ad@ornek',
+    'ad@ornek..com',
+    'ad..soyad@ornek.com',
+    '.ad@ornek.com',
+    'ad.@ornek.com',
+    'ad @ornek.com',
+    'ad@orn ek.com',
+    'ad@ornek.c',
+    'ad@-ornek.com',
+    'ad@ornek.com.',
+    'türkçe@ornek.com',
+    `${'a'.repeat(CONTACT_EMAIL_MAX)}@ornek.com`,
+  ];
+  for (const sample of samples) {
+    assert.equal(isValidContactEmail(sample), route.safeParse(sample).success, JSON.stringify(sample));
+  }
+});
+
+test('isValidContactEmail: surrounding spaces are ignored (the form trims), empty is not an address', () => {
+  assert.equal(isValidContactEmail('  ad@ornek.com  '), true);
+  assert.equal(isValidContactEmail(''), false);
+  assert.equal(isValidContactEmail('   '), false);
+  assert.equal(isValidContactEmail('abc'), false);
 });

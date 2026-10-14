@@ -53,8 +53,11 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { getOrCreateSessionId } from '@/lib/analytics-session';
 import {
+  CONTACT_EMAIL_MAX,
+  CONTACT_PHONE_MAX,
   estimateSurveySeconds,
   formatSurveyDuration,
+  isValidContactEmail,
   surveyResponseShortId,
 } from '@/lib/surveys';
 import {
@@ -127,11 +130,41 @@ export interface PublicSurveyPreview {
 /** Delay between a pointer selection and the next question; 0 turns auto-advance off. */
 const AUTO_ADVANCE_MS = 380;
 
-const GENERIC_SUBMIT_ERROR = 'Gönderilemedi. Bağlantını kontrol edip tekrar dene.';
+// The request never got an answer (offline, dropped): the connection is the
+// likely cause, so this is the only place that says so.
+const NETWORK_SUBMIT_ERROR = 'Gönderilemedi. Bağlantını kontrol edip tekrar dene.';
+// The server answered but did not save (5xx, a rejected form we have no
+// specific words for): blaming the connection would send the customer on a
+// wild goose chase.
+const REJECTED_SUBMIT_ERROR = 'Gönderilemedi. Biraz sonra tekrar dene.';
+const EMAIL_ERROR = 'Geçerli bir e-posta adresi gir. Örnek: ad@ornek.com';
 // Server messages that are written for the customer (Turkish, no jargon).
 const CUSTOMER_FACING_ERRORS = new Set(['rate_limit', 'kvkk_required']);
 
-class SubmitError extends Error {}
+class SubmitError extends Error {
+  constructor(
+    message: string,
+    /** Set when the failure belongs to one form field, not the whole form. */
+    readonly field?: 'email',
+  ) {
+    super(message);
+  }
+}
+
+/** Does a 400 `validation_error` body name this field? (`issues[].path`) */
+function issuesMention(issues: unknown, field: string): boolean {
+  return (
+    Array.isArray(issues) &&
+    issues.some(
+      (i) =>
+        typeof i === 'object' &&
+        i !== null &&
+        typeof (i as { path?: unknown }).path === 'string' &&
+        ((i as { path: string }).path === field ||
+          (i as { path: string }).path.startsWith(`${field}.`)),
+    )
+  );
+}
 
 const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
   rating: 'Yıldız puanı',
@@ -236,6 +269,11 @@ export default function PublicSurveyView({
   const [contactPhone, setContactPhone] = useState('');
   const [kvkk, setKvkk] = useState(true);
   const [marketing, setMarketing] = useState(false);
+  // Inline e-mail problem (shown under the field). `emailFocusSignal` bumps on
+  // every rejected submit so the field takes focus again even if the message
+  // did not change.
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailFocusSignal, setEmailFocusSignal] = useState(0);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -353,6 +391,19 @@ export default function PublicSurveyView({
         setErrorMsg('KVKK onayı gereklidir.');
         return;
       }
+      // The e-mail is optional, but a typo must be fixed here: the server
+      // rejects it and a retry could never succeed. (Same rule as the server.)
+      if (
+        !skipContactValidation &&
+        survey.collectContact &&
+        contactEmail.trim() &&
+        !isValidContactEmail(contactEmail)
+      ) {
+        setErrorMsg(null);
+        setEmailError(EMAIL_ERROR);
+        setEmailFocusSignal((n) => n + 1);
+        return;
+      }
       if (isPreview) {
         // The preview shows the thank-you screen but sends nothing, stores no
         // session id and has no response to reference.
@@ -402,7 +453,13 @@ export default function PublicSurveyView({
           const j = (await res.json().catch(() => null)) as {
             error?: unknown;
             message?: unknown;
+            issues?: unknown;
           } | null;
+          // The server's e-mail check is the only form rule the customer can
+          // fix; show it at the field, in plain words.
+          if (j?.error === 'validation_error' && issuesMention(j.issues, 'email')) {
+            throw new SubmitError(EMAIL_ERROR, 'email');
+          }
           // Only messages written for customers are shown as-is; raw codes and
           // the English validation text never reach the screen.
           const customerFacing =
@@ -410,7 +467,7 @@ export default function PublicSurveyView({
             CUSTOMER_FACING_ERRORS.has(j.error) &&
             typeof j.message === 'string' &&
             j.message.trim();
-          throw new SubmitError(customerFacing ? (j!.message as string) : GENERIC_SUBMIT_ERROR);
+          throw new SubmitError(customerFacing ? (j!.message as string) : REJECTED_SUBMIT_ERROR);
         }
         const saved = (await res.json().catch(() => null)) as { responseId?: unknown } | null;
         setResponseId(
@@ -420,7 +477,13 @@ export default function PublicSurveyView({
         setSubmitted(true);
         setStage('thanks');
       } catch (err) {
-        setErrorMsg(err instanceof SubmitError ? err.message : GENERIC_SUBMIT_ERROR);
+        if (err instanceof SubmitError && err.field === 'email') {
+          setErrorMsg(null);
+          setEmailError(err.message);
+          setEmailFocusSignal((n) => n + 1);
+        } else {
+          setErrorMsg(err instanceof SubmitError ? err.message : NETWORK_SUBMIT_ERROR);
+        }
       } finally {
         submitLockRef.current = false;
         setSubmitting(false);
@@ -524,7 +587,13 @@ export default function PublicSurveyView({
               name={contactName}
               setName={setContactName}
               email={contactEmail}
-              setEmail={setContactEmail}
+              setEmail={(v) => {
+                setContactEmail(v);
+                // Editing the address clears its message; the next submit re-checks.
+                if (emailError) setEmailError(null);
+              }}
+              emailError={emailError}
+              emailFocusSignal={emailFocusSignal}
               phone={contactPhone}
               setPhone={setContactPhone}
               kvkk={kvkk}
@@ -1194,6 +1263,8 @@ function ContactScreen({
   setName,
   email,
   setEmail,
+  emailError,
+  emailFocusSignal,
   phone,
   setPhone,
   kvkk,
@@ -1212,6 +1283,10 @@ function ContactScreen({
   setName: (v: string) => void;
   email: string;
   setEmail: (v: string) => void;
+  /** Plain-words problem with the e-mail, shown under the field. */
+  emailError: string | null;
+  /** Bumps on every rejected submit; the e-mail field takes focus again. */
+  emailFocusSignal: number;
   phone: string;
   setPhone: (v: string) => void;
   kvkk: boolean;
@@ -1226,6 +1301,11 @@ function ContactScreen({
   const valid = kvkk && !submitting;
   // Real <label htmlFor> ↔ input ids for the three contact fields.
   const fieldId = useId();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const emailErrorId = `${fieldId}-email-error`;
+  useEffect(() => {
+    if (emailFocusSignal > 0) emailRef.current?.focus();
+  }, [emailFocusSignal]);
   return (
     <div
       className={direction === 'back' ? 'anim-slideL' : 'anim-slideR'}
@@ -1294,15 +1374,19 @@ function ContactScreen({
                 <LabelledField label="E-POSTA" labelWidth={80} htmlFor={`${fieldId}-email`}>
                   <input
                     id={`${fieldId}-email`}
+                    ref={emailRef}
                     className="bz-survey-field"
                     type="email"
                     style={{
                       paddingLeft: 92,
-                      borderColor: '#0A0A0A',
+                      borderColor: emailError ? '#C62A30' : '#0A0A0A',
                       borderWidth: 1.5,
                     }}
                     placeholder="ornek@mail.com"
                     value={email}
+                    maxLength={CONTACT_EMAIL_MAX}
+                    aria-invalid={emailError ? true : undefined}
+                    aria-describedby={emailError ? emailErrorId : undefined}
                     onChange={(e) => setEmail(e.target.value)}
                     inputMode="email"
                     autoCapitalize="off"
@@ -1325,6 +1409,16 @@ function ContactScreen({
                   }}
                 />
               </div>
+              {emailError && (
+                <p
+                  id={emailErrorId}
+                  role="alert"
+                  className="anim-fade"
+                  style={{ margin: '-2px 2px 0', fontSize: 12.5, lineHeight: 1.4, color: '#B4232A' }}
+                >
+                  {emailError}
+                </p>
+              )}
               <LabelledField label="TEL" labelWidth={48} htmlFor={`${fieldId}-phone`}>
                 <input
                   id={`${fieldId}-phone`}
@@ -1333,6 +1427,7 @@ function ContactScreen({
                   style={{ paddingLeft: 64 }}
                   placeholder="+90 5xx xxx xx xx"
                   value={phone}
+                  maxLength={CONTACT_PHONE_MAX}
                   onChange={(e) => setPhone(e.target.value)}
                   inputMode="tel"
                   autoComplete="tel"
