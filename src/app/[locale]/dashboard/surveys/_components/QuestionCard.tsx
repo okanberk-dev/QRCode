@@ -79,6 +79,10 @@ interface QuestionCardProps {
   onDelete: () => void;
 }
 
+// PulseMenu items are 35 px tall; on touch-sized screens every row gets the
+// 44 px target (the primitive takes no per-item class, so it is set on the menu).
+const MENU_TOUCH = 'max-lg:[&_.bz-menu-item]:min-h-11';
+
 const ICON_BTN =
   'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
@@ -203,7 +207,7 @@ export default function QuestionCard({
           ) : (
             <PulseMenu
               align="start"
-              className="min-w-[220px]"
+              className={`min-w-[220px] ${MENU_TOUCH}`}
               trigger={
                 <button
                   type="button"
@@ -236,7 +240,7 @@ export default function QuestionCard({
 
         <PulseMenu
           align="end"
-          className="min-w-[200px]"
+          className={`min-w-[200px] ${MENU_TOUCH}`}
           trigger={
             <button
               type="button"
