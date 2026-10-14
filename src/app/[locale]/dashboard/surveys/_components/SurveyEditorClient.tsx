@@ -582,7 +582,7 @@ export default function SurveyEditorClient({
   // ── Create + module off: only the notice ────────────────────────────────
   if (!isEdit && moduleOff) {
     return (
-      <div className="mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
+      <div data-survey-editor="" className="mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
         <div id={`${uid}-top`} className="flex min-h-11 items-center">
           <Link
             href={listHref}
@@ -593,7 +593,6 @@ export default function SurveyEditorClient({
           </Link>
         </div>
         <PageHeader
-          className="!mb-0"
           eyebrow={eyebrow}
           title={isTr ? 'Yeni anket' : 'New survey'}
         />
@@ -651,7 +650,7 @@ export default function SurveyEditorClient({
             <button
               type="button"
               id={`${uid}-save`}
-              className={`${showSaveAndPublish ? 'bz-btn-ghost' : 'bz-btn-primary'} min-h-11 flex-1 justify-center leading-tight sm:flex-none`}
+              className={`${showSaveAndPublish ? 'bz-btn-ghost' : 'bz-btn-primary'} min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4`}
               disabled={busy}
               onClick={() => void submit('save')}
             >
@@ -676,7 +675,7 @@ export default function SurveyEditorClient({
               <button
                 type="button"
                 id={`${uid}-save-publish`}
-                className="bz-btn-primary min-h-11 flex-1 justify-center leading-tight sm:flex-none"
+                className="bz-btn-primary min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4"
                 disabled={busy}
                 onClick={() => void submit('saveAndPublish')}
               >
@@ -700,7 +699,7 @@ export default function SurveyEditorClient({
             <button
               type="button"
               id={`${uid}-draft`}
-              className="bz-btn-ghost min-h-11 flex-1 justify-center leading-tight sm:flex-none"
+              className="bz-btn-ghost min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4"
               disabled={busy}
               onClick={() => void submit('draft')}
             >
@@ -716,7 +715,7 @@ export default function SurveyEditorClient({
             <button
               type="button"
               id={`${uid}-publish`}
-              className="bz-btn-primary min-h-11 flex-1 justify-center leading-tight sm:flex-none"
+              className="bz-btn-primary min-h-11 flex-1 justify-center whitespace-normal px-3 leading-tight sm:flex-none sm:whitespace-nowrap sm:px-4"
               disabled={busy}
               onClick={() => void submit('publish')}
             >
@@ -740,7 +739,7 @@ export default function SurveyEditorClient({
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
+    <div data-survey-editor="" className="mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
       <div id={`${uid}-top`} className="flex min-h-11 scroll-mt-24 items-center justify-between gap-3">
         <Link
           href={listHref}
@@ -760,7 +759,7 @@ export default function SurveyEditorClient({
         )}
       </div>
 
-      <PageHeader className="!mb-0" eyebrow={eyebrow} title={pageTitle} description={pageDescription} />
+      <PageHeader eyebrow={eyebrow} title={pageTitle} description={pageDescription} />
 
       {isEdit && moduleOff && <AlertBanner kind="warn">{MODULE_OFF_MESSAGE[locale]}</AlertBanner>}
 
@@ -843,7 +842,7 @@ export default function SurveyEditorClient({
                 >
                   <input
                     id={ids.title}
-                    className="bz-input scroll-mt-24 scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+120px)]"
+                    className="bz-input min-h-11 scroll-mt-24 scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+120px)]"
                     value={form.title}
                     maxLength={TITLE_MAX}
                     autoComplete="off"
@@ -1081,7 +1080,7 @@ export default function SurveyEditorClient({
                         <Field label={isTr ? 'Kupon kodu' : 'Coupon code'} htmlFor={ids.couponCode}>
                           <input
                             id={ids.couponCode}
-                            className="bz-input"
+                            className="bz-input min-h-11"
                             value={form.couponCode}
                             maxLength={40}
                             autoComplete="off"
@@ -1097,7 +1096,7 @@ export default function SurveyEditorClient({
                         >
                           <input
                             id={ids.couponLabel}
-                            className="bz-input"
+                            className="bz-input min-h-11"
                             value={form.couponLabel}
                             maxLength={120}
                             autoComplete="off"
@@ -1114,7 +1113,7 @@ export default function SurveyEditorClient({
 
             {/* Desktop: live phone preview, sticky below the topbar */}
             <aside
-              className="hidden self-start lg:sticky lg:top-[73px] lg:block"
+              className="hidden self-start lg:sticky lg:top-[88px] lg:block"
               aria-label={isTr ? 'Müşterinin göreceği ekran' : 'What customers will see'}
             >
               <p className="mb-2 text-center text-[12px] font-semibold text-[#525252]">

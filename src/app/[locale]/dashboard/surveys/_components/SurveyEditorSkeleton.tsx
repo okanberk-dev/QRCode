@@ -66,7 +66,7 @@ export default function SurveyEditorSkeleton() {
         </div>
 
         {/* Phone preview column (desktop only) */}
-        <div className="hidden self-start lg:sticky lg:top-[73px] lg:block">
+        <div className="hidden self-start lg:sticky lg:top-[88px] lg:block">
           <div className="mb-2 flex justify-center">
             <SkBox className="h-3 w-44" />
           </div>
