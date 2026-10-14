@@ -587,6 +587,7 @@ export function BusinessIntegrationSettings({
         restaurant={restaurant}
         locale={locale}
         dirty={dirty}
+        profileHref={`/${locale}/dashboard/google-reviews?restaurantId=${encodeURIComponent(restaurant.id)}`}
         onGoogleLinkSelected={handleGoogleLinkSelected}
       />
 

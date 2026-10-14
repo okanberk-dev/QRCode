@@ -123,6 +123,13 @@ export interface PlacesProfileSectionProps {
   focusSearch?: boolean;
   /** Anchor id of the reply section (link from the sample reviews). */
   replyAnchorId?: string;
+  /**
+   * What the server already knows (undefined = learn it from the requests):
+   * `canWrite` false → read-only card at once; `placesConfigured` false →
+   * the "search unavailable" row at once, no request.
+   */
+  canWrite?: boolean;
+  placesConfigured?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -134,6 +141,7 @@ interface ConnectCardProps {
   restaurants: PlacesPickerRestaurant[];
   locale: UiLocale;
   canWrite: boolean | undefined;
+  placesConfigured: boolean | undefined;
   autoSearch: boolean;
   autoFocus: boolean;
   notice: { kind: 'info' | 'warn'; text: string } | null;
@@ -147,6 +155,7 @@ function ConnectCard({
   restaurants,
   locale,
   canWrite,
+  placesConfigured,
   autoSearch,
   autoFocus,
   notice,
@@ -184,6 +193,7 @@ function ConnectCard({
         restaurants={restaurants}
         locale={locale}
         canWrite={canWrite}
+        placesConfigured={placesConfigured}
         autoSearch={autoSearch}
         autoFocus={autoFocus}
         onSelected={onSelected}
@@ -208,6 +218,8 @@ export function PlacesProfileSection({
   onSwitchBusiness,
   focusSearch = false,
   replyAnchorId = 'google-reply',
+  canWrite: serverCanWrite,
+  placesConfigured,
 }: PlacesProfileSectionProps) {
   const copy = COPY[locale];
   const placeId = resolveRestaurantPlaceId(restaurant);
@@ -269,7 +281,8 @@ export function PlacesProfileSection({
   const response = current.phase === 'done' ? current.response : null;
   const okProfile = response?.state === 'ok' ? response.profile : undefined;
   const okFetchedAt = response?.state === 'ok' ? response.fetchedAt : undefined;
-  const canWrite: boolean | undefined = forbidden ? false : response ? response.canWrite : undefined;
+  const canWrite: boolean | undefined =
+    forbidden || serverCanWrite === false ? false : response ? response.canWrite : serverCanWrite;
 
   // Tell the page what Google said, so the switcher's state word follows.
   const reportedRef = useRef<string>('');
@@ -441,6 +454,7 @@ export function PlacesProfileSection({
       restaurants={restaurants}
       locale={locale}
       canWrite={canWrite}
+      placesConfigured={placesConfigured}
       autoSearch={!cancel}
       autoFocus={Boolean(cancel) || focusSearch}
       notice={cancel ? null : connectNotice}

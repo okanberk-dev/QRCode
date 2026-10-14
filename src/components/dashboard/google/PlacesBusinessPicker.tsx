@@ -159,6 +159,12 @@ export interface PlacesBusinessPickerProps {
    * the truth from a 403.
    */
   canWrite?: boolean;
+  /**
+   * False when the server already knows Places search is not set up: the
+   * picker shows the "unavailable" row (with the manual-link button) at once
+   * and issues no request. `undefined` / `true` = search normally.
+   */
+  placesConfigured?: boolean;
   /** A form on the same page has unsaved changes: searching/selecting waits. */
   dirty?: boolean;
   /** Run ONE search on mount (once per browser session per business). Default true. */
@@ -175,6 +181,7 @@ export function PlacesBusinessPicker({
   restaurants,
   locale,
   canWrite,
+  placesConfigured,
   dirty = false,
   autoSearch = true,
   autoFocus = false,
@@ -195,9 +202,10 @@ export function PlacesBusinessPicker({
   }, [onForbidden]);
 
   const [query, setQuery] = useState(() => defaultPlacesSearchQuery(restaurant.name, restaurant.city));
-  const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const unconfigured = placesConfigured === false;
+  const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'error'>(unconfigured ? 'error' : 'idle');
   const [results, setResults] = useState<PlacesSearchResultRow[]>([]);
-  const [problem, setProblem] = useState<Problem | null>(null);
+  const [problem, setProblem] = useState<Problem | null>(unconfigured ? 'unavailable' : null);
   const [selecting, setSelecting] = useState<string | null>(null);
   const [selectError, setSelectError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
@@ -222,7 +230,7 @@ export function PlacesBusinessPicker({
 
   const runSearch = useCallback(async () => {
     const q = query.trim();
-    if (q.length < 2 || busyRef.current || dirty) return;
+    if (q.length < 2 || busyRef.current || dirty || unconfigured) return;
     busyRef.current = true;
     const seq = ++seqRef.current;
     setPhase('loading');
@@ -272,14 +280,14 @@ export function PlacesBusinessPicker({
     }
     // `rateWait.start` is stable; copy/locale are derived from `locale`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, dirty, restaurant.id, locale, markForbidden]);
+  }, [query, dirty, unconfigured, restaurant.id, locale, markForbidden]);
 
   // One automatic search per browser session per business. The ref makes the
   // React StrictMode double effect (next dev) harmless; the sessionStorage
   // boolean makes a reload show the prefilled field + the button instead of
   // billing a second search. No per-keystroke search, ever.
   useEffect(() => {
-    if (!autoSearch || readOnly || dirty || autoRanRef.current) return;
+    if (!autoSearch || unconfigured || readOnly || dirty || autoRanRef.current) return;
     if (query.trim().length < 2) return;
     autoRanRef.current = true;
     if (hasAutoSearched(restaurant.id)) return;
@@ -391,7 +399,8 @@ export function PlacesBusinessPicker({
   // `aria-disabled` (not the native attribute): a button that becomes natively
   // disabled while focused drops keyboard focus to <body>. Clicks are ignored
   // in the handlers instead.
-  const searchDisabled = phase === 'loading' || query.trim().length < 2 || dirty || rateWait.left > 0;
+  const searchDisabled =
+    phase === 'loading' || query.trim().length < 2 || dirty || rateWait.left > 0 || unconfigured;
   const DISABLED_CLS = 'aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:hover:translate-y-0';
 
   if (readOnly) {

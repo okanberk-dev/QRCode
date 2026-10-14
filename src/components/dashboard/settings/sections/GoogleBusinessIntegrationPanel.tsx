@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   CheckCircle2,
   ExternalLink,
   Loader2,
   MessageSquareText,
   RefreshCw,
-  Search,
 } from "lucide-react";
-import { AlertBanner, Field } from "@/components/ui";
+import { AlertBanner } from "@/components/ui";
 import { GoogleConnectFlashBanner } from "@/components/dashboard/google/GoogleConnectFlashBanner";
-import { ownerBodyMessage } from "@/components/dashboard/google/places-client";
+import { PlacesBusinessPicker } from "@/components/dashboard/google/PlacesBusinessPicker";
+import { ownerBodyMessage, type PlacesPickerRestaurant } from "@/components/dashboard/google/places-client";
 import { ownerGoogleMessage } from "@/lib/google-owner-copy";
+import { resolveRestaurantPlaceId } from "@/lib/google-places";
 import { SettingsCard } from "../SettingsCard";
 
 interface RestaurantData {
@@ -30,6 +32,12 @@ interface GoogleBusinessIntegrationPanelProps {
   locale: "tr" | "en";
   dirty: boolean;
   returnTo?: string;
+  /**
+   * Owner panels pass the Google Reviews page here: once the business is
+   * matched, a link points to its rating / profile check. Omitted by the admin
+   * hub (an owner URL means nothing there).
+   */
+  profileHref?: string | null;
   onGoogleLinkSelected: (next: {
     googlePlaceId: string | null;
     googleReviewUrl: string | null;
@@ -66,14 +74,6 @@ function formatRelativeTime(syncedAt: string | null, isTr: boolean): string | nu
   return isTr ? `${days} gün önce` : `${days}d ago`;
 }
 
-interface GooglePlace {
-  placeId: string;
-  displayName: string;
-  formattedAddress: string | null;
-  googleMapsUri: string | null;
-  businessStatus: string | null;
-}
-
 interface GoogleLocation {
   accountName: string;
   accountId: string;
@@ -86,26 +86,16 @@ interface GoogleLocation {
   newReviewUri: string | null;
 }
 
-function defaultQuery(restaurant: RestaurantData): string {
-  return [restaurant.name, restaurant.address, restaurant.city]
-    .filter((item): item is string => Boolean(item && item.trim()))
-    .join(" ");
-}
-
 export function GoogleBusinessIntegrationPanel({
   restaurant,
   locale,
   dirty,
   returnTo,
+  profileHref = null,
   onGoogleLinkSelected,
 }: GoogleBusinessIntegrationPanelProps) {
   const isTr = locale === "tr";
   const [status, setStatus] = useState<GoogleStatus | null>(null);
-  const [statusLoading, setStatusLoading] = useState(true);
-  const [query, setQuery] = useState(() => defaultQuery(restaurant));
-  const [places, setPlaces] = useState<GooglePlace[]>([]);
-  const [placesLoading, setPlacesLoading] = useState(false);
-  const [placesError, setPlacesError] = useState<string | null>(null);
   const [locations, setLocations] = useState<GoogleLocation[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [locationsError, setLocationsError] = useState<string | null>(null);
@@ -123,13 +113,6 @@ export function GoogleBusinessIntegrationPanel({
   // Auto-retry guard: backend "X saniye sonra" diyince countdown 0'a
   // gelince tek seferlik otomatik refresh tetiklensin. Sonsuz loop'tan
   // korunmak için tek-seferlik flag tutulur.
-
-  useEffect(() => {
-    setQuery(defaultQuery(restaurant));
-    // We intentionally read individual restaurant fields rather than the whole
-    // object — this avoids re-running on unrelated restaurant prop mutations.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurant.id, restaurant.name, restaurant.address, restaurant.city]);
 
   // 429 retry-after countdown: backend "X saniye sonra yenile" diyince
   // butonu disabled tut + her saniye azaltarak görsel feedback ver.
@@ -165,11 +148,30 @@ export function GoogleBusinessIntegrationPanel({
     return () => clearInterval(interval);
   }, [locationsRetryAfter]);
 
+  const pickerRestaurant = useMemo<PlacesPickerRestaurant>(
+    () => ({
+      id: restaurant.id,
+      name: restaurant.name ?? "",
+      city: restaurant.city ?? null,
+      address: restaurant.address ?? null,
+      googlePlaceId: restaurant.googlePlaceId ?? null,
+      googleReviewUrl: restaurant.googleReviewUrl ?? null,
+    }),
+    [
+      restaurant.id,
+      restaurant.name,
+      restaurant.city,
+      restaurant.address,
+      restaurant.googlePlaceId,
+      restaurant.googleReviewUrl,
+    ],
+  );
+  const linked = resolveRestaurantPlaceId(pickerRestaurant) !== null;
+
   const selectedLocation = status?.selectedLocation ?? null;
   const reviewManagementEnabled = status?.googleReviewManagementEnabled === true;
 
   const loadStatus = async () => {
-    setStatusLoading(true);
     try {
       const res = await fetch(`/api/restaurants/${restaurant.id}/google/business/status`);
       const data = await res.json();
@@ -177,8 +179,6 @@ export function GoogleBusinessIntegrationPanel({
       setStatus(data);
     } catch {
       setStatus(null);
-    } finally {
-      setStatusLoading(false);
     }
   };
 
@@ -188,61 +188,6 @@ export function GoogleBusinessIntegrationPanel({
     // change is the only intentional re-fetch trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant.id]);
-
-  const searchPlaces = async () => {
-    if (dirty) {
-      setPlacesError(isTr ? "Önce alttaki değişiklikleri kaydet." : "Save changes first.");
-      return;
-    }
-    setPlacesLoading(true);
-    setPlacesError(null);
-    try {
-      const res = await fetch(`/api/restaurants/${restaurant.id}/google/places/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, locale }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        // Mapped by machine code: server text is never shown to the owner.
-        setPlacesError(ownerBodyMessage(data, locale, "places_search_failed"));
-        return;
-      }
-      setPlaces(data?.places ?? []);
-    } catch {
-      setPlacesError(ownerGoogleMessage("places_search_failed", locale));
-    } finally {
-      setPlacesLoading(false);
-    }
-  };
-
-  const selectPlace = async (place: GooglePlace) => {
-    if (dirty) {
-      setPlacesError(isTr ? "Önce alttaki değişiklikleri kaydet." : "Save changes first.");
-      return;
-    }
-    setPlacesError(null);
-    try {
-      const res = await fetch(`/api/restaurants/${restaurant.id}/google/places/select`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ placeId: place.placeId }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setPlacesError(ownerBodyMessage(data, locale));
-        return;
-      }
-      onGoogleLinkSelected({
-        googlePlaceId: data?.restaurant?.googlePlaceId ?? place.placeId,
-        googleReviewUrl: data?.restaurant?.googleReviewUrl ?? null,
-        googleEnabled: true,
-      });
-      setPlaces([]);
-    } catch {
-      setPlacesError(ownerGoogleMessage(null, locale));
-    }
-  };
 
   const connectGoogle = async () => {
     const callbackTarget = returnTo ?? `/${locale}/dashboard/platforms?restaurantId=${restaurant.id}`;
@@ -431,97 +376,29 @@ export function GoogleBusinessIntegrationPanel({
         <GoogleConnectFlashBanner locale={locale} />
 
         <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end">
-            <Field
-              label={isTr ? "Google'da işletme ara" : "Search business on Google"}
-              hint={
-                statusLoading ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-                    {isTr ? "Google durumu kontrol ediliyor…" : "Checking Google…"}
-                  </span>
-                ) : !status?.placesConfigured ? (
-                  // Never surface env-var names to the owner. The "Link" field
-                  // only exists on the platform page (the caller passing returnTo).
-                  returnTo ? (
-                    isTr
-                      ? 'Google araması şu an kullanılamıyor. Linki aşağıdaki "Link" alanına elle yapıştırabilirsiniz.'
-                      : 'Google search is unavailable right now. You can paste the link into the "Link" field below.'
-                  ) : isTr ? (
-                    "Google araması şu an kullanılamıyor."
-                  ) : (
-                    "Google search is unavailable right now."
-                  )
-                ) : isTr ? (
-                  "Ad + adres ile ara; doğru sonucu seçince yorum linki otomatik kaydedilir."
-                ) : (
-                  "Search by name + address; selecting a result saves the review link."
-                )
-              }
+          <PlacesBusinessPicker
+            restaurant={pickerRestaurant}
+            restaurants={[pickerRestaurant]}
+            locale={locale}
+            dirty={dirty}
+            // Settings / platform / admin pages never start a billed search on
+            // their own — only the Google Reviews page does.
+            autoSearch={false}
+            onSelected={(placeId, _name, result) =>
+              onGoogleLinkSelected({
+                googlePlaceId: result.restaurant?.googlePlaceId ?? placeId,
+                googleReviewUrl: result.restaurant?.googleReviewUrl ?? null,
+                googleEnabled: true,
+              })
+            }
+          />
+          {profileHref && linked && (
+            <Link
+              href={profileHref}
+              className="mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
             >
-              <input
-                className="bz-input"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={isTr ? "İşletme adı, şehir, adres" : "Business name, city, address"}
-                disabled={!status?.placesConfigured}
-              />
-            </Field>
-            <button
-              type="button"
-              className="bz-btn-primary inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
-              style={{ minHeight: 44 }}
-              onClick={searchPlaces}
-              disabled={!status?.placesConfigured || placesLoading || query.trim().length < 2 || dirty}
-            >
-              {placesLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-              {isTr ? "Ara" : "Search"}
-            </button>
-          </div>
-          {dirty && (
-            <p className="mt-2 text-[12px] text-[#92400E]">
-              {isTr ? "Google seçimi yapmadan önce alttaki değişiklikleri kaydet." : "Save the changes below before selecting a Google result."}
-            </p>
-          )}
-          {placesError && <div className="mt-3"><AlertBanner kind="danger">{placesError}</AlertBanner></div>}
-          {places.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <p className="pulse-eyebrow text-[#525252]">
-                {isTr ? "Sonuçlar: Google Maps" : "Results: Google Maps"}
-              </p>
-              {places.map((place) => (
-                <div
-                  key={place.placeId}
-                  className="flex flex-col gap-3 rounded-xl border border-[#EDEDED] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <div className="bz-h-tight text-[14px]">{place.displayName}</div>
-                    <div className="mt-1 text-[12px] text-[#737373]">{place.formattedAddress}</div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {place.googleMapsUri && (
-                      <a
-                        href={place.googleMapsUri}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px]"
-                      >
-                        <ExternalLink size={13} />
-                        Maps
-                      </a>
-                    )}
-                    <button
-                      type="button"
-                      className="bz-btn-primary inline-flex items-center gap-1.5 rounded-full text-[12px]"
-                      onClick={() => selectPlace(place)}
-                    >
-                      <CheckCircle2 size={13} />
-                      {isTr ? "Seç" : "Select"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+              {isTr ? "Puanını ve profil eksiklerini gör →" : "See your rating and profile gaps →"}
+            </Link>
           )}
         </div>
 
