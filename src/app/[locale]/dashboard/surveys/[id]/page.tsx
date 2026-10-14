@@ -28,7 +28,7 @@ export async function generateMetadata({
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
-  searchParams: Promise<{ tab?: string; new?: string }>;
+  searchParams: Promise<{ tab?: string; new?: string; saved?: string }>;
 }
 
 export default async function SurveyDetailPage({ params, searchParams }: PageProps) {
@@ -105,6 +105,7 @@ export default async function SurveyDetailPage({ params, searchParams }: PagePro
       canWrite={canWrite}
       initialTab={initialTab}
       justCreated={sp.new === '1'}
+      justSaved={sp.saved === '1'}
     />
   );
 }

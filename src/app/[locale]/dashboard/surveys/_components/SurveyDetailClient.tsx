@@ -71,6 +71,8 @@ interface Props {
   initialTab: TabId;
   /** Arrived right after creating the survey (`?new=1`). */
   justCreated: boolean;
+  /** Arrived right after saving an edit (`?saved=1`). */
+  justSaved?: boolean;
 }
 
 export default function SurveyDetailClient({
@@ -81,6 +83,7 @@ export default function SurveyDetailClient({
   canWrite,
   initialTab,
   justCreated,
+  justSaved = false,
 }: Props) {
   const isTr = locale === 'tr';
   const router = useRouter();
@@ -88,7 +91,9 @@ export default function SurveyDetailClient({
   const [tab, setTab] = useState<TabId>(initialTab);
   const [busy, setBusy] = useState<'publish' | 'duplicate' | 'delete' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(
+    justSaved && !justCreated ? (isTr ? 'Değişiklikler kaydedildi.' : 'Changes saved.') : null,
+  );
   const [createdBanner, setCreatedBanner] = useState(justCreated);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmEl, askConfirm] = useConfirmDialog();
