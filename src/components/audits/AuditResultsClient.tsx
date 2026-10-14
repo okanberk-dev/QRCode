@@ -1,162 +1,198 @@
 'use client';
 
-// CLAUDE.md §42 Phase 4 — Owner audit results client.
+// Denetim Merkezi — sonuçlar (spec §3.6).
+//
+// Sayfa sunucudan gelir (ilk boyamada iskelet yok). Üstten alta: özet kutuları
+// (gerçek toplamlar), "Dikkat edilecek maddeler", filtreler, sayfalı liste.
+// Rakamlar HER ZAMAN tüm filtrelenmiş kümeden (aggregate) gelir; liste yalnız
+// 50'şerli sayfalardır — "Daha fazla göster" bir sonrakini ekler.
 
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  BarChart3,
-  Download,
-  Loader2,
-  Search,
-} from 'lucide-react';
+import { ArrowLeft, BarChart3, ChevronRight, Download, Loader2, Search, Share2 } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
-  type BadgeKind,
   BarChart,
   EmptyState,
-  PageHeader,
   PulseSelect,
-  TableSkeleton,
+  PageHeader,
 } from '@/components/ui';
-import { getTranslations, type Locale } from '@/lib/translations';
-import { resolveDisplayTimeZone } from '@/lib/timezone';
-import type { AuditScoringMode } from '@/lib/audits/types';
-import {
-  parseAuditErrorResponse,
-  summarizeAuditError,
-} from '@/lib/audits/error-humanizer';
+import type { Locale } from '@/lib/translations';
+import type {
+  AuditMissSummary,
+  AuditResponseListRow,
+  AuditResponsesPage,
+  AuditResultsInitial,
+} from '@/lib/audits/queries';
+import { parseAuditErrorResponse, summarizeAuditError } from '@/lib/audits/error-humanizer';
+import { formatResponseStamp, itemsCount, kindLabel, responsesCount } from './audit-ui';
+import ChipRadioGroup from './ChipRadioGroup';
+import Disclosure from './Disclosure';
+import ShareLinksModal from './ShareLinksModal';
 
-interface ResponseRow {
-  id: string;
-  respondentName: string | null;
-  respondentEmail: string | null;
-  respondentPhone: string | null;
-  teamMemberId: string | null;
-  score: number | null;
-  scorePercentage: number | null;
-  passed: boolean | null;
-  startedAt: string;
-  completedAt: string | null;
-  reviewedById: string | null;
-  reviewedAt: string | null;
-  assignmentId: string | null;
-  createdAt: string;
-}
-
-interface Summary {
-  total: number;
-  completed: number;
-  averageScore: number | null;
-  passedCount: number;
-  passingScore: number | null;
-}
-
-interface Distribution {
-  bucket: string;
-  min: number;
-  max: number;
-  count: number;
-}
-
-interface FetchResponse {
-  data: ResponseRow[];
-  summary: Summary;
-  distribution: Distribution[];
-}
+type RangeFilter = '7d' | '30d' | '90d' | 'all';
+type PassedFilter = 'all' | 'true' | 'false';
 
 interface Props {
   locale: Locale;
-  template: {
-    id: string;
-    restaurantId: string;
-    title: string;
-    scoringMode: AuditScoringMode;
-    passingScore: number | null;
-  };
+  initial: AuditResultsInitial;
+  /** Denetimdeki madde sayısı (paylaşım penceresi için). */
+  questionCount: number;
+  /** Tanım gereği puanlanabilir madde sayısı; 0 ise "tümü tamam" denemez. */
+  evaluableCount: number;
+  /** Filtreden bağımsız toplam yanıt (boş durum ayrımı). */
+  responseCountAllTime: number;
+  appUrl: string;
+  /** Salt-okunur (viewer) üyeler paylaşım penceresini açamaz. */
+  canWrite: boolean;
 }
 
-type RangeFilter = '7d' | '30d' | '90d' | 'all';
-type StatusFilter = 'all' | 'completed' | 'in_progress';
-type PassedFilter = 'all' | 'true' | 'false';
+const CSV_CAP = 5000;
+const MISS_PREVIEW = 5;
+const HISTOGRAM_MIN_RESPONSES = 5;
 
-export default function AuditResultsClient({ locale, template }: Props) {
-  const t = getTranslations(locale);
-  // Filtre etiketlerini kontrollerine bağlar (label htmlFor yoktu).
-  const filterIdBase = useId();
-  const [range, setRange] = useState<RangeFilter>('30d');
-  const [status, setStatus] = useState<StatusFilter>('completed');
+function isRange(v: string): v is RangeFilter {
+  return v === '7d' || v === '30d' || v === '90d' || v === 'all';
+}
+
+export default function AuditResultsClient({
+  locale,
+  initial,
+  questionCount,
+  evaluableCount,
+  responseCountAllTime,
+  appUrl,
+  canWrite,
+}: Props) {
+  const isTr = locale === 'tr';
+  const ui = isTr ? 'tr' : 'en';
+  const { template } = initial;
+  const idBase = useId();
+  const hasPassMark = template.passingScore !== null;
+  const archived = template.status === 'archived';
+
+  const [range, setRange] = useState<RangeFilter>(isRange(initial.range) ? initial.range : '30d');
   const [passedFilter, setPassedFilter] = useState<PassedFilter>('all');
-  const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [data, setData] = useState<FetchResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
+  const [search, setSearch] = useState('');
 
-  // Debounce search
+  const [page, setPage] = useState<AuditResponsesPage>(initial.responses);
+  const [rows, setRows] = useState<AuditResponseListRow[]>(initial.responses.data);
+  const [misses, setMisses] = useState<AuditMissSummary>(initial.misses);
+
+  const [listLoading, setListLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showHistogram, setShowHistogram] = useState(false);
+  const [showAllMisses, setShowAllMisses] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const apiBase = `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}`;
+  const base = `/${locale}/dashboard/audits`;
+
+  // Aramayı 400 ms geciktir.
   useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput.trim()), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
+    return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const buildQs = useCallback(() => {
-    const qs = new URLSearchParams();
-    if (range !== 'all') qs.set('range', range);
-    if (status !== 'all') qs.set('status', status);
-    if (passedFilter !== 'all') qs.set('passed', passedFilter);
-    if (search) qs.set('search', search);
-    return qs;
-  }, [range, status, passedFilter, search]);
+  const filterKey = `${range}|${passedFilter}|${search}`;
+  const loadedKeyRef = useRef(filterKey);
+  const missRangeRef = useRef<RangeFilter>(range);
+  // Eski bir yanıtın yenisini ezmesini engeller (hızlı filtre değişimi).
+  const requestRef = useRef(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const buildQuery = useCallback(
+    (pageNo: number) => {
+      const qs = new URLSearchParams();
+      if (range !== 'all') qs.set('range', range);
+      if (hasPassMark && passedFilter !== 'all') qs.set('passed', passedFilter);
+      if (search) qs.set('search', search);
+      qs.set('page', String(pageNo));
+      return qs.toString();
+    },
+    [range, passedFilter, search, hasPassMark],
+  );
+
+  const fetchFirstPage = useCallback(async () => {
+    const reqId = ++requestRef.current;
+    setListLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses?${buildQs().toString()}`,
-      );
-      if (!res.ok) {
-        const parsed = await parseAuditErrorResponse(res, locale);
-        setError(summarizeAuditError(parsed));
+      const needMisses = missRangeRef.current !== range;
+      const [listRes, missRes] = await Promise.all([
+        fetch(`${apiBase}/responses?${buildQuery(1)}`),
+        needMisses
+          ? fetch(`${apiBase}/summary${range !== 'all' ? `?range=${range}` : ''}`)
+          : Promise.resolve(null),
+      ]);
+      if (reqId !== requestRef.current) return;
+      if (!listRes.ok) {
+        setError(summarizeAuditError(await parseAuditErrorResponse(listRes, locale)));
         return;
       }
-      const json = (await res.json()) as FetchResponse;
-      setData(json);
+      const next = (await listRes.json()) as AuditResponsesPage;
+      if (reqId !== requestRef.current) return;
+      setPage(next);
+      setRows(next.data);
+      if (missRes) {
+        if (missRes.ok) {
+          setMisses((await missRes.json()) as AuditMissSummary);
+          missRangeRef.current = range;
+        } else {
+          setError(summarizeAuditError(await parseAuditErrorResponse(missRes, locale)));
+        }
+      }
     } catch {
-      setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
+      if (reqId === requestRef.current) setError(isTr ? 'Bağlantı hatası' : 'Connection error');
     } finally {
-      setLoading(false);
+      if (reqId === requestRef.current) setListLoading(false);
     }
-  }, [template.restaurantId, template.id, buildQs, locale]);
+  }, [apiBase, buildQuery, range, locale, isTr]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (filterKey === loadedKeyRef.current) return; // sunucudan gelen ilk veri
+    loadedKeyRef.current = filterKey;
+    void fetchFirstPage();
+    // yalnız filtre değişince
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
 
-  const histogram = useMemo(() => {
-    if (!data) return [];
-    return data.distribution.map((d) => ({ label: d.bucket, value: d.count }));
-  }, [data]);
-
-  const maxBucket = useMemo(() => {
-    if (!histogram.length) return 0;
-    return Math.max(...histogram.map((d) => d.value));
-  }, [histogram]);
+  async function loadMore() {
+    if (loadingMore || !page.meta.hasMore) return;
+    const reqId = requestRef.current;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const res = await fetch(`${apiBase}/responses?${buildQuery(page.meta.page + 1)}`);
+      if (reqId !== requestRef.current) return;
+      if (!res.ok) {
+        setError(summarizeAuditError(await parseAuditErrorResponse(res, locale)));
+        return;
+      }
+      const next = (await res.json()) as AuditResponsesPage;
+      if (reqId !== requestRef.current) return;
+      setPage(next);
+      setRows((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...next.data.filter((r) => !seen.has(r.id))];
+      });
+    } catch {
+      setError(isTr ? 'Bağlantı hatası' : 'Connection error');
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function handleExport() {
     setExporting(true);
     setError(null);
     try {
-      const qs = buildQs();
-      const res = await fetch(
-        `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses/export?${qs.toString()}`,
-      );
+      const res = await fetch(`${apiBase}/responses/export`);
       if (!res.ok) {
-        const parsed = await parseAuditErrorResponse(res, locale);
-        setError(summarizeAuditError(parsed));
+        setError(summarizeAuditError(await parseAuditErrorResponse(res, locale)));
         return;
       }
       const blob = await res.blob();
@@ -169,267 +205,475 @@ export default function AuditResultsClient({ locale, template }: Props) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch {
-      setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
+      setError(isTr ? 'Bağlantı hatası' : 'Connection error');
     } finally {
       setExporting(false);
     }
   }
 
+  function clearFilters() {
+    setRange('all');
+    setPassedFilter('all');
+    setSearchInput('');
+    setSearch('');
+  }
+
+  const summary = page.summary;
+  const distributionTotal = useMemo(
+    () => page.distribution.reduce((n, b) => n + b.count, 0),
+    [page.distribution],
+  );
+  const histogram = useMemo(
+    () => page.distribution.map((d) => ({ label: d.bucket, value: d.count })),
+    [page.distribution],
+  );
+  const filtersActive = range !== 'all' || passedFilter !== 'all' || search !== '';
+  const noResponsesAtAll = responseCountAllTime === 0;
+
+  const rangeOptions = [
+    { value: '7d' as const, label: isTr ? '7g' : '7d' },
+    { value: '30d' as const, label: isTr ? '30g' : '30d' },
+    { value: '90d' as const, label: isTr ? '90g' : '90d' },
+    { value: 'all' as const, label: isTr ? 'Tümü' : 'All' },
+  ];
+  const rangeText = {
+    '7d': isTr ? 'son 7 gün' : 'last 7 days',
+    '30d': isTr ? 'son 30 gün' : 'last 30 days',
+    '90d': isTr ? 'son 90 gün' : 'last 90 days',
+    all: isTr ? 'tüm zamanlar' : 'all time',
+  }[range];
+
+  const visibleMisses = showAllMisses ? misses.items : misses.items.slice(0, MISS_PREVIEW);
+  const showMissCard = evaluableCount > 0 && misses.total > 0;
+
+  const passLabel = isTr ? 'Geçti' : 'Passed';
+  const failLabel = isTr ? 'Kaldı' : 'Failed';
+
   return (
-    <div className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-6 sm:px-7 lg:py-8">
       <div>
         <Link
-          href={`/${locale}/dashboard/audits/${template.id}`}
-          className="text-[12px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1"
+          href={`${base}/${template.id}`}
+          className="inline-flex min-h-9 items-center gap-1 text-[12px] text-[#737373] hover:text-[#0A0A0A]"
         >
-          <ArrowLeft size={12} /> {locale === 'tr' ? 'Detaya dön' : 'Back to detail'}
+          <ArrowLeft size={12} aria-hidden="true" /> {isTr ? 'Denetime dön' : 'Back to audit'}
         </Link>
       </div>
 
       <PageHeader
-        eyebrow={locale === 'tr' ? 'DENETİM SONUÇLARI' : 'AUDIT RESULTS'}
+        eyebrow={isTr ? 'SONUÇLAR' : 'RESULTS'}
         title={template.title}
         description={
-          locale === 'tr'
-            ? 'Yanıtların tam listesi + skor dağılımı + manuel inceleme.'
-            : 'Full response list + score distribution + manual review.'
+          <>
+            {kindLabel(template.kind, ui)} · {itemsCount(questionCount, ui)} ·{' '}
+            {responsesCount(responseCountAllTime, ui)}
+            {responseCountAllTime > CSV_CAP && (
+              <>
+                {' · '}
+                {isTr
+                  ? `Tablo en yeni ${CSV_CAP} yanıtı içerir.`
+                  : `The table download holds the newest ${CSV_CAP} responses.`}
+              </>
+            )}
+          </>
         }
         actions={
           <button
             type="button"
-            className="bz-btn-ghost"
+            className="bz-btn-ghost min-h-11 sm:min-h-0"
             onClick={handleExport}
-            disabled={exporting || !data || data.data.length === 0}
+            disabled={exporting || noResponsesAtAll}
           >
-            {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            CSV
+            {exporting ? (
+              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Download size={14} aria-hidden="true" />
+            )}
+            {isTr ? 'Tablo olarak indir (CSV)' : 'Download as table (CSV)'}
           </button>
         }
       />
 
-      {error && <AlertBanner kind="danger" onDismiss={() => setError(null)}>{error}</AlertBanner>}
-
-      {/* Stats */}
-      <div className="grid gap-3 sm:grid-cols-4">
-        <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">
-            {locale === 'tr' ? 'Toplam yanıt' : 'Total responses'}
-          </div>
-          <div className="bz-h-tight text-[22px] mt-1">{data?.summary.total ?? '—'}</div>
-        </div>
-        <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">{t.audits_completed}</div>
-          <div className="bz-h-tight text-[22px] mt-1">{data?.summary.completed ?? '—'}</div>
-        </div>
-        <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">{t.audits_average_score}</div>
-          <div className="bz-h-tight text-[22px] mt-1">
-            {data?.summary.averageScore != null
-              ? `${Math.round(data.summary.averageScore)}`
-              : '—'}
-            {data?.summary.averageScore != null && (
-              <span className="text-[#A3A3A3] text-[14px]">/100</span>
-            )}
-          </div>
-        </div>
-        <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">{t.audits_pass_rate}</div>
-          <div className="bz-h-tight text-[22px] mt-1">
-            {data?.summary.completed && data.summary.completed > 0
-              ? `%${Math.round((data.summary.passedCount / data.summary.completed) * 100)}`
-              : '—'}
-          </div>
-        </div>
-      </div>
-
-      {/* Histogram */}
-      {data && data.summary.completed > 0 && (
-        <section className="bz-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <BarChart3 size={16} />
-            <h2 className="bz-h-tight text-[14px]">
-              {locale === 'tr' ? 'Skor dağılımı' : 'Score distribution'}
-            </h2>
-          </div>
-          <BarChart data={histogram} maxValue={maxBucket || 1} height={120} accent="#C6F24E" showValues />
-        </section>
+      {archived && (
+        <AlertBanner kind="info">
+          {isTr
+            ? 'Bu denetim arşivlendi. Linkleri kapandı, yanıtlar korunuyor.'
+            : 'This audit is archived. Its links are closed; responses are kept.'}
+        </AlertBanner>
+      )}
+      {error && (
+        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
+          {error}
+        </AlertBanner>
       )}
 
-      {/* Filters */}
-      <div className="bz-card p-3 flex flex-wrap gap-2 items-end">
-        <div>
-          <label htmlFor={`${filterIdBase}-range`} className="pulse-eyebrow text-[#525252] block mb-1">
-            {locale === 'tr' ? 'Aralık' : 'Range'}
-          </label>
-          <PulseSelect
-            id={`${filterIdBase}-range`}
-            className="min-w-[120px]"
-            value={range}
-            onChange={(v) => setRange(v as RangeFilter)}
-            options={[
-              { value: '7d', label: locale === 'tr' ? '7g' : '7d' },
-              { value: '30d', label: locale === 'tr' ? '30g' : '30d' },
-              { value: '90d', label: locale === 'tr' ? '90g' : '90d' },
-              { value: 'all', label: locale === 'tr' ? 'Tümü' : 'All' },
-            ]}
-          />
-        </div>
-        <div>
-          <label htmlFor={`${filterIdBase}-status`} className="pulse-eyebrow text-[#525252] block mb-1">
-            {locale === 'tr' ? 'Durum' : 'Status'}
-          </label>
-          <PulseSelect
-            id={`${filterIdBase}-status`}
-            className="min-w-[140px]"
-            value={status}
-            onChange={(v) => setStatus(v as StatusFilter)}
-            options={[
-              { value: 'all', label: locale === 'tr' ? 'Tümü' : 'All' },
-              { value: 'completed', label: t.audits_completed },
-              { value: 'in_progress', label: t.audits_in_progress },
-            ]}
-          />
-        </div>
-        <div>
-          <label htmlFor={`${filterIdBase}-outcome`} className="pulse-eyebrow text-[#525252] block mb-1">
-            {locale === 'tr' ? 'Sonuç' : 'Outcome'}
-          </label>
-          <PulseSelect
-            id={`${filterIdBase}-outcome`}
-            className="min-w-[120px]"
-            value={passedFilter}
-            onChange={(v) => setPassedFilter(v as PassedFilter)}
-            options={[
-              { value: 'all', label: locale === 'tr' ? 'Tümü' : 'All' },
-              { value: 'true', label: t.audits_passed },
-              { value: 'false', label: t.audits_failed },
-            ]}
-          />
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <label htmlFor={`${filterIdBase}-search`} className="pulse-eyebrow text-[#525252] block mb-1">
-            {locale === 'tr' ? 'Ara (ad / e-posta)' : 'Search (name / email)'}
-          </label>
-          <div className="relative">
-            <Search
-              size={14}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#737373]"
-            />
-            <input
-              id={`${filterIdBase}-search`}
-              className="bz-input pl-8"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={locale === 'tr' ? 'Ad veya e-posta' : 'Name or email'}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* List */}
-      {loading && !data ? (
-        <TableSkeleton rows={6} cols={5} />
-      ) : !data || data.data.length === 0 ? (
+      {noResponsesAtAll ? (
         <EmptyState
-          icon={<BarChart3 size={20} />}
-          title={locale === 'tr' ? 'Yanıt bulunamadı' : 'No responses'}
+          icon={<BarChart3 size={20} aria-hidden="true" />}
+          title={isTr ? 'Henüz yanıt yok' : 'No responses yet'}
           body={
-            locale === 'tr'
-              ? 'Filtreyi değiştir veya yeni bir atama yap.'
-              : 'Adjust filters or create a new assignment.'
+            isTr
+              ? 'Linki paylaştığında yanıtlar burada görünür.'
+              : 'Once you share the link, responses show up here.'
+          }
+          action={
+            canWrite && !archived ? (
+              <button type="button" className="bz-btn-primary min-h-11" onClick={() => setShareOpen(true)}>
+                <Share2 size={14} aria-hidden="true" /> {isTr ? 'Linki paylaş' : 'Share link'}
+              </button>
+            ) : undefined
           }
         />
       ) : (
-        // §38.238 — `overflow-hidden` clipped the 6-column responses table with
-        // nothing to scroll: below ~768px the right-hand columns (score, outcome
-        // and the "İncele" review link) were simply unreachable on a phone, and
-        // there is no mobile card fallback on this surface. The card keeps its
-        // rounded clip; the table now scrolls horizontally inside it (§23.6).
-        <div className="bz-card overflow-hidden">
-          <div className="overflow-x-auto">
-          <table className="bz-table">
-            <thead>
-              <tr>
-                <th>{locale === 'tr' ? 'Katılımcı' : 'Respondent'}</th>
-                <th className="text-right">{t.audits_total_score}</th>
-                <th>{locale === 'tr' ? 'Sonuç' : 'Outcome'}</th>
-                <th>{locale === 'tr' ? 'Tamamlandı' : 'Completed'}</th>
-                <th>{locale === 'tr' ? 'İnceleme' : 'Reviewed'}</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.data.map((r) => {
-                const passedKind: BadgeKind = r.passed === true
-                  ? 'ok'
-                  : r.passed === false
-                    ? 'danger'
-                    : 'ghost';
-                return (
-                  <tr key={r.id}>
-                    <td>
-                      <div className="text-[14px]">
-                        {r.respondentName || (locale === 'tr' ? 'Anonim' : 'Anonymous')}
-                      </div>
-                      {r.respondentEmail && (
-                        <div className="text-[11px] text-[#737373]">{r.respondentEmail}</div>
-                      )}
-                    </td>
-                    <td className="text-right bz-mono">
-                      {r.score != null ? (
-                        <>
-                          {r.score}
-                          <span className="text-[#A3A3A3]">/100</span>
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td>
-                      {r.completedAt ? (
-                        r.passed === true ? (
-                          <Badge kind="ok">{t.audits_passed}</Badge>
-                        ) : r.passed === false ? (
-                          <Badge kind="danger">{t.audits_failed}</Badge>
-                        ) : (
-                          <Badge kind={passedKind}>—</Badge>
-                        )
-                      ) : (
-                        <Badge kind="ghost">{t.audits_in_progress}</Badge>
-                      )}
-                    </td>
-                    <td className="text-[12px] text-[#525252]">
-                      {r.completedAt
-                        ? new Date(r.completedAt).toLocaleDateString(
-                            locale === 'tr' ? 'tr-TR' : 'en-US',
-                            { day: '2-digit', month: 'short', year: 'numeric', timeZone: resolveDisplayTimeZone() },
-                          )
-                        : '—'}
-                    </td>
-                    <td className="text-[12px] text-[#525252]">
-                      {r.reviewedAt
-                        ? new Date(r.reviewedAt).toLocaleDateString(
-                            locale === 'tr' ? 'tr-TR' : 'en-US',
-                            { day: '2-digit', month: 'short', timeZone: resolveDisplayTimeZone() },
-                          )
-                        : ''}
-                    </td>
-                    <td className="text-right">
-                      <Link
-                        href={`/${locale}/dashboard/audits/${template.id}/responses/${r.id}`}
-                        className="bz-btn-ghost"
-                      >
-                        {locale === 'tr' ? 'İncele' : 'Review'}
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <>
+          {/* Özet: mobilde de yan yana kalır */}
+          <div
+            className={`grid gap-2 sm:gap-3 ${hasPassMark ? 'grid-cols-3' : 'grid-cols-2'}`}
+            aria-busy={listLoading}
+          >
+            <SummaryTile label={isTr ? 'Yanıt' : 'Responses'}>{summary.total}</SummaryTile>
+            <SummaryTile label={isTr ? 'Ortalama' : 'Average'}>
+              {summary.averageScore !== null ? (
+                <>
+                  {Math.round(summary.averageScore)}
+                  <span className="text-[12px] text-[#A3A3A3] sm:text-[14px]">/100</span>
+                </>
+              ) : (
+                '—'
+              )}
+            </SummaryTile>
+            {hasPassMark && (
+              <SummaryTile label={isTr ? 'Geçme oranı' : 'Pass rate'}>
+                {summary.passRate !== null ? `%${summary.passRate}` : '—'}
+              </SummaryTile>
+            )}
           </div>
-        </div>
+
+          {/* Dikkat edilecek maddeler */}
+          {showMissCard && (
+            <section className="bz-card p-4 sm:p-5" aria-labelledby={`${idBase}-miss`}>
+              <h2 id={`${idBase}-miss`} className="bz-h-tight text-[15px]">
+                {isTr ? 'Dikkat edilecek maddeler' : 'Items needing attention'}
+              </h2>
+              <p className="mt-0.5 text-[12px] text-[#737373]">
+                {isTr ? `En çok aksayan maddeler · ${rangeText}` : `Most-missed items · ${rangeText}`}
+              </p>
+              {misses.items.length === 0 ? (
+                <div className="mt-3">
+                  <AlertBanner kind="success">
+                    {isTr ? 'Tüm maddeler tamam görünüyor.' : 'All items look fine.'}
+                  </AlertBanner>
+                </div>
+              ) : (
+                <>
+                  <ol className="mt-3 space-y-3">
+                    {visibleMisses.map((m) => (
+                      <li key={m.questionId}>
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="min-w-0 break-words text-[14px] leading-snug text-[#0A0A0A]">
+                            {m.prompt}
+                          </p>
+                          <p className="shrink-0 text-right text-[12px] text-[#525252]">
+                            {isTr
+                              ? `${m.missed} / ${m.answered} yanıtta sorunlu`
+                              : `${m.missed} / ${m.answered} flagged`}
+                          </p>
+                        </div>
+                        <div
+                          className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#EDEDED]"
+                          role="img"
+                          aria-label={`${Math.round(m.missRate * 100)}%`}
+                        >
+                          <div
+                            className="h-full rounded-full bg-[#DC2626]"
+                            style={{ width: `${Math.max(3, Math.round(m.missRate * 100))}%` }}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  {misses.items.length > MISS_PREVIEW && (
+                    <button
+                      type="button"
+                      className="mt-3 min-h-11 text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2 sm:min-h-9"
+                      onClick={() => setShowAllMisses((v) => !v)}
+                    >
+                      {showAllMisses
+                        ? isTr
+                          ? 'Daha az göster'
+                          : 'Show fewer'
+                        : isTr
+                          ? `Tümünü göster (${misses.items.length})`
+                          : `Show all (${misses.items.length})`}
+                    </button>
+                  )}
+                  {misses.truncated && (
+                    <p className="mt-2 text-[11px] text-[#737373]">
+                      {isTr
+                        ? 'Çok sayıda cevap olduğu için en yeni cevaplara göre hesaplandı.'
+                        : 'Based on the newest answers because there are very many.'}
+                    </p>
+                  )}
+                </>
+              )}
+            </section>
+          )}
+
+          {/* Puan dağılımı: en az 5 puanlı yanıt varsa, kapalı başlar */}
+          {distributionTotal >= HISTOGRAM_MIN_RESPONSES && (
+            <section className="bz-card px-4 py-1 sm:px-5">
+              <Disclosure
+                open={showHistogram}
+                onToggle={() => setShowHistogram((v) => !v)}
+                controls={`${idBase}-hist`}
+              >
+                <BarChart3 size={15} aria-hidden="true" />
+                {isTr ? 'Puan dağılımı' : 'Score distribution'}
+              </Disclosure>
+              {showHistogram && (
+                <div id={`${idBase}-hist`} className="pb-4 pt-2">
+                  <BarChart
+                    data={histogram}
+                    maxValue={Math.max(...histogram.map((h) => h.value), 1)}
+                    height={120}
+                    accent="#C6F24E"
+                    showValues
+                  />
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Filtreler: tek satır */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <ChipRadioGroup
+              name={`${idBase}-range`}
+              label={isTr ? 'Tarih aralığı' : 'Date range'}
+              value={range}
+              options={rangeOptions}
+              onChange={(v) => setRange(v)}
+            />
+            <div className="relative min-w-[180px] flex-1">
+              <Search
+                size={14}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]"
+              />
+              <label htmlFor={`${idBase}-search`} className="sr-only">
+                {isTr ? 'Ad veya e-postayla ara' : 'Search by name or email'}
+              </label>
+              <input
+                id={`${idBase}-search`}
+                type="search"
+                className="bz-input pl-9"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder={isTr ? 'Ad veya e-posta ara' : 'Search name or email'}
+                enterKeyHint="search"
+                autoComplete="off"
+              />
+            </div>
+            {hasPassMark && (
+              <div className="w-full sm:w-auto">
+                <PulseSelect
+                  id={`${idBase}-outcome`}
+                  ariaLabel={isTr ? 'Sonuç' : 'Outcome'}
+                  className="w-full sm:min-w-[140px]"
+                  value={passedFilter}
+                  onChange={(v) => setPassedFilter(v as PassedFilter)}
+                  options={[
+                    { value: 'all', label: isTr ? 'Sonuç: Tümü' : 'Outcome: All' },
+                    { value: 'true', label: passLabel },
+                    { value: 'false', label: failLabel },
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Liste */}
+          {rows.length === 0 ? (
+            <EmptyState
+              icon={<BarChart3 size={20} aria-hidden="true" />}
+              title={
+                listLoading
+                  ? isTr
+                    ? 'Yükleniyor…'
+                    : 'Loading…'
+                  : isTr
+                    ? 'Bu filtreyle yanıt yok'
+                    : 'No responses for this filter'
+              }
+              body={
+                listLoading
+                  ? undefined
+                  : isTr
+                    ? 'Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.'
+                    : 'Try a wider date range or clear the search.'
+              }
+              action={
+                !listLoading && filtersActive ? (
+                  <button type="button" className="bz-btn-ghost min-h-11" onClick={clearFilters}>
+                    {isTr ? 'Filtreleri temizle' : 'Clear filters'}
+                  </button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <div className={listLoading ? 'opacity-60 transition-opacity' : 'transition-opacity'} aria-busy={listLoading}>
+              {/* Masaüstü: tablo */}
+              <div className="bz-card hidden overflow-hidden lg:block">
+                <div className="overflow-x-auto">
+                  <table className="bz-table">
+                    <thead>
+                      <tr>
+                        <th>{isTr ? 'Katılımcı' : 'Respondent'}</th>
+                        <th className="text-right">{isTr ? 'Puan' : 'Score'}</th>
+                        {hasPassMark && <th>{isTr ? 'Sonuç' : 'Outcome'}</th>}
+                        <th>{isTr ? 'Tarih' : 'Date'}</th>
+                        <th>
+                          <span className="sr-only">{isTr ? 'İncele' : 'Review'}</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r) => (
+                        <tr key={r.id}>
+                          <td>
+                            <Link
+                              href={`${base}/${template.id}/responses/${r.id}`}
+                              className="text-[14px] text-[#0A0A0A] hover:underline"
+                            >
+                              {r.respondentName || (isTr ? 'Anonim' : 'Anonymous')}
+                            </Link>
+                            {r.respondentEmail && (
+                              <div className="text-[11px] text-[#737373]">{r.respondentEmail}</div>
+                            )}
+                          </td>
+                          <td className="bz-mono text-right">
+                            {r.score !== null ? (
+                              <>
+                                {r.score}
+                                <span className="text-[#A3A3A3]">/100</span>
+                              </>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          {hasPassMark && (
+                            <td>
+                              {r.passed === true ? (
+                                <Badge kind="ok">{passLabel}</Badge>
+                              ) : r.passed === false ? (
+                                <Badge kind="danger">{failLabel}</Badge>
+                              ) : (
+                                <span className="text-[#A3A3A3]">—</span>
+                              )}
+                            </td>
+                          )}
+                          <td className="text-[12px] text-[#525252]">
+                            {formatResponseStamp(r.completedAt ?? r.createdAt, ui)}
+                            {r.reviewedAt && (
+                              <span className="ml-2 text-[#A3A3A3]">
+                                {isTr ? 'İncelendi' : 'Reviewed'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="text-right">
+                            <Link href={`${base}/${template.id}/responses/${r.id}`} className="bz-btn-ghost">
+                              {isTr ? 'İncele' : 'Review'}
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobil / tablet: kart listesi */}
+              <ul className="space-y-2 lg:hidden">
+                {rows.map((r) => (
+                  <li key={r.id}>
+                    <Link
+                      href={`${base}/${template.id}/responses/${r.id}`}
+                      className="bz-card flex min-h-14 items-center gap-3 px-4 py-3 hover:border-[#A3A3A3]"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">
+                          {r.respondentName || (isTr ? 'Anonim' : 'Anonymous')}
+                        </span>
+                        <span className="block truncate text-[12px] text-[#737373]">
+                          {formatResponseStamp(r.completedAt ?? r.createdAt, ui)}
+                          {r.reviewedAt && ` · ${isTr ? 'İncelendi' : 'Reviewed'}`}
+                        </span>
+                      </span>
+                      <ScoreChip row={r} hasPassMark={hasPassMark} />
+                      <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-[#A3A3A3]" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-3 flex flex-col items-center gap-2">
+                <p className="text-[12px] text-[#737373]" aria-live="polite">
+                  {isTr
+                    ? `${rows.length} / ${summary.total} yanıt gösteriliyor`
+                    : `Showing ${rows.length} of ${summary.total} responses`}
+                </p>
+                {page.meta.hasMore && (
+                  <button
+                    type="button"
+                    className="bz-btn-ghost min-h-11"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+                    {isTr ? 'Daha fazla göster' : 'Show more'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {shareOpen && (
+        <ShareLinksModal
+          locale={ui}
+          restaurantId={template.restaurantId}
+          templateId={template.id}
+          title={template.title}
+          kind={template.kind}
+          isPublished={template.isPublished}
+          questionCount={questionCount}
+          appUrl={appUrl}
+          onClose={() => setShareOpen(false)}
+        />
       )}
     </div>
+  );
+}
+
+function SummaryTile({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="bz-card min-w-0 px-3 py-3 sm:p-4">
+      <div className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-[#525252] sm:text-[11px] sm:tracking-[0.14em]">
+        {label}
+      </div>
+      <div className="bz-h-tight mt-1 text-[22px] leading-none sm:text-[26px]">{children}</div>
+    </div>
+  );
+}
+
+function ScoreChip({ row, hasPassMark }: { row: AuditResponseListRow; hasPassMark: boolean }) {
+  if (row.score === null) {
+    return <span className="shrink-0 text-[13px] text-[#A3A3A3]">—</span>;
+  }
+  const kind = hasPassMark ? (row.passed === true ? 'ok' : row.passed === false ? 'danger' : 'ghost') : 'ghost';
+  return (
+    <Badge kind={kind} dot={false} className="shrink-0">
+      <span className="bz-mono">{row.score}/100</span>
+    </Badge>
   );
 }
