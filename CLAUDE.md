@@ -4895,6 +4895,14 @@ auto-applies. Non-heading için `bz-h-tight` utility class.
 - "Tek-tenant per user" varsayımı kıran benzer akış (örn. team transfer,
   ownership change) aynı disipline ile gate edilir.
 
+**J. Google Places içeriği ve maliyet kapısı** (§5.1.2, §38.243):
+- Places içeriği (puan, yorum metni, yorumcu adı/fotoğrafı) DB/log/Sentry/tarayıcı
+  depolamaya yazılmaz; kalıcı tek Google Maps verisi Place ID'dir.
+- Her faturalı Places çağrısı Google'a gitmeden `reservePlacesCall`
+  (`google_places_usage`, atomik tek deyim, fail-closed) ile rezerve edilir.
+  `rateLimit()` (Upstash) burada tavan değil yalnız yumuşak burst sınırıdır.
+- Paylaşılan kotalı Google yüzeylerinde otomatik yeniden deneme yok (§38.211).
+
 ### §40.5 Validation disipline (§28)
 
 **Yeni endpoint** (kanonik):
