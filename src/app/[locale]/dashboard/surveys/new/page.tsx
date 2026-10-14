@@ -1,5 +1,6 @@
-// Stage 98 — Survey wizard entry (CLAUDE.md §42). Server shell: auth +
-// restaurant scope. Client wizard handles the 5-step flow.
+// Survey create page (CLAUDE.md §42). Server shell: auth, business scope, write
+// permission and the starting point. The client editor handles the two phases
+// (pick a template → edit with a live preview).
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -7,9 +8,10 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { canWriteForUserPayload, getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
-import SurveyWizardClient from '../_components/SurveyWizardClient';
+import { getSurveyTemplate } from '@/lib/survey-templates';
+import SurveyEditorClient from '../_components/SurveyEditorClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +29,7 @@ export async function generateMetadata({
 
 interface PageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ restaurantId?: string }>;
+  searchParams: Promise<{ restaurantId?: string; restaurant?: string; template?: string }>;
 }
 
 export default async function NewSurveyPage({ params, searchParams }: PageProps) {
@@ -47,37 +49,48 @@ export default async function NewSurveyPage({ params, searchParams }: PageProps)
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/surveys/new`);
   }
 
-  // Team members included — same scope the API layer resolves
-  // (getScopedRestaurantIds). `userId: payload.userId` hid every
-  // restaurant from invited team members.
-  const scopedIds = await getScopedRestaurantIdsForUserPayload({
-    userId: payload.userId,
-    role: payload.role,
-    email: payload.email,
-  });
+  const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
+  // A viewer (read-only team member) cannot create surveys; the API refuses too.
+  if (!(await canWriteForUserPayload(tokenPayload))) {
+    redirect(`/${locale}/dashboard/surveys`);
+  }
+
+  // Team members included — same scope the API layer resolves.
+  const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
   const restaurants = await prisma.restaurant.findMany({
     where: { id: { in: scopedIds }, isActive: true },
-    select: { id: true, name: true, primaryColor: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      primaryColor: true,
+      category: true,
+      surveysEnabled: true,
+    },
     orderBy: { createdAt: 'asc' },
   });
   if (restaurants.length === 0) {
     redirect(`/${locale}/dashboard/restaurants`);
   }
-  const initialActiveRestaurantId = resolveActiveRestaurantId({
-    restaurants: restaurants.map((r) => ({ id: r.id })),
-    queryRestaurantId: sp.restaurantId,
-    storedRestaurantId: null,
-  });
+  const initialRestaurantId =
+    resolveActiveRestaurantId({
+      restaurants: restaurants.map((r) => ({ id: r.id })),
+      queryRestaurantId: sp.restaurantId ?? sp.restaurant,
+      storedRestaurantId: null,
+    }) ?? restaurants[0].id;
+
+  // `?template=` is either `blank` or a known template id; anything else shows
+  // the template picker.
+  const initialTemplate =
+    sp.template === 'blank' || getSurveyTemplate(sp.template) ? (sp.template ?? null) : null;
 
   return (
-    <SurveyWizardClient
+    <SurveyEditorClient
+      mode="create"
       locale={locale}
-      restaurants={restaurants.map((r) => ({
-        id: r.id,
-        name: r.name,
-        primaryColor: r.primaryColor,
-      }))}
-      initialRestaurantId={initialActiveRestaurantId || restaurants[0].id}
+      restaurants={restaurants}
+      initialRestaurantId={initialRestaurantId}
+      initialTemplate={initialTemplate}
     />
   );
 }
