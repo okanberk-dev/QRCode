@@ -1,27 +1,10 @@
-import {
-  SkBox,
-  SkForm,
-  SkPageHeader,
-  SkPageShell,
-} from '@/components/ui/skeletons/PageSkeleton';
+import AuditBuilderSkeleton from '@/components/audits/AuditBuilderSkeleton';
 
 /**
- * Audit wizard (create / fork) — back link + PageHeader + step strip
- * + form rows. (CLAUDE.md §40.10)
+ * Yeni denetim (tek sayfa builder) — sarmalayıcı sayfayla birebir aynı
+ * (`max-w-[920px] space-y-5`, CLS=0, CLAUDE.md §40.10). Düzenleme ekranıyla
+ * aynı iskeleti paylaşır; yalnız burada "Ne tür bir denetim?" kartları var.
  */
 export default function Loading() {
-  return (
-    <SkPageShell max={920}>
-      <SkBox className="h-3 w-32" />
-      <SkPageHeader titleWidth="w-56" />
-
-      <div className="flex items-center gap-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkBox key={i} className="h-2 flex-1" />
-        ))}
-      </div>
-
-      <SkForm rows={6} />
-    </SkPageShell>
-  );
+  return <AuditBuilderSkeleton withKindPicker />;
 }

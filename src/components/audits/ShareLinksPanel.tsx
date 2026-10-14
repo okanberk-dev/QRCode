@@ -126,7 +126,8 @@ export default function ShareLinksPanel({
   const defaultUrl = defaultLink?.token ? buildShareUrl(appUrl, defaultLink.token) : '';
 
   useEffect(() => {
-    if (autoFocusCopy && defaultUrl) copyBtnRef.current?.focus();
+    // preventScroll: sayfa zaten başta; odak kayması paneli ekran dışına itmesin.
+    if (autoFocusCopy && defaultUrl) copyBtnRef.current?.focus({ preventScroll: true });
   }, [autoFocusCopy, defaultUrl]);
 
   async function copy(linkId: string, url: string, input: HTMLInputElement | null) {

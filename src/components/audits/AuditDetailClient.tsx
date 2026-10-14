@@ -7,7 +7,7 @@
 // paylaşım kartı, özet, maddeler, son yanıtlar. Link kartı iki görünümde de
 // ekranın üst yarısındadır. Arşivlenmiş denetimde link / düzenleme yoktur.
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -59,6 +59,17 @@ interface Props {
 
 const QUESTION_PREVIEW = 5;
 
+/** Paneldeki tüm kaydırılabilir üst öğeleri (ve sayfayı) en başa alır. */
+function resetPanelScroll() {
+  let el: HTMLElement | null = document.getElementById('panel-main-content');
+  while (el) {
+    const overflowY = window.getComputedStyle(el).overflowY;
+    if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollTop !== 0) el.scrollTop = 0;
+    el = el.parentElement;
+  }
+  window.scrollTo(0, 0);
+}
+
 export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: Props) {
   const isTr = locale === 'tr';
   const router = useRouter();
@@ -78,6 +89,25 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Düzenleme ekranı kaydedince `?saved=1` ile döner: bir kez "Kaydedildi." göster,
+  // sonra adresten kaldır (yenilemede eski bir kayıt bildirimi tekrar çıkmasın).
+  const justSaved = searchParams.get('saved') === '1';
+
+  // Oluşturucudan gelince sayfa en üstten açılsın. Masaüstünde kabuğun kendi kaydırma
+  // alanı var; Next.js yönlendirmede onu sıfırlamaz → paylaşım kartı ekran dışında kalırdı.
+  useEffect(() => {
+    if (justCreated || justSaved) resetPanelScroll();
+  }, [justCreated, justSaved]);
+
+  useEffect(() => {
+    if (!justSaved) return;
+    setNotice(isTr ? 'Kaydedildi.' : 'Saved.');
+    const params = new URLSearchParams(window.location.search);
+    params.delete('saved');
+    const qs = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+  }, [justSaved, isTr]);
   const [showAll, setShowAll] = useState(false);
   const [confirmEl, askConfirm] = useConfirmDialog();
   const busyRef = useRef(false);
