@@ -122,7 +122,8 @@
 /* Recommend score 0–10: six columns (0–5, then 6–10 with the last cell empty)
    so a cell is >= 44 px wide even at 320 px. Cell width =
    (frame − 2·16 − 5·gap) / 6: 44.7 px at 320 with a 4 px gap, 48 at 360. The
-   negative inline margin trims the 22 px screen padding to 16 px for the grid. */
+   negative inline margin trims the 22 px screen padding to 16 px for the grid
+   (10 px on screens up to 360 px wide). */
 .bz-survey-nps {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -130,8 +131,11 @@
   margin-inline: -6px;
 }
 @media (max-width: 360px) {
+  /* Tighter gap and a wider grid: even with a classic 15 px scrollbar at a
+     320 px window the cells stay >= 44 px ((305 − 44 + 24 − 20) / 6 ≈ 44.2). */
   .bz-survey-nps {
     gap: 4px;
+    margin-inline: -12px;
   }
 }
 .bz-survey-nps-cell {
