@@ -13,15 +13,17 @@ import { getMenuReadiness } from '@/lib/menu-readiness';
 import { detectSector } from '@/lib/sector-platforms';
 import type { Locale } from '@/lib/translations';
 import MenuBuilderSkeleton from './loading';
+import { BulkAddModal } from './_components/BulkAddModal';
 import { CategoryModal } from './_components/CategoryModal';
 import { CategoryChips, CategoryColumn } from './_components/CategoryNav';
+import { ItemEditorModal } from './_components/ItemEditorModal';
 import { ItemList } from './_components/ItemList';
-import { ItemModal } from './_components/ItemModal';
+import { MenuDesignModal } from './_components/MenuDesignModal';
 import { MenuLivePreview } from './_components/MenuLivePreview';
-import { MenuQrModal } from './_components/MenuQrModal';
+import { MenuShareModal } from './_components/MenuShareModal';
 import { MenuStarter } from './_components/MenuStarter';
 import { MenuStatusBar, type MenuLockReason, type MenuStepId } from './_components/MenuStatusBar';
-import { ThemePanel } from './_components/ThemePanel';
+import type { ItemPatch } from './_components/menu-item-form';
 import type { CategoryShape } from './_components/menu-types';
 import { useIsDesktop } from './_components/menu-ui';
 import { useMenuBuilder } from './_components/useMenuBuilder';
@@ -42,12 +44,13 @@ export default function RestaurantMenuBuilderPage() {
   // confirm state stay here.
   const {
     restaurant, categories, activeCategory, activeCategoryId, setActiveCategoryId,
-    loading, error, setError, notice, setNotice, busy, publishBusy, themeSaving, presetBusy,
-    fetchAll, saveTheme, uploadLogo,
+    loading, error, setError, notice, setNotice, busy, publishBusy, presetBusy,
+    themeStatus, themeError, setThemeError,
+    fetchAll, previewTheme, saveTheme, uploadLogo, uploadPhoto,
     toggleCategoryVisibility, toggleItemAvailability, toggleItemOutOfStock,
     applyStarterPreset,
     saveCategory: persistCategory, deleteCategory: removeCategoryById, reorderCategories, moveCategory,
-    saveItem: persistItem, deleteItem: removeItemById, reorderItems, moveItem,
+    saveItem: persistItem, bulkAddItems, deleteItem: removeItemById, reorderItems, moveItem,
     togglePublish, copy, fmt,
   } = useMenuBuilder({ id, isTr });
 
@@ -56,6 +59,7 @@ export default function RestaurantMenuBuilderPage() {
 
   const [categoryModal, setCategoryModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<CategoryShape> }>(null);
   const [itemModal, setItemModal] = useState<null | { mode: 'create' | 'edit'; data: ItemDraft }>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [designOpen, setDesignOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -105,8 +109,12 @@ export default function RestaurantMenuBuilderPage() {
     if (!activeCategory) return openCategoryCreate();
     setItemModal({
       mode: 'create',
-      data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 },
+      data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [] },
     });
+  };
+  const openBulk = () => {
+    if (!activeCategory) return openCategoryCreate();
+    setBulkOpen(true);
   };
   const openItemEdit = (item: MenuItemView) =>
     setItemModal({ mode: 'edit', data: { ...item, categoryId: activeCategory?.id } });
@@ -134,11 +142,16 @@ export default function RestaurantMenuBuilderPage() {
   };
 
   // ── Item ops ──
-  const saveItem = async (payload: ItemDraft): Promise<string | null> => {
+  // The editor closes itself (it also stays open for "save & add another").
+  const saveItem = async (patch: ItemPatch): Promise<string | null> => {
     if (!itemModal) return null;
-    const err = await persistItem(itemModal.mode, itemModal.data.id, payload);
-    if (!err) setItemModal(null);
-    return err;
+    return persistItem(itemModal.mode, itemModal.data.id, patch);
+  };
+
+  const submitBulk = async (categoryId: string, items: { name: string; priceCents: number }[]) => {
+    const result = await bulkAddItems(categoryId, items);
+    if (result.ok) setBulkOpen(false);
+    return result;
   };
 
   const askDeleteItem = (item: MenuItemView) => {
@@ -413,6 +426,7 @@ export default function RestaurantMenuBuilderPage() {
                 fmt={fmt}
                 headerExtra={previewButton}
                 onAddItem={openItemCreate}
+                onBulkAdd={openBulk}
                 onEditItem={openItemEdit}
                 onToggleSoldOut={toggleItemOutOfStock}
                 onToggleHidden={toggleItemAvailability}
@@ -452,43 +466,62 @@ export default function RestaurantMenuBuilderPage() {
       )}
 
       {itemModal && (
-        <ItemModal
+        <ItemEditorModal
           mode={itemModal.mode}
           data={itemModal.data}
           categories={categories}
+          isTr={isTr}
           copy={copy}
-          busy={busy}
-          locale={locale}
-          restaurantId={id}
+          fmt={fmt}
           onClose={() => setItemModal(null)}
           onSave={saveItem}
+          onUploadPhoto={(file) => uploadPhoto(file, 'item')}
         />
       )}
 
-      {/* The design panel and the QR dialog keep their current form until
-          they are rebuilt; here they only open from the header. */}
+      {bulkOpen && activeCategory && (
+        <BulkAddModal
+          categories={categories}
+          defaultCategoryId={activeCategory.id}
+          isTr={isTr}
+          copy={copy}
+          fmt={fmt}
+          onClose={() => setBulkOpen(false)}
+          onSubmit={submitBulk}
+        />
+      )}
+
       {designOpen && canDesign && (
-        <Modal size={760} title={copy.menuDesign} onClose={() => setDesignOpen(false)}>
-          <div className="space-y-4">
-            {error && (
-              <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
-                {error}
-              </AlertBanner>
-            )}
-            <ThemePanel
-              restaurant={restaurant}
-              copy={copy}
-              locale={locale}
-              saving={themeSaving}
-              onChange={saveTheme}
-              onUploadLogo={uploadLogo}
-            />
-          </div>
-        </Modal>
+        <MenuDesignModal
+          restaurant={restaurant}
+          categories={categories}
+          isTr={isTr}
+          locale={locale}
+          copy={copy}
+          fmt={fmt}
+          status={themeStatus}
+          error={themeError}
+          onDismissError={() => setThemeError(null)}
+          onPreview={previewTheme}
+          onSave={saveTheme}
+          onUploadLogo={uploadLogo}
+          onClose={() => setDesignOpen(false)}
+        />
       )}
 
       {shareOpen && restaurant.menuEnabled && (
-        <MenuQrModal restaurantId={id} slug={restaurant.slug} copy={copy} onClose={() => setShareOpen(false)} />
+        <MenuShareModal
+          restaurantId={id}
+          restaurant={restaurant}
+          isTr={isTr}
+          copy={copy}
+          canPublish={!readOnly}
+          hasPublishableItems={readiness.publishableItems > 0}
+          publishBusy={publishBusy}
+          analyticsHref={`${menuHref}/analytics`}
+          onPublish={publish}
+          onClose={() => setShareOpen(false)}
+        />
       )}
 
       {/* 1024–1399px: no side column, so the live preview opens in a dialog. */}

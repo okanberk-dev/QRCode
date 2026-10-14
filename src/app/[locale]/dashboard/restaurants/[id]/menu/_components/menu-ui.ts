@@ -17,9 +17,18 @@ export function isFinePointer(): boolean {
   return window.matchMedia('(pointer: fine)').matches;
 }
 
-/** Re-renders when a CSS media query starts / stops matching (false on the server). */
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+/**
+ * Re-renders when a CSS media query starts / stops matching (false on the
+ * server). Pass `readNow` for components that only ever mount in the browser
+ * (dialogs): they get the real answer on the first render instead of one frame
+ * of the wrong layout.
+ */
+export function useMediaQuery(query: string, readNow = false): boolean {
+  const [matches, setMatches] = useState(() =>
+    readNow && typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(query).matches
+      : false,
+  );
   useEffect(() => {
     const mql = window.matchMedia(query);
     const update = () => setMatches(mql.matches);
@@ -108,3 +117,10 @@ export async function copyText(text: string): Promise<boolean> {
 export function afterMenuCloses(fn: () => void): void {
   window.setTimeout(fn, 120);
 }
+
+/** Text input / textarea look shared by the builder's dialogs (16px on phones so iOS does not zoom). */
+export const MENU_INPUT_CLASS =
+  'w-full bz-card px-4 py-3 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40';
+
+/** Small label above a field (same look as the shared `Field`, for the few fields that cannot use it). */
+export const MENU_LABEL_CLASS = 'mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]';

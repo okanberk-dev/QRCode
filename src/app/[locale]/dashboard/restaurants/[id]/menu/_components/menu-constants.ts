@@ -67,18 +67,6 @@ export const ALLERGEN_GROUPS: { tr: string; en: string; items: MenuAllergen[] }[
   { tr: 'Diğer',       en: 'Other',         items: ['soya', 'hardal', 'kereviz'] },
 ];
 
-// Curated palette covering common venue moods. Grouped visually in the picker
-// (lime/warm/dark/herb/floral) so a cafe owner and a fine-dining owner can
-// each find a fitting accent without opening the color wheel.
-export const THEME_SWATCH_GROUPS: { tr: string; en: string; colors: string[] }[] = [
-  { tr: 'Marka', en: 'Brand', colors: ['#C6F24E', '#A8D62E', '#8CB81E'] },
-  { tr: 'Sıcak', en: 'Warm', colors: ['#E85A4F', '#D97706', '#F59E0B', '#9A3412'] },
-  { tr: 'Koyu', en: 'Dark', colors: ['#0A0A0A', '#1F2937', '#3F3F46'] },
-  { tr: 'Bitki', en: 'Herb', colors: ['#0E7C66', '#15803D', '#65A30D'] },
-  { tr: 'Soğuk', en: 'Cool', colors: ['#0EA5E9', '#1D4ED8', '#0F766E'] },
-  { tr: 'Zarif', en: 'Soft', colors: ['#8B5CF6', '#EC4899', '#BE185D', '#A16207'] },
-];
-
 // Hint per theme — small TR/EN copy chip on the card so a brand-new owner can
 // pick the layout that fits their venue without opening the public preview.
 export const THEME_VIBES: Record<MenuTheme, { tr: string; en: string }> = {

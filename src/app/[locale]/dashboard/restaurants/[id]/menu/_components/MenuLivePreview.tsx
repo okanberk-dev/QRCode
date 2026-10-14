@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { Smartphone, ExternalLink, Maximize2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -28,6 +29,10 @@ const PublicMenuView = dynamic(
 const PHONE_NATIVE_WIDTH = 375;
 const PHONE_NATIVE_HEIGHT = 660;
 const PREVIEW_ZOOM = 0.78;
+// The phone frame: 375 × 0.78 viewport + 8px bezel on each side.
+const PHONE_FRAME_WIDTH = 308;
+// Stage side padding (px-4) — the phone needs this much room on both sides.
+const STAGE_PADDING = 32;
 
 interface MenuLivePreviewProps {
   // PublicMenuView ile aynı tipler — type safety için import.
@@ -57,6 +62,24 @@ export function MenuLivePreview({ restaurant, categories, locale, published, var
   // exists only from 1400px up (narrower, the item list would shrink to
   // ~376px); between 1024 and 1399 the preview opens in a modal instead.
   const Tag = variant === 'inline' ? 'div' : 'aside';
+
+  // Inside a dialog on a narrow phone the stage is narrower than the frame
+  // (a 375px screen leaves ~265px): shrink the frame to fit instead of
+  // letting the dialog clip it.
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [fit, setFit] = useState(1);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (variant !== 'inline' || !stage || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const room = stage.clientWidth - STAGE_PADDING;
+      setFit(room > 0 ? Math.min(1, Math.max(0.5, room / PHONE_FRAME_WIDTH)) : 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [variant]);
   const wrapperClass = variant === 'inline' ? '' : 'sticky top-[87px] hidden self-start min-[1400px]:block';
 
   return (
@@ -94,8 +117,8 @@ export function MenuLivePreview({ restaurant, categories, locale, published, var
         </header>
 
         {/* Device stage — subtle gradient backdrop, like Vercel/Figma previews */}
-        <div className="relative bg-gradient-to-b from-[#FAFAFA] to-[#F0F0F0] px-4 py-6">
-          <div className="relative mx-auto" style={{ width: 308 }}>
+        <div ref={stageRef} className="relative bg-gradient-to-b from-[#FAFAFA] to-[#F0F0F0] px-4 py-6">
+          <div className="relative mx-auto" style={{ width: PHONE_FRAME_WIDTH, ...(fit < 1 ? { zoom: fit } : null) }}>
             {/* Outer bezel — graphite frame, soft drop shadow, inset highlight */}
             <div
               className="rounded-[40px] bg-[#0A0A0A] p-2 shadow-[0_22px_50px_-12px_rgba(10,10,10,0.45),0_6px_12px_-3px_rgba(10,10,10,0.2),inset_0_1px_0_rgba(255,255,255,0.06)]"

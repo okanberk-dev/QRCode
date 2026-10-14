@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { APSwitch, AlertBanner, Modal } from '@/components/ui';
-import { Field, ModalActions } from './FormParts';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertBanner, Field, Modal } from '@/components/ui';
 import type { MenuCopy } from './menu-copy';
 import type { CategoryShape } from './menu-types';
-import { isFinePointer } from './menu-ui';
-
-const INPUT_CLASS =
-  'w-full bz-card px-4 py-3 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40';
+import { MENU_INPUT_CLASS, isFinePointer } from './menu-ui';
+import { SwitchRow } from './SwitchRow';
 
 export function CategoryModal({
   mode, data, copy, busy, onClose, onSave,
@@ -36,6 +33,22 @@ export function CategoryModal({
     description.trim() !== (data.description ?? '') ||
     isVisible !== (data.isVisible ?? true);
 
+  const submit = async () => {
+    if (busy) return;
+    if (!name.trim()) {
+      setFormError(copy.categoryNameRequired);
+      return;
+    }
+    setFormError(null);
+    const err = await onSave({
+      id: data.id,
+      name: name.trim(),
+      description: description.trim() || null,
+      isVisible,
+    });
+    if (err) setFormError(err);
+  };
+
   return (
     <Modal
       size={620}
@@ -43,38 +56,41 @@ export function CategoryModal({
       onClose={onClose}
       closeGuard={() => dirty}
       closeConfirm={{ title: copy.leaveTitle, body: copy.leaveBody, confirm: copy.leave, cancel: copy.keepEditing }}
+      footer={
+        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onClose} className="bz-btn-ghost">
+            {copy.cancel}
+          </button>
+          <button type="button" onClick={submit} disabled={busy} className="bz-btn-primary">
+            {busy && <Loader2 size={14} className="animate-spin" />}
+            {copy.save}
+          </button>
+        </div>
+      }
     >
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (busy) return;
-          setFormError(null);
-          const err = await onSave({
-            id: data.id,
-            name: name.trim(),
-            description: description.trim() || null,
-            isVisible,
-          });
-          if (err) setFormError(err);
-        }}
-        className="space-y-5"
-      >
+      <div className="space-y-5">
         {formError && (
           <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
             {formError}
           </AlertBanner>
         )}
-        <Field label={copy.categoryName}>
+        <Field label={copy.categoryName} required>
           <input
-            required
             autoFocus={autoFocusName}
             maxLength={80}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter saves (the footer button is outside the field, so there is no form to submit).
+              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                void submit();
+              }
+            }}
             placeholder={copy.categoryNamePlaceholder}
             enterKeyHint="done"
             autoCapitalize="sentences"
-            className={INPUT_CLASS}
+            className={MENU_INPUT_CLASS}
           />
         </Field>
         <Field label={copy.description}>
@@ -82,18 +98,16 @@ export function CategoryModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className={`${INPUT_CLASS} resize-none`}
+            className={`${MENU_INPUT_CLASS} resize-none`}
           />
         </Field>
-        <div className="flex items-center justify-between gap-4 bz-card px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-[14px] font-medium text-[#0A0A0A]">{copy.visible}</p>
-            <p className="mt-0.5 text-[12px] text-[#737373]">{copy.categoryVisibleHint}</p>
-          </div>
-          <APSwitch checked={isVisible} onChange={setIsVisible} ariaLabel={copy.visible} />
-        </div>
-        <ModalActions busy={busy} copy={copy} onClose={onClose} />
-      </form>
+        <SwitchRow
+          title={copy.showOnMenu}
+          hint={copy.categoryVisibleHint}
+          checked={isVisible}
+          onChange={setIsVisible}
+        />
+      </div>
     </Modal>
   );
 }
