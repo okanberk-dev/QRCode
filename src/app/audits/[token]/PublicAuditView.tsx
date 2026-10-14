@@ -1,429 +1,804 @@
 'use client';
 
-// CLAUDE.md §42 Phase 3 — Public audit response client component.
+// Denetim Merkezi — herkese açık doldurma sayfası (spec §3.8). Telefon önce.
 //
-// Pulse design (dark bg + lime accent), step-by-step:
-//   intro (KVKK consent + opsiyonel name/email/phone) → soru-soru →
-//   submit → thanks (skor + geçti/kaldı rozeti).
+// Akış: giriş (ad + tek onay + "Başla") → maddeler → teşekkür.
+//   • Kontrol listesi (yes_no | scale | text | file, ≤ 15 madde): TÜM maddeler tek
+//     sayfada, "Devam" dokunuşu yok. 6 maddelik Evet/Hayır listesi = onay, Başla,
+//     6 cevap, Gönder = 9 dokunuş.
+//   • Adım adım (single | multi içeren test ya da > 15 madde): bir soru bir ekran,
+//     Geri / Devam; OTOMATİK ilerleme yok (yanlış dokunuş riski, WCAG 3.2.2).
 //
-// Backend kontratı: GET /api/audits/[token] → assignment + template +
-// questions (correctAnswer KASTEN EKSIK). POST submit → score response.
+// "Başla" / "Gönder" her zaman ekranın altına yapışık (sticky) çubuktadır; uzun
+// açıklama ya da açılmış iletişim alanları onu aşağı itmez.
+//
+// Taslak (D4): cevaplar `sessionStorage`'a yazılır (fotoğraflar hariç) → sayfa yenilense
+// de kaybolmaz. Canlı düzenleme: soru seti sunucuda değiştiyse cevaplar korunarak
+// yeniden çekilir (spec "Stale question set").
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, ArrowRight, Camera, Check, ClipboardCheck, Loader2, X } from 'lucide-react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, ChevronDown, ClipboardCheck, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { compressImage } from '@/lib/client-image';
-import type {
-  AuditQuestionType,
-  AuditScoringMode,
-  AuditSector,
-} from '@/lib/audits/types';
-import { normalizeQuestionOptions } from '@/lib/audits/options';
+import { readableOn } from '@/lib/audits/kind';
+import { parseAuditErrorResponse, summarizeAuditError, isLikelyEmail } from '@/lib/audits/error-humanizer';
+import PublicQuestionInput, {
+  type PublicAnswerValue,
+  type PublicQuestion,
+} from '@/components/audits/PublicQuestionInput';
+import PublicNoticeCard, { notOpenCopy, usedUpCopy } from './PublicNoticeCard';
+import { clearDraft, getSessionStorage, loadDraft, saveDraft } from './publicAuditDraft';
 import {
-  parseAuditErrorResponse,
-  summarizeAuditError,
-  isLikelyEmail,
-} from '@/lib/audits/error-humanizer';
-
-interface Question {
-  id: string;
-  type: AuditQuestionType;
-  prompt: string;
-  helpText: string | null;
-  options: unknown;
-  weight: number;
-  isRequired: boolean;
-  sortOrder: number;
-}
-
-interface TemplateMeta {
-  id: string;
-  title: string;
-  description: string | null;
-  sector: AuditSector;
-  scoringMode: AuditScoringMode;
-  passingScore: number | null;
-  locale: string;
-}
-
-interface RestaurantMeta {
-  id: string;
-  name: string;
-  primaryColor: string | null;
-  // Stage B — kvkkText dropped from public audit payload. Consent block
-  // now links to Buaze-managed /kvkk + /acik-riza (CLAUDE.md §19.1).
-}
-
-interface AssignmentMeta {
-  id: string;
-  status: string;
-  assigneeType: string;
-  assigneeName: string | null;
-  assigneeEmail: string | null;
-  dueAt: string | null;
-  recurrence: string;
-}
+  buildAnswerRows,
+  chooseFillMode,
+  countAnswered,
+  findMissingRequiredIds,
+  isAnswerFilled,
+  reconcileAnswers,
+  safeAccent,
+  totalPhotoBytes,
+} from './publicAuditFlow';
 
 interface FetchResponse {
   completed: boolean;
-  assignment: AssignmentMeta;
-  template: TemplateMeta;
-  restaurant: RestaurantMeta;
-  questions: Question[];
+  usedUp?: boolean;
+  reusable?: boolean;
+  kind?: 'checklist' | 'quiz';
+  assignment: {
+    id: string;
+    status: string;
+    assigneeName: string | null;
+    assigneeEmail: string | null;
+    recurrence: string;
+  };
+  template: {
+    id: string;
+    title: string;
+    description: string | null;
+    locale: string;
+  };
+  restaurant: { id: string; name: string; primaryColor: string | null };
+  questions: PublicQuestion[];
 }
 
-type AnswerValue = string | string[] | number | null;
+type Phase = 'loading' | 'ready' | 'closed' | 'used' | 'loadError';
+type Step = 'intro' | 'fill' | 'done';
 
 interface Props {
   token: string;
   locale: Locale;
 }
 
-function getOptions(q: Question, locale: 'tr' | 'en'): string[] {
-  // Frontend safety net — backend public GET zaten normalize ediyor
-  // (src/app/api/audits/[token]/route.ts) ama legacy/preview deploylarda
-  // çift güvence için aynı helper'ı burada da çağırıyoruz. yes_no için
-  // her zaman 2 seçenek garanti eder.
-  const normalized = normalizeQuestionOptions(q.type, q.options, locale);
-  return normalized ?? [];
-}
+const PRIMARY_BTN =
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60';
+const GHOST_BTN =
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#D4D4D4] bg-white px-5 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function PublicAuditView({ token, locale }: Props) {
   const isTr = locale === 'tr';
+  const uid = useId();
+
+  const [phase, setPhase] = useState<Phase>('loading');
+  const [loadMessage, setLoadMessage] = useState<string | null>(null);
   const [data, setData] = useState<FetchResponse | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [step, setStep] = useState<'intro' | 'questions' | 'done'>('intro');
+  const [step, setStep] = useState<Step>('intro');
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+  const [answers, setAnswers] = useState<Record<string, PublicAnswerValue>>({});
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [contactOpen, setContactOpen] = useState(false);
   const [kvkkOk, setKvkkOk] = useState(false);
-  const [marketingOk, setMarketingOk] = useState(false);
+  const [consentError, setConsentError] = useState(false);
+  const [introError, setIntroError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ score: number; passed: boolean | null } | null>(null);
-  // §42 — submit error visible olunca scroll-into-view (long form sonu için)
-  const errorRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (submitError && errorRef.current) {
-      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [submitError]);
+  const [result, setResult] = useState<{ score: number | null; passed: boolean | null } | null>(null);
+  const [invalidIds, setInvalidIds] = useState<string[]>([]);
+  const [staleNotice, setStaleNotice] = useState<string | null>(null);
+  const [stalePending, setStalePending] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const [scrollToId, setScrollToId] = useState<string | null>(null);
 
-  // Load template + questions
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/audits/${token}`)
-      .then(async (res) => {
-        if (cancelled) return;
+  const submittingRef = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const consentRef = useRef<HTMLInputElement | null>(null);
+
+  // ─── Yükle ────────────────────────────────────────────────────────────
+
+  const applyData = useCallback(
+    (json: FetchResponse, opts: { keepAnswers: boolean }) => {
+      setData(json);
+      if (json.usedUp) {
+        setPhase('used');
+        return;
+      }
+      setPhase('ready');
+      const lang = json.template.locale === 'en' ? 'en' : 'tr';
+      if (opts.keepAnswers) {
+        // Soru seti değişti: eski cevaplardan hâlâ uyanlar kalır.
+        setAnswers((prev) => reconcileAnswers(json.questions, prev, lang));
+        return;
+      }
+      // Tek seferlik linkte sahibin yazdığı ad / e-posta ön-doldurulur (sürekli linkte
+      // API zaten null döner — link adı katılımcıya ifşa edilmez).
+      let prefName = '';
+      if (!json.reusable && json.assignment.assigneeName) prefName = json.assignment.assigneeName;
+      if (!json.reusable && json.assignment.assigneeEmail) {
+        setEmail(json.assignment.assigneeEmail);
+        setContactOpen(true);
+      }
+      // Test (single / multi): iletişim bilgisi sahibin adaya ulaşması için gerekli → açık başlar.
+      if (json.kind === 'quiz') setContactOpen(true);
+
+      const draft = loadDraft(getSessionStorage(), token);
+      if (draft) {
+        const kept = reconcileAnswers(json.questions, draft.answers, lang);
+        setAnswers(kept);
+        if (!prefName && draft.name) prefName = draft.name;
+        if (Object.keys(kept).length > 0 || draft.name) setRestored(true);
+      }
+      if (prefName) setName(prefName);
+    },
+    [token],
+  );
+
+  const loadData = useCallback(
+    async (opts: { keepAnswers: boolean }): Promise<boolean> => {
+      try {
+        const res = await fetch(`/api/audits/${token}`, { cache: 'no-store' });
+        if (res.status === 404) {
+          setPhase('closed');
+          return false;
+        }
         if (!res.ok) {
-          setLoadError(res.status === 404 ? (isTr ? 'Bu denetime ulaşılamıyor.' : 'Audit not available.') : isTr ? 'Yükleme hatası' : 'Load error');
-          return;
+          const parsed = await parseAuditErrorResponse(res, locale);
+          setLoadMessage(summarizeAuditError(parsed));
+          setPhase('loadError');
+          return false;
         }
         const json = (await res.json()) as FetchResponse;
-        if (cancelled) return;
-        setData(json);
-        // Atama pre-fill name/email
-        if (json.assignment.assigneeName) setName(json.assignment.assigneeName);
-        if (json.assignment.assigneeEmail) setEmail(json.assignment.assigneeEmail);
-        // Tamamlanmışsa direkt thanks ekranına
-        if (json.completed) {
-          setStep('done');
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError(isTr ? 'Bağlantı hatası' : 'Connection error');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, isTr]);
+        applyData(json, opts);
+        return true;
+      } catch {
+        setLoadMessage(isTr ? 'Bağlantı hatası. İnternetini kontrol edip tekrar dene.' : 'Connection error. Check your connection and try again.');
+        setPhase('loadError');
+        return false;
+      }
+    },
+    [token, locale, isTr, applyData],
+  );
 
-  const totalQuestions = data?.questions.length ?? 0;
-  const currentQuestion = data?.questions[questionIndex] ?? null;
-  const progress = totalQuestions ? Math.round(((questionIndex + 1) / totalQuestions) * 100) : 0;
+  useEffect(() => {
+    void loadData({ keepAnswers: false });
+    // yalnız ilk açılışta
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function setAnswer(qid: string, value: AnswerValue) {
+  // ─── Taslak ───────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (phase !== 'ready' || step === 'done') return;
+    const timer = window.setTimeout(() => {
+      saveDraft(getSessionStorage(), token, { answers, name });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [answers, name, phase, step, token]);
+
+  // ─── Türetilmiş değerler ──────────────────────────────────────────────
+
+  const questions = useMemo(() => data?.questions ?? [], [data]);
+  const total = questions.length;
+  const mode = useMemo(() => chooseFillMode(questions), [questions]);
+  const accent = safeAccent(data?.restaurant.primaryColor);
+  const ink = readableOn(accent);
+  const answered = countAnswered(questions, answers);
+  const photoBytes = totalPhotoBytes(questions, answers);
+  const kind = data?.kind ?? 'checklist';
+
+  // ─── Kaydırma / odak ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!scrollToId || step !== 'fill') return;
+    const el = document.getElementById(`audit-item-${scrollToId}`);
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const focusable = el.querySelector<HTMLElement>('input, textarea, button');
+      focusable?.focus({ preventScroll: true });
+    }
+    setScrollToId(null);
+  }, [scrollToId, step, questionIndex]);
+
+  // Adım adım modda: soru değişince odak başlığa (ekran okuyucu yeni soruyu okur).
+  useEffect(() => {
+    if (step === 'fill' && mode === 'steps') headingRef.current?.focus({ preventScroll: true });
+  }, [step, mode, questionIndex]);
+
+  // ─── Cevap değişimi ───────────────────────────────────────────────────
+
+  const setAnswer = useCallback((qid: string, value: PublicAnswerValue) => {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
-  }
+    if (isAnswerFilled(value)) setInvalidIds((prev) => (prev.includes(qid) ? prev.filter((x) => x !== qid) : prev));
+  }, []);
 
-  function toggleMultiAnswer(qid: string, opt: string) {
-    setAnswers((prev) => {
-      const cur = Array.isArray(prev[qid]) ? (prev[qid] as string[]) : [];
-      const next = cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt];
-      return { ...prev, [qid]: next };
-    });
-  }
+  // ─── Başla ────────────────────────────────────────────────────────────
 
-  const canAdvance = useMemo(() => {
-    if (!currentQuestion) return false;
-    if (!currentQuestion.isRequired) return true;
-    const v = answers[currentQuestion.id];
-    if (v === undefined || v === null) return false;
-    if (typeof v === 'string') return v.trim().length > 0;
-    if (Array.isArray(v)) return v.length > 0;
-    if (typeof v === 'number') return Number.isFinite(v);
-    return true;
-  }, [currentQuestion, answers]);
-
-  const handleStartQuestions = useCallback(() => {
+  function handleStart() {
+    setIntroError(null);
     if (!kvkkOk) {
-      setSubmitError(isTr ? 'KVKK onayı zorunlu' : 'KVKK consent is required');
+      setConsentError(true);
+      consentRef.current?.focus();
       return;
     }
-    setSubmitError(null);
-    if (totalQuestions === 0) {
-      // Edge case — yayında ama soru yok (admin draft delete edip yayınlamamış olmalı)
-      setSubmitError(isTr ? 'Soru yok' : 'No questions');
+    if (total === 0) {
+      setIntroError(isTr ? 'Bu denetimde henüz madde yok.' : 'This audit has no items yet.');
       return;
     }
-    setStep('questions');
+    if (email.trim() && !isLikelyEmail(email)) {
+      setContactOpen(true);
+      setIntroError(isTr ? 'E-posta geçerli görünmüyor.' : 'The email address does not look valid.');
+      return;
+    }
+    setStep('fill');
     setQuestionIndex(0);
-  }, [kvkkOk, totalQuestions, isTr]);
-
-  // §42 bug-prevention: submit'ten ÖNCE tüm required soruları kontrol et.
-  // Mevcut canAdvance yalnız o anki soruya bakıyordu — kullanıcı önceki
-  // bir required soruyu boş bıraktıysa son sorudaki "Gönder" backend
-  // `MISSING_REQUIRED` reddederdi, "son soruda devam etmiyor" hissi.
-  // Burada hangi soruda eksik olduğunu söyleyip otomatik o soruya geri
-  // götürüyoruz (UX: bilgilendirici, sessiz değil).
-  function findFirstMissingRequired(): number | null {
-    if (!data) return null;
-    for (let i = 0; i < data.questions.length; i += 1) {
-      const q = data.questions[i];
-      if (!q.isRequired) continue;
-      const v = answers[q.id];
-      if (v === undefined || v === null) return i;
-      if (typeof v === 'string' && v.trim().length === 0) return i;
-      if (Array.isArray(v) && v.length === 0) return i;
-    }
-    return null;
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   }
+
+  // ─── Gönder ───────────────────────────────────────────────────────────
+
+  const goToFirstMissing = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      const first = ids[0];
+      if (mode === 'steps') {
+        const idx = questions.findIndex((q) => q.id === first);
+        if (idx >= 0) setQuestionIndex(idx);
+      }
+      setScrollToId(first);
+    },
+    [mode, questions],
+  );
+
+  const handleStaleSet = useCallback(async () => {
+    const ok = await loadData({ keepAnswers: true });
+    if (ok) setStalePending(true);
+  }, [loadData]);
+
+  // Soru seti yenilendiyse eksik maddeleri işaretle ve ilkine git.
+  useEffect(() => {
+    if (!stalePending || !data) return;
+    setStalePending(false);
+    const missing = findMissingRequiredIds(data.questions, answers);
+    setInvalidIds(missing);
+    setStaleNotice(
+      missing.length > 0
+        ? isTr
+          ? 'Denetim güncellendi. Eksik maddeleri doldurup tekrar gönder.'
+          : 'The audit was updated. Fill in the missing items and send again.'
+        : isTr
+          ? 'Denetim güncellendi. Cevaplarını kontrol edip tekrar gönder.'
+          : 'The audit was updated. Check your answers and send again.',
+    );
+    goToFirstMissing(missing);
+  }, [stalePending, data, answers, isTr, goToFirstMissing]);
 
   const handleSubmit = useCallback(async () => {
-    if (!data) return;
+    if (!data || submittingRef.current) return;
     setSubmitError(null);
+    setStaleNotice(null);
 
-    // Pre-flight client check — backend mirror'ı (`MISSING_REQUIRED`).
-    const missingIdx = findFirstMissingRequired();
-    if (missingIdx !== null) {
-      setQuestionIndex(missingIdx);
-      setSubmitError(
-        isTr
-          ? `Bu soru zorunlu — yanıtı doldurup tekrar dene.`
-          : `This question is required — fill it in and try again.`,
-      );
+    const missing = findMissingRequiredIds(data.questions, answers);
+    if (missing.length > 0) {
+      setInvalidIds(missing);
+      goToFirstMissing(missing);
       return;
     }
+    setInvalidIds([]);
 
-    // Email format sanity — optional alan ama doluysa kontrol et.
-    if (email.trim() && !isLikelyEmail(email)) {
-      setSubmitError(
-        isTr ? 'E-posta geçerli görünmüyor.' : 'Email does not look valid.',
-      );
-      return;
-    }
-
+    submittingRef.current = true;
     setSubmitting(true);
     try {
-      const payload = {
-        answers: data.questions.map((q) => ({
-          questionId: q.id,
-          value: answers[q.id] ?? null,
-        })),
-        respondentName: name.trim() || null,
-        respondentEmail: email.trim() || null,
-        respondentPhone: phone.trim() || null,
-        hasKvkkConsent: true,
-        hasMarketingConsent: marketingOk,
-      };
       const res = await fetch(`/api/audits/${token}/submit`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          answers: buildAnswerRows(data.questions, answers),
+          respondentName: name.trim() || null,
+          respondentEmail: email.trim() || null,
+          respondentPhone: phone.trim() || null,
+          hasKvkkConsent: true,
+          // Dahili denetimde ticari ileti izni istenmez (spec D2).
+          hasMarketingConsent: false,
+        }),
       });
       if (!res.ok) {
-        if (res.status === 409) {
-          setSubmitError(isTr ? 'Bu denetim zaten tamamlandı.' : 'This audit was already completed.');
-          setStep('done');
+        let code: string | null = null;
+        let errorField: string | null = null;
+        try {
+          const body = (await res.clone().json()) as { code?: unknown; error?: unknown };
+          code = typeof body.code === 'string' ? body.code : null;
+          errorField = typeof body.error === 'string' ? body.error : null;
+        } catch {
+          /* gövde JSON değil */
+        }
+        if (res.status === 409 && errorField === 'already_completed') {
+          clearDraft(getSessionStorage(), token);
+          setPhase('used');
           return;
         }
-        const parsed = await parseAuditErrorResponse(res, locale);
-        setSubmitError(summarizeAuditError(parsed));
+        if (res.status === 404) {
+          setPhase('closed');
+          return;
+        }
+        if (res.status === 400 && (code === 'MISSING_REQUIRED' || code === 'INVALID_QUESTION_ID')) {
+          await handleStaleSet();
+          return;
+        }
+        setSubmitError(summarizeAuditError(await parseAuditErrorResponse(res, locale)));
         return;
       }
-      const json = await res.json();
-      setResult({ score: json.score, passed: json.passed });
+      const json = (await res.json()) as { score?: number | null; passed?: boolean | null };
+      // Skor yalnız sunucu verdiyse görünür (test ve puanlanamayan formda null).
+      setResult({
+        score: typeof json.score === 'number' ? json.score : null,
+        passed: typeof json.score === 'number' ? (json.passed ?? null) : null,
+      });
+      clearDraft(getSessionStorage(), token);
       setStep('done');
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
     } catch {
-      setSubmitError(isTr ? 'Bağlantı hatası' : 'Connection error');
+      setSubmitError(
+        isTr
+          ? 'Gönderilemedi. İnternetini kontrol edip tekrar dene. Cevapların korundu.'
+          : 'Could not send. Check your connection and try again. Your answers are kept.',
+      );
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
-    // findFirstMissingRequired closure'da kalır — answers/data değiştiğinde
-    // useCallback yeniden oluşturulur, böylece güncel state ile çalışır.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, answers, name, email, phone, marketingOk, token, isTr, locale]);
+  }, [data, answers, token, name, email, phone, locale, isTr, goToFirstMissing, handleStaleSet]);
 
-  // Loading / error
-  if (loadError) {
+  function handleFillAnother() {
+    clearDraft(getSessionStorage(), token);
+    setAnswers({});
+    setName('');
+    setEmail('');
+    setPhone('');
+    setContactOpen(kind === 'quiz');
+    setKvkkOk(false);
+    setConsentError(false);
+    setInvalidIds([]);
+    setStaleNotice(null);
+    setSubmitError(null);
+    setIntroError(null);
+    setResult(null);
+    setRestored(false);
+    setQuestionIndex(0);
+    setStep('intro');
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }
+
+  // ─── Erken çıkışlar ───────────────────────────────────────────────────
+
+  if (phase === 'loading') {
     return (
-      <main className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center px-4">
-        <div className="max-w-md text-center">
-          <X size={32} className="mx-auto mb-3 text-[#FECACA]" />
-          <h1 className="bz-h-tight-2 text-[24px] mb-2">{isTr ? 'Erişim yok' : 'No access'}</h1>
-          <p className="text-[14px] text-white/60">{loadError}</p>
-        </div>
+      <main
+        lang={locale}
+        className="flex min-h-dvh items-center justify-center bg-[#0A0A0A] text-white"
+        aria-busy="true"
+      >
+        <Loader2 size={28} className="animate-spin" aria-label={isTr ? 'Yükleniyor' : 'Loading'} />
       </main>
     );
   }
-  if (!data) {
+  if (phase === 'closed') {
+    const copy = notOpenCopy(locale);
+    return <PublicNoticeCard title={copy.title} body={copy.body} />;
+  }
+  if (phase === 'used') {
+    const copy = usedUpCopy(locale);
+    return <PublicNoticeCard title={copy.title} body={copy.body} />;
+  }
+  if (phase === 'loadError' || !data) {
     return (
-      <main className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center">
-        <Loader2 size={28} className="animate-spin" />
-      </main>
+      <PublicNoticeCard
+        title={isTr ? 'Denetim yüklenemedi' : 'The audit could not be loaded'}
+        body={loadMessage ?? (isTr ? 'Biraz sonra tekrar dene.' : 'Please try again in a moment.')}
+        action={
+          <button
+            type="button"
+            className={PRIMARY_BTN}
+            onClick={() => {
+              setPhase('loading');
+              void loadData({ keepAnswers: false });
+            }}
+          >
+            {isTr ? 'Tekrar dene' : 'Try again'}
+          </button>
+        }
+      />
     );
   }
 
-  const accent = data.restaurant.primaryColor || '#C6F24E';
+  // ─── Ana görünüm ──────────────────────────────────────────────────────
 
-  const estimatedMinutes = Math.max(1, Math.ceil(totalQuestions / 4));
+  const itemsLabel =
+    kind === 'quiz'
+      ? isTr
+        ? `${total} soru`
+        : `${total} question${total === 1 ? '' : 's'}`
+      : isTr
+        ? `${total} madde`
+        : `${total} item${total === 1 ? '' : 's'}`;
+  const canFillAnother = step === 'done' && Boolean(data.reusable) && kind === 'checklist';
+  const currentQuestion = mode === 'steps' ? (questions[questionIndex] ?? null) : null;
+  const isLastStep = questionIndex >= total - 1;
+  const progress = total ? Math.round(((questionIndex + 1) / total) * 100) : 0;
+  const stepFilled = currentQuestion ? isAnswerFilled(answers[currentQuestion.id]) : false;
+
+  const footerShell =
+    '-mx-4 rounded-t-3xl bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-[#0A0A0A] shadow-[0_-12px_32px_-12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-3 sm:rounded-3xl sm:px-6 sm:pb-4 sm:shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]';
+
+  const submitErrorBlock = submitError && (
+    <div
+      role="alert"
+      className="mb-3 flex items-start gap-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-[13px] leading-snug text-[#991B1B]"
+    >
+      <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" aria-hidden="true" />
+      <span className="min-w-0 flex-1">{submitError}</span>
+      <button
+        type="button"
+        className="-my-1 shrink-0 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold underline underline-offset-2 hover:bg-[#FECACA]/40"
+        onClick={() => void handleSubmit()}
+        disabled={submitting}
+      >
+        {isTr ? 'Tekrar dene' : 'Try again'}
+      </button>
+    </div>
+  );
+
+  const submitLabel = submitting ? (
+    <>
+      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+      {isTr ? 'Gönderiliyor…' : 'Sending…'}
+    </>
+  ) : (
+    <>
+      <Check size={16} aria-hidden="true" />
+      {isTr ? 'Gönder' : 'Send'}
+    </>
+  );
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-white">
-      <div className="max-w-[640px] mx-auto px-4 sm:px-6 py-8 sm:py-14">
-        {/* Brand header */}
-        <header className="text-center mb-6 sm:mb-8">
+    <main lang={locale} className="bg-[#0A0A0A] text-white">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col px-4 pt-5 sm:px-6 sm:pt-10">
+        {/* Başlık: sıkı */}
+        <header className="mb-4 flex items-center gap-3 sm:mb-6">
           <div
-            className="inline-flex items-center justify-center w-12 h-12 rounded-2xl text-[#0A0A0A] mb-3 shadow-[0_4px_24px_-8px_rgba(198,242,78,0.45)]"
-            style={{ background: accent }}
+            aria-hidden="true"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{ background: accent, color: ink }}
           >
-            <ClipboardCheck size={20} strokeWidth={2.5} />
+            <ClipboardCheck size={18} strokeWidth={2.5} />
           </div>
-          <div className="pulse-eyebrow text-white/50">
-            {isTr ? 'DENETİM MERKEZİ' : 'AUDIT CENTER'}
+          <div className="min-w-0">
+            <p className="pulse-eyebrow truncate text-white/60">{data.restaurant.name}</p>
+            <h1 className="bz-h-tight-2 mt-0.5 break-words text-[19px] leading-tight sm:text-[24px]">
+              {data.template.title}
+            </h1>
           </div>
-          <h1 className="bz-h-tight-2 text-[24px] sm:text-[32px] mt-1 break-words">
-            {data.restaurant.name}
-          </h1>
         </header>
 
-        {/* Step: intro */}
-        {step === 'intro' && (
-          <div className="bg-white text-[#0A0A0A] rounded-3xl p-6 sm:p-8 bz-fade-in shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
-            <p className="pulse-eyebrow text-[#525252]">
-              {isTr ? 'BU DENETİM' : 'THIS AUDIT'}
-            </p>
-            <h2 className="bz-h-tight-2 text-[22px] sm:text-[26px] mt-1 leading-tight">
-              {data.template.title}
-            </h2>
-            {data.template.description && (
-              <p className="text-[14px] sm:text-[15px] text-[#525252] mt-2 leading-relaxed">
-                {data.template.description}
-              </p>
-            )}
-
-            {/* Meta chips — soru sayısı + süre */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-3 py-1 text-[12px] text-[#525252]">
-                <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" />
-                {totalQuestions} {isTr ? 'soru' : 'questions'}
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-3 py-1 text-[12px] text-[#525252]">
-                <span
-                  aria-hidden
-                  className="inline-block h-1.5 w-1.5 rounded-full"
-                  style={{ background: accent }}
-                />
-                ~{estimatedMinutes} {isTr ? 'dk' : 'min'}
-              </span>
-            </div>
-
-            <hr className="my-5 sm:my-6 border-[#EDEDED]" />
-
-            {/* Contact (optional) — collapsed eyebrow + grid */}
-            <div className="space-y-3">
-              <div>
-                <p className="pulse-eyebrow text-[#525252]">
-                  {isTr ? 'İLETİŞİM' : 'CONTACT'}
-                </p>
-                <p className="text-[12px] text-[#737373] mt-1">
+        <div className="flex-1 sm:flex-none">
+          {/* ─── Giriş ─── */}
+          {step === 'intro' && (
+            <section className="rounded-3xl bg-white p-5 text-[#0A0A0A] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:p-7">
+              {restored && (
+                <p
+                  role="status"
+                  className="mb-4 flex items-start gap-2 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-[12.5px] leading-snug text-[#1E40AF]"
+                >
+                  <Check size={14} strokeWidth={2.4} className="mt-0.5 shrink-0" aria-hidden="true" />
                   {isTr
-                    ? 'Opsiyonel — işletme cevabını görebilmek için.'
-                    : 'Optional — so the business can follow up.'}
+                    ? 'Önceki cevapların geri yüklendi. Fotoğrafları yeniden eklemen gerekebilir.'
+                    : 'Your earlier answers were restored. You may need to add photos again.'}
                 </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="audit-name" className="pulse-eyebrow text-[#525252] block mb-1">
-                    {isTr ? 'Ad' : 'Name'}
-                  </label>
-                  <input
-                    id="audit-name"
-                    className="bz-input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={isTr ? 'Adın' : 'Your name'}
-                    maxLength={200}
-                    autoComplete="name"
-                    autoCapitalize="words"
-                    enterKeyHint="next"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="audit-email" className="pulse-eyebrow text-[#525252] block mb-1">
-                    {isTr ? 'E-posta' : 'Email'}
-                  </label>
-                  <input
-                    id="audit-email"
-                    className="bz-input"
-                    type="email"
-                    inputMode="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ad@buaze.com"
-                    autoComplete="email"
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    enterKeyHint="next"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="audit-phone" className="pulse-eyebrow text-[#525252] block mb-1">
-                    {isTr ? 'Telefon' : 'Phone'}
-                  </label>
-                  <input
-                    id="audit-phone"
-                    className="bz-input"
-                    type="tel"
-                    inputMode="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+90 ..."
-                    autoComplete="tel"
-                    enterKeyHint="done"
-                  />
-                </div>
-              </div>
-            </div>
+              )}
+              {data.template.description && <Description text={data.template.description} isTr={isTr} />}
 
-            <hr className="my-5 sm:my-6 border-[#EDEDED]" />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1 text-[12px] text-[#525252]">
+                  <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+                  {itemsLabel}
+                </span>
+              </div>
 
-            {/* Consent block — tek kart içinde 2 checkbox, accent border solda */}
-            <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4 space-y-3">
-              {/* Stage B — Buaze-managed KVKK + Açık Rıza + Ticari İleti
-                  links (CLAUDE.md §19.1). Audit center owner cannot override
-                  legal text; consent texts flow through site-wide legal
-                  pages. Locale-aware paths use the audit template's locale
-                  (TR default, EN fallback). */}
-              <label className="flex items-start gap-2.5 text-[13px] cursor-pointer leading-relaxed">
+              <div className="mt-5">
+                <label htmlFor={`${uid}-name`} className="mb-1.5 block text-[13px] font-semibold text-[#0A0A0A]">
+                  {isTr ? 'Adın (isteğe bağlı)' : 'Your name (optional)'}
+                </label>
                 <input
+                  id={`${uid}-name`}
+                  className="bz-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={isTr ? 'Adın' : 'Your name'}
+                  maxLength={200}
+                  autoComplete="name"
+                  autoCapitalize="words"
+                  enterKeyHint="next"
+                />
+              </div>
+
+              <div className="mt-2">
+                <button
+                  type="button"
+                  className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+                  aria-expanded={contactOpen}
+                  aria-controls={`${uid}-contact`}
+                  onClick={() => setContactOpen((v) => !v)}
+                >
+                  {isTr ? 'İletişim bilgisi ekle' : 'Add contact details'}
+                  <ChevronDown
+                    size={14}
+                    aria-hidden="true"
+                    className={`transition-transform ${contactOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {contactOpen && (
+                  <div id={`${uid}-contact`} className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor={`${uid}-email`} className="mb-1.5 block text-[13px] font-semibold text-[#0A0A0A]">
+                        {isTr ? 'E-posta (isteğe bağlı)' : 'Email (optional)'}
+                      </label>
+                      <input
+                        id={`${uid}-email`}
+                        className="bz-input"
+                        type="email"
+                        inputMode="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="ad@ornek.com"
+                        autoComplete="email"
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        enterKeyHint="next"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`${uid}-phone`} className="mb-1.5 block text-[13px] font-semibold text-[#0A0A0A]">
+                        {isTr ? 'Telefon (isteğe bağlı)' : 'Phone (optional)'}
+                      </label>
+                      <input
+                        id={`${uid}-phone`}
+                        className="bz-input"
+                        type="tel"
+                        inputMode="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+90 …"
+                        autoComplete="tel"
+                        enterKeyHint="done"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {introError && (
+                <p role="alert" className="mt-3 flex items-start gap-1.5 text-[13px] text-[#991B1B]">
+                  <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  {introError}
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* ─── Maddeler: kontrol listesi (tek sayfa) ─── */}
+          {step === 'fill' && mode === 'checklist' && (
+            <div className="space-y-3">
+              {staleNotice && (
+                <p
+                  role="status"
+                  className="flex items-start gap-2 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3 text-[13px] leading-snug text-[#92400E]"
+                >
+                  <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  {staleNotice}
+                </p>
+              )}
+              {questions.map((q, i) => {
+                const invalid = invalidIds.includes(q.id);
+                const legendId = `${uid}-legend-${q.id}`;
+                const helpId = q.helpText ? `${uid}-help-${q.id}` : undefined;
+                const errId = invalid ? `${uid}-err-${q.id}` : undefined;
+                return (
+                  <div
+                    key={q.id}
+                    id={`audit-item-${q.id}`}
+                    className={`scroll-mt-4 rounded-2xl bg-white p-4 text-[#0A0A0A] sm:p-5 ${
+                      invalid ? 'ring-2 ring-[#DC2626]' : ''
+                    }`}
+                  >
+                    <fieldset className="m-0 min-w-0 border-0 p-0">
+                      <legend id={legendId} className="mb-3 w-full p-0 text-[15px] font-semibold leading-snug">
+                        <span className="bz-mono mr-2 text-[11px] font-medium text-[#A3A3A3]" aria-hidden="true">
+                          {i + 1}
+                        </span>
+                        {q.prompt}
+                        {!q.isRequired && (
+                          <span className="ml-2 align-middle text-[11px] font-medium text-[#737373]">
+                            {isTr ? 'İsteğe bağlı' : 'Optional'}
+                          </span>
+                        )}
+                      </legend>
+                      {q.helpText && (
+                        <p id={helpId} className="-mt-1.5 mb-3 text-[13px] leading-relaxed text-[#525252]">
+                          {q.helpText}
+                        </p>
+                      )}
+                      <PublicQuestionInput
+                        question={q}
+                        value={answers[q.id] ?? null}
+                        onChange={(v) => setAnswer(q.id, v)}
+                        accent={accent}
+                        isTr={isTr}
+                        variant="inline"
+                        labelledBy={legendId}
+                        describedBy={[helpId, errId].filter(Boolean).join(' ') || undefined}
+                        photoBytesElsewhere={photoBytes - ownPhotoBytes(answers[q.id])}
+                      />
+                      {invalid && (
+                        <p id={errId} role="alert" className="mt-2 text-[13px] font-semibold text-[#DC2626]">
+                          {isTr ? 'Bu madde zorunlu' : 'This item is required'}
+                        </p>
+                      )}
+                    </fieldset>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ─── Maddeler: adım adım ─── */}
+          {step === 'fill' && mode === 'steps' && currentQuestion && (
+            <section className="rounded-3xl bg-white p-5 text-[#0A0A0A] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:p-7">
+              <div className="mb-2 flex items-center justify-between text-[12px]">
+                <span className="pulse-eyebrow text-[#525252]">
+                  {isTr ? `Soru ${questionIndex + 1} / ${total}` : `Question ${questionIndex + 1} / ${total}`}
+                </span>
+                <span className="bz-mono text-[#737373]">%{progress}</span>
+              </div>
+              <div
+                className="mb-5 h-1.5 overflow-hidden rounded-full bg-[#EDEDED]"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                aria-label={isTr ? 'İlerleme' : 'Progress'}
+              >
+                <div
+                  className="h-full transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%`, background: accent }}
+                />
+              </div>
+
+              {staleNotice && (
+                <p
+                  role="status"
+                  className="mb-4 flex items-start gap-2 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[13px] leading-snug text-[#92400E]"
+                >
+                  <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  {staleNotice}
+                </p>
+              )}
+
+              <div id={`audit-item-${currentQuestion.id}`} className="scroll-mt-4">
+                <h2
+                  ref={headingRef}
+                  tabIndex={-1}
+                  id={`${uid}-q`}
+                  className="bz-h-tight-2 text-[20px] leading-snug outline-none sm:text-[22px]"
+                >
+                  {currentQuestion.prompt}
+                </h2>
+                {currentQuestion.helpText && (
+                  <p id={`${uid}-q-help`} className="mt-1.5 text-[13px] leading-relaxed text-[#525252]">
+                    {currentQuestion.helpText}
+                  </p>
+                )}
+                {!currentQuestion.isRequired && (
+                  <span className="mt-2 inline-block rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-2.5 py-0.5 text-[11px] text-[#737373]">
+                    {isTr ? 'İsteğe bağlı' : 'Optional'}
+                  </span>
+                )}
+                <div className="mt-5">
+                  <PublicQuestionInput
+                    key={currentQuestion.id}
+                    question={currentQuestion}
+                    value={answers[currentQuestion.id] ?? null}
+                    onChange={(v) => setAnswer(currentQuestion.id, v)}
+                    accent={accent}
+                    isTr={isTr}
+                    variant="step"
+                    labelledBy={`${uid}-q`}
+                    describedBy={currentQuestion.helpText ? `${uid}-q-help` : undefined}
+                    photoBytesElsewhere={photoBytes - ownPhotoBytes(answers[currentQuestion.id])}
+                  />
+                </div>
+                {invalidIds.includes(currentQuestion.id) && (
+                  <p role="alert" className="mt-3 text-[13px] font-semibold text-[#DC2626]">
+                    {isTr ? 'Bu madde zorunlu' : 'This item is required'}
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ─── Teşekkür ─── */}
+          {step === 'done' && (
+            <section className="rounded-3xl bg-white p-8 text-center text-[#0A0A0A] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)] sm:p-10">
+              <div
+                aria-hidden="true"
+                className="pulse-heartbeat mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full shadow-[0_8px_24px_-8px_rgba(0,0,0,0.25)]"
+                style={{ background: accent, color: ink }}
+              >
+                <Check size={28} strokeWidth={2.5} />
+              </div>
+              <h2 className="bz-h-tight-2 text-[24px] sm:text-[28px]">{isTr ? 'Teşekkürler!' : 'Thank you!'}</h2>
+              <p className="mx-auto mt-2 max-w-[360px] text-[14px] leading-relaxed text-[#525252]">
+                {isTr ? 'Yanıtın işletmeye iletildi.' : 'Your answers were sent to the business.'}
+              </p>
+              {result && result.score !== null && (
+                <div className="mt-6 inline-block min-w-[220px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-5">
+                  <p className="pulse-eyebrow text-[#525252]">{isTr ? 'Puan' : 'Score'}</p>
+                  <p className="bz-mono mt-1 text-[44px] font-medium leading-none tracking-tight">
+                    {result.score}
+                    <span className="text-[20px] text-[#A3A3A3]">/100</span>
+                  </p>
+                  {result.passed !== null && (
+                    <div
+                      className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ${
+                        result.passed ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FEE2E2] text-[#991B1B]'
+                      }`}
+                    >
+                      {result.passed
+                        ? isTr
+                          ? 'Geçti'
+                          : 'Passed'
+                        : isTr
+                          ? 'Geçme puanının altında'
+                          : 'Below the pass mark'}
+                    </div>
+                  )}
+                </div>
+              )}
+              {canFillAnother && (
+                <div className="mt-6">
+                  <button type="button" className={GHOST_BTN} onClick={handleFillAnother}>
+                    {isTr ? 'Bir tane daha doldur' : 'Fill another'}
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+
+        {/* ─── Yapışık çubuk: Başla / Gönder / Geri-Devam ─── */}
+        {step === 'intro' && (
+          <div className="sticky bottom-0 z-20 sm:bottom-4">
+            <div className={footerShell}>
+              <label className="flex min-h-11 cursor-pointer items-start gap-3 text-[13px] leading-relaxed">
+                <input
+                  ref={consentRef}
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[#0A0A0A] shrink-0"
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[#0A0A0A]"
                   checked={kvkkOk}
-                  onChange={(e) => setKvkkOk(e.target.checked)}
+                  onChange={(e) => {
+                    setKvkkOk(e.target.checked);
+                    if (e.target.checked) setConsentError(false);
+                  }}
+                  aria-describedby={consentError ? `${uid}-consent-err` : undefined}
+                  aria-invalid={consentError || undefined}
                 />
                 <span>
                   {isTr ? 'Okudum, anladım — ' : 'I have read and understood the '}
@@ -431,7 +806,7 @@ export default function PublicAuditView({ token, locale }: Props) {
                     href={`/${isTr ? 'tr' : 'en'}/kvkk`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                    className="text-[#0A0A0A] underline hover:text-[#525252]"
                   >
                     {isTr ? 'KVKK Aydınlatma Metni' : 'KVKK Privacy Notice'}
                   </a>
@@ -440,546 +815,142 @@ export default function PublicAuditView({ token, locale }: Props) {
                     href={`/${isTr ? 'tr' : 'en'}/acik-riza`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                    className="text-[#0A0A0A] underline hover:text-[#525252]"
                   >
                     {isTr ? 'Açık Rıza Metni' : 'Explicit Consent'}
                   </a>
                   {isTr
                     ? ' kapsamında yanıtlarımın işlenmesini kabul ediyorum.'
                     : ' for processing my responses.'}{' '}
-                  <span className="text-[#DC2626]" aria-hidden>
+                  <span className="text-[#DC2626]" aria-hidden="true">
                     *
                   </span>
                 </span>
               </label>
-              <label className="flex items-start gap-2.5 text-[13px] cursor-pointer leading-relaxed">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-[#0A0A0A] shrink-0"
-                  checked={marketingOk}
-                  onChange={(e) => setMarketingOk(e.target.checked)}
-                />
-                <span className="text-[#525252]">
-                  {isTr ? 'Kampanya ve duyurular için ' : 'For follow-up via '}
-                  <a
-                    href={`/${isTr ? 'tr' : 'en'}/ticari-ileti`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
-                  >
-                    {isTr ? 'Ticari Elektronik İleti İzni' : 'Commercial Electronic Message Consent'}
-                  </a>
-                  {isTr ? ' kapsamında iletişim onayı veriyorum (opsiyonel).' : ' (optional).'}
-                </span>
-              </label>
+              {consentError && (
+                <p id={`${uid}-consent-err`} role="alert" className="mt-1 text-[12.5px] font-semibold text-[#DC2626]">
+                  {isTr ? 'Başlamak için onay gerekli.' : 'Consent is required to start.'}
+                </p>
+              )}
+              <button type="button" className={`${PRIMARY_BTN} mt-2 w-full`} onClick={handleStart}>
+                {isTr ? 'Başla' : 'Start'} <ArrowRight size={16} aria-hidden="true" />
+              </button>
             </div>
-
-            {submitError && (
-              <div
-                ref={errorRef}
-                role="alert"
-                className="mt-4 flex items-start gap-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-[13px] leading-snug text-[#991B1B]"
-              >
-                <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" />
-                <span className="flex-1">{submitError}</span>
-                <button
-                  type="button"
-                  aria-label={isTr ? 'Kapat' : 'Dismiss'}
-                  className="-mr-1 -mt-1 ml-2 rounded p-1 text-[#991B1B]/70 transition hover:bg-[#FECACA]/40 hover:text-[#991B1B]"
-                  onClick={() => setSubmitError(null)}
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="bz-btn-primary w-full mt-5 justify-center text-[14px] py-2.5"
-              onClick={handleStartQuestions}
-              disabled={!kvkkOk}
-              aria-disabled={!kvkkOk}
-            >
-              {isTr ? 'Başla' : 'Start'} <ArrowRight size={14} />
-            </button>
-            {!kvkkOk && (
-              <p className="text-[11px] text-[#737373] text-center mt-2">
-                {isTr ? 'Başlamak için onay gerekli.' : 'Consent is required to start.'}
-              </p>
-            )}
           </div>
         )}
 
-        {/* Step: questions */}
-        {step === 'questions' && currentQuestion && (
-          <div className="bg-white text-[#0A0A0A] rounded-3xl p-6 sm:p-8 bz-fade-in shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
-            {/* Progress */}
-            <div className="flex items-center justify-between text-[11px] mb-2">
-              <span className="pulse-eyebrow text-[#525252]">
-                {isTr ? `Soru ${questionIndex + 1} / ${totalQuestions}` : `${questionIndex + 1} / ${totalQuestions}`}
-              </span>
-              <span className="bz-mono text-[#737373]">%{progress}</span>
-            </div>
-            <div
-              className="h-1.5 bg-[#EDEDED] rounded-full overflow-hidden mb-6"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progress}
-              aria-label={isTr ? 'Denetim ilerleme' : 'Audit progress'}
-            >
-              <div
-                className="h-full transition-all duration-300 ease-out"
-                style={{ width: `${progress}%`, background: accent }}
-              />
-            </div>
-
-            <h2 className="bz-h-tight-2 text-[20px] sm:text-[22px] leading-snug">
-              {currentQuestion.prompt}
-            </h2>
-            {currentQuestion.helpText && (
-              <p className="text-[13px] text-[#525252] mt-1.5 leading-relaxed">
-                {currentQuestion.helpText}
-              </p>
-            )}
-            {!currentQuestion.isRequired && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[10px] text-[#737373] mt-2 pulse-eyebrow">
-                {isTr ? 'OPSİYONEL' : 'OPTIONAL'}
-              </span>
-            )}
-
-            <div className="mt-5">
-              <QuestionInput
-                question={currentQuestion}
-                value={answers[currentQuestion.id] ?? null}
-                onChange={(v) => setAnswer(currentQuestion.id, v)}
-                onToggleMulti={(opt) => toggleMultiAnswer(currentQuestion.id, opt)}
-                accent={accent}
-                isTr={isTr}
-              />
-            </div>
-
-            {submitError && (
-              <div
-                ref={errorRef}
-                role="alert"
-                className="mt-4 flex items-start gap-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-[13px] leading-snug text-[#991B1B]"
-              >
-                <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" />
-                <span className="flex-1">{submitError}</span>
+        {step === 'fill' && mode === 'checklist' && (
+          <div className="sticky bottom-0 z-20 sm:bottom-4">
+            <div className={footerShell}>
+              {submitErrorBlock}
+              <div className="flex items-center gap-3">
+                <p className="min-w-0 flex-1 text-[13px] leading-snug text-[#525252]" aria-live="polite">
+                  <span className="bz-mono font-semibold text-[#0A0A0A]">
+                    {answered}/{total}
+                  </span>{' '}
+                  {isTr ? 'yanıtlandı' : 'answered'}
+                  {invalidIds.length > 0 && (
+                    <span className="block font-semibold text-[#DC2626]">
+                      {isTr ? `${invalidIds.length} zorunlu madde eksik` : `${invalidIds.length} required item${invalidIds.length === 1 ? '' : 's'} missing`}
+                    </span>
+                  )}
+                </p>
                 <button
                   type="button"
-                  aria-label={isTr ? 'Kapat' : 'Dismiss'}
-                  className="-mr-1 -mt-1 ml-2 rounded p-1 text-[#991B1B]/70 transition hover:bg-[#FECACA]/40 hover:text-[#991B1B]"
-                  onClick={() => setSubmitError(null)}
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-6 gap-2">
-              <button
-                type="button"
-                className="bz-btn-ghost"
-                disabled={questionIndex === 0 || submitting}
-                onClick={() => setQuestionIndex((i) => Math.max(0, i - 1))}
-              >
-                <ArrowLeft size={14} /> {isTr ? 'Geri' : 'Back'}
-              </button>
-              {questionIndex < totalQuestions - 1 ? (
-                <button
-                  type="button"
-                  className="bz-btn-primary"
-                  disabled={!canAdvance || submitting}
-                  onClick={() => setQuestionIndex((i) => i + 1)}
-                >
-                  {isTr ? 'Devam' : 'Continue'} <ArrowRight size={14} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="bz-btn-primary"
-                  disabled={submitting || !canAdvance}
-                  onClick={handleSubmit}
+                  className={`${PRIMARY_BTN} shrink-0`}
+                  onClick={() => void handleSubmit()}
+                  disabled={submitting}
                   aria-busy={submitting}
                 >
-                  {submitting ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      {isTr ? 'Gönderiliyor…' : 'Submitting…'}
-                    </>
-                  ) : (
-                    <>
-                      <Check size={14} />
-                      {isTr ? 'Gönder' : 'Submit'}
-                    </>
-                  )}
+                  {submitLabel}
                 </button>
-              )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Step: done */}
-        {step === 'done' && (
-          <div className="bg-white text-[#0A0A0A] rounded-3xl p-8 sm:p-10 text-center bz-fade-in shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
-            <div
-              className="pulse-heartbeat inline-flex items-center justify-center w-16 h-16 rounded-full text-[#0A0A0A] mb-4 shadow-[0_8px_24px_-8px_rgba(198,242,78,0.6)]"
-              style={{ background: accent }}
-            >
-              <Check size={28} strokeWidth={2.5} />
-            </div>
-            <h2 className="bz-h-tight-2 text-[24px] sm:text-[28px]">
-              {isTr ? 'Teşekkürler!' : 'Thank you!'}
-            </h2>
-            <p className="text-[14px] text-[#525252] mt-2 max-w-[360px] mx-auto leading-relaxed">
-              {isTr
-                ? 'Yanıtın alındı. İşletme değerlendirmeyi panelinde görecek.'
-                : 'Your response was received. The business will see this evaluation in their panel.'}
-            </p>
-            {result && (
-              <div className="mt-6 inline-block min-w-[240px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-5">
-                <p className="pulse-eyebrow text-[#525252]">
-                  {isTr ? 'Toplam puan' : 'Total score'}
-                </p>
-                <p className="bz-mono text-[44px] font-medium mt-1 leading-none tracking-tight">
-                  {result.score}
-                  <span className="text-[#A3A3A3] text-[20px]">/100</span>
-                </p>
-                {result.passed != null && (
-                  <div
-                    className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium ${
-                      result.passed
-                        ? 'bg-[#DCFCE7] text-[#166534]'
-                        : 'bg-[#FEE2E2] text-[#991B1B]'
-                    }`}
+        {step === 'fill' && mode === 'steps' && currentQuestion && (
+          <div className="sticky bottom-0 z-20 sm:bottom-4">
+            <div className={footerShell}>
+              {submitErrorBlock}
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  className={GHOST_BTN}
+                  disabled={questionIndex === 0 || submitting}
+                  onClick={() => setQuestionIndex((i) => Math.max(0, i - 1))}
+                >
+                  <ArrowLeft size={16} aria-hidden="true" /> {isTr ? 'Geri' : 'Back'}
+                </button>
+                {isLastStep ? (
+                  <button
+                    type="button"
+                    className={PRIMARY_BTN}
+                    onClick={() => void handleSubmit()}
+                    disabled={submitting || (currentQuestion.isRequired && !stepFilled)}
+                    aria-busy={submitting}
                   >
-                    <span
-                      aria-hidden
-                      className={`inline-block h-1.5 w-1.5 rounded-full ${
-                        result.passed ? 'bg-[#166534]' : 'bg-[#991B1B]'
-                      }`}
-                    />
-                    {result.passed
-                      ? isTr
-                        ? 'Geçti'
-                        : 'Passed'
-                      : isTr
-                        ? 'Eşik aşılamadı'
-                        : 'Below threshold'}
-                  </div>
+                    {submitLabel}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={PRIMARY_BTN}
+                    disabled={submitting || (currentQuestion.isRequired && !stepFilled)}
+                    onClick={() => setQuestionIndex((i) => Math.min(total - 1, i + 1))}
+                  >
+                    {isTr ? 'Devam' : 'Next'} <ArrowRight size={16} aria-hidden="true" />
+                  </button>
                 )}
               </div>
-            )}
+            </div>
           </div>
         )}
 
-        <p className="text-center text-[11px] text-white/40 bz-mono mt-8">
-          POWERED BY BUAZE
-        </p>
+        <p className="bz-mono py-6 text-center text-[11px] text-white/40">POWERED BY BUAZE</p>
       </div>
     </main>
   );
 }
 
-interface QuestionInputProps {
-  question: Question;
-  value: AnswerValue;
-  onChange: (v: AnswerValue) => void;
-  onToggleMulti: (opt: string) => void;
-  accent: string;
-  isTr: boolean;
+/** Bir cevabın fotoğraf (data URL) uzunluğu; fotoğraf değilse 0. */
+function ownPhotoBytes(value: PublicAnswerValue | undefined): number {
+  return typeof value === 'string' && value.startsWith('data:') ? value.length : 0;
 }
 
-function QuestionInput({ question, value, onChange, onToggleMulti, accent, isTr }: QuestionInputProps) {
-  const options = getOptions(question, isTr ? 'tr' : 'en');
+// ─── Açıklama: 4 satıra kısaltılır ──────────────────────────────────────
 
-  // Empty options defensive fallback — backend + frontend normalize hala
-  // boş array dönerse (admin yanlış konfigürasyon), kullanıcıya açıklayıcı
-  // mesaj göster, sessiz kalma.
-  if (
-    (question.type === 'single' || question.type === 'yes_no' || question.type === 'multi') &&
-    options.length === 0
-  ) {
-    return (
-      <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E] flex items-start gap-2">
-        <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" />
-        <span>
-          {isTr
-            ? 'Bu soruda seçenek tanımlanmamış. İşletme yöneticisi ayarları kontrol etmeli.'
-            : 'No options configured for this question. The business should review settings.'}
-        </span>
-      </div>
-    );
-  }
+function Description({ text, isTr }: { text: string; isTr: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const ref = useRef<HTMLParagraphElement | null>(null);
 
-  if (question.type === 'single' || question.type === 'yes_no') {
-    return (
-      <div className="space-y-2" role="radiogroup" aria-label={isTr ? 'Seçenekler' : 'Options'}>
-        {options.map((opt) => {
-          const selected = value === opt;
-          return (
-            <button
-              key={opt}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onChange(opt)}
-              className={`group w-full text-left rounded-xl border px-4 py-3 text-[14px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 flex items-center gap-3 ${
-                selected
-                  ? 'border-[#0A0A0A] bg-[#FAFAFA] shadow-[inset_3px_0_0_0_#C6F24E]'
-                  : 'border-[#EDEDED] hover:border-[#A3A3A3] hover:bg-[#FAFAFA]'
-              }`}
-            >
-              <span
-                className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition ${
-                  selected ? 'border-[#0A0A0A]' : 'border-[#D4D4D4] group-hover:border-[#0A0A0A]'
-                }`}
-              >
-                {selected && (
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-full"
-                    style={{ background: accent }}
-                  />
-                )}
-              </span>
-              <span className="flex-1">{opt}</span>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  if (question.type === 'multi') {
-    const arr = Array.isArray(value) ? value : [];
-    return (
-      <div className="space-y-2">
-        <p className="text-[11px] text-[#737373] mb-1">
-          {isTr ? 'Birden fazla seçebilirsin' : 'Select multiple'}
-        </p>
-        {options.map((opt) => {
-          const selected = arr.includes(opt);
-          return (
-            <button
-              key={opt}
-              type="button"
-              role="checkbox"
-              aria-checked={selected}
-              onClick={() => onToggleMulti(opt)}
-              className={`group w-full text-left rounded-xl border px-4 py-3 text-[14px] transition flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-                selected
-                  ? 'border-[#0A0A0A] bg-[#FAFAFA] shadow-[inset_3px_0_0_0_#C6F24E]'
-                  : 'border-[#EDEDED] hover:border-[#A3A3A3] hover:bg-[#FAFAFA]'
-              }`}
-            >
-              <span
-                className={`inline-flex items-center justify-center w-5 h-5 rounded-md border-2 shrink-0 transition ${
-                  selected ? 'border-[#0A0A0A]' : 'border-[#D4D4D4] group-hover:border-[#0A0A0A]'
-                }`}
-                style={selected ? { background: accent, borderColor: '#0A0A0A' } : {}}
-              >
-                {selected && <Check size={12} strokeWidth={3} />}
-              </span>
-              <span className="flex-1">{opt}</span>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  if (question.type === 'scale') {
-    const numVal = typeof value === 'number' ? value : null;
-    const scaleLabels = isTr
-      ? ['Çok kötü', 'Kötü', 'Orta', 'İyi', 'Mükemmel']
-      : ['Very poor', 'Poor', 'Average', 'Good', 'Excellent'];
-    return (
-      <div className="space-y-3">
-        <div className="flex gap-2" role="radiogroup" aria-label={isTr ? 'Puan' : 'Rating'}>
-          {[1, 2, 3, 4, 5].map((n) => {
-            const selected = numVal === n;
-            return (
-              <button
-                key={n}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                aria-label={`${n} — ${scaleLabels[n - 1]}`}
-                onClick={() => onChange(n)}
-                className={`flex-1 rounded-xl border py-3 text-[16px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-                  selected
-                    ? 'border-[#0A0A0A]'
-                    : 'border-[#EDEDED] text-[#525252] hover:border-[#A3A3A3] hover:bg-[#FAFAFA]'
-                }`}
-                style={selected ? { background: accent, color: '#0A0A0A' } : {}}
-              >
-                {n}
-              </button>
-            );
-          })}
-        </div>
-        {numVal !== null && (
-          <p className="text-[12px] text-[#525252] text-center bz-fade-in">
-            {scaleLabels[numVal - 1]}
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  if (question.type === 'text') {
-    const textVal = typeof value === 'string' ? value : '';
-    return (
-      <div>
-        <textarea
-          className="bz-input min-h-[120px]"
-          value={textVal}
-          onChange={(e) => onChange(e.target.value)}
-          maxLength={2000}
-          placeholder={isTr ? 'Yanıtın...' : 'Your answer...'}
-          spellCheck
-        />
-        <p className="text-[11px] text-[#A3A3A3] mt-1 text-right bz-mono">
-          {textVal.length} / 2000
-        </p>
-      </div>
-    );
-  }
-
-  if (question.type === 'file') {
-    return <PhotoQuestionInput value={value} onChange={onChange} accent={accent} isTr={isTr} />;
-  }
-
-  return null;
-}
-
-// Max size for a stored audit photo (base64 data URL). Aggressively
-// compressed client-side first (quality not critical here per product), so a
-// normal photo lands well under this; the cap is a defensive ceiling against
-// oversized inputs bloating the AuditAnswer JSON / request body.
-const AUDIT_PHOTO_MAX_BYTES = 600 * 1024; // ~600KB data URL
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-    reader.onerror = () => reject(new Error('read failed'));
-    reader.readAsDataURL(file);
-  });
-}
-
-function PhotoQuestionInput({
-  value,
-  onChange,
-  accent,
-  isTr,
-}: {
-  value: AnswerValue;
-  onChange: (v: AnswerValue) => void;
-  accent: string;
-  isTr: boolean;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const dataUrl = typeof value === 'string' && value.startsWith('data:image/') ? value : null;
-
-  async function handleFile(file: File | undefined) {
-    if (!file) return;
-    setError(null);
-    if (!file.type.startsWith('image/')) {
-      setError(isTr ? 'Lütfen bir fotoğraf seçin.' : 'Please pick an image.');
-      return;
-    }
-    setBusy(true);
-    try {
-      // Small + low quality on purpose (product: size matters, quality doesn't).
-      const compressed = await compressImage(file, { maxDim: 1024, quality: 0.5 });
-      const url = await fileToDataUrl(compressed);
-      if (!url || url.length > AUDIT_PHOTO_MAX_BYTES) {
-        setError(
-          isTr
-            ? 'Fotoğraf çok büyük. Daha küçük bir görsel deneyin.'
-            : 'Photo is too large. Try a smaller image.',
-        );
-        return;
-      }
-      onChange(url);
-    } catch {
-      setError(isTr ? 'Fotoğraf işlenemedi.' : 'Could not process the photo.');
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = '';
-    }
-  }
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    const measure = () => setOverflowing(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [text, open]);
 
   return (
     <div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(e) => handleFile(e.target.files?.[0])}
-      />
-      {dataUrl ? (
-        <div className="flex flex-col gap-3">
-          <img
-            src={dataUrl}
-            alt={isTr ? 'Yüklenen fotoğraf' : 'Uploaded photo'}
-            className="max-h-[260px] w-auto rounded-xl border border-[#EDEDED] object-contain"
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={busy}
-              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px]"
-            >
-              <Camera size={14} strokeWidth={2} />
-              {isTr ? 'Değiştir' : 'Replace'}
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              disabled={busy}
-              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px]"
-            >
-              <X size={14} strokeWidth={2} />
-              {isTr ? 'Kaldır' : 'Remove'}
-            </button>
-          </div>
-        </div>
-      ) : (
+      <p
+        ref={ref}
+        className={`whitespace-pre-line break-words text-[14px] leading-relaxed text-[#525252] ${open ? '' : 'line-clamp-4'}`}
+      >
+        {text}
+      </p>
+      {(overflowing || open) && (
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-8 text-center transition-colors hover:border-[#A3A3A3]"
-          style={{ borderColor: busy ? accent : undefined }}
+          className="mt-1 inline-flex min-h-11 items-center text-[13px] font-semibold text-[#0A0A0A] underline underline-offset-2"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
         >
-          {busy ? (
-            <Loader2 size={22} strokeWidth={2} className="animate-spin text-[#737373]" />
-          ) : (
-            <Camera size={22} strokeWidth={1.8} className="text-[#737373]" />
-          )}
-          <span className="text-[13px] font-medium text-[#0A0A0A]">
-            {busy
-              ? isTr ? 'İşleniyor...' : 'Processing...'
-              : isTr ? 'Fotoğraf ekle' : 'Add photo'}
-          </span>
-          <span className="text-[11px] text-[#A3A3A3]">
-            {isTr ? 'İstersen fotoğraf ekleyebilirsin' : 'Optional — attach a photo if you like'}
-          </span>
+          {open ? (isTr ? 'Daha az göster' : 'Show less') : isTr ? 'Devamını oku' : 'Read more'}
         </button>
-      )}
-      {error && (
-        <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[#991B1B]">
-          <AlertTriangle size={13} strokeWidth={2.2} className="shrink-0" />
-          {error}
-        </p>
       )}
     </div>
   );
