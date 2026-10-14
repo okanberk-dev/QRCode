@@ -114,7 +114,7 @@ export function CategoryChips({ categories, activeId, readOnly, copy, fmt, onSel
       <div
         role="group"
         aria-label={copy.categoryGroupLabel}
-        className="no-scrollbar flex gap-2 overflow-x-auto py-2.5"
+        className="no-scrollbar relative flex gap-2 overflow-x-auto py-2.5"
       >
         {categories.map((c) => {
           const active = c.id === activeId;
@@ -129,7 +129,10 @@ export function CategoryChips({ categories, activeId, readOnly, copy, fmt, onSel
               onClick={() => onSelect(c.id)}
               aria-current={active ? 'true' : undefined}
               aria-label={fmt.categoryChipLabel(c.name, c.items.length)}
-              className={`inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[13px] font-medium transition-colors ${
+              // `relative`: the sr-only "Hidden" span is position:absolute — without a
+              // positioned ancestor inside the scroller it escapes the scroller's
+              // overflow clipping and widens the whole page.
+              className={`relative inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[13px] font-medium transition-colors ${
                 active
                   ? 'bg-[#0A0A0A] text-white'
                   : c.isVisible
