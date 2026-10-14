@@ -12,8 +12,13 @@ import {
   parseGoogleLocationsCache,
   selectedGoogleLocation,
   GoogleBusinessApiError,
+  googleFailureMessage,
   type GoogleLocationsCache,
 } from '@/lib/google-business';
+import {
+  clearBusinessApiNotProvisioned,
+  markBusinessApiNotProvisioned,
+} from '@/lib/google-business-availability';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -146,14 +151,14 @@ export async function GET(
         warning: 'CLIENT_THROTTLED',
         retryAfterSeconds: rl.retryAfterSeconds,
         message: isTr
-          ? `Çok sık yenileme. ${rl.retryAfterSeconds} saniye sonra tekrar deneyin. (Son güncel veriler gösteriliyor.)`
-          : `Too many refresh requests. Try again in ${rl.retryAfterSeconds}s. (Showing last synced data.)`,
+          ? `Çok sık yenilendi. ${rl.retryAfterSeconds} saniye sonra tekrar dene. Son alınan bilgiler gösteriliyor.`
+          : `Refreshed too often. Try again in ${rl.retryAfterSeconds}s. Showing the last synced data.`,
       });
     }
     return ApiErrors.tooManyRequests(
       isTr
-        ? `Çok sık yenileme. ${rl.retryAfterSeconds} saniye sonra tekrar deneyin.`
-        : `Too many refresh requests. Try again in ${rl.retryAfterSeconds}s.`,
+        ? `Çok sık yenilendi. ${rl.retryAfterSeconds} saniye sonra tekrar dene.`
+        : `Refreshed too often. Try again in ${rl.retryAfterSeconds}s.`,
       'CLIENT_THROTTLED',
       rl.retryAfterSeconds,
     );
@@ -165,6 +170,13 @@ export async function GET(
       where: { id: integration.id },
       data: { locationsJson: fresh as unknown as Prisma.InputJsonValue },
     });
+
+    // A fresh (non-cached) sync that returned at least one account proves the
+    // Business Profile API is usable: lift the platform-level "not available
+    // yet" stamp. Throttled + best effort inside the helper.
+    if (fresh.accounts.length > 0) {
+      await clearBusinessApiNotProvisioned(id);
+    }
 
     return NextResponse.json({
       accounts: fresh.accounts,
@@ -211,6 +223,9 @@ export async function GET(
         // limit'ten ayrı işlenir: owner'a "farklı hesap dene" YANILTICI
         // (quota proje-geneli, hesap değiştirmek çözmez).
         const notProvisioned = error.code === 'GOOGLE_API_NOT_PROVISIONED';
+        // Platform-level signal: quota 0 hits every owner, so remember
+        // it and stop offering the sign-in button until it clears or expires.
+        if (notProvisioned) await markBusinessApiNotProvisioned();
         const hasCache = cached.locations.length > 0 || cached.accounts.length > 0;
         if (!hasCache) {
           // İlk quota fail — empty stamp yaz ki sonraki request'ler
@@ -247,16 +262,14 @@ export async function GET(
             // hesap dene" yanıltıcı (quota proje-geneli). Owner'a doğru
             // bağlı olduğunu + ek işlem gerekmediğini söyle.
             message: notProvisioned
-              ? (isTr
-                ? 'Google İşletme Profili API erişimi henüz aktif değil. Hesabınız doğru bağlı; bu Buaze tarafında tamamlanması gereken bir yapılandırma adımı, sizin ek bir işlem yapmanıza gerek yok.'
-                : 'Google Business Profile API access is not active yet. Your account is connected correctly; this is a configuration step on the Buaze side and no action is needed from you.')
+              ? googleFailureMessage('GOOGLE_API_NOT_PROVISIONED', locale)
               : isTr
               ? (hasCache
-                ? `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Son güncel veriler gösteriliyor; birkaç dakika sonra "Yenile" ile tekrar deneyin.`
-                : `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Birkaç dakika bekleyin veya farklı bir Google hesabıyla bağlanmayı deneyin.`)
+                ? 'Google şu an yoğun. Son alınan bilgiler gösteriliyor; birkaç dakika sonra “Yenile”yi dene.'
+                : 'Google şu an yoğun. Birkaç dakika sonra tekrar dene.')
               : (hasCache
-                ? `Google API quota currently exhausted (shared across all Buaze users). Showing last synced data; click "Refresh" again in a few minutes.`
-                : `Google API quota currently exhausted (shared across all Buaze users). Wait a few minutes or try connecting with a different Google account.`),
+                ? 'Google is busy right now. Showing the last synced data; try “Refresh” in a few minutes.'
+                : 'Google is busy right now. Please try again in a few minutes.'),
           },
           { status: 200 },
         );

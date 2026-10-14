@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Clock, MapPin, Phone, Flame, Leaf, Star, Sparkles, WheatOff,
-  Sun, Sprout, Heart, CalendarRange, Droplets, Info,
+  Sun, Sprout, Heart, CalendarRange, Droplets,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import type { MenuAllergen, MenuBadge, MenuTheme } from '@/lib/validations';
@@ -102,52 +102,55 @@ function BadgeChipOnDark({ badge, locale, accent }: { badge: string; locale: 'tr
   );
 }
 
-// Allergen meta — short single-letter glyph for inline density (chip size <
-// badge), TR long-name + EN short-name. Shown as a quiet info row below the
-// price; not a marketing chip.
-const ALLERGEN_META: Record<MenuAllergen, { short: string; tr: string; en: string }> = {
-  gluten:    { short: 'GL', tr: 'Gluten',                en: 'Gluten' },
-  sut:       { short: 'SÜ', tr: 'Süt / laktoz',          en: 'Milk / lactose' },
-  yumurta:   { short: 'YU', tr: 'Yumurta',               en: 'Egg' },
-  findik:    { short: 'FI', tr: 'Sert kabuklu yemiş',    en: 'Tree nut' },
-  fistik:    { short: 'FT', tr: 'Yer fıstığı',           en: 'Peanut' },
-  soya:      { short: 'SO', tr: 'Soya',                  en: 'Soy' },
-  balik:     { short: 'BA', tr: 'Balık',                 en: 'Fish' },
-  kabuklu:   { short: 'KB', tr: 'Kabuklu deniz ürünü',   en: 'Crustacean' },
-  yumusakca: { short: 'YM', tr: 'Yumuşakça',             en: 'Mollusc' },
-  susam:     { short: 'SU', tr: 'Susam',                 en: 'Sesame' },
-  hardal:    { short: 'HA', tr: 'Hardal',                en: 'Mustard' },
-  kereviz:   { short: 'KE', tr: 'Kereviz',               en: 'Celery' },
+// Allergen names shown on every product card. Guests with an allergy need to
+// read these at a glance, so they are plain words (not 2-letter codes with a
+// hover-only tooltip, which a phone cannot show).
+const ALLERGEN_META: Record<MenuAllergen, { tr: string; en: string }> = {
+  gluten:    { tr: 'Gluten',                en: 'Gluten' },
+  sut:       { tr: 'Süt / laktoz',          en: 'Milk / lactose' },
+  yumurta:   { tr: 'Yumurta',               en: 'Egg' },
+  findik:    { tr: 'Sert kabuklu yemiş',    en: 'Tree nut' },
+  fistik:    { tr: 'Yer fıstığı',           en: 'Peanut' },
+  soya:      { tr: 'Soya',                  en: 'Soy' },
+  balik:     { tr: 'Balık',                 en: 'Fish' },
+  kabuklu:   { tr: 'Kabuklu deniz ürünü',   en: 'Crustacean' },
+  yumusakca: { tr: 'Yumuşakça',             en: 'Mollusc' },
+  susam:     { tr: 'Susam',                 en: 'Sesame' },
+  hardal:    { tr: 'Hardal',                en: 'Mustard' },
+  kereviz:   { tr: 'Kereviz',               en: 'Celery' },
 };
 
-function AllergenList({ allergens, locale, dark = false }: { allergens: string[]; locale: 'tr' | 'en'; dark?: boolean }) {
-  if (!allergens?.length) return null;
-  const valid = allergens.filter((a): a is MenuAllergen => a in ALLERGEN_META);
-  if (!valid.length) return null;
-  const label = locale === 'tr' ? 'İçerik' : 'Allergens';
-  const fg = dark ? 'text-white/60' : 'text-[#737373]';
-  const chipBase = dark
-    ? 'bg-white/10 text-white/80 ring-1 ring-white/15'
-    : 'bg-[#FAFAFA] text-[#525252] ring-1 ring-[#EDEDED]';
+// How many allergen names fit on a card before "+N". The full list is in the
+// element's `title` and in the product detail sheet.
+const ALLERGEN_VISIBLE_COUNT = 3;
+
+// One quiet line under the product: "Alerjen: Gluten, Süt / laktoz, Yumurta +2".
+// Deliberately NOT truncated / line-clamped — a clipped "+N" would hide an
+// allergen; on a narrow card the line simply wraps.
+function AllergenList({
+  allergens, locale, dark = false, className = '',
+}: {
+  allergens: string[] | undefined;
+  locale: 'tr' | 'en';
+  dark?: boolean;
+  className?: string;
+}) {
+  const known = (allergens ?? []).filter((a): a is MenuAllergen =>
+    Object.prototype.hasOwnProperty.call(ALLERGEN_META, a),
+  );
+  if (known.length === 0) return null;
+  const label = locale === 'tr' ? 'Alerjen' : 'Allergens';
+  const names = known.map((a) => ALLERGEN_META[a][locale]);
+  const hidden = names.length - ALLERGEN_VISIBLE_COUNT;
   return (
-    <div className={`flex flex-wrap items-center gap-1 text-[10px] ${fg}`}>
-      <span className="inline-flex items-center gap-0.5 font-medium uppercase tracking-[0.14em]">
-        <Info size={9} strokeWidth={2.25} />
-        {label}
-      </span>
-      {valid.map((a) => {
-        const meta = ALLERGEN_META[a];
-        return (
-          <span
-            key={a}
-            title={meta[locale]}
-            className={`inline-flex items-center rounded-full px-1.5 py-px font-mono text-[9px] font-semibold tracking-wider ${chipBase}`}
-          >
-            {meta.short}
-          </span>
-        );
-      })}
-    </div>
+    <p
+      title={`${label}: ${names.join(', ')}`}
+      className={`text-[11px] leading-snug ${dark ? 'text-white/65' : 'text-[#525252]'} ${className}`}
+    >
+      <span className={`font-semibold ${dark ? 'text-white/85' : 'text-[#0A0A0A]'}`}>{label}:</span>{' '}
+      {names.slice(0, ALLERGEN_VISIBLE_COUNT).join(', ')}
+      {hidden > 0 ? ` +${hidden}` : ''}
+    </p>
   );
 }
 
@@ -443,6 +446,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                               ))}
                             </div>
                           )}
+                          {item.allergens?.length ? <AllergenList allergens={item.allergens} locale={locale} className="mt-2" /> : null}
                         </div>
                       </article>
                     ))}
@@ -570,6 +574,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                               ))}
                             </div>
                           )}
+                          {item.allergens?.length ? <AllergenList allergens={item.allergens} locale={locale} /> : null}
                         </div>
                       </article>
                     ))}
@@ -693,6 +698,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                               ))}
                             </div>
                           )}
+                          {item.allergens?.length ? <AllergenList allergens={item.allergens} locale={locale} className="mt-2" /> : null}
                         </div>
                       </article>
                     ))}
@@ -837,6 +843,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                               ))}
                             </div>
                           )}
+                          {item.allergens?.length ? <AllergenList allergens={item.allergens} locale={locale} dark className="mt-2" /> : null}
                         </div>
                       </article>
                     ))}
@@ -965,6 +972,7 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
                               ))}
                             </div>
                           )}
+                          {item.allergens?.length ? <AllergenList allergens={item.allergens} locale={locale} className="mt-2" /> : null}
                           {item.isOutOfStock && (
                             <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.28em] text-[#991B1B]">{copy.outOfStock}</p>
                           )}
@@ -1116,6 +1124,7 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
                               <BadgeChip badge={item.badges[0]} locale={locale} />
                             )}
                           </div>
+                          {item.allergens?.length ? <AllergenList allergens={item.allergens} locale={locale} /> : null}
                         </div>
                       </article>
                     ))}
@@ -1335,9 +1344,7 @@ function PulseLayout({
                               ))}
                             </div>
                           )}
-                          {item.allergens && item.allergens.length > 0 && (
-                            <AllergenList allergens={item.allergens} locale={locale} />
-                          )}
+                          {item.allergens?.length ? <AllergenList allergens={item.allergens} locale={locale} /> : null}
                         </div>
                         <span
                           aria-hidden

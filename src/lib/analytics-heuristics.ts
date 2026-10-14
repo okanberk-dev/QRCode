@@ -35,14 +35,34 @@ export const ANALYTICS_THRESHOLDS = {
 
 // Category classification via name substring. Turkish + English.
 // Used to detect "support" categories for upsell heuristics.
-const BEVERAGE_KEYWORDS = ['içecek', 'icecek', 'beverage', 'drink', 'içki', 'cocktail', 'kokteyl', 'kahve', 'coffee', 'tea', 'çay'];
-const DESSERT_KEYWORDS = ['tatlı', 'tatli', 'dessert', 'pasta', 'cake', 'cheesecake', 'dondurma', 'ice cream'];
-const STARTER_KEYWORDS = ['başlangıç', 'baslangic', 'starter', 'appetizer', 'meze', 'aperatif'];
+//
+// Names are compared after folding Turkish letters to plain ASCII. JavaScript
+// lower-cases "İ" to "i" + a combining dot and "I" to a plain "i", so a plain
+// `toLowerCase()` never matched the most common Turkish category names
+// ("İçecekler", "BAŞLANGIÇLAR") against the dotted/dotless keywords below.
+function foldTr(value: string): string {
+  return value
+    .replace(/İ/g, 'i')
+    .toLowerCase()
+    .replace(/\u0307/g, '')
+    .replace(/ı/g, 'i')
+    .replace(/ç/g, 'c')
+    .replace(/ğ/g, 'g')
+    .replace(/ö/g, 'o')
+    .replace(/ş/g, 's')
+    .replace(/ü/g, 'u')
+    .trim();
+}
+const foldAll = (list: string[]) => [...new Set(list.map(foldTr))];
+
+const BEVERAGE_KEYWORDS = foldAll(['içecek', 'icecek', 'beverage', 'drink', 'içki', 'cocktail', 'kokteyl', 'kahve', 'coffee', 'tea', 'çay']);
+const DESSERT_KEYWORDS = foldAll(['tatlı', 'tatli', 'dessert', 'pasta', 'cake', 'cheesecake', 'dondurma', 'ice cream']);
+const STARTER_KEYWORDS = foldAll(['başlangıç', 'baslangic', 'starter', 'appetizer', 'meze', 'aperatif']);
 
 export type CategoryKind = 'beverage' | 'dessert' | 'starter' | 'main' | 'other';
 
 export function classifyCategory(name: string): CategoryKind {
-  const n = name.toLowerCase().trim();
+  const n = foldTr(name);
   if (BEVERAGE_KEYWORDS.some((k) => n.includes(k))) return 'beverage';
   if (DESSERT_KEYWORDS.some((k) => n.includes(k))) return 'dessert';
   if (STARTER_KEYWORDS.some((k) => n.includes(k))) return 'starter';
@@ -117,13 +137,16 @@ export function buildUpsellInsights(params: {
   const bevViews = beverages.reduce((acc, c) => acc + c.views, 0);
   const desViews = desserts.reduce((acc, c) => acc + c.views, 0);
 
+  // Wording rule: plain owner language, no marketing jargon ("dönüşüm",
+  // "kombo", "upsell"), and no promises the data cannot back ("sepeti
+  // büyütebilir"). The rules and thresholds above are unchanged.
   if (mainsViews > 0 && bevViews > 0 && bevViews / mainsViews < ANALYTICS_THRESHOLDS.upsellMinGapRatio) {
     insights.push({
       kind: 'weak_beverage_engagement',
-      title: tr ? 'İçecekler az ilgi görüyor' : 'Beverages underperform',
+      title: tr ? 'İçecekler az görülüyor' : 'Drinks are rarely seen',
       description: tr
-        ? 'Ana yemekler ile karşılaştırıldığında içecek kategorisi düşük görüntülenme alıyor. İçecekleri menünün üst kısmına taşımayı veya ana yemeklerle yan yana önermeyi değerlendirin.'
-        : 'Beverages are viewed far less than main dishes. Consider moving the beverage section higher or pairing drinks alongside popular mains.',
+        ? 'İçecek bölümü ana yemeklere göre çok daha az görüntüleniyor. İçecekleri menüde daha üste almayı dene.'
+        : 'The drinks section is viewed far less than the mains. Try moving drinks higher up the menu.',
       relatedIds: beverages.map((c) => c.categoryId),
     });
   }
@@ -131,10 +154,10 @@ export function buildUpsellInsights(params: {
   if (mainsViews > 0 && desViews > 0 && desViews / mainsViews < ANALYTICS_THRESHOLDS.upsellMinGapRatio) {
     insights.push({
       kind: 'weak_dessert_engagement',
-      title: tr ? 'Tatlılar yeterince görünmüyor' : 'Desserts underperform',
+      title: tr ? 'Tatlılar az görülüyor' : 'Desserts are rarely seen',
       description: tr
-        ? 'Tatlı kategorisi, ana yemeklere göre düşük görüntülenme alıyor. Görsel kalitesini iyileştirmek veya kombo önerileri eklemek dönüşümü artırabilir.'
-        : 'The dessert section receives low views compared to mains. Consider improving dessert photography or offering bundle suggestions.',
+        ? 'Tatlı bölümü ana yemeklere göre az görüntüleniyor. Daha iyi bir fotoğraf ya da açıklama eklemeyi dene.'
+        : 'The dessert section is viewed less than the mains. Try adding a better photo or description.',
       relatedIds: desserts.map((c) => c.categoryId),
     });
   }
@@ -143,10 +166,10 @@ export function buildUpsellInsights(params: {
     if (p.views >= ANALYTICS_THRESHOLDS.upsellTopProductMinViews && p.clicks / Math.max(1, p.views) < ANALYTICS_THRESHOLDS.lowInterestMaxCtr) {
       insights.push({
         kind: 'low_ctr_product',
-        title: tr ? `${p.productName} yüksek görüntülenme, düşük tıklama` : `${p.productName}: high views, low clicks`,
+        title: tr ? `${p.productName}: çok görülüyor, az dokunuluyor` : `${p.productName}: seen often, tapped rarely`,
         description: tr
-          ? `"${p.productName}" çok görüntüleniyor ancak tıklama oranı düşük. Görseli veya açıklaması güncellendiğinde dönüşüm artabilir.`
-          : `"${p.productName}" is highly viewed but clicked rarely. Its image or description may need an update.`,
+          ? `“${p.productName}” sık görüntüleniyor ama az kişi açıyor. Fotoğrafını ya da açıklamasını gözden geçir.`
+          : `“${p.productName}” is viewed a lot but few people open it. Review its photo or description.`,
         relatedIds: [p.productId],
       });
     }
@@ -157,10 +180,10 @@ export function buildUpsellInsights(params: {
     if (leader.views >= ANALYTICS_THRESHOLDS.upsellTopProductMinViews) {
       insights.push({
         kind: 'top_product_pair_opportunity',
-        title: tr ? `${leader.productName} ile içecek eşleştirmesi` : `Pair a drink with ${leader.productName}`,
+        title: tr ? `${leader.productName} için içecek önerisi` : `A drink to go with ${leader.productName}`,
         description: tr
-          ? `"${leader.productName}" yüksek ilgi görüyor. Bu ürünün yakınında içecek önerisi veya kombo seçeneği eklemek ortalama sepeti büyütebilir.`
-          : `"${leader.productName}" is a top-performer. Adding a drink suggestion or combo near this item can lift average ticket size.`,
+          ? `“${leader.productName}” çok ilgi görüyor. Yakınına bir içecek eklemeyi ya da ikisini birlikte önermeyi düşünebilirsin.`
+          : `“${leader.productName}” gets a lot of attention. Consider placing a drink next to it, or suggesting the two together.`,
         relatedIds: [leader.productId, ...beverages.map((c) => c.categoryId)],
       });
     }

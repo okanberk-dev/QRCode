@@ -1,0 +1,25 @@
+{
+  "id": "ChIJhostile________________1234",
+  "displayName": {
+    "text": "<script>alert(1)</script> Kafe",
+    "languageCode": "tr"
+  },
+  "formattedAddress": "\"><img src=x onerror=alert(1)>",
+  "googleMapsUri": "http://insecure.example/maps",
+  "businessStatus": "SOMETHING_NEW",
+  "rating": "4.5",
+  "userRatingCount": -5,
+  "nationalPhoneNumber": "   ",
+  "websiteUri": "javascript:alert(1)",
+  "regularOpeningHours": [],
+  "photos": "x",
+  "attributions": [
+    {
+      "provider": "Bad",
+      "providerUri": "javascript:alert(2)"
+    },
+    null,
+    "x"
+  ],
+  "reviews": "not-an-array"
+}

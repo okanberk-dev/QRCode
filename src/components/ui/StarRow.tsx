@@ -6,6 +6,8 @@ interface StarRowProps {
   color?: string;
   emptyColor?: string;
   className?: string;
+  /** Localised accessible name. Defaults to the English "{value} of 5 stars". */
+  ariaLabel?: string;
 }
 
 export function StarRow({
@@ -14,12 +16,13 @@ export function StarRow({
   color = "#C6F24E",
   emptyColor = "#E5E5E5",
   className = "",
+  ariaLabel,
 }: StarRowProps) {
   return (
     <span
       className={`inline-flex gap-0.5 ${className}`}
       role="img"
-      aria-label={`${value} of 5 stars`}
+      aria-label={ariaLabel ?? `${value} of 5 stars`}
     >
       {[1, 2, 3, 4, 5].map((s) => {
         const active = s <= value;

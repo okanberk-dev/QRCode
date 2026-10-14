@@ -1,50 +1,21 @@
-import {
-  SkBox,
-  SkPageHeader,
-  SkPageShell,
-  SkStatGrid,
-} from '@/components/ui/skeletons/PageSkeleton';
+import { SkPageHeader, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
+import { GoogleReviewsBodySkeleton } from '@/components/dashboard/google/GoogleReviewsSkeleton';
 
 /**
- * Google reviews hub — header + restaurant selector + KPI + 2-col
- * (review list + AI co-pilot). (CLAUDE.md §40.10)
+ * Google reviews — header, a `h-11` business select row, the 2-col grid
+ * (rating card, tall checklist, review rows) and one reply-card row.
+ *
+ * The body skeleton is the SAME component the client page renders while its
+ * business list resolves (and as its Suspense fallback), and the wrapper is
+ * the page's own `max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-5`, so the
+ * loading → loaded transition does not move anything (CLS = 0, CLAUDE.md
+ * §40.10). No spinner anywhere: flat boxes only.
  */
 export default function Loading() {
   return (
     <SkPageShell max={1440}>
-      <SkPageHeader withActions titleWidth="w-56" />
-
-      <div className="flex items-center gap-3">
-        <SkBox className="h-3 w-32" />
-        <SkBox className="h-9 w-64" />
-      </div>
-
-      <SkStatGrid count={4} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
-        <div className="bz-card divide-y divide-[#EDEDED]">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <SkBox className="h-8 w-8 rounded-full" />
-                  <SkBox className="h-4 w-32" />
-                </div>
-                <SkBox className="h-3 w-16" />
-              </div>
-              <SkBox className="h-3 w-24" />
-              <SkBox className="h-4 w-full" />
-              <SkBox className="h-4 w-3/4" />
-            </div>
-          ))}
-        </div>
-        <div className="hidden lg:block bz-card p-5 space-y-3">
-          <SkBox className="h-3 w-24" />
-          <SkBox className="h-5 w-48" />
-          <SkBox className="h-32 w-full" />
-          <SkBox className="h-9 w-full" />
-        </div>
-      </div>
+      <SkPageHeader titleWidth="w-56" />
+      <GoogleReviewsBodySkeleton />
     </SkPageShell>
   );
 }

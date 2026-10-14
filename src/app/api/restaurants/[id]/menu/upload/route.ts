@@ -14,17 +14,36 @@ const MAX_OPTIMIZED_BYTES = 220 * 1024; // ~300KB base64 after encode
 type UploadKind = 'item' | 'logo' | 'favicon' | 'cover';
 
 const DIMENSIONS: Record<UploadKind, { width: number; height: number | null; fit: 'cover' | 'inside' }> = {
-  item: { width: 1200, height: null, fit: 'inside' },
+  // Product photos are shown on a phone as cards (≤ ~600 CSS px wide, the
+  // detail view a bit more). 720px keeps them sharp there and is roughly a
+  // third of the 1200px/q80 files we stored before — every photo is
+  // downloaded by every guest.
+  item: { width: 720, height: null, fit: 'inside' },
   logo: { width: 512, height: 512, fit: 'cover' },
   favicon: { width: 256, height: 256, fit: 'cover' },
   // Section 2 — Marka Kimliği kapak görseli. 16:9 (Pulse 2026-04 hero).
   cover: { width: 1600, height: 900, fit: 'cover' },
 };
 
+// WebP quality per kind: [first attempt, fallback when the result is over the
+// cap]. Item photos are tuned for weight, brand images for fidelity.
+const QUALITY: Record<UploadKind, [number, number]> = {
+  item: [72, 55],
+  logo: [80, 60],
+  favicon: [80, 60],
+  cover: [80, 60],
+};
+
 // Cover'lar logo/item/favicon'dan büyük base64 üretir; bu kind için ayrı tavan.
 const MAX_OPTIMIZED_BY_KIND: Partial<Record<UploadKind, number>> = {
+  item: 90 * 1024, // ≈120KB base64 — a typical 720px photo lands at 40-60KB
   cover: 380 * 1024, // ~500KB base64 sonrası
 };
+
+// Stable machine codes next to the (Turkish) message so the builder can show
+// the owner a localized sentence instead of the raw server text.
+const IMAGE_TOO_LARGE = 'IMAGE_TOO_LARGE';
+const IMAGE_UNPROCESSABLE = 'IMAGE_UNPROCESSABLE';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   maybeSweep();
@@ -78,42 +97,51 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   if (!file.type.startsWith('image/')) {
-    return NextResponse.json({ error: 'Sadece görsel dosyası yüklenebilir' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Sadece görsel dosyası yüklenebilir', code: IMAGE_UNPROCESSABLE },
+      { status: 400 },
+    );
   }
 
   if (file.size > MAX_UPLOAD_BYTES) {
-    return NextResponse.json({ error: 'Görsel 5 MB\'dan büyük olamaz' }, { status: 413 });
+    return NextResponse.json(
+      { error: 'Görsel 5 MB\'dan büyük olamaz', code: IMAGE_TOO_LARGE },
+      { status: 413 },
+    );
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const dims = DIMENSIONS[kind];
+  const [quality, fallbackQuality] = QUALITY[kind];
+
+  const encode = (webpQuality: number) =>
+    sharp(buffer)
+      .rotate() // honor EXIF orientation then strip it
+      .resize({ width: dims.width, height: dims.height ?? undefined, fit: dims.fit, withoutEnlargement: true })
+      .webp({ quality: webpQuality })
+      .toBuffer();
 
   let optimized: Buffer;
   try {
-    optimized = await sharp(buffer)
-      .rotate() // honor EXIF orientation then strip it
-      .resize({ width: dims.width, height: dims.height ?? undefined, fit: dims.fit, withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer();
+    optimized = await encode(quality);
   } catch (err) {
     console.error('[MenuUpload] sharp failed:', (err as Error).message);
-    return NextResponse.json({ error: 'Görsel işlenemedi' }, { status: 400 });
+    return NextResponse.json({ error: 'Görsel işlenemedi', code: IMAGE_UNPROCESSABLE }, { status: 400 });
   }
 
   const cap = MAX_OPTIMIZED_BY_KIND[kind] ?? MAX_OPTIMIZED_BYTES;
   if (optimized.byteLength > cap) {
     // Rare — very complex image that didn't compress below cap. Reduce quality and retry once.
     try {
-      optimized = await sharp(buffer)
-        .rotate()
-        .resize({ width: dims.width, height: dims.height ?? undefined, fit: dims.fit, withoutEnlargement: true })
-        .webp({ quality: 60 })
-        .toBuffer();
+      optimized = await encode(fallbackQuality);
     } catch {
-      return NextResponse.json({ error: 'Görsel işlenemedi' }, { status: 400 });
+      return NextResponse.json({ error: 'Görsel işlenemedi', code: IMAGE_UNPROCESSABLE }, { status: 400 });
     }
     if (optimized.byteLength > cap) {
-      return NextResponse.json({ error: 'Görsel çok büyük. Daha düşük çözünürlükte tekrar deneyin.' }, { status: 413 });
+      return NextResponse.json(
+        { error: 'Görsel çok büyük. Daha düşük çözünürlükte tekrar deneyin.', code: IMAGE_TOO_LARGE },
+        { status: 413 },
+      );
     }
   }
 

@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": 400,
+    "message": "Cannot find matching fields for path 'fooBar'.",
+    "status": "INVALID_ARGUMENT"
+  }
+}

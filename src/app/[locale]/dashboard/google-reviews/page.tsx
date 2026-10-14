@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useMemo, useState, Suspense } from 'react';
+import { use, useEffect, useMemo, useRef, useState, Suspense, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -13,20 +13,38 @@ import {
   Sparkles,
   Star,
   ExternalLink,
-  Inbox,
   Unplug,
   Flag,
   ArrowUp,
   ArrowDown,
   Edit3,
   Plug,
-  Lock,
 } from 'lucide-react';
-import { AlertBanner, PageHeader, PulseSelect } from '@/components/ui';
+import { AlertBanner, Badge, EmptyState, PageHeader, PulseSelect } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
 import { ReputationHealthCard } from '@/components/dashboard/google-reviews/ReputationHealthCard';
 import { GoogleConnectFlashBanner } from '@/components/dashboard/google/GoogleConnectFlashBanner';
+import {
+  GoogleReviewsBodySkeleton,
+  GoogleReviewsLoadingShell,
+} from '@/components/dashboard/google/GoogleReviewsSkeleton';
+import { PlacesProfileSection } from '@/components/dashboard/google/PlacesProfileSection';
+import {
+  BANNER_TOUCH_CLS,
+  formatBusinessSummary,
+  ownerBodyMessage,
+  ownerBodyMessageOr,
+} from '@/components/dashboard/google/places-client';
+import {
+  placesOptionState,
+  placesOptionStateLabel,
+  type GoogleReplyAvailability,
+  type PlacesOptionState,
+  type PlacesSelectResponse,
+} from '@/lib/google-places';
+import { ownerGoogleMessage } from '@/lib/google-owner-copy';
 import { getQuickReplyTemplate } from '@/lib/quick-reply-templates';
 import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
@@ -84,17 +102,21 @@ interface GoogleStatus {
   connected: boolean;
   selectedLocation: GoogleLocation | null;
   syncedAt: string | null;
+  /**
+   * Platform-level state of the optional reply feature. Missing (older
+   * server) is treated as `available`.
+   */
+  replyAvailability?: GoogleReplyAvailability;
 }
 
-// Stage 10 — PROFİL SAĞLIĞI gauge data (CLAUDE.md §38.80, §38.55 backlog
-// kapanışı). Endpoint: /api/restaurants/[id]/google/business/profile-stats.
-// Soft failures degrade individual fields to `null` (UI shows "— yakında"
-// placeholder) without taking the gauge offline.
-interface ProfileStats {
-  profileComplete: boolean;
-  mediaCount: number | null;
-  totalQuestions: number | null;
-  unansweredQuestions: number | null;
+/** One business of the owner, as `/api/restaurants` lists it (the fields the Google page uses). */
+interface RestaurantRow {
+  id: string;
+  name: string;
+  city?: string | null;
+  address?: string | null;
+  googlePlaceId?: string | null;
+  googleReviewUrl?: string | null;
 }
 
 const STAR_VALUE: Record<string, number> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
@@ -121,24 +143,6 @@ function ratingBreakdown(reviews: GoogleReview[]) {
     counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   return [5, 4, 3, 2, 1].map((rating) => ({ rating, count: counts.get(rating) ?? 0 }));
-}
-
-// PROFİL SAĞLIĞI score (HIGH 5 sub-item) — tasarım .design-pulse-2026/.../page-google.jsx
-// 92/100 paterni. 3 sinyal ağırlıklı toplama, 0-100 normalize:
-// - Rating: avg/5 × 70 (en kritik signal — müşteri memnuniyeti)
-// - Response rate: replied/total × 25 (operasyonel disiplin)
-// - Volume: min(1, total/50) × 5 (mevcudiyet bonus)
-// 4.7 + 92% + 100 yorum → ~94 (tasarımdaki 92/100 hedefi)
-function computeHealthScore(opts: {
-  avgRating: number | null;
-  total: number;
-  replied: number;
-}): number {
-  const rating = Math.max(0, Math.min(5, opts.avgRating ?? 0));
-  const responseRate = opts.total > 0 ? Math.min(1, opts.replied / opts.total) : 0;
-  const volume = Math.min(1, opts.total / 50);
-  const score = (rating / 5) * 70 + responseRate * 25 + volume * 5;
-  return Math.round(Math.max(0, Math.min(100, score)));
 }
 
 // SIK GEÇEN KELİMELER — client-side word frequency analiz. AI maliyet yok,
@@ -210,7 +214,7 @@ function KpiTile({
   label: string;
   value: string;
   delta: { text: string; sign: 1 | 0 | -1 } | null;
-  sub: string;
+  sub?: string;
 }) {
   const deltaColor =
     delta && delta.sign === 1 ? '#16A34A' : delta && delta.sign === -1 ? '#DC2626' : '#737373';
@@ -236,19 +240,8 @@ function KpiTile({
             {delta.text}
           </span>
         )}
-        <span className="bz-mono text-[10.5px] text-[#A3A3A3]">{sub}</span>
+        {sub && <span className="bz-mono text-[10.5px] text-[#A3A3A3]">{sub}</span>}
       </span>
-    </div>
-  );
-}
-
-function LoadingPanel({ label }: { label: string }) {
-  return (
-    <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8">
-      <div className="flex items-center justify-center gap-2 text-[13px] font-medium text-[#737373]">
-        <Loader2 size={16} className="animate-spin" />
-        {label}
-      </div>
     </div>
   );
 }
@@ -425,7 +418,7 @@ function ReviewCard({
                   type="button"
                   onClick={handleAiClick}
                   disabled={drafting}
-                  className="bz-btn-lime bz-btn-sm disabled:opacity-60"
+                  className="bz-btn-lime bz-btn-sm max-sm:min-h-11 disabled:opacity-60"
                 >
                   {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                   {isTr ? 'AI yanıt' : 'AI reply'}
@@ -435,7 +428,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={handleManualClick}
-                  className="bz-btn bz-btn-sm"
+                  className="bz-btn bz-btn-sm max-sm:min-h-11"
                 >
                   <Send size={12} />
                   {isTr ? 'Manuel' : 'Manual'}
@@ -445,7 +438,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={handleEditReply}
-                  className="bz-btn bz-btn-sm"
+                  className="bz-btn bz-btn-sm max-sm:min-h-11"
                 >
                   <Edit3 size={12} />
                   {isTr ? 'Yanıtı düzenle' : 'Edit reply'}
@@ -454,7 +447,7 @@ function ReviewCard({
               <button
                 type="button"
                 onClick={onFlagToggle}
-                className={`${flagged ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
+                className={`${flagged ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
                 aria-pressed={flagged}
               >
                 <Flag size={12} />
@@ -528,7 +521,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={() => setComposerOpen(false)}
-                  className="bz-btn bz-btn-sm"
+                  className="bz-btn bz-btn-sm max-sm:min-h-11"
                 >
                   {isTr ? 'İptal' : 'Cancel'}
                 </button>
@@ -537,7 +530,7 @@ function ReviewCard({
                     type="button"
                     onClick={onDraft}
                     disabled={drafting}
-                    className="bz-btn bz-btn-sm disabled:opacity-60"
+                    className="bz-btn bz-btn-sm max-sm:min-h-11 disabled:opacity-60"
                   >
                     {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                     {isTr ? 'AI taslağı' : 'AI draft'}
@@ -554,7 +547,7 @@ function ReviewCard({
                           : 'Confirm the responsibility checkbox before sending')
                       : undefined
                   }
-                  className="bz-btn-primary bz-btn-sm text-[11.5px] disabled:opacity-60"
+                  className="bz-btn-primary bz-btn-sm max-sm:min-h-11 text-[11.5px] disabled:opacity-60"
                 >
                   {replying ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                   {isTr ? "Google'a gönder" : 'Send to Google'}
@@ -575,12 +568,74 @@ function ReviewCard({
   );
 }
 
+/**
+ * The optional "reply on Google" region (Google Business Profile sign-in).
+ *
+ * It always sits UNDER the Places profile and never gates it: while its own
+ * status loads it is one flat row, and every platform-level state (not open
+ * yet, plan off, sign-in unavailable) is one compact row inside the card.
+ * When the full reviews experience is on screen (`full`) the header drops the
+ * card chrome, because what follows is made of cards itself.
+ */
+function ReplySection({
+  isTr,
+  full,
+  actions,
+  children,
+}: {
+  isTr: boolean;
+  full: boolean;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  const header = (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 id="google-reply-title" className="bz-h-tight text-[17px] text-[#0A0A0A]">
+            {isTr ? "Yorumlara Google'dan yanıt ver" : 'Reply to reviews on Google'}
+          </h2>
+          <Badge kind="ghost" dot={false}>
+            {isTr ? 'İsteğe bağlı' : 'Optional'}
+          </Badge>
+        </div>
+        <p className="mt-1 max-w-2xl text-[13px] leading-[1.6] text-[#525252]">
+          {full
+            ? isTr
+              ? 'Tüm Google yorumlarını burada oku ve Pulse AI taslağıyla yanıtla.'
+              : 'Read all your Google reviews here and reply with a Pulse AI draft.'
+            : isTr
+              ? 'Google İşletme Profili hesabını bağlarsan tüm yorumlarını burada okuyup Pulse AI taslağıyla yanıtlayabilirsin. Profil analizi bu bağlantı olmadan da çalışır.'
+              : 'Connect your Google Business Profile account to read all your reviews here and reply with a Pulse AI draft. The profile check works without it.'}
+        </p>
+      </div>
+      {actions ? <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div> : null}
+    </div>
+  );
+
+  return (
+    <section
+      id="google-reply"
+      aria-labelledby="google-reply-title"
+      tabIndex={-1}
+      className={
+        full
+          ? 'scroll-mt-24 space-y-5 focus:outline-none'
+          : 'bz-card scroll-mt-24 space-y-4 p-5 focus:outline-none sm:p-6'
+      }
+    >
+      {header}
+      {children}
+    </section>
+  );
+}
+
 function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const isTr = locale === 'tr';
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [restaurants, setRestaurants] = useState<Array<{ id: string; name: string }>>([]);
+  const [restaurants, setRestaurants] = useState<RestaurantRow[]>([]);
   const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(null);
   const [loadingInitial, setLoadingInitial] = useState(true);
   // §38.B Stage 122 — workspace fetch silent fail bug. Previously
@@ -598,10 +653,25 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [reviewsPayload, setReviewsPayload] = useState<ReviewsPayload | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
-  // Stage 10 — PROFİL SAĞLIĞI real data (CLAUDE.md §38.80). Best-effort
-  // fetch alongside reviews; null fields render "— yakında" placeholder
-  // instead of failing the gauge.
-  const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
+  // The Places section (rating, checklist, sample reviews) is independent of
+  // the reply region below it. It only needs to know two things about the
+  // reply feature, and both must stay stable while the region reloads (a
+  // "refresh reviews" must not flip the profile card between its full and
+  // one-line forms):
+  //   - `statusSettledFor`: the business whose FIRST status request finished
+  //     (success or failure);
+  //   - `replyActive`: the reply feature is fully set up (plan on, signed in,
+  //     location chosen).
+  const [statusSettledFor, setStatusSettledFor] = useState<string | null>(null);
+  const [replyActive, setReplyActive] = useState(false);
+  // Newest status request wins: a slow response for the business the owner
+  // just left must never overwrite the one now on screen.
+  const statusSeqRef = useRef(0);
+  // Businesses whose saved Google listing Google no longer finds (the switcher
+  // shows "Eşleşmedi" for them even though a Place ID is stored).
+  const [notFoundIds, setNotFoundIds] = useState<Set<string>>(new Set());
+  // "Next: …" jumps to the next unmatched business and focuses its search.
+  const [focusSearchFor, setFocusSearchFor] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [replying, setReplying] = useState<Record<string, boolean>>({});
   const [drafting, setDrafting] = useState<Record<string, boolean>>({});
@@ -749,14 +819,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         const res = await fetch('/api/restaurants?limit=50');
         if (!res.ok) {
           // §38.B Stage 122 — surface non-2xx instead of silently leaving
-          // `restaurants=[]` + `activeRestaurantId=null`. Previously the
-          // page sat on the spinner with no recovery path.
-          const errData = await res.json().catch(() => ({}));
+          // `restaurants=[]` + `activeRestaurantId=null` (the page used to sit
+          // on a spinner with no recovery path). Owner-safe copy only: no
+          // server text and no HTTP codes.
           setWorkspaceError(
-            errData?.error ||
-              (isTr
-                ? `İşletme listesi alınamadı (HTTP ${res.status}).`
-                : `Failed to load businesses (HTTP ${res.status}).`),
+            isTr
+              ? 'İşletme listesi alınamadı. Biraz sonra tekrar dene.'
+              : "Couldn't load your businesses. Please try again shortly.",
           );
           return;
         }
@@ -789,7 +858,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         setWorkspaceError(
           isTr
             ? 'İşletme listesi alınamadı. Bağlantını kontrol edip tekrar dene.'
-            : 'Failed to load businesses. Check your connection and try again.',
+            : "Couldn't load your businesses. Check your connection and try again.",
         );
       } finally {
         setLoadingInitial(false);
@@ -809,25 +878,40 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   };
 
   const loadStatusAndReviews = async (restaurantId: string) => {
+    const seq = ++statusSeqRef.current;
+    const current = () => seq === statusSeqRef.current;
     setStatusLoading(true);
     setStatus(null);
     setCheckedRestaurantId(null);
     setReviewsPayload(null);
     setReviewsError(null);
-    setProfileStats(null);
 
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/google/business/status`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Google durumu alınamadı.");
+      const data = await res.json().catch(() => null);
+      if (!current()) return;
+      if (!res.ok || !data) {
+        setReviewsError(ownerBodyMessage(data, locale));
+        setStatusSettledFor(restaurantId);
+        return;
+      }
       setStatus(data);
       setCheckedRestaurantId(restaurantId);
+      const replyReady = Boolean(
+        data.googleReviewManagementEnabled && data.connected && data.selectedLocation,
+      );
+      setReplyActive(replyReady);
+      setStatusSettledFor(restaurantId);
 
-      if (data.googleReviewManagementEnabled && data.connected && data.selectedLocation) {
+      if (replyReady) {
         setReviewsLoading(true);
         const revRes = await fetch(`/api/restaurants/${restaurantId}/google/business/reviews`);
-        const revData = await revRes.json();
-        if (!revRes.ok) throw new Error(revData?.error || "Google yorumları alınamadı.");
+        const revData = await revRes.json().catch(() => null);
+        if (!current()) return;
+        if (!revRes.ok || !revData) {
+          setReviewsError(ownerBodyMessage(revData, locale));
+          return;
+        }
         setReviewsPayload(revData);
 
         // Reply text seed sırası:
@@ -847,35 +931,22 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           }
         }
         setReplyText(replies);
-
-        // Stage 10 — PROFİL SAĞLIĞI gauge real data (CLAUDE.md §38.80).
-        // Fire-and-forget: reviews UI is the primary signal, profile stats
-        // is a bonus sub-card. Endpoint already degrades soft on Google API
-        // failures (mediaCount / unansweredQuestions → null), and any 4xx
-        // here just means the gauge keeps rendering placeholder text — no
-        // need to surface a banner.
-        try {
-          const statsRes = await fetch(
-            `/api/restaurants/${restaurantId}/google/business/profile-stats`,
-          );
-          if (statsRes.ok) {
-            const statsData = (await statsRes.json()) as ProfileStats;
-            setProfileStats(statsData);
-          }
-        } catch {
-          // soft-fail — gauge keeps "— yakında" placeholder for null fields
-        }
       }
-    } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : "Durum alınamadı.");
+    } catch {
+      if (!current()) return;
+      setReviewsError(ownerGoogleMessage('GOOGLE_NETWORK_ERROR', locale));
+      setStatusSettledFor(restaurantId);
     } finally {
-      setStatusLoading(false);
-      setReviewsLoading(false);
+      if (current()) {
+        setStatusLoading(false);
+        setReviewsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     if (activeRestaurantId) {
+      setReplyActive(false);
       void loadStatusAndReviews(activeRestaurantId);
     }
     // §38.206 — Restoran değişikliğinde "Bu hesapla devam et" denemesi
@@ -885,6 +956,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // §38.211 — Auto-retry state'leri kaldırıldı; restoran change'de
     // ek reset yok. locationRetryAfter zaten setLoadingLocations true
     // sırasında setLocationRetryAfter(null) ile temizleniyor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeRestaurantId]);
 
   // OAuth start — Google'a yönlendirir, callback sonrası bu sayfaya geri
@@ -911,33 +983,20 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.url) {
-        // Backend `message` is an operator-facing English string (e.g. the
-        // missing env var name) — never show it to the owner. Map the known
-        // cases to plain localized copy instead.
+        // Backend `message` is operator wording (it used to name the missing
+        // configuration) — never show it to the owner. Map by machine code.
         if (data?.configured === false || data?.error === 'missing_google_client_id') {
-          setConnectError(
-            isTr
-              ? 'Google hesabı bağlama şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin veya destek ekibimize yazın.'
-              : 'Connecting a Google account is not available right now. Please try again later or contact our support team.',
-          );
+          setConnectError(ownerGoogleMessage('missing_google_client_id', locale));
         } else if (res.status === 401) {
-          setConnectError(
-            isTr
-              ? 'Oturumunuzun süresi doldu. Lütfen tekrar giriş yapıp yeniden deneyin.'
-              : 'Your session has expired. Please sign in again and retry.',
-          );
+          setConnectError(ownerGoogleMessage('UNAUTHORIZED', locale));
         } else {
-          setConnectError(
-            isTr
-              ? 'Google bağlantısı başlatılamadı. Lütfen tekrar deneyin.'
-              : 'Could not start the Google connection. Please try again.',
-          );
+          setConnectError(ownerGoogleMessage('token-error', locale));
         }
         return;
       }
       window.location.href = data.url;
     } catch {
-      setConnectError(isTr ? 'Bağlantı hatası.' : 'Network error.');
+      setConnectError(ownerGoogleMessage('GOOGLE_NETWORK_ERROR', locale));
     } finally {
       setConnecting(false);
     }
@@ -983,11 +1042,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         setAccountsLoaded(true);
         setInlineLocationsSource(data.source ?? null);
         setInlineLocationsSyncedAt(typeof data.syncedAt === 'string' ? data.syncedAt : null);
+        // Mapped by the machine `warning`: the route's own `message` is never
+        // shown. A busy Google gets the "try Refresh in a few minutes" wording
+        // because this page has that button.
         setLocationNotice(
-          data.message ||
-            (isTr
-              ? 'Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Birkaç dakika bekleyin veya farklı bir Google hesabıyla bağlanmayı deneyin.'
-              : 'Google API quota currently exhausted (shared across all Buaze users). Wait a few minutes or try connecting with a different Google account.'),
+          ownerGoogleMessage(data.warning === 'GOOGLE_RATE_LIMITED' ? 'reply_busy' : data.warning, locale),
         );
         // §38.211 — UI-side cooldown only (auto-retry kaldırıldı).
         // Backend artık `retryAfterSeconds` göndermiyor (§38.211 backend
@@ -1007,43 +1066,31 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           // Backend rate-limit retry-after header gönderir ama auto-retry
           // YOK — owner manuel "Yenile" cooldown'unu bekler. setLocationRetryAfter
           // çağrılmaz → countdown UI tetiklenmez.
-          setLocationError(
-            data?.error ||
-              (isTr
-                ? 'Çok sık yenileme. Birkaç dakika sonra tekrar deneyin.'
-                : 'Too many refresh requests. Try again in a few minutes.'),
-          );
+          setLocationError(ownerBodyMessage(data, locale, 'CLIENT_THROTTLED'));
           return;
         }
         if (res.status === 401 || data?.code === 'GOOGLE_REAUTH_REQUIRED' || data?.requiresReauth) {
           // Refresh token süresi doldu / Google revoke etti. Owner için
           // net mesaj + Yeniden Bağla CTA.
-          setLocationError(
-            isTr
-              ? 'Google bağlantınızın süresi doldu. "Yeniden bağla" diyerek izin verin.'
-              : 'Your Google connection expired. Click "Reconnect" to grant access again.',
-          );
+          setLocationError(ownerGoogleMessage('GOOGLE_REAUTH_REQUIRED', locale));
           setNeedsReconnect(true);
           return;
         }
         if (data?.code === 'GOOGLE_NOT_CONNECTED') {
           // İlk OAuth henüz yapılmamış / disconnect olmuş.
-          setLocationError(
-            isTr
-              ? 'Google hesabı bağlı değil. "Google Hesabını Bağla" ile bağlayın.'
-              : 'Google account not connected. Click "Connect Google Account".',
-          );
+          setLocationError(ownerGoogleMessage('GOOGLE_NOT_CONNECTED', locale));
           return;
         }
-        throw new Error(data?.error || (isTr ? 'Konumlar alınamadı.' : 'Failed to load locations.'));
+        setLocationError(ownerBodyMessage(data, locale));
+        return;
       }
       setInlineLocations(data.locations ?? []);
       setInlineAccounts(Array.isArray(data.accounts) ? data.accounts : []);
       setAccountsLoaded(true);
       setInlineLocationsSource(data.source ?? null);
       setInlineLocationsSyncedAt(typeof data.syncedAt === 'string' ? data.syncedAt : null);
-    } catch (err) {
-      setLocationError(err instanceof Error ? err.message : (isTr ? 'Konumlar alınamadı.' : 'Failed to load locations.'));
+    } catch {
+      setLocationError(ownerGoogleMessage('GOOGLE_NETWORK_ERROR', locale));
     } finally {
       setLoadingLocations(false);
     }
@@ -1064,12 +1111,21 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           locationName: location.locationName,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || (isTr ? 'Konum kaydedilemedi.' : 'Failed to save location.'));
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setLocationError(
+          ownerBodyMessageOr(
+            data,
+            locale,
+            isTr ? 'Konum kaydedilemedi. Biraz sonra tekrar dene.' : "Couldn't save the location. Please try again shortly.",
+          ),
+        );
+        return;
+      }
       // Status + reviews otomatik yüklensin
       void loadStatusAndReviews(activeRestaurantId);
-    } catch (err) {
-      setLocationError(err instanceof Error ? err.message : (isTr ? 'Konum kaydedilemedi.' : 'Failed to save location.'));
+    } catch {
+      setLocationError(ownerGoogleMessage('GOOGLE_NETWORK_ERROR', locale));
     } finally {
       setSavingLocation(null);
     }
@@ -1144,11 +1200,20 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           locale,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Taslak oluşturulamadı.");
-      setReplyText((prev) => ({ ...prev, [review.name]: data.suggestion ?? "" }));
-    } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : "Taslak oluşturulamadı.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setReviewsError(
+          ownerBodyMessageOr(
+            data,
+            locale,
+            isTr ? 'Taslak hazırlanamadı. Biraz sonra tekrar dene.' : "Couldn't prepare a draft. Please try again shortly.",
+          ),
+        );
+        return;
+      }
+      setReplyText((prev) => ({ ...prev, [review.name]: data?.suggestion ?? "" }));
+    } catch {
+      setReviewsError(ownerGoogleMessage('GOOGLE_NETWORK_ERROR', locale));
     } finally {
       setDrafting((prev) => ({ ...prev, [review.name]: false }));
     }
@@ -1174,29 +1239,31 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reviewName: review.name, comment, confirmResponsibility: true }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const message =
-          data?.code === 'CONTENT_BLOCKED'
-            ? data?.error ??
-              (isTr
-                ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
-                : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.')
-            : data?.error || (isTr ? 'Yanıt gönderilemedi.' : 'Failed to send reply.');
-        throw new Error(message);
+        // `CONTENT_BLOCKED` and the other known codes are mapped to owner-safe
+        // copy; the route's own text is never rendered.
+        setReviewsError(
+          ownerBodyMessageOr(
+            data,
+            locale,
+            isTr ? 'Yanıt gönderilemedi. Biraz sonra tekrar dene.' : "The reply couldn't be sent. Please try again shortly.",
+          ),
+        );
+        return;
       }
       setReviewsPayload((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           reviews: prev.reviews.map((item) =>
-            item.name === review.name ? { ...item, reviewReply: data.reply } : item,
+            item.name === review.name ? { ...item, reviewReply: data?.reply } : item,
           ),
         };
       });
       setConfirmedReplies((prev) => ({ ...prev, [review.name]: false }));
-    } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : (isTr ? 'Yanıt gönderilemedi.' : 'Failed to send reply.'));
+    } catch {
+      setReviewsError(ownerGoogleMessage('GOOGLE_NETWORK_ERROR', locale));
     } finally {
       setReplying((prev) => ({ ...prev, [review.name]: false }));
     }
@@ -1326,234 +1393,292 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     };
   }, [reviewsPayload]);
 
-  // Stage 28 §38.104 Fix O3-partial — health score memoize.
-  // PROFİL SAĞLIĞI gauge inline IIFE'inde (line ~1194) `computeHealthScore`
-  // her render'da yeniden çalışıyordu. 50+ review'lı dashboard'larda
-  // dependency array değişmediğinde re-render skip kazandırır.
-  // `extractKeywords` zaten reviewAnalysis useMemo içinde — dokunulmadı.
-  const healthScore = useMemo(() => {
-    if (!reviewsPayload) return null;
-    return computeHealthScore({
-      avgRating: reviewsPayload.averageRating,
-      total: reviewsPayload.totalReviewCount,
-      replied: reviewAnalysis.replied,
-    });
-  }, [reviewsPayload, reviewAnalysis.replied]);
-
   const statusIsReady = Boolean(
     activeRestaurantId && checkedRestaurantId === activeRestaurantId && status,
   );
-  const shouldShowStatusLoading = loadingInitial || statusLoading || Boolean(activeRestaurantId && !statusIsReady && !reviewsError);
+  // Guards ONLY the reply region (one flat row). The Places section above it
+  // never waits for the Google sign-in status or the review waterfall.
+  const shouldShowStatusLoading =
+    loadingInitial || statusLoading || Boolean(activeRestaurantId && !statusIsReady && !reviewsError);
+
+  const activeRestaurant = useMemo(
+    () => restaurants.find((r) => r.id === activeRestaurantId) ?? null,
+    [restaurants, activeRestaurantId],
+  );
+
+  // Switcher state word. Computed from the list rows alone (pure, no server
+  // call); "not found" overrides a stored Place ID that Google no longer knows.
+  const optionStateOf = (r: RestaurantRow): PlacesOptionState => {
+    const base = placesOptionState(r);
+    return base === 'found' && notFoundIds.has(r.id) ? 'unmatched' : base;
+  };
+  const matchedCount = restaurants.filter((r) => optionStateOf(r) === 'found').length;
+  const switcherOptions = restaurants.map((r) => ({
+    value: r.id,
+    label: `${r.name} · ${placesOptionStateLabel(optionStateOf(r), locale)}`,
+  }));
+
+  const handleLinked = (restaurantId: string, result: PlacesSelectResponse) => {
+    setRestaurants((prev) =>
+      prev.map((r) =>
+        r.id === restaurantId
+          ? {
+              ...r,
+              googlePlaceId: result.restaurant.googlePlaceId,
+              googleReviewUrl: result.restaurant.googleReviewUrl,
+            }
+          : r,
+      ),
+    );
+    setNotFoundIds((prev) => {
+      if (!prev.has(restaurantId)) return prev;
+      const next = new Set(prev);
+      next.delete(restaurantId);
+      return next;
+    });
+  };
+
+  const handleProfileState = (restaurantId: string, state: 'found' | 'not_found') => {
+    setNotFoundIds((prev) => {
+      if (state === 'not_found' ? prev.has(restaurantId) : !prev.has(restaurantId)) return prev;
+      const next = new Set(prev);
+      if (state === 'not_found') next.add(restaurantId);
+      else next.delete(restaurantId);
+      return next;
+    });
+  };
+
+  // Platform-level state of the optional reply sign-in. Missing (older
+  // server) counts as available.
+  const replyAvailability: GoogleReplyAvailability = status?.replyAvailability ?? 'available';
+  // The reviews experience (not a compact row) is on screen: its section
+  // header drops the card chrome because the content below is made of cards.
+  const replyFull =
+    !shouldShowStatusLoading &&
+    !(reviewsError && !statusIsReady) &&
+    Boolean(status?.googleReviewManagementEnabled && status?.connected && status?.selectedLocation);
+
+  const replyActions =
+    replyFull && reviewsPayload && activeRestaurantId ? (
+      <>
+        <button
+          type="button"
+          onClick={() => loadStatusAndReviews(activeRestaurantId)}
+          disabled={reviewsLoading}
+          className="bz-btn-ghost min-h-11 text-[12.5px]"
+          title={isTr ? 'Google yorumlarını yeniden çek' : 'Refresh Google reviews'}
+        >
+          {reviewsLoading ? (
+            <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <RefreshCw size={13} strokeWidth={2} aria-hidden="true" />
+          )}
+          {isTr ? 'Senkronize et' : 'Sync'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('unreplied')}
+          className="bz-btn-primary min-h-11 text-[12.5px]"
+          title={isTr ? 'Yanıtlanmamış yorumlara odaklan' : 'Focus on unanswered reviews'}
+        >
+          <Send size={13} strokeWidth={2} aria-hidden="true" />
+          {isTr ? 'Yanıt sırası' : 'Reply queue'} ({reviewAnalysis.unanswered})
+        </button>
+      </>
+    ) : null;
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
       {/* §38 audit Fix #1 — connect button returnTo bu sayfa, callback
           ?google=connected|state-*|token-* status'lerini yakalar. */}
-      <GoogleConnectFlashBanner locale={isTr ? 'tr' : 'en'} />
+      <GoogleConnectFlashBanner locale={locale} />
       <PageHeader
-        eyebrow={isTr ? 'GOOGLE YORUMLARI' : 'GOOGLE REVIEWS'}
+        eyebrow="GOOGLE"
         title={isTr ? 'Google Yorumları' : 'Google Reviews'}
         description={
           isTr
-            ? 'Google\'a bırakılan yorumları oku, Pulse AI taslağıyla yanıt yaz ve doğrudan yayınla.'
-            : 'Read Google reviews, draft replies with Pulse AI, and publish straight from here.'
-        }
-        actions={
-          // §38.57 — Tasarım a/page-google.jsx topbar 2 action button birebir.
-          // "Profili görüntüle" backend gerek (profileUrl status'ta exposed
-          // değil, gelecek scope). Senkronize et + Yanıt sırası (unreplied
-          // count) implement edilir.
-          activeRestaurantId && reviewsPayload ? (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => loadStatusAndReviews(activeRestaurantId)}
-                disabled={reviewsLoading}
-                className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px]"
-                title={isTr ? 'Google yorumlarını yeniden çek' : 'Refresh Google reviews'}
-              >
-                {reviewsLoading ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <RefreshCw size={13} strokeWidth={2} />
-                )}
-                {isTr ? 'Senkronize et' : 'Sync'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('unreplied')}
-                className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px]"
-                title={isTr ? 'Yanıtlanmamış yorumlara odaklan' : 'Focus on unanswered reviews'}
-              >
-                <Send size={13} strokeWidth={2} />
-                {isTr ? 'Yanıt sırası' : 'Reply queue'} ({reviewAnalysis.unanswered})
-              </button>
-            </div>
-          ) : null
+            ? "İşletmeni Google'da bul; puanını, yorumlarını ve profil eksiklerini hemen gör."
+            : 'Find your business on Google and instantly see your rating, reviews and profile gaps.'
         }
       />
-
-      {restaurants.length > 1 && (
-        <div className="mb-6">
-          <label className="block text-[13px] font-medium text-[#262626] mb-2">
-            {isTr ? "İşletme Seçin" : "Select Business"}
-          </label>
-          <PulseSelect
-            value={activeRestaurantId ?? ''}
-            onChange={selectRestaurant}
-            options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
-            ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
-            className="w-full max-w-sm"
-          />
-        </div>
-      )}
-
-      {/* §38.72 — Workspace cross-link hint. Owner için Google Yorumları
-          tek-platform; tüm platform durumu için /dashboard/platforms
-          workspace overview'a link. Audit Agent #2 #1 (CLAUDE.md §38.72). */}
-      <div className="mb-5 flex items-center gap-2 text-[12px] text-[#525252]">
-        <Plug size={12} strokeWidth={2} className="shrink-0" />
-        <span>
-          {isTr ? 'Diğer platformları da yönetmek için ' : 'Manage other platforms in '}
-          <Link
-            href={`/${locale}/dashboard/platforms${
-              activeRestaurantId ? `?restaurantId=${encodeURIComponent(activeRestaurantId)}` : ''
-            }`}
-            className="rounded font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
-          >
-            {isTr ? 'Platform bağlantıları' : 'Platform links'}
-          </Link>
-          {isTr ? ' sayfasına git.' : '.'}
-        </span>
-      </div>
 
       {workspaceError ? (
         // §38.B Stage 122 — `/api/restaurants?limit=50` fail. Previously
         // silent (spinner stuck forever); now surfaces with retry CTA so
         // the owner can recover without reloading the whole page.
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           <AlertBanner kind="danger">{workspaceError}</AlertBanner>
           <button
             type="button"
-            className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px]"
+            className="bz-btn-ghost min-h-11"
             onClick={() => setReloadWorkspaceKey((n) => n + 1)}
           >
-            <RefreshCw size={13} />
+            <RefreshCw size={13} aria-hidden="true" />
             {isTr ? 'Tekrar dene' : 'Try again'}
           </button>
         </div>
-      ) : shouldShowStatusLoading ? (
-        <LoadingPanel label={isTr ? "Google yorumları hazırlanıyor..." : "Preparing Google reviews..."} />
+      ) : loadingInitial || (restaurants.length > 0 && !activeRestaurant) ? (
+        // Same flat skeleton as `loading.tsx` (identical geometry, no spinner):
+        // the route fallback → client transition is not a second skeleton.
+        <GoogleReviewsBodySkeleton />
       ) : restaurants.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
-          <Inbox size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
-          <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
-            {isTr ? "Henüz işletme yok" : "No business yet"}
-          </h3>
-          <p className="text-[14px] text-[#525252] max-w-md mx-auto">
-            {isTr
-              ? "Google yorumlarını yönetmek için önce panelden bir işletme oluşturmanız gerekiyor."
-              : "Create a business first before managing Google reviews."}
-          </p>
-        </div>
-      ) : reviewsError && !statusIsReady ? (
-        <div className="mt-6 space-y-4">
-          <AlertBanner kind="danger">{reviewsError}</AlertBanner>
-          <button
-            type="button"
-            className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px]"
-            onClick={() => activeRestaurantId && loadStatusAndReviews(activeRestaurantId)}
-          >
-            <RefreshCw size={13} />
-            {isTr ? "Tekrar dene" : "Try again"}
-          </button>
-        </div>
-      ) : status && !status.googleReviewManagementEnabled ? (
-        // Admin master switch off (Restaurant.googleReviewManagementEnabled,
-        // CLAUDE.md §5.1 / §5.2). Every Google Business call returns
-        // GOOGLE_REVIEW_MANAGEMENT_DISABLED, so offering "Connect" would only
-        // send the owner through OAuth into a dead end. The Google review
-        // link used by QR redirects is independent of this switch.
-        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
-          <Lock size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
-          <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
-            {isTr
-              ? 'Google yorum yönetimi bu işletmede henüz açık değil'
-              : 'Google review management is not enabled for this business yet'}
-          </h3>
-          <p className="text-[14px] text-[#525252] max-w-md mx-auto">
-            {isTr
-              ? 'Google yorumlarını bu sayfadan okumak ve yanıtlamak bu işletmenin paketinde henüz etkin değil. Açtırmak için destek ekibimizle iletişime geçebilirsiniz.'
-              : "Reading and replying to Google reviews from this page is not enabled in this business's plan yet. Contact our support team to have it turned on."}
-          </p>
-          <p className="text-[12.5px] text-[#737373] max-w-md mx-auto mt-3">
-            {isTr
-              ? 'QR kodlarınız müşterileri Google yorum sayfanıza yönlendirmeye devam eder.'
-              : 'Your QR codes still send customers to your Google review page.'}
-          </p>
-          <a
-            href="mailto:support@buaze.com"
-            className="bz-btn-ghost mt-5 inline-flex items-center gap-2 rounded-full text-[13px]"
-          >
-            {isTr ? 'Destek ekibine yaz' : 'Contact support'}
-          </a>
-        </div>
-      ) : status && !status.connected && !status.oauthConfigured ? (
-        // Google sign-in is not configured on this deployment — the connect
-        // endpoint would only return a missing-configuration error.
-        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
-          <Plug size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
-          <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
-            {isTr ? 'Google bağlantısı şu an kullanılamıyor' : 'Google connection is not available right now'}
-          </h3>
-          <p className="text-[14px] text-[#525252] max-w-md mx-auto">
-            {isTr
-              ? 'Google hesabınızı bağlama özelliği şu an hazırlanıyor. Lütfen daha sonra tekrar deneyin veya destek ekibimizle iletişime geçin.'
-              : 'Connecting your Google account is being set up. Please try again later or contact our support team.'}
-          </p>
-          <a
-            href="mailto:support@buaze.com"
-            className="bz-btn-ghost mt-5 inline-flex items-center gap-2 rounded-full text-[13px]"
-          >
-            {isTr ? 'Destek ekibine yaz' : 'Contact support'}
-          </a>
-        </div>
-      ) : !status?.connected ? (
-        // STEP 1 — Google bağlı değil. Inline Connect butonu.
-        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
-          <Plug size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
-          <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
-            {isTr ? "Google hesabınız bağlı değil" : "Google account is not connected"}
-          </h3>
-          <p className="text-[14px] text-[#525252] max-w-md mx-auto mb-6">
-            {isTr
-              ? "Müşterilerinizin Google'a bıraktığı yorumları bu sayfadan okumak ve yanıtlamak için Google Business hesabınızı bağlayın."
-              : "Connect your Google Business account to read and reply to reviews your customers left on Google."}
-          </p>
-          {connectError && (
-            <div className="max-w-md mx-auto mb-4">
-              <AlertBanner kind="danger" onDismiss={() => setConnectError(null)}>
-                {connectError}
-              </AlertBanner>
+        <EmptyState
+          icon={<Building2 size={22} aria-hidden="true" />}
+          title={isTr ? 'Henüz işletme yok' : 'No business yet'}
+          body={
+            isTr
+              ? 'Google puanını ve yorumlarını görmek için önce bir işletme ekle.'
+              : 'Add a business first to see its Google rating and reviews.'
+          }
+          action={
+            <Link href={`/${locale}/dashboard/restaurants/new`} className="bz-btn-primary min-h-11">
+              {isTr ? 'İşletme ekle' : 'Add a business'}
+            </Link>
+          }
+        />
+      ) : (
+        <>
+          {restaurants.length > 1 && (
+            <div className="space-y-2">
+              <p id="google-switcher-summary" className="text-[12.5px] leading-[1.5] text-[#525252]">
+                {formatBusinessSummary(matchedCount, restaurants.length, locale)}
+              </p>
+              <PulseSelect
+                value={activeRestaurantId ?? ''}
+                onChange={(id) => {
+                  // A manual switch never moves focus into a search field (that
+                  // is only for "Next: …", which sets the hint itself).
+                  setFocusSearchFor(null);
+                  selectRestaurant(id);
+                }}
+                options={switcherOptions}
+                ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
+                aria-describedby="google-switcher-summary"
+                className="w-full max-w-md"
+              />
             </div>
           )}
-          <button
-            onClick={connectGoogleInline}
-            disabled={connecting}
-            className="bz-btn-primary inline-flex items-center gap-2 px-6 rounded-full"
-          >
-            {connecting ? <Loader2 size={16} className="animate-spin" /> : <ExternalLink size={16} />}
-            {isTr ? "Google Hesabını Bağla" : "Connect Google Account"}
-          </button>
-          <p className="text-[12px] text-[#737373] mt-3">
-            {isTr
-              ? 'Google ile güvenli giriş yapacaksınız. Bu sayfaya geri döneceksiniz.'
-              : 'You will be redirected to Google for secure sign-in. You will return here.'}
-          </p>
-        </div>
-      ) : !status?.selectedLocation ? (
+
+          {/* §38.72 — Workspace cross-link hint (navigation, kept). Google
+              Yorumları tek-platform; tüm platform durumu için
+              /dashboard/platforms workspace overview'a link. */}
+          <div className="flex min-h-11 items-center gap-2 text-[12px] text-[#525252]">
+            <Plug size={12} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+            <span>
+              {isTr ? 'Diğer platformları da yönetmek için ' : 'Manage other platforms in '}
+              <Link
+                href={`/${locale}/dashboard/platforms${
+                  activeRestaurantId ? `?restaurantId=${encodeURIComponent(activeRestaurantId)}` : ''
+                }`}
+                className="inline-flex min-h-11 items-center rounded font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+              >
+                {isTr ? 'Platform bağlantıları' : 'Platform links'}
+              </Link>
+              {isTr ? ' sayfasına git.' : '.'}
+            </span>
+          </div>
+
+          {/* The profile section is mounted ONLY once the active business is
+              resolved (never for a provisional one: each Details call is
+              billed) and is keyed by it. */}
+          {activeRestaurant && (
+            <PlacesProfileSection
+              key={activeRestaurant.id}
+              restaurant={activeRestaurant}
+              restaurants={restaurants}
+              locale={locale}
+              oauthActive={replyActive}
+              statusLoaded={statusSettledFor === activeRestaurant.id}
+              onLinked={(result) => handleLinked(activeRestaurant.id, result)}
+              onProfileState={handleProfileState}
+              onSwitchBusiness={(id) => {
+                setFocusSearchFor(id);
+                selectRestaurant(id);
+              }}
+              focusSearch={focusSearchFor === activeRestaurant.id}
+            />
+          )}
+
+          <ReplySection isTr={isTr} full={replyFull} actions={replyActions}>
+            {shouldShowStatusLoading ? (
+              <div className="space-y-3" aria-busy="true">
+                <SkBox className="h-4 w-full max-w-xl" />
+                <SkBox className="h-11 w-48" />
+              </div>
+            ) : reviewsError && !statusIsReady ? (
+              <div className="space-y-3">
+                <AlertBanner kind="danger">{reviewsError}</AlertBanner>
+                <button
+                  type="button"
+                  className="bz-btn-ghost min-h-11"
+                  onClick={() => activeRestaurantId && loadStatusAndReviews(activeRestaurantId)}
+                >
+                  <RefreshCw size={13} aria-hidden="true" />
+                  {isTr ? 'Tekrar dene' : 'Try again'}
+                </button>
+              </div>
+            ) : status && !status.connected && replyAvailability !== 'available' ? (
+              // Platform level (Google has not opened reply access for Buaze, or
+              // the operator switched sign-in off): NO connect button. It would
+              // only send the owner through a full Google sign-in into a dead end.
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <Badge kind="warn" dot={false}>
+                  {ownerGoogleMessage('reply_badge_unavailable', locale)}
+                </Badge>
+                <p className="text-[13px] leading-[1.6] text-[#525252]">
+                  {ownerGoogleMessage('reply_unavailable', locale)}
+                </p>
+              </div>
+            ) : status && !status.googleReviewManagementEnabled ? (
+              // Admin master switch off (Restaurant.googleReviewManagementEnabled,
+              // CLAUDE.md §5.1 / §5.2). The Google review link used by QR
+              // redirects and the Places profile above are independent of it.
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[13px] leading-[1.6] text-[#525252]">
+                  {ownerGoogleMessage('reply_plan_off', locale)}
+                </p>
+                <a
+                  href="mailto:support@buaze.com"
+                  className="bz-btn-ghost min-h-11 w-full sm:w-auto"
+                >
+                  {ownerGoogleMessage('reply_plan_off_cta', locale)}
+                </a>
+              </div>
+            ) : status && !status.connected && !status.oauthConfigured ? (
+              // Google sign-in is not configured on this deployment.
+              <p className="text-[13px] leading-[1.6] text-[#525252]">
+                {ownerGoogleMessage('reply_feature_off', locale)}
+              </p>
+            ) : !status?.connected ? (
+              // Not connected, reply access available: the one sign-in button.
+              <div className="space-y-3">
+                {connectError && (
+                  <AlertBanner kind="danger" onDismiss={() => setConnectError(null)} className={BANNER_TOUCH_CLS}>
+                    {connectError}
+                  </AlertBanner>
+                )}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-[13px] leading-[1.6] text-[#525252]">
+                    {ownerGoogleMessage('reply_connect_hint', locale)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={connectGoogleInline}
+                    disabled={connecting}
+                    className="bz-btn-primary min-h-11 w-full shrink-0 sm:w-auto"
+                  >
+                    {connecting ? (
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <ExternalLink size={16} aria-hidden="true" />
+                    )}
+                    {isTr ? 'Google hesabını bağla' : 'Connect Google account'}
+                  </button>
+                </div>
+              </div>
+            ) : !status?.selectedLocation ? (
         // STEP 2 — Google bağlı ama location seçilmedi. Inline location list.
-        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-8">
+        <div className="space-y-4">
           <div className="flex items-start gap-3 mb-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8]">
               <MapPin size={20} strokeWidth={2} className="text-[#0A0A0A]" />
@@ -1564,7 +1689,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
               </h3>
               <p className="text-[13px] text-[#525252] mt-1 leading-relaxed">
                 {isTr
-                  ? 'Google hesabınız bağlandı. Yorumları çekmek istediğiniz Business Profile konumunu seçin.'
+                  ? 'Google hesabınız bağlandı. Yorumları çekmek istediğiniz İşletme Profili konumunu seçin.'
                   : 'Your Google account is connected. Pick the Business Profile location to load reviews from.'}
               </p>
             </div>
@@ -1572,7 +1697,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
               type="button"
               onClick={() => loadInlineLocations(true, { resetAutoRetry: true })}
               disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
-              className="bz-btn-ghost shrink-0 inline-flex items-center gap-1.5 rounded-full text-[12.5px]"
+              className="bz-btn-ghost min-h-11 shrink-0 inline-flex items-center gap-1.5 rounded-full text-[12.5px]"
               aria-label={isTr ? 'Konumları yenile' : 'Refresh locations'}
               title={
                 inlineLocationsSyncedAt
@@ -1601,7 +1726,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
 
           {locationError && (
             <div className="space-y-2">
-              <AlertBanner kind="danger" onDismiss={() => setLocationError(null)}>
+              <AlertBanner kind="danger" onDismiss={() => setLocationError(null)} className={BANNER_TOUCH_CLS}>
                 {locationError}
               </AlertBanner>
               {needsReconnect && (
@@ -1609,7 +1734,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                   type="button"
                   onClick={connectGoogleInline}
                   disabled={connecting}
-                  className="bz-btn-primary inline-flex items-center gap-2 rounded-full text-[13px]"
+                  className="bz-btn-primary min-h-11 inline-flex items-center gap-2 rounded-full text-[13px]"
                 >
                   {connecting ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
                   {isTr ? 'Yeniden bağla' : 'Reconnect'}
@@ -1619,7 +1744,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           )}
           {locationNotice && !locationError && (
             <div className="space-y-2">
-              <AlertBanner kind="warn" onDismiss={() => setLocationNotice(null)}>
+              {/* Google has not opened reply access for Buaze yet: a neutral,
+                  permanent state the owner cannot fix, so `info`. A busy Google
+                  stays a `warn`. */}
+              <AlertBanner
+                kind={apiNotProvisioned ? 'info' : 'warn'}
+                onDismiss={() => setLocationNotice(null)}
+                className={BANNER_TOUCH_CLS}
+              >
                 {locationNotice}
               </AlertBanner>
               {/* §38.208 — Sarı banner görünüyor + accounts boş ise direkt
@@ -1645,8 +1777,8 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-[12.5px] text-[#0A0A0A] leading-relaxed">
                         {isTr
-                          ? 'Beklemek istemiyorsanız farklı bir Google hesabıyla bağlanmayı deneyebilirsiniz. Business Profile genelde Buaze\'ye kayıt olduğunuz Google hesabından farklı bir hesapta olur — doğru hesabı seçmek quota\'yı bypass edebilir.'
-                          : 'Instead of waiting, you can try a different Google account. Your Google Business Profile is usually under a different Google account than the one you signed up with — picking the right account may bypass the quota.'}
+                          ? 'İşletme Profili genelde Buaze\'ye kayıt olduğunuz Google hesabından farklı bir hesapta olur. Hesaplarınızı göremiyorsanız farklı bir Google hesabıyla bağlanmayı deneyebilirsiniz.'
+                          : 'Your Google Business Profile is often under a different Google account than the one you signed up with. If you do not see your accounts, you can connect with a different Google account.'}
                       </p>
                       <button
                         type="button"
@@ -1661,7 +1793,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                           await connectGoogleInline();
                         }}
                         disabled={connecting}
-                        className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] rounded-full mt-2"
+                        className="bz-btn-primary min-h-11 inline-flex items-center gap-1.5 text-[12.5px] rounded-full mt-2"
                       >
                         {connecting ? <Loader2 size={13} className="animate-spin" /> : <Unplug size={13} />}
                         {isTr ? 'Farklı Google hesabıyla bağlan' : 'Switch Google account'}
@@ -1708,12 +1840,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 <div className="flex-1 min-w-0">
                   <p className="bz-h-tight text-[15px] text-[#0A0A0A]">
                     {isTr
-                      ? 'Google Business hesabınız muhtemelen farklı bir Google hesabında'
-                      : 'Your Google Business account is likely under a different Google account'}
+                      ? 'İşletme Profili muhtemelen farklı bir Google hesabında'
+                      : 'Your Business Profile is likely under a different Google account'}
                   </p>
                   <p className="text-[13px] text-[#525252] mt-1.5 leading-relaxed">
                     {isTr
-                      ? 'Genelde Buaze\'ye kayıt olduğunuz Google hesabı (kişisel e-postanız) ile Google Business Profile\'ın bağlı olduğu Google hesabı farklı olur. İşletmenizin Google yorumlarını yönetmek için doğru hesabı seçin.'
+                      ? 'Genelde Buaze\'ye kayıt olduğunuz Google hesabı (kişisel e-postanız) ile Google İşletme Profili\'nin bağlı olduğu Google hesabı farklı olur. İşletmenizin Google yorumlarını yanıtlamak için doğru hesabı seçin.'
                       : 'Most people sign up to Buaze with their personal Google account, but their Google Business Profile is linked to a different Google account (often a business email). To manage your Google reviews, please pick the right account.'}
                   </p>
                   {hasAttemptedSameAccount && (
@@ -1721,8 +1853,8 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       <Sparkles size={13} className="shrink-0 text-[#92400E] mt-0.5" />
                       <p className="text-[12px] text-[#92400E] leading-relaxed">
                         {isTr
-                          ? 'Bu Google hesabında gerçekten Business Profile yok. Lütfen "Farklı hesapla bağlan" diyerek doğru hesabı seçin veya yeni bir profil oluşturun.'
-                          : 'This Google account really has no Business Profile. Please pick the right account via "Switch Google account" or create a new profile.'}
+                          ? 'Bu Google hesabında İşletme Profili görünmüyor. "Farklı Google hesabıyla bağlan" diyerek doğru hesabı seçin veya yeni bir profil oluşturun.'
+                          : 'This Google account has no Business Profile. Use "Connect with a different Google account" to pick the right one, or create a new profile.'}
                       </p>
                     </div>
                   )}
@@ -1743,7 +1875,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                         await connectGoogleInline();
                       }}
                       disabled={connecting}
-                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[13px] rounded-full"
+                      className="bz-btn-primary min-h-11 inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       {connecting ? <Loader2 size={14} className="animate-spin" /> : <Unplug size={14} />}
                       {isTr ? 'Farklı Google hesabıyla bağlan' : 'Connect with a different Google account'}
@@ -1763,11 +1895,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                         (locationRetryAfter !== null && locationRetryAfter > 0) ||
                         hasAttemptedSameAccount
                       }
-                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
+                      className="bz-btn-ghost min-h-11 inline-flex items-center gap-1.5 text-[13px] rounded-full"
                       title={
                         hasAttemptedSameAccount
                           ? isTr
-                            ? 'Bu hesap denendi, Business Profile bulunamadı'
+                            ? 'Bu hesap denendi, İşletme Profili bulunamadı'
                             : 'This account was tried, no Business Profile found'
                           : undefined
                       }
@@ -1778,14 +1910,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                         <CheckCircle2 size={13} />
                       )}
                       {hasAttemptedSameAccount
-                        ? (isTr ? 'Denendi — Business Profile yok' : 'Tried — no Business Profile')
+                        ? (isTr ? 'Denendi — İşletme Profili yok' : 'Tried — no Business Profile')
                         : (isTr ? 'Bu hesapla devam et' : 'Continue with this account')}
                     </button>
                     <a
                       href="https://business.google.com/create"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
+                      className="bz-btn-ghost min-h-11 inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       <ExternalLink size={13} />
                       {isTr ? 'Yeni profil oluştur' : 'Create new profile'}
@@ -1795,7 +1927,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     <Sparkles size={12} className="shrink-0 text-[#525252] mt-0.5" />
                     <p className="text-[11.5px] text-[#525252] leading-relaxed">
                       {isTr
-                        ? 'İpucu: Google Business Profile sahibiyseniz, "Farklı hesapla bağlan"a tıklayın ve işletmenizin kayıtlı olduğu Google hesabını seçin. Eğer hiç profil açmadıysanız "Yeni profil oluştur" ile başlayın; Google posta/telefon/video doğrulama bekleyebilir.'
+                        ? 'İpucu: Google İşletme Profili sahibiyseniz "Farklı Google hesabıyla bağlan"a tıklayın ve işletmenizin kayıtlı olduğu Google hesabını seçin. Hiç profil açmadıysanız "Yeni profil oluştur" ile başlayın; Google posta, telefon veya video doğrulaması isteyebilir.'
                         : 'Tip: If you own a Google Business Profile, click "Connect with a different Google account" and pick the Google account it\'s registered under. If you haven\'t created one yet, start with "Create new profile"; Google may require verification (postcard, phone, or video).'}
                     </p>
                   </div>
@@ -1818,7 +1950,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                   </p>
                   <p className="text-[13px] text-[#525252] mt-1.5 leading-relaxed">
                     {isTr
-                      ? `${inlineAccounts.length} Business Profile hesabınız bağlı, fakat henüz hiç konum (lokasyon) eklenmemiş. Google'da işletme konumu açıp doğruladıktan sonra burada görünecek.`
+                      ? `${inlineAccounts.length} İşletme Profili hesabınız bağlı, fakat henüz hiç konum (lokasyon) eklenmemiş. Google'da işletme konumu açıp doğruladıktan sonra burada görünecek.`
                       : `${inlineAccounts.length} Business Profile account connected, but no location has been added yet. Add and verify a location on Google to see it here.`}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-4">
@@ -1826,7 +1958,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       href="https://business.google.com/locations"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[13px] rounded-full"
+                      className="bz-btn-primary min-h-11 inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       <ExternalLink size={13} />
                       {isTr ? 'Google\'da konum ekle' : 'Add location on Google'}
@@ -1835,7 +1967,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       type="button"
                       onClick={() => loadInlineLocations(true, { resetAutoRetry: true })}
                       disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
-                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
+                      className="bz-btn-ghost min-h-11 inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       <RefreshCw size={13} />
                       {isTr ? 'Yenile' : 'Refresh'}
@@ -1896,7 +2028,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           )}
         </div>
       ) : (
-        <div className="mt-6 space-y-6">
+        <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <p className="text-[14px] font-medium text-[#0A0A0A]">
@@ -1909,7 +2041,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="bz-btn-danger text-[12px]"
+                className="bz-btn-danger min-h-11 text-[12px]"
                 onClick={async () => {
                   if (!confirm(isTr ? 'Google hesap bağlantısı kesilecek. Devam etmek istiyor musunuz?' : 'Google account will be disconnected. Continue?')) return;
                   try {
@@ -1927,7 +2059,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
               </button>
               <button
                 type="button"
-                className="bz-btn-primary inline-flex items-center gap-1.5 rounded-full text-[13px]"
+                className="bz-btn-primary min-h-11 inline-flex items-center gap-1.5 rounded-full text-[13px]"
                 onClick={() => activeRestaurantId && loadStatusAndReviews(activeRestaurantId)}
                 disabled={reviewsLoading}
               >
@@ -1989,7 +2121,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     {/* Inline 5-row distribution (tasarım line 80-92) */}
                     <div className="flex-1">
                       <div className="pulse-eyebrow text-white/55 mb-2">
-                        {isTr ? 'SON 12 AY' : 'LAST 12 MONTHS'}
+                        {isTr ? 'YÜKLENEN YORUMLAR' : 'LOADED REVIEWS'}
                       </div>
                       <div className="flex flex-col gap-1.5">
                         {reviewAnalysis.breakdown.map((d) => {
@@ -2076,7 +2208,6 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                           }
                         : null
                     }
-                    sub={isTr ? 'AI ile' : 'with AI'}
                   />
                   {/* BU AY YENİ */}
                   <KpiTile
@@ -2095,95 +2226,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 </div>
               </div>
 
-              {/* PROFİL SAĞLIĞI + SIK GEÇEN KELİMELER — tasarım
-                  .design-pulse-2026/.../page-google.jsx sağ rail paterni.
-                  Mevcut max-w-[1000px] 1-col layout'a sığdırmak için 2-col
-                  responsive grid (sm+ side-by-side, mobile stack). */}
+              {/* Reviews stream (left) + keywords / quick replies (right rail).
+                  The single score for connected owners is the Buaze health
+                  card above; the second "profile health" gauge was removed
+                  (it used a made-up formula). */}
               {(() => {
-                // Stage 28 §38.104 Fix O3-partial — memoized score reuse.
-                // healthScore useMemo (line ~875) `reviewsPayload` truthy
-                // guard'ı IIFE öncesi sağlandığı için non-null garanti
-                // (parent JSX `reviewsPayload && (...)` line 1042).
-                const score = healthScore ?? 0;
-                const tier =
-                  score >= 85
-                    ? { label: isTr ? 'Mükemmel' : 'Excellent', kind: 'lime' as const }
-                    : score >= 60
-                      ? { label: isTr ? 'İyi' : 'Good', kind: 'warn' as const }
-                      : { label: isTr ? 'Geliştir' : 'Improve', kind: 'danger' as const };
-                const responseRate =
-                  reviewsPayload.totalReviewCount > 0
-                    ? Math.round(
-                        (reviewAnalysis.replied / reviewsPayload.totalReviewCount) * 100,
-                      )
-                    : 0;
-                // §38.55 + §38.80 — PROFİL SAĞLIĞI checklist 4 item (tasarım
-                // birebir page-google.jsx line 191-209). Profil tamlığı + Yanıt
-                // oranı mevcut response data'dan; Stage 10 ile Fotoğraf sayısı
-                // + Q&A bölümü Google Business Profile API'sinden (media + Q&A
-                // helpers — CLAUDE.md §38.80). profileStats null veya tek tek
-                // alan null → "— yakında" placeholder (Q&A API operatör Cloud
-                // projesinde devre dışı olabilir, gauge'ı offline almaz).
-                const profileComplete = Boolean(
-                  profileStats?.profileComplete ??
-                    (status?.connected && status?.selectedLocation?.title),
-                );
-                const placeholder = isTr ? '— yakında' : '— soon';
-                const photoValue =
-                  profileStats && profileStats.mediaCount != null
-                    ? profileStats.mediaCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')
-                    : placeholder;
-                const photoOk =
-                  profileStats?.mediaCount != null && profileStats.mediaCount >= 5;
-                const unanswered = profileStats?.unansweredQuestions;
-                const qaValue =
-                  profileStats && unanswered != null
-                    ? unanswered === 0
-                      ? isTr
-                        ? 'Hepsi yanıtlandı'
-                        : 'All answered'
-                      : isTr
-                        ? `${unanswered} yanıt bekliyor`
-                        : `${unanswered} pending`
-                    : placeholder;
-                const qaOk = unanswered != null && unanswered === 0;
-                const checklist: Array<{
-                  label: string;
-                  value: string;
-                  ok: boolean;
-                }> = [
-                  {
-                    label: isTr ? 'Profil tamlığı' : 'Profile completeness',
-                    value: profileComplete ? '%100' : '%50',
-                    ok: profileComplete,
-                  },
-                  {
-                    label: isTr ? 'Yanıt oranı' : 'Response rate',
-                    value: `%${responseRate}`,
-                    ok: responseRate >= 75,
-                  },
-                  {
-                    label: isTr ? 'Fotoğraf sayısı' : 'Photo count',
-                    value: photoValue,
-                    ok: photoOk,
-                  },
-                  {
-                    label: isTr ? 'Q&A bölümü' : 'Q&A section',
-                    value: qaValue,
-                    ok: qaOk,
-                  },
-                ];
                 const keywords = extractKeywords(reviewsPayload.reviews, 8);
                 const maxMentions = keywords[0]?.mentions ?? 1;
-                const tierBadgeClass =
-                  tier.kind === 'lime'
-                    ? 'bg-[#EAF9B8] text-[#0A0A0A] border border-[#C6F24E]'
-                    : tier.kind === 'warn'
-                      ? 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]'
-                      : 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]';
-                const arcRadius = 38;
-                const arcCircumference = 2 * Math.PI * arcRadius;
-                const arcOffset = arcCircumference * (1 - score / 100);
 
                 return (
                   <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -2222,7 +2271,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                                 role="tab"
                                 aria-selected={active}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] transition-colors ${
+                                className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 py-1 text-[12px] transition-colors sm:min-h-0 ${
                                   active
                                     ? 'bg-[#0A0A0A] text-white'
                                     : 'text-[#525252] hover:bg-[#FAFAFA]'
@@ -2293,104 +2342,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     {/* §38.55 — SAĞ: Right rail (tasarım page-google.jsx line 181-253).
                         Dikey stack: PROFİL SAĞLIĞI + SIK GEÇEN KELİMELER + HIZLI YANIT. */}
                     <aside className="flex flex-col gap-3">
-                    {/* PROFİL SAĞLIĞI */}
-                    <div className="bz-card p-5">
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div>
-                          <span className="pulse-eyebrow text-[#737373]">
-                            {isTr ? 'PROFİL SAĞLIĞI' : 'PROFILE HEALTH'}
-                          </span>
-                          <div className="mt-1.5 flex items-baseline gap-1.5">
-                            <span className="bz-h-tight-2 text-[32px] tabular-nums text-[#0A0A0A]">
-                              {score}
-                            </span>
-                            <span className="text-[15px] text-[#A3A3A3]">/100</span>
-                          </div>
-                          <span
-                            className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${tierBadgeClass}`}
-                          >
-                            <span
-                              aria-hidden
-                              className="h-1.5 w-1.5 rounded-full"
-                              style={{
-                                background:
-                                  tier.kind === 'lime'
-                                    ? '#16A34A'
-                                    : tier.kind === 'warn'
-                                      ? '#D97706'
-                                      : '#DC2626',
-                              }}
-                            />
-                            {tier.label}
-                          </span>
-                        </div>
-                        {/* Mini gauge — SVG arc */}
-                        <svg
-                          viewBox="0 0 100 100"
-                          className="h-20 w-20 shrink-0 -rotate-90"
-                          aria-hidden
-                        >
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r={arcRadius}
-                            fill="none"
-                            stroke="#EDEDED"
-                            strokeWidth="8"
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r={arcRadius}
-                            fill="none"
-                            stroke={
-                              tier.kind === 'lime'
-                                ? '#C6F24E'
-                                : tier.kind === 'warn'
-                                  ? '#D97706'
-                                  : '#DC2626'
-                            }
-                            strokeWidth="8"
-                            strokeDasharray={arcCircumference}
-                            strokeDashoffset={arcOffset}
-                            strokeLinecap="round"
-                            style={{ transition: 'stroke-dashoffset 600ms ease' }}
-                          />
-                        </svg>
-                      </div>
-                      <ul className="space-y-2 border-t border-[#EDEDED] pt-3">
-                        {checklist.map((item) => (
-                          <li
-                            key={item.label}
-                            className="flex items-center gap-2 text-[12.5px]"
-                          >
-                            <span
-                              aria-hidden
-                              className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px]"
-                              style={{
-                                background: item.ok ? '#EAF9B8' : '#FEF3C7',
-                                color: item.ok ? '#4D5C00' : '#92400E',
-                              }}
-                            >
-                              {item.ok ? '✓' : '!'}
-                            </span>
-                            <span className="text-[#525252]">{item.label}</span>
-                            <span className="bz-mono ml-auto text-[11px] font-semibold tabular-nums text-[#0A0A0A]">
-                              {item.value}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
                     {/* SIK GEÇEN KELİMELER */}
                     <div className="bz-card p-5">
-                      <div className="mb-4 flex items-center justify-between">
+                      <div className="mb-4">
                         <span className="pulse-eyebrow text-[#737373]">
                           {isTr ? 'SIK GEÇEN KELİMELER' : 'TOP KEYWORDS'}
-                        </span>
-                        <span className="bz-mono text-[10px] text-[#A3A3A3] uppercase tracking-wider">
-                          NLP
                         </span>
                       </div>
                       {keywords.length === 0 ? (
@@ -2476,6 +2432,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             </div>
           )}
         </div>
+            )}
+          </ReplySection>
+        </>
       )}
     </div>
   );
@@ -2484,13 +2443,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
 export default function GoogleReviewsPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = use(params);
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-[400px] items-center justify-center">
-          <Loader2 className="animate-spin text-[#0A0A0A]" size={24} />
-        </div>
-      }
-    >
+    <Suspense fallback={<GoogleReviewsLoadingShell />}>
       <GoogleReviewsContent locale={locale} />
     </Suspense>
   );

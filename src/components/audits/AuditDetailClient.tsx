@@ -1,665 +1,528 @@
 'use client';
 
-// CLAUDE.md §42 Phase 2 — Owner audit detail page.
-// Şablon meta + sorular listesi + atamalar listesi + yayın toggle.
-// Soru/şablon düzenleme şu an wizard üzerinden (yeniden gönderim) yapılıyor —
-// inline question editing Phase 2.5 backlog (3+ tekrarlanır gibi durur,
-// CLAUDE.md §7 paterni).
+// Denetim Merkezi — owner denetim detayı (spec §3.2).
+//
+// Sunucudan gelir (ilk boyamada iskelet yok). Yukarıdan aşağıya: geri bağlantısı,
+// başlık + tek birincil eylem + menü, (yeni oluşturulduysa) "Hazır" bandı,
+// paylaşım kartı, özet, maddeler, son yanıtlar. Link kartı iki görünümde de
+// ekranın üst yarısındadır. Arşivlenmiş denetimde link / düzenleme yoktur.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
-  ClipboardCheck,
+  ChevronRight,
   Copy as CopyIcon,
   Download,
-  Eye,
-  EyeOff,
-  FileText,
   Link2,
-  Loader2,
+  MoreHorizontal,
+  Pause,
   Pencil,
-  Plus,
   RotateCcw,
   Trash2,
-  User as UserIcon,
 } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
-  type BadgeKind,
-  EmptyState,
-  PageHeader,
+  PulseMenu,
+  PulseMenuDivider,
+  PulseMenuItem,
   useConfirmDialog,
 } from '@/components/ui';
-import { getTranslations, type Locale } from '@/lib/translations';
-import type {
-  AuditAssigneeType,
-  AuditAssignmentStatus,
-  AuditQuestionType,
-  AuditScoringMode,
-  AuditSector,
-} from '@/lib/audits/types';
+import type { Locale } from '@/lib/translations';
+import type { AuditDetail } from '@/lib/audits/queries';
+import { humanQuestionType } from '@/lib/audits/kind';
+import { parseAuditErrorResponse, summarizeAuditError } from '@/lib/audits/error-humanizer';
+import ShareLinksPanel, { SHARE_CARD_ID, SHARE_COPY_BUTTON_ID } from './ShareLinksPanel';
+import { useShareLinks } from './useShareLinks';
 import {
-  parseAuditErrorResponse,
-  summarizeAuditError,
-} from '@/lib/audits/error-humanizer';
-import AuditAssignmentModal from './AuditAssignmentModal';
-import { resolveDisplayTimeZone } from '@/lib/timezone';
-
-interface TeamMemberRef {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string;
-}
-
-interface TemplateDetail {
-  id: string;
-  restaurantId: string;
-  title: string;
-  description: string | null;
-  sector: AuditSector;
-  scoringMode: AuditScoringMode;
-  passingScore: number | null;
-  locale: string;
-  isPublished: boolean;
-  isActive: boolean;
-  category: { id: string; labelTr: string; labelEn: string } | null;
-  /** Fork kaynağı — Phase 5. Owner global katalog'tan fork ettiyse kaynak
-   *  id'si burada saklanır. Reset CTA görünürlüğü buna bağlı (CLAUDE.md
-   *  §40.2). NULL = sıfırdan yapılmış owner template'i; reset semantiği yok. */
-  forkedFromId?: string | null;
-  /** Kaynak global template'in current durumu — reset edilebilirlik
-   *  hesaplamak için. NULL ise kaynak silinmiş veya yayından alınmış. */
-  forkedFrom?: { isPublished: boolean; isActive: boolean } | null;
-  questions: Array<{
-    id: string;
-    type: AuditQuestionType;
-    prompt: string;
-    options: unknown;
-    weight: number;
-    isRequired: boolean;
-    sortOrder: number;
-  }>;
-  _count: { assignments: number; responses: number };
-}
-
-interface AssignmentRow {
-  id: string;
-  assigneeType: AuditAssigneeType;
-  assigneeName: string | null;
-  assigneeEmail: string | null;
-  assigneePhone: string | null;
-  assigneeTeamMemberId: string | null;
-  dueAt: string | null;
-  recurrence: string;
-  status: AuditAssignmentStatus;
-  token: string | null;
-  tokenRevoked: boolean;
-  internalNote: string | null;
-  createdAt: string;
-  _count: { responses: number };
-}
+  deleteConfirmCopy,
+  formatResponseStamp,
+  itemsHeading,
+  kindBadgeKind,
+  kindLabel,
+  pauseConfirmCopy,
+  restoreConfirmCopy,
+  statusBadgeKind,
+  statusLabel,
+  summaryLine,
+} from './audit-ui';
 
 interface Props {
   locale: Locale;
-  template: TemplateDetail;
-  teamMembers: TeamMemberRef[];
+  detail: AuditDetail;
   appUrl: string;
+  /** Salt-okunur (viewer) ekip üyesi false → yazma düğmeleri ve link kartı yok. */
+  canWrite: boolean;
 }
 
-const STATUS_BADGE: Record<AuditAssignmentStatus, BadgeKind> = {
-  pending: 'ghost',
-  sent: 'info',
-  in_progress: 'warn',
-  completed: 'ok',
-  overdue: 'danger',
-  cancelled: 'ghost',
-};
+const QUESTION_PREVIEW = 5;
 
-const ASSIGNEE_LABEL_TR: Record<AuditAssigneeType, string> = {
-  team_member: 'Ekip üyesi',
-  candidate: 'Aday',
-  link: 'Public link',
-  self: 'Kendim',
-};
-const ASSIGNEE_LABEL_EN: Record<AuditAssigneeType, string> = {
-  team_member: 'Team member',
-  candidate: 'Candidate',
-  link: 'Public link',
-  self: 'Myself',
-};
+/** Paneldeki tüm kaydırılabilir üst öğeleri (ve sayfayı) en başa alır. */
+function resetPanelScroll() {
+  let el: HTMLElement | null = document.getElementById('panel-main-content');
+  while (el) {
+    const overflowY = window.getComputedStyle(el).overflowY;
+    if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollTop !== 0) el.scrollTop = 0;
+    el = el.parentElement;
+  }
+  window.scrollTo(0, 0);
+}
 
-const QUESTION_TYPE_LABEL: Record<AuditQuestionType, { tr: string; en: string }> = {
-  single: { tr: 'Tek seçim', en: 'Single' },
-  multi: { tr: 'Çoklu', en: 'Multi' },
-  scale: { tr: 'Ölçek', en: 'Scale' },
-  text: { tr: 'Metin', en: 'Text' },
-  yes_no: { tr: 'Evet/Hayır', en: 'Yes/No' },
-  file: { tr: 'Dosya', en: 'File' },
-};
-
-export default function AuditDetailClient({ locale, template, teamMembers, appUrl }: Props) {
-  const t = getTranslations(locale);
+export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: Props) {
+  const isTr = locale === 'tr';
   const router = useRouter();
-  const assigneeLabel = locale === 'tr' ? ASSIGNEE_LABEL_TR : ASSIGNEE_LABEL_EN;
+  const searchParams = useSearchParams();
+  const { template, recentResponses, lastResponseAt } = detail;
+  const archived = template.status === 'archived';
+  const live = template.status === 'live';
+  const hasResponses = template._count.responses > 0;
+  const justCreated = searchParams.get('share') === '1' && !archived && canWrite;
 
-  const [assignments, setAssignments] = useState<AssignmentRow[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const base = `/${locale}/dashboard/audits`;
+  const resultsHref = `${base}/${template.id}/results`;
+  const editHref = `${base}/${template.id}/edit`;
+  const csvHref = `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses/export`;
+  const api = `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}`;
+
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [confirmEl, askConfirm] = useConfirmDialog();
 
-  const loadAssignments = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/restaurants/${template.restaurantId}/audits/assignments?templateId=${template.id}`,
-      );
-      if (!res.ok) {
-        const parsed = await parseAuditErrorResponse(res, locale);
-        setError(summarizeAuditError(parsed));
-        return;
-      }
-      const json = await res.json();
-      setAssignments(json.data);
-    } catch {
-      setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
-    } finally {
-      setLoading(false);
-    }
-  }, [template.restaurantId, template.id, locale]);
+  // Düzenleme ekranı kaydedince `?saved=1` ile döner: bir kez "Kaydedildi." göster,
+  // sonra adresten kaldır (yenilemede eski bir kayıt bildirimi tekrar çıkmasın).
+  const justSaved = searchParams.get('saved') === '1';
+
+  // Oluşturucudan gelince sayfa en üstten açılsın. Masaüstünde kabuğun kendi kaydırma
+  // alanı var; Next.js yönlendirmede onu sıfırlamaz → paylaşım kartı ekran dışında kalırdı.
+  useEffect(() => {
+    if (justCreated || justSaved) resetPanelScroll();
+  }, [justCreated, justSaved]);
 
   useEffect(() => {
-    loadAssignments();
-  }, [loadAssignments]);
+    if (!justSaved) return;
+    setNotice(isTr ? 'Kaydedildi.' : 'Saved.');
+    const params = new URLSearchParams(window.location.search);
+    params.delete('saved');
+    const qs = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+  }, [justSaved, isTr]);
+  const [showAll, setShowAll] = useState(false);
+  const [confirmEl, askConfirm] = useConfirmDialog();
+  const busyRef = useRef(false);
 
-  async function togglePublish() {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ publish: !template.isPublished }),
-        },
-      );
-      if (!res.ok) {
-        const parsed = await parseAuditErrorResponse(res, locale);
-        setError(summarizeAuditError(parsed));
-        return;
-      }
-      // Refresh server data — Next router refresh.
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
+  const controller = useShareLinks({
+    restaurantId: template.restaurantId,
+    templateId: template.id,
+    kind: template.kind,
+    locale,
+    // Salt-okunur üyeler link almaz → hook ilk çekimi yapmasın.
+    initialLinks: canWrite ? detail.assignments : [],
+    isPublished: template.isPublished,
+    onPublished: () => router.refresh(),
+  });
 
-  async function handleDuplicate() {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/duplicate`,
-        { method: 'POST' },
-      );
-      if (!res.ok) {
-        const parsed = await parseAuditErrorResponse(res, locale);
-        setError(summarizeAuditError(parsed));
-        return;
-      }
-      const json = await res.json();
-      // Yeni şablonun detayına yönlendir.
-      if (json.data?.id) {
-        router.push(`/${locale}/dashboard/audits/${json.data.id}`);
-      } else {
-        router.refresh();
-      }
-    } catch {
-      setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const csvHref = `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses/export`;
-  const hasResponses = template._count.responses > 0;
-  // Reset CTA görünürlüğü — CLAUDE.md §40.2: fork kaynağı varsa + kaynak
-  // hâlâ yayında ise + yanıt yoksa. Diğer durumlarda buton görünmez (silent
-  // ineligibility owner kafası karıştırmaz; tooltip ile sebebi açıklamak
-  // 3+ tekrar olmadıkça gereksiz).
-  const canResetToDefault =
+  // Fork kaynağı hâlâ yayında + yanıt yok (reset rotasının kuralı).
+  const canRestore =
+    canWrite &&
+    !archived &&
     !!template.forkedFromId &&
     !!template.forkedFrom?.isPublished &&
     !!template.forkedFrom?.isActive &&
     !hasResponses;
 
-  async function handleResetToDefault() {
-    askConfirm({
-      title: locale === 'tr' ? 'Varsayılana sıfırla' : 'Reset to default',
-      body:
-        locale === 'tr'
-          ? 'Sorular ve skorlama orijinal şablon kaynağından yeniden alınacak. Owner-eklediğin sorular silinir, başlık ve açıklama korunur. Şablon taslağa düşer.'
-          : 'Questions and scoring will be re-synced from the original fork source. Your custom questions will be removed; title and description are kept. The template will be unpublished.',
-      variant: 'danger',
-      confirmLabel: locale === 'tr' ? 'Sıfırla' : 'Reset',
-      cancelLabel: locale === 'tr' ? 'Vazgeç' : 'Cancel',
-      onConfirm: async () => {
-        setBusy(true);
-        setError(null);
-        try {
-          const res = await fetch(
-            `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/reset`,
-            { method: 'POST' },
-          );
-          if (!res.ok) {
-            const parsed = await parseAuditErrorResponse(res, locale);
-            setError(summarizeAuditError(parsed));
-            return;
-          }
-          setNotice(
-            locale === 'tr'
-              ? 'Şablon varsayılana sıfırlandı.'
-              : 'Template reset to default.',
-          );
-          router.refresh();
-          setTimeout(() => setNotice(null), 3500);
-        } catch {
-          setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
-        } finally {
-          setBusy(false);
-        }
-      },
-    });
-  }
-
-  function copyLink(token: string) {
-    const url = `${appUrl}/audits/${token}`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard
-        .writeText(url)
-        .then(() => {
-          setNotice(t.audits_link_copied);
-          setTimeout(() => setNotice(null), 2500);
-        })
-        .catch(() => {
-          setError(locale === 'tr' ? 'Kopyalama başarısız' : 'Copy failed');
-        });
+  async function run(
+    fn: () => Promise<Response>,
+    onOk: (res: Response) => void | Promise<void>,
+  ): Promise<void> {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fn();
+      if (!res.ok) {
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
+        return;
+      }
+      await onOk(res);
+    } catch {
+      setError(isTr ? 'Bağlantı hatası' : 'Connection error');
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
     }
   }
 
-  function handleRevoke(asg: AssignmentRow) {
-    askConfirm({
-      title: t.audits_detail_revoke,
-      body:
-        locale === 'tr'
-          ? 'Bu atama iptal edilecek. Public link erişilemez olur.'
-          : 'This assignment will be cancelled. The public link becomes inaccessible.',
-      variant: 'danger',
-      confirmLabel: t.audits_detail_revoke,
-      cancelLabel: locale === 'tr' ? 'Vazgeç' : 'Cancel',
-      onConfirm: async () => {
-        try {
-          const res = await fetch(
-            `/api/restaurants/${template.restaurantId}/audits/assignments/${asg.id}`,
-            { method: 'DELETE' },
-          );
-          if (!res.ok) {
-            const parsed = await parseAuditErrorResponse(res, locale);
-            setError(summarizeAuditError(parsed));
-            return;
-          }
-          setNotice(locale === 'tr' ? 'Atama iptal edildi' : 'Assignment revoked');
-          await loadAssignments();
-          setTimeout(() => setNotice(null), 3000);
-        } catch {
-          setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
-        }
+  function focusShareCard() {
+    const target = document.getElementById(SHARE_COPY_BUTTON_ID) ?? document.getElementById(SHARE_CARD_ID);
+    target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    (target as HTMLElement | null)?.focus?.({ preventScroll: true });
+  }
+
+  function handleDuplicate() {
+    void run(
+      () => fetch(`${api}/duplicate`, { method: 'POST' }),
+      async (res) => {
+        const json = (await res.json().catch(() => ({}))) as { data?: { id?: string } };
+        if (json.data?.id) router.push(`${base}/${json.data.id}`);
+        else router.refresh();
       },
+    );
+  }
+
+  function askPause() {
+    const copy = pauseConfirmCopy(locale);
+    askConfirm({
+      title: copy.title,
+      body: copy.body,
+      variant: 'danger',
+      confirmLabel: copy.confirm,
+      cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
+      onConfirm: () =>
+        run(
+          () =>
+            fetch(api, {
+              method: 'PATCH',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ publish: false }),
+            }),
+          () => {
+            setNotice(isTr ? 'Denetim duraklatıldı.' : 'Audit paused.');
+            router.refresh();
+          },
+        ),
     });
   }
 
-  async function handleDeleteTemplate() {
+  function askRestore() {
+    const copy = restoreConfirmCopy(locale);
     askConfirm({
-      title: locale === 'tr' ? 'Şablonu sil' : 'Delete template',
-      body:
-        locale === 'tr'
-          ? 'Yanıt varsa şablon arşivlenir (history korunur). Yanıt yoksa kalıcı silinir.'
-          : 'If responses exist, the template is archived (history preserved). Otherwise permanently deleted.',
+      title: copy.title,
+      body: copy.body,
       variant: 'danger',
-      confirmLabel: locale === 'tr' ? 'Sil' : 'Delete',
-      cancelLabel: locale === 'tr' ? 'Vazgeç' : 'Cancel',
-      onConfirm: async () => {
-        try {
-          const res = await fetch(
-            `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}`,
-            { method: 'DELETE' },
-          );
-          if (!res.ok) {
-            const parsed = await parseAuditErrorResponse(res, locale);
-            setError(summarizeAuditError(parsed));
-            return;
-          }
-          router.push(`/${locale}/dashboard/audits`);
-        } catch {
-          setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
-        }
-      },
+      confirmLabel: copy.confirm,
+      cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
+      onConfirm: () =>
+        run(
+          () => fetch(`${api}/reset`, { method: 'POST' }),
+          () => {
+            setNotice(
+              isTr
+                ? "Hazır şablona dönüldü. Denetim duraklatıldı; hazır olunca 'Yeniden başlat'a bas."
+                : "Restored the ready-made version. The audit is paused; press 'Restart' when ready.",
+            );
+            router.refresh();
+          },
+        ),
     });
   }
+
+  function askDelete() {
+    const copy = deleteConfirmCopy(hasResponses, locale);
+    askConfirm({
+      title: copy.title,
+      body: copy.body,
+      variant: 'danger',
+      confirmLabel: copy.confirm,
+      cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
+      onConfirm: () =>
+        run(
+          () => fetch(api, { method: 'DELETE' }),
+          () => {
+            router.push(base);
+          },
+        ),
+    });
+  }
+
+  // ─── Birincil eylem ───────────────────────────────────────────────────
+  let primary: { label: string; onClick: () => void; disabled?: boolean } | null = null;
+  if (canWrite && !archived) {
+    if (live) {
+      primary = { label: isTr ? 'Linki paylaş' : 'Share link', onClick: focusShareCard };
+    } else if (template.status === 'paused') {
+      primary = {
+        label: isTr ? 'Yeniden başlat' : 'Restart',
+        onClick: () => void controller.publishAndGetLink(),
+        disabled: template.questions.length === 0,
+      };
+    } else {
+      primary = {
+        label: isTr ? 'Yayınla ve linki al' : 'Publish and get link',
+        onClick: () => void controller.publishAndGetLink(),
+        disabled: template.questions.length === 0,
+      };
+    }
+  }
+
+  const heading = itemsHeading(template.kind, locale);
+  const visibleQuestions = showAll ? template.questions : template.questions.slice(0, QUESTION_PREVIEW);
 
   return (
-    <div className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1280px] space-y-4 px-4 py-6 sm:px-7 lg:py-8">
       <div>
         <Link
-          href={`/${locale}/dashboard/audits`}
-          className="text-[12px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1"
+          href={base}
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-[#0A0A0A] sm:min-h-0 sm:text-[12px]"
         >
-          <ArrowLeft size={12} /> {locale === 'tr' ? 'Tüm denetimler' : 'All audits'}
+          <ArrowLeft size={13} aria-hidden="true" /> {isTr ? 'Denetim Merkezi' : 'Audit Center'}
         </Link>
       </div>
 
-      <PageHeader
-        eyebrow={locale === 'tr' ? 'DENETİM DETAYI' : 'AUDIT DETAIL'}
-        title={template.title}
-        description={template.description ?? undefined}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/${locale}/dashboard/audits/${template.id}/results`}
-              className="bz-btn-ghost"
-            >
-              <FileText size={14} /> {locale === 'tr' ? 'Sonuçlar' : 'Results'}
-            </Link>
-            {hasResponses && (
-              <a
-                href={csvHref}
-                className="bz-btn-ghost"
-                download
-              >
-                <Download size={14} /> {t.audits_detail_csv_export}
-              </a>
-            )}
-            <Link
-              href={`/${locale}/dashboard/audits/${template.id}/edit`}
-              className="bz-btn-ghost"
-              title={locale === 'tr' ? 'Şablonu düzenle' : 'Edit template'}
-            >
-              <Pencil size={14} />
-              {locale === 'tr' ? 'Düzenle' : 'Edit'}
-            </Link>
-            {canResetToDefault && (
-              <button
-                type="button"
-                className="bz-btn-ghost"
-                onClick={handleResetToDefault}
-                disabled={busy}
-                title={locale === 'tr' ? 'Fork kaynağına geri dön' : 'Reset to fork source'}
-              >
-                {busy ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                {locale === 'tr' ? 'Varsayılana sıfırla' : 'Reset to default'}
-              </button>
-            )}
-            <button
-              type="button"
-              className="bz-btn-ghost"
-              onClick={handleDuplicate}
-              disabled={busy}
-              title={t.audits_detail_duplicate}
-            >
-              {busy ? <Loader2 size={14} className="animate-spin" /> : <CopyIcon size={14} />}
-              {t.audits_detail_duplicate}
-            </button>
-            <button
-              type="button"
-              className={template.isPublished ? 'bz-btn-ghost' : 'bz-btn-primary'}
-              onClick={togglePublish}
-              disabled={busy}
-            >
-              {busy ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : template.isPublished ? (
-                <EyeOff size={14} />
-              ) : (
-                <Eye size={14} />
-              )}
-              {template.isPublished ? t.audits_admin_unpublish : t.audits_admin_publish}
-            </button>
-            <button
-              type="button"
-              className="bz-btn-icon"
-              onClick={handleDeleteTemplate}
-              aria-label={locale === 'tr' ? 'Sil' : 'Delete'}
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        }
-      />
-
-      {error && <AlertBanner kind="danger" onDismiss={() => setError(null)}>{error}</AlertBanner>}
-      {notice && <AlertBanner kind="success" onDismiss={() => setNotice(null)}>{notice}</AlertBanner>}
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">{t.audits_admin_questions}</div>
-          <div className="bz-h-tight text-[22px] mt-1">{template.questions.length}</div>
-        </div>
-        <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">{t.audits_assignments}</div>
-          <div className="bz-h-tight text-[22px] mt-1">{template._count.assignments}</div>
-        </div>
-        <div className="bz-card p-3">
-          <div className="pulse-eyebrow text-[#525252]">{t.audits_responses}</div>
-          <div className="bz-h-tight text-[22px] mt-1">{template._count.responses}</div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5">
-        {template.isPublished ? (
-          <Badge kind="ok">{t.audits_published}</Badge>
-        ) : template.isActive ? (
-          <Badge kind="ghost">{t.audits_draft}</Badge>
-        ) : (
-          <Badge kind="warn">{t.audits_archived}</Badge>
-        )}
-        <Badge kind="info">
-          {template.scoringMode === 'percentage'
-            ? t.audits_score_mode_percentage
-            : template.scoringMode === 'weighted'
-              ? t.audits_score_mode_weighted
-              : t.audits_score_mode_pass_fail}
-        </Badge>
-        {template.passingScore != null && <Badge kind="warn">≥{template.passingScore}</Badge>}
-        {template.category && (
-          <Badge kind="ghost">
-            {locale === 'tr' ? template.category.labelTr : template.category.labelEn}
-          </Badge>
-        )}
-      </div>
-
-      {/* Questions */}
-      <section className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="bz-h-tight text-[16px]">{t.audits_detail_questions}</h2>
-          <Link
-            href={`/${locale}/dashboard/audits/new?restaurantId=${template.restaurantId}`}
-            className="bz-btn-ghost"
-            title={locale === 'tr' ? 'Yeni şablon oluştur' : 'Create new template'}
+      {/* Başlık */}
+      <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1
+            className="bz-h-tight-2 min-w-0 truncate"
+            style={{ fontSize: 'clamp(24px, 4vw, 32px)', lineHeight: 1.15 }}
+            title={template.title}
           >
-            <Plus size={14} /> {locale === 'tr' ? 'Yeni şablon' : 'New template'}
-          </Link>
+            {template.title}
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <Badge kind={kindBadgeKind(template.kind)} dot={false}>
+              {kindLabel(template.kind, locale)}
+            </Badge>
+            <Badge kind={statusBadgeKind(template.status)}>{statusLabel(template.status, locale)}</Badge>
+          </div>
+          {template.description && (
+            <p className="mt-3 max-w-2xl whitespace-pre-line break-words text-[13px] leading-[1.55] text-[#525252]">
+              {template.description}
+            </p>
+          )}
         </div>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {primary && (
+            <button
+              type="button"
+              className="bz-btn-primary min-h-11 sm:min-h-9"
+              onClick={primary.onClick}
+              disabled={primary.disabled || busy || controller.busy !== null}
+            >
+              <Link2 size={14} aria-hidden="true" /> {controller.busy === 'publish' ? (isTr ? 'Yayınlanıyor…' : 'Publishing…') : primary.label}
+            </button>
+          )}
+          <Link href={resultsHref} className="bz-btn-ghost min-h-11 sm:min-h-9">
+            {isTr ? `Sonuçlar (${template._count.responses})` : `Results (${template._count.responses})`}
+          </Link>
+
+          {canWrite && (
+            <PulseMenu
+              trigger={
+                <button
+                  type="button"
+                  className="bz-btn-icon h-11 w-11 sm:h-9 sm:w-9"
+                  aria-label={isTr ? 'Diğer işlemler' : 'More actions'}
+                  disabled={busy}
+                >
+                  <MoreHorizontal size={16} aria-hidden="true" />
+                </button>
+              }
+            >
+              {!archived && (
+                <PulseMenuItem icon={<Pencil size={14} />} onSelect={() => router.push(editHref)}>
+                  {isTr ? 'Düzenle' : 'Edit'}
+                </PulseMenuItem>
+              )}
+              <PulseMenuItem icon={<CopyIcon size={14} />} onSelect={handleDuplicate}>
+                {isTr ? 'Kopyala' : 'Duplicate'}
+              </PulseMenuItem>
+              {hasResponses && (
+                <PulseMenuItem
+                  icon={<Download size={14} />}
+                  onSelect={() => window.location.assign(csvHref)}
+                >
+                  {isTr ? 'Tablo olarak indir (CSV)' : 'Download as table (CSV)'}
+                </PulseMenuItem>
+              )}
+              {canRestore && (
+                <PulseMenuItem icon={<RotateCcw size={14} />} onSelect={askRestore}>
+                  {isTr ? 'Hazır şablona geri dön' : 'Restore the ready-made version'}
+                </PulseMenuItem>
+              )}
+              {live && (
+                <PulseMenuItem icon={<Pause size={14} />} onSelect={askPause}>
+                  {isTr ? 'Duraklat' : 'Pause'}
+                </PulseMenuItem>
+              )}
+              {!archived && (
+                <>
+                  <PulseMenuDivider />
+                  <PulseMenuItem icon={<Trash2 size={14} />} danger onSelect={askDelete}>
+                    {isTr ? 'Sil' : 'Delete'}
+                  </PulseMenuItem>
+                </>
+              )}
+            </PulseMenu>
+          )}
+        </div>
+      </header>
+
+      {primary?.disabled && template.questions.length === 0 && (
+        <p className="-mt-2 text-[12px] text-[#737373]">
+          {isTr ? 'Yayınlamak için önce ' : 'To publish, first '}
+          <Link href={editHref} className="font-semibold underline">
+            {isTr ? 'madde ekle' : 'add an item'}
+          </Link>
+          .
+        </p>
+      )}
+
+      {error && (
+        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
+          {error}
+        </AlertBanner>
+      )}
+      {notice && (
+        <AlertBanner kind="success" onDismiss={() => setNotice(null)}>
+          {notice}
+        </AlertBanner>
+      )}
+
+      {archived && (
+        <AlertBanner kind="info">
+          {isTr
+            ? 'Bu denetim arşivlendi. Linkler kapandı, yanıtlar korunuyor.'
+            : 'This audit is archived. Its links are closed; responses are kept.'}
+        </AlertBanner>
+      )}
+
+      {justCreated && live && (
+        <AlertBanner kind="success">
+          {isTr
+            ? 'Hazır. Linki kopyalayıp ekibine gönder.'
+            : 'Ready. Copy the link and send it to your team.'}
+        </AlertBanner>
+      )}
+
+      {canWrite && !archived && (
+        <ShareLinksPanel
+          id={SHARE_CARD_ID}
+          controller={controller}
+          title={template.title}
+          appUrl={appUrl}
+          kind={template.kind}
+          locale={locale}
+          questionCount={template.questions.length}
+          autoFocusCopy={justCreated}
+        />
+      )}
+
+      {/* Özet */}
+      <p className="text-[13px] text-[#525252]">
+        {summaryLine(template.questions.length, template._count.responses, lastResponseAt, locale)}
+        {template.passingScore != null && (
+          <span className="text-[#737373]">
+            {' · '}
+            {isTr ? `Geçme puanı ${template.passingScore}` : `Pass mark ${template.passingScore}`}
+          </span>
+        )}
+      </p>
+
+      {/* Maddeler / Sorular */}
+      <section aria-labelledby="audit-items-h" className="space-y-2">
+        <h2 id="audit-items-h" className="bz-h-tight text-[16px]">
+          {heading}
+        </h2>
         {template.questions.length === 0 ? (
-          <EmptyState
-            icon={<ClipboardCheck size={18} />}
-            title={locale === 'tr' ? 'Henüz soru eklenmedi' : 'No questions yet'}
-            body={
-              locale === 'tr'
-                ? 'Bu şablon taslak. Wizard üzerinden yeniden gönderebilirsin.'
-                : 'This template is a draft. Re-submit via the wizard.'
-            }
-          />
+          <p className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#FAFAFA] px-4 py-5 text-center text-[13px] text-[#737373]">
+            {isTr ? 'Henüz madde yok.' : 'No items yet.'}
+          </p>
         ) : (
-          <ol className="space-y-2">
-            {template.questions.map((q, i) => {
-              const labels = QUESTION_TYPE_LABEL[q.type];
-              const opts = Array.isArray(q.options) ? (q.options as string[]) : [];
-              return (
-                <li key={q.id} className="bz-card p-3">
-                  <div className="flex items-start gap-2">
-                    <Badge kind="ghost">{i + 1}</Badge>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap gap-1.5 mb-1">
-                        <Badge kind="info">{locale === 'tr' ? labels.tr : labels.en}</Badge>
-                        {q.weight > 1 && <Badge kind="warn">×{q.weight}</Badge>}
-                        {!q.isRequired && (
-                          <Badge kind="ghost">{locale === 'tr' ? 'opsiyonel' : 'optional'}</Badge>
-                        )}
-                      </div>
-                      <p className="text-[14px] text-[#0A0A0A]">{q.prompt}</p>
-                      {opts.length > 0 && (
-                        <p className="text-[12px] text-[#525252] mt-1">{opts.join(' · ')}</p>
-                      )}
-                    </div>
+          <>
+            <ol className="space-y-1.5">
+              {visibleQuestions.map((q, i) => (
+                <li
+                  key={q.id}
+                  className="flex items-start gap-2.5 rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5"
+                >
+                  <span className="bz-mono mt-0.5 w-5 shrink-0 text-right text-[12px] text-[#737373]">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words text-[14px] leading-snug text-[#0A0A0A]">{q.prompt}</p>
+                    <p className="mt-1 text-[11.5px] text-[#737373]">
+                      {humanQuestionType(q.type, locale)}
+                      {!q.isRequired && (isTr ? ' · zorunlu değil' : ' · not required')}
+                    </p>
                   </div>
                 </li>
-              );
-            })}
-          </ol>
+              ))}
+            </ol>
+            {template.questions.length > QUESTION_PREVIEW && (
+              <button
+                type="button"
+                className="bz-btn-ghost min-h-11 sm:min-h-9"
+                onClick={() => setShowAll((v) => !v)}
+                aria-expanded={showAll}
+              >
+                {showAll
+                  ? isTr
+                    ? 'Daha az göster'
+                    : 'Show less'
+                  : isTr
+                    ? `Tümünü göster (${template.questions.length})`
+                    : `Show all (${template.questions.length})`}
+              </button>
+            )}
+          </>
         )}
       </section>
 
-      {/* Assignments */}
-      <section className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="bz-h-tight text-[16px]">{t.audits_detail_assignments}</h2>
-          <button
-            type="button"
-            className="bz-btn-primary"
-            onClick={() => setModalOpen(true)}
-            disabled={!template.isPublished}
-            title={
-              !template.isPublished
-                ? locale === 'tr'
-                  ? 'Önce şablonu yayınla'
-                  : 'Publish template first'
-                : undefined
-            }
-          >
-            <Plus size={14} /> {t.audits_detail_new_assignment}
-          </button>
-        </div>
-
-        {loading && !assignments ? (
-          <div className="bz-card p-6 text-center">
-            <Loader2 size={18} className="animate-spin inline" />
-          </div>
-        ) : !assignments || assignments.length === 0 ? (
-          <EmptyState
-            icon={<UserIcon size={18} />}
-            title={t.audits_detail_assignments_empty}
-            body={
-              locale === 'tr'
-                ? 'Şablonu yayınladıktan sonra ekip üyesine veya public link ile atayabilirsin.'
-                : 'After publishing, assign to team members or via public link.'
-            }
-          />
+      {/* Son yanıtlar */}
+      <section aria-labelledby="audit-recent-h" className="space-y-2">
+        <h2 id="audit-recent-h" className="bz-h-tight text-[16px]">
+          {isTr ? 'Son yanıtlar' : 'Recent responses'}
+        </h2>
+        {recentResponses.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#FAFAFA] px-4 py-5 text-center text-[13px] text-[#737373]">
+            {isTr ? 'Henüz yanıt yok.' : 'No responses yet.'}
+          </p>
         ) : (
-          <ul className="space-y-2">
-            {assignments.map((a) => (
-              <li key={a.id} className="bz-card p-3 flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                    <Badge kind={STATUS_BADGE[a.status]}>
-                      {t[`audits_assignment_status_${a.status}` as 'audits_assignment_status_pending']}
-                    </Badge>
-                    <Badge kind="info">{assigneeLabel[a.assigneeType]}</Badge>
-                    {a.dueAt && (
-                      <Badge kind="ghost">
-                        ⏰ {new Date(a.dueAt).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', {
-                          timeZone: resolveDisplayTimeZone(),
-                        })}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-[13px] text-[#0A0A0A] truncate">
-                    {a.assigneeType === 'team_member' && a.assigneeTeamMemberId && (
-                      <>
-                        {teamMembers.find((m) => m.id === a.assigneeTeamMemberId)?.email ??
-                          a.assigneeTeamMemberId}
-                      </>
-                    )}
-                    {a.assigneeType === 'candidate' && (
-                      <>
-                        {[a.assigneeName, a.assigneeEmail, a.assigneePhone].filter(Boolean).join(' · ')}
-                      </>
-                    )}
-                    {a.assigneeType === 'link' && (locale === 'tr' ? 'Anonim link' : 'Anonymous link')}
-                    {a.assigneeType === 'self' && (locale === 'tr' ? 'Kendin' : 'Yourself')}
-                  </p>
-                  {a.token && !a.tokenRevoked && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <Link2 size={12} className="text-[#737373]" />
-                      <code className="text-[11px] bz-mono text-[#525252] truncate">
-                        {appUrl}/audits/{a.token}
-                      </code>
-                    </div>
-                  )}
-                  {a.internalNote && (
-                    <p className="text-[11px] text-[#737373] mt-1 italic">{a.internalNote}</p>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  {a.token && !a.tokenRevoked && (
-                    <button
-                      type="button"
-                      className="bz-btn-icon"
-                      onClick={() => copyLink(a.token!)}
-                      aria-label={t.audits_link_copied}
-                    >
-                      <CopyIcon size={14} />
-                    </button>
-                  )}
-                  {a.status !== 'cancelled' && a.status !== 'completed' && (
-                    <button
-                      type="button"
-                      className="bz-btn-icon"
-                      onClick={() => handleRevoke(a)}
-                      aria-label={t.audits_detail_revoke}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-1.5">
+              {recentResponses.map((r) => (
+                <li key={r.id}>
+                  <Link
+                    href={`${base}/${template.id}/responses/${r.id}`}
+                    className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 hover:bg-[#FAFAFA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">
+                        {r.respondentName?.trim() || (isTr ? 'Anonim' : 'Anonymous')}
+                      </span>
+                      <span className="block text-[12px] text-[#737373]">
+                        {formatResponseStamp(r.completedAt ?? r.createdAt, locale)}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      {template.passingScore != null && r.passed !== null && (
+                        <Badge kind={r.passed ? 'ok' : 'danger'} dot={false}>
+                          {r.passed ? (isTr ? 'Geçti' : 'Passed') : isTr ? 'Kaldı' : 'Failed'}
+                        </Badge>
+                      )}
+                      <span className="bz-mono text-[13px] text-[#0A0A0A]">
+                        {r.score !== null ? `${Math.round(r.score)}/100` : '—'}
+                      </span>
+                      <ChevronRight size={14} aria-hidden="true" className="text-[#A3A3A3]" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href={resultsHref}
+              className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-[#0A0A0A] hover:underline sm:min-h-9"
+            >
+              {isTr ? 'Tüm sonuçlar' : 'All results'} <span aria-hidden="true">→</span>
+            </Link>
+          </>
         )}
       </section>
-
-      <AuditAssignmentModal
-        locale={locale}
-        open={modalOpen}
-        templateId={template.id}
-        restaurantId={template.restaurantId}
-        teamMembers={teamMembers}
-        onClose={() => setModalOpen(false)}
-        onCreated={() => {
-          setModalOpen(false);
-          setNotice(locale === 'tr' ? 'Atama oluşturuldu' : 'Assignment created');
-          loadAssignments();
-          setTimeout(() => setNotice(null), 3000);
-        }}
-      />
 
       {confirmEl}
     </div>

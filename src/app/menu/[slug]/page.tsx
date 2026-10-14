@@ -4,6 +4,13 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import PublicMenuView, { type MenuCategoryView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { MENU_THEMES, type MenuTheme } from '@/lib/validations';
+import { SITE_URL } from '@/lib/site';
+import {
+  contentVersion,
+  itemImageVersion,
+  jsonLdImageUrl,
+  publicImageSrc,
+} from '@/lib/menu-image-url';
 
 // Stage 27 §38.103 Fix M2 — ISR cache window. Public menü yüksek-trafik
 // QR akışı; force-dynamic + revalidate=0 her scan'de DB hit + render
@@ -92,6 +99,13 @@ export default async function PublicMenuPage({
     ? (data.menuTheme as MenuTheme)
     : 'classic';
 
+  // Stored photos are base64 data URLs. Inlined they weighed ~2 MB for a menu
+  // with three photos (the same bytes landed in the <img>, the RSC payload and
+  // the JSON-LD), so the page links to the cached image route instead and the
+  // data URLs never enter the HTML. The logo is versioned by content because
+  // not every route that writes it bumps `menuUpdatedAt`.
+  const logoVersion = data.menuLogoUrl ? contentVersion(data.menuLogoUrl) : '0';
+
   const restaurant: RestaurantView = {
     id: data.id,
     slug: data.slug,
@@ -103,7 +117,12 @@ export default async function PublicMenuPage({
     primaryColor: data.primaryColor,
     menuTheme,
     menuAccentColor: data.menuAccentColor ?? null,
-    menuLogoUrl: data.menuLogoUrl ?? null,
+    menuLogoUrl: publicImageSrc({
+      slug: data.slug,
+      itemIdOrLogo: 'logo',
+      imageUrl: data.menuLogoUrl,
+      version: logoVersion,
+    }),
   };
 
   const categories: MenuCategoryView[] = data.menuCategories.map((c) => ({
@@ -118,8 +137,15 @@ export default async function PublicMenuPage({
       description: i.description,
       priceCents: i.priceCents,
       currency: i.currency,
-      imageUrl: i.imageUrl,
+      imageUrl: publicImageSrc({
+        slug: data.slug,
+        itemIdOrLogo: i.id,
+        imageUrl: i.imageUrl,
+        version: itemImageVersion(i.updatedAt),
+      }),
       badges: i.badges,
+      // Allergen information is a safety feature: it must reach the guest.
+      allergens: i.allergens,
       isAvailable: i.isAvailable,
       isOutOfStock: i.isOutOfStock,
       sortOrder: i.sortOrder,
@@ -132,7 +158,13 @@ export default async function PublicMenuPage({
     '@id': `${canonical}#restaurant`,
     name: data.name,
     url: canonical,
-    image: data.menuLogoUrl || undefined,
+    image: jsonLdImageUrl({
+      siteUrl: SITE_URL,
+      slug: data.slug,
+      itemIdOrLogo: 'logo',
+      imageUrl: data.menuLogoUrl,
+      version: logoVersion,
+    }),
     address: data.address
       ? { '@type': 'PostalAddress', streetAddress: data.address, addressCountry: 'TR' }
       : undefined,
@@ -148,7 +180,7 @@ export default async function PublicMenuPage({
     inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
     url: canonical,
     provider: { '@id': `${canonical}#restaurant` },
-    hasMenuSection: categories.map((c) => ({
+    hasMenuSection: data.menuCategories.map((c) => ({
       '@type': 'MenuSection',
       name: c.name,
       description: c.description || undefined,
@@ -156,7 +188,13 @@ export default async function PublicMenuPage({
         '@type': 'MenuItem',
         name: i.name,
         description: i.description || undefined,
-        image: i.imageUrl || undefined,
+        image: jsonLdImageUrl({
+          siteUrl: SITE_URL,
+          slug: data.slug,
+          itemIdOrLogo: i.id,
+          imageUrl: i.imageUrl,
+          version: itemImageVersion(i.updatedAt),
+        }),
         offers: {
           '@type': 'Offer',
           price: (i.priceCents / 100).toFixed(2),

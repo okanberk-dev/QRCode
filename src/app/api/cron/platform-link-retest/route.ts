@@ -8,6 +8,7 @@ import {
   type ProviderRow,
 } from '@/lib/platform-link-test';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import { pruneGooglePlacesUsage } from '@/lib/google-places-budget';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -51,6 +52,17 @@ interface CronSummary {
  */
 export async function runPlatformLinkRetest(): Promise<CronSummary> {
   const start = Date.now();
+
+  // Housekeeping first: drop Google Places budget counters older than 7 days
+  // (they are per UTC day, so older rows are dead weight). Isolated on
+  // purpose — a failure here must never block the link retest.
+  try {
+    await pruneGooglePlacesUsage();
+  } catch (err) {
+    console.warn('[platform-link-retest cron] places usage prune skipped', {
+      errorName: err instanceof Error ? err.name : typeof err,
+    });
+  }
 
   // §38.238 — round-robin by staleness, not `createdAt asc`.
   //

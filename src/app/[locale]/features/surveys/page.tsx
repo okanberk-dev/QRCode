@@ -154,7 +154,7 @@ export default async function SurveysPage({
         {
           icon: ClipboardList,
           title: '5 soru tipi',
-          body: 'Tek seçim, çoktan seçim, skala (1-5), yıldız (1-5), NPS (0-10), kısa metin, uzun metin, e-posta + telefon toplama. Zorunluluk + sıralama drag-drop ile yönetilir.',
+          body: 'Yıldız (1-5), tavsiye skoru (NPS, 0-10), tek seçim, kısa yazı ve uzun yazı. Soruları ⋯ menüsüyle yukarı/aşağı taşı, zorunlu yap, çoğalt veya sil.',
         },
         {
           icon: QrCode,
@@ -164,19 +164,19 @@ export default async function SurveysPage({
         {
           icon: Gift,
           title: 'Kupon teşviki (opsiyonel)',
-          body: 'Anket sonunda kupon kodu + etiket göster ("BUAZE10 · %10 indirim"). Yanıt oranını yükseltir; müşteri tamamlama hissi yaşar. Ödül akışı tamamen opsiyonel.',
+          body: 'Anket sonunda kupon kodu + açıklama göster ("BUAZE10 · %10 indirim"). Müşteri teşekkürü somut bir karşılıkla alır. Ödül akışı tamamen opsiyonel.',
         },
         {
           icon: Smile,
           title: 'Analiz + CSV',
-          body: 'Yanıt sayısı, tamamlanma oranı, soru başına NPS dağılımı, yıldız ortalaması, açık metinlerden örnek alıntılar. Excel\'e CSV indir; ek tool gerekmez.',
+          body: 'Yanıt sayısı, ortalama puan, tavsiye skoru (NPS) ve soru bazlı dağılım; yazılı yanıtlar soru soru görünür. Excel\'e CSV indir; ek tool gerekmez.',
         },
       ]
     : [
         {
           icon: ClipboardList,
           title: '5 question types',
-          body: 'Single choice, multi choice, scale (1-5), star (1-5), NPS (0-10), short text, long text, email + phone capture. Required flag + drag-drop ordering.',
+          body: 'Star (1-5), recommend score (NPS, 0-10), single choice, short text and long text. Move questions up or down with the ⋯ menu, make them required, duplicate or delete them.',
         },
         {
           icon: QrCode,
@@ -186,29 +186,29 @@ export default async function SurveysPage({
         {
           icon: Gift,
           title: 'Coupon reward (optional)',
-          body: 'Show a coupon code + label at the end ("BUAZE10 · 10% off"). Lifts response rate; the customer feels rewarded. Reward flow is entirely optional.',
+          body: 'Show a coupon code + description at the end ("BUAZE10 · 10% off"). The customer gets a concrete thank-you. Reward flow is entirely optional.',
         },
         {
           icon: Smile,
           title: 'Analytics + CSV',
-          body: 'Response count, completion rate, NPS distribution per question, star averages, sample quotes from open answers. CSV export to Excel; no extra tool required.',
+          body: 'Response count, average rating, recommend score (NPS) and a per-question breakdown; written answers are listed question by question. CSV export to Excel; no extra tool required.',
         },
       ];
 
   const featureList = isTr
     ? [
-        'Tek adımlık ve çok adımlı (multi-step) anket türleri',
-        '5 soru tipi: yıldız, NPS 0-10, skala 1-5, çoktan seçim, kısa/uzun metin',
+        '1 soruysa tek ekran, daha fazlaysa adım adım — anket kendiliğinden uyum sağlar',
+        '5 soru tipi: yıldız (1-5), tavsiye skoru (NPS 0-10), tek seçim, kısa yazı, uzun yazı',
         'QR ile dağıtım — her anket için ayrı slug + statik PNG/SVG',
-        'Mobil-first form (max-w-920px wizard), KVKK açık rıza onayı',
+        'Mobil-first, adım adım ilerleyen müşteri formu; iletişim bilgisi alırken KVKK açık rıza onayı',
         'Opsiyonel kupon ödülü + teşekkür mesajı, marka aksent rengi',
         'Yanıt analitiği + CSV dışa aktarım, IP retention 90 gün',
       ]
     : [
-        'Single-step and multi-step survey types',
-        '5 question types: star, NPS 0-10, scale 1-5, multi choice, short/long text',
+        'One question shows on a single screen, more run step by step — the survey adapts by itself',
+        '5 question types: star (1-5), recommend score (NPS 0-10), single choice, short text, long text',
         'QR distribution — per-survey slug + static PNG/SVG',
-        'Mobile-first form (max-w-920px wizard), KVKK explicit consent',
+        'Mobile-first, step-by-step customer form; KVKK explicit consent when contact details are collected',
         'Optional coupon reward + thank-you message, brand accent color',
         'Response analytics + CSV export, IP retention 90 days',
       ];
@@ -217,45 +217,45 @@ export default async function SurveysPage({
     ? [
         {
           q: 'Anket sistemini Google yorumlardan farkı ne?',
-          a: 'Google yorum kamuya açık ve aramanın bir parçasıdır; anket ise işletmen için özel, derinlemesine müşteri sesidir. Buaze\'de iki akış birbirini tamamlar: müşteri QR\'dan girer, yüksek puanlısı Google\'a yönlendirilir, anket ise paralel olarak NPS/CSAT, hangi alanı iyileştirmen gerektiği gibi detayları işletme içinde tutar. Müşteri her zaman istediği platforma yazma hakkını korur.',
+          a: 'Google yorum kamuya açık ve aramanın bir parçasıdır; anket ise işletmen için özel, derinlemesine müşteri sesidir. Buaze\'de iki akış birbirini tamamlar: müşteri QR\'dan girer ve istediği platformda yorum bırakabilir; anket ise paralel olarak NPS/CSAT, hangi alanı iyileştirmen gerektiği gibi detayları işletme içinde tutar. Müşteri her zaman istediği platforma yazma hakkını korur.',
         },
         {
           q: 'Hangi soru tiplerini sunuyorsunuz?',
-          a: 'Yıldız (1-5), NPS (0-10), skala (1-5), çoktan seçim (tek veya çoklu), kısa metin, uzun metin, e-posta + telefon. Tek-adımlık (kısa anket) veya çok-adımlı (multi-step wizard) iki ana tip. Her soruda zorunluluk + sıralama drag-drop ile yönetilir.',
+          a: 'Yıldız (1-5), tavsiye skoru / NPS (0-10), tek seçim, kısa yazı ve uzun yazı. Tür seçmen gerekmez: 1 soru varsa anket tek ekranda, daha fazlaysa adım adım açılır. Her soruda zorunluluğu işaretler, soruları ⋯ menüsüyle yukarı/aşağı taşırsın. İletişim bilgisi bir soru tipi değil, isteğe bağlı son adımdır.',
         },
         {
           q: 'QR yapıştırmadan paylaşabilir miyim?',
-          a: 'Evet. Her ankette `/s/[slug]` formatında benzersiz URL var; bu link\'i SMS, WhatsApp, e-posta footer\'ı, kayıt formu thank-you sayfası, sosyal medya bio\'su gibi her yere koyabilirsin. QR sadece masa içi / fiziksel ortam için ek seçenek.',
+          a: 'Evet. Her anketin kendine ait benzersiz bir linki var; bu link\'i SMS, WhatsApp, e-posta footer\'ı, kayıt formu thank-you sayfası, sosyal medya bio\'su gibi her yere koyabilirsin. QR sadece masa içi / fiziksel ortam için ek seçenek.',
         },
         {
           q: 'Kupon ödülü nasıl çalışır?',
-          a: 'Anket tasarımında "ödül kodu" alanına bir kod (örn. BUAZE10) ve etiket (%10 indirim) gir. Müşteri anketi tamamladığında thank-you ekranında bu kod + etiket görünür; müşteri ekran görüntüsünü gösterip indirim kullanır. Tamamen opsiyonel; istemezsen sadece teşekkür mesajı görünür.',
+          a: 'Anket tasarımında "kupon kodu" alanına bir kod (örn. BUAZE10) ve etiket (%10 indirim) gir. Müşteri anketi tamamladığında thank-you ekranında bu kod + etiket görünür; müşteri ekran görüntüsünü gösterip indirim kullanır. Tamamen opsiyonel; istemezsen sadece teşekkür mesajı görünür.',
         },
         {
           q: 'KVKK + GDPR uyumu nasıl?',
-          a: 'Anket formunda her müşteri açık rıza onayı verir (opt-in checkbox); rıza olmadan submit gönderilmez. IP retention 90 gün (KVKK §13.9), opt-in marketing pazarlama izni ayrı, anonim form opsiyonu var. Yanıtlardaki PII (email, telefon) opsiyonel; topladığın alanları tasarım sırasında belirlersin.',
+          a: 'Anket formunda her müşteri açık rıza onayı verir (opt-in checkbox); rıza olmadan submit gönderilmez. IP adresleri 90 gün sonra anonimleştirilir, opt-in marketing pazarlama izni ayrı, anonim form opsiyonu var. Yanıtlardaki PII (email, telefon) opsiyonel; topladığın alanları tasarım sırasında belirlersin.',
         },
       ]
     : [
         {
           q: 'How is this different from Google reviews?',
-          a: 'Google reviews are public and part of search; surveys are private, deep customer voice for your business. In Buaze the two flows complement each other: a customer scans QR, high ratings are routed to Google, while the survey holds NPS/CSAT, what to improve and similar details internally. The customer always keeps the right to post wherever they want.',
+          a: 'Google reviews are public and part of search; surveys are private, deep customer voice for your business. In Buaze the two flows complement each other: a customer scans QR and can leave a review on any platform they choose, while the survey holds NPS/CSAT, what to improve and similar details internally. The customer always keeps the right to post wherever they want.',
         },
         {
           q: 'Which question types do you support?',
-          a: 'Star (1-5), NPS (0-10), scale (1-5), multiple choice (single or multi), short text, long text, email + phone. Single-step (short survey) or multi-step (wizard) as the two main types. Required flag + drag-drop ordering per question.',
+          a: 'Star (1-5), recommend score / NPS (0-10), single choice, short text and long text. You don\'t pick a survey type: one question shows on a single screen, more run step by step. Mark each question required and move questions up or down with the ⋯ menu. Contact details are not a question type, they are an optional last step.',
         },
         {
           q: 'Can I share without sticking a QR?',
-          a: 'Yes. Each survey has a unique URL at `/s/[slug]`; share it via SMS, WhatsApp, email footer, registration thank-you page, social media bio — anywhere. QR is just an extra option for in-venue / physical settings.',
+          a: 'Yes. Each survey has its own unique link; share it via SMS, WhatsApp, email footer, registration thank-you page, social media bio — anywhere. QR is just an extra option for in-venue / physical settings.',
         },
         {
           q: 'How does the coupon reward work?',
-          a: 'When designing the survey, add a coupon code (e.g. BUAZE10) and a label (10% off) under "reward code". When the customer completes the survey, the code + label appear on the thank-you screen; the customer shows the screenshot to redeem the discount. Entirely optional; without it, only the thank-you message shows.',
+          a: 'When designing the survey, add a coupon code (e.g. BUAZE10) and a label (10% off) under "coupon code". When the customer completes the survey, the code + label appear on the thank-you screen; the customer shows the screenshot to redeem the discount. Entirely optional; without it, only the thank-you message shows.',
         },
         {
           q: 'How do you comply with KVKK + GDPR?',
-          a: 'Every customer gives explicit consent (opt-in checkbox) on the survey form; submission is blocked without it. IP retention is 90 days (KVKK §13.9), marketing consent is opt-in separately, and an anonymous form option exists. PII (email, phone) in responses is optional; you decide which fields to collect during design.',
+          a: 'Every customer gives explicit consent (opt-in checkbox) on the survey form; submission is blocked without it. IP addresses are anonymised after 90 days, marketing consent is opt-in separately, and an anonymous form option exists. PII (email, phone) in responses is optional; you decide which fields to collect during design.',
         },
       ];
 
@@ -269,8 +269,8 @@ export default async function SurveysPage({
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
     description: isTr
-      ? 'Müşteri memnuniyetini Google\'dan bağımsız ölçen Buaze anket modülü. NPS, CSAT, yıldız, çoktan seçim ve metin soruları; QR ile dağıtım, opsiyonel kupon teşviki, KVKK uyumu.'
-      : 'The Buaze survey module measures customer satisfaction independently of Google. NPS, CSAT, star, multiple-choice and text questions; QR distribution, optional coupon reward, KVKK compliance.',
+      ? 'Müşteri memnuniyetini Google\'dan bağımsız ölçen Buaze anket modülü. NPS, CSAT, yıldız, tek seçim ve metin soruları; QR ile dağıtım, opsiyonel kupon teşviki, KVKK uyumu.'
+      : 'The Buaze survey module measures customer satisfaction independently of Google. NPS, CSAT, star, single-choice and text questions; QR distribution, optional coupon reward, KVKK compliance.',
     offers: {
       '@type': 'Offer',
       price: '0',
@@ -316,16 +316,16 @@ export default async function SurveysPage({
     url: canonicalUrl,
     steps: isTr
       ? [
-          { name: 'Anket türünü seç', text: 'Buaze owner panelinde Anketler > Yeni anket altında tek-adımlık (kısa NPS) veya çok-adımlık (wizard) tipini seç.' },
-          { name: 'Soruları ekle', text: '5 soru tipinden seç (yıldız, NPS, skala, çoktan seçim, metin). Drag-drop ile sırala, zorunlu işaretle, soruyu çoğalt veya sil.' },
-          { name: 'QR + paylaşım', text: 'Anket yayınlandığında otomatik üretilen `/s/[slug]` URL\'sini SMS / WhatsApp / e-posta ile paylaş; veya PNG/SVG QR\'ı indir, masaya / faturaya / kapıya yapıştır.' },
-          { name: 'Yanıtları analiz et', text: 'Owner panelde yanıt sayısı, tamamlanma oranı, soru başına NPS dağılımı, yıldız ortalaması ve açık metin alıntıları görünür. CSV olarak Excel\'e indir.' },
+          { name: 'Hazır bir şablon seç', text: 'Buaze panelinde Anketler > Yeni anket altında işletmene uygun hazır şablonlardan birini seç veya boş anketle başla. Soru sayısına göre anket kendiliğinden tek ekran ya da adım adım olur.' },
+          { name: 'Soruları ekle', text: '5 soru tipinden seç (yıldız, tavsiye skoru, tek seçim, kısa yazı, uzun yazı). Soruları ⋯ menüsüyle yukarı/aşağı taşı, zorunlu yap, çoğalt veya sil.' },
+          { name: 'QR + paylaşım', text: 'Anket yayınlandığında otomatik oluşan linki SMS / WhatsApp / e-posta ile paylaş; veya PNG/SVG QR\'ı indir, masaya / faturaya / kapıya yapıştır.' },
+          { name: 'Yanıtları analiz et', text: 'Panelde yanıt sayısı, ortalama puan, tavsiye skoru (NPS), soru bazlı dağılım ve yazılı yanıtlar görünür. CSV olarak Excel\'e indir.' },
         ]
       : [
-          { name: 'Pick a survey type', text: 'In the Buaze owner panel under Surveys > New survey, pick single-step (short NPS) or multi-step (wizard).' },
-          { name: 'Add questions', text: 'Choose from 5 question types (star, NPS, scale, multiple choice, text). Drag-drop to reorder, mark required, duplicate or delete a question.' },
-          { name: 'QR + sharing', text: 'Once published, share the auto-generated `/s/[slug]` URL via SMS / WhatsApp / email; or download the PNG/SVG QR and stick it on the table / receipt / door.' },
-          { name: 'Analyze responses', text: 'In the owner panel see response count, completion rate, NPS distribution per question, star average and open-text quotes. Export CSV to Excel.' },
+          { name: 'Pick a ready-made template', text: 'In the Buaze panel under Surveys > New survey, pick a ready-made template that fits your business or start from a blank survey. One question shows on a single screen, more run step by step.' },
+          { name: 'Add questions', text: 'Choose from 5 question types (star, recommend score, single choice, short text, long text). Move questions up or down with the ⋯ menu, mark them required, duplicate or delete them.' },
+          { name: 'QR + sharing', text: 'Once published, share the link created automatically via SMS / WhatsApp / email; or download the PNG/SVG QR and stick it on the table / receipt / door.' },
+          { name: 'Analyze responses', text: 'In the panel see response count, average rating, recommend score (NPS), a per-question breakdown and written answers. Export CSV to Excel.' },
         ],
   });
 
@@ -375,8 +375,8 @@ export default async function SurveysPage({
               </h1>
               <p className="mt-6 max-w-[560px] text-[17px] leading-[1.6] text-white/70 sm:text-[18px]">
                 {isTr
-                  ? 'NPS, CSAT, yıldız, metin — Google\'dan bağımsız özel anket. QR ile dağıt, opsiyonel kuponla yanıt oranını yükselt, sonuçları aynı panelde analiz et.'
-                  : 'NPS, CSAT, star, text — private surveys independent of Google. Share via QR, lift response rate with an optional coupon, analyze results in the same panel.'}
+                  ? 'NPS, CSAT, yıldız, metin — Google\'dan bağımsız özel anket. QR ile dağıt, istersen teşekkür kuponu ekle, sonuçları aynı panelde oku.'
+                  : 'NPS, CSAT, star, text — private surveys independent of Google. Share via QR, add an optional thank-you coupon, read the results in the same panel.'}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -473,8 +473,8 @@ export default async function SurveysPage({
               <blockquote className="mt-6 rounded-r-2xl border-l-[3px] border-[#C6F24E] bg-[#EAF9B8]/30 px-5 py-4 sm:px-6 sm:py-5">
                 <p className="text-[15px] sm:text-[17px] font-medium leading-[1.55] text-[#0A0A0A]">
                   {isTr
-                    ? '"NPS + CSAT, müşterinin kamuda söylemediği iyileştirme sinyallerini işletmeye taşır. QR ile düşük sürtünmede toplanır — Google yorum oranının çok üzerinde."'
-                    : '"NPS + CSAT carry the improvement signals customers don\'t say publicly to your business. QR collects them with low friction — far above Google review rates."'}
+                    ? '"NPS + CSAT, müşterinin herkese açık yazmadığı iyileştirme sinyallerini işletmene taşır. QR ile tek taramada, az emekle toplanır."'
+                    : '"NPS + CSAT bring the improvement signals customers don\'t post publicly back to your business. A single QR scan collects them with very little effort."'}
                 </p>
               </blockquote>
             </div>
@@ -489,13 +489,13 @@ export default async function SurveysPage({
               <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
-                    ? 'Pratik kurallar: 1) 5 sorudan fazla olmasın — 60 saniyenin altında tamamlanmalı, 2) İlk soru yıldız veya NPS olsun — düşük puanda kalan müşteriyi takip et, 3) Açık metin sadece 1-2 yerde olsun (sebep + öneri), 4) Ödül opsiyonel ama yanıt oranını %30-50 artırır, 5) Mobil-first — formun max-width 920px, font 16px+ (iOS auto-zoom önleme).'
-                    : 'Practical rules: 1) No more than 5 questions — finish in under 60 seconds, 2) First question should be star or NPS — track customers who left a low score, 3) Open text only in 1-2 spots (reason + suggestion), 4) Reward is optional but lifts response rate by 30-50%, 5) Mobile-first — form max-width 920px, font 16px+ (iOS auto-zoom prevention).'}
+                    ? 'Pratik kurallar: 1) 5 sorudan fazla olmasın — 60 saniyenin altında tamamlanmalı, 2) İlk soru yıldız veya NPS olsun — düşük puanda kalan müşteriyi takip et, 3) Açık metin sadece 1-2 yerde olsun (sebep + öneri), 4) Ödül tamamen opsiyonel; istersen teşekkür ekranında bir kupon kodu göster, 5) Telefonda rahat dolsun — müşteri ekranı telefon için tasarlandı: her soru ayrı ekranda, büyük dokunma alanlarıyla.'
+                    : 'Practical rules: 1) No more than 5 questions — finish in under 60 seconds, 2) First question should be star or NPS — track customers who left a low score, 3) Open text only in 1-2 spots (reason + suggestion), 4) A reward is entirely optional; if you want one, show a coupon code on the thank-you screen, 5) Easy on a phone — the customer screen is built for phones: one question per screen with large tap targets.'}
                 </p>
                 <p>
                   {isTr
-                    ? 'Buaze\'in anket wizard\'ı bu kuralları default olarak uygular: drag-drop sıralama, zorunluluk işaretleme, marka aksent rengi, KVKK açık rıza onayı, opsiyonel kupon ödülü ve teşekkür mesajı. Tasarımdan yayına 5 dakika; tasarım dosyası, ek tool, başka login yok.'
-                    : 'Buaze\'s survey wizard applies these rules by default: drag-drop ordering, required flag, brand accent color, KVKK explicit consent, optional coupon reward and thank-you message. From design to publish in 5 minutes; no design files, no extra tool, no separate login.'}
+                    ? 'Buaze\'in anket editörü bu kuralları default olarak uygular: soru sıralama, zorunluluk işaretleme, marka aksent rengi, KVKK açık rıza onayı, opsiyonel kupon ödülü ve teşekkür mesajı. Tasarımdan yayına 5 dakika; tasarım dosyası, ek tool, başka login yok.'
+                    : 'Buaze\'s survey editor applies these rules by default: question ordering, required flag, brand accent color, KVKK explicit consent, optional coupon reward and thank-you message. From design to publish in 5 minutes; no design files, no extra tool, no separate login.'}
                 </p>
               </div>
             </div>
@@ -538,17 +538,17 @@ export default async function SurveysPage({
             {[
               {
                 l: isTr ? 'SORU TİPİ' : 'QUESTION TYPES',
-                v: '5+',
+                v: '5',
                 sub: isTr
-                  ? 'Yıldız, NPS, skala, çoktan seçim, metin (kısa + uzun)'
-                  : 'Star, NPS, scale, multiple choice, text (short + long)',
+                  ? 'Yıldız, tavsiye skoru (NPS), tek seçim, kısa yazı, uzun yazı'
+                  : 'Star, recommend score (NPS), single choice, short text, long text',
               },
               {
                 l: isTr ? 'HEDEF SÜRE' : 'TARGET TIME',
                 v: '<60sn',
                 sub: isTr
-                  ? 'Mobil-first wizard, 4-5 soru ile 60 saniyenin altında tamamlanır'
-                  : 'Mobile-first wizard finishes in under 60 seconds with 4-5 questions',
+                  ? 'Mobil-first form, 4-5 soru ile 60 saniyenin altında tamamlanır'
+                  : 'Mobile-first form finishes in under 60 seconds with 4-5 questions',
               },
               {
                 l: isTr ? 'DAĞITIM' : 'DISTRIBUTION',

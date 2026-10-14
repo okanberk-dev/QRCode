@@ -1,24 +1,17 @@
-// CLAUDE.md §42 Phase 5 — Owner audit template edit page (Server Component).
+// Denetim Merkezi — denetimi düzenle (tek sayfa builder, düzenle modu).
 //
-// Fetches the template + categories on the server, computes lock flags
-// (isPublished + hasResponses + forkSourcePublished), then hands off to
-// AuditEditClient for the flat single-page form.
+// Kapsam, API'nin çözdüğü kapsamın aynısıdır (ekip üyeleri dahil): eski sayfa
+// `restaurant: { userId }` ile arıyor, davetli üyeler 404 görüyordu (A6).
+// Yazma yetkisi olmayanlar ve arşivlenmiş denetimler detay sayfasına döner.
 
-import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
-import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import AuditEditClient, {
-  type AuditTemplateEditData,
-} from '@/components/audits/AuditEditClient';
-import type {
-  AuditQuestionType,
-  AuditScoringMode,
-  AuditSector,
-} from '@/lib/audits/types';
-import type { AuditQuestionDraft } from '@/lib/audits/wizard-state';
+import { getAuditForEdit } from '@/lib/audits/queries';
+import AuditBuilderClient from '@/components/audits/AuditBuilderClient';
+import type { BuilderEditSource } from '@/components/audits/builder-state';
+import { requireOwnerAuditContext } from '@/components/audits/owner-page';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +22,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Şablonu Düzenle — Buaze' : 'Edit Template — Buaze',
+    title: locale === 'tr' ? 'Denetimi Düzenle — Buaze' : 'Edit Audit — Buaze',
     robots: { index: false, follow: false },
   };
 }
@@ -42,114 +35,48 @@ export default async function AuditEditPage({ params }: PageProps) {
   const { locale: localeParam, id } = await params;
   const locale: Locale = localeParam === 'en' ? 'en' : 'tr';
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get('user_token')?.value;
-  if (!token)
-    redirect(`/${locale}/auth/login?next=/${locale}/dashboard/audits/${id}/edit`);
-  const payload = await verifyJwt(token);
-  if (!payload || typeof payload.userId !== 'string') {
-    redirect(`/${locale}/auth/login?next=/${locale}/dashboard/audits/${id}/edit`);
-  }
-  const role = typeof payload.role === 'string' ? payload.role : 'restaurant_owner';
-  if (isAdminRole(role)) {
-    redirect(`/${locale}/auth/login?next=/${locale}/dashboard/audits/${id}/edit`);
-  }
-  const userId = payload.userId;
+  const ctx = await requireOwnerAuditContext(locale, `/${locale}/dashboard/audits/${id}/edit`);
 
-  // Owner-scoped template lookup. Public-safe select; sahibi olmadığı
-  // template'lere erişim 404'e düşer (CLAUDE.md §40.4 B).
-  const tpl = await prisma.auditTemplate.findFirst({
-    where: {
-      id,
-      restaurant: { userId },
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      sector: true,
-      scoringMode: true,
-      passingScore: true,
-      locale: true,
-      categoryId: true,
-      isPublished: true,
-      forkedFromId: true,
-      forkedFrom: {
-        select: { isPublished: true, isActive: true },
-      },
-      restaurant: { select: { id: true } },
-      questions: {
-        orderBy: { sortOrder: 'asc' },
-        select: {
-          id: true,
-          type: true,
-          prompt: true,
-          helpText: true,
-          options: true,
-          correctAnswer: true,
-          weight: true,
-          isRequired: true,
-          sortOrder: true,
-        },
-      },
-      _count: { select: { responses: true, assignments: true } },
-    },
+  const data = await getAuditForEdit({ templateId: id, restaurantIds: ctx.scopedIds });
+  if (!data) notFound();
+
+  const { template } = data;
+  // Salt-okunur üye ya da arşivlenmiş denetim: düzenlenecek bir şey yok.
+  if (!ctx.canWrite || template.status === 'archived') {
+    redirect(`/${locale}/dashboard/audits/${id}`);
+  }
+
+  const restaurant = await prisma.restaurant.findFirst({
+    where: { id: template.restaurantId },
+    select: { id: true, name: true, category: true },
   });
+  if (!restaurant) notFound();
 
-  if (!tpl || !tpl.restaurant) {
-    notFound();
-  }
-
-  const categories = await prisma.auditCategory.findMany({
-    orderBy: [{ sector: 'asc' }, { order: 'asc' }, { labelTr: 'asc' }],
-    select: { id: true, slug: true, labelTr: true, labelEn: true, sector: true },
-  });
-
-  // Cast through known unions — server schema strings, client uses literal types.
-  const questions: AuditQuestionDraft[] = tpl.questions.map((q) => ({
-    id: q.id,
-    type: q.type as AuditQuestionType,
-    prompt: q.prompt,
-    helpText: q.helpText,
-    options: Array.isArray(q.options) ? (q.options as string[]) : null,
-    correctAnswer:
-      q.correctAnswer === null
-        ? null
-        : (q.correctAnswer as string | string[] | number),
-    weight: q.weight,
-    isRequired: q.isRequired,
-    sortOrder: q.sortOrder,
-  }));
-
-  const data: AuditTemplateEditData = {
-    id: tpl.id,
-    title: tpl.title,
-    description: tpl.description,
-    sector: tpl.sector as AuditSector,
-    scoringMode: tpl.scoringMode as AuditScoringMode,
-    passingScore: tpl.passingScore,
-    locale: tpl.locale === 'en' ? 'en' : 'tr',
-    categoryId: tpl.categoryId,
-    isPublished: tpl.isPublished,
-    hasResponses: tpl._count.responses > 0,
-    hasAssignments: tpl._count.assignments > 0,
-    forkedFromId: tpl.forkedFromId,
-    // Reset CTA için: kaynak yayında + aktif olmalı. Kaynak silinmiş /
-    // unpublished ise reset endpoint zaten 410 döner ve UI'da CTA gizli.
-    forkSourcePublished: !!(
-      tpl.forkedFrom &&
-      tpl.forkedFrom.isPublished &&
-      tpl.forkedFrom.isActive
-    ),
-    questions,
+  const edit: BuilderEditSource = {
+    id: template.id,
+    restaurantId: template.restaurantId,
+    title: template.title,
+    description: template.description,
+    sector: template.sector,
+    scoringMode: template.scoringMode,
+    passingScore: template.passingScore,
+    locale: template.locale === 'en' ? 'en' : 'tr',
+    categoryId: template.categoryId,
+    isPublished: template.isPublished,
+    updatedAt: template.updatedAt,
+    hasResponses: template.hasResponses,
+    questions: template.questions,
+    answeredQuestionIds: data.answeredQuestionIds,
   };
 
   return (
-    <AuditEditClient
+    <AuditBuilderClient
+      mode="edit"
       locale={locale}
-      restaurantId={tpl.restaurant.id}
-      template={data}
-      categories={categories}
+      restaurants={[restaurant]}
+      hydratedRestaurantId={restaurant.id}
+      categories={data.categories}
+      edit={edit}
     />
   );
 }

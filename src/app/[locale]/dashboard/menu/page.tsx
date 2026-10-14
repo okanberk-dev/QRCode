@@ -65,10 +65,13 @@ async function fetchMenuCounts(restaurantId: string) {
 
 export default async function DashboardMenuPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale }>;
+  searchParams: Promise<{ restaurantId?: string | string[] }>;
 }) {
   const { locale } = await params;
+  const { restaurantId: restaurantIdParam } = await searchParams;
   const isTr = locale === 'tr';
 
   const cookieStore = await cookies();
@@ -138,6 +141,15 @@ export default async function DashboardMenuPage({
         />
       </div>
     );
+  }
+
+  // The shell already carries the business the owner picked at the top of the
+  // panel (`?restaurantId=`) — don't make them pick it a second time. Only a
+  // business inside their own scope counts; any other id is ignored (it must
+  // never redirect to, or reveal, someone else's menu).
+  const requestedId = Array.isArray(restaurantIdParam) ? restaurantIdParam[0] : restaurantIdParam;
+  if (requestedId && restaurants.some((r) => r.id === requestedId)) {
+    redirect(`/${locale}/dashboard/restaurants/${requestedId}/menu`);
   }
 
   // Single restaurant — skip the picker and drop the user straight into the

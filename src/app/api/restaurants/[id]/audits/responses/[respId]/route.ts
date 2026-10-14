@@ -1,9 +1,18 @@
 // CLAUDE.md §42 Phase 4 — Audit response by-id (detay + manuel re-score).
 //
 // GET: full response + answers + questions (manuel inceleme için).
-// PATCH: manuel score override + reviewer note. autoScore intact; manualScore
-//        override aggregate'i tekrar hesaplar (score helper saf, transaction
-//        içinde recompute).
+// PATCH: inceleme notu ve/veya manuel puan düzeltmesi.
+//
+// Spec §6.6 (A10) — yeniden hesaplama KURALLARI:
+//   • YALNIZ gövdede `overrides` varsa (ve boş değilse) skor yeniden hesaplanır
+//     (`shouldRecompute`). Salt inceleme notu kaydı `score / scorePercentage /
+//     passed` alanlarına DOKUNMAZ — şablon sonradan düzenlendiyse eski bir
+//     yanıtın puanı bir not kaydıyla sessizce değişmesin.
+//   • Yeniden hesap, yanıtın GERÇEKTEN cevap satırı olan soruları üzerinden
+//     yapılır (`questionsForRecompute`): yanıttan sonra denetime eklenen bir soru
+//     eski yanıt için 0 sayılmaz, `passed`'i çevirmez.
+//   • Güncel `passingScore` / `scoringMode` ile hesaplanır (override kaydeden
+//     sahip yeni kurala göre sonuç ister).
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -12,7 +21,8 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
-import { computeAuditScore } from '@/lib/audits/score';
+import { computeAuditScore, questionsForRecompute, shouldRecompute } from '@/lib/audits/score';
+import { getAuditResponseDetail } from '@/lib/audits/queries';
 import type { AuditQuestionType, AuditScoringMode } from '@/lib/audits/types';
 
 type Params = { id: string; respId: string };
@@ -33,64 +43,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
   if (!actor) return ApiErrors.unauthorized();
   if (!(await canAccessRestaurant(actor, id))) return ApiErrors.forbidden();
 
-  const response = await prisma.auditResponse.findFirst({
-    where: { id: respId, restaurantId: id },
-    select: {
-      id: true,
-      templateId: true,
-      assignmentId: true,
-      restaurantId: true,
-      respondentName: true,
-      respondentEmail: true,
-      respondentPhone: true,
-      teamMemberId: true,
-      hasKvkkConsent: true,
-      hasMarketingConsent: true,
-      score: true,
-      scorePercentage: true,
-      passed: true,
-      startedAt: true,
-      completedAt: true,
-      reviewedById: true,
-      reviewedAt: true,
-      reviewNote: true,
-      createdAt: true,
-      updatedAt: true,
-      template: {
-        select: {
-          id: true,
-          title: true,
-          scoringMode: true,
-          passingScore: true,
-          locale: true,
-          questions: {
-            orderBy: { sortOrder: 'asc' },
-            select: {
-              id: true,
-              type: true,
-              prompt: true,
-              helpText: true,
-              options: true,
-              correctAnswer: true, // owner görür (yanıt incelemesi için)
-              weight: true,
-              isRequired: true,
-              sortOrder: true,
-            },
-          },
-        },
-      },
-      answers: {
-        select: {
-          id: true,
-          questionId: true,
-          value: true,
-          autoScore: true,
-          manualScore: true,
-        },
-      },
-    },
-  });
-
+  // Sayfa (server hydration) ile AYNI sorgu — owner doğru cevabı görür (inceleme için).
+  const response = await getAuditResponseDetail({ responseId: respId, restaurantIds: [id] });
   if (!response) return ApiErrors.notFound('Yanıt bulunamadı');
 
   return NextResponse.json({ data: response });
@@ -146,49 +100,66 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<Params> }) 
   // Mevcut answer'lara override'ları map'le
   const answerByQid = new Map(response.answers.map((a) => [a.questionId, a]));
 
-  // Recompute score: caller manualScore'ları yeni override + mevcut intact
-  const scoringQuestions = response.template.questions.map((q) => ({
-    id: q.id,
-    type: q.type as AuditQuestionType,
-    correctAnswer: q.correctAnswer,
-    weight: q.weight,
-    isRequired: q.isRequired,
-  }));
-  const scoringAnswers = response.answers.map((a) => {
-    const overridden = Object.prototype.hasOwnProperty.call(overrides, a.questionId)
-      ? overrides[a.questionId]
-      : a.manualScore;
-    return {
-      questionId: a.questionId,
-      value: a.value as unknown,
-      manualScore: overridden,
-    };
-  });
+  // Skoru YALNIZ override varsa yeniden hesapla (salt not kaydı puanı değiştirmez).
+  const recompute = shouldRecompute(parsed.data);
+  let scorePatch:
+    | { score: number | null; scorePercentage: number | null; passed: boolean | null }
+    | undefined;
 
-  const scoring = computeAuditScore(
-    scoringQuestions,
-    scoringAnswers,
-    response.template.scoringMode as AuditScoringMode,
-    response.template.passingScore,
-  );
+  if (recompute) {
+    // Yanıt gönderildiği anda var olan sorular (cevap satırı olanlar) üzerinden hesapla.
+    const scoringQuestions = questionsForRecompute(
+      response.template.questions,
+      response.answers.map((a) => a.questionId),
+    ).map((q) => ({
+      id: q.id,
+      type: q.type as AuditQuestionType,
+      correctAnswer: q.correctAnswer,
+      weight: q.weight,
+      isRequired: q.isRequired,
+    }));
+    const scoringAnswers = response.answers.map((a) => {
+      const overridden = Object.prototype.hasOwnProperty.call(overrides, a.questionId)
+        ? overrides[a.questionId]
+        : a.manualScore;
+      return {
+        questionId: a.questionId,
+        value: a.value as unknown,
+        manualScore: overridden,
+      };
+    });
+
+    const scoring = computeAuditScore(
+      scoringQuestions,
+      scoringAnswers,
+      response.template.scoringMode as AuditScoringMode,
+      response.template.passingScore,
+    );
+    scorePatch = {
+      score: scoring.score,
+      scorePercentage: scoring.scorePercentage,
+      passed: scoring.passed,
+    };
+  }
 
   const result = await prisma.$transaction(async (tx) => {
     // Override yapılan answer'ları manualScore ile güncelle
-    for (const [qid, value] of Object.entries(overrides)) {
-      const answer = answerByQid.get(qid);
-      if (!answer) continue;
-      await tx.auditAnswer.update({
-        where: { id: answer.id },
-        data: { manualScore: value },
-      });
+    if (recompute) {
+      for (const [qid, value] of Object.entries(overrides)) {
+        const answer = answerByQid.get(qid);
+        if (!answer) continue;
+        await tx.auditAnswer.update({
+          where: { id: answer.id },
+          data: { manualScore: value },
+          select: { id: true },
+        });
+      }
     }
 
     const updated = await tx.auditResponse.update({
       where: { id: respId },
       data: {
-        score: scoring.score,
-        scorePercentage: scoring.scorePercentage,
-        passed: scoring.passed,
+        ...(scorePatch ?? {}),
         reviewedById: actor.id,
         reviewedAt: new Date(),
         reviewNote: parsed.data.reviewNote === undefined ? undefined : parsed.data.reviewNote,

@@ -1,0 +1,35 @@
+{
+  "state": "ok",
+  "placeId": "ChIJpartial_demo_000000003",
+  "profile": {
+    "v": 1,
+    "placeId": "ChIJpartial_demo_000000003",
+    "name": "Hotel Nora Boutique",
+    "address": "Kuloğlu Mah. Turnacıbaşı Sk. No:7, 34433 Beyoğlu/İstanbul, Türkiye",
+    "mapsUri": "https://maps.google.com/?cid=10000000000000000002",
+    "businessStatus": "OPERATIONAL",
+    "category": "Otel",
+    "rating": 4.2,
+    "ratingCount": 57,
+    "phone": "+90 212 555 02 02",
+    "website": null,
+    "hasOpeningHours": true,
+    "photoCount": 2,
+    "attributions": [],
+    "reviews": [
+      {
+        "rating": 4,
+        "text": "Konum çok iyi, odalar temiz.",
+        "publishedAt": "2026-09-15T10:00:00.000Z",
+        "authorName": "Elif S.",
+        "authorUri": "https://www.google.com/maps/contrib/100000000000000000006?hl=tr",
+        "authorPhotoUri": "https://lh3.googleusercontent.com/a/synthetic-author-6=s128-c0x00000000-cc-rp-mo",
+        "mapsUri": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1ssynthetic1"
+      }
+    ]
+  },
+  "fetchedAt": "2026-10-13T12:00:00.000Z",
+  "canWrite": true,
+  "hasManualLink": true,
+  "placesConfigured": true
+}

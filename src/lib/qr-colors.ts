@@ -208,3 +208,71 @@ export function scoreContrast(dark: string, light: string): ContrastVerdict {
 export function isContrastRisky(dark: string, light: string): boolean {
   return contrastRatio(dark, light) < 3;
 }
+
+/** Contrast floor used when a QR colour is picked automatically (see below). */
+export const SCANNABLE_MIN_CONTRAST = 3;
+
+/** Fallback used when the supplied foreground is not a usable hex colour. */
+const SCANNABLE_FALLBACK_DARK = '#0A0A0A';
+
+function toHex2(value: number): string {
+  return Math.max(0, Math.min(255, Math.round(value)))
+    .toString(16)
+    .padStart(2, '0')
+    .toUpperCase();
+}
+
+/** Mix `hex` towards pure black (target 0) or pure white (target 255). */
+function blendTowards(hex: string, target: 0 | 255, amount: number): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  const mix = (channel: number) => channel + (target - channel) * amount;
+  return `#${toHex2(mix(rgb.r))}${toHex2(mix(rgb.g))}${toHex2(mix(rgb.b))}`;
+}
+
+/**
+ * Guarantee a scannable QR foreground without throwing the owner's brand
+ * colour away.
+ *
+ * The menu QR is drawn in the menu accent colour, which an owner can set to
+ * anything — a pale lime (#C6F24E) is only 1.3:1 against white and simply
+ * does not scan. When `dark` already clears `min` against `light` it is
+ * returned untouched (normalised to `#RRGGBB`); otherwise it is blended
+ * towards the extreme that contrasts most with `light`, in 8 % steps, until
+ * the floor is met. The direction follows `light`, so a dark background pulls
+ * the foreground towards white instead of making things worse.
+ *
+ * The floor is 3:1 (not 4.5:1) on purpose: it matches `isContrastRisky`, which
+ * already blocks the QR wizard below 3:1, and the QR is rendered with the
+ * highest error-correction level. Only the lightest brand colours change.
+ *
+ * - Invalid `dark` falls back to `#0A0A0A`; invalid `light` is treated as white.
+ * - 3-digit hex is expanded; the result is always upper-case `#RRGGBB`.
+ * - At most 13 steps: the last one lands exactly on black/white.
+ */
+export function ensureScannableDark(
+  dark: string,
+  light: string,
+  min: number = SCANNABLE_MIN_CONTRAST,
+): { color: string; adjusted: boolean } {
+  const normalDark = normaliseHex(dark);
+  if (!normalDark) return { color: SCANNABLE_FALLBACK_DARK, adjusted: false };
+  const normalLight = normaliseHex(light) ?? '#FFFFFF';
+
+  if (contrastRatio(normalDark, normalLight) >= min) {
+    return { color: normalDark, adjusted: false };
+  }
+
+  const target: 0 | 255 =
+    contrastRatio('#000000', normalLight) >= contrastRatio('#FFFFFF', normalLight) ? 0 : 255;
+
+  for (let step = 1; step <= 13; step += 1) {
+    const candidate = blendTowards(normalDark, target, Math.min(1, step * 0.08));
+    if (contrastRatio(candidate, normalLight) >= min) {
+      return { color: candidate, adjusted: true };
+    }
+  }
+  // Unreachable for any real background (pure black or white always clears
+  // the floor), but keep the function total: land on the extreme.
+  return { color: target === 0 ? '#000000' : '#FFFFFF', adjusted: true };
+}

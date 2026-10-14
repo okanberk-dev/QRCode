@@ -16,6 +16,7 @@ import { ApiErrors, getErrorCode, getErrorMessage } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
 import { AuditTemplateSubmitSchema, type AuditTemplateSubmitInput } from '@/lib/audits/wizard-state';
 import { generateAuditAssignmentToken } from '@/lib/audits/token';
+import { listOwnerAuditTemplates } from '@/lib/audits/queries';
 
 async function gate(req: NextRequest, restaurantId: string, write: boolean) {
   const actor = await getPanelActorFromRequest(req);
@@ -35,30 +36,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const { searchParams } = new URL(req.url);
   const includeDrafts = searchParams.get('drafts') !== 'false';
 
-  const rows = await prisma.auditTemplate.findMany({
-    where: {
-      restaurantId: id,
-      ...(includeDrafts ? {} : { isPublished: true }),
-    },
-    orderBy: [{ updatedAt: 'desc' }],
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      sector: true,
-      scoringMode: true,
-      passingScore: true,
-      locale: true,
-      isPublished: true,
-      isActive: true,
-      publishedAt: true,
-      createdAt: true,
-      updatedAt: true,
-      categoryId: true,
-      category: { select: { id: true, slug: true, labelTr: true, labelEn: true } },
-      _count: { select: { questions: true, assignments: true, responses: true } },
-    },
-  });
+  // Spec §5.5/§6.9 — liste sayfası ile AYNI sorgu (queries.ts). Eski alanlara
+  // ek olarak `kind`, `status`, `lastResponseAt`, `forkedFromId` döner;
+  // arşivlenenler (`isActive: false`) hâlâ listelenir, UI böler.
+  const rows = await listOwnerAuditTemplates(id, { includeDrafts });
 
   return NextResponse.json({ data: rows });
 }

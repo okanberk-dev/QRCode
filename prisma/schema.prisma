@@ -1041,6 +1041,19 @@ model Settings {
   @@map("settings")
 }
 
+// DB-enforced daily call counters for billed Google Places calls (details +
+// search). Holds only a key and a count — no Places content, no personal data.
+// Keys look like "details:g:2026-10-13" or "search:r:<restaurantId>:2026-10-13".
+// Pruned after 7 days by the daily platform-link-retest cron.
+model GooglePlacesUsage {
+  key       String   @id
+  count     Int      @default(0)
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@index([updatedAt])
+  @@map("google_places_usage")
+}
+
 model Announcement {
   id            String    @id @default(cuid())
   title         String

@@ -51,10 +51,11 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 
 ### Görsel işleme akışı (menü)
 - Endpoint: `POST /api/restaurants/[id]/menu/upload` (scoped, IDOR-safe, `requireRestaurantAccess` ile korunur)
-- `sharp` ile resize + WebP dönüşüm: ürün görseli 1200px max, logo 512x512 cover
-- Quality 80 → boyut aşarsa otomatik 60'a düşürür → hala aşarsa 413 döner
+- `sharp` ile resize + WebP dönüşüm: ürün görseli **720px** max (kalite 72 → 55, tavan **90 KB**), logo 512x512 cover, kapak 1600x900
+- Hata kodları: `IMAGE_TOO_LARGE` / `IMAGE_UNPROCESSABLE` (UI ham sunucu metnini göstermez, `mapMenuApiError`)
 - Response: `{ url: 'data:image/webp;base64,...', bytes, kind }`
 - İstemci bu data URL'i `imageUrl` / `menuLogoUrl` alanına doğrudan kaydeder
+- **Herkese açık menü** data URL'i HTML/RSC yükünde taşımaz: görseller `GET /api/menu/[slug]/img/[itemId]` (`itemId=logo` dahil, uzun public immutable cache, yayında olmayan menü 404 no-store, `?v=` cache buster) üzerinden servis edilir; JSON-LD'de de data URL yok
 
 ### Validation
 - `src/lib/validations.ts` — `imageUrl` hem `http(s)://` URL'i hem `data:image/` prefix'li data URL kabul eder
@@ -200,6 +201,19 @@ Eski akış tek "konum seç" işleminde **5-6 quota birim** yakıyordu (location
 - Yeni `googleBusinessFetch`-tabanlı endpoint eklerken aynı 4-katman desenini uygula (TTL + force + rate-limit + soft 429)
 - Quota artışı gerekirse Google Cloud Console → "My Business Account Management API" + "My Business Business Information API" → Quotas → Request increase (24-48 saat onay)
 - `cache.syncedAt` her başarılı sync'te güncel kalmalı — UI rozeti güvenilmezse owner refresh dürtüsü artar
+
+### 5.1.2 Places profili — anında bağla + analiz (2026-10, §38.243)
+
+`/[locale]/dashboard/google-reviews` Google girişi istemeden açılır: owner işletme adını yazar, sonuçtan birini seçer; Google puanı, yorum sayısı, en çok 5 gerçek yorum ve 6 maddelik profil kontrol listesi saniyeler içinde görünür. Business Profile (OAuth) ile yorum yanıtlama bölümü **opsiyonel** kalır, sayfanın altındadır; Business Profile kotası 0 iken (§5.1.1, §38.231) bağlan düğmesi gizlenir.
+
+- **Yalnız Places API (New).** `googleReviewManagementEnabled` sadece yanıt özelliklerini kapatır; profil okuma her tenant için açıktır.
+- **Endpoint'ler**: `GET /api/restaurants/[id]/google/places/profile` (her zaman 200; `state: ok|not_linked|unavailable|not_found|error`; `Cache-Control: private, no-store`), `POST …/places/select` (seçmeden önce ID'yi Google'a doğrulatır: 422 `PLACE_NOT_FOUND`, 503 `GOOGLE_UNAVAILABLE`; audit `owner|admin.google.place.select`), iki `places/search` route'u (sonuçta `category`; 429 `DAILY_LIMIT`, 503 `GOOGLE_PLACES_BUSY`; `GOOGLE_PLACES_NOT_CONFIGURED` HTTP 400 olarak kalır).
+- **Places içeriği saklanmaz.** Kalıcı tek veri Place ID'dir (`googlePlaceId`, `googleReviewUrl`). Puan, yorum metni, yorumcu adı/fotoğrafı yalnız canlı gösterilir: tarayıcıda yalnız bellek içi 10 dk kopya; localStorage/sessionStorage/IndexedDB'ye içerik yazılmaz (sessionStorage'da yalnız "otomatik arama yapıldı" boolean'ı). Sunucuda snapshot tablosu yoktur; eklenmesi (Faz 3) yalnız operatörün Google şartları için yazılı onayından sonra yapılır.
+- **Maliyet kapıları Postgres'te.** Her faturalı çağrı Google'a gitmeden `src/lib/google-places-budget.ts` `reservePlacesCall` ile `google_places_usage` sayacından tek atomik deyimle (`INSERT … ON CONFLICT … WHERE count < cap RETURNING`) rezerve edilir; DB hatası ya da geçersiz env değeri → reddet (fail-closed). Varsayılan günlük (UTC) tavanlar: Details 150 global / 30 işletme, Search 200 global / 20 işletme (`PLACES_DETAILS_DAILY_CAP`, `PLACES_DETAILS_RESTAURANT_DAILY_CAP`, `PLACES_SEARCH_DAILY_CAP`, `PLACES_SEARCH_RESTAURANT_DAILY_CAP`); en kötü durum ≈ $10/gün. `rateLimit()` (Upstash) burada yalnız yumuşak burst sınırıdır, tavan değildir (fail-open + instance-local, §14.2). Sayaç satırları günlük `platform-link-retest` cron'unun ilk adımında 7 gün sonra silinir.
+- **Yanıt özelliği durumu.** `business/status` `replyAvailability` döner (`available|not_provisioned|disabled`); `Settings` anahtarı `google.business_api_state` (3 gün geçerli) kota-0 durumunu işaretler; operatör şalteri `GOOGLE_BUSINESS_REPLY_ENABLED=false`. Connect route'u kapatılmaz, gizleme yalnız arayüzdedir.
+- **Owner metni jargonsuz.** Sunucu mesajları ve sağlık skoru metinleri `src/lib/google-owner-copy.ts` ve `google-business*.ts` içindedir; ham `error.message`, env adı, "kota / API / OAuth" owner'a gösterilmez (§38.233). Her Places kartında görünür "Google Maps" atfı zorunludur.
+- **Yapma**: Places içeriğini DB/log/Sentry/tarayıcı depolamaya yazma; Places çağrısını `reservePlacesCall` olmadan ekleme; kota doluyken otomatik yeniden deneme (§38.211); yorum metnine AI/NLP analizi ya da Google fotoğrafı gösterimi ekleme (şartlar).
+- **Yayın kapıları (operatör)**: G1 Places şartları/saklama onayı; G2 GCP'de Places API (New) günlük kota tavanı + bütçe uyarısı; G3 gerçek Google yanıtlarıyla fixture kaydı (`tests/fixtures/google-places/` şu an sentetik; `attributions` ve `primaryTypeDisplayName` alan maskeleri doğrulanmadı); G4 Business Profile kotası onaylanana kadar `GOOGLE_BUSINESS_REPLY_ENABLED=false`.
 
 ### 5.2 Paket & Özellik Erişimi (2026-05)
 
@@ -452,6 +466,7 @@ Menü yapısı tek tip modern builder etrafında toplandı. Legacy `MenuEditor.t
 - **Quick toggle'lar:** Kategori satırında `isVisible` eye, ürün satırında `isAvailable` eye + `isOutOfStock` AlertTriangle. Modal açmadan tek tıkla değiştir — optimistic state + revert on failure.
 - **Menü QR:** `/api/restaurants/[id]/menu/qr?format=png|svg` → PNG/SVG indir. URL'de `?source=qr` attribution parametresi taşır (analytics attribution için kritik).
 - **Reorder perf:** `reorderCategories` / `reorderItems` sadece **error** durumunda `fetchAll()` çağırır (önceden her reorder'da yapıyordu — 2x network). Optimistic state zaten doğru.
+- **Yapı (2026-10, §38.243):** `page.tsx` ince orkestratör; durum/veri mantığı `_components/useMenuBuilder.ts` (başarılı create/update/delete yanıtı `menu-merge.ts` ile yerelde uygulanır, `fetchAll` yalnız ilk yükleme / starter / başarısız reorder / retry), bileşenler `_components/` altında: `MenuStatusBar` (taslak / yayında / kilitli tek şerit; boş menü yayını 409 `MENU_EMPTY`), `MenuStarter` (sektöre göre sıralı hazır başlangıçlar), `CategoryNav` + `CategoryMenu` (masaüstü sütun, mobil chip), `ItemList` + `MenuItemRow` (satır anahtarı = tükendi; "menüden gizle" satır menüsünde), `ItemEditorModal`, `BulkAddModal` ("liste yapıştır", `POST .../menu/items/bulk`), `MenuDesignModal`, `MenuShareModal` (QR renk uyarısı `X-Qr-Color-Adjusted`). Salt okunur durum (`!menuEnabled || viewer`): kontroller gizlenmez, devre dışı bırakılır, "paketi yükselt" vaadi yok. Dolu kategori silme: 409 `CATEGORY_NOT_EMPTY` + `itemCount`, onaydan sonra `?deleteItems=true`. URL: `?edit=<itemId>` ve `?share=1` bir kez işlenip `router.replace` ile temizlenir. `qr-colors.ts` `ensureScannableDark` (kontrast tabanı 3.0) QR'ın taranabilir kalmasını garanti eder.
 
 ### 12.2 Public menü & PublicMenuView
 
@@ -4529,6 +4544,8 @@ GitHub PR referansı.
 
 - §38.176 — Stage 96 (PR TBD) Team invite acceptance wizard + cross-tenant guard. Owner-side flow (`BusinessUsersRolesSettings` + `/api/team/*`) intact; invitee-side rewritten to address user's "o işletmeyi tanımlıyor mu?" question. **API (`/api/team/accept-invite`)**: GET response extended with `role`, `roleLabelEn`, `restaurantNames: string[]`, `allLocations: boolean` — fetched via `prisma.restaurant.findMany({ where: { id: { in: locations }, userId: member.ownerId }, select: { name: true } })` (IDOR-safe, `select: { name }` minimal payload). Empty `locations` → full owner restaurant list (mirrors `team-invite.ts:50-59` mail template "Tüm konumlar" fallback). POST handler picks up a new **cross-tenant guard**: `prisma.teamMember.findFirst({ where: { email, status: 'active', NOT: { id: member.id } } })` → 409 `cross_tenant_active` so the same email can't be active on two different owners' workspaces (Buaze single-tenant model). **UI (`/[locale]/accept-invite/page.tsx`)**: flat form → 3-step wizard (`overview → account → success`); existing accounts skip step 2 (`overview → success` directly). Step 1 surfaces owner + role + **restaurant chips** + days-left countdown (was buried in mail only). Step 2 keeps the original signup form but adds `enterKeyHint`, `inputMode="tel"`, password `aria-describedby` per CLAUDE.md §25.5. Step 3 success card with `pulse-heartbeat` icon + auto-redirect (`SUCCESS_REDIRECT_MS=2500`, reduced to 500ms under `prefers-reduced-motion: reduce`) + manual "Panele git" CTA. Progress bar `role="progressbar"` + `aria-live="polite"` live region for SR step announcements. Cross-tenant 409 surfaces as `<AlertBanner kind="warn">` with clear "leave existing team first" wording (TR + EN parity). tsc + lint clean.
 
+- §38.243 — Stage 161 (PR #763) Google Places anında bağlama + analiz, Denetim Merkezi / Anketler / Menü sadeleştirme. Kullanıcı talebi (verbatim): *"google benim işletmem profillerini ekleyebilmem için kolaylık yap ve hemen eklenebilsin analiz edilebilsin ve denetim merkezini de basitleştirip geliştir diğer tüm özellikleri de aynı şekilde."* + *"en son maine at ve vercel'De production olsun"*. AskUserQuestion kararları: Google yalnız Places tabanlı (Business Profile kotası 0); kapsam Anketler + Menü + Denetim Merkezi; ayrı PR; yöntem çok ajanlı workflow, her grup sonunda bağımsız test ajanı. **Google**: `/dashboard/google-reviews` hesap bağlamadan açılır — arama → seç → puan, yorum sayısı, en çok 5 canlı yorum, 6 maddelik kontrol listesi (§5.1.2); `google_places_usage` + `reservePlacesCall` maliyet kapısı (migration `20261013000000_google_places_usage`, yalnız eklemeli); owner metninden kota/API/OAuth dili temizlendi. **Denetim**: puan yalnız puanlanabilir sorularla hesaplanır (hiçbiri yoksa `null`), tek sayfalık oluşturucu (oluştur + düzenle), hazır şablon sekmesi, yeniden kullanılabilir paylaşım linkleri, canlı denetim düzenlemesi link ve soru id'lerini korur, sonuçlarda "dikkat edilecek maddeler", iki ekranlı herkese açık form; eski sihirbaz/düzenleme/atama bileşenleri silindi. **Anketler**: PATCH id-koruyucu (`removedQuestionIds`; 409 `stale_survey` / `question_locked` / `removal_not_confirmed`), tür sunucuda türetilir, NPS tek kaynak (`survey-analytics`), tek sayfalık editör + canlı telefon önizlemesi, 5 adımlı sihirbaz silindi, herkese açık akış düzeltmeleri (sahte indirim, görünmez bağlantılar, tekrar yanıt). **Menü**: §3 ve §12.1'de. **Doğrulama**: tsc 0, 1357 test, eslint, prisma validate temiz; Google, Denetim ve Menü bağımsız testten geçti; Anket grubunun son major'ı (herkese açık sayfada çerez kartı "Başlayalım"ı kapatıyordu) elle düzeltildi ve ayrı bir test turuna girmedi; kalan minörler (kısa ekranda editör alt çubuğu önizlemeyi örtüyor, tüm sorular isteğe bağlıysa boş yanıt gönderilebiliyor) bilinçli bırakıldı. **Operatör kapıları**: G1 Places şartları/saklama onayı (varsayılan: saklanmaz); G2 GCP'de Places API (New) günlük kota + bütçe uyarısı (varsayılan tavan ≈ $10/gün en kötü durum); G3 fixture'lar sentetik — ilk üretim çağrısından sonra gerçek yanıtla yenile (`attributions`, `primaryTypeDisplayName` doğrulanmadı); G4 Business Profile kotası onaylanana dek `GOOGLE_BUSINESS_REPLY_ENABLED=false` önerilir. **Ertelenen**: Google Faz 2/3 (yanıt özelliği birleştirme, snapshot tablosu), Anket Faz 2 (yanıtlar sekmesi, sparkline), Menü PR-5 (splash, klavye sensörü). Eski denetim yanıtlarının saklı puanları taşınmadı. **Disipline**: (i) Places içeriği saklanmaz, her faturalı çağrı `reservePlacesCall` ile rezerve edilir (§40.4-J); (ii) düzenleme uçları mevcut soru/seçenek id'lerini korur, kayıp silmeyi onaysız yapmaz; (iii) puan hesabı tek saf modülde, panel puanları 0-100 gösterir (saklama 0-10000). **Chat prompt history (Stage 161)**: oturum limit/konteyner yenileme/kullanıcı duraklatması nedeniyle üç kez kesildi; kullanıcı *"Devam et diyene kadar dur"* sonra *"Devam"* dedi. Hukuki/disipline override yok.
+
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
 
 | PR | Stage | HANDOFF step | Code | Highlights |
@@ -4881,6 +4898,14 @@ auto-applies. Non-heading için `bz-h-tight` utility class.
   ile diğer aktif satır var mı kontrol edilir → varsa 409 reject.
 - "Tek-tenant per user" varsayımı kıran benzer akış (örn. team transfer,
   ownership change) aynı disipline ile gate edilir.
+
+**J. Google Places içeriği ve maliyet kapısı** (§5.1.2, §38.243):
+- Places içeriği (puan, yorum metni, yorumcu adı/fotoğrafı) DB/log/Sentry/tarayıcı
+  depolamaya yazılmaz; kalıcı tek Google Maps verisi Place ID'dir.
+- Her faturalı Places çağrısı Google'a gitmeden `reservePlacesCall`
+  (`google_places_usage`, atomik tek deyim, fail-closed) ile rezerve edilir.
+  `rateLimit()` (Upstash) burada tavan değil yalnız yumuşak burst sınırıdır.
+- Paylaşılan kotalı Google yüzeylerinde otomatik yeniden deneme yok (§38.211).
 
 ### §40.5 Validation disipline (§28)
 

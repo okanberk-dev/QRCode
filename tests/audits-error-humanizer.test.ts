@@ -219,3 +219,165 @@ describe('isLikelyEmail', () => {
     assert.equal(isLikelyEmail('abc@buaze'), false);
   });
 });
+
+// ─── Spec §6.3 / §6.8 — new codes ───────────────────────────────────────
+
+describe('parseAuditErrorResponse — live edit codes (spec §6.3)', () => {
+  function fakeRes(status: number, body: unknown): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  it('QUESTION_LOCKED → human message + "N. madde" detail (TR)', async () => {
+    const res = fakeRes(400, {
+      error: 'Bu maddeye yanıt verilmiş.',
+      code: 'QUESTION_LOCKED',
+      details: { itemNumber: 3, fields: ['options'] },
+    });
+    const parsed = await parseAuditErrorResponse(res, 'tr');
+    assert.equal(parsed.code, 'QUESTION_LOCKED');
+    assert.match(parsed.title, /yanıt verilmiş/);
+    assert.match(parsed.title, /kopyala/);
+    assert.deepEqual(parsed.details, ['3. madde']);
+    assert.match(summarizeAuditError(parsed), /3\. madde/);
+  });
+
+  it('QUESTION_LOCKED (EN) names the item as "Item N"', async () => {
+    const res = fakeRes(400, { code: 'QUESTION_LOCKED', details: { itemNumber: 2 } });
+    const parsed = await parseAuditErrorResponse(res, 'en');
+    assert.match(parsed.title, /already has answers/);
+    assert.deepEqual(parsed.details, ['Item 2']);
+  });
+
+  it('QUESTION_HAS_ANSWERS / DUPLICATE_QUESTION_ID carry the item number too', async () => {
+    const has = await parseAuditErrorResponse(
+      fakeRes(400, { code: 'QUESTION_HAS_ANSWERS', details: { itemNumber: 5 } }),
+      'tr',
+    );
+    assert.match(has.title, /silinemez/);
+    assert.deepEqual(has.details, ['5. madde']);
+
+    const dup = await parseAuditErrorResponse(
+      fakeRes(400, { code: 'DUPLICATE_QUESTION_ID', details: { itemNumber: 1 } }),
+      'en',
+    );
+    assert.match(dup.title, /more than once/);
+    assert.deepEqual(dup.details, ['Item 1']);
+  });
+
+  it('item number is ignored when absent, zero or not a number', async () => {
+    for (const details of [undefined, {}, { itemNumber: 0 }, { itemNumber: 'x' }, ['3']]) {
+      const parsed = await parseAuditErrorResponse(fakeRes(400, { code: 'QUESTION_LOCKED', details }), 'tr');
+      assert.deepEqual(parsed.details, []);
+    }
+  });
+
+  it('STALE_EDIT (409) tells the owner to refresh', async () => {
+    const tr = await parseAuditErrorResponse(fakeRes(409, { code: 'STALE_EDIT' }), 'tr');
+    assert.equal(tr.code, 'STALE_EDIT');
+    assert.match(tr.title, /sen düzenlerken değişti/);
+    assert.match(tr.title, /Sayfayı yenile/);
+    const en = await parseAuditErrorResponse(fakeRes(409, { code: 'STALE_EDIT' }), 'en');
+    assert.match(en.title, /changed while you were editing/);
+  });
+
+  it('ARCHIVED (409) says the audit cannot be edited', async () => {
+    const tr = await parseAuditErrorResponse(fakeRes(409, { code: 'ARCHIVED' }), 'tr');
+    assert.match(tr.title, /arşivlendi/);
+    const en = await parseAuditErrorResponse(fakeRes(409, { code: 'ARCHIVED' }), 'en');
+    assert.match(en.title, /archived/);
+  });
+
+  it('NO_QUESTIONS (publish an empty draft) is still humanized', async () => {
+    const parsed = await parseAuditErrorResponse(fakeRes(400, { code: 'NO_QUESTIONS' }), 'tr');
+    assert.match(parsed.title, /en az 1 soru/);
+  });
+
+  it('the legacy locked codes keep their messages (the admin route still returns them)', async () => {
+    const pub = await parseAuditErrorResponse(fakeRes(400, { code: 'PUBLISHED_LOCKED' }), 'en');
+    assert.match(pub.title, /published/i);
+    const resp = await parseAuditErrorResponse(fakeRes(400, { code: 'RESPONSES_LOCK_QUESTIONS' }), 'tr');
+    assert.match(resp.title, /Yanıt almış/);
+  });
+});
+
+describe('parseAuditErrorResponse — public submit codes (spec §6.8)', () => {
+  function fakeRes(status: number, body: unknown): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  it('PHOTO_TOO_LARGE / INVALID_PHOTO / INVALID_ANSWER / PAYLOAD_TOO_LARGE in TR', async () => {
+    const photo = await parseAuditErrorResponse(fakeRes(400, { error: 'x', code: 'PHOTO_TOO_LARGE' }), 'tr');
+    assert.match(photo.title, /Fotoğraf çok büyük/);
+    const badPhoto = await parseAuditErrorResponse(fakeRes(400, { code: 'INVALID_PHOTO' }), 'tr');
+    assert.match(badPhoto.title, /Fotoğraf geçersiz/);
+    const answer = await parseAuditErrorResponse(fakeRes(400, { code: 'INVALID_ANSWER' }), 'tr');
+    assert.match(answer.title, /cevap geçersiz/);
+    const big = await parseAuditErrorResponse(fakeRes(413, { code: 'PAYLOAD_TOO_LARGE' }), 'tr');
+    assert.match(big.title, /çok büyük/);
+    assert.match(big.title, /Fotoğrafları azaltıp/);
+  });
+
+  it('the same codes in EN', async () => {
+    const photo = await parseAuditErrorResponse(fakeRes(400, { code: 'PHOTO_TOO_LARGE' }), 'en');
+    assert.match(photo.title, /photo is too large/i);
+    const badPhoto = await parseAuditErrorResponse(fakeRes(400, { code: 'INVALID_PHOTO' }), 'en');
+    assert.match(badPhoto.title, /photo is invalid/i);
+    const answer = await parseAuditErrorResponse(fakeRes(400, { code: 'INVALID_ANSWER' }), 'en');
+    assert.match(answer.title, /answer is invalid/i);
+    const big = await parseAuditErrorResponse(fakeRes(413, { code: 'PAYLOAD_TOO_LARGE' }), 'en');
+    assert.match(big.title, /too large/i);
+  });
+
+  it("a plain 429 keeps the generic wait message; scope 'daily' gets the daily-cap message", async () => {
+    const plain = await parseAuditErrorResponse(fakeRes(429, { error: 'rate_limited', retryAfter: 30 }), 'tr');
+    assert.match(plain.title, /Çok hızlı/);
+
+    const daily = await parseAuditErrorResponse(
+      fakeRes(429, { error: 'rate_limited', scope: 'daily', retryAfter: 3600 }),
+      'tr',
+    );
+    assert.equal(daily.code, 'rate_limited');
+    assert.equal(
+      daily.title,
+      'Bu link bugün çok fazla yanıt aldı. Yarın tekrar dene veya işletmeyle iletişime geç.',
+    );
+
+    const dailyEn = await parseAuditErrorResponse(
+      fakeRes(429, { error: 'rate_limited', scope: 'daily' }),
+      'en',
+    );
+    assert.match(dailyEn.title, /too many responses today/);
+  });
+
+  it("scope 'daily' on a non-rate-limit code does not hijack the message", async () => {
+    const parsed = await parseAuditErrorResponse(fakeRes(400, { code: 'INVALID_ANSWER', scope: 'daily' }), 'tr');
+    assert.match(parsed.title, /cevap geçersiz/);
+  });
+
+  it('none of the new owner/respondent messages leaks developer jargon', async () => {
+    const codes = [
+      'QUESTION_LOCKED',
+      'QUESTION_HAS_ANSWERS',
+      'DUPLICATE_QUESTION_ID',
+      'STALE_EDIT',
+      'ARCHIVED',
+      'PHOTO_TOO_LARGE',
+      'PAYLOAD_TOO_LARGE',
+      'INVALID_ANSWER',
+      'INVALID_PHOTO',
+    ];
+    for (const locale of ['tr', 'en'] as const) {
+      for (const code of codes) {
+        const parsed = await parseAuditErrorResponse(fakeRes(400, { code }), locale);
+        assert.ok(!/payload|json|token|assignment|schema|uuid|null|undefined/i.test(parsed.title), `${locale} ${code}: ${parsed.title}`);
+        assert.ok(!parsed.title.includes(code), `${locale} ${code} must not echo the raw code`);
+      }
+    }
+  });
+});

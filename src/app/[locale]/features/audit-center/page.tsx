@@ -46,8 +46,8 @@ export async function generateMetadata({
     ? 'Denetim Merkezi — Operasyonel checklist + skorlama | Buaze'
     : 'Audit Center — Operational checklists + scoring | Buaze';
   const description = isTr
-    ? 'Hijiyen denetimi, işe alım quiz\'i, KVKK uyumluluk, ekip eğitim değerlendirmesi — şablon seç, ata, skorla. 6 sektör için hazır şablon + özel soru tipleri (skala, çoktan seçmeli, evet/hayır).'
-    : 'Hygiene audits, hiring quizzes, KVKK compliance, team training assessments — pick a template, assign, score. Ready-made templates for 6 sectors + custom question types (scale, multiple choice, yes/no).';
+    ? 'Mutfak açılışı, hijyen, vardiya devri gibi günlük kontrol listelerini ve işe alım testlerini hazır şablonlardan başlat; linki WhatsApp ile paylaş, ekibin telefondan doldursun, sonuçları ve aksayan maddeleri gör.'
+    : 'Start daily checklists (kitchen opening, hygiene, shift handover) and hiring tests from ready-made templates; share the link on WhatsApp, your team fills it on their phone, and you see results and missed items.';
   const canonicalUrl = `https://www.buaze.com/${locale}/features/audit-center`;
   return {
     metadataBase: new URL('https://www.buaze.com'),
@@ -58,7 +58,7 @@ export async function generateMetadata({
           'denetim merkezi',
           'operasyonel checklist',
           'hijiyen denetimi',
-          'işe alım quiz',
+          'işe alım testi',
           'ekip eğitim değerlendirme',
           'KVKK uyumluluk checklist',
           'restoran operasyon yönetimi',
@@ -162,108 +162,108 @@ export default async function AuditCenterPage({
         {
           icon: ClipboardList,
           title: 'Şablon kütüphanesi',
-          body: 'Restoran, otel, klinik, perakende, güzellik ve diğer sektörler için hazır şablonlar. Buaze ekibi tarafından hazırlanan denetim şablonlarını kendin için fork\'la ve özelleştir.',
+          body: 'Restoran, otel, klinik, perakende, güzellik ve diğer sektörler için hazır şablonlar. Buaze ekibi tarafından hazırlanan denetim şablonlarını kopyalayıp kendine göre düzenle.',
         },
         {
           icon: Users,
-          title: 'Atama + token akışı',
-          body: 'Şablonu ekip üyesine ata, müşteri adayına quiz olarak gönder veya anonim link üret. Her doldurma kaydı kim, ne zaman, hangi cevabı verdi şeffaf görünür.',
+          title: 'Linkle paylaş',
+          body: 'Denetimi yayınla, linki WhatsApp veya e-posta ile ekibine gönder. Giriş gerekmez; telefondan doldurulur. Her yanıtta kimin, ne zaman, hangi cevabı verdiğini görürsün.',
         },
         {
           icon: BarChart3,
           title: 'Otomatik skor + manuel inceleme',
-          body: 'Çoktan seçmeli, evet/hayır ve skala sorular otomatik skorlanır; metin cevaplar owner tarafından elle değerlendirilir. Yüzdelik, ağırlıklı veya geç/başarısız modu seç.',
+          body: 'Çoktan seçmeli, evet/hayır ve skala maddeleri otomatik skorlanır; metin cevaplarını istersen elle puanlarsın. İstersen yüzdelik, ağırlıklı veya geç/başarısız modunu seç.',
         },
         {
           icon: FileBarChart,
           title: 'Tarihsel raporlama',
-          body: 'Şablon başına tamamlanma zaman çizelgesi, soru başına skor kırılımı, CSV dışa aktarımı. Düşük skoru hangi şubeden, hangi vardiyadan geldiğini gör.',
+          body: 'Yanıt sayısı, ortalama puan ve en çok aksayan maddeler tek ekranda. Yanıtları tek tek incele, istersen tablo olarak (CSV) indir.',
         },
       ]
     : [
         {
           icon: ClipboardList,
           title: 'Template library',
-          body: 'Ready-made templates for restaurants, hotels, clinics, retail, beauty and other sectors. Fork the Buaze-curated audit templates and customize for your operation.',
+          body: 'Ready-made templates for restaurants, hotels, clinics, retail, beauty and other sectors. Copy the Buaze-curated audit templates and customize them for your operation.',
         },
         {
           icon: Users,
-          title: 'Assignment + token flow',
-          body: 'Assign to a team member, send as a quiz to a candidate, or generate an anonymous link. Every submission shows who filled what, when, and which answer.',
+          title: 'Share with a link',
+          body: 'Publish the audit and send the link to your team by WhatsApp or e-mail. No login needed; it\'s filled on a phone. Every response shows who answered what and when.',
         },
         {
           icon: BarChart3,
           title: 'Auto-score + manual review',
-          body: 'Multiple-choice, yes/no and scale questions auto-score; text answers are reviewed by the owner. Pick percentage, weighted or pass/fail scoring mode.',
+          body: 'Multiple-choice, yes/no and scale items auto-score; you can score text answers by hand. Optionally pick percentage, weighted or pass/fail scoring.',
         },
         {
           icon: FileBarChart,
           title: 'Historical reporting',
-          body: 'Per-template completion timeline, per-question score breakdown, CSV export. See which branch or shift produced the low score.',
+          body: 'Response count, average score and the items missed most often on one screen. Review responses one by one and download them as a table (CSV).',
         },
       ];
 
   const featureList = isTr
     ? [
         '6 sektör için hazır şablon (restoran, otel, klinik, perakende, güzellik, diğer)',
-        '5 soru tipi: tek seçim, çoktan seçim, skala 1-5, kısa metin, evet/hayır',
+        '6 soru tipi: evet/hayır, skala 1-5, tek seçim, çoklu seçim, kısa metin, fotoğraf',
         '3 skor modu: yüzdelik, ağırlıklı, geç/başarısız (pass/fail)',
-        'Atama tipleri: ekip üyesi, müşteri adayı (quiz), anonim link',
-        'Tekrarlayan denetim + son tarih, manuel yeniden skor (text cevap),',
-        'CSV dışa aktarım + audit log, KVKK uyumlu IP saklama',
+        'Paylaşım linki: giriş gerektirmez, telefondan açılır',
+        'Aynı link her gün kullanılabilir; metin cevaplarını elle puanlayabilirsin',
+        'CSV dışa aktarım, KVKK uyumlu IP saklama',
       ]
     : [
         'Ready templates for 6 sectors (restaurant, hotel, clinic, retail, beauty, other)',
-        '5 question types: single choice, multi choice, scale 1-5, short text, yes/no',
+        '6 question types: yes/no, scale 1-5, single choice, multi choice, short text, photo',
         '3 scoring modes: percentage, weighted, pass/fail',
-        'Assignment types: team member, candidate (quiz), anonymous link',
-        'Recurring audits + due dates, manual re-score for text answers',
-        'CSV export + audit log, KVKK-compliant IP retention',
+        'Share link: no login, opens on a phone',
+        'The same link works every day; score text answers by hand',
+        'CSV export, KVKK-compliant IP retention',
       ];
 
   const faqs = isTr
     ? [
         {
           q: 'Denetim Merkezi nedir?',
-          a: 'Restoran, otel veya kliniğin günlük operasyonel kontrollerini (hijyen, açılış checklist\'i, vardiya değişimi), işe alım quiz\'lerini ve eğitim değerlendirmelerini şablon olarak hazırlayıp ekip üyelerine veya adaylara atadığın, otomatik skorlu bir denetim sistemidir. Buaze\'in operasyonel disiplin modülüdür.',
+          a: 'Restoran, otel veya kliniğin günlük operasyonel kontrollerini (hijyen, açılış kontrol listesi, vardiya değişimi), işe alım testlerini ve eğitim değerlendirmelerini şablon olarak hazırlayıp linkle ekibine veya adaylara paylaştığın, otomatik skorlu bir denetim sistemidir. Buaze\'in operasyonel disiplin modülüdür.',
         },
         {
           q: 'Hazır şablonlar var mı, yoksa sıfırdan mı yazmalıyım?',
-          a: '6 sektör için Buaze ekibinin hazırladığı şablonlar var: restoran (mutfak açılış, servis senaryosu), otel (housekeeping günlük, check-out akışı), klinik (sterilizasyon günlük, KVKK hasta verisi), perakende (mağaza açılış, müşteri şikayet), güzellik (randevu haftalık, master self-assessment), genel (CX haftalık özet, day-1 onboarding). Hazır şablonu fork\'la, kendi operasyonuna göre düzenle.',
+          a: '6 sektör için Buaze ekibinin hazırladığı şablonlar var: restoran (mutfak açılış, servis senaryosu), otel (housekeeping günlük, check-out akışı), klinik (sterilizasyon günlük, KVKK hasta verisi), perakende (mağaza açılış, müşteri şikayet), güzellik (randevu haftalık, master self-assessment), genel (CX haftalık özet, day-1 onboarding). Hazır şablonu kopyalayıp kendi operasyonuna göre düzenle.',
         },
         {
           q: 'Skorlama nasıl çalışır?',
-          a: 'Üç mod var: yüzdelik (doğru cevap / toplam soru × 100), ağırlıklı (her sorunun ağırlığı tanımlanır, toplam ağırlık üzerinden hesap) ve geç/başarısız (geçer puan eşiği, üstüyse PASS altıysa FAIL). Çoktan seçmeli, evet/hayır ve skala sorular otomatik skorlanır; kısa metin cevaplar owner tarafından elle değerlendirilir.',
+          a: 'Üç mod var: yüzdelik (doğru cevap / puanlanan madde × 100), ağırlıklı (her maddenin ağırlığı tanımlanır, toplam ağırlık üzerinden hesap) ve geç/başarısız (geçer puan eşiği, üstüyse PASS altıysa FAIL). Çoktan seçmeli, evet/hayır ve skala maddeleri otomatik skorlanır; kısa metin cevaplarını istersen elle puanlarsın. Doğru cevabı olmayan maddeler (not, fotoğraf) puana katılmaz.',
         },
         {
-          q: 'Anonim link ile dışarıdan kişiye nasıl gönderirim?',
-          a: 'Şablonu oluştur, atamayı "anonim link" olarak seç, üretilen tokenlı URL\'yi (örn. iş başvurusu için adaylara) paylaş. Doldurma sırasında ad + e-posta + telefon toplanır; cevaplar şablonun cevap arşivine düşer. Owner panelden hangi adayın kaç puan aldığını, hangi soruda takıldığını detay olarak görebilir.',
+          q: 'Adaylara ve dışarıdan kişilere nasıl gönderirim?',
+          a: 'Denetimi yayınla, paylaşım linkini kopyala ve adaylara gönder. Doldurma sırasında ad, e-posta ve telefon isteğe bağlı istenir; test sonucu adaya gösterilmez, yanıtları sen görürsün.',
         },
         {
-          q: 'Owner panelle entegre mi, ayrı bir araç mı?',
-          a: 'Tamamen entegre. Buaze owner panelinde `Denetim Merkezi` menüsünden şablon yönet, ata, sonuç gör. Müşteri yorumlarıyla çapraz analiz yapabilirsin: düşük puanlı yorum geldiğinde hangi vardiyada hangi denetim skoru düşüktü? Yorum yönetimi + denetim merkezi birleşince operasyonel sebep-sonuç görünür olur.',
+          q: 'Panelle entegre mi, ayrı bir araç mı?',
+          a: 'Denetim Merkezi, Buaze panelinde Yorumlar ve QR ile aynı yerde durur; ayrı bir araç veya giriş gerekmez. Denetim sonuçlarını ve yorumları aynı panelden izlersin.',
         },
       ]
     : [
         {
           q: 'What is the Audit Center?',
-          a: 'A scoring-based audit system where you turn daily operational checks (hygiene, opening checklist, shift handover), hiring quizzes and training assessments into templates, then assign them to team members or candidates. Buaze\'s operational discipline module.',
+          a: 'A scoring-based audit system where you turn daily operational checks (hygiene, opening checklist, shift handover), hiring tests and training assessments into templates, then share them by link with your team or candidates. Buaze\'s operational discipline module.',
         },
         {
           q: 'Are there ready templates, or do I write from scratch?',
-          a: 'Ready templates exist for 6 sectors curated by the Buaze team: restaurant (kitchen opening, service scenario), hotel (daily housekeeping, check-out flow), clinic (daily sterilization, KVKK patient data), retail (store opening, customer complaint), beauty (weekly appointment, master self-assessment), generic (weekly CX summary, day-1 onboarding). Fork a template and tailor it to your operation.',
+          a: 'Ready templates exist for 6 sectors curated by the Buaze team: restaurant (kitchen opening, service scenario), hotel (daily housekeeping, check-out flow), clinic (daily sterilization, KVKK patient data), retail (store opening, customer complaint), beauty (weekly appointment, master self-assessment), generic (weekly CX summary, day-1 onboarding). Copy a ready template and tailor it to your operation.',
         },
         {
           q: 'How does scoring work?',
-          a: 'Three modes: percentage (correct / total × 100), weighted (each question carries a weight, total over all weights) and pass/fail (set a threshold — above is PASS, below is FAIL). Multiple-choice, yes/no and scale questions auto-score; short-text answers are manually reviewed by the owner.',
+          a: 'Three modes: percentage (correct / scored items × 100), weighted (each item carries a weight, total over all weights) and pass/fail (set a threshold — above is PASS, below is FAIL). Multiple-choice, yes/no and scale items auto-score; you can score short-text answers by hand. Items without a correct answer (notes, photos) are not scored.',
         },
         {
-          q: 'How do I send to someone outside via anonymous link?',
-          a: 'Create the template, pick "anonymous link" as the assignment type, share the generated tokenized URL (e.g. with job candidates). Name + email + phone are collected on submit; answers land in the template\'s response archive. The owner panel shows which candidate scored what, where they got stuck.',
+          q: 'How do I send it to candidates or people outside my team?',
+          a: 'Publish the audit, copy the share link and send it to candidates. Name, e-mail and phone are asked optionally; the result isn\'t shown to the candidate, you see the answers.',
         },
         {
-          q: 'Is it integrated with the owner panel, or a separate tool?',
-          a: 'Fully integrated. From the Buaze owner panel under `Audit Center` you manage templates, assign and see results. Cross-analyze with customer reviews: when a low rating arrives, which shift had a low audit score? Together, review management + audit center surface operational cause and effect.',
+          q: 'Is it part of the panel, or a separate tool?',
+          a: 'Audit Center lives in the same Buaze panel as Reviews and QR; no separate tool or login. You follow audit results and reviews from one place.',
         },
       ];
 
@@ -277,8 +277,8 @@ export default async function AuditCenterPage({
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
     description: isTr
-      ? 'Hijyen denetimi, işe alım quiz\'i, KVKK uyumluluk ve ekip eğitim değerlendirmesini şablon, atama ve otomatik skorla yöneten Buaze operasyon modülü. 6 sektör için hazır şablon + 5 soru tipi + 3 skor modu.'
-      : 'Buaze operations module managing hygiene audits, hiring quizzes, KVKK compliance and team training assessments via templates, assignment and auto-scoring. Ready templates for 6 sectors + 5 question types + 3 scoring modes.',
+      ? 'Hijyen denetimi, işe alım testi, KVKK uyumluluk ve ekip eğitim değerlendirmesini şablon, paylaşım linki ve otomatik skorla yöneten Buaze operasyon modülü. 6 sektör için hazır şablon + 6 soru tipi + 3 skor modu.'
+      : 'Buaze operations module managing hygiene audits, hiring tests, KVKK compliance and team training assessments via templates, share links and auto-scoring. Ready templates for 6 sectors + 6 question types + 3 scoring modes.',
     offers: {
       '@type': 'Offer',
       price: '0',
@@ -319,21 +319,21 @@ export default async function AuditCenterPage({
     locale,
     name: isTr ? 'Buaze ile operasyonel denetim çalıştırma' : 'Run an operational audit with Buaze',
     description: isTr
-      ? 'Buaze Denetim Merkezi\'nde şablon seçip ekip üyesine atayıp sonuçları okuma akışı.'
-      : 'Pick a template in Buaze Audit Center, assign to a team member and read the results.',
+      ? 'Buaze Denetim Merkezi\'nde şablon seçip linki ekibinle paylaşıp sonuçları okuma akışı.'
+      : 'Pick a template in Buaze Audit Center, share the link with your team and read the results.',
     url: canonicalUrl,
     steps: isTr
       ? [
-          { name: 'Şablon seç veya oluştur', text: 'Buaze owner panelinde Denetim Merkezi > Şablonlar altında 6 sektör için hazır şablonu fork\'la veya boş başla. Başlık, açıklama, sektör, skor modu (yüzdelik / ağırlıklı / geç-başarısız) seç.' },
-          { name: 'Soruları ekle', text: '5 tip arasından seç (tek seçim, çoktan seçim, skala 1-5, kısa metin, evet/hayır). Doğru cevap + ağırlık tanımla (skorlama modu için). Drag-drop ile sırala, önizle, yayınla.' },
-          { name: 'Ekip üyesine veya müşteriye ata', text: 'Atama tipini seç: ekip üyesi (panele giriş ile çözer), müşteri adayı (e-posta ile token-lı link), anonim link (job application URL). Son tarih + tekrarlayan denetim opsiyonel.' },
-          { name: 'Skoru oku, manuel inceleme yap', text: 'Otomatik skor anında hesaplanır; kısa metin cevaplar manuel olarak değerlendirilir. Şablon başına tamamlanma timeline\'ı + CSV dışa aktarım. Düşük skoru hangi şubeden geldiğini gör.' },
+          { name: 'Hazır şablonu seç veya boş başla', text: 'Buaze panelinde Denetim Merkezi > Hazır şablonlar altında sektörüne uygun şablonu seç ve kullan, ya da kopyalayıp düzenle. Boş bir denetim de başlatabilirsin.' },
+          { name: 'Maddeleri ekle', text: '6 tip arasından seç: evet/hayır, 1-5 puan, tek seçim, çoklu seçim, not, fotoğraf. Uygun veya doğru cevabı belirle, sırala ve yayınla.' },
+          { name: 'Linki paylaş', text: 'Denetimi yayınla; Buaze sana bir paylaşım linki verir. WhatsApp veya e-posta ile ekibine gönder; telefondan açıp doldursunlar, giriş gerekmez. Aynı link her gün kullanılabilir.' },
+          { name: 'Dikkat edilecek maddeleri oku', text: 'Otomatik skor anında hesaplanır; en çok aksayan maddeler listelenir. Metin cevaplarını elle puanlayabilir, sonuçları CSV olarak indirebilirsin.' },
         ]
       : [
-          { name: 'Pick or create a template', text: 'In the Buaze owner panel, under Audit Center > Templates, fork a ready template for 6 sectors or start blank. Set title, description, sector, scoring mode (percentage / weighted / pass-fail).' },
-          { name: 'Add questions', text: 'Pick from 5 types (single choice, multi choice, scale 1-5, short text, yes/no). Set correct answer + weight (for scoring mode). Drag-drop to reorder, preview, publish.' },
-          { name: 'Assign to a teammate or customer', text: 'Pick assignment type: team member (solves via panel login), candidate (email with tokenized link), anonymous link (job application URL). Optional due date + recurring audit.' },
-          { name: 'Read the score, do manual review', text: 'Auto-score calculates instantly; short-text answers reviewed manually. Per-template completion timeline + CSV export. See which branch produced the low score.' },
+          { name: 'Pick a ready template or start blank', text: 'In the Buaze panel, under Audit Center > Ready-made templates, pick a template for your sector and use it, or copy and edit it. You can also start a blank audit.' },
+          { name: 'Add items', text: 'Pick from 6 types: yes/no, 1-5 rating, single choice, multi choice, note, photo. Set the expected or correct answer, reorder and publish.' },
+          { name: 'Share the link', text: 'Publish the audit and Buaze gives you a share link. Send it to your team by WhatsApp or e-mail; they open it on a phone and fill it in, no login needed. The same link works every day.' },
+          { name: 'Read the items needing attention', text: 'The auto-score is calculated instantly and the items missed most often are listed. You can score text answers by hand and download the results as CSV.' },
         ],
   });
 
@@ -383,8 +383,8 @@ export default async function AuditCenterPage({
               </h1>
               <p className="mt-6 max-w-[560px] text-[17px] leading-[1.6] text-white/70 sm:text-[18px]">
                 {isTr
-                  ? 'Hijyen denetimi, işe alım quiz\'i, KVKK uyumluluk, ekip eğitim değerlendirmesi. Şablon seç, ata, otomatik skorla. Operasyonel disiplinin yorumun kalitesini şekillendirir.'
-                  : 'Hygiene audits, hiring quizzes, KVKK compliance, team training assessments. Pick a template, assign, auto-score. Operational discipline shapes the quality of your reviews.'}
+                  ? 'Hijyen denetimi, işe alım testi, KVKK uyumluluk, ekip eğitim değerlendirmesi. Şablon seç, linki paylaş, otomatik skorla. Operasyonel disiplinin yorumun kalitesini şekillendirir.'
+                  : 'Hygiene audits, hiring tests, KVKK compliance, team training assessments. Pick a template, share the link, auto-score. Operational discipline shapes the quality of your reviews.'}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -403,8 +403,8 @@ export default async function AuditCenterPage({
               </div>
               <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/60">
                 {(isTr
-                  ? ['6 sektör için hazır şablon', '5 soru tipi · 3 skor modu', 'KVKK uyumlu']
-                  : ['Ready templates for 6 sectors', '5 question types · 3 scoring modes', 'KVKK compliant']
+                  ? ['6 sektör için hazır şablon', '6 soru tipi · 3 skor modu', 'KVKK uyumlu']
+                  : ['Ready templates for 6 sectors', '6 question types · 3 scoring modes', 'KVKK compliant']
                 ).map((item) => (
                   <li key={item} className="flex items-center gap-1.5">
                     <span className="inline-block h-1 w-1 rounded-full bg-[#C6F24E]" />
@@ -499,8 +499,8 @@ export default async function AuditCenterPage({
               <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
-                    ? 'Müşteri yorumlarınızı yönetmek tek başına yeterli değildir. Düşük puanın sebebi vardı: muhtemelen bir vardiyada hijyen kontrolü atlandı, bir adayın eğitimi eksik kaldı, yeni şube açılışında checklist çalışmadı. Buaze Denetim Merkezi bu sebebi bulup düzeltmek için tasarlandı.'
-                    : 'Managing customer reviews is not enough by itself. There was a reason for the low rating: a shift missed a hygiene check, a candidate\'s training was incomplete, the new branch opening checklist did not run. The Buaze Audit Center is designed to find and fix that reason.'}
+                    ? 'Müşteri yorumlarınızı yönetmek tek başına yeterli değildir. Düşük puanın sebebi vardı: muhtemelen bir vardiyada hijyen kontrolü atlandı, yeni bir çalışanın eğitimi eksik kaldı, açılış kontrol listesi doldurulmadı. Buaze Denetim Merkezi bu sebebi bulup düzeltmek için tasarlandı.'
+                    : 'Managing customer reviews is not enough by itself. There was a reason for the low rating: a shift missed a hygiene check, a new hire\'s training was incomplete, the opening checklist was not filled in. The Buaze Audit Center is designed to find and fix that reason.'}
                 </p>
               </div>
               {/* Pull quote accent — featured snippet eligibility + visual rhythm */}
@@ -523,13 +523,13 @@ export default async function AuditCenterPage({
               <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
-                    ? 'Çoğu audit yazılımı tek başına çalışır — şablonlar, formlar, sonuçlar bir sistem; müşteri yorumları başka bir sistem. Buaze\'de Denetim Merkezi, Yorum Yönetimi ve Pulse AI aynı operasyon panelinde buluşur. Düşük puanlı yorum geldiğinde o gün hangi denetim skoru düşüktü tek tıkla görürsün.'
-                    : 'Most audit software lives alone — templates, forms, results in one system; customer reviews in another. In Buaze, the Audit Center, Review Management and Pulse AI meet in the same operating panel. When a low rating arrives, you see in one click which audit score was low that day.'}
+                    ? 'Çoğu audit yazılımı tek başına çalışır — şablonlar, formlar, sonuçlar bir sistem; müşteri yorumları başka bir sistem. Buaze\'de Denetim Merkezi, Yorum Yönetimi ve Pulse AI aynı operasyon panelinde buluşur. Yorumları ve denetim sonuçlarını ayrı sistemler arasında gidip gelmeden aynı yerden izlersin.'
+                    : 'Most audit software lives alone — templates, forms, results in one system; customer reviews in another. In Buaze, the Audit Center, Review Management and Pulse AI meet in the same operating panel. You follow reviews and audit results from one place instead of jumping between separate systems.'}
                 </p>
                 <p>
                   {isTr
-                    ? 'Pratik fark: 6 sektör için Buaze ekibinin hazırladığı şablonlar (restoran mutfak açılış, otel housekeeping günlük, klinik sterilizasyon, perakende mağaza açılış, güzellik master self-assessment, genel CX haftalık) hazır. Fork\'la, kendi operasyonuna göre düzenle, ata. Sıfırdan yazma yükü yok; ayrı bir araç + ek lisans + ayrı login yok.'
-                    : 'Practical difference: ready templates by the Buaze team for 6 sectors (restaurant kitchen opening, hotel daily housekeeping, clinic sterilization, retail store opening, beauty master self-assessment, generic weekly CX) come included. Fork, tailor, assign. No from-scratch authoring burden; no separate tool + extra license + extra login.'}
+                    ? 'Pratik fark: 6 sektör için Buaze ekibinin hazırladığı şablonlar (restoran mutfak açılış, otel housekeeping günlük, klinik sterilizasyon, perakende mağaza açılış, güzellik master self-assessment, genel CX haftalık) hazır. Kopyala, kendi operasyonuna göre düzenle, linkle paylaş. Sıfırdan yazma yükü yok; ayrı bir araç + ek lisans + ayrı login yok.'
+                    : 'Practical difference: ready templates by the Buaze team for 6 sectors (restaurant kitchen opening, hotel daily housekeeping, clinic sterilization, retail store opening, beauty master self-assessment, generic weekly CX) come included. Copy, customize, share by link. No from-scratch authoring burden; no separate tool + extra license + extra login.'}
                 </p>
               </div>
             </div>
@@ -544,7 +544,7 @@ export default async function AuditCenterPage({
                 {isTr ? 'DENETIM DÖNGÜSÜ' : 'AUDIT LOOP'}
               </span>
               <h2 className="mt-3 text-[26px] font-medium leading-[1.04] tracking-[-0.03em] text-[#0A0A0A] sm:text-[42px]">
-                {isTr ? 'Şablonla. Ata. Skorla. Düzelt.' : 'Templatize. Assign. Score. Improve.'}
+                {isTr ? 'Şablonla. Paylaş. Skorla. Düzelt.' : 'Templatize. Share. Score. Improve.'}
               </h2>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -574,8 +574,8 @@ export default async function AuditCenterPage({
                 l: isTr ? 'HAZIR ŞABLON' : 'READY TEMPLATES',
                 v: '25+',
                 sub: isTr
-                  ? '6 sektör, Buaze ekibi tarafından hazırlanmış — fork\'la, özelleştir, ata'
-                  : '6 sectors, curated by the Buaze team — fork, customize, assign',
+                  ? '6 sektör, Buaze ekibi tarafından hazırlanmış — kopyala, kendi operasyonuna göre düzenle, linkle paylaş'
+                  : '6 sectors, curated by the Buaze team — copy, customize, share by link',
               },
               {
                 l: isTr ? 'SORU TİPİ' : 'QUESTION TYPES',
@@ -698,8 +698,8 @@ export default async function AuditCenterPage({
               </Link>
               <span className="text-[12px] text-[#737373]">
                 {isTr
-                  ? 'Sektörünü göremiyor musun? Sıfırdan şablon yazma yine 5 dakika sürer.'
-                  : "Don't see your sector? Writing a template from scratch still takes 5 minutes."}
+                  ? 'Sektörünü göremiyor musun? Boş bir denetimle sıfırdan başlayabilirsin.'
+                  : "Don't see your sector? You can start from scratch with a blank audit."}
               </span>
             </div>
           </div>

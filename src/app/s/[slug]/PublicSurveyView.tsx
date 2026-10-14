@@ -6,8 +6,9 @@
 // reached via QR scan at /s/[slug].
 //
 // Three stages:
-//   1. intro  — dark hero with lime ambient glow, brand pill + table eyebrow,
-//               eyebrow + minutes badge, italic Space Grotesk h1, sub copy,
+//   1. intro  — dark hero with lime ambient glow, brand pill + table eyebrow
+//               (only when ?table= is present), eyebrow + minutes badge,
+//               italic Space Grotesk h1, sub copy,
 //               "NELER SORACAĞIZ" numbered list (first 4 + overflow),
 //               lime CTA with deep shadow, KVKK disclaimer.
 //   2. question — light card surface with TopBar (back + brand + masa) +
@@ -18,18 +19,52 @@
 //                  labelled fields, KVKK consent (required), marketing
 //                  consent (optional, opt-in).
 //   4. thanks — dark hero with confetti burst, lime success circle with
-//               pulsing glow, italic h2, reference number (mono BZ-XXX-XXX),
+//               pulsing glow, italic h2, response no (mono, the last 6
+//               characters of the REAL response id — never made up),
 //               optional coupon card (dashed border + scalloped cutouts +
 //               lime copy → "✓ KOPYALANDI"), "Menüye dön" button.
+//      `already` variant (server answered 409: this device already
+//      submitted) — calm copy, no confetti, no response no; the coupon still
+//      shows.
+//
+// Accent colours go through resolveSurveyAccent (lib/survey-accent.ts): every
+// fill + text pair is contrast-protected per surface (dark intro/thanks vs
+// light question/contact), so an ink-coloured survey no longer paints an
+// invisible CTA.
 //
 // Five question types are wired (rating/nps/short_text/long_text/
 // multiple_choice). The design's emoji/chips/likert/slider/datetime/contact
 // renderers are out of scope until the schema grows to support them.
 //
+// Flow polish (surveys UI phase):
+//   - One-question surveys skip the intro (the first screen is the question).
+//   - Rating / recommend-score / multiple-choice questions move on by
+//     themselves ~380 ms after a POINTER or TOUCH selection (`event.detail > 0`).
+//     Keyboard and screen-reader activation (`detail === 0`) never advance on
+//     their own (WCAG 3.2.2) — they use "Devam et". Only the first time a
+//     question is answered; going back and changing it does not advance.
+//   - The recommend score is a 6-column grid of >= 44 px cells and never labels
+//     the customer ("Eleştirmen" is internal jargon).
+//   - `preview` renders THIS component inside the editor's phone frame with no
+//     side effects: no network, no localStorage session id, no URL rewrite.
+//
 // All KVKK + IDOR + rate limit + sessionId discipline preserved.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { getOrCreateSessionId } from '@/lib/analytics-session';
+import {
+  CONTACT_EMAIL_MAX,
+  CONTACT_PHONE_MAX,
+  estimateSurveySeconds,
+  formatSurveyDuration,
+  isValidContactEmail,
+  surveyResponseShortId,
+} from '@/lib/surveys';
+import {
+  resolveSurveyAccent,
+  type AccentPair,
+  type ResolvedSurveyAccent,
+} from '@/lib/survey-accent';
 
 type QuestionType = 'rating' | 'nps' | 'short_text' | 'long_text' | 'multiple_choice';
 
@@ -80,6 +115,57 @@ interface AnswerValue {
 
 type Stage = 'intro' | 'question' | 'contact' | 'thanks';
 
+/** Survey shape this view renders (the public page and the editor preview both pass it). */
+export type PublicSurveyData = Survey;
+export type PublicSurveyStage = Stage;
+/**
+ * Preview mode. Present = render without side effects (see the file header).
+ * `stage` / `stepIdx` let the editor jump to a screen; omitted = normal flow.
+ */
+export interface PublicSurveyPreview {
+  stage?: Stage;
+  stepIdx?: number;
+}
+
+/** Delay between a pointer selection and the next question; 0 turns auto-advance off. */
+const AUTO_ADVANCE_MS = 380;
+
+// The request never got an answer (offline, dropped): the connection is the
+// likely cause, so this is the only place that says so.
+const NETWORK_SUBMIT_ERROR = 'Gönderilemedi. Bağlantını kontrol edip tekrar dene.';
+// The server answered but did not save (5xx, a rejected form we have no
+// specific words for): blaming the connection would send the customer on a
+// wild goose chase.
+const REJECTED_SUBMIT_ERROR = 'Gönderilemedi. Biraz sonra tekrar dene.';
+const EMAIL_ERROR = 'Geçerli bir e-posta adresi gir. Örnek: ad@ornek.com';
+// Server messages that are written for the customer (Turkish, no jargon).
+const CUSTOMER_FACING_ERRORS = new Set(['rate_limit', 'kvkk_required']);
+
+class SubmitError extends Error {
+  constructor(
+    message: string,
+    /** Set when the failure belongs to one form field, not the whole form. */
+    readonly field?: 'email',
+  ) {
+    super(message);
+  }
+}
+
+/** Does a 400 `validation_error` body name this field? (`issues[].path`) */
+function issuesMention(issues: unknown, field: string): boolean {
+  return (
+    Array.isArray(issues) &&
+    issues.some(
+      (i) =>
+        typeof i === 'object' &&
+        i !== null &&
+        typeof (i as { path?: unknown }).path === 'string' &&
+        ((i as { path: string }).path === field ||
+          (i as { path: string }).path.startsWith(`${field}.`)),
+    )
+  );
+}
+
 const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
   rating: 'Yıldız puanı',
   nps: 'Tavsiye skoru',
@@ -88,19 +174,24 @@ const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
   multiple_choice: 'Tek seçim',
 };
 
-function generateReferenceNumber(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const pick = (n: number) =>
-    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `BZ-${pick(3)}-${pick(3)}`;
-}
+// KVKK / Açık Rıza / Ticari İleti links sit INSIDE a ConsentRow whose
+// background AND text colour flip with the checkbox (white/ink ↔ ink/white).
+// A hard-coded #0A0A0A link was ink-on-ink (1:1, unreadable) on the checked
+// row — i.e. by default, since KVKK ships pre-checked. `inherit` follows the
+// row: white on #0A0A0A when checked, ink on white otherwise (19.8:1 both).
+const LEGAL_LINK_STYLE: React.CSSProperties = {
+  color: 'inherit',
+  textDecoration: 'underline',
+};
 
 // Pull `?table=` once on mount so the brand eyebrow can show "MASA X".
-// Falls back to "—" so the chrome doesn't look broken.
-function useTableNumber(): string {
-  const [table, setTable] = useState('—');
+// `null` when the link carries no (valid) table — callers then render no
+// "MASA" text at all (hotels, clinics … have no tables; "MASA —" is noise).
+function useTableNumber(enabled: boolean): string | null {
+  const [table, setTable] = useState<string | null>(null);
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // Preview mode must not read or rewrite the dashboard's own URL.
+    if (!enabled || typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const t = params.get('table');
     if (t && /^[A-Za-z0-9_-]{1,20}$/.test(t)) setTable(t);
@@ -114,7 +205,7 @@ function useTableNumber(): string {
         `${window.location.pathname}${query ? `?${query}` : ''}`,
       );
     }
-  }, []);
+  }, [enabled]);
   return table;
 }
 
@@ -133,20 +224,44 @@ function isAnswered(q: Question, val: AnswerValue | undefined): boolean {
   }
 }
 
-export default function PublicSurveyView({ survey }: { survey: Survey }) {
-  const accent = survey.accentColor || survey.restaurant.primaryColor || '#C6F24E';
+export default function PublicSurveyView({
+  survey,
+  preview,
+}: {
+  survey: Survey;
+  preview?: PublicSurveyPreview;
+}) {
+  const isPreview = preview !== undefined;
+  // Contrast-protected fill + text pairs for the dark (intro/thanks) and
+  // light (question/contact) surfaces; lime stays lime (lib/survey-accent.ts).
+  const palette = useMemo(
+    () => resolveSurveyAccent(survey.accentColor || survey.restaurant.primaryColor),
+    [survey.accentColor, survey.restaurant.primaryColor],
+  );
   const brand = survey.restaurant.name;
-  const table = useTableNumber();
+  const table = useTableNumber(!isPreview);
 
-  // Multi-step renderer kicks in when there are 2+ questions; single
-  // surveys with a lone question still get the intro + footer chrome but
-  // skip the progress strip.
-  const isMulti = survey.type === 'multi_step' && survey.questions.length > 1;
+  const totalSteps = survey.questions.length;
+  // The survey "type" is derived from the question count on the server, so the
+  // count is the source of truth here too (legacy rows keep a stale `type`).
+  const isMulti = totalSteps > 1;
+  // A single question needs no intro screen — the first thing the customer sees
+  // is the question itself.
+  const skipIntro = totalSteps === 1;
 
-  const [stage, setStage] = useState<Stage>('intro');
-  const [stepIdx, setStepIdx] = useState(0);
+  const [stage, setStage] = useState<Stage>(preview?.stage ?? (skipIntro ? 'question' : 'intro'));
+  const [stepIdx, setStepIdx] = useState(preview?.stepIdx ?? 0);
   const [direction, setDirection] = useState<'fwd' | 'back'>('fwd');
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+
+  // The editor can steer the preview to a screen. Normal customers never pass it.
+  const previewStage = preview?.stage;
+  const previewStep = preview?.stepIdx;
+  useEffect(() => {
+    if (!isPreview) return;
+    if (previewStage) setStage(previewStage);
+    if (typeof previewStep === 'number') setStepIdx(Math.max(0, previewStep));
+  }, [isPreview, previewStage, previewStep]);
 
   // Contact form state — populated only when stage === 'contact'.
   const [contactName, setContactName] = useState('');
@@ -154,25 +269,59 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
   const [contactPhone, setContactPhone] = useState('');
   const [kvkk, setKvkk] = useState(true);
   const [marketing, setMarketing] = useState(false);
+  // Inline e-mail problem (shown under the field). `emailFocusSignal` bumps on
+  // every rejected submit so the field takes focus again even if the message
+  // did not change.
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailFocusSignal, setEmailFocusSignal] = useState(0);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Real id of the saved response (201 body). Null until a save really
+  // happened — the thank-you screen never shows a made-up reference.
+  const [responseId, setResponseId] = useState<string | null>(null);
+  // Server answered 409: this device already submitted. NOT a fresh save.
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  // Synchronous in-flight lock. `submitting` state only updates on the next
+  // render, so a same-tick double tap would POST twice: 201 for the first,
+  // 409 for our own duplicate — and the 409 would then turn a successful save
+  // into the "already answered" screen.
+  const submitLockRef = useRef(false);
 
-  const refNo = useMemo(generateReferenceNumber, []);
-
-  const currentQuestion = survey.questions[stepIdx];
+  // The preview can be steered past the last question (or the editor can delete
+  // questions under it) — never index outside the list.
+  const activeIdx = Math.min(stepIdx, Math.max(totalSteps - 1, 0));
+  const currentQuestion = survey.questions[activeIdx];
   const currentValue = currentQuestion ? answers[currentQuestion.id] : undefined;
-  const totalSteps = survey.questions.length;
 
   const setAnswer = useCallback((qid: string, patch: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [qid]: { ...prev[qid], ...patch } }));
   }, []);
 
+  // ── Auto-advance ────────────────────────────────────────────────────────
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Questions the customer has already moved past. Going back to one of them
+  // and changing the answer must NOT push them forward again.
+  const advancedFromRef = useRef<Set<string>>(new Set());
+  // Drives the (visually hidden) "moving on" announcement for screen readers.
+  const [advancing, setAdvancing] = useState(false);
+
+  const clearAutoTimer = useCallback(() => {
+    if (autoTimerRef.current !== null) {
+      clearTimeout(autoTimerRef.current);
+      autoTimerRef.current = null;
+    }
+    setAdvancing(false);
+  }, []);
+  useEffect(() => clearAutoTimer, [clearAutoTimer]);
+
   const goForward = useCallback(() => {
+    clearAutoTimer();
+    if (currentQuestion) advancedFromRef.current.add(currentQuestion.id);
     setDirection('fwd');
-    if (stepIdx + 1 < totalSteps) {
-      setStepIdx(stepIdx + 1);
+    if (activeIdx + 1 < totalSteps) {
+      setStepIdx(activeIdx + 1);
       return;
     }
     // Stage B — contact stage is ALWAYS reached now: it carries the
@@ -180,20 +329,54 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
     // Buaze-managed legal pages. Contact fields (e-mail / phone) are
     // hidden when `collectContact: false` but the consent block stays.
     setStage('contact');
-  }, [stepIdx, totalSteps]);
+  }, [activeIdx, totalSteps, currentQuestion, clearAutoTimer]);
+
+  // The timer fires a later render's goForward, not the one it was created in.
+  const goForwardRef = useRef(goForward);
+  useEffect(() => {
+    goForwardRef.current = goForward;
+  }, [goForward]);
+
+  /**
+   * Called by the rating / recommend-score / choice inputs. `viaPointer` is
+   * `event.detail > 0` (mouse or touch); keyboard and screen-reader
+   * activation report 0 and never advance on their own.
+   */
+  const handlePick = useCallback(
+    (patch: AnswerValue, viaPointer: boolean) => {
+      if (!currentQuestion) return;
+      setAnswer(currentQuestion.id, patch);
+      const firstTime = !advancedFromRef.current.has(currentQuestion.id);
+      if (!viaPointer || !firstTime || AUTO_ADVANCE_MS <= 0) {
+        // A keyboard change inside the window cancels a pending pointer advance.
+        clearAutoTimer();
+        return;
+      }
+      // A new selection restarts the countdown.
+      if (autoTimerRef.current !== null) clearTimeout(autoTimerRef.current);
+      setAdvancing(true);
+      autoTimerRef.current = setTimeout(() => {
+        autoTimerRef.current = null;
+        setAdvancing(false);
+        goForwardRef.current();
+      }, AUTO_ADVANCE_MS);
+    },
+    [currentQuestion, setAnswer, clearAutoTimer],
+  );
 
   const goBack = useCallback(() => {
+    clearAutoTimer();
     setDirection('back');
     if (stage === 'contact') {
       setStage('question');
       return;
     }
-    if (stepIdx > 0) {
-      setStepIdx(stepIdx - 1);
+    if (activeIdx > 0) {
+      setStepIdx(activeIdx - 1);
       return;
     }
     setStage('intro');
-  }, [stage, stepIdx]);
+  }, [stage, activeIdx, clearAutoTimer]);
 
   const start = useCallback(() => {
     setStage('question');
@@ -203,10 +386,34 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
 
   const doSubmit = useCallback(
     async ({ skipContactValidation = false }: { skipContactValidation?: boolean } = {}) => {
+      if (submitLockRef.current) return;
       if (!skipContactValidation && !kvkk) {
         setErrorMsg('KVKK onayı gereklidir.');
         return;
       }
+      // The e-mail is optional, but a typo must be fixed here: the server
+      // rejects it and a retry could never succeed. (Same rule as the server.)
+      if (
+        !skipContactValidation &&
+        survey.collectContact &&
+        contactEmail.trim() &&
+        !isValidContactEmail(contactEmail)
+      ) {
+        setErrorMsg(null);
+        setEmailError(EMAIL_ERROR);
+        setEmailFocusSignal((n) => n + 1);
+        return;
+      }
+      if (isPreview) {
+        // The preview shows the thank-you screen but sends nothing, stores no
+        // session id and has no response to reference.
+        setResponseId(null);
+        setAlreadySubmitted(false);
+        setSubmitted(true);
+        setStage('thanks');
+        return;
+      }
+      submitLockRef.current = true;
       setSubmitting(true);
       setErrorMsg(null);
       const sessionId = getOrCreateSessionId();
@@ -234,20 +441,51 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
           }),
         });
         if (res.status === 409) {
-          setErrorMsg('Bu anketi zaten yanıtladınız. Teşekkür ederiz!');
+          // (surveyId, sessionId) already stored — nothing was saved now.
+          // Show the dedicated "already answered" state, not the normal
+          // thank-you with a fabricated reference.
+          setAlreadySubmitted(true);
           setSubmitted(true);
           setStage('thanks');
           return;
         }
         if (!res.ok) {
-          const j = await res.json().catch(() => null);
-          throw new Error(j?.message || 'submit_failed');
+          const j = (await res.json().catch(() => null)) as {
+            error?: unknown;
+            message?: unknown;
+            issues?: unknown;
+          } | null;
+          // The server's e-mail check is the only form rule the customer can
+          // fix; show it at the field, in plain words.
+          if (j?.error === 'validation_error' && issuesMention(j.issues, 'email')) {
+            throw new SubmitError(EMAIL_ERROR, 'email');
+          }
+          // Only messages written for customers are shown as-is; raw codes and
+          // the English validation text never reach the screen.
+          const customerFacing =
+            typeof j?.error === 'string' &&
+            CUSTOMER_FACING_ERRORS.has(j.error) &&
+            typeof j.message === 'string' &&
+            j.message.trim();
+          throw new SubmitError(customerFacing ? (j!.message as string) : REJECTED_SUBMIT_ERROR);
         }
+        const saved = (await res.json().catch(() => null)) as { responseId?: unknown } | null;
+        setResponseId(
+          typeof saved?.responseId === 'string' && saved.responseId ? saved.responseId : null,
+        );
+        setAlreadySubmitted(false);
         setSubmitted(true);
         setStage('thanks');
       } catch (err) {
-        setErrorMsg((err as Error).message || 'Bir hata oluştu.');
+        if (err instanceof SubmitError && err.field === 'email') {
+          setErrorMsg(null);
+          setEmailError(err.message);
+          setEmailFocusSignal((n) => n + 1);
+        } else {
+          setErrorMsg(err instanceof SubmitError ? err.message : NETWORK_SUBMIT_ERROR);
+        }
       } finally {
+        submitLockRef.current = false;
         setSubmitting(false);
       }
     },
@@ -256,6 +494,7 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
       marketing,
       contactEmail,
       contactPhone,
+      isPreview,
       survey.slug,
       survey.questions,
       survey.collectContact,
@@ -263,28 +502,19 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
     ],
   );
 
-  // Auto-advance for single-question "rating" surveys at 4★+ — design
-  // intent: a happy customer shouldn't need to tap "Devam et" again.
-  // Stage B — contact stage is now always reached (mandatory consent gate)
-  // so we always transition to it, never skip straight to submit.
-  useEffect(() => {
-    if (survey.type !== 'single' || survey.questions.length !== 1) return;
-    if (stage !== 'question') return;
-    const q = survey.questions[0];
-    if (q.type !== 'rating') return;
-    const v = answers[q.id]?.numberValue;
-    if (typeof v === 'number' && v >= 4) {
-      const t = setTimeout(() => setStage('contact'), 700);
-      return () => clearTimeout(t);
-    }
-  }, [survey.type, survey.questions, stage, answers]);
-
-  const canBack = stage === 'contact' || (stage === 'question' && stepIdx > 0);
+  // Back is offered from the second question on and from the contact screen.
+  const canBack = stage === 'contact' || (stage === 'question' && activeIdx > 0);
   const canContinue = currentQuestion ? isAnswered(currentQuestion, currentValue) : false;
-  // Stage B — contact stage is always reached now (KVKK consent gate);
-  // last question never goes straight to submit, so the "is this the
-  // final step before the dialog closes?" hint is permanently false.
-  const isLastBeforeSubmit = false;
+
+  // One-question surveys: the survey title sits above the question as a small
+  // grey line — unless it only repeats the question.
+  const questionTitleLine =
+    skipIntro &&
+    currentQuestion &&
+    survey.title.trim() &&
+    survey.title.trim() !== currentQuestion.text.trim()
+      ? survey.title.trim()
+      : null;
 
   // ─────────────────────────────────────────────────────────────
   // Stage renderers
@@ -292,13 +522,14 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
 
   if (stage === 'intro') {
     return (
-      <SurveyFrame mode="dark">
+      <SurveyFrame mode="dark" preview={isPreview}>
         <IntroScreen
-          accent={accent}
+          accent={palette.onDark}
           brand={brand}
           table={table}
           survey={survey}
           onStart={start}
+          compact={isPreview}
         />
       </SurveyFrame>
     );
@@ -306,23 +537,31 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
 
   if (stage === 'thanks' || submitted) {
     return (
-      <SurveyFrame mode="dark">
+      <SurveyFrame mode="dark" preview={isPreview}>
         <ThanksScreen
-          accent={accent}
+          accent={palette.onDark}
           brand={brand}
           survey={survey}
-          refNo={refNo}
+          variant={alreadySubmitted ? 'already' : 'done'}
+          responseId={responseId}
+          compact={isPreview}
         />
       </SurveyFrame>
     );
   }
 
   return (
-    <SurveyFrame mode="light">
+    <SurveyFrame mode="light" preview={isPreview}>
       <div className="flex flex-1 flex-col bg-white">
-        <TopBar brand={brand} table={table} onBack={goBack} canBack={canBack} />
+        <TopBar
+          brand={brand}
+          table={table}
+          onBack={goBack}
+          canBack={canBack}
+          compact={isPreview}
+        />
         {isMulti && stage === 'question' && (
-          <ProgressBar current={stepIdx + 1} total={totalSteps} accent={accent} />
+          <ProgressBar current={activeIdx + 1} total={totalSteps} accent={palette.onLight.fill} />
         )}
 
         <div className="flex flex-1 flex-col overflow-auto">
@@ -332,20 +571,29 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
               q={currentQuestion}
               value={currentValue}
               onChange={(patch) => setAnswer(currentQuestion.id, patch)}
-              accent={accent}
+              onPick={handlePick}
+              palette={palette}
               direction={direction}
+              titleLine={questionTitleLine}
+              preview={isPreview}
             />
           )}
 
           {stage === 'contact' && (
             <ContactScreen
               direction={direction}
-              accent={accent}
+              palette={palette}
               collectContact={survey.collectContact}
               name={contactName}
               setName={setContactName}
               email={contactEmail}
-              setEmail={setContactEmail}
+              setEmail={(v) => {
+                setContactEmail(v);
+                // Editing the address clears its message; the next submit re-checks.
+                if (emailError) setEmailError(null);
+              }}
+              emailError={emailError}
+              emailFocusSignal={emailFocusSignal}
               phone={contactPhone}
               setPhone={setContactPhone}
               kvkk={kvkk}
@@ -355,9 +603,15 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
               onSubmit={() => void doSubmit()}
               submitting={submitting}
               error={errorMsg}
+              compact={isPreview}
             />
           )}
         </div>
+
+        {/* Pointer selections move on by themselves; tell screen readers. */}
+        <span className="sr-only" role="status" aria-live="polite">
+          {advancing ? 'Sonraki soruya geçiliyor' : ''}
+        </span>
 
         {stage === 'question' && (
           <FooterBar
@@ -367,9 +621,9 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
               if (currentQuestion) setAnswer(currentQuestion.id, {});
               goForward();
             }}
-            accent={accent}
+            accent={palette.onLight}
             optional={!currentQuestion?.required}
-            isLast={isLastBeforeSubmit}
+            compact={isPreview}
           />
         )}
       </div>
@@ -383,18 +637,35 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
 
 function SurveyFrame({
   mode,
+  preview,
   children,
 }: {
   mode: 'dark' | 'light';
+  /** Editor / detail-page preview: fill the parent phone frame, no page chrome. */
+  preview?: boolean;
   children: React.ReactNode;
 }) {
+  // Preview: the phone frame (360x640) belongs to the editor. The stage/frame
+  // classes below size themselves from the VIEWPORT (min-height 780, margins,
+  // 440 max-width) and would overflow it, so the preview uses a plain
+  // media-query-free column instead (survey.css `.bz-survey-preview`).
+  if (preview) {
+    return (
+      <div
+        className="bz-survey-preview"
+        style={{ background: mode === 'dark' ? '#0A0A0A' : '#fff' }}
+      >
+        {children}
+      </div>
+    );
+  }
   // Mobile (≤520px) — page bg = ink (#0A0A0A) so the frame is seamless
   // with the dark intro/thanks screens (no visible border).
   // Desktop (>520px) — page bg = #1a1a1a so the rounded 440px-wide card
   // floats over a slightly lighter charcoal stage.
   return (
     <main
-      className="bz-survey-stage flex min-h-screen items-center justify-center"
+      className="bz-survey-stage flex min-h-dvh items-center justify-center"
       style={{ fontFamily: 'var(--font-body)' }}
     >
       <div
@@ -419,29 +690,26 @@ function IntroScreen({
   table,
   survey,
   onStart,
+  compact,
 }: {
-  accent: string;
+  /** Contrast-protected fill + text for the dark (#0A0A0A) surface. */
+  accent: AccentPair;
   brand: string;
-  table: string;
+  table: string | null;
   survey: Survey;
   onStart: () => void;
+  /** Preview: no safe-area insets, tighter top/bottom padding. */
+  compact?: boolean;
 }) {
   const dark = true; // design default
-  const minutes = useMemo(() => {
-    // Rough: 8-10s per question + 12s consent stage (always shown
-    // post-Stage B for KVKK + marketing consent).
-    const q = survey.questions.length;
-    const seconds = q * 9 + 12;
-    if (seconds < 30) return '~20 sn';
-    if (seconds < 60) return '~45 sn';
-    if (seconds < 90) return '~1 dk';
-    return `~${Math.round(seconds / 60)} dk`;
-  }, [survey.questions.length]);
+  // The same function the editor and the template cards use, so the owner
+  // never reads "~39 sn" while the customer reads "~45 sn".
+  const minutes = formatSurveyDuration(estimateSurveySeconds(survey.questions.length), 'tr');
 
   const previewSteps = survey.questions.slice(0, 4);
   const overflow = Math.max(0, survey.questions.length - 4);
   const eyebrow =
-    survey.type === 'single'
+    survey.questions.length === 1
       ? 'TEK SORU'
       : survey.questions.length <= 3
       ? 'KISA ANKET'
@@ -449,7 +717,7 @@ function IntroScreen({
 
   return (
     <div
-      className="anim-fade relative flex flex-1 flex-col overflow-hidden"
+      className="bz-survey-scroll anim-fade relative flex flex-1 flex-col overflow-hidden"
       style={{ background: '#0A0A0A', color: '#fff' }}
     >
       {/* Ambient lime glow */}
@@ -462,7 +730,7 @@ function IntroScreen({
           width: 320,
           height: 320,
           borderRadius: 999,
-          background: accent,
+          background: accent.fill,
           opacity: 0.18,
           filter: 'blur(80px)',
           pointerEvents: 'none',
@@ -477,7 +745,7 @@ function IntroScreen({
           width: 240,
           height: 240,
           borderRadius: 999,
-          background: accent,
+          background: accent.fill,
           opacity: 0.1,
           filter: 'blur(70px)',
           pointerEvents: 'none',
@@ -488,8 +756,7 @@ function IntroScreen({
       <div
         className="relative"
         style={{
-          padding:
-            'calc(60px + env(safe-area-inset-top, 0px)) 22px 0',
+          padding: compact ? '36px 22px 0' : 'calc(60px + env(safe-area-inset-top, 0px)) 22px 0',
         }}
       >
         <div className="mb-7 flex items-center justify-between">
@@ -507,8 +774,8 @@ function IntroScreen({
                 width: 8,
                 height: 8,
                 borderRadius: 999,
-                background: accent,
-                boxShadow: `0 0 10px ${accent}`,
+                background: accent.fill,
+                boxShadow: `0 0 10px ${accent.fill}`,
               }}
             />
             <span
@@ -518,18 +785,22 @@ function IntroScreen({
               {brand}
             </span>
           </div>
-          <span
-            className="bz-survey-eyebrow"
-            style={{ color: 'rgba(255,255,255,0.45)' }}
-          >
-            MASA {table}
-          </span>
+          {/* Only when the QR link carries ?table= — hotels, clinics … have
+              no tables, and "MASA —" was meaningless noise. */}
+          {table && (
+            <span
+              className="bz-survey-eyebrow"
+              style={{ color: 'rgba(255,255,255,0.45)' }}
+            >
+              MASA {table}
+            </span>
+          )}
         </div>
 
         <div style={{ padding: '8px 0 12px' }}>
           <div
             className="bz-survey-eyebrow mb-3"
-            style={{ color: accent }}
+            style={{ color: accent.fill }}
           >
             {eyebrow} · {minutes}
           </div>
@@ -541,7 +812,7 @@ function IntroScreen({
               color: dark ? '#fff' : '#0A0A0A',
             }}
           >
-            {survey.title}
+            {survey.title.trim() || (compact ? 'Anket başlığı' : survey.title)}
           </h1>
           {survey.description && (
             <p
@@ -586,8 +857,8 @@ function IntroScreen({
                     width: 22,
                     height: 22,
                     borderRadius: 999,
-                    background: accent,
-                    color: '#0A0A0A',
+                    background: accent.fill,
+                    color: accent.text,
                     fontFamily: 'var(--font-mono)',
                     fontSize: 11,
                     fontWeight: 700,
@@ -604,7 +875,7 @@ function IntroScreen({
                     color: 'rgba(255,255,255,0.85)',
                   }}
                 >
-                  {q.text || SHORT_TYPE_LABEL[q.type]}
+                  {q.text.trim() || SHORT_TYPE_LABEL[q.type]}
                 </span>
               </li>
             ))}
@@ -629,7 +900,9 @@ function IntroScreen({
       <div
         className="relative"
         style={{
-          padding: '20px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
+          padding: compact
+            ? '20px 22px 24px'
+            : '20px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <button
@@ -640,19 +913,19 @@ function IntroScreen({
             padding: '18px 20px',
             border: 'none',
             borderRadius: 16,
-            background: accent,
-            color: '#0A0A0A',
+            background: accent.fill,
+            color: accent.text,
             fontSize: 16,
             fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: `0 12px 36px -10px ${accent}, 0 4px 12px -4px rgba(0,0,0,0.18)`,
+            boxShadow: `0 12px 36px -10px ${accent.fill}, 0 4px 12px -4px rgba(0,0,0,0.18)`,
           }}
         >
           Başlayalım
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
               d="M5 12h14M13 6l6 6-6 6"
-              stroke="#0A0A0A"
+              stroke="currentColor"
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -685,17 +958,19 @@ function TopBar({
   table,
   onBack,
   canBack,
+  compact,
 }: {
   brand: string;
-  table: string;
+  table: string | null;
   onBack: () => void;
   canBack: boolean;
+  compact?: boolean;
 }) {
   return (
     <div
       className="flex items-center gap-2.5"
       style={{
-        padding: 'calc(28px + env(safe-area-inset-top, 0px)) 18px 4px',
+        padding: compact ? '18px 18px 4px' : 'calc(28px + env(safe-area-inset-top, 0px)) 18px 4px',
       }}
     >
       <button
@@ -705,8 +980,8 @@ function TopBar({
         aria-label="Geri"
         className="bz-survey-tap flex shrink-0 items-center justify-center"
         style={{
-          width: 40,
-          height: 40,
+          width: 44,
+          height: 44,
           borderRadius: 999,
           border: '1px solid rgba(10,10,10,0.08)',
           background: '#fff',
@@ -729,17 +1004,26 @@ function TopBar({
         className="flex-1 text-center"
         style={{ lineHeight: 1.1 }}
       >
-        <div className="bz-survey-eyebrow" style={{ color: '#6B6B66' }}>
-          {brand}
-        </div>
+        {/* .bz-survey-eyebrow is inline-block — without display:block the
+            brand and the table text ran together on one line
+            ("KADIKÖYMASA —"). Two stacked lines; the second exists only
+            when the link carries ?table=. */}
         <div
           className="bz-survey-eyebrow"
-          style={{ fontSize: 9, color: '#A3A29C', marginTop: 2 }}
+          style={{ display: 'block', color: '#6B6B66' }}
         >
-          MASA {table} · ANKET
+          {brand}
         </div>
+        {table && (
+          <div
+            className="bz-survey-eyebrow"
+            style={{ display: 'block', fontSize: 9, color: '#6B6B66', marginTop: 2 }}
+          >
+            MASA {table}
+          </div>
+        )}
       </div>
-      <div style={{ width: 40, height: 40, flexShrink: 0 }} />
+      <div style={{ width: 44, height: 44, flexShrink: 0 }} />
     </div>
   );
 }
@@ -799,16 +1083,24 @@ function QuestionScreen({
   q,
   value,
   onChange,
-  accent,
+  onPick,
+  palette,
   direction,
+  titleLine,
+  preview,
 }: {
   q: Question;
   value: AnswerValue | undefined;
   onChange: (patch: AnswerValue) => void;
-  accent: string;
+  /** Selection inputs report whether the click came from a pointer (auto-advance). */
+  onPick: (patch: AnswerValue, viaPointer: boolean) => void;
+  palette: ResolvedSurveyAccent;
   direction: 'fwd' | 'back';
+  /** One-question surveys: the survey title as a small grey line (null = none). */
+  titleLine: string | null;
+  preview?: boolean;
 }) {
-  const eyebrow = (q.text ? '' : SHORT_TYPE_LABEL[q.type] + ' · ') + 'SORU';
+  const text = q.text.trim();
   return (
     <div
       className={direction === 'back' ? 'anim-slideL' : 'anim-slideR'}
@@ -819,28 +1111,57 @@ function QuestionScreen({
         flex: 1,
       }}
     >
-      <div className="bz-survey-eyebrow mb-3" style={{ color: '#0A0A0A' }}>
-        <span
+      {titleLine && (
+        <p
           style={{
-            display: 'inline-block',
-            padding: '4px 10px',
-            background: accent + '24',
-            borderRadius: 999,
-            color: '#0A0A0A',
-            letterSpacing: '0.12em',
+            margin: '0 0 10px',
+            fontSize: 13,
+            lineHeight: 1.35,
+            color: '#6B6B66',
+            fontWeight: 500,
           }}
         >
-          {eyebrow}
-        </span>
-      </div>
+          {titleLine}
+        </p>
+      )}
+      {/* The old "SORU" tag carried no information. Only an optional question
+          is marked, so the customer knows they may skip it. */}
+      {!q.required && (
+        <div className="bz-survey-eyebrow mb-3" style={{ color: '#0A0A0A' }}>
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '4px 10px',
+              background: palette.onLight.fill + '24',
+              borderRadius: 999,
+              color: '#0A0A0A',
+              letterSpacing: '0.12em',
+            }}
+          >
+            İSTEĞE BAĞLI
+          </span>
+        </div>
+      )}
       <h2
         className="bz-survey-head"
         style={{ margin: 0, fontSize: 26, color: '#0A0A0A' }}
       >
-        {q.text}
+        {text ? (
+          q.text
+        ) : preview ? (
+          <span style={{ color: '#6B6B66' }}>Sorunu buraya yaz…</span>
+        ) : (
+          q.text
+        )}
       </h2>
       <div style={{ marginTop: 28 }}>
-        <QuestionInput q={q} value={value} onChange={onChange} accent={accent} />
+        <QuestionInput
+          q={q}
+          value={value}
+          onChange={onChange}
+          onPick={onPick}
+          palette={palette}
+        />
       </div>
     </div>
   );
@@ -856,20 +1177,23 @@ function FooterBar({
   onSkip,
   accent,
   optional,
-  isLast,
+  compact,
 }: {
   canContinue: boolean;
   onContinue: () => void;
   onSkip: () => void;
-  accent: string;
+  /** Contrast-protected fill + text for the light (#FFFFFF) surface. */
+  accent: AccentPair;
   optional: boolean;
-  isLast: boolean;
+  compact?: boolean;
 }) {
   return (
     <div
       className="flex flex-col gap-2.5"
       style={{
-        padding: '14px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
+        padding: compact
+          ? '14px 22px 22px'
+          : '14px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
         borderTop: '1px solid #ECEAE3',
         background: '#fff',
       }}
@@ -883,18 +1207,18 @@ function FooterBar({
           padding: '16px 20px',
           border: 'none',
           borderRadius: 14,
-          background: canContinue ? accent : '#E5E3DC',
-          color: canContinue ? '#0A0A0A' : '#A3A29C',
+          background: canContinue ? accent.fill : '#E5E3DC',
+          color: canContinue ? accent.text : '#A3A29C',
           fontSize: 15.5,
           fontWeight: 600,
           cursor: canContinue ? 'pointer' : 'default',
           boxShadow: canContinue
-            ? `0 10px 26px -10px ${accent}, 0 4px 10px -4px rgba(0,0,0,0.14)`
+            ? `0 10px 26px -10px ${accent.fill}, 0 4px 10px -4px rgba(0,0,0,0.14)`
             : 'none',
           transition: 'background 220ms, color 220ms, box-shadow 220ms',
         }}
       >
-        {isLast ? 'Bitir ve gönder' : 'Devam et'}
+        Devam et
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path
             d="M5 12h14M13 6l6 6-6 6"
@@ -917,6 +1241,7 @@ function FooterBar({
             fontWeight: 500,
             cursor: 'pointer',
             padding: 6,
+            minHeight: 44,
           }}
         >
           Bu soruyu atla →
@@ -932,12 +1257,14 @@ function FooterBar({
 
 function ContactScreen({
   direction,
-  accent,
+  palette,
   collectContact,
   name,
   setName,
   email,
   setEmail,
+  emailError,
+  emailFocusSignal,
   phone,
   setPhone,
   kvkk,
@@ -947,14 +1274,19 @@ function ContactScreen({
   onSubmit,
   submitting,
   error,
+  compact,
 }: {
   direction: 'fwd' | 'back';
-  accent: string;
+  palette: ResolvedSurveyAccent;
   collectContact: boolean;
   name: string;
   setName: (v: string) => void;
   email: string;
   setEmail: (v: string) => void;
+  /** Plain-words problem with the e-mail, shown under the field. */
+  emailError: string | null;
+  /** Bumps on every rejected submit; the e-mail field takes focus again. */
+  emailFocusSignal: number;
   phone: string;
   setPhone: (v: string) => void;
   kvkk: boolean;
@@ -964,8 +1296,16 @@ function ContactScreen({
   onSubmit: () => void;
   submitting: boolean;
   error: string | null;
+  compact?: boolean;
 }) {
   const valid = kvkk && !submitting;
+  // Real <label htmlFor> ↔ input ids for the three contact fields.
+  const fieldId = useId();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const emailErrorId = `${fieldId}-email-error`;
+  useEffect(() => {
+    if (emailFocusSignal > 0) emailRef.current?.focus();
+  }, [emailFocusSignal]);
   return (
     <div
       className={direction === 'back' ? 'anim-slideL' : 'anim-slideR'}
@@ -977,22 +1317,22 @@ function ContactScreen({
             style={{
               display: 'inline-block',
               padding: '4px 10px',
-              background: accent + '24',
+              background: palette.onLight.fill + '24',
               borderRadius: 999,
               color: '#0A0A0A',
               letterSpacing: '0.12em',
             }}
           >
-            SON ADIM · İLETİŞİM
+            {collectContact ? 'İLETİŞİM · İSTEĞE BAĞLI' : 'ONAY'}
           </span>
         </div>
+        {/* The coupon is not tied to leaving contact details, so the heading
+            must not promise it. */}
         <h2
           className="bz-survey-head"
           style={{ margin: 0, fontSize: 26, color: '#0A0A0A' }}
         >
-          {collectContact
-            ? 'Sana özel kupon için iletişim bilgini bırak'
-            : 'Yanıtını gönderiyoruz'}
+          {collectContact ? 'Son adım' : 'Yanıtını gönderelim'}
         </h2>
         <p
           style={{
@@ -1003,8 +1343,8 @@ function ContactScreen({
           }}
         >
           {collectContact
-            ? 'Opsiyonel — kupon kodun ve önemli güncellemeler için.'
-            : 'Onayını alıp anketi tamamlayalım.'}
+            ? 'İstersen e-posta veya telefonunu bırak; ekibimiz gerekirse sana dönebilir. Doldurmak zorunda değilsin.'
+            : 'Onayını verip anketi tamamlayalım.'}
         </p>
 
         <div
@@ -1017,8 +1357,9 @@ function ContactScreen({
         >
           {collectContact && (
             <>
-              <LabelledField label="AD">
+              <LabelledField label="AD" htmlFor={`${fieldId}-name`}>
                 <input
+                  id={`${fieldId}-name`}
                   className="bz-survey-field"
                   style={{ paddingLeft: 64 }}
                   placeholder="Adın"
@@ -1030,17 +1371,22 @@ function ContactScreen({
                 />
               </LabelledField>
               <div className="relative">
-                <LabelledField label="E-POSTA" labelWidth={80}>
+                <LabelledField label="E-POSTA" labelWidth={80} htmlFor={`${fieldId}-email`}>
                   <input
+                    id={`${fieldId}-email`}
+                    ref={emailRef}
                     className="bz-survey-field"
                     type="email"
                     style={{
                       paddingLeft: 92,
-                      borderColor: '#0A0A0A',
+                      borderColor: emailError ? '#C62A30' : '#0A0A0A',
                       borderWidth: 1.5,
                     }}
                     placeholder="ornek@mail.com"
                     value={email}
+                    maxLength={CONTACT_EMAIL_MAX}
+                    aria-invalid={emailError ? true : undefined}
+                    aria-describedby={emailError ? emailErrorId : undefined}
                     onChange={(e) => setEmail(e.target.value)}
                     inputMode="email"
                     autoCapitalize="off"
@@ -1059,17 +1405,29 @@ function ContactScreen({
                     bottom: 14,
                     width: 3,
                     borderRadius: 999,
-                    background: accent,
+                    background: palette.onLight.fill,
                   }}
                 />
               </div>
-              <LabelledField label="TEL" labelWidth={48}>
+              {emailError && (
+                <p
+                  id={emailErrorId}
+                  role="alert"
+                  className="anim-fade"
+                  style={{ margin: '-2px 2px 0', fontSize: 12.5, lineHeight: 1.4, color: '#B4232A' }}
+                >
+                  {emailError}
+                </p>
+              )}
+              <LabelledField label="TEL" labelWidth={48} htmlFor={`${fieldId}-phone`}>
                 <input
+                  id={`${fieldId}-phone`}
                   className="bz-survey-field"
                   type="tel"
                   style={{ paddingLeft: 64 }}
                   placeholder="+90 5xx xxx xx xx"
                   value={phone}
+                  maxLength={CONTACT_PHONE_MAX}
                   onChange={(e) => setPhone(e.target.value)}
                   inputMode="tel"
                   autoComplete="tel"
@@ -1086,7 +1444,7 @@ function ContactScreen({
           <ConsentRow
             checked={kvkk}
             onChange={setKvkk}
-            accent={accent}
+            accent={palette.onDark}
             label={
               <span>
                 Okudum, anladım —{' '}
@@ -1094,7 +1452,7 @@ function ContactScreen({
                   href="/tr/kvkk"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                  style={LEGAL_LINK_STYLE}
                 >
                   KVKK Aydınlatma Metni
                 </a>{' '}
@@ -1103,7 +1461,7 @@ function ContactScreen({
                   href="/tr/acik-riza"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                  style={LEGAL_LINK_STYLE}
                 >
                   Açık Rıza Metni
                 </a>{' '}
@@ -1115,7 +1473,7 @@ function ContactScreen({
           <ConsentRow
             checked={marketing}
             onChange={setMarketing}
-            accent={accent}
+            accent={palette.onDark}
             label={
               <span>
                 Kampanya ve duyurular için{' '}
@@ -1123,12 +1481,15 @@ function ContactScreen({
                   href="/tr/ticari-ileti"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                  style={LEGAL_LINK_STYLE}
                 >
                   Ticari Elektronik İleti İzni
                 </a>{' '}
                 kapsamında iletişim onayı veriyorum{' '}
-                <span style={{ color: '#A3A29C' }}>(opsiyonel)</span>.
+                {/* inherits the row colour (ink unchecked / white checked);
+                    opacity keeps ≥ 4.5:1 in both states — a fixed grey
+                    cannot (3.7:1 on the checked #0A0A0A row). */}
+                <span style={{ opacity: 0.7 }}>(opsiyonel)</span>.
               </span>
             }
           />
@@ -1158,7 +1519,9 @@ function ContactScreen({
       <div
         className="flex flex-col gap-2.5"
         style={{
-          padding: '14px 22px calc(22px + env(safe-area-inset-bottom, 0px))',
+          padding: compact
+            ? '14px 22px 22px'
+            : '14px 22px calc(22px + env(safe-area-inset-bottom, 0px))',
           borderTop: '1px solid #ECEAE3',
           background: '#fff',
         }}
@@ -1172,12 +1535,12 @@ function ContactScreen({
             padding: '16px 20px',
             border: 'none',
             borderRadius: 14,
-            background: valid ? accent : '#E5E3DC',
-            color: valid ? '#0A0A0A' : '#A3A29C',
+            background: valid ? palette.onLight.fill : '#E5E3DC',
+            color: valid ? palette.onLight.text : '#A3A29C',
             fontSize: 15.5,
             fontWeight: 600,
             cursor: valid ? 'pointer' : 'default',
-            boxShadow: valid ? `0 10px 26px -10px ${accent}` : 'none',
+            boxShadow: valid ? `0 10px 26px -10px ${palette.onLight.fill}` : 'none',
           }}
         >
           {submitting ? 'Gönderiliyor…' : 'Anketi gönder'}
@@ -1196,28 +1559,33 @@ function ContactScreen({
   );
 }
 
+// The caption is a real <label htmlFor> (visually unchanged: it sits inside
+// the input at the left). #6B6B66 on white = 5.36:1 (was #A3A29C, 2.56:1).
 function LabelledField({
   label,
   labelWidth,
+  htmlFor,
   children,
 }: {
   label: string;
   labelWidth?: number;
+  htmlFor: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="relative">
-      <span
+      <label
+        htmlFor={htmlFor}
         className="bz-survey-eyebrow absolute"
         style={{
           left: 16,
           top: 16,
-          color: '#A3A29C',
+          color: '#6B6B66',
           width: labelWidth,
         }}
       >
         {label}
-      </span>
+      </label>
       {children}
     </div>
   );
@@ -1232,13 +1600,14 @@ function ConsentRow({
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-  accent: string;
+  /** Fill + text for the CHECKED row, which is dark (#0A0A0A) — dark-surface pair. */
+  accent: AccentPair;
   label: React.ReactNode;
   required?: boolean;
 }) {
   return (
     <label
-      className="bz-survey-tap flex cursor-pointer items-start gap-3 rounded-2xl border"
+      className="bz-survey-tap bz-survey-consent flex cursor-pointer items-start gap-3 rounded-2xl border"
       style={{
         padding: '12px 14px',
         borderColor: checked ? '#0A0A0A' : '#E5E3DC',
@@ -1247,6 +1616,17 @@ function ConsentRow({
         position: 'relative',
       }}
     >
+      {/* The real checkbox: visually hidden (sr-only) but FOCUSABLE, so
+          keyboard users reach it and survey.css draws the focus ring on the
+          whole row (.bz-survey-consent). Kept first in the DOM so Tab order
+          is checkbox → legal links. */}
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-required={required}
+      />
       <span
         aria-hidden
         className="flex shrink-0 items-center justify-center"
@@ -1254,8 +1634,8 @@ function ConsentRow({
           width: 22,
           height: 22,
           borderRadius: 6,
-          border: '1.5px solid ' + (checked ? accent : '#D4D2CC'),
-          background: checked ? accent : '#fff',
+          border: '1.5px solid ' + (checked ? accent.fill : '#D4D2CC'),
+          background: checked ? accent.fill : '#fff',
           marginTop: 1,
         }}
       >
@@ -1263,7 +1643,7 @@ function ConsentRow({
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path
               d="M5 12l5 5L20 7"
-              stroke="#0A0A0A"
+              stroke={accent.text}
               strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1275,20 +1655,13 @@ function ConsentRow({
         {label}
         {required && (
           <span
-            style={{ color: checked ? accent : '#E5484D', marginLeft: 4 }}
+            style={{ color: checked ? accent.fill : '#E5484D', marginLeft: 4 }}
             aria-hidden
           >
             *
           </span>
         )}
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
-        aria-required={required}
-      />
     </label>
   );
 }
@@ -1301,17 +1674,31 @@ function ThanksScreen({
   accent,
   brand,
   survey,
-  refNo,
+  variant,
+  responseId,
+  compact,
 }: {
-  accent: string;
+  /** Contrast-protected fill + text for the dark (#0A0A0A) surface. */
+  accent: AccentPair;
   brand: string;
   survey: Survey;
-  refNo: string;
+  /** `done` = the answers were just saved; `already` = server said 409. */
+  variant: 'done' | 'already';
+  /** Real id of the response saved by THIS submit (null for `already`). */
+  responseId: string | null;
+  compact?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+  const isAlready = variant === 'already';
   const couponCode = survey.couponCode || null;
-  const couponLabel = survey.couponLabel || '10% indirim';
+  // The owner's own wording only. No invented offer: the old fallback
+  // ("10% indirim · Sonraki ziyaretinde") promised a discount the business
+  // never made. A bare code shows as just the code.
+  const couponLabel = survey.couponLabel?.trim() || null;
   const thankYou = survey.thankYouMessage;
+  // Real reference = last 6 chars of the saved response id (what the owner
+  // can look up). Empty when nothing was saved → no reference line at all.
+  const responseNo = !isAlready && responseId ? surveyResponseShortId(responseId) : '';
 
   const copy = (txt: string) => {
     try {
@@ -1325,7 +1712,7 @@ function ThanksScreen({
 
   return (
     <div
-      className="anim-fade relative flex flex-1 flex-col overflow-hidden"
+      className="bz-survey-scroll anim-fade relative flex flex-1 flex-col overflow-hidden"
       style={{ background: '#0A0A0A', color: '#fff' }}
     >
       {/* Ambient glow */}
@@ -1339,19 +1726,19 @@ function ThanksScreen({
           width: 360,
           height: 360,
           borderRadius: 999,
-          background: accent,
+          background: accent.fill,
           opacity: 0.18,
           filter: 'blur(90px)',
           pointerEvents: 'none',
         }}
       />
 
-      {/* Confetti */}
+      {/* Confetti — a fresh save only, not the "already answered" state */}
       <div
         aria-hidden
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       >
-        {Array.from({ length: 14 }).map((_, i) => {
+        {!isAlready && Array.from({ length: 14 }).map((_, i) => {
           const angle = (Math.PI * 2 * i) / 14;
           const r = 80 + (i % 3) * 30;
           return (
@@ -1364,7 +1751,7 @@ function ThanksScreen({
                 width: 8,
                 height: 8,
                 borderRadius: i % 2 ? 999 : 2,
-                background: i % 3 === 0 ? '#FFF' : accent,
+                background: i % 3 === 0 ? '#FFF' : accent.fill,
                 ['--tx' as string]: `${Math.cos(angle) * r}px`,
                 ['--ty' as string]: `${Math.sin(angle) * r}px`,
                 animation: `bzConfettiPop 1100ms cubic-bezier(.2,.6,.3,1) ${i * 35}ms both`,
@@ -1378,7 +1765,7 @@ function ThanksScreen({
       <div
         className="relative text-center"
         style={{
-          padding: 'calc(60px + env(safe-area-inset-top, 0px)) 22px 0',
+          padding: compact ? '40px 22px 0' : 'calc(60px + env(safe-area-inset-top, 0px)) 22px 0',
         }}
       >
         <div
@@ -1388,17 +1775,17 @@ function ThanksScreen({
             height: 88,
             borderRadius: 999,
             marginBottom: 26,
-            background: accent,
-            color: '#0A0A0A',
+            background: accent.fill,
+            color: accent.text,
             animation:
               'bzSurveyPop 460ms cubic-bezier(.2,.65,.3,1.2) both, bzSurveyGlow 2.2s ease-out 460ms infinite',
-            boxShadow: `0 16px 40px -12px ${accent}`,
+            boxShadow: `0 16px 40px -12px ${accent.fill}`,
           }}
         >
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
               d="M5 12l5 5L20 7"
-              stroke="#0A0A0A"
+              stroke="currentColor"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1407,7 +1794,7 @@ function ThanksScreen({
         </div>
         <div
           className="bz-survey-eyebrow mb-2.5"
-          style={{ color: accent }}
+          style={{ color: accent.fill }}
         >
           TEŞEKKÜRLER
         </div>
@@ -1419,7 +1806,9 @@ function ThanksScreen({
             color: '#fff',
           }}
         >
-          {thankYou || 'Yanıtın bizi gerçekten mutlu etti.'}
+          {isAlready
+            ? 'Daha önce yanıt vermişsin'
+            : thankYou || 'Yanıtın için teşekkürler.'}
         </h2>
         <p
           style={{
@@ -1430,13 +1819,24 @@ function ThanksScreen({
             color: 'rgba(255,255,255,0.6)',
           }}
         >
-          {brand} ekibi mesajını birazdan görecek.{' '}
-          <span>
-            Referans:{' '}
-            <span className="bz-survey-mono" style={{ color: '#fff' }}>
-              {refNo}
-            </span>
-          </span>
+          {isAlready ? (
+            'Bu cihazdan bu ankete zaten yanıt gönderildi. Teşekkürler!'
+          ) : (
+            <>
+              Yanıtın {brand} ekibine iletildi.
+              {responseNo && (
+                <>
+                  {' '}
+                  <span>
+                    Yanıt no:{' '}
+                    <span className="bz-survey-mono" style={{ color: '#fff' }}>
+                      {responseNo}
+                    </span>
+                  </span>
+                </>
+              )}
+            </>
+          )}
         </p>
       </div>
 
@@ -1480,10 +1880,11 @@ function ThanksScreen({
               className="bz-survey-eyebrow mb-2"
               style={{ color: 'rgba(255,255,255,0.55)' }}
             >
-              SANA ÖZEL KUPON
+              {couponLabel ? 'SANA ÖZEL KUPON' : 'KUPONUN'}
             </div>
             <div className="flex items-center justify-between gap-3">
-              <div>
+              {/* Owner's own wording only — no label, no invented offer text. */}
+              {couponLabel && (
                 <div
                   className="bz-survey-head"
                   style={{
@@ -1493,28 +1894,21 @@ function ThanksScreen({
                 >
                   {couponLabel}
                 </div>
-                <div
-                  className="bz-survey-mono"
-                  style={{
-                    fontSize: 12,
-                    color: 'rgba(255,255,255,0.5)',
-                    marginTop: 4,
-                  }}
-                >
-                  Sonraki ziyaretinde
-                </div>
-              </div>
+              )}
               <button
                 type="button"
                 onClick={() => copy(couponCode)}
-                className="bz-survey-tap inline-flex items-center gap-2"
+                className="bz-survey-tap inline-flex items-center justify-center gap-2"
                 style={{
                   padding: '10px 14px',
+                  minHeight: 44,
+                  // Bare code: the button IS the card content — full width.
+                  ...(couponLabel ? null : { width: '100%' }),
                   borderRadius: 12,
                   border: 'none',
                   cursor: 'pointer',
-                  background: copied ? '#30A46C' : accent,
-                  color: copied ? '#fff' : '#0A0A0A',
+                  background: copied ? '#30A46C' : accent.fill,
+                  color: copied ? '#fff' : accent.text,
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 600,
                   fontSize: 13,
@@ -1534,7 +1928,9 @@ function ThanksScreen({
       <div
         className="relative flex flex-col gap-2"
         style={{
-          padding: '16px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
+          padding: compact
+            ? '16px 22px 24px'
+            : '16px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <p
@@ -1562,18 +1958,31 @@ function QuestionInput({
   q,
   value,
   onChange,
-  accent,
+  onPick,
+  palette,
 }: {
   q: Question;
   value: AnswerValue | undefined;
   onChange: (patch: AnswerValue) => void;
-  accent: string;
+  onPick: (patch: AnswerValue, viaPointer: boolean) => void;
+  palette: ResolvedSurveyAccent;
 }) {
   if (q.type === 'rating') {
-    return <QStar value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={accent} />;
+    return (
+      <QStar
+        value={value?.numberValue ?? null}
+        onChange={(v, viaPointer) => onPick({ numberValue: v }, viaPointer)}
+        accent={palette.onLight.fill}
+      />
+    );
   }
   if (q.type === 'nps') {
-    return <QNps value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={accent} />;
+    return (
+      <QNps
+        value={value?.numberValue ?? null}
+        onChange={(v, viaPointer) => onPick({ numberValue: v }, viaPointer)}
+      />
+    );
   }
   if (q.type === 'short_text') {
     return (
@@ -1583,6 +1992,7 @@ function QuestionInput({
         value={value?.textValue || ''}
         onChange={(e) => onChange({ textValue: e.target.value.slice(0, 200) })}
         placeholder="Yazmaya başla…"
+        aria-label={q.text.trim() || SHORT_TYPE_LABEL.short_text}
         maxLength={200}
         enterKeyHint="next"
         autoCapitalize="sentences"
@@ -1599,13 +2009,14 @@ function QuestionInput({
           value={value?.textValue || ''}
           onChange={(e) => onChange({ textValue: e.target.value.slice(0, max) })}
           placeholder="Yaşadığın deneyimi birkaç cümleyle anlat…"
+          aria-label={q.text.trim() || SHORT_TYPE_LABEL.long_text}
           maxLength={max}
           style={{ resize: 'none', minHeight: 140 }}
           autoCapitalize="sentences"
         />
         <div
           className="bz-survey-eyebrow text-right"
-          style={{ marginTop: 6, color: '#A3A29C' }}
+          style={{ marginTop: 6, color: '#6B6B66' }}
         >
           {(value?.textValue || '').length} / {max}
         </div>
@@ -1616,13 +2027,37 @@ function QuestionInput({
     return (
       <QRadio
         options={q.options || []}
+        label={q.text.trim() || SHORT_TYPE_LABEL.multiple_choice}
         value={value?.optionValue ?? null}
-        onChange={(v) => onChange({ optionValue: v })}
-        accent={accent}
+        onChange={(v, viaPointer) => onPick({ optionValue: v }, viaPointer)}
+        accent={palette.onDark}
       />
     );
   }
   return null;
+}
+
+/**
+ * Arrow-key navigation for a radiogroup made of `role="radio"` buttons: arrows
+ * (and Home / End) move focus and choose the option, like native radios. The
+ * synthetic click has `detail === 0`, so it never auto-advances.
+ */
+function radioArrowKeys(e: React.KeyboardEvent<HTMLElement>) {
+  const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+  const back = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
+  if (!forward && !back && e.key !== 'Home' && e.key !== 'End') return;
+  const radios = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]'));
+  const from = radios.indexOf(document.activeElement as HTMLElement);
+  if (from < 0 || radios.length === 0) return;
+  e.preventDefault();
+  const to =
+    e.key === 'Home'
+      ? 0
+      : e.key === 'End'
+        ? radios.length - 1
+        : (from + (forward ? 1 : -1) + radios.length) % radios.length;
+  radios[to].focus();
+  radios[to].click();
 }
 
 function QStar({
@@ -1631,7 +2066,7 @@ function QStar({
   accent,
 }: {
   value: number | null;
-  onChange: (v: number) => void;
+  onChange: (v: number, viaPointer: boolean) => void;
   accent: string;
 }) {
   const [hover, setHover] = useState(0);
@@ -1640,6 +2075,9 @@ function QStar({
   return (
     <div>
       <div
+        role="radiogroup"
+        aria-label="Yıldız puanı"
+        onKeyDown={radioArrowKeys}
         className="flex justify-between"
         style={{ gap: 4, padding: '20px 0 14px' }}
       >
@@ -1649,7 +2087,11 @@ function QStar({
             <button
               key={s}
               type="button"
-              onClick={() => onChange(s)}
+              role="radio"
+              aria-checked={value === s}
+              // detail > 0 = mouse / touch; keyboard Enter/Space and screen
+              // reader activation report 0 (they never auto-advance).
+              onClick={(e) => onChange(s, e.detail > 0)}
               onMouseEnter={() => setHover(s)}
               onMouseLeave={() => setHover(0)}
               aria-label={`${s} yıldız`}
@@ -1664,7 +2106,7 @@ function QStar({
                 transform: active ? 'scale(1.06)' : 'scale(1)',
               }}
             >
-              <svg width="48" height="48" viewBox="0 0 24 24">
+              <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden>
                 <path
                   d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"
                   fill={active ? accent : 'rgba(10,10,10,0.06)'}
@@ -1693,7 +2135,7 @@ function QStar({
         ) : (
           <span
             className="bz-survey-head"
-            style={{ fontSize: 14, color: '#A3A29C' }}
+            style={{ fontSize: 14, color: '#6B6B66' }}
           >
             ← seçim yap →
           </span>
@@ -1703,46 +2145,39 @@ function QStar({
   );
 }
 
+// Recommend score 0–10. Six columns (0–5 on the first row, 6–10 on the second,
+// the last cell empty) so every cell is at least 44 px wide even at 320 px —
+// eleven columns gave 29 px. The customer is never labelled ("Eleştirmen" etc.
+// is the owner's jargon): the chosen cell is highlighted and "n / 10" is shown.
 function QNps({
   value,
   onChange,
-  accent,
 }: {
   value: number | null;
-  onChange: (v: number) => void;
-  accent: string;
+  onChange: (v: number, viaPointer: boolean) => void;
 }) {
-  const tone = (n: number) =>
-    n <= 6 ? '#E5484D' : n <= 8 ? '#F5A524' : '#30A46C';
   return (
     <div>
       <div
-        className="grid"
-        style={{ gridTemplateColumns: 'repeat(11, 1fr)', gap: 3 }}
+        role="radiogroup"
+        aria-label="0 ile 10 arası puan"
+        onKeyDown={radioArrowKeys}
+        className="bz-survey-nps"
       >
         {Array.from({ length: 11 }, (_, n) => n).map((n) => {
           const active = value === n;
-          const inRange = value !== null && n <= value;
           return (
             <button
               key={n}
               type="button"
-              onClick={() => onChange(n)}
-              aria-pressed={active}
-              className="bz-survey-tap flex items-center justify-center"
+              role="radio"
+              aria-checked={active}
+              onClick={(e) => onChange(n, e.detail > 0)}
+              className="bz-survey-tap bz-survey-nps-cell flex items-center justify-center"
               style={{
-                aspectRatio: '1 / 1',
-                border:
-                  '1.5px solid ' +
-                  (active ? '#0A0A0A' : inRange ? accent : '#E5E3DC'),
-                background: active ? '#0A0A0A' : inRange ? accent + '33' : '#fff',
+                border: '1.5px solid ' + (active ? '#0A0A0A' : '#E5E3DC'),
+                background: active ? '#0A0A0A' : '#fff',
                 color: active ? '#fff' : '#0A0A0A',
-                borderRadius: 10,
-                fontWeight: 600,
-                fontSize: 13,
-                fontFamily: 'var(--font-mono)',
-                cursor: 'pointer',
-                padding: 0,
                 boxShadow: active ? '0 6px 20px -8px rgba(0,0,0,0.4)' : 'none',
               }}
             >
@@ -1752,89 +2187,74 @@ function QNps({
         })}
       </div>
       <div
-        className="flex justify-between"
+        className="flex items-center justify-between gap-3"
         style={{
-          marginTop: 10,
+          marginTop: 12,
           fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          letterSpacing: '0.08em',
-          color: '#A3A29C',
+          fontSize: 10.5,
+          letterSpacing: '0.06em',
+          color: '#6B6B66',
           textTransform: 'uppercase',
         }}
       >
-        <span>Hiç önermem</span>
-        <span>Kesinlikle</span>
+        <span>0 = Hiç önermem</span>
+        <span>10 = Kesinlikle</span>
       </div>
-      {value !== null && (
-        <div
-          className="anim-fade flex items-center gap-2.5"
-          style={{
-            marginTop: 18,
-            padding: '12px 14px',
-            borderRadius: 14,
-            background: tone(value) + '14',
-            border: '1px solid ' + tone(value) + '40',
-          }}
-        >
-          <span
-            aria-hidden
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 999,
-              background: tone(value),
-              boxShadow: `0 0 10px ${tone(value)}`,
-            }}
-          />
-          <span
-            className="bz-survey-head"
-            style={{ fontSize: 16, color: '#0A0A0A' }}
-          >
-            {value <= 6 ? 'Eleştirmen' : value <= 8 ? 'Tarafsız' : 'Destekçi'}
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              color: '#6B6B66',
-              letterSpacing: '0.06em',
-              marginLeft: 'auto',
-              textTransform: 'uppercase',
-            }}
-          >
-            {value}/10
-          </span>
-        </div>
-      )}
+      <div
+        aria-live="polite"
+        className="text-center"
+        style={{
+          marginTop: 14,
+          minHeight: 22,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 13,
+          fontWeight: 600,
+          color: '#0A0A0A',
+          letterSpacing: '0.06em',
+        }}
+      >
+        {value !== null ? `${value} / 10` : ''}
+      </div>
     </div>
   );
 }
 
 function QRadio({
   options,
+  label,
   value,
   onChange,
   accent,
 }: {
   options: string[];
+  label: string;
   value: string | null;
-  onChange: (v: string) => void;
-  accent: string;
+  onChange: (v: string, viaPointer: boolean) => void;
+  /** The selected option is painted dark (#0A0A0A), so its indicator uses the dark-surface pair. */
+  accent: AccentPair;
 }) {
   return (
-    <div className="flex flex-col" style={{ gap: 10 }}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={radioArrowKeys}
+      className="flex flex-col"
+      style={{ gap: 10 }}
+    >
       {options.map((opt) => {
         const active = value === opt;
         return (
           <button
             key={opt}
             type="button"
-            onClick={() => onChange(opt)}
-            aria-pressed={active}
+            role="radio"
+            aria-checked={active}
+            onClick={(e) => onChange(opt, e.detail > 0)}
             className="bz-survey-tap flex items-center"
             style={{
               gap: 14,
               padding: '14px 16px',
+              minHeight: 52,
               border: '1.5px solid ' + (active ? '#0A0A0A' : '#E5E3DC'),
               background: active ? '#0A0A0A' : '#fff',
               color: active ? '#fff' : '#0A0A0A',
@@ -1853,8 +2273,8 @@ function QRadio({
                 width: 22,
                 height: 22,
                 borderRadius: 999,
-                border: '1.5px solid ' + (active ? accent : '#D4D2CC'),
-                background: active ? accent : 'transparent',
+                border: '1.5px solid ' + (active ? accent.fill : '#D4D2CC'),
+                background: active ? accent.fill : 'transparent',
               }}
               aria-hidden
             >
@@ -1862,7 +2282,7 @@ function QRadio({
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M5 12l5 5L20 7"
-                    stroke="#0A0A0A"
+                    stroke={accent.text}
                     strokeWidth="3.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
