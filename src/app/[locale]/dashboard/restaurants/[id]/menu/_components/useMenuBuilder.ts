@@ -113,7 +113,8 @@ export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Tema kaydedilemedi');
-      setRestaurant((prev) => prev ? { ...prev, ...data } : prev);
+      // The theme route stamps `menu_updated_at` but does not return it.
+      setRestaurant((prev) => prev ? { ...prev, ...data, menuUpdatedAt: new Date().toISOString() } : prev);
     } catch (e) {
       setError((e as Error).message);
     }

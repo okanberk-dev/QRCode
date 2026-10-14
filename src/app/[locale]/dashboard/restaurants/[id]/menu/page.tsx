@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -14,8 +14,6 @@ import {
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import PublicMenuView, { type MenuItemView } from '@/components/menu/PublicMenuView';
 import { AlertBanner, useConfirmDialog } from '@/components/ui';
-import { MENU_THEMES, type MenuTheme } from '@/lib/validations';
-import { compressImage } from '@/lib/client-image';
 import type { Locale } from '@/lib/translations';
 import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 import MenuBuilderSkeleton from './loading';
@@ -28,8 +26,8 @@ import { SortableCategoryRow } from './_components/SortableCategoryRow';
 import { SortableItemRow } from './_components/SortableItemRow';
 import { ThemePanel } from './_components/ThemePanel';
 import { buildMenuCopy } from './_components/menu-copy';
-import type { StarterPreset } from './_components/menu-starter-data';
-import type { CategoryShape, RestaurantShape } from './_components/menu-types';
+import type { CategoryShape } from './_components/menu-types';
+import { useMenuBuilder } from './_components/useMenuBuilder';
 
 export default function RestaurantMenuBuilderPage() {
   const params = useParams();
@@ -40,71 +38,25 @@ export default function RestaurantMenuBuilderPage() {
   const isTr = locale === 'tr';
   const previewMode = searchParams?.get('preview') === '1';
 
-  const [restaurant, setRestaurant] = useState<RestaurantShape | null>(null);
-  const [categories, setCategories] = useState<CategoryShape[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  // State + data layer (restaurant, categories, every mutation). Modal, confirm
+  // and drag-and-drop state stay here.
+  const {
+    restaurant, categories, activeCategory, activeCategoryId, setActiveCategoryId,
+    loading, error, busy, publishBusy, themeSaving, presetBusy,
+    fetchAll, saveTheme, uploadLogo,
+    toggleCategoryVisibility, toggleItemAvailability, toggleItemOutOfStock,
+    applyStarterPreset,
+    saveCategory: persistCategory, deleteCategory: removeCategoryById, reorderCategories, moveCategory,
+    saveItem: persistItem, deleteItem: removeItemById, reorderItems, moveItem,
+    togglePublish,
+  } = useMenuBuilder({ id, isTr });
 
   const [categoryModal, setCategoryModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<CategoryShape> }>(null);
   const [itemModal, setItemModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<MenuItemView> & { categoryId?: string } }>(null);
-  const [busy, setBusy] = useState(false);
-  const [publishBusy, setPublishBusy] = useState(false);
-  const [themeSaving, setThemeSaving] = useState(false);
   const [qrModal, setQrModal] = useState(false);
   const [confirmDialog, askConfirm] = useConfirmDialog();
 
   const copy = useMemo(() => buildMenuCopy(isTr), [isTr]);
-
-  // `initial` (first load / retry) shows the page skeleton. Every other call
-  // — after a category or item save, a preset, a failed reorder — refreshes
-  // silently so the builder stays mounted and keeps its scroll position.
-  const fetchAll = useCallback(async (opts: { initial?: boolean } = {}) => {
-    if (opts.initial) setLoading(true);
-    setError(null);
-    try {
-      const [rRes, cRes] = await Promise.all([
-        fetch(`/api/restaurants/${id}`),
-        fetch(`/api/restaurants/${id}/menu/categories`),
-      ]);
-      // §38.73 — Locale-aware error messages (EN owner için drift fix).
-      if (!rRes.ok) throw new Error(isTr ? 'Restoran yüklenemedi' : 'Restaurant failed to load');
-      if (!cRes.ok) throw new Error(isTr ? 'Menü yüklenemedi' : 'Menu failed to load');
-      const r = await rRes.json();
-      const c = await cRes.json();
-      setRestaurant({
-        id: r.id,
-        slug: r.slug,
-        name: r.name,
-        category: r.category,
-        address: r.address ?? null,
-        phone: r.phone ?? null,
-        workingHours: r.workingHours ?? null,
-        primaryColor: r.primaryColor ?? '#C6F24E',
-        menuEnabled: r.menuEnabled ?? true,
-        menuPublished: r.menuPublished ?? false,
-        menuUpdatedAt: r.menuUpdatedAt ?? null,
-        menuTheme: (MENU_THEMES as readonly string[]).includes(r.menuTheme) ? r.menuTheme : 'classic',
-        menuAccentColor: r.menuAccentColor ?? null,
-        menuLogoUrl: r.menuLogoUrl ?? null,
-      });
-      const cats: CategoryShape[] = (c.categories ?? []).map((cat: CategoryShape) => ({
-        ...cat,
-        items: (cat.items ?? []).sort((a, b) => a.sortOrder - b.sortOrder),
-      }));
-      setCategories(cats);
-      setActiveCategoryId((prev) => prev && cats.some((x) => x.id === prev) ? prev : cats[0]?.id ?? null);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    setLoading(false);
-  }, [id, isTr]);
-
-  useEffect(() => {
-    if (id) fetchAll({ initial: true });
-  }, [id, fetchAll]);
-
-  const activeCategory = categories.find((c) => c.id === activeCategoryId) || null;
 
   // ── DnD sensors ──
   const sensors = useSensors(
@@ -112,165 +64,12 @@ export default function RestaurantMenuBuilderPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
   );
 
-  // ── Theme ops ──
-  const saveTheme = async (patch: { menuTheme?: MenuTheme; menuAccentColor?: string | null; menuLogoUrl?: string | null }) => {
-    if (!restaurant) return;
-    setThemeSaving(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/restaurants/${id}/theme`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Tema kaydedilemedi');
-      setRestaurant((prev) => prev ? { ...prev, ...data } : prev);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    setThemeSaving(false);
-  };
-
-  const uploadLogo = async (file: File) => {
-    setThemeSaving(true);
-    setError(null);
-    try {
-      // Pre-compress in the browser so the request payload is small (~200 KB
-      // instead of several MB) before sharp does the final resize server-side.
-      const compressed = await compressImage(file, { maxDim: 1024, quality: 0.85 });
-      const fd = new FormData();
-      fd.append('file', compressed);
-      fd.append('kind', 'logo');
-      const res = await fetch(`/api/restaurants/${id}/menu/upload`, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Logo yüklenemedi');
-      await saveTheme({ menuLogoUrl: data.url });
-    } catch (e) {
-      setError((e as Error).message);
-      setThemeSaving(false);
-    }
-  };
-
-  // ── Quick toggles ──
-  const toggleCategoryVisibility = async (category: CategoryShape) => {
-    const next = !category.isVisible;
-    setCategories((prev) => prev.map((c) => (c.id === category.id ? { ...c, isVisible: next } : c)));
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/categories/${category.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isVisible: next }),
-      });
-      if (!res.ok) throw new Error('Değişiklik kaydedilemedi');
-    } catch (e) {
-      // Revert on failure
-      setCategories((prev) => prev.map((c) => (c.id === category.id ? { ...c, isVisible: !next } : c)));
-      setError((e as Error).message);
-    }
-  };
-
-  const toggleItemAvailability = async (item: MenuItemView) => {
-    const next = !item.isAvailable;
-    setCategories((prev) => prev.map((c) => ({
-      ...c,
-      items: c.items.map((i) => (i.id === item.id ? { ...i, isAvailable: next } : i)),
-    })));
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/items/${item.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isAvailable: next }),
-      });
-      if (!res.ok) throw new Error('Değişiklik kaydedilemedi');
-    } catch (e) {
-      setCategories((prev) => prev.map((c) => ({
-        ...c,
-        items: c.items.map((i) => (i.id === item.id ? { ...i, isAvailable: !next } : i)),
-      })));
-      setError((e as Error).message);
-    }
-  };
-
-  const toggleItemOutOfStock = async (item: MenuItemView) => {
-    const next = !item.isOutOfStock;
-    setCategories((prev) => prev.map((c) => ({
-      ...c,
-      items: c.items.map((i) => (i.id === item.id ? { ...i, isOutOfStock: next } : i)),
-    })));
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/items/${item.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isOutOfStock: next }),
-      });
-      if (!res.ok) throw new Error('Değişiklik kaydedilemedi');
-    } catch (e) {
-      setCategories((prev) => prev.map((c) => ({
-        ...c,
-        items: c.items.map((i) => (i.id === item.id ? { ...i, isOutOfStock: !next } : i)),
-      })));
-      setError((e as Error).message);
-    }
-  };
-
-  // ── Quick-start preset (only meaningful when categories list is empty) ──
-  const [presetBusy, setPresetBusy] = useState<StarterPreset['id'] | null>(null);
-  const applyStarterPreset = async (preset: StarterPreset) => {
-    setPresetBusy(preset.id);
-    setError(null);
-    const names = preset[isTr ? 'tr' : 'en'].categories;
-    try {
-      // Sequential to keep deterministic sortOrder; ~6 calls so latency is fine.
-      for (const name of names) {
-        const res = await fetch(`/api/restaurants/${id}/menu/categories`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, isVisible: true }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Kategori oluşturulamadı');
-        }
-      }
-      await fetchAll();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    setPresetBusy(null);
-  };
-
   // ── Category ops ──
   const saveCategory = async (payload: Partial<CategoryShape>): Promise<string | null> => {
     if (!categoryModal) return null;
-    setBusy(true);
-    setError(null);
-    try {
-      const url =
-        categoryModal.mode === 'create'
-          ? `/api/restaurants/${id}/menu/categories`
-          : `/api/restaurants/${id}/menu/categories/${categoryModal.data.id}`;
-      const method = categoryModal.mode === 'create' ? 'POST' : 'PATCH';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: payload.name,
-          description: payload.description ?? null,
-          isVisible: payload.isVisible ?? true,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'İşlem başarısız');
-      setCategoryModal(null);
-      await fetchAll();
-      setBusy(false);
-      return null;
-    } catch (e) {
-      setError((e as Error).message);
-      setBusy(false);
-      return (e as Error).message;
-    }
+    const err = await persistCategory(categoryModal.mode, categoryModal.data.id, payload);
+    if (!err) setCategoryModal(null);
+    return err;
   };
 
   const deleteCategory = (categoryId: string) => {
@@ -280,48 +79,8 @@ export default function RestaurantMenuBuilderPage() {
       confirmLabel: isTr ? 'Sil' : 'Delete',
       cancelLabel: isTr ? 'İptal' : 'Cancel',
       variant: 'danger',
-      onConfirm: () => doDeleteCategory(categoryId),
+      onConfirm: () => removeCategoryById(categoryId),
     });
-  };
-
-  const doDeleteCategory = async (categoryId: string) => {
-    setError(null);
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/categories/${categoryId}`, { method: 'DELETE' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Silinemedi');
-      await fetchAll();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
-
-  const reorderCategories = async (newOrder: CategoryShape[]) => {
-    // Optimistic state update; server returns 200 without a body so no refetch
-    // needed on success. Only refetch on failure to revert to canonical order.
-    setCategories(newOrder);
-    const payload = {
-      categories: newOrder.map((c, i) => ({ id: c.id, sortOrder: i })),
-    };
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/reorder`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Sıralama kaydedilemedi');
-    } catch (e) {
-      setError((e as Error).message);
-      await fetchAll();
-    }
-  };
-
-  const moveCategory = async (index: number, dir: -1 | 1) => {
-    const next = [...categories];
-    const swap = index + dir;
-    if (swap < 0 || swap >= next.length) return;
-    [next[index], next[swap]] = [next[swap], next[index]];
-    await reorderCategories(next);
   };
 
   const onCategoryDragEnd = async (event: DragEndEvent) => {
@@ -330,8 +89,7 @@ export default function RestaurantMenuBuilderPage() {
     const oldIndex = categories.findIndex((c) => c.id === active.id);
     const newIndex = categories.findIndex((c) => c.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const next = arrayMove(categories, oldIndex, newIndex);
-    await reorderCategories(next);
+    await reorderCategories(arrayMove(categories, oldIndex, newIndex));
   };
 
   // ── Item ops ──
@@ -339,44 +97,9 @@ export default function RestaurantMenuBuilderPage() {
     payload: Partial<MenuItemView> & { categoryId?: string },
   ): Promise<string | null> => {
     if (!itemModal) return null;
-    setBusy(true);
-    setError(null);
-    try {
-      const url =
-        itemModal.mode === 'create'
-          ? `/api/restaurants/${id}/menu/items`
-          : `/api/restaurants/${id}/menu/items/${itemModal.data.id}`;
-      const method = itemModal.mode === 'create' ? 'POST' : 'PATCH';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          categoryId: payload.categoryId,
-          name: payload.name,
-          description: payload.description ?? null,
-          priceCents: payload.priceCents ?? 0,
-          imageUrl: payload.imageUrl ?? null,
-          badges: payload.badges ?? [],
-          allergens: payload.allergens ?? [],
-          isAvailable: payload.isAvailable ?? true,
-          isOutOfStock: payload.isOutOfStock ?? false,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'İşlem başarısız');
-      setItemModal(null);
-      await fetchAll();
-      setBusy(false);
-      return null;
-    } catch (e) {
-      // Also set the page-level banner for the (rare) case where the modal is
-      // already gone — but the modal itself renders the message now. It used to
-      // ONLY set this state while staying open, so the banner painted behind
-      // the overlay and the owner saw the Save button go idle with no feedback.
-      setError((e as Error).message);
-      setBusy(false);
-      return (e as Error).message;
-    }
+    const err = await persistItem(itemModal.mode, itemModal.data.id, payload);
+    if (!err) setItemModal(null);
+    return err;
   };
 
   const deleteItem = (itemId: string) => {
@@ -386,50 +109,8 @@ export default function RestaurantMenuBuilderPage() {
       confirmLabel: isTr ? 'Sil' : 'Delete',
       cancelLabel: isTr ? 'İptal' : 'Cancel',
       variant: 'danger',
-      onConfirm: () => doDeleteItem(itemId),
+      onConfirm: () => removeItemById(itemId),
     });
-  };
-
-  const doDeleteItem = async (itemId: string) => {
-    setError(null);
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/items/${itemId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Silinemedi');
-      }
-      await fetchAll();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
-
-  const reorderItems = async (categoryId: string, newOrder: MenuItemView[]) => {
-    const nextCats = categories.map((c) => (c.id === categoryId ? { ...c, items: newOrder } : c));
-    setCategories(nextCats);
-    const payload = {
-      items: newOrder.map((item, i) => ({ id: item.id, sortOrder: i })),
-    };
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/reorder`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Sıralama kaydedilemedi');
-    } catch (e) {
-      setError((e as Error).message);
-      await fetchAll();
-    }
-  };
-
-  const moveItem = async (index: number, dir: -1 | 1) => {
-    if (!activeCategory) return;
-    const items = [...activeCategory.items];
-    const swap = index + dir;
-    if (swap < 0 || swap >= items.length) return;
-    [items[index], items[swap]] = [items[swap], items[index]];
-    await reorderItems(activeCategory.id, items);
   };
 
   const onItemDragEnd = async (event: DragEndEvent) => {
@@ -443,28 +124,6 @@ export default function RestaurantMenuBuilderPage() {
     await reorderItems(activeCategory.id, arrayMove(items, oldIndex, newIndex));
   };
 
-  const togglePublish = async () => {
-    if (!restaurant) return;
-    setPublishBusy(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/restaurants/${id}/menu/publish`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ menuPublished: !restaurant.menuPublished }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'İşlem başarısız');
-      setRestaurant({
-        ...restaurant,
-        menuPublished: data.restaurant.menuPublished,
-        menuUpdatedAt: data.restaurant.menuUpdatedAt,
-      });
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    setPublishBusy(false);
-  };
   if (loading) {
     // Same skeleton as the segment loading.tsx — no second loading layer.
     return <MenuBuilderSkeleton />;
