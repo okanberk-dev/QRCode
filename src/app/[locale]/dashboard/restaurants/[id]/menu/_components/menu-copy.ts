@@ -22,7 +22,6 @@ export function buildMenuCopy(isTr: boolean) {
     shareShort: 'QR',
     analytics: isTr ? 'Analitik' : 'Analytics',
     previewRail: isTr ? 'Önizleme' : 'Preview',
-    previewFull: isTr ? 'Tam ekran' : 'Full screen',
 
     // ── status strip ──
     draft: isTr ? 'Taslak' : 'Draft',
@@ -98,7 +97,6 @@ export function buildMenuCopy(isTr: boolean) {
     dragHint: isTr
       ? 'Sıralamak için boşluk tuşuna bas, ok tuşlarıyla taşı, bırakmak için tekrar boşluk, vazgeçmek için Esc.'
       : 'Press space to pick up, arrow keys to move, space to drop, Escape to cancel.',
-    deleteCategoryButton: isTr ? 'Kategoriyi sil' : 'Delete category',
     deleteCategoryAndItems: isTr ? 'Kategoriyi ve ürünleri sil' : 'Delete category and items',
     categoryGroupLabel: isTr ? 'Kategoriler' : 'Categories',
 
@@ -112,7 +110,6 @@ export function buildMenuCopy(isTr: boolean) {
     emptyCategoryBody: isTr
       ? 'Ürün adı ve fiyatıyla başla. Fotoğraf ve açıklamayı sonra ekleyebilirsin.'
       : 'Start with a name and a price. Add a photo and description later.',
-    sellable: isTr ? 'Satışta' : 'Available',
     soldOut: isTr ? 'Tükendi' : 'Sold out',
     hiddenOnMenu: isTr ? 'Menüde gizli' : 'Hidden',
     rowEdit: isTr ? 'Düzenle' : 'Edit',
@@ -120,12 +117,9 @@ export function buildMenuCopy(isTr: boolean) {
     backInStock: isTr ? 'Tekrar satışa al' : 'Back in stock',
     hideItem: isTr ? 'Menüden gizle' : 'Hide from menu',
     showItem: isTr ? 'Menüde göster' : 'Show on menu',
-    switchHint: isTr ? 'Kapalıysa menüde “Tükendi” görünür.' : 'If off, it shows as “Sold out” on the menu.',
     delete: isTr ? 'Sil' : 'Delete',
     cancel: isTr ? 'İptal' : 'Cancel',
     save: isTr ? 'Kaydet' : 'Save',
-    deleteItemButton: isTr ? 'Ürünü sil' : 'Delete item',
-    itemsWillShow: isTr ? 'menüde' : 'on menu',
 
     // ── item editor ──
     category: isTr ? 'Kategori' : 'Category',

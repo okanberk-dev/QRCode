@@ -4,7 +4,7 @@ import type { SectorKey } from '@/lib/sector-platforms';
 import type { MenuCopy } from './menu-copy';
 import { STARTER_FEATURED_COUNT, orderStarterPresets, type StarterPreset } from './menu-starter-data';
 
-export function PresetGlyph({ id }: { id: StarterPreset['id'] }) {
+function PresetGlyph({ id }: { id: StarterPreset['id'] }) {
   const Icon =
     id === 'restaurant' ? UtensilsCrossed
     : id === 'cafe' ? Coffee

@@ -16,7 +16,7 @@ export function currencySymbol(code?: string | null): string {
   return CURRENCY_SYMBOLS[upper] ?? upper;
 }
 
-export type PriceCheck =
+type PriceCheck =
   | { kind: 'empty' }
   | { kind: 'invalid' }
   | { kind: 'ok'; cents: number; zero: boolean };
@@ -66,7 +66,7 @@ export interface ItemFormValues {
 }
 
 /** The item being edited (or the defaults of a new one), as the editor starts. */
-export interface ItemFormSource {
+interface ItemFormSource {
   categoryId?: string;
   name?: string;
   description?: string | null;
