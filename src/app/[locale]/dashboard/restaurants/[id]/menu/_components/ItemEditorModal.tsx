@@ -288,6 +288,7 @@ export function ItemEditorModal({
             ref={nameRef}
             autoFocus={finePointer}
             maxLength={120}
+            readOnly={saving}
             value={values.name}
             onChange={(e) => {
               patch({ name: e.target.value });
@@ -312,6 +313,7 @@ export function ItemEditorModal({
             <input
               id={priceId}
               ref={priceRef}
+              readOnly={saving}
               value={values.price}
               onChange={(e) => {
                 patch({ price: e.target.value });
@@ -448,6 +450,7 @@ export function ItemEditorModal({
                 onChange={(e) => patch({ description: e.target.value })}
                 rows={3}
                 maxLength={500}
+                readOnly={saving}
                 className={`${MENU_INPUT_CLASS} resize-none`}
               />
             </Field>
