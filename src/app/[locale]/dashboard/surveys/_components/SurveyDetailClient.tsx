@@ -51,7 +51,12 @@ import {
 // The customer view is only needed once the preview opens.
 const PublicSurveyView = dynamic(() => import('@/app/s/[slug]/PublicSurveyView'), {
   ssr: false,
-  loading: () => <div className="h-full w-full bg-[#0A0A0A]" />,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center bg-[#0A0A0A]" role="status">
+      <Loader2 size={22} className="animate-spin text-[#C6F24E]" aria-hidden="true" />
+      <span className="sr-only">…</span>
+    </div>
+  ),
 });
 
 type TabId = 'share' | 'results';

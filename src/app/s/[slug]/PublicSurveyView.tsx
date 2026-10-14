@@ -1942,6 +1942,29 @@ function QuestionInput({
   return null;
 }
 
+/**
+ * Arrow-key navigation for a radiogroup made of `role="radio"` buttons: arrows
+ * (and Home / End) move focus and choose the option, like native radios. The
+ * synthetic click has `detail === 0`, so it never auto-advances.
+ */
+function radioArrowKeys(e: React.KeyboardEvent<HTMLElement>) {
+  const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+  const back = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
+  if (!forward && !back && e.key !== 'Home' && e.key !== 'End') return;
+  const radios = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]'));
+  const from = radios.indexOf(document.activeElement as HTMLElement);
+  if (from < 0 || radios.length === 0) return;
+  e.preventDefault();
+  const to =
+    e.key === 'Home'
+      ? 0
+      : e.key === 'End'
+        ? radios.length - 1
+        : (from + (forward ? 1 : -1) + radios.length) % radios.length;
+  radios[to].focus();
+  radios[to].click();
+}
+
 function QStar({
   value,
   onChange,
@@ -1959,6 +1982,7 @@ function QStar({
       <div
         role="radiogroup"
         aria-label="Yıldız puanı"
+        onKeyDown={radioArrowKeys}
         className="flex justify-between"
         style={{ gap: 4, padding: '20px 0 14px' }}
       >
@@ -2039,7 +2063,12 @@ function QNps({
 }) {
   return (
     <div>
-      <div role="radiogroup" aria-label="0 ile 10 arası puan" className="bz-survey-nps">
+      <div
+        role="radiogroup"
+        aria-label="0 ile 10 arası puan"
+        onKeyDown={radioArrowKeys}
+        className="bz-survey-nps"
+      >
         {Array.from({ length: 11 }, (_, n) => n).map((n) => {
           const active = value === n;
           return (
@@ -2110,7 +2139,13 @@ function QRadio({
   accent: AccentPair;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-col" style={{ gap: 10 }}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={radioArrowKeys}
+      className="flex flex-col"
+      style={{ gap: 10 }}
+    >
       {options.map((opt) => {
         const active = value === opt;
         return (
