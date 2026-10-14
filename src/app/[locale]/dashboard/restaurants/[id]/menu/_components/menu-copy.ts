@@ -206,6 +206,8 @@ export function menuFmt(isTr: boolean) {
     switchLabel: (name: string) => (isTr ? `${name}: satışta` : `${name}: available`),
     itemActionsLabel: (name: string) => (isTr ? `${name} için işlemler` : `Actions for ${name}`),
     categoryActionsLabel: (name: string) => (isTr ? `${name} kategorisi için işlemler` : `Actions for category ${name}`),
+    selectedCategoryActionsLabel: (name: string) =>
+      isTr ? `Seçili kategori (${name}) için işlemler` : `Actions for the selected category (${name})`,
     categoryChipLabel: (name: string, n: number) =>
       isTr ? `${name}, ${n} ürün` : `${name}, ${n} ${n === 1 ? 'item' : 'items'}`,
     stepCategoryDone: (n: number) => count(n, 'kategori', 'category', 'categories', isTr),

@@ -97,3 +97,14 @@ export async function copyText(text: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Run `fn` once a Radix menu has finished closing. Radix hands focus back to
+ * the menu's trigger a tick AFTER the item was selected; a dialog opened in the
+ * same tick would have its focus (autofocused field, or the first control)
+ * taken straight back, leaving keyboard and screen-reader users outside the
+ * dialog. Use for menu items that open a dialog; plain actions run directly.
+ */
+export function afterMenuCloses(fn: () => void): void {
+  window.setTimeout(fn, 120);
+}

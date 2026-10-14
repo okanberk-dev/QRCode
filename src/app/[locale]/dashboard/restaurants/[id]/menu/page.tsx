@@ -261,7 +261,7 @@ export default function RestaurantMenuBuilderPage() {
     <button
       type="button"
       onClick={() => setPreviewOpen(true)}
-      className="bz-btn-ghost hidden lg:inline-flex min-[1400px]:hidden"
+      className="bz-btn-ghost hidden lg:max-[1399px]:inline-flex"
     >
       <Smartphone size={14} strokeWidth={2} />
       {copy.previewRail}
@@ -379,7 +379,11 @@ export default function RestaurantMenuBuilderPage() {
             onSelect={setActiveCategoryId}
             onAdd={openCategoryCreate}
           />
-          <div className="grid items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)] min-[1400px]:grid-cols-[240px_minmax(0,1fr)_320px]">
+          {/* Two columns from 1024px, three from 1400px. The two ranges are written
+              as exclusive media queries: Tailwind emits arbitrary `min-[1400px]`
+              rules BEFORE the named `lg:` ones, so a plain `lg:` + `min-[1400px]:`
+              pair would let `lg:` win at 1440. */}
+          <div className="grid items-start gap-5 lg:max-[1399px]:grid-cols-[240px_minmax(0,1fr)] min-[1400px]:grid-cols-[240px_minmax(0,1fr)_320px]">
             <CategoryColumn
               categories={categories}
               activeId={activeCategoryId}

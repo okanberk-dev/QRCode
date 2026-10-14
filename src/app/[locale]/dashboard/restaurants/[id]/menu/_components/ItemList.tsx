@@ -115,6 +115,7 @@ export function ItemList({
               onToggleVisible={onToggleCategoryVisible}
               onMove={onMoveCategory}
               onDelete={onDeleteCategory}
+              label={fmt.selectedCategoryActionsLabel(category.name)}
               className="border border-[#EDEDED]"
             />
           </div>

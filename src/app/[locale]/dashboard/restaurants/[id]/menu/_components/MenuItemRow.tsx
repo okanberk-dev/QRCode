@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/format';
 import type { MenuBadge } from '@/lib/validations';
 import type { Locale } from '@/lib/translations';
 import { BADGE_LABELS, BADGE_TINTS } from './menu-constants';
+import { afterMenuCloses } from './menu-ui';
 import type { MenuCopy, MenuFmt } from './menu-copy';
 
 /** Two tags are enough on a row; the rest are one "+n" away in the editor. */
@@ -209,7 +210,7 @@ export function MenuItemRow({
           </button>
         }
       >
-        <PulseMenuItem icon={<Pencil size={14} strokeWidth={2} />} onSelect={onEdit}>
+        <PulseMenuItem icon={<Pencil size={14} strokeWidth={2} />} onSelect={() => afterMenuCloses(onEdit)}>
           {copy.rowEdit}
         </PulseMenuItem>
         {!hidden && (
@@ -237,7 +238,7 @@ export function MenuItemRow({
           {copy.moveDown}
         </PulseMenuItem>
         <PulseMenuDivider />
-        <PulseMenuItem danger icon={<Trash2 size={14} strokeWidth={2} />} onSelect={onDelete}>
+        <PulseMenuItem danger icon={<Trash2 size={14} strokeWidth={2} />} onSelect={() => afterMenuCloses(onDelete)}>
           {copy.delete}
         </PulseMenuItem>
       </PulseMenu>

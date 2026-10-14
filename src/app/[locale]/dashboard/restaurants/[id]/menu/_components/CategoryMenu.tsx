@@ -2,6 +2,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Eye, EyeOff, MoreHorizontal,
 import { PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
 import type { MenuCopy, MenuFmt } from './menu-copy';
 import type { CategoryShape } from './menu-types';
+import { afterMenuCloses } from './menu-ui';
 
 /**
  * The "⋯" menu of one category: rename, show / hide on the menu, move, delete.
@@ -13,7 +14,7 @@ import type { CategoryShape } from './menu-types';
  */
 export function CategoryMenu({
   category, index, total, horizontal, disabled, copy, fmt,
-  onRename, onToggleVisible, onMove, onDelete, align = 'end', className = '',
+  onRename, onToggleVisible, onMove, onDelete, align = 'end', className = '', label,
 }: {
   category: CategoryShape;
   index: number;
@@ -28,6 +29,8 @@ export function CategoryMenu({
   onDelete: () => void;
   align?: 'start' | 'center' | 'end';
   className?: string;
+  /** Accessible name of the trigger; defaults to "Actions for category X". */
+  label?: string;
 }) {
   return (
     <PulseMenu
@@ -36,14 +39,14 @@ export function CategoryMenu({
         <button
           type="button"
           disabled={disabled}
-          aria-label={fmt.categoryActionsLabel(category.name)}
+          aria-label={label ?? fmt.categoryActionsLabel(category.name)}
           className={`bz-btn-icon h-11 w-11 shrink-0 disabled:opacity-40 disabled:hover:bg-transparent lg:h-9 lg:w-9 ${className}`}
         >
           <MoreHorizontal size={16} strokeWidth={2} />
         </button>
       }
     >
-      <PulseMenuItem icon={<Pencil size={14} strokeWidth={2} />} onSelect={onRename}>
+      <PulseMenuItem icon={<Pencil size={14} strokeWidth={2} />} onSelect={() => afterMenuCloses(onRename)}>
         {copy.rename}
       </PulseMenuItem>
       <PulseMenuItem
@@ -67,7 +70,7 @@ export function CategoryMenu({
         {horizontal ? copy.moveRight : copy.moveDown}
       </PulseMenuItem>
       <PulseMenuDivider />
-      <PulseMenuItem danger icon={<Trash2 size={14} strokeWidth={2} />} onSelect={onDelete}>
+      <PulseMenuItem danger icon={<Trash2 size={14} strokeWidth={2} />} onSelect={() => afterMenuCloses(onDelete)}>
         {copy.delete}
       </PulseMenuItem>
     </PulseMenu>

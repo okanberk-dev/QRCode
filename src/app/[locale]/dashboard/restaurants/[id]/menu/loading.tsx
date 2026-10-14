@@ -57,7 +57,7 @@ export default function Loading() {
       </div>
 
       {/* Categories | items | preview rail */}
-      <div className="grid items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)] min-[1400px]:grid-cols-[240px_minmax(0,1fr)_320px]">
+      <div className="grid items-start gap-5 lg:max-[1399px]:grid-cols-[240px_minmax(0,1fr)] min-[1400px]:grid-cols-[240px_minmax(0,1fr)_320px]">
         <div className="hidden overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm lg:block">
           <div className="space-y-1.5 border-b border-[#EDEDED] px-5 py-4">
             <SkBox className="h-3 w-20" />

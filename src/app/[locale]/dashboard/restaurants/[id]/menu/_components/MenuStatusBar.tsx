@@ -9,7 +9,7 @@ import { SITE_HOST, SITE_URL } from '@/lib/site';
 import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 import type { MenuCopy, MenuFmt } from './menu-copy';
 import type { RestaurantShape } from './menu-types';
-import { copyText } from './menu-ui';
+import { afterMenuCloses, copyText } from './menu-ui';
 
 export type MenuStepId = 'category' | 'items' | 'publish';
 
@@ -192,7 +192,7 @@ export function MenuStatusBar({
                 </button>
               }
             >
-              <PulseMenuItem danger icon={<EyeOff size={14} strokeWidth={2} />} onSelect={onUnpublish}>
+              <PulseMenuItem danger icon={<EyeOff size={14} strokeWidth={2} />} onSelect={() => afterMenuCloses(onUnpublish)}>
                 {copy.unpublish}
               </PulseMenuItem>
             </PulseMenu>
