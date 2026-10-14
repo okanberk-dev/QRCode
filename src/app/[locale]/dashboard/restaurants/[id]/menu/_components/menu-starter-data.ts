@@ -1,3 +1,5 @@
+import type { SectorKey } from '@/lib/sector-platforms';
+
 // Quick-start category presets so a new owner doesn't stare at an empty list.
 // Picking one POSTs ~6 categories with sensible Turkish names; the user can
 // rename / delete after. English mirror is included for the EN locale.
@@ -125,3 +127,27 @@ export const STARTER_PRESETS: StarterPreset[] = [
     },
   },
 ];
+
+/** How many presets are shown up front; the rest sit behind "More templates". */
+export const STARTER_FEATURED_COUNT = 4;
+
+// Which presets lead for a business sector (spec 4.3). Everything not listed
+// follows in the original order, so no preset is ever lost or repeated.
+const FEATURED_BY_SECTOR: Partial<Record<SectorKey, StarterPreset['id'][]>> = {
+  food: ['restaurant', 'cafe', 'fastfood', 'bakery'],
+  delivery: ['fastfood', 'restaurant', 'foodtruck', 'bakery'],
+  hospitality: ['hotel', 'restaurant', 'cafe', 'bar'],
+};
+const DEFAULT_FEATURED: StarterPreset['id'][] = ['restaurant', 'cafe', 'fastfood', 'bakery'];
+
+/**
+ * All presets, best match for the business first. The first
+ * `STARTER_FEATURED_COUNT` are the visible suggestions.
+ */
+export function orderStarterPresets(sector: SectorKey | null | undefined): StarterPreset[] {
+  const lead = (sector && FEATURED_BY_SECTOR[sector]) || DEFAULT_FEATURED;
+  const byId = new Map(STARTER_PRESETS.map((p) => [p.id, p] as const));
+  const head = lead.map((id) => byId.get(id)).filter((p): p is StarterPreset => !!p);
+  const headIds = new Set(head.map((p) => p.id));
+  return [...head, ...STARTER_PRESETS.filter((p) => !headIds.has(p.id))];
+}
