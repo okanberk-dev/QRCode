@@ -136,7 +136,15 @@ describe('share link helpers', () => {
     assert.ok(buildMailtoHref('Kitchen', url, 'en').includes(encodeURIComponent('Open this link')));
   });
 
-  const link = (over: Partial<Parameters<typeof activeShareLinks>[0][number]> & { id: string }) => ({
+  interface TestLink {
+    id: string;
+    status: string;
+    recurrence: string;
+    tokenRevoked: boolean;
+    token?: string | null;
+    createdAt: string;
+  }
+  const link = (over: Partial<TestLink> & { id: string }): TestLink => ({
     status: 'pending',
     recurrence: 'daily',
     tokenRevoked: false,
