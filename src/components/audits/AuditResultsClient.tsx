@@ -625,8 +625,10 @@ export default function AuditResultsClient({
                   <button
                     type="button"
                     className="bz-btn-ghost min-h-11"
-                    onClick={loadMore}
-                    disabled={loadingMore}
+                    onClick={() => {
+                      if (!loadingMore) loadMore();
+                    }}
+                    aria-disabled={loadingMore}
                   >
                     {loadingMore && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
                     {isTr ? 'Daha fazla göster' : 'Show more'}

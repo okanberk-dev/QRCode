@@ -184,7 +184,7 @@ const MESSAGES: Record<string, Copy> = {
   RATE_LIMITED: TOO_MANY,
   TOO_MANY_REQUESTS: TOO_MANY,
   UNAUTHORIZED: {
-    tr: 'Oturumun sona ermiş. Tekrar giriş yap.',
+    tr: 'Oturumun sona erdi. Tekrar giriş yap.',
     en: 'Your session has ended. Please sign in again.',
   },
   FORBIDDEN: {

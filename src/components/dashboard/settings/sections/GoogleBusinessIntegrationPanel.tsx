@@ -486,6 +486,9 @@ export function GoogleBusinessIntegrationPanel({
           {placesError && <div className="mt-3"><AlertBanner kind="danger">{placesError}</AlertBanner></div>}
           {places.length > 0 && (
             <div className="mt-4 space-y-2">
+              <p className="pulse-eyebrow text-[#525252]">
+                {isTr ? "Sonuçlar: Google Maps" : "Results: Google Maps"}
+              </p>
               {places.map((place) => (
                 <div
                   key={place.placeId}

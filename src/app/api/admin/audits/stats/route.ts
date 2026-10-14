@@ -22,6 +22,12 @@ import { AUDIT_SECTORS, type AuditSector } from '@/lib/audits/types';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// AuditResponse.scorePercentage 0-10000 (basis points) saklanir; panel 0-100
+// ve tek ondalik gosterir.
+function basisPointsToPercent(value: number | null | undefined): number | null {
+  return value == null ? null : Math.round(value / 10) / 10;
+}
+
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
   if (!admin) return { ok: false as const, res: ApiErrors.unauthorized() };
@@ -162,7 +168,7 @@ export async function GET(req: NextRequest) {
       responses: sectorResponsesAcc[sec].count,
       avgScore:
         sectorResponsesAcc[sec].n > 0
-          ? Math.round((sectorResponsesAcc[sec].sumScore / sectorResponsesAcc[sec].n) * 10) / 10
+          ? basisPointsToPercent(sectorResponsesAcc[sec].sumScore / sectorResponsesAcc[sec].n)
           : null,
     }));
 
@@ -186,7 +192,7 @@ export async function GET(req: NextRequest) {
           title: tpl.title,
           sector: tpl.sector as AuditSector,
           responseCount: r._count._all,
-          avgScore: r._avg.scorePercentage != null ? Math.round(r._avg.scorePercentage * 10) / 10 : null,
+          avgScore: basisPointsToPercent(r._avg.scorePercentage),
           isPublished: tpl.isPublished,
         };
       })
@@ -211,10 +217,7 @@ export async function GET(req: NextRequest) {
           restaurantId: r.restaurantId,
           name: restaurantLookup.get(r.restaurantId) || '—',
           responseCount: r._count._all,
-          avgScore:
-            r._avg.scorePercentage != null
-              ? Math.round(r._avg.scorePercentage * 10) / 10
-              : null,
+          avgScore: basisPointsToPercent(r._avg.scorePercentage),
           latestResponseAt: r._max.completedAt ? r._max.completedAt.toISOString() : null,
         };
       })
@@ -227,10 +230,7 @@ export async function GET(req: NextRequest) {
           publishedTemplates,
           draftTemplates: totalTemplates - publishedTemplates,
           completedResponses,
-          avgScore:
-            avgScoreRow._avg.scorePercentage != null
-              ? Math.round(avgScoreRow._avg.scorePercentage * 10) / 10
-              : null,
+          avgScore: basisPointsToPercent(avgScoreRow._avg.scorePercentage),
         },
         sectorBreakdown,
         topTemplates,

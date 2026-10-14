@@ -48,6 +48,20 @@ function formatValue(value: unknown, type: AuditQuestionType): string {
   return JSON.stringify(value);
 }
 
+// Chromium ust duzey gezinmede data: adresleri engeller; once blob'a cevirip aciyoruz.
+function openPhotoInNewTab(dataUrl: string): void {
+  fetch(dataUrl)
+    .then((r) => r.blob())
+    .then((blob) => {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    })
+    .catch(() => {
+      /* sessizce vazgec: kucuk onizleme zaten ekranda */
+    });
+}
+
 function formatExpected(correct: unknown): string {
   if (Array.isArray(correct)) return correct.map((v) => String(v)).join(', ');
   if (typeof correct === 'string') return correct;
@@ -306,7 +320,11 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
                             {isTr ? 'Madde sonradan eklendi' : 'Item added later'}
                           </div>
                         ) : photo ? (
-                          <a href={photo} target="_blank" rel="noopener noreferrer" className="inline-block">
+                          <button
+                            type="button"
+                            onClick={() => openPhotoInNewTab(photo)}
+                            className="inline-block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                          >
                             <img
                               src={photo}
                               alt={isTr ? 'Yüklenen fotoğraf (büyütmek için aç)' : 'Uploaded photo (open to enlarge)'}
@@ -314,7 +332,7 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
                               decoding="async"
                               className="mt-1 max-h-[200px] w-auto rounded-lg border border-[#EDEDED] object-contain"
                             />
-                          </a>
+                          </button>
                         ) : empty ? (
                           <div className="italic text-[#A3A3A3]">
                             {q.type === 'file'
