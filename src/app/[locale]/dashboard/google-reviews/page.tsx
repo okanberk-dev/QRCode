@@ -418,7 +418,7 @@ function ReviewCard({
                   type="button"
                   onClick={handleAiClick}
                   disabled={drafting}
-                  className="bz-btn-lime bz-btn-sm disabled:opacity-60"
+                  className="bz-btn-lime bz-btn-sm max-sm:min-h-11 disabled:opacity-60"
                 >
                   {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                   {isTr ? 'AI yanıt' : 'AI reply'}
@@ -428,7 +428,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={handleManualClick}
-                  className="bz-btn bz-btn-sm"
+                  className="bz-btn bz-btn-sm max-sm:min-h-11"
                 >
                   <Send size={12} />
                   {isTr ? 'Manuel' : 'Manual'}
@@ -438,7 +438,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={handleEditReply}
-                  className="bz-btn bz-btn-sm"
+                  className="bz-btn bz-btn-sm max-sm:min-h-11"
                 >
                   <Edit3 size={12} />
                   {isTr ? 'Yanıtı düzenle' : 'Edit reply'}
@@ -447,7 +447,7 @@ function ReviewCard({
               <button
                 type="button"
                 onClick={onFlagToggle}
-                className={`${flagged ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
+                className={`${flagged ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm max-sm:min-h-11`}
                 aria-pressed={flagged}
               >
                 <Flag size={12} />
@@ -521,7 +521,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={() => setComposerOpen(false)}
-                  className="bz-btn bz-btn-sm"
+                  className="bz-btn bz-btn-sm max-sm:min-h-11"
                 >
                   {isTr ? 'İptal' : 'Cancel'}
                 </button>
@@ -530,7 +530,7 @@ function ReviewCard({
                     type="button"
                     onClick={onDraft}
                     disabled={drafting}
-                    className="bz-btn bz-btn-sm disabled:opacity-60"
+                    className="bz-btn bz-btn-sm max-sm:min-h-11 disabled:opacity-60"
                   >
                     {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                     {isTr ? 'AI taslağı' : 'AI draft'}
@@ -547,7 +547,7 @@ function ReviewCard({
                           : 'Confirm the responsibility checkbox before sending')
                       : undefined
                   }
-                  className="bz-btn-primary bz-btn-sm text-[11.5px] disabled:opacity-60"
+                  className="bz-btn-primary bz-btn-sm max-sm:min-h-11 text-[11.5px] disabled:opacity-60"
                 >
                   {replying ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                   {isTr ? "Google'a gönder" : 'Send to Google'}
@@ -1545,7 +1545,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
               </p>
               <PulseSelect
                 value={activeRestaurantId ?? ''}
-                onChange={selectRestaurant}
+                onChange={(id) => {
+                  // A manual switch never moves focus into a search field (that
+                  // is only for "Next: …", which sets the hint itself).
+                  setFocusSearchFor(null);
+                  selectRestaurant(id);
+                }}
                 options={switcherOptions}
                 ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
                 aria-describedby="google-switcher-summary"
@@ -1739,7 +1744,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           )}
           {locationNotice && !locationError && (
             <div className="space-y-2">
-              <AlertBanner kind="warn" onDismiss={() => setLocationNotice(null)} className={BANNER_TOUCH_CLS}>
+              {/* Google has not opened reply access for Buaze yet: a neutral,
+                  permanent state the owner cannot fix, so `info`. A busy Google
+                  stays a `warn`. */}
+              <AlertBanner
+                kind={apiNotProvisioned ? 'info' : 'warn'}
+                onDismiss={() => setLocationNotice(null)}
+                className={BANNER_TOUCH_CLS}
+              >
                 {locationNotice}
               </AlertBanner>
               {/* §38.208 — Sarı banner görünüyor + accounts boş ise direkt
