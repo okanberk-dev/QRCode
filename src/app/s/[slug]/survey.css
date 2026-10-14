@@ -119,6 +119,55 @@
   }
 }
 
+/* Recommend score 0–10: six columns (0–5, then 6–10 with the last cell empty)
+   so a cell is >= 44 px wide even at 320 px. Cell width =
+   (frame − 2·16 − 5·gap) / 6: 44.7 px at 320 with a 4 px gap, 48 at 360. The
+   negative inline margin trims the 22 px screen padding to 16 px for the grid. */
+.bz-survey-nps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-inline: -6px;
+}
+@media (max-width: 360px) {
+  .bz-survey-nps {
+    gap: 4px;
+  }
+}
+.bz-survey-nps-cell {
+  min-height: 48px;
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Editor / detail-page preview (PublicSurveyView `preview`). The real
+   .bz-survey-stage / -frame size themselves from the VIEWPORT (min-height
+   780px, margins, 440px max-width behind media queries) and overflow a
+   360x640 phone frame, so the preview uses this plain column instead —
+   deliberately NO media queries: content follows the frame's own width. */
+.bz-survey-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+.bz-survey-preview > * {
+  min-height: 0;
+}
+/* Dark intro / thank-you screens are taller than a phone frame: they scroll
+   inside it (the question screen already scrolls its middle part). */
+.bz-survey-preview .bz-survey-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 /* Page-transition animations — transform-only so frozen frames stay visible */
 @keyframes bzSurveySlideR {
   from {
