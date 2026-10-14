@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { AlertBanner, Field } from "@/components/ui";
 import { GoogleConnectFlashBanner } from "@/components/dashboard/google/GoogleConnectFlashBanner";
+import { ownerBodyMessage } from "@/components/dashboard/google/places-client";
+import { ownerGoogleMessage } from "@/lib/google-owner-copy";
 import { SettingsCard } from "../SettingsCard";
 
 interface RestaurantData {
@@ -171,7 +173,7 @@ export function GoogleBusinessIntegrationPanel({
     try {
       const res = await fetch(`/api/restaurants/${restaurant.id}/google/business/status`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Google durumu alınamadı.");
+      if (!res.ok) throw new Error("status");
       setStatus(data);
     } catch {
       setStatus(null);
@@ -200,11 +202,15 @@ export function GoogleBusinessIntegrationPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, locale }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Google işletme araması başarısız.");
-      setPlaces(data.places ?? []);
-    } catch (err) {
-      setPlacesError(err instanceof Error ? err.message : "Google işletme araması başarısız.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        // Mapped by machine code: server text is never shown to the owner.
+        setPlacesError(ownerBodyMessage(data, locale, "places_search_failed"));
+        return;
+      }
+      setPlaces(data?.places ?? []);
+    } catch {
+      setPlacesError(ownerGoogleMessage("places_search_failed", locale));
     } finally {
       setPlacesLoading(false);
     }
@@ -222,32 +228,41 @@ export function GoogleBusinessIntegrationPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ placeId: place.placeId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Google işletmesi kaydedilemedi.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setPlacesError(ownerBodyMessage(data, locale));
+        return;
+      }
       onGoogleLinkSelected({
-        googlePlaceId: data.restaurant?.googlePlaceId ?? place.placeId,
-        googleReviewUrl: data.restaurant?.googleReviewUrl ?? null,
+        googlePlaceId: data?.restaurant?.googlePlaceId ?? place.placeId,
+        googleReviewUrl: data?.restaurant?.googleReviewUrl ?? null,
         googleEnabled: true,
       });
       setPlaces([]);
-    } catch (err) {
-      setPlacesError(err instanceof Error ? err.message : "Google işletmesi kaydedilemedi.");
+    } catch {
+      setPlacesError(ownerGoogleMessage(null, locale));
     }
   };
 
   const connectGoogle = async () => {
     const callbackTarget = returnTo ?? `/${locale}/dashboard/platforms?restaurantId=${restaurant.id}`;
-    const res = await fetch("/api/integrations/google/connect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ returnTo: callbackTarget }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.url) {
-      setLocationsError(data?.message || data?.error || "Google OAuth başlatılamadı.");
-      return;
+    try {
+      const res = await fetch("/api/integrations/google/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ returnTo: callbackTarget }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) {
+        // The route's `message` is operator wording (it used to name the
+        // missing configuration); the owner only ever sees mapped copy.
+        setLocationsError(ownerBodyMessage(data, locale, "token-error"));
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setLocationsError(ownerGoogleMessage("token-error", locale));
     }
-    window.location.href = data.url;
   };
 
   // `force=true` sadece kullanıcı bilinçli "Konumları yenile" butonuna
@@ -289,12 +304,8 @@ export function GoogleBusinessIntegrationPanel({
         setApiNotProvisioned(notProvisioned);
         setLocations(data.locations ?? []);
         setLocationsSource(data.source ?? null);
-        setLocationsNotice(
-          data.message ||
-            (isTr
-              ? 'Google API kotası doldu. Son güncel veriler gösteriliyor; birkaç dakika sonra yenileyin.'
-              : 'Google API quota exhausted. Showing last synced data; try again in a few minutes.'),
-        );
+        // Mapped by the machine `warning`: the route's own `message` is never shown.
+        setLocationsNotice(ownerGoogleMessage(data.warning, locale));
         const retryAfter = notProvisioned
           ? null
           : typeof data.retryAfterSeconds === 'number'
@@ -316,20 +327,18 @@ export function GoogleBusinessIntegrationPanel({
         if (res.status === 429) {
           const retryHeader = res.headers.get('retry-after');
           const retryAfter = retryHeader ? Number(retryHeader) : null;
-          setLocationsError(
-            data?.error ||
-              (retryAfter
-                ? (isTr
-                    ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
-                    : `Google API quota exhausted. Try again in ${retryAfter}s.`)
-                : (isTr
-                    ? 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.'
-                    : 'Google API quota exhausted. Try again in a few minutes.')),
-          );
-          setLocationsRetryAfter(Number.isFinite(retryAfter) ? retryAfter : null);
+          setLocationsError(ownerBodyMessage(data, locale, 'CLIENT_THROTTLED'));
+          setLocationsRetryAfter(retryAfter !== null && Number.isFinite(retryAfter) ? retryAfter : null);
           return;
         }
-        throw new Error(data?.error || (isTr ? 'Google konumları alınamadı.' : 'Failed to load locations.'));
+        setLocationsError(
+          ownerBodyMessage(
+            data,
+            locale,
+            res.status >= 500 ? 'GOOGLE_API_ERROR' : undefined,
+          ),
+        );
+        return;
       }
       setLocations(data.locations ?? []);
       setLocationsSource(data.source ?? null);
@@ -341,8 +350,8 @@ export function GoogleBusinessIntegrationPanel({
         selectedLocation: data.selectedLocation ?? prev?.selectedLocation ?? null,
         syncedAt: data.syncedAt ?? prev?.syncedAt ?? null,
       }));
-    } catch (err) {
-      setLocationsError(err instanceof Error ? err.message : (isTr ? "Google konumları alınamadı." : "Failed to load locations."));
+    } catch {
+      setLocationsError(ownerGoogleMessage('GOOGLE_NETWORK_ERROR', locale));
     } finally {
       setLocationsLoading(false);
     }
@@ -359,23 +368,26 @@ export function GoogleBusinessIntegrationPanel({
           locationName: location.locationName,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Google konumu kaydedilemedi.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setLocationsError(ownerBodyMessage(data, locale));
+        return;
+      }
       setStatus((prev) => ({
         googleReviewManagementEnabled: prev?.googleReviewManagementEnabled ?? true,
         placesConfigured: prev?.placesConfigured ?? true,
         oauthConfigured: prev?.oauthConfigured ?? true,
         connected: true,
-        selectedLocation: data.selectedLocation,
+        selectedLocation: data?.selectedLocation ?? null,
         syncedAt: prev?.syncedAt ?? null,
       }));
       onGoogleLinkSelected({
-        googlePlaceId: data.restaurant?.googlePlaceId ?? location.placeId,
-        googleReviewUrl: data.restaurant?.googleReviewUrl ?? location.newReviewUri,
+        googlePlaceId: data?.restaurant?.googlePlaceId ?? location.placeId,
+        googleReviewUrl: data?.restaurant?.googleReviewUrl ?? location.newReviewUri,
         googleEnabled: true,
       });
-    } catch (err) {
-      setLocationsError(err instanceof Error ? err.message : "Google konumu kaydedilemedi.");
+    } catch {
+      setLocationsError(ownerGoogleMessage(null, locale));
     }
   };
 
@@ -387,16 +399,19 @@ export function GoogleBusinessIntegrationPanel({
       const res = await fetch(`/api/integrations/google/disconnect`, {
         method: "POST",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Bağlantı kesilemedi.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setLocationsError(ownerBodyMessage(data, locale));
+        return;
+      }
       setStatus((prev) => prev ? ({
         ...prev,
         connected: false,
         selectedLocation: null,
       }) : null);
       setLocations([]);
-    } catch (err) {
-      setLocationsError(err instanceof Error ? err.message : "Bağlantı kesilemedi.");
+    } catch {
+      setLocationsError(ownerGoogleMessage(null, locale));
     }
   };
 
@@ -406,7 +421,7 @@ export function GoogleBusinessIntegrationPanel({
       title={isTr ? "Google işletme bağlantısı" : "Google Business connection"}
       description={
         isTr
-          ? "İşletmeyi Google'da bul, yorum linkini otomatik üret ve Business Profile bağlıysa gelen Google yorumlarını yönet."
+          ? "İşletmeyi Google'da bul, yorum linkini otomatik üret ve Google İşletme Profili bağlıysa gelen Google yorumlarını yönet."
           : "Find the business on Google, generate the review link, and manage Google reviews when Business Profile is connected."
       }
     >
@@ -448,7 +463,7 @@ export function GoogleBusinessIntegrationPanel({
                 className="bz-input"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={isTr ? "Restoran adı, şehir, adres" : "Restaurant name, city, address"}
+                placeholder={isTr ? "İşletme adı, şehir, adres" : "Business name, city, address"}
                 disabled={!status?.placesConfigured}
               />
             </Field>
@@ -511,11 +526,11 @@ export function GoogleBusinessIntegrationPanel({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="bz-h-tight text-[15px]">
-                {isTr ? "Google Business Profile yorumları" : "Google Business Profile reviews"}
+                {isTr ? "Google İşletme Profili yorumları" : "Google Business Profile reviews"}
               </div>
               <p className="mt-1 max-w-[680px] text-[13px] leading-relaxed text-[#525252]">
                 {isTr
-                  ? "Yorumları çekmek ve cevap yazmak için işletmenin Google hesabıyla bağlanması gerekir. Hesap, ilgili Google Business konumunda sahip veya yönetici olmalı."
+                  ? "Yorumları çekmek ve cevap yazmak için işletmenin Google hesabıyla bağlanması gerekir. Hesap, ilgili Google İşletme Profili konumunda sahip veya yönetici olmalı."
                   : "Fetching and replying to reviews requires connecting the business Google account. The account must be an owner or manager of the selected Business Profile location."}
               </p>
             </div>
@@ -531,8 +546,8 @@ export function GoogleBusinessIntegrationPanel({
             <div className="mt-4">
               <AlertBanner kind="warn">
                 {isTr
-                  ? "Bu işletme için Google yorum yönetimi admin panelinden kapalı. Places araması ve yorum linki çalışır; Google yorumlarını çekme, AI ile cevap verme ve Google'a gönderme açılana kadar pasif kalır."
-                  : "Google review management is disabled for this business in the admin panel. Places search and review links still work; fetching reviews, AI replies, and Google reply publishing remain inactive until enabled."}
+                  ? `${ownerGoogleMessage("reply_plan_off", locale)} İşletmeni Google'da bulma ve yorum linki çalışmaya devam eder; yorumları okuma, Pulse AI ile yanıt hazırlama ve Google'a yanıt gönderme açılana kadar pasif kalır.`
+                  : `${ownerGoogleMessage("reply_plan_off", locale)} Finding your business on Google and the review link keep working; reading reviews, Pulse AI drafts and sending replies to Google stay inactive until it is enabled.`}
               </AlertBanner>
             </div>
           )}
@@ -540,9 +555,7 @@ export function GoogleBusinessIntegrationPanel({
           {reviewManagementEnabled && !status?.oauthConfigured && (
             <div className="mt-4">
               <AlertBanner kind="warn">
-                {isTr
-                  ? "Yorumları yönetmek için Vercel'e GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET ve GOOGLE_REDIRECT_URI eklenmeli."
-                  : "To manage reviews, add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI to Vercel."}
+                {ownerGoogleMessage("reply_feature_off", locale)}
               </AlertBanner>
             </div>
           )}
@@ -565,7 +578,7 @@ export function GoogleBusinessIntegrationPanel({
                   {selectedLocation
                     ? `${isTr ? "Seçili konum:" : "Selected location:"} ${selectedLocation.title}`
                     : isTr
-                      ? "Henüz Google Business konumu seçilmedi."
+                      ? "Henüz Google İşletme Profili konumu seçilmedi."
                       : "No Google Business location selected yet."}
                 </div>
                 <div className="flex gap-2">
@@ -622,12 +635,10 @@ export function GoogleBusinessIntegrationPanel({
                   </p>
                   <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-[1.6] text-[#737373]">
                     {apiNotProvisioned
-                      ? isTr
-                        ? 'Hesabınız doğru bağlandı. Google İşletme Profili API erişimi Buaze tarafında aktifleşince konumlarınız burada listelenecek — sizin ek bir işlem yapmanıza gerek yok.'
-                        : 'Your account is connected correctly. Your locations will appear here once Google Business Profile API access is activated on the Buaze side — no action is needed from you.'
+                      ? ownerGoogleMessage('reply_connected_not_provisioned', locale)
                       : isTr
-                        ? 'Bu Google hesabında yönettiğiniz bir İşletme Profili görünmüyor. İşletmeniz farklı bir Google hesabında olabilir — o hesapla bağlanmayı deneyin.'
-                        : "We can't see a Business Profile you manage on this Google account. Your business may live on a different Google account — try connecting with that one."}
+                        ? 'Bu Google hesabında yönettiğin bir İşletme Profili görünmüyor. İşletmen farklı bir Google hesabında olabilir; o hesapla bağlanmayı dene.'
+                        : "We can't see a Business Profile you manage on this Google account. Your business may live on a different Google account; try connecting with that one."}
                   </p>
                 </div>
               )}
