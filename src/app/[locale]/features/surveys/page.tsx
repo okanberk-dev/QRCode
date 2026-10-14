@@ -164,7 +164,7 @@ export default async function SurveysPage({
         {
           icon: Gift,
           title: 'Kupon teşviki (opsiyonel)',
-          body: 'Anket sonunda kupon kodu + etiket göster ("BUAZE10 · %10 indirim"). Yanıt oranını yükseltir; müşteri tamamlama hissi yaşar. Ödül akışı tamamen opsiyonel.',
+          body: 'Anket sonunda kupon kodu + açıklama göster ("BUAZE10 · %10 indirim"). Müşteri teşekkürü somut bir karşılıkla alır. Ödül akışı tamamen opsiyonel.',
         },
         {
           icon: Smile,
@@ -186,7 +186,7 @@ export default async function SurveysPage({
         {
           icon: Gift,
           title: 'Coupon reward (optional)',
-          body: 'Show a coupon code + label at the end ("BUAZE10 · 10% off"). Lifts response rate; the customer feels rewarded. Reward flow is entirely optional.',
+          body: 'Show a coupon code + description at the end ("BUAZE10 · 10% off"). The customer gets a concrete thank-you. Reward flow is entirely optional.',
         },
         {
           icon: Smile,
@@ -375,8 +375,8 @@ export default async function SurveysPage({
               </h1>
               <p className="mt-6 max-w-[560px] text-[17px] leading-[1.6] text-white/70 sm:text-[18px]">
                 {isTr
-                  ? 'NPS, CSAT, yıldız, metin — Google\'dan bağımsız özel anket. QR ile dağıt, opsiyonel kuponla yanıt oranını yükselt, sonuçları aynı panelde analiz et.'
-                  : 'NPS, CSAT, star, text — private surveys independent of Google. Share via QR, lift response rate with an optional coupon, analyze results in the same panel.'}
+                  ? 'NPS, CSAT, yıldız, metin — Google\'dan bağımsız özel anket. QR ile dağıt, istersen teşekkür kuponu ekle, sonuçları aynı panelde oku.'
+                  : 'NPS, CSAT, star, text — private surveys independent of Google. Share via QR, add an optional thank-you coupon, read the results in the same panel.'}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -473,8 +473,8 @@ export default async function SurveysPage({
               <blockquote className="mt-6 rounded-r-2xl border-l-[3px] border-[#C6F24E] bg-[#EAF9B8]/30 px-5 py-4 sm:px-6 sm:py-5">
                 <p className="text-[15px] sm:text-[17px] font-medium leading-[1.55] text-[#0A0A0A]">
                   {isTr
-                    ? '"NPS + CSAT, müşterinin kamuda söylemediği iyileştirme sinyallerini işletmeye taşır. QR ile düşük sürtünmede toplanır — Google yorum oranının çok üzerinde."'
-                    : '"NPS + CSAT carry the improvement signals customers don\'t say publicly to your business. QR collects them with low friction — far above Google review rates."'}
+                    ? '"NPS + CSAT, müşterinin herkese açık yazmadığı iyileştirme sinyallerini işletmene taşır. QR ile tek taramada, az emekle toplanır."'
+                    : '"NPS + CSAT bring the improvement signals customers don\'t post publicly back to your business. A single QR scan collects them with very little effort."'}
                 </p>
               </blockquote>
             </div>
@@ -489,8 +489,8 @@ export default async function SurveysPage({
               <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
-                    ? 'Pratik kurallar: 1) 5 sorudan fazla olmasın — 60 saniyenin altında tamamlanmalı, 2) İlk soru yıldız veya NPS olsun — düşük puanda kalan müşteriyi takip et, 3) Açık metin sadece 1-2 yerde olsun (sebep + öneri), 4) Ödül opsiyonel ama yanıt oranını %30-50 artırır, 5) Mobil-first — formun max-width 920px, font 16px+ (iOS auto-zoom önleme).'
-                    : 'Practical rules: 1) No more than 5 questions — finish in under 60 seconds, 2) First question should be star or NPS — track customers who left a low score, 3) Open text only in 1-2 spots (reason + suggestion), 4) Reward is optional but lifts response rate by 30-50%, 5) Mobile-first — form max-width 920px, font 16px+ (iOS auto-zoom prevention).'}
+                    ? 'Pratik kurallar: 1) 5 sorudan fazla olmasın — 60 saniyenin altında tamamlanmalı, 2) İlk soru yıldız veya NPS olsun — düşük puanda kalan müşteriyi takip et, 3) Açık metin sadece 1-2 yerde olsun (sebep + öneri), 4) Ödül tamamen opsiyonel; istersen teşekkür ekranında bir kupon kodu göster, 5) Telefonda rahat dolsun — müşteri ekranı telefon için tasarlandı: her soru ayrı ekranda, büyük dokunma alanlarıyla.'
+                    : 'Practical rules: 1) No more than 5 questions — finish in under 60 seconds, 2) First question should be star or NPS — track customers who left a low score, 3) Open text only in 1-2 spots (reason + suggestion), 4) A reward is entirely optional; if you want one, show a coupon code on the thank-you screen, 5) Easy on a phone — the customer screen is built for phones: one question per screen with large tap targets.'}
                 </p>
                 <p>
                   {isTr
