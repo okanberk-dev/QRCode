@@ -55,7 +55,7 @@ function PresetCard({
       type="button"
       onClick={onPick}
       disabled={disabled}
-      className="group relative flex min-h-[44px] flex-col items-start gap-2 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#0A0A0A] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:border-[#EDEDED] disabled:hover:shadow-none"
+      className="group relative flex min-h-[44px] flex-col items-start gap-1.5 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white p-3 text-left sm:gap-2 sm:p-3.5 transition-all hover:-translate-y-0.5 hover:border-[#0A0A0A] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:border-[#EDEDED] disabled:hover:shadow-none"
     >
       <div className="flex w-full items-center justify-between gap-2">
         <span className="inline-flex min-w-0 items-center gap-2">
@@ -130,10 +130,13 @@ export function MenuStarter({
   );
 
   return (
-    <section className="rounded-3xl border border-[#EDEDED] bg-white px-4 py-5 shadow-sm sm:px-8 sm:py-8">
+    // Phones: no card around the cards (card-in-card cost ~40 px of the first
+    // screen and squeezed the template chips onto extra lines) and no icon tile —
+    // the first template has to sit as high as possible above the bottom nav.
+    <section className="sm:rounded-3xl sm:border sm:border-[#EDEDED] sm:bg-white sm:px-8 sm:py-8 sm:shadow-sm">
       <div className="mx-auto max-w-[760px]">
         <div className="flex items-start gap-3.5">
-          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#EAF9B8] to-[#C6F24E] text-[#0A0A0A] shadow-sm sm:h-11 sm:w-11">
+          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#EAF9B8] to-[#C6F24E] text-[#0A0A0A] shadow-sm sm:inline-flex">
             <UtensilsCrossed size={18} strokeWidth={2} />
           </span>
           <div className="min-w-0">
@@ -142,7 +145,7 @@ export function MenuStarter({
           </div>
         </div>
 
-        <div className="mt-4 space-y-2.5 sm:mt-5">
+        <div className="mt-3 space-y-2.5 sm:mt-5">
           {grid(featured)}
           {showMore && grid(others)}
           {others.length > 0 && (
