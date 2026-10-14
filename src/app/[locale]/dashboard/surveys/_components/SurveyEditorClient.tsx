@@ -582,7 +582,7 @@ export default function SurveyEditorClient({
   // ── Create + module off: only the notice ────────────────────────────────
   if (!isEdit && moduleOff) {
     return (
-      <div data-survey-editor="" className="mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
+      <div data-survey-editor="" className="relative mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
         <div id={`${uid}-top`} className="flex min-h-11 items-center">
           <Link
             href={listHref}
@@ -738,8 +738,13 @@ export default function SurveyEditorClient({
     </div>
   );
 
+  // `relative` on the wrapper: `sr-only` helpers and the switch internals are
+  // absolutely positioned, and without a positioned ancestor inside the panel's
+  // scroll column they belong to the (overflow-hidden) shell. That makes the
+  // whole shell programmatically scrollable, and a focus() on a new question then
+  // slides the sidebar and topbar up by ~200 px.
   return (
-    <div data-survey-editor="" className="mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
+    <div data-survey-editor="" className="relative mx-auto w-full max-w-[1280px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
       <div id={`${uid}-top`} className="flex min-h-11 scroll-mt-24 items-center justify-between gap-3">
         <Link
           href={listHref}

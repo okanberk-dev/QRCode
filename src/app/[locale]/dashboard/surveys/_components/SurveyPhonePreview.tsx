@@ -106,7 +106,10 @@ export default function SurveyPhonePreview({ locale, form, business }: Props) {
   const shape = survey.questions.length === 1 ? 'one' : 'many';
 
   return (
-    <div className="mx-auto w-full max-w-[360px]">
+    // 360 px wide at most; on a short screen (laptop) the phone shrinks so the
+    // frame and the "restart" button stay clear of the sticky action bar
+    // (sticky top 88 + caption 26 + restart row 52 + action bar 69 + gap 8).
+    <div className="mx-auto w-full max-w-[clamp(280px,calc((100dvh_-_243px)*9/16),360px)]">
       <div
         className="aspect-[9/16] w-full overflow-hidden rounded-[32px] border-8 border-[#0A0A0A] bg-[#0A0A0A]"
         data-testid="survey-phone-preview"
