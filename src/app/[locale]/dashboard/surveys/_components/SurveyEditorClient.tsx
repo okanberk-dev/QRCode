@@ -149,10 +149,16 @@ function initialFormFor(
   return blankForm(makeId, makeKey);
 }
 
+// The live phone only fits beside the form when the screen is wide AND tall
+// enough to keep it clear of the sticky action bar; on a short screen (a
+// landscape tablet, a small laptop) the "Preview" button opens it in a modal.
+// Keep this query in sync with the `[@media(...)]` classes below.
+const TALL_DESKTOP_QUERY = '(min-width: 1024px) and (min-height: 740px)';
+
 function useIsDesktop(): boolean {
   const [desktop, setDesktop] = useState(false);
   useEffect(() => {
-    const query = window.matchMedia('(min-width: 1024px)');
+    const query = window.matchMedia(TALL_DESKTOP_QUERY);
     const sync = () => setDesktop(query.matches);
     sync();
     query.addEventListener('change', sync);
@@ -637,7 +643,7 @@ export default function SurveyEditorClient({
 
         <button
           type="button"
-          className="bz-btn-ghost min-h-11 min-w-11 justify-center lg:hidden"
+          className="bz-btn-ghost min-h-11 min-w-11 justify-center [@media(min-width:1024px)_and_(min-height:740px)]:hidden"
           aria-label={isTr ? 'Önizle' : 'Preview'}
           onClick={() => setPreviewOpen(true)}
         >
@@ -830,7 +836,7 @@ export default function SurveyEditorClient({
         </>
       ) : (
         <>
-          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6">
+          <div className="[@media(min-width:1024px)_and_(min-height:740px)]:grid [@media(min-width:1024px)_and_(min-height:740px)]:grid-cols-[minmax(0,1fr)_380px] [@media(min-width:1024px)_and_(min-height:740px)]:items-start [@media(min-width:1024px)_and_(min-height:740px)]:gap-6">
             <div className="min-w-0 space-y-5">
               {/* 1 · Title */}
               <section className="bz-card space-y-4 p-4 sm:p-5" aria-label={isTr ? 'Anket başlığı' : 'Survey title'}>
@@ -1118,7 +1124,7 @@ export default function SurveyEditorClient({
 
             {/* Desktop: live phone preview, sticky below the topbar */}
             <aside
-              className="hidden self-start lg:sticky lg:top-[88px] lg:block"
+              className="hidden self-start [@media(min-width:1024px)_and_(min-height:740px)]:sticky [@media(min-width:1024px)_and_(min-height:740px)]:top-[88px] [@media(min-width:1024px)_and_(min-height:740px)]:block"
               aria-label={isTr ? 'Müşterinin göreceği ekran' : 'What customers will see'}
             >
               <p className="mb-2 text-center text-[12px] font-semibold text-[#525252]">

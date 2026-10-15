@@ -79,6 +79,11 @@ interface Props {
 
 type TabId = 'mine' | 'ready';
 
+// How many times this list has mounted in this browser session. The first mount
+// carries a fresh server render; a later one (Back from a detail/builder page)
+// is restored from the router cache and its list can be older than the server.
+let listMountCount = 0;
+
 interface ShareTarget {
   row: OwnerAuditTemplateRow;
   restaurantId: string;
@@ -144,6 +149,37 @@ export default function AuditListClient({
       }
     })();
   }, [business.ready, activeId, hasCache, retryTick, locale, isTr]);
+
+  // Back from an audit/builder page restores this page from the router cache, so
+  // a just-created or just-renamed audit can be missing. On a repeat mount, quietly
+  // re-read the active business's list and swap it in (no skeleton, no flash).
+  const isRepeatMountRef = useRef(false);
+  useEffect(() => {
+    isRepeatMountRef.current = listMountCount > 0;
+    listMountCount += 1;
+  }, []);
+  useEffect(() => {
+    if (!isRepeatMountRef.current || !business.ready || !activeId) return;
+    const target = activeId;
+    isRepeatMountRef.current = false;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(`/api/restaurants/${target}/audits/templates`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as { data?: OwnerAuditTemplateRow[] };
+        if (Array.isArray(json.data)) {
+          setByBusiness((prev) => ({ ...prev, [target]: json.data as OwnerAuditTemplateRow[] }));
+        }
+      } catch {
+        // Keep showing the list we have; the next visit tries again.
+      }
+    })();
+    return () => controller.abort();
+  }, [business.ready, activeId]);
 
   const loadingRows = Boolean(activeId) && rows === undefined;
   const nonArchived = useMemo(() => (rows ?? []).filter((r) => r.status !== 'archived'), [rows]);
@@ -429,6 +465,7 @@ export default function AuditListClient({
       )}
 
       <Tabs
+        className="[&_[role=tab]]:min-h-11"
         ariaLabel={isTr ? 'Denetim Merkezi bölümleri' : 'Audit Center sections'}
         active={effectiveTab}
         onChange={setTab}

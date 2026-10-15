@@ -564,6 +564,7 @@ export default function PlatformProviderWizard({
           locale={locale}
           dirty={dirty}
           returnTo={`/${locale}/dashboard/platforms/google?restaurantId=${selectedRestaurant.id}`}
+          profileHref={`/${locale}/dashboard/google-reviews?restaurantId=${encodeURIComponent(selectedRestaurant.id)}`}
           onGoogleLinkSelected={(next) => {
             updateSelectedRestaurant({
               googlePlaceId: next.googlePlaceId,

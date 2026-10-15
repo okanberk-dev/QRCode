@@ -213,6 +213,12 @@ export async function POST(
     );
   }
 
+  // A survey whose questions are all optional must still carry at least one
+  // real answer — an empty response is noise in the results and the counts.
+  if (sanitizedAnswers.length === 0) {
+    return NextResponse.json({ error: 'no_answers' }, { status: 400 });
+  }
+
   // Sanitize contact fields (CRLF strip) so they can't poison downstream
   // mail / CSV exports (CLAUDE.md §37.2.G).
   const stripCtl = (v: unknown, max = 200): string | null => {

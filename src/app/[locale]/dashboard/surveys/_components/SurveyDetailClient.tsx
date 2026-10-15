@@ -387,6 +387,7 @@ export default function SurveyDetailClient({
 
       <div className="mt-5">
         <Tabs
+          className="[&_[role=tab]]:min-h-11"
           ariaLabel={isTr ? 'Anket bölümleri' : 'Survey sections'}
           items={[
             { id: 'share', label: isTr ? 'Paylaş' : 'Share' },
