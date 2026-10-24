@@ -12,6 +12,8 @@ import { sanitizeBlogContent } from '@/lib/blog-content';
 import { blogDateToIso } from '@/lib/blog-date';
 import { resolveBlogPairFromDb } from '@/lib/blog-translation-pairs';
 import Link from 'next/link';
+import { cache } from 'react';
+import { SITE_URL } from '@/lib/site';
 import { ArrowLeft } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 
@@ -39,6 +41,12 @@ const SHARE_ICONS = {
 // `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
 // from the Vercel CDN edge for anonymous visitors.
 
+// generateMetadata and the page both need the post; React `cache` makes the
+// second call reuse the first query within the same request.
+const getBlogPost = cache((slug: string, locale: string) =>
+  prisma.blogPost.findUnique({ where: { slug_locale: { slug, locale } } }),
+);
+
 export async function generateMetadata(
   {
     params,
@@ -47,36 +55,41 @@ export async function generateMetadata(
   },
 ): Promise<Metadata> {
   const { locale, slug } = await params;
-  const post = await prisma.blogPost.findUnique({
-    where: { slug_locale: { slug, locale } },
-  });
+  const post = await getBlogPost(slug, locale);
 
-  if (!post) return { title: 'Post Not Found' };
+  if (!post || !post.isActive) return { title: 'Post Not Found' };
 
   const ogImage = post.coverImage?.trim() || `/images/open-graph-${locale}.png`;
   const keywords = getBlogKeywords(post.title, post.description, locale);
 
   // hreflang — pair'lı yazılarda karşı locale farklı slug taşıyabilir.
   // DB-aware lookup (translationGroupId) + statik map fallback.
-  const trSlug =
-    locale === 'tr' ? slug : (await resolveBlogPairFromDb(slug, 'en', 'tr')) ?? slug;
-  const enSlug =
-    locale === 'en' ? slug : (await resolveBlogPairFromDb(slug, 'tr', 'en')) ?? slug;
+  const otherLocale: Locale = locale === 'tr' ? 'en' : 'tr';
+  const pairedSlug = await resolveBlogPairFromDb(slug, locale, otherLocale);
+  // Only advertise the other language when that post really exists and is
+  // live — falling back to the same slug pointed hreflang at 404s/redirects.
+  const counterpart = await prisma.blogPost.findUnique({
+    where: { slug_locale: { slug: pairedSlug ?? slug, locale: otherLocale } },
+    select: { slug: true, isActive: true },
+  });
+  const languages: Record<string, string> = {
+    [locale]: `${SITE_URL}/${locale}/blog/${slug}`,
+  };
+  if (counterpart?.isActive) {
+    languages[otherLocale] = `${SITE_URL}/${otherLocale}/blog/${counterpart.slug}`;
+  }
+  languages['x-default'] = languages.tr ?? languages[locale];
 
   return {
-    title: `${post.title} — Buaze Blog`,
+    title: post.title,
     description: post.description,
     keywords,
-    authors: [{ name: post.author, url: 'https://www.buaze.com' }],
+    authors: [{ name: post.author, url: SITE_URL }],
     publisher: 'Buaze',
     category: locale === 'tr' ? 'İtibar yönetimi' : 'Reputation management',
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/blog/${slug}`,
-      languages: {
-        tr: `https://www.buaze.com/tr/blog/${trSlug}`,
-        en: `https://www.buaze.com/en/blog/${enSlug}`,
-        'x-default': `https://www.buaze.com/en/blog/${enSlug}`,
-      },
+      canonical: `${SITE_URL}/${locale}/blog/${slug}`,
+      languages,
     },
     robots: {
       index: Boolean(post.isActive),
@@ -193,10 +206,8 @@ export default async function BlogPostPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  const post = await prisma.blogPost.findUnique({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    where: { slug_locale: { slug, locale }, isActive: true } as any,
-  });
+  const found = await getBlogPost(slug, locale);
+  const post = found && found.isActive ? found : null;
 
   if (!post) {
     // Fallback 1: caller'ın landed slug'ı bu locale'de yok ama karşı locale
@@ -262,7 +273,8 @@ export default async function BlogPostPage({
       },
       address: {
         '@type': 'PostalAddress',
-        addressLocality: 'Ataşehir',
+        streetAddress: 'Workinton Maslak, Floor 4',
+        addressLocality: 'Maslak',
         addressRegion: 'İstanbul',
         addressCountry: 'TR',
       },

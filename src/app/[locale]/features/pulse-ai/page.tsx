@@ -23,8 +23,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Buaze Pulse AI — Yanıtları saniyelerde yaz | Buaze'
-      : 'Buaze Pulse AI — Draft replies in seconds | Buaze';
+      ? 'Buaze Pulse AI — Yanıtları saniyelerde yaz'
+      : 'Buaze Pulse AI — Draft replies in seconds';
   const description =
     locale === 'tr'
       ? 'Buaze Pulse AI, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. Onay kontrollü, hızlı yanıt akışı.'
@@ -120,24 +120,19 @@ export default async function PulseAiPage({
   const canonicalUrl = `https://www.buaze.com/${locale}/features/pulse-ai`;
   const softwareSchema = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
+    // Service, not SoftwareApplication: Google's software-app rich result
+    // requires a price plus a real aggregateRating/review, which we don't
+    // have — the item was reported as invalid.
+    '@type': 'Service',
+    serviceType: isTr ? 'AI yanıt asistanı' : 'AI reply assistant',
     name: 'Buaze Pulse AI',
     description: isTr
       ? 'Yorumlara saniyeler içinde markaya özel taslak yanıt üreten Buaze\'nin AI yanıt asistanı.'
       : "Buaze's AI reply copilot — generates brand-aligned draft responses to reviews in seconds.",
-    applicationCategory: 'BusinessApplication',
-    applicationSubCategory: isTr ? 'Yorum yönetimi' : 'Review management',
-    operatingSystem: 'Web',
     inLanguage: isTr ? 'tr-TR' : 'en-US',
     url: canonicalUrl,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'TRY',
-      description: isTr
-        ? 'Buaze planlarına dahil — ek ücret yok.'
-        : 'Included with Buaze plans — no add-on fee.',
-    },
+    // No `offers`: a price-0 Offer read as "this product is free" while
+    // the module is part of paid plans (only the trial is free).
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',

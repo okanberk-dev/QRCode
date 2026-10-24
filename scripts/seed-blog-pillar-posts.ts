@@ -66,7 +66,7 @@ const POSTS: PillarPost[] = [
 <ul>
 <li><strong>Genel memnuniyet ölçümü:</strong> Müşteriler genel olarak ne hissediyor? Tek soruluk bir puan yeterlidir.</li>
 <li><strong>Operasyonel sinyal yakalama:</strong> Hangi masa, şube veya saatte sorun yaşanıyor? Geri bildirime şube/masa bilgisi eklemelisiniz.</li>
-<li><strong>Kamuya açık yorum büyütme:</strong> Memnun müşterileri Google İşletme Profili gibi platformlardaki yorum bağlantısına yönlendirmek.</li>
+<li><strong>Kamuya açık yorum büyütme:</strong> Her müşteriye Google İşletme Profili gibi platformlardaki herkese açık yorum bağlantısını sunmak.</li>
 </ul>
 
 <p>Çoğu işletme için doğru başlangıç, tek bir net hedefe odaklanmaktır. Önce memnuniyeti ölçün, sonra detaylandırın.</p>
@@ -78,7 +78,7 @@ const POSTS: PillarPost[] = [
 <ul>
 <li><strong>1. Puan ekranı:</strong> Müşteri 1–5 yıldız veya benzeri basit bir ölçekle başlar. Tek dokunuş yeterli olmalı.</li>
 <li><strong>2. Açıklama (opsiyonel):</strong> İsteyen müşteri birkaç cümle ekleyebilir. Zorunlu tutmayın; zorunlu alanlar tamamlanma oranını düşürür.</li>
-<li><strong>3. Yönlendirme:</strong> Yüksek puan veren müşteriye dilerse kamuya açık platformda yorum yazma bağlantısı sunulur; düşük puan veren müşteri işletmeyle özel paylaşım yapabilir. Burada kritik nokta şudur: bu bir tercih akışıdır, bir engelleme değil.</li>
+<li><strong>3. Seçenekler:</strong> Her müşteriye kamuya açık platformda yorum yazma bağlantısı gösterilir; müşteri dilerse işletmeyle özel geri bildirim de paylaşabilir. Burada kritik nokta şudur: bu bir tercih akışıdır, bir engelleme değil.</li>
 </ul>
 
 <p>Buaze'nin yaklaşımında düşük puan veren müşteri istese de istediği platforma gidebilir; sadece kendisine ekiple özel iletişim seçeneği de sunulur. Bu, hem müşteri haklarına saygılı hem de Google'ın kullanıcı katkı politikalarıyla uyumlu bir tasarımdır. Konuyla ilgili ayrıntıyı <a href="/tr/google-compliance">Google uyumluluğu sayfamızda</a> bulabilirsiniz.</p>
@@ -104,7 +104,7 @@ const POSTS: PillarPost[] = [
 <li><strong>Zamanlama:</strong> Müşteriye deneyim biter bitmez sunun. Bir hafta sonra gelen anket unutulmuş bir deneyimi ölçer.</li>
 <li><strong>Kısalık:</strong> İlk ekran tek soru olmalı. Her ek zorunlu adım tamamlanma oranını düşürür.</li>
 <li><strong>Görünürlük:</strong> Karekodu göz hizasında ve yeterince büyük basın. Buruşmuş, küçük bir kod taranmaz.</li>
-<li><strong>İnsan teması:</strong> Personelin "deneyiminizi bizimle paylaşır mısınız?" demesi, sessiz bir standa göre kat kat daha etkilidir.</li>
+<li><strong>İnsan teması:</strong> Personelin "deneyiminizi bizimle paylaşır mısınız?" demesi, sessiz bir standa göre belirgin şekilde daha etkilidir.</li>
 </ul>
 
 <h2>Adım 5: Geri bildirimi operasyona çevirin</h2>
@@ -263,7 +263,7 @@ const POSTS: PillarPost[] = [
 
 <h2>QR akışı ile platformları beslemek</h2>
 
-<p>Çok platformlu yönetim yalnızca gelen yorumları okumak değildir; aynı zamanda memnun müşterileri doğru platformlara yönlendirmektir. Bir QR geri bildirim akışı, masadaki memnun müşteriye uygun platformun yorum bağlantısını sunabilir. Burada da ilke aynıdır: yönlendirme bir tercihtir, bir zorlama değil. Her müşteri istediği yere yorum yazma hakkını korur.</p>
+<p>Çok platformlu yönetim yalnızca gelen yorumları okumak değildir; aynı zamanda müşterilere doğru platformların yorum bağlantısını sunmaktır. Bir QR geri bildirim akışı, masadaki her müşteriye uygun platformun yorum bağlantısını sunabilir. Burada da ilke aynıdır: yönlendirme bir tercihtir, bir zorlama değil. Her müşteri istediği yere yorum yazma hakkını korur.</p>
 
 <h2>Pratik bir uygulama planı</h2>
 

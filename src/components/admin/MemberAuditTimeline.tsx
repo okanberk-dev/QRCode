@@ -8,7 +8,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
-import { actionLabel as sharedActionLabel } from '@/lib/audit-log';
+import { actionLabel as sharedActionLabel } from '@/lib/audit-log-labels';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 interface AuditEntry {

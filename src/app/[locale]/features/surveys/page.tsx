@@ -42,11 +42,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'Anketler — NPS, CSAT ve özel sorular QR ile | Buaze'
-    : 'Surveys — NPS, CSAT and custom questions via QR | Buaze';
+    ? 'Anketler — NPS, CSAT ve özel sorular QR ile'
+    : 'Surveys — NPS, CSAT and custom questions via QR';
   const description = isTr
-    ? 'Müşteri memnuniyetini Google\'dan bağımsız ölç. QR\'dan açılan kısa anket, NPS / CSAT / yıldız ve metin soruları, opsiyonel kupon teşviki. Tek panel üzerinden tasarla, paylaş, analiz et.'
-    : 'Measure customer satisfaction independently of Google. Short surveys opened from QR, NPS / CSAT / star and text questions, optional coupon reward. Design, share, analyze from one panel.';
+    ? 'Müşteri memnuniyetini QR ile açılan kısa anketlerle ölç: NPS, CSAT, yıldız ve metin soruları, isteğe bağlı kupon. Tek panelden tasarla, paylaş ve analiz et.'
+    : 'Measure customer satisfaction with short QR surveys: NPS, CSAT, star and text questions, optional coupon reward. Design, share and analyse from one panel.';
   const canonicalUrl = `https://www.buaze.com/${locale}/features/surveys`;
   return {
     metadataBase: new URL('https://www.buaze.com'),
@@ -78,7 +78,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://www.buaze.com/tr/features/surveys',
         en: 'https://www.buaze.com/en/features/surveys',
-        'x-default': 'https://www.buaze.com/en/features/surveys',
+        'x-default': 'https://www.buaze.com/tr/features/surveys',
       },
     },
     openGraph: {
@@ -271,13 +271,8 @@ export default async function SurveysPage({
     description: isTr
       ? 'Müşteri memnuniyetini Google\'dan bağımsız ölçen Buaze anket modülü. NPS, CSAT, yıldız, tek seçim ve metin soruları; QR ile dağıtım, opsiyonel kupon teşviki, KVKK uyumu.'
       : 'The Buaze survey module measures customer satisfaction independently of Google. NPS, CSAT, star, single-choice and text questions; QR distribution, optional coupon reward, KVKK compliance.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: isTr ? 'TRY' : 'USD',
-      description: isTr ? '14 gün ücretsiz deneme; kart gerektirmez.' : '14-day free trial; no card required.',
-      url: `${base}/auth/register`,
-    },
+    // No `offers`: a price-0 Offer read as "this product is free" while
+    // the module is part of paid plans (only the trial is free).
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: isTr ? 'Anket yetenekleri' : 'Survey capabilities',

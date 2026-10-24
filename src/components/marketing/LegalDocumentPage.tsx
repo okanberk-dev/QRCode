@@ -27,7 +27,7 @@ export default function LegalDocumentPage({
 }) {
   const isTr = locale === 'tr';
   const effective = doc.effectiveAt ?? doc.updatedAt ?? null;
-  const { blocks, headings } = renderLegalContentWithToc(doc.content);
+  const { blocks, headings } = renderLegalContentWithToc(doc.content, locale === 'en' ? 'en' : 'tr');
   const tocItems = headings.filter((h) => h.level === 2);
 
   const lastUpdatedLabel = (() => {

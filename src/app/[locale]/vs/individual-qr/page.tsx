@@ -57,7 +57,7 @@ export default async function VsIndividualQrPage({
       competitor: <span className="text-[13px] text-[#525252]">{locale === 'tr' ? 'Statik (sabit)' : 'Static (fixed)'}</span>,
     },
     {
-      label: t.compare_f2, // Negatif Yorum Filtreleme
+      label: t.compare_f2, // Özel Geri Bildirim Kanalı
       buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
       competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },
@@ -67,7 +67,7 @@ export default async function VsIndividualQrPage({
       competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },
     {
-      label: t.compare_f5, // Otomatik Google Yönlendirme
+      label: t.compare_f5, // Tek Tıkla Google Bağlantısı
       buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
       competitor: <span className="text-[13px] text-[#525252]">{locale === 'tr' ? 'Tek link' : 'Single link'}</span>,
     },
@@ -122,13 +122,13 @@ export default async function VsIndividualQrPage({
       vsName={locale === 'tr' ? 'Bireysel QR' : 'Individual QR'}
       heroTitle={locale === 'tr' ? 'Statik Linkler İşletmenizi Koruyamaz.' : 'Static Links Can\'t Protect Your Business.'}
       heroDesc={locale === 'tr' 
-        ? 'Durağan QR kodları eskidi. İşletmenizin değişen ihtiyaçlarına uyum sağlayan, yorumlarınızı optimize eden ve size anlık veri getiren akıllı Buaze altyapısına geçin.'
-        : 'Static QR codes are obsolete. Switch to the smart Buaze infrastructure that adapts to your business needs, optimizes your reviews, and brings you real-time data.'}
+        ? 'Durağan QR kodları eskidi. İşletmenizin değişen ihtiyaçlarına uyum sağlayan, yorum akışınızı sadeleştiren ve size anlık veri getiren akıllı Buaze altyapısına geçin.'
+        : 'Static QR codes are obsolete. Switch to the smart Buaze infrastructure that adapts to your business needs, simplifies your review flow, and brings you real-time data.'}
       rows={rows}
       argumentTitle={locale === 'tr' ? 'Ücretsiz QR Kodların Gizli Maliyeti' : 'The Hidden Cost of Free QR Codes'}
       argumentDesc={locale === 'tr'
-        ? 'Ücretsiz oluşturulan statik QR kodları bir kez basıldıktan sonra değiştirilemez. Google Maps linkiniz güncellendiğinde veya şube yapınız değiştiğinde tüm baskıları çöpe atmanız gerekir.\nEn kritiği: Statik QR\'larda servis kurtarma kanalı yok. Misafir Google\'a yorum bırakırken aynı akışta işletmene özel geri bildirim de gönderemez; servis sorunlarını ekibine ulaşmadan önce kamuya açık ortamda öğrenirsin.'
-        : 'Static QR codes created for free cannot be changed once printed. When your Google Maps link is updated or your branch structure changes, you have to throw away all prints.\nMost critically: Static QR codes have no service-recovery channel. A guest can leave a Google review, but cannot also share private feedback with your team in the same flow — so you learn about service issues in public, not internally.'}
+        ? 'Ücretsiz oluşturulan statik QR kodları bir kez basıldıktan sonra değiştirilemez. Google Maps linkiniz güncellendiğinde veya şube yapınız değiştiğinde tüm baskıları çöpe atmanız gerekir.\nEn kritiği: Statik QR\'larda servis kurtarma kanalı yok. Misafir Google\'a yorum bırakırken aynı akışta işletmene özel geri bildirim de gönderemez; servis sorunlarını özel bir yanıtla hızlıca çözme fırsatını kaçırırsın.'
+        : 'Static QR codes created for free cannot be changed once printed. When your Google Maps link is updated or your branch structure changes, you have to throw away all prints.\nMost critically: Static QR codes have no service-recovery channel. A guest can leave a Google review, but cannot also share private feedback with your team in the same flow — so you miss the chance to resolve service issues quickly with a private reply.'}
     />
     </>
   );

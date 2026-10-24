@@ -28,13 +28,16 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   const story = getCustomerStory(slug);
   if (!story || !VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
-    return { title: 'Customer story · Buaze' };
+    return { title: 'Customer story', robots: { index: false, follow: true } };
   }
 
-  const title = `${storyText(story.title, locale)} | Buaze`;
+  const title = `${storyText(story.title, locale)}`;
   const description = storyText(story.description, locale);
 
   return {
+    // Illustrative content, not a verified customer — kept out of Google's
+    // index (and the sitemap) until real, permissioned stories replace it.
+    robots: { index: false, follow: true },
     metadataBase: new URL('https://www.buaze.com'),
     title,
     description,

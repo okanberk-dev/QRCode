@@ -19,6 +19,8 @@ export type DiscoveredRoute = {
   path: string;
   priority: number;
   changefreq: ChangeFreq;
+  /** Locales this route is canonical in. Omitted → both tr and en. */
+  locales?: ReadonlyArray<'tr' | 'en'>;
 };
 
 const APP_LOCALE_DIR = path.join(process.cwd(), 'src', 'app', '[locale]');
@@ -33,7 +35,22 @@ const EXCLUDE_DIRS = new Set([
   // emitted to crawlers. Stories are fictitious (CLAUDE.md §35.10);
   // remove this exclude when replaced with real customer stories.
   'customer-stories',
+  // Same reason as customer-stories: the seeded case studies (and the
+  // pizza-locale page) are illustrative, with quotes and multiplier claims
+  // that are not from real customers. Pages are noindex; keep them out of
+  // the sitemap until real, permissioned case studies replace them.
+  'case-study',
 ]);
+
+// Routes that render but are `robots: noindex` — never list them.
+const NOINDEX_PATHS = new Set(['help/search']);
+
+// The privacy policy is served at two slugs; each locale has one canonical
+// (TR /gizlilik, EN /privacy) and the other slug 301s to it (next.config).
+const LOCALE_ONLY: Record<string, ReadonlyArray<'tr' | 'en'>> = {
+  gizlilik: ['tr'],
+  privacy: ['en'],
+};
 
 // Directories whose page.tsx only calls redirect() — listing them here is
 // simpler than scanning file contents and unambiguous (CLAUDE.md §7
@@ -89,8 +106,14 @@ function walk(currentDir: string, relativePath: string, out: DiscoveredRoute[]):
   // / dynamic). Subdirectories are walked regardless so nested public routes
   // (e.g. solutions/restaurants, vs/individual-qr) are surfaced.
   const hasPage = entries.some((e) => e.isFile() && e.name === 'page.tsx');
-  if (hasPage && relativePath !== '' && !REDIRECT_ALIASES.has(relativePath)) {
-    out.push({ path: relativePath, ...inferMetadata(relativePath) });
+  if (
+    hasPage &&
+    relativePath !== '' &&
+    !REDIRECT_ALIASES.has(relativePath) &&
+    !NOINDEX_PATHS.has(relativePath)
+  ) {
+    const locales = LOCALE_ONLY[relativePath];
+    out.push({ path: relativePath, ...inferMetadata(relativePath), ...(locales ? { locales } : {}) });
   } else if (hasPage && relativePath === '') {
     // Root /[locale]/page.tsx — emit as the home route.
     out.push({ path: '', ...inferMetadata('') });

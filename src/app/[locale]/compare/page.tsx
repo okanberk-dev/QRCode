@@ -24,6 +24,12 @@ export async function generateMetadata({
       canonical: `https://www.buaze.com/${locale}/compare`,
       languages: { tr: 'https://www.buaze.com/tr/compare', en: 'https://www.buaze.com/en/compare', 'x-default': 'https://www.buaze.com/tr/compare' },
     },
+    openGraph: {
+      title: t.compare_title,
+      description: t.compare_subtitle,
+      url: `https://www.buaze.com/${locale}/compare`,
+      images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }],
+    },
   };
 }
 

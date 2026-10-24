@@ -7,7 +7,10 @@ import { headers, cookies } from 'next/headers';
  * Priority order:
  *   1. `NEXT_LOCALE` cookie (explicit user choice, set by the language switcher)
  *   2. `Accept-Language` request header (browser preference)
- *   3. Fallback to English so international visitors are never stuck on Turkish
+ *   3. No header at all (crawlers) → Turkish, matching hreflang x-default;
+ *      any other language → English
+ *
+ * Normally the edge middleware answers `/` first; this is the fallback.
  */
 export default async function RootPage() {
   // 1. Honor an existing user preference stored in the cookie.
@@ -20,6 +23,7 @@ export default async function RootPage() {
   // 2. Fall back to the browser's Accept-Language header.
   const headersList = await headers();
   const acceptLanguage = headersList.get('accept-language') || '';
+  if (!acceptLanguage.trim()) redirect('/tr');
   const preferredLangs = acceptLanguage
     .split(',')
     .map((l) => l.split(';')[0].trim().toLowerCase())

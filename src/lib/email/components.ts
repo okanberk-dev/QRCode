@@ -86,7 +86,7 @@ export function renderFooter(params: FooterParams = {}): string {
   // /help/[slug] detail ayrımı). Footer link 35 mail template'inden
   // çağrılıyor → daha önce her birinde dead 404 link rendered.
   const helpHref = `${appUrl}/${isTr ? 'tr' : 'en'}/help`;
-  const privacyHref = `${appUrl}/${isTr ? 'tr' : 'en'}/privacy`;
+  const privacyHref = isTr ? `${appUrl}/tr/gizlilik` : `${appUrl}/en/privacy`;
 
   const unsubBlock = params.unsubscribeUrl
     ? `${unsubText} <a href="${params.unsubscribeUrl}" style="color:${PULSE.n600};text-decoration:underline;">${unsubLink}</a>.`

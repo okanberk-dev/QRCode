@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, ChevronDown, ChevronRight, Clock, Loader2, ShieldCheck } from 'lucide-react';
 import { AlertBanner, EmptyState } from '@/components/ui';
-import { ACTION_LABELS } from '@/lib/audit-log';
+import { ACTION_LABELS } from '@/lib/audit-log-labels';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 import type { Locale } from '@/lib/translations';
 

@@ -21,7 +21,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Anket — Buaze' : 'Survey — Buaze',
+    title: locale === 'tr' ? 'Anket' : 'Survey',
     robots: { index: false, follow: false },
   };
 }

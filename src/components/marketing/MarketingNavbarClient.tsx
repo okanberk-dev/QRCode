@@ -32,7 +32,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Locale, Translations } from '@/lib/translations';
-import { resolveBlogPair } from '@/lib/blog-translation-pairs';
+import { resolveBlogPair } from '@/lib/blog-translation-pairs-static';
 import BuazeLogo from './BuazeLogo';
 import WatchDemoButton from './WatchDemoButton';
 import { useMarketingAuth } from '@/hooks/useMarketingAuth';

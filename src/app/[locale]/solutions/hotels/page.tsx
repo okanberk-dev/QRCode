@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : 'Hotel & Hospitality Reputation Management';
   const description =
     locale === 'tr'
-      ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, negatifi önce sen gör."
+      ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, her geri bildirime hızlı yanıt ver."
       : 'Booking.com, Tripadvisor, Airbnb and Google — manage all four from one panel. Collect reviews at check-out with room QRs.';
   return {
     title,
@@ -114,17 +114,17 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
 
   const faqs: FaqItem[] = isTr
     ? [
-        { q: 'Otel için Buaze nasıl çalışır?', a: 'Her oda için bir QR sticker (oda numarası URL\'ye gömülü) + check-out tezgahında bir genel QR yerleştirirsin. Misafir QR\'ı tarar, deneyimini puanlar ve seçtiğin platformlara (Booking, Tripadvisor, Airbnb, Google) yönlendirilir. Misafir tesiste deneyim taze, yorum oranı 3 hafta sonra gönderilen Booking mailine kıyasla 5-10× yüksek.' },
+        { q: 'Otel için Buaze nasıl çalışır?', a: 'Her oda için bir QR sticker (oda numarası URL\'ye gömülü) + check-out tezgahında bir genel QR yerleştirirsin. Misafir QR\'ı tarar, deneyimini puanlar ve seçtiğin platformların (Booking, Tripadvisor, Airbnb, Google) herkese açık yorum bağlantılarını görür. Deneyim tesisteyken taze olduğu için yorum bırakma olasılığı, haftalar sonra gelen platform e-postasına kıyasla daha yüksektir.' },
         { q: 'Booking.com / Tripadvisor / Airbnb yorumlarını da topluyor mu?', a: 'Evet. Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; akış misafire seçtiğin platformları sunar. Misafir tercih ettiği platforma yorum yazar. Booking gibi closed-loop platformlarda link doğrudan booking ID\'siyle eşleşmez (Booking bunu API\'de açmıyor) — ama misafire bağlantı sunulur.' },
         { q: 'Oda numarası bazlı analitik var mı?', a: 'Evet. QR\'a oda numarası URL parametresi ekleyebilirsin (örn. `?room=412`); yorum geldiğinde oda numarası + kat + oda tipi loglanır. Analytics raporunda hangi katlarda memnuniyet düşük, hangi odalarda klima/gürültü/manzara şikayeti yoğun — operasyonel ekip görür.' },
-        { q: 'Düşük puan veren misafir Booking\'e yorum yazmaz mı?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren misafirler ek olarak otelinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Misafir her zaman herkese açık platformlara (Booking, Tripadvisor, Google) yorum yazma hakkını korur; siz sorunu özelden (oda değişimi, fatura iadesi vb.) çözme şansı kazanırsınız.' },
+        { q: 'Düşük puan veren misafir Booking\'e yorum yazmaz mı?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren misafirler ek olarak otelinizle özel paylaşım yapma seçeneği görür — Buaze müşteri kohortunda ~%85\'i bu kanalı da kullanır. Misafir her zaman herkese açık platformlara (Booking, Tripadvisor, Google) yorum yazma hakkını korur; hızlı bir özel yanıtla (oda değişimi, fatura iadesi vb.) sorunu çözme şansı kazanırsınız.' },
         { q: 'Çoklu-dil destek var mı?', a: 'Evet. Misafir yorumunu hangi dilde yazarsa, Pulse AI o dilde yanıt taslağı üretir (TR, EN, DE, RU şu an desteklenen). Genelde otel müşteri profili çok-dilli, bu kritik — manuel çeviri yapmak yanıt süresini saatlerce uzatıyor.' },
       ]
     : [
-        { q: 'How does Buaze work for a hotel?', a: 'You place a QR sticker per room (with the room number embedded in the URL) + a general QR at the check-out desk. The guest scans, rates the experience, and is routed to the platforms you have selected (Booking, Tripadvisor, Airbnb, Google). The experience is fresh — review rates are 5-10× higher than the Booking email sent three weeks later.' },
+        { q: 'How does Buaze work for a hotel?', a: 'You place a QR sticker per room (with the room number embedded in the URL) + a general QR at the check-out desk. The guest scans, rates the experience, and sees the public review links for the platforms you have selected (Booking, Tripadvisor, Airbnb, Google). The experience is still fresh on site, so guests are more likely to post than after an email that arrives weeks later.' },
         { q: 'Does it also collect Booking.com / Tripadvisor / Airbnb reviews?', a: 'Yes. You add the public review links of these platforms in the owner panel; the flow surfaces the platforms you select to the guest. The guest posts on their preferred platform. For closed-loop platforms like Booking, the link does not match a specific booking ID (Booking does not expose that API) — but the public link is presented to the guest.' },
         { q: 'Is there room-number-level analytics?', a: 'Yes. You can add a room number URL parameter to the QR (e.g. `?room=412`); when a review arrives, the room number + floor + room type are logged. The analytics report shows where satisfaction drops by floor, where AC / noise / view complaints concentrate — visible to the operational team.' },
-        { q: 'Will guests giving low ratings simply not post on Booking?', a: 'No. Buaze never blocks or hides any review. Guests giving low ratings additionally see an option to share privately with your hotel — in practice ~85% choose this private channel. The guest always retains the right to post on any public platform (Booking, Tripadvisor, Google); you simply gain a chance to resolve the issue privately first (room change, refund, etc.).' },
+        { q: 'Will guests giving low ratings simply not post on Booking?', a: 'No. Buaze never blocks or hides any review. Guests giving low ratings additionally see an option to share privately with your hotel — across the Buaze customer cohort ~85% also use this channel. The guest always retains the right to post on any public platform (Booking, Tripadvisor, Google); a quick private reply gives you a chance to resolve the issue (room change, refund, etc.).' },
         { q: 'Is there multi-language support?', a: 'Yes. Pulse AI detects the language the guest writes in (TR, EN, DE, RU currently supported) and produces a reply draft in that language. Hotels typically have a multi-language guest profile — this is critical, manual translation adds hours to reply latency.' },
       ];
 
@@ -136,7 +136,7 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
     industryLabel: isTr ? 'Otel & Konaklama' : 'Hotel & Hospitality',
     serviceName: isTr ? 'Otel & Konaklama İtibar Yönetimi' : 'Hotel & Hospitality Reputation Management',
     description: isTr
-      ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, negatifi önce sen gör."
+      ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, her geri bildirime hızlı yanıt ver."
       : 'Booking.com, Tripadvisor, Airbnb and Google — manage all four from one panel. Collect reviews at check-out with room QRs.',
     faqs,
   });
@@ -203,8 +203,8 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
             </h1>
             <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
               {isTr
-                ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, negatifi önce sen gör."
-                : 'Booking.com, Tripadvisor, Airbnb and Google — run all four from one panel. Room QRs capture feedback at check-out; you see the negative ones first.'}
+                ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, her geri bildirime hızlı yanıt ver."
+                : 'Booking.com, Tripadvisor, Airbnb and Google — run all four from one panel. Room QRs capture feedback at check-out; reply to every signal quickly.'}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link

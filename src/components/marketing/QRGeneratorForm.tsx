@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import QRCodeLib from 'qrcode';
 import { AlertCircle, Download } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 
@@ -110,22 +109,35 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
     const canvas = canvasRef.current;
     if (!canvas || !submittedUrl) return;
     setIsGenerating(true);
-    QRCodeLib.toCanvas(
-      canvas,
-      submittedUrl,
-      {
-        width: 480,
-        margin: 2,
-        errorCorrectionLevel: 'H',
-        color: { dark: '#0A0A0A', light: '#FFFFFF' },
-      },
-      (err) => {
-        setIsGenerating(false);
-        if (err) {
-          setError(isTr ? 'QR kodu oluşturulamadı' : 'Could not generate QR code');
-        }
-      },
-    );
+    let cancelled = false;
+    // Loaded on demand so the ~12 KB gz encoder isn't in the page's first
+    // bundle.
+    import('qrcode').then(({ default: QRCodeLib }) => {
+      if (cancelled) return;
+      QRCodeLib.toCanvas(
+        canvas,
+        submittedUrl,
+        {
+          width: 480,
+          margin: 2,
+          errorCorrectionLevel: 'H',
+          color: { dark: '#0A0A0A', light: '#FFFFFF' },
+        },
+        (err) => {
+          setIsGenerating(false);
+          if (err) {
+            setError(isTr ? 'QR kodu oluşturulamadı' : 'Could not generate QR code');
+          }
+        },
+      );
+    }).catch(() => {
+      if (cancelled) return;
+      setIsGenerating(false);
+      setError(isTr ? 'QR kodu oluşturulamadı' : 'Could not generate QR code');
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [submittedUrl, isTr]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

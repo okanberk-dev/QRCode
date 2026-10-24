@@ -30,12 +30,13 @@ export async function generateMetadata({
       : ['QR reputation management how it works', 'customer feedback system setup', 'Google review collection system', 'digital reputation steps'],
     alternates: {
       canonical: `https://www.buaze.com/${locale}/how-it-works`,
-      languages: { tr: 'https://www.buaze.com/tr/how-it-works', en: 'https://www.buaze.com/en/how-it-works', 'x-default': 'https://www.buaze.com/en/how-it-works' },
+      languages: { tr: 'https://www.buaze.com/tr/how-it-works', en: 'https://www.buaze.com/en/how-it-works', 'x-default': 'https://www.buaze.com/tr/how-it-works' },
     },
     openGraph: {
       title,
       description,
       url: `https://www.buaze.com/${locale}/how-it-works`,
+      images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }],
     },
   };
 }

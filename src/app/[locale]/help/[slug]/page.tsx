@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   }
   article = article ?? getStaticHelpArticle(locale, slug);
   if (!article) return { title: locale === 'tr' ? 'Makale bulunamadı' : 'Article not found' };
-  const title = `${article.title} — ${locale === 'tr' ? 'Yardım' : 'Help'} | Buaze`;
+  const title = `${article.title} — ${locale === 'tr' ? 'Yardım' : 'Help'}`;
   const description =
     article.excerpt ||
     (locale === 'tr'
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
         'x-default': `https://www.buaze.com/tr/help/${slug}`,
       },
     },
-    openGraph: { type: 'article', url: `https://www.buaze.com/${locale}/help/${slug}`, title, description },
+    openGraph: { type: 'article', url: `https://www.buaze.com/${locale}/help/${slug}`, title, description, images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }] },
   };
 }
 

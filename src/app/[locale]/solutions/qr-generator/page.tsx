@@ -49,6 +49,7 @@ export async function generateMetadata({
       siteName: 'Buaze',
       title,
       description,
+      images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',

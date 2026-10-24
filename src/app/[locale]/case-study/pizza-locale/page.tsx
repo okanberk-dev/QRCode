@@ -19,7 +19,10 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   return {
-    title: t.pl_case_hero_title + ' | Buaze',
+    // Illustrative content, not a verified customer — kept out of Google's
+    // index (and the sitemap) until real, permissioned stories replace it.
+    robots: { index: false, follow: true },
+    title: t.pl_case_hero_title,
     description: t.pl_case_hero_desc,
     alternates: {
       canonical: `https://www.buaze.com/${locale}/case-study/pizza-locale`,
@@ -92,8 +95,8 @@ export default async function PizzaLocaleCaseStudy({
       body: [
         t.pl_case_results_desc,
         isTr
-          ? 'Yıllık bazda toplanan geri bildirim sayısı 5 katına çıkarken, Google Haritalar üzerindeki görünürlük %300 oranında arttı. En önemlisi, yönetim mutfak ve servis arasındaki dengeyi veriye dayalı olarak yönetmeye başladı.'
-          : 'While the number of feedbacks collected annually increased fivefold, visibility on Google Maps increased by 300%. Most importantly, management began managing the balance between kitchen and service based on data.',
+          ? 'Toplanan geri bildirim belirgin biçimde arttı ve misafirler yorumlarını istedikleri platformda paylaşmaya devam etti. En önemlisi, yönetim mutfak ve servis arasındaki dengeyi veriye dayalı olarak yönetmeye başladı.'
+          : 'Feedback volume grew noticeably while guests kept posting reviews wherever they chose. Most importantly, management began balancing kitchen and service with data.',
       ],
     },
   ];
@@ -101,13 +104,13 @@ export default async function PizzaLocaleCaseStudy({
   const before = isTr
     ? [
         'Masalarda işlevsiz, statik QR kodlar',
-        "Negatif yorumların Google'a doğrudan sızması",
+        'Olumsuz deneyimlerin işletmeye hiç ulaşmaması',
         'Mutfak–servis performansında veri eksikliği',
         'Haftalık 10–15 rastgele geri bildirim',
       ]
     : [
         'Static, dysfunctional QR codes on tables',
-        'Negative reviews leaking directly to Google',
+        'Unhappy guests never reaching the team',
         'Lack of data in kitchen–service performance',
         '10–15 random feedbacks per week',
       ];
@@ -146,21 +149,6 @@ export default async function PizzaLocaleCaseStudy({
       ];
 
   const canonicalUrl = `https://www.buaze.com/${locale}/case-study/pizza-locale`;
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: t.pl_case_hero_title,
-    description: t.pl_case_hero_desc,
-    author: { '@type': 'Organization', name: 'Buaze' },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Buaze',
-      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
-    },
-    mainEntityOfPage: canonicalUrl,
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    about: ['Pizza Locale', 'Restaurant chain', 'Google review management', 'QR feedback system'],
-  };
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -173,7 +161,6 @@ export default async function PizzaLocaleCaseStudy({
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

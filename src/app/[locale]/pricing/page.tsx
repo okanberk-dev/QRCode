@@ -38,7 +38,7 @@ export async function generateMetadata({
     },
     alternates: {
       canonical: `https://www.buaze.com/${locale}/pricing`,
-      languages: { tr: 'https://www.buaze.com/tr/pricing', en: 'https://www.buaze.com/en/pricing', 'x-default': 'https://www.buaze.com/en/pricing' },
+      languages: { tr: 'https://www.buaze.com/tr/pricing', en: 'https://www.buaze.com/en/pricing', 'x-default': 'https://www.buaze.com/tr/pricing' },
     },
   };
 }
@@ -65,7 +65,9 @@ export default async function PricingPage({
     { q: t.faq_q6, a: t.faq_a6 },
   ];
 
-  const priceCurrency = isTr ? 'TRY' : 'USD';
+  // Prices are USD in every locale (CLAUDE.md §15.2 USD-only billing); the
+  // TR page used to declare these USD amounts as TRY in structured data.
+  const priceCurrency = 'USD';
   // DB-driven JSON-LD offers — prices reflect the same priceMonthly used in the
   // visible cards (post-discount when applicable, pre-yearly toggle).
   const planOffers = plans.map((p) => {

@@ -21,7 +21,7 @@ import {
   PulseSelect,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
-import { actionLabel } from '@/lib/audit-log';
+import { actionLabel } from '@/lib/audit-log-labels';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 // Stage A3 §38.95 — admin audit log viewer page.

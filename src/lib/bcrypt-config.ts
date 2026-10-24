@@ -15,3 +15,14 @@
  * original cost via bcrypt.compare(). No migration required.
  */
 export const BCRYPT_COST = 12;
+
+/**
+ * Cost for the placeholder hash stored on passwordless (Google sign-in)
+ * accounts. The hashed value is two random UUIDs (~244 bits) that nobody
+ * ever learns — it exists only so the e-mail/password path can never match.
+ * Work factor protects *guessable* secrets; for an unguessable one it buys
+ * nothing, while cost 12 in pure-JS bcrypt adds ~0.5 s to every first
+ * Google sign-in on a serverless CPU. bcrypt.compare still reads the cost
+ * from the hash, so login verification is unaffected.
+ */
+export const UNUSABLE_PASSWORD_BCRYPT_COST = 4;

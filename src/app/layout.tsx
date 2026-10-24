@@ -3,10 +3,9 @@ import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { SITE_URL } from '@/lib/site';
 import { getSiteSettings } from '@/lib/site-settings';
-import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
-import CookieConsentBanner from '@/components/legal/CookieConsentBanner';
+import CookieConsentBanner from '@/components/legal/LazyCookieConsentBanner';
 import ConditionalAnalytics from '@/components/legal/ConditionalAnalytics';
 
 // SEO §35 — root layout no longer forces `dynamic = 'force-dynamic'`.
@@ -19,7 +18,6 @@ import ConditionalAnalytics from '@/components/legal/ConditionalAnalytics';
 // stays dynamic automatically); public `/r` + `/menu` are dynamic segments
 // rendered on-demand. Marketing pages keep their per-page `revalidate=3600`,
 // which now actually takes effect → better crawl budget + Core Web Vitals.
-const YM_ID = 108768887;
 
 // Stage 27 §38.103 Fix M5 — Space Grotesk weight 600 unused removal.
 // Codebase-wide audit: `font-semibold` Space Grotesk üzerinde 0 callsite
@@ -56,10 +54,13 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
+// Mono is only used for small eyebrows / numbers — never the LCP text — so
+// it isn't preloaded on every page (it still loads, just not with priority).
 const jetBrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   display: 'swap',
+  preload: false,
   variable: '--font-jetbrains-mono',
 });
 
@@ -72,9 +73,9 @@ export async function generateMetadata(): Promise<Metadata> {
       template: s.titleTemplate,
     },
     description: s.descriptionTr,
-    alternates: {
-      canonical: 'https://www.buaze.com',
-    },
+    // No canonical here: every route under this layout (public menus, review
+    // and survey pages, embeds) would inherit the homepage as its canonical.
+    // Each indexable page declares its own.
     icons: {
       icon: [
         // §38.106 — `?v=4` cache bust for circular favicon (Google search
@@ -94,7 +95,6 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: 'Buaze',
       locale: 'tr_TR',
       alternateLocale: ['en_US'],
-      url: 'https://www.buaze.com',
       images: [
         {
           url: '/images/open-graph-en.png',
@@ -105,11 +105,9 @@ export async function generateMetadata(): Promise<Metadata> {
         },
       ],
     },
+    // Title / description / image are filled per page from its openGraph.
     twitter: {
       card: 'summary_large_image',
-      title: s.titleDefaultTr,
-      description: s.descriptionTr,
-      images: ['/images/open-graph-en.png'],
     },
     // Apple PWA / iOS metadata — improves the "Add to Home Screen" UX:
     // standalone display, dark status bar on the lime-on-black brand,
@@ -170,21 +168,12 @@ export default function RootLayout({
               "if(/^\\/en(\\/|$)/.test(location.pathname))document.documentElement.lang='en';",
           }}
         />
-        {/* Resource hints — `preconnect` opens the TLS handshake ahead of
-            time (DNS + TCP + TLS) and was promoted from the previous
-            `dns-prefetch`-only setup after PageSpeed flagged the
-            "Network dependency tree" insight (CLAUDE.md §34.14).
-            `dns-prefetch` is kept as a fallback for browsers that ignore
-            `preconnect` (very old). Fonts use `crossOrigin="anonymous"`
-            because the woff2 files are fetched as anonymous CORS — without
-            the attribute the browser opens a second connection just to
-            satisfy the credentials mode. */}
-        <link rel="preconnect" href="https://mc.yandex.ru" />
+        {/* Resource hints. Fonts are self-hosted by next/font, so no Google
+            Fonts connections are needed. GTM and Yandex load only after
+            analytics consent (ConditionalAnalytics, lazyOnload), so a full
+            preconnect would usually be wasted — dns-prefetch is enough. */}
         <link rel="dns-prefetch" href="https://mc.yandex.ru" />
-        <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-dvh`}>
         {/* Stage 31b §38.108 — KVKK Çerez Kurulu kararı + ePrivacy Direktifi
@@ -195,15 +184,7 @@ export default function RootLayout({
             `bz:cookie-consent-changed` event'i ile script'ler reactive
             olarak yüklenir. */}
         <ConditionalAnalytics />
-        {/* Yandex Metrica noscript pixel — analytics consent opt-in
-            şartına bağlı; consent verilmediyse pixel yüklenmez. KVKK
-            Çerez Kurulu rehberi: opt-in tüm tracker'lar için zorunlu. */}
-        <noscript
-          dangerouslySetInnerHTML={{
-            __html: `<div><img src="https://mc.yandex.ru/watch/${YM_ID}" style="position:absolute;left:-9999px;" alt="" /></div>`,
-          }}
-        />
-        <QueryProvider>{children}</QueryProvider>
+        {children}
         {/* Cookie consent banner — bottom-sheet, ilk ziyarette görünür,
             iframe (`/embed/*`) context'te otomatik gizli. Locale client-side
             auto-detect edilir (Stage 31d §38.110); default 'tr'. */}

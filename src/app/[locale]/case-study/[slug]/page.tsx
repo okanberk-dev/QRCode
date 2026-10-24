@@ -68,11 +68,14 @@ export async function generateMetadata({
       isPublished: true,
     },
   });
-  if (!study || !study.isPublished) return { title: 'Case study · Buaze' };
+  if (!study || !study.isPublished) return { title: 'Case study', robots: { index: false, follow: true } };
   const isTr = locale === 'tr';
-  const title = `${study.brand} · ${isTr ? 'Buaze ile' : 'with Buaze'}`;
+  const title = isTr ? `${study.brand} başarı hikayesi` : `${study.brand} customer story`;
   return {
-    title: `${title} | Buaze`,
+    // Illustrative content, not a verified customer — kept out of Google's
+    // index (and the sitemap) until real, permissioned stories replace it.
+    robots: { index: false, follow: true },
+    title,
     description: isTr ? study.heroTr : study.heroEn,
     alternates: {
       canonical: `https://www.buaze.com/${locale}/case-study/${slug}`,
@@ -127,22 +130,6 @@ export default async function CaseStudyPage({
   const quoteText = isTr ? study.quoteTr : study.quoteEn;
 
   const canonicalUrl = `https://www.buaze.com/${locale}/case-study/${slug}`;
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: `${study.brand} · ${isTr ? 'Buaze ile' : 'with Buaze'}`,
-    description: heroText,
-    image: study.heroImage,
-    author: { '@type': 'Organization', name: 'Buaze' },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Buaze',
-      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
-    },
-    mainEntityOfPage: canonicalUrl,
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    about: [resolveSector(study, isTr), 'Google review management', 'QR feedback system'],
-  };
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -155,7 +142,6 @@ export default async function CaseStudyPage({
 
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

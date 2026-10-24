@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   const { locale } = await params;
   const isTr = locale === 'tr';
   return {
-    title: isTr ? 'Yardım Merkezi Arama | Buaze' : 'Help Center Search | Buaze',
+    title: isTr ? 'Yardım Merkezi Arama' : 'Help Center Search',
     description: isTr
       ? 'Yardım merkezinde makale arayın. Kurulum, QR kodları, entegrasyonlar ve daha fazlası.'
       : 'Search the help center. Setup, QR codes, integrations and more.',

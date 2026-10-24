@@ -249,7 +249,7 @@ export default async function CaseStudiesPage({
           {[
             { value: String(studies.length), label: isTr ? 'YAYINDA VAKA' : 'PUBLISHED CASES' },
             { value: '5', label: isTr ? 'FARKLI SEKTÖR' : 'DIFFERENT INDUSTRIES' },
-            { value: '+184% – 5×', label: isTr ? 'YORUM HACMİ ARTIŞI' : 'REVIEW VOLUME GAIN' },
+            { value: '+184%', label: isTr ? 'KOHORT 90 GÜN ORT. YORUM ARTIŞI' : 'COHORT 90-DAY AVG. REVIEW GAIN' },
             { value: isTr ? '12 dk' : '12 min', label: isTr ? 'ORT. İLK YANIT' : 'AVG. FIRST REPLY' },
           ].map((stat) => (
             <div key={stat.label} className="border-l-2 border-[#0A0A0A] pl-4 sm:border-l-0 sm:border-t-2 sm:pl-0 sm:pt-4">

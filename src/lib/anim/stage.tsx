@@ -64,6 +64,9 @@ export interface StageProps {
  *
  * Tab pause + reduced-motion HANDOFF §5 disipline'i intact:
  *  - `document.visibilityState === 'hidden'` → RAF teardown (battery save)
+ *  - host scrolled out of the viewport → RAF teardown too. The loop calls
+ *    setTime every frame, re-rendering the whole sprite tree; without this
+ *    the hero kept doing that at 60 fps while the visitor read the page.
  *  - `prefers-reduced-motion: reduce` → time = duration, autoplay off
  *    (child sprite'lar final state'te static render)
  */
@@ -96,6 +99,27 @@ export function Stage({
   const [playing, setPlaying] = React.useState(autoplay && !reduced);
   const lastTsRef = React.useRef<number | null>(null);
   const rafRef = React.useRef<number | null>(null);
+  const hostRef = React.useRef<HTMLDivElement | null>(null);
+  const [inView, setInView] = React.useState(true);
+
+  // Off-screen pause: no frames while the stage is outside the viewport.
+  React.useEffect(() => {
+    const el = hostRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting);
+        setInView(visible);
+        if (!visible) lastTsRef.current = null;
+      },
+      { rootMargin: '100px 0px' },
+    );
+    // Scenes are usually `absolute inset-0` against the parent, leaving this
+    // host 0 px tall — observe the parent's box in that case.
+    const target = el.offsetHeight > 0 ? el : (el.parentElement ?? el);
+    io.observe(target);
+    return () => io.disconnect();
+  }, []);
 
   // Sync state when reduced-motion flips at runtime
   React.useEffect(() => {
@@ -124,7 +148,7 @@ export function Stage({
 
   // RAF animation loop (delta-time based; correct under tab throttle)
   React.useEffect(() => {
-    if (!playing || reduced) {
+    if (!playing || reduced || !inView) {
       lastTsRef.current = null;
       return;
     }
@@ -151,7 +175,7 @@ export function Stage({
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       lastTsRef.current = null;
     };
-  }, [playing, duration, loop, reduced]);
+  }, [playing, duration, loop, reduced, inView]);
 
   const value = React.useMemo<TimelineContextValue>(
     () => ({
@@ -165,7 +189,7 @@ export function Stage({
 
   return (
     <TimelineContext.Provider value={value}>
-      <div className={className}>{children}</div>
+      <div ref={hostRef} className={className}>{children}</div>
     </TimelineContext.Provider>
   );
 }

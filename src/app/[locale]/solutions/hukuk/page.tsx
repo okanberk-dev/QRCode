@@ -1,5 +1,5 @@
 // Turkish slug alias — forwards to the canonical /solutions/law-firms.
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -12,5 +12,5 @@ export default async function HukukRedirect({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  redirect(`/${locale}/solutions/law-firms`);
+  permanentRedirect(`/${locale}/solutions/law-firms`);
 }

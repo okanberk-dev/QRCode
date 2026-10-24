@@ -57,7 +57,7 @@ export default async function VsSpreadsheetPage({
       competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },
     {
-      label: t.compare_f2, // Negatif Yorum Filtreleme
+      label: t.compare_f2, // Özel Geri Bildirim Kanalı
       buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
       competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },
@@ -77,7 +77,7 @@ export default async function VsSpreadsheetPage({
       competitor: <span className="text-[13px] text-[#525252]">{locale === 'tr' ? 'Zor yönetilen satırlar' : 'Hard to manage rows'}</span>,
     },
     {
-      label: t.compare_f5, // Otomatik Google Yönlendirme
+      label: t.compare_f5, // Tek Tıkla Google Bağlantısı
       buaze: <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center mx-auto"><Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} /></span>,
       competitor: <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center mx-auto"><X size={14} className="text-[#B91C1C]" strokeWidth={2.5} /></span>,
     },

@@ -8,6 +8,29 @@ const SCRIPT_ID = 'buaze-recaptcha-enterprise';
 // again. 75 s leaves margin for the Google popup + server round-trip.
 const PREFETCH_MAX_AGE_MS = 75_000;
 
+// Upper bound on how long a sign-in waits for a token. The server runs
+// reCAPTCHA in monitor mode (a missing token soft-passes) and in enforce mode
+// answers with a clear "security check missing" error — either is better
+// than a spinner that never ends when Google's script stalls (slow network,
+// content blocker, `ready()` never firing).
+const TAKE_TIMEOUT_MS = 4_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      },
+    );
+  });
+}
+
 declare global {
   interface Window {
     grecaptcha?: {
@@ -109,10 +132,13 @@ export async function takeRecaptchaToken(action: string): Promise<string | null>
   const candidate = prefetched;
   prefetched = null;
   if (candidate && candidate.action === action) {
-    const result = await candidate.promise;
-    if (result.token && Date.now() - result.issuedAt < PREFETCH_MAX_AGE_MS) {
+    const result = await withTimeout(candidate.promise, TAKE_TIMEOUT_MS, null);
+    if (result?.token && Date.now() - result.issuedAt < PREFETCH_MAX_AGE_MS) {
       return result.token;
     }
+    // The prefetch already had its chance; if it failed or stalled, a second
+    // full execute would only double the wait.
+    if (!result?.token) return null;
   }
-  return getRecaptchaToken(action);
+  return withTimeout(getRecaptchaToken(action), TAKE_TIMEOUT_MS, null);
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { BCRYPT_COST } from '@/lib/bcrypt-config';
+import { UNUSABLE_PASSWORD_BCRYPT_COST } from '@/lib/bcrypt-config';
 import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
@@ -9,6 +9,17 @@ import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { handleOAuthSignIn, type OAuthDeps } from '@/lib/oauth';
 import { createUserSessionForToken } from '@/lib/user-session';
 import { describeDevice } from '@/lib/device-fingerprint';
+
+const OAUTH_USER_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  role: true,
+  plan: true,
+  isActive: true,
+  trialEndsAt: true,
+  locale: true,
+} as const;
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,12 +67,15 @@ export async function POST(req: NextRequest) {
 
     const deps: OAuthDeps = {
       verifyToken: () => verifiedClaims.catch(() => null),
-      findUser: (email) => prisma.user.findUnique({ where: { email } }),
+      // Explicit select (CLAUDE.md §14.1): only what the OAuth gate, the JWT
+      // and the response need — not password hashes / 2FA secrets.
+      findUser: (email) =>
+        prisma.user.findUnique({ where: { email }, select: OAUTH_USER_SELECT }),
       createUser: async (data) => {
         // Google tarafından gelen kullanıcı → parolasız hesap. Rastgele güçlü
         // bir hash saklıyoruz ki e-posta yolundan giriş denenemesin.
         const randomSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-        const passwordHash = await bcrypt.hash(randomSecret, BCRYPT_COST);
+        const passwordHash = await bcrypt.hash(randomSecret, UNUSABLE_PASSWORD_BCRYPT_COST);
         return prisma.user.create({
           data: {
             email: data.email,
@@ -70,6 +84,7 @@ export async function POST(req: NextRequest) {
             plan: 'trial',
             trialEndsAt: data.trialEndsAt,
           },
+          select: OAUTH_USER_SELECT,
         });
       },
       signToken: signJwt,
@@ -133,7 +148,7 @@ export async function POST(req: NextRequest) {
       const desc = describeDevice(userAgent, ip);
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
       const userLocale: 'tr' | 'en' = (
-        (user as unknown as { locale?: string }).locale === 'en' ? 'en' : 'tr'
+        (user as { locale?: string }).locale === 'en' ? 'en' : 'tr'
       );
       // Lazy import: `@/lib/email` pulls in the whole template catalogue;
       // keeping it off the module graph shrinks the cold-start of this

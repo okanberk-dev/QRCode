@@ -12,7 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'E-posta Onayı Bekliyor - Buaze' : 'Verify Your Email - Buaze',
+    title: locale === 'tr' ? 'E-posta Onayı Bekliyor' : 'Verify Your Email',
     robots: { index: false, follow: false },
   };
 }

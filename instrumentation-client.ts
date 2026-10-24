@@ -21,7 +21,9 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // Server / edge config already set this from VERCEL_GIT_COMMIT_SHA.
     // CLAUDE.md §34.16.
     release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
-    integrations: [Sentry.replayIntegration()],
+    // Replay is NOT bundled: it costs ~50-65 KB gz and its rrweb recorder
+    // watches every DOM mutation from page load (the marketing hero animates
+    // every frame). It is lazy-loaded below for the panels only.
     beforeSend(event, hint) {
       const original = hint.originalException;
       const originalMessage =
@@ -97,6 +99,23 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       return event;
     },
   });
+
+  // On-error replay is only worth its weight where owners/admins work. Load
+  // it from Sentry's CDN after the panel is idle; marketing, auth and the
+  // public review/menu pages never download it. Failure (ad-blocker, offline)
+  // just means no replay.
+  if (typeof window !== 'undefined' && /^\/(?:admin|(?:tr|en)\/dashboard)(?:\/|$)/.test(window.location.pathname)) {
+    const loadReplay = () => {
+      Sentry.lazyLoadIntegration('replayIntegration')
+        .then((replayIntegration) => Sentry.addIntegration(replayIntegration()))
+        .catch(() => {});
+    };
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(loadReplay, { timeout: 5000 });
+    } else {
+      setTimeout(loadReplay, 2000);
+    }
+  }
 }
 
 // Required for Next.js 15 router transition tracing.

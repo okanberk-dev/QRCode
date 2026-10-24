@@ -23,7 +23,7 @@ import {
   PERMISSION_PRESETS,
   type AdminAction,
   type AdminResource,
-} from '@/lib/rbac';
+} from '@/lib/rbac-constants';
 import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 
 // Stage A2 §38.94 — admin permission matrix UI.

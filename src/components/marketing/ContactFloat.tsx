@@ -65,7 +65,13 @@ export function ContactFloat({ locale }: { locale: string }) {
   // visits see the float on first paint without waiting for the probe).
   // Hook lives at the top to comply with rules-of-hooks; the early
   // return below consults `isLoggedIn` after pathname guards.
-  const { isLoggedIn, pending: authPending } = useMarketingAuth();
+  const hiddenByPath =
+    current.startsWith(`${base}/auth`) ||
+    current.startsWith(`${base}/onboarding`) ||
+    current.startsWith(`${base}/dashboard`);
+  // No auth probe on routes where the bubble never renders (dashboard pages
+  // would otherwise hit /api/auth/me on every load for nothing).
+  const { isLoggedIn, pending: authPending } = useMarketingAuth(!hiddenByPath);
 
   const [state, setState] = useState<WidgetState>('fab');
   const [showBubble, setShowBubble] = useState(false);
@@ -149,9 +155,7 @@ export function ContactFloat({ locale }: { locale: string }) {
   // Path-based dashboard gate is deterministic — float never flashes during
   // the ~50-200ms auth probe window on owner panel pages.
   if (
-    current.startsWith(`${base}/auth`) ||
-    current.startsWith(`${base}/onboarding`) ||
-    current.startsWith(`${base}/dashboard`) ||
+    hiddenByPath ||
     authPending ||
     isLoggedIn
   ) {
@@ -742,7 +746,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                     <>
                       I have read the{' '}
                       <Link
-                        href={`/${locale}/privacy`}
+                        href={locale === 'tr' ? '/tr/gizlilik' : '/en/privacy'}
                         className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
                         target="_blank"
                       >

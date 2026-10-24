@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   const cat = CATEGORY_BY_SLUG[slug];
   if (!cat) return { title: 'Not Found' };
   const meta = cat[locale];
-  const title = `${meta.title} — ${locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'} | Buaze`;
+  const title = `${meta.title} — ${locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'}`;
   return {
     title,
     description: meta.desc,
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
         'x-default': `https://www.buaze.com/tr/help/category/${slug}`,
       },
     },
-    openGraph: { title, description: meta.desc, url: `https://www.buaze.com/${locale}/help/category/${slug}` },
+    openGraph: { title, description: meta.desc, url: `https://www.buaze.com/${locale}/help/category/${slug}`, images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }] },
   };
 }
 
