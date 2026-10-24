@@ -63,8 +63,6 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   // AI search engines (Perplexity, Bing Chat, Gemini AIO).
   roi: { priority: 0.8, changefreq: 'monthly' },
   'google-compliance': { priority: 0.8, changefreq: 'monthly' },
-  'case-study': { priority: 0.8, changefreq: 'monthly' },
-  'customer-stories': { priority: 0.8, changefreq: 'monthly' },
 
   // Public utility tools
   'solutions/qr-generator': { priority: 0.85, changefreq: 'monthly' },

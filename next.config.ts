@@ -166,6 +166,18 @@ const nextConfig: NextConfig = {
         destination: '/en/privacy',
         permanent: true,
       },
+      // Illustrative case studies / customer stories were removed (not real
+      // customers — a trust and E-E-A-T risk). Keep any indexed URL alive.
+      {
+        source: '/:locale(tr|en)/customer-stories/:path*',
+        destination: '/:locale/features',
+        permanent: true,
+      },
+      {
+        source: '/:locale(tr|en)/case-study/:path*',
+        destination: '/:locale/features',
+        permanent: true,
+      },
       {
         source: '/:locale(tr|en)/legal/kvkk-aydinlatma',
         destination: '/:locale/kvkk',

@@ -135,7 +135,7 @@ export default async function ReviewManagementPage({
         },
         {
           id: 'tripadvisor',
-          title: 'Hotel Nora · Tripadvisor',
+          title: 'Tripadvisor',
           snippet: 'Oda temizdi, kahvaltı çeşidi azdı.',
           rating: 3,
           sla: '1 sa önce',
@@ -167,7 +167,7 @@ export default async function ReviewManagementPage({
         },
         {
           id: 'tripadvisor',
-          title: 'Hotel Nora · Tripadvisor',
+          title: 'Tripadvisor',
           snippet: 'Room was clean, breakfast variety was limited.',
           rating: 3,
           sla: '1 hr ago',
