@@ -209,7 +209,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
                 <span className="text-[#C6F24E]">★</span>
                 <span className="pulse-eyebrow text-[#C6F24E]">
-                  {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+                  {isTr ? '10 YORUM PLATFORMU' : '10 REVIEW PLATFORMS'}
                 </span>
               </span>
               <div className="flex gap-2">

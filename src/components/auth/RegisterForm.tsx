@@ -437,7 +437,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           <span>
             {locale === 'tr' ? (
               <>
-                <Link href={`/${locale}/privacy`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                <Link href="/tr/gizlilik" target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
                   Gizlilik Politikası
                 </Link>
                 &apos;nı okudum ve onaylıyorum.
@@ -445,7 +445,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             ) : (
               <>
                 I have read and agree to the{' '}
-                <Link href={`/${locale}/privacy`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                <Link href="/en/privacy" target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
                   Privacy Policy
                 </Link>
                 .

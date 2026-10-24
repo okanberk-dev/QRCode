@@ -130,7 +130,7 @@ export default async function GoogleTwentyTwentySixPost({
           list: [
             'Her masaya, her personele özel kod',
             'Tara → puan → 20 saniyede yorum',
-            "Memnun: Google'a; memnun değil: ekibe",
+            'Herkese açık bağlantı herkese; özel geri bildirim isteğe bağlı',
           ],
         },
         {
@@ -140,8 +140,8 @@ export default async function GoogleTwentyTwentySixPost({
           lead: 'Ödeme anında veya hizmet bitiminden 1–4 saat sonra gönderilen davet en yüksek dönüşümü sağlıyor.',
           p: '24 saati geçince oran yarıya iniyor. 72 saatten sonra organik yanıtın değil, "rica edilmiş yanıtın" sınıfına giriyor; Google bunu farklı ağırlıklandırıyor.',
           stat: {
-            k: '4×',
-            l: 'İlk 4 saat içinde gelen yorum, 24 saati geçen yoruma kıyasla 4 kat daha fazla görüntüleniyor.',
+            k: '4sa',
+            l: 'Hizmetten sonraki ilk 4 saat, deneyimin en taze olduğu davet penceresidir.',
           },
         },
         {
@@ -179,7 +179,7 @@ export default async function GoogleTwentyTwentySixPost({
           list: [
             'A unique code for every table and staff member',
             'Scan → rate → review in 20 seconds',
-            'Happy goes to Google; unhappy goes to your team',
+            'Public link for everyone; private feedback is optional',
           ],
         },
         {
@@ -189,8 +189,8 @@ export default async function GoogleTwentyTwentySixPost({
           lead: 'Invites at checkout — or 1–4 hours after service — yield the highest conversion.',
           p: 'Past 24 hours the rate halves. After 72 hours it switches from organic to "solicited" — a class Google weighs differently.',
           stat: {
-            k: '4×',
-            l: 'Reviews in the first 4 hours get 4× more impressions than those past 24 hours.',
+            k: '4h',
+            l: 'The first 4 hours after service are the window when the experience is freshest.',
           },
         },
         {

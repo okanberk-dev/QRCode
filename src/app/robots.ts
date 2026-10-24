@@ -1,35 +1,37 @@
 import { MetadataRoute } from 'next';
 import { SITE_URL, SITE_HOST } from '@/lib/site';
 
+const PRIVATE_PATHS = [
+  '/admin/',
+  '/api/',
+  '/r/',
+  '/tr/dashboard/',
+  '/en/dashboard/',
+  '/tr/auth/',
+  '/en/auth/',
+  '/tr/onboarding',
+  '/en/onboarding',
+  '/tr/accept-invite',
+  '/en/accept-invite',
+  '/*/dashboard/',
+  '/*/onboarding',
+  '/*/accept-invite',
+  // Faceted / search query strings. `?cat=` blog filters already
+  // self-canonicalise to /blog, and `?q=` only resolves on the
+  // noindex help-search page — neither is worth crawl budget, and
+  // Googlebot was fetching the literal `?q={search_term_string}`
+  // template off the WebSite SearchAction.
+  '/*?q=',
+  '/*?cat=',
+];
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
         allow: ['/', '/tr/', '/en/'],
-        disallow: [
-          '/admin/',
-          '/api/',
-          '/r/',
-          '/tr/dashboard/',
-          '/en/dashboard/',
-          '/tr/auth/',
-          '/en/auth/',
-          '/tr/onboarding',
-          '/en/onboarding',
-          '/tr/accept-invite',
-          '/en/accept-invite',
-          '/*/dashboard/',
-          '/*/onboarding',
-          '/*/accept-invite',
-          // Faceted / search query strings. `?cat=` blog filters already
-          // self-canonicalise to /blog, and `?q=` only resolves on the
-          // noindex help-search page — neither is worth crawl budget, and
-          // Googlebot was fetching the literal `?q={search_term_string}`
-          // template off the WebSite SearchAction.
-          '/*?q=',
-          '/*?cat=',
-        ],
+        disallow: PRIVATE_PATHS,
       },
       // Allow AI bots to read marketing pages for search generative experiences.
       // `crawlDelay: 2` — polite scraping. Major search engines (Google, Bing)
@@ -52,16 +54,9 @@ export default function robots(): MetadataRoute.Robots {
           'OAI-SearchBot',
         ],
         allow: ['/', '/tr/', '/en/'],
-        disallow: [
-          '/admin/',
-          '/api/',
-          '/tr/auth/',
-          '/en/auth/',
-          '/tr/onboarding',
-          '/en/onboarding',
-          '/tr/accept-invite',
-          '/en/accept-invite',
-        ],
+        // Same private surface as everyone else — the AI group used to omit
+        // /r/, the dashboards and the faceted query strings.
+        disallow: PRIVATE_PATHS,
         crawlDelay: 2,
       }
     ],

@@ -72,7 +72,10 @@ export default function RevealHeadline({
           },
         },
       }}
-      className="contents"
+      // Must be a real box: an element with `display: contents` has no
+      // layout box, so IntersectionObserver never reports it as visible and
+      // the words stayed at opacity 0 — the heading was invisible.
+      className="block"
     >
       <Tag
         className={`m-0 leading-none tracking-[-0.03em] text-brand-ink ${

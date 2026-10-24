@@ -1,6 +1,6 @@
 // Turkish slug alias — forwards to the canonical /solutions/hotels
 // so design-spec and footer links work without duplicating content.
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -13,5 +13,5 @@ export default async function OtelRedirect({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  redirect(`/${locale}/solutions/hotels`);
+  permanentRedirect(`/${locale}/solutions/hotels`);
 }

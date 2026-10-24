@@ -50,8 +50,39 @@ const PUBLIC_ADMIN_PATHS = new Set<string>([
   '/admin/reset-password',
 ]);
 
+// `/` → `/tr` or `/en`. Runs here at the edge instead of in a server
+// function (src/app/page.tsx keeps the same logic as a fallback), so the
+// first hop of every visit no longer waits on a serverless cold start.
+// Order: NEXT_LOCALE cookie → Accept-Language → no header at all (crawlers;
+// Googlebot sends none) → /tr, matching hreflang x-default → anything else
+// → /en for international visitors.
+function rootLocaleRedirect(req: NextRequest): NextResponse {
+  const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value;
+  let locale: 'tr' | 'en' | null =
+    cookieLocale === 'tr' || cookieLocale === 'en' ? cookieLocale : null;
+  if (!locale) {
+    const acceptLanguage = req.headers.get('accept-language') || '';
+    if (!acceptLanguage.trim()) {
+      locale = 'tr';
+    } else {
+      for (const part of acceptLanguage.split(',')) {
+        const lang = part.split(';')[0].trim().toLowerCase();
+        if (lang.startsWith('tr')) { locale = 'tr'; break; }
+        if (lang.startsWith('en')) { locale = 'en'; break; }
+      }
+    }
+  }
+  const url = req.nextUrl.clone();
+  url.pathname = `/${locale ?? 'en'}`;
+  const res = NextResponse.redirect(url);
+  res.headers.set('Vary', 'Accept-Language, Cookie');
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname === '/') return rootLocaleRedirect(req);
 
   // /admin (login page): if the visitor is already authenticated, send
   // them straight to the dashboard. Otherwise the AdminLayout would still
@@ -107,6 +138,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Protect only /admin/* (not the marketing /[locale]/* pages).
-  matcher: ['/admin/:path*'],
+  // `/` for the edge locale redirect; otherwise only /admin/* (not the
+  // marketing /[locale]/* pages).
+  matcher: ['/', '/admin/:path*'],
 };

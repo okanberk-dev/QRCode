@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     select: { name: true, category: true, address: true, isActive: true, menuEnabled: true, menuPublished: true },
   });
   if (!restaurant || !restaurant.isActive || !restaurant.menuEnabled || !restaurant.menuPublished) {
-    return { title: 'Menü bulunamadı · Buaze', robots: { index: false } };
+    return { title: 'Menü bulunamadı', robots: { index: false } };
   }
   const title = `${restaurant.name} · Menü`;
   const description = [restaurant.category, restaurant.address].filter(Boolean).join(' — ') ||

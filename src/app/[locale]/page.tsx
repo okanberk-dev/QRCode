@@ -94,7 +94,7 @@ export async function generateMetadata({
       languages: {
         tr: '/tr',
         en: '/en',
-        'x-default': '/en',
+        'x-default': '/tr',
       },
     },
     openGraph: {
@@ -143,19 +143,19 @@ export default async function LandingPage({
   // visible accordion (Stage 53 §38.134 HANDOFF FAQSection birebir).
   // Compliance disipline: Q2 Google review-gating answer mirrors
   // CLAUDE.md §19.1.1 (no incentives + no star-branching). Q5 yıllık
-  // 2 ay hediye claim → CLAUDE.md §15.2 priceYearly admin override
+  // %20 indirim claim → CLAUDE.md §15.2 priceYearly admin override
   // pattern (discountedYearly = monthly × 0.8 ≈ 20% off).
   const aeoFaqs = isTr
     ? [
         {
           q: 'Buaze nasıl çalışıyor?',
-          a: "Masanıza yerleştirdiğiniz QR'ı misafir okuttuğunda 30 saniyelik bir akışla puan verir. Yüksek puan verenler doğrudan seçtiğiniz platforma gider; düşük puan verenler önce ekibinizle özel paylaşım yapabilir, herkese açık yorum bağlantısı yine aynı ekranda açık kalır. Düşük puanlı geri bildirim panelinize düşer ve Pulse AI saniyeler içinde profesyonel yanıt taslağı yazar.",
-          meta: ['~30 sn akış', 'Tek QR · masa-bazlı', 'Otomatik yönlendirme'],
+          a: "Masanıza yerleştirdiğiniz QR'ı misafir okuttuğunda 30 saniyelik bir akışla puan verir. Her misafire seçtiğiniz platformun herkese açık yorum bağlantısı gösterilir; misafir dilerse ekibinizle özel geri bildirim de paylaşabilir. Özel geri bildirim panelinize düşer ve Pulse AI saniyeler içinde profesyonel yanıt taslağı yazar.",
+          meta: ['~30 sn akış', 'Tek QR · masa-bazlı', 'Müşteri tercihi'],
         },
         {
           q: "Google'ın kurallarına aykırı mı?",
-          a: 'Hayır. Filtreleme yapmıyoruz — sadece misafiri Google\'ın resmi yorum bağlantısına yönlendiriyoruz. Google "review gating"i yasaklar; biz herhangi bir puana hediye/kupon koşulu bağlamayız. KVKK ve Google Politikalarına %100 uyumluyuz.',
-          meta: ['KVKK uyumlu', 'Filtreleme yok'],
+          a: 'Hayır. Yorumları filtrelemiyor, gizlemiyor veya engellemiyoruz; her misafire Google\'ın resmi yorum bağlantısını gösteriyoruz. Google "review gating"i yasaklar; biz herhangi bir puana hediye/kupon koşulu bağlamayız. Her müşteri istediği yere yorum yazma hakkını korur.',
+          meta: ['KVKK uyumlu', 'Gizleme yok'],
         },
         {
           q: 'Kurulum ne kadar sürüyor?',
@@ -169,20 +169,20 @@ export default async function LandingPage({
         },
         {
           q: 'Fiyatlandırma nasıl?',
-          a: 'Aylık tek ücret, şube başına. 14 gün ücretsiz deneme, kredi kartı istemiyoruz. İstediğiniz an iptal edebilir, verilerinizi tek tuşla CSV olarak indirebilirsiniz. Yıllık ödemede 2 ay hediye.',
+          a: 'Aylık tek ücret, şube başına. 14 gün ücretsiz deneme, kredi kartı istemiyoruz. İstediğiniz an iptal edebilir, verilerinizi tek tuşla CSV olarak indirebilirsiniz. Yıllık ödemede %20 indirim.',
           meta: ['14 gün deneme', 'Kart yok', 'Şube bazlı'],
         },
       ]
     : [
         {
           q: 'How does Buaze work?',
-          a: 'Guests scan the QR at the table and give a rating in 30 seconds. Higher ratings go straight to your chosen platform; lower ratings can be shared privately with your team first, while the public review link stays available on the same screen. Low-rated feedback lands in your panel and Pulse AI drafts a professional reply in seconds.',
-          meta: ['~30s flow', 'One QR · per-table', 'Auto routing'],
+          a: 'Guests scan the QR at the table and give a rating in 30 seconds. Every guest is shown the public review link for your chosen platform; guests can also choose to share private feedback with your team. Private feedback lands in your panel and Pulse AI drafts a professional reply in seconds.',
+          meta: ['~30s flow', 'One QR · per-table', 'Customer choice'],
         },
         {
           q: "Does this break Google's policy?",
-          a: 'No. We don\'t filter — we route guests to Google\'s official review link. Google bans "review gating"; we never gate perks behind a specific rating. Fully GDPR & Google Policy compliant.',
-          meta: ['GDPR ready', 'No gating'],
+          a: 'No. We never filter, hide or block reviews — every guest is shown Google\'s official review link. Google bans "review gating"; we never gate perks behind a specific rating. Every customer keeps the right to post wherever they want.',
+          meta: ['GDPR ready', 'No hiding'],
         },
         {
           q: 'How long does setup take?',
@@ -196,7 +196,7 @@ export default async function LandingPage({
         },
         {
           q: 'How is it priced?',
-          a: 'Flat monthly, per location. 14-day free trial, no card required. Cancel anytime, export data as CSV. Annual plan = 2 months free.',
+          a: 'Flat monthly, per location. 14-day free trial, no card required. Cancel anytime, export data as CSV. Annual plan = 20% off.',
           meta: ['14-day trial', 'No card', 'Per location'],
         },
       ];
@@ -514,8 +514,8 @@ export default async function LandingPage({
               title={isTr ? 'Yorum Akışı' : 'Reviews Inbox'}
               body={
                 isTr
-                  ? 'Tüm kanallardan yorumlar tek panelde — düşük puanı işletme önce görür.'
-                  : 'Every review in one inbox — low ratings reach you first, not the platform.'
+                  ? 'Tüm kanallardan yorumlar tek panelde — özel geri bildirime hızlıca yanıt ver.'
+                  : 'Every review in one inbox — reply to private feedback quickly.'
               }
               icon={<Inbox size={16} strokeWidth={2.25} />}
             />
@@ -758,8 +758,8 @@ export default async function LandingPage({
             </h2>
             <p className="mt-5 text-[16px] text-white leading-[1.6] max-w-[480px]">
               {isTr
-                ? 'Google, Tripadvisor, Yemeksepeti, Getir — tüm platformlardaki yorumlar Buaze\'de buluşur. Olumsuzu önce sen gör, kriz büyümeden çöz.'
-                : 'Google, Tripadvisor, Yemeksepeti, Getir — reviews from every platform meet inside Buaze. Spot the negative first and resolve it before it grows.'}
+                ? 'Google, Tripadvisor, Yemeksepeti, Getir — tüm platformlardaki yorumlar Buaze\'de buluşur. Her sinyali tek yerden gör, hızlı ve özenle yanıtla.'
+                : 'Google, Tripadvisor, Yemeksepeti, Getir — reviews from every platform meet inside Buaze. See every signal in one place and reply with care.'}
             </p>
 
             {/* Platform logos row — review + delivery platforms that Buaze pulls into the inbox */}
@@ -844,8 +844,8 @@ export default async function LandingPage({
             <RevealHeadline
               text={
                 isTr
-                  ? 'Restoranlar Buaze ile yeniden tanıtıldı.'
-                  : 'Restaurants relaunched with Buaze.'
+                  ? 'İşletmeler Buaze ile yeniden tanıtıldı'
+                  : 'Businesses relaunched with Buaze'
               }
               className="mt-3 text-[clamp(28px,5vw,48px)] leading-[1.05] tracking-[-0.025em]"
             />
@@ -1043,8 +1043,8 @@ export default async function LandingPage({
                     </span>
                     <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">
                       {isTr
-                        ? 'Buaze müşteri kohortunda yorumların büyük çoğunluğu pozitif tona kayar; düşük puan tek panelde önce işletmeye ulaşır.'
-                        : 'Across the Buaze customer cohort, reviews skew positive; low ratings reach you first in one inbox.'}
+                        ? 'Buaze müşteri kohortunda yorumların büyük çoğunluğu pozitif tona kayar; özel geri bildirimler tek panelde hızlıca yanıtlanır.'
+                        : 'Across the Buaze customer cohort, reviews skew positive; private feedback gets a quick reply from one inbox.'}
                     </p>
                   </div>
                 </div>

@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : 'Restaurant & Café Reputation Management';
   const description =
     locale === 'tr'
-      ? 'Masaya QR koy: Buaze müşteri kohortunda ilk 90 günde organik Google yorumlarınız ortalama %184 büyüyor. Her misafire Google bağlantısı sunulur; isteyen ek olarak ekibinize özel geri bildirim de gönderebilir.'
-      : 'Put a QR on the table — Buaze customer cohort sees an average +184% organic Google review growth in the first 90 days. Every guest gets the Google review link; private feedback is an optional extra step.';
+      ? 'Masaya QR koy, her misafire Google yorum bağlantısını sun; isteyen ekibinize özel geri bildirim de bıraksın. Restoran ve kafeler için yorum yönetimi.'
+      : 'Put a QR on the table and offer every guest your Google review link; guests can also leave private feedback. Review management for restaurants and cafés.';
   return {
     title,
     description,

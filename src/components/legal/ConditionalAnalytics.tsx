@@ -19,7 +19,7 @@
 
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
-import { readCookieConsent, type CookieConsentState } from './CookieConsentBanner';
+import { readCookieConsent, type CookieConsentState } from './cookie-consent-storage';
 
 const GA_MEASUREMENT_ID = 'G-Y1H5FLYZ9R';
 const YM_ID = 108768887;

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SITE_URL } from '@/lib/site';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import LegalDocumentPage from '@/components/marketing/LegalDocumentPage';
@@ -15,10 +16,10 @@ export async function generateMetadata({
     title: doc.title,
     description: doc.description,
     alternates: {
-      canonical: `/${locale}/gizlilik`,
+      canonical: locale === 'tr' ? '/tr/gizlilik' : '/en/privacy',
       languages: {
         tr: '/tr/gizlilik',
-        en: '/en/gizlilik',
+        en: '/en/privacy',
         'x-default': '/tr/gizlilik',
       },
     },
@@ -26,7 +27,7 @@ export async function generateMetadata({
       type: 'article',
       siteName: 'Buaze',
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      url: `https://www.buaze.com/${locale}/gizlilik`,
+      url: locale === 'tr' ? `${SITE_URL}/tr/gizlilik` : `${SITE_URL}/en/privacy`,
       title: doc.title,
       description: doc.description,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: doc.title }],

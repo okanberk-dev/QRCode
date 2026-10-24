@@ -43,11 +43,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'Denetim Merkezi — Operasyonel checklist + skorlama | Buaze'
-    : 'Audit Center — Operational checklists + scoring | Buaze';
+    ? 'Denetim Merkezi — Operasyonel checklist + skorlama'
+    : 'Audit Center — Operational checklists + scoring';
   const description = isTr
-    ? 'Mutfak açılışı, hijyen, vardiya devri gibi günlük kontrol listelerini ve işe alım testlerini hazır şablonlardan başlat; linki WhatsApp ile paylaş, ekibin telefondan doldursun, sonuçları ve aksayan maddeleri gör.'
-    : 'Start daily checklists (kitchen opening, hygiene, shift handover) and hiring tests from ready-made templates; share the link on WhatsApp, your team fills it on their phone, and you see results and missed items.';
+    ? 'Hijyen ve vardiya devri kontrol listelerini, işe alım testlerini hazır şablonlarla başlat. Ekip telefondan doldurur, aksayan maddeleri görürsün.'
+    : 'Run hygiene and shift-handover checklists and hiring tests from ready-made templates. Your team fills them in on their phone; you see missed items.';
   const canonicalUrl = `https://www.buaze.com/${locale}/features/audit-center`;
   return {
     metadataBase: new URL('https://www.buaze.com'),
@@ -78,7 +78,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://www.buaze.com/tr/features/audit-center',
         en: 'https://www.buaze.com/en/features/audit-center',
-        'x-default': 'https://www.buaze.com/en/features/audit-center',
+        'x-default': 'https://www.buaze.com/tr/features/audit-center',
       },
     },
     openGraph: {
@@ -279,13 +279,8 @@ export default async function AuditCenterPage({
     description: isTr
       ? 'Hijyen denetimi, işe alım testi, KVKK uyumluluk ve ekip eğitim değerlendirmesini şablon, paylaşım linki ve otomatik skorla yöneten Buaze operasyon modülü. 6 sektör için hazır şablon + 6 soru tipi + 3 skor modu.'
       : 'Buaze operations module managing hygiene audits, hiring tests, KVKK compliance and team training assessments via templates, share links and auto-scoring. Ready templates for 6 sectors + 6 question types + 3 scoring modes.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: isTr ? 'TRY' : 'USD',
-      description: isTr ? '14 gün ücretsiz deneme; kart gerektirmez.' : '14-day free trial; no card required.',
-      url: `${base}/auth/register`,
-    },
+    // No `offers`: a price-0 Offer read as "this product is free" while
+    // the module is part of paid plans (only the trial is free).
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: isTr ? 'Denetim Merkezi yetenekleri' : 'Audit Center capabilities',

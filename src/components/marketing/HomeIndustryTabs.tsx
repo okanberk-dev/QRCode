@@ -36,7 +36,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/restaurants',
     icon: Utensils,
     label: { tr: 'Restoran & Kafe', en: 'Restaurant & Café' },
-    count: { tr: '1.200+ nokta', en: '1,200+ venues' },
+    count: { tr: 'Masa + paket QR', en: 'Table + delivery QR' },
     body: {
       tr: 'Masa, fatura, kapı çıkışı ve paket servis temaslarını tek QR operasyonuna bağlayın.',
       en: 'Connect table, receipt, exit and delivery touchpoints into one QR operation.',
@@ -55,7 +55,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/hotels',
     icon: Hotel,
     label: { tr: 'Otel', en: 'Hotel' },
-    count: { tr: '340+ tesis', en: '340+ properties' },
+    count: { tr: 'Oda + check-out QR', en: 'Room + checkout QR' },
     body: {
       tr: 'Check-out, oda kartı ve restoran masası gibi doğal anlarda misafir deneyimini yakalayın.',
       en: 'Capture guest experience at natural moments like checkout, key cards and restaurant tables.',
@@ -74,7 +74,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/healthcare',
     icon: Stethoscope,
     label: { tr: 'Klinik & Uygulama', en: 'Clinic & Practice' },
-    count: { tr: '520+ sağlayıcı', en: '520+ providers' },
+    count: { tr: 'Randevu sonrası', en: 'Post-appointment' },
     body: {
       tr: 'Randevu sonrası tarafsız geri bildirim isteyin; ekip takiplerini hassas veriden ayırın.',
       en: 'Request neutral post-appointment feedback and keep team follow-up separate from sensitive data.',
@@ -93,7 +93,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/law-firms',
     icon: Scale,
     label: { tr: 'Hukuk Ofisi', en: 'Legal' },
-    count: { tr: '180+ büro', en: '180+ offices' },
+    count: { tr: 'Danışma sonrası', en: 'Post-consultation' },
     body: {
       tr: 'Danışmanlık veya dosya kapanışı sonrası güven sinyalini düzenli hale getirin.',
       en: 'Make trust signals consistent after consultations or case closures.',
@@ -112,7 +112,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/beauty-salon',
     icon: Sparkles,
     label: { tr: 'Güzellik & Spa', en: 'Beauty & Spa' },
-    count: { tr: '410+ salon', en: '410+ salons' },
+    count: { tr: 'Seans sonrası', en: 'Post-session' },
     body: {
       tr: 'Seans sonrası memnuniyeti yakalayın; Instagram, Google ve tekrar randevu akışını besleyin.',
       en: 'Capture post-session satisfaction and feed Instagram, Google and rebooking flows.',
@@ -131,7 +131,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/retail',
     icon: ShoppingBag,
     label: { tr: 'Perakende', en: 'Retail' },
-    count: { tr: '260+ mağaza', en: '260+ stores' },
+    count: { tr: 'Kasa + e-fatura', en: 'Register + e-receipt' },
     body: {
       tr: 'Kasa, poşet ve e-fatura temaslarını mağaza bazlı geri bildirim hattına dönüştürün.',
       en: 'Turn register, bag and e-receipt touchpoints into store-level feedback lines.',
@@ -150,7 +150,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/gym',
     icon: Dumbbell,
     label: { tr: 'Spor & Fitness', en: 'Sports & Fitness' },
-    count: { tr: '140+ tesis', en: '140+ facilities' },
+    count: { tr: 'Ders + üyelik', en: 'Class + membership' },
     body: {
       tr: 'Ders sonu, üyelik yenileme ve stüdyo çıkışında üye deneyimini düzenli ölçün.',
       en: 'Measure member experience after classes, renewals and studio exits.',
@@ -169,7 +169,7 @@ const SECTORS: Sector[] = [
     href: '/solutions/schools',
     icon: GraduationCap,
     label: { tr: 'Eğitim', en: 'Education' },
-    count: { tr: '90+ kurum', en: '90+ institutions' },
+    count: { tr: 'Kurs + veli', en: 'Course + parent' },
     body: {
       tr: 'Kurs bitimi, tanışma günü ve veli iletişiminde geri bildirimi ölçülebilir hale getirin.',
       en: 'Make feedback measurable after courses, open days and parent communication.',

@@ -10,6 +10,7 @@ import type { ReactElement, ReactNode } from 'react';
  *   "1. " numbered liste    → <ol><li>
  *   `**bold**` inline       → <strong>
  *   `'inline-term'`         → <code>          (tek-tırnak içine alınmış teknik terim)
+ *   `[metin](/yol)`         → <a href="/{locale}/yol">  (yalnız site içi yol)
  *   Boş satır               → yeni paragraf
  *
  * XSS açısından güvenli: kullanıcı içeriği değil, admin yazar; React default
@@ -23,9 +24,24 @@ import type { ReactElement, ReactNode } from 'react';
 // Tek tırnak çevreli teknik terim ('user_token', 'admin_token' gibi).
 // Boş tırnak ('') ve apostrof'u (don't, it's) yutmamak için içerik
 // en az 1 karakter, sadece [\w-]+ kabul edilir; tipik teknik terimler.
-const INLINE_PATTERN = /(\*\*[^*\n]+?\*\*|'[\w-]+')/g;
+//
+// `[metin](/yol)` — site içi bağlantı. Şablonlar locale'siz yol yazar
+// (`/gizlilik`); burada aktif locale ile önek alır. Eskiden bu kalıp
+// tanınmıyordu ve sayfada ham "[Gizlilik Politikası](/gizlilik)" metni
+// görünüyordu.
+const INLINE_PATTERN = /(\*\*[^*\n]+?\*\*|'[\w-]+'|\[[^\]\n]+\]\(\/[a-z0-9-]*\))/g;
+const LINK_TOKEN = /^\[([^\]\n]+)\]\((\/[a-z0-9-]*)\)$/;
 
-function renderInline(text: string, baseKey: string): ReactNode[] {
+// Template slugs whose public route differs from the slug itself.
+function legalHref(path: string, locale: 'tr' | 'en'): string {
+  if (path === '/kullanim-sartlari') return `/${locale}/terms`;
+  if (path === '/gizlilik' || path === '/privacy') {
+    return locale === 'tr' ? '/tr/gizlilik' : '/en/privacy';
+  }
+  return `/${locale}${path === '/' ? '' : path}`;
+}
+
+function renderInline(text: string, baseKey: string, locale: 'tr' | 'en'): ReactNode[] {
   const out: ReactNode[] = [];
   let lastIdx = 0;
   let m: RegExpExecArray | null;
@@ -43,6 +59,17 @@ function renderInline(text: string, baseKey: string): ReactNode[] {
       );
     } else if (token.startsWith("'") && token.endsWith("'")) {
       out.push(<code key={`${baseKey}-code-${i++}`}>{token.slice(1, -1)}</code>);
+    } else if (LINK_TOKEN.test(token)) {
+      const [, label, path] = token.match(LINK_TOKEN)!;
+      out.push(
+        <a
+          key={`${baseKey}-link-${i++}`}
+          href={legalHref(path, locale)}
+          className="text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-2"
+        >
+          {label}
+        </a>,
+      );
     } else {
       out.push(token);
     }
@@ -82,11 +109,14 @@ export interface RenderLegalResult {
   headings: HeadingMeta[];
 }
 
-export function renderLegalContent(content: string): ReactElement[] {
-  return renderLegalContentWithToc(content).blocks;
+export function renderLegalContent(content: string, locale: 'tr' | 'en' = 'tr'): ReactElement[] {
+  return renderLegalContentWithToc(content, locale).blocks;
 }
 
-export function renderLegalContentWithToc(content: string): RenderLegalResult {
+export function renderLegalContentWithToc(
+  content: string,
+  locale: 'tr' | 'en' = 'tr',
+): RenderLegalResult {
   const blocks: ReactElement[] = [];
   const headings: HeadingMeta[] = [];
   const usedIds = new Map<string, number>();
@@ -119,7 +149,7 @@ export function renderLegalContentWithToc(content: string): RenderLegalResult {
           id={id}
           className="bz-h-tight mt-10 mb-3 text-[20px] sm:text-[24px] tracking-[-0.02em] text-[#0A0A0A]"
         >
-          {renderInline(text, `h2-${id}`)}
+          {renderInline(text, `h2-${id}`, locale)}
           <a
             href={`#${id}`}
             aria-label={`${text} bölümüne bağlantı`}
@@ -143,7 +173,7 @@ export function renderLegalContentWithToc(content: string): RenderLegalResult {
           id={id}
           className="bz-h-tight mt-7 mb-2 text-[16px] sm:text-[18px] tracking-[-0.02em] text-[#0A0A0A]"
         >
-          {renderInline(text, `h3-${id}`)}
+          {renderInline(text, `h3-${id}`, locale)}
           <a
             href={`#${id}`}
             aria-label={`${text} alt-bölümüne bağlantı`}
@@ -170,7 +200,7 @@ export function renderLegalContentWithToc(content: string): RenderLegalResult {
           className="my-3 list-disc space-y-1.5 pl-6 text-[14px] sm:text-[15px] leading-[1.7] text-[#525252]"
         >
           {items.map((item, idx) => (
-            <li key={idx}>{renderInline(item, `ul-${key}-${idx}`)}</li>
+            <li key={idx}>{renderInline(item, `ul-${key}-${idx}`, locale)}</li>
           ))}
         </ul>,
       );
@@ -187,7 +217,7 @@ export function renderLegalContentWithToc(content: string): RenderLegalResult {
       blocks.push(
         <ol key={`ol-${key++}`}>
           {items.map((item, idx) => (
-            <li key={idx}>{renderInline(item, `ol-${key}-${idx}`)}</li>
+            <li key={idx}>{renderInline(item, `ol-${key}-${idx}`, locale)}</li>
           ))}
         </ol>,
       );
@@ -214,7 +244,7 @@ export function renderLegalContentWithToc(content: string): RenderLegalResult {
         key={`p-${key++}`}
         className="my-3 text-[14px] sm:text-[15px] leading-[1.7] text-[#525252]"
       >
-        {renderInline(para, `p-${key}`)}
+        {renderInline(para, `p-${key}`, locale)}
       </p>,
     );
   }

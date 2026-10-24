@@ -36,7 +36,7 @@ const PLANS: PlanDef[] = [
 // Sector conversion multipliers — applied to discovery uplift.
 // Restaurants/cafes have high-frequency, low-consideration purchases →
 // rating bumps convert fast. Hotels/clinics have longer funnels → slower.
-// Calibrated against ~2,400 Buaze accounts (2026-04 cohort).
+// Calibrated against Buaze customer cohort observations (2026-04).
 //
 // `ticketLabel*` — sektör başına gerçek terminoloji. Otel "gece başı
 // ücret", klinik "hizmet başı ücret", restoran/kafe "ortalama sepet".
@@ -112,14 +112,14 @@ const MAX_RATING_DELTA = 0.6;
 // % of new discovery that converts to a paying customer.
 const DISCOVERY_TO_CUSTOMER_RATE = 0.32;
 
-// Buaze'nin signature faydası: düşük puan filtrelemesi.
-// Yüksek puan platforma yönlendirilirken düşük puan dahili form'a düşer →
-// Google'a sızma oranı tipik ~%15. Yani ~%85 filtrelenir.
+// Buaze kohort varsayımı: düşük puan veren müşterilerin ~%85'i ekibe özel
+// geri bildirimi tercih eder (herkese açık yorum bağlantısı her müşteriye
+// gösterilir). Model kalan ~%15'in herkese açık düşük yorum bıraktığını varsayar.
 const LOW_RATING_FILTER_RATE = 0.85;
 
 // Yeni Google puanı projeksiyonu için dilüsyon modeli sabitleri:
 // - Buaze QR akışında çekilen yüksek-puanlı yorumların ortalama yıldızı
-// - Filtreden kaçan ~%15 düşük yorumun ortalama yıldızı
+// - Herkese açık bırakılan ~%15 düşük yorumun ortalama yıldızı
 // - Mevcut Google yorum havuzu tahmini: aylık müşterinin %4'ü 12 ay
 //   içinde yorum bırakmış varsayımı (BrightLocal benchmark)
 const HIGH_REVIEW_AVG_STARS = 4.7;
@@ -131,7 +131,7 @@ const MIN_EXISTING_REVIEWS = 20;
 // Manuel yanıt 5-7 dk, AI taslak + edit 1-2 dk → ~4 dk tasarruf / yanıt.
 const AI_REPLY_TIME_SAVED_MIN = 4;
 
-// Yüksek puan akışında platform dağılımı default ağırlıkları. Kullanıcı
+// Herkese açık yorumların platform dağılımı default ağırlıkları. Kullanıcı
 // seçili olmayan platformları sıfırlar; geri kalanlar runtime'da normalize
 // edilir. Resmi marka hex'leri (CLAUDE.md §11 dokunulmaz tablosu + ek
 // platformların kendi brand guideline'ları).
@@ -320,13 +320,13 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
     const scanned = Math.round(monthlyCustomers * planDef.scanRate);
     const reviewers = Math.round(scanned * REVIEW_SUBMISSION_RATE);
 
-    // 1) Buaze filtrelemesi — düşük yorumların ne kadarı Google'a sızmaz.
+    // 1) Özel geri bildirim tercihi — düşük puanlı müşterilerin ne kadarı özel kanalı seçer.
     const filteredLowReviews = Math.round(lowRatingsPerMonth * LOW_RATING_FILTER_RATE);
     const leakedLowReviewsPerMonth = lowRatingsPerMonth - filteredLowReviews;
 
     // 2) Yeni Google puanı — dilüsyon modeli (12 ay sonunda yeni ortalama):
     //    mevcut yorum havuzu × mevcut puan + Buaze'den gelen yeni yüksek
-    //    yorumlar × 4.7★ + filtreden kaçan düşük yorumlar × 2.0★, hepsi
+    //    yorumlar × 4.7★ + herkese açık düşük yorumlar × 2.0★, hepsi
     //    toplanır ve toplam yorum sayısına bölünür. Aylık müşteri, plan
     //    (scanRate) ve sektör değiştikçe `reviewers` değişir → projeksiyon
     //    da gerçekten hareket eder.
@@ -344,7 +344,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
     const rawProjectedGoogle =
       totalReviews12mo > 0 ? totalPoints12mo / totalReviews12mo : currentGoogle;
     // Cap üst: 4.9 (gerçekçi ceiling). Cap alt: mevcut puan (Buaze hiç
-    // bir senaryoda mevcut ortalamayı düşürmez — filtreleme sayesinde).
+    // bir senaryoda mevcut ortalamayı düşürmez — model varsayımı).
     const projectedGoogle = Math.max(
       currentGoogle,
       Math.min(4.9, rawProjectedGoogle),
@@ -374,7 +374,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
     // 4) Pulse AI zaman tasarrufu — ay başına saat (yanıtlanan yorum × 4 dk).
     const aiHoursSaved = (reviewers * AI_REPLY_TIME_SAVED_MIN) / 60;
 
-    // 5) Platform breakdown — yüksek puan akışı seçili platformlara dağılır.
+    // 5) Platform breakdown — herkese açık yorumlar seçili platformlara dağılır.
     //    Default ağırlıklar normalize edilir (seçili olmayan = 0).
     const totalWeight = platforms.reduce((sum, key) => sum + PLATFORM_META[key].weight, 0);
     const platformBreakdown: Array<{ key: PlatformKey; share: number; reviews: number }> =
@@ -592,7 +592,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           />
         </div>
 
-        {/* Aylık düşük yorum (Buaze filtreleme inputu) */}
+        {/* Aylık düşük yorum (özel geri bildirim inputu) */}
         <div>
           <div className="flex items-baseline justify-between gap-3">
             <label htmlFor="roi-lowratings" className="pulse-eyebrow text-[#0A0A0A]">
@@ -605,7 +605,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
               {fmt(lowRatingsPerMonth)}
               <span className="text-[#A8D62E] font-normal">
                 {' '}
-                → {fmt(calc.filteredLowReviews)} {isTr ? 'filtre' : 'filtered'}
+                → {fmt(calc.filteredLowReviews)} {isTr ? 'özel kanal' : 'private'}
               </span>
             </output>
           </div>
@@ -622,12 +622,12 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           />
           <p className="mt-1.5 text-[11px] text-[#737373] leading-[1.5]">
             {isTr
-              ? 'Buaze, düşük puanları dahili form\'a düşürür → Google\'a sızma %15\'e iner.'
-              : 'Buaze routes low ratings to an internal form → only ~15% leak to Google.'}
+              ? 'Buaze müşteri kohortunda düşük puan verenlerin ~%85\'i özel geri bildirimi tercih eder; herkese açık bağlantı da görünür.'
+              : 'Across the Buaze customer cohort, ~85% of low-rating customers prefer private feedback; the public link stays visible.'}
           </p>
         </div>
 
-        {/* Aktif platformlar (yüksek puan dağılımı) */}
+        {/* Aktif platformlar (herkese açık yorum dağılımı) */}
         <div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="pulse-eyebrow text-[#0A0A0A]">
@@ -639,12 +639,12 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           </div>
           <p className="mt-1 text-[11px] text-[#737373] leading-[1.5]">
             {isTr
-              ? 'İşletmen hangilerinde varsa açık tut. Yüksek puan akışı yalnız seçili platformlara dağılır.'
-              : 'Keep on the ones your business is on. The high-rating flow distributes only to active platforms.'}
+              ? 'İşletmen hangilerinde varsa açık tut. Herkese açık yorumlar yalnız seçili platformlara dağılır.'
+              : 'Keep on the ones your business is on. Public reviews distribute only across active platforms.'}
           </p>
           <div
             role="group"
-            aria-label={isTr ? 'Yönlendirilen platformlar' : 'Active redirect platforms'}
+            aria-label={isTr ? 'Aktif yorum platformları' : 'Active review platforms'}
             className="mt-2.5 flex flex-wrap gap-1.5"
           >
             {ALL_PLATFORMS.map((key) => {
@@ -709,8 +709,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
 
         <p className="text-[11px] text-[#737373] leading-[1.5]">
           {isTr
-            ? 'Üç temel sürücü: düşük yorum filtreleme (%85), çoklu platform yönlendirme ve Pulse AI zaman tasarrufu. BrightLocal 2024 + ~2.400 Buaze hesabı kohortu üzerinde kalibre.'
-            : 'Three drivers: low-review filtering (85%), multi-platform routing, and Pulse AI time savings. Calibrated on BrightLocal 2024 + ~2,400 Buaze accounts.'}
+            ? 'Üç temel sürücü: özel geri bildirim tercihi (%85), çoklu platform yorum dağılımı ve Pulse AI zaman tasarrufu. BrightLocal 2024 + Buaze müşteri kohortu gözlemleri üzerinde kalibre.'
+            : 'Three drivers: private feedback preference (85%), multi-platform review mix, and Pulse AI time savings. Calibrated on BrightLocal 2024 + Buaze customer cohort observations.'}
         </p>
       </form>
 
@@ -753,7 +753,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
             {
               icon: <ShieldCheck size={14} strokeWidth={2.2} className="text-[#C6F24E]" />,
               v: `${fmt(calc.filteredLowReviews)}`,
-              l: isTr ? 'Filtrelenen kötü' : 'Low filtered',
+              l: isTr ? 'Özel geri bildirim' : 'Private feedback',
               accent: true,
             },
             {
@@ -820,11 +820,11 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
           ))}
         </ul>
 
-        {/* Platform breakdown — yüksek puan akışı seçili platformlara dağılır */}
+        {/* Platform breakdown — herkese açık yorumlar seçili platformlara dağılır */}
         {calc.platformBreakdown.length > 0 && calc.reviewers > 0 && (
           <div>
             <span className="pulse-eyebrow text-white/55 block">
-              {isTr ? 'PLATFORMA YÖNLENDİRME' : 'PLATFORM ROUTING'}
+              {isTr ? 'PLATFORM DAĞILIMI' : 'PLATFORM MIX'}
             </span>
             <ul className="mt-3 space-y-2">
               {calc.platformBreakdown.map(({ key, share, reviews }) => {
@@ -1046,7 +1046,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                       Buaze ekibinin benimle iletişime geçmesini ve raporu e-posta ile
                       göndermesini onaylıyorum. Detaylar{' '}
                       <Link
-                        href={`/${locale}/privacy`}
+                        href="/tr/gizlilik"
                         className="font-semibold text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
                       >
                         gizlilik politikası
@@ -1058,7 +1058,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
                       I consent to be contacted by Buaze and to receive the report by
                       email. See{' '}
                       <Link
-                        href={`/${locale}/privacy`}
+                        href="/en/privacy"
                         className="font-semibold text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
                       >
                         privacy policy

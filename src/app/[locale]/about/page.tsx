@@ -19,8 +19,8 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
   const title = isTr ? 'Hakkımızda | Buaze — Dijital İtibar Yönetimi Platformu' : 'About Us | Buaze — Digital Reputation Management Platform';
   const description = isTr
-    ? 'Buaze, restoranlar, oteller, klinikler ve daha fazlası için QR tabanlı müşteri geri bildirimi ve itibar yönetimi sunan Türkiye\'nin öncü SaaS platformudur.'
-    : 'Buaze is Turkey\'s leading SaaS platform offering QR-based customer feedback and reputation management for restaurants, hotels, clinics, and more.';
+    ? 'Buaze, restoranlar, oteller, klinikler ve daha fazlası için QR tabanlı müşteri geri bildirimi ve itibar yönetimi sunan İstanbul merkezli bir SaaS platformudur.'
+    : 'Buaze is an Istanbul-based SaaS platform offering QR-based customer feedback and reputation management for restaurants, hotels, clinics, and more.';
   return {
     title: { absolute: title },
     description,
@@ -35,7 +35,7 @@ export async function generateMetadata({
     },
     alternates: {
       canonical: `https://www.buaze.com/${locale}/about`,
-      languages: { tr: 'https://www.buaze.com/tr/about', en: 'https://www.buaze.com/en/about', 'x-default': 'https://www.buaze.com/en/about' },
+      languages: { tr: 'https://www.buaze.com/tr/about', en: 'https://www.buaze.com/en/about', 'x-default': 'https://www.buaze.com/tr/about' },
     },
   };
 }

@@ -24,13 +24,16 @@ export async function generateMetadata({
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Başarı Hikayeleri — Buaze'
-      : 'Customer Stories — Buaze';
+      ? 'Başarı Hikayeleri'
+      : 'Customer Stories';
   const description =
     locale === 'tr'
       ? 'İşletmeler Buaze ile nabzını dinliyor. Restoran, otel, klinik, kafe ve daha fazlasından örnek kullanım senaryoları.'
       : 'Businesses listen to their pulse with Buaze. Example scenarios from restaurants, hotels, clinics, cafés and more.';
   return {
+    // Illustrative content, not a verified customer — kept out of Google's
+    // index (and the sitemap) until real, permissioned stories replace it.
+    robots: { index: false, follow: true },
     metadataBase: new URL('https://www.buaze.com'),
     title,
     description,

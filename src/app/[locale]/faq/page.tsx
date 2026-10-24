@@ -16,8 +16,8 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
 
   const title = isTr
-    ? 'Sıkça Sorulan Sorular — QR Yorum Yönetimi | Buaze'
-    : 'Frequently Asked Questions — QR Review Management | Buaze';
+    ? 'Sıkça Sorulan Sorular — QR Yorum Yönetimi'
+    : 'Frequently Asked Questions — QR Review Management';
   const description = isTr
     ? 'Buaze hakkında merak ettiğiniz tüm soruların cevapları. QR itibar yönetimi, akıllı yönlendirme, fiyatlandırma ve kurulum hakkında detaylı bilgi alın.'
     : 'Find answers to all your questions about Buaze — QR reputation management, smart routing, pricing, and setup explained in detail.';
@@ -26,7 +26,7 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `https://www.buaze.com/${locale}/faq`,
-      languages: { tr: 'https://www.buaze.com/tr/faq', en: 'https://www.buaze.com/en/faq', 'x-default': 'https://www.buaze.com/en/faq' },
+      languages: { tr: 'https://www.buaze.com/tr/faq', en: 'https://www.buaze.com/en/faq', 'x-default': 'https://www.buaze.com/tr/faq' },
     },
     openGraph: {
       title,

@@ -1,7 +1,7 @@
 import '../globals.css';
 import { SITE_URL } from '@/lib/site';
 import { jsonLdString } from '@/lib/seo/json-ld';
-import { ContactFloat } from '@/components/marketing/ContactFloat';
+import ContactFloat from '@/components/marketing/LazyContactFloat';
 import type { Metadata } from 'next';
 import { type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -55,7 +55,7 @@ export async function generateMetadata({
     },
     description,
     keywords,
-    authors: [{ name: 'Buaze', url: 'https://www.buaze.com' }],
+    authors: [{ name: 'Buaze', url: SITE_URL }],
     creator: 'Buaze',
     publisher: 'Buaze',
     applicationName: 'Buaze',
@@ -84,30 +84,21 @@ export async function generateMetadata({
         'max-snippet': -1,
       },
     },
+    // Only site-wide defaults live here. Page-specific fields (title,
+    // description, og:url, canonical, hreflang) must come from each page:
+    // anything set here is inherited by every page that omits it, which used
+    // to give those pages the homepage's og:url / twitter title. Next fills
+    // twitter title/description/images from the page's openGraph.
     openGraph: {
       type: 'website',
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      url: `https://www.buaze.com/${locale}`,
       siteName: 'Buaze',
-      title,
-      description,
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
-      description,
       site: '@buaze',
       creator: '@buaze',
-      images: [ogImage],
-    },
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}`,
-      languages: {
-        'tr': 'https://www.buaze.com/tr',
-        'en': 'https://www.buaze.com/en',
-        'x-default': `${SITE_URL}/tr`,
-      },
     },
     icons: {
       icon: [
@@ -146,12 +137,11 @@ export default async function LocaleLayout({
   // marketing tree without changing the visual outcome (anon users still
   // see the float; signed-in users still don't).
 
-  // JSON-LD structured data for richer search-engine appearance
-  // (Organization + WebSite + SoftwareApplication schemas).
-  // NOTE: aggregateRating is intentionally omitted from SoftwareApplication.
-  // Google requires AggregateRating to be backed by verifiable, on-page review
-  // data; hardcoded numbers are a Manual Action risk. Re-add only when
-  // computed from real Feedback aggregates surfaced on this page.
+  // JSON-LD structured data (Organization + WebSite). There is deliberately
+  // no SoftwareApplication node: Google only accepts it with a price and an
+  // aggregateRating backed by verifiable on-page reviews — without both it
+  // is reported as an invalid item on every page, and invented ratings are
+  // a manual-action risk.
   const structuredData = [
     {
       '@context': 'https://schema.org',
@@ -211,23 +201,8 @@ export default async function LocaleLayout({
       name: 'Buaze',
       url: siteUrl,
       inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: `${siteUrl}/${locale}/help/search?q={search_term_string}`,
-        'query-input': 'required name=search_term_string',
-      },
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'Buaze',
-      applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web, iOS, Android',
-      // Stage 94 §38.174 — `offers` removed (was hardcoded TRY 500;
-      // drifted from /admin/plans actual prices Starter 499 / Growth
-      // 899 / Pro 1499). Misleading-business-claim risk per Google.
-      // SoftwareApplication remains valid without `offers`; rich
-      // result skips price rendering until DB-driven plan injection.
+      // No SearchAction: Google retired the sitelinks search box (2024) and
+      // the target (/help/search) is noindex + robots-disallowed anyway.
     },
   ];
 

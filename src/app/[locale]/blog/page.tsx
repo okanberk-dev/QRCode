@@ -20,8 +20,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'Blog & Rehberler — Yorum yönetimi & müşteri büyüme | Buaze'
-    : 'Blog & Guides — Review management & customer growth | Buaze';
+    ? 'Blog & Rehberler — Yorum yönetimi & müşteri büyüme'
+    : 'Blog & Guides — Review management & customer growth';
   const description = isTr
     ? 'Yorum yönetimi, müşteri psikolojisi, KVKK + Google policy uyumu, QR strateji ve büyüme taktikleri — restoran, otel ve klinikler için uzman rehberleri.'
     : 'Review management, customer psychology, KVKK + Google policy compliance, QR strategy and growth tactics — expert guides for restaurants, hotels & clinics.';
@@ -105,6 +105,17 @@ export default async function BlogIndexPage({
       ...(tagsToMatch.length > 0 ? { tags: { hasSome: tagsToMatch } } : {}),
     },
     orderBy: { createdAt: 'desc' },
+    // List fields only — the index never renders the post body, so loading
+    // every article's full content on each request was wasted DB + memory.
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      coverImage: true,
+      author: true,
+      date: true,
+      readTime: true,
+    },
   });
 
   const featured = posts[0];

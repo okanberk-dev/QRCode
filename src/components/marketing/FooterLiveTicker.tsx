@@ -9,8 +9,8 @@ import type { Locale } from '@/lib/translations';
  * HANDOFF premium-footer.jsx live ticker (line 53-78) editorial polish.
  * Mevcut Stage 44 §38.125 static pill (`ÇEVRİMİÇİ · BUAZE · Sistem aktif`)
  * yerine 5-state rotation 2.8s — Türkiye semt adları + Buaze gerçek
- * platform feature event'leri (AI Co-Pilot reply / low-rating detect /
- * QR scan / platform redirect).
+ * platform feature event'leri (AI Co-Pilot reply / private feedback /
+ * QR scan / review link open).
  *
  * Compliance disipline (CLAUDE.md §38.130 §39.2):
  * Kullanıcı AskUserQuestion ile §35.10 LiveReviewTicker fake testimonial
@@ -47,8 +47,8 @@ export default function FooterLiveTicker({ locale }: FooterLiveTickerProps) {
     { city: 'Karaköy', text: isTr ? 'AI yanıtladı' : 'AI replied' },
     { city: 'Bağdat Cd.', text: isTr ? 'Yeni 5★ yorum' : 'New 5★ review' },
     { city: 'Cihangir', text: isTr ? 'QR tarandı' : 'QR scanned' },
-    { city: 'Çankaya', text: isTr ? 'Negatif yakalandı' : 'Negative caught' },
-    { city: 'İzmir', text: isTr ? "Google'a yayınlandı" : 'Pushed to Google' },
+    { city: 'Çankaya', text: isTr ? 'Özel geri bildirim alındı' : 'Private feedback received' },
+    { city: 'İzmir', text: isTr ? 'Yorum bağlantısı açıldı' : 'Review link opened' },
   ];
 
   const [tick, setTick] = useState(0);

@@ -97,8 +97,8 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     keyInsight: 'İyi bir kurulum dakikalar sürer; iyi bir <strong>test</strong> ise saatler kazandırır. İlk QR’ı kendi telefonunuzdan okutmadan canlıya almayın.',
     sections: [
       { title: '1. Hesap ve işletme bilgileri', paragraphs: ['Kayıt olduktan sonra işletme adı, kategori, adres, telefon ve bildirim e-postasını girin. Bu bilgiler hem panelde raporların doğru ayrışmasını sağlar hem de müşteri ekranında güven veren bir kimlik oluşturur.'] },
-      { title: '2. Platform bağlantıları', paragraphs: ['Google yorum bağlantısı veya Place ID, Yemeksepeti, Getir ve Trendyol GO bağlantıları işletme profilinde tutulur. Yüksek puan veren müşteri uygun platforma yönlendirilir; düşük puan veren müşteri ise önce işletme içi çözüm formuna alınır.'] },
-      { title: '3. İlk test', items: ['QR sayfasını telefondan açın.', '5 yıldız verip platform yönlendirmesini kontrol edin.', '2 veya 3 yıldız verip dahili formun açıldığını doğrulayın.', 'Panelde kaydın doğru restoran, masa ve platformla geldiğini kontrol edin.'] },
+      { title: '2. Platform bağlantıları', paragraphs: ['Google yorum bağlantısı veya Place ID, Yemeksepeti, Getir ve Trendyol GO bağlantıları işletme profilinde tutulur. Herkese açık yorum bağlantısı her müşteriye gösterilir; müşteri dilerse işletmeye özel geri bildirim de bırakabilir.'] },
+      { title: '3. İlk test', items: ['QR sayfasını telefondan açın.', 'Yüksek ve düşük birer puan deneyip herkese açık yorum bağlantısının açıldığını kontrol edin.', 'Özel geri bildirim formunu gönderip kaydın oluştuğunu doğrulayın.', 'Panelde kaydın doğru restoran, masa ve platformla geldiğini kontrol edin.'] },
     ],
     checklist: ['İşletme adı ve slug doğru.', 'Bildirim e-postası aktif.', 'Google yorum linki veya Place ID girildi.', 'En az bir QR kod test edildi.', 'Panelde yeni geri bildirim göründü.'],
     faq: [
@@ -111,8 +111,8 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     keyInsight: 'A good setup takes minutes; a good <strong>test</strong> saves hours. Do not go live until you have scanned the first QR on your own phone.',
     sections: [
       { title: '1. Account and business profile', paragraphs: ['After signing up, add your business name, category, address, phone number and notification email. These details keep reporting clean and make the customer-facing flow feel trustworthy.'] },
-      { title: '2. Review platform links', paragraphs: ['Store your Google review link or Place ID, plus Yemeksepeti, Getir and Trendyol GO URLs when relevant. High ratings can route to public platforms, while low ratings are captured privately for resolution first.'] },
-      { title: '3. First test', items: ['Open the QR page on a phone.', 'Submit a 5-star rating and confirm the platform redirect.', 'Submit a 2 or 3-star rating and confirm the private form.', 'Check that the dashboard records restaurant, table and platform correctly.'] },
+      { title: '2. Review platform links', paragraphs: ['Store your Google review link or Place ID, plus Yemeksepeti, Getir and Trendyol GO URLs when relevant. The public review link is shown to every customer, and customers can choose to send private feedback to your team as well.'] },
+      { title: '3. First test', items: ['Open the QR page on a phone.', 'Try both a high and a low rating and confirm the public review link opens.', 'Submit the private feedback form and confirm the entry is created.', 'Check that the dashboard records restaurant, table and platform correctly.'] },
     ],
     checklist: ['Business name and slug are correct.', 'Notification email is active.', 'Google review link or Place ID is saved.', 'At least one QR code is tested.', 'A new feedback entry appears in the dashboard.'],
     faq: [
@@ -181,13 +181,13 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     lead: 'Parametreler, tek bir QR sisteminden farklı rapor kırılımları üretmenizi sağlar. Buaze; masa, platform ve kaynak bilgisini geri bildirim kaydına işleyerek operasyonel analiz yapmanızı kolaylaştırır.',
     keyInsight: 'Parametre <em>opsiyonel</em> görünür ama <strong>raporlama derinliği</strong> tam buradan başlar. Tutarlı parametre = okunabilir rapor.',
     sections: [
-      { title: 'Temel URL yapısı', paragraphs: ['Genel format /r/restaurant-slug?table=12&platform=google şeklindedir. table fiziksel lokasyonu, platform ise yüksek puan sonrası yönlendirilecek yorum kanalını temsil eder.'] },
+      { title: 'Temel URL yapısı', paragraphs: ['Genel format /r/restaurant-slug?table=12&platform=google şeklindedir. table fiziksel lokasyonu, platform ise müşteriye gösterilecek herkese açık yorum kanalını temsil eder.'] },
       { title: 'Platform değerleri', items: ['google: Google yorum bağlantısı', 'yemeksepeti: Yemeksepeti restoran sayfası', 'getir: Getir Yemek sayfası', 'trendyol_go: Trendyol GO sayfası'] },
       { title: 'Raporlama etkisi', paragraphs: ['Parametreler doğru kullanıldığında hangi masadan, hangi servis tipinden veya hangi teslimat kanalından daha çok olumlu ya da olumsuz sinyal geldiğini görebilirsiniz.'] },
     ],
     checklist: ['Parametre isimleri küçük harfle yazıldı.', 'Platform değerleri desteklenen listeyle uyumlu.', 'Masa kodları 20 karakterden kısa.', 'QR geçmişinde doğru platform görünüyor.', 'CSV exportta kaynak ayrımı okunuyor.'],
     faq: [
-      { q: 'Platform parametresi yoksa ne olur?', a: 'Yüksek puan sonrası ilk uygun platform kullanılır veya kullanıcı teşekkür ekranında kalır. Raporlarda platform boş olabilir.' },
+      { q: 'Platform parametresi yoksa ne olur?', a: 'İşletmenin ilk uygun yorum platformu gösterilir; uygun platform yoksa teşekkür ekranı açılır. Raporlarda platform boş olabilir.' },
       { q: 'Masa yerine şube kullanabilir miyim?', a: 'Şube ayrı restoran olarak tanımlanmalı; table parametresi daha çok masa, alan veya kampanya kırılımı için uygundur.' },
     ],
   }),
@@ -195,13 +195,13 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     lead: 'Parameters let one QR system produce multiple reporting views. Buaze stores table, platform and source details on feedback records so teams can analyze operations more precisely.',
     keyInsight: 'Parameters look <em>optional</em> but <strong>reporting depth</strong> starts exactly here. Consistent parameters mean readable reports.',
     sections: [
-      { title: 'Basic URL structure', paragraphs: ['A typical URL looks like /r/restaurant-slug?table=12&platform=google. The table parameter identifies a physical spot, while platform controls the public review destination after a high rating.'] },
+      { title: 'Basic URL structure', paragraphs: ['A typical URL looks like /r/restaurant-slug?table=12&platform=google. The table parameter identifies a physical spot, while platform sets which public review destination is shown to the customer.'] },
       { title: 'Supported platform values', items: ['google: Google review link', 'yemeksepeti: Yemeksepeti restaurant page', 'getir: Getir Food page', 'trendyol_go: Trendyol GO page'] },
       { title: 'Reporting impact', paragraphs: ['When parameters are used consistently, you can see which tables, service types or delivery channels generate the strongest positive or negative signals.'] },
     ],
     checklist: ['Parameter names are lowercase.', 'Platform values match the supported list.', 'Table identifiers are shorter than 20 characters.', 'QR history shows the correct platform.', 'CSV exports include source separation.'],
     faq: [
-      { q: 'What if the platform parameter is missing?', a: 'Buaze uses the first available platform after a high rating, or shows a thank-you state. Platform reporting may stay empty.' },
+      { q: 'What if the platform parameter is missing?', a: 'Buaze shows the first available review platform, or a thank-you state if none is set. Platform reporting may stay empty.' },
       { q: 'Can I use table for branch names?', a: 'Branches should usually be separate restaurants; table is better for table, area or campaign-level attribution.' },
     ],
   }),
@@ -263,29 +263,29 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     ],
   }),
 
-  article('tr', 'integrations', 10, 'google-review-link', 'Google yorum bağlantısını doğru ekleme', 'Google Place ID veya doğrudan yorum linki ile yüksek puan yönlendirmesini güvenilir hale getirin.', ['google', 'place id', 'yorum linki', 'entegrasyon'], {
-    lead: 'Google bağlantısı, yüksek puan veren müşterinin doğru işletme profiline gitmesini sağlar. Yanlış veya eski bağlantılar, iyi niyetli müşteriyi boşa düşürür ve yorum kazanma oranını azaltır.',
-    keyInsight: 'Doğru link <strong>amaç</strong>tır, akış değildir. Müşteriye <em>sahte teşvik</em> veya <em>seçici filtre</em> sunmadan onun Google üzerinde özgürce yorum yazma hakkını korur.',
+  article('tr', 'integrations', 10, 'google-review-link', 'Google yorum bağlantısını doğru ekleme', 'Google Place ID veya doğrudan yorum linki ile herkese açık yorum bağlantısını güvenilir hale getirin.', ['google', 'place id', 'yorum linki', 'entegrasyon'], {
+    lead: 'Google bağlantısı, yorum yazmak isteyen müşterinin doğru işletme profiline gitmesini sağlar. Yanlış veya eski bağlantılar, iyi niyetli müşteriyi boşa düşürür ve yorum kazanma oranını azaltır.',
+    keyInsight: 'Doğru link <strong>amaç</strong>tır, akış değildir. Müşteriye <em>sahte teşvik</em> veya <em>seçici yönlendirme</em> sunmadan onun Google üzerinde özgürce yorum yazma hakkını korur.',
     sections: [
       { title: 'Place ID mi doğrudan URL mi?', paragraphs: ['Place ID kullanırsanız Buaze Google’ın write review formatında bağlantı oluşturur. Doğrudan URL kullanırsanız müşteriyi sizin verdiğiniz adrese yönlendirir. İki yöntem de çalışır; önemli olan test etmektir.'] },
-      { title: 'Test adımları', items: ['QR akışında 5 yıldız seçin.', 'Yönlendirilen sayfanın doğru Google işletmesi olduğunu kontrol edin.', 'Mobil tarayıcı ve Google Maps uygulamasında deneyin.', 'Farklı şube profillerini karıştırmadığınızdan emin olun.'] },
-      { title: 'Politika notu', paragraphs: ['Google yorum akışlarında müşteriyi yanıltan, yorum metni dayatan veya yalnızca olumlu yorumları seçici biçimde teşvik eden uygulamalardan kaçının. Buaze akışı geri bildirimi önce işletme deneyimini anlamak için kullanır.'] },
+      { title: 'Test adımları', items: ['QR akışında yüksek ve düşük birer puan deneyin.', 'Google yorum bağlantısının doğru işletme profilini açtığını kontrol edin.', 'Mobil tarayıcı ve Google Maps uygulamasında deneyin.', 'Farklı şube profillerini karıştırmadığınızdan emin olun.'] },
+      { title: 'Politika notu', paragraphs: ['Google yorum akışlarında müşteriyi yanıltan, yorum metni dayatan veya yalnızca olumlu yorumları seçici biçimde teşvik eden uygulamalardan kaçının. Buaze akışında her müşteri istediği yere yorum yazma hakkını korur.'] },
     ],
-    checklist: ['Google sağlayıcısı etkin.', 'Place ID veya URL test edildi.', 'Şube profili doğru.', 'Yüksek puan yönlendirmesi çalışıyor.', 'Düşük puan dahili forma düşüyor.'],
+    checklist: ['Google sağlayıcısı etkin.', 'Place ID veya URL test edildi.', 'Şube profili doğru.', 'Google yorum bağlantısı her puanda görünüyor.', 'Özel geri bildirim formu çalışıyor.'],
     faq: [
       { q: 'Google Place ID nereden bulunur?', a: 'Google Place ID Finder veya işletme profilinizin yorum bağlantısı kullanılabilir. Emin değilseniz doğrudan çalışan yorum URL’sini ekleyin.' },
       { q: 'Birden fazla Google profili varsa ne yapmalıyım?', a: 'Her şubeyi ayrı restoran olarak tanımlayın ve ilgili Google linkini o restoran kaydına ekleyin.' },
     ],
   }),
-  article('en', 'integrations', 10, 'google-review-link', 'Add your Google review link correctly', 'Use a Google Place ID or direct review URL so high-rating redirects land on the right profile.', ['google', 'place id', 'review link', 'integration'], {
-    lead: 'Your Google link sends high-rating customers to the correct business profile. Broken or outdated links waste customer intent and reduce review conversion.',
-    keyInsight: 'The right link is the <strong>goal</strong>, not the flow. It preserves the customer’s freedom to review on Google without <em>incentives</em> or <em>selective filtering</em>.',
+  article('en', 'integrations', 10, 'google-review-link', 'Add your Google review link correctly', 'Use a Google Place ID or direct review URL so your public review link opens the right profile.', ['google', 'place id', 'review link', 'integration'], {
+    lead: 'Your Google link takes customers who want to post a review to the correct business profile. Broken or outdated links waste customer intent and reduce review conversion.',
+    keyInsight: 'The right link is the <strong>goal</strong>, not the flow. It preserves the customer’s freedom to review on Google without <em>incentives</em> or <em>selective steering</em>.',
     sections: [
       { title: 'Place ID or direct URL?', paragraphs: ['With a Place ID, Buaze generates the Google write-review URL. With a direct URL, Buaze redirects to the exact address you provide. Both work; testing is the important part.'] },
-      { title: 'Testing steps', items: ['Select 5 stars in the QR flow.', 'Confirm the redirected page is the correct Google business.', 'Test both mobile browser and Google Maps app behavior.', 'Make sure branch profiles are not mixed.'] },
-      { title: 'Policy note', paragraphs: ['Avoid misleading review flows, forced review text or selective pressure for positive reviews. Buaze uses feedback first to understand the customer experience.'] },
+      { title: 'Testing steps', items: ['Try both a high and a low rating in the QR flow.', 'Confirm the Google review link opens the correct business.', 'Test both mobile browser and Google Maps app behavior.', 'Make sure branch profiles are not mixed.'] },
+      { title: 'Policy note', paragraphs: ['Avoid misleading review flows, forced review text or selective pressure for positive reviews. In the Buaze flow every customer keeps the right to post wherever they want.'] },
     ],
-    checklist: ['Google provider is enabled.', 'Place ID or URL has been tested.', 'The branch profile is correct.', 'High-rating redirect works.', 'Low ratings stay in the private form.'],
+    checklist: ['Google provider is enabled.', 'Place ID or URL has been tested.', 'The branch profile is correct.', 'The Google review link shows at every rating.', 'The private feedback form works.'],
     faq: [
       { q: 'Where do I find the Place ID?', a: 'You can use Google’s Place ID Finder or a working review URL from your business profile. If unsure, paste the direct review URL.' },
       { q: 'What if I have multiple Google profiles?', a: 'Create each branch as a separate restaurant and add the matching Google link to each one.' },
@@ -296,7 +296,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     keyInsight: 'Teslimat ve dine-in <em>aynı işletme</em> ama <strong>farklı operasyon</strong>dur. Karıştırılan sinyaller karıştırılmış kararlara yol açar.',
     sections: [
       { title: 'Hangi link eklenmeli?', paragraphs: ['Müşterinin yorum bırakabileceği veya restoran sayfasını görebileceği halka açık platform URL’sini ekleyin. Kısaltılmış linkler yerine mümkünse kalıcı restoran sayfasını kullanın.'] },
-      { title: 'Platform parametresi', paragraphs: ['QR URL’sinde platform=getir veya platform=trendyol_go gibi değerler kullanıldığında, yüksek puan yönlendirmesi o kanala yapılır ve raporda platform alanı dolar.'] },
+      { title: 'Platform parametresi', paragraphs: ['QR URL’sinde platform=getir veya platform=trendyol_go gibi değerler kullanıldığında, müşteriye o kanalın yorum bağlantısı gösterilir ve raporda platform alanı dolar.'] },
       { title: 'Operasyonel okuma', items: ['Getir düşük puanları teslimat süresiyle ilişkilendirilebilir.', 'Yemeksepeti yorumları paketleme veya ürün doğruluğu için izlenebilir.', 'Trendyol GO ayrımı kampanya dönemlerinde performans takibi sağlar.'] },
     ],
     checklist: ['Her platform linki mobilde açılıyor.', 'Platform parametreleri doğru yazıldı.', 'QR geçmişinde platform kaydı var.', 'Dashboard dağılım grafiği kontrol edildi.', 'Yanlış veya eski linkler kaldırıldı.'],
@@ -310,7 +310,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     keyInsight: 'Delivery and dine-in are <em>the same business</em> but <strong>different operations</strong>. Mixed signals lead to mixed decisions.',
     sections: [
       { title: 'Which link should I add?', paragraphs: ['Use the public platform URL where customers can view or review your restaurant. Prefer permanent restaurant pages over short links.'] },
-      { title: 'Platform parameter', paragraphs: ['When a QR URL includes values like platform=getir or platform=trendyol_go, high-rating redirects use that destination and reporting stores the platform field.'] },
+      { title: 'Platform parameter', paragraphs: ['When a QR URL includes values like platform=getir or platform=trendyol_go, customers are shown that platform’s review link and reporting stores the platform field.'] },
       { title: 'Operational reading', items: ['Getir low ratings may point to delivery time.', 'Yemeksepeti feedback can reveal packaging or order accuracy issues.', 'Trendyol GO separation helps during campaign-heavy periods.'] },
     ],
     checklist: ['Each platform link opens on mobile.', 'Platform parameters are spelled correctly.', 'QR history includes platform records.', 'Dashboard distribution was checked.', 'Old or broken links were removed.'],
@@ -494,7 +494,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'Geri bildirim toplarken amaç, müşteriden gereksiz veri almak değil, deneyimi iyileştirmek için yeterli ve hukuka uygun bilgiyi toplamaktır. Buaze akışı KVKK onayı, iletişim izni ve anonim geri bildirim ayrımını destekler.',
     keyInsight: 'Veri minimizasyonu <em>kısıtlama</em> değildir; <strong>güven inşası</strong>dır. Daha az toplamak, daha az saklamak ve daha az risk demektir.',
     sections: [
-      { title: 'Hangi veri ne zaman alınır?', paragraphs: ['Düşük puanlarda müşteriye ulaşmak için ad, telefon veya e-posta istenebilir. Yüksek puan yönlendirme akışında genellikle kişisel veri toplamaya gerek yoktur.'] },
+      { title: 'Hangi veri ne zaman alınır?', paragraphs: ['Özel geri bildirim formunda müşteriye ulaşmak için ad, telefon veya e-posta istenebilir. Herkese açık yorum bağlantısını açmak için genellikle kişisel veri gerekmez.'] },
       { title: 'Açık rıza ve iletişim izni', items: ['KVKK onayı geri bildirim süreci için zorunlu olabilir.', 'Pazarlama izni ayrı ve isteğe bağlı tutulmalıdır.', 'İzin metni açık ve anlaşılır olmalıdır.', 'Müşteri dilediğinde iletişim iznini geri çekebilmelidir.'] },
       { title: 'Anonim kayıtlar', paragraphs: ['E-posta ve telefon bırakmayan müşteri geri bildirimi operasyonel analizde kullanılabilir; ancak müşteri listesinde kişisel kayıt gibi ele alınmamalıdır.'] },
     ],
@@ -508,7 +508,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'The goal of feedback collection is not to gather unnecessary personal data, but to collect enough lawful information to improve the experience. Buaze supports consent, marketing permission and anonymous feedback separation.',
     keyInsight: 'Data minimization is not a <em>limitation</em>; it is <strong>trust-building</strong>. Less collected means less stored — and less risk.',
     sections: [
-      { title: 'Which data is collected when?', paragraphs: ['For low ratings, name, phone or email may be requested so the business can follow up. High-rating redirect flows usually do not need personal data.'] },
+      { title: 'Which data is collected when?', paragraphs: ['In the private feedback form, name, phone or email may be requested so the business can follow up. Opening the public review link usually needs no personal data.'] },
       { title: 'Consent and marketing permission', items: ['Privacy consent may be required for feedback processing.', 'Marketing permission should be separate and optional.', 'Consent text should be clear.', 'Customers should be able to withdraw marketing permission.'] },
       { title: 'Anonymous records', paragraphs: ['Feedback without email or phone can still be used for operational analysis, but should not be treated as an identified customer record.'] },
     ],
@@ -806,7 +806,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'Buaze; Google, Yemeksepeti, Getir ve Trendyol GO ile çalışan birinci sınıf platform yönlendirmeleri sunar. Tripadvisor, Foursquare veya niş bir rezervasyon platformu için ise yan kanal yaklaşımı uygundur.',
     keyInsight: 'Yan kanal güzeldir ama her profil <em>aktif</em> değildir. Hacim yoksa müşteriyi dağıtmak değil, ana profili güçlendirmek daha verimlidir.',
     sections: [
-      { title: 'Yan kanal nedir?', paragraphs: ['Yan kanal, müşterinin yüksek puan sonrası yönlendirildiği ek profil bağlantısıdır. İçeride platform parametresi olarak tanımlı olmadığından, kart üzerindeki link bileşeniyle kurulur. Akış: önce yıldız → uygun ana platforma yönlendirme veya teşekkür ekranı → hemen altında “Tripadvisor’da paylaşmak ister misiniz?” gibi ek davet.'] },
+      { title: 'Yan kanal nedir?', paragraphs: ['Yan kanal, müşteriye gösterilen ek profil bağlantısıdır. İçeride platform parametresi olarak tanımlı olmadığından, kart üzerindeki link bileşeniyle kurulur. Akış: önce yıldız → ana yorum platformu bağlantısı veya teşekkür ekranı → hemen altında “Tripadvisor’da paylaşmak ister misiniz?” gibi ek davet.'] },
       { title: 'Yorum hacmi ve kalitesi', items: ['Tripadvisor turist trafiğinin yüksek olduğu lokasyonlarda kritik.', 'Foursquare niş bir alanda hedef kitle yakaladıysa anlamlı.', 'Sosyal medya profilleri yorum yerine takip kazanır.', 'Maps özetleri zaten Google profilinde toplanır.', 'Boş profil yerine eksik kalan ana profili tamamlayın.'] },
       { title: 'Karar matrisi', paragraphs: ['Eğer ek profilden ayda 5’ten az yorum geliyorsa müşteri akışını dağıtmak yerine ana profilde toplamak daha verimlidir. Hacim 20+ olduğunda yan kanal yatırımı kendini geri öder.'] },
     ],
@@ -820,7 +820,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     lead: 'Buaze ships first-class platform redirects for Google, Yemeksepeti, Getir and Trendyol GO. For Tripadvisor, Foursquare or a niche reservation platform, a side-channel approach works well.',
     keyInsight: 'Side channels are nice, but not every profile is <em>active</em>. Without volume, strengthening the main profile beats spreading the customer thin.',
     sections: [
-      { title: 'What is a side channel?', paragraphs: ['A side channel is an extra profile link offered after a high rating. Since it is not a built-in platform parameter, you set it up via a link card on the screen. Flow: stars → main platform redirect or thank-you → a follow-up like “Would you also share on Tripadvisor?”'] },
+      { title: 'What is a side channel?', paragraphs: ['A side channel is an extra profile link shown to the customer. Since it is not a built-in platform parameter, you set it up via a link card on the screen. Flow: stars → main review platform link or thank-you → a follow-up like “Would you also share on Tripadvisor?”'] },
       { title: 'Volume and quality', items: ['Tripadvisor matters most in tourist-heavy locations.', 'Foursquare is meaningful where a niche audience uses it.', 'Social profiles bring follows, not reviews.', 'Maps summaries already aggregate via your Google profile.', 'Improve the main profile before adding empty side channels.'] },
       { title: 'Decision matrix', paragraphs: ['If a profile receives fewer than 5 reviews per month, it is more efficient to focus the main profile. Beyond 20+, side-channel investment pays back.'] },
     ],
@@ -858,7 +858,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
       { q: 'Can the export be automated?', a: 'Currently via manual or scheduled scripts. For sustainable flow, prefer webhooks plus your warehouse or BI.' },
     ],
   }),
-  article('tr', 'integrations', 50, 'google-maps-link-vs-place-id', 'Google Maps linki, Place ID ve doğrudan yorum URL’si arasındaki fark', 'Hangi formatın hangi senaryoya uyduğunu görerek yüksek puan yönlendirmesini doğru kanala kilitleyin.', ['google', 'maps', 'place id', 'link'], {
+  article('tr', 'integrations', 50, 'google-maps-link-vs-place-id', 'Google Maps linki, Place ID ve doğrudan yorum URL’si arasındaki fark', 'Hangi formatın hangi senaryoya uyduğunu görerek yorum bağlantısını doğru kanala kilitleyin.', ['google', 'maps', 'place id', 'link'], {
     lead: 'Google bağlantısı tek bir tip değildir. Maps linki, Place ID ve doğrudan write-review URL’si farklı davranır. Doğru olanı seçmek müşterinin yorumunun gerçekten profile düşmesini sağlar.',
     keyInsight: 'En iyi link <em>en az tıkla</em> yorum yazma ekranına götüren değildir; <strong>müşterinin niyetiyle uyumlu</strong> olandır. Kısa yol her zaman doğru yol değildir.',
     sections: [
@@ -872,7 +872,7 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
       { q: 'Profil askıya alındıysa ne olur?', a: 'Müşteri bir hata sayfası görür. Profil yeniden aktif olana kadar Buaze’deki link’i pasifleştirin.' },
     ],
   }),
-  article('en', 'integrations', 50, 'google-maps-link-vs-place-id', 'Google Maps link, Place ID or direct review URL', 'See which format fits which scenario so high-rating redirects always reach the right channel.', ['google', 'maps', 'place id', 'link'], {
+  article('en', 'integrations', 50, 'google-maps-link-vs-place-id', 'Google Maps link, Place ID or direct review URL', 'See which format fits which scenario so your review link always reaches the right channel.', ['google', 'maps', 'place id', 'link'], {
     lead: 'A Google link is not a single thing. Maps link, Place ID and direct write-review URLs behave differently. Picking the right one ensures the customer actually lands on a review form.',
     keyInsight: 'The best link is not the one with <em>fewest taps</em>; it is the one <strong>aligned with customer intent</strong>. Short does not always mean right.',
     sections: [

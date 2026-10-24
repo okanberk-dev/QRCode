@@ -23,8 +23,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Entegrasyonlar — Google, Yemeksepeti, Getir, Slack | Buaze'
-      : 'Integrations — Google, Slack, Teams, WhatsApp | Buaze';
+      ? 'Entegrasyonlar — Google, Yemeksepeti, Getir, Slack'
+      : 'Integrations — Google, Slack, Teams, WhatsApp';
   const description =
     locale === 'tr'
       ? 'İşletmenizde zaten kullandığınız araçlarla Buaze tek tıkla konuşur. Google, Yemeksepeti, Getir, Slack, Teams, WhatsApp, Zapier ve daha fazlası.'

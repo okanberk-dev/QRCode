@@ -50,7 +50,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Panel — Buaze' : 'Dashboard — Buaze',
+    title: locale === 'tr' ? 'Panel' : 'Dashboard',
     robots: { index: false, follow: false },
   };
 }

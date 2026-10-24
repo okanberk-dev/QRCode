@@ -16,7 +16,10 @@ import { useEffect, useState } from 'react';
  * hydration (~50–200ms — invisible to the eye in practice).
  *
  * Behavior:
- *   - Single fetch on mount (no polling, no retry on failure).
+ *   - One shared request per page: navbar, mobile bottom nav and the
+ *     contact bubble all call this hook; they now reuse a single in-flight
+ *     promise (cached 60 s across client navigations) instead of firing
+ *     three `/api/auth/me` requests on every page view.
  *   - `cache: 'no-store'` — the endpoint is per-cookie + sets its own
  *     Cache-Control: private, max-age=30 (browser tab dedupe).
  *   - Errors are swallowed silently (returns the default anonymous state).
@@ -33,7 +36,39 @@ export interface MarketingAuthState {
   pending: boolean;
 }
 
-export function useMarketingAuth(): MarketingAuthState {
+type ProbeResult = Omit<MarketingAuthState, 'pending'>;
+
+const ANONYMOUS: ProbeResult = { isLoggedIn: false, source: null };
+const PROBE_TTL_MS = 60_000;
+let sharedProbe: { promise: Promise<ProbeResult>; startedAt: number } | null = null;
+
+async function runProbe(): Promise<ProbeResult> {
+  try {
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    if (!res.ok) return ANONYMOUS;
+    const data = (await res.json()) as { isLoggedIn?: unknown; source?: unknown };
+    return {
+      isLoggedIn: data.isLoggedIn === true,
+      source: data.source === 'user' || data.source === 'admin' ? data.source : null,
+    };
+  } catch {
+    return ANONYMOUS;
+  }
+}
+
+function probeAuth(): Promise<ProbeResult> {
+  const now = Date.now();
+  if (!sharedProbe || now - sharedProbe.startedAt > PROBE_TTL_MS) {
+    sharedProbe = { promise: runProbe(), startedAt: now };
+  }
+  return sharedProbe.promise;
+}
+
+/**
+ * @param enabled  false skips the probe entirely (e.g. the contact bubble on
+ *                 /auth, /onboarding and the dashboard, where it never shows).
+ */
+export function useMarketingAuth(enabled = true): MarketingAuthState {
   const [state, setState] = useState<MarketingAuthState>({
     isLoggedIn: false,
     source: null,
@@ -41,38 +76,17 @@ export function useMarketingAuth(): MarketingAuthState {
   });
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
 
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me', { cache: 'no-store' });
-        if (!res.ok) {
-          if (!cancelled) {
-            setState({ isLoggedIn: false, source: null, pending: false });
-          }
-          return;
-        }
-        const data = (await res.json()) as {
-          isLoggedIn?: unknown;
-          source?: unknown;
-        };
-        const isLoggedIn = data.isLoggedIn === true;
-        const source =
-          data.source === 'user' || data.source === 'admin' ? data.source : null;
-        if (!cancelled) {
-          setState({ isLoggedIn, source, pending: false });
-        }
-      } catch {
-        if (!cancelled) {
-          setState({ isLoggedIn: false, source: null, pending: false });
-        }
-      }
-    })();
+    probeAuth().then((result) => {
+      if (!cancelled) setState({ ...result, pending: false });
+    });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return state;
 }

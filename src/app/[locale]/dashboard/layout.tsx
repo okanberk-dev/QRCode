@@ -14,6 +14,9 @@ import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { Locale } from '@/lib/translations';
 import { getSiteSettings } from '@/lib/site-settings';
+// React Query is only used inside the owner panel (useCurrentRole), so its
+// provider lives here instead of the root layout — public pages don't ship it.
+import { QueryProvider } from '@/components/providers/QueryProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,7 +123,7 @@ export default async function DashboardLayout({
               </Link>
             </div>
           </div>
-          {children}
+          <QueryProvider>{children}</QueryProvider>
         </div>
       );
     }
@@ -243,7 +246,7 @@ export default async function DashboardLayout({
         })),
       }}
     >
-      {children}
+      <QueryProvider>{children}</QueryProvider>
     </UserDashboardShell>
   );
 }

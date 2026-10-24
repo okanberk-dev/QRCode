@@ -22,8 +22,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'ROI Hesaplayıcı — QR yorum akışının 12 aylık getirisi | Buaze'
-    : 'ROI Calculator: 12-Month Return on QR Review Routing — Buaze';
+    ? 'ROI Hesaplayıcı — QR yorum akışının 12 aylık getirisi'
+    : 'ROI Calculator — 12-month return of a QR review flow';
   const description = isTr
     ? 'QR yorum akışının 12 aylık getirisini slider\'larla hesaplayın: Pulse AI yanıt taslağı, müşteri tercihli platform seçimi, haftalık rapor. KVKK + Google uyumlu.'
     : 'Calculate the 12-month net gain of QR review routing with sliders: Pulse AI reply drafts, customer-led platform choice and weekly reports. KVKK + Google compliant.';
@@ -57,7 +57,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://www.buaze.com/tr/roi',
         en: 'https://www.buaze.com/en/roi',
-        'x-default': 'https://www.buaze.com/en/roi',
+        'x-default': 'https://www.buaze.com/tr/roi',
       },
     },
     openGraph: {
@@ -69,10 +69,11 @@ export async function generateMetadata({
       locale: isTr ? 'tr_TR' : 'en_US',
       images: [
         {
-          url: 'https://www.buaze.com/favicon.svg',
-          width: 512,
-          height: 512,
-          alt: 'Buaze ROI Hesaplayıcı',
+          // Social platforms don't render SVG previews — use the PNG card.
+          url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png',
+          width: 1200,
+          height: 630,
+          alt: isTr ? 'Buaze ROI Hesaplayıcı' : 'Buaze ROI Calculator',
         },
       ],
     },
@@ -80,7 +81,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://www.buaze.com/favicon.svg'],
+      images: [isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
     },
     robots: {
       index: true,
@@ -115,7 +116,7 @@ export default async function RoiPage({
         },
         {
           q: 'Müşteri akışı tam olarak nasıl çalışır?',
-          a: 'Buaze QR akışında her müşteri herkese açık platformlara (Google, Yemeksepeti, Getir, Trendyol GO ve isteğe bağlı Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb) yorum yapma hakkını korur. Yüksek puan veren müşterilere işletmenin seçtiği herkese açık platformlar sunulur; düşük puan veren müşteriler önce ekibe özel paylaşım yapmayı tercih edebilir. Pratikte düşük puan veren müşterilerin ~%85\'i bu özel kanalı seçer; işletme sahibi müşteriyle doğrudan iletişim kurar, sorun çözülürse müşteri sonradan kendi isteğiyle herkese açık bir yorum bırakabilir. Bu pattern Google\'ın yorum politikasıyla uyumludur — Buaze yorumları engellemez, gizlemez veya manipüle etmez; sadece müşteri tercihiyle yönlendirir.',
+          a: 'Buaze QR akışında her müşteri herkese açık platformlara (Google, Yemeksepeti, Getir, Trendyol GO ve isteğe bağlı Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb) yorum yapma hakkını korur. Her müşteriye işletmenin seçtiği herkese açık yorum bağlantısı gösterilir; düşük puan veren müşteri dilerse aynı ekranda ekibe özel geri bildirim de bırakabilir. Buaze müşteri kohortunda düşük puan veren müşterilerin ~%85\'i bu özel kanalı tercih eder; işletme sahibi müşteriyle doğrudan iletişim kurar ve hızlı bir yanıtla sorunu çözme şansı bulur. Bu pattern Google\'ın yorum politikasıyla uyumludur — Buaze yorumları engellemez, gizlemez veya manipüle etmez; seçim her zaman müşterinindir.',
         },
         {
           q: 'Hesap bana özel mi yoksa genel ortalama mı?',
@@ -137,7 +138,7 @@ export default async function RoiPage({
         },
         {
           q: 'How does the customer flow actually work?',
-          a: 'In the Buaze QR flow, every customer keeps the right to post a review on any public platform (Google, Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb). Customers giving high ratings see the public platforms the business has selected; customers giving low ratings can choose to share privately with the team first. In practice, ~85% of customers giving low ratings choose this private channel; the owner gets a chance to resolve the issue directly, and once resolved the customer may decide on their own to leave a public review. This pattern is compliant with Google\'s review policy — Buaze does not block, hide, or manipulate reviews; it only routes by customer preference.',
+          a: 'In the Buaze QR flow, every customer keeps the right to post a review on any public platform (Google, Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb). Every customer is shown the public review link for the platforms the business has selected; customers giving a low rating can also choose to send private feedback to the team on the same screen. Across the Buaze customer cohort, ~85% of customers giving low ratings prefer this private channel; the owner can reach out directly and resolve the issue with a quick reply. This pattern is compliant with Google\'s review policy — Buaze does not block, hide, or manipulate reviews; the choice always stays with the customer.',
         },
         {
           q: 'Is the calculation specific to my business or a generic average?',
@@ -165,7 +166,7 @@ export default async function RoiPage({
         url,
         description: isTr
           ? 'Buaze QR yorum akışının 12 ayda işletmene ne kadar net kazanç getireceğini hesaplar. Şahsi geri bildirim akışı, çoklu platform yönlendirme ve Pulse AI zaman tasarrufu bağımsız parametrelerle modellenir.'
-          : 'Calculates the 12-month net gain of the Buaze QR review-routing flow for your business. Models private feedback preference, multi-platform routing and Pulse AI time savings as independent parameters.',
+          : 'Calculates the 12-month net gain of the Buaze QR review flow for your business. Models private feedback preference, multi-platform routing and Pulse AI time savings as independent parameters.',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
         inLanguage: isTr ? 'tr-TR' : 'en-US',
@@ -323,12 +324,12 @@ export default async function RoiPage({
                   {
                     n: '01',
                     h: 'Şahsi geri bildirim akışı',
-                    body: 'Buaze QR akışında her müşteri herkese açık platformlara yorum yapma hakkını korur. Düşük puan veren müşteriler önce ekiple özel paylaşım yapmayı tercih edebilir; pratikte ~%85\'i bu kanalı seçer ve doğrudan işletme sahibinin admin paneline ulaşır. Sahip sorunu çözerse müşteri sonradan kendi isteğiyle herkese açık bir yorum bırakabilir; bu özel-önce akış Google ortalamasına projeksiyonda +0,012 ★ marjinal etki bırakır (toplam 0,6 ★ cap içinde).',
+                    body: 'Buaze QR akışında her müşteri herkese açık platformlara yorum yapma hakkını korur. Düşük puan veren müşteriler dilerse ekiple özel geri bildirim de paylaşabilir; Buaze müşteri kohortunda ~%85\'i bu kanalı tercih eder ve doğrudan işletme sahibinin admin paneline ulaşır. Herkese açık yorum bağlantısı aynı ekranda kalır; hızlı özel yanıt sorunu çözmeye yardım eder ve bu akış Google ortalamasına projeksiyonda +0,012 ★ marjinal etki bırakır (toplam 0,6 ★ cap içinde).',
                   },
                   {
                     n: '02',
-                    h: 'Çoklu platform yönlendirme',
-                    body: 'Yüksek puan akışı sadece Google\'a değil; Yemeksepeti, Getir, Trendyol GO ve istersen Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb\'ye de dağılır. Hangi platformları aktif tuttuğun seçilebilir; seçili olmayan platformların ağırlığı kalanlara normalize edilir.',
+                    h: 'Çoklu platform bağlantısı',
+                    body: 'Herkese açık yorumlar sadece Google\'da toplanmaz; Yemeksepeti, Getir, Trendyol GO ve istersen Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb\'ye de dağılır. Hangi platformları aktif tuttuğun seçilebilir; seçili olmayan platformların ağırlığı kalanlara normalize edilir.',
                   },
                   {
                     n: '03',
@@ -340,12 +341,12 @@ export default async function RoiPage({
                   {
                     n: '01',
                     h: 'Private feedback flow',
-                    body: 'In the Buaze QR flow, every customer keeps the right to post on any public platform. Customers giving low ratings can choose to share privately with the team first — about 85% of them prefer this channel and reach the owner\'s admin panel directly. Once the owner resolves the issue, the customer may decide on their own to post a public review; this private-first option contributes a projected +0.012 ★ marginal lift to the Google average (capped at 0.6 ★ total).',
+                    body: 'In the Buaze QR flow, every customer keeps the right to post on any public platform. Customers giving low ratings can also choose to share private feedback with the team — across the Buaze customer cohort about 85% prefer this channel and reach the owner\'s admin panel directly. The public review link stays on the same screen; a quick private reply helps resolve the issue, and this option contributes a projected +0.012 ★ marginal lift to the Google average (capped at 0.6 ★ total).',
                   },
                   {
                     n: '02',
-                    h: 'Multi-platform routing',
-                    body: 'The high-rating flow distributes across Google, Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb. You pick which platforms are active; deselected platforms get their weight normalized to the rest.',
+                    h: 'Multi-platform links',
+                    body: 'Public reviews are not limited to Google; they spread across Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb. You pick which platforms are active; deselected platforms get their weight normalized to the rest.',
                   },
                   {
                     n: '03',

@@ -32,11 +32,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'Analitik & Raporlar — Yorum trendlerini canlı izle | Buaze'
-    : 'Analytics & Reports — Track review trends live | Buaze';
+    ? 'Analitik & Raporlar — Yorum trendlerini canlı izle'
+    : 'Analytics & Reports — Track review trends live';
   const description = isTr
-    ? 'Ortalama puan, yanıt oranı, dönüşüm, platform kırılımı, konum karşılaştırması ve haftalık raporlar tek panelde. Pulse AI tema çıkarımı entitlement açıkken çalışır; normal KPI akışı her planda canlıdır.'
-    : 'Average rating, reply rate, conversion, platform breakdown, location comparison and weekly reports — all in one panel. Pulse AI theme extraction runs when the entitlement is on; core KPIs stay live on every plan.';
+    ? 'Ortalama puan, yanıt oranı, dönüşüm, platform kırılımı ve şube karşılaştırması tek panelde. Haftalık e-posta raporu ve isteğe bağlı Pulse AI tema analizi.'
+    : 'Average rating, reply rate, conversion, platform breakdown and location comparison in one panel, with a weekly email report and optional Pulse AI theme analysis.';
   const canonicalUrl = `https://www.buaze.com/${locale}/features/analytics-reports`;
   return {
     metadataBase: new URL('https://www.buaze.com'),
@@ -68,7 +68,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://www.buaze.com/tr/features/analytics-reports',
         en: 'https://www.buaze.com/en/features/analytics-reports',
-        'x-default': 'https://www.buaze.com/en/features/analytics-reports',
+        'x-default': 'https://www.buaze.com/tr/features/analytics-reports',
       },
     },
     openGraph: {
@@ -262,13 +262,8 @@ export default async function AnalyticsReportsPage({
     description: isTr
       ? 'Yorum hacmi, ortalama puan, dönüşüm, platform kırılımı ve konum karşılaştırmasını canlı izlemek için Buaze analitik modülü. Haftalık e-posta raporu ve isteğe bağlı AI tema çıkarımı içerir.'
       : 'Buaze analytics module to monitor review volume, average rating, conversion, platform breakdown and location comparison live. Includes a weekly email report and optional AI theme extraction.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: isTr ? 'TRY' : 'USD',
-      description: isTr ? '14 gün ücretsiz deneme; kart gerektirmez.' : '14-day free trial; no card required.',
-      url: `${base}/auth/register`,
-    },
+    // No `offers`: a price-0 Offer read as "this product is free" while
+    // the module is part of paid plans (only the trial is free).
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: isTr ? 'Analitik & Raporlar yetenekleri' : 'Analytics & Reports capabilities',

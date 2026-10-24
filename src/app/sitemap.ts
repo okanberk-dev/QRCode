@@ -17,18 +17,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // skipped (see route-discovery.ts).
   const routes = discoverPublicRoutes();
   for (const route of routes) {
-    const trUrl = `${BASE_URL}/tr${route.path ? `/${route.path}` : ''}`;
-    const enUrl = `${BASE_URL}/en${route.path ? `/${route.path}` : ''}`;
+    const suffix = route.path ? `/${route.path}` : '';
+    const trUrl = `${BASE_URL}/tr${suffix}`;
+    const enUrl = `${BASE_URL}/en${suffix}`;
     const lastModified = new Date();
+    const locales = route.locales ?? ['tr', 'en'];
 
+    if (locales.length === 1) {
+      // Locale-only slug (e.g. /tr/gizlilik ↔ /en/privacy): no same-path
+      // alternate exists, so emit the single canonical URL without one.
+      sitemapEntries.push({
+        url: locales[0] === 'tr' ? trUrl : enUrl,
+        lastModified,
+        changeFrequency: route.changefreq,
+        priority: route.priority,
+      });
+      continue;
+    }
+
+    // hreflang pairs on both rows (Google wants the annotation on every
+    // URL in the cluster), x-default → TR (CLAUDE.md §35.12).
+    const alternates = { languages: { tr: trUrl, en: enUrl, 'x-default': trUrl } };
     sitemapEntries.push({
       url: trUrl,
       lastModified,
       changeFrequency: route.changefreq,
       priority: route.priority,
-      alternates: {
-        languages: { tr: trUrl, en: enUrl },
-      },
+      alternates,
     });
 
     sitemapEntries.push({
@@ -36,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified,
       changeFrequency: route.changefreq,
       priority: Math.max(0, route.priority - 0.1),
+      alternates,
     });
   }
 
@@ -57,32 +73,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap blog fetch error:', error);
   }
 
-  // Case studies — single row renders both locales (heroTr/heroEn columns).
-  try {
-    const studies = await prisma.caseStudy.findMany({
-      where: { isPublished: true },
-      select: { slug: true, publishedAt: true },
-    });
-    studies.forEach((study) => {
-      const trUrl = `${BASE_URL}/tr/case-study/${study.slug}`;
-      const enUrl = `${BASE_URL}/en/case-study/${study.slug}`;
-      sitemapEntries.push({
-        url: trUrl,
-        lastModified: study.publishedAt,
-        changeFrequency: 'monthly',
-        priority: 0.7,
-        alternates: { languages: { tr: trUrl, en: enUrl } },
-      });
-      sitemapEntries.push({
-        url: enUrl,
-        lastModified: study.publishedAt,
-        changeFrequency: 'monthly',
-        priority: 0.6,
-      });
-    });
-  } catch (error) {
-    console.error('Sitemap case-study fetch error:', error);
-  }
+  // Case studies are deliberately not listed (see route-discovery.ts
+  // EXCLUDE_DIRS 'case-study'): the seeded studies are illustrative, not
+  // real customers, and the pages are noindex.
 
   // Stage 94 §38.174 — Customer stories desindex. CLAUDE.md §35.10
   // flagged 6 fictitious case studies (Ark Bistro / Hotel Nora /
@@ -114,18 +107,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   HELP_CATEGORIES.forEach((cat) => {
     const trUrl = `${BASE_URL}/tr/help/category/${cat.slug}`;
     const enUrl = `${BASE_URL}/en/help/category/${cat.slug}`;
+    const alternates = { languages: { tr: trUrl, en: enUrl, 'x-default': trUrl } };
     sitemapEntries.push({
       url: trUrl,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.7,
-      alternates: { languages: { tr: trUrl, en: enUrl } },
+      alternates,
     });
     sitemapEntries.push({
       url: enUrl,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.6,
+      alternates,
     });
   });
 

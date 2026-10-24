@@ -39,7 +39,7 @@ const BLOG_POSTS_TR = [
         <p>Dijital itibar stratejisi yıldız avlamakla değil, akış kurmakla başarılı. Akış üç günlük alışkanlıktan besleniyor; her biri ayrı bir takım değil, aynı disiplinin parçası.</p>
 
         <h3>Yorum istemenin doğru anı</h3>
-        <p>Geri bildirimi istemenin en yüksek dönüşümlü anı, müşterinin deneyimi hâlâ <em>taze</em> hatırladığı andır. Restoranlarda hesap masaya geldiğinde, otellerde oda kartı resepsiyona bırakılırken, kliniklerde tedavi bittikten on dakika sonra. Akşam toplu mesajla yorum talep eden işletmelerin dönüşüm oranı, doğru anda sorma alışkanlığına kıyasla on katı kadar düşük.</p>
+        <p>Geri bildirimi istemenin en yüksek dönüşümlü anı, müşterinin deneyimi hâlâ <em>taze</em> hatırladığı andır. Restoranlarda hesap masaya geldiğinde, otellerde oda kartı resepsiyona bırakılırken, kliniklerde tedavi bittikten on dakika sonra. Akşam toplu mesajla yorum talep etmek, doğru anda sorma alışkanlığına kıyasla belirgin şekilde daha düşük dönüşüm getirir.</p>
 
         <h3>Sürtünmeyi azaltan QR temas noktası</h3>
         <p>Sözlü "lütfen yorum yazar mısınız" cümlesi, müşterinin masadan kalkmadan önce yapması gereken üçüncü işe dönüşür ve büyük çoğunluk bu işi sonraya bırakıp unutur. Markalı bir QR kod standı bu üç adımı bire indiriyor: müşteri telefonunu açar, tarar, yorumunu birkaç saniyede paylaşır. Servis ekibinin ekstra mesai harcamasına gerek kalmıyor; akış sessizce çalışıyor.</p>
@@ -123,12 +123,12 @@ const BLOG_POSTS_TR = [
         <p>İlk yanıt süresi tonun kendisinden çok daha belirleyici. Aynı yanıt yedi gün sonra yazıldığında yarı etkisini kaybeder; gelecekteki müşteri "demek ki yorumlara önem vermiyorlar" izlenimini taşıyarak sayfayı terk eder. <strong>İlk on iki dakika</strong> içinde verilen bir yanıt ise düşük yıldızı bile bir güven sinyaline çevirebilir. Bu sürenin elle yakalanması zor; bu yüzden yorum yönetimini operasyonel bir akışa bağlamak gerekiyor.</p>
 
         <h2>Yanıt yetmediğinde: krizi baştan önlemek</h2>
-        <p>İyi bir yanıt çerçevesinden sonra atılacak en doğru adım, krizin Google'a düşmeden çözülmesini sağlamak. Müşterinin masada hâlâ memnuniyetsiz olduğu anda hatırını sormak, çayı tekrar getirmek ya da hesabı düzeltmek — bu küçük adımlar şikâyetin sayfaya yansımasını engeller. Bu amaca yönelik en pratik araç, müşteriye yorumunu kamuya değil önce işletmeye iletme fırsatı sunan bir QR akışıdır.</p>
+        <p>İyi bir yanıt çerçevesinden sonra atılacak en doğru adım, sorunları müşteri hâlâ mekândayken çözmek. Müşterinin masada memnuniyetsiz olduğu anda hatırını sormak, çayı tekrar getirmek ya da hesabı düzeltmek — bu küçük adımlar sorunu çoğu zaman yerinde çözer. Bu amaca yönelik en pratik araç, müşteriye dilerse işletmeye özel geri bildirim bırakma imkânı da sunan bir QR akışıdır.</p>
 
-        <p><strong>Buaze</strong> tam bu noktada operasyonel bir köprü kuruyor. QR'ı tarayan müşteriye önce kamuya açık platform yorumu sunulur — yıldıza göre yol ayrımı yapılmaz, çünkü bu uygulama Google politikalarına aykırı. Misafir aynı akışta size özel bir not da bırakabilir. Düşük puanlı bir geri bildirim panele anlık alarm olarak düşer; yönetici müşteri henüz kapıdan çıkmadan iletişime geçer. Yorumların tonu zamanla iyileşir çünkü problemler herkese açık platforma değil, doğrudan size ulaşır.</p>
+        <p><strong>Buaze</strong> tam bu noktada operasyonel bir köprü kuruyor. QR'ı tarayan müşteriye önce kamuya açık platform yorumu sunulur — yıldıza göre yol ayrımı yapılmaz, çünkü bu uygulama Google politikalarına aykırı. Misafir aynı akışta size özel bir not da bırakabilir. Düşük puanlı bir geri bildirim panele anlık alarm olarak düşer; yönetici müşteri henüz kapıdan çıkmadan iletişime geçer. Herkese açık yorum yolu her zaman açık kalır; özel geri bildirime hızlı yanıt vermek sorunu çözme şansını artırır.</p>
 
         <h2>Sonuç</h2>
-        <p>Olumsuz yoruma profesyonel yanıt vermek bir reaktif disiplin değil, gelecekteki müşteri deneyiminin bir parçası. Yanıtın tonu yorumu yumuşatır, yanıt hızı güveni inşa eder, operasyonel arka plan krizleri Google'a düşmeden kapatır. Bu üç sıralamayı doğru kuran işletmeler tek bir yıldızlı yorumla bile büyümeye devam ediyor — çünkü potansiyel müşteri yıldıza değil, sizin yıldızı nasıl yönettiğinize bakıyor.</p>
+        <p>Olumsuz yoruma profesyonel yanıt vermek bir reaktif disiplin değil, gelecekteki müşteri deneyiminin bir parçası. Yanıtın tonu yorumu yumuşatır, yanıt hızı güveni inşa eder, operasyonel arka plan sorunları hızla çözmeye yardım eder. Bu üç sıralamayı doğru kuran işletmeler tek bir yıldızlı yorumla bile büyümeye devam ediyor — çünkü potansiyel müşteri yıldıza değil, sizin yıldızı nasıl yönettiğinize bakıyor.</p>
       `,
   },
   {
@@ -165,7 +165,7 @@ const BLOG_POSTS_TR = [
         <p>Yorum istemenin en yüksek dönüşümlü anı, oda kartı resepsiyona teslim edildiği saniyedir. Misafire sadece "mutlu görünüyorsa" yorum platformunu önermek <strong>Google politikalarına aykırı</strong>; bu pratiğe genellikle "review gating" deniyor ve cezai yaptırımı işletme profilinin gizlenmesine kadar gidebilir. Doğru yaklaşım yıldıza bakmadan herkese aynı bağlantıyı sunmaktır. Akıllı bir QR akışı bu prensibi temiz tutuyor.</p>
 
         <h3>Çıkış sonrası kişisel WhatsApp mesajı</h3>
-        <p>Check-out'tan iki saat sonra gönderilen kısa bir WhatsApp mesajı; misafirin adını, kaldığı oda numarasını ve şehre dönüş yolundayken hatırlanan bir detayı içerebilir. Bu mesajda yer alan kişisel link, dönüşüm oranını jenerik bir mass mailing'e kıyasla kat kat yükseltiyor — özellikle Tripadvisor üzerinde.</p>
+        <p>Check-out'tan iki saat sonra gönderilen kısa bir WhatsApp mesajı; misafirin adını, kaldığı oda numarasını ve şehre dönüş yolundayken hatırlanan bir detayı içerebilir. Bu mesajda yer alan kişisel link, dönüşüm oranını jenerik bir mass mailing'e kıyasla belirgin şekilde yükseltiyor — özellikle Tripadvisor üzerinde.</p>
 
         <h2>Buaze ile profesyonel otel itibar yönetimi</h2>
         <p>Buaze QR'ı tarayan her misafire önce Google yorum bağlantısı sunulur. İsteyen misafir aynı akışta otel yönetimine özel geri bildirim de bırakır — yıldıza göre dallandırma yapılmaz. Böylece kamuya açık yorum yolu her zaman açık kalırken operasyonel sinyal de hızlıca yönetime ulaşır. Düşük puanlı bir geri bildirim panele anlık alarm olarak düşer; resepsiyon görevlisi misafir henüz lobide iken iletişime geçer ve sorunu çözer.</p>
@@ -186,7 +186,7 @@ const BLOG_POSTS_TR = [
     author: 'Buaze İçerik Ekibi',
     coverImage: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&q=80&w=1200&h=600',
     content: `
-        <p>Bir kahvaltı mekânına gitmeden önce müşterinin yaptığı en küçük hareket telefonunu açıp Google haritada arama yapmak. Listede ilk çıkan üç işletmenin tıklanma oranı, dördüncü ve sonrasındakilere kıyasla on katı bir fark yaratıyor. O üç sıraya kim girer? Cevap son beş yılda sessizce değişti: artık sadece konum değil, dijital itibar belirliyor.</p>
+        <p>Bir kahvaltı mekânına gitmeden önce müşterinin yaptığı en küçük hareket telefonunu açıp Google haritada arama yapmak. Listede ilk çıkan üç işletme, tıklamaların büyük kısmını topluyor. O üç sıraya kim girer? Cevap son beş yılda sessizce değişti: artık sadece konum değil, dijital itibar belirliyor.</p>
 
         <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800&h=400" alt="Yerel kafe ve müşteri akışı" />
 
@@ -325,12 +325,12 @@ const BLOG_POSTS_EN = [
         <p>The speed of the first reply often outweighs the wording itself. The same reply written seven days later loses half its effect; a future customer reads "they don't pay attention to reviews" and bounces. A reply within the <strong>first twelve minutes</strong>, on the other hand, can turn even a low rating into a trust signal. Catching that window manually is hard; that is why review management has to live inside an operational flow.</p>
 
         <h2>When the reply isn't enough: prevention upstream</h2>
-        <p>The most useful next step after a strong reply framework is making sure the crisis never reaches Google in the first place. Asking after the meal whether everything is fine, bringing fresh tea, adjusting the bill — these small interventions stop a complaint from landing on the public page. The most practical tool for that purpose is a QR flow that lets the customer share feedback with the business <em>before</em> sharing it with the public.</p>
+        <p>The most useful next step after a strong reply framework is resolving issues while the customer is still on site. Asking after the meal whether everything is fine, bringing fresh tea, adjusting the bill — these small interventions often solve the problem on the spot. The most practical tool for that purpose is a QR flow that also gives the customer the option to share private feedback with the business.</p>
 
-        <p><strong>Buaze</strong> bridges that gap operationally. A customer who scans the QR is offered the public review platform first — without rating-based gating, because such gating violates Google policy. They can also leave a private note for the venue in the same flow. A low-rated note drops into the operations panel as an instant alert; the manager often reaches out before the customer leaves. Over time, the public reviews become more positive — not because the bad ones are blocked, but because the issues are resolved before they need to be written.</p>
+        <p><strong>Buaze</strong> bridges that gap operationally. A customer who scans the QR is offered the public review platform first — without rating-based gating, because such gating violates Google policy. They can also leave a private note for the venue in the same flow. A low-rated note drops into the operations panel as an instant alert; the manager often reaches out before the customer leaves. The public review path always stays open; replying quickly to private feedback improves the chance of resolving the issue.</p>
 
         <h2>The takeaway</h2>
-        <p>Replying to a negative review professionally is not a reactive discipline; it's part of the next customer's experience. Tone softens the complaint, speed builds trust, and the operational backstop closes crises before they reach Google. Operators who get all three right keep growing even with the occasional one-star review — because future customers don't judge the rating, they judge how you manage it.</p>
+        <p>Replying to a negative review professionally is not a reactive discipline; it's part of the next customer's experience. Tone softens the complaint, speed builds trust, and the operational backstop helps resolve issues quickly. Operators who get all three right keep growing even with the occasional one-star review — because future customers don't judge the rating, they judge how you manage it.</p>
       `,
   },
   {
@@ -367,7 +367,7 @@ const BLOG_POSTS_EN = [
         <p>The highest-converting moment to ask for a review is the second the room key is handed back. Pointing only the visibly happy guests to the public review platform <strong>violates Google policy</strong> — the practice is called "review gating," and the penalty can extend to the business profile being suppressed in search. The right approach is to offer the same link to every guest, regardless of how many stars they would give. A well-designed QR flow keeps this principle clean.</p>
 
         <h3>A personal WhatsApp message after departure</h3>
-        <p>A short WhatsApp note sent two hours after check-out — addressing the guest by name, mentioning their room number, recalling a small detail from their stay — reaches them while they are still on the road home. The personalized link inside that message converts at multiples of a generic mass mail, particularly on Tripadvisor.</p>
+        <p>A short WhatsApp note sent two hours after check-out — addressing the guest by name, mentioning their room number, recalling a small detail from their stay — reaches them while they are still on the road home. The personalized link inside that message converts noticeably better than a generic mass mail, particularly on Tripadvisor.</p>
 
         <h2>Buaze for professional hotel reputation management</h2>
         <p>A guest who scans a Buaze QR is first offered the public Google review link — no rating-based gating. They can also leave a private note for hotel management in the same flow. The public review path stays open while the operational signal reaches the team quickly. A low-rated note drops into the panel as an instant alert; reception staff can reach the guest while they are still in the lobby and resolve the issue.</p>
@@ -388,7 +388,7 @@ const BLOG_POSTS_EN = [
     author: 'Buaze Content Team',
     coverImage: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&q=80&w=1200&h=600',
     content: `
-        <p>Before walking into a brunch spot, the smallest move a customer makes is opening Google Maps. The top three results in that local pack receive roughly ten times the clicks of the rest. Who occupies those three slots? The answer has changed quietly over the past five years: it is no longer just about proximity, it is about digital reputation.</p>
+        <p>Before walking into a brunch spot, the smallest move a customer makes is opening Google Maps. The top three results in that local pack collect most of the clicks. Who occupies those three slots? The answer has changed quietly over the past five years: it is no longer just about proximity, it is about digital reputation.</p>
 
         <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800&h=400" alt="Local cafe foot traffic" />
 

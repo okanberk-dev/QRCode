@@ -33,11 +33,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'Yorum Yönetimi — Tüm platformlar tek panelde | Buaze'
-    : 'Review Management — Every platform in one inbox | Buaze';
+    ? 'Yorum Yönetimi — Tüm platformlar tek panelde'
+    : 'Review Management — Every platform in one inbox';
   const description = isTr
-    ? 'Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare ve daha fazlasından gelen yorumları tek panelde topla. Atama, etiket, SLA takibi ve onay kontrollü yanıt akışı; KVKK + Google policy uyumlu.'
-    : 'Bring reviews from Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare and more into one inbox. Assignment, tags, SLA tracking and approval-led replies — KVKK and Google policy compliant.';
+    ? 'Google, Yemeksepeti, Getir, Trendyol GO ve Tripadvisor yorumlarını tek panelde topla. Atama, etiket, SLA takibi ve onaylı yanıt akışı; KVKK uyumlu.'
+    : 'Bring Google, Yemeksepeti, Getir, Trendyol GO and Tripadvisor reviews into one inbox, with assignment, tags, SLA tracking and approved replies.';
   const canonicalUrl = `https://www.buaze.com/${locale}/features/review-management`;
   return {
     metadataBase: new URL('https://www.buaze.com'),
@@ -68,7 +68,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://www.buaze.com/tr/features/review-management',
         en: 'https://www.buaze.com/en/features/review-management',
-        'x-default': 'https://www.buaze.com/en/features/review-management',
+        'x-default': 'https://www.buaze.com/tr/features/review-management',
       },
     },
     openGraph: {
@@ -314,13 +314,8 @@ export default async function ReviewManagementPage({
     description: isTr
       ? 'Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor ve diğer yorum platformlarını tek panelde yöneten Buaze ürün modülü. Atama, SLA, Pulse AI taslak yanıt ve KVKK uyumu içerir.'
       : 'Buaze product module that manages Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor and other review platforms in one panel. Includes assignment, SLA, Pulse AI drafts and KVKK compliance.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: isTr ? 'TRY' : 'USD',
-      description: isTr ? '14 gün ücretsiz deneme; kart gerektirmez.' : '14-day free trial; no card required.',
-      url: `${base}/auth/register`,
-    },
+    // No `offers`: a price-0 Offer read as "this product is free" while
+    // the module is part of paid plans (only the trial is free).
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: isTr ? 'Yorum Yönetimi yetenekleri' : 'Review Management capabilities',

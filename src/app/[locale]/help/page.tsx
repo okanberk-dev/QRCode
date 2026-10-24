@@ -22,8 +22,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'Yardım Merkezi — Kurulum, QR, yorum yönetimi | Buaze'
-    : 'Help Center — Setup, QR codes and review guides | Buaze';
+    ? 'Yardım Merkezi — Kurulum, QR, yorum yönetimi'
+    : 'Help Center — Setup, QR codes and review guides';
   const description = isTr
     ? 'Buaze yardım merkezi: kurulum, QR kodları, yorum yönetimi, entegrasyonlar, ekip yönetimi ve güvenlik rehberleri. Sorunuzun cevabı burada.'
     : 'Buaze Help Center: setup, QR codes, review management, integrations, team roles, security and KVKK guides — your question, answered in seconds.';

@@ -43,7 +43,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://www.buaze.com/tr/features',
         en: 'https://www.buaze.com/en/features',
-        'x-default': 'https://www.buaze.com/en/features',
+        'x-default': 'https://www.buaze.com/tr/features',
       },
     },
     openGraph: {

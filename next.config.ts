@@ -153,6 +153,19 @@ const nextConfig: NextConfig = {
         destination: '/admin/dashboard',
         permanent: true,
       },
+      // Privacy policy lives at one slug per locale (TR /gizlilik, EN
+      // /privacy). Both slugs used to render the same document with their own
+      // self-canonical — four duplicate URLs in Google's index.
+      {
+        source: '/tr/privacy',
+        destination: '/tr/gizlilik',
+        permanent: true,
+      },
+      {
+        source: '/en/gizlilik',
+        destination: '/en/privacy',
+        permanent: true,
+      },
       {
         source: '/:locale(tr|en)/legal/kvkk-aydinlatma',
         destination: '/:locale/kvkk',
