@@ -4205,7 +4205,7 @@ Site-wide (`/:path*`):
 
 #### B grubu — partial (COOP ✅ kapatıldı, CORP backlog)
 
-- ~~`Cross-Origin-Opener-Policy: same-origin-allow-popups`~~ — **✅ KAPATILDI** (Stage 147 §38.227, kullanıcı raporu Firebase Google sign-in popup'unda `window.closed/close` warning'leri + `/api/auth/google` 403). Site-wide enforce; Firebase popup auth intact (`-allow-popups` variant cross-origin popup'a opener context izolasyonu kalır ama same-origin popup'a `.closed/.close` erişimi açar). Resmi Firebase rehberi tam olarak bu değeri öneriyor.
+- ~~`Cross-Origin-Opener-Policy: same-origin-allow-popups`~~ — **✅ KAPATILDI** (Stage 147 §38.227, kullanıcı raporu Firebase Google sign-in popup'unda `window.closed/close` warning'leri + `/api/auth/google` 403). Site-wide enforce; Firebase popup auth intact (`-allow-popups` variant cross-origin popup'a opener context izolasyonu kalır ama same-origin popup'a `.closed/.close` erişimi açar). Resmi Firebase rehberi tam olarak bu değeri öneriyor. **İstisna (§38.245)**: `/__/:path*` (kendi alan adımıza proxy'lenen Firebase `/__/auth/handler` + `/__/auth/iframe`) `unsafe-none` alır — handler'da site COOP'u varken accounts.google.com'a gidiş-dönüş tarayıcı bağlam grubunu değiştirip `window.opener`'ı koparıyordu (pencere kapanmıyor, sonuç iletilemiyordu).
 - `Cross-Origin-Resource-Policy: same-origin` (site-wide) + `cross-origin` (`/embed/*`, `/buaze-embed.js`, `/opengraph-image*`, `/favicon.svg`, `/apple-touch-icon.svg`) — 3rd party script-tag wrapper'ı + sosyal paylaşım OG image'ı + favicon yine cross-origin, geri kalan resource'lar same-origin lock. Path-override sayısı arttığı için ayrı PR'da değerlendirilir.
 
 #### C grubu — backlog (Report-Only mode + 1-2 hafta gözlem)
