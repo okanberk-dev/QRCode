@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -59,6 +59,12 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const inviteEmail = searchParams.get('email') ?? '';
 
   const [loading, setLoading] = useState(false);
+  // Google button feedback: 'popup' while the Google window is open,
+  // 'finalizing' while our /api/auth/google round-trip runs.
+  const [googleStage, setGoogleStage] = useState<'idle' | 'popup' | 'finalizing'>('idle');
+  // A newer click supersedes an older pending popup (Firebase cancels it with
+  // `auth/cancelled-popup-request`); only the latest attempt may touch the UI.
+  const googleAttemptRef = useRef(0);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -100,17 +106,29 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   }, [inviteEmail, inviteToken]);
 
   const finalizeGoogleSignUp = async (idToken: string) => {
+    setLoading(true);
+    setGoogleStage('finalizing');
     // Prefetched when the popup opened (handleGoogleSignUp) — usually ready.
     const recaptchaToken = await takeRecaptchaToken('auth_google');
-    const res = await fetch('/api/auth/google', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken, recaptchaToken, locale }),
-    });
-    const data = await res.json();
+    let res: Response;
+    let data: { error?: string; isNewUser?: boolean; onboardingCompleted?: boolean };
+    try {
+      res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, recaptchaToken, locale }),
+      });
+      data = await res.json();
+    } catch {
+      setError(locale === 'tr' ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');
+      setLoading(false);
+      setGoogleStage('idle');
+      return;
+    }
     if (!res.ok) {
       setError(data.error || (locale === 'tr' ? 'Google ile kayıt başarısız oldu.' : 'Google sign-up failed.'));
       setLoading(false);
+      setGoogleStage('idle');
       return;
     }
     const target = data.onboardingCompleted && !data.isNewUser
@@ -142,6 +160,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         const { getFirebaseErrorMessage } = await import('@/lib/firebase-client');
         setError(getFirebaseErrorMessage(err, locale));
         setLoading(false);
+        setGoogleStage('idle');
       }
     })();
     return () => { cancelled = true; };
@@ -149,13 +168,30 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   }, []);
 
   const handleGoogleSignUp = async () => {
+    const attempt = ++googleAttemptRef.current;
+    const isCurrent = () => attempt === googleAttemptRef.current;
     setError('');
     setNotice('');
     setLoading(true);
+    setGoogleStage('popup');
+    // Run the reCAPTCHA execute concurrently with the Google popup instead
+    // of after it — the two are independent network round-trips.
+    prefetchRecaptchaToken('auth_google');
+    let settled = false;
+    let stopWatching = () => {};
     try {
-      const { startGoogleSignIn } = await import('@/lib/firebase-client');
-      prefetchRecaptchaToken('auth_google');
+      const { startGoogleSignIn, watchPopupFocusReturn } = await import('@/lib/firebase-client');
+      // Closing the Google window is only noticed by Firebase ~10 s later;
+      // re-enable the button as soon as focus is back and nothing arrived.
+      stopWatching = watchPopupFocusReturn(() => {
+        if (settled || !isCurrent()) return;
+        setLoading(false);
+        setGoogleStage('idle');
+      });
       const result = await startGoogleSignIn();
+      settled = true;
+      stopWatching();
+      if (!isCurrent()) return;
       if (result.status === 'unconfigured') {
         setNotice(
           locale === 'tr'
@@ -163,6 +199,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             : 'Google sign-up is not active yet. Please continue with email.'
         );
         setLoading(false);
+        setGoogleStage('idle');
         return;
       }
       if (result.status === 'idToken') {
@@ -172,6 +209,10 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
       // status === 'redirecting' — browser navigates away; result handled by
       // the mount effect on return.
     } catch (err: unknown) {
+      settled = true;
+      stopWatching();
+      if (!isCurrent()) return;
+      setGoogleStage('idle');
       const code = (err as { code?: string })?.code;
       // User dismissed the popup — not an error, just reset UI.
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
@@ -261,8 +302,18 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         disabled={loading}
         className="flex items-center gap-2.5 w-full min-h-[46px] px-4 py-3 rounded-[10px] border border-[#E5E5E5] bg-white text-[14px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <GoogleIcon size={16} />
-        {locale === 'tr' ? 'Google ile kayıt ol' : 'Sign up with Google'}
+        {googleStage === 'idle' ? (
+          <GoogleIcon size={16} />
+        ) : (
+          <Loader2 size={16} className="animate-spin text-[#737373]" aria-hidden />
+        )}
+        <span aria-live="polite">
+          {googleStage === 'popup'
+            ? (locale === 'tr' ? 'Google penceresinde devam edin…' : 'Continue in the Google window…')
+            : googleStage === 'finalizing'
+              ? (locale === 'tr' ? 'Giriş yapılıyor…' : 'Signing you in…')
+              : (locale === 'tr' ? 'Google ile kayıt ol' : 'Sign up with Google')}
+        </span>
       </button>
 
       <div className="flex items-center gap-2.5 my-1 text-[#A3A3A3]">

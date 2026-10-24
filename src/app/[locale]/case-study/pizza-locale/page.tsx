@@ -19,7 +19,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   return {
-    title: t.pl_case_hero_title + ' | Buaze',
+    title: t.pl_case_hero_title,
     description: t.pl_case_hero_desc,
     alternates: {
       canonical: `https://www.buaze.com/${locale}/case-study/pizza-locale`,

@@ -256,6 +256,32 @@ const nextConfig: NextConfig = {
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
         ],
       },
+      // /__/auth/* + /__/firebase/* — Firebase Auth pages proxied onto our
+      // own domain by the rewrites above (Google sign-in popup handler +
+      // the hidden auth iframe). These are Firebase's documents, not ours,
+      // so the site-wide COOP / CSP must not leak onto them.
+      //
+      // Why COOP breaks the popup: the popup loads /__/auth/handler with our
+      // `same-origin-allow-popups`, then navigates to accounts.google.com
+      // (COOP unsafe-none). Mismatched COOP values on a cross-origin
+      // navigation force a browsing-context-group switch, which severs
+      // `window.opener` for good. The handler can then neither hand the
+      // result back to the opener nor `window.close()` itself — the popup
+      // stays open on a blank page while the opener waits on Firebase's 8 s
+      // "popup closed" timer. With `unsafe-none` here the opener survives
+      // the round trip and the handler closes the popup as designed.
+      //
+      // Later header entries override earlier ones for the same key (the
+      // /embed/* entry below relies on the same rule). CSP keeps only the
+      // framing/plugin directives; `form-action` is dropped because some
+      // Firebase providers finish with a form POST.
+      {
+        source: '/__/:path*',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'unsafe-none' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'self'; object-src 'none'" },
+        ],
+      },
       // /embed/* — public iframe widget. Sadece bu path için frame
       // restrictions gevşetilir (CLAUDE.md §34.10). Site geneli korumalı
       // (SAMEORIGIN) kalır. ALLOWALL eski browser'lar için placeholder;

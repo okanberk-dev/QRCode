@@ -20,7 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'tr' ? 'Ücretsiz Kayıt Ol - Buaze' : 'Sign Up for Free - Buaze',
+    title: locale === 'tr' ? 'Ücretsiz Kayıt Ol' : 'Sign Up for Free',
     description: locale === 'tr'
       ? '14 gün boyunca Buaze\'yi ücretsiz deneyin. Kredi kartı gerekmez, anında başlayın.'
       : 'Try Buaze free for 14 days. No credit card required, start instantly.',

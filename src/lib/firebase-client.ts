@@ -105,7 +105,15 @@ async function loadFirebase(): Promise<{ appMod: FirebaseAppModule; authMod: Fir
   }
 }
 
-function getAuthInstance(appMod: FirebaseAppModule, authMod: FirebaseAuthModule) {
+type AuthBundle = {
+  auth: ReturnType<FirebaseAuthModule['getAuth']>;
+  cfg: ReturnType<typeof publicConfig>;
+};
+
+let cachedAuth: AuthBundle | null = null;
+
+function getAuthInstance(appMod: FirebaseAppModule, authMod: FirebaseAuthModule): AuthBundle {
+  if (cachedAuth) return cachedAuth;
   const cfg = publicConfig();
   const app = appMod.getApps().length
     ? appMod.getApp()
@@ -115,13 +123,56 @@ function getAuthInstance(appMod: FirebaseAppModule, authMod: FirebaseAuthModule)
         projectId: cfg.projectId!,
         appId: cfg.appId!,
       });
-  return { auth: authMod.getAuth(app), cfg };
+
+  // We only need Firebase long enough to hand a Google ID token to
+  // /api/auth/google — the real session is our own httpOnly cookie. So the
+  // Firebase user lives in sessionStorage (redirect fallback still works)
+  // instead of getAuth()'s IndexedDB default: no IndexedDB open on every
+  // login page, no background token refresh for a stale user, and no
+  // Firebase refresh token left on a shared computer after the tab closes.
+  let auth: AuthBundle['auth'];
+  try {
+    auth = authMod.initializeAuth(app, {
+      persistence: [authMod.browserSessionPersistence, authMod.inMemoryPersistence],
+      popupRedirectResolver: authMod.browserPopupRedirectResolver,
+    });
+  } catch {
+    // `auth/already-initialized` (HMR re-evaluates this module but keeps the
+    // Firebase app alive) — reuse the existing instance.
+    auth = authMod.getAuth(app);
+  }
+  cachedAuth = { auth, cfg };
+  return cachedAuth;
+}
+
+type PopupResolverInternals = {
+  _popupRedirectResolver?: { _initialize?: (auth: unknown) => Promise<unknown> };
+};
+
+/**
+ * Loads Google's gapi script and the hidden `/__/auth/iframe` that relays the
+ * popup result. Firebase does this proactively only on mobile/Safari; on
+ * desktop it happens on click, *before* the popup opens — 1-2 s of dead time
+ * after "Google ile devam et". The call is idempotent (Firebase caches the
+ * manager per auth instance and drops the cache on failure, so the click path
+ * simply retries). It is an internal hook, hence the defensive typing.
+ */
+function warmPopupResolver(auth: AuthBundle['auth']): void {
+  try {
+    const resolver = (auth as unknown as PopupResolverInternals)._popupRedirectResolver;
+    resolver?._initialize?.(auth)?.catch(() => {
+      /* click path retries */
+    });
+  } catch {
+    /* click path retries */
+  }
 }
 
 /**
- * Warm the Firebase Auth SDK + auth instance during idle time so the click on
- * "Google ile devam et" opens the popup immediately instead of first
- * downloading ~150 KB of `firebase/auth` and initialising the popup resolver.
+ * Warm the Firebase Auth SDK, the auth instance and the popup resolver during
+ * idle time so the click on "Google ile devam et" opens the popup immediately
+ * instead of first downloading ~150 KB of `firebase/auth`, gapi and the auth
+ * iframe.
  * Firebase modules are cached after the first import, so repeated calls are
  * free. Errors are swallowed — the click path still loads on demand.
  */
@@ -130,7 +181,9 @@ export function preloadGoogleSignIn(): void {
   const run = () => {
     loadFirebase()
       .then((mods) => {
-        if (mods) getAuthInstance(mods.appMod, mods.authMod);
+        if (!mods) return;
+        const { auth } = getAuthInstance(mods.appMod, mods.authMod);
+        warmPopupResolver(auth);
       })
       .catch(() => {
         /* click path retries */
@@ -245,4 +298,34 @@ export function isGoogleRedirectPending(): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Firebase notices a closed popup only on a 2 s poll and then waits another
+ * 8 s (in case the result is still in flight) before rejecting with
+ * `auth/popup-closed-by-user` — so a user who closes the Google window sits
+ * on a disabled button for up to ~10 s. Focus returning to this tab is the
+ * earliest reliable signal: if the sign-in still hasn't settled `graceMs`
+ * after that, call `onLikelyDismissed` so the UI can re-enable. The Firebase
+ * promise keeps running; if it resolves after all, the caller still
+ * finishes the sign-in. Returns a disposer.
+ */
+export function watchPopupFocusReturn(
+  onLikelyDismissed: () => void,
+  graceMs = 3000,
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  let timer: number | null = null;
+  const onFocus = () => {
+    if (timer !== null) window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      timer = null;
+      onLikelyDismissed();
+    }, graceMs);
+  };
+  window.addEventListener('focus', onFocus);
+  return () => {
+    window.removeEventListener('focus', onFocus);
+    if (timer !== null) window.clearTimeout(timer);
+  };
 }

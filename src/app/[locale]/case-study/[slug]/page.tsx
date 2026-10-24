@@ -68,11 +68,11 @@ export async function generateMetadata({
       isPublished: true,
     },
   });
-  if (!study || !study.isPublished) return { title: 'Case study · Buaze' };
+  if (!study || !study.isPublished) return { title: 'Case study' };
   const isTr = locale === 'tr';
-  const title = `${study.brand} · ${isTr ? 'Buaze ile' : 'with Buaze'}`;
+  const title = isTr ? `${study.brand} başarı hikayesi` : `${study.brand} customer story`;
   return {
-    title: `${title} | Buaze`,
+    title,
     description: isTr ? study.heroTr : study.heroEn,
     alternates: {
       canonical: `https://www.buaze.com/${locale}/case-study/${slug}`,
