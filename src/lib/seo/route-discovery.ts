@@ -30,16 +30,6 @@ const EXCLUDE_DIRS = new Set([
   'dashboard',
   'onboarding',
   'accept-invite',
-  // Stage 94 §38.174 — customer-stories desindex. List + detail pages
-  // still render for direct-link visitors, but no canonical URLs are
-  // emitted to crawlers. Stories are fictitious (CLAUDE.md §35.10);
-  // remove this exclude when replaced with real customer stories.
-  'customer-stories',
-  // Same reason as customer-stories: the seeded case studies (and the
-  // pizza-locale page) are illustrative, with quotes and multiplier claims
-  // that are not from real customers. Pages are noindex; keep them out of
-  // the sitemap until real, permissioned case studies replace them.
-  'case-study',
 ]);
 
 // Routes that render but are `robots: noindex` — never list them.

@@ -41,7 +41,7 @@ const COPY = {
     subtitle:
       'Buaze müşteri kohortunda ortalama puan ilk 90 günde belirgin biçimde yükseliyor — çünkü her müşterinin sesi tek panelden duyuluyor.',
     primaryCta: '14 gün ücretsiz dene',
-    secondaryCta: 'Kanıtları gör',
+    secondaryCta: 'Nasıl çalışır',
     chartLabel: '90 GÜNLÜK ORTALAMA PUAN',
     weekLabel: 'Hafta',
     cohortNote:
@@ -54,7 +54,7 @@ const COPY = {
     subtitle:
       'In the Buaze customer cohort, average rating climbs noticeably in the first 90 days — because every customer is heard from one dashboard.',
     primaryCta: 'Start 14-day free trial',
-    secondaryCta: 'See the proof',
+    secondaryCta: 'How it works',
     chartLabel: '90-DAY AVG. RATING',
     weekLabel: 'Week',
     cohortNote:
@@ -141,7 +141,7 @@ export default function HeroStarClimb({ locale }: Props): React.ReactElement {
               <ArrowRight size={16} aria-hidden />
             </Link>
             <Link
-              href={`/${locale}/customer-stories`}
+              href={`/${locale}/how-it-works`}
               className="bz-btn-ghost inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-5 py-3.5 text-[14px] font-semibold text-[#0A0A0A] hover:bg-[#F5F5F5]"
             >
               <TrendingUp size={14} aria-hidden />

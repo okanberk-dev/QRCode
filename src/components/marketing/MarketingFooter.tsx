@@ -102,8 +102,6 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
       title: isTr ? 'Şirket' : 'Company',
       items: [
         { label: isTr ? 'Hakkımızda' : 'About', href: `${base}/about` },
-        { label: isTr ? 'Müşteri hikayeleri' : 'Customer stories', href: `${base}/customer-stories`, badge: isTr ? 'YENİ' : 'NEW' },
-        { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/case-study` },
         { label: 'Blog', href: `${base}/blog` },
         { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
         { label: isTr ? 'Basın kiti' : 'Press kit', href: `${base}/press` },

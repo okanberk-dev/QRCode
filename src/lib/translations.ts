@@ -485,20 +485,6 @@ export const translations = {
     sol_bou_badge: 'BUTİK OTELLER İÇİN',
 
     // Case Studies
-    case_study_title: 'Rakamlarla Buaze Başarısı',
-    case_study_subtitle: 'Müşterilerimizin elde ettiği somut ve ölçülebilir sonuçlar.',
-    case_growth_title: '90 Günde Rekor Etkileşim',
-    case_growth_metric: '+%420',
-    case_growth_desc: 'Gourmet Kitchen, manuel geri bildirim toplama sisteminden Buaze\'ye geçtikten sonra 3 ay içinde etkileşim sayısını 5 katına çıkardı.',
-    case_conv_title: 'Yüksek Dönüşüm Oranı',
-    case_conv_metric: '%68',
-    case_conv_desc: 'QR kodlarımızı tarayan her 100 müşteriden 68\'i dürüst geri bildirimde bulunarak organik etkileşimi zirveye taşıyor.',
-    case_scale_title: 'Tek Şubeden Zincire',
-    case_scale_metric: '1 → 12',
-    case_scale_desc: 'Pizza Locale, tek şubeyle başladığı Buaze yolculuğunda 12 şubeli bir zincire dönüşürken tüm lokasyonlarda yüksek itibar skorlarını korudu.',
-    case_speed_title: 'Işık Hızında Müdahale',
-    case_speed_metric: '4 dk',
-    case_speed_desc: 'Olumsuz deneyim bildirimlerine operasyonel dönüş süresi ortalama 48 dakikadan 4 dakikaya düşerek müşteri kaybını %90 oranında azalttı.',
 
     // Blog
     blog_title: 'Blog',
@@ -554,21 +540,7 @@ export const translations = {
 
     // New Content Labels
     nav_compare: 'Karşılaştır',
-    case_learn_more: 'Detayları İncele',
 
-    // Pizza Locale Case Study
-    pl_case_hero_badge: 'BAŞARI HİKAYESİ',
-    pl_case_hero_title: 'Pizza Locale: 1 Şubeden 12 Şubeye Dijital İtibar Yolculuğu',
-    pl_case_hero_desc: 'Türkiye\'nin yükselen markası Pizza Locale, operasyonel mükemmelliği ve müşteri geri bildirimlerini nasıl büyüme yakıtına dönüştürdü?',
-    pl_case_metric_growth_label: 'Etkileşim Artışı',
-    pl_case_metric_speed_label: 'Yanıt Süresi',
-    pl_case_metric_locations_label: 'Lokasyon',
-    pl_case_challenge_title: 'Zorluk: Parçalanmış İtibar ve Operasyonel Kör Noktalar',
-    pl_case_challenge_desc: 'Hızlı büyüme sürecinde her şubede aynı kaliteyi korumak ve müşterilerin "sessiz kalmamasını" sağlamak Pizza Locale için en büyük zorluktu. Manuel geri bildirim toplama yöntemleri, müşteri deneyiminde operasyonel kör noktalar yaratıyordu. İşletme yönetimi, her şubedeki gerçek hissiyatı anlık olarak ölçebilecek merkezi bir sisteme ihtiyaç duyuyordu.',
-    pl_case_solution_title: 'Çözüm: Buaze Akıllı Deneyim Akışı',
-    pl_case_solution_desc: 'Tüm şubelerdeki masalara yerleştirilen akıllı QR kodlar ile geri bildirim toplama süreci tam otomatize edildi. Her misafire Google Haritalar bağlantısı sunulurken, ek olarak işletmeye özel paylaşılan geri bildirimler de saniyeler içinde bölge sorumlusuna iletildi. Bu sayede her masa, şeffaf bir veri kaynağına dönüştü.',
-    pl_case_results_title: 'Sonuç: Veriyle Gelen Zincirleme Başarı',
-    pl_case_results_desc: 'Bugün Pizza Locale, 12 şubesinde de 4.5+ puan ortalamasını başarıyla koruyor. Müşteri kaybı %90 oranında azaldı ve şube fark etmeksizin servis kalitesi standardize edildi. Yeni şubelerin açılış paketine Buaze entegrasyonu "olmazsa olmaz" bir standart olarak eklendi.',
     
     // SEO Comparison Strings
     compare_verdict_title: 'Nihai Karar',
@@ -1170,20 +1142,6 @@ export const translations = {
     sol_bou_badge: 'FOR BOUTIQUE HOTELS',
 
     // Case Studies
-    case_study_title: 'Buaze Success by the Numbers',
-    case_study_subtitle: 'Concrete and measurable results achieved by our customers.',
-    case_growth_title: '90-Day Record Engagement',
-    case_growth_metric: '+420%',
-    case_growth_desc: 'Gourmet Kitchen increased its engagement count fivefold within 3 months after switching to Buaze\'s professional system.',
-    case_conv_title: 'High Conversion Rate',
-    case_conv_metric: '68%',
-    case_conv_desc: '68 out of every 100 customers who scan our QR codes provide honest feedback, driving organic engagement to the peak.',
-    case_scale_title: 'From Single to Chain',
-    case_scale_metric: '1 → 12',
-    case_scale_desc: 'Pizza Locale maintained high reputation scores across all locations while expanding from a single shop to a 12-branch chain with Buaze.',
-    case_speed_title: 'Lightning-Fast Response',
-    case_speed_metric: '4 min',
-    case_speed_desc: 'Average operational response time to feedback dropped from 48 minutes to just 4 minutes, reducing customer churn by 90%.',
 
     // Blog
     blog_title: 'Blog',
@@ -1239,21 +1197,7 @@ export const translations = {
 
     // New Content Labels
     nav_compare: 'Compare',
-    case_learn_more: 'Learn More',
 
-    // Pizza Locale Case Study
-    pl_case_hero_badge: 'SUCCESS STORY',
-    pl_case_hero_title: 'Pizza Locale: A Digital Reputation Journey from 1 to 12 Branches',
-    pl_case_hero_desc: 'How Turkey\'s rising brand, Pizza Locale, turned operational excellence and customer feedback into growth fuel.',
-    pl_case_metric_growth_label: 'Engagement Growth',
-    pl_case_metric_speed_label: 'Response Speed',
-    pl_case_metric_locations_label: 'Locations',
-    pl_case_challenge_title: 'Challenge: Fragmented Reputation & Operational Blind Spots',
-    pl_case_challenge_desc: 'Maintaining the same quality across every branch during rapid growth and ensuring customers didn\'t stay silent were the biggest challenges for Pizza Locale. Manual methods of collecting feedback created an operational blind spot in the customer experience. Management needed a centralized system to measure the real sentiment at every branch in real-time.',
-    pl_case_solution_title: 'Solution: Buaze Smart Experience Flow',
-    pl_case_solution_desc: 'The feedback collection process was fully automated with smart QR codes placed on tables in all branches. Every guest was offered the Google Maps review link, and any additional private feedback shared with the business was instantly forwarded to the regional manager within seconds. This way, every table was transformed into a transparent data source.',
-    pl_case_results_title: 'Result: Data-Driven Chain Success',
-    pl_case_results_desc: 'Today, Pizza Locale successfully maintains a 4.5+ rating average across all 12 branches. Customer churn has decreased by 90%, and service quality has been standardized regardless of the location. Buaze integration has been added as a "must-have" standard to the opening package of all new branches.',
 
     // SEO Comparison Strings
     compare_verdict_title: 'Final Verdict',

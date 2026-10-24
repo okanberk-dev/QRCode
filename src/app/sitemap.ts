@@ -73,18 +73,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap blog fetch error:', error);
   }
 
-  // Case studies are deliberately not listed (see route-discovery.ts
-  // EXCLUDE_DIRS 'case-study'): the seeded studies are illustrative, not
-  // real customers, and the pages are noindex.
-
-  // Stage 94 §38.174 — Customer stories desindex. CLAUDE.md §35.10
-  // flagged 6 fictitious case studies (Ark Bistro / Hotel Nora /
-  // Derma+ / Kahve Dükkan / Law&Co / Spa Ren) as E-E-A-T risk.
-  // Sitemap entries removed + Article/ItemList JSON-LD deleted from
-  // pages. Pages remain functional for direct-link visitors; routes
-  // are not emitted to crawlers via sitemap. Replace with real
-  // customer stories (§19.4.4) when permissions are in hand.
-
   // Published menu pages (public restaurant menus).
   try {
     const restaurants = await prisma.restaurant.findMany({
@@ -155,8 +143,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   });
 
-  // De-duplicate by URL — static slug pages (e.g. blog/google-2026,
-  // case-study/pizza-locale) are surfaced by both the filesystem walk and
+  // De-duplicate by URL — static slug pages (e.g. blog/google-2026) are surfaced by both the filesystem walk and
   // the DB query if a matching row exists. Keep the entry from whichever
   // source ran first; later sources are skipped.
   const seenUrls = new Set<string>();

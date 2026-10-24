@@ -18,9 +18,7 @@ import {
   Plug,
   QrCode,
   Scale,
-  ShoppingBag,
   Sparkles,
-  Star,
   Stethoscope,
   Truck,
   Utensils,
@@ -302,18 +300,6 @@ export default function MarketingNavbarClient({
   ];
 
   const customersItems: NavItem[] = [
-    {
-      href: `${base}/customer-stories`,
-      label: isTr ? 'Müşteri Hikayeleri' : 'Customer Stories',
-      sub: isTr ? 'Buaze ile büyüyen markalar' : 'Brands growing with Buaze',
-      icon: <Star size={16} />,
-    },
-    {
-      href: `${base}/case-study`,
-      label: isTr ? 'Vaka Çalışmaları' : 'Case Studies',
-      sub: isTr ? '+184% yorum, 3 sektör' : '+184% reviews, 3 sectors',
-      icon: <ShoppingBag size={16} />,
-    },
     {
       href: `${base}/roi`,
       label: isTr ? 'ROI Hesapla' : 'Calculate ROI',

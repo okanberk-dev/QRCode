@@ -170,7 +170,7 @@ const BLOG_POSTS_TR = [
         <h2>Buaze ile profesyonel otel itibar yönetimi</h2>
         <p>Buaze QR'ı tarayan her misafire önce Google yorum bağlantısı sunulur. İsteyen misafir aynı akışta otel yönetimine özel geri bildirim de bırakır — yıldıza göre dallandırma yapılmaz. Böylece kamuya açık yorum yolu her zaman açık kalırken operasyonel sinyal de hızlıca yönetime ulaşır. Düşük puanlı bir geri bildirim panele anlık alarm olarak düşer; resepsiyon görevlisi misafir henüz lobide iken iletişime geçer ve sorunu çözer.</p>
 
-        <p>Otelin spa, restoran ve oda servisi gibi farklı departmanları için ayrı kampanyalar tanımlanabilir. Departman bazlı NPS rakamları yöneticinin haftalık toplantıda hangi alanda hangi şefin güçlü olduğunu görmesini sağlar. Detaylı bir vaka için <a href="/tr/case-study/hotel-nora">Hotel Nora vaka çalışmasına</a> göz atabilirsiniz: altı ayda Booking puanı 3.9'dan 4.7'ye, oda doluluğu yüzde on sekiz arttı.</p>
+        <p>Otelin spa, restoran ve oda servisi gibi farklı departmanları için ayrı kampanyalar tanımlanabilir. Departman bazlı NPS rakamları yöneticinin haftalık toplantıda hangi alanda hangi şefin güçlü olduğunu görmesini sağlar.</p>
 
         <h2>Sonuç</h2>
         <p>Otelcilikte yüksek Google puanı bir lüks değil, doğrudan rezervasyon akışını kalıcı kılan bir altyapı. Konaklamanın farklı evrelerinde farklı temas noktaları kurmak, gelen sinyali hızla işlemek ve bu rutini her ay yenilemek, OTA bağımlılığını azaltırken kâr marjını korur. Yıldız avlamak yerine, yıldızların gelmesini doğal kılan bir misafir deneyimi inşa etmek — modern otelcilik bu cümlenin etrafında dönüyor.</p>
@@ -372,7 +372,7 @@ const BLOG_POSTS_EN = [
         <h2>Buaze for professional hotel reputation management</h2>
         <p>A guest who scans a Buaze QR is first offered the public Google review link — no rating-based gating. They can also leave a private note for hotel management in the same flow. The public review path stays open while the operational signal reaches the team quickly. A low-rated note drops into the panel as an instant alert; reception staff can reach the guest while they are still in the lobby and resolve the issue.</p>
 
-        <p>Separate campaigns can be set up for the spa, restaurant and room service. Per-department NPS lets the manager see in the weekly review which area has the strongest performer. For a deeper case study, see the <a href="/en/case-study/hotel-nora">Hotel Nora case</a>: in six months, the Booking score climbed from 3.9 to 4.7 and occupancy rose by 18%.</p>
+        <p>Separate campaigns can be set up for the spa, restaurant and room service. Per-department NPS lets the manager see in the weekly review which area has the strongest performer.</p>
 
         <h2>The takeaway</h2>
         <p>In hospitality, a high Google rating is not a luxury; it is the infrastructure that keeps direct bookings sustainable. Building distinct touchpoints across the stay, processing the signal quickly and refreshing this routine every month reduces OTA dependence while protecting margin. Instead of chasing stars, you build a guest experience that makes the stars inevitable — modern hospitality revolves around that single sentence.</p>
