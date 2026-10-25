@@ -255,7 +255,7 @@ export async function renderRoiAdminNotification(
   // orphan "★" at 375px), value right-aligned. The rounded border lives on a
   // wrapper div: border-radius + overflow on a collapsed-border table never
   // clipped the label column.
-  // table-layout:fixed + explicit 52/48 split: the label column gets enough room
+  // table-layout:fixed + explicit 54/46 split: the label column gets enough room
   // for "Mevcut Google ★" / "Monthly customers" on a 320px phone and the value
   // column cannot be squeezed to nothing by a long unbreakable value. Labels are
   // trusted constants (HTML); the "★" is glued to its word with U+00A0 / a
@@ -263,8 +263,8 @@ export async function renderRoiAdminNotification(
   const nb = (t: string) => `<span style="white-space:nowrap;">${t}</span>`;
   const scenarioRow = (labelHtml: string, valueHtml: string, opts: { accent?: boolean; last?: boolean } = {}) => `
     <tr>
-      <td valign="top" width="52%" style="width:52%;padding:12px 6px 12px 14px;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:12.5px;line-height:1.5;color:${opts.accent ? PULSE.graphite : PULSE.n500};">${labelHtml}</td>
-      <td valign="top" align="right" width="48%" style="width:48%;padding:12px 14px 12px 6px;text-align:right;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:13.5px;line-height:1.5;color:${PULSE.graphite};font-weight:${opts.accent ? 600 : 500};">${valueHtml}</td>
+      <td valign="top" width="54%" style="width:54%;padding:12px 4px 12px 12px;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:12.5px;line-height:1.5;color:${opts.accent ? PULSE.graphite : PULSE.n500};">${labelHtml}</td>
+      <td valign="top" align="right" width="46%" style="width:46%;padding:12px 12px 12px 4px;text-align:right;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:13.5px;line-height:1.5;color:${PULSE.graphite};font-weight:${opts.accent ? 600 : 500};">${valueHtml}</td>
     </tr>
   `;
   // Plan value: plan name over its (unbreakable) price. Two deliberate lines on
