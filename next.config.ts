@@ -16,6 +16,39 @@ const firebaseAuthProxyTarget =
     ? `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`
     : '');
 
+// Locale-less public URLs (/pricing, /contact, /iletisim ...) used to 404: they are what
+// people type, what other sites link to and what AI assistants guess. Negotiated, so
+// temporary (307): Accept-Language starting with "en" -> /en/..., everything else
+// (including crawlers without the header) -> /tr/... (TR is the primary locale, x-default).
+// Only an explicit allow-list: /api, /admin, /dashboard, /r, /menu, /s, /embed stay untouched.
+const LOCALE_LESS_SEGMENTS = [
+  'about', 'blog', 'careers', 'compare', 'contact', 'cookie', 'faq', 'features',
+  'google-compliance', 'help', 'how-it-works', 'integrations', 'press', 'pricing', 'roi',
+  'solutions', 'vs', 'kvkk', 'terms', 'ticari-ileti', 'kullanim-sozlesmesi',
+  'mesafeli-hizmet-sozlesmesi', 'iade-iptal-politikasi', 'veri-isleyici-sozlesmesi',
+  'veri-ihlali-mudahale', 'icerik-moderasyon', 'kabul-edilebilir-kullanim', 'acik-riza',
+];
+// Turkish / alternative spellings -> [tr destination, en destination]
+const LOCALE_LESS_ALIASES: Record<string, [string, string]> = {
+  iletisim: ['contact', 'contact'],
+  fiyatlandirma: ['pricing', 'pricing'],
+  hakkimizda: ['about', 'about'],
+  gizlilik: ['gizlilik', 'privacy'],
+  privacy: ['gizlilik', 'privacy'],
+};
+
+function localeLessRedirects() {
+  const enHeader = [{ type: 'header' as const, key: 'accept-language', value: '^en.*' }];
+  const rules: { source: string; destination: string; permanent: false; has?: typeof enHeader }[] = [];
+  const add = (seg: string, trDest: string, enDest: string) => {
+    rules.push({ source: `/${seg}/:path*`, has: enHeader, destination: `/en/${enDest}/:path*`, permanent: false });
+    rules.push({ source: `/${seg}/:path*`, destination: `/tr/${trDest}/:path*`, permanent: false });
+  };
+  for (const seg of LOCALE_LESS_SEGMENTS) add(seg, seg, seg);
+  for (const [seg, [tr, en]] of Object.entries(LOCALE_LESS_ALIASES)) add(seg, tr, en);
+  return rules;
+}
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -65,6 +98,7 @@ const nextConfig: NextConfig = {
   // Add new entries here whenever a marketing route changes path.
   async redirects() {
     return [
+      ...localeLessRedirects(),
       // Marketing slug rename: /features/ai-copilot → /features/pulse-ai
       // Audit Section 5: URL slug must match the canonical product name.
       {

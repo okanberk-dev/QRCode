@@ -80,7 +80,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Buaze pozitif yorum için teşvik (indirim, hediye) sunuyor mu?',
-          a: 'Hayır. Buaze hiçbir teşvik, indirim, ikram veya kupon sunmaz. Google\'ın yorum politikası bu tür incentive\'leri açıkça yasaklar; biz de aynı politikayı uygularız. İşletme sahibi tarafından oluşturulabilecek herhangi bir teşvik, müşteriye yorum yazdırmaya bağlı olarak verilemez (CLAUDE.md §19.1).',
+          a: 'Hayır. Buaze hiçbir teşvik, indirim, ikram veya kupon sunmaz. Google\'ın yorum politikası bu tür incentive\'leri açıkça yasaklar; biz de aynı politikayı uygularız. İşletme sahibi tarafından oluşturulabilecek herhangi bir teşvik, müşteriye yorum yazdırmaya bağlı olarak verilemez.',
         },
         {
           q: 'Müşteri verilerim KVKK ve GDPR ile uyumlu mu saklanıyor?',
@@ -92,7 +92,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Pulse AI yanıt taslakları Google\'ın yorum politikasına uygun mu?',
-          a: 'Evet. Pulse AI sadece **işletme tarafının yanıtı** için taslak üretir — müşteri tarafından yazılan yorumun içeriğini değiştirmez veya manipüle etmez. Üretilen taslak yayınlanmadan önce işletme sahibi tarafından düzenlenir ve onaylanır. Hiçbir AI taslağı otomatik olarak gönderilmez; her yanıt insan onayından geçer.',
+          a: 'Evet. Pulse AI sadece işletme tarafının yanıtı için taslak üretir — müşteri tarafından yazılan yorumun içeriğini değiştirmez veya manipüle etmez. Üretilen taslak yayınlanmadan önce işletme sahibi tarafından düzenlenir ve onaylanır. Hiçbir AI taslağı otomatik olarak gönderilmez; her yanıt insan onayından geçer.',
         },
       ]
     : [
@@ -106,7 +106,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Does Buaze offer incentives (discounts, gifts) for positive reviews?',
-          a: 'No. Buaze never offers any incentive, discount, freebie, or coupon. Google\'s review policy explicitly prohibits such incentives, and we apply the same policy. Any incentive a business owner may create cannot be conditioned on a customer leaving a review (CLAUDE.md §19.1).',
+          a: 'No. Buaze never offers any incentive, discount, freebie, or coupon. Google\'s review policy explicitly prohibits such incentives, and we apply the same policy. Any incentive a business owner may create cannot be conditioned on a customer leaving a review.',
         },
         {
           q: 'Is my customer data stored in compliance with KVKK and GDPR?',
@@ -118,7 +118,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Are Pulse AI reply drafts compliant with Google\'s review policy?',
-          a: 'Yes. Pulse AI only generates drafts for the **business-side reply** — it never modifies or manipulates the content of a review written by a customer. The generated draft is edited and approved by the business owner before it is published. No AI draft is sent automatically; every reply passes through human approval.',
+          a: 'Yes. Pulse AI only generates drafts for the business-side reply — it never modifies or manipulates the content of a review written by a customer. The generated draft is edited and approved by the business owner before it is published. No AI draft is sent automatically; every reply passes through human approval.',
         },
       ];
 

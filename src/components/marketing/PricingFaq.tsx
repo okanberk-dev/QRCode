@@ -41,6 +41,7 @@ export default function PricingFaq({ faqs, title, subtitle }: PricingFaqProps) {
                   onClick={() => setOpenFaq(isOpen ? null : index)}
                   className="w-full py-5 sm:py-6 flex items-center justify-between text-left gap-6 group"
                   aria-expanded={isOpen}
+                  aria-controls={`faq-panel-${index}`}
                 >
                   <span className="text-[16px] sm:text-[17px] font-medium text-[#0A0A0A] leading-snug">
                     {faq.q}
@@ -53,11 +54,14 @@ export default function PricingFaq({ faqs, title, subtitle }: PricingFaqProps) {
                     <ChevronDown size={16} strokeWidth={2.25} className="text-[#0A0A0A]" />
                   </span>
                 </button>
-                {isOpen && (
-                  <div className="pb-6 pr-14 text-[15px] text-[#525252] leading-[1.6]">
-                    {faq.a}
-                  </div>
-                )}
+                {/* Always in the markup (see FaqAccordion): collapsed with [hidden], not unmounted. */}
+                <div
+                  id={`faq-panel-${index}`}
+                  hidden={!isOpen}
+                  className="pb-6 pr-14 text-[15px] text-[#525252] leading-[1.6]"
+                >
+                  {faq.a}
+                </div>
               </div>
             );
           })}
