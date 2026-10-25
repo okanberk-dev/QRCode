@@ -145,7 +145,7 @@ export function renderMonthlyHealthReport(
   const heroSection = `
     <tr>
       <td class="bz-pad" style="background:${PULSE.graphite};padding:40px 40px 36px;color:${PULSE.pure};">
-        ${renderEyebrow(`BUAZE · ${monthStr.toUpperCase()}`, PULSE.n400)}
+        ${renderEyebrow(`BUAZE · ${monthStr.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}`, PULSE.n400)}
         ${spacer(14)}
         <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:30px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;color:${PULSE.pure};margin:0;">
           ${escapeHtml(greeting)}<br/>
@@ -154,7 +154,7 @@ export function renderMonthlyHealthReport(
             : `${escapeHtml(params.restaurantName)}'s monthly <span style="color:${PULSE.lime};">health report</span> is ready.`}
         </h1>
         ${spacer(28)}
-        <div style="font-family:${FONTS.heading};font-size:${heroScoreSize};font-weight:600;letter-spacing:-0.03em;color:${heroScoreColor};line-height:1;">
+        <div style="font-family:${FONTS.heading};font-size:${heroScoreSize};font-weight:600;letter-spacing:-0.02em;color:${heroScoreColor};line-height:1;">
           ${latestScore ?? '—'}<span style="font-size:24px;font-weight:500;letter-spacing:0;color:${PULSE.n400};">/100</span>
         </div>
         ${spacer(10)}
@@ -179,17 +179,19 @@ export function renderMonthlyHealthReport(
   // Always two columns (even at 320px): four cells in a row cannot hold Poppins
   // numbers, and four stacked rows wasted a screen. The value leads so numbers
   // stay top-aligned even when a label wraps; big counts are compacted (12K).
+  // The card IS the table cell (background + border + radius on the <td>), so
+  // both cards in a row are always the same height even when one label wraps at
+  // 320px. Needs border-collapse:separate on the table (inline, beats the
+  // global collapse rule) for the radius; the gap is a spacer cell.
   const statCard = (label: string, value: string, sub: string | null = null) => `
-    <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:16px;">
-      <div style="font-family:${FONTS.heading};font-size:28px;font-weight:600;letter-spacing:-0.02em;color:${PULSE.graphite};line-height:1.1;">${escapeHtml(value)}</div>
-      <div style="font-family:${FONTS.body};font-size:12px;font-weight:600;line-height:1.4;color:${PULSE.graphite};margin-top:8px;">${escapeHtml(label)}</div>
-      ${sub ? `<div style="font-family:${FONTS.body};font-size:11px;line-height:1.4;color:${PULSE.n500};margin-top:2px;">${escapeHtml(sub)}</div>` : ''}
-    </div>`;
+      <td valign="top" width="50%" style="width:50%;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:16px 14px;">
+        <div style="font-family:${FONTS.heading};font-size:28px;font-weight:600;letter-spacing:-0.02em;color:${PULSE.graphite};line-height:1.1;">${escapeHtml(value)}</div>
+        <div style="font-family:${FONTS.body};font-size:12px;font-weight:600;line-height:1.4;color:${PULSE.graphite};margin-top:8px;">${escapeHtml(label)}</div>
+        ${sub ? `<div style="font-family:${FONTS.body};font-size:11px;line-height:1.5;color:${PULSE.n500};margin-top:2px;">${escapeHtml(sub)}</div>` : ''}
+      </td>`;
+  const statGap = `<td width="12" style="width:12px;min-width:12px;font-size:1px;line-height:1px;"><div style="width:12px;font-size:1px;line-height:1px;">&nbsp;</div></td>`;
   const statRow = (left: string, right: string) => `
-    <tr>
-      <td valign="top" style="width:50%;padding:0 6px 0 0;">${left}</td>
-      <td valign="top" style="width:50%;padding:0 0 0 6px;">${right}</td>
-    </tr>`;
+    <tr>${left}${statGap}${right}</tr>`;
 
   const replyRate =
     params.metrics.feedbackTotal && params.metrics.feedbackTotal > 0
@@ -201,7 +203,7 @@ export function renderMonthlyHealthReport(
       <td class="bz-pad" style="padding:32px 40px 8px;">
         ${renderEyebrow(isTr ? 'Bu ayın özeti' : 'This month at a glance')}
         ${spacer(16)}
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:0;">
           ${statRow(
             statCard(
               isTr ? 'Google puanı' : 'Google rating',
@@ -218,7 +220,7 @@ export function renderMonthlyHealthReport(
                 : null,
             ),
           )}
-          <tr><td colspan="2" height="12" style="height:12px;font-size:1px;line-height:12px;">&nbsp;</td></tr>
+          <tr><td colspan="3" height="12" style="height:12px;font-size:1px;line-height:12px;">&nbsp;</td></tr>
           ${statRow(
             statCard(isTr ? 'Yanıt oranı' : 'Reply rate', replyRate, isTr ? 'müşteri yanıtı' : 'customer replies'),
             statCard(
@@ -349,6 +351,7 @@ export function renderMonthlyHealthReport(
     subject: escapeHtml(subject),
     preheader: escapeHtml(preheader),
     content,
+    footer: { locale },
   });
 
   const text = [

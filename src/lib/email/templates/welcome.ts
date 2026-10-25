@@ -109,39 +109,32 @@ export async function renderWelcome(
       </tr>`;
   }).join('');
 
-  // Resource grid — 2x2 on desktop, stacked rows on phones. Cards are cells,
-  // not display:block anchors (Outlook drops padding on those); only the title
-  // is the link.
+  // Resource list — ONE column at every width: a single rounded panel with
+  // hairline-separated rows (chip · title/meta · chevron). Side-by-side cards
+  // can't be both equal-height (only sibling cells stretch) and self-stacking
+  // (needs inline-block); a list is neither, so it holds up with or without the
+  // <style> block (Gmail app on non-Google accounts) and at 320px. Only the
+  // title and chevron are links; the cells carry the padding (Outlook drops
+  // padding on display:block anchors).
   // CLAUDE.md §38.132 — /help index page mevcut; /help/page route YOK
   // (CLAUDE.md §22 — `/help/[slug]` detail vs `/help` index ayrımı).
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const helpHref = `${baseAppUrl}/${isTr ? 'tr' : 'en'}/help`;
-  const resourceCard = (r: { t: string; s: string; icon: string }) => `
-    <table ${LC_TABLE} width="100%" height="100%" style="width:100%;height:100%;border-collapse:separate;">
+  const resourceRow = (r: { t: string; s: string; icon: string }, i: number) => {
+    const rule = i > 0 ? `border-top:1px solid ${PULSE.n200};` : '';
+    return `
       <tr>
-        <td valign="middle" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:14px 16px;">
-          <table ${LC_TABLE} width="100%">
-            <tr>
-              <td valign="top" width="48" style="width:48px;padding-right:12px;">${lcChip(r.icon, { size: 36, fontSize: 16, radius: 10 })}</td>
-              <td valign="middle">
-                <a href="${helpHref}" style="font-family:${FONTS.heading};font-size:14px;font-weight:600;line-height:1.4;letter-spacing:-0.005em;color:${PULSE.graphite};text-decoration:none;">${r.t}</a>
-                <div style="margin-top:4px;font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.4;letter-spacing:0.04em;color:${PULSE.n500};">${r.s}</div>
-              </td>
-            </tr>
-          </table>
+        <td valign="middle" width="36" style="width:36px;padding:14px 0 14px 16px;${rule}">${lcChip(r.icon, { size: 36, fontSize: 16, radius: 10 })}</td>
+        <td valign="middle" style="padding:14px 8px 14px 14px;${rule}">
+          <a href="${helpHref}" style="font-family:${FONTS.heading};font-size:14px;font-weight:600;line-height:1.4;letter-spacing:-0.005em;color:${PULSE.graphite};text-decoration:none;">${r.t}</a>
+          <div style="margin-top:3px;font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.4;letter-spacing:0.04em;color:${PULSE.n500};">${r.s}</div>
         </td>
-      </tr>
-    </table>`;
+        <td valign="middle" align="right" width="14" style="width:14px;padding:14px 16px 14px 0;${rule}"><a href="${helpHref}" style="font-family:${FONTS.body};font-size:22px;font-weight:500;line-height:1;color:${PULSE.n400};text-decoration:none;">&rsaquo;</a></td>
+      </tr>`;
+  };
   const resourceGrid = `
-    <table ${LC_TABLE} width="100%" class="stack-row">
-      <tr>
-        <td class="col-half" valign="top" style="width:50%;padding:0 6px 12px 0;">${resourceCard(copy.resources[0])}</td>
-        <td class="col-half" valign="top" style="width:50%;padding:0 0 12px 6px;">${resourceCard(copy.resources[1])}</td>
-      </tr>
-      <tr>
-        <td class="col-half" valign="top" style="width:50%;padding:0 6px 0 0;">${resourceCard(copy.resources[2])}</td>
-        <td class="col-half" valign="top" style="width:50%;padding:0 0 0 6px;">${resourceCard(copy.resources[3])}</td>
-      </tr>
+    <table ${LC_TABLE} width="100%" style="width:100%;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;border-collapse:separate;">
+      ${copy.resources.map(resourceRow).join('')}
     </table>`;
 
   const content = lcPage([

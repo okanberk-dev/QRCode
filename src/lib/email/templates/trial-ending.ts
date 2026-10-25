@@ -118,10 +118,10 @@ export async function renderTrialEnding(
     const left = i % 2 === 0;
     const topRow = i < 2;
     const border = `${left ? `border-right:1px solid ${PULSE.n800};` : ''}${topRow ? `border-bottom:1px solid ${PULSE.n800};` : ''}`;
-    const pad = `${topRow ? '0' : '18px'} ${left ? '16px' : '0'} ${topRow ? '18px' : '0'} ${left ? '0' : '18px'}`;
+    const pad = `${topRow ? '0' : '18px'} ${left ? '14px' : '0'} ${topRow ? '18px' : '0'} ${left ? '0' : '14px'}`;
     return `
       <td valign="top" width="50%" style="width:50%;padding:${pad};${border}">
-        <div class="bz-price-mobile" style="font-family:${FONTS.heading};font-size:32px;font-weight:600;letter-spacing:-0.02em;color:${PULSE.pure};line-height:1.05;">${escapeHtml(s.v)}</div>
+        <div class="bz-price-mobile" style="font-family:${FONTS.heading};font-size:30px;font-weight:600;letter-spacing:-0.02em;color:${PULSE.pure};line-height:1.05;">${escapeHtml(s.v)}</div>
         <div style="margin-top:6px;font-family:${FONTS.body};font-size:12px;line-height:1.4;color:${PULSE.n400};">${s.k}</div>
       </td>`;
   };
@@ -131,24 +131,34 @@ export async function renderTrialEnding(
       <tr>${statCell(stats[2], 2)}${statCell(stats[3], 3)}</tr>
     </table>`;
 
-  // Plan cards. The "recommended" badge sits in the title row (not
-  // position:absolute — Gmail/Outlook drop it), so both cards keep the same
-  // structure and line up when side by side.
+  // Plan cards — full-width "pricing rows", one per plan, stacked. Side-by-side
+  // cards were never reliably equal-height (only sibling cells stretch, nested
+  // height:100% tables don't) and overflowed phones as soon as the <style> block
+  // was stripped (two 28px prices + a badge have a ~290px min-content). A single
+  // card is one cell, so it is robust either way.
+  // Inside: [badge + title | price + period] on one line, body underneath. The
+  // inner cells carry stack-col so phones read title → price → body. The
+  // "recommended" badge sits above the title (not position:absolute — Gmail /
+  // Outlook drop it, and beside the title it would squeeze the price).
   const planCard = (c: { title: string; price: string; period?: string; body: string; badge?: string; featured?: boolean }) => `
-    <table ${LC_TABLE} width="100%" height="100%" style="width:100%;height:100%;border-collapse:separate;">
+    <table ${LC_TABLE} width="100%" style="width:100%;border-collapse:separate;">
       <tr>
-        <td valign="top" style="background:${c.featured ? PULSE.limeSoft : PULSE.pure};border:${c.featured ? `2px solid ${PULSE.graphite}` : `1px solid ${PULSE.n200}`};border-radius:14px;padding:${c.featured ? '21px' : '22px'};">
-          <table ${LC_TABLE} width="100%">
+        <td style="background:${c.featured ? PULSE.limeSoft : PULSE.pure};border:${c.featured ? `2px solid ${PULSE.graphite}` : `1px solid ${PULSE.n200}`};border-radius:14px;padding:${c.featured ? '18px 15px' : '19px 16px'};">
+          <table ${LC_TABLE} width="100%" class="stack-row" style="width:100%;">
             <tr>
-              <td valign="middle" height="26" style="height:26px;font-family:${FONTS.heading};font-size:16px;font-weight:600;line-height:1.3;color:${PULSE.graphite};">${c.title}</td>
-              ${c.badge ? `<td valign="middle" align="right" style="padding-left:8px;white-space:nowrap;">${renderBadge({ text: c.badge, variant: 'lime-on-dark' })}</td>` : ''}
+              <td class="stack-col" valign="middle" style="padding:0 8px 0 0;">
+                ${c.badge ? `<div style="margin-bottom:8px;">${renderBadge({ text: c.badge, variant: 'lime-on-dark' })}</div>` : ''}
+                <div style="font-family:${FONTS.heading};font-size:17px;font-weight:600;line-height:1.3;color:${PULSE.graphite};">${c.title}</div>
+              </td>
+              <td class="stack-col" valign="middle" align="right" style="padding:0;text-align:right;">
+                <div class="bz-price-mobile" style="font-family:${FONTS.heading};font-size:26px;font-weight:600;letter-spacing:-0.02em;line-height:1.1;color:${PULSE.graphite};">${escapeHtml(c.price)}</div>
+                ${c.period ? `<div style="margin-top:3px;font-family:${FONTS.body};font-size:12px;line-height:1.4;color:${c.featured ? PULSE.n600 : PULSE.n500};">${escapeHtml(c.period)}</div>` : ''}
+              </td>
+            </tr>
+            <tr>
+              <td class="stack-col" colspan="2" valign="top" style="padding:12px 0 0;">${renderP(c.body, { size: 13, color: c.featured ? PULSE.n700 : PULSE.n600 })}</td>
             </tr>
           </table>
-          ${spacer(12)}
-          <div class="bz-price-mobile" style="font-family:${FONTS.heading};font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.1;color:${PULSE.graphite};">${escapeHtml(c.price)}</div>
-          ${c.period ? `<div style="margin-top:4px;font-family:${FONTS.body};font-size:12px;line-height:1.4;color:${c.featured ? PULSE.n600 : PULSE.n500};">${escapeHtml(c.period)}</div>` : ''}
-          ${spacer(14)}
-          ${renderP(c.body, { size: 13, color: c.featured ? PULSE.n700 : PULSE.n600 })}
         </td>
       </tr>
     </table>`;
@@ -163,7 +173,7 @@ export async function renderTrialEnding(
       titleSize: 36,
     }),
     lcSection(
-      `<div class="bz-roi-card" style="background:${PULSE.graphite};border-radius:16px;padding:26px 28px;">
+      `<div class="bz-roi-card" style="background:${PULSE.graphite};border-radius:16px;padding:26px 22px;">
         ${renderEyebrow(copy.usageEyebrow, PULSE.lime)}
         ${spacer(18)}
         ${statGrid}
@@ -173,12 +183,9 @@ export async function renderTrialEnding(
     lcSection(
       `${renderEyebrow(copy.plansEyebrow)}
        ${spacer(14)}
-       <table ${LC_TABLE} width="100%" class="stack-row">
-         <tr>
-           <td class="stack-col" valign="top" style="width:50%;padding:0 6px 0 0;">${starterCard}</td>
-           <td class="stack-col" valign="top" style="width:50%;padding:0 0 0 6px;">${proCard}</td>
-         </tr>
-       </table>`,
+       ${starterCard}
+       ${spacer(12)}
+       ${proCard}`,
       { padding: '32px 40px 8px' },
     ),
     lcSection(
@@ -191,7 +198,9 @@ export async function renderTrialEnding(
     subject,
     preheader,
     content,
-    eyebrow: copy.headerEyebrow,
+    // Inline wrap guard: "FATURALANDIRMA" is a ~150px unbreakable word that
+    // would otherwise stretch the shell on clients that strip <style> (320px).
+    eyebrow: `<span style="overflow-wrap:anywhere;word-break:break-word;">${copy.headerEyebrow}</span>`,
     footer: { locale, unsubText: isTr ? 'Faturalandırma maillerini ayarlamak için' : 'To adjust billing emails' },
   });
   const text = `${copyText.titleA} ${copyText.titleB}\n\n${stats.map((s) => `${s.v} ${s.k}`).join(' · ')}\n\n${copyText.cta} ${params.upgradeUrl}\n${copyText.comparisonLink}: ${comparisonUrl}`;

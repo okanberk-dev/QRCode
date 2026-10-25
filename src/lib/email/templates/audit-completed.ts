@@ -147,7 +147,7 @@ export async function renderAuditCompleted(
   const barColor = params.passed === false ? PULSE.danger : params.passed === true ? PULSE.limeDeep : PULSE.graphite;
   const scoreBody = hasScore
     ? `
-        <div style="font-family:${FONTS.heading};font-size:56px;font-weight:600;color:${PULSE.graphite};letter-spacing:-0.03em;line-height:1.05;margin-top:10px;">${params.score}<span style="color:${PULSE.n400};font-size:22px;font-weight:500;letter-spacing:0;">/100</span></div>
+        <div style="font-family:${FONTS.heading};font-size:56px;font-weight:600;color:${PULSE.graphite};letter-spacing:-0.02em;line-height:1.05;margin-top:10px;">${params.score}<span style="color:${PULSE.n400};font-size:22px;font-weight:500;letter-spacing:0;">/100</span></div>
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:14px;">
           <tr>
             <td style="background:${PULSE.n200};border-radius:100px;height:8px;line-height:8px;font-size:1px;">

@@ -56,7 +56,7 @@ export async function renderRatingDropAlert(
     actionTitle: 'Sıradaki 24 saatte 3 adım',
     action1: 'Son 7 günün 1-3 puanlı yorumlarına yanıt yaz — geç yanıt verilen yorumlar Google\'da kalıcı hasar bırakır.',
     action2: 'Tekrar eden şikayet konularını çıkar (servis, hijyen, hız) — operasyon ekibiyle paylaş.',
-    action3: 'Memnun müşterilerden Google yorumu iste — yeni 5\'ler ortalamayı hızlı toparlar.',
+    action3: 'Yorum bırakma bağlantını (QR) tüm müşterilerinle paylaşmaya devam et.',
   } : {
     eyebrow: 'Early warning · Rating drop',
     title: 'Your rating is',
@@ -73,7 +73,7 @@ export async function renderRatingDropAlert(
     actionTitle: 'Three moves in the next 24 hours',
     action1: 'Reply to every 1-3 star review from the last 7 days — late replies leave permanent Google damage.',
     action2: 'Extract recurring complaint themes (service, hygiene, speed) and share with operations.',
-    action3: 'Ask satisfied customers for a Google review — fresh 5-stars rebalance the average quickly.',
+    action3: 'Keep making your review link available to every customer.',
   };
 
   const merged = await loadMailCopy('rating-drop-alert', locale, inlineDefault);
@@ -153,7 +153,7 @@ export async function renderRatingDropAlert(
             </div>
           </div>
           ${spacer(26)}
-          ${renderButton({ href: params.inboxUrl, label: copy.cta, variant: 'dark' })}
+          ${renderButton({ href: escapeHtml(params.inboxUrl), label: copy.cta, variant: 'dark' })}
           ${spacer(32)}
           ${renderH2(copy.actionTitle)}
           ${spacer(16)}
@@ -167,7 +167,9 @@ export async function renderRatingDropAlert(
     </table>
   `;
 
-  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
   const text = [
     copyText.eyebrow,
     '',

@@ -229,6 +229,11 @@ export const FIXTURES_G3: MailFixture[] = [
       ),
   },
   {
+    id: 'weekly-report:zero-trend',
+    template: 'weekly-report',
+    render: (l) => renderWeeklyReport({ ...WR_BASE, trend: [0, 0, 0, 0, 0, 0, 0], deltas: undefined }, l),
+  },
+  {
     id: 'weekly-report:stress',
     template: 'weekly-report',
     stress: true,

@@ -30,6 +30,12 @@ const role = (locale: MailFixtureLocale, kind: 'manager' | 'staff' | 'viewer' = 
 const LONG_ROLE = 'Bölge Operasyon ve Müşteri Deneyimi Yöneticisi (Çok Şubeli)';
 const SEVEN_DIGITS = '1.234.567';
 
+// Hostile free text: every user-controlled field must stay inert (see
+// tests/mail-g5a-injection.test.ts). The title payload targets the <title> and
+// preheader sinks in pulseLayout.
+export const INJECT_TITLE = '</title><b id="INJ">x</b>';
+export const INJECT_TAG = '<img src=x onerror=1>';
+
 export const FIXTURES_G5A: MailFixture[] = [
   // ── team-invite ──────────────────────────────────────────────────────
   {
@@ -106,6 +112,38 @@ export const FIXTURES_G5A: MailFixture[] = [
       ),
   },
 
+  {
+    id: 'team-invite:inject',
+    template: 'team-invite',
+    render: async (locale) =>
+      renderTeamInvite(
+        {
+          name: INJECT_TAG,
+          ownerName: INJECT_TITLE,
+          restaurantNames: [INJECT_TAG, 'Kadıköy Bistro'],
+          roleLabel: INJECT_TITLE,
+          acceptUrl: `${APP_URL}/tr/accept-invite?token=abc"><script>1</script>`,
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'team-invite:two-days',
+    template: 'team-invite',
+    render: async (locale) =>
+      renderTeamInvite(
+        {
+          name: 'Elif Şahin',
+          ownerName: 'Mert Demir',
+          restaurantNames: ['Kadıköy Bistro', 'Moda Kahve Dükkanı', 'Nişantaşı Pastanesi ve Kahve Evi'],
+          roleLabel: role(locale, 'staff'),
+          acceptUrl: ACCEPT_URL,
+          expiresInDays: 2,
+        },
+        locale,
+      ),
+  },
+
   // ── team-member-joined ───────────────────────────────────────────────
   {
     id: 'team-member-joined',
@@ -154,6 +192,37 @@ export const FIXTURES_G5A: MailFixture[] = [
       ),
   },
 
+  {
+    id: 'team-member-joined:long-names',
+    template: 'team-member-joined',
+    render: (locale) =>
+      renderTeamMemberJoined(
+        {
+          ownerName: 'Mert',
+          memberName: 'Mehmet Ali Yıldırım-Özkaya',
+          roleLabel: locale === 'en' ? 'Regional Operations Manager' : 'Bölge Operasyon Yöneticisi',
+          locationNames: ['Balıkçı Ahmet Usta Ürünleri', 'Ünlü Oğulları Lokantası', 'Nişantaşı Pastanesi ve Kahve Evi'],
+          teamUrl: TEAM_URL,
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'team-member-joined:inject',
+    template: 'team-member-joined',
+    render: (locale) =>
+      renderTeamMemberJoined(
+        {
+          ownerName: INJECT_TAG,
+          memberName: INJECT_TITLE,
+          roleLabel: INJECT_TITLE,
+          locationNames: [INJECT_TAG],
+          teamUrl: `${TEAM_URL}"><script>1</script>`,
+        },
+        locale,
+      ),
+  },
+
   // ── team-member-removed ──────────────────────────────────────────────
   {
     id: 'team-member-removed',
@@ -197,6 +266,22 @@ export const FIXTURES_G5A: MailFixture[] = [
           memberEmail: 'can@kadikoybistro.co',
           roleLabel: role(locale, 'viewer'),
           teamUrl: TEAM_URL,
+        },
+        locale,
+      ),
+  },
+
+  {
+    id: 'team-member-removed:inject',
+    template: 'team-member-removed',
+    render: (locale) =>
+      renderTeamMemberRemoved(
+        {
+          ownerName: INJECT_TAG,
+          memberName: INJECT_TITLE,
+          memberEmail: INJECT_TITLE,
+          roleLabel: INJECT_TITLE,
+          teamUrl: `${TEAM_URL}"><script>1</script>`,
         },
         locale,
       ),
@@ -311,6 +396,23 @@ export const FIXTURES_G5A: MailFixture[] = [
     render: (locale) => renderNewsletter({ issueNumber: 9, posts: [], unsubscribeUrl: UNSUB_URL }, locale),
   },
 
+  {
+    id: 'newsletter:inject',
+    template: 'newsletter',
+    render: (locale) =>
+      renderNewsletter(
+        {
+          issueNumber: 10,
+          posts: [{ title: INJECT_TAG, excerpt: INJECT_TITLE, url: `${APP_URL}/tr/blog/x"><script>1</script>`, category: INJECT_TAG }],
+          customSubject: INJECT_TITLE,
+          customTitle: INJECT_TAG,
+          customIntro: INJECT_TAG,
+          unsubscribeUrl: UNSUB_URL,
+        },
+        locale,
+      ),
+  },
+
   // ── owner-segment-mail ───────────────────────────────────────────────
   {
     id: 'owner-segment-mail',
@@ -339,6 +441,20 @@ export const FIXTURES_G5A: MailFixture[] = [
           body: `${LONG_COMMENT}\n\n${LONG_URL}\n\n${LONG_EMAIL}\n\n1.\n2.\n3.\n\n${LONG_WORD}`,
           ownerName: LONG_NAME,
           appUrl: LONG_URL,
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'owner-segment-mail:inject',
+    template: 'owner-segment-mail',
+    render: async (locale) =>
+      renderOwnerSegmentMail(
+        {
+          subject: INJECT_TITLE,
+          body: `${INJECT_TAG}\n\n- ${INJECT_TAG}\n- ${INJECT_TITLE}`,
+          ownerName: INJECT_TAG,
+          appUrl: `${APP_URL}/tr/dashboard"><script>1</script>`,
         },
         locale,
       ),

@@ -242,6 +242,12 @@ export const FIXTURES_G1: MailFixture[] = [
       ),
   },
   {
+    id: 'account-deletion-canceled:noname',
+    template: 'account-deletion-canceled',
+    render: (l) =>
+      renderAccountDeletionCanceled({ accountEmail: ACCOUNT, dashboardUrl: `${APP_URL}/tr/dashboard` }, l),
+  },
+  {
     id: 'account-deletion-canceled:stress',
     template: 'account-deletion-canceled',
     stress: true,

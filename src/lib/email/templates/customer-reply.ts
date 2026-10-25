@@ -30,18 +30,25 @@ export async function renderCustomerReply(
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
-  const customerFirst = params.customerName ? escapeHtml(params.customerName).split(' ')[0] : (isTr ? 'merhaba' : 'hi');
-  const restaurant = escapeHtml(params.restaurantName);
-  const restaurantInitial = escapeHtml((params.restaurantName || 'B').trim().charAt(0).toUpperCase() || 'B');
-  const ownerName = params.ownerName ? escapeHtml(params.ownerName) : (isTr ? 'İşletmeci' : 'Owner');
-  const ownerInitials = (params.ownerName || 'B').split(' ').map((p) => p.charAt(0).toUpperCase()).slice(0, 2).join('');
+  // `feedback.name` is nullable, so every name-dependent string has a nameless
+  // form instead of a lowercase "merhaba," masquerading as a name.
+  const customerFirstRaw = (params.customerName ?? '').trim().split(/\s+/)[0] ?? '';
+  const restaurantRaw = params.restaurantName;
+  const restaurant = escapeHtml(restaurantRaw);
+  const restaurantInitial = escapeHtml((restaurantRaw || 'B').trim().charAt(0).toUpperCase() || 'B');
+  // The production sender never passes ownerName. Without it the sign-off is the
+  // team ("<Restaurant> ekibi") — never the bare role word dressed up as a name.
+  const ownerRaw = (params.ownerName ?? '').trim();
+  const ownerName = escapeHtml(ownerRaw);
+  const signoffRaw = ownerRaw || (isTr ? `${restaurantRaw} ekibi` : `The ${restaurantRaw} team`);
+  const signoff = escapeHtml(signoffRaw);
 
-  const subject = isTr
-    ? `${customerFirst}, geri bildirimin için teşekkürler`
-    : `${customerFirst}, thank you for your feedback`;
+  const subject = customerFirstRaw
+    ? (isTr ? `${customerFirstRaw}, geri bildirimin için teşekkürler` : `${customerFirstRaw}, thank you for your feedback`)
+    : (isTr ? 'Geri bildirimin için teşekkürler' : 'Thank you for your feedback');
   const preheader = isTr
-    ? `Yaşadığın deneyim için özür dileriz. Seni tekrar ${params.restaurantName}'de ağırlamak isteriz.`
-    : `We\'re sorry about your experience. We\'d love to welcome you back to ${params.restaurantName}.`;
+    ? `Yaşadığın deneyim için özür dileriz. Seni tekrar ${restaurantRaw}'de ağırlamak isteriz.`
+    : `We're sorry about your experience. We'd love to welcome you back to ${restaurantRaw}.`;
 
   const inlineDefault = isTr ? {
     headerEyebrow: 'Sana özel · Kişisel yanıt',
@@ -82,12 +89,22 @@ export async function renderCustomerReply(
   // DB-merged + placeholder substitution. `sentLine`/`sentSuffix` are the
   // Buaze-attribution disclosure — KVKK-locked server-side (locked-fields.ts).
   const merged = await loadMailCopy('customer-reply', locale, inlineDefault);
+  // Raw values: deepSubstitute escapes in html mode, so pre-escaped input would
+  // double-escape (D&#39;Arcy → D&amp;#39;Arcy).
   const vars = {
-    customerFirstName: customerFirst,
-    restaurantName: params.restaurantName,
-    ownerName: ownerName,
+    customerFirstName: customerFirstRaw,
+    restaurantName: restaurantRaw,
+    ownerName: signoffRaw,
   };
   const copy = deepSubstitute(merged, vars, 'html');
+
+  // No customer name → drop the "${customerFirstName}," line (unless an admin
+  // rewrote titleA without the placeholder) and capitalise the sentence start.
+  const dropGreeting = !customerFirstRaw && String(merged.titleA ?? '').includes('${customerFirstName}');
+  const titleGreeting = dropGreeting ? '' : copy.titleA;
+  const titleSubA = titleGreeting
+    ? copy.titleSubA
+    : copy.titleSubA.charAt(0).toLocaleUpperCase(isTr ? 'tr' : 'en') + copy.titleSubA.slice(1);
 
   const messageP = `font-family:${FONTS.body};font-size:15px;line-height:1.7;color:${PULSE.n700};`;
   const message = escapeHtml(params.message).replace(/\n\s*\n/g, `</p><p style="${messageP}margin:14px 0 0;">`).replace(/\n/g, '<br>');
@@ -164,8 +181,8 @@ export async function renderCustomerReply(
       <div style="font-family:${FONTS.label};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${escapeHtml(params.phone)}</div>
     </a>
   ` : '';
-  const mapsCard = params.mapsUrl ? `
-    <a href="${escapeHtml(params.mapsUrl)}" style="display:block;padding:14px 16px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
+  const mapsCard = params.mapsUrl && /^https?:\/\//i.test(params.mapsUrl.trim()) ? `
+    <a href="${escapeHtml(params.mapsUrl.trim())}" style="display:block;padding:14px 16px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
       ${renderEyebrow(copy.mapsEyebrow)}
       <div style="height:4px;line-height:1px;font-size:1px;">&nbsp;</div>
       <div style="font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${escapeHtml(params.mapsLabel || params.restaurantName)}</div>
@@ -192,7 +209,7 @@ export async function renderCustomerReply(
                     </td>
                     <td valign="middle" style="padding-left:12px;">
                       <div style="font-family:${FONTS.heading};font-size:15px;font-weight:600;line-height:1.35;color:${PULSE.graphite};">${restaurant}</div>
-                      <div style="font-family:${FONTS.label};font-size:11px;line-height:1.5;color:${PULSE.n600};letter-spacing:0.08em;text-transform:uppercase;font-weight:500;">${ownerName} · ${copy.ownerLabel}</div>
+                      ${ownerName ? `<div style="font-family:${FONTS.label};font-size:11px;line-height:1.5;color:${PULSE.n600};letter-spacing:0.08em;text-transform:uppercase;font-weight:500;">${ownerName} · ${copy.ownerLabel}</div>` : ''}
                     </td>
                   </tr>
                 </table>
@@ -202,8 +219,8 @@ export async function renderCustomerReply(
           </table>
           ${spacer(20)}
           <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:38px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
-            ${copy.titleA}<br/>
-            ${copy.titleSubA} <span style="font-style:italic;">${copy.titleSubItalic}</span>${copy.titleSubB ? ` ${copy.titleSubB}` : ''}<span style="color:${PULSE.success};">.</span>
+            ${titleGreeting ? `${titleGreeting}<br/>` : ''}
+            ${titleSubA} <span style="font-style:italic;">${copy.titleSubItalic}</span>${copy.titleSubB ? ` ${copy.titleSubB}` : ''}<span style="color:${PULSE.success};">.</span>
           </h1>
         </td>
       </tr>
@@ -216,8 +233,8 @@ export async function renderCustomerReply(
           ${params.signaturePostscript ? `${renderP(escapeHtml(params.signaturePostscript), { size: 15, color: PULSE.n700 })}${spacer(22)}` : ''}
           ${renderP(isTr ? 'Tekrar teşekkürler.' : 'Thanks again.', { size: 15, color: PULSE.n700 })}
           ${spacer(6)}
-          <div style="font-family:${FONTS.heading};font-size:22px;font-weight:600;line-height:1.25;color:${PULSE.graphite};letter-spacing:-0.01em;font-style:italic;">${ownerName}</div>
-          <div style="font-size:12px;line-height:1.5;color:${PULSE.n500};margin-top:4px;">${isTr ? 'İşletmeci' : 'Owner'} · ${restaurant}</div>
+          <div style="font-family:${FONTS.heading};font-size:22px;font-weight:600;line-height:1.25;color:${PULSE.graphite};letter-spacing:-0.01em;font-style:italic;">${signoff}</div>
+          ${ownerName ? `<div style="font-size:12px;line-height:1.5;color:${PULSE.n500};margin-top:4px;">${isTr ? 'İşletmeci' : 'Owner'} · ${restaurant}</div>` : ''}
           ${contactBlock}
         </td>
       </tr>
@@ -229,19 +246,16 @@ export async function renderCustomerReply(
     </table>
   `;
 
-  // ownerInitials is computed up top for a future avatar variant (JSX
-  // prototype showed an owner-initials chip we haven't ported yet); keep
-  // the calculation around so the data is ready when that block lands.
-  // The `void` discards the value so eslint's no-unused-vars stays quiet.
-  void ownerInitials;
-
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
   const html = pulseLayout({
-    subject,
-    preheader,
+    subject: escapeHtml(subject),
+    preheader: escapeHtml(preheader),
     content,
     eyebrow: '',
     footer: { locale, unsubText: isTr ? 'Restoran maillerini almayı bırakmak için' : 'To stop restaurant emails' },
   });
-  const text = `${customerFirst},\n\n${params.message}\n\n— ${ownerName}, ${params.restaurantName}`;
+  const greeting = customerFirstRaw ? `${customerFirstRaw},` : (isTr ? 'Merhaba,' : 'Hi,');
+  const text = `${greeting}\n\n${params.message}\n\n— ${ownerRaw ? `${ownerRaw}, ${restaurantRaw}` : signoffRaw}`;
   return { subject, html, text };
 }

@@ -54,7 +54,7 @@ export async function renderFirstFeedbackCelebration(
     quoteEyebrow: 'Müşterinin sözleri',
     noComment: 'Müşteri yorum yazmadı — sadece yıldız bıraktı.',
     cta: 'Yorumu gör →',
-    tipPositive: 'Yüksek puanlı yorumlara 24 saat içinde teşekkür et — müşteri sadakatini iki katına çıkarır.',
+    tipPositive: 'Yüksek puanlı yorumlara 24 saat içinde teşekkür et — küçük bir teşekkür müşterinin geri dönmesine yardımcı olur.',
     tipLow: 'Düşük puanlarda önce dinle, sonra çöz: müşteri hatasını kabul edilen restoranı tekrar dener.',
   } : {
     eyebrow: 'Activation · First review',
@@ -66,7 +66,7 @@ export async function renderFirstFeedbackCelebration(
     quoteEyebrow: 'What the customer said',
     noComment: 'No written comment — only the star rating.',
     cta: 'Open the review →',
-    tipPositive: 'Thank high-rated reviews within 24 hours — it doubles repeat-customer loyalty.',
+    tipPositive: 'Thank high-rated reviews within 24 hours — a quick thank-you helps bring customers back.',
     tipLow: 'For low ratings, listen first then fix: customers retry a restaurant that admits mistakes.',
   };
 
@@ -119,7 +119,7 @@ export async function renderFirstFeedbackCelebration(
             `}
           </div>
           ${spacer(26)}
-          ${renderButton({ href: params.feedbackUrl, label: copy.cta, variant: 'dark' })}
+          ${renderButton({ href: escapeHtml(params.feedbackUrl), label: copy.cta, variant: 'dark' })}
           ${spacer(24)}
           <div style="background:${PULSE.n50};border-left:3px solid ${PULSE.limeDeep};border-radius:8px;padding:14px 18px;font-family:${FONTS.body};font-size:13px;line-height:1.6;color:${PULSE.n700};">
             ${tip}
@@ -129,7 +129,9 @@ export async function renderFirstFeedbackCelebration(
     </table>
   `;
 
-  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
 
   const text = [
     copyText.eyebrow,

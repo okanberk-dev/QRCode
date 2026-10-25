@@ -33,12 +33,14 @@ export function renderTeamInvite(
   const isTr = locale !== 'en';
   const { name, ownerName, restaurantNames, roleLabel, acceptUrl, expiresInDays = 7 } = params;
 
+  const daysEn = `${expiresInDays} day${expiresInDays === 1 ? '' : 's'}`;
+
   const subject = isTr
     ? `${ownerName} seni Buaze ekibine davet etti`
     : `${ownerName} invited you to join their Buaze team`;
   const preheader = isTr
     ? `Daveti ${expiresInDays} gün içinde kabul et — bağlantı süresi sonra dolar.`
-    : `Accept the invite within ${expiresInDays} days — link expires after that.`;
+    : `Accept the invite within ${daysEn} — link expires after that.`;
 
   const greeting = name
     ? (isTr ? `Merhaba ${escapeHtml(name)},` : `Hi ${escapeHtml(name)},`)
@@ -63,7 +65,7 @@ export function renderTeamInvite(
 
   const expiryNote = isTr
     ? `Bu davet bağlantısı ${expiresInDays} gün sonra geçersiz olur. Süresi dolarsa hesap sahibinden yeni bir davet isteyebilirsin.`
-    : `This invite link expires in ${expiresInDays} days. If it does, ask the workspace owner to send a new one.`;
+    : `This invite link expires in ${daysEn}. If it does, ask the workspace owner to send a new one.`;
 
   const ctaLabel = isTr ? 'Daveti kabul et →' : 'Accept invite →';
 
@@ -81,7 +83,9 @@ export function renderTeamInvite(
     ${renderP(expiryNote, { color: PULSE.n500, size: 13 })}
   `);
 
-  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
+  // <title> and the hidden preheader are raw-HTML sinks in pulseLayout; ownerName
+  // is user text, so both get escaped here (the Subject header stays plain).
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
 
   const text = [
     `${ownerName} ${isTr ? 'seni Buaze ekibine davet etti.' : 'invited you to their Buaze team.'}`,

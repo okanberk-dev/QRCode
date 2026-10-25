@@ -107,19 +107,30 @@ export async function renderWeeklyReport(
     ? `${escapeHtml(params.restaurantName)} · ${periodStr} haftalık özet`
     : `${escapeHtml(params.restaurantName)} · ${periodStr} weekly digest`;
 
-  const positiveCount = params.stats.highRatings;
-  const totalDeltaText = params.deltas?.totalDelta ?? (positiveCount > params.stats.total / 2 ? '+' : '');
+  // Hero accent: the week-over-week delta when the caller has one, otherwise
+  // the review count (never a bare "+"). The lead line stays neutral because
+  // nothing here knows whether the week started quiet.
+  const deltaRaw = params.deltas?.totalDelta?.trim();
+  const accentText = escapeHtml(deltaRaw ? deltaRaw : String(params.stats.total));
+
+  // Chart heading follows the data: name the actual peak day (the block is
+  // hidden when no day has reviews; the neutral title only backs copy overrides).
+  const trendValues = params.trend && params.trend.length === 7 ? params.trend : null;
+  const trendMax = trendValues ? Math.max(...trendValues) : 0;
+  const peakIdx = trendValues && trendMax > 0 ? trendValues.indexOf(trendMax) : -1;
+  const DAYS_TR = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+  const DAYS_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const inlineDefault = isTr ? {
     eyebrow: `Hafta ${weekNum} · Pazartesi raporu`,
-    titleA: positiveCount > 0 ? 'Sessiz başlayan hafta,' : 'Hafta nasıl geçti?',
-    titleAccent: totalDeltaText && totalDeltaText !== '' ? `${totalDeltaText}` : `${params.stats.total}`,
+    titleA: 'Hafta nasıl geçti?',
+    titleAccent: accentText,
     titleEnd: 'yorumla bitti.',
     statTotal: 'Yeni yorum',
     statAvg: 'Ortalama puan',
     statResp: 'Yanıt süresi',
     chartEyebrow: 'Günlük dağılım',
-    chartTitle: 'Cumartesi günü zirve yaptın.',
+    chartTitle: peakIdx >= 0 ? `${DAYS_TR[peakIdx]} günü zirve yaptın.` : 'Gün gün yorum sayısı',
     quotesEyebrow: 'Bu haftanın sözleri',
     aspectFood: 'Yemek',
     aspectService: 'Servis',
@@ -140,14 +151,14 @@ export async function renderWeeklyReport(
     segmentHint: 'Sadık + memnuniyetsiz dağılımı tek bakışta.',
   } : {
     eyebrow: `Week ${weekNum} · Monday report`,
-    titleA: positiveCount > 0 ? 'A quiet week,' : 'How was the week?',
-    titleAccent: totalDeltaText && totalDeltaText !== '' ? `${totalDeltaText}` : `${params.stats.total}`,
+    titleA: 'How was the week?',
+    titleAccent: accentText,
     titleEnd: 'reviews to close.',
     statTotal: 'New reviews',
     statAvg: 'Average rating',
     statResp: 'Response time',
     chartEyebrow: 'Daily distribution',
-    chartTitle: 'Saturday hit the peak.',
+    chartTitle: peakIdx >= 0 ? `${DAYS_EN[peakIdx]} hit the peak.` : 'Reviews day by day',
     quotesEyebrow: 'This week\'s voices',
     aspectFood: 'Food',
     aspectService: 'Service',
@@ -212,15 +223,15 @@ export async function renderWeeklyReport(
     return renderBarRow({ label: `${star}★`, labelWidth: 30, value: `${pct}% · ${count}`, pct, color: barColor });
   }).join('');
 
-  // 7-day column chart
-  const trendBlock = params.trend && params.trend.length === 7 ? `
+  // 7-day column chart (hidden when no day had a review — a flat chart says nothing)
+  const trendBlock = trendValues && peakIdx >= 0 ? `
     <tr>
       <td class="bz-pad" style="padding:36px 40px 8px;">
         ${renderEyebrow(copy.chartEyebrow)}
         ${spacer(10)}
         ${renderH2(copy.chartTitle)}
         ${spacer(22)}
-        ${renderWeekChart(params.trend, isTr ? ['PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT', 'PAZ'] : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'])}
+        ${renderWeekChart(trendValues!, isTr ? ['PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT', 'PAZ'] : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'])}
       </td>
     </tr>` : '';
 

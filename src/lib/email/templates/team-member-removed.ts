@@ -114,7 +114,9 @@ export async function renderTeamMemberRemoved(
     ${renderP(copy.note, { color: PULSE.n500, size: 13 })}
   `);
 
-  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
+  // <title> and the hidden preheader are raw-HTML sinks in pulseLayout; the
+  // member name / role label are user text, so both get escaped here.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
 
   const text = [
     copyText.eyebrow,

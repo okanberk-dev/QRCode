@@ -9,6 +9,13 @@ import { APP_URL, LONG_COMMENT, LONG_NAME, LONG_URL, LONG_WORD, type MailFixture
 const REVIEW_URL = `${APP_URL}/tr/dashboard/feedbacks`;
 const AT = new Date('2026-10-24T11:32:00Z');
 
+// Hostile input. Every user-supplied field must come out escaped (body, <title>,
+// hidden preheader, href attributes); tests/mail-g2-injection.test.ts asserts it.
+export const INJECT_TAG = '<img src=x onerror=1>';
+export const INJECT_LINK = '</div><a href="https://evil.example/login">Hesabını doğrula</a><div>';
+export const INJECT_ATTR = '"><script>alert(1)</script>';
+const INJECT_URL = 'https://x.test/review?a=1&b="><script>alert(1)</script>';
+
 const AI_DRAFT =
   'Merhaba Defne, deneyiminiz için çok özür dileriz. Kahvenizin soğuk gelmesi ve bekleme süresi standardımızın altında — bu durumu vardiya ekibimizle paylaştık. Bir sonraki ziyaretinizde sizi tanıyalım.';
 
@@ -103,6 +110,30 @@ export const FIXTURES_G2: MailFixture[] = [
       ),
   },
 
+  {
+    id: 'low-rating-alert:inject',
+    template: 'low-rating-alert',
+    render: (locale) =>
+      renderLowRatingAlert(
+        {
+          rating: 2,
+          restaurantName: INJECT_TAG,
+          customerName: INJECT_LINK,
+          customerSubtitle: INJECT_TAG,
+          comment: INJECT_ATTR,
+          branch: INJECT_LINK,
+          tableNumber: INJECT_TAG,
+          reviewUrl: INJECT_URL,
+          aiDraft: INJECT_LINK,
+          aiTone: INJECT_TAG,
+          tags: [INJECT_TAG, INJECT_LINK],
+          platformLabel: INJECT_ATTR,
+          submittedAt: AT,
+        },
+        locale,
+      ),
+  },
+
   // ── new-review ────────────────────────────────────────────────────────
   {
     id: 'new-review',
@@ -179,6 +210,27 @@ export const FIXTURES_G2: MailFixture[] = [
       ),
   },
 
+  {
+    id: 'new-review:inject',
+    template: 'new-review',
+    render: (locale) =>
+      renderNewReview(
+        {
+          rating: 4,
+          restaurantName: INJECT_TAG,
+          customerName: INJECT_LINK,
+          comment: INJECT_LINK + INJECT_TAG,
+          branch: INJECT_ATTR,
+          tableNumber: INJECT_TAG,
+          platform: INJECT_LINK,
+          reviewUrl: INJECT_URL,
+          shareUrl: INJECT_URL,
+          submittedAt: AT,
+        },
+        locale,
+      ),
+  },
+
   // ── customer-reply ────────────────────────────────────────────────────
   {
     id: 'customer-reply',
@@ -233,7 +285,8 @@ export const FIXTURES_G2: MailFixture[] = [
       ),
   },
   {
-    // Production sender shape: only the message, nothing optional.
+    // Production sender shape (sendCustomerReplyEmail via the reply route): no
+    // ownerName, no actions / coupon / phone / maps — only the typed message.
     id: 'customer-reply:minimal',
     template: 'customer-reply',
     render: (locale) =>
@@ -241,7 +294,7 @@ export const FIXTURES_G2: MailFixture[] = [
         {
           customerName: 'Defne',
           restaurantName: 'Kadıköy Bistro',
-          ownerName: 'Mert Demir',
+          rating: 2,
           message: 'Merhaba Defne,\n\nGeri bildirimin için teşekkür ederiz. Konuyu ekibimizle konuştuk.',
         },
         locale,
@@ -260,6 +313,44 @@ export const FIXTURES_G2: MailFixture[] = [
           couponCode: 'MODA10',
           couponLabel: 'Bir sonraki ziyaretinde\nkahveler bizden.',
           phone: '+90 532 555 12 34',
+        },
+        locale,
+      ),
+  },
+
+  {
+    // Production shape, anonymous customer + long restaurant name.
+    id: 'customer-reply:production-anon',
+    template: 'customer-reply',
+    render: (locale) =>
+      renderCustomerReply(
+        {
+          customerName: null,
+          restaurantName: 'Kadıköy Moda Sahil Balıkçısı',
+          message: 'Merhaba,\n\nGeri bildirimin için teşekkür ederiz. Konuyu ekibimizle konuştuk, bir sonraki ziyaretinde seni daha iyi ağırlamak isteriz.',
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'customer-reply:inject',
+    template: 'customer-reply',
+    render: (locale) =>
+      renderCustomerReply(
+        {
+          customerName: INJECT_LINK,
+          restaurantName: INJECT_TAG,
+          ownerName: INJECT_LINK,
+          message: `${INJECT_TAG}\n\n${INJECT_ATTR}`,
+          actions: [INJECT_TAG],
+          actionDescriptions: { [INJECT_TAG]: INJECT_LINK },
+          couponCode: INJECT_TAG,
+          couponLabel: INJECT_LINK,
+          couponBody: INJECT_ATTR,
+          phone: INJECT_ATTR,
+          mapsUrl: INJECT_URL,
+          mapsLabel: INJECT_TAG,
+          signaturePostscript: INJECT_LINK,
         },
         locale,
       ),
@@ -313,6 +404,24 @@ export const FIXTURES_G2: MailFixture[] = [
           delta: -0.6,
           reviewCount: 8,
           inboxUrl: REVIEW_URL,
+        },
+        locale,
+      ),
+  },
+
+  {
+    id: 'rating-drop-alert:inject',
+    template: 'rating-drop-alert',
+    render: (locale) =>
+      renderRatingDropAlert(
+        {
+          firstName: INJECT_LINK,
+          restaurantName: INJECT_TAG,
+          currentAvg: 3.9,
+          baselineAvg: 4.5,
+          delta: -0.6,
+          reviewCount: 8,
+          inboxUrl: INJECT_URL,
         },
         locale,
       ),
@@ -381,6 +490,22 @@ export const FIXTURES_G2: MailFixture[] = [
       ),
   },
 
+  {
+    id: 'first-feedback-celebration:inject',
+    template: 'first-feedback-celebration',
+    render: (locale) =>
+      renderFirstFeedbackCelebration(
+        {
+          ownerName: INJECT_LINK,
+          restaurantName: INJECT_TAG,
+          rating: 4,
+          comment: INJECT_LINK + INJECT_ATTR,
+          feedbackUrl: INJECT_URL,
+        },
+        locale,
+      ),
+  },
+
   // ── first-reply-celebration ───────────────────────────────────────────
   {
     id: 'first-reply-celebration',
@@ -418,6 +543,19 @@ export const FIXTURES_G2: MailFixture[] = [
           ownerName: null,
           restaurantName: 'Moda Kahve Evi',
           reviewsUrl: `${APP_URL}/tr/dashboard/google-reviews`,
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'first-reply-celebration:inject',
+    template: 'first-reply-celebration',
+    render: (locale) =>
+      renderFirstReplyCelebration(
+        {
+          ownerName: INJECT_LINK,
+          restaurantName: INJECT_TAG,
+          reviewsUrl: INJECT_URL,
         },
         locale,
       ),

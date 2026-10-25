@@ -4,7 +4,7 @@
 // Reassures the owner that everything is intact and points them back to
 // the dashboard. Companion to account-deletion-scheduled.
 
-import { PULSE } from '../tokens';
+import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderButton, renderP, spacer } from '../components';
@@ -72,15 +72,21 @@ export async function renderAccountDeletionCanceled(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const checkChip = `<span style="display:inline-block;width:24px;height:24px;border-radius:12px;background:${PULSE.lime};color:${PULSE.graphite};text-align:center;font-size:13px;font-weight:700;line-height:24px;vertical-align:middle;margin-right:10px;">&#10003;</span>`;
+  // Chip + status as a two-cell row: when the status wraps on 320px the second
+  // line hangs under the text, not under the chip.
+  const statusRow = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+    <td valign="top" width="34" style="width:34px;padding:1px 10px 0 0;"><div style="width:24px;height:24px;border-radius:12px;background:${PULSE.lime};color:${PULSE.graphite};text-align:center;font-family:${FONTS.heading};font-size:13px;font-weight:700;line-height:24px;">&#10003;</div></td>
+    <td valign="top" style="font-family:${FONTS.heading};font-size:20px;font-weight:600;letter-spacing:-0.01em;line-height:1.3;color:${PULSE.graphite};">${copy.statusValue}</td>
+  </tr></table>`;
 
   const content = securityContent(`
     ${securityHero({
       eyebrow: copy.eyebrow,
-      eyebrowColor: PULSE.success,
+      eyebrowColor: '#15803D',
       title: copy.title,
       accent: copy.titleAccent,
-      accentColor: PULSE.limeDeep,
+      accentColor: PULSE.graphite,
+      accentHighlight: true,
       intro: copy.intro,
     })}
     ${spacer(28)}
@@ -90,12 +96,7 @@ export async function renderAccountDeletionCanceled(
       body: securityMetaGrid(
         [
           { label: copy.accountLabel, value: accountEmail, breakable: true, full: true },
-          {
-            label: copy.statusLabel,
-            value: `${checkChip}<span style="vertical-align:middle;">${copy.statusValue}</span>`,
-            strong: true,
-            full: true,
-          },
+          { label: copy.statusLabel, value: statusRow, full: true },
         ],
         'success',
       ),

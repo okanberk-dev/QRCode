@@ -3,7 +3,10 @@
 //
 // Table-based + inline-styled (no flex/grid/svg) so Gmail and Outlook render it
 // like Apple Mail. Mobile behaviour comes from the shared layout.ts classes
-// (bz-pad, bz-pad-tight, bz-btn, bz-break, bz-h1).
+// (bz-pad, bz-pad-tight, bz-btn, bz-h1). Free-text cells (names, locations) rely
+// on the layout's global overflow-wrap:anywhere — they wrap at spaces first and
+// only split a token that cannot fit a line on its own. bz-break (break-all)
+// is reserved for emails/tokens, never ordinary words.
 //
 // Every string passed in is expected to be HTML-safe already (templates escape
 // user values and run copy through deepSubstitute before calling these).
@@ -108,8 +111,8 @@ export function teamPerson(tone: TeamTone, rawName: string, nameHtml: string, su
             </tr>
           </table>
         </td>
-        <td valign="middle" class="bz-break" style="font-family:${FONTS.heading};font-size:18px;font-weight:600;line-height:1.3;letter-spacing:-0.01em;color:${PULSE.graphite};">
-          ${nameHtml}${subHtml ? `<div class="bz-break" style="margin-top:2px;font-family:${FONTS.body};font-size:13px;font-weight:400;letter-spacing:0;line-height:1.45;color:${PULSE.n600};">${subHtml}</div>` : ''}
+        <td valign="middle" style="font-family:${FONTS.heading};font-size:18px;font-weight:600;line-height:1.3;letter-spacing:-0.01em;color:${PULSE.graphite};">
+          ${nameHtml}${subHtml ? `<div style="margin-top:2px;font-family:${FONTS.body};font-size:13px;font-weight:400;letter-spacing:0;line-height:1.45;color:${PULSE.n600};">${subHtml}</div>` : ''}
         </td>
       </tr>
     </table>
@@ -125,7 +128,7 @@ export function teamBulletList(itemsHtml: string[], dotColor: string = PULSE.lim
           <td valign="top" width="18" style="width:18px;padding:${i === 0 ? '7px' : '15px'} 0 0;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="8" height="8" style="width:8px;height:8px;background:${dotColor};border-radius:4px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table>
           </td>
-          <td valign="top" class="bz-break" style="padding:${i === 0 ? '0' : '8px'} 0 0;font-family:${FONTS.body};font-size:14px;font-weight:500;line-height:1.5;color:${PULSE.graphite};">${it}</td>
+          <td valign="top" style="padding:${i === 0 ? '0' : '8px'} 0 0;font-family:${FONTS.body};font-size:14px;font-weight:500;line-height:1.5;color:${PULSE.graphite};">${it}</td>
         </tr>`,
     )
     .join('');

@@ -38,11 +38,15 @@ export async function renderVerifyEmail(
     }
   })();
 
+  const hasName = Boolean(params.firstName && params.firstName.trim());
+
   const inlineDefault = isTr ? {
     eyebrow: 'E-POSTA ONAYI',
     title: 'Hesabını birkaç',
     titleAccent: 'saniyede aç',
-    intro: 'Merhaba <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Buaze hesabını oluşturduğun için teşekkürler. Devam edebilmek için aşağıdaki butonla e-posta adresini onayla. Bağlantı 24 saat geçerli.',
+    intro: hasName
+      ? 'Merhaba <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Buaze hesabını oluşturduğun için teşekkürler. Devam edebilmek için aşağıdaki butonla e-posta adresini onayla. Bağlantı 24 saat geçerli.'
+      : 'Merhaba, Buaze hesabını oluşturduğun için teşekkürler. Devam edebilmek için aşağıdaki butonla e-posta adresini onayla. Bağlantı 24 saat geçerli.',
     cardEyebrow: 'Tek kullanımlık link',
     statusText: 'Aktif · 24 saat geçerli',
     cta: 'E-postamı onayla →',
@@ -52,7 +56,9 @@ export async function renderVerifyEmail(
     eyebrow: 'EMAIL VERIFICATION',
     title: 'Activate your account',
     titleAccent: 'in seconds',
-    intro: 'Hi <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Thanks for creating a Buaze account. To continue, confirm your email address with the button below. The link is valid for 24 hours.',
+    intro: hasName
+      ? 'Hi <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Thanks for creating a Buaze account. To continue, confirm your email address with the button below. The link is valid for 24 hours.'
+      : 'Hi, thanks for creating a Buaze account. To continue, confirm your email address with the button below. The link is valid for 24 hours.',
     cardEyebrow: 'One-time link',
     statusText: 'Active · 24h valid',
     cta: 'Verify my email →',
@@ -61,10 +67,19 @@ export async function renderVerifyEmail(
   };
 
   const merged = await loadMailCopy('verify-email', locale, inlineDefault);
-  const fallbackName = isTr ? 'merhaba' : 'hi';
-  const vars = { firstName: params.firstName || fallbackName };
+  const vars = { firstName: hasName ? (params.firstName as string) : '' };
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
+  if (!hasName) {
+    // An admin override may still carry ${firstName}: drop the empty name slot
+    // ("Merhaba <strong></strong>. …") instead of inventing a name.
+    const cleanGreeting = (t: string) =>
+      t
+        .replace(/<(strong|span)\b[^>]*>\s*<\/\1>/g, '')
+        .replace(/^(\s*[\p{L}]+)\s*([.,!])\s+/u, '$1, ');
+    copy.intro = cleanGreeting(copy.intro);
+    copyText.intro = cleanGreeting(copyText.intro);
+  }
 
   const verifyHrefSafe = escapeHtml(params.verifyUrl);
   const displayUrlSafe = escapeHtml(displayUrl);

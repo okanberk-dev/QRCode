@@ -204,6 +204,9 @@ export async function renderNewsletter(
     ? escapeHtml(customTitleTrimmed)
     : `${copy.titleA}<br/><span style="display:inline-block;background:${PULSE.lime};padding:0 8px;border-radius:8px;">${copy.titleAccent}</span> ${copy.titleEnd}`;
   const introText = customIntroTrimmed ?? copy.intro;
+  // The campaign intro is admin-typed plain text (textarea); the default copy is
+  // trusted, already-substituted HTML. Only the custom text needs escaping.
+  const introHtml = customIntroTrimmed !== undefined ? escapeHtml(customIntroTrimmed) : copy.intro;
 
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -215,7 +218,7 @@ export async function renderNewsletter(
             ${titleHtml}
           </h1>
           ${spacer(20)}
-          ${renderP(introText, { size: 16 })}
+          ${renderP(introHtml, { size: 16 })}
           ${spacer(24)}
           ${renderButton({ href: escapeHtml(editorNoteUrl), label: copy.cta, size: 'lg' })}
           ${spacer(36)}
@@ -238,9 +241,11 @@ export async function renderNewsletter(
     </table>
   `;
 
+  // Subject (admin-authored campaign subject) and preheader (a post excerpt)
+  // land in <title> / the hidden preheader div — escape both for those sinks.
   const html = pulseLayout({
-    subject,
-    preheader,
+    subject: escapeHtml(subject),
+    preheader: escapeHtml(preheader),
     content,
     eyebrow: `${issueLabel} · ${monthLabel.split(' ')[0]}`,
     footer: {

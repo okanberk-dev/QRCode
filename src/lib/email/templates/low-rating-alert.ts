@@ -52,6 +52,7 @@ export async function renderLowRatingAlert(
     ? escapeHtml(params.customerSubtitle)
     : (params.platformLabel ? escapeHtml(params.platformLabel) : '');
 
+  const reviewHref = escapeHtml(params.reviewUrl);
   const safeComment = params.comment ? escapeHtml(params.comment).replace(/\n/g, '<br>') : '';
   const tags = (params.tags ?? []).slice(0, 4);
 
@@ -141,8 +142,8 @@ export async function renderLowRatingAlert(
               <tr>
                 <td class="stack-col" valign="middle" style="font-family:${FONTS.label};font-size:11px;line-height:1.5;color:${PULSE.n400};">${escapeHtml(copy.toneLabel)}</td>
                 <td class="stack-col" valign="middle" align="right">
-                  <a href="${params.reviewUrl}" class="bz-btn" style="display:inline-block;font-family:${FONTS.body};font-size:13px;font-weight:500;line-height:1.2;color:${PULSE.pure};text-decoration:none;padding:10px 16px;border:1px solid ${PULSE.n600};border-radius:8px;margin-right:6px;">${copy.aiEdit}</a>
-                  <a href="${params.reviewUrl}" class="bz-btn" style="display:inline-block;font-family:${FONTS.body};font-size:13px;font-weight:600;line-height:1.2;color:${PULSE.graphite};background:${PULSE.lime};text-decoration:none;padding:11px 16px;border-radius:8px;">${copy.aiApprove}</a>
+                  <a href="${reviewHref}" class="bz-btn" style="display:inline-block;font-family:${FONTS.body};font-size:13px;font-weight:500;line-height:1.2;color:${PULSE.pure};text-decoration:none;padding:10px 16px;border:1px solid ${PULSE.n600};border-radius:8px;margin-right:6px;">${copy.aiEdit}</a>
+                  <a href="${reviewHref}" class="bz-btn" style="display:inline-block;font-family:${FONTS.body};font-size:13px;font-weight:600;line-height:1.2;color:${PULSE.graphite};background:${PULSE.lime};text-decoration:none;padding:11px 16px;border-radius:8px;">${copy.aiApprove}</a>
                 </td>
               </tr>
             </table>
@@ -153,7 +154,7 @@ export async function renderLowRatingAlert(
   // Quick actions — 3-col grid on desktop, stacked cards on phones.
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const localePath = isTr ? 'tr' : 'en';
-  const quickHrefs = [params.reviewUrl, params.reviewUrl, `${baseAppUrl}/${localePath}/dashboard/feedbacks`];
+  const quickHrefs = [reviewHref, reviewHref, escapeHtml(`${baseAppUrl}/${localePath}/dashboard/feedbacks`)];
   const quickCards = copy.quickActions.map((a, i) => `
     <td class="stack-col" valign="top" style="width:33.33%;padding:0 ${i === 0 ? '6px 0 0' : i === copy.quickActions.length - 1 ? '0 0 6px' : '6px'};">
       <a href="${quickHrefs[i]}" style="display:block;padding:16px;border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
@@ -238,9 +239,11 @@ export async function renderLowRatingAlert(
     </table>
   `;
 
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
   const html = pulseLayout({
-    subject,
-    preheader,
+    subject: escapeHtml(subject),
+    preheader: escapeHtml(preheader),
     content,
     eyebrow: '',
     footer: { locale, unsubText: isTr ? 'Düşük puan uyarılarını ayarlamak için' : 'To adjust low-rating alerts' },

@@ -92,7 +92,7 @@ export async function renderNewReview(
   // Secondary CTA: `bz-btn` goes full width under the primary on phones; height
   // matches renderButton('md') (13px + 1px border + 16.8px line).
   const shareCta = params.shareUrl
-    ? `<a href="${params.shareUrl}" class="bz-btn" style="display:inline-block;padding:13px 24px;border:1px solid ${PULSE.n300};border-radius:10px;font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.2;color:${PULSE.graphite};text-decoration:none;margin-left:10px;">${copy.secondaryCta}</a>`
+    ? `<a href="${escapeHtml(params.shareUrl)}" class="bz-btn" style="display:inline-block;padding:13px 24px;border:1px solid ${PULSE.n300};border-radius:10px;font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.2;color:${PULSE.graphite};text-decoration:none;margin-left:10px;">${copy.secondaryCta}</a>`
     : '';
 
   // Two-tone card (lime-soft identity band + white quote area): same anatomy as
@@ -140,16 +140,18 @@ export async function renderNewReview(
             </div>
           </div>
           ${spacer(28)}
-          ${renderButton({ href: params.reviewUrl, label: copy.primaryCta, size: 'md' })}
+          ${renderButton({ href: escapeHtml(params.reviewUrl), label: copy.primaryCta, size: 'md' })}
           ${shareCta}
         </td>
       </tr>
     </table>
   `;
 
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
   const html = pulseLayout({
-    subject,
-    preheader,
+    subject: escapeHtml(subject),
+    preheader: escapeHtml(preheader),
     content,
     eyebrow: isTr ? 'Yeni yorum · Anında' : 'New review · Live',
     footer: { locale, unsubText: isTr ? 'Yeni yorum bildirimlerini kapatmak için' : 'To stop new-review alerts' },

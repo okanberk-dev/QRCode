@@ -84,23 +84,25 @@ export function renderWeeklyDigestSummary(
     },
   ];
 
+  // The card IS the table cell, so the two cards in a row stay the same height
+  // when one label wraps ("Yorum yok (atlandı)" at 320-375px). The table is
+  // border-collapse:separate (inline) so the cell radius renders; the gap is a
+  // spacer cell.
   const heroCard = (s: (typeof heroStats)[number]) => {
     const accent = s.tone === 'lime' ? PULSE.lime : s.tone === 'danger' ? '#F87171' : s.tone === 'warn' ? PULSE.warning : PULSE.pure;
     return `
-      <div style="background:${PULSE.n800};border-radius:14px;padding:16px;">
+      <td valign="top" width="50%" style="width:50%;background:${PULSE.n800};border-radius:14px;padding:16px 14px;">
         <div style="font-family:${FONTS.heading};font-size:30px;font-weight:600;letter-spacing:-0.02em;color:${accent};line-height:1.1;">${s.value}</div>
         <div style="font-family:${FONTS.body};font-size:12px;font-weight:500;line-height:1.4;color:${PULSE.n400};margin-top:8px;">${s.label}</div>
-      </div>`;
+      </td>`;
   };
+  const heroGap = `<td width="12" style="width:12px;min-width:12px;font-size:1px;line-height:1px;"><div style="width:12px;font-size:1px;line-height:1px;">&nbsp;</div></td>`;
   const heroRow = (a: (typeof heroStats)[number], b: (typeof heroStats)[number]) => `
-    <tr>
-      <td valign="top" style="width:50%;padding:0 6px 0 0;">${heroCard(a)}</td>
-      <td valign="top" style="width:50%;padding:0 0 0 6px;">${heroCard(b)}</td>
-    </tr>`;
+    <tr>${heroCard(a)}${heroGap}${heroCard(b)}</tr>`;
   const heroGrid = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:0;">
       ${heroRow(heroStats[0], heroStats[1])}
-      <tr><td colspan="2" height="12" style="height:12px;font-size:1px;line-height:12px;">&nbsp;</td></tr>
+      <tr><td colspan="3" height="12" style="height:12px;font-size:1px;line-height:12px;">&nbsp;</td></tr>
       ${heroRow(heroStats[2], heroStats[3])}
     </table>`;
 
@@ -112,7 +114,7 @@ export function renderWeeklyDigestSummary(
   const maskEmail = (email: string) => {
     const [local, domain] = email.split('@');
     if (!local || !domain) return email;
-    return `${local.charAt(0)}${'*'.repeat(Math.max(2, local.length - 1))}@${domain}`;
+    return `${local.charAt(0)}${'*'.repeat(Math.min(6, Math.max(2, local.length - 1)))}@${domain}`;
   };
 
   const metricLabel = (text: string) =>
@@ -138,16 +140,16 @@ export function renderWeeklyDigestSummary(
           <td style="padding:16px 0;border-bottom:1px solid ${PULSE.n200};">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td valign="top" style="font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">
-                  ${escapeHtml(r.restaurantName)}
-                  <div class="bz-break" style="font-family:${FONTS.body};font-size:11px;font-weight:400;line-height:1.5;color:${PULSE.n500};margin-top:2px;">${escapeHtml(maskEmail(r.recipientEmail))}</div>
-                </td>
+                <td valign="top" style="font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${escapeHtml(r.restaurantName)}</td>
                 <td valign="top" align="right" style="width:1%;padding-left:12px;white-space:nowrap;">
-                  <span style="display:inline-block;background:${statusBg};color:${statusFg};font-family:${FONTS.label};font-size:10px;font-weight:600;letter-spacing:0.08em;line-height:1.4;padding:4px 10px;border-radius:100px;text-transform:uppercase;white-space:nowrap;">${statusLabel}</span>
+                  <span style="display:inline-block;background:${statusBg};color:${statusFg};font-family:${FONTS.label};font-size:10px;font-weight:600;letter-spacing:0.1em;line-height:1.4;padding:4px 10px;border-radius:100px;text-transform:uppercase;white-space:nowrap;">${statusLabel}</span>
                 </td>
               </tr>
               <tr>
-                <td colspan="2" style="padding-top:10px;line-height:1.9;">
+                <td colspan="2" class="bz-break" style="padding-top:4px;font-family:${FONTS.body};font-size:11px;font-weight:400;line-height:1.55;color:${PULSE.n500};">${escapeHtml(maskEmail(r.recipientEmail))}</td>
+              </tr>
+              <tr>
+                <td colspan="2" style="padding-top:8px;line-height:1.9;">
                   ${metricLabel(isTr ? 'Yorum' : 'Reviews')} ${metricValue(String(r.total))}${metricSep}${metricLabel(isTr ? 'Ort.' : 'Avg')} ${metricValue(r.avgRating.toFixed(1))}${metricSep}${aiBadge}
                 </td>
               </tr>
@@ -177,7 +179,7 @@ export function renderWeeklyDigestSummary(
               : `Weekly digest reached <span style="color:${PULSE.lime};">${params.totals.sent}</span><br/>restaurants.`}
           </h1>
           ${spacer(10)}
-          <p style="font-family:${FONTS.body};font-size:12px;line-height:1.5;letter-spacing:0.02em;color:${PULSE.n400};margin:0;">${dateStr}</p>
+          <p style="font-family:${FONTS.body};font-size:12px;line-height:1.55;letter-spacing:0.02em;color:${PULSE.n400};margin:0;">${dateStr}</p>
           ${spacer(28)}
           ${heroGrid}
         </td>

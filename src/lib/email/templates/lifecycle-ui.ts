@@ -41,7 +41,7 @@ export function lcEcgRow(bg: string, tone: 'graphite' | 'lime'): string {
 export function lcH1(html: string, opts: { color?: string; size?: number } = {}): string {
   const size = opts.size ?? 34;
   const cls = size >= 40 ? 'bz-h1-lg' : 'bz-h1';
-  return `<h1 class="${cls}" style="font-family:${FONTS.heading};font-size:${size}px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${opts.color ?? PULSE.graphite};margin:0;">${html}</h1>`;
+  return `<h1 class="${cls}" style="font-family:${FONTS.heading};font-size:${size}px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${opts.color ?? PULSE.graphite};margin:0;overflow-wrap:anywhere;word-break:break-word;">${html}</h1>`;
 }
 
 /** Amber pill used as an eyebrow when a mail flags something that needs attention. */

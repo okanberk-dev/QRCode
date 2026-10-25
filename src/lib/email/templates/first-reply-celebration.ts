@@ -27,16 +27,16 @@ export async function renderFirstReplyCelebration(
 
   const subject = isTr ? 'İlk Google yanıtın gitti' : 'Your first Google reply is live';
   const preheader = isTr
-    ? 'Müşteriyle ilk kez kalıcı bir kayıtta konuştun. Bu basit refleks itibarı katlar.'
-    : 'You just spoke to a customer in a permanent record for the first time. This habit multiplies reputation.';
+    ? 'Müşteriyle ilk kez kalıcı bir kayıtta konuştun. Bu basit refleks itibarını güçlendirir.'
+    : 'You just spoke to a customer in a permanent record for the first time. This simple habit builds reputation.';
 
   const inlineDefault = isTr ? {
     eyebrow: 'Reputation OS · İlk yanıt',
     title: 'İlk Google',
     titleAccent: 'yanıtın gitti',
     intro: ownerName
-      ? `Bravo <span style="color:${PULSE.graphite};font-weight:600;">${ownerName}</span>, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar yanıtlanmayanlara göre %33 daha fazla yeni müşteriye dönüşür (Google internal data).`
-      : `Bravo, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar yanıtlanmayanlara göre %33 daha fazla yeni müşteriye dönüşür (Google internal data).`,
+      ? `Bravo <span style="color:${PULSE.graphite};font-weight:600;">${ownerName}</span>, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar, yeni müşterilere işletmenin onları dinlediğini gösterir.`
+      : `Bravo, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar, yeni müşterilere işletmenin onları dinlediğini gösterir.`,
     habitTitle: 'Sıradaki refleks',
     habitBody: 'Her sabah 5 dakika ayır: yeni gelen yorumları tara, 5 puanlara teşekkür et, 1-3 puanlara önce dinle sonra çöz yaklaşımıyla yaz.',
     cta: 'Yorum panelini aç →',
@@ -46,8 +46,8 @@ export async function renderFirstReplyCelebration(
     title: 'Your first Google',
     titleAccent: 'reply is live',
     intro: ownerName
-      ? `Well done <span style="color:${PULSE.graphite};font-weight:600;">${ownerName}</span>, you just sent the first Google review reply for <strong>${restaurantName}</strong>. Replied reviews convert new customers 33% better than unreplied ones (Google internal data).`
-      : `You just sent the first Google review reply for <strong>${restaurantName}</strong>. Replied reviews convert new customers 33% better than unreplied ones (Google internal data).`,
+      ? `Well done <span style="color:${PULSE.graphite};font-weight:600;">${ownerName}</span>, you just sent the first Google review reply for <strong>${restaurantName}</strong>. Replying to reviews shows future customers that you listen.`
+      : `You just sent the first Google review reply for <strong>${restaurantName}</strong>. Replying to reviews shows future customers that you listen.`,
     habitTitle: 'The habit that follows',
     habitBody: 'Block 5 minutes every morning: scan new reviews, thank 5-stars, listen-then-fix the 1-3s.',
     cta: 'Open reviews panel →',
@@ -86,7 +86,7 @@ export async function renderFirstReplyCelebration(
             <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.65;color:${PULSE.n700};">${copy.habitBody}</p>
           </div>
           ${spacer(26)}
-          ${renderButton({ href: params.reviewsUrl, label: copy.cta, variant: 'dark' })}
+          ${renderButton({ href: escapeHtml(params.reviewsUrl), label: copy.cta, variant: 'dark' })}
           ${spacer(22)}
           <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.65;color:${PULSE.n500};">
             ${copy.note}
@@ -96,7 +96,9 @@ export async function renderFirstReplyCelebration(
     </table>
   `;
 
-  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
   const text = [
     copyText.eyebrow, '', `${copy.title} ${copy.titleAccent}`, '',
     copyText.intro.replace(/<[^>]*>/g, ''), '',

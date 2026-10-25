@@ -139,7 +139,8 @@ export function renderOwnerSegmentMail(
     </table>
   `;
 
-  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
+  // Admin-authored subject goes into <title>; escape it for that raw-HTML sink.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
 
   const text = `${greeting}
 
