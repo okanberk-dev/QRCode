@@ -202,7 +202,7 @@ export async function renderNewsletter(
   const customIntroTrimmed = params.customIntro?.trim();
   const titleHtml = customTitleTrimmed
     ? escapeHtml(customTitleTrimmed)
-    : `${copy.titleA}<br/><span style="display:inline-block;background:${PULSE.lime};padding:0 8px;border-radius:8px;">${copy.titleAccent}</span> ${copy.titleEnd}`;
+    : `${copy.titleA}<br/><span style="display:inline-block;margin-top:8px;background:${PULSE.lime};padding:0 8px;border-radius:8px;">${copy.titleAccent}</span> ${copy.titleEnd}`;
   const introText = customIntroTrimmed ?? copy.intro;
   // The campaign intro is admin-typed plain text (textarea); the default copy is
   // trusted, already-substituted HTML. Only the custom text needs escaping.
