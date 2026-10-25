@@ -2,8 +2,9 @@
 // deletion, ...). One Pulse design in Poppins so the click-through from a mail
 // lands on the same visual family instead of three ad-hoc pages.
 //
-// Pure + dependency-free (no Prisma / next): routes import the page builders
-// from landing-pages.ts, fixtures and the visual audit import this file too.
+// Pure + dependency-free (no Prisma / next): routes pass the copy from
+// landing-pages.ts into renderMailLandingPage(); fixtures and the visual audit
+// import both files too.
 //
 // This is a real browser page, not an HTML mail, so flex and inline SVG are
 // fine here; the page still works without JS, honours safe-area insets and
@@ -140,33 +141,35 @@ body{margin:0;background:${PULSE.n100};color:${PULSE.graphite};font-family:${FON
 .page{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:max(32px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));}
 .card{width:100%;max-width:480px;background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:20px;overflow:hidden;box-shadow:0 16px 40px -20px rgba(10,10,10,0.18);}
 .bar{height:4px;background:${t.accent};}
-.hdr{padding:20px 28px;border-bottom:1px solid ${PULSE.n200};}
-.logo{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:${PULSE.graphite};}
+.hdr{padding:10px 28px;border-bottom:1px solid ${PULSE.n200};}
+.logo{display:inline-flex;align-items:center;gap:7px;min-height:44px;text-decoration:none;color:${PULSE.graphite};}
 .logo img{display:block;width:28px;height:28px;}
 .logo span{font-weight:600;font-size:20px;letter-spacing:-0.03em;line-height:1;}
 .main{padding:32px 28px 30px;}
 .chip{width:56px;height:56px;border-radius:18px;background:${t.chipBg};color:${t.chipFg};display:flex;align-items:center;justify-content:center;}
 .chip svg{display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;max-width:100%;margin:20px 0 0;padding:6px 12px;border-radius:999px;background:${t.pillBg};border:1px solid ${t.pillBorder};color:${t.pillFg};font-weight:600;font-size:11px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;}
-.eyebrow i{flex:none;width:7px;height:7px;border-radius:50%;background:${t.accent};}
+.eyebrow{display:inline-flex;align-items:flex-start;gap:8px;max-width:100%;margin:20px 0 0;padding:6px 12px;border-radius:15px;background:${t.pillBg};border:1px solid ${t.pillBorder};color:${t.pillFg};font-weight:600;font-size:11px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;}
+.eyebrow i{flex:none;width:7px;height:7px;margin-top:4px;border-radius:50%;background:${t.accent};}
+.eyebrow span{min-width:0;overflow-wrap:anywhere;}
 h1{margin:16px 0 12px;font-weight:600;font-size:28px;line-height:1.18;letter-spacing:-0.02em;color:${PULSE.graphite};overflow-wrap:anywhere;text-wrap:balance;}
 .copy{margin:0;font-size:15px;line-height:1.65;color:${PULSE.n600};overflow-wrap:anywhere;}
 .detail{margin-top:20px;}
 .label{font-weight:600;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${PULSE.n500};margin-bottom:8px;}
 .value{padding:11px 14px;border-radius:10px;background:${PULSE.n50};border:1px solid ${PULSE.n200};font-family:${FONTS.code};font-size:13px;line-height:1.5;color:${PULSE.n800};overflow-wrap:anywhere;word-break:break-all;}
 .actions{margin-top:26px;}
-.cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:13px 24px;border-radius:12px;background:${PULSE.graphite};color:${PULSE.pure};font-weight:600;font-size:14px;line-height:1.2;text-decoration:none;transition:background-color .18s ease,transform .18s ease;}
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;max-width:100%;min-height:48px;text-align:center;padding:13px 24px;border-radius:12px;background:${PULSE.graphite};color:${PULSE.pure};font-weight:600;font-size:14px;line-height:1.2;text-decoration:none;transition:background-color .18s ease,transform .18s ease;}
 .cta:hover{background:${PULSE.n800};}
 .cta:active{transform:scale(0.98);}
 .cta:focus-visible,.logo:focus-visible,.ftr a:focus-visible{outline:3px solid ${PULSE.lime};outline-offset:3px;}
+.cta span{min-width:0;overflow-wrap:anywhere;}
 .cta .arrow{flex:none;}
 .ftr{background:${PULSE.n50};border-top:1px solid ${PULSE.n200};padding:22px 28px 22px;}
 .ftr img.ecg{display:block;width:100%;height:auto;margin:0 0 16px;border:0;}
 .ftr .row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 16px;font-size:12px;line-height:1.5;color:${PULSE.n500};}
-.ftr a{color:${PULSE.n700};font-weight:500;text-decoration:none;border-bottom:1px solid ${PULSE.n300};}
+.ftr a{display:inline-block;padding:10px 0;color:${PULSE.n700};font-weight:500;text-decoration:underline;text-decoration-color:${PULSE.n300};text-underline-offset:4px;}
 @media (max-width:520px){
   .main{padding:28px 22px 26px;}
-  .hdr{padding:18px 22px;}
+  .hdr{padding:8px 22px;}
   .ftr{padding:20px 22px;}
   h1{font-size:24px;}
   .cta{display:flex;width:100%;}

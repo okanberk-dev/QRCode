@@ -133,7 +133,9 @@ export function renderImpersonationStart(
         { label: copy.metaAdmin, value: adminHtml, breakable: true },
         { label: copy.metaDuration, value: copy.metaDurationValue, strong: true },
         { label: copy.metaEnds, value: endsValue, strong: true, full: true },
-        { label: copy.metaReason, value: reasonHtml, breakable: true, full: true },
+        // Prose, not a token: wrap on word boundaries (break-all would split words
+        // mid-letter); overflow-wrap still lets a pasted URL break instead of growing the shell.
+        { label: copy.metaReason, value: `<span style="overflow-wrap:anywhere;word-break:normal;">${reasonHtml}</span>`, full: true },
       ]),
     })}
     ${spacer(24)}

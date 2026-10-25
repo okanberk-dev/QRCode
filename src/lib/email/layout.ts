@@ -94,7 +94,7 @@ u + #body a { color:inherit; text-decoration:none; font-size:inherit; font-famil
   table.bar-chart td { padding:0 2px !important; }
   table.bar-chart td > div:first-child { font-size:10px !important; }
   table.bar-chart td > div:last-child { font-size:9px !important; letter-spacing:0.05em !important; }
-  /* Type scale. Poppins runs ~8% wider than the old Space Grotesk/Inter pair,
+  /* Type scale. Poppins runs ~8% wider than the previous heading/body pair,
      so display sizes step down harder on phones. */
   h1.bz-h1 { font-size:26px !important; line-height:1.18 !important; }
   h1.bz-h1-lg { font-size:30px !important; line-height:1.12 !important; }

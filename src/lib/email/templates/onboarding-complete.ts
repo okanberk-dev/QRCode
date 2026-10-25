@@ -23,14 +23,14 @@ const TABLE = 'role="presentation" cellpadding="0" cellspacing="0" border="0"';
 function stepRow(n: number, label: string, href: string, last: boolean): string {
   const rule = last ? '' : `border-bottom:1px solid ${PULSE.n200};`;
   return `<tr>
-      <td valign="middle" width="44" style="width:44px;padding:14px 12px 14px 0;${rule}">
+      <td valign="middle" width="44" style="width:44px;padding:12px 12px 12px 0;${rule}">
         <table ${TABLE} width="32" style="width:32px;border-collapse:separate;"><tr><td width="32" height="32" align="center" valign="middle" style="width:32px;height:32px;background:${PULSE.graphite};border-radius:10px;font-family:${FONTS.label};font-size:13px;font-weight:600;line-height:1;color:${PULSE.lime};text-align:center;">${n}</td></tr></table>
       </td>
-      <td valign="middle" style="padding:14px 0;${rule}">
-        <a href="${escapeHtml(href)}" style="display:block;font-family:${FONTS.heading};font-size:15px;font-weight:600;line-height:1.4;color:${PULSE.graphite};text-decoration:none;">${label}</a>
+      <td valign="middle" style="padding:0;${rule}">
+        <a href="${escapeHtml(href)}" style="display:block;padding:15px 0;font-family:${FONTS.heading};font-size:15px;font-weight:600;line-height:1.4;color:${PULSE.graphite};text-decoration:none;">${label}</a>
       </td>
-      <td valign="middle" align="right" width="28" style="width:28px;padding:14px 0 14px 8px;${rule}">
-        <a href="${escapeHtml(href)}" style="display:block;font-family:${FONTS.body};font-size:16px;font-weight:600;line-height:1.4;color:${PULSE.n500};text-decoration:none;">&rarr;</a>
+      <td valign="middle" align="right" width="28" style="width:28px;padding:0;${rule}">
+        <a href="${escapeHtml(href)}" style="display:block;padding:15px 0 15px 8px;font-family:${FONTS.body};font-size:16px;font-weight:600;line-height:1.4;color:${PULSE.n500};text-decoration:none;">&rarr;</a>
       </td>
     </tr>`;
 }
