@@ -1,5 +1,8 @@
+import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
-import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '../components';
+import { escapeHtml } from '../escape';
+import { renderP, renderButton } from '../components';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcFootnote } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { INACTIVE_REACTIVATION_DEFAULTS } from './lifecycle-defaults';
@@ -37,17 +40,30 @@ export async function renderInactiveReactivation(
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 
-  const content = [
-    renderEyebrow(copy.eyebrow),
-    renderH1(copy.title),
-    spacer(8),
-    renderP(copy.intro),
-    renderP(copy.suggestion),
-    spacer(28),
-    renderButton({ href: params.dashboardUrl, label: copy.cta, variant: 'dark', size: 'lg' }),
-    spacer(32),
-    renderP(copy.footnote, { color: '#737373', size: 12 }),
-  ].join('\n');
+  // Soft welcome-back hero → "three quick checks" callout → dark CTA.
+  const callout = `
+    <table ${LC_TABLE} width="100%" style="width:100%;border-collapse:separate;">
+      <tr>
+        <td width="4" style="width:4px;background:${PULSE.lime};border-radius:4px 0 0 4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-left:0;border-radius:0 14px 14px 0;padding:18px 20px;">${renderP(copy.suggestion, { size: 14, color: PULSE.n700 })}</td>
+      </tr>
+    </table>`;
+
+  const content = lcPage([
+    lcHero({
+      eyebrow: copy.eyebrow,
+      eyebrowColor: PULSE.n700,
+      title: copy.title,
+      titleSize: 34,
+      intro: [copy.intro],
+      introColor: PULSE.n700,
+      bg: PULSE.limeSoft,
+      ecg: 'graphite',
+    }),
+    lcSection(callout, { padding: '32px 40px 8px' }),
+    lcSection(renderButton({ href: escapeHtml(params.dashboardUrl), label: copy.cta, variant: 'dark', size: 'lg' }), { padding: '28px 40px 36px' }),
+    lcFootnote(copy.footnote),
+  ]);
 
   const text = [
     copyText.eyebrow,
@@ -65,7 +81,7 @@ export async function renderInactiveReactivation(
 
   return {
     subject,
-    html: pulseLayout({ subject, preheader, content }),
+    html: pulseLayout({ subject, preheader, content, footer: { locale } }),
     text,
   };
 }

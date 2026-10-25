@@ -17,7 +17,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderP, renderH2, spacer, renderStatusPill } from '../components';
+import { renderEyebrow, renderP, renderH2, renderButton, spacer, renderStatusPill } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -121,56 +121,67 @@ export async function renderAuditCompleted(
 
   const passedBlock =
     params.passed === true
-      ? renderStatusPill({ text: copy.passedYes, dotColor: PULSE.lime, textColor: PULSE.graphite, bgColor: '#EAF9B8' })
+      ? renderStatusPill({ text: copy.passedYes, dotColor: PULSE.limeDeep, textColor: PULSE.graphite, bgColor: PULSE.limeSoft })
       : params.passed === false
-        ? renderStatusPill({ text: copy.passedNo, dotColor: '#DC2626', textColor: '#991B1B', bgColor: '#FEE2E2' })
+        ? renderStatusPill({ text: copy.passedNo, dotColor: PULSE.danger, textColor: '#991B1B', bgColor: '#FEE2E2' })
         : hasScore
-          ? renderStatusPill({ text: copy.passedUnknown, dotColor: PULSE.n400, textColor: PULSE.n600, bgColor: PULSE.n50 })
+          ? renderStatusPill({ text: copy.passedUnknown, dotColor: PULSE.n400, textColor: PULSE.n600, bgColor: PULSE.n100 })
           : '';
 
-  const passingHint =
-    params.passingScore != null
-      ? `<span style="font-family:${FONTS.label};color:${PULSE.n500};font-size:12px;">· ${isTr ? 'Eşik' : 'Threshold'} ${params.passingScore}</span>`
+  const thresholdChip =
+    hasScore && params.passingScore != null
+      ? renderStatusPill({
+          text: `${isTr ? 'Eşik' : 'Threshold'} ${params.passingScore}`,
+          dotColor: PULSE.n400,
+          textColor: PULSE.n600,
+          bgColor: PULSE.n100,
+        })
       : '';
 
-  // Skor bloğu: puan varsa 42px rakamlar, yoksa "Puanlanmıyor" etiketi.
-  const scoreBody = hasScore
-    ? `<div style="font-family:${FONTS.heading};font-size:42px;font-weight:600;color:${PULSE.graphite};letter-spacing:-0.025em;line-height:1.1;margin-top:6px;">${params.score}<span style="color:${PULSE.n400};font-size:22px;">/100</span> ${passingHint}</div>`
-    : `<div style="margin-top:10px;">${renderStatusPill({ text: notScoredLabel, dotColor: PULSE.n400, textColor: PULSE.n600, bgColor: PULSE.pure })}</div>`;
-
-  const attentionBlock =
+  const attentionPill =
     attention > 0
-      ? `<div style="margin-top:12px;">${renderStatusPill({ text: attentionText(attention, isTr), dotColor: '#DC2626', textColor: '#991B1B', bgColor: '#FEE2E2' })}</div>`
+      ? renderStatusPill({ text: attentionText(attention, isTr), dotColor: PULSE.danger, textColor: '#991B1B', bgColor: '#FEE2E2' })
       : '';
 
+  // Score body: big number + progress bar when scored, a "Not scored" pill otherwise.
+  const barColor = params.passed === false ? PULSE.danger : params.passed === true ? PULSE.limeDeep : PULSE.graphite;
+  const scoreBody = hasScore
+    ? `
+        <div style="font-family:${FONTS.heading};font-size:56px;font-weight:600;color:${PULSE.graphite};letter-spacing:-0.03em;line-height:1.05;margin-top:10px;">${params.score}<span style="color:${PULSE.n400};font-size:22px;font-weight:500;letter-spacing:0;">/100</span></div>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:14px;">
+          <tr>
+            <td style="background:${PULSE.n200};border-radius:100px;height:8px;line-height:8px;font-size:1px;">
+              <div style="width:${Math.min(100, Math.max(2, Math.round(params.score as number)))}%;background:${barColor};height:8px;border-radius:100px;line-height:8px;font-size:1px;">&nbsp;</div>
+            </td>
+          </tr>
+        </table>`
+    : `<div style="margin-top:12px;">${renderStatusPill({ text: notScoredLabel, dotColor: PULSE.n400, textColor: PULSE.n600, bgColor: PULSE.pure })}</div>`;
+
+  const pillsHtml = [passedBlock, thresholdChip, attentionPill]
+    .filter(Boolean)
+    .map((pill) => `<span style="display:inline-block;margin:0 8px 8px 0;">${pill}</span>`)
+    .join('');
+
+  // One padded cell for the whole body: separate bz-pad rows would each get
+  // 28px top + bottom on phones and open 56px gaps between every block.
   const content = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.pure};border-radius:18px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.pure};">
       <tr>
-        <td class="bz-pad" style="padding:36px 40px 16px;">
+        <td class="bz-pad" style="padding:40px 40px 40px;">
           ${renderEyebrow(copy.eyebrow)}
-          ${spacer(8)}
+          ${spacer(12)}
           ${renderH2(escapeHtml(copy.titleLine))}
-          ${spacer(8)}
+          ${spacer(10)}
           ${renderP(copy.introLine)}
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:8px 40px 24px;">
-          <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:20px;">
-            <div style="font-family:${FONTS.label};color:${PULSE.n500};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">${escapeHtml(copy.scoreLabel)}</div>
+          ${spacer(24)}
+          <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:16px;padding:22px 22px 14px;">
+            ${renderEyebrow(escapeHtml(copy.scoreLabel))}
             ${scoreBody}
-            ${passedBlock ? `<div style="margin-top:12px;">${passedBlock}</div>` : ''}
-            ${attentionBlock}
+            ${pillsHtml ? `<div style="margin-top:16px;">${pillsHtml}</div>` : ''}
           </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:0 40px 24px;">
-          <a href="${escapeHtml(params.panelUrl)}" style="display:inline-block;background:${PULSE.graphite};color:${PULSE.pure};font-family:${FONTS.heading};font-size:14px;font-weight:500;letter-spacing:-0.01em;text-decoration:none;padding:14px 24px;border-radius:999px;">${escapeHtml(copy.ctaLabel)} →</a>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:0 40px 36px;">
+          ${spacer(24)}
+          ${renderButton({ href: escapeHtml(params.panelUrl), label: `${escapeHtml(copy.ctaLabel)} →`, size: 'lg' })}
+          ${spacer(20)}
           ${renderP(copy.secondaryLine, { size: 13 })}
         </td>
       </tr>

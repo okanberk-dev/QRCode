@@ -11,7 +11,7 @@
 
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
-import { renderEyebrow, renderH2, spacer } from '../components';
+import { renderEyebrow, renderH2, renderButton, spacer } from '../components';
 import { escapeHtml } from '../escape';
 import { scoreLabel } from '@/lib/reputation/health-score';
 
@@ -61,8 +61,12 @@ const SEVERITY_COLORS_EN: Record<MonthlyHealthReportRecommendation['severity'], 
   tip: { bg: PULSE.limeSoft, fg: PULSE.graphite, label: 'TIP' },
 };
 
-function fmtNum(n: number | null, fallback = '—'): string {
+/** Whole number, compacted past 99,999 (12K / 3.4M) so it fits a half-width card on a phone. */
+function compactNumber(n: number | null, fallback = '—'): string {
   if (n == null || !Number.isFinite(n)) return fallback;
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1).replace(/\.0$/, '')}M`;
+  if (abs >= 100_000) return `${Math.round(n / 1000)}K`;
   return String(Math.round(n));
 }
 
@@ -124,88 +128,119 @@ export function renderMonthlyHealthReport(
       ? `Hi ${params.ownerName},`
       : 'Hi,';
 
+  // Thin progress bar under the score (table cell + px-height div: no flex/svg).
+  const scoreBar =
+    latestScore != null
+      ? `
+        ${spacer(14)}
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;max-width:360px;">
+          <tr>
+            <td style="background:${PULSE.n800};border-radius:100px;height:6px;line-height:6px;font-size:1px;">
+              <div style="width:${Math.min(100, Math.max(2, Math.round(latestScore)))}%;background:${heroScoreColor};height:6px;border-radius:100px;line-height:6px;font-size:1px;">&nbsp;</div>
+            </td>
+          </tr>
+        </table>`
+      : '';
+
   const heroSection = `
     <tr>
-      <td class="bz-pad" style="background:${PULSE.graphite};padding:36px 40px;color:${PULSE.pure};">
-        ${renderEyebrow(isTr ? `BUAZE · ${monthStr.toUpperCase()}` : `BUAZE · ${monthStr.toUpperCase()}`, PULSE.n400)}
-        ${spacer(12)}
-        <h1 style="font-family:${FONTS.heading};font-size:30px;font-weight:500;letter-spacing:-0.025em;line-height:1.15;color:${PULSE.pure};margin:0;">
+      <td class="bz-pad" style="background:${PULSE.graphite};padding:40px 40px 36px;color:${PULSE.pure};">
+        ${renderEyebrow(`BUAZE · ${monthStr.toUpperCase()}`, PULSE.n400)}
+        ${spacer(14)}
+        <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:30px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;color:${PULSE.pure};margin:0;">
           ${escapeHtml(greeting)}<br/>
           ${isTr
             ? `${escapeHtml(params.restaurantName)} için aylık <span style="color:${PULSE.lime};">sağlık raporu</span> hazır.`
             : `${escapeHtml(params.restaurantName)}'s monthly <span style="color:${PULSE.lime};">health report</span> is ready.`}
         </h1>
-        ${spacer(24)}
-        <div style="font-family:${FONTS.heading};font-size:${heroScoreSize};font-weight:500;letter-spacing:-0.04em;color:${heroScoreColor};line-height:1;">
-          ${latestScore ?? '—'}<span style="font-size:24px;color:${PULSE.n400};">/100</span>
+        ${spacer(28)}
+        <div style="font-family:${FONTS.heading};font-size:${heroScoreSize};font-weight:600;letter-spacing:-0.03em;color:${heroScoreColor};line-height:1;">
+          ${latestScore ?? '—'}<span style="font-size:24px;font-weight:500;letter-spacing:0;color:${PULSE.n400};">/100</span>
         </div>
-        ${spacer(8)}
-        <p style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.16em;color:${PULSE.n400};margin:0;text-transform:uppercase;">
+        ${spacer(10)}
+        <div style="font-family:${FONTS.label};font-size:11px;font-weight:600;letter-spacing:0.12em;line-height:1.4;color:${PULSE.n400};text-transform:uppercase;">
           ${latestScore != null ? scoreLabel(latestScore, locale) : isTr ? 'Veri Yok' : 'No Data'}
-        </p>
+        </div>
+        ${scoreBar}
         ${baselineDelta != null
           ? `
-        ${spacer(16)}
-        <div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n300};">
-          ${isTr ? 'Buaze öncesinde' : 'Before Buaze'}: <strong style="color:${PULSE.pure};">${baselineScore ?? '—'}</strong> →
-          ${isTr ? 'şimdi' : 'now'}: <strong style="color:${PULSE.lime};">${latestScore ?? '—'}</strong>
-          <span style="color:${deltaColor(baselineDelta)};">(${fmtDelta(baselineDelta)} ${isTr ? 'puan' : 'points'})</span>
+        ${spacer(18)}
+        <div style="font-family:${FONTS.body};font-size:13px;line-height:1.7;color:${PULSE.n300};">
+          ${isTr ? 'Buaze öncesinde' : 'Before Buaze'}: <strong style="color:${PULSE.pure};font-weight:600;">${baselineScore ?? '—'}</strong> →
+          ${isTr ? 'şimdi' : 'now'}: <strong style="color:${PULSE.lime};font-weight:600;">${latestScore ?? '—'}</strong>
+          <span style="color:${deltaColor(baselineDelta)};white-space:nowrap;">(${fmtDelta(baselineDelta)} ${isTr ? 'puan' : 'points'})</span>
         </div>`
           : ''}
       </td>
     </tr>
   `;
 
-  // ─── 4-stat grid ──────────────────────────────────────────────────────
-  const statCell = (label: string, value: string, sub: string | null = null, accent?: string) => `
-    <td class="stack-col" valign="top" style="width:25%;padding:0 12px;">
-      <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;color:${PULSE.n500};text-transform:uppercase;">${escapeHtml(label)}</div>
-      <div style="font-family:${FONTS.heading};font-size:28px;font-weight:500;letter-spacing:-0.025em;color:${accent ?? PULSE.graphite};line-height:1;margin-top:6px;">${escapeHtml(value)}</div>
-      ${sub ? `<div style="font-family:${FONTS.body};font-size:11px;color:${PULSE.n500};margin-top:4px;">${escapeHtml(sub)}</div>` : ''}
-    </td>
-  `;
+  // ─── 2×2 stat cards ───────────────────────────────────────────────────
+  // Always two columns (even at 320px): four cells in a row cannot hold Poppins
+  // numbers, and four stacked rows wasted a screen. The value leads so numbers
+  // stay top-aligned even when a label wraps; big counts are compacted (12K).
+  const statCard = (label: string, value: string, sub: string | null = null) => `
+    <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:16px;">
+      <div style="font-family:${FONTS.heading};font-size:28px;font-weight:600;letter-spacing:-0.02em;color:${PULSE.graphite};line-height:1.1;">${escapeHtml(value)}</div>
+      <div style="font-family:${FONTS.body};font-size:12px;font-weight:600;line-height:1.4;color:${PULSE.graphite};margin-top:8px;">${escapeHtml(label)}</div>
+      ${sub ? `<div style="font-family:${FONTS.body};font-size:11px;line-height:1.4;color:${PULSE.n500};margin-top:2px;">${escapeHtml(sub)}</div>` : ''}
+    </div>`;
+  const statRow = (left: string, right: string) => `
+    <tr>
+      <td valign="top" style="width:50%;padding:0 6px 0 0;">${left}</td>
+      <td valign="top" style="width:50%;padding:0 0 0 6px;">${right}</td>
+    </tr>`;
+
+  const replyRate =
+    params.metrics.feedbackTotal && params.metrics.feedbackTotal > 0
+      ? `%${Math.round(((params.metrics.feedbackReplied ?? 0) / params.metrics.feedbackTotal) * 100)}`
+      : '—';
 
   const metricGrid = `
     <tr>
       <td class="bz-pad" style="padding:32px 40px 8px;">
         ${renderEyebrow(isTr ? 'Bu ayın özeti' : 'This month at a glance')}
-        ${spacer(20)}
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-          <tr>
-            ${statCell(
+        ${spacer(16)}
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          ${statRow(
+            statCard(
               isTr ? 'Google puanı' : 'Google rating',
               fmtRating(params.metrics.googleRating),
               params.metrics.googleReviewCount != null
-                ? `${params.metrics.googleReviewCount} ${isTr ? 'yorum' : 'reviews'}`
+                ? `${compactNumber(params.metrics.googleReviewCount)} ${isTr ? 'yorum' : 'reviews'}`
                 : null,
-              PULSE.graphite,
-            )}
-            ${statCell(
+            ),
+            statCard(
               isTr ? 'Buaze yorumları' : 'Buaze feedback',
-              fmtNum(params.metrics.feedbackTotal),
+              compactNumber(params.metrics.feedbackTotal),
               params.metrics.feedbackAvgRating != null
                 ? `${isTr ? 'ortalama' : 'avg'} ${fmtRating(params.metrics.feedbackAvgRating)}`
                 : null,
-            )}
-            ${statCell(
-              isTr ? 'Yanıt oranı' : 'Reply rate',
-              params.metrics.feedbackTotal && params.metrics.feedbackTotal > 0
-                ? `%${Math.round(((params.metrics.feedbackReplied ?? 0) / params.metrics.feedbackTotal) * 100)}`
-                : '—',
-              isTr ? 'müşteri yanıtı' : 'customer replies',
-            )}
-            ${statCell(
+            ),
+          )}
+          <tr><td colspan="2" height="12" style="height:12px;font-size:1px;line-height:12px;">&nbsp;</td></tr>
+          ${statRow(
+            statCard(isTr ? 'Yanıt oranı' : 'Reply rate', replyRate, isTr ? 'müşteri yanıtı' : 'customer replies'),
+            statCard(
               isTr ? 'Profil fotoğrafı' : 'Profile photos',
-              fmtNum(params.metrics.googleMediaCount),
+              compactNumber(params.metrics.googleMediaCount),
               isTr ? 'Google Business' : 'on Google',
-            )}
-          </tr>
+            ),
+          )}
         </table>
       </td>
     </tr>
   `;
 
   // ─── Geçen aya göre delta ──────────────────────────────────────────────
+  const deltaRow = (label: string, valueHtml: string, last = false) => `
+    <tr>
+      <td valign="middle" style="padding:12px 12px 12px 0;${last ? '' : `border-bottom:1px solid ${PULSE.n200};`}font-family:${FONTS.body};font-size:13px;line-height:1.4;color:${PULSE.n600};">${label}</td>
+      <td valign="middle" align="right" style="padding:12px 0;${last ? '' : `border-bottom:1px solid ${PULSE.n200};`}white-space:nowrap;">${valueHtml}</td>
+    </tr>`;
+  const deltaValue = (text: string, color: string) =>
+    `<span style="font-family:${FONTS.heading};font-size:20px;font-weight:600;letter-spacing:-0.01em;line-height:1.2;color:${color};">${escapeHtml(text)}</span>`;
+
   const deltaSection = params.delta && (
     params.delta.googleReviewCount != null ||
     params.delta.feedbackTotal != null ||
@@ -213,33 +248,29 @@ export function renderMonthlyHealthReport(
   )
     ? `
     <tr>
-      <td class="bz-pad" style="padding:8px 40px 8px;">
-        ${spacer(16)}
-        <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:12px;padding:18px 20px;">
+      <td class="bz-pad" style="padding:24px 40px 8px;">
+        <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:16px;padding:20px 20px 16px;">
           ${renderEyebrow(isTr ? 'Geçen aya göre' : 'Vs last month')}
-          ${spacer(8)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-            <tr>
-              <td valign="top" style="padding:0 10px 0 0;">
-                <div style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};">${isTr ? 'Yeni Google yorumu' : 'New Google reviews'}</div>
-                <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;color:${deltaColor(params.delta.googleReviewCount)};margin-top:2px;">${fmtDelta(params.delta.googleReviewCount)}</div>
-              </td>
-              <td valign="top" style="padding:0 10px;">
-                <div style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};">${isTr ? 'Yeni Buaze yorumu' : 'New Buaze feedback'}</div>
-                <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;color:${deltaColor(params.delta.feedbackTotal)};margin-top:2px;">${fmtDelta(params.delta.feedbackTotal)}</div>
-              </td>
-              <td valign="top" style="padding:0 0 0 10px;">
-                <div style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};">${isTr ? 'Ortalama puan' : 'Avg rating'}</div>
-                <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;color:${deltaColor(params.delta.feedbackAvgRating)};margin-top:2px;">${params.delta.feedbackAvgRating != null ? (params.delta.feedbackAvgRating > 0 ? '+' : '') + params.delta.feedbackAvgRating.toFixed(2) : '—'}</div>
-              </td>
-            </tr>
+          ${spacer(4)}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            ${deltaRow(isTr ? 'Yeni Google yorumu' : 'New Google reviews', deltaValue(fmtDelta(params.delta.googleReviewCount), deltaColor(params.delta.googleReviewCount)))}
+            ${deltaRow(isTr ? 'Yeni Buaze yorumu' : 'New Buaze feedback', deltaValue(fmtDelta(params.delta.feedbackTotal), deltaColor(params.delta.feedbackTotal)))}
+            ${deltaRow(
+              isTr ? 'Ortalama puan' : 'Avg rating',
+              deltaValue(
+                params.delta.feedbackAvgRating != null
+                  ? (params.delta.feedbackAvgRating > 0 ? '+' : '') + params.delta.feedbackAvgRating.toFixed(2)
+                  : '—',
+                deltaColor(params.delta.feedbackAvgRating),
+              ),
+              previousDelta == null,
+            )}
           </table>
           ${previousDelta != null
             ? `
-          ${spacer(12)}
-          <p style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};margin:0;">
+          <p style="font-family:${FONTS.body};font-size:13px;line-height:1.6;color:${PULSE.n600};margin:12px 0 0;">
             ${isTr ? 'Sağlık skoru bu ay' : 'Health score this month'}
-            <strong style="color:${deltaColor(previousDelta)};">${fmtDelta(previousDelta, isTr ? ' puan' : ' pts')}</strong>
+            <strong style="color:${deltaColor(previousDelta)};font-weight:600;white-space:nowrap;">${fmtDelta(previousDelta, isTr ? ' puan' : ' pts')}</strong>
             ${previousDelta >= 0 ? (isTr ? 'arttı.' : 'gained.') : (isTr ? 'düştü.' : 'dropped.')}
           </p>`
             : ''}
@@ -257,10 +288,10 @@ export function renderMonthlyHealthReport(
       const sev = sevPalette[r.severity];
       return `
         <tr>
-          <td style="padding:14px 16px;border-bottom:1px solid ${PULSE.n200};vertical-align:top;">
-            <span style="display:inline-block;background:${sev.bg};color:${sev.fg};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 8px;border-radius:100px;text-transform:uppercase;margin-bottom:8px;">${sev.label}</span>
-            <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};line-height:1.35;">${escapeHtml(r.title)}</div>
-            <p style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n600};line-height:1.5;margin:6px 0 0;">${escapeHtml(r.body)}</p>
+          <td style="padding:18px 0;border-bottom:1px solid ${PULSE.n200};vertical-align:top;">
+            <span style="display:inline-block;background:${sev.bg};color:${sev.fg};font-family:${FONTS.label};font-size:10px;font-weight:600;letter-spacing:0.1em;line-height:1.4;padding:3px 10px;border-radius:100px;text-transform:uppercase;white-space:nowrap;">${sev.label}</span>
+            <div style="font-family:${FONTS.heading};font-size:15px;font-weight:600;color:${PULSE.graphite};line-height:1.4;margin-top:10px;">${escapeHtml(r.title)}</div>
+            <p style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n600};line-height:1.6;margin:6px 0 0;">${escapeHtml(r.body)}</p>
           </td>
         </tr>
       `;
@@ -271,11 +302,11 @@ export function renderMonthlyHealthReport(
     params.recommendations.length > 0
       ? `
     <tr>
-      <td class="bz-pad" style="padding:24px 40px 8px;">
+      <td class="bz-pad" style="padding:32px 40px 8px;">
         ${renderEyebrow(isTr ? 'Sonraki adımlar' : 'Next steps')}
-        ${spacer(8)}
+        ${spacer(10)}
         ${renderH2(isTr ? `${monthStr} için yapılması önerilenler` : `Recommended for ${monthStr}`)}
-        ${spacer(12)}
+        ${spacer(8)}
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid ${PULSE.n200};">
           ${recRows}
         </table>
@@ -288,17 +319,14 @@ export function renderMonthlyHealthReport(
   const ctaSection = `
     <tr>
       <td class="bz-pad" style="padding:32px 40px 40px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="background:${PULSE.lime};border-radius:100px;">
-              <a href="${params.appUrl}/tr/dashboard" style="display:inline-block;font-family:${FONTS.body};font-size:14px;font-weight:600;color:${PULSE.graphite};text-decoration:none;padding:12px 24px;">
-                ${isTr ? 'Panelimde detayları gör →' : 'Open my panel →'}
-              </a>
-            </td>
-          </tr>
-        </table>
-        ${spacer(16)}
-        <p style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};margin:0;line-height:1.5;">
+        ${renderButton({
+          href: `${params.appUrl}/tr/dashboard`,
+          label: isTr ? 'Panelimde detayları gör →' : 'Open my panel →',
+          variant: 'lime',
+          size: 'lg',
+        })}
+        ${spacer(18)}
+        <p style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};margin:0;line-height:1.6;">
           ${isTr
             ? 'Bu rapor her ayın 1\'inde Buaze tarafından otomatik üretilir. Yorum yönetimi, fotoğraf önerileri ve sağlık skorunu paneliniz üzerinden istediğiniz an inceleyebilirsiniz.'
             : 'This report is generated automatically by Buaze at the start of each month. View reviews, photo recommendations, and your health score anytime in your panel.'}
@@ -318,8 +346,8 @@ export function renderMonthlyHealthReport(
   `;
 
   const html = pulseLayout({
-    subject,
-    preheader,
+    subject: escapeHtml(subject),
+    preheader: escapeHtml(preheader),
     content,
   });
 

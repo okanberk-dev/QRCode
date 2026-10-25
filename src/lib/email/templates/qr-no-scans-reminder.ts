@@ -6,6 +6,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderButton, spacer } from '../components';
+import { LC_TABLE, WARN, lcPage, lcSection, lcHero, lcChip, lcCard } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -66,42 +67,39 @@ export async function renderQrNoScansReminder(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const tipRow = (label: string, body: string) => `
+  // Numbered idea rows inside one soft card. The chip is a table cell so it
+  // holds its size in Outlook; rows get hairlines instead of per-row cards so
+  // the text column stays as wide as possible on 320px phones.
+  const tipRow = (n: string, body: string, first: boolean) => `
     <tr>
-      <td valign="top" style="padding:10px 0;">
-        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${label}</div>
-        <div style="margin-top:4px;font-family:${FONTS.body};font-size:13.5px;line-height:1.55;color:${PULSE.graphite};">${body}</div>
-      </td>
+      <td valign="top" width="40" style="width:40px;padding:14px 12px 14px 0;${first ? '' : `border-top:1px solid ${PULSE.n200};`}">${lcChip(n, { size: 28, fontSize: 11, radius: 8 })}</td>
+      <td valign="middle" style="padding:14px 0;${first ? '' : `border-top:1px solid ${PULSE.n200};`}font-family:${FONTS.body};font-size:14px;line-height:1.55;color:${PULSE.n800};">${body}</td>
     </tr>`;
+  const tips = [copy.tip1, copy.tip2, copy.tip3, copy.tip4];
 
-  const content = `
-    ${renderEyebrow(copy.eyebrow)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.warning};">${copy.titleAccent}</span>
-    </h1>
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">
-      ${copy.intro}
-    </p>
-    ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:18px;">
-      <tr><td style="padding:20px 24px;">
-        <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">${copy.tipsEyebrow}</div>
-        ${spacer(8)}
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-          ${tipRow('01', copy.tip1)}
-          ${tipRow('02', copy.tip2)}
-          ${tipRow('03', copy.tip3)}
-          ${tipRow('04', copy.tip4)}
-        </table>
-      </td></tr>
-    </table>
-    ${spacer(28)}
-    ${renderButton({ href: params.qrUrl, label: copy.cta, variant: 'dark' })}
-  `;
+  const accentWord = `<span style="background:${WARN.bg};color:${WARN.fg};padding:0 10px;border-radius:10px;">${copy.titleAccent}</span>`;
 
-  const html = pulseLayout({ subject, preheader, content });
+  const content = lcPage([
+    lcHero({
+      eyebrow: copy.eyebrow,
+      eyebrowTone: 'warn',
+      title: `${copy.title} ${accentWord}`,
+      titleSize: 38,
+      intro: [copy.intro],
+    }),
+    lcSection(
+      lcCard(
+        `${renderEyebrow(copy.tipsEyebrow, PULSE.n600)}
+         ${spacer(6)}
+         <table ${LC_TABLE} width="100%">${tips.map((t, i) => tipRow(String(i + 1).padStart(2, '0'), t, i === 0)).join('')}</table>`,
+        { padding: '20px 20px 6px' },
+      ),
+      { padding: '28px 40px 8px' },
+    ),
+    lcSection(renderButton({ href: escapeHtml(params.qrUrl), label: copy.cta, variant: 'dark', size: 'lg' }), { padding: '28px 40px 40px' }),
+  ]);
+
+  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
   const text = [
     copyText.eyebrow,
     '',

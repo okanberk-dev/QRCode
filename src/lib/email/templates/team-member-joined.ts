@@ -8,9 +8,10 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderButton, spacer } from '../components';
+import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
+import { teamContent, teamCard, teamRow, teamRoleChip, teamPerson, teamBulletList } from './team-mail-parts';
 
 export interface TeamMemberJoinedParams {
   /** Owner first name — addressed in the salutation. */
@@ -42,9 +43,9 @@ export async function renderTeamMemberJoined(
     : `New teammate is now in your workspace — ${params.roleLabel}.`;
 
   const allLocations = !params.locationNames || params.locationNames.length === 0;
-  const locationsLine = allLocations
-    ? (isTr ? 'Tüm konumlar' : 'All locations')
-    : (params.locationNames ?? []).map(escapeHtml).join(' · ');
+  const locationsHtml = allLocations
+    ? `<div style="font-family:${FONTS.body};font-size:14px;font-weight:500;line-height:1.5;color:${PULSE.graphite};">${isTr ? 'Tüm konumlar' : 'All locations'}</div>`
+    : teamBulletList((params.locationNames ?? []).map(escapeHtml), PULSE.graphite);
 
   const inlineDefault = isTr ? {
     eyebrow: 'Ekip · Yeni üye',
@@ -79,56 +80,29 @@ export async function renderTeamMemberJoined(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const content = `
-    ${renderEyebrow(copy.eyebrow)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.limeDeep};">${copy.titleAccent}</span>
-    </h1>
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">
-      ${copy.intro}
-    </p>
-    ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.lime};border-radius:18px;">
-      <tr>
-        <td style="padding:24px;">
-          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">
-            ${copy.cardEyebrow}
-          </div>
-          ${spacer(14)}
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.nameLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.graphite};">${memberName}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.roleLabelKey}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};">${roleLabel}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.locationsLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};">${locationsLine}</div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-    ${spacer(28)}
-    ${renderButton({ href: params.teamUrl, label: copy.cta, variant: 'dark' })}
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:12.5px;line-height:1.55;color:${PULSE.n500};">
-      ${copy.note}
-    </p>
-  `;
+  const accent = `<span style="display:inline-block;background:${PULSE.lime};color:${PULSE.graphite};padding:0 10px;border-radius:8px;">${copy.titleAccent}</span>`;
 
-  const html = pulseLayout({ subject, preheader, content });
+  const content = teamContent(`
+    ${renderEyebrow(copy.eyebrow)}
+    ${spacer(14)}
+    ${renderH1(`${copy.title} ${accent}`, { size: 44 })}
+    ${spacer(18)}
+    ${renderP(copy.intro)}
+    ${spacer(26)}
+    ${teamCard(
+      'lime',
+      copy.cardEyebrow,
+      teamRow('lime', copy.nameLabel, teamPerson('lime', params.memberName, memberName), { first: true }) +
+        teamRow('lime', copy.roleLabelKey, teamRoleChip('lime', roleLabel)) +
+        teamRow('lime', copy.locationsLabel, locationsHtml, { last: true }),
+    )}
+    ${spacer(28)}
+    ${renderButton({ href: escapeHtml(params.teamUrl), label: copy.cta, variant: 'dark' })}
+    ${spacer(20)}
+    ${renderP(copy.note, { color: PULSE.n500, size: 13 })}
+  `);
+
+  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
 
   const text = [
     copyText.eyebrow,

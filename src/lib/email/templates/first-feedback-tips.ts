@@ -1,5 +1,8 @@
+import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
-import { renderEyebrow, renderH1, renderH2, renderP, renderButton, spacer } from '../components';
+import { escapeHtml } from '../escape';
+import { renderP, renderButton, spacer } from '../components';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcFootnote } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { FIRST_FEEDBACK_TIPS_DEFAULTS } from './lifecycle-defaults';
@@ -37,25 +40,41 @@ export async function renderFirstFeedbackTips(
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 
-  const content = [
-    renderEyebrow(copy.eyebrow),
-    renderH1(copy.title),
-    spacer(8),
-    renderP(copy.intro),
-    spacer(20),
-    renderH2(copy.tip1Title),
-    renderP(copy.tip1Body),
-    spacer(12),
-    renderH2(copy.tip2Title),
-    renderP(copy.tip2Body),
-    spacer(12),
-    renderH2(copy.tip3Title),
-    renderP(copy.tip3Body),
-    spacer(28),
-    renderButton({ href: params.dashboardUrl, label: copy.cta, variant: 'dark', size: 'lg' }),
-    spacer(32),
-    renderP(copy.footnote, { color: '#737373', size: 12 }),
-  ].join('\n');
+  // Tip titles are copy-owned and start with their number ("1. Görünürlük…").
+  // Pull the numeral into a chip so the row reads as a designed step; falls
+  // back to the row index when an admin override drops the numeral.
+  const tips = [
+    { title: copy.tip1Title, body: copy.tip1Body },
+    { title: copy.tip2Title, body: copy.tip2Body },
+    { title: copy.tip3Title, body: copy.tip3Body },
+  ];
+  const tipRows = tips.map((t, i) => {
+    const m = /^\s*(\d+)[.)]\s*([\s\S]*)$/.exec(t.title);
+    const num = m ? m[1] : String(i + 1);
+    const title = m ? m[2] : t.title;
+    const border = `${i === 0 ? `border-top:1px solid ${PULSE.n200};` : ''}border-bottom:1px solid ${PULSE.n200};`;
+    return `
+      <tr>
+        <td valign="top" width="52" style="width:52px;padding:20px 16px 20px 0;${border}">${lcChip(num, { size: 36, fontSize: 14 })}</td>
+        <td valign="top" style="padding:18px 0 20px;${border}">
+          <div style="font-family:${FONTS.heading};font-size:16px;font-weight:600;line-height:1.35;letter-spacing:-0.01em;color:${PULSE.graphite};">${title}</div>
+          ${spacer(6)}
+          ${renderP(t.body, { size: 14 })}
+        </td>
+      </tr>`;
+  }).join('');
+
+  const content = lcPage([
+    lcHero({
+      eyebrow: copy.eyebrow,
+      title: copy.title,
+      titleSize: 34,
+      intro: [copy.intro],
+    }),
+    lcSection(`<table ${LC_TABLE} width="100%">${tipRows}</table>`, { padding: '28px 40px 8px' }),
+    lcSection(renderButton({ href: escapeHtml(params.dashboardUrl), label: copy.cta, variant: 'dark', size: 'lg' }), { padding: '28px 40px 36px' }),
+    lcFootnote(copy.footnote),
+  ]);
 
   const text = [
     copyText.eyebrow,
@@ -80,7 +99,7 @@ export async function renderFirstFeedbackTips(
 
   return {
     subject,
-    html: pulseLayout({ subject, preheader, content }),
+    html: pulseLayout({ subject, preheader, content, footer: { locale } }),
     text,
   };
 }

@@ -203,7 +203,7 @@ export async function renderCustomerReply(
           ${spacer(20)}
           <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:38px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
             ${copy.titleA}<br/>
-            ${copy.titleSubA} <span style="font-style:italic;">${copy.titleSubItalic}</span> ${copy.titleSubB}<span style="color:${PULSE.success};">.</span>
+            ${copy.titleSubA} <span style="font-style:italic;">${copy.titleSubItalic}</span>${copy.titleSubB ? ` ${copy.titleSubB}` : ''}<span style="color:${PULSE.success};">.</span>
           </h1>
         </td>
       </tr>

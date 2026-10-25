@@ -120,3 +120,17 @@ export type { DataExportConfirmationParams } from './data-export-confirmation';
 // Wave D (CLAUDE.md §38.195) — new-device login security alert.
 export { renderNewDeviceLogin } from './new-device-login';
 export type { NewDeviceLoginParams } from './new-device-login';
+
+// Render-only security notice (CLAUDE.md §38.96) — admin impersonation start
+// mail to the account owner. Not DB-driven, not in SUPPORTED_MAIL_KEYS.
+export { renderImpersonationStart } from './impersonation-start';
+export type { ImpersonationStartParams } from './impersonation-start';
+
+// Render-only operator alerts (CLAUDE.md §21.33) — critical mail send failure
+// and OpenAI billing failure. Not DB-driven, not in SUPPORTED_MAIL_KEYS.
+export { renderOpsMailFailureAlert, renderOpsOpenAiBillingAlert } from './ops-alert';
+export type { OpsMailFailureAlertParams, OpsOpenAiBillingAlertParams } from './ops-alert';
+
+// Render-only — onboarding wizard finished ("panel is ready") mail.
+export { renderOnboardingComplete } from './onboarding-complete';
+export type { OnboardingCompleteParams } from './onboarding-complete';

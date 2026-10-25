@@ -5,9 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { validateBody } from '@/lib/api/validate';
 import { sendMail } from '@/lib/email';
-import { pulseLayout } from '@/lib/email/layout';
-import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '@/lib/email/components';
-import { PULSE } from '@/lib/email/tokens';
+import { renderOnboardingComplete } from '@/lib/email/templates/onboarding-complete';
 import { sectorIdToLabel } from '@/lib/sectors';
 import { ensureOnboardingConsents } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
@@ -124,33 +122,12 @@ export async function POST(req: NextRequest) {
     const bizName = bizNameRaw || null;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
     const dashboardUrl = `${appUrl}/tr/dashboard`;
-    const subject = 'Buaze kurulumu tamamlandı — panele hoş geldiniz';
-    const innerContent = `
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-        <tr>
-          <td class="bz-pad" style="padding:40px 40px 24px;">
-            ${renderEyebrow('Kurulum · Tamamlandı', PULSE.success)}
-            ${spacer(14)}
-            ${renderH1(bizName ? `${escape(bizName)} hazır.` : 'Hazırsın.', { size: 36 })}
-            ${spacer(16)}
-            ${renderP('Buaze kurulumun tamamlandı. Panelden QR\'larını indirebilir, yorumlarını izleyebilir, ekibini davet edebilirsin.')}
-            ${spacer(28)}
-            ${renderButton({ href: dashboardUrl, label: 'Panele git →', size: 'lg' })}
-          </td>
-        </tr>
-      </table>
-    `;
+    const rendered = renderOnboardingComplete({ bizName, dashboardUrl }, 'tr');
     sendMail({
       to: actor.email,
-      subject,
-      text: `${bizName ? bizName + ' · ' : ''}Buaze kurulumu tamamlandı. Panele git: ${dashboardUrl}`,
-      html: pulseLayout({
-        subject,
-        preheader: 'Panelden QR\'larını indirebilir, yorumlarını izleyebilir, ekibini davet edebilirsin.',
-        content: innerContent,
-        eyebrow: 'Kurulum',
-        footer: { locale: 'tr' },
-      }),
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
     }).catch((err) => {
       console.error('[onboarding/complete] welcome mail failed', err);
     });
@@ -196,13 +173,4 @@ function slugify(raw: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
-}
-
-function escape(v: string) {
-  return v
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }

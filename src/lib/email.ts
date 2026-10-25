@@ -30,6 +30,7 @@ import {
   renderFirstReplyCelebration,
   renderDataExportConfirmation,
   renderNewDeviceLogin,
+  renderImpersonationStart,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -49,6 +50,7 @@ import {
   // not re-exported through email.ts.
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
+import { formatFullDateTimeInTimeZone } from './timezone';
 import { sendResendEmail } from './email-internal';
 import { notifyOpsOfMailFailure } from './email/ops-alert';
 
@@ -293,9 +295,8 @@ export async function sendWelcomeEmail(params: {
  * Owner'a "Hesabınıza X yönetici Y nedeniyle eriştir, Z dakika boyunca aktif"
  * mailı gönderir. KVKK §13.9 transparency disipline + audit complementary.
  *
- * Inline minimal template (Pulse layout overhead'i bu kritik mail için
- * gereksiz — text-first body + hesap güvenliği bilgisi). recipient + reason
- * CRLF strip (CLAUDE.md §37.2 H + §37.7).
+ * HTML: Pulse `impersonation-start` render-only template (security notice
+ * look). recipient + reason CRLF strip (CLAUDE.md §37.2 H + §37.7).
  */
 function stripCtl(value: unknown, max = 1000): string | null {
   if (typeof value !== 'string') return null;
@@ -312,66 +313,35 @@ export async function sendImpersonationStartEmail(params: {
 }): Promise<boolean> {
   const recipient = stripCtl(params.recipient, 256);
   if (!recipient) return false;
-  // stripCtl removes CRLF/tab (header-injection defense). Keep these RAW for
-  // the plain-text body; build HTML-escaped variants for the HTML body so an
-  // admin-supplied reason/username can't inject markup into the recipient's
-  // mail client (§21.1 / §37.6 escape discipline).
+  // stripCtl removes CRLF/tab (header-injection defense). These stay RAW:
+  // the plain-text body uses them as-is and renderImpersonationStart escapes
+  // them for the HTML body, so an admin-supplied reason/username can't inject
+  // markup into the recipient's mail client (§21.1 / §37.6 escape discipline).
   const adminUsername = stripCtl(params.adminUsername, 80) ?? 'Yönetici';
   const reason = stripCtl(params.reason, 500) ?? '(belirtilmemiş)';
   const recipientName = stripCtl(params.recipientName, 100);
-  const adminUsernameHtml = escapeHtml(adminUsername);
-  const reasonHtml = escapeHtml(reason);
-  const recipientNameHtml = recipientName ? escapeHtml(recipientName) : null;
-  const endsAtLabel = params.endsAt.toLocaleString(
-    params.locale === 'en' ? 'en-US' : 'tr-TR',
-    { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' },
-  );
+  // §46 — event times are shown in the business display time zone, not the
+  // server's (UTC on Vercel).
+  const endsAtLabel = formatFullDateTimeInTimeZone(params.endsAt, params.locale === 'en' ? 'en' : 'tr');
 
   const subject =
     params.locale === 'en'
       ? `[Buaze] An admin opened a support session on your account`
       : `[Buaze] Hesabınıza destek erişimi açıldı`;
 
-  const buildGreeting = (name: string | null) =>
-    name
+  const greeting =
+    recipientName
       ? params.locale === 'en'
-        ? `Hi ${name},`
-        : `Merhaba ${name},`
+        ? `Hi ${recipientName},`
+        : `Merhaba ${recipientName},`
       : params.locale === 'en'
         ? 'Hi there,'
         : 'Merhaba,';
-  const greeting = buildGreeting(recipientName); // plain-text body
-  const greetingHtml = buildGreeting(recipientNameHtml); // HTML body (escaped)
 
-  const html =
-    params.locale === 'en'
-      ? `
-<p>${greetingHtml}</p>
-<p>A Buaze admin (${adminUsernameHtml}) just opened a 30-minute support
-session on your account.</p>
-<p><strong>Reason:</strong> ${reasonHtml}</p>
-<p><strong>Session ends at:</strong> ${endsAtLabel} (auto-revoke).</p>
-<p>This is part of KVKK / GDPR transparency — we always notify you when an
-admin acts on your behalf. Your data is read-only during this session
-unless the admin makes a change you explicitly approved with support.</p>
-<p>If you didn't expect this contact our support team immediately at
-support@buaze.com.</p>
-<p>— Buaze Team</p>
-`
-      : `
-<p>${greetingHtml}</p>
-<p>Bir Buaze yöneticisi (${adminUsernameHtml}) hesabınızda 30 dakikalık bir destek
-oturumu açtı.</p>
-<p><strong>Sebep:</strong> ${reasonHtml}</p>
-<p><strong>Oturum bitiş:</strong> ${endsAtLabel} (otomatik kapanır).</p>
-<p>Bu bildirim KVKK / GDPR şeffaflık disiplinin bir parçasıdır — bir
-yönetici hesabınız üzerinden işlem yaptığında her zaman size haber
-veririz. Bu oturumda yönetici varsayılan olarak yalnız okuyabilir;
-müşteri talebiniz olmadan değişiklik yapmaz.</p>
-<p>Bu erişimi bilmiyorsanız hemen support@buaze.com adresinden bize
-ulaşın.</p>
-<p>— Buaze Ekibi</p>
-`;
+  const { html } = renderImpersonationStart(
+    { recipientName, adminUsername, reason, endsAt: params.endsAt },
+    params.locale === 'en' ? 'en' : 'tr',
+  );
 
   const text =
     params.locale === 'en'

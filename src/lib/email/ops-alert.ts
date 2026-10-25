@@ -16,6 +16,7 @@
 
 import { rateLimit } from '@/lib/rate-limit';
 import { sendResendEmail } from '@/lib/email-internal';
+import { renderOpsMailFailureAlert, renderOpsOpenAiBillingAlert } from '@/lib/email/templates/ops-alert';
 
 export interface OpsAlertParams {
   /** Which template failed — 'low-rating-alert', 'forgot-password', etc. */
@@ -133,7 +134,10 @@ export async function notifyOpsOfMailFailure(params: OpsAlertParams): Promise<vo
       locale: params.userLocale ?? 'tr',
       to,
       subject,
-      html: `<pre style="font-family:monospace;white-space:pre-wrap;">${text.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c))}</pre>`,
+      html: renderOpsMailFailureAlert(
+        { template: params.template, recipient: params.recipient, reason: params.reason, metadata: params.metadata },
+        isTr ? 'tr' : 'en',
+      ).html,
       text,
       logMetadata: { failedTemplate: params.template, reason: params.reason ?? null },
     });
@@ -221,7 +225,10 @@ export async function notifyOpsOfOpenAiBillingFailure(
       locale: 'tr',
       to,
       subject,
-      html: `<pre style="font-family:monospace;white-space:pre-wrap;">${text.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c))}</pre>`,
+      html: renderOpsOpenAiBillingAlert(
+        { status: params.status, errorType: params.errorType, message: params.message, source: params.source },
+        'tr',
+      ).html,
       text,
       logMetadata: { status: params.status, errorType: params.errorType ?? null, source: params.source ?? null },
     });

@@ -3,6 +3,15 @@ import { pulseLayout } from '../layout';
 import { renderEyebrow, renderH2, renderP, spacer } from '../components';
 import type { WeeklyDigestRecipient } from '@/lib/weekly-digest-runner';
 
+/** Counts past 99,999 collapse to 123K / 1.2M so they fit a half-width stat card at 320px. */
+function compactCount(n: number): string {
+  if (!Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1).replace(/\.0$/, '')}M`;
+  if (abs >= 100_000) return `${Math.round(n / 1000)}K`;
+  return String(n);
+}
+
 export interface WeeklyDigestSummaryParams {
   /** Mail'in tetiklendiği zaman (ISO timestamp). */
   triggeredAt: Date;
@@ -50,41 +59,55 @@ export function renderWeeklyDigestSummary(
     ? `Pazartesi 09:00 raporu ${params.totals.sent}/${params.totals.totalRestaurants} restorana gitti.`
     : `Monday 09:00 digest reached ${params.totals.sent}/${params.totals.totalRestaurants} restaurants.`;
 
-  // Top-stat hero — pure, no graphite splash (ops-internal kullanılır,
-  // marketing değil). Numerik tabular-aligned.
+  // Top-stat hero — 2×2 cards on the dark band (value first so numbers stay
+  // top-aligned even when a label wraps). 2 columns on every width: four
+  // stacked rows cost a full phone screen.
   const totals = params.totals;
   const heroStats: Array<{ label: string; value: string; tone?: 'lime' | 'warn' | 'danger' }> = [
     {
       label: isTr ? 'Mail gönderildi' : 'Mail sent',
-      value: String(totals.sent),
+      value: compactCount(totals.sent),
       tone: 'lime',
     },
     {
       label: isTr ? 'Yorum yok (atlandı)' : 'No reviews (skipped)',
-      value: String(totals.skipped),
+      value: compactCount(totals.skipped),
     },
     {
       label: isTr ? 'Bildirim kapalı' : 'Notifications off',
-      value: String(totals.optedOut),
+      value: compactCount(totals.optedOut),
     },
     {
       label: isTr ? 'Hata' : 'Failed',
-      value: String(totals.failed),
+      value: compactCount(totals.failed),
       tone: totals.failed > 0 ? 'danger' : undefined,
     },
   ];
 
-  const heroCells = heroStats.map((s, i) => {
-    const accent = s.tone === 'lime' ? PULSE.lime : s.tone === 'danger' ? PULSE.danger : s.tone === 'warn' ? PULSE.warning : PULSE.pure;
+  const heroCard = (s: (typeof heroStats)[number]) => {
+    const accent = s.tone === 'lime' ? PULSE.lime : s.tone === 'danger' ? '#F87171' : s.tone === 'warn' ? PULSE.warning : PULSE.pure;
     return `
-      <td class="stack-col" valign="top" style="width:25%;padding:0 16px;${i === 0 ? 'padding-left:0;' : ''}${i < heroStats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
-        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.label}</div>
-        <div style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.025em;color:${accent};line-height:1;margin-top:6px;">${s.value}</div>
-      </td>
-    `;
-  }).join('');
+      <div style="background:${PULSE.n800};border-radius:14px;padding:16px;">
+        <div style="font-family:${FONTS.heading};font-size:30px;font-weight:600;letter-spacing:-0.02em;color:${accent};line-height:1.1;">${s.value}</div>
+        <div style="font-family:${FONTS.body};font-size:12px;font-weight:500;line-height:1.4;color:${PULSE.n400};margin-top:8px;">${s.label}</div>
+      </div>`;
+  };
+  const heroRow = (a: (typeof heroStats)[number], b: (typeof heroStats)[number]) => `
+    <tr>
+      <td valign="top" style="width:50%;padding:0 6px 0 0;">${heroCard(a)}</td>
+      <td valign="top" style="width:50%;padding:0 0 0 6px;">${heroCard(b)}</td>
+    </tr>`;
+  const heroGrid = `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      ${heroRow(heroStats[0], heroStats[1])}
+      <tr><td colspan="2" height="12" style="height:12px;font-size:1px;line-height:12px;">&nbsp;</td></tr>
+      ${heroRow(heroStats[2], heroStats[3])}
+    </table>`;
 
-  // Recipient table — sent durumu, AI tetiklenmiş mi, restoran istatistiği.
+  // Recipient list — one stacked block per restaurant instead of a 5-column
+  // table: Poppins at 320px cannot hold five columns, and a table that is wider
+  // than the shell gets silently clipped. Name + masked e-mail on the left,
+  // status pill on the right, review count / average / AI on a second line.
   // Email adresini hidden tutmak için partial mask: ad@domain → a***@domain
   const maskEmail = (email: string) => {
     const [local, domain] = email.split('@');
@@ -92,63 +115,51 @@ export function renderWeeklyDigestSummary(
     return `${local.charAt(0)}${'*'.repeat(Math.max(2, local.length - 1))}@${domain}`;
   };
 
+  const metricLabel = (text: string) =>
+    `<span style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};">${text}</span>`;
+  const metricValue = (text: string) =>
+    `<strong style="font-family:${FONTS.body};font-size:13px;font-weight:600;color:${PULSE.graphite};">${text}</strong>`;
+  const metricSep = `<span style="color:${PULSE.n300};padding:0 6px;">·</span>`;
+
   const recipientRows = params.recipients
     .slice() // immutable copy
     .sort((a, b) => b.total - a.total) // çok yorumlu üstte
     .map((r) => {
-      const statusBg = r.emailSent ? PULSE.limeSoft : PULSE.n100;
-      const statusFg = r.emailSent ? PULSE.graphite : PULSE.n600;
+      const statusBg = r.emailSent ? PULSE.limeSoft : '#FEE2E2';
+      const statusFg = r.emailSent ? PULSE.graphite : '#991B1B';
       const statusLabel = r.emailSent
         ? (isTr ? 'Gönderildi' : 'Sent')
         : (isTr ? 'Hata / dry' : 'Fail / dry');
       const aiBadge = r.hasAi
-        ? `<span style="display:inline-block;background:${PULSE.graphite};color:${PULSE.lime};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 6px;border-radius:4px;">AI</span>`
-        : `<span style="display:inline-block;background:${PULSE.n100};color:${PULSE.n500};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 6px;border-radius:4px;">—</span>`;
+        ? `<span style="display:inline-block;background:${PULSE.graphite};color:${PULSE.lime};font-family:${FONTS.label};font-size:10px;font-weight:600;letter-spacing:0.08em;line-height:1.4;padding:2px 8px;border-radius:6px;white-space:nowrap;">AI</span>`
+        : `<span style="display:inline-block;background:${PULSE.n100};color:${PULSE.n500};font-family:${FONTS.label};font-size:10px;font-weight:600;letter-spacing:0.08em;line-height:1.4;padding:2px 8px;border-radius:6px;white-space:nowrap;">AI —</span>`;
       return `
         <tr>
-          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.body};font-size:13px;font-weight:500;color:${PULSE.graphite};vertical-align:top;">
-            ${escapeHtml(r.restaurantName)}
-            <div style="font-family:${FONTS.label};font-size:10px;color:${PULSE.n500};font-weight:400;margin-top:2px;">${escapeHtml(maskEmail(r.recipientEmail))}</div>
-          </td>
-          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.label};font-size:12px;color:${PULSE.graphite};text-align:right;vertical-align:top;">
-            ${r.total}
-          </td>
-          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.label};font-size:12px;color:${PULSE.graphite};text-align:right;vertical-align:top;">
-            ${r.avgRating.toFixed(1)}
-          </td>
-          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};text-align:center;vertical-align:top;">
-            ${aiBadge}
-          </td>
-          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};text-align:right;vertical-align:top;">
-            <span style="display:inline-block;background:${statusBg};color:${statusFg};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 8px;border-radius:100px;text-transform:uppercase;">${statusLabel}</span>
+          <td style="padding:16px 0;border-bottom:1px solid ${PULSE.n200};">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td valign="top" style="font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">
+                  ${escapeHtml(r.restaurantName)}
+                  <div class="bz-break" style="font-family:${FONTS.body};font-size:11px;font-weight:400;line-height:1.5;color:${PULSE.n500};margin-top:2px;">${escapeHtml(maskEmail(r.recipientEmail))}</div>
+                </td>
+                <td valign="top" align="right" style="width:1%;padding-left:12px;white-space:nowrap;">
+                  <span style="display:inline-block;background:${statusBg};color:${statusFg};font-family:${FONTS.label};font-size:10px;font-weight:600;letter-spacing:0.08em;line-height:1.4;padding:4px 10px;border-radius:100px;text-transform:uppercase;white-space:nowrap;">${statusLabel}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" style="padding-top:10px;line-height:1.9;">
+                  ${metricLabel(isTr ? 'Yorum' : 'Reviews')} ${metricValue(String(r.total))}${metricSep}${metricLabel(isTr ? 'Ort.' : 'Avg')} ${metricValue(r.avgRating.toFixed(1))}${metricSep}${aiBadge}
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
       `;
     }).join('');
 
-  const tableHeader = `
-    <tr>
-      <th align="left" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
-        ${isTr ? 'Restoran' : 'Restaurant'}
-      </th>
-      <th align="right" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
-        ${isTr ? 'Yorum' : 'Reviews'}
-      </th>
-      <th align="right" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
-        ${isTr ? 'Ort.' : 'Avg'}
-      </th>
-      <th align="center" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
-        ${isTr ? 'AI' : 'AI'}
-      </th>
-      <th align="right" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
-        ${isTr ? 'Durum' : 'Status'}
-      </th>
-    </tr>
-  `;
-
   const emptyTable = `
     <tr>
-      <td colspan="5" style="padding:24px;text-align:center;font-family:${FONTS.body};font-size:13px;color:${PULSE.n500};">
+      <td style="padding:24px 16px;text-align:center;background:${PULSE.n50};border-radius:12px;font-family:${FONTS.body};font-size:13px;line-height:1.6;color:${PULSE.n500};">
         ${isTr ? 'Bu hafta hiçbir restoran rapor almadı.' : 'No restaurant received the digest this week.'}
       </td>
     </tr>
@@ -157,39 +168,36 @@ export function renderWeeklyDigestSummary(
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td class="bz-pad" style="background:${PULSE.graphite};padding:36px 40px;color:${PULSE.pure};">
+        <td class="bz-pad" style="background:${PULSE.graphite};padding:40px 40px 36px;color:${PULSE.pure};">
           ${renderEyebrow(isTr ? 'Pazartesi · Ops Özeti' : 'Monday · Ops Summary', PULSE.n400)}
-          ${spacer(12)}
-          <h1 style="font-family:${FONTS.heading};font-size:34px;font-weight:500;letter-spacing:-0.025em;line-height:1.15;color:${PULSE.pure};margin:0;">
+          ${spacer(14)}
+          <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.pure};margin:0;">
             ${isTr
               ? `<span style="color:${PULSE.lime};">${params.totals.sent}</span> restorana<br/>haftalık rapor gitti.`
               : `Weekly digest reached <span style="color:${PULSE.lime};">${params.totals.sent}</span><br/>restaurants.`}
           </h1>
-          ${spacer(8)}
-          <p style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.1em;color:${PULSE.n400};margin:0;">${dateStr}</p>
+          ${spacer(10)}
+          <p style="font-family:${FONTS.body};font-size:12px;line-height:1.5;letter-spacing:0.02em;color:${PULSE.n400};margin:0;">${dateStr}</p>
           ${spacer(28)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="border-top:1px solid ${PULSE.n800};padding-top:18px;">
-            <tr>${heroCells}</tr>
-          </table>
+          ${heroGrid}
         </td>
       </tr>
 
       <tr>
         <td class="bz-pad" style="padding:32px 40px 8px;">
           ${renderEyebrow(isTr ? 'Gönderim listesi' : 'Recipient list')}
-          ${spacer(8)}
+          ${spacer(10)}
           ${renderH2(isTr ? 'Bu Pazartesi rapor alan restoranlar' : 'Restaurants that got the digest this Monday')}
-          ${spacer(16)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
-            <thead>${tableHeader}</thead>
-            <tbody>${params.recipients.length > 0 ? recipientRows : emptyTable}</tbody>
+          ${spacer(12)}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="${params.recipients.length > 0 ? `border-top:1px solid ${PULSE.n200};` : ''}">
+            ${params.recipients.length > 0 ? recipientRows : emptyTable}
           </table>
         </td>
       </tr>
 
       <tr>
-        <td class="bz-pad" style="padding:24px 40px 36px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border-radius:12px;">
+        <td class="bz-pad" style="padding:24px 40px 40px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;">
             <tr>
               <td style="padding:18px 20px;">
                 ${renderP(
