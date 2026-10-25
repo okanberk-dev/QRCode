@@ -1,6 +1,18 @@
 import { PULSE, FONTS, MAIL_FONT_CSS_URL } from './tokens';
 import { renderHeader, renderFooter, type FooterParams } from './components';
 
+// Idempotent HTML escape for the two raw interpolation points below (<title>,
+// hidden preheader). Callers pass plain text (it is also the mail Subject
+// header) but several already escape it: a '&' that already starts an entity
+// is left alone, so escaping twice never produces '&amp;amp;'.
+function escapeHtmlOnce(value: string): string {
+  return value
+    .replace(/&(?!(?:#\d+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);)/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export interface PulseLayoutParams {
   subject: string;
   preheader?: string;
@@ -43,7 +55,7 @@ export function pulseLayout(params: PulseLayoutParams): string {
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
 <meta name="color-scheme" content="light only">
 <meta name="supported-color-schemes" content="light only">
-<title>${subject}</title>
+<title>${escapeHtmlOnce(subject)}</title>
 <!--[if mso]>
 <noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
 <style type="text/css">
@@ -58,7 +70,7 @@ export function pulseLayout(params: PulseLayoutParams): string {
 html, body { margin:0; padding:0; width:100%; }
 body, table, td, p, a, h1, h2, h3 { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
 body { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; border-collapse:collapse; }
+table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
 img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; max-width:100%; height:auto; line-height:100%; }
 a { color:${PULSE.graphite}; }
 /* Safety net: no long URL / token / unbroken word may widen the shell past the viewport. */
@@ -81,7 +93,7 @@ u + #body a { color:inherit; text-decoration:none; font-size:inherit; font-famil
      bz-pad 24/20 → 28/22, bz-pad-tight 18/20 → 22/22. */
   td.bz-pad { padding:28px 22px !important; }
   td.bz-pad-tight { padding:22px 22px !important; }
-  td.bz-ftr { padding-left:22px !important; padding-right:22px !important; }
+  td.bz-ftr, td.bz-pad-x { padding-left:22px !important; padding-right:22px !important; }
   td.stack-col { display:block !important; width:100% !important; padding:8px 0 !important; border-right:none !important; text-align:left !important; }
   td.col-half { width:100% !important; display:block !important; padding:6px 0 !important; }
   table.stack-row, table.stack-row > tbody, table.stack-row > tbody > tr { display:block !important; width:100% !important; }
@@ -122,7 +134,7 @@ u + #body a { color:inherit; text-decoration:none; font-size:inherit; font-famil
 </style>
 </head>
 <body id="body" style="margin:0;padding:0;background:${PULSE.n100};font-family:${FONTS.body};color:${PULSE.graphite};">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${PULSE.n100};opacity:0;">${preheader}${preheaderFiller}</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${PULSE.n100};opacity:0;">${escapeHtmlOnce(preheader)}${preheaderFiller}</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;background:${PULSE.n100};">
   <tr>
     <!-- §38.198 — Outer viewport→shell padding 24/12 → 32/16. Desktop'ta

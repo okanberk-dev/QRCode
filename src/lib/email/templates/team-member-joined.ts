@@ -80,7 +80,9 @@ export async function renderTeamMemberJoined(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const accent = `<span style="display:inline-block;background:${PULSE.lime};color:${PULSE.graphite};padding:0 10px;border-radius:8px;">${copy.titleAccent}</span>`;
+  // margin-top: when the chip wraps onto its own line on a narrow phone it would
+  // sit flush under the first line (Poppins' tall line box); this adds the gap.
+  const accent = `<span style="display:inline-block;margin-top:6px;background:${PULSE.lime};color:${PULSE.graphite};padding:0 10px;border-radius:8px;">${copy.titleAccent}</span>`;
 
   const content = teamContent(`
     ${renderEyebrow(copy.eyebrow)}

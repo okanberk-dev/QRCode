@@ -2,7 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderBadge, spacer } from '../components';
-import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcTextLink } from './lifecycle-ui';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcTextLink, lcSubLine } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -141,7 +141,7 @@ export async function renderWelcome(
     lcHero({
       eyebrow: copy.eyebrow,
       eyebrowColor: PULSE.n800,
-      title: `${copy.titleHi}<br/><span style="color:${PULSE.n800};font-style:italic;">${copy.titleSub}</span>`,
+      title: `${copy.titleHi}${lcSubLine(copy.titleSub, 44, `color:${PULSE.n800};font-style:italic;`)}`,
       titleSize: 44,
       intro: [copy.intro],
       introSize: 16,

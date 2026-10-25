@@ -79,7 +79,9 @@ export async function renderTeamMemberRemoved(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const accent = `<span style="color:${PULSE.n500};">${copy.titleAccent}</span>`;
+  // inline-block + margin-top: keeps the muted second phrase from sitting flush
+  // under the first line when the heading wraps on a narrow phone.
+  const accent = `<span style="display:inline-block;margin-top:6px;color:${PULSE.n500};">${copy.titleAccent}</span>`;
 
   const content = teamContent(`
     ${renderEyebrow(copy.eyebrow)}

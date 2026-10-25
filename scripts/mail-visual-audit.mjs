@@ -18,6 +18,7 @@
 //   • clipped       — any element poking outside the shell's left/right edge. The shell has
 //                     overflow:hidden, so content past the edge is silently CUT OFF (the real
 //                     "kayma" bug — it never shows up as a scrollbar)
+//   • overlap       — text boxes of different elements intersecting (collapsed / stacked-on-top cells)
 //   • textClip      — elements whose own scrollWidth > clientWidth with overflow hidden/auto
 //   • smallText     — rendered font-size < 10px
 //   • tapSmall      — links/buttons < 36px tall on ≤414px viewports
@@ -158,8 +159,39 @@ for (const width of widths) {
           tapSmall.push({ text: snip(el), h: Math.round(r.height), w: Math.round(r.width) });
         }
       }
+      // Overlapping text boxes: stacked cells collapsing onto each other (e.g. fixed td height +
+      // height:100% tables) are invisible to the checks above. Compare text-node line boxes.
+      const boxes = [];
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let tn;
+      while ((tn = walker.nextNode())) {
+        if (!tn.textContent.trim()) continue;
+        const pe = tn.parentElement;
+        const pcs = getComputedStyle(pe);
+        if (pcs.display === 'none' || pcs.visibility === 'hidden' || pe.closest('[style*="display:none"]')) continue;
+        const range = document.createRange();
+        range.selectNodeContents(tn);
+        for (const rr of range.getClientRects()) {
+          if (rr.width < 2 || rr.height < 2) continue;
+          boxes.push({ t: tn.textContent.trim().slice(0, 30), l: rr.left, tp: rr.top, r: rr.right, b: rr.bottom, node: tn });
+        }
+      }
+      const overlap = [];
+      for (let i = 0; i < boxes.length && overlap.length < 6; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i], b = boxes[j];
+          if (a.node === b.node) continue;
+          const ix = Math.min(a.r, b.r) - Math.max(a.l, b.l);
+          const iy = Math.min(a.b, b.b) - Math.max(a.tp, b.tp);
+          // Range rects are font content boxes (~1.5em for Poppins), so consecutive lines of a tight
+          // heading overlap ~25%. Only a MAJORITY overlap means cells really sit on top of each other.
+          const minH = Math.min(a.b - a.tp, b.b - b.tp);
+          if (ix > 3 && iy > 4 && iy > 0.55 * minH) { overlap.push(`${a.t} <> ${b.t} (${Math.round(ix)}x${Math.round(iy)})`); if (overlap.length >= 6) break; }
+        }
+      }
       return {
         vw,
+        overlap,
         docOverflow: doc.scrollWidth - doc.clientWidth,
         shellWidth: Math.round(sr.right - sr.left),
         // The shell must never grow past 640px or past the viewport: a table grows to fit
@@ -196,11 +228,12 @@ fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify({ widths, results
 // 3) summary
 let fail = 0;
 for (const r of results) {
-  const bad = r.docOverflow > 0 || r.clippedCount > 0 || r.textClip.length > 0 || r.shellGrew;
+  const bad = r.docOverflow > 0 || r.clippedCount > 0 || r.textClip.length > 0 || r.shellGrew || r.overlap.length > 0;
   if (bad) fail++;
   const flags = [
     r.docOverflow > 0 && `docOverflow=${r.docOverflow}px`,
     r.shellGrew && `shellGrew=${r.shellWidth}px`,
+    r.overlap.length > 0 && `overlap=${r.overlap.length} (${r.overlap.slice(0, 2).join(' | ')})`,
     r.clippedCount > 0 && `clipped=${r.clippedCount} (${r.clipped.slice(0, 2).map((c) => `${c.el}@${c.right}>${c.shellRight} "${c.text}"`).join(' | ')})`,
     r.textClip.length > 0 && `textClip=${r.textClip.length} (${r.textClip.slice(0, 2).map((c) => `${c.el} ${c.scrollWidth}>${c.clientWidth}`).join(' | ')})`,
     r.htmlBytes > 100000 && `htmlBytes=${r.htmlBytes} (Gmail clips >102KB)`,

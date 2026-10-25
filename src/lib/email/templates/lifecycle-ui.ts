@@ -22,14 +22,16 @@ export function lcPage(rows: string[]): string {
 
 /** One content row. Phones get the shared gutters from layout.ts: `bz-pad`
  *  (28/22) for hero bands, `bz-pad-tight` (22/22) for the rows that follow so
- *  stacked sections don't open a 56px gap between each other. */
+ *  stacked sections don't open a 56px gap between each other. The wrap guard is
+ *  inline (inherited by everything inside) so a long name / price / URL still
+ *  breaks when a client strips the <style> block (Gmail app, non-Google accounts). */
 export function lcSection(
   inner: string,
   opts: { bg?: string; padding?: string; hero?: boolean } = {},
 ): string {
   const bg = opts.bg ? `background:${opts.bg};` : '';
   const cls = opts.hero ? 'bz-pad' : 'bz-pad-tight';
-  return `<tr><td class="${cls}" style="${bg}padding:${opts.padding ?? '36px 40px'};">${inner}</td></tr>`;
+  return `<tr><td class="${cls}" style="${bg}padding:${opts.padding ?? '36px 40px'};overflow-wrap:anywhere;word-break:break-word;">${inner}</td></tr>`;
 }
 
 /** Full-bleed ECG line in its own row (replaces the old negative-margin trick). */
@@ -42,6 +44,14 @@ export function lcH1(html: string, opts: { color?: string; size?: number } = {})
   const size = opts.size ?? 34;
   const cls = size >= 40 ? 'bz-h1-lg' : 'bz-h1';
   return `<h1 class="${cls}" style="font-family:${FONTS.heading};font-size:${size}px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${opts.color ?? PULSE.graphite};margin:0;overflow-wrap:anywhere;word-break:break-word;">${html}</h1>`;
+}
+
+/** Second tier of a two-line headline ("Merhaba Mert." / "Şimdi başlıyoruz."). A
+ *  block with a small top margin instead of `<br/>`: Poppins' glyph box (1.4em)
+ *  is taller than the 1.12-1.18 line-height the phone layout forces on h1, so
+ *  adjacent lines otherwise collide. `titleSize` is the h1 font size. */
+export function lcSubLine(html: string, titleSize: number, style = ''): string {
+  return `<span style="display:block;margin-top:${Math.round(titleSize * 0.19)}px;${style}">${html}</span>`;
 }
 
 /** Amber pill used as an eyebrow when a mail flags something that needs attention. */

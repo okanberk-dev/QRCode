@@ -24,13 +24,14 @@ export function renderLogo(opts: { size?: number; dark?: boolean; accent?: strin
 
 export function renderEcgDivider(opts: { color?: string; height?: number } = {}): string {
   const color = opts.color ?? PULSE.lime;
-  const height = opts.height ?? 22;
+  // `height` is kept for old callers; the PNG keeps its own 600:28 aspect ratio.
+  void opts.height;
   // PNG (not inline <svg> — stripped by Gmail/Outlook). Two baked colours:
   // lime (default) and graphite. The 600:28 aspect ratio is preserved; the
   // wrapper clamps the rendered height so the line stays slim on wide shells.
   const asset = color === PULSE.graphite ? 'buaze-ecg-graphite.png' : 'buaze-ecg-lime.png';
   return `
-    <img src="${mailAssetUrl(asset)}" width="600" height="28" alt="" class="bz-fluid" style="display:block;width:100%;max-width:100%;height:auto;max-height:${height + 6}px;border:0;outline:none;">
+    <img src="${mailAssetUrl(asset)}" width="600" height="28" alt="" class="bz-fluid" style="display:block;width:100%;max-width:100%;height:auto;border:0;outline:none;">
   `;
 }
 
@@ -164,8 +165,8 @@ export function renderStarRow(rating: number, opts: { size?: number; color?: str
   const size = opts.size ?? 18;
   const color = opts.color ?? PULSE.graphite;
   const filled = '★'.repeat(Math.max(0, Math.min(5, rating)));
-  const empty = '☆'.repeat(5 - Math.max(0, Math.min(5, rating)));
-  return `<span style="font-size:${size}px;letter-spacing:2px;color:${color};">${filled}<span style="color:${PULSE.n300};">${empty}</span></span>`;
+  const empty = '★'.repeat(5 - Math.max(0, Math.min(5, rating)));
+  return `<span style="font-size:${size}px;letter-spacing:2px;color:${color};white-space:nowrap;">${filled}<span style="color:${PULSE.n300};">${empty}</span></span>`;
 }
 
 export interface StatCell {
@@ -267,7 +268,7 @@ export function renderStatusPill(opts: StatusPillOpts): string {
   const bg = opts.bgColor ?? 'transparent';
   // inline-block + vertical-align (NOT inline-flex): Outlook and older Gmail
   // ignore flexbox, which collapsed the dot on top of the label.
-  return `<span style="display:inline-block;font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.4;color:${textColor};background:${bg};padding:${bg !== 'transparent' ? '4px 10px' : '0'};border-radius:999px;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:${dotColor};border-radius:50%;vertical-align:middle;margin-right:6px;"></span><span style="vertical-align:middle;">${opts.text}</span></span>`;
+  return `<span style="display:inline-block;font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.4;color:${textColor};background:${bg};padding:${bg !== 'transparent' ? '4px 10px' : '0'};border-radius:999px;"><span style="display:inline-block;width:6px;height:6px;background:${dotColor};border-radius:50%;vertical-align:middle;margin-right:6px;"></span><span style="vertical-align:middle;">${opts.text}</span></span>`;
 }
 
 export interface TwoColCardsParams {
@@ -301,8 +302,8 @@ export function renderBarChart(opts: BarChartOpts): string {
     const pct = Math.max(8, Math.round((v / max) * 100));
     const isPeak = i === peak;
     return `<td valign="bottom" align="center" style="padding:0 4px;width:${Math.floor(100 / opts.values.length)}%;">
-      <div style="font-family:${FONTS.label};font-size:11px;color:${isPeak ? PULSE.graphite : PULSE.n400};font-weight:${isPeak ? 500 : 400};margin-bottom:8px;">${v}</div>
-      <div style="background:${isPeak ? PULSE.lime : PULSE.n100};height:${Math.round((pct / 100) * height)}px;border-radius:4px;width:100%;min-height:8px;line-height:1px;font-size:1px;">&nbsp;</div>
+      <div style="font-family:${FONTS.label};font-size:11px;color:${isPeak ? PULSE.graphite : PULSE.n400};font-weight:${isPeak ? 600 : 400};margin-bottom:8px;">${v >= 10000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K` : v}</div>
+      <div style="background:${isPeak ? PULSE.lime : PULSE.n200};height:${Math.round((pct / 100) * height)}px;border-radius:4px;width:100%;min-height:8px;line-height:1px;font-size:1px;">&nbsp;</div>
       <div style="font-family:${FONTS.label};font-size:10px;color:${PULSE.n400};letter-spacing:0.1em;margin-top:8px;">${opts.labels[i] ?? ''}</div>
     </td>`;
   }).join('');
@@ -320,7 +321,7 @@ export function renderAvatarCircle(opts: AvatarCircleOpts): string {
   const size = opts.size ?? 36;
   const bg = opts.bg ?? PULSE.limeSoft;
   const fg = opts.fg ?? PULSE.graphite;
-  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};display:inline-block;text-align:center;line-height:${size}px;font-family:${FONTS.heading};font-weight:500;font-size:${Math.round(size * 0.4)}px;color:${fg};">${opts.initials.charAt(0).toUpperCase()}</div>`;
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};display:inline-block;text-align:center;line-height:${size}px;font-family:${FONTS.heading};font-weight:500;font-size:${Math.round(size * 0.4)}px;color:${fg};">${escapeHtmlInline((Array.from(String(opts.initials ?? '').trim())[0] ?? '').toUpperCase())}</div>`;
 }
 
 export interface QuoteCardOpts {
@@ -341,7 +342,7 @@ export function renderQuoteCard(opts: QuoteCardOpts): string {
       </td>
       <td valign="top" style="padding:16px 0 16px 16px;border-bottom:1px solid ${PULSE.n200};">
         <div style="margin-bottom:4px;">
-          <span style="color:${starColor};font-size:13px;letter-spacing:0.05em;">${'★'.repeat(opts.stars)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - opts.stars)}</span></span>
+          <span style="color:${starColor};font-size:13px;letter-spacing:0.05em;white-space:nowrap;">${'★'.repeat(opts.stars)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - opts.stars)}</span></span>
           <span style="font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};margin-left:10px;">${escapeHtmlInline(opts.name)}${opts.platform ? ` · ${escapeHtmlInline(opts.platform)}` : ''}</span>
         </div>
         <div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n700};line-height:1.55;">"${escapeHtmlInline(opts.text)}"</div>
@@ -361,11 +362,11 @@ export function renderTimeline(items: TimelineItem[]): string {
     const status = it.status ?? (i === 0 ? 'done' : i === 1 ? 'current' : 'pending');
     const dotColor = status === 'done' ? PULSE.graphite : status === 'current' ? PULSE.lime : PULSE.n300;
     const dotBorder = status === 'current' ? `border:2px solid ${PULSE.graphite};` : '';
-    const lineColor = i === items.length - 1 ? 'transparent' : PULSE.n200;
+    const lineColor = PULSE.n200;
     return `<tr>
       <td valign="top" align="center" style="width:32px;padding:6px 0;">
         <div style="width:12px;height:12px;background:${dotColor};${dotBorder}border-radius:50%;display:inline-block;line-height:1;"></div>
-        <div style="width:2px;background:${lineColor};height:36px;margin:4px auto 0;"></div>
+        ${i === items.length - 1 ? '' : `<div style="width:2px;background:${lineColor};height:36px;margin:4px auto 0;"></div>`}
       </td>
       <td valign="top" style="padding:6px 0 6px 16px;">
         <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.12em;color:${status === 'done' ? PULSE.graphite : PULSE.n500};text-transform:uppercase;font-weight:500;">${escapeHtmlInline(it.label)}</div>

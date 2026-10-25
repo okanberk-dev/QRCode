@@ -2,7 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderBadge, spacer } from '../components';
-import { LC_TABLE, lcPage, lcSection, lcHero, lcTextLink } from './lifecycle-ui';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcTextLink, lcSubLine } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -169,7 +169,7 @@ export async function renderTrialEnding(
     lcHero({
       eyebrow: copy.eyebrow,
       eyebrowTone: 'warn',
-      title: `${copy.titleA}<br/><span style="color:${PULSE.n500};">${copy.titleB}</span>`,
+      title: `${copy.titleA}${lcSubLine(copy.titleB, 36, `color:${PULSE.n500};`)}`,
       titleSize: 36,
     }),
     lcSection(
