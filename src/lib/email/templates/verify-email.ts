@@ -74,8 +74,8 @@ export async function renderVerifyEmail(
       eyebrow: copy.eyebrow,
       title: copy.title,
       accent: copy.titleAccent,
-      accentColor: PULSE.limeDeep,
-      accentSuffix: `<span style="color:${PULSE.lime};">.</span>`,
+      accentColor: PULSE.graphite,
+      accentHighlight: true,
       breakBeforeAccent: true,
       intro: copy.intro,
     })}

@@ -88,7 +88,8 @@ export async function renderDataExportConfirmation(
       eyebrow: copy.eyebrow,
       title: copy.title,
       accent: copy.titleAccent,
-      accentColor: PULSE.limeDeep,
+      accentColor: PULSE.graphite,
+      accentHighlight: true,
       intro: copy.intro,
     })}
     ${spacer(28)}

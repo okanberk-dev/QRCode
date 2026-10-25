@@ -38,6 +38,9 @@ export interface SecurityHeroOpts {
   title: string;
   accent: string;
   accentColor: string;
+  /** Lime highlighter band behind graphite accent text. Lime text on white is
+   *  ~1.7:1, so the "good news" accent uses a band instead of a lime colour. */
+  accentHighlight?: boolean;
   /** Put the accent on its own line (<br/>) instead of after a space. */
   breakBeforeAccent?: boolean;
   /** Trailing glyph appended after the accent (e.g. a lime full stop). */
@@ -47,7 +50,10 @@ export interface SecurityHeroOpts {
 
 export function securityHero(o: SecurityHeroOpts): string {
   const sep = o.breakBeforeAccent ? '<br/>' : ' ';
-  const heading = `${o.title}${sep}<span style="color:${o.accentColor};">${o.accent}</span>${o.accentSuffix ?? ''}`;
+  const accent = o.accentHighlight
+    ? `<span style="background-color:${PULSE.lime};color:${PULSE.graphite};padding:0 7px;border-radius:6px;-webkit-box-decoration-break:clone;box-decoration-break:clone;">${o.accent}</span>`
+    : `<span style="color:${o.accentColor};">${o.accent}</span>`;
+  const heading = `${o.title}${sep}${accent}${o.accentSuffix ?? ''}`;
   return `
     ${renderEyebrow(o.eyebrow, o.eyebrowColor ?? PULSE.n500)}
     ${spacer(14)}
@@ -122,14 +128,19 @@ function metaCell(item: MetaItem, side: 'left' | 'right' | 'full', rule: string)
     : item.code
       ? `font-family:${FONTS.code};font-size:13px;font-weight:500;line-height:1.5;color:${item.color ?? PULSE.graphite};`
       : `font-family:${FONTS.body};font-size:13px;font-weight:500;line-height:1.5;color:${item.color ?? PULSE.graphite};`;
-  const cls = item.code || item.breakable ? ' class="bz-break"' : '';
+  // Code (IP / token) breaks anywhere. Emails + device strings keep the base
+  // overflow-wrap:anywhere net but NOT break-all, so the <wbr> below wins.
+  const cls = item.code ? ' class="bz-break"' : '';
+  // Emails: offer a semantic break after "@" so a narrow card wraps at the
+  // domain instead of splitting the TLD ("...kahvedukkani.co / m.tr").
+  const shown = item.breakable ? item.value.replace(/@/g, '@<wbr>') : item.value;
   // Hairline lives on the <td> (not an inner div) so the two columns of a row
   // join into one continuous rule, and on mobile (td padding is forced to
   // 6px 0 by layout.ts) the rule sits flush above the stacked cell.
   return `<td${colspan} class="stack-col col-half" valign="top" style="${width}padding:${pad};border-top:1px solid ${rule};">
       <div style="padding:9px 0 9px;">
         ${renderEyebrow(item.label, PULSE.n500)}
-        <div${cls} style="margin-top:4px;${valueStyle}">${item.value}</div>
+        <div${cls} style="margin-top:4px;${valueStyle}">${shown}</div>
       </div>
     </td>`;
 }
