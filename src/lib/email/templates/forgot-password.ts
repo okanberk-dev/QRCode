@@ -1,12 +1,16 @@
-import { PULSE, FONTS } from '../tokens';
+import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
+import { renderButton, spacer } from '../components';
 import {
-  renderEyebrow,
-  renderButton,
-  renderStatusPill,
-  spacer,
-} from '../components';
+  securityContent,
+  securityHero,
+  securityCard,
+  securityMetaGrid,
+  securityUrlBox,
+  securityCodeBox,
+  securityNotYou,
+} from './security-mail-parts';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -102,80 +106,45 @@ export async function renderForgotPassword(
 
   const supportHref = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com'}/${isTr ? 'tr' : 'en'}/contact`;
 
-  // 2x2 meta grid — matches forgot-password.jsx:65-82
-  const metaCells: Array<[string, string]> = [
-    [copy.metaTime, requestTime],
-    [copy.metaIp, ip],
-    [copy.metaDevice, device],
-    [copy.metaAccount, account],
-  ];
-  const metaRow = (a: [string, string], b: [string, string]) => `
-    <tr>
-      <td class="col-half" valign="top" style="width:50%;padding:10px 12px 10px 0;border-top:1px solid ${PULSE.n200};">
-        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${a[0]}</div>
-        <div style="font-family:${FONTS.mono};font-size:13px;color:${PULSE.n700};margin-top:4px;">${a[1]}</div>
-      </td>
-      <td class="col-half" valign="top" style="width:50%;padding:10px 0 10px 12px;border-top:1px solid ${PULSE.n200};">
-        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${b[0]}</div>
-        <div style="font-family:${FONTS.mono};font-size:13px;color:${PULSE.n700};margin-top:4px;">${b[1]}</div>
-      </td>
-    </tr>`;
-
-  const content = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td class="bz-pad" style="padding:40px 40px 8px;">
-          ${renderEyebrow(copy.eyebrow)}
-          ${spacer(14)}
-          <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
-            ${copy.title}<br/>${copy.titleAccent}<span style="color:${PULSE.lime};">.</span>
-          </h1>
-          ${spacer(20)}
-          <p style="font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};margin:0;letter-spacing:-0.005em;">${copy.intro}</p>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:32px 40px 12px;">
-          <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:24px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td valign="middle" align="left">${renderEyebrow(copy.cardEyebrow)}</td>
-                <td valign="middle" align="right">${renderStatusPill({ text: copy.statusText, dotColor: PULSE.success, textColor: PULSE.success })}</td>
-              </tr>
-            </table>
-            ${spacer(16)}
-            <div style="font-family:${FONTS.mono};font-size:12px;color:${PULSE.n500};background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:8px;padding:12px 14px;word-break:break-all;line-height:1.5;">
-              ${escapeHtml(displayUrl)}
-            </div>
-            ${spacer(16)}
-            ${renderButton({ href: params.resetUrl, label: copy.cta, size: 'lg' })}
-            ${spacer(14)}
-            <div style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};">
-              ${copy.altCodeLabel}: <span style="color:${PULSE.graphite};font-weight:600;letter-spacing:0.2em;">${escapeHtml(params.code)}</span>
-            </div>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:24px 40px 8px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-            ${metaRow(metaCells[0], metaCells[1])}
-            ${metaRow(metaCells[2], metaCells[3])}
-          </table>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:24px 40px 40px;">
-          <div style="margin-top:8px;padding:16px;background:${PULSE.limeSoft};border-radius:10px;border-left:3px solid ${PULSE.limeDeep};">
-            <p style="font-family:${FONTS.body};font-size:13px;line-height:1.6;color:${PULSE.n700};margin:0;letter-spacing:-0.005em;">
-              <strong style="color:${PULSE.graphite};font-weight:600;">${copy.notYouTitle}</strong> ${copy.notYouBody}
-              <a href="${supportHref}" style="color:${PULSE.graphite};font-weight:500;">${copy.notYouLink}</a>.
-            </p>
-          </div>
-        </td>
-      </tr>
-    </table>
-  `;
+  const content = securityContent(`
+    ${securityHero({
+      eyebrow: copy.eyebrow,
+      title: copy.title,
+      accent: copy.titleAccent,
+      accentColor: PULSE.graphite,
+      breakBeforeAccent: true,
+      accentSuffix: `<span style="color:${PULSE.lime};">.</span>`,
+      intro: copy.intro,
+    })}
+    ${spacer(28)}
+    ${securityCard({
+      tone: 'neutral',
+      eyebrow: copy.cardEyebrow,
+      pill: { text: copy.statusText, dotColor: PULSE.success, bgColor: PULSE.limeSoft },
+      body: `
+        ${securityUrlBox(escapeHtml(displayUrl))}
+        ${spacer(16)}
+        ${renderButton({ href: escapeHtml(params.resetUrl), label: copy.cta, size: 'lg' })}
+        ${spacer(20)}
+        <div style="border-top:1px solid ${PULSE.n200};font-size:1px;line-height:1px;">&nbsp;</div>
+        ${spacer(16)}
+        ${securityCodeBox(copy.altCodeLabel, escapeHtml(params.code))}
+      `,
+    })}
+    ${spacer(20)}
+    ${securityMetaGrid([
+      { label: copy.metaTime, value: requestTime },
+      { label: copy.metaIp, value: ip, code: true },
+      { label: copy.metaDevice, value: device, breakable: true },
+      { label: copy.metaAccount, value: account, breakable: true, full: (params.account ?? '').length > 24 },
+    ])}
+    ${spacer(24)}
+    ${securityNotYou({
+      tone: 'calm',
+      title: copy.notYouTitle,
+      body: `${copy.notYouBody} <a href="${supportHref}" style="color:${PULSE.graphite};font-weight:600;text-decoration:underline;">${copy.notYouLink}</a>.`,
+    })}
+  `);
 
   const html = pulseLayout({
     subject,

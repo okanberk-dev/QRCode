@@ -15,44 +15,18 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { sendAccountDeletionCanceledEmail } from '@/lib/email';
 import { ApiErrors } from '@/lib/api-errors';
 import { writeAdminAuditLog } from '@/lib/audit-log';
+import { renderMailLandingPage } from '@/lib/email/landing-page';
+import { accountDeleteCancelLanding, type AccountDeleteCancelState } from '@/lib/email/landing-pages';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-function renderLandingPage(opts: { locale: 'tr' | 'en'; success: boolean; message: string; ctaUrl: string }): string {
-  const isTr = opts.locale !== 'en';
-  const palette = opts.success ? { accent: '#A8D62E', bg: '#EAF9B8', headerColor: '#0A0A0A' } : { accent: '#DC2626', bg: '#FEE2E2', headerColor: '#0A0A0A' };
-  const title = opts.success
-    ? (isTr ? 'Hesap silme iptal edildi' : 'Account deletion canceled')
-    : (isTr ? 'Bağlantı geçersiz' : 'Link is invalid');
-  const ctaLabel = isTr ? 'Panele git' : 'Open dashboard';
-  return `<!DOCTYPE html>
-<html lang="${isTr ? 'tr' : 'en'}">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title}</title>
-<style>
-  body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: #FAFAFA; color: #0A0A0A; margin: 0; padding: 48px 24px; min-height: 100vh; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
-  .card { max-width: 480px; width: 100%; background: #FFFFFF; border: 1px solid #EDEDED; border-radius: 18px; padding: 36px; box-shadow: 0 4px 16px rgba(10,10,10,0.04); }
-  .badge { display: inline-block; padding: 4px 12px; background: ${palette.bg}; color: ${palette.headerColor}; font-size: 11px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.18em; text-transform: uppercase; border-radius: 999px; border-left: 3px solid ${palette.accent}; }
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.025em; font-weight: 500; margin: 16px 0 12px; }
-  p { font-size: 15px; line-height: 1.6; color: #525252; margin: 0 0 24px; }
-  a.cta { display: inline-block; padding: 12px 24px; background: #0A0A0A; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-size: 14px; font-weight: 500; }
-  a.cta:hover { background: #1A1A1A; }
-  .footer { margin-top: 32px; font-size: 12px; color: #A3A3A3; }
-</style>
-</head>
-<body>
-<div class="card">
-  <span class="badge">${isTr ? 'Hesap silme · İptal' : 'Account delete · Cancel'}</span>
-  <h1>${title}</h1>
-  <p>${opts.message}</p>
-  <a class="cta" href="${opts.ctaUrl}">${ctaLabel} →</a>
-  <div class="footer">buaze.com</div>
-</div>
-</body>
-</html>`;
+function landingHtml(
+  locale: 'tr' | 'en',
+  state: AccountDeleteCancelState,
+  dashboardUrl: string,
+): string {
+  return renderMailLandingPage(accountDeleteCancelLanding({ locale, state, dashboardUrl }));
 }
 
 export async function GET(req: NextRequest) {
@@ -75,15 +49,10 @@ export async function GET(req: NextRequest) {
   // Token format check: hex string, exactly 64 chars (32 bytes hex).
   // Block obviously malformed input before hitting Prisma.
   if (!token || !/^[a-f0-9]{64}$/.test(token)) {
-    return new NextResponse(
-      renderLandingPage({
-        locale: 'tr',
-        success: false,
-        message: 'Bu link geçersiz görünüyor. Mail\'deki bağlantıyı tekrar dene veya destek ekibine yaz.',
-        ctaUrl: `${appUrl}/tr/dashboard`,
-      }),
-      { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
-    );
+    return new NextResponse(landingHtml('tr', 'invalid', `${appUrl}/tr/dashboard`), {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   }
 
   const user = await prisma.user.findUnique({
@@ -101,15 +70,10 @@ export async function GET(req: NextRequest) {
   // generic message as malformed input — don't leak whether the token
   // ever existed (timing attack hygiene).
   if (!user || !user.scheduledDeletionAt) {
-    return new NextResponse(
-      renderLandingPage({
-        locale: 'tr',
-        success: false,
-        message: 'Bu link artık geçerli değil. İptal süresi dolmuş veya hesabın zaten aktif olabilir.',
-        ctaUrl: `${appUrl}/tr/dashboard`,
-      }),
-      { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
-    );
+    return new NextResponse(landingHtml('tr', 'expired', `${appUrl}/tr/dashboard`), {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   }
 
   const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';
@@ -146,19 +110,10 @@ export async function GET(req: NextRequest) {
     // sender already logs + ops-alerts
   });
 
-  const message = userLocale === 'tr'
-    ? 'Hesabın aktif kalıyor. Tüm verin yerinde — restoranlar, yorumlar ve abonelik geçmişi olduğu gibi devam ediyor. Onay maili dakikalar içinde inbox\'ına gelir.'
-    : 'Your account stays active. All data is intact — restaurants, reviews and subscription history continue unchanged. A confirmation mail will arrive in your inbox shortly.';
-
-  return new NextResponse(
-    renderLandingPage({
-      locale: userLocale,
-      success: true,
-      message,
-      ctaUrl: `${appUrl}/${userLocale}/dashboard`,
-    }),
-    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
-  );
+  return new NextResponse(landingHtml(userLocale, 'success', `${appUrl}/${userLocale}/dashboard`), {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
 }
 
 // POST /api/account/delete/cancel — auth-gated in-app cancel (no token).

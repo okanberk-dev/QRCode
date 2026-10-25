@@ -8,9 +8,10 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderButton, spacer } from '../components';
+import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
+import { teamContent, teamCard, teamRow, teamRoleChip, teamPerson } from './team-mail-parts';
 
 export interface TeamMemberRemovedParams {
   ownerName?: string | null;
@@ -78,62 +79,46 @@ export async function renderTeamMemberRemoved(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const content = `
-    ${renderEyebrow(copy.eyebrow)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.n500};">${copy.titleAccent}</span>
-    </h1>
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">
-      ${copy.intro}
-    </p>
-    ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:18px;">
-      <tr>
-        <td style="padding:24px;">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n500};">
-            ${copy.cardEyebrow}
-          </div>
-          ${spacer(14)}
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.nameLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.graphite};">${memberName}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.emailLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.mono};font-size:13px;color:${PULSE.graphite};">${memberEmail}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.roleLabelKey}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};">${roleLabel}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.actionLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${copy.actionValue}</div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-    ${spacer(28)}
-    ${renderButton({ href: params.teamUrl, label: copy.cta, variant: 'dark' })}
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:12.5px;line-height:1.55;color:${PULSE.n500};">
-      ${copy.note}
-    </p>
-  `;
+  // inline-block + margin-top: keeps the muted second phrase from sitting flush
+  // under the first line when the heading wraps on a narrow phone.
+  const accent = `<span style="display:inline-block;margin-top:6px;color:${PULSE.n500};">${copy.titleAccent}</span>`;
 
-  const html = pulseLayout({ subject, preheader, content });
+  const content = teamContent(`
+    ${renderEyebrow(copy.eyebrow)}
+    ${spacer(14)}
+    ${renderH1(`${copy.title} ${accent}`, { size: 44 })}
+    ${spacer(18)}
+    ${renderP(copy.intro)}
+    ${spacer(26)}
+    ${teamCard(
+      'neutral',
+      copy.cardEyebrow,
+      teamRow('neutral', copy.nameLabel, teamPerson('neutral', params.memberName, memberName), { first: true }) +
+        teamRow(
+          'neutral',
+          copy.emailLabel,
+          `<div class="bz-break" style="font-family:${FONTS.body};font-size:14px;font-weight:500;line-height:1.5;color:${PULSE.graphite};">${memberEmail}</div>`,
+        ) +
+        teamRow('neutral', copy.roleLabelKey, teamRoleChip('neutral', roleLabel)) +
+        teamRow(
+          'neutral',
+          copy.actionLabel,
+          `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+            <td valign="top" width="18" style="width:18px;padding:7px 0 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="8" height="8" style="width:8px;height:8px;background:${PULSE.danger};border-radius:4px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table></td>
+            <td valign="top" style="font-family:${FONTS.body};font-size:14px;font-weight:500;line-height:1.5;color:${PULSE.graphite};">${copy.actionValue}</td>
+          </tr></table>`,
+          { last: true },
+        ),
+    )}
+    ${spacer(28)}
+    ${renderButton({ href: escapeHtml(params.teamUrl), label: copy.cta, variant: 'dark' })}
+    ${spacer(20)}
+    ${renderP(copy.note, { color: PULSE.n500, size: 13 })}
+  `);
+
+  // <title> and the hidden preheader are raw-HTML sinks in pulseLayout; the
+  // member name / role label are user text, so both get escaped here.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
 
   const text = [
     copyText.eyebrow,

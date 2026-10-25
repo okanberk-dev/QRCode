@@ -27,16 +27,16 @@ export async function renderFirstReplyCelebration(
 
   const subject = isTr ? 'İlk Google yanıtın gitti' : 'Your first Google reply is live';
   const preheader = isTr
-    ? 'Müşteriyle ilk kez kalıcı bir kayıtta konuştun. Bu basit refleks itibarı katlar.'
-    : 'You just spoke to a customer in a permanent record for the first time. This habit multiplies reputation.';
+    ? 'Müşteriyle ilk kez kalıcı bir kayıtta konuştun. Bu basit refleks itibarını güçlendirir.'
+    : 'You just spoke to a customer in a permanent record for the first time. This simple habit builds reputation.';
 
   const inlineDefault = isTr ? {
     eyebrow: 'Reputation OS · İlk yanıt',
     title: 'İlk Google',
     titleAccent: 'yanıtın gitti',
     intro: ownerName
-      ? `Bravo <span style="color:${PULSE.graphite};font-weight:500;">${ownerName}</span>, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar yanıtlanmayanlara göre %33 daha fazla yeni müşteriye dönüşür (Google internal data).`
-      : `Bravo, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar yanıtlanmayanlara göre %33 daha fazla yeni müşteriye dönüşür (Google internal data).`,
+      ? `Bravo <span style="color:${PULSE.graphite};font-weight:600;">${ownerName}</span>, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar, yeni müşterilere işletmenin onları dinlediğini gösterir.`
+      : `Bravo, <strong>${restaurantName}</strong> için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar, yeni müşterilere işletmenin onları dinlediğini gösterir.`,
     habitTitle: 'Sıradaki refleks',
     habitBody: 'Her sabah 5 dakika ayır: yeni gelen yorumları tara, 5 puanlara teşekkür et, 1-3 puanlara önce dinle sonra çöz yaklaşımıyla yaz.',
     cta: 'Yorum panelini aç →',
@@ -46,8 +46,8 @@ export async function renderFirstReplyCelebration(
     title: 'Your first Google',
     titleAccent: 'reply is live',
     intro: ownerName
-      ? `Well done <span style="color:${PULSE.graphite};font-weight:500;">${ownerName}</span>, you just sent the first Google review reply for <strong>${restaurantName}</strong>. Replied reviews convert new customers 33% better than unreplied ones (Google internal data).`
-      : `You just sent the first Google review reply for <strong>${restaurantName}</strong>. Replied reviews convert new customers 33% better than unreplied ones (Google internal data).`,
+      ? `Well done <span style="color:${PULSE.graphite};font-weight:600;">${ownerName}</span>, you just sent the first Google review reply for <strong>${restaurantName}</strong>. Replying to reviews shows future customers that you listen.`
+      : `You just sent the first Google review reply for <strong>${restaurantName}</strong>. Replying to reviews shows future customers that you listen.`,
     habitTitle: 'The habit that follows',
     habitBody: 'Block 5 minutes every morning: scan new reviews, thank 5-stars, listen-then-fix the 1-3s.',
     cta: 'Open reviews panel →',
@@ -60,32 +60,45 @@ export async function renderFirstReplyCelebration(
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
   const content = `
-    ${renderEyebrow(copy.eyebrow)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.limeDeep};">${copy.titleAccent}</span>
-    </h1>
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">
-      ${copy.intro}
-    </p>
-    ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.limeSoft};border-left:3px solid ${PULSE.limeDeep};border-radius:12px;">
-      <tr><td style="padding:18px 20px;">
-        <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};">${copy.habitTitle}</div>
-        ${spacer(8)}
-        <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.55;color:${PULSE.n700};">${copy.habitBody}</p>
-      </td></tr>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td class="bz-pad" style="padding:40px 40px 44px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td valign="middle" style="width:42px;">
+                <div style="width:32px;height:32px;border-radius:10px;background:${PULSE.lime};text-align:center;line-height:32px;font-family:${FONTS.body};font-size:16px;font-weight:700;color:${PULSE.graphite};">✓</div>
+              </td>
+              <td valign="middle">${renderEyebrow(copy.eyebrow)}</td>
+            </tr>
+          </table>
+          ${spacer(18)}
+          <h1 class="bz-h1-lg" style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.12;letter-spacing:-0.02em;font-weight:600;color:${PULSE.graphite};">
+            ${copy.title} <span style="display:inline-block;background:${PULSE.lime};color:${PULSE.graphite};padding:0 8px;border-radius:8px;line-height:1.2;">${copy.titleAccent}</span>
+          </h1>
+          ${spacer(18)}
+          <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.65;color:${PULSE.n600};">
+            ${copy.intro}
+          </p>
+          ${spacer(26)}
+          <div style="background:${PULSE.limeSoft};border-left:3px solid ${PULSE.limeDeep};border-radius:10px;padding:18px 20px;">
+            <div style="font-family:${FONTS.heading};font-size:15px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${copy.habitTitle}</div>
+            ${spacer(8)}
+            <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.65;color:${PULSE.n700};">${copy.habitBody}</p>
+          </div>
+          ${spacer(26)}
+          ${renderButton({ href: escapeHtml(params.reviewsUrl), label: copy.cta, variant: 'dark' })}
+          ${spacer(22)}
+          <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.65;color:${PULSE.n500};">
+            ${copy.note}
+          </p>
+        </td>
+      </tr>
     </table>
-    ${spacer(28)}
-    ${renderButton({ href: params.reviewsUrl, label: copy.cta, variant: 'dark' })}
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:12.5px;line-height:1.55;color:${PULSE.n500};">
-      ${copy.note}
-    </p>
   `;
 
-  const html = pulseLayout({ subject, preheader, content });
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
   const text = [
     copyText.eyebrow, '', `${copy.title} ${copy.titleAccent}`, '',
     copyText.intro.replace(/<[^>]*>/g, ''), '',

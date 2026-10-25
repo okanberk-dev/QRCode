@@ -1,6 +1,8 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
-import { renderEyebrow, renderP, renderButton, renderEcgDivider, spacer } from '../components';
+import { escapeHtml } from '../escape';
+import { renderEyebrow, renderP, renderButton, renderBadge, spacer } from '../components';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcTextLink, lcSubLine, lcHasName, lcDropNameToken } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -70,106 +72,90 @@ export async function renderWelcome(
   // over the inline default. After merge, runtime placeholders (`${firstName}`)
   // are substituted — admin can keep / move / remove the token and the
   // greeting still personalises per recipient.
-  const merged = await loadMailCopy('welcome', locale, inlineDefault);
-  const fallbackName = isTr ? 'merhaba' : 'hi';
-  const vars = { firstName: params.firstName || fallbackName };
+  const loaded = await loadMailCopy('welcome', locale, inlineDefault);
+  // No first name: drop the token (and its greeting/punctuation) instead of
+  // substituting a filler word ("Merhaba merhaba.").
+  const hasName = lcHasName(params.firstName);
+  const merged = hasName ? loaded : lcDropNameToken(loaded, locale);
+  const vars = { firstName: hasName ? params.firstName : '' };
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 
   const demoUrl = params.demoUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com'}/${isTr ? 'tr' : 'en'}/how-it-works`;
 
-  // Steps — done/current/pending visual states matching welcome.jsx:38-71
+  // Steps — done / current / pending. State colours are explicit (no row
+  // opacity: Outlook ignores it) and the "next" badge sits above the title so
+  // it can never be squeezed into a third column on phones.
   const stepRows = copy.steps.map((s, i) => {
-    const bg = s.state === 'done' ? PULSE.graphite : s.state === 'current' ? PULSE.lime : PULSE.n100;
-    const fg = s.state === 'done' ? PULSE.pure : PULSE.graphite;
-    const opacity = s.state === 'done' ? 'opacity:0.5;' : '';
-    const titleStyle = s.state === 'done' ? 'text-decoration:line-through;' : '';
-    const numOrCheck = s.state === 'done' ? '✓' : s.n;
-    const nextPill = s.state === 'current'
-      ? `<span style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.graphite};background:${PULSE.limeSoft};padding:4px 8px;border-radius:6px;text-transform:uppercase;font-weight:500;">${copy.nextLabel}</span>`
+    const done = s.state === 'done';
+    const current = s.state === 'current';
+    const chip = lcChip(done ? '✓' : s.n, {
+      size: 36,
+      bg: done ? PULSE.graphite : current ? PULSE.lime : PULSE.n100,
+      fg: done ? PULSE.lime : current ? PULSE.graphite : PULSE.n500,
+      fontSize: 12,
+    });
+    const nextBadge = current
+      ? `<div style="margin-bottom:8px;">${renderBadge({ text: copy.nextLabel, variant: 'lime-on-dark' })}</div>`
       : '';
+    const border = `${i === 0 ? `border-top:1px solid ${PULSE.n200};` : ''}border-bottom:1px solid ${PULSE.n200};`;
+    const titleStyle = done ? `color:${PULSE.n400};text-decoration:line-through;` : `color:${PULSE.graphite};`;
     return `
-      <tr style="${opacity}">
-        <td valign="top" style="width:56px;padding:18px 0;${i === 0 ? `border-top:1px solid ${PULSE.n200};` : ''}border-bottom:1px solid ${PULSE.n200};">
-          <div style="width:36px;height:36px;border-radius:10px;background:${bg};color:${fg};text-align:center;line-height:36px;font-family:${FONTS.mono};font-size:12px;font-weight:500;">${numOrCheck}</div>
+      <tr>
+        <td valign="top" width="52" style="width:52px;padding:18px 16px 18px 0;${border}">${chip}</td>
+        <td valign="top" style="padding:16px 0 18px;${border}">
+          ${nextBadge}
+          <div style="font-family:${FONTS.heading};font-size:16px;font-weight:600;line-height:1.35;letter-spacing:-0.01em;${titleStyle}">${s.t}</div>
+          ${spacer(4)}
+          ${renderP(s.d, { size: 13, color: done ? PULSE.n400 : PULSE.n600 })}
         </td>
-        <td valign="top" style="padding:18px 0 18px 20px;${i === 0 ? `border-top:1px solid ${PULSE.n200};` : ''}border-bottom:1px solid ${PULSE.n200};">
-          <div style="font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.015em;${titleStyle}">${s.t}</div>
-          <div style="height:4px;line-height:1px;font-size:1px;">&nbsp;</div>
-          ${renderP(s.d, { size: 13 })}
-        </td>
-        <td valign="top" align="right" style="padding:18px 0;${i === 0 ? `border-top:1px solid ${PULSE.n200};` : ''}border-bottom:1px solid ${PULSE.n200};">${nextPill}</td>
-      </tr>
-    `;
+      </tr>`;
   }).join('');
 
-  // Resource grid — 2x2 — matches welcome.jsx:87-113
+  // Resource list — ONE column at every width: a single rounded panel with
+  // hairline-separated rows (chip · title/meta · chevron). Side-by-side cards
+  // can't be both equal-height (only sibling cells stretch) and self-stacking
+  // (needs inline-block); a list is neither, so it holds up with or without the
+  // <style> block (Gmail app on non-Google accounts) and at 320px. Only the
+  // title and chevron are links; the cells carry the padding (Outlook drops
+  // padding on display:block anchors).
   // CLAUDE.md §38.132 — /help index page mevcut; /help/page route YOK
   // (CLAUDE.md §22 — `/help/[slug]` detail vs `/help` index ayrımı).
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const helpHref = `${baseAppUrl}/${isTr ? 'tr' : 'en'}/help`;
-  const resourceCard = (r: { t: string; s: string; icon: string }) => `
-    <a href="${helpHref}" style="display:block;padding:18px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:12px;text-decoration:none;">
-      <div style="margin-bottom:10px;">
-        <span style="display:inline-block;width:28px;height:28px;border-radius:8px;background:${PULSE.graphite};color:${PULSE.lime};text-align:center;line-height:28px;font-family:${FONTS.heading};font-size:14px;">${r.icon}</span>
-      </div>
-      <div style="font-family:${FONTS.heading};font-size:14px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.01em;line-height:1.35;">${r.t}</div>
-      <div style="margin-top:6px;font-size:11px;color:${PULSE.n500};font-family:${FONTS.mono};letter-spacing:0.05em;">${r.s}</div>
-    </a>
-  `;
+  const resourceRow = (r: { t: string; s: string; icon: string }, i: number) => {
+    const rule = i > 0 ? `border-top:1px solid ${PULSE.n200};` : '';
+    return `
+      <tr>
+        <td valign="middle" width="36" style="width:36px;padding:14px 0 14px 16px;${rule}">${lcChip(r.icon, { size: 36, fontSize: 16, radius: 10 })}</td>
+        <td valign="middle" style="padding:14px 8px 14px 14px;${rule}">
+          <a href="${helpHref}" style="font-family:${FONTS.heading};font-size:14px;font-weight:600;line-height:1.4;letter-spacing:-0.005em;color:${PULSE.graphite};text-decoration:none;">${r.t}</a>
+          <div style="margin-top:3px;font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.4;letter-spacing:0.04em;color:${PULSE.n500};">${r.s}</div>
+        </td>
+        <td valign="middle" align="right" width="14" style="width:14px;padding:14px 16px 14px 0;${rule}"><a href="${helpHref}" style="font-family:${FONTS.body};font-size:22px;font-weight:500;line-height:1;color:${PULSE.n400};text-decoration:none;">&rsaquo;</a></td>
+      </tr>`;
+  };
   const resourceGrid = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-      <tr>
-        <td class="col-half" valign="top" style="width:50%;padding:0 6px 12px 0;">${resourceCard(copy.resources[0])}</td>
-        <td class="col-half" valign="top" style="width:50%;padding:0 0 12px 6px;">${resourceCard(copy.resources[1])}</td>
-      </tr>
-      <tr>
-        <td class="col-half" valign="top" style="width:50%;padding:0 6px 0 0;">${resourceCard(copy.resources[2])}</td>
-        <td class="col-half" valign="top" style="width:50%;padding:0 0 0 6px;">${resourceCard(copy.resources[3])}</td>
-      </tr>
-    </table>
-  `;
+    <table ${LC_TABLE} width="100%" style="width:100%;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;border-collapse:separate;">
+      ${copy.resources.map(resourceRow).join('')}
+    </table>`;
 
-  const content = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td class="bz-pad" style="background:${PULSE.lime};padding:40px 40px 0;">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n800};text-transform:uppercase;font-weight:500;text-align:right;">${copy.eyebrow}</div>
-          ${spacer(18)}
-          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:48px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
-            ${copy.titleHi}<br/>
-            <span style="color:${PULSE.n800};font-style:italic;">${copy.titleSub}</span>
-          </h1>
-          ${spacer(18)}
-          <div style="font-family:${FONTS.body};font-size:16px;color:${PULSE.n800};line-height:1.6;">${copy.intro}</div>
-          ${spacer(24)}
-          <div style="margin:0 -40px -1px;">${renderEcgDivider({ color: PULSE.graphite, height: 22 })}</div>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:40px 40px 8px;">
-          ${renderEyebrow(copy.stepsEyebrow)}
-          ${spacer(18)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${stepRows}</table>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:32px 40px 8px;">
-          ${renderButton({ href: params.dashboardUrl, label: copy.cta, size: 'lg' })}
-          <span style="margin-left:14px;">
-            <a href="${demoUrl}" style="font-size:14px;color:${PULSE.n600};text-decoration:none;border-bottom:1px solid ${PULSE.n300};">${copy.demoLink}</a>
-          </span>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:36px 40px 44px;">
-          ${renderEyebrow(copy.resourcesEyebrow)}
-          ${spacer(14)}
-          ${resourceGrid}
-        </td>
-      </tr>
-    </table>
-  `;
+  const content = lcPage([
+    lcHero({
+      eyebrow: copy.eyebrow,
+      eyebrowColor: PULSE.n800,
+      title: `${copy.titleHi}${lcSubLine(copy.titleSub, 44, `color:${PULSE.n800};font-style:italic;`)}`,
+      titleSize: 44,
+      intro: [copy.intro],
+      introSize: 16,
+      introColor: PULSE.n800,
+      bg: PULSE.lime,
+      ecg: 'graphite',
+    }),
+    lcSection(`${renderEyebrow(copy.stepsEyebrow)}${spacer(14)}<table ${LC_TABLE} width="100%">${stepRows}</table>`, { padding: '40px 40px 8px' }),
+    lcSection(`${renderButton({ href: escapeHtml(params.dashboardUrl), label: copy.cta, size: 'lg' })}${spacer(6)}${lcTextLink(demoUrl, copy.demoLink)}`, { padding: '28px 40px 8px' }),
+    lcSection(`${renderEyebrow(copy.resourcesEyebrow)}${spacer(14)}${resourceGrid}`, { padding: '36px 40px 44px' }),
+  ]);
 
   const html = pulseLayout({
     subject,

@@ -9,10 +9,17 @@
 // verify-email — security disclosure phrasing is phishing-defence
 // critical.
 
-import { PULSE, FONTS } from '../tokens';
+import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderStatusPill, spacer } from '../components';
+import { spacer } from '../components';
+import {
+  securityContent,
+  securityHero,
+  securityCard,
+  securityMetaGrid,
+  securityNotYou,
+} from './security-mail-parts';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -44,8 +51,8 @@ export async function renderNewDeviceLogin(
 
   const subject = isTr ? 'Yeni cihazdan giriş yapıldı' : 'New device sign-in detected';
   const preheader = isTr
-    ? `${params.device} · ${params.location}. Sen değilsen hemen aksiyon al.`
-    : `${params.device} · ${params.location}. If this wasn't you, act now.`;
+    ? `${device} · ${location}. Sen değilsen hemen aksiyon al.`
+    : `${device} · ${location}. If this wasn't you, act now.`;
 
   const inlineDefault = isTr ? {
     eyebrow: 'Güvenlik · Yeni cihaz',
@@ -86,58 +93,37 @@ export async function renderNewDeviceLogin(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const content = `
-    ${renderEyebrow(copy.eyebrow, PULSE.danger)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.danger};">${copy.titleAccent}</span>
-    </h1>
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">${copy.intro}</p>
+  const content = securityContent(`
+    ${securityHero({
+      eyebrow: copy.eyebrow,
+      eyebrowColor: PULSE.danger,
+      title: copy.title,
+      accent: copy.titleAccent,
+      accentColor: PULSE.danger,
+      intro: copy.intro,
+    })}
     ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:18px;">
-      <tr><td style="padding:24px;">
-        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n500};">${copy.cardEyebrow}</div>
-        ${spacer(12)}
-        ${renderStatusPill({ text: copy.statusText, dotColor: PULSE.warning, textColor: PULSE.graphite, bgColor: '#FFFBEB' })}
-        ${spacer(20)}
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="stack-row">
-          <tr>
-            <td class="stack-col" width="50%" valign="top" style="padding-right:12px;">
-              <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaTime}</div>
-              <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${loggedInAt}</div>
-            </td>
-            <td class="stack-col" width="50%" valign="top" style="padding-left:12px;">
-              <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaDevice}</div>
-              <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${device}</div>
-            </td>
-          </tr>
-          <tr>
-            <td class="stack-col" width="50%" valign="top" style="padding-right:12px;padding-top:14px;">
-              <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaLocation}</div>
-              <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${location}</div>
-            </td>
-            <td class="stack-col" width="50%" valign="top" style="padding-left:12px;padding-top:14px;">
-              <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaAccount}</div>
-              <div style="margin-top:4px;font-family:${FONTS.mono};font-size:13px;color:${PULSE.graphite};">${accountEmail}</div>
-            </td>
-          </tr>
-        </table>
-      </td></tr>
-    </table>
-    ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FEF2F2;border-left:3px solid ${PULSE.danger};border-radius:12px;">
-      <tr><td style="padding:18px 20px;">
-        <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};">${copy.notYouTitle}</div>
-        ${spacer(8)}
-        <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.55;color:${PULSE.n700};">${copy.notYouBody}</p>
-        ${spacer(10)}
-        <a href="${escapeHtml(params.resetUrl)}" style="font-family:${FONTS.body};font-size:13px;font-weight:500;color:${PULSE.danger};text-decoration:underline;">${copy.notYouLink}</a>
-      </td></tr>
-    </table>
-  `;
+    ${securityCard({
+      tone: 'neutral',
+      eyebrow: copy.cardEyebrow,
+      pill: { text: copy.statusText, dotColor: PULSE.warning, bgColor: '#FFFBEB' },
+      body: securityMetaGrid([
+        { label: copy.metaTime, value: loggedInAt },
+        { label: copy.metaDevice, value: device, breakable: true },
+        { label: copy.metaLocation, value: location, code: true },
+        { label: copy.metaAccount, value: accountEmail, breakable: true, full: params.accountEmail.length > 24 },
+      ]),
+    })}
+    ${spacer(24)}
+    ${securityNotYou({
+      tone: 'danger',
+      title: copy.notYouTitle,
+      body: copy.notYouBody,
+      cta: { href: params.resetUrl, label: copy.notYouLink },
+    })}
+  `);
 
-  const html = pulseLayout({ subject, preheader, content });
+  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
   const text = [
     copyText.eyebrow, '', `${copy.title} ${copy.titleAccent}`, '',
     copyText.intro.replace(/<[^>]*>/g, ''), '',

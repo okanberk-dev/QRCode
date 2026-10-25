@@ -1,8 +1,53 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
-import { renderEyebrow, renderH2, renderP, renderButton, renderBarChart, renderQuoteCard, spacer } from '../components';
+import { renderEyebrow, renderH2, renderP, renderButton, renderQuoteCard, spacer } from '../components';
+import { escapeHtml } from '../escape';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
+
+/** 1.2K / 3.4M — keeps 7-digit values inside a 37px chart column on 320px phones. */
+function compactNumber(n: number): string {
+  if (!Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1).replace(/\.0$/, '')}M`;
+  if (abs >= 10_000) return `${Math.round(n / 1000)}K`;
+  return String(n);
+}
+
+/**
+ * 7-day column chart. Table cells + px-height divs only (no flex/svg). Labels
+ * stay >=10px; values are compacted so every column fits at 320px.
+ */
+function renderWeekChart(values: number[], labels: string[]): string {
+  const height = 120;
+  const max = Math.max(...values, 1);
+  const peak = values.indexOf(Math.max(...values));
+  const cells = values.map((v, i) => {
+    const isPeak = i === peak && max > 0;
+    const barH = Math.max(6, Math.round((v / max) * height));
+    return `<td valign="bottom" align="center" style="padding:0 3px;width:14.28%;">
+      <div style="font-family:${FONTS.label};font-size:11px;line-height:1.2;color:${isPeak ? PULSE.graphite : PULSE.n500};font-weight:${isPeak ? 700 : 500};margin-bottom:6px;white-space:nowrap;">${compactNumber(v)}</div>
+      <div style="background:${isPeak ? PULSE.lime : PULSE.n200};height:${barH}px;border-radius:6px;line-height:1px;font-size:1px;">&nbsp;</div>
+      <div style="font-family:${FONTS.label};font-size:10px;line-height:1.2;color:${isPeak ? PULSE.graphite : PULSE.n500};letter-spacing:0.04em;font-weight:${isPeak ? 600 : 500};margin-top:8px;">${labels[i] ?? ''}</div>
+    </td>`;
+  }).join('');
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>${cells}</tr></table>`;
+}
+
+/** One "label · bar · value" row (rating distribution, segments, aspects share it). */
+function renderBarRow(opts: { label: string; labelWidth: number; value: string; pct: number; color: string }): string {
+  const pct = Math.min(100, Math.max(0, opts.pct));
+  return `
+      <tr>
+        <td valign="middle" style="width:${opts.labelWidth}px;padding:7px 10px 7px 0;font-family:${FONTS.label};font-size:13px;line-height:1.3;color:${PULSE.graphite};font-weight:600;white-space:nowrap;">${opts.label}</td>
+        <td valign="middle" style="padding:7px 0;">
+          <div style="background:${PULSE.n200};border-radius:100px;height:8px;line-height:8px;font-size:1px;overflow:hidden;">
+            <div style="background:${opts.color};height:8px;width:${pct}%;border-radius:100px;line-height:8px;font-size:1px;">&nbsp;</div>
+          </div>
+        </td>
+        <td valign="middle" align="right" style="width:1%;padding:7px 0 7px 12px;font-family:${FONTS.label};font-size:13px;line-height:1.3;color:${PULSE.n600};font-weight:500;white-space:nowrap;">${opts.value}</td>
+      </tr>`;
+}
 
 export interface WeeklyReportParams {
   restaurantName: string;
@@ -59,22 +104,33 @@ export async function renderWeeklyReport(
     ? `Bu hafta · ${params.stats.total} yorum, ${params.stats.avgRating} ortalama`
     : `This week · ${params.stats.total} reviews, ${params.stats.avgRating} avg`;
   const preheader = isTr
-    ? `${params.restaurantName} · ${periodStr} haftalık özet`
-    : `${params.restaurantName} · ${periodStr} weekly digest`;
+    ? `${escapeHtml(params.restaurantName)} · ${periodStr} haftalık özet`
+    : `${escapeHtml(params.restaurantName)} · ${periodStr} weekly digest`;
 
-  const positiveCount = params.stats.highRatings;
-  const totalDeltaText = params.deltas?.totalDelta ?? (positiveCount > params.stats.total / 2 ? '+' : '');
+  // Hero accent: the week-over-week delta when the caller has one, otherwise
+  // the review count (never a bare "+"). The lead line stays neutral because
+  // nothing here knows whether the week started quiet.
+  const deltaRaw = params.deltas?.totalDelta?.trim();
+  const accentText = escapeHtml(deltaRaw ? deltaRaw : String(params.stats.total));
+
+  // Chart heading follows the data: name the actual peak day (the block is
+  // hidden when no day has reviews; the neutral title only backs copy overrides).
+  const trendValues = params.trend && params.trend.length === 7 ? params.trend : null;
+  const trendMax = trendValues ? Math.max(...trendValues) : 0;
+  const peakIdx = trendValues && trendMax > 0 ? trendValues.indexOf(trendMax) : -1;
+  const DAYS_TR = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+  const DAYS_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const inlineDefault = isTr ? {
     eyebrow: `Hafta ${weekNum} · Pazartesi raporu`,
-    titleA: positiveCount > 0 ? 'Sessiz başlayan hafta,' : 'Hafta nasıl geçti?',
-    titleAccent: totalDeltaText && totalDeltaText !== '' ? `${totalDeltaText}` : `${params.stats.total}`,
+    titleA: 'Hafta nasıl geçti?',
+    titleAccent: accentText,
     titleEnd: 'yorumla bitti.',
     statTotal: 'Yeni yorum',
     statAvg: 'Ortalama puan',
     statResp: 'Yanıt süresi',
     chartEyebrow: 'Günlük dağılım',
-    chartTitle: 'Cumartesi günü zirve yaptın.',
+    chartTitle: peakIdx >= 0 ? `${DAYS_TR[peakIdx]} günü zirve yaptın.` : 'Gün gün yorum sayısı',
     quotesEyebrow: 'Bu haftanın sözleri',
     aspectFood: 'Yemek',
     aspectService: 'Servis',
@@ -95,14 +151,14 @@ export async function renderWeeklyReport(
     segmentHint: 'Sadık + memnuniyetsiz dağılımı tek bakışta.',
   } : {
     eyebrow: `Week ${weekNum} · Monday report`,
-    titleA: positiveCount > 0 ? 'A quiet week,' : 'How was the week?',
-    titleAccent: totalDeltaText && totalDeltaText !== '' ? `${totalDeltaText}` : `${params.stats.total}`,
+    titleA: 'How was the week?',
+    titleAccent: accentText,
     titleEnd: 'reviews to close.',
     statTotal: 'New reviews',
     statAvg: 'Average rating',
     statResp: 'Response time',
     chartEyebrow: 'Daily distribution',
-    chartTitle: 'Saturday hit the peak.',
+    chartTitle: peakIdx >= 0 ? `${DAYS_EN[peakIdx]} hit the peak.` : 'Reviews day by day',
     quotesEyebrow: 'This week\'s voices',
     aspectFood: 'Food',
     aspectService: 'Service',
@@ -145,53 +201,46 @@ export async function renderWeeklyReport(
     { k: copy.statTotal, v: String(params.stats.total), delta: params.deltas?.totalDelta },
     { k: copy.statAvg, v: params.stats.avgRating.toFixed(1), delta: params.deltas?.avgDelta },
   ];
+  // Side-by-side on every width (no stack-col): two short numbers fit a 320px
+  // phone, and a stacked hero wasted a full screen. Big values step down on
+  // mobile through bz-roi-bignum-sm so 7-digit stress values still fit.
   const heroStatCells = stats.map((s, i) => `
-    <td class="stack-col" valign="top" style="width:${(100 / stats.length).toFixed(2)}%;padding:0 20px;${i === 0 ? 'padding-left:0;' : ''}${i < stats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
-      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.k}</div>
-      <div style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.pure};line-height:1;margin-top:6px;">${s.v}</div>
-      ${s.delta ? `<div style="margin-top:6px;font-size:12px;color:${PULSE.lime};font-weight:500;">${s.delta} ↑</div>` : ''}
+    <td valign="top" style="width:50%;${i === 0 ? `padding:0 16px 0 0;border-right:1px solid ${PULSE.n800};` : 'padding:0 0 0 20px;'}">
+      <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;font-weight:600;color:${PULSE.n400};text-transform:uppercase;">${s.k}</div>
+      <div class="bz-roi-bignum-sm" style="font-family:${FONTS.heading};font-size:36px;font-weight:600;letter-spacing:-0.02em;color:${PULSE.pure};line-height:1.1;margin-top:8px;">${s.v}</div>
+      ${s.delta ? (() => {
+        const down = /^[-−–]/.test(s.delta.trim());
+        return `<div style="margin-top:6px;font-family:${FONTS.body};font-size:12px;line-height:1.3;color:${down ? '#F87171' : PULSE.lime};font-weight:600;">${escapeHtml(s.delta)} ${down ? '↓' : '↑'}</div>`;
+      })() : ''}
     </td>
   `).join('');
 
-  // Distribution table
+  // Rating distribution
   const distRows = [5, 4, 3, 2, 1].map((star) => {
     const count = params.stats.distribution[star] || 0;
     const pct = params.stats.total > 0 ? Math.round((count / params.stats.total) * 100) : 0;
     const barColor = star >= 4 ? PULSE.success : star === 3 ? PULSE.warning : PULSE.danger;
-    return `
-      <tr>
-        <td style="width:34px;padding:6px 0;font-family:${FONTS.mono};font-size:12px;color:${PULSE.graphite};font-weight:600;">${star}★</td>
-        <td style="padding:6px 0;">
-          <div style="background:${PULSE.n200};border-radius:100px;height:8px;overflow:hidden;">
-            <div style="background:${barColor};height:8px;width:${Math.max(pct, 0)}%;border-radius:100px;"></div>
-          </div>
-        </td>
-        <td style="width:60px;padding:6px 0 6px 12px;text-align:right;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};">${pct}% · ${count}</td>
-      </tr>
-    `;
+    return renderBarRow({ label: `${star}★`, labelWidth: 30, value: `${pct}% · ${count}`, pct, color: barColor });
   }).join('');
 
-  // 7-day bar chart (jsx:43-62)
-  const trendBlock = params.trend && params.trend.length === 7 ? `
+  // 7-day column chart (hidden when no day had a review — a flat chart says nothing)
+  const trendBlock = trendValues && peakIdx >= 0 ? `
     <tr>
       <td class="bz-pad" style="padding:36px 40px 8px;">
         ${renderEyebrow(copy.chartEyebrow)}
-        ${spacer(12)}
+        ${spacer(10)}
         ${renderH2(copy.chartTitle)}
-        ${spacer(20)}
-        ${renderBarChart({
-          values: params.trend,
-          labels: isTr ? ['PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT', 'PAZ'] : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-        })}
+        ${spacer(22)}
+        ${renderWeekChart(trendValues!, isTr ? ['PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT', 'PAZ'] : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'])}
       </td>
     </tr>` : '';
 
-  // Quotes (jsx:66-100)
+  // Quotes
   const quotesBlock = params.quotes && params.quotes.length > 0 ? `
     <tr>
       <td class="bz-pad" style="padding:36px 40px 8px;">
         ${renderEyebrow(copy.quotesEyebrow)}
-        ${spacer(12)}
+        ${spacer(8)}
         ${params.quotes.slice(0, 3).map((q) => renderQuoteCard({
           stars: q.rating,
           name: q.name,
@@ -210,27 +259,25 @@ export async function renderWeeklyReport(
   const aiBlock = hasAi ? `
     <tr>
       <td class="bz-pad" style="padding:32px 40px 8px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.graphite};border-radius:14px;overflow:hidden;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.graphite};border-radius:16px;">
           <tr>
-            <td style="padding:22px 24px 18px;">
+            <td style="padding:24px 24px 22px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="padding-right:8px;vertical-align:middle;">
-                    <span style="display:inline-block;width:8px;height:8px;border-radius:100px;background:${PULSE.lime};"></span>
-                  </td>
-                  <td style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;vertical-align:middle;">${copy.aiEyebrow}</td>
+                  <td width="8" valign="middle" style="width:8px;font-size:1px;line-height:1px;"><div style="width:8px;height:8px;background:${PULSE.lime};border-radius:100px;font-size:1px;line-height:8px;">&nbsp;</div></td>
+                  <td valign="middle" style="padding-left:10px;font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;font-weight:600;color:${PULSE.lime};text-transform:uppercase;">${copy.aiEyebrow}</td>
                 </tr>
               </table>
-              <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.pure};line-height:1.2;margin-top:12px;">${copy.aiTitle}</div>
+              <div style="font-family:${FONTS.heading};font-size:22px;font-weight:600;letter-spacing:-0.015em;color:${PULSE.pure};line-height:1.25;margin-top:12px;">${copy.aiTitle}</div>
               ${aiInsight!.summary ? `
-                <p style="font-family:${FONTS.body};font-size:14px;line-height:1.6;color:${PULSE.n200};margin:14px 0 0;">${aiInsight!.summary}</p>
+                <p style="font-family:${FONTS.body};font-size:14px;line-height:1.65;color:${PULSE.n200};margin:14px 0 0;">${escapeHtml(aiInsight!.summary)}</p>
               ` : ''}
               ${aiInsight!.recommendation ? `
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px;border-top:1px solid ${PULSE.n800};">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:18px;border-top:1px solid ${PULSE.n800};">
                   <tr>
-                    <td style="padding-top:14px;">
-                      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${copy.aiRecommendationLabel}</div>
-                      <p style="font-family:${FONTS.body};font-size:14px;line-height:1.55;color:${PULSE.lime};margin:8px 0 0;font-weight:500;">${aiInsight!.recommendation}</p>
+                    <td style="padding-top:16px;">
+                      <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;font-weight:600;color:${PULSE.n400};text-transform:uppercase;">${copy.aiRecommendationLabel}</div>
+                      <p style="font-family:${FONTS.body};font-size:14px;line-height:1.6;color:${PULSE.lime};margin:8px 0 0;font-weight:500;">${escapeHtml(aiInsight!.recommendation)}</p>
                     </td>
                   </tr>
                 </table>
@@ -241,47 +288,46 @@ export async function renderWeeklyReport(
       </td>
     </tr>` : '';
 
-  // Phase 8c+ (CLAUDE.md §38.21 + §38.48) — segment counts kart. Tüm değerler 0
+  // Phase 8c+ (CLAUDE.md §38.21 + §38.48) — segment counts. Tüm değerler 0
   // ise section gizlenir (anonim feedback haftası veya hiç müşteri yoksa).
-  // §38.48 — 5-cell stack (vip + loyal + new + risk + churned). Mobile responsive
-  // otomatik (stack-col @media query 4-cell pattern aynı, 5'te dikey stack OK).
+  // Bar rows (not a 5-cell strip): a 5-up strip cannot fit Poppins at 320px and
+  // stacked into a tall empty box. Each row = pill + proportional bar + count.
   const segCounts = params.segmentCounts;
   const segTotal = segCounts
     ? segCounts.vip + segCounts.loyal + segCounts.new + segCounts.risk + segCounts.churned
     : 0;
   const segmentBlock = segCounts && segTotal > 0 ? (() => {
-    const segItems: Array<{ label: string; count: number; bg: string; fg: string }> = [
-      { label: copy.segmentVip, count: segCounts.vip, bg: PULSE.graphite, fg: PULSE.pure },
-      { label: copy.segmentLoyal, count: segCounts.loyal, bg: PULSE.limeSoft, fg: PULSE.graphite },
-      { label: copy.segmentNew, count: segCounts.new, bg: '#DBEAFE', fg: '#1E40AF' },
-      { label: copy.segmentRisk, count: segCounts.risk, bg: '#FEE2E2', fg: '#991B1B' },
-      // §38.48 — Churned ghost paletti (CLAUDE.md §38.47 SEGMENT_COLOR_MAP
-      // birebir): n100 bg + n500 fg muted. Risk = aktif memnuniyetsizlik kırmızı,
-      // Churned = sessiz bırakma muted.
-      { label: copy.segmentChurned, count: segCounts.churned, bg: '#F5F5F5', fg: '#737373' },
+    const segItems: Array<{ label: string; count: number; bg: string; fg: string; bar: string }> = [
+      { label: copy.segmentVip, count: segCounts.vip, bg: PULSE.graphite, fg: PULSE.pure, bar: PULSE.graphite },
+      { label: copy.segmentLoyal, count: segCounts.loyal, bg: PULSE.limeSoft, fg: PULSE.graphite, bar: PULSE.limeDeep },
+      { label: copy.segmentNew, count: segCounts.new, bg: '#DBEAFE', fg: '#1E40AF', bar: '#2563EB' },
+      { label: copy.segmentRisk, count: segCounts.risk, bg: '#FEE2E2', fg: '#991B1B', bar: PULSE.danger },
+      // §38.48 — Churned ghost paletti (CLAUDE.md §38.47 SEGMENT_COLOR_MAP):
+      // Risk = aktif memnuniyetsizlik kırmızı, Churned = sessiz bırakma muted.
+      { label: copy.segmentChurned, count: segCounts.churned, bg: '#F5F5F5', fg: '#737373', bar: PULSE.n400 },
     ];
+    const maxSeg = Math.max(...segItems.map((x) => x.count), 1);
+    const segRows = segItems.map((seg) => renderBarRow({
+      label: `<span style="display:inline-block;background:${seg.bg};color:${seg.fg};font-family:${FONTS.body};font-size:11px;font-weight:600;line-height:1.4;border-radius:100px;padding:3px 10px;white-space:nowrap;">${seg.label}</span>`,
+      labelWidth: 84,
+      value: String(seg.count),
+      pct: Math.round((seg.count / maxSeg) * 100),
+      color: seg.bar,
+    })).join('');
     return `
     <tr>
-      <td class="bz-pad" style="padding:0 40px 24px;">
+      <td class="bz-pad" style="padding:32px 40px 8px;">
         ${renderEyebrow(copy.segmentEyebrow)}
         ${spacer(8)}
-        <div style="font-family:${FONTS.heading};font-size:18px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.graphite};margin-bottom:14px;">${copy.segmentTitle}</div>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="background:${PULSE.n50};border-radius:14px;overflow:hidden;">
-          <tr>
-            ${segItems.map((seg, i) => `
-              <td class="stack-col" valign="top" style="width:20%;padding:14px 14px;${i < 4 ? `border-right:1px solid ${PULSE.n200};` : ''}">
-                <span style="display:inline-block;background:${seg.bg};color:${seg.fg};font-family:${FONTS.body};font-size:11px;font-weight:600;border-radius:100px;padding:3px 10px;letter-spacing:-0.01em;">${seg.label}</span>
-                <div style="font-family:${FONTS.heading};font-size:26px;font-weight:500;color:${PULSE.graphite};margin-top:8px;letter-spacing:-0.02em;line-height:1;">${seg.count}</div>
-              </td>
-            `).join('')}
-          </tr>
-        </table>
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.12em;color:${PULSE.n500};text-transform:uppercase;margin-top:10px;">${copy.segmentHint}</div>
+        <div style="font-family:${FONTS.heading};font-size:18px;font-weight:600;letter-spacing:-0.01em;line-height:1.3;color:${PULSE.graphite};">${copy.segmentTitle}</div>
+        ${spacer(8)}
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${segRows}</table>
+        <div style="font-family:${FONTS.body};font-size:12px;line-height:1.5;color:${PULSE.n500};margin-top:8px;">${copy.segmentHint}</div>
       </td>
     </tr>`;
   })() : '';
 
-  // Aspect averages
+  // Aspect averages (0–5 scale bars)
   const aspectsItems: Array<[string, number | null]> = [
     [copy.aspectFood, params.stats.aspects.food],
     [copy.aspectService, params.stats.aspects.service],
@@ -289,18 +335,17 @@ export async function renderWeeklyReport(
   ];
   const aspectsBlock = aspectsItems.every(([, v]) => v === null) ? '' : `
     <tr>
-      <td class="bz-pad" style="padding:0 40px 24px;">
+      <td class="bz-pad" style="padding:32px 40px 8px;">
         ${renderEyebrow(isTr ? 'Boyut ortalamaları' : 'Aspect averages')}
-        ${spacer(10)}
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="background:${PULSE.n50};border-radius:14px;overflow:hidden;">
-          <tr>
-            ${aspectsItems.map(([label, val], i) => `
-              <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${label}</div>
-                <div style="font-family:${FONTS.heading};font-size:26px;font-weight:500;color:${PULSE.graphite};margin-top:4px;letter-spacing:-0.02em;">${val !== null ? val.toFixed(1) : '—'}</div>
-              </td>
-            `).join('')}
-          </tr>
+        ${spacer(8)}
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          ${aspectsItems.map(([label, val]) => renderBarRow({
+            label,
+            labelWidth: 84,
+            value: val !== null ? val.toFixed(1) : '—',
+            pct: val !== null ? (val / 5) * 100 : 0,
+            color: val !== null && val < 3 ? PULSE.danger : val !== null && val < 4 ? PULSE.warning : PULSE.success,
+          })).join('')}
         </table>
       </td>
     </tr>`;
@@ -311,13 +356,17 @@ export async function renderWeeklyReport(
         <td class="bz-pad" style="background:${PULSE.graphite};padding:40px 40px 36px;color:${PULSE.pure};">
           ${renderEyebrow(copy.eyebrow, PULSE.n400)}
           ${spacer(14)}
-          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:42px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.pure};margin:0;">
+          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:42px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.pure};margin:0;">
             ${copy.titleA}<br/>
             <span style="color:${PULSE.lime};">${copy.titleAccent}</span> ${copy.titleEnd}
           </h1>
           ${spacer(28)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="border-top:1px solid ${PULSE.n800};padding-top:20px;">
-            <tr>${heroStatCells}</tr>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid ${PULSE.n800};">
+            <tr><td style="padding-top:22px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>${heroStatCells}</tr>
+              </table>
+            </td></tr>
           </table>
         </td>
       </tr>
@@ -325,7 +374,7 @@ export async function renderWeeklyReport(
       <tr>
         <td class="bz-pad" style="padding:32px 40px 8px;">
           ${renderEyebrow(isTr ? 'Puan dağılımı' : 'Rating distribution')}
-          ${spacer(10)}
+          ${spacer(8)}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${distRows}</table>
         </td>
       </tr>
@@ -334,16 +383,22 @@ export async function renderWeeklyReport(
       ${aspectsBlock}
       ${quotesBlock}
       <tr>
-        <td class="bz-pad" style="padding:24px 40px 40px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="background:${PULSE.limeSoft};border-radius:14px;">
+        <td class="bz-pad" style="padding:32px 40px 40px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.limeSoft};border-radius:16px;">
             <tr>
-              <td class="stack-col" valign="middle" style="padding:24px;">
-                ${renderH2(copy.detailLabel)}
-                ${spacer(6)}
-                ${renderP(copy.detailSub, { size: 13, color: PULSE.n700 })}
-              </td>
-              <td class="stack-col" valign="middle" align="right" style="padding:24px;">
-                ${renderButton({ href: params.dashboardUrl, label: copy.cta, size: 'lg' })}
+              <td style="padding:24px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
+                  <tr>
+                    <td class="stack-col" valign="middle" style="padding:0 16px 0 0;">
+                      ${renderH2(copy.detailLabel)}
+                      ${spacer(6)}
+                      ${renderP(copy.detailSub, { size: 13, color: PULSE.n700 })}
+                    </td>
+                    <td class="stack-col" valign="middle" align="right" style="padding:0;width:1%;white-space:nowrap;">
+                      ${renderButton({ href: params.dashboardUrl, label: copy.cta, size: 'lg' })}
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>

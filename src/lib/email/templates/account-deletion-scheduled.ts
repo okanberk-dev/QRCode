@@ -6,10 +6,17 @@
 // link. After the grace window the cron hard-deletes (cascade chain
 // §37.9 + financial-record anonymisation).
 
-import { PULSE, FONTS } from '../tokens';
+import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderButton, renderStatusPill, spacer } from '../components';
+import { renderButton, renderP, spacer } from '../components';
+import {
+  securityContent,
+  securityHero,
+  securityCard,
+  securityMetaGrid,
+  securityNotYou,
+} from './security-mail-parts';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -88,73 +95,38 @@ export async function renderAccountDeletionScheduled(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const content = `
-    ${renderEyebrow(copy.eyebrow, PULSE.danger)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.danger};">${copy.titleAccent}</span>
-    </h1>
+  const content = securityContent(`
+    ${securityHero({
+      eyebrow: copy.eyebrow,
+      eyebrowColor: PULSE.danger,
+      title: copy.title,
+      accent: copy.titleAccent,
+      accentColor: PULSE.danger,
+      intro: copy.intro,
+    })}
+    ${spacer(28)}
+    ${securityCard({
+      tone: 'danger',
+      eyebrow: copy.cardEyebrow,
+      pill: { text: copy.statusText, dotColor: PULSE.danger, bgColor: PULSE.pure },
+      body: securityMetaGrid(
+        [
+          { label: copy.metaAccountLabel, value: accountEmail, breakable: true, full: true },
+          { label: copy.metaScheduledLabel, value: scheduledFormatted, strong: true },
+          { label: copy.metaCountdownLabel, value: copy.metaCountdownValue, strong: true, color: PULSE.danger },
+        ],
+        'danger',
+      ),
+    })}
+    ${spacer(24)}
+    ${renderButton({ href: escapeHtml(params.cancelUrl), label: copy.cta, variant: 'lime', size: 'lg' })}
     ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">
-      ${copy.intro}
-    </p>
-    ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:18px;">
-      <tr>
-        <td style="padding:24px;">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">
-            ${copy.cardEyebrow}
-          </div>
-          ${spacer(12)}
-          ${renderStatusPill({ text: copy.statusText, dotColor: PULSE.danger, textColor: PULSE.graphite, bgColor: '#FFFBEB' })}
-          ${spacer(18)}
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.metaAccountLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.mono};font-size:13px;color:${PULSE.graphite};">${accountEmail}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.metaScheduledLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.graphite};">${scheduledFormatted}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.metaCountdownLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.danger};">${copy.metaCountdownValue}</div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-    ${spacer(28)}
-    ${renderButton({ href: params.cancelUrl, label: copy.cta, variant: 'lime' })}
+    ${renderP(copy.note, { size: 13, color: PULSE.n500 })}
     ${spacer(24)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:12.5px;line-height:1.55;color:${PULSE.n500};">
-      ${copy.note}
-    </p>
-    ${spacer(24)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.limeSoft};border-left:3px solid ${PULSE.limeDeep};border-radius:12px;">
-      <tr>
-        <td style="padding:18px 20px;">
-          <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};">
-            ${copy.notYouTitle}
-          </div>
-          ${spacer(8)}
-          <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.55;color:${PULSE.n700};">
-            ${copy.notYouBody}
-          </p>
-        </td>
-      </tr>
-    </table>
-  `;
+    ${securityNotYou({ tone: 'calm', title: copy.notYouTitle, body: copy.notYouBody })}
+  `);
 
-  const html = pulseLayout({ subject, preheader, content });
-
+  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
   const text = [
     copyText.eyebrow,
     '',

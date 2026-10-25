@@ -1,7 +1,14 @@
-import { PULSE, FONTS } from '../tokens';
+import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderButton, renderStatusPill, spacer } from '../components';
+import { renderButton, spacer } from '../components';
+import {
+  securityContent,
+  securityHero,
+  securityCard,
+  securityUrlBox,
+  securityNotYou,
+} from './security-mail-parts';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -31,11 +38,15 @@ export async function renderVerifyEmail(
     }
   })();
 
+  const hasName = Boolean(params.firstName && params.firstName.trim());
+
   const inlineDefault = isTr ? {
     eyebrow: 'E-POSTA ONAYI',
     title: 'Hesabını birkaç',
     titleAccent: 'saniyede aç',
-    intro: 'Merhaba <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Buaze hesabını oluşturduğun için teşekkürler. Devam edebilmek için aşağıdaki butonla e-posta adresini onayla. Bağlantı 24 saat geçerli.',
+    intro: hasName
+      ? 'Merhaba <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Buaze hesabını oluşturduğun için teşekkürler. Devam edebilmek için aşağıdaki butonla e-posta adresini onayla. Bağlantı 24 saat geçerli.'
+      : 'Merhaba, Buaze hesabını oluşturduğun için teşekkürler. Devam edebilmek için aşağıdaki butonla e-posta adresini onayla. Bağlantı 24 saat geçerli.',
     cardEyebrow: 'Tek kullanımlık link',
     statusText: 'Aktif · 24 saat geçerli',
     cta: 'E-postamı onayla →',
@@ -45,7 +56,9 @@ export async function renderVerifyEmail(
     eyebrow: 'EMAIL VERIFICATION',
     title: 'Activate your account',
     titleAccent: 'in seconds',
-    intro: 'Hi <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Thanks for creating a Buaze account. To continue, confirm your email address with the button below. The link is valid for 24 hours.',
+    intro: hasName
+      ? 'Hi <strong style="color:' + PULSE.graphite + ';font-weight:500;">${firstName}</strong>. Thanks for creating a Buaze account. To continue, confirm your email address with the button below. The link is valid for 24 hours.'
+      : 'Hi, thanks for creating a Buaze account. To continue, confirm your email address with the button below. The link is valid for 24 hours.',
     cardEyebrow: 'One-time link',
     statusText: 'Active · 24h valid',
     cta: 'Verify my email →',
@@ -54,74 +67,52 @@ export async function renderVerifyEmail(
   };
 
   const merged = await loadMailCopy('verify-email', locale, inlineDefault);
-  const fallbackName = isTr ? 'merhaba' : 'hi';
-  const vars = { firstName: params.firstName || fallbackName };
+  const vars = { firstName: hasName ? (params.firstName as string) : '' };
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
+  if (!hasName) {
+    // An admin override may still carry ${firstName}: drop the empty name slot
+    // ("Merhaba <strong></strong>. …") instead of inventing a name.
+    const cleanGreeting = (t: string) =>
+      t
+        .replace(/<(strong|span)\b[^>]*>\s*<\/\1>/g, '')
+        .replace(/^(\s*[\p{L}]+)\s*([.,!])\s+/u, '$1, ');
+    copy.intro = cleanGreeting(copy.intro);
+    copyText.intro = cleanGreeting(copyText.intro);
+  }
 
   const verifyHrefSafe = escapeHtml(params.verifyUrl);
   const displayUrlSafe = escapeHtml(displayUrl);
 
-  const content = `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td class="bz-pad" style="padding:36px 40px 0;">
-          ${renderEyebrow(copy.eyebrow)}
-          ${spacer(18)}
-          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:44px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
-            ${copy.title}<br/>
-            <span style="color:${PULSE.lime};">${copy.titleAccent}.</span>
-          </h1>
-          ${spacer(18)}
-          <p style="font-family:${FONTS.body};font-size:16px;color:${PULSE.n800};line-height:1.6;margin:0;">${copy.intro}</p>
-          ${spacer(28)}
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:0 40px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;">
-            <tr>
-              <td style="padding:22px 24px 8px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n600};text-transform:uppercase;">${copy.cardEyebrow}</span>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 24px 14px;">
-                <div style="font-family:${FONTS.mono};font-size:12px;color:${PULSE.n600};word-break:break-all;">${displayUrlSafe}</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 24px 22px;">
-                ${renderStatusPill({ text: copy.statusText, dotColor: PULSE.lime, textColor: PULSE.graphite })}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 24px 24px;">
-                ${renderButton({ href: verifyHrefSafe, label: copy.cta, size: 'lg' })}
-              </td>
-            </tr>
-          </table>
-          ${spacer(28)}
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:0 40px 40px;">
-          <div style="border-top:1px solid ${PULSE.n200};padding-top:20px;">
-            <div style="font-family:${FONTS.heading};font-size:14px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.01em;margin:0 0 6px;">${copy.notYouTitle}</div>
-            <p style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n600};line-height:1.6;margin:0;">${copy.notYouBody}</p>
-          </div>
-        </td>
-      </tr>
-    </table>
-  `;
+  const content = securityContent(`
+    ${securityHero({
+      eyebrow: copy.eyebrow,
+      title: copy.title,
+      accent: copy.titleAccent,
+      accentColor: PULSE.graphite,
+      accentHighlight: true,
+      breakBeforeAccent: true,
+      intro: copy.intro,
+    })}
+    ${spacer(28)}
+    ${securityCard({
+      tone: 'neutral',
+      eyebrow: copy.cardEyebrow,
+      pill: { text: copy.statusText, dotColor: PULSE.success, bgColor: PULSE.limeSoft },
+      body: `
+        ${securityUrlBox(displayUrlSafe)}
+        ${spacer(16)}
+        ${renderButton({ href: verifyHrefSafe, label: copy.cta, size: 'lg' })}
+      `,
+    })}
+    ${spacer(24)}
+    ${securityNotYou({ tone: 'calm', title: copy.notYouTitle, body: copy.notYouBody })}
+  `);
 
   const html = pulseLayout({
     subject,
     preheader,
     content,
-    eyebrow: isTr ? 'E-posta onayı' : 'Email verification',
     footer: { locale },
   });
 

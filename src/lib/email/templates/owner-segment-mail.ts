@@ -14,7 +14,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { spacer } from '../components';
+import { renderEyebrow, renderP, renderButton, spacer } from '../components';
 
 export interface OwnerSegmentMailParams {
   /** Admin'in yazdığı subject. */
@@ -32,6 +32,54 @@ export interface OwnerSegmentMailParams {
    * locale prefix yoktu, dashboard route 404'tu).
    */
   appUrl?: string;
+}
+
+// Admin writes plain text. Blank line = new paragraph, single newline = line
+// break, consecutive "- " / "• " / "* " lines = a bulleted list. Everything is
+// escaped before it touches markup.
+function renderSegmentBody(body: string): string {
+  const BULLET = /^\s*[-•*]\s+/;
+  const blocks = body.replace(/\r\n?/g, '\n').trim().split(/\n{2,}/).filter((b) => b.trim().length > 0);
+  const para = (lines: string[]): string =>
+    `<p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.65;color:${PULSE.n700};">${lines.map((l) => escapeHtml(l)).join('<br />')}</p>`;
+  const list = (items: string[]): string =>
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${items
+      .map(
+        (it, i) => `<tr>
+          <td valign="top" width="18" style="width:18px;padding:${i === 0 ? '8px' : '15px'} 0 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="7" height="7" style="width:7px;height:7px;background:${PULSE.limeDeep};border-radius:4px;font-size:1px;line-height:1px;">&nbsp;</td></tr></table></td>
+          <td valign="top" style="padding:${i === 0 ? '0' : '7px'} 0 0;font-family:${FONTS.body};font-size:15px;line-height:1.65;color:${PULSE.n700};">${escapeHtml(it)}</td>
+        </tr>`,
+      )
+      .join('')}</table>`;
+
+  return blocks
+    .map((block) => {
+      const lines = block.split('\n');
+      const parts: string[] = [];
+      let text: string[] = [];
+      let items: string[] = [];
+      const flushText = () => {
+        if (text.length) parts.push(para(text));
+        text = [];
+      };
+      const flushItems = () => {
+        if (items.length) parts.push(list(items));
+        items = [];
+      };
+      for (const line of lines) {
+        if (BULLET.test(line)) {
+          flushText();
+          items.push(line.replace(BULLET, ''));
+        } else {
+          flushItems();
+          text.push(line);
+        }
+      }
+      flushText();
+      flushItems();
+      return parts.map((p, i) => (i === 0 ? p : `${spacer(10)}${p}`)).join('');
+    })
+    .join(spacer(16));
 }
 
 export function renderOwnerSegmentMail(
@@ -52,7 +100,6 @@ export function renderOwnerSegmentMail(
       ? 'Merhaba,'
       : 'Hello,';
 
-  const safeBody = escapeHtml(params.body).replace(/\r?\n/g, '<br />');
   const safeGreeting = escapeHtml(greeting);
   // CLAUDE.md §38.132 — Locale-aware dashboard URL inşası.
   // appUrl override edilmemişse env-aware base + recipient locale +
@@ -67,55 +114,33 @@ export function renderOwnerSegmentMail(
   const sentLine = isTr ? 'Bu mesaj' : 'Sent via';
   const sentSuffix = isTr ? 'tarafından gönderildi.' : '';
 
+  // One padded cell (layout.ts forces .bz-pad to 28/22 on mobile for every cell
+  // that has it — one cell per block stacked 56px gaps). The wrapper table also
+  // fixes the old bare <tr> that was injected straight into the shell <td>.
   const content = `
-    <tr>
-      <td class="bz-pad" style="padding:32px 40px 16px;">
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.lime};font-weight:600;">
-          ${eyebrow}
-        </div>
-        <h1 style="font-family:${FONTS.heading};font-size:22px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.02em;margin:6px 0 0;">
-          ${escapeHtml(subject)}
-        </h1>
-      </td>
-    </tr>
-
-    <tr>
-      <td class="bz-pad" style="padding:8px 40px 0;">
-        <p style="font-family:${FONTS.body};font-size:15px;color:${PULSE.graphite};margin:0 0 14px;">
-          ${safeGreeting}
-        </p>
-      </td>
-    </tr>
-
-    <tr>
-      <td class="bz-pad" style="padding:0 40px 28px;">
-        <div style="font-family:${FONTS.body};font-size:14px;line-height:1.65;color:${PULSE.graphite};">
-          ${safeBody}
-        </div>
-      </td>
-    </tr>
-
-    <tr>
-      <td class="bz-pad" style="padding:0 40px 32px;">
-        <a href="${safeAppUrl}" style="display:inline-block;background:${PULSE.lime};color:${PULSE.graphite};font-family:${FONTS.body};font-size:13px;font-weight:600;padding:10px 18px;border-radius:24px;text-decoration:none;">
-          ${ctaLabel}
-        </a>
-      </td>
-    </tr>
-    ${spacer(8)}
-
-    <tr>
-      <td class="bz-pad" style="padding:0 40px 32px;">
-        <div style="border-top:1px solid ${PULSE.n200};padding-top:18px;">
-          <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:${PULSE.n500};">
-            ${sentLine} <strong style="color:${PULSE.graphite};">Buaze</strong> ${sentSuffix}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td class="bz-pad" style="padding:40px;">
+          ${renderEyebrow(eyebrow)}
+          ${spacer(12)}
+          <h1 style="font-family:${FONTS.heading};font-size:26px;font-weight:600;color:${PULSE.graphite};letter-spacing:-0.02em;line-height:1.2;margin:0;">${escapeHtml(subject)}</h1>
+          ${spacer(22)}
+          ${renderP(safeGreeting, { color: PULSE.graphite })}
+          ${spacer(14)}
+          ${renderSegmentBody(params.body)}
+          ${spacer(28)}
+          ${renderButton({ href: safeAppUrl, label: ctaLabel, variant: 'lime' })}
+          ${spacer(28)}
+          <div style="border-top:1px solid ${PULSE.n200};padding-top:18px;font-family:${FONTS.body};font-size:12px;line-height:1.6;color:${PULSE.n500};">
+            ${sentLine} <strong style="color:${PULSE.graphite};">Buaze</strong>${sentSuffix ? ` ${sentSuffix}` : ''}
           </div>
-        </div>
-      </td>
-    </tr>
+        </td>
+      </tr>
+    </table>
   `;
 
-  const html = pulseLayout({ subject, preheader, content });
+  // Admin-authored subject goes into <title>; escape it for that raw-HTML sink.
+  const html = pulseLayout({ subject: escapeHtml(subject), preheader: escapeHtml(preheader), content, footer: { locale } });
 
   const text = `${greeting}
 

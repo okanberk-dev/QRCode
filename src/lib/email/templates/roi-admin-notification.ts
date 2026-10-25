@@ -17,28 +17,21 @@ import {
   spacer,
 } from '../components';
 import { loadMailCopy } from '../copy-loader';
+import {
+  ROI_LIME_LINE_ON_SOFT,
+  ROI_ON_DARK_55,
+  ROI_ON_DARK_65,
+  ROI_ON_DARK_75,
+  ROI_ON_DARK_90,
+  ROI_ON_DARK_DIVIDER,
+  renderRoiBigNumber,
+  renderRoiKpiGrid,
+  renderRoiSteps,
+  roiPlatformList,
+  roiSectorLabel,
+} from './roi-mail-parts';
 import { deepSubstitute } from '../placeholders';
 
-const PLATFORM_LABEL_TR: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-  trendyol: 'Trendyol GO',
-  tripadvisor: 'Tripadvisor',
-  airbnb: 'Airbnb',
-  booking: 'Booking',
-  yandex: 'Yandex',
-  yelp: 'Yelp',
-  foursquare: 'Foursquare',
-};
-const SECTOR_LABEL_TR: Record<string, string> = {
-  restaurant: 'Restoran',
-  cafe: 'Kafe',
-  hotel: 'Otel',
-  clinic: 'Klinik',
-  other: 'Diğer',
-};
 const PLAN_LABEL: Record<string, string> = {
   starter: 'Starter',
   growth: 'Growth',
@@ -93,9 +86,7 @@ export async function renderRoiAdminNotification(
   const businessSafe = escapeHtml(params.restaurantName);
   const emailSafe = escapeHtml(params.email);
   const phoneSafe = params.phone ? escapeHtml(params.phone) : null;
-  const sectorLabel = isTr
-    ? SECTOR_LABEL_TR[params.sector] ?? params.sector
-    : params.sector;
+  const sectorLabel = roiSectorLabel(params.sector, isTr);
   const planLabel = PLAN_LABEL[params.plan] ?? params.plan;
   const initial = (params.restaurantName || params.email || '?').charAt(0).toUpperCase();
   const timestamp = new Date().toLocaleString(isTr ? 'tr-TR' : 'en-US', {
@@ -106,9 +97,7 @@ export async function renderRoiAdminNotification(
     minute: '2-digit',
   });
 
-  const platformLabels = params.platforms
-    .map((p) => (isTr ? PLATFORM_LABEL_TR[p] : p) ?? p)
-    .join(', ');
+  const platformLabels = roiPlatformList(params.platforms);
 
   // DB-driven copy override (CLAUDE.md §21.26 Phase 2 pattern). Kritik
   // alarm chrome admin panelden edit edilebilir; geri kalan inline.
@@ -164,14 +153,6 @@ export async function renderRoiAdminNotification(
 
   const summarySafe = escapeHtml(params.aiSummary);
   const highlightSafe = escapeHtml(params.aiHighlight);
-  // Steps list color'ı koyu zemin için baştan beyaz set ediliyor — eski
-  // .replace() regex hack'i (PULSE.graphite literal'ine bağımlıydı) kaldırıldı.
-  const stepsSafeHtml = params.aiNextSteps
-    .map(
-      (s) =>
-        `<li style="margin:0 0 8px;padding-left:6px;color:rgba(255,255,255,0.9);font-size:13.5px;line-height:1.55;">${escapeHtml(s)}</li>`,
-    )
-    .join('');
 
   const insightSourceLabel = isTr
     ? params.aiSource === 'ai'
@@ -188,179 +169,186 @@ export async function renderRoiAdminNotification(
   const preheader = `${copyText.preheaderPrefix} ${previewSummary}…`;
 
   // ─── HEAD: dark alert bar (timestamp + status pill) ────────────────────
+  // Inner row stacks on phones (pill under the timestamp) — side by side the
+  // eyebrow wrapped to two lines at 320px.
   const alertBar = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PULSE.graphite};border-radius:14px;margin:0 0 18px;">
-      <tr>
-        <td style="padding:14px 18px;color:${PULSE.pure};">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="vertical-align:middle;">
-                ${renderEyebrow(copy.alertEyebrow, PULSE.lime)}
-                <div style="margin-top:4px;font-size:12.5px;color:rgba(255,255,255,0.65);font-family:${FONTS.mono};">${escapeHtml(timestamp)}</div>
-              </td>
-              <td style="vertical-align:middle;text-align:right;">
-                ${renderStatusPill({
-                  text: copy.statusPill,
-                  dotColor: PULSE.lime,
-                  textColor: PULSE.pure,
-                  bgColor: 'rgba(255,255,255,0.08)',
-                })}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
+    <div style="background:${PULSE.graphite};border-radius:14px;padding:16px 18px;">
+      <table role="presentation" class="stack-row" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="stack-col" valign="middle">
+            ${renderEyebrow(copy.alertEyebrow, PULSE.lime)}
+            <div style="margin-top:4px;font-family:${FONTS.label};font-size:12px;line-height:1.5;color:${ROI_ON_DARK_65};">${escapeHtml(timestamp)}</div>
+          </td>
+          <td class="stack-col" valign="middle" align="right" style="text-align:right;">
+            ${renderStatusPill({
+              text: copy.statusPill,
+              dotColor: PULSE.lime,
+              textColor: PULSE.pure,
+              bgColor: '#262626',
+            })}
+          </td>
+        </tr>
+      </table>
+    </div>
   `;
 
   // ─── HERO: business + email + ROI big number ───────────────────────────
+  // Email / phone sit on their own lines (the old inline "· phone" dangled on
+  // a third line on phones).
   const hero = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr>
-        <td style="vertical-align:middle;width:56px;padding-right:14px;">
-          ${renderAvatarCircle({ initials: initial, size: 56, bg: PULSE.graphite, fg: PULSE.lime })}
+        <td valign="top" width="60" style="vertical-align:top;width:60px;padding-right:12px;">
+          ${renderAvatarCircle({ initials: initial, size: 48, bg: PULSE.graphite, fg: PULSE.lime })}
         </td>
-        <td style="vertical-align:middle;">
-          ${renderEyebrow(isTr ? `${sectorLabel} · ${planLabel}` : `${sectorLabel} · ${planLabel}`, PULSE.n500)}
-          <h1 style="margin:4px 0 2px;font-family:${FONTS.heading};font-size:24px;line-height:1.15;letter-spacing:-0.025em;color:${PULSE.graphite};font-weight:600;">${businessSafe}</h1>
-          <a href="mailto:${encodeURI(params.email)}" style="font-family:${FONTS.mono};font-size:12.5px;color:${PULSE.graphite};text-decoration:underline;">${emailSafe}</a>
-          ${phoneSafe ? `<span style="display:inline-block;margin-left:10px;font-family:${FONTS.mono};font-size:12.5px;color:${PULSE.n500};">· ${phoneSafe}</span>` : ''}
+        <td valign="top" style="vertical-align:top;">
+          ${renderEyebrow(escapeHtml(`${sectorLabel} · ${planLabel}`), PULSE.n500)}
+          <h1 style="margin:6px 0 0;font-family:${FONTS.heading};font-size:24px;line-height:1.2;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${businessSafe}</h1>
+          <a href="mailto:${encodeURI(params.email)}" style="display:block;padding:9px 0;font-family:${FONTS.body};font-size:12.5px;line-height:1.55;color:${PULSE.graphite};text-decoration:underline;">${emailSafe}</a>
+          ${phoneSafe ? `<div class="bz-break" style="font-family:${FONTS.body};font-size:13px;line-height:1.55;color:${PULSE.n600};">${phoneSafe}</div>` : ''}
         </td>
       </tr>
     </table>
-    ${spacer(18)}
-    <div class="bz-roi-card" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:14px;padding:18px 20px;">
+    ${spacer(20)}
+    <div class="bz-roi-card" style="background:${PULSE.limeSoft};border:1px solid ${ROI_LIME_LINE_ON_SOFT};border-radius:14px;padding:20px 22px;">
       ${renderEyebrow(copy.netGainEyebrow, PULSE.graphite)}
-      <div class="bz-roi-bignum-sm" style="margin-top:6px;font-family:${FONTS.heading};font-size:32px;line-height:1.05;letter-spacing:-0.03em;color:${PULSE.graphite};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
-      <div style="margin-top:8px;font-size:13px;color:${PULSE.n800};line-height:1.55;">
+      ${renderRoiBigNumber(`${c}${fmt(Math.max(0, Math.round(params.netGain)))}`, { color: PULSE.graphite, size: 36, mt: 8 })}
+      <div style="margin-top:10px;font-family:${FONTS.body};font-size:13px;line-height:1.6;color:${PULSE.n800};">
         12 ${isTr ? 'ayda' : 'mo'} ${params.roiMultiple.toFixed(1)}× ROI${params.paybackMonths ? ` · ${isTr ? 'amorti' : 'payback'} ~${params.paybackMonths} ${isTr ? 'ay' : 'mo'}` : ''} · ${c}${fmt(Math.round(params.monthlyUplift))}/${isTr ? 'ay' : 'mo'} ${isTr ? 'ek gelir' : 'uplift'}
       </div>
     </div>
   `;
 
-  // ─── KPI row (4 cell, mobile stack via .grid-4) ────────────────────────
-  const kpiRow = `
-    <table role="presentation" class="stack-row grid-4" width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        ${[
-          { v: `+${fmt(params.reviewers)}`, l: isTr ? 'Yorum / ay' : 'Reviews / mo' },
-          { v: fmt(params.filteredLowReviews), l: isTr ? 'Filtrelenen' : 'Filtered', accent: true },
-          { v: params.projectedGoogle.toFixed(1), l: isTr ? 'Yeni ★' : 'New ★' },
-          { v: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, l: isTr ? 'AI tasarruf' : 'AI saved' },
-        ]
-          .map(
-            (k) => `<td class="cell stack-col" valign="top" style="width:25%;padding:6px;">
-              <div class="bz-roi-kpi-cell" style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
-                <div class="bz-roi-kpi-val" style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
-                <div style="margin-top:6px;font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
-              </div>
-            </td>`,
-          )
-          .join('')}
-      </tr>
-    </table>
-  `;
+  // ─── KPI tiles (2×2, equal heights) ────────────────────────────────────
+  const kpiRow = renderRoiKpiGrid([
+    { value: `+${fmt(params.reviewers)}`, label: isTr ? 'Yorum / ay' : 'Reviews / mo' },
+    { value: fmt(params.filteredLowReviews), label: isTr ? 'Filtrelenen' : 'Filtered', accent: true },
+    { value: params.projectedGoogle.toFixed(1), label: isTr ? 'Yeni\u00A0★' : 'New\u00A0★' },
+    { value: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, label: isTr ? 'AI tasarruf' : 'AI saved' },
+  ]);
 
   // ─── AI INSIGHT card (graphite bg + lime accent) ───────────────────────
   // Priority actions section yalnız aiNextSteps doluyken render edilir;
-  // boş array'de orphan başlık + boş <ol> görünmez.
+  // boş array'de orphan başlık görünmez.
   const prioritySection =
     params.aiNextSteps.length > 0
       ? `
-      <div style="margin-top:16px;">
-        <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:8px;">${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}</div>
-        <ol style="margin:0;padding:0 0 0 22px;color:rgba(255,255,255,0.9);">${stepsSafeHtml}</ol>
+      <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${ROI_ON_DARK_DIVIDER};">
+        <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:${ROI_ON_DARK_55};margin-bottom:14px;">${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}</div>
+        ${renderRoiSteps(params.aiNextSteps, { dark: true })}
       </div>`
       : '';
   const aiInsightCard = `
-    <div style="background:${PULSE.graphite};border-radius:16px;padding:22px;color:${PULSE.pure};">
+    <div class="bz-roi-card" style="background:${PULSE.graphite};border-radius:16px;padding:24px;color:${PULSE.pure};">
       ${renderEyebrow(insightSourceLabel, PULSE.lime)}
-      <div style="margin-top:8px;font-size:13.5px;line-height:1.6;color:rgba(255,255,255,0.92);">${summarySafe}</div>
-      <div style="margin-top:14px;padding:12px 14px;background:rgba(198,242,78,0.12);border-left:3px solid ${PULSE.lime};border-radius:8px;">
-        <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.lime};margin-bottom:4px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
-        <div style="font-size:13px;line-height:1.55;color:${PULSE.pure};">${highlightSafe}</div>
+      <div style="margin-top:10px;font-family:${FONTS.body};font-size:14px;line-height:1.7;color:${ROI_ON_DARK_90};">${summarySafe}</div>
+      <div style="margin-top:16px;padding:14px 16px;background:#212612;border-left:3px solid ${PULSE.lime};border-radius:8px;">
+        <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:${PULSE.lime};margin-bottom:6px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
+        <div style="font-family:${FONTS.body};font-size:13.5px;line-height:1.6;color:${PULSE.pure};">${highlightSafe}</div>
       </div>
       ${prioritySection}
     </div>
   `;
 
-  // ─── Scenario table ────────────────────────────────────────────────────
-  const tableRow = (label: string, value: string, accent = false) => `
+  // ─── Scenario list ─────────────────────────────────────────────────────
+  // Label left (sentence case — uppercase labels wrapped to two lines and left
+  // orphan "★" at 375px), value right-aligned. The rounded border lives on a
+  // wrapper div: border-radius + overflow on a collapsed-border table never
+  // clipped the label column.
+  // table-layout:fixed + explicit 54/46 split: the label column gets enough room
+  // for "Mevcut Google ★" / "Monthly customers" on a 320px phone and the value
+  // column cannot be squeezed to nothing by a long unbreakable value. Labels are
+  // trusted constants (HTML); the "★" is glued to its word with U+00A0 / a
+  // nowrap span so it never dangles alone on a second line.
+  const nb = (t: string) => `<span style="white-space:nowrap;">${t}</span>`;
+  const scenarioRow = (labelHtml: string, valueHtml: string, opts: { accent?: boolean; last?: boolean } = {}) => `
     <tr>
-      <td style="padding:11px 14px;border-bottom:1px solid ${PULSE.n200};background:${PULSE.n50};font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};width:42%;">${escapeHtml(label)}</td>
-      <td style="padding:11px 14px;border-bottom:1px solid ${PULSE.n200};font-size:13px;color:${PULSE.graphite};${accent ? `font-family:${FONTS.mono};font-weight:600;` : ''}">${value}</td>
+      <td valign="top" width="54%" style="width:54%;padding:12px 4px 12px 12px;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:12.5px;line-height:1.5;color:${opts.accent ? PULSE.graphite : PULSE.n500};">${labelHtml}</td>
+      <td valign="top" align="right" width="46%" style="width:46%;padding:12px 12px 12px 4px;text-align:right;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:13.5px;line-height:1.5;color:${PULSE.graphite};font-weight:${opts.accent ? 600 : 500};">${valueHtml}</td>
     </tr>
   `;
+  // Plan value: plan name over its (unbreakable) price. Two deliberate lines on
+  // every width — a single "Growth · $899/mo" line wrapped to a dangling "·" on
+  // phones.
+  const planValue = `${escapeHtml(planLabel)}<br><span style="font-weight:400;font-size:12.5px;color:${PULSE.n500};white-space:nowrap;">${escapeHtml(`${c}${fmt(params.planPrice)}/${isTr ? 'ay' : 'mo'}`)}</span>`;
   const scenarioTable = `
-    <h2 style="margin:0 0 12px;font-family:${FONTS.heading};font-size:17px;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${copy.scenarioH2}</h2>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${PULSE.n200};border-radius:12px;overflow:hidden;">
-      ${tableRow(isTr ? 'Sektör' : 'Sector', escapeHtml(sectorLabel))}
-      ${tableRow(isTr ? 'Aylık müşteri' : 'Monthly customers', fmt(params.monthlyCustomers))}
-      ${tableRow(isTr ? 'Ortalama hesap' : 'Avg ticket', `${c}${fmt(params.avgTicket)}`)}
-      ${tableRow(isTr ? 'Mevcut Google ★' : 'Current Google ★', params.currentGoogle.toFixed(1))}
-      ${tableRow(isTr ? 'Aylık 1-3★ yorum' : '1-3★ reviews/mo', fmt(params.lowRatingsPerMonth))}
-      ${tableRow(isTr ? 'Aktif platformlar' : 'Active platforms', escapeHtml(platformLabels || '—'))}
-      ${tableRow(isTr ? 'Buaze planı' : 'Buaze plan', `${planLabel} · ${c}${fmt(params.planPrice)}/${isTr ? 'ay' : 'mo'}`)}
-      ${tableRow(isTr ? 'Yıllık ek gelir' : 'Yearly uplift', `${c}${fmt(Math.round(params.yearlyUplift))}`, true)}
-    </table>
+    <h2 style="margin:0 0 12px;font-family:${FONTS.heading};font-size:18px;line-height:1.3;letter-spacing:-0.01em;color:${PULSE.graphite};font-weight:600;">${copy.scenarioH2}</h2>
+    <div style="border:1px solid ${PULSE.n200};border-radius:12px;overflow:hidden;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;">
+        ${scenarioRow(isTr ? 'Sektör' : 'Sector', escapeHtml(sectorLabel))}
+        ${scenarioRow(isTr ? 'Aylık müşteri' : 'Monthly customers', escapeHtml(fmt(params.monthlyCustomers)))}
+        ${scenarioRow(isTr ? 'Ortalama hesap' : 'Avg ticket', escapeHtml(`${c}${fmt(params.avgTicket)}`))}
+        ${scenarioRow(isTr ? 'Mevcut Google\u00A0★' : 'Current Google\u00A0★', escapeHtml(params.currentGoogle.toFixed(1)))}
+        ${scenarioRow(isTr ? `Aylık ${nb('1-3★')} yorum` : `${nb('1-3★')} reviews/mo`, escapeHtml(fmt(params.lowRatingsPerMonth)))}
+        ${scenarioRow(isTr ? 'Aktif platformlar' : 'Active platforms', escapeHtml(platformLabels || '—'))}
+        ${scenarioRow(isTr ? 'Buaze planı' : 'Buaze plan', planValue)}
+        ${scenarioRow(isTr ? 'Yıllık ek gelir' : 'Yearly uplift', escapeHtml(`${c}${fmt(Math.round(params.yearlyUplift))}`), { accent: true, last: true })}
+      </table>
+    </div>
   `;
 
   // ─── Quick action 3-grid (Reply / Call / Panel) ────────────────────────
   // tel: ve mailto: URL attribute'larında HTML-escape'li değer KULLANILMAZ —
   // & -> &amp; dönüşümü URL'i bozar. Raw email + raw phone (ASCII filter).
   const rawPhone = params.phone ? params.phone.replace(/[^+0-9]/g, '') : '';
-  const callHref = rawPhone ? `tel:${rawPhone}` : '#';
+  const callHref = rawPhone ? `tel:${rawPhone}` : '';
   // §38.197 — env-aware admin panel fallback. Hardcoded canonical
-  // staging/preview deploy'larda yanlış host'a yönlendirir.
+  // staging/preview deploy'larında yanlış host'a yönlendirir.
   const adminAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const panelHref = params.panelUrl || `${adminAppUrl}/admin/customers`;
   const replyHref = `mailto:${encodeURI(params.email)}?subject=${encodeURIComponent(
     isTr ? `Buaze ROI hesabınız hakkında — ${params.restaurantName}` : `About your Buaze ROI estimate — ${params.restaurantName}`,
   )}`;
 
-  const quickAction = (label: string, sub: string, href: string, dark: boolean) => `
+  // No phone → a muted, non-clickable tile (the old tile linked to "#").
+  const quickAction = (label: string, sub: string, href: string, tone: 'dark' | 'light' | 'muted') => {
+    const bg = tone === 'dark' ? PULSE.graphite : tone === 'muted' ? PULSE.n100 : PULSE.n50;
+    const border = tone === 'dark' ? PULSE.graphite : PULSE.n200;
+    const titleColor = tone === 'dark' ? PULSE.lime : tone === 'muted' ? PULSE.n400 : PULSE.graphite;
+    const subColor = tone === 'dark' ? ROI_ON_DARK_75 : tone === 'muted' ? PULSE.n400 : PULSE.n500;
+    const inner = `<div style="font-family:${FONTS.heading};font-size:14px;line-height:1.3;font-weight:600;color:${titleColor};">${escapeHtml(label)}</div>
+        <div style="margin-top:4px;font-family:${FONTS.body};font-size:12px;line-height:1.45;color:${subColor};">${escapeHtml(sub)}</div>`;
+    const boxStyle = `display:block;background:${bg};border:1px solid ${border};border-radius:12px;padding:15px 16px;text-decoration:none;`;
+    return `
     <td class="cell stack-col" valign="top" style="width:33.33%;padding:5px;">
-      <a href="${href}" style="display:block;background:${dark ? PULSE.graphite : PULSE.n50};border:1px solid ${dark ? PULSE.graphite : PULSE.n200};border-radius:12px;padding:14px;text-decoration:none;">
-        <div style="font-family:${FONTS.heading};font-size:14px;font-weight:600;letter-spacing:-0.015em;color:${dark ? PULSE.lime : PULSE.graphite};">${escapeHtml(label)}</div>
-        <div style="margin-top:4px;font-size:11.5px;color:${dark ? 'rgba(255,255,255,0.7)' : PULSE.n500};">${escapeHtml(sub)}</div>
-      </a>
+      ${href ? `<a href="${href}" style="${boxStyle}">${inner}</a>` : `<div style="${boxStyle}">${inner}</div>`}
     </td>
   `;
+  };
 
   const quickActions = `
     ${renderEyebrow(copy.quickEyebrow, PULSE.n500)}
     ${spacer(8)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="stack-row">
       <tr>
-        ${quickAction(copy.replyLabel, copy.replySub, replyHref, true)}
-        ${quickAction(copy.callLabel, phoneSafe ? copy.callSubYes : copy.callSubNo, callHref, false)}
-        ${quickAction(copy.panelLabel, copy.panelSub, panelHref, false)}
+        ${quickAction(copy.replyLabel, copy.replySub, replyHref, 'dark')}
+        ${quickAction(copy.callLabel, phoneSafe ? copy.callSubYes : copy.callSubNo, callHref, phoneSafe ? 'light' : 'muted')}
+        ${quickAction(copy.panelLabel, copy.panelSub, panelHref, 'light')}
       </tr>
     </table>
   `;
 
   // Outer chrome — `bz-pad` wrapper aligns the lead alert with the rest of
   // the Pulse template family (low-rating-alert / contact-admin / …):
-  // 36px/40px desktop padding, 24px/20px mobile via the @media rule in
-  // layout.ts. Without this wrapper the alert bar + hero + KPI grid sat
-  // flush against the email shell and looked visibly "shifted" compared to
-  // peer admin alerts.
+  // 36px/40px desktop padding, 28px/22px mobile via the @media rule in
+  // layout.ts.
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
         <td class="bz-pad" style="padding:36px 40px 40px;">
           ${alertBar}
+          ${spacer(22)}
           ${hero}
           ${spacer(20)}
           ${kpiRow}
-          ${spacer(18)}
+          ${spacer(22)}
           ${aiInsightCard}
-          ${spacer(20)}
+          ${spacer(28)}
           ${scenarioTable}
-          ${spacer(18)}
+          ${spacer(24)}
           ${quickActions}
-          ${spacer(12)}
-          <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">${copy.footerDisclosure}</p>
+          ${spacer(18)}
+          <p style="margin:0;padding-top:18px;border-top:1px solid ${PULSE.n200};font-family:${FONTS.body};font-size:11px;color:${PULSE.n500};line-height:1.65;">${copy.footerDisclosure}</p>
         </td>
       </tr>
     </table>

@@ -30,18 +30,25 @@ export async function renderCustomerReply(
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
-  const customerFirst = params.customerName ? escapeHtml(params.customerName).split(' ')[0] : (isTr ? 'merhaba' : 'hi');
-  const restaurant = escapeHtml(params.restaurantName);
-  const restaurantInitial = (params.restaurantName || 'B').charAt(0).toUpperCase();
-  const ownerName = params.ownerName ? escapeHtml(params.ownerName) : (isTr ? 'İşletmeci' : 'Owner');
-  const ownerInitials = (params.ownerName || 'B').split(' ').map((p) => p.charAt(0).toUpperCase()).slice(0, 2).join('');
+  // `feedback.name` is nullable, so every name-dependent string has a nameless
+  // form instead of a lowercase "merhaba," masquerading as a name.
+  const customerFirstRaw = (params.customerName ?? '').trim().split(/\s+/)[0] ?? '';
+  const restaurantRaw = params.restaurantName;
+  const restaurant = escapeHtml(restaurantRaw);
+  const restaurantInitial = escapeHtml((restaurantRaw || 'B').trim().charAt(0).toUpperCase() || 'B');
+  // The production sender never passes ownerName. Without it the sign-off is the
+  // team ("<Restaurant> ekibi") — never the bare role word dressed up as a name.
+  const ownerRaw = (params.ownerName ?? '').trim();
+  const ownerName = escapeHtml(ownerRaw);
+  const signoffRaw = ownerRaw || (isTr ? `${restaurantRaw} ekibi` : `The ${restaurantRaw} team`);
+  const signoff = escapeHtml(signoffRaw);
 
-  const subject = isTr
-    ? `${customerFirst}, geri bildirimin için teşekkürler`
-    : `${customerFirst}, thank you for your feedback`;
+  const subject = customerFirstRaw
+    ? (isTr ? `${customerFirstRaw}, geri bildirimin için teşekkürler` : `${customerFirstRaw}, thank you for your feedback`)
+    : (isTr ? 'Geri bildirimin için teşekkürler' : 'Thank you for your feedback');
   const preheader = isTr
-    ? `Yaşadığın deneyim için özür dileriz. Seni tekrar ${params.restaurantName}'de ağırlamak isteriz.`
-    : `We\'re sorry about your experience. We\'d love to welcome you back to ${params.restaurantName}.`;
+    ? `Yaşadığın deneyim için özür dileriz. Seni tekrar ${restaurantRaw}'de ağırlamak isteriz.`
+    : `We're sorry about your experience. We'd love to welcome you back to ${restaurantRaw}.`;
 
   const inlineDefault = isTr ? {
     headerEyebrow: 'Sana özel · Kişisel yanıt',
@@ -82,14 +89,25 @@ export async function renderCustomerReply(
   // DB-merged + placeholder substitution. `sentLine`/`sentSuffix` are the
   // Buaze-attribution disclosure — KVKK-locked server-side (locked-fields.ts).
   const merged = await loadMailCopy('customer-reply', locale, inlineDefault);
+  // Raw values: deepSubstitute escapes in html mode, so pre-escaped input would
+  // double-escape (D&#39;Arcy → D&amp;#39;Arcy).
   const vars = {
-    customerFirstName: customerFirst,
-    restaurantName: params.restaurantName,
-    ownerName: ownerName,
+    customerFirstName: customerFirstRaw,
+    restaurantName: restaurantRaw,
+    ownerName: signoffRaw,
   };
   const copy = deepSubstitute(merged, vars, 'html');
 
-  const message = escapeHtml(params.message).replace(/\n\s*\n/g, '</p><p style="font-family:' + FONTS.body + ';font-size:15px;line-height:1.7;color:' + PULSE.n700 + ';margin:14px 0 0;letter-spacing:-0.005em;">').replace(/\n/g, '<br>');
+  // No customer name → drop the "${customerFirstName}," line (unless an admin
+  // rewrote titleA without the placeholder) and capitalise the sentence start.
+  const dropGreeting = !customerFirstRaw && String(merged.titleA ?? '').includes('${customerFirstName}');
+  const titleGreeting = dropGreeting ? '' : copy.titleA;
+  const titleSubA = titleGreeting
+    ? copy.titleSubA
+    : copy.titleSubA.charAt(0).toLocaleUpperCase(isTr ? 'tr' : 'en') + copy.titleSubA.slice(1);
+
+  const messageP = `font-family:${FONTS.body};font-size:15px;line-height:1.7;color:${PULSE.n700};`;
+  const message = escapeHtml(params.message).replace(/\n\s*\n/g, `</p><p style="${messageP}margin:14px 0 0;">`).replace(/\n/g, '<br>');
 
   // Actions card — JSX prototipinde Kadıköy Bistro hikayesine özel 3 sabit
   // örnek ("kahve / vardiya / briefing") vardı. Gerçek müşteri yanıtında
@@ -103,88 +121,95 @@ export async function renderCustomerReply(
     : [];
 
   const actionsBlock = actionItems.length ? `
-    <tr>
-      <td class="bz-pad" style="padding:20px 40px 8px;">
+        ${spacer(24)}
         <div style="background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:14px;padding:24px;">
           ${renderEyebrow(copy.actionsEyebrow)}
-          ${spacer(12)}
+          ${spacer(14)}
           ${actionItems.map(([title, desc], i) => `
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
                 <td valign="top" style="width:36px;padding:${i === 0 ? '0' : '14px 0 0 0'};">
-                  <div style="width:22px;height:22px;border-radius:50%;background:${PULSE.lime};color:${PULSE.graphite};text-align:center;line-height:22px;font-size:12px;font-weight:600;">✓</div>
+                  <div style="width:24px;height:24px;border-radius:50%;background:${PULSE.lime};color:${PULSE.graphite};text-align:center;line-height:24px;font-size:12px;font-weight:600;">✓</div>
                 </td>
                 <td valign="top" style="padding:${i === 0 ? '0 0 14px 0' : '14px 0'};${i < actionItems.length - 1 ? `border-bottom:1px solid ${PULSE.n200};` : ''}">
-                  <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.01em;">${escapeHtml(title)}</div>
+                  <div style="font-family:${FONTS.heading};font-size:15px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${escapeHtml(title)}</div>
                   ${desc ? `<div style="height:4px;line-height:1px;font-size:1px;">&nbsp;</div>${renderP(escapeHtml(desc), { size: 13 })}` : ''}
                 </td>
               </tr>
             </table>
           `).join('')}
         </div>
-      </td>
-    </tr>
   ` : '';
 
-  // Coupon card with code + days split — JSX:94-125
+  // Coupon card. The code sits on its own line (monospace, wraps via bz-break if
+  // an owner types a very long one); the validity is a pill that sits right of
+  // the code on desktop and drops under it on phones (stack-col).
+  const couponBody = params.couponBody ? escapeHtml(params.couponBody) : copy.couponDescDefault;
   const couponBlock = params.couponCode ? `
-    <tr>
-      <td class="bz-pad" style="padding:32px 40px 8px;">
-        <div style="background:${PULSE.graphite};border-radius:14px;padding:28px;color:${PULSE.pure};">
+        ${spacer(28)}
+        <div style="background:${PULSE.graphite};border-radius:14px;padding:26px 24px;color:${PULSE.pure};">
           ${renderEyebrow(copy.couponEyebrow, PULSE.lime)}
           ${spacer(14)}
           ${renderH2(escapeHtml(params.couponLabel || copy.couponTitle).replace(/\n/g, '<br/>'), { color: PULSE.pure })}
-          ${spacer(16)}
-          ${renderP(params.couponBody ?? copy.couponDescDefault, { size: 14, color: PULSE.n300 })}
-          ${spacer(18)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:${PULSE.pure};border-radius:10px;">
+          ${spacer(14)}
+          ${renderP(couponBody, { size: 14, color: PULSE.n300 })}
+          ${spacer(20)}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.pure};border-radius:12px;">
             <tr>
-              <td valign="middle" style="padding:14px 20px;font-family:${FONTS.mono};font-size:18px;color:${PULSE.graphite};letter-spacing:0.15em;font-weight:500;">${escapeHtml(params.couponCode)}</td>
-              <td valign="middle" style="padding:14px 0;"><span style="display:inline-block;width:1px;height:18px;background:${PULSE.n300};"></span></td>
-              <td valign="middle" style="padding:14px 20px;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};letter-spacing:0.1em;">${params.couponDays ?? 30} ${copy.daysSuffix}</td>
+              <td style="padding:12px 20px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
+                  <tr>
+                    <td class="stack-col" valign="middle" style="padding:0;">
+                      <div class="bz-break" style="font-family:${FONTS.code};font-size:20px;font-weight:700;line-height:1.35;letter-spacing:0.08em;color:${PULSE.graphite};">${escapeHtml(params.couponCode)}</div>
+                    </td>
+                    <td class="stack-col" valign="middle" align="right" style="padding:0;">
+                      <span style="display:inline-block;font-family:${FONTS.label};font-size:11px;font-weight:600;line-height:1.4;letter-spacing:0.04em;color:${PULSE.graphite};background:${PULSE.limeSoft};border-radius:999px;padding:5px 12px;white-space:nowrap;">${params.couponDays ?? 30} ${copy.daysSuffix}</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
             </tr>
           </table>
-        </div>
-      </td>
-    </tr>` : '';
+        </div>` : '';
 
-  // Contact 2x2 grid (jsx:144-164). Build only present rows.
+  // Contact cards (jsx:144-164). Two present → 50/50 (stacked on phones);
+  // one present → full width instead of half a row with an empty half.
   const callCard = params.phone ? `
-    <a href="tel:${params.phone.replace(/[^+0-9]/g, '')}" style="display:block;padding:14px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
+    <a href="tel:${params.phone.replace(/[^+0-9]/g, '')}" style="display:block;padding:14px 16px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
       ${renderEyebrow(copy.callEyebrow)}
       <div style="height:4px;line-height:1px;font-size:1px;">&nbsp;</div>
-      <div style="font-family:${FONTS.mono};font-size:14px;color:${PULSE.graphite};font-weight:500;">${escapeHtml(params.phone)}</div>
+      <div style="font-family:${FONTS.label};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${escapeHtml(params.phone)}</div>
     </a>
   ` : '';
-  const mapsCard = params.mapsUrl ? `
-    <a href="${params.mapsUrl}" style="display:block;padding:14px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
+  const mapsCard = params.mapsUrl && /^https?:\/\//i.test(params.mapsUrl.trim()) ? `
+    <a href="${escapeHtml(params.mapsUrl.trim())}" style="display:block;padding:14px 16px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
       ${renderEyebrow(copy.mapsEyebrow)}
       <div style="height:4px;line-height:1px;font-size:1px;">&nbsp;</div>
-      <div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};font-weight:500;">${escapeHtml(params.mapsLabel || params.restaurantName)}</div>
+      <div style="font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${escapeHtml(params.mapsLabel || params.restaurantName)}</div>
     </a>
   ` : '';
-  const contactBlock = (callCard || mapsCard) ? `
-    <tr>
-      <td class="bz-pad" style="padding:32px 40px 12px;">
-        ${renderTwoColCards({ left: callCard || '<div></div>', right: mapsCard || '<div></div>' })}
-      </td>
-    </tr>` : '';
+  const contactCards = callCard && mapsCard
+    ? renderTwoColCards({ left: callCard, right: mapsCard })
+    : (callCard || mapsCard);
+  const contactBlock = contactCards ? `
+        ${spacer(32)}
+        ${contactCards}` : '';
 
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td class="bz-pad" style="background:${PULSE.limeSoft};padding:40px 40px 32px;">
+        <td class="bz-pad" style="background:${PULSE.limeSoft};padding:40px 40px 34px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
             <tr>
               <td class="stack-col" valign="middle">
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                   <tr>
                     <td valign="middle">
-                      <div style="width:36px;height:36px;border-radius:10px;background:${PULSE.graphite};color:${PULSE.lime};text-align:center;line-height:36px;font-family:${FONTS.heading};font-weight:500;font-size:16px;">${restaurantInitial}</div>
+                      <div style="width:36px;height:36px;border-radius:10px;background:${PULSE.graphite};color:${PULSE.lime};text-align:center;line-height:36px;font-family:${FONTS.heading};font-weight:600;font-size:16px;">${restaurantInitial}</div>
                     </td>
                     <td valign="middle" style="padding-left:12px;">
-                      <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.01em;">${restaurant}</div>
-                      <div style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n600};letter-spacing:0.05em;text-transform:uppercase;">${ownerName} · ${copy.ownerLabel}</div>
+                      <div style="font-family:${FONTS.heading};font-size:15px;font-weight:600;line-height:1.35;color:${PULSE.graphite};">${restaurant}</div>
+                      ${ownerName ? `<div style="font-family:${FONTS.label};font-size:11px;line-height:1.5;color:${PULSE.n600};letter-spacing:0.08em;text-transform:uppercase;font-weight:500;">${ownerName} · ${copy.ownerLabel}</div>` : ''}
                     </td>
                   </tr>
                 </table>
@@ -193,50 +218,44 @@ export async function renderCustomerReply(
             </tr>
           </table>
           ${spacer(20)}
-          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:38px;font-weight:500;letter-spacing:-0.025em;line-height:1.15;color:${PULSE.graphite};margin:0;">
-            ${copy.titleA}<br/>
-            ${copy.titleSubA} <span style="font-style:italic;">${copy.titleSubItalic}</span> ${copy.titleSubB}<span style="color:${PULSE.success};">.</span>
+          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:38px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
+            ${titleGreeting ? `${titleGreeting}<br/>` : ''}
+            ${titleSubA} <span style="font-style:italic;">${copy.titleSubItalic}</span>${copy.titleSubB ? ` ${copy.titleSubB}` : ''}<span style="color:${PULSE.success};">.</span>
           </h1>
         </td>
       </tr>
       <tr>
         <td class="bz-pad" style="padding:36px 40px 8px;">
-          <p style="font-family:${FONTS.body};font-size:15px;line-height:1.7;color:${PULSE.n700};margin:0;letter-spacing:-0.005em;">${message}</p>
-        </td>
-      </tr>
-      ${actionsBlock}
-      ${couponBlock}
-      <tr>
-        <td class="bz-pad" style="padding:32px 40px 8px;">
+          <p style="${messageP}margin:0;">${message}</p>
+          ${actionsBlock}
+          ${couponBlock}
+          ${spacer(32)}
           ${params.signaturePostscript ? `${renderP(escapeHtml(params.signaturePostscript), { size: 15, color: PULSE.n700 })}${spacer(22)}` : ''}
           ${renderP(isTr ? 'Tekrar teşekkürler.' : 'Thanks again.', { size: 15, color: PULSE.n700 })}
-          ${spacer(4)}
-          <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.02em;font-style:italic;">${ownerName}</div>
-          <div style="font-size:12px;color:${PULSE.n500};margin-top:4px;">${isTr ? 'İşletmeci' : 'Owner'} · ${restaurant}</div>
+          ${spacer(6)}
+          <div style="font-family:${FONTS.heading};font-size:22px;font-weight:600;line-height:1.25;color:${PULSE.graphite};letter-spacing:-0.01em;font-style:italic;">${signoff}</div>
+          ${ownerName ? `<div style="font-size:12px;line-height:1.5;color:${PULSE.n500};margin-top:4px;">${isTr ? 'İşletmeci' : 'Owner'} · ${restaurant}</div>` : ''}
+          ${contactBlock}
         </td>
       </tr>
-      ${contactBlock}
       <tr>
-        <td class="bz-pad" style="padding:24px 40px 36px;text-align:center;">
-          <div style="font-size:11px;color:${PULSE.n400};font-family:${FONTS.mono};letter-spacing:0.1em;">${copy.sentLine} <span style="color:${PULSE.n600};">buaze</span> ${copy.sentSuffix}</div>
+        <td class="bz-pad" style="padding:28px 40px 36px;text-align:center;">
+          <div style="font-size:11px;line-height:1.5;color:${PULSE.n500};font-family:${FONTS.label};letter-spacing:0.03em;">${copy.sentLine} <span style="color:${PULSE.graphite};font-weight:600;">buaze</span> ${copy.sentSuffix}</div>
         </td>
       </tr>
     </table>
   `;
 
-  // ownerInitials is computed up top for a future avatar variant (JSX
-  // prototype showed an owner-initials chip we haven't ported yet); keep
-  // the calculation around so the data is ready when that block lands.
-  // The `void` discards the value so eslint's no-unused-vars stays quiet.
-  void ownerInitials;
-
+  // pulseLayout interpolates subject/preheader into <title> and the hidden
+  // preheader div verbatim, so they are escaped here.
   const html = pulseLayout({
-    subject,
-    preheader,
+    subject: escapeHtml(subject),
+    preheader: escapeHtml(preheader),
     content,
     eyebrow: '',
     footer: { locale, unsubText: isTr ? 'Restoran maillerini almayı bırakmak için' : 'To stop restaurant emails' },
   });
-  const text = `${customerFirst},\n\n${params.message}\n\n— ${ownerName}, ${params.restaurantName}`;
+  const greeting = customerFirstRaw ? `${customerFirstRaw},` : (isTr ? 'Merhaba,' : 'Hi,');
+  const text = `${greeting}\n\n${params.message}\n\n— ${ownerRaw ? `${ownerRaw}, ${restaurantRaw}` : signoffRaw}`;
   return { subject, html, text };
 }

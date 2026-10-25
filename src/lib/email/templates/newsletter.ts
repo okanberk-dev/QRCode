@@ -115,49 +115,55 @@ export async function renderNewsletter(
   const exploreUrl = params.exploreUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com'}/${isTr ? 'tr' : 'en'}/blog`;
   const editorNoteUrl = featured?.url ?? exploreUrl;
 
+  // Layout note: layout.ts forces `.bz-pad` to 28/22 on EVERY cell that carries
+  // it on mobile, so the whole body lives in ONE padded cell and sections are
+  // separated with spacers (a bz-pad cell per section stacked 56px gaps).
+
   // Featured dark card. JSX prototipinde sağda statik bir Pulse AI demo
   // code block vardı ("input.tone / model.draft / latency: 1.2s") — sadece
   // o sayının kapak yazısı için anlamlıydı. Gerçek mailde her ay farklı bir
   // post seçildiğinden çelişkili duruyordu, kaldırdık. Card artık tek sütun:
   // okuma süresi + başlık + excerpt + CTA.
   const featuredBlock = featured ? `
-    <tr>
-      <td class="bz-pad" style="padding:36px 40px 8px;">
-        ${renderEyebrow(copy.featuredEyebrow)}
-        ${spacer(14)}
-        <div style="background:${PULSE.graphite};border-radius:14px;padding:32px;color:${PULSE.pure};">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;font-weight:600;">${featured.readMinutes ? `${featured.readMinutes} ${copy.readMinutesUnit} okuma` : copy.featuredReadTime}</div>
+    ${spacer(32)}
+    ${renderEyebrow(copy.featuredEyebrow)}
+    ${spacer(14)}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:0;">
+      <tr>
+        <td class="bz-pad-tight" style="background:${PULSE.graphite};border-radius:16px;padding:32px;color:${PULSE.pure};">
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.12em;line-height:1.5;color:${PULSE.lime};text-transform:uppercase;font-weight:600;">${featured.readMinutes ? `${featured.readMinutes} ${copy.readMinutesUnit} ${isTr ? 'okuma' : 'read'}` : copy.featuredReadTime}</div>
           ${spacer(12)}
-          <h2 style="font-family:${FONTS.heading};font-size:28px;font-weight:500;letter-spacing:-0.02em;line-height:1.2;color:${PULSE.pure};margin:0;">${escapeHtml(featured.title)}</h2>
-          ${featured.excerpt ? `${spacer(14)}<div style="font-family:${FONTS.body};font-size:15px;color:${PULSE.n300};line-height:1.6;max-width:520px;">${escapeHtml(featured.excerpt)}</div>` : ''}
-          ${spacer(20)}
-          <a href="${featured.url}" style="display:inline-block;color:${PULSE.graphite};background:${PULSE.lime};padding:11px 20px;border-radius:8px;font-family:${FONTS.body};font-weight:600;font-size:14px;text-decoration:none;">${copy.featuredOpen}</a>
-        </div>
-      </td>
-    </tr>` : '';
+          <h2 style="font-family:${FONTS.heading};font-size:26px;font-weight:600;letter-spacing:-0.02em;line-height:1.25;color:${PULSE.pure};margin:0;">${escapeHtml(featured.title)}</h2>
+          ${featured.excerpt ? `${spacer(14)}<div style="font-family:${FONTS.body};font-size:15px;color:${PULSE.n300};line-height:1.65;">${escapeHtml(featured.excerpt)}</div>` : ''}
+          ${spacer(22)}
+          ${renderButton({ href: escapeHtml(featured.url), label: copy.featuredOpen, variant: 'lime' })}
+        </td>
+      </tr>
+    </table>` : '';
 
-  // Articles list (jsx:90-112)
-  const postRows = restPosts.slice(0, 4).map((p, i) => {
+  // Articles list (jsx:90-112). Link lives on the title + arrow (an <a> around
+  // a whole <table> breaks in Outlook); the row stays one tap target on mobile.
+  const visiblePosts = restPosts.slice(0, 4);
+  const postRows = visiblePosts.map((p, i) => {
     const num = String(i + 1).padStart(2, '0');
     const cat = p.category ? escapeHtml(p.category) : copy.fallbackCategory;
     const read = p.readMinutes ? `${p.readMinutes} ${copy.readMinutesUnit}` : '';
-    const isLast = i === Math.min(restPosts.length, 4) - 1;
+    const isLast = i === visiblePosts.length - 1;
+    const href = escapeHtml(p.url);
     return `
       <tr>
         <td style="padding:18px 0;border-top:1px solid ${PULSE.n200};${isLast ? `border-bottom:1px solid ${PULSE.n200};` : ''}">
-          <a href="${p.url}" style="text-decoration:none;display:block;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td valign="top" style="width:36px;font-family:${FONTS.mono};font-size:13px;color:${PULSE.n400};font-weight:500;">${num}</td>
-                <td valign="top" style="padding-left:8px;">
-                  <div style="font-family:${FONTS.heading};font-size:17px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.015em;line-height:1.35;">${escapeHtml(p.title)}</div>
-                  ${p.excerpt ? `<div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n600};margin-top:4px;line-height:1.55;">${escapeHtml(p.excerpt)}</div>` : ''}
-                  <div style="margin-top:8px;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};letter-spacing:0.05em;text-transform:uppercase;">${cat}${read ? ` · ${read}` : ''}</div>
-                </td>
-                <td valign="middle" align="right" style="width:30px;color:${PULSE.n400};font-size:18px;font-family:${FONTS.body};">→</td>
-              </tr>
-            </table>
-          </a>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td valign="top" width="34" style="width:34px;padding-top:3px;font-family:${FONTS.label};font-size:13px;line-height:1.4;color:${PULSE.n400};font-weight:600;">${num}</td>
+              <td valign="top">
+                <a href="${href}" style="font-family:${FONTS.heading};font-size:17px;font-weight:600;color:${PULSE.graphite};letter-spacing:-0.01em;line-height:1.35;text-decoration:none;">${escapeHtml(p.title)}</a>
+                ${p.excerpt ? `<div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n600};margin-top:6px;line-height:1.6;">${escapeHtml(p.excerpt)}</div>` : ''}
+                <div style="margin-top:10px;font-family:${FONTS.label};font-size:11px;font-weight:600;color:${PULSE.n500};letter-spacing:0.08em;line-height:1.5;text-transform:uppercase;">${cat}${read ? ` · ${read}` : ''}</div>
+              </td>
+              <td valign="top" align="right" width="28" style="width:28px;padding-top:1px;font-family:${FONTS.body};font-size:18px;line-height:1.4;"><a href="${href}" style="color:${PULSE.n400};text-decoration:none;">→</a></td>
+            </tr>
+          </table>
         </td>
       </tr>
     `;
@@ -166,25 +172,28 @@ export async function renderNewsletter(
   // Stats band — opsiyonel. Caller `params.stats` geçerse render edilir,
   // yoksa block tamamen gizlenir. JSX prototip değerleri (+184% / 1.4s)
   // gerçek metrik üretmediği için her ay aynı görünmesindense yokluğu
-  // tercih edildi.
+  // tercih edildi. Each cell opens with a short lime bar so stacked cells on
+  // phones still read as separate stats.
   const statsList = params.stats ?? [];
   const statsBlock = statsList.length > 0 ? `
-    <tr>
-      <td class="bz-pad" style="padding:32px 40px 16px;">
-        <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:28px;">
+    ${spacer(32)}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate;border-spacing:0;">
+      <tr>
+        <td class="bz-pad-tight" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:16px;padding:28px;">
           ${renderEyebrow(copy.statsTitle)}
-          ${spacer(14)}
+          ${spacer(16)}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
             <tr>${statsList.map((s, i) => `
-              <td class="stack-col" valign="top" style="width:${(100 / statsList.length).toFixed(2)}%;padding:0 16px;${i === 0 ? 'padding-left:0;' : ''}${i < statsList.length - 1 ? `border-right:1px solid ${PULSE.n200};` : 'padding-right:0;'}">
-                <div style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.graphite};line-height:1;">${escapeHtml(s.value)}</div>
-                <div style="margin-top:6px;font-family:${FONTS.body};font-size:12px;color:${PULSE.n500};">${escapeHtml(s.label)}</div>
+              <td class="stack-col" valign="top" style="width:${(100 / statsList.length).toFixed(2)}%;padding:0 14px;${i === 0 ? 'padding-left:0;' : ''}${i < statsList.length - 1 ? `border-right:1px solid ${PULSE.n200};` : 'padding-right:0;'}">
+                <div style="width:24px;height:3px;background:${PULSE.lime};border-radius:2px;font-size:1px;line-height:3px;">&nbsp;</div>
+                <div style="margin-top:12px;font-family:${FONTS.heading};font-size:26px;font-weight:600;letter-spacing:-0.02em;color:${PULSE.graphite};line-height:1.1;">${escapeHtml(s.value)}</div>
+                <div style="margin-top:6px;font-family:${FONTS.body};font-size:12px;line-height:1.5;color:${PULSE.n500};">${escapeHtml(s.label)}</div>
               </td>
             `).join('')}</tr>
           </table>
-        </div>
-      </td>
-    </tr>` : '';
+        </td>
+      </tr>
+    </table>` : '';
 
   // Custom title/intro override the default Pulse copy. When admin authors a
   // campaign with its own headline, the lime-highlight styling falls away and
@@ -193,54 +202,50 @@ export async function renderNewsletter(
   const customIntroTrimmed = params.customIntro?.trim();
   const titleHtml = customTitleTrimmed
     ? escapeHtml(customTitleTrimmed)
-    : `${copy.titleA}<br/><span style="display:inline-block;background:${PULSE.lime};padding:0 6px;">${copy.titleAccent}</span> ${copy.titleEnd}`;
+    : `${copy.titleA}<br/><span style="display:inline-block;margin-top:8px;background:${PULSE.lime};padding:0 8px;border-radius:8px;">${copy.titleAccent}</span> ${copy.titleEnd}`;
   const introText = customIntroTrimmed ?? copy.intro;
+  // The campaign intro is admin-typed plain text (textarea); the default copy is
+  // trusted, already-substituted HTML. Only the custom text needs escaping.
+  const introHtml = customIntroTrimmed !== undefined ? escapeHtml(customIntroTrimmed) : copy.intro;
 
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td class="bz-pad" style="padding:40px 40px 36px;">
+        <td class="bz-pad" style="padding:40px;">
           ${renderEyebrow(copy.eyebrowTop)}
-          ${spacer(18)}
-          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:48px;font-weight:500;letter-spacing:-0.025em;line-height:1.05;color:${PULSE.graphite};margin:0;">
+          ${spacer(16)}
+          <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:44px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
             ${titleHtml}
           </h1>
-          ${spacer(22)}
-          ${renderP(introText, { size: 16 })}
+          ${spacer(20)}
+          ${renderP(introHtml, { size: 16 })}
           ${spacer(24)}
-          ${renderButton({ href: editorNoteUrl, label: copy.cta, size: 'lg' })}
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:0 40px;">
+          ${renderButton({ href: escapeHtml(editorNoteUrl), label: copy.cta, size: 'lg' })}
+          ${spacer(36)}
           ${renderEcgDivider({ color: PULSE.lime, height: 24 })}
-        </td>
-      </tr>
-      ${featuredBlock}
-      ${restPosts.length > 0 ? `
-      <tr>
-        <td class="bz-pad" style="padding:36px 40px 8px;">
+          ${featuredBlock}
+          ${restPosts.length > 0 ? `
+          ${spacer(36)}
           ${renderEyebrow(copy.listEyebrow)}
-          ${spacer(14)}
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${postRows}</table>
-        </td>
-      </tr>` : ''}
-      ${statsBlock}
-      <tr>
-        <td class="bz-pad" style="padding:${statsBlock ? '8px' : '32px'} 40px 36px;">
+          ${spacer(10)}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${postRows}</table>` : ''}
+          ${statsBlock}
+          ${spacer(36)}
           ${renderEyebrow(copy.futureLabel)}
           ${spacer(8)}
           ${renderP(copy.futureBody, { size: 13, color: PULSE.n600 })}
           ${spacer(18)}
-          <a href="${exploreUrl}" style="font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};font-weight:500;border-bottom:1px solid ${PULSE.graphite};text-decoration:none;">${copy.exploreCta}</a>
+          <a href="${escapeHtml(exploreUrl)}" class="bz-btn" style="display:inline-block;color:${PULSE.graphite};border:1px solid ${PULSE.graphite};padding:12px 22px;border-radius:10px;font-family:${FONTS.body};font-weight:600;font-size:14px;line-height:1.2;text-decoration:none;mso-padding-alt:0;">${copy.exploreCta}</a>
         </td>
       </tr>
     </table>
   `;
 
+  // Subject (admin-authored campaign subject) and preheader (a post excerpt)
+  // land in <title> / the hidden preheader div — escape both for those sinks.
   const html = pulseLayout({
-    subject,
-    preheader,
+    subject: escapeHtml(subject),
+    preheader: escapeHtml(preheader),
     content,
     eyebrow: `${issueLabel} · ${monthLabel.split(' ')[0]}`,
     footer: {

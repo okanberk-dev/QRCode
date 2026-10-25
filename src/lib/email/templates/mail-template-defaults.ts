@@ -634,7 +634,7 @@ const FIRST_FEEDBACK_CELEBRATION_TR: FlatCopy = {
   noComment: 'Müşteri yorum yazmadı — sadece yıldız bıraktı.',
   cta: 'Yorumu gör →',
   tipPositive:
-    'Yüksek puanlı yorumlara 24 saat içinde teşekkür et — müşteri sadakatini iki katına çıkarır.',
+    'Yüksek puanlı yorumlara 24 saat içinde teşekkür et — küçük bir teşekkür müşterinin geri dönmesine yardımcı olur.',
   tipLow:
     'Düşük puanlarda önce dinle, sonra çöz: müşteri hatasını kabul edilen restoranı tekrar dener.',
 };
@@ -649,7 +649,7 @@ const FIRST_FEEDBACK_CELEBRATION_EN: FlatCopy = {
   noComment: 'No written comment — only the star rating.',
   cta: 'Open the review →',
   tipPositive:
-    'Thank high-rated reviews within 24 hours — it doubles repeat-customer loyalty.',
+    'Thank high-rated reviews within 24 hours — a quick thank-you helps bring customers back.',
   tipLow:
     'For low ratings, listen first then fix: customers retry a restaurant that admits mistakes.',
 };
@@ -773,7 +773,7 @@ const RATING_DROP_ALERT_TR: FlatCopy = {
   actionTitle: 'Sıradaki 24 saatte 3 adım',
   action1: 'Son 7 günün 1-3 puanlı yorumlarına yanıt yaz — geç yanıt verilen yorumlar Google\'da kalıcı hasar bırakır.',
   action2: 'Tekrar eden şikayet konularını çıkar (servis, hijyen, hız) — operasyon ekibiyle paylaş.',
-  action3: 'Memnun müşterilerden Google yorumu iste — yeni 5\'ler ortalamayı hızlı toparlar.',
+  action3: 'Yorum bırakma bağlantını (QR) tüm müşterilerinle paylaşmaya devam et.',
 };
 
 const RATING_DROP_ALERT_EN: FlatCopy = {
@@ -791,7 +791,7 @@ const RATING_DROP_ALERT_EN: FlatCopy = {
   actionTitle: 'Three moves in the next 24 hours',
   action1: 'Reply to every 1-3 star review from the last 7 days — late replies leave permanent Google damage.',
   action2: 'Extract recurring complaint themes (service, hygiene, speed) and share with operations.',
-  action3: 'Ask satisfied customers for a Google review — fresh 5-stars rebalance the average quickly.',
+  action3: 'Keep making your review link available to every customer.',
 };
 
 const FIRST_REPLY_CELEBRATION_TR: FlatCopy = {
@@ -799,7 +799,7 @@ const FIRST_REPLY_CELEBRATION_TR: FlatCopy = {
   title: 'İlk Google',
   titleAccent: 'yanıtın gitti',
   intro:
-    'Bravo, ${restaurantName} için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar yanıtlanmayanlara göre %33 daha fazla yeni müşteriye dönüşür (Google internal data).',
+    'Bravo, ${restaurantName} için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar, yeni müşterilere işletmenin onları dinlediğini gösterir.',
   habitTitle: 'Sıradaki refleks',
   habitBody:
     'Her sabah 5 dakika ayır: yeni gelen yorumları tara, 5 puanlara teşekkür et, 1-3 puanlara önce dinle sonra çöz yaklaşımıyla yaz.',
@@ -812,7 +812,7 @@ const FIRST_REPLY_CELEBRATION_EN: FlatCopy = {
   title: 'Your first Google',
   titleAccent: 'reply is live',
   intro:
-    'You just sent the first Google review reply for ${restaurantName}. Replied reviews convert new customers 33% better than unreplied ones (Google internal data).',
+    'You just sent the first Google review reply for ${restaurantName}. Replying to reviews shows future customers that you listen.',
   habitTitle: 'The habit that follows',
   habitBody: 'Block 5 minutes every morning: scan new reviews, thank 5-stars, listen-then-fix the 1-3s.',
   cta: 'Open reviews panel →',
