@@ -1,7 +1,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderP, renderAvatarCircle, renderStatusPill, spacer } from '../components';
+import { renderEyebrow, renderP, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { formatCompactStampInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
@@ -46,7 +46,8 @@ export async function renderLowRatingAlert(
     : `${params.customerName ?? 'A customer'} just left ${params.rating} stars. ${params.aiDraft ? 'AI reply draft inside.' : 'Quick actions inside.'}`;
 
   const customerName = params.customerName ? escapeHtml(params.customerName) : (isTr ? 'Anonim' : 'Anonymous');
-  const customerInitial = (params.customerName || '?').charAt(0).toUpperCase();
+  const customerInitial = (params.customerName || '?').trim().charAt(0).toUpperCase() || '?';
+  const rating = Math.max(0, Math.min(5, Math.round(params.rating)));
   const customerSubtitle = params.customerSubtitle
     ? escapeHtml(params.customerSubtitle)
     : (params.platformLabel ? escapeHtml(params.platformLabel) : '');
@@ -109,56 +110,55 @@ export async function renderLowRatingAlert(
     resolveDisplayTimeZone(params.timeZone),
   );
   const subTitle = params.branch
-    ? `${escapeHtml(params.restaurantName)} · ${escapeHtml(params.branch)}${params.tableNumber ? ' · Masa ' + escapeHtml(params.tableNumber) : ''}`
+    ? `${escapeHtml(params.restaurantName)} · ${escapeHtml(params.branch)}${params.tableNumber ? ` · ${isTr ? 'Masa' : 'Table'} ${escapeHtml(params.tableNumber)}` : ''}`
     : escapeHtml(params.restaurantName);
 
-  // Star row — warning color matches jsx:55-58
-  const starsHtml = `<span style="color:${PULSE.warning};font-size:18px;letter-spacing:0.05em;">${'★'.repeat(params.rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - params.rating)}</span></span>`;
+  // Star row — nowrap so a narrow card never splits it 3 + 2.
+  const starsHtml = `<span style="font-family:${FONTS.body};font-size:18px;line-height:1;letter-spacing:2px;white-space:nowrap;color:${PULSE.warning};">${'★'.repeat(rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - rating)}</span></span>`;
 
-  // Tags — jsx:67-73
+  // Tags — chips wrap onto new rows; a single long tag may break inside itself.
   const tagsHtml = tags.length
-    ? `<div style="margin-top:16px;">${tags.map((t) => `<span style="display:inline-block;font-family:${FONTS.label};font-size:11px;color:${PULSE.n600};background:${PULSE.n100};padding:4px 10px;border-radius:6px;margin:0 6px 6px 0;">#${escapeHtml(t)}</span>`).join('')}</div>`
+    ? `<div style="margin-top:16px;line-height:1.4;">${tags.map((t) => `<span style="display:inline-block;max-width:100%;font-family:${FONTS.label};font-size:11px;line-height:1.4;color:${PULSE.n600};background:${PULSE.n100};padding:5px 10px;border-radius:6px;margin:0 6px 6px 0;">#${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
 
-  // AI Draft card — jsx:80-115
+  // AI Draft card — dark editor card. Buttons are `bz-btn` so on phones they go
+  // full width and stack (edit above approve).
   const aiBlock = params.aiDraft ? `
-    <tr>
-      <td class="bz-pad" style="padding:32px 40px 8px;">
+        ${spacer(32)}
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td valign="middle" style="width:32px;">
-              <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:${PULSE.lime};text-align:center;line-height:22px;color:${PULSE.graphite};font-family:${FONTS.label};font-size:11px;font-weight:600;">AI</span>
+              <span style="display:inline-block;width:24px;height:24px;border-radius:6px;background:${PULSE.lime};text-align:center;line-height:24px;color:${PULSE.graphite};font-family:${FONTS.label};font-size:11px;font-weight:600;">AI</span>
             </td>
-            <td valign="middle" style="padding-left:10px;">${renderEyebrow(`${copy.aiEyebrow}${params.aiLatencyMs ? ' · ' + (params.aiLatencyMs / 1000).toFixed(1) + 's' : ''}`)}</td>
+            <td valign="middle" style="padding-left:6px;">${renderEyebrow(`${copy.aiEyebrow}${params.aiLatencyMs ? ' · ' + (params.aiLatencyMs / 1000).toFixed(1) + 's' : ''}`)}</td>
           </tr>
         </table>
         ${spacer(14)}
         <div style="background:${PULSE.graphite};border-radius:14px;padding:24px;color:${PULSE.pure};">
           ${renderP(escapeHtml(params.aiDraft).replace(/\n/g, '<br>'), { size: 14, color: PULSE.n300 })}
-          <div style="margin-top:18px;padding-top:16px;border-top:1px solid ${PULSE.n800};">
+          <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${PULSE.n700};">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
               <tr>
-                <td class="stack-col" valign="middle" style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n400};">${escapeHtml(copy.toneLabel)}</td>
+                <td class="stack-col" valign="middle" style="font-family:${FONTS.label};font-size:11px;line-height:1.5;color:${PULSE.n400};">${escapeHtml(copy.toneLabel)}</td>
                 <td class="stack-col" valign="middle" align="right">
-                  <a href="${params.reviewUrl}" style="display:inline-block;font-size:13px;font-weight:500;color:${PULSE.n300};text-decoration:none;padding:8px 14px;border:1px solid ${PULSE.n700};border-radius:8px;margin-right:6px;">${copy.aiEdit}</a>
-                  <a href="${params.reviewUrl}" style="display:inline-block;font-size:13px;font-weight:600;color:${PULSE.graphite};background:${PULSE.lime};text-decoration:none;padding:8px 14px;border-radius:8px;">${copy.aiApprove}</a>
+                  <a href="${params.reviewUrl}" class="bz-btn" style="display:inline-block;font-family:${FONTS.body};font-size:13px;font-weight:500;line-height:1.2;color:${PULSE.pure};text-decoration:none;padding:10px 16px;border:1px solid ${PULSE.n600};border-radius:8px;margin-right:6px;">${copy.aiEdit}</a>
+                  <a href="${params.reviewUrl}" class="bz-btn" style="display:inline-block;font-family:${FONTS.body};font-size:13px;font-weight:600;line-height:1.2;color:${PULSE.graphite};background:${PULSE.lime};text-decoration:none;padding:11px 16px;border-radius:8px;">${copy.aiApprove}</a>
                 </td>
               </tr>
             </table>
           </div>
         </div>
-      </td>
-    </tr>` : '';
+` : '';
 
-  // Quick actions — 3-col grid
+  // Quick actions — 3-col grid on desktop, stacked cards on phones.
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const localePath = isTr ? 'tr' : 'en';
   const quickHrefs = [params.reviewUrl, params.reviewUrl, `${baseAppUrl}/${localePath}/dashboard/feedbacks`];
   const quickCards = copy.quickActions.map((a, i) => `
     <td class="stack-col" valign="top" style="width:33.33%;padding:0 ${i === 0 ? '6px 0 0' : i === copy.quickActions.length - 1 ? '0 0 6px' : '6px'};">
       <a href="${quickHrefs[i]}" style="display:block;padding:16px;border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
-        <div style="font-family:${FONTS.heading};font-size:14px;font-weight:500;color:${PULSE.graphite};margin-bottom:4px;">${a.l} →</div>
-        <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.label};letter-spacing:0.05em;">${a.s}</div>
+        <div style="font-family:${FONTS.heading};font-size:14px;font-weight:600;line-height:1.35;color:${PULSE.graphite};margin-bottom:4px;">${a.l} →</div>
+        <div style="font-size:11px;line-height:1.45;color:${PULSE.n500};font-family:${FONTS.label};letter-spacing:0.03em;">${a.s}</div>
       </a>
     </td>
   `).join('');
@@ -166,68 +166,70 @@ export async function renderLowRatingAlert(
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td style="background:${PULSE.graphite};padding:14px 40px;">
+        <td class="bz-ftr" style="background:${PULSE.graphite};padding:14px 40px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
             <tr>
-              <td valign="middle">
-                ${renderStatusPill({ text: copy.eyebrowAlert, dotColor: PULSE.warning, textColor: PULSE.pure })}
+              <td valign="middle" style="font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.45;color:${PULSE.pure};">
+                <span style="display:inline-block;width:6px;height:6px;background:${PULSE.warning};border-radius:50%;vertical-align:middle;margin-right:8px;"></span><span style="vertical-align:middle;">${copy.eyebrowAlert}</span>
               </td>
-              <td align="right" valign="middle">
-                <span style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n400};">${timestamp}</span>
+              <td align="right" valign="middle" style="padding-left:12px;white-space:nowrap;">
+                <span style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n400};white-space:nowrap;">${timestamp}</span>
               </td>
             </tr>
           </table>
         </td>
       </tr>
       <tr>
-        <td style="background:${PULSE.pure};padding:18px 40px;border-bottom:1px solid ${PULSE.n200};">
-          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${subTitle}</div>
+        <td class="bz-ftr" style="background:${PULSE.pure};padding:16px 40px;border-bottom:1px solid ${PULSE.n200};">
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.12em;line-height:1.6;color:${PULSE.n500};text-transform:uppercase;font-weight:600;">${subTitle}</div>
         </td>
       </tr>
       <tr>
-        <td class="bz-pad" style="padding:36px 40px 8px;">
+        <td class="bz-pad" style="padding:36px 40px 44px;">
           ${renderEyebrow(copy.eyebrowAction, PULSE.warning)}
           ${spacer(14)}
-          <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
+          <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
             ${copy.title}<br/>
             <span style="color:${PULSE.n500};">${copy.titleSub}</span>
           </h1>
-        </td>
-      </tr>
-      <tr>
-        <td class="bz-pad" style="padding:28px 40px 8px;">
+          ${spacer(26)}
           <div style="border:1px solid ${PULSE.n200};border-radius:14px;overflow:hidden;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border-bottom:1px solid ${PULSE.n200};">
               <tr>
-                <td valign="middle" style="padding:20px 24px;">
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <td style="padding:16px 24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
                     <tr>
-                      <td valign="middle">${renderAvatarCircle({ initials: customerInitial, bg: '#FEF3C7', fg: PULSE.graphite, size: 40 })}</td>
-                      <td valign="middle" style="padding-left:12px;">
-                        <div style="font-family:${FONTS.body};font-size:14px;font-weight:500;color:${PULSE.graphite};">${customerName}</div>
-                        ${customerSubtitle ? `<div style="font-size:12px;color:${PULSE.n500};">${customerSubtitle}</div>` : ''}
+                      <td class="stack-col" valign="middle" style="padding:0;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td valign="middle" style="width:40px;">
+                              <div style="width:40px;height:40px;border-radius:50%;background:#FEF3C7;text-align:center;line-height:40px;font-family:${FONTS.heading};font-weight:600;font-size:16px;color:${PULSE.graphite};">${escapeHtml(customerInitial)}</div>
+                            </td>
+                            <td valign="middle" style="padding-left:12px;">
+                              <div style="font-family:${FONTS.body};font-size:14px;font-weight:600;line-height:1.4;color:${PULSE.graphite};">${customerName}</div>
+                              ${customerSubtitle ? `<div style="font-size:12px;line-height:1.45;color:${PULSE.n500};">${customerSubtitle}</div>` : ''}
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td class="stack-col" valign="middle" align="right" style="padding:0;">
+                        ${starsHtml}
+                        <span style="font-size:11px;line-height:1.4;color:${PULSE.n500};font-family:${FONTS.label};margin-left:8px;white-space:nowrap;">${params.rating.toFixed(1)} / 5.0</span>
                       </td>
                     </tr>
                   </table>
-                </td>
-                <td valign="middle" align="right" style="padding:20px 24px;">
-                  ${starsHtml}
-                  <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.label};margin-top:2px;">${params.rating.toFixed(1)} / 5.0</div>
                 </td>
               </tr>
             </table>
             <div style="padding:24px;">
               ${safeComment
-                ? `<p style="font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n800};margin:0;">"${safeComment}"</p>`
-                : `<p style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n500};margin:0;">${copy.noComment}</p>`}
+                ? `<p style="font-family:${FONTS.body};font-size:15px;line-height:1.65;color:${PULSE.n800};margin:0;">“${safeComment}”</p>`
+                : `<p style="font-family:${FONTS.body};font-size:13px;line-height:1.55;color:${PULSE.n500};margin:0;">${copy.noComment}</p>`}
               ${tagsHtml}
             </div>
           </div>
-        </td>
-      </tr>
-      ${aiBlock}
-      <tr>
-        <td class="bz-pad" style="padding:32px 40px 44px;">
+          ${aiBlock}
+          ${spacer(32)}
           ${renderEyebrow(copy.quickEyebrow)}
           ${spacer(12)}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row"><tr>${quickCards}</tr></table>

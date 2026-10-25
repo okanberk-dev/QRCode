@@ -5,10 +5,17 @@
 // this mail confirms one happened. Same KVKK-locked "not you?" surface so
 // owners can detect compromised accounts.
 
-import { PULSE, FONTS } from '../tokens';
+import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderStatusPill, spacer } from '../components';
+import { spacer } from '../components';
+import {
+  securityContent,
+  securityHero,
+  securityCard,
+  securityMetaGrid,
+  securityNotYou,
+} from './security-mail-parts';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -81,70 +88,36 @@ export async function renderPasswordChanged(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const content = `
-    ${renderEyebrow(copy.eyebrow)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.limeDeep};">${copy.titleAccent}</span>
-    </h1>
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">
-      ${copy.intro}
-    </p>
-    ${spacer(32)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:18px;">
-      <tr>
-        <td style="padding:24px;">
-          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n500};">
-            ${copy.cardEyebrow}
-          </div>
-          ${spacer(12)}
-          ${renderStatusPill({ text: copy.statusText, dotColor: PULSE.success, textColor: PULSE.graphite, bgColor: PULSE.limeSoft })}
-          ${spacer(20)}
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="stack-row">
-            <tr>
-              <td class="stack-col" width="50%" valign="top" style="padding-right:12px;">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaTime}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${changedAt}</div>
-              </td>
-              <td class="stack-col" width="50%" valign="top" style="padding-left:12px;">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaIp}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${ip}</div>
-              </td>
-            </tr>
-            <tr>
-              <td class="stack-col" width="50%" valign="top" style="padding-right:12px;padding-top:14px;">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaDevice}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${device}</div>
-              </td>
-              <td class="stack-col" width="50%" valign="top" style="padding-left:12px;padding-top:14px;">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaAccount}</div>
-                <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${account}</div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
+  const content = securityContent(`
+    ${securityHero({
+      eyebrow: copy.eyebrow,
+      title: copy.title,
+      accent: copy.titleAccent,
+      accentColor: PULSE.limeDeep,
+      intro: copy.intro,
+    })}
     ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.limeSoft};border-left:3px solid ${PULSE.limeDeep};border-radius:12px;">
-      <tr>
-        <td style="padding:18px 20px;">
-          <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};">
-            ${copy.notYouTitle}
-          </div>
-          ${spacer(8)}
-          <p style="margin:0;font-family:${FONTS.body};font-size:13px;line-height:1.55;color:${PULSE.n700};">
-            ${copy.notYouBody}
-          </p>
-          ${spacer(10)}
-          <a href="${escapeHtml(params.resetUrl)}" style="font-family:${FONTS.body};font-size:13px;font-weight:500;color:${PULSE.graphite};text-decoration:underline;">${copy.notYouLink}</a>
-        </td>
-      </tr>
-    </table>
-  `;
+    ${securityCard({
+      tone: 'neutral',
+      eyebrow: copy.cardEyebrow,
+      pill: { text: copy.statusText, dotColor: PULSE.success, bgColor: PULSE.limeSoft },
+      body: securityMetaGrid([
+        { label: copy.metaTime, value: changedAt },
+        { label: copy.metaIp, value: ip, code: true },
+        { label: copy.metaDevice, value: device, breakable: true },
+        { label: copy.metaAccount, value: account, breakable: true, full: (params.account ?? '').length > 24 },
+      ]),
+    })}
+    ${spacer(24)}
+    ${securityNotYou({
+      tone: 'danger',
+      title: copy.notYouTitle,
+      body: copy.notYouBody,
+      cta: { href: params.resetUrl, label: copy.notYouLink },
+    })}
+  `);
 
-  const html = pulseLayout({ subject, preheader, content });
+  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
 
   const text = [
     copyText.eyebrow,

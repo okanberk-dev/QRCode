@@ -4,10 +4,16 @@
 // Reassures the owner that everything is intact and points them back to
 // the dashboard. Companion to account-deletion-scheduled.
 
-import { PULSE, FONTS } from '../tokens';
+import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderEyebrow, renderButton, spacer } from '../components';
+import { renderButton, renderP, spacer } from '../components';
+import {
+  securityContent,
+  securityHero,
+  securityCard,
+  securityMetaGrid,
+} from './security-mail-parts';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -66,51 +72,41 @@ export async function renderAccountDeletionCanceled(
   const copy = deepSubstitute(merged, vars, 'html') as typeof inlineDefault;
   const copyText = deepSubstitute(merged, vars, 'text') as typeof inlineDefault;
 
-  const content = `
-    ${renderEyebrow(copy.eyebrow, PULSE.success)}
-    ${spacer(16)}
-    <h1 style="margin:0;font-family:${FONTS.heading};font-size:42px;line-height:1.05;letter-spacing:-0.03em;font-weight:500;color:${PULSE.graphite};">
-      ${copy.title} <span style="color:${PULSE.limeDeep};">${copy.titleAccent}</span>
-    </h1>
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:15px;line-height:1.6;color:${PULSE.n600};">
-      ${copy.intro}
-    </p>
-    ${spacer(28)}
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.lime};border-radius:18px;">
-      <tr>
-        <td style="padding:24px;">
-          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">
-            ${copy.cardEyebrow}
-          </div>
-          ${spacer(14)}
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-            <tr>
-              <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.accountLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.label};font-size:13px;color:${PULSE.graphite};">${accountEmail}</div>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top">
-                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.statusLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.limeDeep};">${copy.statusValue}</div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-    ${spacer(28)}
-    ${renderButton({ href: params.dashboardUrl, label: copy.cta, variant: 'dark' })}
-    ${spacer(20)}
-    <p style="margin:0;font-family:${FONTS.body};font-size:12.5px;line-height:1.55;color:${PULSE.n500};">
-      ${copy.footer}
-    </p>
-  `;
+  const checkChip = `<span style="display:inline-block;width:24px;height:24px;border-radius:12px;background:${PULSE.lime};color:${PULSE.graphite};text-align:center;font-size:13px;font-weight:700;line-height:24px;vertical-align:middle;margin-right:10px;">&#10003;</span>`;
 
-  const html = pulseLayout({ subject, preheader, content });
+  const content = securityContent(`
+    ${securityHero({
+      eyebrow: copy.eyebrow,
+      eyebrowColor: PULSE.success,
+      title: copy.title,
+      accent: copy.titleAccent,
+      accentColor: PULSE.limeDeep,
+      intro: copy.intro,
+    })}
+    ${spacer(28)}
+    ${securityCard({
+      tone: 'success',
+      eyebrow: copy.cardEyebrow,
+      body: securityMetaGrid(
+        [
+          { label: copy.accountLabel, value: accountEmail, breakable: true, full: true },
+          {
+            label: copy.statusLabel,
+            value: `${checkChip}<span style="vertical-align:middle;">${copy.statusValue}</span>`,
+            strong: true,
+            full: true,
+          },
+        ],
+        'success',
+      ),
+    })}
+    ${spacer(24)}
+    ${renderButton({ href: escapeHtml(params.dashboardUrl), label: copy.cta, variant: 'dark', size: 'lg' })}
+    ${spacer(20)}
+    ${renderP(copy.footer, { size: 13, color: PULSE.n500 })}
+  `);
 
+  const html = pulseLayout({ subject, preheader, content, footer: { locale } });
   const text = [
     copyText.eyebrow,
     '',
