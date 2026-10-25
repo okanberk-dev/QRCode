@@ -19,21 +19,11 @@ import {
   renderRoiBigNumber,
   renderRoiKpiGrid,
   renderRoiSteps,
+  roiPlatformList,
 } from './roi-mail-parts';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
-const PLATFORM_LABEL_TR: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-  trendyol: 'Trendyol GO',
-  tripadvisor: 'Tripadvisor',
-  airbnb: 'Airbnb',
-  booking: 'Booking',
-  yandex: 'Yandex',
-};
 const PLAN_LABEL: Record<string, string> = {
   starter: 'Starter',
   growth: 'Growth',
@@ -89,9 +79,7 @@ export async function renderRoiCustomerReport(
     : isTr
       ? `Merhaba ${params.restaurantName} ekibi,`
       : `Hi ${params.restaurantName} team,`;
-  const platformLabels = params.platforms
-    .map((p) => (isTr ? PLATFORM_LABEL_TR[p] : p) ?? p)
-    .join(', ');
+  const platformLabels = roiPlatformList(params.platforms);
 
   // DB-driven copy override (CLAUDE.md §21.26 Phase 2 pattern). Kritik
   // pazarlama copy'si (subject/preheader/eyebrow/CTA/risk-free strip)
@@ -182,7 +170,7 @@ export async function renderRoiCustomerReport(
   const kpiRow = renderRoiKpiGrid([
     { value: `+${fmt(params.reviewers)}`, label: isTr ? 'Yorum / ay' : 'Reviews / mo' },
     { value: fmt(params.filteredLowReviews), label: isTr ? 'Filtrelenen kötü' : 'Low filtered', accent: true },
-    { value: params.projectedGoogle.toFixed(1), label: isTr ? 'Yeni Google ★' : 'New Google ★' },
+    { value: params.projectedGoogle.toFixed(1), label: isTr ? 'Yeni Google\u00A0★' : 'New Google\u00A0★' },
     { value: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, label: isTr ? 'AI tasarruf' : 'AI saved' },
   ]);
 
@@ -237,8 +225,8 @@ export async function renderRoiCustomerReport(
       isTr ? 'Seçili platform' : 'Selected platform',
       escapeHtml(
         isTr
-          ? `${platformLabels || 'Google'}'a normalize ağırlıklarla dağılır. Yüksek puanlar arama görünürlüğünü ve dönüşümü birlikte yukarı çeker.`
-          : `Distributed across ${platformLabels || 'Google'} with normalized weights. High ratings lift discovery and conversion together.`,
+          ? `Ağırlıklar şu platformlara normalize dağıtılır: ${platformLabels || 'Google'}. Yüksek puanlar arama görünürlüğünü ve dönüşümü birlikte yukarı çeker.`
+          : `Weights are normalized and distributed across: ${platformLabels || 'Google'}. High ratings lift discovery and conversion together.`,
       ),
     )}
   `;

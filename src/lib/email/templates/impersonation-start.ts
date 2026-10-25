@@ -46,6 +46,16 @@ function transparencyNote(eyebrow: string, body: string): string {
   `;
 }
 
+/** "25 Ekim 2026 14:30" / "October 25, 2026 02:30 PM" → date and time each kept
+ *  whole (nowrap, NBSP before AM/PM) so a narrow card breaks only between them
+ *  instead of orphaning "PM" on its own line. */
+function endsAtHtml(label: string): string {
+  const m = label.match(/^(.*?)\s+(\d{1,2}:\d{2}(?:\s*[AaPp]\.?[Mm]\.?)?)$/);
+  if (!m) return escapeHtml(label);
+  const time = m[2].replace(/\s+/g, '\u00A0');
+  return `<span style="white-space:nowrap;">${escapeHtml(m[1])}</span> <span style="white-space:nowrap;">${escapeHtml(time)}</span>`;
+}
+
 export function renderImpersonationStart(
   params: ImpersonationStartParams,
   locale: 'tr' | 'en' = 'tr',
@@ -82,10 +92,9 @@ export function renderImpersonationStart(
         metaReason: 'Sebep',
         transparencyEyebrow: 'Şeffaflık · KVKK / GDPR',
         transparency:
-          'Bu bildirim KVKK / GDPR şeffaflık disiplinin bir parçasıdır — bir yönetici hesabınız üzerinden işlem yaptığında her zaman size haber veririz. Bu oturumda yönetici varsayılan olarak yalnız okuyabilir; müşteri talebiniz olmadan değişiklik yapmaz.',
+          'Bu bildirim KVKK / GDPR şeffaflık disiplinin bir parçasıdır — bir yönetici hesabınız üzerinden işlem yaptığında her zaman size haber veririz. Bu oturumdaki tüm işlemler denetim kaydına alınır; yönetici yalnızca destek talebiniz kapsamında işlem yapar.',
         notYouTitle: 'Bu erişimi bilmiyor musunuz?',
         notYouBody: `Hemen <a href="mailto:${SUPPORT_EMAIL}" style="color:${PULSE.n700};font-weight:600;text-decoration:underline;">${SUPPORT_EMAIL}</a> adresinden bize ulaşın.`,
-        notYouCta: 'Destek ekibine yaz →',
         signoff: '— Buaze Ekibi',
       }
     : {
@@ -105,14 +114,13 @@ export function renderImpersonationStart(
         metaReason: 'Reason',
         transparencyEyebrow: 'Transparency · KVKK / GDPR',
         transparency:
-          'This is part of KVKK / GDPR transparency — we always notify you when an admin acts on your behalf. Your data is read-only during this session unless the admin makes a change you explicitly approved with support.',
+          'This is part of KVKK / GDPR transparency — we always notify you when an admin acts on your behalf. Every action taken during this session is recorded in the audit log, and the admin acts only within the scope of your support request.',
         notYouTitle: "Didn't expect this?",
         notYouBody: `Contact our support team immediately at <a href="mailto:${SUPPORT_EMAIL}" style="color:${PULSE.n700};font-weight:600;text-decoration:underline;">${SUPPORT_EMAIL}</a>.`,
-        notYouCta: 'Contact support →',
         signoff: '— Buaze Team',
       };
 
-  const endsValue = `${escapeHtml(endsAtLabel)}<div style="font-family:${FONTS.body};font-size:12px;font-weight:400;letter-spacing:0;line-height:1.5;color:${PULSE.n500};margin-top:3px;">${copy.metaEndsNote}</div>`;
+  const endsValue = `${endsAtHtml(endsAtLabel)}<div style="font-family:${FONTS.body};font-size:12px;font-weight:400;letter-spacing:0;line-height:1.5;color:${PULSE.n500};margin-top:3px;">${copy.metaEndsNote}</div>`;
 
   const content = securityContent(`
     ${securityHero({
@@ -145,7 +153,6 @@ export function renderImpersonationStart(
       tone: 'danger',
       title: copy.notYouTitle,
       body: copy.notYouBody,
-      cta: { href: `mailto:${SUPPORT_EMAIL}`, label: copy.notYouCta },
     })}
     ${spacer(24)}
     ${renderP(copy.signoff, { size: 13, color: PULSE.n500 })}
@@ -163,8 +170,9 @@ oturumu açtı.
 Sebep: ${params.reason}
 Oturum bitiş: ${endsAtLabel} (otomatik kapanır).
 
-KVKK / GDPR şeffaflık. Bu erişimi bilmiyorsanız ${SUPPORT_EMAIL}
-adresinden bize ulaşın.
+KVKK / GDPR şeffaflık. Bu oturumdaki tüm işlemler denetim kaydına alınır;
+yönetici yalnızca destek talebiniz kapsamında işlem yapar. Bu erişimi
+bilmiyorsanız ${SUPPORT_EMAIL} adresinden bize ulaşın.
 
 ${copy.signoff}`
     : `${greeting}
@@ -175,8 +183,10 @@ your account.
 Reason: ${params.reason}
 Session ends at: ${endsAtLabel} (auto-revoke).
 
-This is part of KVKK / GDPR transparency. If you didn't expect this contact
-${SUPPORT_EMAIL} immediately.
+This is part of KVKK / GDPR transparency. Every action taken during this
+session is recorded in the audit log, and the admin acts only within the scope
+of your support request. If you didn't expect this contact ${SUPPORT_EMAIL}
+immediately.
 
 ${copy.signoff}`;
 

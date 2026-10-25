@@ -2,7 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderBadge, spacer } from '../components';
-import { LC_TABLE, lcPage, lcSection, lcHero, lcTextLink, lcSubLine } from './lifecycle-ui';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcTextLink, lcSubLine, lcMapStrings } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -39,9 +39,18 @@ export async function renderTrialEnding(
   const subject = isTr
     ? `Deneme süren ${days} gün sonra bitiyor`
     : `Your trial ends in ${days} day${days === 1 ? '' : 's'}`;
-  const preheader = isTr
-    ? `${params.usage.reviews ?? 0} yorum yönettin · ${params.usage.avgRating?.toFixed(1) ?? '—'} ortalama. Devam etmek için planı seç.`
-    : `You handled ${params.usage.reviews ?? 0} reviews · ${params.usage.avgRating?.toFixed(1) ?? '—'} avg. Pick a plan to continue.`;
+  // Nothing tracked yet (the cron passes 0 / null): no stats card, no stats in
+  // the preview line, and the plans follow the headline directly.
+  const hasUsage =
+    (params.usage.reviews ?? 0) > 0 ||
+    (params.usage.avgRating ?? 0) > 0 ||
+    (params.usage.aiReplies ?? 0) > 0 ||
+    (params.usage.growthPct ?? 0) !== 0;
+  const preheader = !hasUsage
+    ? (isTr ? 'Devam etmek için planı seç.' : 'Pick a plan to continue.')
+    : isTr
+      ? `${params.usage.reviews ?? 0} yorum yönettin · ${params.usage.avgRating?.toFixed(1) ?? '—'} ortalama. Devam etmek için planı seç.`
+      : `You handled ${params.usage.reviews ?? 0} reviews · ${params.usage.avgRating?.toFixed(1) ?? '—'} avg. Pick a plan to continue.`;
 
   // Pricing fallback. JSX prototip değerleri burada — caller param.prices
   // geçmezse plan kartlarında ₺499 / ₺1.299 görünür. Gerçek pricing
@@ -94,7 +103,12 @@ export async function renderTrialEnding(
 
   // DB-driven override + placeholder substitution. `${firstName}`,
   // `${restaurantName}`, `${daysLeft}` admin tarafından kullanılabilir.
-  const merged = await loadMailCopy('trial-ending', locale, inlineDefault);
+  const loaded = await loadMailCopy('trial-ending', locale, inlineDefault);
+  // EN singular: "${daysLeft} days left" must read "1 day left" (the subject
+  // already does). Done on the raw copy so admin overrides get it too.
+  const merged = !isTr && days === 1
+    ? lcMapStrings(loaded, (s) => s.replace(/\$\{daysLeft\}(\s+)days\b/gi, '${daysLeft}$1day'))
+    : loaded;
   const vars = {
     firstName: params.firstName || (isTr ? 'orada' : 'there'),
     daysLeft: days,
@@ -172,21 +186,23 @@ export async function renderTrialEnding(
       title: `${copy.titleA}${lcSubLine(copy.titleB, 36, `color:${PULSE.n500};`)}`,
       titleSize: 36,
     }),
-    lcSection(
-      `<div class="bz-roi-card" style="background:${PULSE.graphite};border-radius:16px;padding:26px 22px;">
-        ${renderEyebrow(copy.usageEyebrow, PULSE.lime)}
-        ${spacer(18)}
-        ${statGrid}
-      </div>`,
-      { padding: '24px 40px 8px' },
-    ),
+    ...(hasUsage
+      ? [lcSection(
+          `<div class="bz-roi-card" style="background:${PULSE.graphite};border-radius:16px;padding:26px 22px;">
+            ${renderEyebrow(copy.usageEyebrow, PULSE.lime)}
+            ${spacer(18)}
+            ${statGrid}
+          </div>`,
+          { padding: '24px 40px 8px' },
+        )]
+      : []),
     lcSection(
       `${renderEyebrow(copy.plansEyebrow)}
        ${spacer(14)}
        ${starterCard}
        ${spacer(12)}
        ${proCard}`,
-      { padding: '32px 40px 8px' },
+      { padding: hasUsage ? '32px 40px 8px' : '28px 40px 8px' },
     ),
     lcSection(
       `${renderButton({ href: escapeHtml(params.upgradeUrl), label: copy.cta, size: 'lg' })}${spacer(6)}${lcTextLink(comparisonUrl, copy.comparisonLink)}`,
@@ -203,6 +219,7 @@ export async function renderTrialEnding(
     eyebrow: `<span style="overflow-wrap:anywhere;word-break:break-word;">${copy.headerEyebrow}</span>`,
     footer: { locale, unsubText: isTr ? 'Faturalandırma maillerini ayarlamak için' : 'To adjust billing emails' },
   });
-  const text = `${copyText.titleA} ${copyText.titleB}\n\n${stats.map((s) => `${s.v} ${s.k}`).join(' · ')}\n\n${copyText.cta} ${params.upgradeUrl}\n${copyText.comparisonLink}: ${comparisonUrl}`;
+  const textStats = hasUsage ? stats.filter((s) => s.v !== '—').map((s) => `${s.v} ${s.k}`).join(' · ') : '';
+  const text = `${copyText.titleA} ${copyText.titleB}\n\n${textStats ? `${textStats}\n\n` : ''}${copyText.cta} ${params.upgradeUrl}\n${copyText.comparisonLink}: ${comparisonUrl}`;
   return { subject, html, text };
 }

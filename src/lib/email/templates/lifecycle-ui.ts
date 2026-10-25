@@ -127,4 +127,41 @@ export function lcFootnote(text: string): string {
   );
 }
 
+/** Walks strings inside copy objects/arrays (non-strings pass through). */
+export function lcMapStrings<T>(value: T, fn: (s: string) => string): T {
+  if (typeof value === 'string') return fn(value) as unknown as T;
+  if (Array.isArray(value)) return value.map((v) => lcMapStrings(v, fn)) as unknown as T;
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = lcMapStrings(v, fn);
+    return out as T;
+  }
+  return value;
+}
+
+/** True when the recipient has a usable first name (whitespace-only counts as none). */
+export function lcHasName(firstName?: string | null): boolean {
+  return Boolean(firstName && firstName.trim());
+}
+
+const GREETING = '(?:Merhaba|Selam|Sevgili|Hi|Hello|Hey|Dear)';
+
+/** Removes the `${firstName}` token from copy for recipients without a name, plus
+ *  the greeting/punctuation that hung off it. "Merhaba ${firstName}, QR kodunuz
+ *  sizi bekliyor" -> "QR kodunuz sizi bekliyor" (first letter re-capitalised for
+ *  the locale); "Hi ${firstName}." -> "Hi."; mid-sentence tokens just disappear
+ *  with their stray space/comma. Copy without the token is returned untouched,
+ *  so call it only when there is no name (see {@link lcHasName}). */
+export function lcDropNameToken<T>(value: T, locale: 'tr' | 'en'): T {
+  const up = (c: string) => (locale === 'tr' ? c.toLocaleUpperCase('tr-TR') : c.toUpperCase());
+  return lcMapStrings(value, (s) => {
+    if (!s.includes('${firstName}')) return s;
+    return s
+      .replace(new RegExp(`^(\\s*)${GREETING}\\s+\\$\\{firstName\\}\\s*[,:;\\u2014-]\\s*(\\S)`, 'i'), (_m, lead: string, c: string) => `${lead}${up(c)}`)
+      .replace(/\s*\$\{firstName\}/g, '')
+      .replace(/\s+([,.!?:;])/g, '$1')
+      .replace(/ {2,}/g, ' ');
+  });
+}
+
 export { TABLE as LC_TABLE };

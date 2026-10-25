@@ -2,7 +2,7 @@ import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderP, renderButton } from '../components';
-import { LC_TABLE, lcPage, lcSection, lcHero, lcFootnote } from './lifecycle-ui';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcFootnote, lcHasName, lcDropNameToken } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { INACTIVE_REACTIVATION_DEFAULTS } from './lifecycle-defaults';
@@ -31,10 +31,12 @@ export async function renderInactiveReactivation(
 
   const inlineDefault = INACTIVE_REACTIVATION_DEFAULTS[isTr ? 'tr' : 'en'];
 
-  const merged = await loadMailCopy('inactive-reactivation', locale, inlineDefault);
-  const fallbackName = isTr ? 'merhaba' : 'hi';
+  const loaded = await loadMailCopy('inactive-reactivation', locale, inlineDefault);
+  // No first name: drop the token + its greeting/punctuation (no filler word).
+  const hasName = lcHasName(params.firstName);
+  const merged = hasName ? loaded : lcDropNameToken(loaded, locale);
   const vars = {
-    firstName: params.firstName || fallbackName,
+    firstName: hasName ? params.firstName : '',
     daysInactive: String(params.daysInactive),
   };
   const copy = deepSubstitute(merged, vars, 'html');

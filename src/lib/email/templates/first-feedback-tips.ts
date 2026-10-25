@@ -2,7 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderP, renderButton, spacer } from '../components';
-import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcFootnote } from './lifecycle-ui';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcFootnote, lcHasName, lcDropNameToken } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { FIRST_FEEDBACK_TIPS_DEFAULTS } from './lifecycle-defaults';
@@ -31,10 +31,12 @@ export async function renderFirstFeedbackTips(
 
   const inlineDefault = FIRST_FEEDBACK_TIPS_DEFAULTS[isTr ? 'tr' : 'en'];
 
-  const merged = await loadMailCopy('first-feedback-tips', locale, inlineDefault);
-  const fallbackName = isTr ? 'merhaba' : 'hi';
+  const loaded = await loadMailCopy('first-feedback-tips', locale, inlineDefault);
+  // No first name: drop the token + its greeting/punctuation (no filler word).
+  const hasName = lcHasName(params.firstName);
+  const merged = hasName ? loaded : lcDropNameToken(loaded, locale);
   const vars = {
-    firstName: params.firstName || fallbackName,
+    firstName: hasName ? params.firstName : '',
     restaurantName: params.restaurantName,
   };
   const copy = deepSubstitute(merged, vars, 'html');

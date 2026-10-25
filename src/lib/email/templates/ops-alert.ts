@@ -15,7 +15,7 @@
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
-import { renderButton, renderP, spacer } from '../components';
+import { renderP, spacer } from '../components';
 import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 import { securityContent, securityHero, securityCard, securityMetaGrid } from './security-mail-parts';
 
@@ -110,8 +110,9 @@ function stepRow(n: number, text: string): string {
     </tr>`;
 }
 
-/** Lime action card: heading, numbered steps, optional full-width-on-mobile CTA. */
-function actionCard(title: string, steps: string[], cta?: { href: string; label: string }): string {
+/** Lime action card: heading + numbered steps (no outbound buttons — ops knows
+ *  where the dashboards live). */
+function actionCard(title: string, steps: string[]): string {
   return `
     <table ${TABLE} width="100%" style="background:${PULSE.limeSoft};border-left:4px solid ${PULSE.limeDeep};border-radius:6px 14px 14px 6px;border-collapse:separate;border-spacing:0;">
       <tr>
@@ -119,7 +120,6 @@ function actionCard(title: string, steps: string[], cta?: { href: string; label:
           <div style="font-family:${FONTS.heading};font-size:16px;font-weight:600;line-height:1.3;color:${PULSE.graphite};">${title}</div>
           ${spacer(14)}
           <table ${TABLE} width="100%">${steps.map((s, i) => stepRow(i + 1, s)).join('')}</table>
-          ${cta ? `${spacer(4)}${renderButton({ href: escapeHtml(cta.href), label: cta.label, variant: 'dark' })}${spacer(8)}` : ''}
         </td>
       </tr>
     </table>
@@ -183,7 +183,6 @@ export function renderOpsMailFailureAlert(
           'Alıcı mailbox\'ını / Resend dashboard\'unu kontrol edin.',
           'Upstream kayıt hâlâ geçerliyse admin panelinden tekrar tetikleyin.',
         ],
-        cta: 'Resend dashboard\'unu aç →',
       }
     : {
         eyebrow: 'Ops · Mail delivery failure',
@@ -204,7 +203,6 @@ export function renderOpsMailFailureAlert(
           'Investigate the recipient mailbox / Resend dashboard.',
           'Re-trigger from the admin panel if the upstream record is still actionable.',
         ],
-        cta: 'Open Resend dashboard →',
       };
 
   const content = securityContent(`
@@ -235,7 +233,7 @@ export function renderOpsMailFailureAlert(
     ${spacer(20)}
     ${metadataCard(params.metadata, { eyebrow: copy.metaEyebrow, none: copy.metaNone })}
     ${spacer(24)}
-    ${actionCard(copy.actionTitle, copy.steps, { href: 'https://resend.com/emails', label: copy.cta })}
+    ${actionCard(copy.actionTitle, copy.steps)}
   `);
 
   const html = opsLayout({ subject, preheader, content, locale });
@@ -332,7 +330,6 @@ export function renderOpsOpenAiBillingAlert(
           'OpenAI billing sayfasında kart / credit durumunu kontrol edin, gerekirse kredi yükleyin.',
           'Düzeldikten sonra owner\'lar dashboard yenileyince AI taslakları tekrar üretilir (cache yok, anlık).',
         ],
-        cta: 'OpenAI billing\'i aç →',
         footnote: 'Bu uyarı 5 dakikada bir kez atılır — aynı hata içinde tekrarlamaz.',
       }
     : {
@@ -357,7 +354,6 @@ export function renderOpsOpenAiBillingAlert(
           'Check the card / credit balance on the OpenAI billing page and top up if needed.',
           'Once fixed, AI drafts are generated again as owners refresh their dashboard (no cache, instant).',
         ],
-        cta: 'Open OpenAI billing →',
         footnote: 'This alert is sent at most once every 5 minutes — it does not repeat within the same error.',
       };
 
@@ -395,7 +391,12 @@ export function renderOpsOpenAiBillingAlert(
       body: bulletList(copy.affected.map(escapeHtml), PULSE.warning),
     })}
     ${spacer(24)}
-    ${actionCard(copy.actionTitle, copy.steps, { href: billingUrl, label: copy.cta })}
+    ${actionCard(copy.actionTitle, [
+      // The billing URL was part of the original alert text; keep it as plain
+      // monospace text under the first step (no button).
+      `${copy.steps[0]}<div style="margin-top:4px;font-family:${FONTS.code};font-size:12px;line-height:1.5;color:${PULSE.n500};">${escapeHtml(billingUrl.replace(/^https?:\/\//, '')).replace(/\//g, '/<wbr>')}</div>`,
+      ...copy.steps.slice(1),
+    ])}
     ${spacer(20)}
     ${renderP(copy.footnote, { size: 12, color: PULSE.n500 })}
   `);

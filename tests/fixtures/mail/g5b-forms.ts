@@ -134,6 +134,35 @@ export const FIXTURES_G5B: MailFixture[] = [
       ),
   },
 
+  // No ticketId supplied (what every real caller does): no chip, no ticket text.
+  {
+    id: 'form-confirmation:no-ticket',
+    template: 'form-confirmation',
+    render: (locale) =>
+      renderFormConfirmation({ formType: 'contact', name: 'Mert Demir', details: CONTACT_DETAILS }, locale),
+  },
+  {
+    id: 'form-confirmation:career:no-ticket',
+    template: 'form-confirmation',
+    render: (locale) =>
+      renderFormConfirmation({ formType: 'career', name: 'Elif Aydın', details: CAREER_DETAILS }, locale),
+  },
+  {
+    id: 'form-confirmation:roi:no-ticket',
+    template: 'form-confirmation',
+    render: (locale) =>
+      renderFormConfirmation({ formType: 'roi', name: 'Can Yıldız', details: ROI_DETAILS }, locale),
+  },
+  {
+    id: 'form-confirmation:newsletter:no-ticket',
+    template: 'form-confirmation',
+    render: (locale) =>
+      renderFormConfirmation(
+        { formType: 'newsletter', details: [{ label: locale === 'en' ? 'Email' : 'E-posta', value: 'okanberkmanavoglu@gmail.com' }] },
+        locale,
+      ),
+  },
+
   // ── contact-admin ────────────────────────────────────────────────────
   {
     id: 'contact-admin',
@@ -210,6 +239,53 @@ export const FIXTURES_G5B: MailFixture[] = [
           message: Array.from({ length: 6 }, (_, i) => `${i + 1}. paragraf: ${LONG_COMMENT.split(' ').slice(0, 40).join(' ')}.`).join('\n\n'),
           marketingConsent: true,
           sourcePath: 'buaze.com/iletisim',
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'contact-admin:realistic-emails',
+    template: 'contact-admin',
+    render: async (locale) =>
+      renderContactAdmin(
+        {
+          name: 'Burak Şahin',
+          email: 'info@kadikoybalikevi.com.tr',
+          phone: '+90 216 555 41 82',
+          business: 'Kadıköy Balık Evi',
+          message: 'Merhaba, 2 şubemiz için QR ile yorum toplamayı denemek istiyoruz.',
+          marketingConsent: true,
+          sourcePath: 'buaze.com/iletisim',
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'contact-admin:realistic-emails-b',
+    template: 'contact-admin',
+    render: async (locale) =>
+      renderContactAdmin(
+        {
+          name: "Ayşe O'Brien",
+          email: 'ayse.yilmaz@outlook.com',
+          message: 'Fiyatlar hakkında bilgi alabilir miyim?',
+          marketingConsent: false,
+        },
+        locale,
+      ),
+  },
+  {
+    id: 'contact-admin:realistic-emails-c',
+    template: 'contact-admin',
+    render: async (locale) =>
+      renderContactAdmin(
+        {
+          name: 'Okan Berkmanavoğlu',
+          email: 'okanberkmanavoglu@gmail.com',
+          phone: '+90 532 555 12 34',
+          business: 'Mamas Burger & Co',
+          message: 'Demo talep ediyoruz.',
+          marketingConsent: true,
         },
         locale,
       ),

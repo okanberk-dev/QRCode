@@ -2,7 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderButton, renderBadge, spacer } from '../components';
-import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcTextLink, lcSubLine } from './lifecycle-ui';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcTextLink, lcSubLine, lcHasName, lcDropNameToken } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 
@@ -72,9 +72,12 @@ export async function renderWelcome(
   // over the inline default. After merge, runtime placeholders (`${firstName}`)
   // are substituted — admin can keep / move / remove the token and the
   // greeting still personalises per recipient.
-  const merged = await loadMailCopy('welcome', locale, inlineDefault);
-  const fallbackName = isTr ? 'merhaba' : 'hi';
-  const vars = { firstName: params.firstName || fallbackName };
+  const loaded = await loadMailCopy('welcome', locale, inlineDefault);
+  // No first name: drop the token (and its greeting/punctuation) instead of
+  // substituting a filler word ("Merhaba merhaba.").
+  const hasName = lcHasName(params.firstName);
+  const merged = hasName ? loaded : lcDropNameToken(loaded, locale);
+  const vars = { firstName: hasName ? params.firstName : '' };
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 

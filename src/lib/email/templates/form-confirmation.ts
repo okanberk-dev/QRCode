@@ -26,13 +26,16 @@ export async function renderFormConfirmation(
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   // Ticket is only ever rendered into HTML (preheader + eyebrow chip), never the
-  // plain-text part, so it is escaped once at the source.
-  const ticket = escapeHtml(params.ticketId ?? `BUZ-${Math.floor(Math.random() * 9000 + 1000)}`);
+  // plain-text part, so it is escaped once at the source. It is NEVER invented:
+  // no caller-supplied id (or the newsletter variant, which has no ticket) means
+  // no chip and no ticket text in the preheader.
+  const rawTicket = (params.ticketId ?? '').trim();
+  const ticket: string | null = rawTicket && params.formType !== 'newsletter' ? escapeHtml(rawTicket) : null;
 
   const FORM_COPY = isTr ? {
     contact: {
       subject: 'Mesajını aldık — 24 saat içinde döneceğiz',
-      preheader: `Talep #${ticket} sıraya alındı. İşte özet.`,
+      preheader: ticket ? `Talep #${ticket} sıraya alındı. İşte özet.` : 'Talebin sıraya alındı. İşte özet.',
       eyebrow: 'İletişim · Onay',
       titleA: 'Aldık',
       titleB: 'Sıradayız.',
@@ -53,7 +56,7 @@ export async function renderFormConfirmation(
     },
     career: {
       subject: 'Başvurun bize ulaştı',
-      preheader: `Başvuru #${ticket} sıraya alındı. 5 iş gününde dönüyoruz.`,
+      preheader: ticket ? `Başvuru #${ticket} sıraya alındı. 5 iş gününde dönüyoruz.` : 'Başvurun sıraya alındı. 5 iş gününde dönüyoruz.',
       eyebrow: 'Kariyer · Onay',
       titleA: 'Aldık',
       titleB: 'İnceliyoruz.',
@@ -74,7 +77,7 @@ export async function renderFormConfirmation(
     },
     roi: {
       subject: 'ROI hesaplamanı kaydettik',
-      preheader: `Hesap #${ticket} hazır. Detaylı PDF birazdan inboxuna düşecek.`,
+      preheader: ticket ? `Hesap #${ticket} hazır. Detaylı PDF birazdan inboxuna düşecek.` : 'Hesabın hazır. Detaylı PDF birazdan inboxuna düşecek.',
       eyebrow: 'ROI · Onay',
       titleA: 'Hesapladık',
       titleB: 'Sıradaki adım: demo.',
@@ -117,7 +120,7 @@ export async function renderFormConfirmation(
   } : {
     contact: {
       subject: 'Got your message — we\'ll reply within 24h',
-      preheader: `Ticket #${ticket} queued. Here\'s the summary.`,
+      preheader: ticket ? `Ticket #${ticket} queued. Here's the summary.` : 'Your request is queued. Here\'s the summary.',
       eyebrow: 'Contact · Confirmation',
       titleA: 'Got it',
       titleB: 'In the queue.',
@@ -138,7 +141,7 @@ export async function renderFormConfirmation(
     },
     career: {
       subject: 'Your application reached us',
-      preheader: `Application #${ticket} queued. We\'ll reply within 5 business days.`,
+      preheader: ticket ? `Application #${ticket} queued. We'll reply within 5 business days.` : 'Your application is queued. We\'ll reply within 5 business days.',
       eyebrow: 'Careers · Confirmation',
       titleA: 'Got it',
       titleB: 'Reviewing now.',
@@ -159,7 +162,7 @@ export async function renderFormConfirmation(
     },
     roi: {
       subject: 'We saved your ROI estimate',
-      preheader: `Estimate #${ticket} ready. Detailed PDF inbound.`,
+      preheader: ticket ? `Estimate #${ticket} ready. Detailed PDF inbound.` : 'Your estimate is ready. Detailed PDF inbound.',
       eyebrow: 'ROI · Confirmation',
       titleA: 'Crunched',
       titleB: 'Next: demo.',
@@ -301,6 +304,11 @@ export async function renderFormConfirmation(
       ${spacer(14)}
       ${cardCta(sideHrefB, copy.sideCtaB, PULSE.lime, PULSE.graphite, PULSE.lime)}`);
 
+  // Chip only when a real ticket id was supplied (never fabricated).
+  const ticketChip = ticket
+    ? ` <span class="bz-break" style="display:inline-block;margin-left:6px;padding:2px 9px;background:${PULSE.n100};border-radius:6px;font-family:${FONTS.code};font-size:11px;letter-spacing:0.04em;font-weight:500;color:${PULSE.n700};text-transform:none;vertical-align:middle;">#${ticket}</span>`
+    : '';
+
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
@@ -308,7 +316,7 @@ export async function renderFormConfirmation(
           <div style="width:64px;height:64px;margin:0 auto 22px;border-radius:50%;background:${PULSE.limeSoft};text-align:center;line-height:64px;">
             <div style="display:inline-block;width:44px;height:44px;border-radius:50%;background:${PULSE.lime};text-align:center;line-height:44px;color:${PULSE.graphite};font-family:${FONTS.heading};font-size:22px;font-weight:600;vertical-align:middle;">✓</div>
           </div>
-          <div style="font-family:${FONTS.label};font-size:11px;line-height:1.8;letter-spacing:0.14em;font-weight:600;color:${PULSE.n500};text-transform:uppercase;">${copy.eyebrow.split(' · ')[0]} <span class="bz-break" style="display:inline-block;margin-left:6px;padding:2px 9px;background:${PULSE.n100};border-radius:6px;font-family:${FONTS.code};font-size:11px;letter-spacing:0.04em;font-weight:500;color:${PULSE.n700};text-transform:none;vertical-align:middle;">#${ticket}</span></div>
+          <div style="font-family:${FONTS.label};font-size:11px;line-height:1.8;letter-spacing:0.14em;font-weight:600;color:${PULSE.n500};text-transform:uppercase;">${copy.eyebrow.split(' · ')[0]}${ticketChip}</div>
           ${spacer(14)}
           <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
             ${copy.titleA}<span style="color:${PULSE.lime};">.</span><br/><span style="color:${PULSE.n500};">${copy.titleB}</span>

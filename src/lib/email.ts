@@ -50,7 +50,6 @@ import {
   // not re-exported through email.ts.
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
-import { formatFullDateTimeInTimeZone } from './timezone';
 import { sendResendEmail } from './email-internal';
 import { notifyOpsOfMailFailure } from './email/ops-alert';
 
@@ -320,55 +319,19 @@ export async function sendImpersonationStartEmail(params: {
   const adminUsername = stripCtl(params.adminUsername, 80) ?? 'Yönetici';
   const reason = stripCtl(params.reason, 500) ?? '(belirtilmemiş)';
   const recipientName = stripCtl(params.recipientName, 100);
-  // §46 — event times are shown in the business display time zone, not the
-  // server's (UTC on Vercel).
-  const endsAtLabel = formatFullDateTimeInTimeZone(params.endsAt, params.locale === 'en' ? 'en' : 'tr');
 
   const subject =
     params.locale === 'en'
       ? `[Buaze] An admin opened a support session on your account`
       : `[Buaze] Hesabınıza destek erişimi açıldı`;
 
-  const greeting =
-    recipientName
-      ? params.locale === 'en'
-        ? `Hi ${recipientName},`
-        : `Merhaba ${recipientName},`
-      : params.locale === 'en'
-        ? 'Hi there,'
-        : 'Merhaba,';
-
-  const { html } = renderImpersonationStart(
+  // HTML and plain text come from the same render so the two bodies can't drift
+  // (§46 — the "session ends at" time is shown in the business display time
+  // zone, not the server's UTC).
+  const { html, text } = renderImpersonationStart(
     { recipientName, adminUsername, reason, endsAt: params.endsAt },
     params.locale === 'en' ? 'en' : 'tr',
   );
-
-  const text =
-    params.locale === 'en'
-      ? `${greeting}
-
-A Buaze admin (${adminUsername}) just opened a 30-minute support session on
-your account.
-
-Reason: ${reason}
-Session ends at: ${endsAtLabel} (auto-revoke).
-
-This is part of KVKK / GDPR transparency. If you didn't expect this contact
-support@buaze.com immediately.
-
-— Buaze Team`
-      : `${greeting}
-
-Bir Buaze yöneticisi (${adminUsername}) hesabınızda 30 dakikalık bir destek
-oturumu açtı.
-
-Sebep: ${reason}
-Oturum bitiş: ${endsAtLabel} (otomatik kapanır).
-
-KVKK / GDPR şeffaflık. Bu erişimi bilmiyorsanız support@buaze.com
-adresinden bize ulaşın.
-
-— Buaze Ekibi`;
 
   return sendResendEmail({
     template: 'impersonation-start',

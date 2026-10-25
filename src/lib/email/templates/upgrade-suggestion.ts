@@ -2,7 +2,7 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderButton } from '../components';
-import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcCard, lcFootnote } from './lifecycle-ui';
+import { LC_TABLE, lcPage, lcSection, lcHero, lcChip, lcCard, lcFootnote, lcHasName, lcDropNameToken } from './lifecycle-ui';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { UPGRADE_SUGGESTION_DEFAULTS } from './lifecycle-defaults';
@@ -32,10 +32,12 @@ export async function renderUpgradeSuggestion(
 
   const inlineDefault = UPGRADE_SUGGESTION_DEFAULTS[isTr ? 'tr' : 'en'];
 
-  const merged = await loadMailCopy('upgrade-suggestion', locale, inlineDefault);
-  const fallbackName = isTr ? 'merhaba' : 'hi';
+  const loaded = await loadMailCopy('upgrade-suggestion', locale, inlineDefault);
+  // No first name: drop the token + its greeting/punctuation (no filler word).
+  const hasName = lcHasName(params.firstName);
+  const merged = hasName ? loaded : lcDropNameToken(loaded, locale);
   const vars = {
-    firstName: params.firstName || fallbackName,
+    firstName: hasName ? params.firstName : '',
     restaurantName: params.restaurantName,
     feedbackCount: String(params.feedbackCount),
   };

@@ -27,29 +27,11 @@ import {
   renderRoiBigNumber,
   renderRoiKpiGrid,
   renderRoiSteps,
+  roiPlatformList,
+  roiSectorLabel,
 } from './roi-mail-parts';
 import { deepSubstitute } from '../placeholders';
 
-const PLATFORM_LABEL_TR: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-  trendyol: 'Trendyol GO',
-  tripadvisor: 'Tripadvisor',
-  airbnb: 'Airbnb',
-  booking: 'Booking',
-  yandex: 'Yandex',
-  yelp: 'Yelp',
-  foursquare: 'Foursquare',
-};
-const SECTOR_LABEL_TR: Record<string, string> = {
-  restaurant: 'Restoran',
-  cafe: 'Kafe',
-  hotel: 'Otel',
-  clinic: 'Klinik',
-  other: 'Diğer',
-};
 const PLAN_LABEL: Record<string, string> = {
   starter: 'Starter',
   growth: 'Growth',
@@ -104,9 +86,7 @@ export async function renderRoiAdminNotification(
   const businessSafe = escapeHtml(params.restaurantName);
   const emailSafe = escapeHtml(params.email);
   const phoneSafe = params.phone ? escapeHtml(params.phone) : null;
-  const sectorLabel = isTr
-    ? SECTOR_LABEL_TR[params.sector] ?? params.sector
-    : params.sector;
+  const sectorLabel = roiSectorLabel(params.sector, isTr);
   const planLabel = PLAN_LABEL[params.plan] ?? params.plan;
   const initial = (params.restaurantName || params.email || '?').charAt(0).toUpperCase();
   const timestamp = new Date().toLocaleString(isTr ? 'tr-TR' : 'en-US', {
@@ -117,9 +97,7 @@ export async function renderRoiAdminNotification(
     minute: '2-digit',
   });
 
-  const platformLabels = params.platforms
-    .map((p) => (isTr ? PLATFORM_LABEL_TR[p] : p) ?? p)
-    .join(', ');
+  const platformLabels = roiPlatformList(params.platforms);
 
   // DB-driven copy override (CLAUDE.md §21.26 Phase 2 pattern). Kritik
   // alarm chrome admin panelden edit edilebilir; geri kalan inline.
@@ -224,7 +202,7 @@ export async function renderRoiAdminNotification(
           ${renderAvatarCircle({ initials: initial, size: 48, bg: PULSE.graphite, fg: PULSE.lime })}
         </td>
         <td valign="top" style="vertical-align:top;">
-          ${renderEyebrow(`${sectorLabel} · ${planLabel}`, PULSE.n500)}
+          ${renderEyebrow(escapeHtml(`${sectorLabel} · ${planLabel}`), PULSE.n500)}
           <h1 style="margin:6px 0 0;font-family:${FONTS.heading};font-size:24px;line-height:1.2;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${businessSafe}</h1>
           <a href="mailto:${encodeURI(params.email)}" style="display:block;padding:9px 0;font-family:${FONTS.body};font-size:12.5px;line-height:1.55;color:${PULSE.graphite};text-decoration:underline;">${emailSafe}</a>
           ${phoneSafe ? `<div class="bz-break" style="font-family:${FONTS.body};font-size:13px;line-height:1.55;color:${PULSE.n600};">${phoneSafe}</div>` : ''}
@@ -245,7 +223,7 @@ export async function renderRoiAdminNotification(
   const kpiRow = renderRoiKpiGrid([
     { value: `+${fmt(params.reviewers)}`, label: isTr ? 'Yorum / ay' : 'Reviews / mo' },
     { value: fmt(params.filteredLowReviews), label: isTr ? 'Filtrelenen' : 'Filtered', accent: true },
-    { value: params.projectedGoogle.toFixed(1), label: isTr ? 'Yeni ★' : 'New ★' },
+    { value: params.projectedGoogle.toFixed(1), label: isTr ? 'Yeni\u00A0★' : 'New\u00A0★' },
     { value: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, label: isTr ? 'AI tasarruf' : 'AI saved' },
   ]);
 
@@ -277,24 +255,34 @@ export async function renderRoiAdminNotification(
   // orphan "★" at 375px), value right-aligned. The rounded border lives on a
   // wrapper div: border-radius + overflow on a collapsed-border table never
   // clipped the label column.
-  const scenarioRow = (label: string, value: string, opts: { accent?: boolean; last?: boolean } = {}) => `
+  // table-layout:fixed + explicit 52/48 split: the label column gets enough room
+  // for "Mevcut Google ★" / "Monthly customers" on a 320px phone and the value
+  // column cannot be squeezed to nothing by a long unbreakable value. Labels are
+  // trusted constants (HTML); the "★" is glued to its word with U+00A0 / a
+  // nowrap span so it never dangles alone on a second line.
+  const nb = (t: string) => `<span style="white-space:nowrap;">${t}</span>`;
+  const scenarioRow = (labelHtml: string, valueHtml: string, opts: { accent?: boolean; last?: boolean } = {}) => `
     <tr>
-      <td valign="top" width="44%" style="width:44%;padding:12px 8px 12px 16px;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:12.5px;line-height:1.5;color:${opts.accent ? PULSE.graphite : PULSE.n500};">${escapeHtml(label)}</td>
-      <td valign="top" align="right" style="padding:12px 16px 12px 8px;text-align:right;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:13.5px;line-height:1.5;color:${PULSE.graphite};font-weight:${opts.accent ? 600 : 500};">${value}</td>
+      <td valign="top" width="52%" style="width:52%;padding:12px 6px 12px 14px;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:12.5px;line-height:1.5;color:${opts.accent ? PULSE.graphite : PULSE.n500};">${labelHtml}</td>
+      <td valign="top" align="right" width="48%" style="width:48%;padding:12px 14px 12px 6px;text-align:right;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:13.5px;line-height:1.5;color:${PULSE.graphite};font-weight:${opts.accent ? 600 : 500};">${valueHtml}</td>
     </tr>
   `;
+  // Plan value: plan name over its (unbreakable) price. Two deliberate lines on
+  // every width — a single "Growth · $899/mo" line wrapped to a dangling "·" on
+  // phones.
+  const planValue = `${escapeHtml(planLabel)}<br><span style="font-weight:400;font-size:12.5px;color:${PULSE.n500};white-space:nowrap;">${escapeHtml(`${c}${fmt(params.planPrice)}/${isTr ? 'ay' : 'mo'}`)}</span>`;
   const scenarioTable = `
     <h2 style="margin:0 0 12px;font-family:${FONTS.heading};font-size:18px;line-height:1.3;letter-spacing:-0.01em;color:${PULSE.graphite};font-weight:600;">${copy.scenarioH2}</h2>
     <div style="border:1px solid ${PULSE.n200};border-radius:12px;overflow:hidden;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;">
         ${scenarioRow(isTr ? 'Sektör' : 'Sector', escapeHtml(sectorLabel))}
-        ${scenarioRow(isTr ? 'Aylık müşteri' : 'Monthly customers', fmt(params.monthlyCustomers))}
-        ${scenarioRow(isTr ? 'Ortalama hesap' : 'Avg ticket', `${c}${fmt(params.avgTicket)}`)}
-        ${scenarioRow(isTr ? 'Mevcut Google ★' : 'Current Google ★', params.currentGoogle.toFixed(1))}
-        ${scenarioRow(isTr ? 'Aylık 1-3★ yorum' : '1-3★ reviews/mo', fmt(params.lowRatingsPerMonth))}
+        ${scenarioRow(isTr ? 'Aylık müşteri' : 'Monthly customers', escapeHtml(fmt(params.monthlyCustomers)))}
+        ${scenarioRow(isTr ? 'Ortalama hesap' : 'Avg ticket', escapeHtml(`${c}${fmt(params.avgTicket)}`))}
+        ${scenarioRow(isTr ? 'Mevcut Google\u00A0★' : 'Current Google\u00A0★', escapeHtml(params.currentGoogle.toFixed(1)))}
+        ${scenarioRow(isTr ? `Aylık ${nb('1-3★')} yorum` : `${nb('1-3★')} reviews/mo`, escapeHtml(fmt(params.lowRatingsPerMonth)))}
         ${scenarioRow(isTr ? 'Aktif platformlar' : 'Active platforms', escapeHtml(platformLabels || '—'))}
-        ${scenarioRow(isTr ? 'Buaze planı' : 'Buaze plan', `${escapeHtml(planLabel)} · ${c}${fmt(params.planPrice)}/${isTr ? 'ay' : 'mo'}`)}
-        ${scenarioRow(isTr ? 'Yıllık ek gelir' : 'Yearly uplift', `${c}${fmt(Math.round(params.yearlyUplift))}`, { accent: true, last: true })}
+        ${scenarioRow(isTr ? 'Buaze planı' : 'Buaze plan', planValue)}
+        ${scenarioRow(isTr ? 'Yıllık ek gelir' : 'Yearly uplift', escapeHtml(`${c}${fmt(Math.round(params.yearlyUplift))}`), { accent: true, last: true })}
       </table>
     </div>
   `;

@@ -56,8 +56,8 @@ export function renderContactAdmin(
     ? {
         eyebrowAlert: 'Yeni talep · İletişim formu',
         eyebrowAction: '24 saat içinde dönüş yap',
-        titlePrefix: `${safeFirstName}'den`,
-        titleMain: 'bir mesaj var.',
+        titlePrefix: `${safeFirstName}`,
+        titleMain: 'bir mesaj gönderdi.',
         titleSub: 'Önce dinle, sonra ara.',
         senderEyebrow: 'Talep eden',
         senderEmailLabel: 'E-POSTA',
@@ -131,25 +131,30 @@ export function renderContactAdmin(
 
   const missing = `<span style="color:${PULSE.n400};font-weight:400;">${copy.senderMissing}</span>`;
   const telHref = params.phone ? `tel:${params.phone.replace(/[^+0-9]/g, '')}` : '';
-  const senderTiles: Array<{ w: string; label: string; value: string }> = [
+  // Email gets its OWN full-width tile: a realistic address must never share a
+  // row with other tiles (it wrapped mid-word at 31-36% width). Long tokens may
+  // still wrap (overflow-wrap:anywhere), but only when they truly don't fit, and
+  // <wbr> after '@' and '.' gives the browser clean break points first.
+  const emailWithBreaks = safeEmail.replace(/@/g, '@<wbr>').replace(/\./g, '.<wbr>');
+  const emailTile = tile(
+    copy.senderEmailLabel,
+    `<a href="mailto:${mailtoAddr}" style="color:${PULSE.graphite};text-decoration:none;word-break:normal;overflow-wrap:anywhere;">${emailWithBreaks}</a>`,
+    PULSE.pure,
+  );
+  // Phone + business sit side by side beneath it as two 50% tiles (stack on phones).
+  const phoneBusinessTiles: Array<{ label: string; value: string }> = [
     {
-      w: '36%',
-      label: copy.senderEmailLabel,
-      value: `<a href="mailto:${mailtoAddr}" class="bz-break" style="color:${PULSE.graphite};text-decoration:none;">${safeEmail}</a>`,
-    },
-    {
-      w: '31%',
       label: copy.senderPhoneLabel,
       value: safePhone && telHref
         ? `<a href="${telHref}" style="color:${PULSE.graphite};text-decoration:none;${params.phone && params.phone.length <= 22 ? 'white-space:nowrap;' : ''}">${safePhone}</a>`
         : missing,
     },
-    { w: '33%', label: copy.senderBusinessLabel, value: safeBusiness ?? missing },
+    { label: copy.senderBusinessLabel, value: safeBusiness ?? missing },
   ];
-  const senderTilesHtml = senderTiles
+  const phoneBusinessHtml = phoneBusinessTiles
     .map(
-      (t) => `
-      <td class="stack-col" valign="top" style="width:${t.w};padding:0 4px;">${tile(t.label, t.value, PULSE.pure)}</td>`,
+      (t, i) => `
+      <td class="stack-col col-half" valign="top" style="width:50%;padding:${i === 0 ? '0 4px 0 0' : '0 0 0 4px'};">${tile(t.label, t.value, PULSE.pure)}</td>`,
     )
     .join('');
 
@@ -251,8 +256,11 @@ export function renderContactAdmin(
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border-top:1px solid ${PULSE.n200};">
               <tr>
                 <td style="padding:12px 10px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr><td style="padding:0 0 8px;">${emailTile}</td></tr>
+                  </table>
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
-                    <tr>${senderTilesHtml}</tr>
+                    <tr>${phoneBusinessHtml}</tr>
                   </table>
                 </td>
               </tr>
@@ -306,7 +314,8 @@ export function renderContactAdmin(
     ? `KVKK ✓ · ${copy.marketingLabel}: ${copy.marketingYes}`
     : `KVKK ✓ · ${copy.marketingLabel}: ${copy.marketingNo}`;
 
-  const text = `${copy.titlePrefix} ${copy.titleMain} ${copy.titleSub}
+  // Raw (unescaped) first name for the plain-text part; HTML keeps the escaped one.
+  const text = `${firstName} ${copy.titleMain} ${copy.titleSub}
 
 ${copy.senderEyebrow}: ${params.name}
 ${copy.senderEmailLabel}: ${params.email}
