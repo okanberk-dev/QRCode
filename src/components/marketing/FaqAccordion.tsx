@@ -40,6 +40,7 @@ export default function FaqAccordion({ faqs, defaultOpen = [0, 1] }: Props) {
               type="button"
               onClick={() => toggle(i)}
               aria-expanded={isOpen}
+              aria-controls={`faq-panel-${i}`}
               className="flex w-full items-start justify-between gap-5 text-left"
             >
               <span
@@ -55,11 +56,16 @@ export default function FaqAccordion({ faqs, defaultOpen = [0, 1] }: Props) {
                 {isOpen ? '−' : '+'}
               </span>
             </button>
-            {isOpen && (
-              <p className="mt-2.5 max-w-[560px] text-[14px] leading-[1.6] text-[#525252]">
-                {f.a}
-              </p>
-            )}
+            {/* Always rendered, collapsed with [hidden]: the answer text must ship in the
+                server HTML (it is also in the FAQPage JSON-LD, which has to match visible
+                content, and non-JS crawlers only see what is in the markup). */}
+            <p
+              id={`faq-panel-${i}`}
+              hidden={!isOpen}
+              className="mt-2.5 max-w-[560px] text-[14px] leading-[1.6] text-[#525252]"
+            >
+              {f.a}
+            </p>
           </div>
         );
       })}

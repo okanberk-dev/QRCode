@@ -239,17 +239,15 @@ export default async function BlogPostPage({
     select: { slug: true, title: true, readTime: true, author: true, date: true },
   });
 
-  // Fire-and-forget view counter — atomic increment, swallow P2022 (column
-  // not migrated yet on first deploy after schema change).
-  prisma.blogPost
-    .update({
-      where: { id: post.id },
-      data: { viewCount: { increment: 1 } },
-      select: { id: true },
-    })
+  // Fire-and-forget view counter. Raw SQL on purpose: prisma.update() would also
+  // rewrite the @updatedAt column on every render, which made BlogPosting.dateModified,
+  // the sitemap lastmod and the RSS date move to "now" with no content change.
+  // Swallow P2010/P2022-style errors (column not migrated yet on first deploy).
+  prisma
+    .$executeRaw`UPDATE "blog_posts" SET "view_count" = "view_count" + 1 WHERE "id" = ${post.id}`
     .catch((err) => {
       const code = (err as { code?: string })?.code;
-      if (code !== 'P2022') console.error('[blog viewCount]', err);
+      if (code !== 'P2022' && code !== 'P2010') console.error('[blog viewCount]', err);
     });
 
   const jsonLd = {

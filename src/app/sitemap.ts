@@ -15,12 +15,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Auto-discovered marketing routes from src/app/[locale]/. New pages are
   // picked up automatically; redirect aliases + auth/dashboard surfaces are
   // skipped (see route-discovery.ts).
+  // lastmod is deliberately omitted for static routes: stamping every row with
+  // the regeneration time teaches Google to ignore lastmod entirely. Only rows
+  // with a real content date (blog / help / menu from the DB) carry one.
   const routes = discoverPublicRoutes();
   for (const route of routes) {
     const suffix = route.path ? `/${route.path}` : '';
     const trUrl = `${BASE_URL}/tr${suffix}`;
     const enUrl = `${BASE_URL}/en${suffix}`;
-    const lastModified = new Date();
     const locales = route.locales ?? ['tr', 'en'];
 
     if (locales.length === 1) {
@@ -28,7 +30,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // alternate exists, so emit the single canonical URL without one.
       sitemapEntries.push({
         url: locales[0] === 'tr' ? trUrl : enUrl,
-        lastModified,
         changeFrequency: route.changefreq,
         priority: route.priority,
       });
@@ -40,7 +41,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const alternates = { languages: { tr: trUrl, en: enUrl, 'x-default': trUrl } };
     sitemapEntries.push({
       url: trUrl,
-      lastModified,
       changeFrequency: route.changefreq,
       priority: route.priority,
       alternates,
@@ -48,9 +48,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     sitemapEntries.push({
       url: enUrl,
-      lastModified,
       changeFrequency: route.changefreq,
-      priority: Math.max(0, route.priority - 0.1),
+      priority: Math.max(0, Math.round((route.priority - 0.1) * 10) / 10),
       alternates,
     });
   }
@@ -98,14 +97,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const alternates = { languages: { tr: trUrl, en: enUrl, 'x-default': trUrl } };
     sitemapEntries.push({
       url: trUrl,
-      lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.7,
       alternates,
     });
     sitemapEntries.push({
       url: enUrl,
-      lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.6,
       alternates,

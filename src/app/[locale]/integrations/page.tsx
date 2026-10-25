@@ -23,12 +23,12 @@ export async function generateMetadata({
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Entegrasyonlar — Google, Yemeksepeti, Getir, Slack'
-      : 'Integrations — Google, Slack, Teams, WhatsApp';
+      ? 'Entegrasyonlar — Google, Yemeksepeti, Getir, Trendyol GO'
+      : 'Integrations — Google, Tripadvisor, Booking, Yemeksepeti';
   const description =
     locale === 'tr'
-      ? 'İşletmenizde zaten kullandığınız araçlarla Buaze tek tıkla konuşur. Google, Yemeksepeti, Getir, Slack, Teams, WhatsApp, Zapier ve daha fazlası.'
-      : 'Buaze talks to the tools your team already uses: Google, Uber Eats, DoorDash, Deliveroo, Slack, Microsoft Teams, WhatsApp, Zapier and more — connect in clicks.';
+      ? 'Buaze, yorum ve paket servis platformlarının bağlantılarını tek panelde toplar: Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor ve Booking. Müşteri nerede yorum yazacağına kendisi karar verir.'
+      : 'Buaze keeps your public review links in one place — Google, Tripadvisor, Booking, Yemeksepeti, Getir and Trendyol GO — and lets each customer choose where to post.';
   return {
     metadataBase: new URL('https://www.buaze.com'),
     title,
@@ -114,7 +114,8 @@ export default async function IntegrationsPage({
     },
   ];
 
-  const allIntegrations = groups.flatMap((g) => g.items);
+  // Structured data lists only what the product really ships (live groups).
+  const allIntegrations = groups.filter((g) => g.live !== false).flatMap((g) => g.items);
   const canonicalUrl = `https://www.buaze.com/${locale}/integrations`;
   const itemListSchema = {
     '@context': 'https://schema.org',
@@ -168,8 +169,8 @@ export default async function IntegrationsPage({
           </h1>
           <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
             {isTr
-              ? 'İşletmenizde zaten kullandığınız araçlarla Buaze tek tıkla konuşur. API ve webhook\'lar developer dokümanlarında.'
-              : 'Buaze connects with the tools you already run in one click. APIs and webhooks live in our developer docs.'}
+              ? 'İşletmenizin kullandığı yorum ve paket servis platformlarının bağlantılarını tek panelden yönetin.'
+              : 'Manage the review and delivery platform links your business already uses from one panel.'}
           </p>
         </div>
       </section>

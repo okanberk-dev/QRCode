@@ -9,9 +9,9 @@ manage reviews from one dashboard, and drafts replies with Pulse AI.
 Buaze does not block, hide, or manipulate customer reviews. The flow does not gate access
 to public review platforms by star rating. Buaze does not offer incentives (discounts,
 gifts) for positive reviews. Customers giving low ratings additionally see an option to
-share privately with the business; in practice ~85% of them choose this private channel
-to enable direct service recovery — but every customer always retains the right to post
-on any public platform of their choice. Full statement: https://www.buaze.com/en/google-compliance
+share privately with the business, which enables direct service recovery — but every
+customer always retains the right to post on any public platform of their choice.
+Full statement: https://www.buaze.com/en/google-compliance
 
 ## Who is it for?
 Small and medium businesses in Turkey and globally — restaurants, hotels, healthcare providers,
@@ -35,6 +35,11 @@ aesthetic clinics, schools, boutique hotels, retail stores, and food delivery op
 - https://www.buaze.com/tr/compare — Platform comparison
 - https://www.buaze.com/tr/features — Feature overview
 - https://www.buaze.com/tr/features/pulse-ai — Buaze Pulse AI
+- https://www.buaze.com/tr/features/review-management — Review management
+- https://www.buaze.com/tr/features/analytics-reports — Analytics and reports
+- https://www.buaze.com/tr/features/menu — Digital menu builder
+- https://www.buaze.com/tr/features/surveys — Customer surveys (NPS / CSAT)
+- https://www.buaze.com/tr/features/audit-center — Audit center (checklists and quality audits)
 - https://www.buaze.com/tr/how-it-works — How it works
 - https://www.buaze.com/tr/integrations — Integrations
 - https://www.buaze.com/tr/roi — ROI calculator
@@ -71,7 +76,7 @@ aesthetic clinics, schools, boutique hotels, retail stores, and food delivery op
 - https://www.buaze.com/tr/solutions/qr-generator — Free QR code generator (no login)
 
 ### Legal (Turkish + English where applicable)
-- https://www.buaze.com/tr/privacy, https://www.buaze.com/tr/terms, https://www.buaze.com/tr/cookie
+- https://www.buaze.com/tr/gizlilik, https://www.buaze.com/en/privacy, https://www.buaze.com/tr/terms, https://www.buaze.com/tr/cookie
 - https://www.buaze.com/tr/kvkk, https://www.buaze.com/tr/gizlilik, https://www.buaze.com/tr/acik-riza
 - https://www.buaze.com/tr/ticari-ileti, https://www.buaze.com/tr/kullanim-sozlesmesi
 - https://www.buaze.com/tr/mesafeli-hizmet-sozlesmesi, https://www.buaze.com/tr/iade-iptal-politikasi
@@ -135,9 +140,10 @@ sends it from the Buaze panel.
 → https://www.buaze.com/en/how-it-works
 
 ### Is Buaze compliant with KVKK and GDPR?
-Yes. Data is stored on EU infrastructure, customer IPs are anonymised after 90 days,
-marketing consent is opt-in (separate from service consent), and patient or client data
-is never used to gate review access. Buaze does not block, hide or manipulate reviews.
+Buaze handles personal data under KVKK and GDPR: customer IP addresses are anonymised
+after 90 days, marketing consent is opt-in (separate from service consent), and patient or
+client data is never used to gate review access. Storage and processor details are in the
+privacy policy and the data processing agreement. Buaze does not block, hide or manipulate reviews.
 → https://www.buaze.com/en/google-compliance
 
 ### How long does setup take?
@@ -147,16 +153,14 @@ branch. No engineering is required.
 → https://www.buaze.com/en/help/quick-start
 
 ### What does Buaze cost?
-Buaze sells monthly and annual plans (Starter, Growth, Pro). A 14-day free trial is
-available without a card. Live pricing is on the pricing page; admin-overridden plan pricing
-is visible there.
+Buaze sells tiered monthly and annual plans. Current plan names and prices are always on the
+pricing page (prices are listed in USD).
 → https://www.buaze.com/en/pricing
 
 ### Does Buaze hide or filter negative reviews?
 No. Buaze never blocks or hides reviews. Customers giving low ratings additionally see an
-option to share privately with the business (in practice ~85% choose this private channel),
-but the customer always retains the right to post on any public platform. There is no
-rating gate. Full statement: https://www.buaze.com/en/google-compliance
+option to share privately with the business, but the customer always retains the right to
+post on any public platform. There is no rating gate. Full statement: https://www.buaze.com/en/google-compliance
 
 ### Which sectors does Buaze serve?
 Restaurants, hotels, boutique hotels, healthcare and dental clinics, beauty salons, gyms,
@@ -166,9 +170,10 @@ page with sector-specific setup steps and FAQ.
 → https://www.buaze.com/en/solutions
 
 ### What integrations exist?
-Buaze unifies reviews from Google Business Profile, Yemeksepeti, Getir, Trendyol GO,
-Tripadvisor, Airbnb, Booking and Yandex. Pulse AI handles reply drafts. Webhooks and an
-API key system are available for developer-facing workflows.
+Buaze keeps a public review link per platform (Google Business Profile, Yemeksepeti, Getir,
+Trendyol GO, Tripadvisor, Airbnb, Booking, Yandex) and offers them to customers from the QR
+page; customers choose where, or whether, to post. Pulse AI drafts replies that the business
+owner edits and approves before anything is sent.
 → https://www.buaze.com/en/integrations
 
 ## Contact
@@ -177,4 +182,4 @@ API key system are available for developer-facing workflows.
 - Postal address: Workinton Maslak, Floor 4, Maslak / İstanbul, TR
 - Security disclosures: see /.well-known/security.txt
 - Language: Turkish (primary), English (secondary)
-- Last updated: 2026-06-03
+- Last updated: 2026-10-25
