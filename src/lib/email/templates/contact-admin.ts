@@ -129,7 +129,7 @@ export function renderContactAdmin(
     <td class="stack-col" valign="top" style="width:33.33%;padding:0 ${i === 0 ? '6px 0 0' : i === quickActions.length - 1 ? '0 0 6px' : '6px'};">
       <a href="${a.href}" style="display:block;padding:16px;border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
         <div style="font-family:${FONTS.heading};font-size:14px;font-weight:500;color:${PULSE.graphite};margin-bottom:4px;">${a.l} →</div>
-        <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.mono};letter-spacing:0.05em;">${a.s}</div>
+        <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.label};letter-spacing:0.05em;">${a.s}</div>
       </a>
     </td>
   `,
@@ -155,7 +155,7 @@ export function renderContactAdmin(
     .map(
       (c, i) => `
       <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}">
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${c.label}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${c.label}</div>
         <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;font-weight:500;color:${PULSE.graphite};word-break:break-word;">${
           c.href ? `<a href="${c.href}" style="color:${PULSE.graphite};text-decoration:none;">${c.value}</a>` : c.value
         }</div>
@@ -167,11 +167,11 @@ export function renderContactAdmin(
   const consentRows = `
     <tr>
       <td class="stack-col" valign="top" style="padding:14px 16px;width:50%;border-right:1px solid ${PULSE.n200};">
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${copy.kvkkLabel}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${copy.kvkkLabel}</div>
         <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.success};font-weight:500;">✓ ${copy.kvkkValue}</div>
       </td>
       <td class="stack-col" valign="top" style="padding:14px 16px;width:50%;">
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${copy.marketingLabel}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${copy.marketingLabel}</div>
         <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${params.marketingConsent ? PULSE.success : PULSE.n500};font-weight:500;">${params.marketingConsent ? '✓ ' + copy.marketingYes : '○ ' + copy.marketingNo}</div>
       </td>
     </tr>
@@ -190,7 +190,7 @@ export function renderContactAdmin(
                 ${renderStatusPill({ text: copy.eyebrowAlert, dotColor: PULSE.lime, textColor: PULSE.pure })}
               </td>
               <td align="right" valign="middle">
-                <span style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n400};">${timestamp}</span>
+                <span style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n400};">${timestamp}</span>
               </td>
             </tr>
           </table>
@@ -200,7 +200,7 @@ export function renderContactAdmin(
       <!-- Sub-title row -->
       <tr>
         <td style="background:${PULSE.pure};padding:18px 40px;border-bottom:1px solid ${PULSE.n200};">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${subRowMeta}</div>
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${subRowMeta}</div>
         </td>
       </tr>
 

@@ -139,9 +139,9 @@ export async function renderCustomerReply(
           ${spacer(18)}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:${PULSE.pure};border-radius:10px;">
             <tr>
-              <td valign="middle" style="padding:14px 20px;font-family:${FONTS.mono};font-size:18px;color:${PULSE.graphite};letter-spacing:0.15em;font-weight:500;">${escapeHtml(params.couponCode)}</td>
+              <td valign="middle" style="padding:14px 20px;font-family:${FONTS.label};font-size:18px;color:${PULSE.graphite};letter-spacing:0.15em;font-weight:500;">${escapeHtml(params.couponCode)}</td>
               <td valign="middle" style="padding:14px 0;"><span style="display:inline-block;width:1px;height:18px;background:${PULSE.n300};"></span></td>
-              <td valign="middle" style="padding:14px 20px;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};letter-spacing:0.1em;">${params.couponDays ?? 30} ${copy.daysSuffix}</td>
+              <td valign="middle" style="padding:14px 20px;font-family:${FONTS.label};font-size:11px;color:${PULSE.n500};letter-spacing:0.1em;">${params.couponDays ?? 30} ${copy.daysSuffix}</td>
             </tr>
           </table>
         </div>
@@ -153,7 +153,7 @@ export async function renderCustomerReply(
     <a href="tel:${params.phone.replace(/[^+0-9]/g, '')}" style="display:block;padding:14px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
       ${renderEyebrow(copy.callEyebrow)}
       <div style="height:4px;line-height:1px;font-size:1px;">&nbsp;</div>
-      <div style="font-family:${FONTS.mono};font-size:14px;color:${PULSE.graphite};font-weight:500;">${escapeHtml(params.phone)}</div>
+      <div style="font-family:${FONTS.label};font-size:14px;color:${PULSE.graphite};font-weight:500;">${escapeHtml(params.phone)}</div>
     </a>
   ` : '';
   const mapsCard = params.mapsUrl ? `
@@ -184,7 +184,7 @@ export async function renderCustomerReply(
                     </td>
                     <td valign="middle" style="padding-left:12px;">
                       <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.01em;">${restaurant}</div>
-                      <div style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n600};letter-spacing:0.05em;text-transform:uppercase;">${ownerName} · ${copy.ownerLabel}</div>
+                      <div style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n600};letter-spacing:0.05em;text-transform:uppercase;">${ownerName} · ${copy.ownerLabel}</div>
                     </td>
                   </tr>
                 </table>
@@ -218,7 +218,7 @@ export async function renderCustomerReply(
       ${contactBlock}
       <tr>
         <td class="bz-pad" style="padding:24px 40px 36px;text-align:center;">
-          <div style="font-size:11px;color:${PULSE.n400};font-family:${FONTS.mono};letter-spacing:0.1em;">${copy.sentLine} <span style="color:${PULSE.n600};">buaze</span> ${copy.sentSuffix}</div>
+          <div style="font-size:11px;color:${PULSE.n400};font-family:${FONTS.label};letter-spacing:0.1em;">${copy.sentLine} <span style="color:${PULSE.n600};">buaze</span> ${copy.sentSuffix}</div>
         </td>
       </tr>
     </table>

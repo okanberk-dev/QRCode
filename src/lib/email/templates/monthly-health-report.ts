@@ -140,7 +140,7 @@ export function renderMonthlyHealthReport(
           ${latestScore ?? '—'}<span style="font-size:24px;color:${PULSE.n400};">/100</span>
         </div>
         ${spacer(8)}
-        <p style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.16em;color:${PULSE.n400};margin:0;text-transform:uppercase;">
+        <p style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.16em;color:${PULSE.n400};margin:0;text-transform:uppercase;">
           ${latestScore != null ? scoreLabel(latestScore, locale) : isTr ? 'Veri Yok' : 'No Data'}
         </p>
         ${baselineDelta != null
@@ -159,7 +159,7 @@ export function renderMonthlyHealthReport(
   // ─── 4-stat grid ──────────────────────────────────────────────────────
   const statCell = (label: string, value: string, sub: string | null = null, accent?: string) => `
     <td class="stack-col" valign="top" style="width:25%;padding:0 12px;">
-      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;color:${PULSE.n500};text-transform:uppercase;">${escapeHtml(label)}</div>
+      <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;color:${PULSE.n500};text-transform:uppercase;">${escapeHtml(label)}</div>
       <div style="font-family:${FONTS.heading};font-size:28px;font-weight:500;letter-spacing:-0.025em;color:${accent ?? PULSE.graphite};line-height:1;margin-top:6px;">${escapeHtml(value)}</div>
       ${sub ? `<div style="font-family:${FONTS.body};font-size:11px;color:${PULSE.n500};margin-top:4px;">${escapeHtml(sub)}</div>` : ''}
     </td>
@@ -258,7 +258,7 @@ export function renderMonthlyHealthReport(
       return `
         <tr>
           <td style="padding:14px 16px;border-bottom:1px solid ${PULSE.n200};vertical-align:top;">
-            <span style="display:inline-block;background:${sev.bg};color:${sev.fg};font-family:${FONTS.mono};font-size:9px;letter-spacing:0.16em;padding:2px 8px;border-radius:100px;text-transform:uppercase;margin-bottom:8px;">${sev.label}</span>
+            <span style="display:inline-block;background:${sev.bg};color:${sev.fg};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 8px;border-radius:100px;text-transform:uppercase;margin-bottom:8px;">${sev.label}</span>
             <div style="font-family:${FONTS.heading};font-size:15px;font-weight:500;color:${PULSE.graphite};line-height:1.35;">${escapeHtml(r.title)}</div>
             <p style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n600};line-height:1.5;margin:6px 0 0;">${escapeHtml(r.body)}</p>
           </td>

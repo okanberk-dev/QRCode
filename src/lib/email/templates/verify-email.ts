@@ -83,13 +83,13 @@ export async function renderVerifyEmail(
             <tr>
               <td style="padding:22px 24px 8px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;">
-                  <span style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n600};text-transform:uppercase;">${copy.cardEyebrow}</span>
+                  <span style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n600};text-transform:uppercase;">${copy.cardEyebrow}</span>
                 </div>
               </td>
             </tr>
             <tr>
               <td style="padding:0 24px 14px;">
-                <div style="font-family:${FONTS.mono};font-size:12px;color:${PULSE.n600};word-break:break-all;">${displayUrlSafe}</div>
+                <div style="font-family:${FONTS.label};font-size:12px;color:${PULSE.n600};word-break:break-all;">${displayUrlSafe}</div>
               </td>
             </tr>
             <tr>

@@ -196,7 +196,7 @@ export async function renderRoiAdminNotification(
             <tr>
               <td style="vertical-align:middle;">
                 ${renderEyebrow(copy.alertEyebrow, PULSE.lime)}
-                <div style="margin-top:4px;font-size:12.5px;color:rgba(255,255,255,0.65);font-family:${FONTS.mono};">${escapeHtml(timestamp)}</div>
+                <div style="margin-top:4px;font-size:12.5px;color:rgba(255,255,255,0.65);font-family:${FONTS.label};">${escapeHtml(timestamp)}</div>
               </td>
               <td style="vertical-align:middle;text-align:right;">
                 ${renderStatusPill({
@@ -223,8 +223,8 @@ export async function renderRoiAdminNotification(
         <td style="vertical-align:middle;">
           ${renderEyebrow(isTr ? `${sectorLabel} · ${planLabel}` : `${sectorLabel} · ${planLabel}`, PULSE.n500)}
           <h1 style="margin:4px 0 2px;font-family:${FONTS.heading};font-size:24px;line-height:1.15;letter-spacing:-0.025em;color:${PULSE.graphite};font-weight:600;">${businessSafe}</h1>
-          <a href="mailto:${encodeURI(params.email)}" style="font-family:${FONTS.mono};font-size:12.5px;color:${PULSE.graphite};text-decoration:underline;">${emailSafe}</a>
-          ${phoneSafe ? `<span style="display:inline-block;margin-left:10px;font-family:${FONTS.mono};font-size:12.5px;color:${PULSE.n500};">· ${phoneSafe}</span>` : ''}
+          <a href="mailto:${encodeURI(params.email)}" style="font-family:${FONTS.label};font-size:12.5px;color:${PULSE.graphite};text-decoration:underline;">${emailSafe}</a>
+          ${phoneSafe ? `<span style="display:inline-block;margin-left:10px;font-family:${FONTS.label};font-size:12.5px;color:${PULSE.n500};">· ${phoneSafe}</span>` : ''}
         </td>
       </tr>
     </table>
@@ -252,7 +252,7 @@ export async function renderRoiAdminNotification(
             (k) => `<td class="cell stack-col" valign="top" style="width:25%;padding:6px;">
               <div class="bz-roi-kpi-cell" style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
                 <div class="bz-roi-kpi-val" style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
-                <div style="margin-top:6px;font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
+                <div style="margin-top:6px;font-family:${FONTS.label};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
               </div>
             </td>`,
           )
@@ -268,7 +268,7 @@ export async function renderRoiAdminNotification(
     params.aiNextSteps.length > 0
       ? `
       <div style="margin-top:16px;">
-        <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:8px;">${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}</div>
+        <div style="font-family:${FONTS.label};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:8px;">${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}</div>
         <ol style="margin:0;padding:0 0 0 22px;color:rgba(255,255,255,0.9);">${stepsSafeHtml}</ol>
       </div>`
       : '';
@@ -277,7 +277,7 @@ export async function renderRoiAdminNotification(
       ${renderEyebrow(insightSourceLabel, PULSE.lime)}
       <div style="margin-top:8px;font-size:13.5px;line-height:1.6;color:rgba(255,255,255,0.92);">${summarySafe}</div>
       <div style="margin-top:14px;padding:12px 14px;background:rgba(198,242,78,0.12);border-left:3px solid ${PULSE.lime};border-radius:8px;">
-        <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.lime};margin-bottom:4px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
+        <div style="font-family:${FONTS.label};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.lime};margin-bottom:4px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
         <div style="font-size:13px;line-height:1.55;color:${PULSE.pure};">${highlightSafe}</div>
       </div>
       ${prioritySection}
@@ -287,8 +287,8 @@ export async function renderRoiAdminNotification(
   // ─── Scenario table ────────────────────────────────────────────────────
   const tableRow = (label: string, value: string, accent = false) => `
     <tr>
-      <td style="padding:11px 14px;border-bottom:1px solid ${PULSE.n200};background:${PULSE.n50};font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};width:42%;">${escapeHtml(label)}</td>
-      <td style="padding:11px 14px;border-bottom:1px solid ${PULSE.n200};font-size:13px;color:${PULSE.graphite};${accent ? `font-family:${FONTS.mono};font-weight:600;` : ''}">${value}</td>
+      <td style="padding:11px 14px;border-bottom:1px solid ${PULSE.n200};background:${PULSE.n50};font-family:${FONTS.label};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};width:42%;">${escapeHtml(label)}</td>
+      <td style="padding:11px 14px;border-bottom:1px solid ${PULSE.n200};font-size:13px;color:${PULSE.graphite};${accent ? `font-family:${FONTS.label};font-weight:600;` : ''}">${value}</td>
     </tr>
   `;
   const scenarioTable = `

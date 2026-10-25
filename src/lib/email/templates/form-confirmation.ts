@@ -221,7 +221,7 @@ export async function renderFormConfirmation(
   const detailRows = (params.details || []).map((d, i, arr) => `
     <tr>
       <td valign="top" style="width:110px;padding:12px 16px 12px 0;${i < arr.length - 1 ? `border-bottom:1px solid ${PULSE.n200};` : ''}">
-        <div style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};letter-spacing:0.1em;text-transform:uppercase;padding-top:2px;">${escapeHtml(d.label)}</div>
+        <div style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n500};letter-spacing:0.1em;text-transform:uppercase;padding-top:2px;">${escapeHtml(d.label)}</div>
       </td>
       <td valign="top" style="padding:12px 0;${i < arr.length - 1 ? `border-bottom:1px solid ${PULSE.n200};` : ''}">
         <div style="font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};line-height:1.55;">${escapeHtml(d.value)}</div>
@@ -241,7 +241,7 @@ export async function renderFormConfirmation(
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border-bottom:1px solid ${PULSE.n200};">
         <tr>
           <td style="padding:14px 20px;" valign="middle">${renderEyebrow(copy.formEyebrow)}</td>
-          <td style="padding:14px 20px;" valign="middle" align="right"><span style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};">${filedAt}</span></td>
+          <td style="padding:14px 20px;" valign="middle" align="right"><span style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n500};">${filedAt}</span></td>
         </tr>
       </table>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding:0;">

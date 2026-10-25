@@ -78,7 +78,7 @@ export function renderWeeklyDigestSummary(
     const accent = s.tone === 'lime' ? PULSE.lime : s.tone === 'danger' ? PULSE.danger : s.tone === 'warn' ? PULSE.warning : PULSE.pure;
     return `
       <td class="stack-col" valign="top" style="width:25%;padding:0 16px;${i === 0 ? 'padding-left:0;' : ''}${i < heroStats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.label}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.label}</div>
         <div style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.025em;color:${accent};line-height:1;margin-top:6px;">${s.value}</div>
       </td>
     `;
@@ -102,25 +102,25 @@ export function renderWeeklyDigestSummary(
         ? (isTr ? 'Gönderildi' : 'Sent')
         : (isTr ? 'Hata / dry' : 'Fail / dry');
       const aiBadge = r.hasAi
-        ? `<span style="display:inline-block;background:${PULSE.graphite};color:${PULSE.lime};font-family:${FONTS.mono};font-size:9px;letter-spacing:0.16em;padding:2px 6px;border-radius:4px;">AI</span>`
-        : `<span style="display:inline-block;background:${PULSE.n100};color:${PULSE.n500};font-family:${FONTS.mono};font-size:9px;letter-spacing:0.16em;padding:2px 6px;border-radius:4px;">—</span>`;
+        ? `<span style="display:inline-block;background:${PULSE.graphite};color:${PULSE.lime};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 6px;border-radius:4px;">AI</span>`
+        : `<span style="display:inline-block;background:${PULSE.n100};color:${PULSE.n500};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 6px;border-radius:4px;">—</span>`;
       return `
         <tr>
           <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.body};font-size:13px;font-weight:500;color:${PULSE.graphite};vertical-align:top;">
             ${escapeHtml(r.restaurantName)}
-            <div style="font-family:${FONTS.mono};font-size:10px;color:${PULSE.n500};font-weight:400;margin-top:2px;">${escapeHtml(maskEmail(r.recipientEmail))}</div>
+            <div style="font-family:${FONTS.label};font-size:10px;color:${PULSE.n500};font-weight:400;margin-top:2px;">${escapeHtml(maskEmail(r.recipientEmail))}</div>
           </td>
-          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.mono};font-size:12px;color:${PULSE.graphite};text-align:right;vertical-align:top;">
+          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.label};font-size:12px;color:${PULSE.graphite};text-align:right;vertical-align:top;">
             ${r.total}
           </td>
-          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.mono};font-size:12px;color:${PULSE.graphite};text-align:right;vertical-align:top;">
+          <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};font-family:${FONTS.label};font-size:12px;color:${PULSE.graphite};text-align:right;vertical-align:top;">
             ${r.avgRating.toFixed(1)}
           </td>
           <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};text-align:center;vertical-align:top;">
             ${aiBadge}
           </td>
           <td style="padding:10px 8px;border-bottom:1px solid ${PULSE.n200};text-align:right;vertical-align:top;">
-            <span style="display:inline-block;background:${statusBg};color:${statusFg};font-family:${FONTS.mono};font-size:9px;letter-spacing:0.16em;padding:2px 8px;border-radius:100px;text-transform:uppercase;">${statusLabel}</span>
+            <span style="display:inline-block;background:${statusBg};color:${statusFg};font-family:${FONTS.label};font-size:9px;letter-spacing:0.16em;padding:2px 8px;border-radius:100px;text-transform:uppercase;">${statusLabel}</span>
           </td>
         </tr>
       `;
@@ -128,19 +128,19 @@ export function renderWeeklyDigestSummary(
 
   const tableHeader = `
     <tr>
-      <th align="left" style="padding:8px;font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
+      <th align="left" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
         ${isTr ? 'Restoran' : 'Restaurant'}
       </th>
-      <th align="right" style="padding:8px;font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
+      <th align="right" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
         ${isTr ? 'Yorum' : 'Reviews'}
       </th>
-      <th align="right" style="padding:8px;font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
+      <th align="right" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
         ${isTr ? 'Ort.' : 'Avg'}
       </th>
-      <th align="center" style="padding:8px;font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
+      <th align="center" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
         ${isTr ? 'AI' : 'AI'}
       </th>
-      <th align="right" style="padding:8px;font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
+      <th align="right" style="padding:8px;font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;border-bottom:2px solid ${PULSE.graphite};">
         ${isTr ? 'Durum' : 'Status'}
       </th>
     </tr>
@@ -166,7 +166,7 @@ export function renderWeeklyDigestSummary(
               : `Weekly digest reached <span style="color:${PULSE.lime};">${params.totals.sent}</span><br/>restaurants.`}
           </h1>
           ${spacer(8)}
-          <p style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.1em;color:${PULSE.n400};margin:0;">${dateStr}</p>
+          <p style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.1em;color:${PULSE.n400};margin:0;">${dateStr}</p>
           ${spacer(28)}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="border-top:1px solid ${PULSE.n800};padding-top:18px;">
             <tr>${heroCells}</tr>

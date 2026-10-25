@@ -38,3 +38,4 @@ next-env.d.ts
 # Claude Code (transient worktrees + local-only settings)
 .claude/worktrees/
 .claude/settings.local.json
+.mail-audit/

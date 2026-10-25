@@ -112,12 +112,12 @@ export async function renderForgotPassword(
   const metaRow = (a: [string, string], b: [string, string]) => `
     <tr>
       <td class="col-half" valign="top" style="width:50%;padding:10px 12px 10px 0;border-top:1px solid ${PULSE.n200};">
-        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${a[0]}</div>
-        <div style="font-family:${FONTS.mono};font-size:13px;color:${PULSE.n700};margin-top:4px;">${a[1]}</div>
+        <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${a[0]}</div>
+        <div style="font-family:${FONTS.label};font-size:13px;color:${PULSE.n700};margin-top:4px;">${a[1]}</div>
       </td>
       <td class="col-half" valign="top" style="width:50%;padding:10px 0 10px 12px;border-top:1px solid ${PULSE.n200};">
-        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${b[0]}</div>
-        <div style="font-family:${FONTS.mono};font-size:13px;color:${PULSE.n700};margin-top:4px;">${b[1]}</div>
+        <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${b[0]}</div>
+        <div style="font-family:${FONTS.label};font-size:13px;color:${PULSE.n700};margin-top:4px;">${b[1]}</div>
       </td>
     </tr>`;
 
@@ -144,13 +144,13 @@ export async function renderForgotPassword(
               </tr>
             </table>
             ${spacer(16)}
-            <div style="font-family:${FONTS.mono};font-size:12px;color:${PULSE.n500};background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:8px;padding:12px 14px;word-break:break-all;line-height:1.5;">
+            <div style="font-family:${FONTS.label};font-size:12px;color:${PULSE.n500};background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:8px;padding:12px 14px;word-break:break-all;line-height:1.5;">
               ${escapeHtml(displayUrl)}
             </div>
             ${spacer(16)}
             ${renderButton({ href: params.resetUrl, label: copy.cta, size: 'lg' })}
             ${spacer(14)}
-            <div style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};">
+            <div style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n500};">
               ${copy.altCodeLabel}: <span style="color:${PULSE.graphite};font-weight:600;letter-spacing:0.2em;">${escapeHtml(params.code)}</span>
             </div>
           </div>

@@ -99,8 +99,8 @@ body{margin:0;background:${PULSE.n100};font-family:${FONTS.body};color:${PULSE.g
 .card{background:${PULSE.pure};border-radius:16px;padding:36px 28px;max-width:480px;width:100%;border:1px solid ${PULSE.n200};box-shadow:0 8px 24px rgba(0,0,0,0.04);}
 h1{font-family:${FONTS.heading};font-size:28px;font-weight:500;margin:0 0 12px;letter-spacing:-0.02em;}
 p{font-size:15px;line-height:1.6;color:${PULSE.n700};margin:0 0 8px;}
-.eyebrow{font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;margin-bottom:14px;}
-.email{font-family:${FONTS.mono};font-size:13px;color:${PULSE.n800};background:${PULSE.n50};padding:10px 14px;border-radius:8px;margin-top:14px;display:inline-block;border:1px solid ${PULSE.n200};}
+.eyebrow{font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;margin-bottom:14px;}
+.email{font-family:${FONTS.label};font-size:13px;color:${PULSE.n800};background:${PULSE.n50};padding:10px 14px;border-radius:8px;margin-top:14px;display:inline-block;border:1px solid ${PULSE.n200};}
 .btn{display:inline-block;background:${PULSE.graphite};color:${PULSE.pure};padding:14px 24px;border-radius:10px;font-weight:600;text-decoration:none;font-size:14px;margin-top:22px;}
 .dot{display:inline-block;width:10px;height:10px;background:${PULSE.lime};border-radius:50%;margin-right:8px;vertical-align:middle;}
 @media (max-width:480px){h1{font-size:24px;}.card{padding:28px 22px;}}

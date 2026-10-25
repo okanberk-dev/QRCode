@@ -69,7 +69,7 @@ export async function renderQrNoScansReminder(
   const tipRow = (label: string, body: string) => `
     <tr>
       <td valign="top" style="padding:10px 0;">
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${label}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${label}</div>
         <div style="margin-top:4px;font-family:${FONTS.body};font-size:13.5px;line-height:1.55;color:${PULSE.graphite};">${body}</div>
       </td>
     </tr>`;
@@ -87,7 +87,7 @@ export async function renderQrNoScansReminder(
     ${spacer(28)}
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:18px;">
       <tr><td style="padding:20px 24px;">
-        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">${copy.tipsEyebrow}</div>
+        <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">${copy.tipsEyebrow}</div>
         ${spacer(8)}
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
           ${tipRow('01', copy.tip1)}

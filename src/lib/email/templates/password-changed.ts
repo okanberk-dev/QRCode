@@ -95,7 +95,7 @@ export async function renderPasswordChanged(
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:18px;">
       <tr>
         <td style="padding:24px;">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n500};">
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n500};">
             ${copy.cardEyebrow}
           </div>
           ${spacer(12)}
@@ -104,21 +104,21 @@ export async function renderPasswordChanged(
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="stack-row">
             <tr>
               <td class="stack-col" width="50%" valign="top" style="padding-right:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaTime}</div>
+                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaTime}</div>
                 <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${changedAt}</div>
               </td>
               <td class="stack-col" width="50%" valign="top" style="padding-left:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaIp}</div>
+                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaIp}</div>
                 <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${ip}</div>
               </td>
             </tr>
             <tr>
               <td class="stack-col" width="50%" valign="top" style="padding-right:12px;padding-top:14px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaDevice}</div>
+                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaDevice}</div>
                 <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${device}</div>
               </td>
               <td class="stack-col" width="50%" valign="top" style="padding-left:12px;padding-top:14px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaAccount}</div>
+                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n500};">${copy.metaAccount}</div>
                 <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;color:${PULSE.graphite};">${account}</div>
               </td>
             </tr>

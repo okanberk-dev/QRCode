@@ -114,7 +114,7 @@ export async function renderTrialEnding(
   const statCells = stats.map((s, i) => `
     <td class="cell stack-col" valign="top" style="width:25%;padding:0 16px;${i === 0 ? 'padding-left:0;' : ''}${i < stats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
       <div style="font-family:${FONTS.heading};font-size:30px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.pure};line-height:1;">${escapeHtml(s.v)}</div>
-      <div style="margin-top:6px;font-size:11px;color:${PULSE.n400};font-family:${FONTS.mono};letter-spacing:0.05em;">${s.k}</div>
+      <div style="margin-top:6px;font-size:11px;color:${PULSE.n400};font-family:${FONTS.label};letter-spacing:0.05em;">${s.k}</div>
     </td>
   `).join('');
 

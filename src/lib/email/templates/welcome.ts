@@ -86,12 +86,12 @@ export async function renderWelcome(
     const titleStyle = s.state === 'done' ? 'text-decoration:line-through;' : '';
     const numOrCheck = s.state === 'done' ? '✓' : s.n;
     const nextPill = s.state === 'current'
-      ? `<span style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.graphite};background:${PULSE.limeSoft};padding:4px 8px;border-radius:6px;text-transform:uppercase;font-weight:500;">${copy.nextLabel}</span>`
+      ? `<span style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.graphite};background:${PULSE.limeSoft};padding:4px 8px;border-radius:6px;text-transform:uppercase;font-weight:500;">${copy.nextLabel}</span>`
       : '';
     return `
       <tr style="${opacity}">
         <td valign="top" style="width:56px;padding:18px 0;${i === 0 ? `border-top:1px solid ${PULSE.n200};` : ''}border-bottom:1px solid ${PULSE.n200};">
-          <div style="width:36px;height:36px;border-radius:10px;background:${bg};color:${fg};text-align:center;line-height:36px;font-family:${FONTS.mono};font-size:12px;font-weight:500;">${numOrCheck}</div>
+          <div style="width:36px;height:36px;border-radius:10px;background:${bg};color:${fg};text-align:center;line-height:36px;font-family:${FONTS.label};font-size:12px;font-weight:500;">${numOrCheck}</div>
         </td>
         <td valign="top" style="padding:18px 0 18px 20px;${i === 0 ? `border-top:1px solid ${PULSE.n200};` : ''}border-bottom:1px solid ${PULSE.n200};">
           <div style="font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.015em;${titleStyle}">${s.t}</div>
@@ -114,7 +114,7 @@ export async function renderWelcome(
         <span style="display:inline-block;width:28px;height:28px;border-radius:8px;background:${PULSE.graphite};color:${PULSE.lime};text-align:center;line-height:28px;font-family:${FONTS.heading};font-size:14px;">${r.icon}</span>
       </div>
       <div style="font-family:${FONTS.heading};font-size:14px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.01em;line-height:1.35;">${r.t}</div>
-      <div style="margin-top:6px;font-size:11px;color:${PULSE.n500};font-family:${FONTS.mono};letter-spacing:0.05em;">${r.s}</div>
+      <div style="margin-top:6px;font-size:11px;color:${PULSE.n500};font-family:${FONTS.label};letter-spacing:0.05em;">${r.s}</div>
     </a>
   `;
   const resourceGrid = `
@@ -134,7 +134,7 @@ export async function renderWelcome(
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
         <td class="bz-pad" style="background:${PULSE.lime};padding:40px 40px 0;">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n800};text-transform:uppercase;font-weight:500;text-align:right;">${copy.eyebrow}</div>
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n800};text-transform:uppercase;font-weight:500;text-align:right;">${copy.eyebrow}</div>
           ${spacer(18)}
           <h1 class="bz-h1-lg" style="font-family:${FONTS.heading};font-size:48px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
             ${copy.titleHi}<br/>

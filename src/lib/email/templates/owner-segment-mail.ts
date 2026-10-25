@@ -70,7 +70,7 @@ export function renderOwnerSegmentMail(
   const content = `
     <tr>
       <td class="bz-pad" style="padding:32px 40px 16px;">
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.lime};font-weight:600;">
+        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.lime};font-weight:600;">
           ${eyebrow}
         </div>
         <h1 style="font-family:${FONTS.heading};font-size:22px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.02em;margin:6px 0 0;">
@@ -107,7 +107,7 @@ export function renderOwnerSegmentMail(
     <tr>
       <td class="bz-pad" style="padding:0 40px 32px;">
         <div style="border-top:1px solid ${PULSE.n200};padding-top:18px;">
-          <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:${PULSE.n500};">
+          <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:${PULSE.n500};">
             ${sentLine} <strong style="color:${PULSE.graphite};">Buaze</strong> ${sentSuffix}
           </div>
         </div>

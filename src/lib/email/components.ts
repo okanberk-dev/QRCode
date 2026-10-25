@@ -3,22 +3,21 @@
 // styles + table primitives + a small <style> block in layout.ts that
 // handles mobile breakpoints. No flex/grid where it can be avoided.
 
-import { PULSE, FONTS, INSTAGRAM_HANDLE, INSTAGRAM_URL } from './tokens';
+import { PULSE, FONTS, INSTAGRAM_HANDLE, INSTAGRAM_URL, mailAssetUrl } from './tokens';
 
 export function renderLogo(opts: { size?: number; dark?: boolean; accent?: string } = {}): string {
   const size = opts.size ?? 22;
   const dark = !!opts.dark;
   const fg = dark ? PULSE.pure : PULSE.graphite;
-  const accent = opts.accent ?? PULSE.lime;
-  const svgSize = Math.round(size * 1.4);
+  const markSize = Math.round(size * 1.4);
+  // PNG, not inline <svg>: Gmail + Outlook strip <svg>, which left the mark
+  // as an empty gap next to the wordmark. `accent` is baked into the PNG
+  // (lime spark) — the option is kept only so old callers still compile.
+  const mark = mailAssetUrl(dark ? 'buaze-mark-light.png' : 'buaze-mark-dark.png');
   return `
-    <span style="display:inline-block;line-height:1;vertical-align:middle;">
-      <svg viewBox="0 0 64 64" width="${svgSize}" height="${svgSize}" style="display:inline-block;vertical-align:middle;" aria-hidden="true">
-        <path d="M10 14 Q10 8 16 8 L48 8 Q54 8 54 14 L54 36 Q54 42 48 42 L30 42 L22 52 L22 42 L16 42 Q10 42 10 36 Z" fill="none" stroke="${fg}" stroke-width="3.2" stroke-linejoin="round"/>
-        <path d="M15 26 L22 26 L25 18 L30 34 L34 22 L38 28 L49 28" fill="none" stroke="${fg}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="54" cy="10" r="5" fill="${accent}"/>
-      </svg>
-      <span style="font-family:${FONTS.heading};font-weight:500;font-size:${size}px;color:${fg};letter-spacing:-0.035em;line-height:0.9;margin-left:6px;vertical-align:middle;">buaze</span>
+    <span style="display:inline-block;line-height:1;vertical-align:middle;white-space:nowrap;">
+      <img src="${mark}" width="${markSize}" height="${markSize}" alt="" style="display:inline-block;vertical-align:middle;border:0;outline:none;width:${markSize}px;height:${markSize}px;">
+      <span style="font-family:${FONTS.heading};font-weight:600;font-size:${size}px;color:${fg};letter-spacing:-0.03em;line-height:1;margin-left:6px;vertical-align:middle;">buaze</span>
     </span>
   `;
 }
@@ -26,15 +25,17 @@ export function renderLogo(opts: { size?: number; dark?: boolean; accent?: strin
 export function renderEcgDivider(opts: { color?: string; height?: number } = {}): string {
   const color = opts.color ?? PULSE.lime;
   const height = opts.height ?? 22;
+  // PNG (not inline <svg> — stripped by Gmail/Outlook). Two baked colours:
+  // lime (default) and graphite. The 600:28 aspect ratio is preserved; the
+  // wrapper clamps the rendered height so the line stays slim on wide shells.
+  const asset = color === PULSE.graphite ? 'buaze-ecg-graphite.png' : 'buaze-ecg-lime.png';
   return `
-    <svg width="100%" height="${height}" viewBox="0 0 600 28" preserveAspectRatio="none" style="display:block;">
-      <path d="M0 14 L120 14 L140 14 L155 4 L172 24 L188 8 L205 18 L220 14 L340 14 L360 14 L375 6 L392 22 L408 10 L425 16 L440 14 L600 14" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <img src="${mailAssetUrl(asset)}" width="600" height="28" alt="" class="bz-fluid" style="display:block;width:100%;max-width:100%;height:auto;max-height:${height + 6}px;border:0;outline:none;">
   `;
 }
 
 export function renderEyebrow(text: string, color: string = PULSE.n500): string {
-  return `<div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${color};text-transform:uppercase;font-weight:500;">${text}</div>`;
+  return `<div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.14em;line-height:1.5;color:${color};text-transform:uppercase;font-weight:600;">${text}</div>`;
 }
 
 export function renderButton(opts: { href: string; label: string; variant?: 'dark' | 'lime'; size?: 'md' | 'lg' }): string {
@@ -45,7 +46,7 @@ export function renderButton(opts: { href: string; label: string; variant?: 'dar
   const fontSize = size === 'lg' ? 15 : 14;
   const bg = variant === 'lime' ? PULSE.lime : PULSE.graphite;
   const fg = variant === 'lime' ? PULSE.graphite : PULSE.pure;
-  return `<a href="${href}" style="display:inline-block;background:${bg};color:${fg};padding:${padding};border-radius:10px;font-family:${FONTS.body};font-weight:600;font-size:${fontSize}px;letter-spacing:-0.005em;text-decoration:none;line-height:1;mso-padding-alt:0;">${label}</a>`;
+  return `<a href="${href}" class="bz-btn" style="display:inline-block;background:${bg};color:${fg};padding:${padding};border-radius:10px;font-family:${FONTS.body};font-weight:600;font-size:${fontSize}px;letter-spacing:0;text-decoration:none;line-height:1.2;mso-padding-alt:0;">${label}</a>`;
 }
 
 export function renderHeader(opts: { eyebrow?: string; dark?: boolean } = {}): string {
@@ -53,12 +54,18 @@ export function renderHeader(opts: { eyebrow?: string; dark?: boolean } = {}): s
   const bg = dark ? PULSE.graphite : PULSE.pure;
   const borderBottom = dark ? '' : `border-bottom:1px solid ${PULSE.n200};`;
   const eyebrowColor = dark ? PULSE.n400 : PULSE.n500;
+  // No eyebrow → single logo cell (no empty right cell eating width). With an
+  // eyebrow, mobile CSS (.bz-hdr-logo / .bz-hdr-eyebrow) stacks the two so a
+  // long eyebrow can never collide with the logo on 320–360px screens.
+  const cells = opts.eyebrow
+    ? `<td class="bz-hdr-logo" style="padding:28px 36px;" align="left" valign="middle">${renderLogo({ size: 20, dark })}</td>
+        <td class="bz-hdr-eyebrow" style="padding:28px 36px 28px 0;" align="right" valign="middle">${renderEyebrow(opts.eyebrow, eyebrowColor)}</td>`
+    : `<td class="bz-hdr-only" style="padding:28px 36px;" align="left" valign="middle">${renderLogo({ size: 20, dark })}</td>`;
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${bg};${borderBottom}">
+    <table role="presentation"${opts.eyebrow ? ' class="stack-row"' : ''} cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;background:${bg};${borderBottom}">
       <tr>
         <!-- §38.198 — Header padding 24px 32px → 28px 36px; logo + eyebrow shell çerçevesine bitişik durmasın. -->
-        <td style="padding:28px 36px;" align="left" valign="middle">${renderLogo({ size: 20, dark })}</td>
-        <td style="padding:28px 36px;" align="right" valign="middle">${opts.eyebrow ? renderEyebrow(opts.eyebrow, eyebrowColor) : ''}</td>
+        ${cells}
       </tr>
     </table>
   `;
@@ -98,13 +105,13 @@ export function renderFooter(params: FooterParams = {}): string {
            28/18/20/18 → 32/22/24/22 ile shell çerçevesine bitişik
            durmasın. Tagline italic 11px N500. -->
       <tr>
-        <td style="padding:32px 36px 14px;">
+        <td class="bz-ftr" style="padding:32px 36px 14px;">
           ${renderEcgDivider({ color: PULSE.lime, height: 18 })}
         </td>
       </tr>
       <tr>
-        <td style="padding:22px 36px 0;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <td class="bz-ftr" style="padding:22px 36px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;">
             <tr>
               <td class="stack-col" valign="top" style="font-family:${FONTS.body};">
                 ${renderLogo({ size: 16 })}
@@ -128,22 +135,16 @@ export function renderFooter(params: FooterParams = {}): string {
         </td>
       </tr>
       <tr>
-        <td style="padding:24px 36px 0;font-family:${FONTS.body};">
-          <a href="${INSTAGRAM_URL}" style="display:inline-block;padding:10px 14px;background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:999px;text-decoration:none;vertical-align:middle;">
-            <span style="display:inline-block;vertical-align:middle;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;" aria-hidden="true">
-                <rect x="2.5" y="2.5" width="19" height="19" rx="5" stroke="${PULSE.graphite}" stroke-width="1.6"/>
-                <circle cx="12" cy="12" r="4.2" stroke="${PULSE.graphite}" stroke-width="1.6"/>
-                <circle cx="17.4" cy="6.6" r="1.1" fill="${PULSE.graphite}"/>
-              </svg>
-            </span>
-            <span style="font-family:${FONTS.mono};font-size:12px;color:${PULSE.graphite};font-weight:500;margin-left:8px;vertical-align:middle;">${INSTAGRAM_HANDLE}</span>
+        <td class="bz-ftr" style="padding:24px 36px 0;font-family:${FONTS.body};">
+          <a href="${INSTAGRAM_URL}" style="display:inline-block;padding:10px 14px;background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:999px;text-decoration:none;vertical-align:middle;white-space:nowrap;">
+            <img src="${mailAssetUrl('buaze-instagram.png')}" width="16" height="16" alt="" style="display:inline-block;vertical-align:middle;border:0;width:16px;height:16px;">
+            <span style="font-family:${FONTS.label};font-size:12px;color:${PULSE.graphite};font-weight:500;margin-left:8px;vertical-align:middle;">${INSTAGRAM_HANDLE}</span>
           </a>
-          <span style="font-size:11px;color:${PULSE.n500};margin-left:10px;vertical-align:middle;">${followCopy}</span>
+          <span class="bz-follow" style="font-family:${FONTS.body};font-size:11px;line-height:1.5;color:${PULSE.n500};margin-left:10px;vertical-align:middle;">${followCopy}</span>
         </td>
       </tr>
       <tr>
-        <td style="padding:22px 36px 32px;">
+        <td class="bz-ftr" style="padding:22px 36px 32px;">
           <div style="border-top:1px solid ${PULSE.n200};padding-top:16px;font-family:${FONTS.body};font-size:11px;color:${PULSE.n400};">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
@@ -180,8 +181,8 @@ export function renderStatGrid(stats: StatCell[], opts: { dark?: boolean } = {})
   const borderColor = dark ? PULSE.n800 : PULSE.n200;
   const cells = stats.map((s, i) => `
     <td class="stack-col" valign="top" style="padding:0 16px;${i === 0 ? 'padding-left:0;' : ''}${i === stats.length - 1 ? 'padding-right:0;' : `border-right:1px solid ${borderColor};`}width:${Math.floor(100 / stats.length)}%;">
-      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${labelColor};text-transform:uppercase;">${s.label}</div>
-      <div style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.025em;color:${valueColor};line-height:1;margin-top:6px;">${s.value}</div>
+      <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.12em;font-weight:600;color:${labelColor};text-transform:uppercase;">${s.label}</div>
+      <div style="font-family:${FONTS.heading};font-size:30px;font-weight:600;letter-spacing:-0.02em;color:${valueColor};line-height:1.05;margin-top:6px;">${s.value}</div>
       ${s.delta ? `<div style="margin-top:6px;font-size:12px;color:${PULSE.lime};font-weight:500;">${s.delta}</div>` : ''}
     </td>
   `).join('');
@@ -189,20 +190,23 @@ export function renderStatGrid(stats: StatCell[], opts: { dark?: boolean } = {})
 }
 
 export function renderH1(text: string, opts: { color?: string; size?: number } = {}): string {
-  const size = opts.size ?? 36;
+  const size = opts.size ?? 34;
   const color = opts.color ?? PULSE.graphite;
-  return `<h1 style="font-family:${FONTS.heading};font-size:${size}px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${color};margin:0;">${text}</h1>`;
+  // Responsive class by size so mobile CSS only ever steps a heading DOWN:
+  // display (>=44) → 30px, hero (>=30) → 26px, smaller headings keep their size.
+  const cls = size >= 44 ? ' class="bz-h1-lg"' : size >= 30 ? ' class="bz-h1"' : '';
+  return `<h1${cls} style="font-family:${FONTS.heading};font-size:${size}px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${color};margin:0;">${text}</h1>`;
 }
 
 export function renderH2(text: string, opts: { color?: string } = {}): string {
   const color = opts.color ?? PULSE.graphite;
-  return `<h2 style="font-family:${FONTS.heading};font-size:22px;font-weight:500;letter-spacing:-0.02em;line-height:1.2;color:${color};margin:0;">${text}</h2>`;
+  return `<h2 class="bz-h2" style="font-family:${FONTS.heading};font-size:22px;font-weight:600;letter-spacing:-0.015em;line-height:1.25;color:${color};margin:0;">${text}</h2>`;
 }
 
 export function renderP(text: string, opts: { color?: string; size?: number } = {}): string {
   const size = opts.size ?? 15;
   const color = opts.color ?? PULSE.n600;
-  return `<p style="font-family:${FONTS.body};font-size:${size}px;line-height:1.6;color:${color};margin:0;letter-spacing:-0.005em;">${text}</p>`;
+  return `<p style="font-family:${FONTS.body};font-size:${size}px;line-height:1.65;color:${color};margin:0;letter-spacing:0;">${text}</p>`;
 }
 
 export function spacer(height: number): string {
@@ -236,7 +240,7 @@ export function renderBadge(opts: BadgeOpts): string {
       ? { bg: PULSE.limeSoft, fg: PULSE.graphite }
       : { bg: PULSE.graphite, fg: PULSE.lime };
 
-  const inner = `<span style="display:inline-block;font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;background:${colors.bg};color:${colors.fg};padding:4px 10px;border-radius:6px;text-transform:uppercase;font-weight:600;line-height:1.2;">${text}</span>`;
+  const inner = `<span style="display:inline-block;font-family:${FONTS.label};font-size:10px;letter-spacing:0.12em;background:${colors.bg};color:${colors.fg};padding:4px 10px;border-radius:6px;text-transform:uppercase;font-weight:600;line-height:1.3;">${text}</span>`;
 
   if (position === 'inline') return inner;
 
@@ -261,10 +265,9 @@ export function renderStatusPill(opts: StatusPillOpts): string {
   const dotColor = opts.dotColor ?? PULSE.success;
   const textColor = opts.textColor ?? PULSE.success;
   const bg = opts.bgColor ?? 'transparent';
-  return `<span style="display:inline-flex;align-items:center;gap:6px;font-family:${FONTS.mono};font-size:11px;color:${textColor};background:${bg};padding:${bg !== 'transparent' ? '4px 10px' : '0'};border-radius:999px;">
-    <span style="display:inline-block;width:6px;height:6px;background:${dotColor};border-radius:50%;"></span>
-    ${opts.text}
-  </span>`;
+  // inline-block + vertical-align (NOT inline-flex): Outlook and older Gmail
+  // ignore flexbox, which collapsed the dot on top of the label.
+  return `<span style="display:inline-block;font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.4;color:${textColor};background:${bg};padding:${bg !== 'transparent' ? '4px 10px' : '0'};border-radius:999px;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:${dotColor};border-radius:50%;vertical-align:middle;margin-right:6px;"></span><span style="vertical-align:middle;">${opts.text}</span></span>`;
 }
 
 export interface TwoColCardsParams {
@@ -298,9 +301,9 @@ export function renderBarChart(opts: BarChartOpts): string {
     const pct = Math.max(8, Math.round((v / max) * 100));
     const isPeak = i === peak;
     return `<td valign="bottom" align="center" style="padding:0 4px;width:${Math.floor(100 / opts.values.length)}%;">
-      <div style="font-family:${FONTS.mono};font-size:11px;color:${isPeak ? PULSE.graphite : PULSE.n400};font-weight:${isPeak ? 500 : 400};margin-bottom:8px;">${v}</div>
+      <div style="font-family:${FONTS.label};font-size:11px;color:${isPeak ? PULSE.graphite : PULSE.n400};font-weight:${isPeak ? 500 : 400};margin-bottom:8px;">${v}</div>
       <div style="background:${isPeak ? PULSE.lime : PULSE.n100};height:${Math.round((pct / 100) * height)}px;border-radius:4px;width:100%;min-height:8px;line-height:1px;font-size:1px;">&nbsp;</div>
-      <div style="font-family:${FONTS.mono};font-size:10px;color:${PULSE.n400};letter-spacing:0.1em;margin-top:8px;">${opts.labels[i] ?? ''}</div>
+      <div style="font-family:${FONTS.label};font-size:10px;color:${PULSE.n400};letter-spacing:0.1em;margin-top:8px;">${opts.labels[i] ?? ''}</div>
     </td>`;
   }).join('');
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="bar-chart" style="height:${height + 40}px;"><tr>${cells}</tr></table>`;
@@ -365,7 +368,7 @@ export function renderTimeline(items: TimelineItem[]): string {
         <div style="width:2px;background:${lineColor};height:36px;margin:4px auto 0;"></div>
       </td>
       <td valign="top" style="padding:6px 0 6px 16px;">
-        <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.12em;color:${status === 'done' ? PULSE.graphite : PULSE.n500};text-transform:uppercase;font-weight:500;">${escapeHtmlInline(it.label)}</div>
+        <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.12em;color:${status === 'done' ? PULSE.graphite : PULSE.n500};text-transform:uppercase;font-weight:500;">${escapeHtmlInline(it.label)}</div>
         <div style="font-family:${FONTS.body};font-size:14px;color:${PULSE.graphite};margin-top:2px;line-height:1.5;">${escapeHtmlInline(it.body)}</div>
       </td>
     </tr>`;

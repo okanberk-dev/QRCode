@@ -147,7 +147,7 @@ export async function renderWeeklyReport(
   ];
   const heroStatCells = stats.map((s, i) => `
     <td class="stack-col" valign="top" style="width:${(100 / stats.length).toFixed(2)}%;padding:0 20px;${i === 0 ? 'padding-left:0;' : ''}${i < stats.length - 1 ? `border-right:1px solid ${PULSE.n800};` : 'padding-right:0;'}">
-      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.k}</div>
+      <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${s.k}</div>
       <div style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;color:${PULSE.pure};line-height:1;margin-top:6px;">${s.v}</div>
       ${s.delta ? `<div style="margin-top:6px;font-size:12px;color:${PULSE.lime};font-weight:500;">${s.delta} ↑</div>` : ''}
     </td>
@@ -160,13 +160,13 @@ export async function renderWeeklyReport(
     const barColor = star >= 4 ? PULSE.success : star === 3 ? PULSE.warning : PULSE.danger;
     return `
       <tr>
-        <td style="width:34px;padding:6px 0;font-family:${FONTS.mono};font-size:12px;color:${PULSE.graphite};font-weight:600;">${star}★</td>
+        <td style="width:34px;padding:6px 0;font-family:${FONTS.label};font-size:12px;color:${PULSE.graphite};font-weight:600;">${star}★</td>
         <td style="padding:6px 0;">
           <div style="background:${PULSE.n200};border-radius:100px;height:8px;overflow:hidden;">
             <div style="background:${barColor};height:8px;width:${Math.max(pct, 0)}%;border-radius:100px;"></div>
           </div>
         </td>
-        <td style="width:60px;padding:6px 0 6px 12px;text-align:right;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};">${pct}% · ${count}</td>
+        <td style="width:60px;padding:6px 0 6px 12px;text-align:right;font-family:${FONTS.label};font-size:11px;color:${PULSE.n500};">${pct}% · ${count}</td>
       </tr>
     `;
   }).join('');
@@ -218,7 +218,7 @@ export async function renderWeeklyReport(
                   <td style="padding-right:8px;vertical-align:middle;">
                     <span style="display:inline-block;width:8px;height:8px;border-radius:100px;background:${PULSE.lime};"></span>
                   </td>
-                  <td style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;vertical-align:middle;">${copy.aiEyebrow}</td>
+                  <td style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;vertical-align:middle;">${copy.aiEyebrow}</td>
                 </tr>
               </table>
               <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.pure};line-height:1.2;margin-top:12px;">${copy.aiTitle}</div>
@@ -229,7 +229,7 @@ export async function renderWeeklyReport(
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px;border-top:1px solid ${PULSE.n800};">
                   <tr>
                     <td style="padding-top:14px;">
-                      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${copy.aiRecommendationLabel}</div>
+                      <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${copy.aiRecommendationLabel}</div>
                       <p style="font-family:${FONTS.body};font-size:14px;line-height:1.55;color:${PULSE.lime};margin:8px 0 0;font-weight:500;">${aiInsight!.recommendation}</p>
                     </td>
                   </tr>
@@ -276,7 +276,7 @@ export async function renderWeeklyReport(
             `).join('')}
           </tr>
         </table>
-        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.12em;color:${PULSE.n500};text-transform:uppercase;margin-top:10px;">${copy.segmentHint}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.12em;color:${PULSE.n500};text-transform:uppercase;margin-top:10px;">${copy.segmentHint}</div>
       </td>
     </tr>`;
   })() : '';
@@ -296,7 +296,7 @@ export async function renderWeeklyReport(
           <tr>
             ${aspectsItems.map(([label, val], i) => `
               <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${label}</div>
+                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${label}</div>
                 <div style="font-family:${FONTS.heading};font-size:26px;font-weight:500;color:${PULSE.graphite};margin-top:4px;letter-spacing:-0.02em;">${val !== null ? val.toFixed(1) : '—'}</div>
               </td>
             `).join('')}

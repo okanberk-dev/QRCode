@@ -126,7 +126,7 @@ export async function renderNewsletter(
         ${renderEyebrow(copy.featuredEyebrow)}
         ${spacer(14)}
         <div style="background:${PULSE.graphite};border-radius:14px;padding:32px;color:${PULSE.pure};">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;font-weight:600;">${featured.readMinutes ? `${featured.readMinutes} ${copy.readMinutesUnit} okuma` : copy.featuredReadTime}</div>
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;font-weight:600;">${featured.readMinutes ? `${featured.readMinutes} ${copy.readMinutesUnit} okuma` : copy.featuredReadTime}</div>
           ${spacer(12)}
           <h2 style="font-family:${FONTS.heading};font-size:28px;font-weight:500;letter-spacing:-0.02em;line-height:1.2;color:${PULSE.pure};margin:0;">${escapeHtml(featured.title)}</h2>
           ${featured.excerpt ? `${spacer(14)}<div style="font-family:${FONTS.body};font-size:15px;color:${PULSE.n300};line-height:1.6;max-width:520px;">${escapeHtml(featured.excerpt)}</div>` : ''}
@@ -148,11 +148,11 @@ export async function renderNewsletter(
           <a href="${p.url}" style="text-decoration:none;display:block;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td valign="top" style="width:36px;font-family:${FONTS.mono};font-size:13px;color:${PULSE.n400};font-weight:500;">${num}</td>
+                <td valign="top" style="width:36px;font-family:${FONTS.label};font-size:13px;color:${PULSE.n400};font-weight:500;">${num}</td>
                 <td valign="top" style="padding-left:8px;">
                   <div style="font-family:${FONTS.heading};font-size:17px;font-weight:500;color:${PULSE.graphite};letter-spacing:-0.015em;line-height:1.35;">${escapeHtml(p.title)}</div>
                   ${p.excerpt ? `<div style="font-family:${FONTS.body};font-size:13px;color:${PULSE.n600};margin-top:4px;line-height:1.55;">${escapeHtml(p.excerpt)}</div>` : ''}
-                  <div style="margin-top:8px;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n500};letter-spacing:0.05em;text-transform:uppercase;">${cat}${read ? ` · ${read}` : ''}</div>
+                  <div style="margin-top:8px;font-family:${FONTS.label};font-size:11px;color:${PULSE.n500};letter-spacing:0.05em;text-transform:uppercase;">${cat}${read ? ` · ${read}` : ''}</div>
                 </td>
                 <td valign="middle" align="right" style="width:30px;color:${PULSE.n400};font-size:18px;font-family:${FONTS.body};">→</td>
               </tr>

@@ -80,20 +80,20 @@ export async function renderAccountDeletionCanceled(
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.lime};border-radius:18px;">
       <tr>
         <td style="padding:24px;">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">
             ${copy.cardEyebrow}
           </div>
           ${spacer(14)}
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
             <tr>
               <td valign="top" style="padding-bottom:12px;">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.accountLabel}</div>
-                <div style="margin-top:4px;font-family:${FONTS.mono};font-size:13px;color:${PULSE.graphite};">${accountEmail}</div>
+                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.accountLabel}</div>
+                <div style="margin-top:4px;font-family:${FONTS.label};font-size:13px;color:${PULSE.graphite};">${accountEmail}</div>
               </td>
             </tr>
             <tr>
               <td valign="top">
-                <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.statusLabel}</div>
+                <div style="font-family:${FONTS.label};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${PULSE.n600};">${copy.statusLabel}</div>
                 <div style="margin-top:4px;font-family:${FONTS.heading};font-size:18px;font-weight:500;color:${PULSE.limeDeep};">${copy.statusValue}</div>
               </td>
             </tr>

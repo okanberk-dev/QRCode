@@ -117,7 +117,7 @@ export async function renderLowRatingAlert(
 
   // Tags — jsx:67-73
   const tagsHtml = tags.length
-    ? `<div style="margin-top:16px;">${tags.map((t) => `<span style="display:inline-block;font-family:${FONTS.mono};font-size:11px;color:${PULSE.n600};background:${PULSE.n100};padding:4px 10px;border-radius:6px;margin:0 6px 6px 0;">#${escapeHtml(t)}</span>`).join('')}</div>`
+    ? `<div style="margin-top:16px;">${tags.map((t) => `<span style="display:inline-block;font-family:${FONTS.label};font-size:11px;color:${PULSE.n600};background:${PULSE.n100};padding:4px 10px;border-radius:6px;margin:0 6px 6px 0;">#${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
 
   // AI Draft card — jsx:80-115
@@ -127,7 +127,7 @@ export async function renderLowRatingAlert(
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td valign="middle" style="width:32px;">
-              <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:${PULSE.lime};text-align:center;line-height:22px;color:${PULSE.graphite};font-family:${FONTS.mono};font-size:11px;font-weight:600;">AI</span>
+              <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:${PULSE.lime};text-align:center;line-height:22px;color:${PULSE.graphite};font-family:${FONTS.label};font-size:11px;font-weight:600;">AI</span>
             </td>
             <td valign="middle" style="padding-left:10px;">${renderEyebrow(`${copy.aiEyebrow}${params.aiLatencyMs ? ' · ' + (params.aiLatencyMs / 1000).toFixed(1) + 's' : ''}`)}</td>
           </tr>
@@ -138,7 +138,7 @@ export async function renderLowRatingAlert(
           <div style="margin-top:18px;padding-top:16px;border-top:1px solid ${PULSE.n800};">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
               <tr>
-                <td class="stack-col" valign="middle" style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n400};">${escapeHtml(copy.toneLabel)}</td>
+                <td class="stack-col" valign="middle" style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n400};">${escapeHtml(copy.toneLabel)}</td>
                 <td class="stack-col" valign="middle" align="right">
                   <a href="${params.reviewUrl}" style="display:inline-block;font-size:13px;font-weight:500;color:${PULSE.n300};text-decoration:none;padding:8px 14px;border:1px solid ${PULSE.n700};border-radius:8px;margin-right:6px;">${copy.aiEdit}</a>
                   <a href="${params.reviewUrl}" style="display:inline-block;font-size:13px;font-weight:600;color:${PULSE.graphite};background:${PULSE.lime};text-decoration:none;padding:8px 14px;border-radius:8px;">${copy.aiApprove}</a>
@@ -158,7 +158,7 @@ export async function renderLowRatingAlert(
     <td class="stack-col" valign="top" style="width:33.33%;padding:0 ${i === 0 ? '6px 0 0' : i === copy.quickActions.length - 1 ? '0 0 6px' : '6px'};">
       <a href="${quickHrefs[i]}" style="display:block;padding:16px;border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
         <div style="font-family:${FONTS.heading};font-size:14px;font-weight:500;color:${PULSE.graphite};margin-bottom:4px;">${a.l} →</div>
-        <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.mono};letter-spacing:0.05em;">${a.s}</div>
+        <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.label};letter-spacing:0.05em;">${a.s}</div>
       </a>
     </td>
   `).join('');
@@ -173,7 +173,7 @@ export async function renderLowRatingAlert(
                 ${renderStatusPill({ text: copy.eyebrowAlert, dotColor: PULSE.warning, textColor: PULSE.pure })}
               </td>
               <td align="right" valign="middle">
-                <span style="font-family:${FONTS.mono};font-size:11px;color:${PULSE.n400};">${timestamp}</span>
+                <span style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n400};">${timestamp}</span>
               </td>
             </tr>
           </table>
@@ -181,7 +181,7 @@ export async function renderLowRatingAlert(
       </tr>
       <tr>
         <td style="background:${PULSE.pure};padding:18px 40px;border-bottom:1px solid ${PULSE.n200};">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${subTitle}</div>
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;font-weight:500;">${subTitle}</div>
         </td>
       </tr>
       <tr>
@@ -212,7 +212,7 @@ export async function renderLowRatingAlert(
                 </td>
                 <td valign="middle" align="right" style="padding:20px 24px;">
                   ${starsHtml}
-                  <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.mono};margin-top:2px;">${params.rating.toFixed(1)} / 5.0</div>
+                  <div style="font-size:11px;color:${PULSE.n500};font-family:${FONTS.label};margin-top:2px;">${params.rating.toFixed(1)} / 5.0</div>
                 </td>
               </tr>
             </table>

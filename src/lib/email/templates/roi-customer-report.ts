@@ -146,7 +146,7 @@ export async function renderRoiCustomerReport(
     .map(
       (s, i) =>
         `<li style="margin:0 0 10px;padding-left:8px;color:${PULSE.graphite};font-size:14px;line-height:1.6;">
-          <span style="font-family:${FONTS.mono};font-weight:700;color:${PULSE.limeDeep};margin-right:4px;">${String(i + 1).padStart(2, '0')}.</span>
+          <span style="font-family:${FONTS.label};font-weight:700;color:${PULSE.limeDeep};margin-right:4px;">${String(i + 1).padStart(2, '0')}.</span>
           ${escapeHtml(s)}
         </li>`,
     )
@@ -190,7 +190,7 @@ export async function renderRoiCustomerReport(
             (k) => `<td class="cell stack-col" valign="top" style="width:25%;padding:6px;">
               <div class="bz-roi-kpi-cell" style="background:${k.accent ? PULSE.limeSoft : PULSE.n50};border:1px solid ${k.accent ? PULSE.limeDeep + '33' : PULSE.n200};border-radius:12px;padding:14px;">
                 <div class="bz-roi-kpi-val" style="font-family:${FONTS.heading};font-size:18px;line-height:1.1;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(k.v)}</div>
-                <div style="margin-top:6px;font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
+                <div style="margin-top:6px;font-family:${FONTS.label};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.n500};">${escapeHtml(k.l)}</div>
               </div>
             </td>`,
           )
@@ -205,7 +205,7 @@ export async function renderRoiCustomerReport(
       ${renderEyebrow(isTr ? 'BUAZE ANALİZİ — SANA ÖZEL' : 'BUAZE ANALYSIS — TAILORED', PULSE.graphite)}
       <p style="margin:10px 0 14px;font-size:14.5px;line-height:1.65;color:${PULSE.graphite};">${summarySafe}</p>
       <div style="background:${PULSE.pure};border:1px solid ${PULSE.limeDeep}55;border-left:4px solid ${PULSE.limeDeep};border-radius:10px;padding:14px 16px;">
-        <div style="font-family:${FONTS.mono};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.limeDeep};margin-bottom:6px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
+        <div style="font-family:${FONTS.label};font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:${PULSE.limeDeep};margin-bottom:6px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
         <div style="font-size:14px;line-height:1.6;color:${PULSE.graphite};font-weight:500;">${highlightSafe}</div>
       </div>
     </div>

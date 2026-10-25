@@ -130,7 +130,7 @@ export async function renderAuditCompleted(
 
   const passingHint =
     params.passingScore != null
-      ? `<span style="font-family:${FONTS.mono};color:${PULSE.n500};font-size:12px;">· ${isTr ? 'Eşik' : 'Threshold'} ${params.passingScore}</span>`
+      ? `<span style="font-family:${FONTS.label};color:${PULSE.n500};font-size:12px;">· ${isTr ? 'Eşik' : 'Threshold'} ${params.passingScore}</span>`
       : '';
 
   // Skor bloğu: puan varsa 42px rakamlar, yoksa "Puanlanmıyor" etiketi.
@@ -157,7 +157,7 @@ export async function renderAuditCompleted(
       <tr>
         <td class="bz-pad" style="padding:8px 40px 24px;">
           <div style="background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:14px;padding:20px;">
-            <div style="font-family:${FONTS.mono};color:${PULSE.n500};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">${escapeHtml(copy.scoreLabel)}</div>
+            <div style="font-family:${FONTS.label};color:${PULSE.n500};font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">${escapeHtml(copy.scoreLabel)}</div>
             ${scoreBody}
             ${passedBlock ? `<div style="margin-top:12px;">${passedBlock}</div>` : ''}
             ${attentionBlock}

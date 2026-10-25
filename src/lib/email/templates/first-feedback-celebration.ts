@@ -92,7 +92,7 @@ export async function renderFirstFeedbackCelebration(
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${isPositive ? PULSE.limeSoft : PULSE.n50};border:1px solid ${isPositive ? PULSE.lime : PULSE.n200};border-radius:18px;">
       <tr>
         <td style="padding:24px;">
-          <div style="font-family:${FONTS.mono};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">
+          <div style="font-family:${FONTS.label};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${PULSE.n600};">
             ${copy.quoteEyebrow}
           </div>
           ${spacer(12)}
