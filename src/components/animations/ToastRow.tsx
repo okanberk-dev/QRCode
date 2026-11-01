@@ -64,36 +64,67 @@ export interface ToastRowItem {
 // Stage 136 §38.216 — card 1 tone neu → pos (graphite container guarantee),
 // MessageSquareText → MessageCircle (daha modern + chat-like form), icon
 // size 14 → 15 (+1px visibility), strokeWidth 2.5 → 2.2 (premium SaaS).
-const DEFAULT_GENERIC_ITEMS: ToastRowItem[] = [
+// Workflow steps Buaze really performs (no "posted to Google": Buaze does not
+// publish replies to Google, and no fixed AI latency claim).
+const DEFAULT_GENERIC_ITEMS_TR: ToastRowItem[] = [
   {
     tone: 'pos',
     icon: <MessageCircle size={15} strokeWidth={2.2} />,
-    title: 'Yeni yorum geldi',
-    sub: 'Google · ★★★★★',
+    title: 'Yeni geri bildirim geldi',
+    sub: 'QR · ★★★★★',
   },
   {
     tone: 'lime',
     icon: <Sparkles size={15} strokeWidth={2.2} />,
-    title: 'AI yanıt taslağı hazır',
-    sub: '0.8s',
+    title: 'Pulse AI taslağı hazır',
+    sub: 'Sıcak ton · onay bekliyor',
   },
   {
     tone: 'neg',
     icon: <AlertTriangle size={15} strokeWidth={2.2} />,
-    title: 'Düşük puan tespit edildi',
-    sub: 'Google · ★★',
+    title: 'Düşük puan uyarısı',
+    sub: 'E-posta bildirimi · ★★',
   },
   {
     tone: 'info',
     icon: <Send size={15} strokeWidth={2.2} />,
-    title: 'Yorum Google’a yayınlandı',
-    sub: 'Google Reviews',
+    title: 'Yanıt gönderildi',
+    sub: 'Müşteriye e-posta',
+  },
+];
+
+const DEFAULT_GENERIC_ITEMS_EN: ToastRowItem[] = [
+  {
+    tone: 'pos',
+    icon: <MessageCircle size={15} strokeWidth={2.2} />,
+    title: 'New feedback received',
+    sub: 'QR · ★★★★★',
+  },
+  {
+    tone: 'lime',
+    icon: <Sparkles size={15} strokeWidth={2.2} />,
+    title: 'Pulse AI draft ready',
+    sub: 'Warm tone · awaiting approval',
+  },
+  {
+    tone: 'neg',
+    icon: <AlertTriangle size={15} strokeWidth={2.2} />,
+    title: 'Low-rating alert',
+    sub: 'E-mail alert · ★★',
+  },
+  {
+    tone: 'info',
+    icon: <Send size={15} strokeWidth={2.2} />,
+    title: 'Reply sent',
+    sub: 'E-mail to the customer',
   },
 ];
 
 interface ToastRowProps {
   /** Custom items. Default 4 generic event. */
   items?: ToastRowItem[];
+  /** Language of the default items. Default 'tr'. */
+  locale?: 'tr' | 'en';
   /** Stagger delay seconds (default 0.15). */
   staggerSec?: number;
   /** Tailwind className override. */
@@ -139,10 +170,12 @@ const TONE_BORDER: Record<ToastTone, string> = {
 };
 
 export default function ToastRow({
-  items = DEFAULT_GENERIC_ITEMS,
+  items: itemsProp,
+  locale = 'tr',
   staggerSec = 0.15,
   className,
 }: ToastRowProps) {
+  const items = itemsProp ?? (locale === 'en' ? DEFAULT_GENERIC_ITEMS_EN : DEFAULT_GENERIC_ITEMS_TR);
   const prefersReducedMotion = useReducedMotion();
   const { ref, inView } = useInView({
     rootMargin: '100px',

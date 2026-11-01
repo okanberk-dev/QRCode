@@ -195,6 +195,14 @@ export async function renderCustomerReply(
         ${spacer(32)}
         ${contactCards}` : '';
 
+  // Legal attribution (fixed, not admin-editable): the business writes the
+  // reply and is solely responsible for it; Buaze only transmits it. Pairs
+  // with the per-send responsibility checkbox and the profanity/threat gate
+  // in src/lib/content-safety.ts (CLAUDE.md §45).
+  const senderDisclaimer = isTr
+    ? `Bu e-posta, verdiğiniz geri bildirime ${restaurantRaw} işletmesinin yanıtıdır ve Buaze platformu aracılığıyla iletilmiştir. Mesajın içeriğinden yalnızca gönderen işletme sorumludur; Buaze içeriği yazmaz ve onaylamaz. Uygunsuz bir içerik aldıysanız support@buaze.com adresine bildirebilirsiniz.`
+    : `This e-mail is ${restaurantRaw}'s reply to your feedback, delivered through the Buaze platform. The sending business is solely responsible for its content; Buaze does not write or endorse it. To report inappropriate content, write to support@buaze.com.`;
+
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
@@ -241,6 +249,7 @@ export async function renderCustomerReply(
       <tr>
         <td class="bz-pad" style="padding:28px 40px 36px;text-align:center;">
           <div style="font-size:11px;line-height:1.5;color:${PULSE.n500};font-family:${FONTS.label};letter-spacing:0.03em;">${copy.sentLine} <span style="color:${PULSE.graphite};font-weight:600;">buaze</span> ${copy.sentSuffix}</div>
+          <div style="font-size:10px;line-height:1.5;color:${PULSE.n500};margin-top:10px;">${escapeHtml(senderDisclaimer)}</div>
         </td>
       </tr>
     </table>
@@ -256,6 +265,6 @@ export async function renderCustomerReply(
     footer: { locale, unsubText: isTr ? 'Restoran maillerini almayı bırakmak için' : 'To stop restaurant emails' },
   });
   const greeting = customerFirstRaw ? `${customerFirstRaw},` : (isTr ? 'Merhaba,' : 'Hi,');
-  const text = `${greeting}\n\n${params.message}\n\n— ${ownerRaw ? `${ownerRaw}, ${restaurantRaw}` : signoffRaw}`;
+  const text = `${greeting}\n\n${params.message}\n\n— ${ownerRaw ? `${ownerRaw}, ${restaurantRaw}` : signoffRaw}\n\n---\n${senderDisclaimer}`;
   return { subject, html, text };
 }

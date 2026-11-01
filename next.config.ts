@@ -59,6 +59,19 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // SEO: never stream metadata into <body>. Next 15.2+ "streaming metadata"
+  // renders <title>, description, canonical, hreflang and robots at the END
+  // of <body> on dynamically rendered pages for every user agent except a
+  // short list of "HTML-limited" bots. Googlebot is not on that list (it runs
+  // JS), and neither are GPTBot / ClaudeBot / PerplexityBot / OAI-SearchBot,
+  // which do not run JS at all. Google only honours rel=canonical and
+  // hreflang inside <head>, and Search Console's live test (Google-
+  // InspectionTool) gets head metadata while the real crawl did not — a
+  // mismatch that is invisible in GSC. /.*/ makes metadata blocking for all
+  // requests, so every crawler gets it in <head>. Cost: a dynamic page waits
+  // for generateMetadata before flushing <head>; ours are cheap.
+  htmlLimitedBots: /.*/,
+
   typescript: {
     ignoreBuildErrors: true,
   },

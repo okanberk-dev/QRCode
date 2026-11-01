@@ -36,8 +36,8 @@ export async function generateMetadata({
     ? 'Yorum Yönetimi — Tüm platformlar tek panelde'
     : 'Review Management — Every platform in one inbox';
   const description = isTr
-    ? 'Google, Yemeksepeti, Getir, Trendyol GO ve Tripadvisor yorumlarını tek panelde topla. Atama, etiket, SLA takibi ve onaylı yanıt akışı; KVKK uyumlu.'
-    : 'Bring Google, Yemeksepeti, Getir, Trendyol GO and Tripadvisor reviews into one inbox, with assignment, tags, SLA tracking and approved replies.';
+    ? 'QR ile gelen müşteri geri bildirimleri ve Google profil özetiniz tek panelde. Atama, etiket, düşük puan uyarısı ve onaylı yanıt akışı; KVKK uyumlu.'
+    : 'QR customer feedback and your Google profile overview in one panel, with assignment, tags, low-rating alerts and approved replies. GDPR-ready.';
   const canonicalUrl = `https://www.buaze.com/${locale}/features/review-management`;
   return {
     metadataBase: new URL('https://www.buaze.com'),
@@ -61,7 +61,6 @@ export async function generateMetadata({
           'restaurant review reply',
           'multi-platform reviews',
           'customer feedback platform',
-          'review SLA tracking',
         ],
     alternates: {
       canonical: canonicalUrl,
@@ -270,7 +269,7 @@ export default async function ReviewManagementPage({
         },
         {
           q: 'KVKK ve Google policy uyumu nasıl sağlanıyor?',
-          a: 'IP retention 90 gün, açık rıza opt-in, müşteri agency wording kanonik. Google review yönetimi admin entitlement ile gate edilir; kapalıyken API hard-block döner.',
+          a: 'IP retention 90 gün, açık rıza opt-in, müşterinin istediği yere yorum yazma hakkı korunur. Google review yönetimi admin entitlement ile gate edilir; kapalıyken API hard-block döner.',
         },
         {
           q: 'Birden fazla şube için tek panel kullanabilir miyim?',
@@ -292,7 +291,7 @@ export default async function ReviewManagementPage({
         },
         {
           q: 'How do you stay compliant with KVKK and Google policy?',
-          a: 'IP retention 90 days, opt-in marketing consent, customer-agency wording canonical. Google review management is gated by an admin entitlement; APIs hard-block when off.',
+          a: 'IP retention 90 days, opt-in marketing consent, every customer keeps the right to post wherever they want. Google review management is gated by an admin entitlement; APIs hard-block when off.',
         },
         {
           q: 'Can I manage multiple branches in one panel?',

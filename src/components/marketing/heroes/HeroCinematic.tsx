@@ -38,7 +38,7 @@ const COPY = {
     // slogan H1'i override edildi). Birincil hedef: "Google yorum" + "QR".
     title: 'Google yorumlarını\nQR ile yönet',
     subtitle:
-      'QR ile geri bildirim topla, tek panelden yönet, Pulse AI taslakları ile saniyeler içinde yanıt ver.',
+      'Buaze ile QR kodla müşteri geri bildirimi toplayın, Google ve diğer platformlardaki yorumları tek panelden yönetin, Pulse AI yanıt taslaklarıyla daha hızlı yanıt verin.',
     primaryCta: '14 gün ücretsiz dene',
     secondaryCta: 'Nasıl çalışır?',
     sceneLabels: {
@@ -46,10 +46,10 @@ const COPY = {
       scan: 'MÜŞTERİ TARAR',
       form: 'YORUM BIRAKIR',
       aiReply: 'AI TASLAĞI HAZIR',
-      starPop: 'PUAN ARTAR',
+      starPop: 'PUANINI İZLE',
     },
-    ratingLabel: 'GENEL PUAN',
-    deltaLabel: '90 GÜN İÇİNDE',
+    ratingLabel: 'GOOGLE PUANI',
+    deltaLabel: 'ÖRNEK PANEL',
     formExample: '"Tatlılar muhteşem, yine geleceğim!"',
     aiPreview: 'Çok teşekkürler! Sizi tekrar görmek için sabırsızlanıyoruz.',
     aiBadge: 'PULSE AI',
@@ -58,7 +58,7 @@ const COPY = {
   en: {
     title: 'Manage Google\nreviews with QR',
     subtitle:
-      'Collect feedback via QR, manage it from one dashboard, reply in seconds with Pulse AI drafts.',
+      'Collect customer feedback with a QR code, manage Google and other platform reviews in one panel and reply faster with Pulse AI drafts.',
     primaryCta: 'Start 14-day free trial',
     secondaryCta: 'How it works?',
     sceneLabels: {
@@ -66,10 +66,10 @@ const COPY = {
       scan: 'CUSTOMER SCANS',
       form: 'LEAVES REVIEW',
       aiReply: 'AI DRAFT READY',
-      starPop: 'RATING CLIMBS',
+      starPop: 'TRACK YOUR RATING',
     },
-    ratingLabel: 'AVG. RATING',
-    deltaLabel: 'IN 90 DAYS',
+    ratingLabel: 'GOOGLE RATING',
+    deltaLabel: 'SAMPLE PANEL',
     formExample: '"Desserts amazing, coming back for sure!"',
     aiPreview: 'Thank you so much! We can\'t wait to welcome you back.',
     aiBadge: 'PULSE AI',
@@ -572,7 +572,7 @@ function SceneStarPop({
           className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide"
           style={{ background: '#EAF9B8', color: '#0A0A0A' }}
         >
-          +1.2 ★ <span className="text-[#525252]">·</span> {deltaLabel}
+          {deltaLabel}
         </span>
       </div>
     </div>

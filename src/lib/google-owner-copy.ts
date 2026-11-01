@@ -105,8 +105,8 @@ const MESSAGES: Record<string, Copy> = {
     en: "Replying isn't included in this business's plan.",
   },
   CONTENT_BLOCKED: {
-    tr: 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.',
-    en: 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.',
+    tr: 'Bu yanıt gönderilemedi: küfür, tehdit, hakaret veya benzeri uygunsuz bir ifade içeriyor. Metni düzenleyip tekrar dene.',
+    en: 'This reply could not be sent: it contains profanity, a threat, harassment or similar inappropriate content. Please edit it.',
   },
   PULSE_AI_DISABLED: {
     tr: 'Pulse AI bu işletme için kapalı.',

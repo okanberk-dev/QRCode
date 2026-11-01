@@ -120,7 +120,7 @@ export default async function VsSpreadsheetPage({
       locale={locale}
       t={t}
       vsName={locale === 'tr' ? 'Spreadsheet' : 'Spreadsheet'}
-      heroTitle={locale === 'tr' ? 'Excel Tabloları Yorum Yapmaz, Buaze Yapar.' : 'Spreadsheets Don\'t Write Reviews, Buaze Does.'}
+      heroTitle={locale === 'tr' ? 'Excel ile mi, Buaze ile mi yorum takibi?' : 'Tracking reviews: spreadsheet or Buaze?'}
       heroDesc={locale === 'tr' 
         ? 'Geri bildirimleri pasif birer satır olarak tutmayı bırakın. Manuel veri girişinin yarattığı operasyonel kör noktaları, gerçek zamanlı otomasyonla aşın.'
         : 'Stop keeping feedback as passive rows of data. Overcome the operational blind spots created by manual data entry with real-time automation.'}

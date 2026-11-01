@@ -201,19 +201,19 @@ export default async function PulseAiPage({
             >
               {isTr ? (
                 <>
-                  Her yoruma{' '}
+                  Yapay zekâ ile{' '}
                   <span className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 py-0.5 text-[#0A0A0A]">
-                    30 sn&apos;de
+                    yorum yanıtı
                   </span>{' '}
-                  mükemmel yanıt.
+                  taslağı
                 </>
               ) : (
                 <>
-                  Perfect reply to every review in{' '}
+                  AI{' '}
                   <span className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 py-0.5 text-[#0A0A0A]">
-                    30s
-                  </span>
-                  .
+                    review reply
+                  </span>{' '}
+                  drafts
                 </>
               )}
             </h1>

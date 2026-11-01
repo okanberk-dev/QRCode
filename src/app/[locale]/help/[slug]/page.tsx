@@ -21,6 +21,14 @@ interface PageParams {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
+// Cache each help article after its first request (ISR, revalidate from the
+// [locale] layout). Without generateStaticParams a dynamic segment renders on
+// every request: slower for crawlers and no CDN copy. An empty list means
+// "nothing prerendered at build, everything cached on first visit".
+export async function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
   const { locale, slug } = await params;
   let article: { title: string; excerpt: string | null } | null = null;

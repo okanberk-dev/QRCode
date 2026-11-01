@@ -37,6 +37,14 @@ const SHARE_ICONS = {
   ),
 };
 
+// Cache each blog post after its first request (ISR, revalidate from the
+// [locale] layout). Without generateStaticParams a dynamic segment renders on
+// every request: slower for crawlers and no CDN copy. An empty list means
+// "nothing prerendered at build, everything cached on first visit".
+export async function generateStaticParams() {
+  return [];
+}
+
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
 // `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
 // from the Vercel CDN edge for anonymous visitors.

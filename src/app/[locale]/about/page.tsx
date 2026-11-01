@@ -9,6 +9,7 @@ export const revalidate = 86400;
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { getSiteSettings } from '@/lib/site-settings';
+import { getCompanyLegalInfo } from '@/lib/legal/variables';
 
 export async function generateMetadata({
   params,
@@ -49,6 +50,7 @@ export default async function AboutPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const settings = await getSiteSettings();
+  const legal = await getCompanyLegalInfo();
 
   // /about is the canonical entity description for Buaze (the company).
   // We expose a richer @graph than the rest of the site so search engines and
@@ -72,7 +74,7 @@ export default async function AboutPage({
         '@type': 'Organization',
         '@id': 'https://www.buaze.com/#organization',
         name: 'Buaze',
-        legalName: 'Buaze Bilişim A.Ş.',
+        ...(legal.name ? { legalName: legal.name } : {}),
         alternateName: ['Buaze (the company)', 'Buaze SaaS'],
         url: 'https://www.buaze.com',
         logo: 'https://www.buaze.com/favicon.svg',

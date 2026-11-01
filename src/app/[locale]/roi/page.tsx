@@ -26,7 +26,7 @@ export async function generateMetadata({
     : 'ROI Calculator — 12-month return of a QR review flow';
   const description = isTr
     ? 'QR yorum akışının 12 aylık getirisini slider\'larla hesaplayın: Pulse AI yanıt taslağı, müşteri tercihli platform seçimi, haftalık rapor. KVKK + Google uyumlu.'
-    : 'Calculate the 12-month net gain of QR review routing with sliders: Pulse AI reply drafts, customer-led platform choice and weekly reports. KVKK + Google compliant.';
+    : 'Calculate the 12-month net gain of QR review routing with sliders: Pulse AI reply drafts, customer-chosen platform and weekly reports. KVKK + Google compliant.';
   const url = `https://www.buaze.com/${locale}/roi`;
   return {
     metadataBase: new URL('https://www.buaze.com'),

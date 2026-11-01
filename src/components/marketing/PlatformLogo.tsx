@@ -89,32 +89,35 @@ export default function PlatformLogo({ id, size = 40, rounded = 10, className }:
 
 export type PlatformItem = { id: PlatformId; name: string; tag: string };
 
+// Only platforms Buaze actually supports as review-link targets (CLAUDE.md
+// §5: google, yemeksepeti, getir, trendyol_go, tripadvisor, airbnb, booking,
+// yandex, yelp, foursquare). These lists render on marketing pages as
+// "supported platforms"; listing Uber Eats, DoorDash, Trustpilot, Facebook,
+// Instagram or OpenTable there claimed integrations that do not exist.
 export const TR_DELIVERY: PlatformItem[] = [
-  { id: 'yemeksepeti', name: 'Yemeksepeti', tag: 'Paket servis · Türkiye' },
-  { id: 'getir-yemek', name: 'Getir Yemek', tag: 'Paket servis · Türkiye' },
-  { id: 'trendyol-go', name: 'Trendyol GO', tag: 'Paket servis · Türkiye' },
-  { id: 'ubereats', name: 'Uber Eats', tag: 'Paket servis · Global' },
+  { id: 'yemeksepeti', name: 'Yemeksepeti', tag: 'Paket servis' },
+  { id: 'getir-yemek', name: 'Getir Yemek', tag: 'Paket servis' },
+  { id: 'trendyol-go', name: 'Trendyol GO', tag: 'Paket servis' },
 ];
 
 export const TR_REVIEW: PlatformItem[] = [
   { id: 'google', name: 'Google', tag: 'Yorum & arama' },
+  { id: 'tripadvisor', name: 'Tripadvisor', tag: 'Seyahat & konaklama' },
+  { id: 'yandex', name: 'Yandex', tag: 'Harita & yorum' },
   { id: 'foursquare', name: 'Foursquare', tag: 'Konum & yorum' },
-  { id: 'facebook', name: 'Facebook', tag: 'Sosyal' },
-  { id: 'instagram', name: 'Instagram', tag: 'Sosyal' },
 ];
 
 export const GLOBAL_REVIEW: PlatformItem[] = [
-  { id: 'google', name: 'Google', tag: 'Reviews & Search' },
-  { id: 'yelp', name: 'Yelp', tag: 'Local reviews' },
+  { id: 'google', name: 'Google', tag: 'Reviews & search' },
   { id: 'tripadvisor', name: 'Tripadvisor', tag: 'Travel & hospitality' },
-  { id: 'trustpilot', name: 'Trustpilot', tag: 'Verified reviews' },
-  { id: 'facebook', name: 'Facebook', tag: 'Social' },
-  { id: 'booking', name: 'Booking.com', tag: 'Hotel' },
-  { id: 'opentable', name: 'OpenTable', tag: 'Restaurant' },
+  { id: 'yelp', name: 'Yelp', tag: 'Local reviews' },
+  { id: 'foursquare', name: 'Foursquare', tag: 'Places & tips' },
+  { id: 'yandex', name: 'Yandex', tag: 'Maps & reviews' },
 ];
 
+// Booking platforms (kept under the historical "delivery" name; Buaze's
+// supported delivery apps are Turkey-only — see TR_DELIVERY).
 export const GLOBAL_DELIVERY: PlatformItem[] = [
-  { id: 'ubereats', name: 'Uber Eats', tag: 'Delivery · Global' },
-  { id: 'doordash', name: 'DoorDash', tag: 'Delivery · US' },
-  { id: 'deliveroo', name: 'Deliveroo', tag: 'Delivery · UK/EU' },
+  { id: 'booking', name: 'Booking.com', tag: 'Hotel stays' },
+  { id: 'airbnb', name: 'Airbnb', tag: 'Short stays' },
 ];

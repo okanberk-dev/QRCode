@@ -324,7 +324,7 @@ export default function MarketingNavbarClient({
     {
       href: `${base}/careers`,
       label: isTr ? 'Kariyer' : 'Careers',
-      sub: isTr ? 'Açık 5 pozisyon' : '5 open roles',
+      sub: isTr ? 'Ekibimize katılın' : 'Join the team',
       icon: <Sparkles size={16} />,
     },
   ];
@@ -560,12 +560,6 @@ export default function MarketingNavbarClient({
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
             >
               {isTr ? 'Fiyatlandırma' : 'Pricing'}
-              <span
-                className="inline-flex items-center rounded bg-[#C6F24E] px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.06em] text-[#0A0A0A]"
-                aria-label={isTr ? 'Yüzde otuz indirim' : 'Thirty percent off'}
-              >
-                %30
-              </span>
             </Link>
 
             {/* Customers */}
@@ -772,12 +766,6 @@ export default function MarketingNavbarClient({
               >
                 <span className="inline-flex items-center gap-2">
                   {isTr ? 'Fiyatlandırma' : 'Pricing'}
-                  <span
-                    className="inline-flex items-center rounded bg-[#C6F24E] px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.06em] text-[#0A0A0A]"
-                    aria-label={isTr ? 'Yüzde otuz indirim' : 'Thirty percent off'}
-                  >
-                    %30
-                  </span>
                 </span>
                 <span className="text-[#737373]">→</span>
               </Link>
