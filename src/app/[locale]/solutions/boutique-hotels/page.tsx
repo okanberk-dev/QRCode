@@ -51,10 +51,10 @@ export default async function BoutiqueHotelsSolutionPage({ params }: { params: P
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '+%120', label: isTr ? 'TRİPADVISOR YORUMU' : 'TRIPADVISOR REVIEWS', context: isTr ? '90 günde' : 'In 90 days' },
-    { num: '%93', label: isTr ? 'MİSAFİR MEMNUNİYETİ' : 'GUEST SATISFACTION', context: isTr ? 'Kişisel deneyim' : 'Personal experience' },
-    { num: '%82', label: isTr ? 'TEKKERARİ REZ.' : 'REPEAT BOOKINGS', context: isTr ? 'Sadık misafirler' : 'Loyal guests' },
-    { num: '<4dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Hızlı başlangıç' : 'Quick start' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Tripadvisor, Booking, Airbnb dahil' : 'Incl. Tripadvisor, Booking, Airbnb' },
+    { num: isTr ? '3 ton' : '3 tones', label: isTr ? 'PULSE AI TASLAĞI' : 'PULSE AI DRAFTS', context: isTr ? 'Siz onaylar, gönderirsiniz' : 'You approve and send' },
+    { num: 'TR + EN', label: isTr ? 'İKİ DİL' : 'TWO LANGUAGES', context: isTr ? 'Yabancı misafirler için' : 'For international guests' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
   ];
 
   const steps = [
@@ -89,7 +89,7 @@ export default async function BoutiqueHotelsSolutionPage({ params }: { params: P
     },
     {
       title: isTr ? 'TripAdvisor Sıralaması' : 'TripAdvisor Ranking',
-      desc: isTr ? 'Düzenli ve güncel yorumlar TripAdvisor algoritmasını besler. Bölgenizde üst sıralara çıkın.' : 'Regular and recent reviews feed the TripAdvisor algorithm. Rise to the top in your region.',
+      desc: isTr ? 'Düzenli ve güncel yorumlar Tripadvisor profilinizin canlı kalmasına yardımcı olur. Misafir yorum bağlantısını QR ile tek dokunuşla açar.' : 'Regular, recent reviews keep your Tripadvisor profile active. Guests open the review link in one tap from the QR.',
       icon: <TrendingUp size={20} className="text-[#d97706]" />,
     },
     {

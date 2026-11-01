@@ -157,16 +157,16 @@ export default async function DeliveryPage({
 
   const stats = isTr
     ? [
-        { k: '+312%', l: 'Yemeksepeti yorum artışı · 60 gün' },
-        { k: '4.8', l: 'Ortalama Getir puanı · 3. ay' },
-        { k: '+184%', l: 'Toplam yorum hacmi · ilk 90 gün' },
-        { k: '18sn', l: 'Ortalama tarama–yorum süresi' },
+        { k: '10', l: 'Yorum platformu · Yemeksepeti, Getir, Trendyol GO dahil' },
+        { k: 'PNG · PDF', l: 'Paket içi QR kartı çıktısı' },
+        { k: '3 ton', l: 'Pulse AI yanıt taslağı' },
+        { k: '14 gün', l: 'Ücretsiz deneme · kredi kartı gerekmez' },
       ]
     : [
-        { k: '+312%', l: 'Yemeksepeti review growth · 60 days' },
-        { k: '4.8', l: 'Average Getir score · month 3' },
-        { k: '+184%', l: 'Total review volume · first 90 days' },
-        { k: '18s', l: 'Average scan-to-review time' },
+        { k: '10', l: 'Review platforms · incl. Yemeksepeti, Getir, Trendyol GO' },
+        { k: 'PNG · PDF', l: 'In-bag QR card output' },
+        { k: '3 tones', l: 'Pulse AI reply drafts' },
+        { k: '14 days', l: 'Free trial · no credit card' },
       ];
 
   // Sector benefits — 4 tiles. Pulse design (lime icon tile + graphite headline).
@@ -188,14 +188,14 @@ export default async function DeliveryPage({
     ? [
         { q: 'Paket servis için Buaze nasıl çalışır?', a: 'Pakete bir Buaze QR sticker yapıştırırsın. Müşteri evde paketi açtığında QR\'ı tarar; deneyimini puanlar ve seçtiğin herkese açık platformlara (Yemeksepeti, Getir Yemek, Trendyol GO, Google) yönlendirilir. Her müşteri istediği yere yorum yazma hakkını korur.' },
         { q: 'Yemeksepeti, Getir ve Trendyol GO yorumlarını da topluyor mu?', a: 'Evet. Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; akış müşteriye seçtiğin platformları sunar. Müşteri tercih ettiği platforma yorum yazar; ek olarak ekibinle özel paylaşım yapma seçeneği de görür.' },
-        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden çözme şansı kazanırsınız.' },
+        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden çözme şansı kazanırsınız.' },
         { q: 'Kurye performansını da takip eder miyim?', a: 'Evet. Yorum geldiğinde sipariş ID + kurye etiketi + bölge + saat birlikte loglanır. Analytics raporunda hangi kurye en çok düşük puan çekiyor, hangi bölgede teslimat süresi yorumu negatif etkiliyor — sürücü bazlı görürsün.' },
         { q: 'Sticker tasarımını siz mi gönderiyorsunuz?', a: 'QR PDF\'i indirebileceğin bir sayfa veriyoruz; Buaze logosu + işletme adı + QR kodu kompakt yerleşim. Yerel matbaada bastırabilir veya kendi paketleme tasarımına ekleyebilirsin. Her şube için ayrı QR oluşturma mümkün.' },
       ]
     : [
         { q: 'How does Buaze work for delivery?', a: 'You stick a Buaze QR on every package. When the customer opens it at home, they scan the QR; they rate their experience and are routed to the public platforms you have selected (Yemeksepeti, Getir Yemek, Trendyol GO, Google). Every customer keeps the right to post anywhere they choose.' },
         { q: 'Does it also collect Yemeksepeti, Getir and Trendyol GO reviews?', a: 'Yes. You add the public review links of these platforms in the owner panel; the flow surfaces the platforms you select to the customer. The customer posts on their preferred platform; they additionally see an option to share privately with your team.' },
-        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team — in practice ~85% choose this private channel. The customer always keeps the right to post on any public platform; you gain a chance to resolve the issue privately first.' },
+        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team. The customer always keeps the right to post on any public platform; you gain a chance to resolve the issue privately first.' },
         { q: 'Can I track courier performance?', a: 'Yes. When a review arrives, the order ID + courier tag + zone + time are logged together. The analytics report shows which courier attracts the most low ratings, which zone\'s delivery time hurts review sentiment — you see it driver-by-driver.' },
         { q: 'Do you provide the sticker design?', a: 'We provide a page where you can download the QR as PDF; Buaze logo + business name + QR code in a compact layout. You can print it at a local print shop or include it in your packaging design. Per-branch QR generation is supported.' },
       ];
@@ -305,13 +305,13 @@ export default async function DeliveryPage({
                   <>
                     Memnun kaldın mı?
                     <br />
-                    10 sn&apos;de paylaş.
+                    Hemen paylaş.
                   </>
                 ) : (
                   <>
                     Happy with your order?
                     <br />
-                    Share it in 10 sec.
+                    Share it now.
                   </>
                 )}
               </h3>
@@ -532,12 +532,6 @@ export default async function DeliveryPage({
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-white/55 max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 

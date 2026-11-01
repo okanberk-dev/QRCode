@@ -51,10 +51,10 @@ export default async function VeterinarySolutionPage({ params }: { params: Promi
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '%88', label: isTr ? 'GERİ DÖNÜŞ ORANI' : 'RETURN RATE', context: isTr ? 'Tekrar ziyaret' : 'Repeat visits' },
-    { num: '+%180', label: isTr ? 'GOOGLE YORUMU' : 'GOOGLE REVIEWS', context: isTr ? '90 günde' : 'In 90 days' },
-    { num: '%95', label: isTr ? 'SAHİP MEMNUNİYETİ' : 'OWNER SATISFACTION', context: isTr ? 'Anket ortalaması' : 'Survey avg.' },
-    { num: '<5dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Hızlı başlangıç' : 'Quick start' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
+    { num: 'KVKK', label: isTr ? 'UYUMLU AKIŞ' : 'COMPLIANT FLOW', context: isTr ? 'Açık rıza ile' : 'With explicit consent' },
+    { num: isTr ? '3 ton' : '3 tones', label: isTr ? 'PULSE AI TASLAĞI' : 'PULSE AI DRAFTS', context: isTr ? 'Siz onaylar, gönderirsiniz' : 'You approve and send' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
   ];
 
   const steps = [

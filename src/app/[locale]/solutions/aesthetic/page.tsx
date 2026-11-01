@@ -52,9 +52,9 @@ export default async function AestheticSolutionPage({ params }: { params: Promis
 
   const stats = [
     { num: 'KVKK', label: isTr ? 'UYUMLU GİZLİLİK' : 'COMPLIANT PRIVACY', context: isTr ? 'Hasta koruması' : 'Patient protection' },
-    { num: '%96', label: isTr ? 'ÖZEL GERİ BİLDİRİM' : 'PRIVATE FEEDBACK', context: isTr ? 'Anonim sistem' : 'Anonymous system' },
-    { num: '+%150', label: isTr ? 'GOOGLE YORUMU' : 'GOOGLE REVIEWS', context: isTr ? '3 ayda' : 'In 3 months' },
-    { num: '%88', label: isTr ? 'GÜVENİLİRLİK' : 'CREDIBILITY', context: isTr ? 'Hasta anketi' : 'Patient survey' },
+    { num: isTr ? '3 ton' : '3 tones', label: isTr ? 'PULSE AI TASLAĞI' : 'PULSE AI DRAFTS', context: isTr ? 'Siz onaylar, gönderirsiniz' : 'You approve and send' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
   ];
 
   const steps = [

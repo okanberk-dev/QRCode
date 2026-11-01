@@ -51,10 +51,10 @@ export default async function AutoServiceSolutionPage({ params }: { params: Prom
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '%72', label: isTr ? 'GERİ DÖNÜŞ ORANI' : 'RETURN RATE', context: isTr ? 'Servis sonrası' : 'After service' },
-    { num: '+%240', label: isTr ? 'GOOGLE YORUMU' : 'GOOGLE REVIEWS', context: isTr ? '3 ayda' : 'In 3 months' },
-    { num: 'OTO', label: isTr ? 'TETİKLEME' : 'AUTO TRIGGER', context: isTr ? 'Araç tesliminde' : 'At vehicle delivery' },
-    { num: '<3dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Anında hazır' : 'Instantly ready' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
+    { num: 'QR', label: isTr ? 'TESLİM ANINDA' : 'AT HANDOVER', context: isTr ? 'Fiş veya anahtar kartında' : 'On the receipt or key tag' },
+    { num: 'TR + EN', label: isTr ? 'İKİ DİL' : 'TWO LANGUAGES', context: isTr ? 'Türkçe ve İngilizce arayüz' : 'Turkish and English interface' },
   ];
 
   const steps = [
@@ -99,7 +99,7 @@ export default async function AutoServiceSolutionPage({ params }: { params: Prom
     },
     {
       title: isTr ? 'Sadık Müşteri Kitlesi' : 'Loyal Customer Base',
-      desc: isTr ? 'Geri bildirim sonrası takip eden servis, müşterinin tekrar tercihini %72 oranında artırır.' : 'A service that follows up after feedback increases customer return choice by 72%.',
+      desc: isTr ? 'Geri bildirime hızlı dönen servis, müşteriyle güveni güçlendirir ve tekrar gelmesini kolaylaştırır.' : 'A service that follows up quickly on feedback builds trust and makes customers more likely to return.',
       icon: <TrendingUp size={20} className="text-[#64748b]" />,
     },
   ];

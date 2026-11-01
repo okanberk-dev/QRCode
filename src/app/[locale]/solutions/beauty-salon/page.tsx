@@ -66,16 +66,16 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
 
   const stats = isTr
     ? [
-        { value: '4.9', label: 'Usta bazlı müşteri skoru' },
-        { value: '+148%', label: 'Instagram yorum artışı' },
-        { value: '%72', label: 'Tekrar randevu oranı' },
-        { value: '%18', label: 'Yorum→randevu dönüşüm' },
+        { value: '10', label: 'Yorum platformu' },
+        { value: 'QR', label: 'Usta veya koltuk bazlı etiket' },
+        { value: '3 ton', label: 'Pulse AI yanıt taslağı' },
+        { value: '14 gün', label: 'Ücretsiz deneme' },
       ]
     : [
-        { value: '4.9', label: 'Per-stylist customer score' },
-        { value: '+148%', label: 'Instagram review growth' },
-        { value: '72%', label: 'Repeat booking rate' },
-        { value: '18%', label: 'Review → booking conversion' },
+        { value: '10', label: 'Review platforms' },
+        { value: 'QR', label: 'Per-stylist or per-chair tag' },
+        { value: '3 tones', label: 'Pulse AI reply drafts' },
+        { value: '14 days', label: 'Free trial' },
       ];
 
   const features = isTr
@@ -108,14 +108,14 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
     ? [
         { q: 'Güzellik salonu için Buaze nasıl çalışır?', a: 'Hizmet bittikten sonra (boya, manikür, makyaj, cilt bakımı) müşteriye QR kart sunulur — masada, aynada veya bekleme alanında. Müşteri tarar, deneyimini puanlar ve seçtiğin platformlara (Google, Instagram, Foursquare) yönlendirilir. İlk gün ilk yorumlar genelde aynı seansta gelir.' },
         { q: 'Stilist bazlı performansı görebiliyor muyum?', a: 'Evet. QR oluştururken stilist etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi stilist + hangi hizmet ile geldiği loglanır. Analytics raporunda stilist bazlı ortalama puan, yorum sayısı ve düşük puan oranları görünür.' },
-        { q: 'Düşük puan veren müşteri kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müşteri her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (renk düzeltme, hizmet tekrarı vb.) çözme şansı kazanırsınız.' },
+        { q: 'Düşük puan veren müşteri kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (renk düzeltme, hizmet tekrarı vb.) çözme şansı kazanırsınız.' },
         { q: 'Instagram entegrasyonu var mı?', a: 'Müşteriye akış sırasında Instagram profil bağlantısı sunulur (DM\'le yorum yazma daveti). Instagram\'dan gelen DM yorumlarını otomatik çekecek bir API entegrasyonu yok — Instagram bu API\'yi 3rd-party\'lere açık tutmuyor; ama yönlendirme akışı çalışıyor ve müşteri Instagram tag\'i sayesinde organik kazanım sağlar.' },
         { q: 'Birden fazla şubem var, nasıl yönetirim?', a: 'Her şube için ayrı işletme oluşturabilir veya tek işletme + şube etiketleri kullanabilirsin. Analytics şube bazlı ayrılır; merkez ekibinin "şube X gerileme yaşıyor, kuruluşa müdahale gerek" gibi kararları doğrudan veriden almasını sağlar.' },
       ]
     : [
         { q: 'How does Buaze work for a beauty salon?', a: 'After the service is done (coloring, manicure, makeup, skincare), present a QR card to the customer — at the chair, on the mirror, or in the waiting area. The customer scans, rates the experience, and is routed to the platforms you have selected (Google, Instagram, Foursquare). Same-session reviews are common on day one.' },
         { q: 'Can I see per-stylist performance?', a: 'Yes. When generating the QR, you can add a stylist tag (Buaze branch field or a custom URL parameter); when the review arrives, which stylist + which service is logged with it. The analytics report shows per-stylist average rating, review volume, and low-rating ratio.' },
-        { q: 'Do customers giving low ratings simply disappear?', a: 'No. Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team — in practice ~85% choose this private channel. The customer always retains the right to post on a public platform; you gain a chance to resolve the issue privately first (color correction, service redo, etc.).' },
+        { q: 'Do customers giving low ratings simply disappear?', a: 'No. Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team. The customer always retains the right to post on a public platform; you gain a chance to resolve the issue privately first (color correction, service redo, etc.).' },
         { q: 'Is there an Instagram integration?', a: 'The flow surfaces an Instagram profile link to the customer (a DM-review invitation). There is no API integration that auto-pulls DM reviews — Instagram does not expose that API to third parties — but the routing flow works and the Instagram tag drives organic acquisition.' },
         { q: 'I have multiple branches — how do I manage them?', a: 'Either create a separate business per branch or use a single business + branch tags. Analytics splits per branch, allowing the central team to make decisions like "branch X is regressing, intervention needed at onboarding" directly from data.' },
       ];
@@ -290,12 +290,6 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 
@@ -390,8 +384,8 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
           </h2>
           <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · 5 dakikada kurulum'
-              : '14-day free · No credit card · 5-minute setup'}
+              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
+              : '14-day free · No credit card'}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
             <Link

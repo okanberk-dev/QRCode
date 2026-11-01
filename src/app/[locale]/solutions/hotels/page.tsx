@@ -68,16 +68,16 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
 
   const stats = isTr
     ? [
-        { value: '8.2→9.1', label: 'Booking puanı artışı (ort.)' },
-        { value: '+92%', label: 'Tripadvisor yorum artışı' },
-        { value: '%57', label: 'Oda QR dönüşüm oranı' },
-        { value: '22sn', label: 'Check-out→yorum süresi' },
+        { value: '10', label: 'Yorum platformu (Booking, Tripadvisor, Airbnb dahil)' },
+        { value: 'Oda', label: 'Oda numarası etiketli QR' },
+        { value: 'TR + EN', label: 'Türkçe ve İngilizce arayüz' },
+        { value: '14 gün', label: 'Ücretsiz deneme, kredi kartı gerekmez' },
       ]
     : [
-        { value: '8.2→9.1', label: 'Avg. Booking rating lift' },
-        { value: '+92%', label: 'Tripadvisor review growth' },
-        { value: '57%', label: 'Room QR conversion' },
-        { value: '22s', label: 'Check-out → review time' },
+        { value: '10', label: 'Review platforms (incl. Booking, Tripadvisor, Airbnb)' },
+        { value: 'Room', label: 'Room-number tagged QR' },
+        { value: 'TR + EN', label: 'Turkish and English interface' },
+        { value: '14 days', label: 'Free trial, no credit card' },
       ];
 
   const features = isTr
@@ -117,14 +117,14 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
         { q: 'Otel için Buaze nasıl çalışır?', a: 'Her oda için bir QR sticker (oda numarası URL\'ye gömülü) + check-out tezgahında bir genel QR yerleştirirsin. Misafir QR\'ı tarar, deneyimini puanlar ve seçtiğin platformların (Booking, Tripadvisor, Airbnb, Google) herkese açık yorum bağlantılarını görür. Deneyim tesisteyken taze olduğu için yorum bırakma olasılığı, haftalar sonra gelen platform e-postasına kıyasla daha yüksektir.' },
         { q: 'Booking.com / Tripadvisor / Airbnb yorumlarını da topluyor mu?', a: 'Evet. Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; akış misafire seçtiğin platformları sunar. Misafir tercih ettiği platforma yorum yazar. Booking gibi closed-loop platformlarda link doğrudan booking ID\'siyle eşleşmez (Booking bunu API\'de açmıyor) — ama misafire bağlantı sunulur.' },
         { q: 'Oda numarası bazlı analitik var mı?', a: 'Evet. QR\'a oda numarası URL parametresi ekleyebilirsin (örn. `?room=412`); yorum geldiğinde oda numarası + kat + oda tipi loglanır. Analytics raporunda hangi katlarda memnuniyet düşük, hangi odalarda klima/gürültü/manzara şikayeti yoğun — operasyonel ekip görür.' },
-        { q: 'Düşük puan veren misafir Booking\'e yorum yazmaz mı?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren misafirler ek olarak otelinizle özel paylaşım yapma seçeneği görür — Buaze müşteri kohortunda ~%85\'i bu kanalı da kullanır. Misafir her zaman herkese açık platformlara (Booking, Tripadvisor, Google) yorum yazma hakkını korur; hızlı bir özel yanıtla (oda değişimi, fatura iadesi vb.) sorunu çözme şansı kazanırsınız.' },
+        { q: 'Düşük puan veren misafir Booking\'e yorum yazmaz mı?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren misafirler ek olarak otelinizle özel paylaşım yapma seçeneği görür. Misafir her zaman herkese açık platformlara (Booking, Tripadvisor, Google) yorum yazma hakkını korur; hızlı bir özel yanıtla (oda değişimi, fatura iadesi vb.) sorunu çözme şansı kazanırsınız.' },
         { q: 'Çoklu-dil destek var mı?', a: 'Evet. Misafir yorumunu hangi dilde yazarsa, Pulse AI o dilde yanıt taslağı üretir (TR, EN, DE, RU şu an desteklenen). Genelde otel müşteri profili çok-dilli, bu kritik — manuel çeviri yapmak yanıt süresini saatlerce uzatıyor.' },
       ]
     : [
         { q: 'How does Buaze work for a hotel?', a: 'You place a QR sticker per room (with the room number embedded in the URL) + a general QR at the check-out desk. The guest scans, rates the experience, and sees the public review links for the platforms you have selected (Booking, Tripadvisor, Airbnb, Google). The experience is still fresh on site, so guests are more likely to post than after an email that arrives weeks later.' },
         { q: 'Does it also collect Booking.com / Tripadvisor / Airbnb reviews?', a: 'Yes. You add the public review links of these platforms in the owner panel; the flow surfaces the platforms you select to the guest. The guest posts on their preferred platform. For closed-loop platforms like Booking, the link does not match a specific booking ID (Booking does not expose that API) — but the public link is presented to the guest.' },
         { q: 'Is there room-number-level analytics?', a: 'Yes. You can add a room number URL parameter to the QR (e.g. `?room=412`); when a review arrives, the room number + floor + room type are logged. The analytics report shows where satisfaction drops by floor, where AC / noise / view complaints concentrate — visible to the operational team.' },
-        { q: 'Will guests giving low ratings simply not post on Booking?', a: 'No. Buaze never blocks or hides any review. Guests giving low ratings additionally see an option to share privately with your hotel — across the Buaze customer cohort ~85% also use this channel. The guest always retains the right to post on any public platform (Booking, Tripadvisor, Google); a quick private reply gives you a chance to resolve the issue (room change, refund, etc.).' },
+        { q: 'Will guests giving low ratings simply not post on Booking?', a: 'No. Buaze never blocks or hides any review. Guests giving low ratings additionally see an option to share privately with your hotel. The guest always retains the right to post on any public platform (Booking, Tripadvisor, Google); a quick private reply gives you a chance to resolve the issue (room change, refund, etc.).' },
         { q: 'Is there multi-language support?', a: 'Yes. Pulse AI detects the language the guest writes in (TR, EN, DE, RU currently supported) and produces a reply draft in that language. Hotels typically have a multi-language guest profile — this is critical, manual translation adds hours to reply latency.' },
       ];
 
@@ -282,12 +282,6 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 
@@ -382,8 +376,8 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
           </h2>
           <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · 5 dakikada kurulum'
-              : '14-day free · No credit card · 5-minute setup'}
+              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
+              : '14-day free · No credit card'}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
             <Link

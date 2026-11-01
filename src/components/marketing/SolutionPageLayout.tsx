@@ -137,10 +137,10 @@ export default function SolutionPageLayout({
   ];
 
   const displayStats = stats || [
-    { num: '500+', label: isTr ? 'AKTİF İŞLETME' : 'ACTIVE BUSINESSES', context: isTr ? 'Pilot veri' : 'Pilot data' },
-    { num: '4.8', label: isTr ? 'ORT. SKOR' : 'AVG. SCORE', context: isTr ? 'Ağ ortalaması' : 'Network average' },
-    { num: '%92', label: isTr ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH', context: isTr ? '90 günlük trend' : '90-day trend' },
-    { num: '<5dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Hızlı entegrasyon' : 'Fast integration' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
+    { num: isTr ? '3 ton' : '3 tones', label: isTr ? 'PULSE AI TASLAĞI' : 'PULSE AI DRAFTS', context: isTr ? 'Siz onaylar, gönderirsiniz' : 'You approve and send' },
+    { num: 'KVKK', label: isTr ? 'UYUMLU AKIŞ' : 'COMPLIANT FLOW', context: isTr ? 'Açık rıza ile' : 'With explicit consent' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
   ];
 
   const jsonLdSchemas: object[] = [
@@ -365,12 +365,6 @@ export default function SolutionPageLayout({
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-[#0A0A0A]/65 max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 
