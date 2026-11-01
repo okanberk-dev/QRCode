@@ -52,8 +52,8 @@ export default async function SchoolsSolutionPage({ params }: { params: Promise<
 
   const stats = [
     { num: 'Veli', label: isTr ? '& ÖĞRENCİ FEEDBACK' : '& STUDENT FEEDBACK', context: isTr ? 'Çift kanal' : 'Dual channel' },
-    { num: '+%135', label: isTr ? 'GOOGLE YORUMU' : 'GOOGLE REVIEWS', context: isTr ? 'Dönem başı' : 'Semester start' },
-    { num: '%91', label: isTr ? 'VELİ MEMNUNİYETİ' : 'PARENT SATISFACTION', context: isTr ? 'Dönem sonu' : 'Semester end' },
+    { num: 'KVKK', label: isTr ? 'UYUMLU AKIŞ' : 'COMPLIANT FLOW', context: isTr ? 'Açık rıza ile' : 'With explicit consent' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
     { num: 'AKADEMİK', label: isTr ? 'DÖNEM BAZLI' : 'TERM-BASED', context: isTr ? 'Dönemlik analiz' : 'Term analysis' },
   ];
 
@@ -94,7 +94,7 @@ export default async function SchoolsSolutionPage({ params }: { params: Promise<
     },
     {
       title: isTr ? 'Kayıt Artışı' : 'Enrollment Growth',
-      desc: isTr ? 'Yüksek Google skorlu okul, yeni veli araştırmalarında üst sıralara çıkar. Doğal kayıt artışı sağlanır.' : 'A school with high Google scores appears at the top in new parent searches. Natural enrollment growth is achieved.',
+      desc: isTr ? 'Velilerin Google\'da bıraktığı güncel yorumlar, okulu araştıran yeni ailelere gerçek bir fikir verir.' : 'Recent reviews from parents on Google give families researching your school a genuine picture.',
       icon: <TrendingUp size={20} className="text-[#0ea5e9]" />,
     },
     {

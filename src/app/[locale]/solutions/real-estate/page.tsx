@@ -51,10 +51,10 @@ export default async function RealEstateSolutionPage({ params }: { params: Promi
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '+%67', label: isTr ? 'MÜŞTERİ GÜVENİ' : 'CLIENT TRUST', context: isTr ? 'Yorum artışıyla' : 'With review growth' },
-    { num: '%84', label: isTr ? 'TAVSİYE ORANI' : 'REFERRAL RATE', context: isTr ? 'Memnun müşteri' : 'Satisfied clients' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
     { num: 'Portföy', label: isTr ? 'BAZLI QR KOD' : 'BASED QR CODE', context: isTr ? 'Her mülk için' : 'For each property' },
-    { num: '<5dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Hızlı başlangıç' : 'Quick start' },
+    { num: 'TR + EN', label: isTr ? 'İKİ DİL' : 'TWO LANGUAGES', context: isTr ? 'Yabancı alıcılar için' : 'For international buyers' },
   ];
 
   const steps = [

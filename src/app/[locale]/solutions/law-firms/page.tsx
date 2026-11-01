@@ -80,14 +80,14 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
 
   const stats = isTr
     ? [
-        { value: '+1.2', label: 'Ortalama Google puan artışı' },
-        { value: '+90', label: '90 günde yeni yorum' },
-        { value: '%38', label: 'Müvekkil başvuru artışı' },
+        { value: 'KVKK', label: 'Uyumlu geri bildirim formu' },
+        { value: '3 ton', label: 'Pulse AI yanıt taslağı, siz onaylarsınız' },
+        { value: '14 gün', label: 'Ücretsiz deneme' },
       ]
     : [
-        { value: '+1.2', label: 'Avg. Google rating lift' },
-        { value: '+90', label: 'New reviews in 90 days' },
-        { value: '38%', label: 'Client inquiry growth' },
+        { value: 'KVKK', label: 'Compliant feedback form' },
+        { value: '3 tones', label: 'Pulse AI reply drafts, you approve' },
+        { value: '14 days', label: 'Free trial' },
       ];
 
   const benefits = isTr
@@ -109,14 +109,14 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
         { q: 'Hukuk ofisi için Buaze Türkiye Barolar Birliği reklam yasaklarına uygun mu?', a: 'Akış müvekkilden danışmanlık kalitesi + hizmet süreci hakkında geri bildirim toplar — hukuki sonuç vaadi, dava kazanma garantisi, başarı oranı gibi reklam yasakları kapsamındaki ifadeler form\'da yer almaz. Yorum yanıt taslakları da bu kurallara uygun (mesleki ton, dava ayrıntısı yok).' },
         { q: 'Müvekkil gizliliği nasıl korunuyor?', a: 'Form alanları sadece deneyim puanı + opsiyonel yorum + opsiyonel iletişim bilgisi (e-posta veya telefon) toplar. Dava bilgisi, taraf isimleri, davanın konusu gibi gizli alanlar yer almaz. Müvekkil verileri EU veri merkezinde saklanır, KVKK aydınlatma metni form altında görünür ve onay açık (opt-in) şekilde alınır.' },
         { q: 'Avukat performansını takip eder miyim?', a: 'Evet. QR oluştururken avukat etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi avukat + hangi uzmanlık alanı + ay loglanır. Yönetim ortağı analytics raporundan müvekkil memnuniyetini avukat bazlı ayrıştırabilir.' },
-        { q: 'Düşük puan veren müvekkil ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müvekkiller ek olarak hukuk ofisinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müvekkil her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (ek danışmanlık, faturalama netleştirme, vb.) çözme şansı kazanırsınız.' },
+        { q: 'Düşük puan veren müvekkil ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müvekkiller ek olarak hukuk ofisinizle özel paylaşım yapma seçeneği görür. Müvekkil her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (ek danışmanlık, faturalama netleştirme, vb.) çözme şansı kazanırsınız.' },
         { q: 'Birden fazla avukat / şube nasıl yönetilir?', a: 'Her şube için ayrı işletme oluştur veya tek işletme + avukat etiketleri kullan. Analytics avukat ve şube bazlı ayrılır. Yönetim ortağı: hangi şubenin müvekkil memnuniyeti yüksek, hangi avukatın yanıt süresi düşük — doğrudan görür.' },
       ]
     : [
         { q: 'Is Buaze compliant with the Bar Association advertising rules for law firms?', a: 'The flow collects feedback from clients about consultation quality + service process — never about case outcomes, win promises, or success rates that fall under advertising restrictions. The reply drafts also follow these rules (professional tone, no case detail).' },
         { q: 'How is client confidentiality protected?', a: 'Form fields only collect experience rating + optional comment + optional contact (email or phone). No case info, party names, or case subject — those confidential fields do not exist. Client data is stored in an EU data center, the KVKK notice is visible under the form, and consent is opt-in.' },
         { q: 'Can I track lawyer performance?', a: 'Yes. When generating the QR you can add a lawyer tag (Buaze branch field or a custom URL parameter); when the review arrives, which lawyer + which practice area + month is logged. Managing partners can split client satisfaction per lawyer in the analytics report.' },
-        { q: 'What happens to clients giving low ratings?', a: 'Buaze never blocks or hides any review. Clients giving low ratings additionally see an option to share privately with your firm — in practice ~85% choose this private channel. The client always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (additional consultation, billing clarification, etc.).' },
+        { q: 'What happens to clients giving low ratings?', a: 'Buaze never blocks or hides any review. Clients giving low ratings additionally see an option to share privately with your firm. The client always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (additional consultation, billing clarification, etc.).' },
         { q: 'How do I manage multiple lawyers / branches?', a: 'Either create a separate business per branch or use a single business + lawyer tags. Analytics splits per lawyer and per branch. Managing partners see directly: which branch has higher client satisfaction, which lawyer has the longest reply latency.' },
       ];
 
@@ -293,12 +293,6 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 

@@ -67,14 +67,14 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
 
   const stats = isTr
     ? [
-        { k: '+184%', l: 'Organik Google yorum artışı', d: 'İlk 90 gün ortalaması' },
-        { k: '4.8 / 5', l: 'Ortalama Google puanı', d: 'Buaze kullanıcılarının' },
-        { k: '12 dk', l: 'Ortalama yanıt süresi', d: 'Takım atama sonrası' },
+        { k: '10', l: 'Yorum platformu', d: 'Google, Yemeksepeti, Getir, Trendyol GO dahil' },
+        { k: '7', l: 'QR menü teması', d: 'Sürükle-bırak menü oluşturucu' },
+        { k: '14 gün', l: 'Ücretsiz deneme', d: 'Kredi kartı gerekmez' },
       ]
     : [
-        { k: '+184%', l: 'Organic Google review growth', d: 'First 90-day average' },
-        { k: '4.8 / 5', l: 'Avg. Google rating', d: 'Across Buaze customers' },
-        { k: '12 min', l: 'Avg. reply time', d: 'After team assignment' },
+        { k: '10', l: 'Review platforms', d: 'Incl. Google, Yemeksepeti, Getir, Trendyol GO' },
+        { k: '7', l: 'QR menu themes', d: 'Drag-and-drop menu builder' },
+        { k: '14 days', l: 'Free trial', d: 'No credit card required' },
       ];
 
   const useCases = isTr
@@ -147,7 +147,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
     ? [
         {
           q: 'Restoran için Buaze kurulumu ne kadar sürer?',
-          a: 'Ortalama 5-10 dakika. Hesabını aç, Google İşletme bağlantını yapıştır (isteğe bağlı: Yemeksepeti / Getir / Trendyol GO), masaya yapıştırılacak QR kartını PDF olarak indir, yazdır. Onboarding sihirbazı (5 adım) tüm bağlantıları sırayla toplar. İlk yorum genellikle aynı gün gelir.',
+          a: 'Genellikle birkaç dakika sürer. Hesabını aç, Google İşletme bağlantını yapıştır (isteğe bağlı: Yemeksepeti / Getir / Trendyol GO), masaya yapıştırılacak QR kartını PDF olarak indir, yazdır. Onboarding sihirbazı (5 adım) tüm bağlantıları sırayla toplar.',
         },
         {
           q: 'Yemeksepeti, Getir ve Trendyol GO yönlendirmesi nasıl çalışır?',
@@ -159,17 +159,17 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
         },
         {
           q: 'Düşük puan veren müşteri "kaybolur" mu?',
-          a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müşteri her zaman herkese açık platforma yorum yazma hakkını korur; siz sadece sorunu özelden çözme şansı kazanırsınız.',
+          a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platforma yorum yazma hakkını korur; siz sadece sorunu özelden çözme şansı kazanırsınız.',
         },
         {
           q: 'Çoklu şubem var, nasıl yönetilir?',
-          a: 'Her şube için ayrı işletme oluştur veya tek işletme + şube etiketleri (Buaze branch field) kullan. Analitik şube bazlı ayrılır: hangi şube ortalama 4.7, hangi şube 4.2 — peak hours ve müşteri yorumları şube bazlı incelenebilir. Pricing planı şube sayısına göre ölçeklenir.',
+          a: 'Her şube için ayrı işletme oluştur veya tek işletme + şube etiketleri (Buaze branch field) kullan. Analitik şube bazlı ayrılır: şubelerin ortalama puanını, yoğun saatleri ve müşteri yorumlarını yan yana karşılaştırabilirsin.',
         },
       ]
     : [
         {
           q: 'How long does Buaze setup take for a restaurant?',
-          a: 'About 5-10 minutes on average. Open an account, paste your Google Business link (optionally Yemeksepeti / Getir / Trendyol GO), download the table-QR PDF and print it. The 5-step onboarding wizard collects all links in sequence. The first review usually arrives the same day.',
+          a: 'Usually a few minutes. Open an account, paste your Google Business link (optionally Yemeksepeti / Getir / Trendyol GO), download the table-QR PDF and print it. The 5-step onboarding wizard collects all links in sequence.',
         },
         {
           q: 'How does Yemeksepeti, Getir, and Trendyol GO routing work?',
@@ -181,11 +181,11 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
         },
         {
           q: 'Will customers giving low ratings simply "disappear"?',
-          a: 'No. Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team — in practice ~85% choose this private channel. The customer always retains the right to post on a public platform; you simply gain a chance to resolve the issue privately first.',
+          a: 'No. Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team. The customer always retains the right to post on a public platform; you simply gain a chance to resolve the issue privately first.',
         },
         {
           q: 'I have multiple branches — how do I manage them?',
-          a: 'Either create a separate business per branch or use a single business + branch tags (Buaze branch field). Analytics splits per branch: which branch averages 4.7, which 4.2 — peak hours and customer reviews can be analyzed per branch. Pricing plans scale with the number of branches.',
+          a: 'Either create a separate business per branch or use a single business + branch tags (Buaze branch field). Analytics splits per branch: compare average ratings, busy hours and customer comments side by side.',
         },
       ];
 
@@ -197,8 +197,8 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
     industryLabel: isTr ? 'Restoran & Kafe' : 'Restaurant & Café',
     serviceName: isTr ? 'Restoran & Kafe İtibar Yönetimi' : 'Restaurant & Café Reputation Management',
     description: isTr
-      ? 'Masaya QR koy: Buaze müşteri kohortunda ilk 90 günde organik Google yorumlarınız ortalama %184 büyüyor. Her misafire Google bağlantısı sunulur; isteyen ek olarak ekibinize özel geri bildirim de gönderebilir.'
-      : 'Put a QR on the table — Buaze customer cohort sees an average +184% organic Google review growth in the first 90 days. Every guest gets the Google review link; private feedback is an optional extra step.',
+      ? 'Masaya QR koyun: misafir puanını verir ve Google yorum bağlantısını görür. İsteyen ek olarak ekibinize özel geri bildirim de gönderebilir; tüm geri bildirimler tek panelde toplanır.'
+      : 'Put a QR on the table: guests rate their visit and see your Google review link. Anyone who wants can also send private feedback to your team, and all feedback lands in one panel.',
     faqs,
   });
 
@@ -260,8 +260,8 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
             </h1>
             <p className="mt-5 max-w-[520px] text-[15px] leading-[1.55] text-[#525252] sm:text-[18px]">
               {isTr
-                ? "Masaya QR koy: Buaze müşteri kohortunda ilk 90 günde organik Google yorumlarınız ortalama %184 büyüyor. Her misafire Google bağlantısını sunuyoruz; ek olarak isteyen, ekibine özel geri bildirim de gönderebiliyor."
-                : 'Put a QR on the table — Buaze customer cohort sees an average +184% organic Google review growth in the first 90 days. Every guest gets the Google review link; anyone who wants to share private feedback with your team can do so in the same flow.'}
+                ? "Masaya QR koyun: misafir puanını verir ve Google yorum bağlantısını görür. İsteyen ek olarak ekibinize özel geri bildirim de gönderebilir; tüm geri bildirimler tek panelde toplanır."
+                : 'Put a QR on the table: guests rate their visit and see your Google review link. Anyone who wants can also send private feedback to your team, and all feedback lands in one panel.'}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -337,12 +337,6 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 
@@ -509,8 +503,8 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
           </h2>
           <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · 2 dakikada kurulum'
-              : '14-day free · No credit card · 2-minute setup'}
+              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
+              : '14-day free · No credit card'}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
             <Link

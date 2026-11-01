@@ -67,14 +67,14 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
 
   const stats = isTr
     ? [
-        { value: '+62%', label: 'Randevu artışı (90 gün)' },
-        { value: '4.8/5', label: 'Google ort. puan' },
-        { value: '%94', label: 'Hasta memnuniyet skoru' },
+        { value: 'KVKK', label: 'Aydınlatma metni ve açık rıza' },
+        { value: '90 gün', label: 'Sonra IP adresleri anonimleşir' },
+        { value: '14 gün', label: 'Ücretsiz deneme' },
       ]
     : [
-        { value: '+62%', label: 'Appointment growth (90 days)' },
-        { value: '4.8/5', label: 'Avg. Google rating' },
-        { value: '94%', label: 'Patient satisfaction' },
+        { value: 'KVKK', label: 'Privacy notice and explicit consent' },
+        { value: '90 days', label: 'Then IP addresses are anonymised' },
+        { value: '14 days', label: 'Free trial' },
       ];
 
   const features = isTr
@@ -109,14 +109,14 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
     ? [
         { q: 'Klinik için Buaze KVKK ile uyumlu mu?', a: 'Evet. Hasta verileri EU veri merkezinde (Frankfurt) saklanır; KVKK aydınlatma metni feedback form altında görünür ve onay açık (opt-in) şekilde alınır. IP adresleri 90 gün sonra otomatik anonimleştirilir. Pazarlama izni hizmet onayından ayrı toplanır. Hasta talep ederse veriler silinir veya export edilir.' },
         { q: 'Hekim performansını takip eder miyim?', a: 'Evet. QR oluştururken hekim etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi hekim + hangi branş + muayene saati loglanır. Analytics raporunda hekim bazlı ortalama puan, yorum sayısı ve memnuniyet trendleri görünür.' },
-        { q: 'Düşük puan veren hasta kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren hastalar ek olarak kliniğinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Hasta her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (randevu yeniden planlama, ek konsültasyon, vb.) çözme şansı kazanırsınız.' },
+        { q: 'Düşük puan veren hasta kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren hastalar ek olarak kliniğinizle özel paylaşım yapma seçeneği görür. Hasta her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (randevu yeniden planlama, ek konsültasyon, vb.) çözme şansı kazanırsınız.' },
         { q: 'Hassas tıbbi veri toplar mı?', a: 'Hayır. Form sadece deneyim puanı + opsiyonel yorum + opsiyonel iletişim bilgisi (e-posta veya telefon, KVKK onaylı) toplar. Tedavi detayları, tanı, ilaç bilgisi gibi tıbbi veriler form alanlarında yer almaz. Pulse AI yanıtları da tıbbi ayrıntıya girmez — sadece hizmet kalitesi tonunda yanıt verir.' },
         { q: 'Birden fazla şubem / muayenehanem var, nasıl yönetilir?', a: 'Her şube için ayrı işletme oluştur veya tek işletme + şube etiketleri kullan. Analytics şube bazlı ayrılır: hangi şubenin ortalama puanı yüksek, hangi şubede bekleme süresi memnuniyeti olumsuz etkiliyor — merkezi yönetim doğrudan veriden görür.' },
       ]
     : [
         { q: 'Is Buaze KVKK / GDPR-compliant for clinics?', a: 'Yes. Patient data is stored in an EU data center (Frankfurt); the KVKK / GDPR notice is visible under the feedback form and consent is opt-in. IP addresses are automatically anonymized after 90 days. Marketing consent is collected separately from service consent. On patient request, data is deleted or exported.' },
         { q: 'Can I track physician performance?', a: 'Yes. When generating the QR you can add a physician tag (Buaze branch field or a custom URL parameter); when the review arrives, which physician + which specialty + visit time is logged with it. The analytics report shows per-physician average rating, review volume, and satisfaction trends.' },
-        { q: 'Will low-rating patients simply disappear?', a: 'No. Buaze never blocks or hides any review. Patients giving low ratings additionally see an option to share privately with your clinic — in practice ~85% choose this private channel. The patient always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (rescheduling, extra consultation, etc.).' },
+        { q: 'Will low-rating patients simply disappear?', a: 'No. Buaze never blocks or hides any review. Patients giving low ratings additionally see an option to share privately with your clinic. The patient always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (rescheduling, extra consultation, etc.).' },
         { q: 'Does Buaze collect sensitive medical data?', a: 'No. The form only collects an experience rating + optional comment + optional contact (email or phone, KVKK-consented). Treatment details, diagnoses, medication information — no medical fields exist. Pulse AI replies also avoid medical detail — they respond in a service-quality tone only.' },
         { q: 'I have multiple branches / offices — how do I manage them?', a: 'Either create a separate business per branch or use a single business + branch tags. Analytics splits per branch: which branch has the highest average rating, where wait time hurts satisfaction — central management sees it directly from data.' },
       ];
@@ -283,12 +283,6 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 

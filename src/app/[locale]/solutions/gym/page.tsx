@@ -51,10 +51,10 @@ export default async function GymSolutionPage({ params }: { params: Promise<{ lo
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '%78', label: isTr ? 'ÜYE TUTMA ORANI' : 'MEMBER RETENTION', context: isTr ? 'Yıllık ortalama' : 'Yearly average' },
-    { num: '+%156', label: isTr ? 'YENİ ÜYE EDİNİMİ' : 'NEW MEMBER ACQU.', context: isTr ? 'Organik yorum' : 'Organic reviews' },
-    { num: '%62', label: isTr ? 'AZ TERK' : 'LESS CHURN', context: isTr ? 'Feedback takibi' : 'Feedback tracking' },
-    { num: '<3dk', label: isTr ? 'KURULUM' : 'SETUP', context: isTr ? 'Anında hazır' : 'Instantly ready' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
+    { num: isTr ? 'Anlık' : 'Instant', label: isTr ? 'DÜŞÜK PUAN UYARISI' : 'LOW-RATING ALERT', context: isTr ? 'E-posta ile' : 'By e-mail' },
+    { num: isTr ? '3 ton' : '3 tones', label: isTr ? 'PULSE AI TASLAĞI' : 'PULSE AI DRAFTS', context: isTr ? 'Siz onaylar, gönderirsiniz' : 'You approve and send' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
   ];
 
   const steps = [
@@ -76,8 +76,8 @@ export default async function GymSolutionPage({ params }: { params: Promise<{ lo
       icon: <BarChart3 size={24} />,
       title: isTr ? 'Üye Kaybını Önle' : 'Prevent Member Churn',
       desc: isTr
-        ? 'Memnuniyetsiz üyeyi erken tespit edin. Proaktif iletişimle üye kaybını %62\'ye kadar azaltın.'
-        : 'Identify dissatisfied members early. Reduce member churn by up to 62% with proactive communication.',
+        ? 'Memnuniyetsiz üyeyi erken fark edin. Düşük puan uyarısı sayesinde ekibiniz aynı gün iletişime geçebilir.'
+        : 'Spot unhappy members early. The low-rating alert lets your team reach out the same day.',
     },
   ];
 
@@ -99,7 +99,7 @@ export default async function GymSolutionPage({ params }: { params: Promise<{ lo
     },
     {
       title: isTr ? 'Google\'da Büyü' : 'Grow on Google',
-      desc: isTr ? '"Yakınımdaki spor salonu" aramasında üst sıralara çıkın. Daha fazla yorum = daha fazla üye.' : 'Rise to the top for "gym near me" searches. More reviews = more members.',
+      desc: isTr ? 'Düzenli yeni yorumlar, "yakınımdaki spor salonu" aramalarında Google profilinizin güncel görünmesine yardımcı olur.' : 'A steady flow of new reviews helps your Google profile look current in "gym near me" searches.',
       icon: <TrendingUp size={20} className="text-[#C6F24E]" />,
     },
   ];

@@ -66,16 +66,16 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
 
   const stats = isTr
     ? [
-        { value: '+210%', label: 'Yorum artışı (ilk 30 gün)' },
-        { value: 'Sınırsız', label: 'Çok mağaza desteği' },
-        { value: '%88', label: 'Google sıralama iyileşme' },
-        { value: '25sn', label: 'Ortalama yorum süresi' },
+        { value: '10', label: 'Yorum platformu' },
+        { value: 'Şube', label: 'Mağaza bazlı QR ve karşılaştırma' },
+        { value: 'Anlık', label: 'Düşük puan e-posta uyarısı' },
+        { value: '14 gün', label: 'Ücretsiz deneme' },
       ]
     : [
-        { value: '+210%', label: 'Review lift (first 30 days)' },
-        { value: 'Unlimited', label: 'Multi-store support' },
-        { value: '88%', label: 'Google rank improvement' },
-        { value: '25s', label: 'Avg. review time' },
+        { value: '10', label: 'Review platforms' },
+        { value: 'Store', label: 'Per-store QR and comparison' },
+        { value: 'Instant', label: 'Low-rating e-mail alert' },
+        { value: '14 days', label: 'Free trial' },
       ];
 
   const features = isTr
@@ -125,15 +125,15 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
   const faqs: FaqItem[] = isTr
     ? [
         { q: 'Perakende mağaza için Buaze nasıl çalışır?', a: 'Her fişin altına QR sticker basarsın (POS yazılımı entegrasyonu varsa otomatik) + kasada genel bir QR yerleştirirsin. Müşteri kasadan çıkarken QR\'ı tarar, deneyimini puanlar ve seçtiğin platformlara (Google, Yandex, Foursquare) yönlendirilir.' },
-        { q: 'Birden fazla mağaza nasıl yönetirim?', a: 'Her mağaza için ayrı işletme oluştur veya tek işletme + mağaza etiketleri (Buaze branch field) kullan. Analytics mağaza bazlı ayrılır: hangi mağaza ortalama 4.7, hangi mağaza 4.2 — bölge müdürü doğrudan veriden görür. Pricing planı mağaza sayısına göre ölçeklenir.' },
-        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak mağaza yönetimiyle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden (iade, değişim, ek hizmet) çözme şansı kazanırsınız.' },
+        { q: 'Birden fazla mağaza nasıl yönetirim?', a: 'Her mağaza için ayrı işletme oluştur veya tek işletme + mağaza etiketleri (Buaze branch field) kullan. Analitik mağaza bazlı ayrılır: bölge müdürü mağazaların ortalama puanını ve yorumlarını yan yana görür. Pricing planı mağaza sayısına göre ölçeklenir.' },
+        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak mağaza yönetimiyle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden (iade, değişim, ek hizmet) çözme şansı kazanırsınız.' },
         { q: 'Vardiya / kasiyer bazlı performans takip eder miyim?', a: 'Evet. QR\'a vardiya ID veya kasiyer etiketi URL parametresi olarak eklenebilir; yorum geldiğinde hangi vardiya + hangi kasiyer + saat loglanır. Analytics raporunda mağaza yönetimi vardiya bazlı memnuniyet farklarını görür.' },
         { q: 'Yandex entegrasyonu var mı?', a: 'Evet. Yandex Maps yorum bağlantısını owner panelden eklersin; akış müşteriye Yandex bağlantısı sunar. Türkiye\'de Yandex arama hacmi büyüyor; özellikle Anadolu mağazaları için Google\'la birlikte ikinci kanal olarak değerli.' },
       ]
     : [
         { q: 'How does Buaze work for a retail store?', a: 'You print a QR sticker under every receipt (auto if your POS supports it) + place a general QR at the register. As the customer leaves, they scan the QR, rate the experience, and are routed to the platforms you have selected (Google, Yandex, Foursquare).' },
-        { q: 'How do I manage multiple stores?', a: 'Either create a separate business per store or use a single business + store tags (Buaze branch field). Analytics splits per store: which one averages 4.7, which 4.2 — area managers see it directly from data. Pricing scales with store count.' },
-        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with store management — in practice ~85% choose this private channel. The customer always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (refund, exchange, extra service).' },
+        { q: 'How do I manage multiple stores?', a: 'Either create a separate business per store or use a single business + store tags (Buaze branch field). Analytics splits per store: area managers see each store\'s average rating and comments side by side. Pricing scales with store count.' },
+        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with store management. The customer always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (refund, exchange, extra service).' },
         { q: 'Can I track shift / cashier performance?', a: 'Yes. The QR can carry a shift ID or cashier tag as a URL parameter; when the review arrives, which shift + which cashier + time is logged. Store management sees per-shift satisfaction differences in the analytics report.' },
         { q: 'Is there Yandex integration?', a: 'Yes. You add the Yandex Maps review link in the owner panel; the flow surfaces the Yandex link to the customer. Yandex search volume is growing in Turkey; especially for Anatolian stores, Yandex is a valuable second channel alongside Google.' },
       ];
@@ -163,13 +163,13 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
           { name: 'Mağazaları tanımla', text: 'Her mağazayı ayrı işletme veya tek işletme + mağaza etiketi olarak panelde tanımla; Google ve Yandex bağlantılarını ekle.' },
           { name: 'Fiş altına veya kasa yanına QR yerleştir', text: 'Fiş alt boşluğuna QR baskı + kasa yanındaki stand — müşteri kasadan çıkarken son temas noktası kazanılır.' },
           { name: 'Mağaza müdürlerini ekibe ekle', text: 'Her mağaza müdürünü Buaze ekibine ekle; düşük puanları kendi mağazasında görsün, merkez yönetimi toplu raporu izlesin.' },
-          { name: 'Pulse AI ile yanıtla ve karşılaştır', text: 'Pulse AI taslak üretir, mağaza müdürü onaylar; mağaza bazlı analitiklerden hangi şube ortalama 4.7, hangi 4.2 — operasyonel karar tek panelde alınır.' },
+          { name: 'Pulse AI ile yanıtla ve karşılaştır', text: 'Pulse AI taslak üretir, mağaza müdürü onaylar; mağaza bazlı analitikte şubeler yan yana karşılaştırılır ve operasyonel karar tek panelde alınır.' },
         ]
       : [
           { name: 'Identify each store', text: 'Set up each store as a separate business or single business + store tag; add Google and Yandex review links.' },
           { name: 'Place the QR on the receipt or near the till', text: 'Print the QR at the bottom of the receipt + a stand near the till — the last-touch moment as customers leave.' },
           { name: 'Invite store managers', text: 'Add each store manager to your Buaze team; let them see their own store\'s low ratings while head office tracks the aggregate.' },
-          { name: 'Reply and benchmark via Pulse AI', text: 'Pulse AI drafts the reply, store manager approves; per-store analytics show which branch averages 4.7 vs 4.2 — operational decisions in one panel.' },
+          { name: 'Reply and benchmark via Pulse AI', text: 'Pulse AI drafts the reply, store manager approves; per-store analytics compare branches side by side, so operational decisions happen in one panel.' },
         ],
   });
   if (howTo) jsonLd.push(howTo);
@@ -272,7 +272,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
               <path d="M150 60 L220 30 L255 30" fill="none" stroke="#0A0A0A" strokeWidth="1.5" />
               <rect x="200" y="5" width="60" height="24" rx="12" fill="#0A0A0A" />
               <text x="230" y="21" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="10" fill="#C6F24E" fontWeight="600">
-                +184%
+                ★ 5
               </text>
               <rect x="30" y="30" width="90" height="10" rx="5" fill="#0A0A0A" />
               <rect x="30" y="44" width="60" height="6" rx="3" fill="#EDEDED" />
@@ -308,12 +308,6 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
               </div>
             ))}
           </div>
-          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
-          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
-            {isTr
-              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
-              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
-          </p>
         </div>
       </section>
 
@@ -411,8 +405,8 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
           </h2>
           <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz · 5 dakikada kurulum'
-              : '14-day free · No credit card · 5-minute setup'}
+              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
+              : '14-day free · No credit card'}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
             <Link

@@ -51,9 +51,9 @@ export default async function DentistSolutionPage({ params }: { params: Promise<
   const isTr = locale === 'tr';
 
   const stats = [
-    { num: '%91', label: isTr ? 'TAVSİYE ORANI' : 'REFERRAL RATE', context: isTr ? 'Memnun hastalar' : 'Satisfied patients' },
-    { num: '≤3dk', label: isTr ? 'YORUM ALMA SÜRESİ' : 'REVIEW TIME', context: isTr ? 'Tedavi sonrası' : 'Post-treatment' },
-    { num: '+%120', label: isTr ? 'YENİ HASTA' : 'NEW PATIENTS', context: isTr ? 'Organik büyüme' : 'Organic growth' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
+    { num: isTr ? '3 ton' : '3 tones', label: isTr ? 'PULSE AI TASLAĞI' : 'PULSE AI DRAFTS', context: isTr ? 'Siz onaylar, gönderirsiniz' : 'You approve and send' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
     { num: 'KVKK', label: isTr ? 'UYUMLU' : 'COMPLIANT', context: isTr ? 'Hasta gizliliği' : 'Patient privacy' },
   ];
 
@@ -84,7 +84,7 @@ export default async function DentistSolutionPage({ params }: { params: Promise<
   const benefits = [
     {
       title: isTr ? 'Güven Oluşturur' : 'Builds Trust',
-      desc: isTr ? 'Diş hekimi seçimi hassas bir karardır. Bol olumlu yorum potansiyel hastanın kararını 4x hızlandırır.' : 'Choosing a dentist is a sensitive decision. Many positive reviews speed up potential patients\' decision 4x.',
+      desc: isTr ? 'Diş hekimi seçimi hassas bir karardır. Güncel ve gerçek hasta yorumları, kliniğinizi araştıran kişinin karar vermesini kolaylaştırır.' : 'Choosing a dentist is a sensitive decision. Recent, genuine patient reviews make the choice easier for people researching your clinic.',
       icon: <Star size={20} className="text-[#C6F24E]" />,
     },
     {
@@ -94,7 +94,7 @@ export default async function DentistSolutionPage({ params }: { params: Promise<
     },
     {
       title: isTr ? 'Organik Büyüme' : 'Organic Growth',
-      desc: isTr ? 'Yorum hacmi arttıkça Google aramasında "diş kliniği yakınımda" için üst sıralara çıkıyorsunuz.' : 'As review volume grows, you rise to the top for "dentist near me" Google searches.',
+      desc: isTr ? 'Düzenli yeni yorumlar, "yakınımdaki diş kliniği" aramalarında Google profilinizin güncel ve güvenilir görünmesine yardımcı olur.' : 'A steady flow of new reviews helps your Google profile look current and trustworthy in "dentist near me" searches.',
       icon: <TrendingUp size={20} className="text-[#10b981]" />,
     },
     {

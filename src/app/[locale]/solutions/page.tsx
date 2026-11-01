@@ -142,7 +142,7 @@ export default async function SolutionsOverviewPage({
     { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS' },
     { num: '15', label: isTr ? 'SEKTÖR ÇÖZÜMÜ' : 'SECTOR SOLUTIONS' },
     { num: 'TR + EN', label: isTr ? 'ÜRÜN DİLİ' : 'PRODUCT LANGUAGES' },
-    { num: '<5dk', label: isTr ? 'KURULUM' : 'SETUP' },
+    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL' },
   ];
 
   const jsonLd = {
@@ -384,7 +384,7 @@ export default async function SolutionsOverviewPage({
             {isTr ? 'Çözümü bugün devreye al.' : 'Put the solution to work today.'}
           </h2>
           <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[480px] mx-auto">
-            {isTr ? '14 gün ücretsiz. Kredi kartı gerekmez. Kurulum 2 dakika.' : '14-day free trial. No card required. 2-minute setup.'}
+            {isTr ? '14 gün ücretsiz. Kredi kartı gerekmez.' : '14-day free trial. No card required.'}
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
             <Link
