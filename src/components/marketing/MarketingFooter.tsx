@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getCompanyLegalInfo } from '@/lib/legal/variables';
 import type { ReactElement } from 'react';
 import type { Locale } from '@/lib/translations';
 import NewsletterSignup from './NewsletterSignup';
@@ -67,6 +68,13 @@ const SOCIAL: SocialLink[] = [
  * operational" dot on the bottom rail.
  */
 export default async function MarketingFooter({ locale }: MarketingFooterProps) {
+  // Legal name + address come from the admin legal variables (COMPANY_NAME,
+  // COMPANY_ADDRESS) so the footer, the legal documents and the Organization
+  // JSON-LD always show the same registered entity. Until they are filled in,
+  // only the brand name is shown — never an unregistered "A.Ş.".
+  const legal = await getCompanyLegalInfo();
+  const companyName = legal.name ?? 'Buaze';
+  const companyAddress = legal.address ?? 'Maslak / İstanbul';
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
@@ -483,9 +491,9 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
             §35.8 + §19.1.2 NAP consistency rule). support@buaze.com
             lime tint + JetBrains Mono tracking-wider. */}
         <address className="not-italic mx-auto mb-4 flex max-w-[1240px] flex-col items-center gap-x-3 gap-y-1 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4">
-          <span className="pulse-eyebrow text-white/40">Buaze Bilişim A.Ş.</span>
+          <span className="pulse-eyebrow text-white/40">{companyName}</span>
           <span aria-hidden className="hidden sm:inline text-white/20">·</span>
-          <span className="pulse-eyebrow text-white/40">Workinton Maslak, Kat 4 · Maslak / İstanbul</span>
+          <span className="pulse-eyebrow text-white/40">{companyAddress}</span>
           <span aria-hidden className="hidden sm:inline text-white/20">·</span>
           <a
             href="mailto:support@buaze.com"
@@ -497,7 +505,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
         </address>
         <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
           <p className="pulse-eyebrow text-[#A3A3A3]">
-            © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL
+            © {new Date().getFullYear()} {companyName}
           </p>
           {/* Stage D (legal-compliance-update) — footer legal-link strip
               trimmed to the minimum required by Turkish law:

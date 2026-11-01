@@ -9,7 +9,7 @@ import HelpSearchBar from '@/components/marketing/HelpSearchBar';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
-import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
+import { CATEGORY_BY_SLUG, HELP_CATEGORIES } from '@/lib/help-categories';
 import { getStaticHelpArticles } from '@/lib/help-articles';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -18,6 +18,12 @@ import { getStaticHelpArticles } from '@/lib/help-articles';
 
 interface PageParams {
   params: Promise<{ locale: Locale; slug: string }>;
+}
+
+// The category list is static: prerender every category page at build time
+// (both locales come from the [locale] layout's generateStaticParams).
+export async function generateStaticParams() {
+  return HELP_CATEGORIES.map((cat) => ({ slug: cat.slug }));
 }
 
 export async function generateMetadata({ params }: PageParams): Promise<Metadata> {

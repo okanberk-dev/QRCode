@@ -43,12 +43,16 @@
 
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+// The default hero is imported statically. Loaded through next/dynamic it was
+// a lazy boundary: even in the prerendered HTML the H1 sat at the very end of
+// <body> inside <div hidden>, swapped in by script — crawlers that do not run
+// JS (GPTBot, ClaudeBot, PerplexityBot) saw a skeleton where the H1 should be.
+import HeroCinematic from './HeroCinematic';
 
 interface Props {
   locale: 'tr' | 'en';
 }
 
-const HeroCinematic = dynamic(() => import('./HeroCinematic'), { ssr: true });
 const HeroStarClimb = dynamic(() => import('./HeroStarClimb'), { ssr: true });
 const HeroParallax = dynamic(() => import('./HeroParallax'), { ssr: true });
 
@@ -95,6 +99,7 @@ function HeroSkeleton() {
 
 export default function HeroVariantPicker({ locale }: Props) {
   const variant = resolveVariant();
+  if (variant === 'cinematic') return <HeroCinematic locale={locale} />;
   const Hero = VARIANTS[variant];
 
   return (

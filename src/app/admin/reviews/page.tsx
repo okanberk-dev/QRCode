@@ -63,8 +63,8 @@ function replyErrorMessage(code: unknown, isTr: boolean): string {
   switch (code) {
     case 'content_blocked':
       return isTr
-        ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
-        : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.';
+        ? 'Bu yanıt gönderilemedi: küfür, tehdit, hakaret veya benzeri uygunsuz bir ifade içeriyor. Lütfen metni düzenleyin.'
+        : 'This reply could not be sent: it contains profanity, a threat, harassment or similar inappropriate content. Please edit it.';
     case 'consent_required':
       return isTr
         ? 'Göndermeden önce sorumluluk onayını işaretleyin.'

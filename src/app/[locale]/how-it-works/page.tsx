@@ -96,8 +96,8 @@ export default async function HowItWorksPage({
         : 'Your NPS, Google score shift, staff performance — all in a live dashboard. The weekly digest lands in your inbox.',
       Ill: IllusChart,
       perks: isTr
-        ? ['Gerçek zamanlı grafik', 'CSV dışa aktar', 'Şube karşılaştırma', 'SLA takibi']
-        : ['Real-time charts', 'CSV export', 'Branch benchmarks', 'SLA tracking'],
+        ? ['Gerçek zamanlı grafik', 'CSV dışa aktar', 'Şube karşılaştırma', 'Haftalık e-posta özeti']
+        : ['Real-time charts', 'CSV export', 'Branch benchmarks', 'Weekly e-mail summary'],
     },
   ];
 

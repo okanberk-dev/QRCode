@@ -42,7 +42,7 @@ export async function generateMetadata({
     ? 'Sektörel çözümler — Restoran, otel, klinik ve perakende'
     : 'Industry solutions — Restaurants, hotels, clinics and retail';
   const description = isTr
-    ? 'Buaze ile dijital itibarınızı yönetin: QR ile yakala, tek panelde topla, akıllı yönlendir, büyümeyi ölç. Her sektör için hazır.'
+    ? 'Restoran, otel, klinik, güzellik salonu ve mağazalar için QR ile müşteri geri bildirimi ve Google yorum yönetimi. Sektörünüzü seçin, 14 gün ücretsiz deneyin.'
     : 'Manage your digital reputation with Buaze: capture via QR, collect in one panel, route smartly, measure growth. Ready for every sector.';
   return {
     title,

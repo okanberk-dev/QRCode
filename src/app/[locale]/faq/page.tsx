@@ -19,8 +19,8 @@ export async function generateMetadata({
     ? 'Sıkça Sorulan Sorular — QR Yorum Yönetimi'
     : 'Frequently Asked Questions — QR Review Management';
   const description = isTr
-    ? 'Buaze hakkında merak ettiğiniz tüm soruların cevapları. QR itibar yönetimi, akıllı yönlendirme, fiyatlandırma ve kurulum hakkında detaylı bilgi alın.'
-    : 'Find answers to all your questions about Buaze — QR reputation management, smart routing, pricing, and setup explained in detail.';
+    ? 'Buaze hakkında merak ettiğiniz tüm soruların cevapları. QR ile yorum toplama, Google politikaları, fiyatlandırma ve kurulum hakkında cevaplar.'
+    : 'Find answers to all your questions about Buaze — collecting reviews with QR codes, Google policies, pricing and setup.';
   return {
     title: { absolute: title },
     description,

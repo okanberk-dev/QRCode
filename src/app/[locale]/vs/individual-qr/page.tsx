@@ -18,8 +18,8 @@ export async function generateMetadata({
   return {
     title: (locale === 'tr' ? 'Buaze vs Bireysel QR | Akıllı İtibar Yönetimi' : 'Buaze vs Individual QR | Smart Reputation Management'),
     description: locale === 'tr'
-      ? 'Ücretsiz statik QR kodları işletmeniz için ne kadar güvenli? Dinamik Buaze QR\'lerinin platform yönlendirme, müşteri-led tercih ve panelin farkını öğrenin.'
-      : 'How secure are free static QR codes for your business? Learn how dynamic Buaze QR codes add platform routing, customer-led choice and a unified dashboard.',
+      ? 'Ücretsiz statik QR kodları işletmeniz için ne kadar güvenli? Dinamik Buaze QR\'lerinin yorum bağlantıları, müşteri tercihi ve tek panelin farkını öğrenin.'
+      : 'How secure are free static QR codes for your business? Learn how dynamic Buaze QR codes add review links, customer choice and one panel.',
     alternates: {
       canonical: `/${locale}/vs/individual-qr`,
       languages: {
@@ -120,7 +120,7 @@ export default async function VsIndividualQrPage({
       locale={locale}
       t={t}
       vsName={locale === 'tr' ? 'Bireysel QR' : 'Individual QR'}
-      heroTitle={locale === 'tr' ? 'Statik Linkler İşletmenizi Koruyamaz.' : 'Static Links Can\'t Protect Your Business.'}
+      heroTitle={locale === 'tr' ? 'Statik QR kod mu, Buaze QR yorum akışı mı?' : 'Static QR code or a Buaze QR review flow?'}
       heroDesc={locale === 'tr' 
         ? 'Durağan QR kodları eskidi. İşletmenizin değişen ihtiyaçlarına uyum sağlayan, yorum akışınızı sadeleştiren ve size anlık veri getiren akıllı Buaze altyapısına geçin.'
         : 'Static QR codes are obsolete. Switch to the smart Buaze infrastructure that adapts to your business needs, simplifies your review flow, and brings you real-time data.'}

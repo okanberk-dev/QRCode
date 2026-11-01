@@ -24,6 +24,8 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+import { containsProfanity } from './profanity';
+
 const OPENAI_MODERATION_URL = 'https://api.openai.com/v1/moderations';
 const MODERATION_MODEL = 'omni-moderation-latest';
 const MODERATION_TIMEOUT_MS = 8_000;
@@ -31,7 +33,7 @@ const MODERATION_TIMEOUT_MS = 8_000;
 export interface ContentSafetyResult {
   blocked: boolean;
   /** Which layer produced the block, for logging/telemetry. `null` when allowed. */
-  reason: 'ai_moderation' | 'keyword_filter' | null;
+  reason: 'ai_moderation' | 'keyword_filter' | 'profanity' | null;
   /** OpenAI moderation category keys that triggered the block (empty for keyword_filter). */
   categories: string[];
 }
@@ -78,6 +80,12 @@ interface OpenAiModerationBody {
 export async function moderateReplyContent(text: string): Promise<ContentSafetyResult> {
   const trimmed = text.trim();
   if (!trimmed) return { blocked: false, reason: null, categories: [] };
+
+  // Swear words in any supported language — deterministic, no API call, so
+  // it also holds when OPENAI_API_KEY is missing or the moderation call fails.
+  if (containsProfanity(trimmed)) {
+    return { blocked: true, reason: 'profanity', categories: [] };
+  }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return keywordResult(trimmed);

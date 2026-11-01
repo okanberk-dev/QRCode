@@ -40,8 +40,6 @@ const LiveTicker = nextDynamic(() => import('@/components/animations/LiveTicker'
 // + §35.10 generic events disipline intact. PulseLine + RevealHeadline +
 // FeatureCard server component (no dynamic import); diğerleri client +
 // dynamic chunk lazy load.
-const BigCounter = nextDynamic(() => import('@/components/animations/BigCounter'));
-const StarClimber = nextDynamic(() => import('@/components/animations/StarClimber'));
 const ToastRow = nextDynamic(() => import('@/components/animations/ToastRow'));
 const Marquee = nextDynamic(() => import('@/components/animations/Marquee'));
 const SweepCTA = nextDynamic(() => import('@/components/animations/SweepCTA'));
@@ -78,11 +76,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   const title = locale === 'tr'
-    ? 'QR ile Google Yorum ve Online İtibar Yönetimi'
-    : 'QR Feedback & Online Reputation Management';
+    ? 'QR Kod ile Google Yorum Toplama ve Yorum Yönetimi'
+    : 'QR Code Google Review Collection & Review Management';
   const description = locale === 'tr'
-    ? 'QR ile müşteri geri bildirimi toplayın, Google yorumlarını tek panelden yönetin, Pulse AI taslaklarıyla saniyeler içinde yanıtlayın. 14 gün ücretsiz deneyin.'
-    : 'Collect customer feedback with QR, manage Google reviews from one dashboard and reply in seconds with Pulse AI drafts. Start a free 14-day trial.';
+    ? 'QR kodla müşteri geri bildirimi toplayın, Google ve diğer platformlardaki yorumları tek panelden yönetin, Pulse AI ile hızlı yanıt verin. 14 gün ücretsiz.'
+    : 'Collect customer feedback with a QR code, manage Google and other platform reviews in one panel and reply faster with Pulse AI. 14-day free trial.';
   const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
 
   return {
@@ -103,7 +101,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       siteName: 'Buaze',
       title,
-      description: t.siteDescription || description,
+      description,
       images: [
         {
           url: ogImage,
@@ -148,56 +146,56 @@ export default async function LandingPage({
   const aeoFaqs = isTr
     ? [
         {
-          q: 'Buaze nasıl çalışıyor?',
-          a: "Masanıza yerleştirdiğiniz QR'ı misafir okuttuğunda 30 saniyelik bir akışla puan verir. Her misafire seçtiğiniz platformun herkese açık yorum bağlantısı gösterilir; misafir dilerse ekibinizle özel geri bildirim de paylaşabilir. Özel geri bildirim panelinize düşer ve Pulse AI saniyeler içinde profesyonel yanıt taslağı yazar.",
-          meta: ['~30 sn akış', 'Tek QR · masa-bazlı', 'Müşteri tercihi'],
+          q: 'Buaze nedir, nasıl çalışır?',
+          a: "Buaze, işletmelerin QR kodla müşteri geri bildirimi toplamasını ve online yorumlarını tek panelden yönetmesini sağlayan bir yazılımdır. Müşteri masadaki, fişteki veya paketteki QR kodu okutup puan verir; her müşteriye seçtiğiniz platformun (Google, Tripadvisor, Yemeksepeti vb.) herkese açık yorum bağlantısı gösterilir. Dilerse ekibinize özel geri bildirim de bırakır; bu geri bildirim panelinize düşer ve Pulse AI bir yanıt taslağı hazırlar.",
+          meta: ['QR ile geri bildirim', 'Tek panel', 'Müşteri tercihi'],
         },
         {
-          q: "Google'ın kurallarına aykırı mı?",
-          a: 'Hayır. Yorumları filtrelemiyor, gizlemiyor veya engellemiyoruz; her misafire Google\'ın resmi yorum bağlantısını gösteriyoruz. Google "review gating"i yasaklar; biz herhangi bir puana hediye/kupon koşulu bağlamayız. Her müşteri istediği yere yorum yazma hakkını korur.',
-          meta: ['KVKK uyumlu', 'Gizleme yok'],
+          q: "QR ile yorum toplamak Google'ın kurallarına uygun mu?",
+          a: 'Evet. Buaze yorumları filtrelemez, gizlemez veya engellemez; puanı ne olursa olsun her müşteriye Google\'ın resmi yorum bağlantısı gösterilir. Google, yorumları puana göre ayıklamayı ("review gating") ve yorum karşılığı teşvik vermeyi yasaklar; Buaze ikisini de yapmaz. Her müşteri istediği yere yorum yazma hakkını korur.',
+          meta: ['Filtreleme yok', 'Teşvik yok', 'KVKK uyumlu'],
         },
         {
-          q: 'Kurulum ne kadar sürüyor?',
-          a: 'Ortalama 7 dakika. Hesabınızı açın, işletmenizi doğrulayın, lokasyon bazlı QR kodlarınızı PDF olarak indirin. Onboarding asistanımız Google entegrasyonu ve Pulse AI ton ayarını sizin yerinize yapar.',
-          meta: ['~7 dk kurulum', 'PDF QR paketi', 'Asistan onboarding'],
+          q: 'Kurulum nasıl yapılır?',
+          a: 'Hesabınızı açın, işletmenizi ekleyin ve Google işletme profilinizi arayıp seçin; Buaze resmi Google yorum bağlantınızı otomatik oluşturur. Diğer platformların yorum bağlantılarını ekleyin, QR kodlarınızı PNG veya PDF olarak indirip masaya, fişe ya da pakete yerleştirin. Teknik bilgi gerekmez.',
+          meta: ['Teknik bilgi gerekmez', 'PNG · PDF QR', 'Google bağlantısı'],
         },
         {
-          q: 'Pulse AI yanıtları kontrol edebilir miyim?',
-          a: 'Evet. Tüm yanıtlar varsayılan olarak "onay bekliyor" durumundadır. Marka tonu (sıcak / profesyonel / esprili) seçersiniz, AI taslağı yazar, siz onaylar veya düzenlersiniz. Tek tuşla otomatik onay da açılabilir.',
-          meta: ['3 ton seçeneği', 'Onay zorunlu (default)'],
+          q: 'Pulse AI yanıtları kendiliğinden gönderir mi?',
+          a: 'Hayır. Pulse AI yalnızca yanıt taslağı hazırlar; taslağı okuyup düzenler ve gönderip göndermeyeceğinize siz karar verirsiniz. Yanıt tonunu sıcak, resmi veya özür dileyen olarak seçebilir, Türkçe ya da İngilizce taslak alabilirsiniz.',
+          meta: ['3 ton', 'İnsan onayı', 'TR · EN'],
         },
         {
-          q: 'Fiyatlandırma nasıl?',
-          a: 'Aylık tek ücret, şube başına. 14 gün ücretsiz deneme, kredi kartı istemiyoruz. İstediğiniz an iptal edebilir, verilerinizi tek tuşla CSV olarak indirebilirsiniz. Yıllık ödemede %20 indirim.',
-          meta: ['14 gün deneme', 'Kart yok', 'Şube bazlı'],
+          q: 'Buaze ücretli mi, deneme süresi var mı?',
+          a: '14 gün ücretsiz deneyebilirsiniz; deneme için kredi kartı istenmez. Sonrasında aylık veya yıllık plan seçersiniz, yıllık ödeme yaklaşık %20 daha uygundur. İstediğiniz zaman iptal edebilir, geri bildirimlerinizi CSV olarak indirebilirsiniz.',
+          meta: ['14 gün deneme', 'Kart gerekmez', 'Aylık · yıllık'],
         },
       ]
     : [
         {
-          q: 'How does Buaze work?',
-          a: 'Guests scan the QR at the table and give a rating in 30 seconds. Every guest is shown the public review link for your chosen platform; guests can also choose to share private feedback with your team. Private feedback lands in your panel and Pulse AI drafts a professional reply in seconds.',
-          meta: ['~30s flow', 'One QR · per-table', 'Customer choice'],
+          q: 'What is Buaze and how does it work?',
+          a: 'Buaze is software that lets businesses collect customer feedback with QR codes and manage their online reviews from one panel. A customer scans the QR on the table, receipt or package and leaves a rating; every customer is shown the public review link of the platform you choose (Google, Tripadvisor and others). They can also leave private feedback for your team, which lands in your panel with a Pulse AI reply draft.',
+          meta: ['QR feedback', 'One panel', 'Customer choice'],
         },
         {
-          q: "Does this break Google's policy?",
-          a: 'No. We never filter, hide or block reviews — every guest is shown Google\'s official review link. Google bans "review gating"; we never gate perks behind a specific rating. Every customer keeps the right to post wherever they want.',
-          meta: ['GDPR ready', 'No hiding'],
+          q: "Is collecting reviews with a QR code allowed by Google's policies?",
+          a: 'Yes. Buaze never filters, hides or blocks reviews; every customer is shown Google\'s official review link whatever rating they give. Google bans sorting reviews by rating ("review gating") and rewarding reviews; Buaze does neither. Every customer keeps the right to post wherever they want.',
+          meta: ['No filtering', 'No incentives', 'GDPR ready'],
         },
         {
-          q: 'How long does setup take?',
-          a: 'About 7 minutes. Sign up, verify your venue, download table QR codes as PDF. Our onboarding bot handles Google integration and Pulse AI tone setup.',
-          meta: ['~7 min setup', 'PDF QR pack', 'Guided onboarding'],
+          q: 'How do I set it up?',
+          a: 'Create an account, add your business and search for your Google Business Profile; Buaze builds your official Google review link. Add the review links of other platforms, download your QR codes as PNG or PDF and place them on tables, receipts or packages. No technical skills needed.',
+          meta: ['No coding', 'PNG · PDF QR', 'Google link'],
         },
         {
-          q: 'Can I review Pulse AI replies?',
-          a: 'Yes. Every reply defaults to "pending approval". You set brand tone (warm / pro / witty), AI drafts, you approve or edit. One-click auto-approval available.',
-          meta: ['3 tone presets', 'Approval required'],
+          q: 'Does Pulse AI send replies on its own?',
+          a: 'No. Pulse AI only prepares a reply draft; you read it, edit it and decide whether to send it. You can pick a warm, formal or apologetic tone and get drafts in Turkish or English.',
+          meta: ['3 tones', 'Human approval', 'TR · EN'],
         },
         {
-          q: 'How is it priced?',
-          a: 'Flat monthly, per location. 14-day free trial, no card required. Cancel anytime, export data as CSV. Annual plan = 20% off.',
-          meta: ['14-day trial', 'No card', 'Per location'],
+          q: 'Is there a free trial?',
+          a: 'Yes, 14 days free with no credit card. After that you choose a monthly or yearly plan; paying yearly is about 20% cheaper. Cancel anytime and export your feedback as CSV.',
+          meta: ['14-day trial', 'No card', 'Monthly · yearly'],
         },
       ];
 
@@ -213,12 +211,12 @@ export default async function LandingPage({
     '@graph': [
       {
         '@type': 'Service',
-        name: isTr ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
+        name: isTr ? 'QR ile müşteri geri bildirimi ve Google yorum yönetimi' : 'QR customer feedback and Google review management',
         provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
         description: isTr
-          ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.'
-          : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
-        serviceType: isTr ? 'Dijital itibar yönetimi yazılımı' : 'Digital reputation management software',
+          ? 'Restoran, otel, klinik ve mağazaların QR kodla müşteri geri bildirimi toplamasını, Google ve diğer platformlardaki yorum bağlantılarını tek panelden yönetmesini ve Pulse AI ile yanıt taslağı hazırlamasını sağlayan yazılım.'
+          : 'Software that lets restaurants, hotels, clinics and stores collect customer feedback with QR codes, manage Google and other review platform links from one panel and draft replies with Pulse AI.',
+        serviceType: isTr ? 'Online itibar ve yorum yönetimi yazılımı' : 'Online reputation and review management software',
         areaServed: { '@type': 'Country', name: 'Turkey' },
         inLanguage: isTr ? 'tr-TR' : 'en-US',
         url: `https://www.buaze.com/${locale}`,
@@ -249,8 +247,8 @@ export default async function LandingPage({
       n: 1,
       title: isTr ? 'Topla' : 'Collect',
       body: isTr
-        ? 'Masanızdaki QR kodu tarayan müşteri, 20 saniyede yorum bırakır. Zahmet sıfır.'
-        : 'A customer scans the QR on your table and leaves a review in 20 seconds. Zero friction.',
+        ? 'Müşteri masadaki, fişteki veya paketteki QR kodu tarar ve puan verir. Herkese Google yorum bağlantısı gösterilir; isteyen size özel geri bildirim de bırakır.'
+        : 'A customer scans the QR on the table, receipt or package and leaves a rating. Everyone sees your Google review link; anyone can also leave private feedback for you.',
       Icon: QrCode,
       iconBg: '#C6F24E',
       iconFg: '#0A0A0A',
@@ -260,10 +258,10 @@ export default async function LandingPage({
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8] text-[12px] font-semibold text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            M
+            ★
           </span>
           <p className="min-w-0 flex-1 truncate text-[13px] text-[#0A0A0A]">
-            <strong className="font-semibold">M. Demir</strong>{' '}
+            <strong className="font-semibold">{isTr ? 'Misafir' : 'Guest'}</strong>{' '}
             <span className="text-[#525252]">
               {isTr ? 'Servis harikaydı!' : 'Service was great!'}
             </span>
@@ -284,8 +282,8 @@ export default async function LandingPage({
       n: 2,
       title: isTr ? 'Yönet' : 'Manage',
       body: isTr
-        ? "Hem Google'a düşen yorumları hem de işletmene özel gönderilen geri bildirimleri tek panelden yanıtla."
-        : 'Reply to every review — public Google posts and private guest feedback — from one shared inbox.',
+        ? 'Özel geri bildirimler tek gelen kutusuna düşer: ekipten birine atayın, etiketleyin, Pulse AI taslağıyla yanıtlayın. Google profilinizin puanı ve son yorumları da aynı panelde.'
+        : 'Private feedback lands in one inbox: assign it, tag it and reply with a Pulse AI draft. Your Google rating and latest Google reviews sit in the same panel.',
       Icon: Inbox,
       iconBg: '#0A0A0A',
       iconFg: '#C6F24E',
@@ -296,7 +294,7 @@ export default async function LandingPage({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C6F24E] opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C6F24E]" />
             </span>
-            <span className="pulse-eyebrow text-[#C6F24E]">+184%</span>
+            <span className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'TEK GELEN KUTUSU' : 'ONE INBOX'}</span>
           </div>
           <p className="mt-2 text-[12px] leading-snug text-[#A3A3A3]">
             {isTr ? 'Tüm yorumlar tek yerde. Ata, yanıtla, kapat.' : 'All reviews in one place. Assign, reply, close.'}
@@ -306,10 +304,10 @@ export default async function LandingPage({
     },
     {
       n: 3,
-      title: isTr ? 'Büyü' : 'Grow',
+      title: isTr ? 'Ölç' : 'Measure',
       body: isTr
-        ? 'Canlı analitik ile puanını izle, Google sıralamanı yükselt, organik büyümeyi yakala.'
-        : 'Track your score with live analytics, lift your Google ranking, capture organic growth.',
+        ? 'Ortalama puanı, yorum sayısını, platform ve şube dağılımını panelden izleyin; haftalık e-posta özetiyle neyin işe yaradığını görün.'
+        : 'Track average rating, review count, platform and branch breakdown in the panel; a weekly e-mail summary shows what works.',
       Icon: BarChart3,
       iconBg: '#EAF9B8',
       iconFg: '#0A0A0A',
@@ -350,9 +348,9 @@ export default async function LandingPage({
             strokeWidth="1.5"
             strokeDasharray="3,3"
           />
-          {/* Leader line from peak to +184% pill */}
+          {/* Leader line from peak to the trend pill */}
           <path d="M115 20 L195 11" fill="none" stroke="#0A0A0A" strokeWidth="1" />
-          {/* +184% pill — top-right floating badge */}
+          {/* Trend pill — top-right floating badge (illustration, not a result) */}
           <rect x="195" y="2" width="55" height="18" rx="9" fill="#0A0A0A" />
           <text
             x="222.5"
@@ -363,7 +361,7 @@ export default async function LandingPage({
             fill="#C6F24E"
             fontWeight="600"
           >
-            +184%
+            {isTr ? 'TREND' : 'TREND'}
           </text>
           {/* Peak dot — lime fill, graphite stroke */}
           <circle cx="115" cy="20" r="6" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
@@ -374,28 +372,28 @@ export default async function LandingPage({
 
   const darkFeatures = isTr
     ? [
-        { t: 'Otomatik etiketleme', d: 'Anahtar kelime ve duyguya göre.' },
-        { t: 'Buaze Pulse AI duygu analizi', d: 'Pozitif / nötr / negatif sinyalleri otomatik ayırır.' },
-        { t: 'Takım atama', d: 'Yorum doğru kişiye düşer.' },
-        { t: 'SLA takibi', d: 'Yanıt süresi hedefleri tutulsun.' },
+        { t: 'Etiket ve işaret', d: 'Geri bildirimleri konuya göre etiketleyin.' },
+        { t: 'Pulse AI yanıt taslağı', d: 'Sıcak, resmi veya özür dileyen tonda.' },
+        { t: 'Ekip ataması', d: 'Her geri bildirim doğru kişiye gider.' },
+        { t: 'Düşük puan uyarısı', d: 'Anında e-posta bildirimi.' },
       ]
     : [
-        { t: 'Auto-tagging', d: 'By keyword and sentiment.' },
-        { t: 'Buaze Pulse AI sentiment', d: 'Automatically separates positive, neutral and negative signals.' },
-        { t: 'Team assignment', d: 'Reviews land on the right person.' },
-        { t: 'SLA tracking', d: 'Hit your response-time targets.' },
+        { t: 'Tags and flags', d: 'Group feedback by topic.' },
+        { t: 'Pulse AI reply drafts', d: 'In a warm, formal or apologetic tone.' },
+        { t: 'Team assignment', d: 'Every piece of feedback reaches the right person.' },
+        { t: 'Low-rating alerts', d: 'Instant e-mail notification.' },
       ];
 
   const policyBlocks = isTr
     ? [
         { n: '01', t: 'Herkese açık bağlantı', d: 'Her misafire herkese açık yorum bağlantısı sunulur; düşük puan verenler ek olarak ekibe özel paylaşım seçeneği görür.' },
-        { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumlar süzülmez veya engellenmez; isteyen Google\'a yazar, isteyen ek olarak işletmeye özel geri bildirim de bırakır.' },
-        { n: '03', t: 'Şeffaf raporlama', d: 'Yorumlar gizlenmez veya filtrelenmez; her sinyal panelde olduğu gibi görünür.' },
+        { n: '02', t: 'Filtreleme yok', d: 'Olumsuz yorumlar süzülmez veya engellenmez; isteyen Google\'a yazar, isteyen ek olarak işletmeye özel geri bildirim de bırakır.' },
+        { n: '03', t: 'Teşvik yok', d: 'Yorum karşılığı indirim veya hediye verilmez; her geri bildirim panelde olduğu gibi görünür.' },
       ]
     : [
         { n: '01', t: 'Public link always', d: 'Every guest is offered the public review link; those giving a low rating additionally see an option to share privately with the team.' },
-        { n: '02', t: 'Transparent flow', d: 'Negative reviews are never filtered or blocked; private feedback to your team is an optional extra step in the same flow.' },
-        { n: '03', t: 'Transparent reporting', d: 'No review is hidden or filtered; every signal lands in the panel as-is.' },
+        { n: '02', t: 'No filtering', d: 'Negative reviews are never filtered or blocked; private feedback to your team is an optional extra step in the same flow.' },
+        { n: '03', t: 'No incentives', d: 'No discounts or gifts in exchange for reviews; every piece of feedback lands in the panel as-is.' },
       ];
 
   return (
@@ -434,15 +432,20 @@ export default async function LandingPage({
         <div className="max-w-[1200px] mx-auto">
           <div className="max-w-[720px] mb-10 sm:mb-14">
             <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Tüm kanallar tek panelde' : 'Every channel, one inbox'}
+              {isTr ? 'Desteklenen yorum platformları' : 'Supported review platforms'}
             </span>
             <h2
               className="mt-3 text-[clamp(26px,5vw,46px)] leading-[1.05] tracking-[-0.035em] font-medium text-[#0A0A0A] text-balance"
             >
               {isTr
-                ? 'İşletmenizin kullandığı platformlarla konuşur'
-                : 'Speaks the platforms your business already uses'}
+                ? 'Google, Yemeksepeti, Tripadvisor ve 7 platform daha tek QR akışında'
+                : 'Google, Tripadvisor, Booking.com and 7 more platforms in one QR flow'}
             </h2>
+            <p className="mt-4 text-[15px] sm:text-[17px] leading-[1.6] text-[#525252] text-pretty">
+              {isTr
+                ? 'Buaze, müşterilerinizin yorum yazdığı platformların bağlantılarını tek yerde tutar. QR kodu okutan müşteri puan verir ve seçtiğiniz platformun resmi yorum sayfasına tek dokunuşla ulaşır.'
+                : 'Buaze keeps the review links of the platforms your customers use in one place. A customer who scans the QR code gives a rating and reaches the official review page of the platform you chose in one tap.'}
+            </p>
           </div>
 
           {/* Marquee — Buaze gerçek partner platform names.
@@ -492,8 +495,8 @@ export default async function LandingPage({
               title={isTr ? 'QR Studio' : 'QR Studio'}
               body={
                 isTr
-                  ? 'Markana özel QR şablonları — masa, fatura, kapı, paket için tek tıkla.'
-                  : 'Branded QR templates — table, receipt, door, packaging in one click.'
+                  ? 'Masa, fiş, kapı ve paket için markanıza özel QR şablonları; PNG, PDF veya SVG indirin.'
+                  : 'Branded QR templates for tables, receipts, doors and packaging; download PNG, PDF or SVG.'
               }
               icon={<QrCode size={16} strokeWidth={2.25} />}
             />
@@ -503,8 +506,8 @@ export default async function LandingPage({
               title={isTr ? 'Pulse AI' : 'Pulse AI'}
               body={
                 isTr
-                  ? 'Yorum geldiğinde profesyonel taslak — sen onayla, biz Google\'a iletelim.'
-                  : 'Pro reply drafts as reviews come in — you approve, we ship to Google.'
+                  ? 'Her geri bildirime tonuna uygun yanıt taslağı; siz onaylamadan hiçbir şey gönderilmez.'
+                  : 'A reply draft in the right tone for every piece of feedback; nothing is sent until you approve.'
               }
               icon={<Sparkles size={16} strokeWidth={2.25} />}
             />
@@ -514,8 +517,8 @@ export default async function LandingPage({
               title={isTr ? 'Yorum Akışı' : 'Reviews Inbox'}
               body={
                 isTr
-                  ? 'Tüm kanallardan yorumlar tek panelde — özel geri bildirime hızlıca yanıt ver.'
-                  : 'Every review in one inbox — reply to private feedback quickly.'
+                  ? 'Müşteri geri bildirimleri tek gelen kutusunda; atayın, etiketleyin, e-postayla yanıtlayın.'
+                  : 'All customer feedback in one inbox; assign, tag and reply by e-mail.'
               }
               icon={<Inbox size={16} strokeWidth={2.25} />}
             />
@@ -525,8 +528,8 @@ export default async function LandingPage({
               title={isTr ? 'Analitik' : 'Analytics'}
               body={
                 isTr
-                  ? 'Trend, sentiment, kohort tırmanışı — kararlar verifiable veriyle.'
-                  : 'Trend, sentiment, cohort climb — decisions with verifiable data.'
+                  ? 'Ortalama puan, trend, platform ve şube kırılımı; haftalık e-posta özeti.'
+                  : 'Average rating, trends, platform and branch breakdown; a weekly e-mail summary.'
               }
               icon={<BarChart3 size={16} strokeWidth={2.25} />}
             />
@@ -553,7 +556,7 @@ export default async function LandingPage({
               {isTr ? 'Nasıl çalışır' : 'How it works'}
             </span>
             <h2 className="mt-4 text-[28px] sm:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
-              {isTr ? 'Üç adım, üç saniye.' : 'Three steps, three seconds.'}
+              {isTr ? 'QR kod ile yorum toplama 3 adımda' : 'Collect reviews with a QR code in 3 steps'}
             </h2>
           </div>
 
@@ -609,7 +612,7 @@ export default async function LandingPage({
         <div className="max-w-[1200px] mx-auto">
           <div className="max-w-[760px]">
             <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'BUAZE REPUTATION OS' : 'BUAZE REPUTATION OS'}
+              {isTr ? 'YORUMDAN OPERASYONA' : 'FROM REVIEWS TO OPERATIONS'}
             </span>
             <h2 className="mt-4 text-[28px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-[#0A0A0A] text-balance">
               {isTr ? (
@@ -632,8 +635,8 @@ export default async function LandingPage({
             </h2>
             <p className="mt-5 text-[15px] sm:text-[17px] text-[#525252] leading-[1.6] max-w-[640px]">
               {isTr
-                ? 'Yorum yönetimi tek başına yeterli değil. Buaze; operasyonel disiplin (denetim), derin müşteri sesi (anketler) ve hızlı yanıt (Pulse AI) ile feedback döngüsünü kapatır — hepsi tek panelde.'
-                : 'Review management alone is not enough. Buaze closes the feedback loop with operational discipline (audits), deep customer voice (surveys) and fast replies (Pulse AI) — all in one panel.'}
+                ? 'Yorumlar sorunu gösterir; çözmek operasyonun işidir. Buaze aynı panelde denetim listeleri (Denetim Merkezi), kısa müşteri anketleri ve Pulse AI yanıt taslaklarıyla geri bildirim döngüsünü kapatır.'
+                : 'Reviews show the problem; fixing it is an operations job. In the same panel Buaze closes the feedback loop with checklists (Audit Center), short customer surveys and Pulse AI reply drafts.'}
             </p>
           </div>
 
@@ -643,8 +646,8 @@ export default async function LandingPage({
                 eyebrow: isTr ? 'DENETİM MERKEZİ' : 'AUDIT CENTER',
                 title: isTr ? 'Operasyonu ölç, geliştir' : 'Measure operations, improve',
                 body: isTr
-                  ? 'Hijyen denetimi, işe alım quiz\'i, KVKK uyumluluk, ekip eğitim değerlendirmesi. 6 sektör için hazır şablon · 5 soru tipi · 3 skor modu.'
-                  : 'Hygiene audits, hiring quizzes, KVKK compliance, team training assessments. Ready templates for 6 sectors · 5 question types · 3 scoring modes.',
+                  ? 'Hijyen denetimi, vardiya devri, işe alım testi ve KVKK kontrol listeleri. Hazır şablonlar, fotoğraflı sorular ve puanlama; ekip telefondan doldurur.'
+                  : 'Hygiene, shift-handover, hiring-test and KVKK checklists. Ready templates, photo questions and scoring; your team fills them in on their phones.',
                 icon: ClipboardCheck,
                 href: `${base}/features/audit-center`,
               },
@@ -652,8 +655,8 @@ export default async function LandingPage({
                 eyebrow: isTr ? 'ANKETLER' : 'SURVEYS',
                 title: isTr ? 'NPS, CSAT ve özel sorular' : 'NPS, CSAT and custom questions',
                 body: isTr
-                  ? 'QR\'dan açılan kısa anket, NPS / CSAT / yıldız ve metin soruları, opsiyonel kupon teşviki. Google\'dan bağımsız müşteri sesi.'
-                  : 'Short surveys opened from QR, NPS / CSAT / star and text questions, optional coupon reward. Customer voice independent of Google.',
+                  ? 'QR ile açılan kısa anketler: NPS, CSAT, yıldız, çoktan seçmeli ve metin soruları. Anketi tamamlayana isteğe bağlı kupon verebilirsiniz.'
+                  : 'Short QR surveys: NPS, CSAT, star, multiple-choice and text questions. You can offer an optional coupon for completing the survey.',
                 icon: ClipboardList,
                 href: `${base}/features/surveys`,
               },
@@ -758,8 +761,8 @@ export default async function LandingPage({
             </h2>
             <p className="mt-5 text-[16px] text-white leading-[1.6] max-w-[480px]">
               {isTr
-                ? 'Google, Tripadvisor, Yemeksepeti, Getir — tüm platformlardaki yorumlar Buaze\'de buluşur. Her sinyali tek yerden gör, hızlı ve özenle yanıtla.'
-                : 'Google, Tripadvisor, Yemeksepeti, Getir — reviews from every platform meet inside Buaze. See every signal in one place and reply with care.'}
+                ? 'QR ile gelen tüm özel geri bildirimler, Google profilinizin puanı ve son yorumları aynı panelde. Tripadvisor, Yemeksepeti, Getir ve Trendyol GO gibi platformların yorum bağlantılarını da buradan yönetirsiniz.'
+                : 'Every piece of private QR feedback, your Google rating and your latest Google reviews in one panel. You also manage the review links of platforms like Tripadvisor, Booking.com and Yelp from here.'}
             </p>
 
             {/* Platform logos row — review + delivery platforms that Buaze pulls into the inbox */}
@@ -768,7 +771,7 @@ export default async function LandingPage({
                 {isTr ? 'DESTEKLENEN PLATFORMLAR' : 'SUPPORTED PLATFORMS'}
               </span>
               <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                {(['google', 'tripadvisor', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'migros-hemen'] as const).map(
+                {(['google', 'tripadvisor', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'booking'] as const).map(
                   (id) => (
                     <div
                       key={id}
@@ -802,30 +805,12 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-          4.5 BUAZE COHORT HIGHLIGHTS — Stage 70 §38.150 +
-          Stage 85 §38.165 corporate premium polish
-          Compliance-safe verifiable cohort claims (CLAUDE.md §35.8 +
-          §19.1.1):
-          - StarClimber: ortalama 3.6 → 4.4 climb (90 gün, Buaze müşteri
-            kohort, source-attributed framing)
-          - BigCounter: 10+ aktif işletme (CLAUDE.md §19.4.4 mevcut
-            cohort), 8+ entegrasyon (footer §38.103 verifiable)
-          - RevealHeadline: section heading (scroll-triggered word-by-
-            word, useInView one-shot — UX stutter önleme)
-          - ToastRow: 4 generic platform event default (§35.10 + §38.131
-            paterni — fake müşteri testimonial YASAK)
-          - CTA group: primary SweepCTA + secondary outline anchor
-            (Pulse §11 button group paterni — kullanıcı raporu §38.165
-            "gözükmeyen buton yapısı" fix; corporate premium dual CTA)
-
-          Stage 85 §38.165 polish:
-          - Section padding artırıldı: py-[60px] sm:py-24 →
-            py-[80px] sm:py-28 lg:py-32 (corporate breathing room)
-          - Eyebrow lime pulse-dot indicator eklendi (Pulse §11)
-          - Headline tracking sıkılaştırıldı (-0.025em corporate)
-          - CTA group: SweepCTA + outline secondary "Demo iste" link
-          - Microcopy CTA altında (KVKK + ücretsiz disclaimer
-            verifiable claim, §35.8 paterni)
+          4.5 BUAZE AT A GLANCE — verifiable product facts (10 review
+          platforms, 14-day trial, TR/EN, KVKK) as server-rendered text, the
+          four-step feedback → reply workflow (ToastRow) and a sample tone
+          card. The former "cohort" claims (3.6 → 4.4 in 90 days, animated
+          "10+ active venues" counter that rendered "0+" in the HTML) were
+          removed: no audited data backs them (CLAUDE.md §35.8).
       ═══════════════════════════════════════════════════════════ */}
       {/* Stage 92 §38.172 — Section spacing daralt (kullanıcı raporu "çok
           fazla boşluk"). Stage 85 §38.165 "corporate breathing room"
@@ -839,13 +824,13 @@ export default async function LandingPage({
                 aria-hidden="true"
                 className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat"
               />
-              {isTr ? 'Buaze müşteri kohortu' : 'Buaze customer cohort'}
+              {isTr ? 'Bir bakışta Buaze' : 'Buaze at a glance'}
             </span>
             <RevealHeadline
               text={
                 isTr
-                  ? 'İşletmeler Buaze ile yeniden tanıtıldı'
-                  : 'Businesses relaunched with Buaze'
+                  ? 'Yorum yönetimi için ihtiyacınız olan her şey tek panelde'
+                  : 'Everything you need for review management in one panel'
               }
               className="mt-3 text-[clamp(28px,5vw,48px)] leading-[1.05] tracking-[-0.025em]"
             />
@@ -853,8 +838,8 @@ export default async function LandingPage({
               className="mt-4 text-[15px] sm:text-[16px] leading-[1.55] text-[#525252] max-w-[640px]"
             >
               {isTr
-                ? 'Tek panel, gerçek metrikler. Buaze müşteri kohortunda ortalama puan tipik 90 günde belirgin yukarı kayar; tek pano tüm kanalları sade tutar.'
-                : 'One panel, real metrics. Buaze customer cohort averages climb meaningfully over 90 days; one inbox keeps every channel calm.'}
+                ? 'Kurulum için teknik bilgi gerekmez. QR kodlarınızı indirip yerleştirdiğiniz andan itibaren gelen her geri bildirim, puan ve yanıt aynı panelde kayıt altında olur.'
+                : 'No technical setup is needed. From the moment your QR codes are placed, every piece of feedback, rating and reply is recorded in the same panel.'}
             </p>
           </div>
 
@@ -877,46 +862,40 @@ export default async function LandingPage({
                   responsive (mobile stack OK)
                 Stage 92 §38.172 — module space-y-8 → space-y-6 (kompakt). */}
             <div className="space-y-6">
-              {/* StarClimber bordered card */}
-              <div className="rounded-[18px] border border-[#EDEDED] bg-white p-6 shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)]">
-                <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#525252]">
-                  <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat"
-                  />
-                  {isTr ? '90 günlük tipik kohort tırmanışı' : 'Typical 90-day cohort climb'}
-                </span>
-                <div className="mt-4">
-                  <StarClimber
-                    from={3.6}
-                    to={4.4}
-                    locale={locale}
-                    label={isTr ? 'Buaze müşteri kohortu' : 'Buaze customer cohort'}
-                  />
-                </div>
-              </div>
-
-              {/* BigCounter pair — split bordered card with hairline
-                  separator (gap-px on neutral bg = visual 1px line) */}
+              {/* Verifiable product facts — server-rendered text (the old
+                  animated counters rendered "0+" in the HTML crawlers read,
+                  and the "3.6 → 4.4 in 90 days" climb was not an audited
+                  result). */}
               <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[18px] bg-[#EDEDED] shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)]">
-                <div className="bg-white p-6">
-                  <BigCounter
-                    to={10}
-                    prefix=""
-                    suffix="+"
-                    label={isTr ? 'Aktif işletme' : 'Active venues'}
-                    locale={locale}
-                  />
-                </div>
-                <div className="bg-white p-6">
-                  <BigCounter
-                    to={8}
-                    prefix=""
-                    suffix="+"
-                    label={isTr ? 'Entegrasyon kanalı' : 'Integration channels'}
-                    locale={locale}
-                  />
-                </div>
+                {(isTr
+                  ? [
+                      { v: '10', l: 'Yorum platformu' },
+                      { v: '14 gün', l: 'Ücretsiz deneme' },
+                      { v: 'TR · EN', l: 'Panel ve form dili' },
+                      { v: 'KVKK', l: 'Uyumlu onay akışı' },
+                    ]
+                  : [
+                      { v: '10', l: 'Review platforms' },
+                      { v: '14 days', l: 'Free trial' },
+                      { v: 'TR · EN', l: 'Panel and form languages' },
+                      { v: 'GDPR', l: 'Ready consent flow' },
+                    ]
+                ).map((f) => (
+                  <div key={f.l} className="bg-white p-6">
+                    <p
+                      className="leading-none tracking-[-0.03em] text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(32px, 5vw, 48px)' }}
+                    >
+                      {f.v}
+                    </p>
+                    <p
+                      className="mt-2 text-[10px] uppercase tracking-[0.18em] text-[#737373]"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {f.l}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               {/* Stage 88 §38.168 — Cohort CTA premium card upgrade.
@@ -1001,22 +980,22 @@ export default async function LandingPage({
                 icon görünmüyor — §38.170 paterni). */}
             <div className="flex flex-col gap-3">
               <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Tek yorum, dört adım' : 'One review, four steps'}
+                {isTr ? 'Bir geri bildirim, dört adım' : 'One piece of feedback, four steps'}
               </span>
               <h3 className="mt-1 text-[24px] sm:text-[30px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] text-balance">
                 {isTr
-                  ? 'Bir yorum, dört adımda yayında.'
-                  : 'One review, live in four steps.'}
+                  ? 'Geri bildirimden yanıta dört adım'
+                  : 'From feedback to reply in four steps'}
               </h3>
               <p
                 className="text-[14px] leading-[1.55] text-[#525252]"
               >
                 {isTr
-                  ? 'Müşteri yorum bırakır → AI taslak hazırlar → ekibin son hali onaylar → Google\'a yayınlanır. Her adım tek panelde.'
-                  : 'Guest leaves a review → AI drafts a reply → your team approves → it ships to Google. Every step in one inbox.'}
+                  ? 'Müşteri geri bildirim bırakır → düşük puanda size e-posta gelir → Pulse AI yanıt taslağı hazırlar → ekibiniz düzenleyip müşteriye gönderir.'
+                  : 'A customer leaves feedback → a low rating triggers an e-mail to you → Pulse AI drafts a reply → your team edits it and sends it to the customer.'}
               </p>
               <div className="mt-2">
-                <ToastRow />
+                <ToastRow locale={locale} />
               </div>
 
               {/* Stage 88 §38.168 — SentimentDial card premium polish
@@ -1039,12 +1018,12 @@ export default async function LandingPage({
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="pulse-eyebrow text-[#A8D62E]">
-                      {isTr ? 'Genel sentiment' : 'Overall sentiment'}
+                      {isTr ? 'Örnek görünüm · genel ton' : 'Sample view · overall tone'}
                     </span>
                     <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">
                       {isTr
-                        ? 'Buaze müşteri kohortunda yorumların büyük çoğunluğu pozitif tona kayar; özel geri bildirimler tek panelde hızlıca yanıtlanır.'
-                        : 'Across the Buaze customer cohort, reviews skew positive; private feedback gets a quick reply from one inbox.'}
+                        ? 'Analitik ekranı geri bildirimlerin genel tonunu ve en çok bahsedilen konuları özetler; neyin düzeltilmesi gerektiğini görürsünüz.'
+                        : 'The analytics screen sums up the overall tone of your feedback and the most mentioned topics, so you see what needs fixing.'}
                     </p>
                   </div>
                 </div>
@@ -1067,7 +1046,7 @@ export default async function LandingPage({
               </span>
             </span>
             <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Şeffaf akış. Organik büyüme.' : 'Transparent flow. Organic growth.'}
+              {isTr ? "Google yorum politikalarına uygun QR akışı" : "A QR flow that follows Google's review policies"}
             </h2>
 
             <div className="mt-10 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
@@ -1107,7 +1086,7 @@ export default async function LandingPage({
               {isTr ? 'Tek platform' : 'One platform'}
             </span>
             <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[46px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] text-balance">
-              {isTr ? 'Tek panelde, dört süper güç.' : 'One panel, four superpowers.'}
+              {isTr ? 'QR kod, yanıt, analitik ve platformlar tek panelde' : 'QR codes, replies, analytics and platforms in one panel'}
             </h2>
           </div>
 
@@ -1129,8 +1108,8 @@ export default async function LandingPage({
                 </h3>
                 <p className="mt-3 max-w-[400px] text-[14px] leading-[1.6] text-white/70">
                   {isTr
-                    ? 'Markana özel QR şablonları, dört yerleştirme yolu (masa / fatura / kapı / paket), ham rapor.'
-                    : 'Branded QR templates, four placement modes (table / receipt / door / pack), raw reports.'}
+                    ? 'Markanıza özel QR şablonları; masa, fiş, kapı ve paket için. Her QR\'a şube veya masa etiketi ekleyin, geri bildirimleri bu etikete göre ayırın.'
+                    : 'Branded QR templates for tables, receipts, doors and packaging. Add a branch or table label to each QR and filter feedback by it.'}
                 </p>
                 <div className="mt-8 flex items-end justify-between gap-6">
                   {/* Realistic QR mock — 3 finder patterns + scattered data cells */}
@@ -1170,10 +1149,10 @@ export default async function LandingPage({
                       className="text-[40px] sm:text-[52px] font-semibold leading-none tracking-tight text-[#C6F24E]"
                       style={{ fontFamily: 'var(--font-heading)' }}
                     >
-                      +184%
+                      PNG · PDF
                     </p>
                     <p className="pulse-eyebrow mt-1.5 text-white/60">
-                      {isTr ? 'ORGANİK YORUM' : 'ORGANIC REVIEWS'}
+                      {isTr ? 'BASKIYA HAZIR' : 'PRINT READY'}
                     </p>
                   </div>
                 </div>
@@ -1191,12 +1170,12 @@ export default async function LandingPage({
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
               >
-                {isTr ? 'Yanıtı saniyede yaz.' : 'Draft replies in seconds.'}
+                {isTr ? 'Yanıt taslağı hazır.' : 'A reply draft, ready.'}
               </h3>
               <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
                 {isTr
-                  ? 'Her yorum için Buaze Pulse AI ile Türkçe yanıt taslağı.'
-                  : 'Turkish/English reply drafts with Buaze Pulse AI.'}
+                  ? 'Pulse AI her geri bildirime Türkçe veya İngilizce yanıt taslağı hazırlar; siz düzenleyip gönderirsiniz.'
+                  : 'Pulse AI drafts a Turkish or English reply to every piece of feedback; you edit and send it.'}
               </p>
               <div className="mt-4 rounded-xl bg-[#0A0A0A] px-3 py-2.5">
                 <div className="flex items-center justify-between">
@@ -1205,13 +1184,13 @@ export default async function LandingPage({
                     className="text-[10px] text-[#A3A3A3]"
                     style={{ fontFamily: 'var(--font-mono)' }}
                   >
-                    0.8s
+                    {isTr ? 'Sıcak ton' : 'Warm tone'}
                   </span>
                 </div>
                 <p className="mt-1.5 text-[11px] leading-snug text-white/85">
                   {isTr
-                    ? '"Merhaba Mert, harika yorumun için çok teşekkür ederiz…"'
-                    : '"Hi Mark, thank you so much for taking the time…"'}
+                    ? '"Merhaba, güzel yorumunuz için çok teşekkür ederiz…"'
+                    : '"Hi, thank you so much for taking the time…"'}
                 </p>
               </div>
             </div>
@@ -1230,7 +1209,7 @@ export default async function LandingPage({
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
               >
-                {isTr ? 'Nabzını canlı izle.' : 'Watch your pulse live.'}
+                {isTr ? 'Puanınızı takip edin.' : 'Track your rating.'}
               </h3>
               <svg viewBox="0 0 220 56" className="mt-4 w-full" aria-hidden>
                 <defs>
@@ -1256,7 +1235,7 @@ export default async function LandingPage({
                 <circle cx="220" cy="6" r="4" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
               </svg>
               <p className="mt-3 text-[12px] text-[#737373]">
-                {isTr ? 'NPS, trend, konum kırılımı.' : 'NPS, trend, per-location breakdown.'}
+                {isTr ? 'Ortalama puan, NPS, trend ve şube kırılımı.' : 'Average rating, NPS, trends and per-location breakdown.'}
               </p>
             </div>
 
@@ -1268,7 +1247,7 @@ export default async function LandingPage({
               <h3
                 className="mt-3 text-[20px] font-medium leading-tight tracking-tight text-[#0A0A0A]"
               >
-                {isTr ? 'Türkiye ve dünya — aynı panelde.' : 'Turkey and the world, same panel.'}
+                {isTr ? 'Türkiye ve dünyadaki yorum platformları' : 'Review platforms in Turkey and worldwide'}
               </h3>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(['google', 'yemeksepeti', 'getir-yemek', 'trendyol-go', 'yelp', 'tripadvisor', 'booking'] as const).map(
@@ -1287,7 +1266,7 @@ export default async function LandingPage({
                   ),
                 )}
                 <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-dashed border-[#D4D4D4] bg-transparent px-2.5 py-1.5 text-[11px] font-medium text-[#737373]">
-                  + {isTr ? '12 daha' : '12 more'}
+                  + Airbnb · Yandex · Foursquare
                 </div>
               </div>
             </div>
@@ -1323,12 +1302,12 @@ export default async function LandingPage({
               {isTr ? 'Sektörler' : 'Industries'}
             </span>
             <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[52px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Her sektör için, tam oturur.' : 'Fits every industry, perfectly.'}
+              {isTr ? 'Restoran, otel, klinik ve mağazalar için' : 'For restaurants, hotels, clinics and stores'}
             </h2>
             <p className="mt-4 text-[15px] leading-[1.7] text-[#525252] sm:mx-auto sm:max-w-[620px] sm:text-[17px]">
               {isTr
-                ? 'Temas noktası, platform önerisi ve rapor dili sektörünüze göre şekillenir; mobilde de aynı netlikle çalışır.'
-                : 'Touchpoints, platform suggestions and reporting language adapt to your industry and stay clear on mobile.'}
+                ? 'QR\'ın nereye konacağı ve hangi yorum platformunun öne çıkacağı sektöre göre değişir. Buaze, sektörünüze uygun platformları önerir.'
+                : 'Where the QR goes and which review platform matters most depends on your industry. Buaze suggests the platforms that fit yours.'}
             </p>
           </div>
           <HomeIndustryTabs locale={locale} />
@@ -1343,17 +1322,17 @@ export default async function LandingPage({
           <div className="max-w-[1200px] mx-auto">
             <div className="max-w-[720px]">
               <span className="pulse-eyebrow text-[#737373]">
-                One dashboard · Every platform
+                One panel · Supported platforms
               </span>
               <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
-                From Yelp to Tripadvisor to DoorDash.
+                From Google and Tripadvisor to Yelp and Booking.com.
               </h2>
             </div>
             <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="bg-white border border-[#EDEDED] rounded-2xl p-7 sm:p-8">
                 <span className="pulse-eyebrow text-[#737373]">Review platforms</span>
                 <h3 className="mt-2 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]">
-                  Your brand&apos;s trust signals
+                  Where customers read reviews
                 </h3>
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {GLOBAL_REVIEW.map((p) => (
@@ -1368,9 +1347,9 @@ export default async function LandingPage({
                 </div>
               </div>
               <div className="bg-white border border-[#EDEDED] rounded-2xl p-7 sm:p-8">
-                <span className="pulse-eyebrow text-[#737373]">Delivery &amp; booking</span>
+                <span className="pulse-eyebrow text-[#737373]">Hotels &amp; stays</span>
                 <h3 className="mt-2 text-[22px] sm:text-[26px] font-medium tracking-[-0.02em]">
-                  Where orders happen
+                  Where guests book
                 </h3>
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {GLOBAL_DELIVERY.map((p) => (
@@ -1398,7 +1377,7 @@ export default async function LandingPage({
           <div className="relative grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 items-center">
             <div>
               <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'ÜCRETSİZ ARAÇ · YENİ' : 'FREE TOOL · NEW'}
+                {isTr ? 'ÜCRETSİZ QR KOD OLUŞTURUCU' : 'FREE QR CODE GENERATOR'}
               </span>
               <h2 className="mt-4 text-[24px] sm:text-[36px] lg:text-[48px] font-medium text-white tracking-[-0.03em] leading-[1.05]">
                 {isTr ? (
@@ -1421,8 +1400,8 @@ export default async function LandingPage({
               </h2>
               <p className="mt-5 text-[15px] sm:text-[16px] text-white/70 leading-[1.65] max-w-[520px]">
                 {isTr
-                  ? 'Web sitenizin, menünüzün veya herhangi bir linkinizin yüksek çözünürlüklü QR kodunu hemen indirin. Kayıt gerekmez — Buaze deneyimine ısınırken kullanabileceğiniz bir araç.'
-                  : "Instantly download a high-resolution QR code for your website, menu or any link. No signup needed — a tool you can use while warming up to the Buaze experience."}
+                  ? 'Web siteniz, menünüz veya Google yorum bağlantınız için QR kod oluşturun ve PNG ya da PDF olarak indirin. Üyelik gerekmez, süre sınırı yoktur.'
+                  : 'Create a QR code for your website, menu or Google review link and download it as PNG or PDF. No sign-up, no expiry.'}
               </p>
               <div className="mt-7 flex flex-row items-center gap-2 sm:gap-3">
                 <Link
@@ -1572,8 +1551,8 @@ export default async function LandingPage({
 
               <p className="mt-6 max-w-[320px] text-[15px] leading-[1.55] text-[#525252]">
                 {isTr
-                  ? 'Kısa demo, gizli ücret yok, istediğiniz an iptal edebilirsiniz.'
-                  : 'Short demo, no hidden fees, cancel anytime.'}
+                  ? 'QR ile yorum toplama, Google politikaları, kurulum, Pulse AI ve fiyatlandırma hakkında kısa cevaplar.'
+                  : 'Short answers about collecting reviews with QR codes, Google policies, setup, Pulse AI and pricing.'}
               </p>
 
               {/* Help card — graphite + lime gradient orb */}
@@ -1596,8 +1575,8 @@ export default async function LandingPage({
                   }}
                 >
                   {isTr
-                    ? '15 dakika. Panelinizi gerçek verinizle birlikte gösteriyoruz.'
-                    : '15 minutes. We show your panel on real data.'}
+                    ? 'Kısa bir görüşmede paneli sizin işletmeniz üzerinden gösterelim.'
+                    : 'In a short call we walk you through the panel set up for your business.'}
                 </p>
                 <Link
                   href={`${base}/contact`}
@@ -1609,7 +1588,7 @@ export default async function LandingPage({
                     textTransform: 'uppercase',
                   }}
                 >
-                  {isTr ? "15 DK'LIK DEMO AL" : 'BOOK A 15-MIN DEMO'}
+                  {isTr ? 'DEMO İSTE' : 'REQUEST A DEMO'}
                   <span aria-hidden>→</span>
                 </Link>
               </div>
@@ -1719,7 +1698,7 @@ export default async function LandingPage({
             {/* Tail rail — sayım + tüm sorular link */}
             <div className="mt-6 flex items-center justify-between px-1">
               <span className="pulse-eyebrow text-[#A3A3A3]">
-                {isTr ? '5 / 8 SORU' : '5 / 8 QUESTIONS'}
+                {isTr ? '5 SORU' : '5 QUESTIONS'}
               </span>
               <Link
                 href={`${base}/faq`}
@@ -1772,7 +1751,7 @@ export default async function LandingPage({
       <section className="bg-[#C6F24E] px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[900px] mx-auto text-center">
           <h2 className="text-[28px] sm:text-[44px] lg:text-[56px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A] text-balance">
-            {isTr ? 'Bugün başla, ilk yorumunu yarın al.' : 'Start today, get your first review tomorrow.'}
+            {isTr ? 'QR ile müşteri geri bildirimi toplamaya bugün başlayın' : 'Start collecting customer feedback with QR codes today'}
           </h2>
           <p className="mt-5 text-[16px] sm:text-[17px] text-[#1A1A1A] max-w-[560px] mx-auto">
             {isTr

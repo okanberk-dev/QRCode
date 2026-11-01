@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { getSiteSettings } from '@/lib/site-settings';
+import { getCompanyLegalInfo } from '@/lib/legal/variables';
 import DocumentLang from '@/components/providers/DocumentLang';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -128,6 +129,7 @@ export default async function LocaleLayout({
   const locale = rawLocale as Locale;
 
   const s = await getSiteSettings();
+  const legal = await getCompanyLegalInfo();
   const siteUrl = SITE_URL;
 
   // Stage 83 §38.163 — auth-aware ContactFloat visibility moved to the
@@ -147,7 +149,7 @@ export default async function LocaleLayout({
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'Buaze',
-      legalName: 'Buaze Bilişim A.Ş.',
+      ...(legal.name ? { legalName: legal.name } : {}),
       alternateName: ['Buaze (the company)', 'Buaze SaaS'],
       url: siteUrl,
       logo: s.logoUrl || `${siteUrl}/favicon.svg`,
@@ -173,12 +175,6 @@ export default async function LocaleLayout({
           email: 'support@buaze.com',
           availableLanguage: ['Turkish', 'English'],
           areaServed: 'TR',
-        },
-        {
-          '@type': 'ContactPoint',
-          contactType: 'sales',
-          email: 'sales@buaze.com',
-          availableLanguage: ['Turkish', 'English'],
         },
       ],
       address: {

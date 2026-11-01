@@ -1,16 +1,16 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
-import { detectLocaleFromAcceptLanguage } from '@/lib/translations';
+import NotFoundContent from '@/components/marketing/NotFoundContent';
 
 /**
  * 1:1 with .design/site/site-pages4.jsx:NotFoundPage — dark #0A0A0A bg,
  * horizontal ECG waveform at 6% opacity, lime #C6F24E giant "404",
  * Space Grotesk headline, dual CTA (home + help).
  */
-export default async function NotFound() {
-  const h = await headers();
-  const locale = detectLocaleFromAcceptLanguage(h.get('accept-language'));
+// Must stay free of dynamic APIs (headers/cookies/searchParams): this
+// component is rendered into every route's tree, so one `headers()` call here
+// turns the whole site into per-request rendering (see NotFoundContent).
+export default function NotFound() {
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#0A0A0A] px-6 py-12 text-center text-white font-sans">
       {/* ECG waveform background (design: horizontal pulse line, 6% opacity) */}
@@ -48,31 +48,7 @@ export default async function NotFound() {
           404
         </div>
 
-        <h1
-          className="mt-4 text-[26px] font-medium leading-[1.1] tracking-[-0.025em] sm:text-[36px]"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
-          Bu sayfa nabız vermiyor.
-        </h1>
-
-        <p className="mx-auto mt-3 max-w-[480px] text-[15px] leading-[1.6] text-[#A3A3A3] sm:text-[16px]">
-          Aradığınız sayfa taşınmış, silinmiş ya da hiç var olmamış olabilir.
-        </p>
-
-        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
-            href="/"
-            className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-6 py-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
-          >
-            Ana sayfaya dön
-          </Link>
-          <Link
-            href={`/${locale}/help`}
-            className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border border-[#333] px-6 py-3 text-[14px] font-medium text-white transition-colors hover:border-white/60"
-          >
-            Yardım al
-          </Link>
-        </div>
+        <NotFoundContent />
       </div>
     </div>
   );

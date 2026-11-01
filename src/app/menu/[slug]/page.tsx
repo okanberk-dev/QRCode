@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import PublicMenuView, { type MenuCategoryView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { MENU_THEMES, type MenuTheme } from '@/lib/validations';
 import { SITE_URL } from '@/lib/site';
+import { isIndexableMenu } from '@/lib/seo/indexable-menu';
 import {
   contentVersion,
   itemImageVersion,
@@ -47,11 +48,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug },
-    select: { name: true, category: true, address: true, isActive: true, menuEnabled: true, menuPublished: true },
+    select: {
+      name: true,
+      category: true,
+      address: true,
+      isActive: true,
+      menuEnabled: true,
+      menuPublished: true,
+      _count: { select: { menuItems: { where: { deletedAt: null, isAvailable: true } } } },
+    },
   });
   if (!restaurant || !restaurant.isActive || !restaurant.menuEnabled || !restaurant.menuPublished) {
     return { title: 'Menü bulunamadı', robots: { index: false } };
   }
+  // Test/demo or near-empty menus stay reachable for their owner's QR codes
+  // but out of Google's index (thin pages; also left out of sitemap.xml).
+  const indexable = isIndexableMenu({ slug, name: restaurant.name, itemCount: restaurant._count.menuItems });
   const title = `${restaurant.name} · Menü`;
   const description = [restaurant.category, restaurant.address].filter(Boolean).join(' — ') ||
     `${restaurant.name} işletmesinin dijital menüsü.`;
@@ -60,6 +72,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title,
     description,
     alternates: { canonical },
+    ...(indexable ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       title,
       description,

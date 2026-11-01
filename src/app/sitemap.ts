@@ -4,17 +4,31 @@ import { HELP_CATEGORIES } from '@/lib/help-categories';
 import { STATIC_HELP_ARTICLES } from '@/lib/help-articles';
 import { discoverPublicRoutes } from '@/lib/seo/route-discovery';
 import { SITE_URL } from '@/lib/site';
+import { isIndexableMenu } from '@/lib/seo/indexable-menu';
 
 export const revalidate = 3600;
 
 const BASE_URL = SITE_URL;
 
+// Blog URLs that next.config.ts 301-redirects to a newer slug. The old DB rows
+// can still be active, and a redirecting URL in the sitemap shows up in Search
+// Console as "Page with redirect". Keep in sync with the blog redirects in
+// next.config.ts.
+const RETIRED_BLOG_PATHS = new Set([
+  '/tr/blog/why-google-reviews-matter-for-local-business-growth',
+  '/en/blog/why-google-reviews-matter-for-local-business-growth',
+  '/tr/blog/the-power-of-google-reviews-for-hotels',
+  '/tr/blog/handling-negative-customer-reviews',
+  '/tr/blog/how-to-increase-restaurant-reviews',
+  '/tr/blog/digital-reputation-strategies',
+]);
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitemapEntries: MetadataRoute.Sitemap = [];
 
-  // Auto-discovered marketing routes from src/app/[locale]/. New pages are
-  // picked up automatically; redirect aliases + auth/dashboard surfaces are
-  // skipped (see route-discovery.ts).
+  // Marketing routes from src/app/[locale]/, listed at build time by
+  // scripts/generate-public-routes.mjs (new pages are picked up on the next
+  // build; redirect aliases + auth/dashboard surfaces are skipped).
   // lastmod is deliberately omitted for static routes: stamping every row with
   // the regeneration time teaches Google to ignore lastmod entirely. Only rows
   // with a real content date (blog / help / menu from the DB) carry one.
@@ -54,18 +68,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Dynamic blog posts — locale-specific rows.
+  // Dynamic blog posts — locale-specific rows. Translated pairs (same
+  // translationGroupId) carry hreflang alternates, matching the <link
+  // rel="alternate"> tags the post page itself emits.
   try {
     const posts = await prisma.blogPost.findMany({
       where: { isActive: true },
-      select: { slug: true, locale: true, updatedAt: true },
+      select: { slug: true, locale: true, updatedAt: true, translationGroupId: true },
     });
-    posts.forEach((post) => {
+    const live = posts.filter(
+      (post) => !RETIRED_BLOG_PATHS.has(`/${post.locale}/blog/${post.slug}`),
+    );
+    const groups = new Map<string, { tr?: string; en?: string }>();
+    for (const post of live) {
+      if (!post.translationGroupId) continue;
+      const g = groups.get(post.translationGroupId) ?? {};
+      if (post.locale === 'tr' || post.locale === 'en') g[post.locale] = post.slug;
+      groups.set(post.translationGroupId, g);
+    }
+    live.forEach((post) => {
+      const pair = post.translationGroupId ? groups.get(post.translationGroupId) : undefined;
+      const alternates =
+        pair?.tr && pair?.en
+          ? {
+              languages: {
+                tr: `${BASE_URL}/tr/blog/${pair.tr}`,
+                en: `${BASE_URL}/en/blog/${pair.en}`,
+                'x-default': `${BASE_URL}/tr/blog/${pair.tr}`,
+              },
+            }
+          : undefined;
       sitemapEntries.push({
         url: `${BASE_URL}/${post.locale}/blog/${post.slug}`,
         lastModified: post.updatedAt,
         changeFrequency: 'monthly',
         priority: 0.8,
+        ...(alternates ? { alternates } : {}),
       });
     });
   } catch (error) {
@@ -76,16 +114,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const restaurants = await prisma.restaurant.findMany({
       where: { isActive: true, menuEnabled: true, menuPublished: true },
-      select: { slug: true, menuUpdatedAt: true, updatedAt: true },
+      select: {
+        slug: true,
+        name: true,
+        menuUpdatedAt: true,
+        updatedAt: true,
+        _count: { select: { menuItems: { where: { deletedAt: null, isAvailable: true } } } },
+      },
     });
-    restaurants.forEach((r) => {
-      sitemapEntries.push({
-        url: `${BASE_URL}/menu/${r.slug}`,
-        lastModified: r.menuUpdatedAt ?? r.updatedAt,
-        changeFrequency: 'weekly',
-        priority: 0.7,
+    restaurants
+      .filter((r) => isIndexableMenu({ slug: r.slug, name: r.name, itemCount: r._count.menuItems }))
+      .forEach((r) => {
+        sitemapEntries.push({
+          url: `${BASE_URL}/menu/${r.slug}`,
+          lastModified: r.menuUpdatedAt ?? r.updatedAt,
+          changeFrequency: 'weekly',
+          priority: 0.6,
+        });
       });
-    });
   } catch (error) {
     console.error('Sitemap menu fetch error:', error);
   }

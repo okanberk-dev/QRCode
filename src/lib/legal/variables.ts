@@ -249,6 +249,22 @@ export async function loadLegalVariableMap(): Promise<Record<string, string>> {
   return merged;
 }
 
+/**
+ * Registered company name (admin → Hukuki metinler → Değişkenler →
+ * COMPANY_NAME) for the public footer and Organization JSON-LD `legalName`.
+ * Returns null while the value is still the plain-brand default or a
+ * "[placeholder]", so no unregistered legal entity is ever published.
+ */
+export async function getCompanyLegalInfo(): Promise<{ name: string | null; address: string | null }> {
+  const map = await loadLegalVariableMap();
+  const clean = (v: string | undefined, plainDefault?: string) => {
+    const t = (v ?? '').trim();
+    if (!t || t.startsWith('[') || (plainDefault && t === plainDefault)) return null;
+    return t;
+  };
+  return { name: clean(map.COMPANY_NAME, 'Buaze'), address: clean(map.COMPANY_ADDRESS) };
+}
+
 export function invalidateLegalVariableCache() {
   cache = null;
 }

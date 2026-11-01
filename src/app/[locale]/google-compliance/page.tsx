@@ -26,8 +26,8 @@ export async function generateMetadata({
     ? 'Google Yorum Politikası Uyumu — Sahte yorum yok, teşvik yok'
     : 'Google Review Policy Compliance — No fake reviews, no incentives';
   const description = isTr
-    ? 'Buaze, Google yorum politikalarına tam uyum sağlar: sahte yorum yok, teşvik yok, müşteri agency korunur. Şeffaf ve dürüst geri bildirim ekosistemini koruruz.'
-    : 'Buaze strictly adheres to Google review policies: no fake reviews, no incentives, customer agency preserved. We protect a transparent, honest feedback ecosystem.';
+    ? 'Buaze, Google yorum politikalarına tam uyum sağlar: sahte yorum yok, teşvik yok, filtreleme yok. Her müşteri istediği platformda yorum yazma hakkını korur.'
+    : 'Buaze strictly adheres to Google review policies: no fake reviews, no incentives, no filtering. Every customer keeps the right to post on any platform.';
   return {
     title,
     description,
