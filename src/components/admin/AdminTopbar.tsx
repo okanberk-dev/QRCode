@@ -58,19 +58,19 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
           it's available on mobile too (mobile sidebar drawer dispatches
           'buaze:admin-search-open' CustomEvent which the palette listens for). */}
       <AdminCommandPalette />
-    <div className="hidden lg:flex sticky top-0 z-30 items-center gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur sm:px-6">
+    <div className="hidden lg:flex sticky top-0 z-30 h-14 shrink-0 items-center gap-2 border-b border-[#EDEDED] bg-white/95 px-4 backdrop-blur sm:px-6">
       {/* §38.219 Stage 139 — Search trigger (Cmd+K). Visual cue + click also
           opens the palette for mouse users. AdminCommandPalette listens for
           both Cmd+K shortcut + 'buaze:admin-search-open' CustomEvent. */}
       <button
         type="button"
         onClick={openPalette}
-        className="flex flex-1 max-w-[420px] items-center gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1.5 text-left text-[13px] text-[#737373] transition-colors hover:border-[#0A0A0A] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+        className="flex h-9 flex-1 max-w-[420px] items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-3 text-left text-[13px] text-[#737373] shadow-[0_1px_2px_rgba(10,10,10,0.05)] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
         aria-label="Admin arama (Cmd+K)"
       >
         <SearchIcon size={14} className="text-[#737373]" aria-hidden />
         <span className="flex-1">Sayfa, işletme veya müşteri ara…</span>
-        <kbd className="hidden xl:inline-flex items-center gap-0.5 rounded border border-[#EDEDED] bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase text-[#525252]">
+        <kbd className="hidden xl:inline-flex items-center gap-0.5 rounded border border-[#E5E5E5] bg-[#FAFAFA] px-1.5 py-0.5 bz-mono text-[10px] uppercase text-[#525252]">
           {isMac ? '⌘' : 'Ctrl'} K
         </kbd>
       </button>

@@ -17,6 +17,7 @@ import { getSiteSettings } from '@/lib/site-settings';
 // React Query is only used inside the owner panel (useCurrentRole), so its
 // provider lives here instead of the root layout — public pages don't ship it.
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import PanelTheme from '@/components/panel/PanelTheme';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,7 +110,8 @@ export default async function DashboardLayout({
     const adminPayload = await verifyAdminTokenForLayout(adminToken);
     if (adminPayload && isAdminRole(adminPayload.role)) {
       return (
-        <div className="min-h-dvh bg-[#FFFFFF]">
+        <div className="bz-panel min-h-dvh bg-[#FFFFFF]">
+          <PanelTheme />
           <div className="border-b border-[#EDEDED] bg-[#0A0A0A] text-white">
             <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-7">
               <p className="text-[11px] pulse-eyebrow">
@@ -218,11 +220,14 @@ export default async function DashboardLayout({
   const totalFeedbacks = restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
 
   return (
+    <>
+    <PanelTheme />
     <UserDashboardShell
       locale={locale}
       announcements={announcements}
       logoUrl={logoUrl}
       viewerMode={viewerMode}
+      canAddBusiness={(user.role || 'restaurant_owner') !== 'team_member'}
       user={{
         name: user.name,
         email: user.email,
@@ -248,5 +253,6 @@ export default async function DashboardLayout({
     >
       <QueryProvider>{children}</QueryProvider>
     </UserDashboardShell>
+    </>
   );
 }

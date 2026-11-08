@@ -18,7 +18,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ChevronRight, Download, Loader2, RefreshCw } from 'lucide-react';
-import { AlertBanner, PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader, Tabs } from '@/components/ui';
+import { PlatformsPortfolio } from '@/components/dashboard/platforms/PlatformsPortfolio';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
 import RedirectThresholdPicker from '@/components/dashboard/RedirectThresholdPicker';
 import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
@@ -113,6 +114,10 @@ export default function PlatformsClient({
   const [retesting, setRetesting] = useState(false);
   const [retestNotice, setRetestNotice] = useState<string>('');
   const [retestError, setRetestError] = useState<string | null>(null);
+  // §49 — franchise owners get an "all businesses" matrix (?view=all).
+  const [view, setView] = useState<'business' | 'all'>(() =>
+    restaurants.length > 1 && searchParams.get('view') === 'all' ? 'all' : 'business',
+  );
   useFocusClearance();
 
   useEffect(() => setRows(restaurants), [restaurants]);
@@ -174,6 +179,21 @@ export default function PlatformsClient({
   const updateRow = useCallback((id: string, patch: Partial<PlatformsRestaurant>) => {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   }, []);
+
+  const changeView = (next: 'business' | 'all') => {
+    setView(next);
+    const params = new URLSearchParams(window.location.search);
+    if (next === 'all') params.set('view', 'all');
+    else params.delete('view');
+    const search = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}`);
+  };
+
+  const openBusinessFromPortfolio = (id: string) => {
+    selectRestaurant(id);
+    changeView('business');
+    window.requestAnimationFrame(() => document.getElementById('pb-ctx')?.scrollIntoView({ block: 'start' }));
+  };
 
   const selectRestaurant = (id: string) => {
     if (id === selectedId) return;
@@ -288,6 +308,31 @@ export default function PlatformsClient({
         {header}
       </div>
 
+      {rows.length > 1 && (
+        <Tabs
+          items={[
+            { id: 'business', label: isTr ? 'Bu işletme' : 'This business' },
+            { id: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses', count: rows.length },
+          ]}
+          active={view}
+          onChange={(id) => changeView(id as 'business' | 'all')}
+          ariaLabel={isTr ? 'Görünüm' : 'View'}
+        />
+      )}
+
+      {view === 'all' && rows.length > 1 ? (
+        <PlatformsPortfolio
+          locale={locale}
+          businesses={rows}
+          checksById={checks}
+          onOpenBusiness={openBusinessFromPortfolio}
+          onChecks={(restaurantId, next) => {
+            setChecks((current) => ({ ...current, [restaurantId]: next }));
+            setNowMs(Date.now());
+          }}
+        />
+      ) : (
+      <>
       <PlatformBusinessContext
         locale={locale}
         restaurant={restaurant}
@@ -490,6 +535,8 @@ export default function PlatformsClient({
           {isTr ? 'Kontrol geçmişini indir (CSV)' : 'Download check history (CSV)'}
         </a>
       </div>
+      </>
+      )}
     </>
   );
 }

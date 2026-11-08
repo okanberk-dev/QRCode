@@ -1,26 +1,25 @@
 import {
   SkBox,
-  SkCardGrid,
   SkPageHeader,
   SkPageShell,
+  SkStatGrid,
+  SkTable,
 } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
- * Owner restaurants (locations) list — header + filter strip + card
- * grid. (CLAUDE.md §40.10)
+ * Owner businesses (franchise table) — header + 4 stats + filter strip +
+ * table. (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
     <SkPageShell max={1440}>
       <SkPageHeader withActions titleWidth="w-44" />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <SkBox className="h-9 w-48" />
-        <SkBox className="h-9 w-32" />
-        <SkBox className="h-9 w-28" />
+      <SkStatGrid count={4} />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <SkBox className="h-9 w-72" />
+        <SkBox className="h-9 w-full lg:w-72" />
       </div>
-
-      <SkCardGrid count={6} cols={3} />
+      <SkTable rows={6} cols={6} />
     </SkPageShell>
   );
 }

@@ -4,13 +4,13 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, Building2, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
-import { PulseSelect } from '@/components/ui';
+import BusinessSwitcher from './BusinessSwitcher';
 import ViewportMount from '@/components/ui/ViewportMount';
 import { detectSector } from '@/lib/sector-platforms';
 import { getSectorByLabel } from '@/lib/sectors';
@@ -80,6 +80,8 @@ interface UserDashboardShellProps {
    * `canWriteFeedback`/`canWriteRestaurant` zaten reddediyor — UI sync.
    */
   viewerMode?: boolean;
+  /** Team members cannot create businesses — hides "Yeni işletme". */
+  canAddBusiness?: boolean;
   children: React.ReactNode;
 }
 
@@ -209,7 +211,7 @@ function saveSidebarScroll(scrollTop: number) {
   }
 }
 
-export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, children }: UserDashboardShellProps) {
+export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, canAddBusiness = true, children }: UserDashboardShellProps) {
   void TOP_BAR_MAP;
   const pathname = usePathname();
   const router = useRouter();
@@ -243,8 +245,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       storedRestaurantId: null,
     }),
   );
-  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
-  const workspaceMenuRef = useRef<HTMLDivElement | null>(null);
   const activeRestaurant = useMemo(
     () => workspaceRestaurants.find((restaurant) => restaurant.id === activeRestaurantId) ?? null,
     [workspaceRestaurants, activeRestaurantId],
@@ -428,23 +428,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceRestaurants, queryRestaurantId, pathRestaurantId]);
 
-  useEffect(() => {
-    if (!workspaceMenuOpen) return;
-    const onPointer = (e: MouseEvent) => {
-      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(e.target as Node)) {
-        setWorkspaceMenuOpen(false);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setWorkspaceMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onPointer);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onPointer);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [workspaceMenuOpen]);
 
   // User menu dropdown — outside click + ESC kapatır.
   useEffect(() => {
@@ -524,7 +507,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const selectRestaurantScope = (restaurantId: string) => {
     setActiveRestaurantId(restaurantId);
     ownerShellActiveRestaurantId = restaurantId;
-    setWorkspaceMenuOpen(false);
     if (typeof window !== 'undefined') {
       try {
         window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
@@ -737,13 +719,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   ];
   const moreActive = moreSheetItems.some((i) => isPathActive(i.href));
 
-  // Business category as an eyebrow. `Restaurant.category` holds the Turkish
-  // label ("Restoran"); English pages show the sector's English name.
-  // Locale-aware uppercase: "Klinik" → "KLİNİK" in Turkish.
-  const categoryEyebrow = (category: string) => {
-    const text = locale === 'en' ? getSectorByLabel(category)?.display.en ?? category : category;
-    return text.toLocaleUpperCase(locale === 'tr' ? 'tr-TR' : 'en-US');
-  };
+  // Business category label. `Restaurant.category` holds the Turkish label
+  // ("Restoran"); English pages show the sector's English name.
+  const categoryLabel = (category: string) =>
+    locale === 'en' ? getSectorByLabel(category)?.display.en ?? category : category;
 
   const displayName = user.name?.trim() || user.email.split('@')[0];
   const initial = displayName.charAt(0).toUpperCase();
@@ -757,12 +736,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     window.location.href = `/${locale}/auth/login`;
   };
 
-  const primaryName =
-    activeRestaurant?.name ??
-    workspace?.primaryName ??
-    (locale === 'tr' ? 'İşletmen' : 'Your workspace');
   const locationCount = workspace?.locationCount ?? 0;
-  const primaryInitial = (activeRestaurant?.name || workspace?.primaryName || displayName).charAt(0).toUpperCase();
 
   // SidebarContent was previously declared as an inner function component
   // (`const SidebarContent = ({ navRef }) => …`). Every parent re-render
@@ -791,78 +765,27 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </Link>
       </div>
 
-      {/* Workspace switcher */}
-      <div className="relative px-3 pb-3" ref={workspaceMenuRef}>
-        <button
-          type="button"
-          onClick={() => setWorkspaceMenuOpen((open) => !open)}
-          aria-expanded={workspaceMenuOpen}
-          aria-haspopup="menu"
-          className={`flex w-full items-center gap-2.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] transition-colors hover:bg-[#F2F2F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${isCollapsed ? 'justify-center px-2 py-2' : 'px-3 py-2.5'}`}
-          title={isCollapsed ? primaryName : undefined}
-        >
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[12px] font-semibold text-[#0A0A0A] bz-h-tight"
-            style={{ background: activeRestaurant?.primaryColor || '#C6F24E' }}
-          >
-            {activeRestaurant ? primaryInitial : <Building2 size={14} strokeWidth={2} />}
-          </div>
-          {!isCollapsed && (
-            <>
-              <div className="min-w-0 flex-1 text-left animate-in fade-in slide-in-from-left-2 duration-300">
-                <p className="truncate text-[13px] font-semibold text-[#0A0A0A] leading-tight">{primaryName}</p>
-                <p className="pulse-eyebrow text-[#525252] mt-0.5">
-                  {activeRestaurant
-                    ? detectSector(activeRestaurant.category) === 'clinic'
-                      ? locale === 'tr' ? 'KLİNİK MODU' : 'CLINIC MODE'
-                      : categoryEyebrow(activeRestaurant.category)
-                    : `${locationCount} ${locale === 'tr' ? 'KONUM' : 'LOCATIONS'}`}
-                </p>
-              </div>
-              <ChevronDown
-                size={14}
-                className={`shrink-0 text-[#737373] transition-transform ${workspaceMenuOpen ? 'rotate-180' : ''}`}
-                strokeWidth={2}
-              />
-            </>
-          )}
-        </button>
-
-        {workspaceMenuOpen && !isCollapsed && (
-          <div
-            role="menu"
-            className="bz-menu absolute left-3 right-3 top-[calc(100%-10px)] z-50"
-          >
-            {workspaceRestaurants.map((restaurant) => {
-              const selected = restaurant.id === activeRestaurantId;
-              const clinic = detectSector(restaurant.category) === 'clinic';
-              return (
-                <button
-                  key={restaurant.id}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={selected}
-                  onClick={() => selectRestaurantScope(restaurant.id)}
-                  className={`bz-menu-item ${selected ? 'is-selected' : ''}`}
-                >
-                  <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold text-[#0A0A0A]"
-                    style={{ background: restaurant.primaryColor || '#C6F24E' }}
-                  >
-                    {restaurant.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-semibold text-[#0A0A0A]">{restaurant.name}</span>
-                    <span className="pulse-eyebrow mt-0.5 block !text-[#A3A3A3]">
-                      {clinic ? (locale === 'tr' ? 'KLİNİK' : 'CLINIC') : categoryEyebrow(restaurant.category)} · {restaurant.feedbackCount}
-                    </span>
-                  </span>
-                  {selected && <Check size={14} strokeWidth={2.4} className="!text-[#A8D62E]" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
+      {/* Business (franchise) switcher — search, recents, manage / add
+          (BusinessSwitcher). Collapsed sidebar opens the same panel. */}
+      <div className="px-3 pb-3">
+        <BusinessSwitcher
+          locale={locale}
+          variant={isCollapsed ? 'collapsed' : 'sidebar'}
+          businesses={workspaceRestaurants}
+          activeId={activeRestaurantId}
+          onSelect={selectRestaurantScope}
+          caption={
+            activeRestaurant
+              ? detectSector(activeRestaurant.category) === 'clinic'
+                ? locale === 'tr' ? 'Klinik modu' : 'Clinic mode'
+                : categoryLabel(activeRestaurant.category)
+              : `${locationCount} ${locale === 'tr' ? 'konum' : 'locations'}`
+          }
+          categoryLabel={categoryLabel}
+          manageHref={`/${locale}/dashboard/restaurants`}
+          newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
+          onNavigate={handleNavClick}
+        />
       </div>
 
       {/* §38.59 — Sidebar search button kaldırıldı (kullanıcı kararı). Cmd+K
@@ -914,9 +837,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                    text shift smooth animate olur. Lift `bz-lift` kasıtlı
                    eklenmedi — sidebar item'lar nav-link, lift hareket distract
                    eder; CTA + kartlar için saklı. */
-                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium bz-motion-spring ${
+                /* §49 — shadcn sidebar density: 8px items, active graphite
+                   with a lime icon (the outside lime stripe is gone). */
+                className={`relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium bz-motion-spring ${
                   isActive
-                    ? 'bg-[#0A0A0A] text-white font-semibold before:absolute before:left-[-12px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:bg-[#C6F24E] before:rounded-r-sm'
+                    ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
                     : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                 }`}
               >
@@ -966,16 +891,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 //   ve parent group da gri — kullanıcı 2 menü "seçili" hissi
                 //   yaşadı. Şimdi parent group sadece chevron rotate + child
                 //   reveal animation; tek "active" görünüm child item'da.
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A]"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A]"
                 aria-expanded={isExpanded}
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
                 {!isCollapsed && (
                   <>
-                    <span
-                      className="flex-1 truncate text-left text-[10.5px] font-mono uppercase tracking-[0.14em] animate-in fade-in slide-in-from-left-2 duration-300"
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                    >
+                    <span className="flex-1 truncate text-left text-[12px] font-medium text-[#737373] animate-in fade-in slide-in-from-left-2 duration-300">
                       {item.label}
                     </span>
                     <ChevronRight
@@ -1021,10 +943,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                           onClick={handleNavClick}
                           aria-current={isActive ? 'page' : undefined}
                           tabIndex={isExpanded ? 0 : -1}
-                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] font-medium transition-colors ${
+                          className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium transition-colors ${
                             isActive
-                              ? 'bg-[#0A0A0A] text-white font-semibold'
-                              : 'text-[#737373] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
+                              ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
+                              : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                           }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
@@ -1185,7 +1107,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
        `lg:flex-1 lg:min-h-0 lg:overflow-hidden` (sidebar + main row layout
        intact). Banner null durumda görsel etki sıfır (column ile single
        flex child = sadece inner). */
-    <div className="min-h-dvh bg-[#FFFFFF] flex flex-col lg:h-screen lg:overflow-hidden relative">
+    <div className="bz-panel min-h-dvh bg-[#FFFFFF] flex flex-col lg:h-screen lg:overflow-hidden relative">
       {/* Stage A4 §38.96 — sticky impersonation banner. Server-side actor.realAdminId
           set ise üstte kırmızı banner + 30dk countdown + "Çıkış" CTA.
           §38.158 — banner artık outer column flex'in birinci child'ı
@@ -1241,15 +1163,15 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
           <div className="flex items-center gap-2">
             {workspaceRestaurants.length > 1 && (
-              <PulseSelect
-                value={activeRestaurantId ?? ''}
-                onChange={selectRestaurantScope}
-                options={workspaceRestaurants.map((restaurant) => ({
-                  value: restaurant.id,
-                  label: restaurant.name,
-                }))}
-                ariaLabel={copy.chooseBusiness}
-                className="max-w-[132px]"
+              <BusinessSwitcher
+                locale={locale}
+                variant="mobile"
+                businesses={workspaceRestaurants}
+                activeId={activeRestaurantId}
+                onSelect={selectRestaurantScope}
+                categoryLabel={categoryLabel}
+                manageHref={`/${locale}/dashboard/restaurants`}
+                newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
               />
             )}
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
@@ -1302,32 +1224,37 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             görünür kalır, mobile sticky pattern (z-40) ile uyumlu z-30
             (sidebar collapse toggle z-50'nin altında). bg-white/95 +
             backdrop-blur Apple "frosted glass" tier (CLAUDE.md §38.65). */}
-        <div className="hidden lg:sticky lg:top-0 lg:z-30 lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white/95 backdrop-blur-xl px-7 py-3.5">
-          <div className="min-w-0">
-            {topBar ? (
+        <div className="hidden lg:sticky lg:top-0 lg:z-30 lg:flex h-14 shrink-0 items-center justify-between gap-4 border-b border-[#EDEDED] bg-white/95 backdrop-blur-xl px-6">
+          {/* §49 — shadcn header: one-line breadcrumb ("Panel › Yorumlar").
+              Every page renders its own <PageHeader> h1 below. */}
+          <nav aria-label={locale === 'tr' ? 'Sayfa konumu' : 'Breadcrumb'} className="flex min-w-0 items-center gap-1.5 text-[13px]">
+            <Link
+              href={hrefWithActiveRestaurant(`/${locale}/dashboard`)}
+              className="shrink-0 rounded text-[#737373] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            >
+              Panel
+            </Link>
+            {topBar && (
               <>
-                <p className="pulse-eyebrow text-[#737373]">{topBar.breadcrumb}</p>
-                {/* Not an <h1>: every page renders its own <PageHeader> h1, so a
-                    second one here gave each page two (often conflicting) h1s. */}
-                <p className="mt-1 text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-none truncate bz-h-tight">
+                <ChevronRight size={13} strokeWidth={2} className="shrink-0 text-[#A3A3A3]" aria-hidden="true" />
+                <span aria-current="page" className="truncate font-medium text-[#0A0A0A]">
                   {topBar.title}
-                </p>
+                </span>
               </>
-            ) : (
-              <p className="pulse-eyebrow text-[#737373]">{copy.workspace}</p>
             )}
-          </div>
+          </nav>
           <div className="flex items-center gap-2.5 shrink-0">
             {workspaceRestaurants.length > 1 && (
-              <PulseSelect
-                value={activeRestaurantId ?? ''}
-                onChange={selectRestaurantScope}
-                options={workspaceRestaurants.map((restaurant) => ({
-                  value: restaurant.id,
-                  label: restaurant.name,
-                }))}
-                ariaLabel={copy.chooseBusiness}
-                className="hidden max-w-[220px] xl:inline-block"
+              <BusinessSwitcher
+                locale={locale}
+                variant="topbar"
+                businesses={workspaceRestaurants}
+                activeId={activeRestaurantId}
+                onSelect={selectRestaurantScope}
+                categoryLabel={categoryLabel}
+                manageHref={`/${locale}/dashboard/restaurants`}
+                newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
+                className="hidden xl:inline-flex"
               />
             )}
             <button
@@ -1335,11 +1262,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               onClick={() => setPaletteOpen(true)}
               aria-label={locale === 'tr' ? 'Arama paletini aç' : 'Open search palette'}
               title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-              className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+              className="hidden xl:flex h-9 w-[260px] items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-3 text-[13px] text-[#737373] shadow-[0_1px_2px_rgba(10,10,10,0.05)] hover:bg-[#F5F5F5] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
             >
               <Search size={13} strokeWidth={2.25} />
-              <span>{locale === 'tr' ? 'Yorum, konum, sayfa ara…' : 'Search reviews, locations, pages…'}</span>
-              <span className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono">
+              <span className="flex-1 truncate text-left">{locale === 'tr' ? 'Ara…' : 'Search…'}</span>
+              <span className="rounded border border-[#E5E5E5] bg-[#FAFAFA] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono">
                 ⌘K
               </span>
             </button>

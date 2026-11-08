@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { AlertBanner, APSwitch, Field, PageHeader } from '@/components/ui';
 import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
+import { ApplyLinkToBusinesses } from '@/components/dashboard/platforms/ApplyLinkToBusinesses';
 import { GoogleBusinessIntegrationPanel } from '@/components/dashboard/settings/sections/GoogleBusinessIntegrationPanel';
 import { WhatsAppReviewWizard } from '@/components/dashboard/settings/WhatsAppReviewWizard';
 import { PlatformBusinessContext } from '@/components/dashboard/platforms/PlatformBusinessContext';
@@ -773,6 +774,41 @@ export default function PlatformProviderWizard({
           )}
         </div>
       </SettingsCard>
+
+      {/* §49 franchise — copy a saved contact-channel link (Instagram,
+          Facebook, WhatsApp) to the other businesses. Not for review
+          platforms: every branch has its own review page. */}
+      {!isReview && restaurantRows.length > 1 && currentUrl && !dirty && !gated && (
+        <ApplyLinkToBusinesses
+          key={`${selectedRestaurant.id}-${platform.slug}`}
+          locale={locale}
+          platformName={platform.name}
+          urlField={platform.urlField}
+          url={currentUrl}
+          sourceRestaurantId={selectedRestaurant.id}
+          businesses={restaurantRows.map((restaurant) => ({
+            id: restaurant.id,
+            name: restaurant.name,
+            url: restaurant[platform.urlField] ?? null,
+          }))}
+          onApplied={(ids, savedUrl) => {
+            const idSet = new Set(ids);
+            setRestaurantRows((rows) =>
+              rows.map((restaurant) =>
+                idSet.has(restaurant.id) ? { ...restaurant, [platform.urlField]: savedUrl } : restaurant,
+              ),
+            );
+            // A new link invalidates those businesses' previous check.
+            for (const id of ids) {
+              patchChecks(id, (current) => {
+                const next = { ...current };
+                delete next[platform.provider];
+                return next;
+              });
+            }
+          }}
+        />
+      )}
 
       {/* Stage 97 — WhatsApp review opt-in marker + wizard CTA (unchanged
           behaviour). Gated until the saved URL normalises cleanly. */}

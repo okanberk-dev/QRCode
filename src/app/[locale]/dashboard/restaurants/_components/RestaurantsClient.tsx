@@ -1,16 +1,74 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+// Owner "İşletmelerim" — franchise management table (§49).
+//
+// One row per business with the numbers an owner of several branches checks
+// every day: reviews and average rating over 30 days, low ratings still
+// waiting, review-platform link health and the newest review. "Panele geç"
+// makes the business the active one and opens its dashboard; the row menu
+// reaches settings, platforms, menu, QR and the public page. A "Dikkat"
+// tab lists only the active businesses that need a look.
+//
+// The page is scope-blind (§22): every business the user owns or manages is
+// listed; the shell's active business does not filter this list.
+
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ExternalLink, Plus, Search, Store } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ExternalLink,
+  MessageSquareText,
+  MoreHorizontal,
+  Pause,
+  Play,
+  Plug,
+  Plus,
+  QrCode,
+  Search,
+  Settings,
+  Star,
+  Store,
+  UtensilsCrossed,
+} from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, Badge, EmptyState, PageHeader, Tabs, type TabItem } from '@/components/ui';
+import {
+  AlertBanner,
+  Badge,
+  EmptyState,
+  PageHeader,
+  PulseMenu,
+  PulseMenuDivider,
+  PulseMenuItem,
+  StatCard,
+  Tabs,
+  type TabItem,
+} from '@/components/ui';
 import {
   isSuspendedByAdminError,
   restaurantSaveErrorMessage,
   suspendedByAdminMessage,
 } from '@/components/dashboard/settings/restaurant-status';
+import { PlatformStateIcon } from '@/components/dashboard/platforms/PlatformStatusPill';
+import { ACTIVE_BUSINESS_STORAGE_KEY } from '@/lib/active-business';
+import {
+  attentionReasons,
+  portfolioTotals,
+  sortPortfolioRows,
+  type AttentionReason,
+  type PortfolioRow,
+  type PortfolioSortKey,
+} from '@/lib/business-overview';
+import {
+  parseRecentBusinesses,
+  pushRecentBusiness,
+  RECENT_BUSINESS_STORAGE_KEY,
+} from '@/lib/business-switcher';
+import { formatRelativeTime, type PlatformLinkSummary } from '@/lib/platform-link-status';
+import { getSectorByLabel } from '@/lib/sectors';
 import type { Locale } from '@/lib/translations';
 
 interface Restaurant {
@@ -25,105 +83,166 @@ interface Restaurant {
   suspendedByAdmin?: boolean;
   createdAt: string;
   _count: { feedbacks: number };
+  reviews30d: number;
+  avgRating30d: number | null;
+  /** Low ratings (≤3) nobody has opened yet — notification bell definition. */
+  lowUnread: number;
+  lastFeedbackAt: string | null;
+  platforms: PlatformLinkSummary;
 }
 
 interface RestaurantsClientProps {
   locale: Locale;
   initialRestaurants: Restaurant[];
   initialNotificationEmail: string;
+  /** Server render time — relative "2 sa önce" text hydrates identically. */
+  serverNow: number;
   /**
-   * §22 franchise — `team_member` rolündeki kullanıcı (area manager) kendi
-   * lokasyonlarını yönetmek için bu sayfaya gelir. Başlık/alt yazı rol-aware,
-   * "Yeni İşletme" CTA team_member için gizli (backend `canWriteRestaurant`
-   * zaten reddediyor, UI'da gereksiz disabled state göstermiyoruz).
+   * §22 franchise — `team_member` (area manager) sees the locations assigned
+   * to them; "Yeni İşletme" is hidden (backend `canWriteRestaurant` rejects).
    */
   role?: string;
-  /**
-   * §22 viewer-mode — `TeamMember.role='viewer'` ise true. Deaktifleştir /
-   * Aktifleştir butonu gizlenir; backend `canWriteRestaurant` zaten viewer'ı
-   * reddediyor (`role !== 'viewer'`), UI sync.
-   */
+  /** §22 viewer-mode — pause / reactivate actions are hidden. */
   viewerMode?: boolean;
+}
+
+type StatusFilter = 'active' | 'attention' | 'all' | 'passive';
+
+const REASON_COPY: Record<AttentionReason, { tr: string; en: string; kind: 'danger' | 'warn' | 'off' | 'info' }> = {
+  paused: { tr: 'Devre dışı', en: 'Disabled', kind: 'off' },
+  platform_issue: { tr: 'Platform linki sorunlu', en: 'Platform link issue', kind: 'danger' },
+  no_platform: { tr: 'Yorum platformu yok', en: 'No review platform', kind: 'warn' },
+  unread: { tr: 'Bekleyen düşük puan', en: 'Low ratings waiting', kind: 'warn' },
+  quiet: { tr: '30 gündür yorum yok', en: 'No reviews in 30 days', kind: 'info' },
+};
+
+function toPortfolioRow(restaurant: Restaurant): PortfolioRow {
+  return {
+    id: restaurant.id,
+    name: restaurant.name,
+    category: restaurant.category,
+    isActive: restaurant.isActive,
+    suspendedByAdmin: restaurant.suspendedByAdmin,
+    reviewsTotal: restaurant._count.feedbacks,
+    reviews30d: restaurant.reviews30d,
+    avgRating30d: restaurant.avgRating30d,
+    unread: restaurant.lowUnread,
+    lastFeedbackAt: restaurant.lastFeedbackAt,
+    platforms: restaurant.platforms,
+  };
 }
 
 export default function RestaurantsClient({
   locale,
   initialRestaurants,
+  serverNow,
   role = 'restaurant_owner',
   viewerMode = false,
 }: RestaurantsClientProps) {
+  const isTr = locale === 'tr';
   const isTeamMember = role === 'team_member';
   const canMutate = !viewerMode;
   const router = useRouter();
-  // The server render already returns every business in scope (active and
-  // disabled, oldest first). The status tabs filter this one list locally —
-  // refetching per tab used to show disabled businesses under "Aktif" on
-  // first load, flip the order and cap the list at 20.
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'active' | 'all' | 'passive'>('active');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [sortKey, setSortKey] = useState<PortfolioSortKey | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; text: string } | null>(null);
+  const [nowMs, setNowMs] = useState(serverNow);
 
-  useEffect(() => {
-    setRestaurants(initialRestaurants);
-  }, [initialRestaurants]);
+  useEffect(() => setRestaurants(initialRestaurants), [initialRestaurants]);
+  useEffect(() => setNowMs(Date.now()), []);
 
-  const copy = locale === 'tr'
+  const copy = isTr
     ? {
         eyebrow: isTeamMember ? 'YÖNETTİĞİN LOKASYONLAR' : 'İŞLETMELER',
         title: isTeamMember ? 'Yönettiğin lokasyonlar' : 'İşletmelerim',
         subtitle: isTeamMember
-          ? 'Sahibin sana atadığı lokasyonlar burada listelenir. Erişimin yalnızca bu listeyle sınırlıdır.'
-          : 'Restoranlarınızı, şubelerinizi veya mağazalarınızı tek panelden yönetin.',
+          ? 'Sahibin sana atadığı lokasyonlar. Erişimin bu listeyle sınırlıdır.'
+          : 'Tüm şubelerini tek tabloda izle; bir işletmeye geçmek için "Panele geç"e bas.',
         add: 'Yeni İşletme',
         emptyTitle: isTeamMember ? 'Henüz lokasyon atanmamış' : 'Henüz işletme yok',
         emptyText: isTeamMember
           ? 'İşletme sahibinden bir lokasyon yetkisi bekliyorsun. Atama yapıldığında burada görünür.'
           : 'İlk işletmenizi ekleyerek QR ve yorum toplamaya başlayın.',
-        manage: 'Yönet',
-        qr: 'QR Kod',
-        category: 'Kategori',
-        reviews: 'Yorum',
         search: isTeamMember ? 'Lokasyon ara' : 'İşletme ara',
         active: 'Aktif',
+        attention: 'Dikkat',
         all: 'Tümü',
-        inactive: 'Devre Dışı Bırakılanlar',
+        inactive: 'Devre dışı',
         inactiveEmptyTitle: 'Devre dışı işletme yok',
         inactiveEmptyText: 'Pasife alınan işletmeler burada görünür. Aktifleştirme işlemini bu listeden yapabilirsin.',
+        attentionEmptyTitle: 'Her şey yolunda',
+        attentionEmptyText: 'Aktif işletmelerinde sorunlu link, bekleyen düşük puan ya da sessiz kalan şube yok.',
         activate: 'Aktifleştir',
         deactivate: 'Devre dışı bırak',
         activeStatus: 'Aktif',
         inactiveStatus: 'Devre dışı',
         pausedByAdmin: 'Buaze tarafından duraklatıldı',
+        open: 'Panele geç',
       }
     : {
         eyebrow: isTeamMember ? 'LOCATIONS YOU MANAGE' : 'BUSINESSES',
-        title: isTeamMember ? 'Locations you manage' : 'My Businesses',
+        title: isTeamMember ? 'Locations you manage' : 'My businesses',
         subtitle: isTeamMember
-          ? 'Locations assigned to you by the owner are listed here. Your access is scoped to this list only.'
-          : 'Manage your restaurants, branches, or stores from one panel.',
+          ? 'Locations assigned to you by the owner. Your access is scoped to this list.'
+          : 'Watch every branch in one table; press "Open dashboard" to switch to a business.',
         add: 'New Business',
         emptyTitle: isTeamMember ? 'No locations assigned yet' : 'No business yet',
         emptyText: isTeamMember
           ? 'Waiting for the owner to grant access to a location. Assignments appear here.'
           : 'Create your first business to start collecting feedback.',
-        manage: 'Manage',
-        qr: 'QR Code',
-        category: 'Category',
-        reviews: 'Reviews',
         search: isTeamMember ? 'Search locations' : 'Search businesses',
         active: 'Active',
+        attention: 'Needs a look',
         all: 'All',
         inactive: 'Disabled',
         inactiveEmptyTitle: 'No disabled business',
         inactiveEmptyText: 'Disabled businesses appear here. You can reactivate them from this list.',
+        attentionEmptyTitle: 'All good',
+        attentionEmptyText: 'No broken links, waiting low ratings or quiet branches among your active businesses.',
         activate: 'Reactivate',
         deactivate: 'Disable',
         activeStatus: 'Active',
         inactiveStatus: 'Disabled',
         pausedByAdmin: 'Paused by Buaze',
+        open: 'Open dashboard',
       };
+
+  const rows = useMemo(() => restaurants.map(toPortfolioRow), [restaurants]);
+  const totals = useMemo(() => portfolioTotals(rows), [rows]);
+  const byId = useMemo(() => new Map(restaurants.map((r) => [r.id, r])), [restaurants]);
+
+  const statusFiltered = rows.filter((row) => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'passive') return !row.isActive;
+    if (statusFilter === 'attention') return row.isActive && attentionReasons(row).length > 0;
+    return row.isActive;
+  });
+  const collatorLocale = isTr ? 'tr-TR' : 'en-US';
+  const query = searchTerm.trim().toLocaleLowerCase(collatorLocale);
+  const filtered = statusFiltered.filter(
+    (row) =>
+      !query ||
+      row.name.toLocaleLowerCase(collatorLocale).includes(query) ||
+      row.category.toLocaleLowerCase(collatorLocale).includes(query) ||
+      (byId.get(row.id)?.slug ?? '').includes(query),
+  );
+  const visible = sortKey ? sortPortfolioRows(filtered, sortKey, sortDir, locale) : filtered;
+
+  const toggleSort = (key: PortfolioSortKey) => {
+    if (sortKey === key) {
+      setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'name' ? 'asc' : 'desc');
+    }
+  };
+
+  const categoryLabel = (category: string) =>
+    isTr ? category : getSectorByLabel(category)?.display.en ?? category;
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     setActionLoadingId(id);
@@ -137,72 +256,234 @@ export default function RestaurantsClient({
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         if (isSuspendedByAdminError(data)) {
-          // Lock this card's toggle without waiting for a refetch.
-          setRestaurants((prev) =>
-            prev.map((r) => (r.id === id ? { ...r, suspendedByAdmin: true } : r)),
-          );
+          setRestaurants((prev) => prev.map((r) => (r.id === id ? { ...r, suspendedByAdmin: true } : r)));
         }
         setNotice({
           kind: 'danger',
-          text: restaurantSaveErrorMessage(
-            data,
-            locale,
-            locale === 'tr' ? 'Durum güncellenemedi.' : 'Status could not be updated.',
-          ),
+          text: restaurantSaveErrorMessage(data, locale, isTr ? 'Durum güncellenemedi.' : 'Status could not be updated.'),
         });
         return;
       }
-
       setNotice({
         kind: 'success',
         text: !currentStatus
-          ? locale === 'tr' ? 'İşletme tekrar aktifleştirildi.' : 'Location reactivated.'
-          : locale === 'tr' ? 'İşletme devre dışı bırakıldı.' : 'Location disabled.',
+          ? isTr ? 'İşletme tekrar aktifleştirildi.' : 'Location reactivated.'
+          : isTr ? 'İşletme devre dışı bırakıldı.' : 'Location disabled.',
       });
-      // Update the card in place, then resync from the server (keeps order
-      // and every business — no 20-item API page).
-      setRestaurants((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, isActive: !currentStatus } : r)),
-      );
+      setRestaurants((prev) => prev.map((r) => (r.id === id ? { ...r, isActive: !currentStatus } : r)));
       router.refresh();
     } catch (error) {
       console.error(error);
-      setNotice({
-        kind: 'danger',
-        text: locale === 'tr' ? 'Bağlantı hatası oluştu.' : 'Connection error.',
-      });
+      setNotice({ kind: 'danger', text: isTr ? 'Bağlantı hatası oluştu.' : 'Connection error.' });
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  // §22 — Sayfa scope-blind. Sahibi/yönettiği TÜM restoranlar her zaman
-  // listelenir. Sidebar switcher seçimi (?restaurantId=) sadece downstream
-  // context-scoped sayfalarda (dashboard / feedbacks / analytics) etkili;
-  // bu sayfada owner tüm portföyü gözlemleyip yönetmek istediğini seçer.
-  const statusFiltered = restaurants.filter((r) =>
-    statusFilter === 'all' ? true : statusFilter === 'active' ? r.isActive : !r.isActive,
-  );
-  const query = searchTerm.trim().toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US');
-  const filtered = statusFiltered.filter(
-    (r) =>
-      !query ||
-      r.name.toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US').includes(query) ||
-      r.category.toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US').includes(query),
-  );
+  // Make the business the active one (shell switcher + pages agree via the
+  // URL and the remembered id) and open its dashboard.
+  const openDashboard = (id: string) => {
+    try {
+      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, id);
+      const recent = parseRecentBusinesses(window.localStorage.getItem(RECENT_BUSINESS_STORAGE_KEY));
+      window.localStorage.setItem(RECENT_BUSINESS_STORAGE_KEY, JSON.stringify(pushRecentBusiness(recent, id)));
+    } catch {
+      /* storage blocked — the URL carries the selection */
+    }
+    router.push(`/${locale}/dashboard?restaurantId=${encodeURIComponent(id)}`);
+  };
+
   const newBusinessHref = `/${locale}/dashboard/restaurants/new`;
-  // Absolute public link for the copy button — env app URL (stable on server
-  // and client), production host when unset / localhost.
   const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/+$/, '');
   const publicBase =
     envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : 'https://www.buaze.com';
+  const attentionCount = totals.needsAttention;
   const statusTabs: TabItem[] = [
-    { id: 'active', label: copy.active },
-    { id: 'all', label: copy.all },
-    { id: 'passive', label: copy.inactive },
+    { id: 'active', label: copy.active, count: totals.active },
+    { id: 'attention', label: copy.attention, count: attentionCount },
+    { id: 'all', label: copy.all, count: totals.businesses },
+    { id: 'passive', label: copy.inactive, count: totals.businesses - totals.active },
   ];
-  const emptyTitle = statusFilter === 'passive' ? copy.inactiveEmptyTitle : copy.emptyTitle;
-  const emptyText = statusFilter === 'passive' ? copy.inactiveEmptyText : copy.emptyText;
+  const number = (value: number) => value.toLocaleString(collatorLocale);
+
+  const emptyTitle =
+    statusFilter === 'passive'
+      ? copy.inactiveEmptyTitle
+      : statusFilter === 'attention'
+        ? copy.attentionEmptyTitle
+        : copy.emptyTitle;
+  const emptyText =
+    statusFilter === 'passive'
+      ? copy.inactiveEmptyText
+      : statusFilter === 'attention'
+        ? copy.attentionEmptyText
+        : copy.emptyText;
+
+  const rating = (value: number | null) =>
+    value === null ? (
+      <span className="text-[#A3A3A3]">—</span>
+    ) : (
+      <span className="inline-flex items-center gap-1 tabular-nums">
+        <Star size={12} strokeWidth={0} className="fill-[#F5B400]" aria-hidden="true" />
+        {value.toLocaleString(collatorLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+      </span>
+    );
+
+  const platformCell = (row: PortfolioRow) => {
+    const { connected, issue, missing } = row.platforms;
+    const href = `/${locale}/dashboard/platforms?restaurantId=${encodeURIComponent(row.id)}`;
+    return (
+      <Link
+        href={href}
+        className="inline-flex items-center gap-2.5 rounded-md px-1 py-0.5 text-[12.5px] text-[#525252] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+        aria-label={
+          isTr
+            ? `${row.name} platform linkleri: ${connected} bağlı, ${issue} sorunlu, ${missing} eksik`
+            : `${row.name} platform links: ${connected} connected, ${issue} need attention, ${missing} not added`
+        }
+      >
+        <span className={`inline-flex items-center gap-1 tabular-nums ${connected > 0 ? 'text-[#15803D]' : 'text-[#737373]'}`}>
+          <PlatformStateIcon state="connected" size={12} />
+          {connected}
+        </span>
+        {issue > 0 && (
+          <span className="inline-flex items-center gap-1 tabular-nums text-[#991B1B]">
+            <PlatformStateIcon state="issue" size={12} />
+            {issue}
+          </span>
+        )}
+        {/* "Not added" only matters while nothing works yet — a restaurant
+            rarely needs every in-sector platform. */}
+        {missing > 0 && connected === 0 && issue === 0 && (
+          <span className="inline-flex items-center gap-1 tabular-nums text-[#737373]">
+            <PlatformStateIcon state="missing" size={12} />
+            {missing}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
+  const statusBadge = (restaurant: Restaurant) =>
+    restaurant.suspendedByAdmin ? (
+      <Badge kind="danger">{copy.pausedByAdmin}</Badge>
+    ) : restaurant.isActive ? (
+      <Badge kind="ok">{copy.activeStatus}</Badge>
+    ) : (
+      <Badge kind="off">{copy.inactiveStatus}</Badge>
+    );
+
+  const reasonsLine = (row: PortfolioRow) => {
+    const reasons = attentionReasons(row).filter((reason) => reason !== 'paused');
+    if (reasons.length === 0) return null;
+    return (
+      <span className="mt-1 flex flex-wrap gap-1">
+        {reasons.map((reason) => (
+          <Badge key={reason} kind={REASON_COPY[reason].kind} dot={false} className="!h-5 !px-1.5 !text-[10.5px]">
+            {isTr ? REASON_COPY[reason].tr : REASON_COPY[reason].en}
+          </Badge>
+        ))}
+      </span>
+    );
+  };
+
+  const rowMenu = (restaurant: Restaurant) => {
+    const suspended = restaurant.suspendedByAdmin === true;
+    return (
+      <PulseMenu
+        trigger={
+          <button
+            type="button"
+            className="bz-btn-icon"
+            aria-label={isTr ? `${restaurant.name} işlemleri` : `${restaurant.name} actions`}
+          >
+            <MoreHorizontal size={16} strokeWidth={2} />
+          </button>
+        }
+        className="min-w-[220px]"
+      >
+        <PulseMenuItem icon={<Settings size={14} />} onSelect={() => router.push(`/${locale}/dashboard/restaurants/${restaurant.id}/settings`)}>
+          {isTr ? 'İşletme ayarları' : 'Business settings'}
+        </PulseMenuItem>
+        <PulseMenuItem icon={<Plug size={14} />} onSelect={() => router.push(`/${locale}/dashboard/platforms?restaurantId=${restaurant.id}`)}>
+          {isTr ? 'Platform bağlantıları' : 'Platform links'}
+        </PulseMenuItem>
+        <PulseMenuItem icon={<UtensilsCrossed size={14} />} onSelect={() => router.push(`/${locale}/dashboard/restaurants/${restaurant.id}/menu`)}>
+          {isTr ? 'Menü' : 'Menu'}
+        </PulseMenuItem>
+        <PulseMenuItem icon={<QrCode size={14} />} onSelect={() => router.push(`/${locale}/dashboard/qr?restaurantId=${restaurant.id}`)}>
+          {isTr ? 'QR kodları' : 'QR codes'}
+        </PulseMenuItem>
+        <PulseMenuItem icon={<ExternalLink size={14} />} onSelect={() => window.open(`/r/${restaurant.slug}`, '_blank', 'noopener')}>
+          {isTr ? 'Müşteri sayfasını aç' : 'Open customer page'}
+        </PulseMenuItem>
+        <PulseMenuItem icon={<Store size={14} />} onSelect={() => router.push(`/${locale}/dashboard/restaurants/${restaurant.id}`)}>
+          {isTr ? 'İşletme detayı' : 'Business details'}
+        </PulseMenuItem>
+        {canMutate && (
+          <>
+            <PulseMenuDivider />
+            <PulseMenuItem
+              icon={restaurant.isActive ? <Pause size={14} /> : <Play size={14} />}
+              danger={restaurant.isActive}
+              disabled={suspended || actionLoadingId === restaurant.id}
+              onSelect={() => toggleActive(restaurant.id, restaurant.isActive)}
+            >
+              {suspended ? copy.pausedByAdmin : restaurant.isActive ? copy.deactivate : copy.activate}
+            </PulseMenuItem>
+          </>
+        )}
+      </PulseMenu>
+    );
+  };
+
+  const sortHeader = (key: PortfolioSortKey, label: string, align: 'left' | 'right' = 'left') => {
+    const activeSort = sortKey === key;
+    const Icon = !activeSort ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown;
+    return (
+      <th
+        scope="col"
+        aria-sort={activeSort ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+        className={align === 'right' ? 'text-right' : undefined}
+      >
+        <button
+          type="button"
+          onClick={() => toggleSort(key)}
+          className={`-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${activeSort ? 'text-[#0A0A0A]' : ''}`}
+        >
+          {label}
+          <Icon size={12} aria-hidden="true" className={activeSort ? '' : 'opacity-50'} />
+        </button>
+      </th>
+    );
+  };
+
+  const nameCell = (restaurant: Restaurant, row: PortfolioRow) => (
+    <div className="flex min-w-0 items-start gap-3">
+      <span
+        aria-hidden="true"
+        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold text-[#0A0A0A]"
+        style={{ background: restaurant.primaryColor || '#C6F24E' }}
+      >
+        {restaurant.name.trim().charAt(0).toLocaleUpperCase(collatorLocale)}
+      </span>
+      <div className="min-w-0">
+        <Link
+          href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
+          className="block truncate text-[13.5px] font-semibold text-[#0A0A0A] hover:underline underline-offset-2"
+        >
+          {restaurant.name}
+        </Link>
+        <span className="flex min-w-0 items-center gap-1 text-[12px] text-[#737373]">
+          <span className="truncate">{categoryLabel(restaurant.category)}</span>
+          <span aria-hidden="true">·</span>
+          <span className="truncate bz-mono text-[11px]">/r/{restaurant.slug}</span>
+          <CopyUrlButton url={`${publicBase}/r/${restaurant.slug}`} locale={locale} className="!h-6 !w-6 shrink-0" />
+        </span>
+        {reasonsLine(row)}
+      </div>
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
@@ -226,196 +507,204 @@ export default function RestaurantsClient({
         </AlertBanner>
       )}
 
-      {/*
-        Stage 80 §38.160 — Mobile filter toolbar sticky-on-scroll.
-        Topbar h-16 (64px) altında pin'lenir; tab + arama kutusu içerik
-        scroll'unda her zaman erişilebilir kalır. lg+ desktop'ta
-        non-sticky (mevcut layout intact). bg-white/95 + backdrop-blur
-        Apple-soft hissi (CLAUDE.md §38.46 + §38.65 paterni reuse).
-      */}
-      <div className="bz-card flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur lg:static lg:bg-white lg:backdrop-blur-none">
+      {rows.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard
+            label={isTr ? 'Aktif işletme' : 'Active businesses'}
+            value={`${number(totals.active)}/${number(totals.businesses)}`}
+            icon={<Store size={14} />}
+          />
+          <StatCard
+            label={isTr ? 'Yorum · 30 gün' : 'Reviews · 30 days'}
+            value={number(totals.reviews30d)}
+            icon={<MessageSquareText size={14} />}
+          />
+          <StatCard
+            label={isTr ? 'Ortalama puan · 30 gün' : 'Avg rating · 30 days'}
+            value={totals.avgRating30d === null ? '—' : totals.avgRating30d.toLocaleString(collatorLocale, { minimumFractionDigits: 1 })}
+            icon={<Star size={14} />}
+          />
+          <StatCard
+            label={isTr ? 'Dikkat gereken' : 'Need a look'}
+            value={number(attentionCount)}
+            delta={totals.unread > 0 ? (isTr ? `${number(totals.unread)} bekleyen düşük puan` : `${number(totals.unread)} low ratings waiting`) : undefined}
+            deltaKind="neutral"
+            icon={<AlertTriangle size={14} />}
+          />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Tabs
           items={statusTabs}
           active={statusFilter}
-          onChange={(id) => setStatusFilter(id as 'active' | 'all' | 'passive')}
-          ariaLabel={locale === 'tr' ? 'İşletme durum filtresi' : 'Location status filter'}
+          onChange={(id) => setStatusFilter(id as StatusFilter)}
+          ariaLabel={isTr ? 'İşletme filtresi' : 'Business filter'}
           className="overflow-x-auto no-scrollbar"
         />
-        <div className="relative w-full lg:max-w-md">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+        <div className="relative w-full lg:max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={copy.search}
+            aria-label={copy.search}
             className="bz-input"
-            style={{ paddingLeft: 44 }}
+            style={{ paddingLeft: 36 }}
           />
         </div>
       </div>
 
       {statusFiltered.length === 0 ? (
-        <EmptyState
-          icon={<Store size={22} />}
-          title={emptyTitle}
-          body={emptyText}
-          action={
-            statusFilter !== 'passive' && !isTeamMember ? (
-              <Link href={newBusinessHref} className="bz-btn-primary">
-                <Plus size={14} strokeWidth={2} />
-                {copy.add}
-              </Link>
-            ) : undefined
-          }
-        />
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={<Search size={22} />}
-          title={locale === 'tr' ? 'Sonuç bulunamadı' : 'No results'}
-          body={locale === 'tr' ? 'Arama kriterlerini değiştirerek tekrar dene.' : 'Try changing the search term.'}
-        />
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((restaurant) => {
-            const suspended = restaurant.suspendedByAdmin === true;
-            const publicUrl = `${publicBase}/r/${restaurant.slug}`;
-            return (
-              <div
-                key={restaurant.id}
-                className={`overflow-hidden bz-card bz-motion-spring ${!restaurant.isActive ? 'border-[#FECACA] bg-[#FFFBFB]' : 'hover:border-[#C6F24E] hover:bz-elev-2 bz-lift'}`}
-              >
-                <div className="p-5 sm:p-6">
-                  {/* Header — name + category + status badge (AdminLocations design) */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3
-                        className="truncate text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.02em] leading-tight bz-h-tight"
-                      >
-                        {restaurant.name}
-                      </h3>
-                      <p className="mt-1 text-[12px] text-[#737373] truncate">{restaurant.category}</p>
-                    </div>
-                    {/* Status shown once here; the map overlay is the only other
-                        mention (status used to appear four times per card). */}
-                    <div className="shrink-0">
-                      <Badge kind={restaurant.isActive ? 'ok' : 'danger'}>
-                        {suspended
-                          ? copy.pausedByAdmin
-                          : restaurant.isActive
-                            ? copy.activeStatus
-                            : copy.inactiveStatus}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Mini map graphic — decorative, lime accent pin (AdminLocations §716-724) */}
-                  <div className="mt-4 block w-full aspect-[2/1] rounded-lg bg-[#F5F5F5] relative overflow-hidden">
-                    <svg viewBox="0 0 200 100" className="w-full h-full" aria-hidden>
-                      <path d="M0 50 Q30 40 60 48 Q90 55 120 42 Q150 30 200 38" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
-                      <path d="M20 70 Q60 60 100 65 Q140 70 180 62" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
-                      <path d="M0 20 Q40 25 80 18 Q120 12 160 22 Q190 30 200 22" stroke="#EDEDED" strokeWidth="1.5" fill="none" />
-                      <circle cx="100" cy="50" r="18" fill={restaurant.primaryColor} opacity="0.3" />
-                      <circle cx="100" cy="50" r="10" fill={restaurant.primaryColor} opacity="0.6" />
-                      <circle cx="100" cy="50" r="5" fill="#0A0A0A" />
-                    </svg>
-                    <span className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded bg-white/85 px-2 py-1 pulse-eyebrow text-[#737373]">
-                      {(restaurant.isActive ? copy.activeStatus : copy.inactiveStatus).toLocaleUpperCase(
-                        locale === 'tr' ? 'tr-TR' : 'en-US',
-                      )}
-                    </span>
-                  </div>
-
-                  {/* Review count + public link. The old 4-tile grid had a "PUAN"
-                      tile hardcoded to "—" with a lime star (the SSR list carries
-                      no rating), a "DURUM" tile repeating the badge and a URL
-                      tile repeating this row — collapsed into one line. */}
-                  <div className="mt-4 flex items-end justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'YORUM' : 'REVIEWS'}</div>
-                      <div className="mt-1.5 text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] font-heading">
-                        {restaurant._count.feedbacks}
-                      </div>
-                    </div>
-                    {/* Copy keeps bz-btn-icon's native 32px tap target (was
-                        squeezed to 20px). */}
-                    <div className="flex min-w-0 items-center gap-1">
-                      <p className="pulse-eyebrow text-[#737373] truncate">/r/{restaurant.slug}</p>
-                      <CopyUrlButton url={publicUrl} locale={locale} className="shrink-0" />
-                    </div>
-                  </div>
-
-                  {/*
-                    Stage 80 §38.160 — Action grid 4 button mobile 44px+
-                    touch target garantisi (WCAG 2.5.5 AA). Mobile'da
-                    `min-h-[44px]`, sm:+ desktop'ta mevcut padding intact.
-                    Lime CTA + ghost dark + status toggle + public preview
-                    sırası action priority hierarchy'siyle uyumlu.
-
-                    Stage 81 §38.161 — `min-h-[44px] sm:min-h-0` inline
-                    pattern → `bz-touch-target` utility migrate (CLAUDE.md
-                    §38.49 dead utility class disipline, callsite adopt).
-                    `sm:min-h-0 sm:min-w-0` override sm:+ desktop'ta
-                    utility override eder (button compact density intact).
-                  */}
-                  <div
-                    className={`mt-4 grid gap-2 ${
-                      canMutate ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'
-                    }`}
-                  >
-                    <Link
-                      href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                      className="bz-btn-ghost justify-center text-[12px] bz-touch-target sm:min-h-0 sm:min-w-0"
-                    >
-                      {locale === 'tr' ? 'Detay aç' : 'Open details'} →
-                    </Link>
-                    <Link
-                      href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                      className="bz-btn-primary justify-center text-[12px] bz-touch-target sm:min-h-0 sm:min-w-0"
-                    >
-                      {copy.qr}
-                    </Link>
-                    {/* §22 viewer-mode — Deaktifleştir / Aktifleştir backend
-                        `canWriteRestaurant` viewer'ı reddediyor; UI'da da
-                        gizliyoruz. Grid `grid-cols-1 sm:grid-cols-3`'e düşer
-                        (Detay / QR / Aç). */}
-                    {canMutate && (
-                      <button
-                        type="button"
-                        disabled={actionLoadingId === restaurant.id || suspended}
-                        title={suspended ? suspendedByAdminMessage(locale) : undefined}
-                        onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                        className={`inline-flex items-center justify-center bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full px-4 py-2.5 text-center text-[12px] font-medium bz-motion-spring disabled:opacity-60 ${
-                          restaurant.isActive
-                            ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
-                            : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                        }`}
-                      >
-                        {actionLoadingId === restaurant.id
-                          ? locale === 'tr' ? 'İşleniyor...' : 'Working...'
-                          : suspended
-                            ? copy.pausedByAdmin
-                            : restaurant.isActive ? copy.deactivate : copy.activate}
-                      </button>
-                    )}
-                    <Link
-                      href={`/r/${restaurant.slug}`}
-                      target="_blank"
-                      className="inline-flex items-center justify-center gap-1.5 bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] bz-motion-spring hover:border-[#C6F24E]"
-                      aria-label={
-                        locale === 'tr'
-                          ? `${restaurant.name} müşteri sayfasını yeni sekmede aç`
-                          : `Open the ${restaurant.name} customer page in a new tab`
-                      }
-                    >
-                      <ExternalLink size={14} strokeWidth={2} />
-                      {locale === 'tr' ? 'Aç' : 'Open'}
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="bz-card">
+          <EmptyState
+            icon={<Store size={22} />}
+            title={emptyTitle}
+            body={emptyText}
+            action={
+              statusFilter !== 'passive' && statusFilter !== 'attention' && !isTeamMember ? (
+                <Link href={newBusinessHref} className="bz-btn-primary">
+                  <Plus size={14} strokeWidth={2} />
+                  {copy.add}
+                </Link>
+              ) : undefined
+            }
+          />
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="bz-card">
+          <EmptyState
+            icon={<Search size={22} />}
+            title={isTr ? 'Sonuç bulunamadı' : 'No results'}
+            body={isTr ? 'Arama kriterlerini değiştirerek tekrar dene.' : 'Try changing the search term.'}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Desktop table (§23.6 — card list below lg). */}
+          <div className="bz-card hidden overflow-x-auto lg:block">
+            <table className="bz-table">
+              <thead>
+                <tr>
+                  {sortHeader('name', isTr ? 'İşletme' : 'Business')}
+                  <th scope="col">{isTr ? 'Durum' : 'Status'}</th>
+                  {sortHeader('reviews30d', isTr ? 'Yorum (30g)' : 'Reviews (30d)', 'right')}
+                  {sortHeader('rating', isTr ? 'Puan (30g)' : 'Rating (30d)', 'right')}
+                  {sortHeader('unread', isTr ? 'Bekleyen' : 'Waiting', 'right')}
+                  <th scope="col">{isTr ? 'Platformlar' : 'Platforms'}</th>
+                  <th scope="col">{isTr ? 'Son yorum' : 'Last review'}</th>
+                  <th scope="col" className="text-right">
+                    <span className="sr-only">{isTr ? 'İşlemler' : 'Actions'}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((row) => {
+                  const restaurant = byId.get(row.id);
+                  if (!restaurant) return null;
+                  return (
+                    <tr key={row.id} className={!row.isActive ? 'bg-[#FCFCFC] text-[#737373]' : undefined}>
+                      <td className="max-w-[340px]">{nameCell(restaurant, row)}</td>
+                      <td>{statusBadge(restaurant)}</td>
+                      <td className="text-right tabular-nums">
+                        <span className="font-medium text-[#0A0A0A]">{number(row.reviews30d)}</span>
+                        <span className="block text-[11px] text-[#A3A3A3]">
+                          {isTr ? `toplam ${number(row.reviewsTotal)}` : `${number(row.reviewsTotal)} total`}
+                        </span>
+                      </td>
+                      <td className="text-right">{rating(row.avgRating30d)}</td>
+                      <td className="text-right tabular-nums">
+                        {row.unread > 0 ? (
+                          <Link
+                            href={`/${locale}/dashboard/feedbacks?restaurantId=${encodeURIComponent(row.id)}`}
+                            className="font-medium text-[#B45309] hover:underline underline-offset-2"
+                          >
+                            {number(row.unread)}
+                          </Link>
+                        ) : (
+                          <span className="text-[#A3A3A3]">0</span>
+                        )}
+                      </td>
+                      <td>{platformCell(row)}</td>
+                      <td className="whitespace-nowrap text-[12.5px] text-[#525252]">
+                        {row.lastFeedbackAt ? formatRelativeTime(row.lastFeedbackAt, locale, nowMs) : '—'}
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openDashboard(row.id)}
+                            disabled={!row.isActive}
+                            title={!row.isActive ? copy.inactiveStatus : undefined}
+                            className="bz-btn-ghost bz-btn-sm whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {copy.open}
+                          </button>
+                          {rowMenu(restaurant)}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile / tablet cards. */}
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden" role="list">
+            {visible.map((row) => {
+              const restaurant = byId.get(row.id);
+              if (!restaurant) return null;
+              return (
+                <li key={row.id} className={`bz-card p-4 ${!row.isActive ? 'bg-[#FCFCFC]' : ''}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    {nameCell(restaurant, row)}
+                    {rowMenu(restaurant)}
+                  </div>
+                  <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-[#EDEDED] pt-3 text-[12px]">
+                    <div>
+                      <dt className="text-[#737373]">{isTr ? 'Yorum (30g)' : 'Reviews (30d)'}</dt>
+                      <dd className="mt-0.5 font-semibold tabular-nums text-[#0A0A0A]">{number(row.reviews30d)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[#737373]">{isTr ? 'Puan' : 'Rating'}</dt>
+                      <dd className="mt-0.5 font-semibold text-[#0A0A0A]">{rating(row.avgRating30d)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[#737373]">{isTr ? 'Bekleyen' : 'Waiting'}</dt>
+                      <dd className={`mt-0.5 font-semibold tabular-nums ${row.unread > 0 ? 'text-[#B45309]' : 'text-[#0A0A0A]'}`}>
+                        {number(row.unread)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {statusBadge(restaurant)}
+                      {platformCell(row)}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openDashboard(row.id)}
+                      disabled={!row.isActive}
+                      className="bz-btn-primary bz-btn-sm shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {copy.open}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {statusFilter === 'passive' && canMutate && (
+            <p className="text-[12px] text-[#737373]">
+              {isTr
+                ? 'Bir işletmeyi yeniden açmak için satırdaki ••• menüsünden "Aktifleştir"i seç.'
+                : 'To reopen a business, choose "Reactivate" from the row ••• menu.'}
+              {visible.some((row) => byId.get(row.id)?.suspendedByAdmin) ? ` ${suspendedByAdminMessage(locale)}` : ''}
+            </p>
+          )}
+        </>
       )}
     </div>
   );

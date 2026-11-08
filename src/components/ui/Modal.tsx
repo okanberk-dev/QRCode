@@ -206,7 +206,7 @@ export function Modal({
         ref={dialogRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="bz-fade-in relative bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[20px] sm:rounded-[20px]"
+        className="bz-fade-in relative bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[16px] sm:rounded-[14px]"
         style={{
           width: computedWidth,
           maxWidth: "92vw",
@@ -256,7 +256,7 @@ export function Modal({
             body (only shown when closeGuard signals dirty input). */}
         {confirmingClose && (
           <div
-            className="absolute inset-0 z-10 flex items-center justify-center rounded-t-[20px] sm:rounded-[20px] bg-white/95 p-6 backdrop-blur-sm"
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-t-[16px] sm:rounded-[14px] bg-white/95 p-6 backdrop-blur-sm"
             role="alertdialog"
             aria-label={confirmCopy.title}
           >

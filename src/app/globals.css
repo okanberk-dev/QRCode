@@ -1651,7 +1651,131 @@ select.bz-input option:checked {
   transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .bz-progress.lime > i { background: #C6F24E; }
+
+/* ─────────────────────────────────────────────────────────────
+ * §49 Panel theme — shadcn dashboard type + density, Pulse colors.
+ * Active only where a panel shell (`.bz-panel`, owner dashboard + admin)
+ * is on the page. `:root:has(...)` (not a `.bz-panel` ancestor selector)
+ * so portaled menus, selects and modals rendered into <body> get it too.
+ * Marketing, auth and the public /r /menu /s pages keep the §11 look even
+ * though they reuse a few bz-* classes.
+ * Font names come from PanelTheme (next/font, panel layouts only).
+ * ───────────────────────────────────────────────────────────── */
+:root:has(.bz-panel) {
+  --font-body: var(--font-panel-sans, var(--font-inter)), system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-panel-sans, var(--font-space-grotesk)), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: var(--font-panel-mono, var(--font-jetbrains-mono)), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --bz-shadow-xs: 0 1px 2px rgba(10, 10, 10, 0.05);
+}
+/* Geist reads best a step heavier than Space Grotesk for titles/numbers. */
+:root:has(.bz-panel) :is(.bz-h-tight, .bz-h-tight-2, .bz-wordmark) {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+:root:has(.bz-panel) .pulse-eyebrow { letter-spacing: 0.1em; }
+
+/* Cards: 12px radius + hairline shadow (shadcn card). */
+:root:has(.bz-panel) :is(.bz-card, .bz-card-soft) {
+  border-radius: 12px;
+  border-color: #E8E8E8;
+}
+:root:has(.bz-panel) .bz-card { box-shadow: var(--bz-shadow-xs); }
+
+/* Buttons: 8px rounded rectangles, medium weight (shadcn button). The
+ * mobile 44px touch-target floor above is untouched (no min-height here). */
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-primary, .bz-btn-lime, .bz-btn-ghost, .bz-btn-danger, .bz-btn-warn, .bz-btn-on-dark) {
+  border-radius: 8px;
+  font-weight: 500;
+  font-family: var(--font-body);
+}
+:root:has(.bz-panel) .bz-btn-primary:hover { transform: none; }
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost) {
+  background: #FFFFFF;
+  border-color: #E5E5E5;
+  box-shadow: var(--bz-shadow-xs);
+}
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):hover { background: #F5F5F5; border-color: #E5E5E5; }
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198, 242, 78, 0.45); }
+:root:has(.bz-panel) .bz-btn-icon { border-radius: 8px; }
+:root:has(.bz-panel) .bz-side-cta { border-radius: 8px; font-weight: 500; }
+
+/* Badges: shadcn badge (medium weight, 6px). */
+:root:has(.bz-panel) .bz-badge { font-weight: 500; border-radius: 6px; }
+
+/* Inputs: 8px + hairline shadow; lime focus ring stays (brand). */
+:root:has(.bz-panel) .bz-input {
+  border-radius: 8px;
+  border-color: #E5E5E5;
+  box-shadow: var(--bz-shadow-xs);
+}
+:root:has(.bz-panel) .bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198, 242, 78, 0.35); }
+
+/* Tabs: segmented control (shadcn TabsList) instead of an underline. */
+:root:has(.bz-panel) .bz-tabs {
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: 10px;
+  background: #F2F2F2;
+}
+:root:has(.bz-panel) .bz-tab {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #525252;
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+:root:has(.bz-panel) .bz-tab:hover { color: #0A0A0A; }
+:root:has(.bz-panel) .bz-tab:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(198, 242, 78, 0.7); }
+:root:has(.bz-panel) .bz-tab[aria-selected="true"] {
+  background: #FFFFFF;
+  color: #0A0A0A;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(10, 10, 10, 0.08), 0 0 0 1px rgba(10, 10, 10, 0.04);
+}
+:root:has(.bz-panel) .bz-tab[aria-selected="true"]::after { content: none; }
+:root:has(.bz-panel) .bz-tab-vertical { border-radius: 8px; font-weight: 500; padding: 8px 12px; }
+:root:has(.bz-panel) .bz-tab-vertical[aria-selected="true"] { font-weight: 500; }
+
+/* Tables: plain sentence-case header (shadcn table). */
+:root:has(.bz-panel) .bz-table th {
+  background: transparent;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #737373;
+  height: 40px;
+  padding: 8px 14px;
+}
+:root:has(.bz-panel) .bz-table td { padding: 12px 14px; }
+:root:has(.bz-panel) .bz-table tbody tr:hover td { background: #FAFAFA; }
+
+/* Menus: 10px popover, 6px items (shadcn dropdown). */
+:root:has(.bz-panel) .bz-menu { border-radius: 10px; padding: 4px; border-color: #E8E8E8; }
+:root:has(.bz-panel) .bz-menu-item { border-radius: 6px; padding: 8px 10px; }
+:root:has(.bz-panel) .bz-menu-item:hover { background: #F5F5F5; }
+:root:has(.bz-panel) .bz-menu-label {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #737373;
+}
+:root:has(.bz-panel) .bz-avatar { border-radius: 8px; font-family: var(--font-body); }
 } /* @layer components */
+
+/* §49 — headings are styled by an unlayered rule (`:where(h1…h6)` above),
+ * so the panel weight override has to be unlayered too. */
+:root:has(.bz-panel) :where(h1, h2, h3, h4, h5, h6) {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
 
 /* iOS Safari zooms into any focused field under 16px. Inside the layer a
  * `text-[13px]` utility next to `bz-input` would now win on phones, so the

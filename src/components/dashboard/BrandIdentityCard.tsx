@@ -45,9 +45,11 @@ const FONT_OPTIONS = ['Space Grotesk', 'Inter', 'Manrope', 'system'];
 const SLOGAN_MAX = 140;
 
 const FONT_FAMILY_MAP: Record<string, string> = {
-  'Space Grotesk': 'var(--font-heading), sans-serif',
-  Inter: 'var(--font-body), sans-serif',
-  Manrope: 'Manrope, var(--font-heading), sans-serif',
+  // The business's public-page font, not the panel's (§49): resolve the
+  // family directly instead of --font-heading (Geist inside the panel).
+  'Space Grotesk': 'var(--font-space-grotesk), sans-serif',
+  Inter: 'var(--font-inter), sans-serif',
+  Manrope: 'Manrope, var(--font-space-grotesk), sans-serif',
   system: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
 };
 

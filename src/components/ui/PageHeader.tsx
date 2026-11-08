@@ -39,9 +39,10 @@ export function PageHeader({
   // §38.66 — titleScale variant: hero (Apple HIG default) vs compact
   // (yoğun 3-col layout için mütevazı). Her ikisinde de `bz-h-tight-2`
   // Space Grotesk weight 500 + tight tracking sabit; sadece size scale.
+  // §49 — shadcn dashboard scale (text-2xl/3xl semibold) in the Geist panels.
   const titleStyle = titleScale === 'compact'
-    ? { fontSize: 'clamp(22px, 4vw, 32px)', lineHeight: 1.1 }
-    : { fontSize: 'clamp(28px, 5vw, 40px)', lineHeight: 1.05 };
+    ? { fontSize: 'clamp(20px, 2.6vw, 24px)', lineHeight: 1.15 }
+    : { fontSize: 'clamp(24px, 3vw, 30px)', lineHeight: 1.1 };
   return (
     <div
       className={`flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4 mb-5 ${className}`}

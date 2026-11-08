@@ -413,7 +413,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           : 'TEK İŞLETME';
 
   const SidebarContent = ({ navRef: forwardedNavRef }: { navRef?: React.MutableRefObject<HTMLElement | null> } = {}) => (
-    <div className="flex flex-col h-full bg-white text-[#0A0A0A]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex flex-col h-full bg-white text-[#0A0A0A]">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <Link href="/admin/dashboard" className="flex items-center gap-2.5">
@@ -477,9 +477,9 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                   href={item.href}
                   onClick={handleNavClick}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${isActive
-                      ? 'bg-[#0A0A0A] text-white font-semibold before:absolute before:left-[-12px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:bg-[#C6F24E] before:rounded-r-sm'
-                      : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
+                  className={`relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all ${isActive
+                      ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
+                      : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                     }`}
                 >
                   <Icon size={16} strokeWidth={2} className="shrink-0" />
@@ -503,9 +503,9 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${childActive
-                      ? 'bg-[#F2F2F2] text-[#0A0A0A] font-semibold'
-                      : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all ${childActive
+                      ? 'text-[#0A0A0A]'
+                      : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                     }`}
                   aria-expanded={isExpanded}
                 >
@@ -534,9 +534,9 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                           href={child.href}
                           onClick={handleNavClick}
                           aria-current={isActive ? 'page' : undefined}
-                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${isActive
-                              ? 'bg-[#0A0A0A] text-white font-semibold'
-                              : 'text-[#737373] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
+                          className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium transition-all ${isActive
+                              ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
+                              : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                             }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />

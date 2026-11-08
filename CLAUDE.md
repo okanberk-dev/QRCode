@@ -427,6 +427,7 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 
 ### Font
 - **Space Grotesk** (display/heading) + **Inter** (body) + **JetBrains Mono** (eyebrow / sayı / kod) — `next/font/google` ile yüklü (`src/app/layout.tsx`).
+- **Panel istisnası (§49)**: owner + admin panelleri **Geist / Geist Mono** kullanır (shadcn dashboard tipografisi, 2026-11 kullanıcı kararı). Yalnız panel layout'ları yükler; pazarlama, auth ve `/r` `/menu` `/s` yüzeyleri bu listedeki fontlarla kalır.
 - `globals.css` içinde `h1..h6` için CSS seçiciyle Space Grotesk + `font-weight: 500` + sıkı `letter-spacing: -0.025em` otomatik uygulanır, body default Inter'dir.
 - Space Grotesk weights: 400, 500, 600, 700. Inter weights: 400, 500, 600, 700, 800, 900. JetBrains Mono weights: 400, 500, 600.
 - CSS variable'ları: `--font-heading` (Space Grotesk), `--font-body` (Inter), `--font-mono` (JetBrains Mono).
@@ -1281,6 +1282,12 @@ Wave 1-2-3'ü bağlayan son halka. `/api/restaurants?slug=` GET endpoint'i artı
 **Yap:**
 - Yeni provider eklerken hiç ek iş yok — slug GET `latestChecks` reducer string key kabul eder.
 - Cron `take` (BATCH_SIZE=25) artarsa: latestChecks query sınırlı (24h pencere + per-restaurant), yine performant.
+
+#### 19.4.6 Franchise görünümü — "Tüm işletmeler" + linki diğer işletmelere uygula (2026-11, §49)
+
+- `/dashboard/platforms` çok işletmeli sahipte iki sekme: **Bu işletme** (mevcut tek işletme sayfası) / **Tüm işletmeler** (`?view=all`). Matris `src/lib/platform-portfolio.ts` `buildPlatformPortfolio()` ile kurulur — aynı `platform-link-status` modeli, dolayısıyla hücre ile işletme sayfası asla farklı durum göstermez. Sütun = en az bir işletme için görünür yorum platformu; hücre = o işletmenin platform sayfası linki; "Yalnız düzeltilecekler" filtresi; "Tüm işletmeleri kontrol et" işletme işletme sırayla `/integrations/retest` çağırır (işletme başı rate limit).
+- **Düzeltilecek** tanımı: sorunlu link VEYA hiç çalışan yorum linki yok. Eklenmemiş platform bir seçenektir, sorun değildir (restoran sektörü 8 platform önerir; hepsini eklemek gerekmez).
+- Sosyal / mesaj platform sayfasında (Instagram, Facebook, WhatsApp) kayıtlı link `ApplyLinkToBusinesses` kartıyla diğer işletmelere kopyalanır: her işletme kendi `PUT /api/restaurants/[id]`'si ile (aynı doğrulama, yetki, audit), sırayla; işletme başı sonuç listelenir. **Yorum platformlarında yok** — her şubenin kendi Google / Yemeksepeti sayfası vardır.
 
 ### 19.5 Owner Activation Checklist (Phase 11.29, 2026-05)
 
@@ -3493,7 +3500,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 | **react-hook-form + @hookform/resolvers** | ⚠️ Defer | Backend Zod task'ında kurulmadı (kasıtlı). Frontend form refactor task'ı açıldığında yeniden değerlendir. Mevcut elle form state çoğu Buaze form'unda yeterli (4-6 alan). |
 | **react-email / mjml** | ❌ Reject | `src/lib/email/` Pulse layout helper'ları çalışıyor (§21). DB-driven copy + placeholder substitution + revision audit zaten var. |
 | **NestJS / tRPC migration** | ❌ Reject | Monolitik Next.js App Router pattern'i bilinçli karar. Migration tüm 125+ route + DI pattern + decorator yeniden yazımı demek. |
-| **shadcn/ui** | ⚠️ Allowed (pattern restricted) | Yasak değil ama 138 mevcut component elle yazılmış (`bz-*` token'larıyla). Yeni complex UI'da yararlı olabilir; eklenirse styled wrapper'ları Pulse token'larıyla **tamamen override etmek zorunda**. |
+| **shadcn/ui** | ⚠️ Allowed (pattern restricted) | Yasak değil ama 138 mevcut component elle yazılmış (`bz-*` token'larıyla). Yeni complex UI'da yararlı olabilir; eklenirse styled wrapper'ları Pulse token'larıyla **tamamen override etmek zorunda**. 2026-11: shadcn dashboard görünümü paket eklenmeden `bz-*` sınıflarının panel kapsamlı override'ıyla alındı (§49). |
 
 ### 30.5 Tetik olduğunda ek edilebilecekler
 
@@ -4572,6 +4579,8 @@ GitHub PR referansı.
 - §38.248 — Stage 166 (PR TBD) Sektör sayfalarındaki doğrulanamayan rakamlar (+%184, %91, 8.2→9.1, "~%85 özel kanalı tercih eder", "üst sıralara çıkarsınız", kurulum dakikaları) ürün gerçekleriyle değiştirildi; `SolutionPageLayout` varsayılanı ve kohort dipnotu güncellendi. **Disipline**: rakam kutusuna yalnız ürünün kendisinden doğrulanabilen değer (platform sayısı, deneme süresi, tema sayısı, saklama süresi); sonuç vaadi (artış %, puan, süre) yok.
 - §38.249 — Stage 167 (PR TBD) Denetim Merkezi sihirbazı + yanıt risk kapısı + menü kurulum sihirbazı. (i) Owner `AuditBuilderClient` tek sayfadan 3 adımlı sihirbaza döndü: **Başla** (sıfırdan Kontrol listesi / Test + ad + dil tek kartta; altında işletme sektörüne göre 4 hazır şablon → `?from=` ile 2. adımda açılır, `new/page.tsx` `key` ile yeniden kurar) → **Maddeler** → **Yayınla** (özet + düzenle kalemleri, açıklama, geçme puanı, ek ayarlar). "İleri" yalnız o adımı doğrular, kaydet ilk hatalı adıma döner (`firstErrorInStep` / `stepForTarget` / `pickStarterTemplates`, `tests/audits-wizard-steps.test.ts`). Düzenle modunda adımlar serbest, "Kaydet" her adımda. Adımlar `hidden` ile gizlenir (madde listesinin iç durumu korunur). (ii) Admin `CreateTemplateWizard`: Kimlik → **Sorular** (`AuditQuestionList`, owner ile aynı) → Puanlama & özet; şablon sorularıyla birlikte taslak oluşur; native select → `PulseSelect`; `closeGuard`. (iii) Yanıt e-postası / Google yanıtı risk kapısı (§48). (iv) Menü: `MenuStarter` → `MenuSetupWizard` (§12.1); `applyStarterPreset` yerine `createMenuFromSetup` (kategori + toplu ürün sırayla, ilk hatada durur). (v) Ortak `WizardSteps` primitive'i (§23.3). **Disipline**: sihirbaz adımlarında state'i kaybetmemek için adım içeriğini `hidden` ile gizle (koşullu render değil); doğrulama "İleri"de yalnız o adım, kaydette tümü + ilk hatalı adıma odak; boş durum sihirbazı görünürken aynı adımları gösteren ikinci bir yönlendirici (durum şeridi) gösterme.
 - **Chat prompt history (Stage 167)**: 2026-11-08 kullanıcı: *"Panellerseki denerim merkezini daha kolay ui uz ve wizard yap ayrıca kötü yoruma mail yollarken uygunsuz harfleri vs bizi eiske atacak her hardi engelle vw mail gönderilemesin. Sonra menü kısmının wizardını da geliştie ve maine push et"*. Yorum: "uygunsuz harfler" hem uygunsuz kelimeler hem görünmeyen / başka alfabeden benzer / süslü harfler olarak ele alındı. Hukuki/disipline override yok.
+- §38.250 — Stage 168 (PR TBD) Panel shadcn teması + franchise geçişi + Platform Bağlantıları + işletme yönetimi. (i) Panel tipografisi Geist / Geist Mono (`src/lib/panel-fonts.ts` + `PanelTheme`, yalnız panel layout'larında), `bz-*` sınıfları `:root:has(.bz-panel)` ile shadcn yoğunluğuna çekildi (8px düğme, 12px kart + ince gölge, segment sekmeler, düz tablo başlığı, 10px menü); `PageHeader` başlık ölçeği küçüldü; kenar çubuğu öğeleri 8px + aktif öğede lime ikon (dış lime şerit kalktı); üst çubuk `h-14` tek satır ekmek kırıntısı. (ii) `BusinessSwitcher` (kenar çubuğu, daraltılmış kenar çubuğu, masaüstü + mobil üst çubuk tek bileşen): arama (5+), son kullanılanlar (6+), klavye, "İşletmeleri yönet / Yeni işletme ekle"; eski daraltılmışta açılmayan dropdown + iki `PulseSelect` kaldırıldı. (iii) `/dashboard/restaurants` kart ızgarası → sıralanabilir franchise tablosu (30 gün yorum + puan, bekleyen düşük puan, platform sağlığı, son yorum, "Panele geç", satır menüsü, "Dikkat" sekmesi; mobilde kart). (iv) Platform Bağlantıları "Tüm işletmeler" matrisi + sosyal linki diğer işletmelere uygula (§19.4.6). (v) Admin + owner üst çubuk flex item olduğu için uzun sayfada 37px'e eziliyordu → `shrink-0`. **Disipline**: panel-özel görsel değişikliği `bz-*` sınıfının kendisine değil `:root:has(.bz-panel)` kapsamına yaz (pazarlama / `/r` aynı sınıfları kullanır); flex sütun içindeki sabit yükseklikli çubuklara `shrink-0`; işletme listesi gösteren yeni yüzeyde `BusinessSwitcher` / `business-switcher.ts` yeniden kullan.
+- **Chat prompt history (Stage 168)**: 2026-11-08 kullanıcı: *"paneldeki  https://github.com/shadcndashboard/shadcndashboard bu shadcnyi kullan yazı tipi vs ve component elementleri sistemimize uygun şekilde geliştir ve platform bağlantılarını daha iyi yapıp franchise'lar içinde geçişleri ve sistemi daha klaylaştır ayrıca yönetimi de kolaylaştırıp maine gönder"*. Yorum: referans repo (Vite + base-ui) bağımlılık olarak eklenmedi; yazı tipi (Geist) ve bileşen ölçüleri Pulse renkleriyle panel kapsamında uygulandı. **Disipline override**: §11 font listesi panel için Geist ile değişti (kullanıcı kararı; pazarlama aynı kaldı).
 - §38.245 — Stage 163 (PR TBD) Google girişi penceresi kapanmıyor + yavaş giriş, site hızı, SEO ve Google uyumu. **Disipline**: (i) proxy'lenen üçüncü taraf sayfalara (`/__/*`) site güvenlik başlıklarını körlemesine uygulama — özellikle COOP opener'ı koparır; (ii) layout metadata'sına sayfaya özgü alan (canonical, hreflang, og:url, twitter başlığı) koyma, miras kalır; (iii) `'use client'` dosyası `@/lib/prisma` içeren modülü dolaylı da olsa import etmemeli (sabitleri ayrı modüle al); (iv) IntersectionObserver hedefi gerçek kutu olmalı (`display: contents` asla). **Not**: Firebase `authDomain` ve OAuth ayarlarına dokunulmadı; düzeltme… (Ayrıntı: git log.)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
@@ -5296,6 +5305,7 @@ Yeni session bir kural belirlediyse, hangi §'ye gider:
 | Auto-merge / chat logging | §39 |
 | Cross-stage patterns | §40 |
 | Note-taking disiplini (bu §) | §41 |
+| Panel teması (Geist + shadcn yoğunluğu), işletme/franchise geçişi ve yönetimi | §49 |
 
 Yeni konu ortaya çıkarsa yeni `## §X` ekle; ama önce `grep -n "^## " CLAUDE.md` ile mevcut §-lere baktıktan sonra (overlap riski).
 
@@ -6027,3 +6037,18 @@ Kategoriler (`ReplyRiskKind`): `threat`, `hate`, `profanity` (§47 sözlüğü +
 **Yapma**: Yeni kural eklerken geçmesi gereken gündelik cümleyi test etmeden ekleme (yanlış pozitif = engellenen meşru yanıt, geçersiz kılma yok); kuralı AI kotasına bağlama (§45); istemci önizlemesini tek kapı sanma (sunucu her zaman yeniden kontrol eder).
 
 **Yap**: İşletme adına müşteriye metin gönderen yeni her yüzey → `moderateReplyContent(text, { allowedHosts: await loadReplyAllowedHosts(id) })` + `ReplyRiskNotice`; engel durumunda yazma/gönderme yok.
+
+## §49 — Panel teması (Geist + shadcn yoğunluğu), işletme geçişi ve franchise yönetimi (kanonik, 2026-11)
+
+**Tipografi**: owner + admin panelleri Geist / Geist Mono kullanır. `src/lib/panel-fonts.ts` (next/font/google, latin + latin-ext) yalnız panel layout'larından import edilir; `src/components/panel/PanelTheme.tsx` aile adlarını `:root{--font-panel-sans;--font-panel-mono}` olarak yazar (portallar `<body>`'de render olduğu için `:root`). Pazarlama sayfalarına font dosyası / preload gitmez.
+
+**Tema anahtarı**: `globals.css` `:root:has(.bz-panel)` bloğu (`@layer components` içinde; başlık ağırlığı katmansız). `.bz-panel` sınıfı owner shell kökünde, admin layout kökünde ve dashboard admin-önizleme sarmalayıcısındadır. Bu blok `--font-body/heading/mono`'yu Geist'e çevirir ve `bz-card` (12px + ince gölge), `bz-btn*` (8px, 500), `bz-input` (8px + ince gölge, lime odak halkası korunur), `bz-tabs` (segment kontrol), `bz-table` (düz başlık), `bz-menu` (10px / 6px öğe), `bz-badge` (500) görünümünü shadcn'e çeker. Renkler Pulse (§11) olarak kalır.
+
+**Yapma**: panel-özel görünümü doğrudan `.bz-card` / `.bz-btn-*` kuralına yazma — pazarlama, auth, `/r`, `/menu`, `/audits/[token]` aynı sınıfları kullanır; `:root:has(.bz-panel)` kapsamına yaz. Panel dışı bir yüzeye `.bz-panel` ekleme. Marka önizlemesinde (`BrandIdentityCard`) `--font-heading` kullanma — panelde Geist'e döner; `--font-space-grotesk` / `--font-inter`'i doğrudan kullan. Shadcn / base-ui paketlerini ekleme (§30.4); görünüm token düzeyinde alınır.
+
+**İşletme geçişi**: `src/components/dashboard/BusinessSwitcher.tsx` tek bileşen (varyant `sidebar | collapsed | topbar | mobile`). Panel `<body>`'ye portal + `position: fixed`; 640px altında `.bz-menu--sheet`. Arama ≥5 işletme, "Son kullanılanlar" ≥6 (`localStorage['buaze.owner.recentRestaurants']`, en çok 4). Saf mantık `src/lib/business-switcher.ts` (`tests/business-switcher.test.ts`; aksan/büyük-küçük harf duyarsız arama). Seçim shell'in `selectRestaurantScope`'una gider (aynı sayfada kalır, `/restaurants/<id>/…` yolunu yeni işletmeye çevirir). "Yeni işletme ekle" ekip üyelerinde gizli (`canAddBusiness`).
+
+**Franchise yönetimi**: `/dashboard/restaurants` sıralanabilir tablo (lg) / kart (mobil). Sunucu tek `$transaction`: işletmeler + 30 gün `groupBy` (sayı + ortalama puan) + bekleyen düşük puan (`rating ≤ 3 AND isRead = false`, bildirim zili tanımı) + son yorum + platform kontrolleri → `summarizeReviewPlatformLinks`. Saf mantık `src/lib/business-overview.ts` (`attentionReasons`, `portfolioTotals` — puan yorum sayısıyla ağırlıklı, `sortPortfolioRows`; `tests/business-overview.test.ts`). "Panele geç" aktif işletmeyi yazar + `/dashboard?restaurantId=` açar. Sayfa §22 gereği scope-blind kalır (tüm işletmeler listelenir).
+
+**Üst çubuk**: owner + admin masaüstü üst çubuğu `h-14 shrink-0` (flex sütun içinde; `shrink-0` yoksa uzun sayfada 37px'e ezilir). Owner'da tek satır ekmek kırıntısı ("Panel › Sayfa"); her sayfa kendi `PageHeader` h1'ini taşır.
+

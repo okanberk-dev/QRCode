@@ -12,6 +12,7 @@ import {
 } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AdminTranslationProvider } from '@/components/admin/AdminTranslationProvider';
+import PanelTheme from '@/components/panel/PanelTheme';
 import { loadAdminPanelProfile, type AdminPanelProfile } from '@/lib/admin-profile';
 
 function getStringClaim(payload: Awaited<ReturnType<typeof verifyJwt>>, key: string) {
@@ -147,7 +148,8 @@ export default async function AdminLayout({
 
   return (
     <AdminTranslationProvider initialLocale={adminLocale}>
-      <div className="flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden font-sans selection:bg-[#C6F24E]/30 relative">
+      <PanelTheme />
+      <div className="bz-panel flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden selection:bg-[#C6F24E]/30 relative">
         {showSidebar && (
           <a href="#panel-main-content" className="bz-skip-link">
             {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
