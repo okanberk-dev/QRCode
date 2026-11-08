@@ -21,6 +21,12 @@ interface PanelSelectionBarProps {
   onClear: () => void;
   clearLabel: string;
   countLocale?: string;
+  /**
+   * §49 — render an in-flow spacer so the last rows of the page can scroll
+   * above the bar instead of staying hidden under it. Turn off where the
+   * page manages its own scroll panes (admin reviews inbox).
+   */
+  reserveSpace?: boolean;
 }
 
 const ACTION_CLASS: Record<NonNullable<PanelSelectionAction['variant']>, string> = {
@@ -42,18 +48,21 @@ export function PanelSelectionBar({
   onClear,
   clearLabel,
   countLocale = 'tr-TR',
+  reserveSpace = true,
 }: PanelSelectionBarProps) {
   if (count === 0) return null;
 
   return (
+    <>
+    {reserveSpace && <div aria-hidden="true" className="h-36 sm:h-20" />}
     <div
       role="region"
       aria-label={ariaLabel}
       className="fixed inset-x-3 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 lg:bottom-4 sm:left-1/2 sm:right-auto sm:w-[min(720px,calc(100vw-32px))] sm:-translate-x-1/2"
     >
-      <div className="rounded-2xl border border-white/10 bg-[#0A0A0A] p-3 text-white shadow-[0_24px_70px_-24px_rgba(0,0,0,0.55)]">
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#0A0A0A] p-3 text-white shadow-[0_24px_70px_-24px_rgba(0,0,0,0.55)] sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2 sm:contents">
+          <div className="min-w-0 flex-1 sm:order-1 sm:flex-none sm:pl-1">
             <div className="pulse-eyebrow text-[#C6F24E]" aria-live="polite">
               {count.toLocaleString(countLocale)} {label}
             </div>
@@ -62,12 +71,12 @@ export function PanelSelectionBar({
             type="button"
             onClick={onClear}
             aria-label={clearLabel}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:order-3 sm:ml-auto"
           >
             <X size={15} strokeWidth={2.2} />
           </button>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <div className="grid grid-cols-2 gap-2 sm:order-2 sm:flex sm:flex-wrap sm:items-center">
           {actions.map((action) => {
             const variant = action.variant ?? 'neutral';
             return (
@@ -90,6 +99,7 @@ export function PanelSelectionBar({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

@@ -64,16 +64,18 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
       // bottom nav ile parity. Drawer (z-50) artık üstte kalır + bu
       // component drawer açıkken event ile gizlenir (defensive iki
       // katman).
-      className={`lg:hidden fixed left-3 right-3 z-40 mx-auto max-w-[520px] text-[#0A0A0A] transition-[opacity,transform] duration-200 ease-out ${
+      // §49 — full-width bottom band in the page colour behind the floating
+      // pill: content scrolling under the bar fades out instead of peeking
+      // out around and below the pill. The band itself ignores taps; only
+      // the pill is interactive. Bottom-anchored padding (§38.169).
+      className={`lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pt-3 pointer-events-none text-[#0A0A0A] transition-[opacity,transform] duration-200 ease-out ${
         drawerOpen
-          ? 'pointer-events-none translate-y-full opacity-0'
+          ? 'translate-y-full opacity-0'
           : 'translate-y-0 opacity-100'
       }`}
       style={{
-        // Stage 60 §38.141 — HANDOFF floating pill paterni: 12px bottom
-        // margin + safe-area (iOS home-indicator overlap önleme). Eski
-        // bottom-0 full-width yerine floating pill modern UX.
-        bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        background: 'linear-gradient(to top, #FAFAFA 0%, #FAFAFA 60%, rgba(250,250,250,0) 100%)',
         willChange: 'transform, opacity',
         backfaceVisibility: 'hidden',
       }}
@@ -82,11 +84,12 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
           Glassmorphism backdrop-blur(20px) saturate(180%) + translucent
           white surface. 28px borderRadius + 72px height. */}
       <div
-        className="rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)]"
+        className={`mx-auto max-w-[520px] rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)] ${drawerOpen ? 'pointer-events-none' : 'pointer-events-auto'}`}
         style={{
-          background: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          // §49 — solid surface. The translucent "glass" pill let the
+          // page text behind it show through the nav labels (reported as
+          // overlapping text on phones).
+          background: '#FFFFFF',
         }}
       >
         {/* §38.77 — Dynamic grid: role-filtered item sayısına göre eşit

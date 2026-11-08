@@ -37,6 +37,7 @@ export function BulkActionToolbar({
 
   return (
     <PanelSelectionBar
+      reserveSpace={false}
       count={count}
       label={isTr ? 'YORUM SEÇİLDİ' : 'REVIEWS SELECTED'}
       countLocale={isTr ? 'tr-TR' : 'en-US'}

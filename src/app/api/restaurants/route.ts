@@ -322,6 +322,13 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // §49 franchise view — one owner's businesses (admin İşletme sahipleri →
+    // "İşletmeleri gör"). Scope still applies through `where.id` above.
+    const ownerId = adminParams.get('ownerId');
+    if (ownerId && /^[A-Za-z0-9_-]{6,64}$/.test(ownerId)) {
+      where.userId = ownerId;
+    }
+
     if (requestedRestaurantId) {
       const allowedByScope = scopedIds === null || scopedIds.includes(requestedRestaurantId);
       if (!allowedByScope) {

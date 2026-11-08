@@ -6,7 +6,7 @@ import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, 
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, APSwitch, PLATFORMS, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, APSwitch, PLATFORMS, PulseSelect, useConfirmDialog } from '@/components/ui';
 import RestaurantDetailLoading from './loading';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
 import { MENU_THEMES, type MenuTheme as MenuThemeKey } from '@/lib/validations';
@@ -121,6 +121,34 @@ export default function RestaurantDetailPage() {
   const [featureSaving, setFeatureSaving] = useState<FeatureToggleKey | null>(null);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [meta, setMeta] = useState<RestaurantMeta | null>(null);
+  // §49 franchise — the owner's other businesses, for the branch switcher.
+  const [siblings, setSiblings] = useState<Array<{ id: string; name: string; isActive: boolean }>>([]);
+
+  const ownerUserId = meta?.user?.id ?? null;
+  useEffect(() => {
+    if (!ownerUserId) {
+      setSiblings([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/restaurants?ownerId=${encodeURIComponent(ownerUserId)}&status=all&limit=100`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => {
+        if (cancelled || !body) return;
+        const list: Array<{ id: string; name: string; isActive: boolean }> = Array.isArray(body?.data) ? body.data : [];
+        setSiblings(
+          list
+            .map((r) => ({ id: r.id, name: r.name, isActive: r.isActive }))
+            .sort((a, b) => a.name.localeCompare(b.name, 'tr')),
+        );
+      })
+      .catch(() => {
+        /* the switcher is a convenience — the page works without it */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerUserId]);
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -402,16 +430,32 @@ export default function RestaurantDetailPage() {
   return (
     <div className="mx-auto max-w-[1440px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+      <div className="relative overflow-hidden bz-card">
         <div className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: formData.primaryColor }} aria-hidden />
         <div className="flex flex-col gap-5 p-6 sm:p-8">
-          <Link
-            href="/admin/restaurants"
-            className="pulse-eyebrow inline-flex w-fit items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
-          >
-            <ArrowLeft size={12} strokeWidth={2.25} />
-            Tüm İşletmeler
-          </Link>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              href="/admin/restaurants"
+              className="pulse-eyebrow inline-flex w-fit items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
+            >
+              <ArrowLeft size={12} strokeWidth={2.25} />
+              Tüm İşletmeler
+            </Link>
+            {siblings.length > 1 && (
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <span className="shrink-0 text-[12px] text-[#737373]">Şube</span>
+                <PulseSelect
+                  value={id}
+                  onChange={(next) => {
+                    if (next !== id) router.push(`/admin/restaurants/${next}`);
+                  }}
+                  ariaLabel="Aynı sahibin işletmeleri"
+                  className="min-w-0 flex-1 sm:w-[240px] sm:flex-none"
+                  options={siblings.map((b) => ({ value: b.id, label: b.isActive ? b.name : `${b.name} (pasif)` }))}
+                />
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-4">
@@ -454,14 +498,14 @@ export default function RestaurantDetailPage() {
               <Link
                 href={`/r/${formData.slug}`}
                 target="_blank"
-                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="bz-btn-ghost"
               >
                 <ExternalLink size={14} strokeWidth={2} />
                 Önizle
               </Link>
               <Link
                 href={`/admin/restaurants/${id}/menu`}
-                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="bz-btn-ghost"
               >
                 <UtensilsCrossed size={14} strokeWidth={2} />
                 Menü
@@ -472,7 +516,7 @@ export default function RestaurantDetailPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-        <section className="rounded-3xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+        <section className="bz-card p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
               <Link2 size={18} strokeWidth={2} />
@@ -489,7 +533,7 @@ export default function RestaurantDetailPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
+        <section className="bz-card p-5 sm:p-6">
           <p className="pulse-eyebrow text-[#737373]">İşletme özeti</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Metric icon={<MessageSquare size={15} />} label="Yorum" value={String(meta?._count.feedbacks ?? 0)} />
@@ -515,6 +559,14 @@ export default function RestaurantDetailPage() {
               <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]">{ownerLabel}</p>
             )}
             {meta?.user?.email && <p className="truncate text-[11px] text-[#737373]">{meta.user.email}</p>}
+            {meta?.user?.id && siblings.length > 1 && (
+              <Link
+                href={`/admin/restaurants?owner=${encodeURIComponent(meta.user.id)}&status=all&view=franchise`}
+                className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+              >
+                Zincirin tüm şubeleri ({siblings.length})
+              </Link>
+            )}
           </div>
 
           {/* §38.76 — Yorum geçmişi filter'lı cross-link. /admin/reviews
@@ -553,7 +605,7 @@ export default function RestaurantDetailPage() {
           (/[locale]/dashboard/restaurants/[id]/menu) primary control sahibi;
           burası support/operations override için. Logo upload owner'a özel;
           admin sadece clear edebilir. */}
-      <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+      <section className="overflow-hidden bz-card">
         <div className="flex flex-col gap-4 border-b border-[#EDEDED] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
@@ -701,7 +753,7 @@ export default function RestaurantDetailPage() {
       />
 
       {/* Feature entitlements — package-ready master switches */}
-      <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+      <section className="overflow-hidden bz-card">
         <div className="flex flex-col gap-4 border-b border-[#EDEDED] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
@@ -803,7 +855,7 @@ export default function RestaurantDetailPage() {
 
       <form onSubmit={handleSave} className="space-y-5">
         {/* Basic Info */}
-        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
               <Building2 size={18} strokeWidth={2} />
@@ -918,7 +970,7 @@ export default function RestaurantDetailPage() {
         </section>
 
         {/* Contact Info */}
-        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
               <MapPin size={18} strokeWidth={2} />
@@ -953,7 +1005,7 @@ export default function RestaurantDetailPage() {
         </section>
 
         {/* Notification & Google */}
-        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
               <Mail size={18} strokeWidth={2} />
@@ -1004,7 +1056,7 @@ export default function RestaurantDetailPage() {
 
         {/* Delivery Platforms */}
         {showDeliverySection && (
-        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
               <Globe size={18} strokeWidth={2} />
@@ -1076,7 +1128,7 @@ export default function RestaurantDetailPage() {
         )}
 
         {/* Sticky save bar */}
-        <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-3xl border border-[#EDEDED] bg-white/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-10 flex flex-col gap-3 rounded-xl border border-[#E8E8E8] bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between lg:bottom-4">
           <button
             type="button"
             onClick={handleDelete}
@@ -1220,7 +1272,7 @@ function OwnerModulesCard({
     : null;
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+    <section className="overflow-hidden bz-card">
       <div className="flex items-start gap-3 border-b border-[#EDEDED] px-6 py-5">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
           <ClipboardCheck size={18} strokeWidth={2} />

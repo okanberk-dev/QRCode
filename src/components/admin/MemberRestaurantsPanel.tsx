@@ -65,7 +65,22 @@ export default function MemberRestaurantsPanel({ userId }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-[#EDEDED] divide-y divide-[#EDEDED] overflow-hidden bg-white">
+    <div className="space-y-3">
+    {/* §49 franchise — manage all of this owner's businesses together
+        (bulk pause / feature toggle) in the admin businesses table. */}
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <p className="text-[12.5px] text-[#525252]">
+        {data.length} işletme{data.length > 1 ? ' · zincir' : ''}
+      </p>
+      <Link
+        href={`/admin/restaurants?owner=${encodeURIComponent(userId)}&status=all`}
+        className="bz-btn-ghost bz-btn-sm"
+      >
+        <Store size={13} strokeWidth={2} />
+        İşletmeler tablosunda yönet
+      </Link>
+    </div>
+    <div className="bz-card divide-y divide-[#EDEDED] overflow-hidden">
       {data.map((r) => (
         <div key={r.id} className="p-4 sm:p-5 flex items-center gap-3 flex-wrap">
           <div
@@ -111,6 +126,7 @@ export default function MemberRestaurantsPanel({ userId }: Props) {
           </div>
         </div>
       ))}
+    </div>
     </div>
   );
 }

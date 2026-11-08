@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, Settings2, Pencil } from 'lucide-react';
+import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, Settings2, Pencil, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
-import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, PanelSelectionBar, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, PanelSelectionBar, PulseMenu, PulseMenuDivider, PulseMenuItem, PulseSelect, Tabs, useConfirmDialog } from '@/components/ui';
+import { countChains, groupByOwner, type FranchiseGroup } from '@/lib/admin-franchise';
 import RestaurantsLoading from './loading';
 
 interface Restaurant {
@@ -103,6 +104,10 @@ export default function RestaurantsPage() {
     // (CLAUDE.md §11.36). Backend overrides status when set; UI surfaces an
     // info banner with "Filtreyi temizle" (clear) action.
     attention: '' as '' | 'quota_full' | 'unverified_platform',
+    // §49 — "İşletmeler" list or businesses grouped by owner ("Franchise'lar").
+    view: 'list' as 'list' | 'franchise',
+    // One owner's businesses (from İşletme sahipleri → "İşletmeleri gör").
+    owner: '',
   });
   // The field keeps its own value and writes the URL debounced — binding it
   // straight to the URL lost keystrokes during each router round trip. The
@@ -119,6 +124,8 @@ export default function RestaurantsPage() {
   const setMenuStatusFilter = (v: 'all' | 'published' | 'draft' | 'disabled') => filters.set('menuStatus', v);
   const attention = filters.values.attention;
   const clearAttention = () => filters.set('attention', '');
+  const view = filters.values.view === 'franchise' ? 'franchise' : 'list';
+  const ownerFilter = filters.values.owner;
   // PR6 — Inline failure surface (Linear/Stripe pattern, CLAUDE.md §11).
   // fetch fail veya !res.ok'da set; success'te null. AlertBanner onDismiss
   // ile kullanıcı manuel kapatabilir.
@@ -165,6 +172,11 @@ export default function RestaurantsPage() {
     userId: '',
   });
   const [isManualSlug, setIsManualSlug] = useState(false);
+  // "Şube ekle" on a franchise card opens the create form for that owner.
+  const openCreate = (ownerId = '') => {
+    setFormData((prev) => ({ ...prev, userId: ownerId }));
+    setShowCreateModal(true);
+  };
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
 
   const fetchRestaurants = async (opts: { append?: boolean } = {}) => {
@@ -180,6 +192,7 @@ export default function RestaurantsPage() {
       qp.set('status', statusFilter);
       qp.set('plan', planFilter);
       if (attention) qp.set('attention', attention);
+      if (ownerFilter) qp.set('ownerId', ownerFilter);
       qp.set('limit', String(PAGE_SIZE));
       qp.set('page', String(nextPage));
       const res = await fetch(`/api/restaurants?${qp.toString()}`);
@@ -241,7 +254,7 @@ export default function RestaurantsPage() {
     // fetchRestaurants is a stable closure capturing filter state; the listed
     // filters are the only intentional triggers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, planFilter, attention]);
+  }, [statusFilter, planFilter, attention, ownerFilter]);
 
   useEffect(() => {
     fetchOwners();
@@ -251,7 +264,7 @@ export default function RestaurantsPage() {
   // selectedIds'de kalır ve bulk action onlara da uygulanır.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [statusFilter, planFilter, menuStatusFilter, searchTerm, attention]);
+  }, [statusFilter, planFilter, menuStatusFilter, searchTerm, attention, ownerFilter]);
 
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
@@ -451,60 +464,38 @@ export default function RestaurantsPage() {
 
   // First load only: render the same skeleton as loading.tsx (§40.10) so the
   // segment skeleton hands over without a blank frame. Later refetches keep
-  // the header, tabs and search on screen (see `refreshing`).
+  // the page chrome on screen and only dim the list (`refreshing`).
   if (loading) return <RestaurantsLoading />;
-
-  // Primary tabs — owner plan (lifecycle bucket on User.plan, §15.2).
-  const planTabs: TabItem[] = [
-    { id: 'all', label: 'Tüm planlar' },
-    { id: 'trial', label: 'Deneme' },
-    { id: 'monthly', label: 'Aylık' },
-    { id: 'yearly', label: 'Yıllık' },
-    { id: 'enterprise', label: 'Kurumsal' },
-    { id: 'free', label: 'Ücretsiz' },
-  ];
 
   // Server-side filters narrow `restaurants` itself; client-side ones
   // (search, menu status) narrow `filteredRestaurants`. Empty states must
   // tell "nothing registered" apart from "nothing matches".
-  const serverFiltered = statusFilter !== 'all' || planFilter !== 'all' || !!attention;
+  const serverFiltered = statusFilter !== 'all' || planFilter !== 'all' || !!attention || !!ownerFilter;
   const showAllBusinesses = () => {
     search.replaceInput('');
-    filters.setMany({ status: 'all', plan: 'all', attention: '', menuStatus: 'all', search: '' });
+    filters.setMany({ status: 'all', plan: 'all', attention: '', menuStatus: 'all', search: '', owner: '' });
   };
   const clearClientFilters = () => {
     search.replaceInput('');
     filters.setMany({ search: '', menuStatus: 'all' });
   };
-  const headerTitle = appliedFilters.attention
+  const summary = appliedFilters.attention
     ? `${total} işletme dikkat istiyor`
-    : appliedFilters.plan !== 'all'
-    ? `${total} işletme listeleniyor`
     : appliedFilters.status === 'active'
     ? `${total} aktif işletme`
     : appliedFilters.status === 'passive'
     ? `${total} duraklatılmış işletme`
     : `${total} kayıtlı işletme`;
   const hasMore = restaurants.length < total;
-
-  // Secondary control — operational status (preserved for "Pasif işletmeleri
-  // gör" use case; design'da tek tab ama mevcut operatör akışı için kritik)
-  const statusTabs: TabItem[] = [
-    { id: 'active', label: 'Aktif' },
-    { id: 'passive', label: 'Pasif' },
-    { id: 'all', label: 'Hepsi' },
-  ];
-
-  // Menu publish filter — Stage 109 §A1 (admin menü görünürlüğü)
-  // operator menu yayın akışını taramak için ek filter strip. Counts
-  // label'da görünür → anında hacim sinyali (kaç işletmenin menüsü
-  // taslakta kalmış, kaç tanesi disabled vb.)
-  const menuTabs: TabItem[] = [
-    { id: 'all', label: `Tümü` },
-    { id: 'published', label: `Yayında (${menuCounts.published})` },
-    { id: 'draft', label: `Taslak (${menuCounts.draft})` },
-    { id: 'disabled', label: `Kapalı (${menuCounts.disabled})` },
-  ];
+  const groups = groupByOwner(filteredRestaurants);
+  const chainCount = countChains(groups);
+  const ownerCount = groups.filter((g) => g.ownerId !== null).length;
+  const ownerLabel = ownerFilter
+    ? (() => {
+        const owner = restaurants.find((r) => r.user?.id === ownerFilter)?.user;
+        return owner ? owner.name || owner.email : 'Seçili sahip';
+      })()
+    : '';
 
   // CSV export — design `Dışa aktar` button (1:1, line 96)
   const handleExport = () => {
@@ -535,6 +526,25 @@ export default function RestaurantsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const toggleSelect = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+  const setManySelected = (ids: string[], checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (checked) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       {fetchError && (
@@ -548,16 +558,22 @@ export default function RestaurantsPage() {
           {attention === 'quota_full' && 'Yalnızca trial kotasının %90+ doldurmuş işletmeler gösteriliyor.'}
         </AlertBanner>
       )}
+      {ownerFilter && (
+        <AlertBanner kind="info" onDismiss={() => filters.set('owner', '')}>
+          Yalnızca <strong>{ownerLabel}</strong> hesabının işletmeleri gösteriliyor.
+        </AlertBanner>
+      )}
       <PageHeader
         eyebrow="İŞLETMELER"
-        title={headerTitle}
+        title="İşletmeler"
+        description={`${summary} · ${ownerCount} işletme sahibi${chainCount > 0 ? ` · ${chainCount} zincir` : ''}`}
         actions={
           <>
             <button onClick={handleExport} className="bz-btn-ghost">
               <Download size={14} strokeWidth={2} />
               Dışa aktar
             </button>
-            <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+            <button onClick={() => openCreate(ownerFilter)} className="bz-btn-primary">
               <Plus size={14} strokeWidth={2} />
               Yeni işletme
             </button>
@@ -565,138 +581,140 @@ export default function RestaurantsPage() {
         }
       />
 
-      {/*
-        Stage 81 §38.161 — Filter toolbar mobile/tablet sticky-on-scroll
-        (owner Stage 80 §38.160 Fix 4 paterni paralel — owner restaurants
-        list `md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur
-        lg:static`). Admin parity: tablet portrait'da scroll sırasında
-        filter görünür kalır + topbar h-16 altında pin'lenir + Apple-soft
-        backdrop-blur. Desktop (lg+) inline normal akış (`lg:static`).
-      */}
-      <div className="md:sticky md:top-16 md:z-20 md:-mx-3 md:px-3 md:py-2 md:bg-white/95 md:backdrop-blur sm:md:rounded-xl lg:static lg:bg-transparent lg:backdrop-blur-none lg:py-0 lg:mx-0 lg:px-0">
-        {/* Primary filter — plan tabs (1:1 design) */}
+      {/* §49 — one toolbar instead of three tab rows: view, search, then
+          status / plan / menu as compact selects. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <Tabs
-          items={planTabs}
-          active={planFilter}
-          onChange={(id) => setPlanFilter(id as PlanFilter)}
-          ariaLabel="Plan filtresi"
+          items={[
+            { id: 'list', label: 'İşletmeler', count: filteredRestaurants.length },
+            { id: 'franchise', label: "Franchise'lar", count: ownerCount },
+          ]}
+          active={view}
+          onChange={(id) => filters.set('view', id as 'list' | 'franchise')}
+          ariaLabel="Görünüm"
+          className="shrink-0"
         />
-      </div>
-
-      {/* Menu publish filter — Stage 109 §A1. Menu yayın yüzdesini
-          anında görmek + draft'ta takılı kalan işletmeleri yakalamak için. */}
-      <Tabs
-        items={menuTabs}
-        active={menuStatusFilter}
-        onChange={(id) => setMenuStatusFilter(id as 'all' | 'published' | 'draft' | 'disabled')}
-        ariaLabel="Menü yayın filtresi"
-      />
-
-      {/* Secondary control — status + search */}
-      <div className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">
-        <Tabs
-          items={statusTabs}
-          active={statusFilter}
-          onChange={(id) => setStatusFilter(id as StatusFilter)}
-          ariaLabel="Durum filtresi"
-          className="md:w-auto"
-        />
-
-        <div className="relative w-full md:max-w-md">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A3A3A3]" size={14} strokeWidth={2} />
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]" size={14} strokeWidth={2} />
           <input
-            type="text"
-            placeholder="İşletme, URL, kategori veya sahip ara..."
+            type="search"
+            placeholder="İşletme, URL, kategori veya sahip ara…"
             aria-label="İşletme ara"
             value={searchTerm}
             onChange={(e) => search.setInput(e.target.value)}
             className="bz-input"
-            style={{ paddingLeft: 36, paddingRight: searchTerm ? 36 : 12 }}
+            style={{ paddingLeft: 34 }}
           />
-          {searchTerm && (
-            <button
-              onClick={() => {
-                search.replaceInput('');
-                filters.set('search', '');
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bz-btn-icon"
-              aria-label="Aramayı temizle"
-              style={{ width: 28, height: 28 }}
-            >
-              <X size={12} strokeWidth={2} />
-            </button>
-          )}
+        </div>
+        <div className="grid grid-cols-3 gap-2 lg:flex lg:shrink-0">
+          <PulseSelect
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as StatusFilter)}
+            ariaLabel="Durum filtresi"
+            className="w-full lg:w-[130px]"
+            options={[
+              { value: 'active', label: 'Aktif' },
+              { value: 'passive', label: 'Pasif' },
+              { value: 'all', label: 'Durum' },
+            ]}
+          />
+          <PulseSelect
+            value={planFilter}
+            onChange={(v) => setPlanFilter(v as PlanFilter)}
+            ariaLabel="Plan filtresi"
+            className="w-full lg:w-[130px]"
+            options={[
+              { value: 'all', label: 'Plan' },
+              { value: 'trial', label: 'Deneme' },
+              { value: 'monthly', label: 'Aylık' },
+              { value: 'yearly', label: 'Yıllık' },
+              { value: 'enterprise', label: 'Kurumsal' },
+              { value: 'free', label: 'Ücretsiz' },
+            ]}
+          />
+          <PulseSelect
+            value={menuStatusFilter}
+            onChange={(v) => setMenuStatusFilter(v as 'all' | 'published' | 'draft' | 'disabled')}
+            ariaLabel="Menü filtresi"
+            className="w-full lg:w-[170px]"
+            options={[
+              { value: 'all', label: 'Menü' },
+              { value: 'published', label: `Menü yayında (${menuCounts.published})` },
+              { value: 'draft', label: `Menü taslak (${menuCounts.draft})` },
+              { value: 'disabled', label: `Menü kapalı (${menuCounts.disabled})` },
+            ]}
+          />
         </div>
       </div>
 
-      {/* Restaurant Cards Grid — dimmed (not unmounted) while a filter change
-          or an action refetches the list. */}
       <div
         aria-busy={refreshing}
         className={`space-y-4 transition-opacity ${refreshing ? 'pointer-events-none opacity-50' : ''}`}
       >
       {restaurants.length === 0 ? (
-        serverFiltered ? (
+        <div className="bz-card">
+          {serverFiltered ? (
+            <EmptyState
+              icon={<Search size={22} />}
+              title="Bu filtreye uyan işletme yok"
+              body="Seçili durum, plan veya sahip filtresiyle eşleşen işletme bulunamadı."
+              action={
+                <button onClick={showAllBusinesses} className="bz-btn-ghost">
+                  <X size={14} strokeWidth={2} />
+                  Tüm işletmeleri göster
+                </button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Store size={22} />}
+              title="Henüz işletme yok"
+              body="İlk işletmeyi ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur."
+              action={
+                <button onClick={() => openCreate()} className="bz-btn-primary">
+                  <Plus size={14} strokeWidth={2} />
+                  İşletme ekle
+                </button>
+              }
+            />
+          )}
+        </div>
+      ) : filteredRestaurants.length === 0 ? (
+        <div className="bz-card">
           <EmptyState
             icon={<Search size={22} />}
-            title="Bu filtreye uyan işletme yok"
-            body="Seçili durum veya plan filtresiyle eşleşen işletme bulunamadı. Filtreleri temizleyip tüm işletmeleri görebilirsin."
+            title="Sonuç bulunamadı"
+            body={
+              searchTerm.trim()
+                ? `"${searchTerm.trim()}" ile eşleşen işletme bulunamadı.${hasMore ? ' Arama yalnızca yüklenen işletmelerde yapılır.' : ''}`
+                : 'Seçili menü durumunda işletme yok.'
+            }
             action={
-              <button onClick={showAllBusinesses} className="bz-btn-ghost">
+              <button onClick={clearClientFilters} className="bz-btn-ghost">
                 <X size={14} strokeWidth={2} />
-                Tüm işletmeleri göster
+                Filtreleri temizle
               </button>
             }
           />
-        ) : (
-          <EmptyState
-            icon={<Store size={22} />}
-            title="Henüz işletme yok"
-            body="İlk işletmenizi ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur."
-            action={
-              <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
-                <Plus size={14} strokeWidth={2} />
-                İşletme ekle
-              </button>
-            }
-          />
-        )
-      ) : filteredRestaurants.length === 0 ? (
-        <EmptyState
-          icon={<Search size={22} />}
-          title="Sonuç bulunamadı"
-          body={
-            searchTerm.trim()
-              ? `"${searchTerm.trim()}" ile eşleşen işletme bulunamadı.${hasMore ? ' Arama yalnızca yüklenen işletmelerde yapılır.' : ''}`
-              : 'Seçili menü durumunda işletme yok.'
-          }
-          action={
-            <button onClick={clearClientFilters} className="bz-btn-ghost">
-              <X size={14} strokeWidth={2} />
-              Filtreleri temizle
-            </button>
-          }
+        </div>
+      ) : view === 'franchise' ? (
+        <FranchiseView
+          groups={groups}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+          onSelectMany={setManySelected}
+          onToggleActive={toggleActive}
+          onAddBranch={(ownerId) => openCreate(ownerId)}
+          onShowOwner={(ownerId) => filters.setMany({ owner: ownerId, view: 'list' })}
         />
       ) : (
-        <RestaurantTable
+        <BusinessList
           rows={filteredRestaurants}
-          onToggle={toggleActive}
           selectedIds={selectedIds}
-          onToggleSelect={(id, checked) => {
-            setSelectedIds((prev) => {
-              const next = new Set(prev);
-              if (checked) next.add(id);
-              else next.delete(id);
-              return next;
-            });
-          }}
-          onToggleSelectAll={(checked) => {
-            if (checked) {
-              setSelectedIds(new Set(filteredRestaurants.map((r) => r.id)));
-            } else {
-              setSelectedIds(new Set());
-            }
-          }}
+          onToggleSelect={toggleSelect}
+          onSelectMany={setManySelected}
+          onToggleActive={toggleActive}
+          onShowOwner={(ownerId) => filters.set('owner', ownerId)}
         />
       )}
 
@@ -704,7 +722,7 @@ export default function RestaurantsPage() {
         <div className="flex flex-col items-center gap-2 pt-1">
           <p className="text-[12px] text-[#737373]">
             {restaurants.length} / {total} işletme yüklendi
-            {searchTerm.trim() ? ' · arama ve toplu işlemler yalnızca yüklenenlerde çalışır' : ''}
+            {searchTerm.trim() || view === 'franchise' ? ' · arama, gruplama ve toplu işlemler yalnızca yüklenenlerde çalışır' : ''}
           </p>
           <button
             type="button"
@@ -845,40 +863,43 @@ export default function RestaurantsPage() {
                 {owners.length > 0 && (
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className="pulse-eyebrow text-[#737373]">İşletme Sahibi</label>
-                    <select
+                    <PulseSelect
                       value={formData.userId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
-                      className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
-                    >
-                      <option value="">Sahipsiz oluştur</option>
-                      {owners.map((owner) => (
-                        <option key={owner.id} value={owner.id}>
-                          {(owner.name || owner.email)} · {planBadge(owner.plan).label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => setFormData((prev) => ({ ...prev, userId: v }))}
+                      ariaLabel="İşletme sahibi"
+                      className="w-full"
+                      options={[
+                        { value: '', label: 'Sahipsiz oluştur' },
+                        ...owners.map((owner) => ({
+                          value: owner.id,
+                          label: `${owner.name || owner.email} · ${planBadge(owner.plan).label}`,
+                        })),
+                      ]}
+                    />
                   </div>
                 )}
                 <div className="space-y-1.5">
                   <label className="pulse-eyebrow text-[#737373]">Kategori</label>
-                  <select
+                  <PulseSelect
                     value={formData.category}
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
-                  >
-                    <option>Restoran</option>
-                    <option>Kafe</option>
-                    <option>Otel</option>
-                    <option>Klinik</option>
-                    <option>Güzellik Merkezi</option>
-                    <option>Mağaza</option>
-                    <option>Fast Food</option>
-                    <option>Fine Dining</option>
-                    <option>Meyhane</option>
-                    <option>Pastane</option>
-                    <option>Otobüs/Gemi</option>
-                    <option>Diğer</option>
-                  </select>
+                    onChange={(v) => setFormData((prev) => ({ ...prev, category: v }))}
+                    ariaLabel="Kategori"
+                    className="w-full"
+                    options={[
+                      { value: 'Restoran', label: 'Restoran' },
+                      { value: 'Kafe', label: 'Kafe' },
+                      { value: 'Otel', label: 'Otel' },
+                      { value: 'Klinik', label: 'Klinik' },
+                      { value: 'Güzellik Merkezi', label: 'Güzellik Merkezi' },
+                      { value: 'Mağaza', label: 'Mağaza' },
+                      { value: 'Fast Food', label: 'Fast Food' },
+                      { value: 'Fine Dining', label: 'Fine Dining' },
+                      { value: 'Meyhane', label: 'Meyhane' },
+                      { value: 'Pastane', label: 'Pastane' },
+                      { value: 'Otobüs/Gemi', label: 'Otobüs/Gemi' },
+                      { value: 'Diğer', label: 'Diğer' },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="pulse-eyebrow text-[#737373]">Tema Rengi</label>
@@ -1105,255 +1126,301 @@ export default function RestaurantsPage() {
   );
 }
 
-interface RestaurantTableProps {
-  rows: Restaurant[];
-  onToggle: (id: string, currentStatus: boolean) => void;
-  selectedIds: Set<string>;
-  onToggleSelect: (id: string, checked: boolean) => void;
-  onToggleSelectAll: (checked: boolean) => void;
+// ── Row actions ───────────────────────────────────────────────────────────
+// Radix-based PulseMenu: portaled + collision-aware, so the menu never hides
+// under the table edge, the sticky topbar or the mobile bottom nav (the old
+// hand-positioned fixed menu could).
+function RowMenu({ r, onToggleActive }: { r: Restaurant; onToggleActive: (id: string, current: boolean) => void }) {
+  const router = useRouter();
+  return (
+    <PulseMenu
+      trigger={
+        <button type="button" className="bz-btn-icon" aria-label={`${r.name} işlemleri`}>
+          <MoreHorizontal size={15} strokeWidth={2} />
+        </button>
+      }
+      className="min-w-[210px]"
+    >
+      <PulseMenuItem icon={<Pencil size={13} />} onSelect={() => router.push(`/admin/restaurants/${r.id}`)}>
+        Düzenle
+      </PulseMenuItem>
+      <PulseMenuItem icon={<UtensilsCrossed size={13} />} onSelect={() => router.push(`/admin/restaurants/${r.id}/menu`)}>
+        Menü
+      </PulseMenuItem>
+      <PulseMenuItem icon={<Link2 size={13} />} onSelect={() => router.push(`/admin/qr?restaurant=${r.id}`)}>
+        QR yönetimi
+      </PulseMenuItem>
+      <PulseMenuItem icon={<ExternalLink size={13} />} onSelect={() => window.open(`/r/${r.slug}`, '_blank', 'noopener')}>
+        Müşteri sayfasını aç
+      </PulseMenuItem>
+      {r.user && (
+        <PulseMenuItem icon={<UserRound size={13} />} onSelect={() => router.push(`/admin/members/${r.user!.id}`)}>
+          Sahip detayı
+        </PulseMenuItem>
+      )}
+      <PulseMenuDivider />
+      <PulseMenuItem
+        icon={r.isActive ? <ToggleLeft size={13} /> : <ToggleRight size={13} />}
+        danger={r.isActive}
+        onSelect={() => onToggleActive(r.id, r.isActive)}
+      >
+        {r.isActive ? 'Duraklat' : 'Aktifleştir'}
+      </PulseMenuItem>
+    </PulseMenu>
+  );
 }
 
-function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggleSelectAll }: RestaurantTableProps) {
-  const router = useRouter();
+function MenuBadge({ r }: { r: Restaurant }) {
+  if (!r.menuEnabled) return <Badge kind="ghost">Menü kapalı</Badge>;
+  return r.menuPublished ? <Badge kind="ok">Menü yayında</Badge> : <Badge kind="warn">Menü taslak</Badge>;
+}
+
+function RatingCell({ value }: { value: number | null | undefined }) {
+  if (value == null) return <span className="text-[#A3A3A3]">—</span>;
+  return (
+    <span className="inline-flex items-center gap-1 tabular-nums text-[#0A0A0A]">
+      <Star size={12} strokeWidth={0} className="fill-[#F5B400]" aria-hidden="true" />
+      {value.toFixed(1)}
+    </span>
+  );
+}
+
+// ── İşletmeler: table (lg) + cards (mobile, §23.6) ──────────────────────────
+interface BusinessListProps {
+  rows: Restaurant[];
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string, checked: boolean) => void;
+  onSelectMany: (ids: string[], checked: boolean) => void;
+  onToggleActive: (id: string, current: boolean) => void;
+  onShowOwner: (ownerId: string) => void;
+}
+
+function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggleActive, onShowOwner }: BusinessListProps) {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = !allSelected && rows.some((r) => selectedIds.has(r.id));
-  // The desktop table lives inside `overflow-x-auto`, which clips
-  // absolute-positioned dropdowns vertically (browsers treat `overflow-x: auto`
-  // as also clipping `overflow-y`). Anchoring the menu via `position: fixed`
-  // with viewport-space coords escapes both clip contexts.
-  const [openMenu, setOpenMenu] = useState<
-    | { id: string; top: number; right: number }
-    | null
-  >(null);
+  // Businesses per owner, to show "3 işletme" next to a chain owner.
+  const perOwner = new Map<string, number>();
+  for (const r of rows) if (r.user) perOwner.set(r.user.id, (perOwner.get(r.user.id) ?? 0) + 1);
 
-  useEffect(() => {
-    if (!openMenu) return;
-    const close = () => setOpenMenu(null);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    // capture-phase scroll so nested scroll containers (the table itself)
-    // also dismiss the menu.
-    document.addEventListener('click', close);
-    document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
-    return () => {
-      document.removeEventListener('click', close);
-      document.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
-    };
-  }, [openMenu]);
+  const ownerCell = (r: Restaurant) =>
+    r.user ? (
+      <div className="min-w-0">
+        <Link href={`/admin/members/${r.user.id}`} className="block truncate text-[13px] text-[#0A0A0A] hover:underline underline-offset-2">
+          {r.user.name || r.user.email}
+        </Link>
+        {(perOwner.get(r.user.id) ?? 0) > 1 && (
+          <button
+            type="button"
+            onClick={() => onShowOwner(r.user!.id)}
+            className="text-[11.5px] text-[#737373] hover:text-[#0A0A0A] hover:underline underline-offset-2"
+          >
+            {perOwner.get(r.user.id)} işletme · hepsini gör
+          </button>
+        )}
+      </div>
+    ) : (
+      <span className="text-[12.5px] text-[#A3A3A3]">Sahip atanmamış</span>
+    );
 
-  const toggleMenu = (id: string, target: HTMLElement) => {
-    if (openMenu?.id === id) {
-      setOpenMenu(null);
-      return;
-    }
-    const rect = target.getBoundingClientRect();
-    setOpenMenu({
-      id,
-      top: rect.bottom + 4,
-      right: Math.max(8, window.innerWidth - rect.right),
-    });
-  };
-
-  const openRow = openMenu ? rows.find((r) => r.id === openMenu.id) : null;
-
-  // Card grid layout (CLAUDE.md §38.42) — eski 2-pas (desktop tablo + mobile
-  // card) tek responsive grid'e konsolide edildi. Tasarım kaynağı:
-  // .design-owner-2026/components/mobile.jsx:222-237 MobileCustomers card paterni
-  // (avatar + name + plan/status pill + meta line). Bulk select checkbox + more
-  // menu kart içine entegre edildi.
   return (
     <>
-      {/* Bulk select-all bar (sadece sayfada en az 1 kart varsa görünür).
-          Stage 47 §38.128 — APCheckbox primitive (manuel ref-based
-          indeterminate pattern → primitive). Pulse §11 lime fill +
-          Indeterminate Minus icon. Mono uppercase label aynı. */}
-      {rows.length > 0 && (
-        <div className="mb-3 flex items-center justify-between gap-2 px-1 text-[11.5px] text-[#525252]">
+      <div className="bz-card hidden overflow-x-auto lg:block">
+        <table className="bz-table">
+          <thead>
+            <tr>
+              <th scope="col" className="w-10">
+                <APCheckbox
+                  size="sm"
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={(next) => onSelectMany(rows.map((r) => r.id), next)}
+                  ariaLabel="Tümünü seç"
+                />
+              </th>
+              <th scope="col">İşletme</th>
+              <th scope="col">Sahip</th>
+              <th scope="col">Plan</th>
+              <th scope="col">Durum</th>
+              <th scope="col">Menü</th>
+              <th scope="col" className="text-right">Yorum</th>
+              <th scope="col" className="text-right">Puan</th>
+              <th scope="col" className="w-12"><span className="sr-only">İşlemler</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const plan = planBadge(r.user?.plan);
+              const selected = selectedIds.has(r.id);
+              return (
+                <tr key={r.id} className={selected ? 'bg-[#F7FAEF]' : undefined}>
+                  <td>
+                    <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} />
+                  </td>
+                  <td className="max-w-[300px]">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar name={r.name} size={32} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
+                      <div className="min-w-0">
+                        <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[13.5px] font-semibold text-[#0A0A0A] hover:underline underline-offset-2">
+                          {r.name}
+                        </Link>
+                        <span className="block truncate text-[12px] text-[#737373]">
+                          {r.category}
+                          {r.city ? ` · ${r.city}` : ''}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="max-w-[220px]">{ownerCell(r)}</td>
+                  <td><Badge kind={plan.kind}>{plan.label}</Badge></td>
+                  <td>{r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}</td>
+                  <td><MenuBadge r={r} /></td>
+                  <td className="text-right tabular-nums">{r._count.feedbacks}</td>
+                  <td className="text-right"><RatingCell value={r.avgRating} /></td>
+                  <td className="text-right"><RowMenu r={r} onToggleActive={onToggleActive} /></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="space-y-3 lg:hidden">
+        <div className="flex items-center justify-between px-1">
           <APCheckbox
             size="sm"
             checked={allSelected}
             indeterminate={someSelected}
-            onChange={onToggleSelectAll}
-            ariaLabel="Tümünü seç"
+            onChange={(next) => onSelectMany(rows.map((r) => r.id), next)}
             label={allSelected ? 'Hepsi seçili' : someSelected ? `${selectedIds.size} seçili` : 'Tümünü seç'}
-            labelClassName="bz-mono uppercase tracking-wider !text-[11px]"
           />
-          <span className="bz-mono text-[#737373]">{rows.length} işletme</span>
+          <span className="text-[12px] text-[#737373]">{rows.length} işletme</span>
         </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {rows.map((r) => {
-          const plan = planBadge(r.user?.plan);
-          const detailHref = `/admin/restaurants/${r.id}`;
-          const isSelected = selectedIds.has(r.id);
-          const onCardKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            if ((e.target as HTMLElement).closest('button, a, input, [role="menu"]')) return;
-            e.preventDefault();
-            router.push(detailHref);
-          };
-          return (
-            <div
-              key={r.id}
-              role="link"
-              tabIndex={0}
-              aria-label={`${r.name} detayını aç`}
-              onClick={(e) => {
-                if ((e.target as HTMLElement).closest('button, a, input')) return;
-                router.push(detailHref);
-              }}
-              onKeyDown={onCardKey}
-              className={`bz-card cursor-pointer p-4 transition-colors hover:border-[#A3A3A3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${isSelected ? 'bg-[#EAF9B8]/40 border-[#A8D62E]' : ''}`}
-            >
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => onToggleSelect(r.id, e.target.checked)}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`${r.name} seç`}
-                  className="mt-1 h-3.5 w-3.5 shrink-0 accent-[#0A0A0A] cursor-pointer"
-                />
-                <Avatar name={r.name} size={40} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[14px] font-semibold text-[#0A0A0A] truncate" title={r.name}>
-                        {r.name}
-                      </div>
-                      <div className="text-[11px] text-[#737373] truncate">
-                        {r.user?.name || r.user?.email || 'Sahip atanmamış'}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="bz-btn-icon shrink-0 -mt-1 -mr-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleMenu(r.id, e.currentTarget);
-                      }}
-                      aria-label="İşlemler"
-                      aria-haspopup="menu"
-                      aria-expanded={openMenu?.id === r.id}
-                    >
-                      <MoreHorizontal size={14} strokeWidth={2} />
-                    </button>
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="list">
+          {rows.map((r) => {
+            const plan = planBadge(r.user?.plan);
+            const selected = selectedIds.has(r.id);
+            return (
+              <li key={r.id} className={`bz-card p-4 ${selected ? 'border-[#A8D62E] bg-[#F7FAEF]' : ''}`}>
+                <div className="flex items-start gap-3">
+                  <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} className="mt-1.5" />
+                  <Avatar name={r.name} size={36} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-semibold text-[#0A0A0A]">
+                      {r.name}
+                    </Link>
+                    <span className="block truncate text-[12px] text-[#737373]">
+                      {r.user ? r.user.name || r.user.email : 'Sahip atanmamış'}
+                    </span>
                   </div>
+                  <RowMenu r={r} onToggleActive={onToggleActive} />
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <Badge kind={plan.kind}>{plan.label}</Badge>
+                  {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
+                  <MenuBadge r={r} />
+                </div>
+                <div className="mt-3 flex items-center gap-4 border-t border-[#EDEDED] pt-3 text-[12.5px] text-[#525252]">
+                  <span><span className="font-medium tabular-nums text-[#0A0A0A]">{r._count.feedbacks}</span> yorum</span>
+                  <RatingCell value={r.avgRating} />
+                  {r.city && <span className="truncate">{r.city}</span>}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+// ── Franchise'lar: businesses grouped by owner ─────────────────────────────
+interface FranchiseViewProps {
+  groups: FranchiseGroup<Restaurant>[];
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string, checked: boolean) => void;
+  onSelectMany: (ids: string[], checked: boolean) => void;
+  onToggleActive: (id: string, current: boolean) => void;
+  onAddBranch: (ownerId: string) => void;
+  onShowOwner: (ownerId: string) => void;
+}
+
+function FranchiseView({ groups, selectedIds, onToggleSelect, onSelectMany, onToggleActive, onAddBranch, onShowOwner }: FranchiseViewProps) {
+  return (
+    <ul className="space-y-3" role="list">
+      {groups.map((g) => {
+        const ids = g.restaurants.map((r) => r.id);
+        const all = ids.every((id) => selectedIds.has(id));
+        const some = !all && ids.some((id) => selectedIds.has(id));
+        const plan = g.plan ? planBadge(g.plan) : null;
+        const title = g.ownerId ? g.ownerName || g.ownerEmail || 'İşletme sahibi' : 'Sahibi atanmamış işletmeler';
+        return (
+          <li key={g.ownerId ?? 'none'} className="bz-card overflow-hidden p-0">
+            <div className="flex flex-col gap-3 border-b border-[#EDEDED] bg-[#FCFCFC] p-4 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <APCheckbox
+                  size="sm"
+                  checked={all}
+                  indeterminate={some}
+                  onChange={(next) => onSelectMany(ids, next)}
+                  ariaLabel={`${title} işletmelerinin tümünü seç`}
+                />
+                <Avatar name={title} size={36} />
+                <div className="min-w-0">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="truncate text-[14px] font-semibold text-[#0A0A0A]">{title}</span>
+                    {plan && <Badge kind={plan.kind}>{plan.label}</Badge>}
+                    {g.restaurants.length > 1 && <Badge kind="dark" dot={false}>Zincir</Badge>}
+                    {!g.ownerActive && <Badge kind="danger">Hesap pasif</Badge>}
+                  </div>
+                  {g.ownerEmail && g.ownerName && <span className="block truncate text-[12px] text-[#737373]">{g.ownerEmail}</span>}
                 </div>
               </div>
-
-              <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-                <Badge kind={plan.kind}>{plan.label}</Badge>
-                {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
-                {/* Menu publish badge — Stage 109 §A1. enabled+published=ok,
-                    enabled+draft=warn, disabled=ghost. Operator filter
-                    sekmesi ile birebir parite. */}
-                {!r.menuEnabled ? (
-                  <Badge kind="ghost">Menü kapalı</Badge>
-                ) : r.menuPublished ? (
-                  <Badge kind="ok">Menü yayında</Badge>
-                ) : (
-                  <Badge kind="warn">Menü taslak</Badge>
-                )}
-                {r.category && (
-                  <span className="text-[10.5px] uppercase tracking-wider text-[#A3A3A3] bz-mono">
-                    {r.category}
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-3 flex items-center gap-3 text-[11.5px] text-[#525252] border-t border-[#EDEDED] pt-3">
-                {r.city && (
-                  <span className="truncate">{r.city}</span>
-                )}
-                <span className="inline-flex items-center gap-1 bz-mono">
-                  {r._count.feedbacks}
-                  <span className="text-[#A3A3A3]">yrm</span>
-                </span>
-                {r.avgRating != null ? (
-                  <span className="inline-flex items-center gap-0.5 font-semibold text-[#0A0A0A]">
-                    <Star size={11} className="text-[#C6F24E] fill-[#C6F24E]" />
-                    {r.avgRating.toFixed(1)}
-                  </span>
-                ) : (
-                  <span className="text-[#A3A3A3]">— puan yok</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Viewport-anchored action menu (kart içinde overflow clipping'e takılmaz).
-          Coords trigger button'ın bounding rect'ından alınır. Mobile <640px:
-          `.bz-menu--sheet` override coord'ları nötralize edip bottom sheet'e
-          dönüştürür + backdrop tap-to-dismiss sağlar. */}
-      {openRow && openMenu && (
-        <>
-          <div
-            className="bz-menu-backdrop"
-            aria-hidden="true"
-            onClick={() => setOpenMenu(null)}
-          />
-          <div
-            role="menu"
-            className="bz-menu bz-menu--sheet fixed w-52"
-            style={{ top: openMenu.top, right: openMenu.right }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Link
-              href={`/admin/restaurants/${openRow.id}`}
-              role="menuitem"
-              className="bz-menu-item"
-              onClick={() => setOpenMenu(null)}
-            >
-              <Pencil size={13} strokeWidth={2} />
-              Düzenle
-            </Link>
-            <Link
-              href={`/admin/restaurants/${openRow.id}/menu`}
-              role="menuitem"
-              className="bz-menu-item"
-              onClick={() => setOpenMenu(null)}
-            >
-              <UtensilsCrossed size={13} strokeWidth={2} />
-              Menü
-            </Link>
-            <Link
-              href={`/admin/qr?restaurant=${openRow.id}`}
-              role="menuitem"
-              className="bz-menu-item"
-              onClick={() => setOpenMenu(null)}
-            >
-              <Link2 size={13} strokeWidth={2} />
-              QR yönetimi
-            </Link>
-            <div className="bz-menu-divider" />
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onToggle(openRow.id, openRow.isActive);
-                setOpenMenu(null);
-              }}
-              className="bz-menu-item"
-            >
-              {openRow.isActive ? (
-                <ToggleRight size={13} strokeWidth={2} />
-              ) : (
-                <ToggleLeft size={13} strokeWidth={2} />
+              <dl className="grid grid-cols-4 gap-3 text-[12px] sm:flex sm:gap-5">
+                <div><dt className="text-[#737373]">İşletme</dt><dd className="font-semibold tabular-nums text-[#0A0A0A]">{g.active}/{g.restaurants.length}</dd></div>
+                <div><dt className="text-[#737373]">Yorum</dt><dd className="font-semibold tabular-nums text-[#0A0A0A]">{g.reviews}</dd></div>
+                <div><dt className="text-[#737373]">Puan</dt><dd className="font-semibold"><RatingCell value={g.avgRating} /></dd></div>
+                <div><dt className="text-[#737373]">Menü</dt><dd className="font-semibold tabular-nums text-[#0A0A0A]">{g.menuPublished}/{g.restaurants.length}</dd></div>
+              </dl>
+              {g.ownerId && (
+                <div className="flex flex-wrap gap-2 sm:shrink-0">
+                  <Link href={`/admin/members/${g.ownerId}`} className="bz-btn-ghost bz-btn-sm">
+                    <UserRound size={13} />
+                    Sahip
+                  </Link>
+                  <button type="button" onClick={() => onAddBranch(g.ownerId!)} className="bz-btn-ghost bz-btn-sm">
+                    <Plus size={13} />
+                    Şube ekle
+                  </button>
+                  {g.restaurants.length > 1 && (
+                    <button type="button" onClick={() => onShowOwner(g.ownerId!)} className="bz-btn-ghost bz-btn-sm">
+                      Listele
+                    </button>
+                  )}
+                </div>
               )}
-              {openRow.isActive ? 'Duraklat' : 'Aktifleştir'}
-            </button>
-          </div>
-        </>
-      )}
-    </>
+            </div>
+            <ul className="divide-y divide-[#EDEDED]" role="list">
+              {g.restaurants.map((r) => {
+                const selected = selectedIds.has(r.id);
+                return (
+                  <li key={r.id} className={`flex items-center gap-3 px-4 py-2.5 ${selected ? 'bg-[#F7FAEF]' : ''}`}>
+                    <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} />
+                    <Link href={`/admin/restaurants/${r.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#0A0A0A] hover:underline underline-offset-2">
+                      {r.name}
+                      {r.city && <span className="font-normal text-[#737373]"> · {r.city}</span>}
+                    </Link>
+                    <span className="hidden sm:inline-flex">{r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}</span>
+                    <span className="hidden md:inline-flex"><MenuBadge r={r} /></span>
+                    <span className="w-14 text-right text-[12.5px] tabular-nums text-[#525252]">{r._count.feedbacks}</span>
+                    <span className="w-12 text-right text-[12.5px]"><RatingCell value={r.avgRating} /></span>
+                    <RowMenu r={r} onToggleActive={onToggleActive} />
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

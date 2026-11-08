@@ -1416,23 +1416,28 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         // reflow and jitter mid-scroll. Anchoring the wrapper at bottom-0 and
         // moving the offset into padding keeps the visual gap identical while the
         // element itself never moves. Mirrors marketing/MobileBottomNav.
-        className={`fixed bottom-0 left-3 right-3 z-40 mx-auto max-w-[520px] lg:hidden transition-[opacity,transform] duration-200 ease-out ${
+        // §49 — full-width band in the page colour behind the pill (admin
+        // parity): scrolled content fades out instead of peeking around the
+        // pill. Only the pill takes taps.
+        className={`fixed inset-x-0 bottom-0 z-40 px-3 pt-3 pointer-events-none lg:hidden transition-[opacity,transform] duration-200 ease-out ${
           drawerOpen
-            ? 'pointer-events-none translate-y-full opacity-0'
+            ? 'translate-y-full opacity-0'
             : 'translate-y-0 opacity-100'
         }`}
         style={{
           paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+          background: 'linear-gradient(to top, #FAFAFA 0%, #FAFAFA 60%, rgba(250,250,250,0) 100%)',
           willChange: 'transform, opacity',
           backfaceVisibility: 'hidden',
         }}
       >
         <div
-          className="rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)]"
+          className={`mx-auto max-w-[520px] rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)] ${drawerOpen ? 'pointer-events-none' : 'pointer-events-auto'}`}
           style={{
-            background: 'rgba(255,255,255,0.85)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            // §49 — solid surface. The translucent "glass" pill let the
+            // page text behind it show through the nav labels (reported as
+            // overlapping text on phones).
+            background: '#FFFFFF',
           }}
         >
           <ul className="flex h-[72px] items-stretch px-2">

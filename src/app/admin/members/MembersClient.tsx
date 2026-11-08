@@ -14,6 +14,8 @@ import {
   Download,
   Loader2,
   Mail,
+  MoreHorizontal,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -32,6 +34,8 @@ import {
   Modal,
   PageHeader,
   PanelSelectionBar,
+  PulseMenu,
+  PulseMenuItem,
   useConfirmDialog,
 } from '@/components/ui';
 import MemberBillingModal from '@/components/admin/MemberBillingModal';
@@ -448,28 +452,34 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
         title="İşletme sahipleri"
         description="Buaze'ye kayıtlı işletme sahibi hesaplarının plan, deneme süresi, erişim durumu ve bağlı işletme sayısını yönet."
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={fetchMembers} className="bz-btn-ghost" disabled={loading}>
-              <RefreshCw size={14} strokeWidth={2} />
-              Yenile
-            </button>
-            <button onClick={handleExport} className="bz-btn-ghost">
-              <Download size={14} strokeWidth={2} />
-              CSV
-            </button>
-            {/* Stage A5 §38.97 — segment-bazlı toplu mail (selection bağımsız;
-                modal içinde admin segment seçer) */}
-            <button
-              onClick={() => {
-                setMailSegment(selectedIds.size > 0 ? 'custom' : 'all');
-                setShowMailModal(true);
-              }}
-              className="bz-btn-ghost"
-              title="Tüm sahiplere veya segmente toplu mail gönder"
+          <div className="flex items-center gap-2">
+            {/* §49 — secondary actions in one menu; one primary button. */}
+            <PulseMenu
+              trigger={
+                <button type="button" className="bz-btn-ghost" aria-label="Diğer işlemler">
+                  <MoreHorizontal size={14} strokeWidth={2} />
+                  <span className="hidden sm:inline">Diğer</span>
+                </button>
+              }
+              className="min-w-[220px]"
             >
-              <Mail size={14} strokeWidth={2} />
-              Toplu mail
-            </button>
+              <PulseMenuItem icon={<RefreshCw size={13} />} onSelect={fetchMembers} disabled={loading}>
+                Listeyi yenile
+              </PulseMenuItem>
+              <PulseMenuItem icon={<Download size={13} />} onSelect={handleExport}>
+                CSV indir
+              </PulseMenuItem>
+              {/* Stage A5 §38.97 — segment-based bulk mail (the modal picks the segment). */}
+              <PulseMenuItem
+                icon={<Mail size={13} />}
+                onSelect={() => {
+                  setMailSegment(selectedIds.size > 0 ? 'custom' : 'all');
+                  setShowMailModal(true);
+                }}
+              >
+                Toplu mail gönder
+              </PulseMenuItem>
+            </PulseMenu>
             <button onClick={() => setShowCreate(true)} className="bz-btn-primary">
               <Plus size={14} strokeWidth={2} />
               Yeni İşletme Sahibi
@@ -579,8 +589,8 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse sm:min-w-[600px]">
               <thead>
-                <tr className="bg-[#0A0A0A] pulse-eyebrow text-white/60">
-                  <th className="px-3 py-4 sm:pl-5 sm:pr-2 w-10">
+                <tr className="border-b border-[#EDEDED] text-[12.5px] font-medium text-[#737373]">
+                  <th className="px-3 py-3 sm:pl-5 sm:pr-2 w-10">
                     {/* Stage A5 §38.97 — bulk select-all (with indeterminate).
                         Stage 47 §38.128 — APCheckbox primitive entegre
                         (manuel ref-based pattern → primitive). Pulse §11
@@ -607,12 +617,12 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                       );
                     })()}
                   </th>
-                  <th className="px-3 py-4 sm:px-5">İŞLETME SAHİBİ</th>
-                  <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
-                  <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
-                  <th className="hidden lg:table-cell px-3 py-4 sm:px-5">İŞLETME</th>
-                  <th className="hidden md:table-cell px-3 py-4 sm:px-5">DURUM</th>
-                  <th className="px-3 py-4 sm:px-5 text-right">EYLEM</th>
+                  <th className="px-3 py-3 sm:px-5">İşletme sahibi</th>
+                  <th className="hidden md:table-cell px-3 py-3 sm:px-5">Plan</th>
+                  <th className="hidden lg:table-cell px-3 py-3 sm:px-5">Deneme / bitiş</th>
+                  <th className="hidden lg:table-cell px-3 py-3 sm:px-5">İşletmeler</th>
+                  <th className="hidden md:table-cell px-3 py-3 sm:px-5">Durum</th>
+                  <th className="px-3 py-3 sm:px-5 text-right"><span className="sr-only">İşlemler</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EDEDED]">
@@ -679,6 +689,9 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                               <Badge kind={m.isActive ? 'ok' : 'danger'}>
                                 {m.isActive ? 'Aktif' : 'Silinmiş'}
                               </Badge>
+                              {m._count.restaurants > 0 && (
+                                <Badge kind="ghost" dot={false}>{m._count.restaurants} işletme</Badge>
+                              )}
                               {m.scheduledDeletionAt && (
                                 <Badge kind="danger">Silinme planlandı</Badge>
                               )}
@@ -721,10 +734,19 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                         )}
                       </td>
                       <td className="hidden lg:table-cell px-3 py-4 sm:px-5">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-[#0A0A0A]">
-                          <Store size={13} strokeWidth={2} />
-                          {m._count.restaurants}
-                        </div>
+                        {m._count.restaurants > 0 ? (
+                          <Link
+                            href={`/admin/restaurants?owner=${encodeURIComponent(m.id)}&status=all`}
+                            className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs font-medium text-[#0A0A0A] hover:bg-[#F2F2F2]"
+                            title="Bu sahibin işletmelerini göster"
+                          >
+                            <Store size={13} strokeWidth={2} />
+                            {m._count.restaurants}
+                            {m._count.restaurants > 1 && <Badge kind="dark" dot={false} className="!h-[18px] !px-1.5 !text-[10px]">Zincir</Badge>}
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-[#A3A3A3]">0</span>
+                        )}
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 sm:px-5">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -735,29 +757,39 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                         </div>
                       </td>
                       <td className="px-2 py-4 sm:px-5 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          <Link
-                            href={`/admin/members/${m.id}`}
-                            className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] !px-3 !py-1.5 text-[12px]"
-                            title="Detay"
-                          >
-                            <span className="hidden sm:inline">Detay</span>
-                            <ChevronRight size={12} strokeWidth={2} />
-                          </Link>
-                          <button
-                            onClick={() => setBillingMember(m)}
-                            className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] !px-3 !py-1.5 text-[12px]"
-                            title="Faturalandırma"
-                          >
-                            <CreditCard size={12} strokeWidth={2} />
-                            <span className="hidden sm:inline">Fatura</span>
-                          </button>
+                        <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => openEdit(m)}
-                            className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] !px-3 !py-1.5 text-[12px]"
+                            className="bz-btn-ghost bz-btn-sm hidden sm:inline-flex"
                           >
                             Düzenle
                           </button>
+                          <PulseMenu
+                            trigger={
+                              <button type="button" className="bz-btn-icon" aria-label={`${m.name || m.email} işlemleri`}>
+                                <MoreHorizontal size={15} strokeWidth={2} />
+                              </button>
+                            }
+                            className="min-w-[220px]"
+                          >
+                            <PulseMenuItem icon={<ChevronRight size={13} />} onSelect={() => router.push(`/admin/members/${m.id}`)}>
+                              Detay
+                            </PulseMenuItem>
+                            <PulseMenuItem icon={<Pencil size={13} />} onSelect={() => openEdit(m)}>
+                              Düzenle
+                            </PulseMenuItem>
+                            <PulseMenuItem icon={<CreditCard size={13} />} onSelect={() => setBillingMember(m)}>
+                              Faturalandırma
+                            </PulseMenuItem>
+                            {m._count.restaurants > 0 && (
+                              <PulseMenuItem
+                                icon={<Store size={13} />}
+                                onSelect={() => router.push(`/admin/restaurants?owner=${encodeURIComponent(m.id)}&status=all`)}
+                              >
+                                İşletmelerini gör ({m._count.restaurants})
+                              </PulseMenuItem>
+                            )}
+                          </PulseMenu>
                         </div>
                       </td>
                     </tr>
