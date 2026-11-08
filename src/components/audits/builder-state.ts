@@ -75,6 +75,16 @@ export interface BuilderEditSource {
 
 export type BuilderMode = 'create' | 'edit';
 
+/** Sihirbazın ilk adımında önerilen hazır şablon (katalogdan, hafif). */
+export interface BuilderStarterTemplate {
+  id: string;
+  title: string;
+  sector: AuditSector;
+  kind: AuditKind;
+  locale: AuditLocale;
+  itemCount: number;
+}
+
 // ─── İlk durum ──────────────────────────────────────────────────────────
 
 export interface BuilderInitialState {
@@ -470,4 +480,61 @@ export function resolveScoringMode(args: {
     hasResponses: args.hasResponses,
     explicitMode: args.explicitMode,
   });
+}
+
+// ─── Sihirbaz (3 adım) ──────────────────────────────────────────────────
+//
+// 0 · Başla   — tür (sıfırdan) ya da hazır şablon, ad, dil
+// 1 · Maddeler — sorular / maddeler
+// 2 · Yayınla — açıklama, geçme puanı, ek ayarlar, özet
+
+export type WizardStepIndex = 0 | 1 | 2;
+export const WIZARD_LAST_STEP: WizardStepIndex = 2;
+
+/** Hangi adımda düzeltilir? */
+export function stepForTarget(target: BuilderFocusTarget): WizardStepIndex {
+  switch (target.kind) {
+    case 'title':
+      return 0;
+    case 'questions':
+    case 'question':
+      return 1;
+    case 'passingScore':
+      return 2;
+  }
+}
+
+/**
+ * Bir adımdaki ilk hata (yoksa null). "İleri" yalnız o adımın alanlarını
+ * kontrol eder; kaydet tüm adımları (`validation.first`).
+ */
+export function firstErrorInStep(
+  validation: BuilderValidation,
+  step: WizardStepIndex,
+): BuilderFocusTarget | null {
+  if (step === 0) return validation.titleError ? { kind: 'title' } : null;
+  if (step === 1) {
+    if (validation.questionsError) return { kind: 'questions' };
+    const key = Object.keys(validation.questionErrors)[0];
+    return key ? { kind: 'question', clientKey: key } : null;
+  }
+  return validation.passingScoreError ? { kind: 'passingScore' } : null;
+}
+
+/**
+ * İlk adımda gösterilecek hazır şablonlar: denetim dilindeki, işletmenin
+ * sektörüne uyanlar önce (sonra diğerleri), en çok `limit` tane.
+ */
+export function pickStarterTemplates<T extends { sector: AuditSector; locale: AuditLocale; title: string }>(
+  templates: readonly T[],
+  sector: AuditSector,
+  locale: AuditLocale,
+  limit = 4,
+): T[] {
+  const inLocale = templates.filter((t) => t.locale === locale);
+  const pool = inLocale.length > 0 ? inLocale : templates.slice();
+  const byTitle = (a: T, b: T) => a.title.localeCompare(b.title, locale === 'tr' ? 'tr' : 'en');
+  const mine = pool.filter((t) => t.sector === sector).sort(byTitle);
+  const rest = pool.filter((t) => t.sector !== sector).sort(byTitle);
+  return [...mine, ...rest].slice(0, limit);
 }

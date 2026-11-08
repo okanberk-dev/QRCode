@@ -1,17 +1,19 @@
-// Denetim Merkezi — yeni denetim (tek sayfa builder, oluştur modu).
+// Denetim Merkezi — yeni denetim (3 adımlı sihirbaz, oluştur modu).
 //
 // Sunucu: oturum + işletme kapsamı + (varsa) `?from=` hazır şablon kaynağı +
-// kategori listesi + yazma yetkisi. Ekip üyesi sorgusu YOK (kişi atama kalktı).
-// Salt-okunur üyeler denetim oluşturamaz → listeye yönlendirilir.
+// kategori listesi + yazma yetkisi + ilk adımda önerilecek hazır şablonlar.
+// Ekip üyesi sorgusu YOK (kişi atama kalktı). Salt-okunur üyeler denetim
+// oluşturamaz → listeye yönlendirilir.
 
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
+import { listCatalogForOwner } from '@/lib/audits/queries';
 import type { AuditScoringMode, AuditSector } from '@/lib/audits/types';
 import AuditBuilderClient from '@/components/audits/AuditBuilderClient';
-import type { BuilderForkSource } from '@/components/audits/builder-state';
+import type { BuilderForkSource, BuilderStarterTemplate } from '@/components/audits/builder-state';
 import { requireOwnerAuditContext } from '@/components/audits/owner-page';
 
 export const dynamic = 'force-dynamic';
@@ -106,8 +108,25 @@ export default async function NewAuditPage({ params, searchParams }: PageProps) 
       }
     : null;
 
+  // İlk adımdaki "Hazır şablonla başla" önerileri (yalnız sıfırdan oluştururken).
+  // Süzme (sektör / dil) istemcide: kabuktan işletme değişince yeniden istek yok.
+  let starterTemplates: BuilderStarterTemplate[] = [];
+  if (!forkRow) {
+    const { data } = await listCatalogForOwner();
+    starterTemplates = data.map((row) => ({
+      id: row.id,
+      title: row.title,
+      sector: row.sector,
+      kind: row.kind,
+      locale: row.locale === 'en' ? 'en' : 'tr',
+      itemCount: row._count.questions,
+    }));
+  }
+
   return (
     <AuditBuilderClient
+      // `?from=` değişince (ilk adımda şablon seçildi) sihirbaz baştan kurulur.
+      key={forkRow ? `from-${sp.from}` : 'blank'}
       mode="create"
       locale={locale}
       restaurants={restaurants}
@@ -115,6 +134,7 @@ export default async function NewAuditPage({ params, searchParams }: PageProps) 
       categories={categories}
       fork={fork}
       forkMissing={Boolean(sp.from) && !forkRow}
+      starterTemplates={starterTemplates}
     />
   );
 }

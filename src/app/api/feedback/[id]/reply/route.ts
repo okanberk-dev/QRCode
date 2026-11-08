@@ -5,6 +5,8 @@ import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 import { sendCustomerReplyEmail } from '@/lib/email';
 import { isValidEmail } from '@/lib/validations';
 import { moderateReplyContent } from '@/lib/content-safety';
+import { loadReplyAllowedHosts } from '@/lib/reply-allowed-hosts';
+import { isReplyRiskKind, replyRiskMessages } from '@/lib/reply-risk';
 import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -98,18 +100,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'consent_required' }, { status: 400 });
   }
 
-  // Legal-risk content gate — threats, harassment, hate speech. Runs before
-  // any DB write or email dispatch; a blocked reply never reaches the
-  // customer and never gets persisted. See src/lib/content-safety.ts.
-  const safety = await moderateReplyContent(text);
+  const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
+
+  // Risk gate (CLAUDE.md §45, §48) — profanity, insults, threats, legal
+  // intimidation, slurs, review pressure, personal data, unknown links,
+  // markup, look-alike / invisible characters, then AI moderation. Runs
+  // before any DB write or email dispatch: a blocked reply never reaches the
+  // customer and is never persisted. No override.
+  const allowedHosts = await loadReplyAllowedHosts(access.feedback.restaurantId);
+  const safety = await moderateReplyContent(text, { allowedHosts });
   if (safety.blocked) {
+    const issues = safety.categories.filter(isReplyRiskKind);
     return NextResponse.json(
-      { error: 'content_blocked', reason: safety.reason, categories: safety.categories },
+      {
+        error: 'content_blocked',
+        reason: safety.reason,
+        issues,
+        messages: replyRiskMessages(issues, locale),
+      },
       { status: 422 },
     );
   }
 
-  const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
   const requestedEmail = body.channel === 'email' || body.sendEmail === true;
   const customerEmail = access.feedback.email;
 

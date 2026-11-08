@@ -37,6 +37,7 @@ export { Sparkline } from "./Sparkline";
 export { StarRow } from "./StarRow";
 export { StatCard, StatCardSkeleton, type DeltaKind } from "./StatCard";
 export { Tabs, type TabItem } from "./Tabs";
+export { WizardSteps, type WizardStep } from "./WizardSteps";
 
 // Stage 37 §38.117 — HANDOFF §8 step 4 (Panel atomları). APSlider + APStarInput
 // + APIconButton aktif callsite'larda; `APRadioGroup` §38.232'de silindi (0 callsite).

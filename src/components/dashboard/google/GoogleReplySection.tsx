@@ -12,6 +12,12 @@
 // region reloads (see PlacesProfileSection).
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  ReplyRiskNotice,
+  blockedReplyMessage,
+  issuesFromBody,
+  useReplyRisk,
+} from '@/components/reply/ReplyRiskNotice';
 import Link from 'next/link';
 import {
   Building2,
@@ -285,6 +291,8 @@ function ReviewCard({
     .toUpperCase();
   const replied = Boolean(review.reviewReply?.comment);
   const positive = rating >= 4;
+  // §48 — live risk preview; a risky reply can't be sent (server re-checks).
+  const risk = useReplyRisk(value);
 
   // Composer state — tasarım birebir collapse pattern. Action click → açılır.
   // Yanıtlandı durumda "Yanıtı düzenle" → mevcut reply'i value'ya yükle.
@@ -456,7 +464,9 @@ function ReviewCard({
                     : 'Public reply for this review...'
                 }
                 aria-label={isTr ? 'Google yanıtı' : 'Google reply'}
+                aria-invalid={risk.blocked || undefined}
               />
+              <ReplyRiskNotice risk={risk} locale={locale} className="mt-2" />
               {/* §45 — Per-message sorumluluk onayı. Google yanıtı herkese
                   açık ve Google tarafından indekslenir; dahili yanıttan
                   daha yüksek risk taşır. Her gönderimde yeniden
@@ -524,9 +534,13 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={onSend}
-                  disabled={replying || !value.trim() || !confirmed}
+                  disabled={replying || !value.trim() || !confirmed || risk.blocked}
                   title={
-                    !confirmed
+                    risk.blocked
+                      ? (isTr
+                          ? 'Bu yanıt gönderilemez — kırmızı uyarıya bakın'
+                          : "This reply can't be sent — see the red warning")
+                      : !confirmed
                       ? (isTr
                           ? 'Göndermeden önce sorumluluk onayını işaretleyin'
                           : 'Confirm the responsibility checkbox before sending')
@@ -1154,8 +1168,13 @@ export function GoogleReplySection({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        // `CONTENT_BLOCKED` and the other known codes are mapped to owner-safe
-        // copy; the route's own text is never rendered.
+        // `CONTENT_BLOCKED` names the rules that matched (copy from our own
+        // issue keys); other known codes map to owner-safe copy. The route's
+        // own text is never rendered.
+        if (data && (data as { code?: unknown }).code === 'CONTENT_BLOCKED') {
+          setReviewsError(blockedReplyMessage(issuesFromBody(data), locale));
+          return;
+        }
         setReviewsError(
           ownerBodyMessageOr(
             data,

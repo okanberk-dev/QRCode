@@ -64,15 +64,9 @@ export function buildMenuCopy(isTr: boolean) {
       ? 'Bu menüyü yalnızca görüntüleyebilirsin (izleyici rolü).'
       : 'You have view-only access to this menu.',
 
-    // ── starter (empty menu) ──
-    starterTitle: isTr ? 'Menünü birkaç adımda hazırla' : 'Set up your menu in a few steps',
-    starterBody: isTr
-      ? 'İşletmene en yakın şablonu seç; kategorileri biz ekleyelim. Ürünlerini sonra eklersin.'
-      : 'Pick the template closest to your business; we add the categories. You add items later.',
+    // ── setup wizard (empty menu) ──
     moreTemplates: isTr ? 'Diğer şablonlar' : 'More templates',
     lessTemplates: isTr ? 'Daha az göster' : 'Show fewer',
-    startEmpty: isTr ? 'Boş kategoriyle başla' : 'Start with an empty category',
-    or: isTr ? 'veya' : 'or',
 
     // ── categories ──
     categories: isTr ? 'Kategoriler' : 'Categories',
@@ -245,12 +239,16 @@ export function menuFmt(isTr: boolean) {
     deleteItemTitle: (name: string) => (isTr ? `“${name}” silinsin mi?` : `Delete “${name}”?`),
     deleteItemBody: () => (isTr ? 'Ürün menüden kaldırılır.' : 'This item is removed from your menu.'),
 
-    presetAdded: (n: number) =>
-      isTr
-        ? `${n} kategori eklendi. Şimdi ürünlerini ekle.`
-        : `${n} ${n === 1 ? 'category' : 'categories'} added. Now add your items.`,
     presetPartial: () =>
       isTr ? 'Bazı kategoriler eklenemedi. Tekrar dene.' : "Some categories couldn't be added. Try again.",
+    setupCreated: (categories: number, items: number) =>
+      isTr
+        ? items > 0
+          ? `Menün hazır: ${categories} kategori, ${items} ürün. Kontrol edip yayına alabilirsin.`
+          : `${categories} kategori eklendi. Şimdi ürünlerini ekle.`
+        : items > 0
+          ? `Your menu is ready: ${categories} ${categories === 1 ? 'category' : 'categories'}, ${items} ${items === 1 ? 'item' : 'items'}. Check it and publish.`
+          : `${categories} ${categories === 1 ? 'category' : 'categories'} added. Now add your items.`,
 
     emptyCategoryTitle: (name: string) => (isTr ? `${name} henüz boş` : `${name} is empty`),
 

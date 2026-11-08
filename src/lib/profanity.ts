@@ -62,6 +62,18 @@ const PATTERNS: string[] = [
   word('göt'),
   stem('ananı\\s*s[iı]k'),
   stem('anan[ıi]\\s*s[iı]k'),
+  stem('hassiktir'),
+  stem('hasiktir'),
+  word('sktr'),
+  word('siktr'),
+  word('oç'),
+  stem('orspu'),
+  stem('kodumun'),
+  stem('ta[şs]{1,2}a[kğ]'),
+  word('yarak'),
+  stem('yarağ'),
+  // "Bok" is Turkish for shit; "bok choy" is a vegetable.
+  `${B}bok(?:tan|u|a|lu|luk|un)?${E}(?!\\s*choy)`,
   // ── English ───────────────────────────────────────────────────────────
   stem('fuck'),
   stem('motherfuck'),
@@ -82,6 +94,8 @@ const PATTERNS: string[] = [
   word('twat'),
   word('prick'),
   stem('jackass'),
+  word('stfu'),
+  word('gtfo'),
   // ── German ────────────────────────────────────────────────────────────
   stem('scheiß'),
   stem('scheiss'),
@@ -139,6 +153,8 @@ const PATTERNS: string[] = [
   stem('sharmut'),
   word('kos omak'),
   stem('kuss? ?ummak'),
+  // Obscene gesture emoji.
+  '\u{1F595}',
 ];
 
 const PROFANITY_RE = new RegExp(PATTERNS.join('|'), 'iu');
@@ -156,16 +172,46 @@ const LEET: Record<string, string> = {
   '!': 'i',
 };
 
+// Invisible characters used to split a word so filters miss it ("s\u200Biktir").
+const INVISIBLE_RE = /[\u00AD\u180E\u200B-\u200F\u2060-\u2064\uFEFF]/g;
+
+// Cyrillic / Greek letters that look like Latin ones ("ѕһіt", "fuсk").
+const HOMOGLYPHS: Record<string, string> = {
+  а: 'a', в: 'b', е: 'e', ё: 'e', і: 'i', ї: 'i', ј: 'j', к: 'k', м: 'm', н: 'h',
+  о: 'o', р: 'p', с: 'c', т: 't', у: 'y', х: 'x', ѕ: 's', ԁ: 'd', ӏ: 'l', ү: 'y',
+  һ: 'h', ԛ: 'q', ԝ: 'w', ɡ: 'g',
+  α: 'a', β: 'b', ε: 'e', η: 'n', ι: 'i', κ: 'k', ν: 'v', ο: 'o', ρ: 'p', τ: 't',
+  υ: 'u', χ: 'x', ζ: 'z',
+};
+const HOMOGLYPH_RE = new RegExp(`[${Object.keys(HOMOGLYPHS).join('')}]`, 'g');
+
+/**
+ * "s i k t i r", "f - u - c - k", "o ç": two or more single letters separated
+ * by spaces or punctuation are read as one word.
+ */
+function joinSpacedLetters(text: string): string {
+  return text.replace(
+    /(?<![\p{L}\p{N}])\p{L}(?:[\s.\-_*·•|/\\]+\p{L}(?![\p{L}\p{N}])){1,}/gu,
+    (m) => m.replace(/[^\p{L}]/gu, ''),
+  );
+}
+
 function variants(text: string): string[] {
-  const lower = text.normalize('NFC').toLowerCase();
-  // Turkish-aware lowering keeps İ → i; plain lowering turns it into i̇.
-  const trLower = text.normalize('NFC').toLocaleLowerCase('tr-TR');
-  const deLeet = lower.replace(/[013457@$!]/g, (c) => LEET[c] ?? c);
+  // NFKC folds "fancy font" letters (𝐬𝐢𝐤, ｆｕｃｋ) into plain ones.
+  const clean = text.replace(INVISIBLE_RE, '').normalize('NFKC');
+  // Plain lowering turns "İ" into "i" + a combining dot; drop the dot so
+  // "SİKTİR" reads as "siktir" while "SHIT" still reads as "shit".
+  const lower = clean.toLowerCase().replace(/\u0307/g, '');
+  // Turkish-aware lowering ("I" → "ı").
+  const trLower = clean.toLocaleLowerCase('tr-TR');
+  const latin = lower.replace(HOMOGLYPH_RE, (c) => HOMOGLYPHS[c] ?? c);
+  const deLeet = latin.replace(/[013457@$!]/g, (c) => LEET[c] ?? c);
   // "fuuuuck", "siiiiktir": collapse runs of 3+ identical letters.
   const collapsed = deLeet.replace(/(\p{L})\1{2,}/gu, '$1');
   // "f.u.c.k" / "s-i-k-t-i-r": drop separators between single letters.
   const joined = collapsed.replace(/(?<=\p{L})[.\-_*](?=\p{L})/gu, '');
-  return Array.from(new Set([lower, trLower, deLeet, collapsed, joined]));
+  const spaced = joinSpacedLetters(collapsed);
+  return Array.from(new Set([lower, trLower, latin, deLeet, collapsed, joined, spaced]));
 }
 
 /** True when the text contains a swear word in any supported language. */

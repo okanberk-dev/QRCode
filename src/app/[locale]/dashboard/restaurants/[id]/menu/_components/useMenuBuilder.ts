@@ -18,7 +18,7 @@ import {
 } from './menu-merge';
 import type { ItemPatch } from './menu-item-form';
 import { buildMenuCopy, menuFmt } from './menu-copy';
-import type { StarterPreset } from './menu-starter-data';
+import type { SetupPlanCategory } from './menu-setup';
 import { beginThemeSave, createThemeSync, settleThemeSave, type ThemeSyncState, type ThemeValues } from './menu-theme';
 import type { CategoryShape, RestaurantShape } from './menu-types';
 
@@ -92,8 +92,8 @@ const NOTICE_MS = 3500;
  * (with photos stored as data URLs that was hundreds of KB per save), and every
  * successful mutation advances `restaurant.menuUpdatedAt` locally — the server
  * bumps it too, but the builder would otherwise show the old "last updated"
- * until the next full load. `fetchAll` runs only on the first load, after a
- * starter preset, after a failed reorder, on retry (and as a safety net when a
+ * until the next full load. `fetchAll` runs only on the first load, after the
+ * setup wizard, after a failed reorder, on retry (and as a safety net when a
  * response cannot be merged).
  */
 export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
@@ -111,7 +111,6 @@ export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
   const [themeError, setThemeError] = useState<string | null>(null);
   const themeSync = useRef<ThemeSyncState | null>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [presetBusy, setPresetBusy] = useState<StarterPreset['id'] | null>(null);
 
   const copy = useMemo(() => buildMenuCopy(isTr), [isTr]);
   const fmt = useMemo(() => menuFmt(isTr), [isTr]);
@@ -320,40 +319,57 @@ export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
   const toggleItemAvailability = (item: MenuItemView) => toggleItemFlag(item, 'isAvailable');
   const toggleItemOutOfStock = (item: MenuItemView) => toggleItemFlag(item, 'isOutOfStock');
 
-  // ── Quick-start preset (only meaningful when categories list is empty) ──
+  // ── Setup wizard (empty menu) ──
   /**
-   * Adds the preset's categories one by one (sequential keeps sortOrder
-   * deterministic; ~6 calls). Whatever was created is shown even when one call
-   * fails half way, so the owner never sees an empty menu next to categories
+   * Creates the wizard's categories one by one (sequential keeps sortOrder
+   * deterministic) and, right after each, its pasted items in one bulk
+   * request. Stops at the first failure; whatever was created is shown
+   * (fetchAll), so the owner never sees an empty menu next to categories
    * that really exist.
    */
-  const applyStarterPreset = async (preset: StarterPreset): Promise<{ created: number; failed: boolean }> => {
-    setPresetBusy(preset.id);
+  const createMenuFromSetup = async (
+    plan: SetupPlanCategory[],
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ categories: number; items: number; failed: string | null }> => {
     setError(null);
-    const names = preset[isTr ? 'tr' : 'en'].categories;
-    let created = 0;
+    let categoriesCreated = 0;
+    let itemsCreated = 0;
     let failure: string | null = null;
     try {
-      for (const name of names) {
+      for (const entry of plan) {
+        onProgress?.(categoriesCreated, plan.length);
         const r = await apiCall(
           `/api/restaurants/${id}/menu/categories`,
-          jsonInit('POST', { name, isVisible: true }),
+          jsonInit('POST', { name: entry.name, isVisible: true }),
           isTr,
         );
         if (!r.ok) {
           failure = r.message;
           break;
         }
-        created += 1;
+        categoriesCreated += 1;
+        const categoryId = r.data?.category?.id;
+        if (categoryId && entry.items.length > 0) {
+          const b = await apiCall(
+            `/api/restaurants/${id}/menu/items/bulk`,
+            jsonInit('POST', { categoryId, items: entry.items }),
+            isTr,
+          );
+          if (!b.ok) {
+            failure = b.message;
+            break;
+          }
+          itemsCreated += b.data?.items?.length ?? entry.items.length;
+        }
       }
+      onProgress?.(categoriesCreated, plan.length);
     } finally {
       await fetchAll();
-      setPresetBusy(null);
     }
-    // fetchAll clears the error banner, so the message is set after it.
-    if (failure) setError(created > 0 ? fmt.presetPartial() : failure);
-    else setNotice(fmt.presetAdded(created));
-    return { created, failed: failure !== null };
+    // fetchAll clears the error banner, so messages are set after it.
+    if (failure) setError(categoriesCreated > 0 ? fmt.presetPartial() : failure);
+    else setNotice(fmt.setupCreated(categoriesCreated, itemsCreated));
+    return { categories: categoriesCreated, items: itemsCreated, failed: failure };
   };
 
   // ── Category ops ──
@@ -576,7 +592,7 @@ export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
     // data
     restaurant, categories, activeCategory, activeCategoryId, setActiveCategoryId,
     // status
-    loading, error, setError, notice, setNotice, busy, publishBusy, presetBusy,
+    loading, error, setError, notice, setNotice, busy, publishBusy,
     themeStatus, themeError, setThemeError,
     // loading
     fetchAll,
@@ -584,8 +600,8 @@ export function useMenuBuilder({ id, isTr }: { id: string; isTr: boolean }) {
     previewTheme, saveTheme, uploadLogo, uploadPhoto,
     // toggles
     toggleCategoryVisibility, toggleItemAvailability, toggleItemOutOfStock,
-    // preset
-    applyStarterPreset,
+    // setup wizard
+    createMenuFromSetup,
     // categories
     saveCategory, deleteCategory, reorderCategories, moveCategory,
     // items

@@ -15,16 +15,17 @@
  * control, not a generative feature; gating it behind a user-facing quota
  * would open a bypass window once quota is exhausted).
  *
- * Fallback: a narrow, high-precision keyword net for explicit death/legal
- * threats. Used when `OPENAI_API_KEY` is unset, or when the moderation
- * call itself fails (timeout/network/non-2xx) — infra failures fail OPEN
- * on the AI check (matches the reCAPTCHA soft-pass pattern, CLAUDE.md
- * §37.3) but the keyword net still applies regardless of network state.
+ * Deterministic layer first: `checkReplyRisk` (src/lib/reply-risk.ts) —
+ * swear words, insults, threats, legal intimidation, slurs, review pressure,
+ * personal data, links outside the business's saved hosts, markup and
+ * look-alike / invisible characters. It needs no network, so it holds when
+ * OPENAI_API_KEY is missing or the moderation call fails (infra failures fail
+ * OPEN on the AI check only — the reCAPTCHA soft-pass pattern, CLAUDE.md §37.3).
  */
 
 import * as Sentry from '@sentry/nextjs';
 
-import { containsProfanity } from './profanity';
+import { checkReplyRisk, type ReplyRiskKind, type ReplyRiskOptions } from './reply-risk';
 
 const OPENAI_MODERATION_URL = 'https://api.openai.com/v1/moderations';
 const MODERATION_MODEL = 'omni-moderation-latest';
@@ -32,37 +33,16 @@ const MODERATION_TIMEOUT_MS = 8_000;
 
 export interface ContentSafetyResult {
   blocked: boolean;
-  /** Which layer produced the block, for logging/telemetry. `null` when allowed. */
-  reason: 'ai_moderation' | 'keyword_filter' | 'profanity' | null;
-  /** OpenAI moderation category keys that triggered the block (empty for keyword_filter). */
+  /** Which layer / rule produced the block, for logging and owner copy. `null` when allowed. */
+  reason: ReplyRiskKind | 'ai_moderation' | null;
+  /**
+   * Deterministic issues (every rule that matched) or the OpenAI moderation
+   * category keys that triggered the block.
+   */
   categories: string[];
 }
 
-// Deliberately short. Every phrase here must be unambiguous — a
-// false-positive here blocks a legitimate reply outright with no override,
-// so this net is reserved for phrases that are threats under any reading.
-// This is a fallback only; the AI moderation call above is the primary
-// detector and understands context/idiom far better than regex ever could.
-const HARD_BLOCK_PATTERNS: RegExp[] = [
-  /seni?\s+(öldür|geber+t)/iu,
-  /adamlar[ıi]m[ıi]?\s+(yollar|gönderir)/iu,
-  /seni\s+bulur(?:um|uz)\b/iu,
-  /kan[ıi]n[ıi]?\s+dök/iu,
-  /sonunu(?:zu)?\s+haz[ıi]rla/iu,
-  /\bi\s*(?:will|'ll)\s+kill\s+you\b/i,
-  /\bi\s*(?:will|'ll)\s+(?:hurt|destroy)\s+you\b/i,
-  /\bi\s+know\s+where\s+you\s+live\b/i,
-];
-
-function keywordFlag(text: string): boolean {
-  return HARD_BLOCK_PATTERNS.some((re) => re.test(text));
-}
-
-function keywordResult(text: string): ContentSafetyResult {
-  return keywordFlag(text)
-    ? { blocked: true, reason: 'keyword_filter', categories: [] }
-    : { blocked: false, reason: null, categories: [] };
-}
+const ALLOWED: ContentSafetyResult = { blocked: false, reason: null, categories: [] };
 
 interface OpenAiModerationBody {
   results?: Array<{
@@ -73,22 +53,25 @@ interface OpenAiModerationBody {
 
 /**
  * Checks a reply body (manual, AI-drafted, or AI-drafted-and-edited) for
- * threats, harassment, hate speech, or other content that could expose
- * Buaze to legal risk. Callers MUST block the send when `blocked` is true
- * — there is no partial-allow path.
+ * anything that could expose Buaze to legal or sender-reputation risk.
+ * Callers MUST block the send when `blocked` is true — there is no
+ * partial-allow path. Pass the business's saved hosts as `allowedHosts`
+ * (`allowedHostsFromUrls`); without them every link except buaze.com blocks.
  */
-export async function moderateReplyContent(text: string): Promise<ContentSafetyResult> {
+export async function moderateReplyContent(
+  text: string,
+  opts: Pick<ReplyRiskOptions, 'allowedHosts'> = {},
+): Promise<ContentSafetyResult> {
   const trimmed = text.trim();
-  if (!trimmed) return { blocked: false, reason: null, categories: [] };
+  if (!trimmed) return ALLOWED;
 
-  // Swear words in any supported language — deterministic, no API call, so
-  // it also holds when OPENAI_API_KEY is missing or the moderation call fails.
-  if (containsProfanity(trimmed)) {
-    return { blocked: true, reason: 'profanity', categories: [] };
+  const risk = checkReplyRisk(trimmed, { allowedHosts: opts.allowedHosts ?? [] });
+  if (risk.blocked) {
+    return { blocked: true, reason: risk.issues[0], categories: risk.issues };
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return keywordResult(trimmed);
+  if (!apiKey) return ALLOWED;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), MODERATION_TIMEOUT_MS);
@@ -111,7 +94,7 @@ export async function moderateReplyContent(text: string): Promise<ContentSafetyR
         level: 'warning',
         tags: { service: 'openai-moderation', status: String(res.status) },
       });
-      return keywordResult(trimmed);
+      return ALLOWED;
     }
 
     const data = (await res.json()) as OpenAiModerationBody;
@@ -122,7 +105,7 @@ export async function moderateReplyContent(text: string): Promise<ContentSafetyR
         .map(([category]) => category);
       return { blocked: true, reason: 'ai_moderation', categories };
     }
-    return keywordResult(trimmed);
+    return ALLOWED;
   } catch (err) {
     const isAbort =
       err instanceof Error &&
@@ -139,7 +122,7 @@ export async function moderateReplyContent(text: string): Promise<ContentSafetyR
       console.error('[content-safety] moderation request failed', err);
       Sentry.captureException(err, { tags: { service: 'openai-moderation' } });
     }
-    return keywordResult(trimmed);
+    return ALLOWED;
   } finally {
     clearTimeout(timeout);
   }

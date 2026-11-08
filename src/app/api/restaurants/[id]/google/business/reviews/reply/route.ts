@@ -17,6 +17,8 @@ import {
 import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 import { rateLimit } from '@/lib/rate-limit';
 import { moderateReplyContent } from '@/lib/content-safety';
+import { loadReplyAllowedHosts } from '@/lib/reply-allowed-hosts';
+import { isReplyRiskKind, replyRiskMessages } from '@/lib/reply-risk';
 import { prisma } from '@/lib/prisma';
 import { sendFirstReplyCelebrationEmail } from '@/lib/email';
 import { alreadySent, recordSent } from '@/lib/email/lifecycle';
@@ -118,17 +120,23 @@ export async function POST(
   }
   const canonicalReviewName = `${expectedPrefix}${reviewId}`;
 
-  // Legal-risk content gate — threats, harassment, hate speech. Public
-  // Google replies carry more exposure than internal-only ones (visible to
-  // anyone, indexed by Google), so this runs before the reply ever reaches
-  // Google's API. See src/lib/content-safety.ts.
-  const safety = await moderateReplyContent(parsed.data.comment);
+  // Risk gate (CLAUDE.md §45, §48). Public Google replies carry more
+  // exposure than internal-only ones (visible to anyone, indexed by Google),
+  // so this runs before the reply ever reaches Google's API.
+  const allowedHosts = await loadReplyAllowedHosts(id);
+  const safety = await moderateReplyContent(parsed.data.comment, { allowedHosts });
   if (safety.blocked) {
-    return ApiErrors.badRequest(
-      isTr
-        ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
-        : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.',
-      'CONTENT_BLOCKED',
+    const issues = safety.categories.filter(isReplyRiskKind);
+    return NextResponse.json(
+      {
+        error: isTr
+          ? 'Bu yanıt gönderilemedi: riskli bir ifade içeriyor.'
+          : 'This reply could not be sent: it contains risky content.',
+        code: 'CONTENT_BLOCKED',
+        issues,
+        messages: replyRiskMessages(issues, isTr ? 'tr' : 'en'),
+      },
+      { status: 400 },
     );
   }
 

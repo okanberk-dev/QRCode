@@ -1,29 +1,36 @@
 'use client';
 
-// CLAUDE.md §42 — Audit template creation wizard (3-step).
+// CLAUDE.md §42 — Hazır şablon oluşturma sihirbazı (3 adım, superadmin).
 //
-// Adımlar:
-//   1. Kimlik — title (required) + locale + sector + category
-//   2. Puanlama — scoringMode + passingScore + description (özet)
-//   3. Önizleme — özet + "Oluştur" CTA
+//   1. Kimlik  — başlık + dil + sektör + kategori
+//   2. Sorular — owner sihirbazındaki madde listesi (hızlı ekleme, sürükle,
+//                "Detay"); boş bırakılabilir, sonra detay ekranından eklenir
+//   3. Puanlama & özet — puanlama modu, geçme puanı, açıklama, özet, "Oluştur"
 //
-// CreateBusinessWizard (`/dashboard/restaurants` Modal) paterniyle uyumlu;
-// step counter + Pulse styling + sticky bottom action bar. Sorular bu
-// adımda eklenmez (taslak oluşur, detail page'inde soru CRUD).
+// Şablon taslak olarak oluşur; işletme kataloğuna yayın detay ekranından.
+// Adım göstergesi owner sihirbazı ve menü kurulumu ile ortak (`WizardSteps`).
 
 import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, ClipboardCheck, Loader2, Save, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { AlertBanner, Field, Modal } from '@/components/ui';
+import { ArrowLeft, ArrowRight, ClipboardCheck, ListChecks, Loader2, Save, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { AlertBanner, Field, Modal, PulseSelect, WizardSteps } from '@/components/ui';
 import {
   AUDIT_SCORING_MODES,
   AUDIT_SECTORS,
   type AuditScoringMode,
   type AuditSector,
 } from '@/lib/audits/types';
+import { deriveAuditKind } from '@/lib/audits/kind';
+import {
+  checkQuestionForSave,
+  toCreateQuestions,
+  type AuditBuilderQuestion,
+} from '@/lib/audits/question-normalize';
 import {
   parseAuditErrorResponse,
   summarizeAuditError,
 } from '@/lib/audits/error-humanizer';
+import AuditQuestionList from '@/components/audits/AuditQuestionList';
+import { itemsCount, kindLabel, localizeYesNoQuestions } from '@/components/audits/audit-ui';
 
 interface CategoryRef {
   id: string;
@@ -78,10 +85,12 @@ const SCORING_HINT: Record<AuditScoringMode, string> = {
 };
 
 const STEPS = [
-  { tr: 'Kimlik', en: 'Identity', icon: ClipboardCheck },
-  { tr: 'Puanlama', en: 'Scoring', icon: SlidersHorizontal },
-  { tr: 'Önizleme', en: 'Review', icon: Sparkles },
+  { label: 'Kimlik' },
+  { label: 'Sorular' },
+  { label: 'Puanlama & özet', short: 'Özet' },
 ] as const;
+
+const QUICK_INPUT_ID = 'admin-template-quick';
 
 type Step = 0 | 1 | 2;
 
@@ -94,7 +103,10 @@ interface Props {
 
 export default function CreateTemplateWizard({ open, categories, onClose, onCreated }: Props) {
   const [step, setStep] = useState<Step>(0);
+  const [reached, setReached] = useState<Step>(0);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
+  const [questions, setQuestions] = useState<AuditBuilderQuestion[]>([]);
+  const [showQuestionErrors, setShowQuestionErrors] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -106,6 +118,22 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
     [categories, form.sector],
   );
 
+  const kind = deriveAuditKind(questions.map((q) => q.type));
+  const questionErrors = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const q of questions) {
+      const check = checkQuestionForSave(q, form.locale);
+      if (check.ok) continue;
+      out[q.clientKey] =
+        check.field === 'prompt'
+          ? 'Soru metni boş olamaz.'
+          : 'En az 2 seçenek yaz. "Detay"dan ekleyebilirsin.';
+    }
+    return out;
+  }, [questions, form.locale]);
+  const questionsValid = Object.keys(questionErrors).length === 0;
+  const filledQuestions = questions.filter((q) => q.prompt.trim()).length;
+
   const canContinueIdentity = form.title.trim().length > 0;
   const passNum = Number(form.passingScore);
   const passValid =
@@ -114,7 +142,10 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
 
   function reset() {
     setForm(EMPTY_FORM);
+    setQuestions([]);
+    setShowQuestionErrors(false);
     setStep(0);
+    setReached(0);
     setError(null);
   }
 
@@ -124,20 +155,44 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
     onClose();
   }
 
-  function continueTo(next: Step) {
-    if (next === 1 && !canContinueIdentity) {
-      setError('Başlık zorunlu.');
-      return;
-    }
-    if (next === 2 && !canContinueScoring) {
-      setError('Geçme puanı 0-100 aralığında olmalı veya boş bırakılmalı.');
-      return;
+  /** İleri: aradaki her adım geçerli olmalı; geri her zaman serbest. */
+  function goTo(next: Step) {
+    if (next > step) {
+      if (step <= 0 && !canContinueIdentity) {
+        setStep(0);
+        setError('Başlık zorunlu.');
+        return;
+      }
+      if (step <= 1 && next > 1 && !questionsValid) {
+        setStep(1);
+        setShowQuestionErrors(true);
+        setError('Boş ya da eksik soruları tamamla veya sil.');
+        return;
+      }
     }
     setError(null);
     setStep(next);
+    setReached((r) => (next > r ? next : r));
+  }
+
+  function changeLocale(next: 'tr' | 'en') {
+    setForm((f) => ({ ...f, locale: next }));
+    // Evet/Hayır seçenekleri ve doğru cevabı yeni dile geçer.
+    setQuestions((prev) => localizeYesNoQuestions(prev, next));
   }
 
   async function handleCreate() {
+    if (!canContinueIdentity) return goTo(0);
+    if (!questionsValid) {
+      setShowQuestionErrors(true);
+      setStep(1);
+      setError('Boş ya da eksik soruları tamamla veya sil.');
+      return;
+    }
+    if (!canContinueScoring) {
+      setError('Geçme puanı 0-100 aralığında olmalı veya boş bırakılmalı.');
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -150,6 +205,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
       if (form.categoryId) body.categoryId = form.categoryId;
       if (form.description.trim()) body.description = form.description.trim();
       if (form.passingScore !== '' && passValid) body.passingScore = passNum;
+      if (questions.length > 0) body.questions = toCreateQuestions(questions, form.locale);
 
       const res = await fetch('/api/admin/audits/templates', {
         method: 'POST',
@@ -161,8 +217,13 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
         setError(summarizeAuditError(parsed));
         return;
       }
+      const count = questions.length;
       reset();
-      onCreated('Şablon oluşturuldu (taslak). Sorular eklendikten sonra yayınlayabilirsin.');
+      onCreated(
+        count > 0
+          ? `Şablon ${count} soruyla taslak olarak oluşturuldu. Detay ekranından yayınlayabilirsin.`
+          : 'Şablon oluşturuldu (taslak). Sorular eklendikten sonra yayınlayabilirsin.',
+      );
     } catch {
       setError('Bağlantı hatası');
     } finally {
@@ -173,45 +234,22 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
   if (!open) return null;
 
   return (
-    <Modal size={680} onClose={handleClose} title="Yeni hazır şablon">
+    <Modal
+      size={760}
+      onClose={handleClose}
+      title="Yeni hazır şablon"
+      // Dışarı tıklama / ESC yazılanı sessizce silmesin.
+      closeGuard={() => !submitting && (form.title.trim() !== '' || questions.length > 0)}
+    >
       <div className="space-y-5">
-        {/* Step indicator — CreateBusinessWizard paterni */}
-        <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#F5F5F5] p-1.5">
-          {STEPS.map((s, idx) => {
-            const active = idx === step;
-            const complete = idx < step;
-            const Icon = s.icon;
-            return (
-              <button
-                key={s.tr}
-                type="button"
-                disabled={idx > step && !canContinueIdentity}
-                onClick={() => {
-                  if (idx <= step) {
-                    setError(null);
-                    setStep(idx as Step);
-                  }
-                }}
-                className={`flex min-h-[44px] min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 text-[11px] font-semibold transition-all sm:gap-2 sm:px-2 sm:text-[12px] ${
-                  active
-                    ? 'bg-white text-[#0A0A0A] shadow-sm'
-                    : complete
-                      ? 'text-[#0A0A0A]'
-                      : 'text-[#737373]'
-                }`}
-              >
-                <span
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
-                    active || complete ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-white text-[#737373]'
-                  }`}
-                >
-                  {complete ? <Check size={12} strokeWidth={2.4} /> : <Icon size={12} />}
-                </span>
-                <span className="truncate">{s.tr}</span>
-              </button>
-            );
-          })}
-        </div>
+        <WizardSteps
+          steps={STEPS}
+          current={step}
+          isComplete={(i) => i < reached}
+          canSelect={(i) => i <= reached}
+          onSelect={(i) => goTo(i as Step)}
+          ariaLabel="Şablon adımları"
+        />
 
         {error && (
           <AlertBanner kind="danger" onDismiss={() => setError(null)}>
@@ -222,126 +260,129 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
         {/* Step 0 — Kimlik */}
         {step === 0 && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A]">
-                  <ClipboardCheck size={18} strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-[15px] font-semibold text-[#0A0A0A]">Şablon kimliği</p>
-                  <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-                    Sektör, dil ve kategori şablonun işletme kataloğunda nasıl gruplandırılacağını
-                    belirler. Hepsi sonradan düzenlenebilir.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <StepIntro
+              icon={<ClipboardCheck size={18} strokeWidth={2} />}
+              title="Şablon kimliği"
+              body="Sektör, dil ve kategori şablonun işletme kataloğunda nasıl gruplandırılacağını belirler. Hepsi sonradan düzenlenebilir."
+            />
 
             <Field label="Başlık" required hint="İşletme sahibi şablon listesinde bu metni görür">
               <input
                 className="bz-input"
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    goTo(1);
+                  }
+                }}
                 placeholder="Örn. F&B yeni eleman temel quiz"
                 autoFocus
+                enterKeyHint="next"
                 maxLength={120}
               />
             </Field>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Dil">
-                <select
-                  className="bz-input"
+              <Field label="Dil" htmlFor="admin-template-locale">
+                <PulseSelect
+                  id="admin-template-locale"
+                  className="w-full"
                   value={form.locale}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, locale: e.target.value as 'tr' | 'en' }))
-                  }
-                >
-                  <option value="tr">Türkçe</option>
-                  <option value="en">English</option>
-                </select>
+                  onChange={(v) => changeLocale(v === 'en' ? 'en' : 'tr')}
+                  options={[
+                    { value: 'tr', label: 'Türkçe' },
+                    { value: 'en', label: 'English' },
+                  ]}
+                />
               </Field>
-              <Field label="Sektör">
-                <select
-                  className="bz-input"
+              <Field label="Sektör" htmlFor="admin-template-sector">
+                <PulseSelect
+                  id="admin-template-sector"
+                  className="w-full"
                   value={form.sector}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      sector: e.target.value as AuditSector,
-                      categoryId: '',
-                    }))
+                  onChange={(v) =>
+                    setForm((f) => ({ ...f, sector: v as AuditSector, categoryId: '' }))
                   }
-                >
-                  {AUDIT_SECTORS.map((s) => (
-                    <option key={s} value={s}>
-                      {SECTOR_LABEL[s]}
-                    </option>
-                  ))}
-                </select>
+                  options={AUDIT_SECTORS.map((s) => ({ value: s, label: SECTOR_LABEL[s] }))}
+                />
               </Field>
             </div>
 
             <Field
               label="Kategori (opsiyonel)"
+              htmlFor="admin-template-category"
               hint={
                 filteredCategories.length === 0
                   ? 'Bu sektör için kategori yok. Kategoriler sayfasından ekleyebilirsin.'
                   : 'Aynı sektör içinde alt-konu gruplaması (örn. "günlük checklist" / "eğitim quiz").'
               }
             >
-              <select
-                className="bz-input"
+              <PulseSelect
+                id="admin-template-category"
+                className="w-full"
                 value={form.categoryId}
-                onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-              >
-                <option value="">— Yok —</option>
-                {filteredCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.labelTr}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setForm((f) => ({ ...f, categoryId: v }))}
+                options={[
+                  { value: '', label: '— Yok —' },
+                  ...filteredCategories.map((c) => ({ value: c.id, label: c.labelTr })),
+                ]}
+              />
             </Field>
           </div>
         )}
 
-        {/* Step 1 — Puanlama */}
+        {/* Step 1 — Sorular */}
         {step === 1 && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[#EAF9B8] bg-[#F7FAEF] p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A]">
-                  <SlidersHorizontal size={18} strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-[15px] font-semibold text-[#0A0A0A]">Puanlama mantığı</p>
-                  <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-                    Skor hesaplama biçimi ve geçme eşiği. Sorular eklendikten sonra şablonu yayına
-                    açtığında otomatik uygulanır.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <StepIntro
+              icon={<ListChecks size={18} strokeWidth={2} />}
+              title="Sorular"
+              body='Soruyu yaz, Enter’a bas. Türü çipten seç; seçenekleri, doğru cevabı ve ağırlığı "Detay"dan ayarla. İstersen boş bırakıp sonra detay ekranından ekleyebilirsin.'
+            />
+            <AuditQuestionList
+              locale="tr"
+              auditLocale={form.locale}
+              kind={kind}
+              startKind="checklist"
+              questions={questions}
+              onChange={setQuestions}
+              errors={showQuestionErrors ? questionErrors : undefined}
+              inputId={QUICK_INPUT_ID}
+            />
+          </div>
+        )}
+
+        {/* Step 2 — Puanlama & özet */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <StepIntro
+              icon={<SlidersHorizontal size={18} strokeWidth={2} />}
+              title="Puanlama ve özet"
+              body="Skor hesaplama biçimi ve geçme eşiği. Şablon yayına açıldığında işletmeye kopyalanan denetimlere aynen geçer."
+            />
 
             <Field label="Puanlama modu">
-              <div className="grid grid-cols-1 gap-2">
+              <div role="radiogroup" aria-label="Puanlama modu" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {AUDIT_SCORING_MODES.map((mode) => {
                   const active = form.scoringMode === mode;
                   return (
                     <button
                       key={mode}
                       type="button"
+                      role="radio"
+                      aria-checked={active}
                       onClick={() => setForm((f) => ({ ...f, scoringMode: mode }))}
                       className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all ${
                         active
-                          ? 'border-[#C6F24E] bg-[#F7FAEF] shadow-[0_10px_30px_-24px_rgba(10,10,10,0.35)]'
-                          : 'border-[#EDEDED] bg-white hover:border-[#C6F24E]/70'
+                          ? 'border-[#0A0A0A] bg-[#FAFAFA]'
+                          : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]/40'
                       }`}
                     >
                       <span
                         className={`mt-0.5 h-3 w-3 shrink-0 rounded-full ${
-                          active ? 'bg-[#C6F24E]' : 'bg-[#E5E5E5]'
+                          active ? 'bg-[#C6F24E] ring-2 ring-[#0A0A0A]' : 'bg-[#E5E5E5]'
                         }`}
                       />
                       <span className="min-w-0">
@@ -358,39 +399,34 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
               </div>
             </Field>
 
-            <Field
-              label="Geçme puanı (opsiyonel, 0-100)"
-              hint="Boş bırakılırsa sadece skor görünür, geçti/kaldı rozeti çıkmaz."
-            >
-              <input
-                className="bz-input"
-                type="number"
-                min={0}
-                max={100}
-                value={form.passingScore}
-                onChange={(e) => setForm((f) => ({ ...f, passingScore: e.target.value }))}
-                placeholder="örn. 70"
-              />
-            </Field>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[200px_minmax(0,1fr)]">
+              <Field
+                label="Geçme puanı (0-100)"
+                error={passValid ? null : '0 ile 100 arasında olmalı.'}
+                hint="Boşsa yalnız skor görünür."
+              >
+                <input
+                  className="bz-input"
+                  type="text"
+                  inputMode="numeric"
+                  value={form.passingScore}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, passingScore: e.target.value.replace(/\D/g, '').slice(0, 3) }))
+                  }
+                  placeholder="örn. 70"
+                />
+              </Field>
+              <Field label="Açıklama (opsiyonel)" hint="İşletme sahibi şablon seçim ekranında görür.">
+                <textarea
+                  className="bz-input min-h-[80px]"
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  maxLength={400}
+                  placeholder="Örn. Servis prosedürlerinin günlük kontrolü."
+                />
+              </Field>
+            </div>
 
-            <Field
-              label="Açıklama (opsiyonel)"
-              hint="İşletme sahibi şablon seçim ekranında özet metin olarak görür."
-            >
-              <textarea
-                className="bz-input min-h-[80px]"
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                maxLength={400}
-                placeholder="Örn. Servis prosedürlerinin günlük kontrolü."
-              />
-            </Field>
-          </div>
-        )}
-
-        {/* Step 2 — Önizleme */}
-        {step === 2 && (
-          <div className="space-y-4">
             <div className="rounded-2xl border border-[#EDEDED] bg-[#0A0A0A] p-5 text-white">
               <div className="flex items-center justify-between gap-3">
                 <span className="pulse-eyebrow text-white/60">ŞABLON ÖZETİ</span>
@@ -405,12 +441,16 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                   ? ` · ${filteredCategories.find((c) => c.id === form.categoryId)?.labelTr ?? ''}`
                   : ''}
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-white/8 p-3">
+              <div className="mt-4 grid grid-cols-3 gap-3 rounded-2xl bg-white/8 p-3">
+                <div>
+                  <span className="pulse-eyebrow text-white/55">Sorular</span>
+                  <p className="mt-1 text-[13px] font-medium text-white">
+                    {filledQuestions > 0 ? `${kindLabel(kind, 'tr')} · ${itemsCount(filledQuestions, 'tr')}` : '—'}
+                  </p>
+                </div>
                 <div>
                   <span className="pulse-eyebrow text-white/55">Mod</span>
-                  <p className="mt-1 text-[13px] font-medium text-white">
-                    {SCORING_LABEL[form.scoringMode]}
-                  </p>
+                  <p className="mt-1 text-[13px] font-medium text-white">{SCORING_LABEL[form.scoringMode]}</p>
                 </div>
                 <div>
                   <span className="pulse-eyebrow text-white/55">Geçme</span>
@@ -419,19 +459,27 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                   </p>
                 </div>
               </div>
-              {form.description && (
-                <p className="mt-3 text-[12px] leading-[1.55] text-white/70">
-                  {form.description}
-                </p>
-              )}
             </div>
 
-            <div className="rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-3.5 text-[12.5px] leading-[1.55] text-[#92400E]">
-              <p>
-                <strong>Bu şablon taslak olarak oluşturulur.</strong> Yayınlamadan önce detay
-                ekranından en az 1 soru ekle. Sonra &quot;Yayınla&quot; butonuyla işletme sahiplerinin kataloğuna açılır.
-              </p>
-            </div>
+            <p
+              className={`rounded-2xl border p-3.5 text-[12.5px] leading-[1.55] ${
+                filledQuestions > 0
+                  ? 'border-[#EDEDED] bg-[#FAFAFA] text-[#525252]'
+                  : 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]'
+              }`}
+            >
+              {filledQuestions > 0 ? (
+                <>
+                  <strong>Taslak olarak oluşturulur.</strong> Detay ekranından kontrol edip
+                  &quot;Yayınla&quot; ile işletme sahiplerinin kataloğuna açabilirsin.
+                </>
+              ) : (
+                <>
+                  <strong>Henüz soru yok.</strong> Şablon taslak oluşur; yayınlamadan önce detay
+                  ekranından en az 1 soru ekle.
+                </>
+              )}
+            </p>
           </div>
         )}
 
@@ -449,7 +497,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             {step > 0 && (
               <button
                 type="button"
-                onClick={() => setStep((s) => (Math.max(0, s - 1) as Step))}
+                onClick={() => goTo((step - 1) as Step)}
                 className="bz-btn-ghost flex-1 sm:flex-none"
                 disabled={submitting}
               >
@@ -460,11 +508,10 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             {step < 2 ? (
               <button
                 type="button"
-                onClick={() => continueTo((step + 1) as Step)}
-                className="bz-btn-primary flex-1 disabled:opacity-50 sm:flex-none"
-                disabled={(step === 0 && !canContinueIdentity) || (step === 1 && !canContinueScoring)}
+                onClick={() => goTo((step + 1) as Step)}
+                className="bz-btn-primary flex-1 sm:flex-none"
               >
-                Devam
+                {step === 1 && questions.length === 0 ? 'Sorusuz devam et' : 'Devam'}
                 <ArrowRight size={14} strokeWidth={2} />
               </button>
             ) : (
@@ -483,7 +530,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                 ) : (
                   <>
                     <Save size={14} strokeWidth={2} />
-                    Oluştur
+                    Taslak olarak oluştur
                   </>
                 )}
               </button>
@@ -492,5 +539,21 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
         </div>
       </div>
     </Modal>
+  );
+}
+
+function StepIntro({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A]">
+          {icon}
+        </div>
+        <div>
+          <p className="text-[15px] font-semibold text-[#0A0A0A]">{title}</p>
+          <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">{body}</p>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 /**
- * moderateReplyContent — keyword-fallback path tests.
+ * moderateReplyContent — deterministic-gate path tests (src/lib/reply-risk.ts).
  *
  * Only the `OPENAI_API_KEY`-absent branch is exercised here: it's fully
  * deterministic and network-free (the moderation API call is skipped
@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 
 import { moderateReplyContent } from '../src/lib/content-safety';
 
-describe('moderateReplyContent (keyword fallback, no OPENAI_API_KEY)', () => {
+describe('moderateReplyContent (deterministic gate, no OPENAI_API_KEY)', () => {
   let originalKey: string | undefined;
 
   beforeEach(() => {
@@ -45,19 +45,19 @@ describe('moderateReplyContent (keyword fallback, no OPENAI_API_KEY)', () => {
   it('blocks an explicit Turkish death threat', async () => {
     const result = await moderateReplyContent('Seni öldürürüm bir daha buraya gelirsen.');
     assert.equal(result.blocked, true);
-    assert.equal(result.reason, 'keyword_filter');
+    assert.equal(result.reason, 'threat');
   });
 
   it('blocks an explicit English death threat', async () => {
     const result = await moderateReplyContent('I will kill you if you post another review.');
     assert.equal(result.blocked, true);
-    assert.equal(result.reason, 'keyword_filter');
+    assert.equal(result.reason, 'threat');
   });
 
   it('blocks a Turkish "I will find you" style threat', async () => {
     const result = await moderateReplyContent('Merak etme seni buluruz.');
     assert.equal(result.blocked, true);
-    assert.equal(result.reason, 'keyword_filter');
+    assert.equal(result.reason, 'threat');
   });
 
   it('does not false-positive on unrelated words containing threat substrings', async () => {

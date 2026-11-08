@@ -21,7 +21,7 @@ import { ItemList } from './_components/ItemList';
 import { MenuDesignModal } from './_components/MenuDesignModal';
 import { MenuLivePreview } from './_components/MenuLivePreview';
 import { MenuShareModal } from './_components/MenuShareModal';
-import { MenuStarter } from './_components/MenuStarter';
+import { MenuSetupWizard } from './_components/MenuSetupWizard';
 import { MenuStatusBar, type MenuLockReason, type MenuStepId } from './_components/MenuStatusBar';
 import type { ItemPatch } from './_components/menu-item-form';
 import type { CategoryShape } from './_components/menu-types';
@@ -44,11 +44,11 @@ export default function RestaurantMenuBuilderPage() {
   // confirm state stay here.
   const {
     restaurant, categories, activeCategory, activeCategoryId, setActiveCategoryId,
-    loading, error, setError, notice, setNotice, busy, publishBusy, presetBusy,
+    loading, error, setError, notice, setNotice, busy, publishBusy,
     themeStatus, themeError, setThemeError,
     fetchAll, previewTheme, saveTheme, uploadLogo, uploadPhoto,
     toggleCategoryVisibility, toggleItemAvailability, toggleItemOutOfStock,
-    applyStarterPreset,
+    createMenuFromSetup,
     saveCategory: persistCategory, deleteCategory: removeCategoryById, reorderCategories, moveCategory,
     saveItem: persistItem, bulkAddItems, deleteItem: removeItemById, reorderItems, moveItem,
     togglePublish, copy, fmt,
@@ -190,13 +190,14 @@ export default function RestaurantMenuBuilderPage() {
     else void publish();
   };
 
-  const onApplyPreset = async (preset: Parameters<typeof applyStarterPreset>[0]) => {
-    const result = await applyStarterPreset(preset);
-    if (result.created > 0 && typeof window !== 'undefined' && window.innerWidth < 1024) {
+  const onCreateFromSetup: Parameters<typeof MenuSetupWizard>[0]['onCreate'] = async (plan, onProgress) => {
+    const result = await createMenuFromSetup(plan, onProgress);
+    if (result.categories > 0 && typeof window !== 'undefined' && window.innerWidth < 1024) {
       requestAnimationFrame(() =>
         document.getElementById('menu-items-pane')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
       );
     }
+    return result;
   };
 
   if (loading) {
@@ -329,23 +330,28 @@ export default function RestaurantMenuBuilderPage() {
         />
       </div>
 
-      <MenuStatusBar
-        isTr={isTr}
-        copy={copy}
-        fmt={fmt}
-        restaurant={restaurant}
-        readiness={readiness}
-        lockReason={lockReason}
-        readOnly={readOnly}
-        publishBusy={publishBusy}
-        justPublished={justPublished}
-        analyticsHref={`${menuHref}/analytics`}
-        onDismissPublished={() => setJustPublished(false)}
-        onPublish={publish}
-        onUnpublish={askUnpublish}
-        onOpenShare={() => setShareOpen(true)}
-        onStep={onStep}
-      />
+      {/* Empty draft menu: the setup wizard below is the guide — the strip's own
+          "add categories → add items → publish" steps would compete with it.
+          Locked / viewer / live states keep the strip (it explains them). */}
+      {!(categories.length === 0 && !lockReason && !restaurant.menuPublished) && (
+        <MenuStatusBar
+          isTr={isTr}
+          copy={copy}
+          fmt={fmt}
+          restaurant={restaurant}
+          readiness={readiness}
+          lockReason={lockReason}
+          readOnly={readOnly}
+          publishBusy={publishBusy}
+          justPublished={justPublished}
+          analyticsHref={`${menuHref}/analytics`}
+          onDismissPublished={() => setJustPublished(false)}
+          onPublish={publish}
+          onUnpublish={askUnpublish}
+          onOpenShare={() => setShareOpen(true)}
+          onStep={onStep}
+        />
+      )}
 
       {(error || notice) && (
         <div className="space-y-3">
@@ -371,13 +377,12 @@ export default function RestaurantMenuBuilderPage() {
       )}
 
       {categories.length === 0 ? (
-        <MenuStarter
+        <MenuSetupWizard
           isTr={isTr}
           copy={copy}
           sector={restaurant.category ? detectSector(restaurant.category) : null}
-          presetBusy={presetBusy}
           readOnly={readOnly}
-          onApplyPreset={onApplyPreset}
+          onCreate={onCreateFromSetup}
           onStartEmpty={openCategoryCreate}
         />
       ) : (

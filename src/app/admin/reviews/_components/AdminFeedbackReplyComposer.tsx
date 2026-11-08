@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Loader2, Mail, RotateCw, Send, Sparkles } from 'lucide-react';
+import { ReplyRiskNotice, useReplyRisk } from '@/components/reply/ReplyRiskNotice';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone } from './types';
 
 /** API limit for a reply body (`/api/feedback/[id]/reply` → body_too_long). */
@@ -169,7 +170,9 @@ export function AdminReplyComposerCard({
   notice,
 }: AdminReplyComposerCardProps) {
   const willEmail = sendEmail && Boolean(active.customerEmail);
-  const canSend = Boolean(draft.trim()) && !sending && confirmResponsibility;
+  // §48 — live risk preview; a risky draft can't be sent (server re-checks).
+  const risk = useReplyRisk(draft);
+  const canSend = Boolean(draft.trim()) && !sending && confirmResponsibility && !risk.blocked;
 
   // Auto-grow on every draft change (typing, an AI draft landing, the draft
   // clearing on a review switch). lg: capped at 200px so the docked composer
@@ -204,6 +207,7 @@ export function AdminReplyComposerCard({
         rows={2}
         maxLength={ADMIN_REPLY_MAX_LENGTH}
         aria-describedby="admin-reply-textarea-hint"
+        aria-invalid={risk.blocked || undefined}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
@@ -221,6 +225,7 @@ export function AdminReplyComposerCard({
         spellCheck={true}
         className="mt-2 max-h-[480px] min-h-[84px] w-full resize-none overflow-y-auto rounded-xl border border-[#EDEDED] bg-white px-3.5 py-2.5 text-[16px] leading-[1.55] text-[#0A0A0A] placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:text-[14px] lg:max-h-[200px] lg:min-h-[44px] lg:shrink"
       />
+      <ReplyRiskNotice risk={risk} locale={isTr ? 'tr' : 'en'} className="mt-2 lg:shrink-0" />
       <p id="admin-reply-textarea-hint" className="sr-only">
         {isTr
           ? 'Cmd veya Ctrl + Enter ile gönderebilirsiniz. En fazla 2000 karakter.'
@@ -324,6 +329,10 @@ export function AdminReplyComposerCard({
                 ? isTr
                   ? 'Önce bir yanıt yazın'
                   : 'Write a reply first'
+                : risk.blocked
+                  ? isTr
+                    ? 'Bu yanıt gönderilemez — kırmızı uyarıya bakın'
+                    : "This reply can't be sent — see the red warning"
                 : !confirmResponsibility
                   ? isTr
                     ? 'Göndermeden önce sorumluluk onayını işaretleyin'

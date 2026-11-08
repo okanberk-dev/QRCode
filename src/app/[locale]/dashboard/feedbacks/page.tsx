@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode } from 'react';
+import { blockedReplyMessage, issuesFromBody } from '@/components/reply/ReplyRiskNotice';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
@@ -52,12 +53,12 @@ const LG_QUERY = '(min-width: 1024px)';
 const isLgUp = () => typeof window !== 'undefined' && window.matchMedia(LG_QUERY).matches;
 
 /** Reply API error → user copy. The raw `data.error` key is never shown (§0.7). */
-function replyErrorMessage(code: unknown, isTr: boolean): string {
+function replyErrorMessage(data: unknown, isTr: boolean): string {
+  const code = typeof data === 'object' && data !== null ? (data as { error?: unknown }).error : null;
   switch (code) {
     case 'content_blocked':
-      return isTr
-        ? 'Bu yanıt gönderilemedi: küfür, tehdit, hakaret veya benzeri uygunsuz bir ifade içeriyor. Lütfen metni düzenleyin.'
-        : 'This reply could not be sent: it contains profanity, a threat, harassment or similar inappropriate content. Please edit it.';
+      // §48 — say exactly which rule blocked it (copy is ours, from the issue keys).
+      return blockedReplyMessage(issuesFromBody(data), isTr ? 'tr' : 'en');
     case 'consent_required':
       return isTr
         ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
@@ -780,7 +781,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         }
       } else {
         const data = await res.json().catch(() => ({}));
-        flashReply(replyErrorMessage(data?.error, isTr), 'error');
+        flashReply(replyErrorMessage(data, isTr), 'error');
       }
     } catch {
       flashReply(
