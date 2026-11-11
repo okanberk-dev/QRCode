@@ -12,9 +12,13 @@ import { INBOX_PLATFORM_FILTER_IDS, platformLabel } from './inbox-format';
  * "Filtre" button — one place owns every filter.
  *
  *   Row 1  status tabs (InboxStatusTabs, horizontally scrollable on mobile)
- *   Row 2  search · [md+] platform / rating / date selects · more filters ·
- *          clear · optional right slot (admin restaurant chip)
+ *   Row 2  search · [md+] platform / rating / date selects · state toggles
+ *          (or a "more filters" button) · clear · optional right slot
+ *          (admin restaurant chip)
  *          [< md] search + one filter icon button (opens the full modal)
+ *
+ * Every control applies immediately — no "Apply" step. Touch targets are
+ * 44px below md (tabs, search, icon buttons).
  *
  * Mobile: sticky under the 61px shell topbar. lg+: static (the panes below
  * scroll internally).
@@ -39,12 +43,18 @@ export interface InboxToolbarProps {
   days: string;
   onDaysChange: (value: string) => void;
 
+  /**
+   * md+: on/off filters shown inline next to the selects (e.g. "Yanıtsız",
+   * "İşaretli"). When given, they replace the "more filters" button — a
+   * couple of toggles don't need a modal.
+   */
+  toggles?: InboxToggle[];
   /** Count of the "other" filters (reply state / flagged / assigned) — md+ button badge. */
-  moreFiltersCount: number;
+  moreFiltersCount?: number;
   /** Count of every filter — the < md icon button badge. */
   allFiltersCount: number;
-  /** md+: opens the modal in compact mode (other filters only). */
-  onOpenMoreFilters: () => void;
+  /** md+: opens the modal in compact mode (other filters only). Ignored when `toggles` is set. */
+  onOpenMoreFilters?: () => void;
   /** < md: opens the full modal (date, rating, platform + other filters). */
   onOpenAllFilters: () => void;
 
@@ -56,6 +66,19 @@ export interface InboxToolbarProps {
   rightSlot?: ReactNode;
   /** Extra classes for the wrapper (e.g. `hidden lg:block` on mobile detail). */
   className?: string;
+}
+
+/** An inline on/off filter (md+ toolbar). */
+export interface InboxToggle {
+  id: string;
+  label: string;
+  /** Longer description for the tooltip, e.g. "Yalnız yanıtı olmayan yorumlar". */
+  title?: string;
+  icon?: ReactNode;
+  pressed: boolean;
+  onToggle: () => void;
+  /** Pressed colour: lime (default) or red (flag). */
+  tone?: 'lime' | 'danger';
 }
 
 export function platformFilterOptions(isTr: boolean): PulseSelectOption[] {
@@ -113,7 +136,8 @@ export function InboxToolbar({
   onRatingChange,
   days,
   onDaysChange,
-  moreFiltersCount,
+  toggles,
+  moreFiltersCount = 0,
   allFiltersCount,
   onOpenMoreFilters,
   onOpenAllFilters,
@@ -160,7 +184,7 @@ export function InboxToolbar({
               // Explicit classes, not `bz-input`: the bz-* rules are unlayered,
               // so they would beat `pl-9` / `rounded-full` and the text would
               // run under the search icon.
-              className="h-10 w-full rounded-full border border-[#EDEDED] bg-white pl-9 pr-3 text-[16px] text-[#0A0A0A] outline-none transition-[border-color,box-shadow] placeholder:text-[#A3A3A3] hover:border-[#D4D4D4] focus:border-[#0A0A0A] focus:shadow-[0_0_0_3px_rgba(198,242,78,0.35)] sm:text-[13px] md:h-[34px]"
+              className="h-11 w-full rounded-full border border-[#EDEDED] bg-white pl-9 pr-3 text-[16px] text-[#0A0A0A] outline-none transition-[border-color,box-shadow] placeholder:text-[#A3A3A3] hover:border-[#D4D4D4] focus:border-[#0A0A0A] focus:shadow-[0_0_0_3px_rgba(198,242,78,0.35)] sm:text-[13px] md:h-[34px]"
             />
           </div>
 
@@ -168,7 +192,7 @@ export function InboxToolbar({
           <button
             type="button"
             onClick={onOpenAllFilters}
-            className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] md:hidden"
+            className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] md:hidden"
             aria-label={
               allFiltersCount > 0
                 ? `${isTr ? 'Filtreler' : 'Filters'} · ${activeLabel(allFiltersCount)}`
@@ -191,7 +215,7 @@ export function InboxToolbar({
             <button
               type="button"
               onClick={onClear}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] md:hidden"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] md:hidden"
               aria-label={isTr ? 'Filtreleri temizle' : 'Clear filters'}
               title={isTr ? 'Filtreleri temizle' : 'Clear filters'}
             >
@@ -223,20 +247,38 @@ export function InboxToolbar({
             ariaLabel={isTr ? 'Tarih' : 'Date'}
             className="min-w-[150px]"
           />
-          <button
-            type="button"
-            onClick={onOpenMoreFilters}
-            className="bz-btn bz-btn-sm h-[34px]"
-            aria-label={
-              moreFiltersCount > 0
-                ? `${isTr ? 'Diğer filtreler' : 'More filters'} · ${activeLabel(moreFiltersCount)}`
-                : undefined
-            }
-          >
-            <SlidersHorizontal size={13} strokeWidth={2} aria-hidden="true" />
-            {isTr ? 'Diğer filtreler' : 'More filters'}
-            <CountBadge count={moreFiltersCount} label={activeLabel(moreFiltersCount)} />
-          </button>
+          {toggles && toggles.length > 0
+            ? toggles.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={t.onToggle}
+                  aria-pressed={t.pressed}
+                  title={t.title}
+                  className={`${
+                    t.pressed ? (t.tone === 'danger' ? 'bz-btn-danger' : 'bz-btn-lime') : 'bz-btn'
+                  } bz-btn-sm h-[34px]`}
+                >
+                  {t.icon}
+                  {t.label}
+                </button>
+              ))
+            : onOpenMoreFilters && (
+                <button
+                  type="button"
+                  onClick={onOpenMoreFilters}
+                  className="bz-btn bz-btn-sm h-[34px]"
+                  aria-label={
+                    moreFiltersCount > 0
+                      ? `${isTr ? 'Diğer filtreler' : 'More filters'} · ${activeLabel(moreFiltersCount)}`
+                      : undefined
+                  }
+                >
+                  <SlidersHorizontal size={13} strokeWidth={2} aria-hidden="true" />
+                  {isTr ? 'Diğer filtreler' : 'More filters'}
+                  <CountBadge count={moreFiltersCount} label={activeLabel(moreFiltersCount)} />
+                </button>
+              )}
           {showClear && (
             <button
               type="button"

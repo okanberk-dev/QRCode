@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode } from 'react';
 import { blockedReplyMessage, issuesFromBody } from '@/components/reply/ReplyRiskNotice';
 import { useSearchParams, usePathname } from 'next/navigation';
-import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
+import { Download, Flag, Inbox, Loader2, Mail, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { getOwnerShellActiveRestaurantId } from '@/components/dashboard/UserDashboardShell';
-import { InboxToolbar } from '@/components/dashboard/feedbacks/InboxToolbar';
+import { InboxToolbar, type InboxToggle } from '@/components/dashboard/feedbacks/InboxToolbar';
 import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';
 
 import type {
@@ -148,7 +148,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(focusId ?? idParam);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filtersModal, setFiltersModal] = useState<null | 'all' | 'more'>(null);
+  // < md filter sheet (md+ shows every filter inline in the toolbar).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Pagination — "Daha fazla göster" (20 per page).
   const PAGE_SIZE = 20;
@@ -1036,12 +1037,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [filteredList],
   );
 
-  const moreFiltersCount = (hasReply !== 'all' ? 1 : 0) + (flagged ? 1 : 0);
   const allFiltersCount =
     (days !== 'all' ? 1 : 0) +
     (rating !== 'all' ? 1 : 0) +
     (platform !== 'all' ? 1 : 0) +
-    moreFiltersCount;
+    (hasReply !== 'all' ? 1 : 0) +
+    (flagged ? 1 : 0);
   const hasActiveFilter = allFiltersCount > 0 || tab !== 'all' || searchTerm.trim() !== '';
 
   // §0.5 — CSV export follows the selected business + toolbar filters.
@@ -1070,6 +1071,28 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     },
     { id: 'replied', label: isTr ? 'Yanıtlandı' : 'Replied', count: countsExact ? counts.replied : null },
     { id: 'pending', label: isTr ? 'Beklemede' : 'Pending', count: countsExact ? counts.pending : null },
+  ];
+
+  // md+ inline on/off filters (server-side) — they used to sit alone in a
+  // "Diğer filtreler" modal.
+  const stateToggles: InboxToggle[] = [
+    {
+      id: 'no-reply',
+      label: isTr ? 'Yanıtsız' : 'No reply',
+      title: isTr ? 'Yalnız yanıtı olmayan yorumlar' : 'Only reviews without a reply',
+      icon: <Mail size={12} strokeWidth={2.2} aria-hidden="true" />,
+      pressed: hasReply === 'pending',
+      onToggle: () => writeFilters({ hasReply: hasReply === 'pending' ? 'all' : 'pending' }),
+    },
+    {
+      id: 'flagged',
+      label: isTr ? 'İşaretli' : 'Flagged',
+      title: isTr ? 'Yalnız işaretli yorumlar' : 'Only flagged reviews',
+      icon: <Flag size={12} strokeWidth={2.2} aria-hidden="true" />,
+      pressed: flagged,
+      onToggle: () => writeFilters({ flagged: !flagged }),
+      tone: 'danger',
+    },
   ];
 
   const fmtAvg = (n: number) =>
@@ -1162,7 +1185,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <a
               href={exportHref}
               download
-              className="bz-btn bz-btn-sm"
+              className="bz-btn bz-btn-sm max-sm:min-h-[44px]"
               title={
                 isTr
                   ? 'Seçili işletme ve filtrelerle CSV indir'
@@ -1176,7 +1199,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               type="button"
               onClick={onBulkAiReply}
               disabled={bulkBusy || loading || bulkEligibleCount === 0}
-              className="bz-btn-primary bz-btn-sm"
+              className="bz-btn-primary bz-btn-sm max-sm:min-h-[44px]"
               title={
                 bulkEligibleCount === 0
                   ? isTr
@@ -1218,10 +1241,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         onRatingChange={(v) => writeFilters({ rating: v })}
         days={String(days)}
         onDaysChange={(v) => writeFilters({ days: v })}
-        moreFiltersCount={moreFiltersCount}
+        toggles={stateToggles}
         allFiltersCount={allFiltersCount}
-        onOpenMoreFilters={() => setFiltersModal('more')}
-        onOpenAllFilters={() => setFiltersModal('all')}
+        onOpenAllFilters={() => setFiltersOpen(true)}
         showClear={hasActiveFilter}
         onClear={onResetFilters}
       />
@@ -1265,6 +1287,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               feedback={active}
               locale={locale}
               showBackButton={isMobileDetailView}
+              showBusiness={!scopedRestaurantId}
               onBack={onBackToList}
               onFlag={flagFeedback}
               onTogglePending={togglePending}
@@ -1327,9 +1350,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       </div>
 
       <FeedbackFiltersModal
-        open={filtersModal !== null}
-        compact={filtersModal === 'more'}
-        onClose={() => setFiltersModal(null)}
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
         locale={locale}
         daysFilter={String(days)}
         setDaysFilter={(v) => writeFilters({ days: v })}
@@ -1341,14 +1363,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         setHasReplyFilter={(v) => writeFilters({ hasReply: v })}
         flaggedOnly={flagged}
         setFlaggedOnly={(v) => writeFilters({ flagged: v })}
-        hasActiveFilter={filtersModal === 'more' ? moreFiltersCount > 0 : allFiltersCount > 0}
-        onResetFilters={() => {
-          if (filtersModal === 'more') {
-            writeFilters({ hasReply: 'all', flagged: false });
-          } else {
-            onResetFilters();
-          }
-        }}
+        hasActiveFilter={allFiltersCount > 0}
+        onResetFilters={onResetFilters}
       />
 
       {/* §38.58 / §38.171 — bulk + flag/pending notice, above the mobile

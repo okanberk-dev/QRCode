@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   aggregatePlatformTotals,
   type PlatformDailyPoint,
@@ -24,6 +24,10 @@ export interface PulseRangeToggleProps {
   ranges: Record<RangeKey, { data: PlatformDailyPoint[]; peak: RangePeak | null }>;
   defaultRange?: RangeKey;
   isTr?: boolean;
+  /** Card title area, rendered left of the range switch (optional). */
+  header?: ReactNode;
+  /** Link/action rendered right of the peak hint under the chart (optional). */
+  footerAction?: ReactNode;
 }
 
 const LABELS: Record<RangeKey, { tr: string; en: string }> = {
@@ -49,42 +53,48 @@ export function PulseRangeToggle({
   ranges,
   defaultRange = '30g',
   isTr = true,
+  header,
+  footerAction,
 }: PulseRangeToggleProps) {
   const [active, setActive] = useState<RangeKey>(defaultRange);
   const activeRange = ranges[active];
   const totals = aggregatePlatformTotals(activeRange.data);
+  const peak = activeRange.peak && activeRange.peak.count > 0 ? activeRange.peak : null;
 
   return (
     <div className="flex flex-col">
-      {/* Chip toggle satırı — tasarımda chart kart header'ında sağda. */}
-      <div
-        role="tablist"
-        aria-label={isTr ? 'NABIZ aralığı' : 'Pulse range'}
-        className="flex justify-end gap-1.5 mb-3"
-      >
-        {ORDER.map((key) => {
-          const label = isTr ? LABELS[key].tr : LABELS[key].en;
-          const isActive = active === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setActive(key)}
-              className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
-                isActive
-                  ? 'bg-[#0A0A0A] text-white'
-                  : 'bg-white border border-[#EDEDED] text-[#525252] hover:text-[#0A0A0A] hover:border-[#A3A3A3]'
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
+      {/* Title (optional) + range switch on one row. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        {header ? <div className="min-w-0">{header}</div> : null}
+        <div
+          role="group"
+          aria-label={isTr ? 'Grafik aralığı' : 'Chart range'}
+          className="ml-auto flex shrink-0 gap-1.5"
+        >
+          {ORDER.map((key) => {
+            const label = isTr ? LABELS[key].tr : LABELS[key].en;
+            const isActive = active === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setActive(key)}
+                className={`inline-flex min-h-[32px] items-center justify-center px-3 rounded-full text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+                  isActive
+                    ? 'bg-[#0A0A0A] text-white'
+                    : 'bg-white border border-[#EDEDED] text-[#525252] hover:text-[#0A0A0A] hover:border-[#A3A3A3]'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      {/* Series legend with totals for the active range. */}
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         {PULSE_SERIES.map((item) => {
           const total = totals[item.key];
           if (total === 0) return null;
@@ -109,14 +119,20 @@ export function PulseRangeToggle({
         emptyClassName="mt-4 rounded-[14px] border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-8 text-center"
       />
 
-      {/* Peak hint footer — tasarımda "Pik · 4 Mayıs · 9 yorum" sağa
-          aligned. activeRange.peak null ise (boş window) gizlenir. */}
-      {activeRange.peak && activeRange.peak.count > 0 && (
-        <p className="bz-mono mt-2 text-[11px] text-[#737373] text-right">
-          {isTr
-            ? `Pik · ${activeRange.peak.dateText} · ${activeRange.peak.count} yorum`
-            : `Peak · ${activeRange.peak.dateText} · ${activeRange.peak.count} reviews`}
-        </p>
+      {/* Peak hint ("Pik · 4 Mayıs · 9 yorum") + optional action. */}
+      {(peak || footerAction) && (
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          {peak ? (
+            <p className="bz-mono text-[11px] text-[#737373]">
+              {isTr
+                ? `Pik · ${peak.dateText} · ${peak.count} yorum`
+                : `Peak · ${peak.dateText} · ${peak.count} reviews`}
+            </p>
+          ) : (
+            <span />
+          )}
+          {footerAction}
+        </div>
       )}
     </div>
   );

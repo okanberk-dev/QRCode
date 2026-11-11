@@ -8,6 +8,8 @@ import { useRef, type KeyboardEvent } from 'react';
  * shows counts it knows to be exact, and none while loading — never a 0
  * placeholder).
  *
+ * Pills are 44px tall below sm (touch target), 36px from sm.
+ *
  * Keyboard: ArrowLeft/Right/Home/End move AND select (same contract as the
  * `<Tabs>` primitive), roving `tabIndex`. If `active` matches no tab (e.g. a
  * legacy deep-link tab), the first tab stays in the tab order.
@@ -98,7 +100,7 @@ export function InboxStatusTabs({
             title={tab.title}
             onClick={() => onChange(tab.id)}
             onKeyDown={(e) => onKeyDown(e, index)}
-            className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+            className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 sm:h-9 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
               selected
                 ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
                 : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#D4D4D4] hover:text-[#0A0A0A]'

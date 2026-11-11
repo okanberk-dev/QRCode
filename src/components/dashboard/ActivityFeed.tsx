@@ -162,6 +162,11 @@ function describeStatus(status: RealtimeStatus, isTr: boolean): BadgeStyle {
 }
 
 function ConnectionBadge({ status, isTr }: { status: RealtimeStatus; isTr: boolean }) {
+  // Only meaningful states get a badge: "Canlı" while connected and a warning
+  // when a live connection drops. The first connect attempt and the
+  // no-realtime fallback (idle / disabled) show nothing — a permanent
+  // "Pasif" chip next to the title was noise.
+  if (status === 'idle' || status === 'disabled' || status === 'connecting') return null;
   const style = describeStatus(status, isTr);
   // `bz-pulse-dot` lime nabız animasyonu zaten globals.css'te (CLAUDE.md
   // §11). Burada sadece connected status için reuse, diğer durumlarda
@@ -260,7 +265,7 @@ export function ActivityFeed({
     return (
       <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
         <header className="mb-3 flex items-center justify-between gap-3">
-          <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
+          <Eyebrow>{isTr ? 'SON AKTİVİTE' : 'RECENT ACTIVITY'}</Eyebrow>
           <ConnectionBadge status={status} isTr={isTr} />
         </header>
         <div className="flex flex-col items-center gap-2.5 py-6 text-center">
@@ -284,7 +289,7 @@ export function ActivityFeed({
     <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
+          <Eyebrow>{isTr ? 'SON AKTİVİTE' : 'RECENT ACTIVITY'}</Eyebrow>
           <ConnectionBadge status={status} isTr={isTr} />
         </div>
         {/*
@@ -356,7 +361,9 @@ export function ActivityFeed({
                       aria-hidden="true"
                       title={fullTime}
                     >
-                      <span>{relativeTime}</span>
+                      {/* Relative time moves with the clock: server render and
+                          hydration can land in different minutes. */}
+                      <span suppressHydrationWarning>{relativeTime}</span>
                       <span className="text-[#A3A3A3]">{clockTime}</span>
                     </span>
                     <span

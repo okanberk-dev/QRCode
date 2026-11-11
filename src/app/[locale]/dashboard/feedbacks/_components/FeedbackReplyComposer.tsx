@@ -414,7 +414,7 @@ export function ReplyComposerCard({
           {isTr ? (
             <>
               Bu yanıtın içeriğinden bizzat sorumlu olduğumu, tehdit, hakaret, iftira
-              veya yasa dışı bir ifade içermediğini onaylıyorum ({' '}
+              veya yasa dışı bir ifade içermediğini onaylıyorum (
               <Link
                 href={`/${locale}/kabul-edilebilir-kullanim`}
                 target="_blank"
@@ -428,7 +428,7 @@ export function ReplyComposerCard({
           ) : (
             <>
               I confirm I am solely responsible for this reply and that it does not
-              contain a threat, insult, defamation, or unlawful statement ({' '}
+              contain a threat, insult, defamation, or unlawful statement (
               <Link
                 href={`/${locale}/kabul-edilebilir-kullanim`}
                 target="_blank"

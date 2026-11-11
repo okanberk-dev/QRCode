@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDown } from 'lucide-react';
+import { CalendarDays, ChevronDown } from 'lucide-react';
 import { PulseMenu, PulseMenuItem } from '@/components/ui';
 
 // Phase 8c+ §38.31 — Header "Bu hafta" dynamic dropdown (tasarım
@@ -62,13 +62,16 @@ export function ScopeDropdown({ current, isTr = true }: ScopeDropdownProps) {
           className={`bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
             pending ? 'opacity-70' : ''
           }`}
-          aria-label={isTr ? 'Tarih aralığı seçimi' : 'Date scope selector'}
+          // Accessible name keeps the visible text (WCAG 2.5.3 label-in-name).
+          aria-label={`${isTr ? 'Tarih aralığı' : 'Date range'}: ${triggerLabel}`}
           disabled={pending}
         >
+          <CalendarDays size={13} strokeWidth={2} aria-hidden="true" />
           {triggerLabel}
           <ChevronDown
             size={13}
             strokeWidth={2}
+            aria-hidden="true"
             className={pending ? 'animate-pulse' : ''}
           />
         </button>
