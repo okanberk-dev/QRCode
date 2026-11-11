@@ -1244,7 +1244,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             )}
           </nav>
           <div className="flex items-center gap-2.5 shrink-0">
-            {workspaceRestaurants.length > 1 && (
+            {/* The expanded sidebar already shows the switcher; the topbar
+                copy only appears when the sidebar is collapsed to icons. */}
+            {workspaceRestaurants.length > 1 && isCollapsed && (
               <BusinessSwitcher
                 locale={locale}
                 variant="topbar"
