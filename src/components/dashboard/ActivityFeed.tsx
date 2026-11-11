@@ -305,7 +305,7 @@ export function ActivityFeed({
         */}
         <Link
           href={viewAllHref}
-          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 sm:mx-0 rounded-lg sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
+          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 -my-3 sm:m-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
         >
           {isTr ? 'Tüm aktiviteyi gör' : 'View all activity'}
           <ArrowRight size={11} strokeWidth={2} />

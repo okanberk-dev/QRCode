@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Loader2,
   MapPin,
+  MoreHorizontal,
   RefreshCw,
   Send,
   Sparkles,
@@ -35,7 +36,7 @@ import {
   ArrowDown,
   Edit3,
 } from 'lucide-react';
-import { AlertBanner, Badge } from '@/components/ui';
+import { AlertBanner, Badge, PulseMenu, PulseMenuItem, useConfirmDialog } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
@@ -604,8 +605,8 @@ function ReplySection({
               ? 'Tüm Google yorumlarını burada oku ve Pulse AI taslağıyla yanıtla.'
               : 'Read all your Google reviews here and reply with a Pulse AI draft.'
             : isTr
-              ? 'Google İşletme Profili hesabını bağlarsan tüm yorumlarını burada okuyup Pulse AI taslağıyla yanıtlayabilirsin. Profil analizi bu bağlantı olmadan da çalışır.'
-              : 'Connect your Google Business Profile account to read all your reviews here and reply with a Pulse AI draft. The profile check works without it.'}
+              ? 'Google İşletme Profili hesabını bağlarsan tüm yorumlarını burada okuyup Pulse AI taslağıyla yanıtlayabilirsin. Yukarıdaki profil kontrolü bu bağlantı olmadan da çalışır.'
+              : 'Connect your Google Business Profile account to read all your reviews here and reply with a Pulse AI draft. The profile check above works without it.'}
         </p>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div> : null}
@@ -1343,32 +1344,72 @@ export function GoogleReplySection({
     !(reviewsError && !statusIsReady) &&
     Boolean(status?.googleReviewManagementEnabled && status?.connected && status?.selectedLocation);
 
+  // Disconnect asks first (the reviews list disappears until the owner signs
+  // in again). Accessible dialog instead of the native `confirm()`.
+  const [disconnectDialog, askConfirm] = useConfirmDialog();
+  const disconnectGoogle = () =>
+    askConfirm({
+      title: isTr ? 'Google bağlantısı kesilsin mi?' : 'Disconnect Google?',
+      body: isTr
+        ? 'Google hesap bağlantısı kesilecek. Yorumları burada görmek için yeniden bağlaman gerekir.'
+        : 'Your Google account will be disconnected. Connect again to see your reviews here.',
+      confirmLabel: isTr ? 'Bağlantıyı kes' : 'Disconnect',
+      cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/integrations/google/disconnect', { method: 'POST' });
+          if (res.ok) {
+            if (activeRestaurantId) void loadStatusAndReviews(activeRestaurantId);
+            return;
+          }
+        } catch {
+          /* falls through to the message below */
+        }
+        setReviewsError(isTr ? 'Bağlantı kesilemedi. Tekrar dene.' : "Couldn't disconnect. Please try again.");
+      },
+    });
+
+  // §49 — one primary action ("Reply queue") + one "More" menu (refresh,
+  // disconnect). Refresh used to appear twice (header "Sync" + body "Refresh
+  // reviews", same request); both now live in the menu once.
   const replyActions =
-    replyFull && reviewsPayload && activeRestaurantId ? (
+    replyFull && activeRestaurantId ? (
       <>
-        <button
-          type="button"
-          onClick={() => loadStatusAndReviews(activeRestaurantId)}
-          disabled={reviewsLoading}
-          className="bz-btn-ghost min-h-11 text-[12.5px]"
-          title={isTr ? 'Google yorumlarını yeniden çek' : 'Refresh Google reviews'}
+        {reviewsPayload && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('unreplied')}
+            className="bz-btn-primary min-h-11 text-[12.5px] sm:min-h-[36px]"
+            title={isTr ? 'Yanıtlanmamış yorumlara odaklan' : 'Focus on unanswered reviews'}
+          >
+            <Send size={13} strokeWidth={2} aria-hidden="true" />
+            {isTr ? 'Yanıt sırası' : 'Reply queue'} ({reviewAnalysis.unanswered})
+          </button>
+        )}
+        <PulseMenu
+          trigger={
+            <button
+              type="button"
+              className="bz-btn-ghost min-h-11 min-w-11 text-[12.5px] sm:min-h-[36px]"
+              aria-label={isTr ? 'Diğer işlemler' : 'More actions'}
+            >
+              <MoreHorizontal size={14} strokeWidth={2} aria-hidden="true" />
+              <span className="hidden sm:inline">{isTr ? 'Diğer' : 'More'}</span>
+            </button>
+          }
         >
-          {reviewsLoading ? (
-            <Loader2 size={13} className="animate-spin" aria-hidden="true" />
-          ) : (
-            <RefreshCw size={13} strokeWidth={2} aria-hidden="true" />
-          )}
-          {isTr ? 'Senkronize et' : 'Sync'}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('unreplied')}
-          className="bz-btn-primary min-h-11 text-[12.5px]"
-          title={isTr ? 'Yanıtlanmamış yorumlara odaklan' : 'Focus on unanswered reviews'}
-        >
-          <Send size={13} strokeWidth={2} aria-hidden="true" />
-          {isTr ? 'Yanıt sırası' : 'Reply queue'} ({reviewAnalysis.unanswered})
-        </button>
+          <PulseMenuItem
+            icon={<RefreshCw size={14} strokeWidth={2} />}
+            disabled={reviewsLoading}
+            onSelect={() => void loadStatusAndReviews(activeRestaurantId)}
+          >
+            {isTr ? 'Yorumları yenile' : 'Refresh reviews'}
+          </PulseMenuItem>
+          <PulseMenuItem danger icon={<Unplug size={14} strokeWidth={2} />} onSelect={disconnectGoogle}>
+            {isTr ? 'Google bağlantısını kes' : 'Disconnect Google'}
+          </PulseMenuItem>
+        </PulseMenu>
       </>
     ) : null;
 
@@ -1385,6 +1426,7 @@ export function GoogleReplySection({
   }, [restaurantId, statusSettledFor, replyActive]);
 
   return (
+    <>
           <ReplySection isTr={isTr} full={replyFull} actions={replyActions}>
             {shouldShowStatusLoading ? (
               <div className="space-y-3" aria-busy="true">
@@ -1815,44 +1857,17 @@ export function GoogleReplySection({
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <p className="text-[14px] font-medium text-[#0A0A0A]">
-                {status.selectedLocation.title}
-              </p>
+          {/* Connected location (refresh + disconnect are in the section's
+              "Diğer" menu). */}
+          <div>
+            <p className="text-[14px] font-medium text-[#0A0A0A]">
+              {status.selectedLocation.title}
+            </p>
+            {status.selectedLocation.address && (
               <p className="text-[13px] text-[#737373] mt-0.5">
                 {status.selectedLocation.address}
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="bz-btn-danger min-h-11 text-[12px]"
-                onClick={async () => {
-                  if (!confirm(isTr ? 'Google hesap bağlantısı kesilecek. Devam etmek istiyor musunuz?' : 'Google account will be disconnected. Continue?')) return;
-                  try {
-                    const res = await fetch('/api/integrations/google/disconnect', { method: 'POST' });
-                    if (res.ok && activeRestaurantId) {
-                      loadStatusAndReviews(activeRestaurantId);
-                    }
-                  } catch {
-                    setReviewsError(isTr ? 'Bağlantı kesilemedi.' : 'Failed to disconnect.');
-                  }
-                }}
-              >
-                <Unplug size={13} />
-                {isTr ? 'Bağlantıyı Kes' : 'Disconnect'}
-              </button>
-              <button
-                type="button"
-                className="bz-btn-primary min-h-11 inline-flex items-center gap-1.5 rounded-full text-[13px]"
-                onClick={() => activeRestaurantId && loadStatusAndReviews(activeRestaurantId)}
-                disabled={reviewsLoading}
-              >
-                {reviewsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                {isTr ? "Yorumları Yenile" : "Refresh Reviews"}
-              </button>
-            </div>
+            )}
           </div>
 
           {reviewsError && <AlertBanner kind="danger">{reviewsError}</AlertBanner>}
@@ -2220,5 +2235,7 @@ export function GoogleReplySection({
         </div>
             )}
           </ReplySection>
+      {disconnectDialog}
+    </>
   );
 }

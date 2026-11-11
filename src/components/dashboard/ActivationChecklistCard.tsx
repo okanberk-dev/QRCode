@@ -94,6 +94,7 @@ export default function ActivationChecklistCard({
   );
   const [loading, setLoading] = useState(initialResult === undefined);
   const [busy, setBusy] = useState<string | null>(null);
+  const [showDone, setShowDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -141,39 +142,31 @@ export default function ActivationChecklistCard({
     }
   };
 
-  // Loading state — structural clone of the loaded card so the transition
-  // is CLS=0. Container, header (eyebrow + h3 + subline), progress bar,
-  // and step rows (incl. right-side action button placeholder) all match
-  // the final markup at the same dimensions.
+  // Loading state — structural clone of the loaded card (title + subline,
+  // progress bar, step rows) so the swap is CLS=0. Rarely shown: the
+  // dashboard passes a server-computed `initialResult`.
   if (loading && !result) {
     return (
       <div className="bz-card p-5 sm:p-6" aria-busy="true" aria-live="polite" role="status">
         <span className="sr-only">{isTr ? "Kurulum yükleniyor…" : "Loading setup…"}</span>
-        {/* Header: eyebrow (pulse-eyebrow ~10px) + h3 (15-16px) + subline (12px) */}
-        <div className="flex items-start gap-3 mb-4">
-          <div className="flex-1 min-w-0 space-y-1.5">
-            <div className="bz-skeleton h-[10px] w-16 rounded-sm" />
-            <div className="bz-skeleton h-[16px] w-48 rounded" />
-            <div className="bz-skeleton h-[12px] w-32 rounded" />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
+          <div className="lg:w-[260px] lg:shrink-0">
+            <div className="space-y-1.5">
+              <div className="bz-skeleton h-[16px] w-48 max-w-full rounded" />
+              <div className="bz-skeleton h-[12px] w-32 rounded" />
+            </div>
+            <div className="bz-skeleton mt-3 h-2 w-full rounded-full" />
           </div>
-          {/* Dismiss button placeholder (only renders when ≥1 step done; reserve space) */}
-          <div className="bz-skeleton h-7 w-7 rounded-full shrink-0" />
+          <ul className="min-w-0 flex-1 space-y-1">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                <div className="bz-skeleton h-7 w-7 rounded-full shrink-0" />
+                <div className="bz-skeleton h-[13.5px] flex-1 rounded" style={{ maxWidth: `${60 + ((i * 7) % 24)}%` }} />
+                <div className="bz-skeleton h-8 w-20 rounded-full shrink-0" />
+              </li>
+            ))}
+          </ul>
         </div>
-        {/* Progress bar — h-2 mb-5 (matches final) */}
-        <div className="bz-skeleton h-2 w-full rounded-full mb-5" />
-        {/* Step list — 5 rows with h-7 icon + label + action pill (32x80) */}
-        <ul className="space-y-2">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <li
-              key={i}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-            >
-              <div className="bz-skeleton h-7 w-7 rounded-full shrink-0" />
-              <div className="bz-skeleton h-[13.5px] flex-1 rounded" style={{ maxWidth: `${60 + ((i * 7) % 24)}%` }} />
-              <div className="bz-skeleton h-8 w-20 rounded-full shrink-0" />
-            </li>
-          ))}
-        </ul>
       </div>
     );
   }
@@ -192,27 +185,24 @@ export default function ActivationChecklistCard({
   if (result.isComplete) {
     return (
       <div
-        className="rounded-2xl border border-[#A8D62E] bg-[#EAF9B8]/40 p-5 sm:p-6"
+        className="bz-card border-[#A8D62E] bg-[#F6FCE6] p-5 sm:p-6"
         role="status"
       >
         <div className="flex items-start gap-3">
-          <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
+          <div aria-hidden="true" className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
             <PartyPopper size={20} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="pulse-eyebrow text-[#525252] mb-1">
-              {isTr ? "KURULUM TAMAMLANDI" : "SETUP COMPLETE"}
-            </p>
-            <h3 className="bz-h-tight text-[16px] sm:text-[18px] mb-1">
+            <h2 className="bz-h-tight text-[16px] sm:text-[18px] mb-1">
               {isTr
                 ? "Kurulum tamamlandı. Artık geri bildirim toplamaya hazırsınız."
                 : "Setup complete. You're ready to collect feedback."}
-            </h3>
+            </h2>
             <button
               type="button"
               onClick={() => performAction("dismiss")}
               disabled={busy !== null}
-              className="mt-2 text-[12px] font-medium text-[#525252] underline hover:text-[#0A0A0A] disabled:opacity-50"
+              className="mt-1 inline-flex min-h-[44px] items-center text-[12px] font-medium text-[#525252] underline hover:text-[#0A0A0A] disabled:opacity-50 sm:min-h-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] rounded"
             >
               {isTr ? "Kapat" : "Dismiss"}
             </button>
@@ -222,131 +212,140 @@ export default function ActivationChecklistCard({
     );
   }
 
-  // Active checklist — header progress bar + 5 step list
+  // Active checklist — progress on the left (lg), the steps still to do on
+  // the right; finished steps stay one click away behind a toggle.
   const incompleteSteps = result.steps.filter((s) => !s.done);
-  // Dismiss izni: en az 1 step tamamlandıysa veya tüm step'ler boşsa
-  // (ChatGPT: "Allow dismissing only after meaningful progress or 100%")
+  const doneCount = result.steps.length - incompleteSteps.length;
+  const visibleSteps = showDone ? result.steps : incompleteSteps;
+  // Dismiss only after meaningful progress (≥1 step done).
   const canDismiss = result.completedCount >= 1;
+  const stepButtonClass =
+    "bz-btn-ghost shrink-0 inline-flex items-center justify-center gap-1 rounded-full text-[12px] min-h-[44px] px-3 sm:min-h-[32px] disabled:opacity-50";
 
   return (
     <div className="bz-card p-5 sm:p-6">
-      {/* Header — progress + dismiss */}
-      <div className="flex items-start gap-3 mb-4">
-        <div className="flex-1 min-w-0">
-          <p className="pulse-eyebrow text-[#737373] mb-1.5">
-            {isTr ? "KURULUM" : "SETUP"}
-          </p>
-          <h3 className="bz-h-tight text-[15px] sm:text-[16px]">
-            {isTr
-              ? `Kurulum %${result.percentage} tamamlandı`
-              : `Setup ${result.percentage}% complete`}
-          </h3>
-          <p className="text-[12px] text-[#737373] mt-0.5">
-            {result.completedCount} / {result.totalCount}{" "}
-            {isTr ? "adım tamamlandı" : "steps complete"}
-          </p>
-        </div>
-        {canDismiss && (
-          <button
-            type="button"
-            onClick={() => performAction("dismiss")}
-            disabled={busy !== null}
-            className="bz-btn-icon shrink-0"
-            aria-label={isTr ? "Kurulum kartını kapat" : "Dismiss setup card"}
-            title={isTr ? "Kapat" : "Dismiss"}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
+        <div className="lg:w-[260px] lg:shrink-0">
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="bz-h-tight text-[15px] sm:text-[16px]">
+                {isTr
+                  ? `Kurulum %${result.percentage} tamamlandı`
+                  : `Setup ${result.percentage}% complete`}
+              </h2>
+              <p className="text-[12px] text-[#737373] mt-0.5">
+                {isTr
+                  ? `${result.completedCount} / ${result.totalCount} adım · ${incompleteSteps.length} adım kaldı`
+                  : `${result.completedCount} / ${result.totalCount} steps · ${incompleteSteps.length} left`}
+              </p>
+            </div>
+            {canDismiss && (
+              <button
+                type="button"
+                onClick={() => performAction("dismiss")}
+                disabled={busy !== null}
+                className="bz-btn-icon shrink-0 -mr-2 -mt-2 h-11 w-11 sm:-mr-1 sm:-mt-1 sm:h-8 sm:w-8"
+                aria-label={isTr ? "Kurulum kartını kapat" : "Dismiss setup card"}
+                title={isTr ? "Kapat" : "Dismiss"}
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          <div
+            className="mt-3 h-2 rounded-full bg-[#F5F5F5] overflow-hidden"
+            role="progressbar"
+            aria-label={isTr ? "Kurulum ilerlemesi" : "Setup progress"}
+            aria-valuenow={result.percentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
           >
-            <X size={14} />
-          </button>
-        )}
-      </div>
+            <div
+              className="h-full bg-[#C6F24E] transition-[width] duration-500"
+              style={{ width: `${result.percentage}%` }}
+            />
+          </div>
 
-      {/* Progress bar */}
-      <div
-        className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden mb-5"
-        role="progressbar"
-        aria-valuenow={result.percentage}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div
-          className="h-full bg-[#C6F24E] transition-[width] duration-500"
-          style={{ width: `${result.percentage}%` }}
-        />
-      </div>
-
-      {/* Step list */}
-      <ul className="space-y-2">
-        {result.steps.map((s) => {
-          const meta = STEP_META[s.step];
-          const Icon = s.done ? Check : meta.icon;
-          const label = isTr ? meta.tr : meta.en;
-          const href = ctaHref(s.step, restaurantId, locale);
-          const isManualPrint = s.step === "qr_printed_shared";
-
-          return (
-            <li
-              key={s.step}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-[#FAFAFA] transition-colors"
+          {doneCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowDone((v) => !v)}
+              aria-expanded={showDone}
+              className="mt-2 inline-flex min-h-[44px] items-center text-[12px] font-medium text-[#525252] hover:text-[#0A0A0A] sm:min-h-[32px] rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
             >
-              <div
-                className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-full ${
-                  s.done
-                    ? "bg-[#C6F24E] text-[#0A0A0A]"
-                    : "bg-[#F5F5F5] text-[#737373]"
-                }`}
+              {showDone
+                ? isTr
+                  ? "Tamamlananları gizle"
+                  : "Hide completed"
+                : isTr
+                  ? `Tamamlanan ${doneCount} adımı göster`
+                  : `Show ${doneCount} completed`}
+            </button>
+          )}
+        </div>
+
+        <ul className="min-w-0 flex-1 space-y-1">
+          {visibleSteps.map((s) => {
+            const meta = STEP_META[s.step];
+            const Icon = s.done ? Check : meta.icon;
+            const label = isTr ? meta.tr : meta.en;
+            const href = ctaHref(s.step, restaurantId, locale);
+            const isManualPrint = s.step === "qr_printed_shared";
+
+            return (
+              <li
+                key={s.step}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-[#FAFAFA] transition-colors"
               >
-                <Icon size={14} strokeWidth={s.done ? 2.5 : 2} />
-              </div>
-              <span
-                className={`flex-1 text-[13.5px] ${
-                  s.done ? "text-[#737373] line-through" : "text-[#0A0A0A]"
-                }`}
-              >
-                {label}
-              </span>
-              {!s.done && isManualPrint && (
-                <button
-                  type="button"
-                  onClick={() => performAction("mark_qr_printed")}
-                  disabled={busy !== null}
-                  className="bz-btn-ghost shrink-0 inline-flex items-center justify-center gap-1 rounded-full text-[12px] disabled:opacity-50"
-                  style={{ minHeight: 32, padding: "0 12px" }}
+                <div
+                  aria-hidden="true"
+                  className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-full ${
+                    s.done
+                      ? "bg-[#C6F24E] text-[#0A0A0A]"
+                      : "bg-[#F5F5F5] text-[#737373]"
+                  }`}
                 >
-                  {busy === "mark_qr_printed" ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <Check size={12} />
-                  )}
-                  {isTr ? "Bunu yaptım" : "I did this"}
-                </button>
-              )}
-              {!s.done && !isManualPrint && (
-                <Link
-                  href={href}
-                  className="bz-btn-ghost shrink-0 inline-flex items-center justify-center gap-1 rounded-full text-[12px]"
-                  style={{ minHeight: 32, padding: "0 12px" }}
+                  <Icon size={14} strokeWidth={s.done ? 2.5 : 2} />
+                </div>
+                <span
+                  className={`flex-1 min-w-0 text-[13.5px] ${
+                    s.done ? "text-[#737373] line-through" : "text-[#0A0A0A]"
+                  }`}
                 >
-                  {isTr ? "Aç" : "Go"}
-                  <ArrowRight size={12} />
-                </Link>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                  {s.done && <span className="sr-only">{isTr ? "Tamamlandı: " : "Done: "}</span>}
+                  {label}
+                </span>
+                {!s.done && isManualPrint && (
+                  <button
+                    type="button"
+                    onClick={() => performAction("mark_qr_printed")}
+                    disabled={busy !== null}
+                    className={stepButtonClass}
+                  >
+                    {busy === "mark_qr_printed" ? (
+                      <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Check size={12} aria-hidden="true" />
+                    )}
+                    {isTr ? "Bunu yaptım" : "I did this"}
+                  </button>
+                )}
+                {!s.done && !isManualPrint && (
+                  <Link href={href} className={stepButtonClass}>
+                    {isTr ? "Aç" : "Go"}
+                    <ArrowRight size={12} aria-hidden="true" />
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
       {error && (
         <p className="mt-3 text-[12px] text-[#991B1B]" role="alert">
           {error}
-        </p>
-      )}
-
-      {/* Footer hint — incomplete count */}
-      {incompleteSteps.length > 0 && (
-        <p className="mt-4 text-[11.5px] text-[#737373]">
-          {isTr
-            ? `Kalan ${incompleteSteps.length} adımı tamamlayınca geri bildirim akışınız tam çalışır.`
-            : `Complete the remaining ${incompleteSteps.length} step${incompleteSteps.length > 1 ? "s" : ""} to get the full feedback flow.`}
         </p>
       )}
     </div>

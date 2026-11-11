@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Building2, Plug, RefreshCw } from 'lucide-react';
-import { AlertBanner, EmptyState, PageHeader, PulseSelect } from '@/components/ui';
+import { Building2, RefreshCw } from 'lucide-react';
+import { AlertBanner, Badge, EmptyState, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
+import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 import { GoogleConnectFlashBanner } from '@/components/dashboard/google/GoogleConnectFlashBanner';
 import { GoogleReplySection } from '@/components/dashboard/google/GoogleReplySection';
 import { GoogleReviewsBodySkeleton } from '@/components/dashboard/google/GoogleReviewsSkeleton';
@@ -17,7 +17,6 @@ import {
   type PlacesOptionState,
   type PlacesSelectResponse,
 } from '@/lib/google-places';
-import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
 /** One business of the owner, as `/api/restaurants` lists it (the fields the Google page uses). */
 export interface RestaurantRow {
@@ -43,6 +42,13 @@ export interface GoogleReviewsClientProps {
   placesConfigured?: boolean;
 }
 
+/** Badge tone of a business's Google state in the status line. */
+const STATE_BADGE: Record<PlacesOptionState, 'ok' | 'warn' | 'off'> = {
+  found: 'ok',
+  unmatched: 'warn',
+  'not-selected': 'off',
+};
+
 export function GoogleReviewsClient({
   locale,
   initialRestaurants,
@@ -50,27 +56,37 @@ export function GoogleReviewsClient({
   placesConfigured,
 }: GoogleReviewsClientProps) {
   const isTr = locale === 'tr';
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [restaurants, setRestaurants] = useState<RestaurantRow[]>(initialRestaurants ?? []);
-  const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(null);
-  // Hydrated from the server: the list is already here, only the remembered
-  // business (localStorage, unreadable on the server) is still to be resolved.
+  // Hydrated from the server: the list is already here. Otherwise it is
+  // fetched once on mount (and again on "Tekrar dene").
   const [loadingInitial, setLoadingInitial] = useState(initialRestaurants === undefined);
   // §38.B Stage 122 — workspace fetch silent fail bug. Previously
-  // `/api/restaurants?limit=50` 4xx/5xx left `restaurants=[]` +
-  // `activeRestaurantId=null` without any UI signal — the page stuck
-  // on a spinner with no recovery path. Surface the fetch failure as
-  // an AlertBanner with retry CTA so owners can act instead of staring
-  // at an empty page.
+  // `/api/restaurants?limit=50` 4xx/5xx left `restaurants=[]` without any UI
+  // signal — the page stuck on a spinner with no recovery path. Surface the
+  // fetch failure as an AlertBanner with retry CTA so owners can act instead
+  // of staring at an empty page.
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [reloadWorkspaceKey, setReloadWorkspaceKey] = useState(0);
-  // Businesses whose saved Google listing Google no longer finds (the switcher
-  // shows "Eşleşmedi" for them even though a Place ID is stored).
+  // Businesses whose saved Google listing Google no longer finds (the status
+  // line shows "Eşleşmedi" for them even though a Place ID is stored).
   const [notFoundIds, setNotFoundIds] = useState<Set<string>>(new Set());
   // "Next: …" jumps to the next unmatched business and focuses its search.
   const [focusSearchFor, setFocusSearchFor] = useState<string | null>(null);
+
+  // The business on screen follows the owner shell's business switcher
+  // (sidebar / mobile top bar): `?restaurantId` → remembered business →
+  // first business, plus the `buaze:active-restaurant-change` event. The page
+  // has no picker of its own (§49 — one switcher per screen). `select` is used
+  // only by "Sıradaki: …" and writes back the same way, so the shell follows.
+  const { activeId: activeRestaurantId, ready: selectionReady, select: selectRestaurant } =
+    useActiveBusinessSelection(restaurants, null);
+
+  // A switch made elsewhere (shell) never moves focus into the search field;
+  // only "Sıradaki: …" does, for the business it opens.
+  useEffect(() => {
+    setFocusSearchFor((prev) => (prev && prev !== activeRestaurantId ? null : prev));
+  }, [activeRestaurantId]);
 
   // The reply region reports whether its first status request has settled and
   // whether the reply feature is fully set up. Keyed by business so a stale
@@ -86,31 +102,20 @@ export function GoogleReviewsClient({
   const skipFirstListFetchRef = useRef(initialRestaurants !== undefined);
 
   useEffect(() => {
-    // Hydrated from the server: no request on the first run — only work out
-    // which business is on screen (URL → remembered business → first).
     if (skipFirstListFetchRef.current) {
       skipFirstListFetchRef.current = false;
-      const stored =
-        typeof window !== 'undefined' ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY) : null;
-      setActiveRestaurantId(
-        resolveActiveRestaurantId({
-          restaurants: initialRestaurants ?? [],
-          queryRestaurantId: searchParams.get('restaurantId') ?? searchParams.get('restaurant'),
-          storedRestaurantId: stored,
-        }),
-      );
-      setLoadingInitial(false);
       return;
     }
+    let cancelled = false;
     (async () => {
       setWorkspaceError(null);
       try {
         const res = await fetch('/api/restaurants?limit=50');
+        if (cancelled) return;
         if (!res.ok) {
           // §38.B Stage 122 — surface non-2xx instead of silently leaving
-          // `restaurants=[]` + `activeRestaurantId=null` (the page used to sit
-          // on a spinner with no recovery path). Owner-safe copy only: no
-          // server text and no HTTP codes.
+          // `restaurants=[]`. Owner-safe copy only: no server text and no
+          // HTTP codes.
           setWorkspaceError(
             isTr
               ? 'İşletme listesi alınamadı. Biraz sonra tekrar dene.'
@@ -119,28 +124,12 @@ export function GoogleReviewsClient({
           return;
         }
         const data = await res.json();
-        const list = data.data ?? [];
-        if (!list.length) {
-          // §38.B Stage 122 — owner workspace gerçekten boş (yeni hesap,
-          // henüz restaurant eklenmedi). Spinner çekilince empty state
-          // görünür; aşağıdaki "no business" branch tetiklenir.
-          setRestaurants([]);
-          setActiveRestaurantId(null);
-          return;
-        }
-        const requested = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
-        const stored =
-          typeof window !== 'undefined'
-            ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
-            : null;
-        const resolved = resolveActiveRestaurantId({
-          restaurants: list,
-          queryRestaurantId: requested,
-          storedRestaurantId: stored,
-        });
-        setRestaurants(list);
-        setActiveRestaurantId(resolved ?? list[0]?.id ?? null);
+        if (cancelled) return;
+        // An empty list (new account) falls through to the "no business"
+        // empty state below.
+        setRestaurants(Array.isArray(data?.data) ? data.data : []);
       } catch (err) {
+        if (cancelled) return;
         console.error('[google-reviews] workspace fetch failed', {
           message: err instanceof Error ? err.message : 'unknown',
         });
@@ -150,38 +139,27 @@ export function GoogleReviewsClient({
             : "Couldn't load your businesses. Check your connection and try again.",
         );
       } finally {
-        setLoadingInitial(false);
+        if (!cancelled) setLoadingInitial(false);
       }
     })();
-  }, [searchParams, isTr, reloadWorkspaceKey, initialRestaurants]);
-
-  const selectRestaurant = (restaurantId: string) => {
-    setActiveRestaurantId(restaurantId);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
-    }
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('restaurant');
-    params.set('restaurantId', restaurantId);
-    router.replace(`?${params.toString()}`, { scroll: false });
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [isTr, reloadWorkspaceKey]);
 
   const activeRestaurant = useMemo(
     () => restaurants.find((r) => r.id === activeRestaurantId) ?? null,
     [restaurants, activeRestaurantId],
   );
 
-  // Switcher state word. Computed from the list rows alone (pure, no server
-  // call); "not found" overrides a stored Place ID that Google no longer knows.
+  // Status words, computed from the list rows alone (pure, no server call);
+  // "not found" overrides a stored Place ID that Google no longer knows.
   const optionStateOf = (r: RestaurantRow): PlacesOptionState => {
     const base = placesOptionState(r);
     return base === 'found' && notFoundIds.has(r.id) ? 'unmatched' : base;
   };
   const matchedCount = restaurants.filter((r) => optionStateOf(r) === 'found').length;
-  const switcherOptions = restaurants.map((r) => ({
-    value: r.id,
-    label: `${r.name} · ${placesOptionStateLabel(optionStateOf(r), locale)}`,
-  }));
+  const activeState = activeRestaurant ? optionStateOf(activeRestaurant) : null;
 
   const handleLinked = (restaurantId: string, result: PlacesSelectResponse) => {
     setRestaurants((prev) =>
@@ -219,12 +197,11 @@ export function GoogleReviewsClient({
           ?google=connected|state-*|token-* status'lerini yakalar. */}
       <GoogleConnectFlashBanner locale={locale} />
       <PageHeader
-        eyebrow="GOOGLE"
         title={isTr ? 'Google Yorumları' : 'Google Reviews'}
         description={
           isTr
-            ? "İşletmeni Google'da bul; puanını, yorumlarını ve profil eksiklerini hemen gör."
-            : 'Find your business on Google and instantly see your rating, reviews and profile gaps.'
+            ? 'Google puanını, yorumlarını ve profil eksiklerini tek yerde gör.'
+            : 'See your Google rating, reviews and profile gaps in one place.'
         }
       />
 
@@ -243,7 +220,7 @@ export function GoogleReviewsClient({
             {isTr ? 'Tekrar dene' : 'Try again'}
           </button>
         </div>
-      ) : loadingInitial || (restaurants.length > 0 && !activeRestaurant) ? (
+      ) : loadingInitial || (restaurants.length > 0 && (!selectionReady || !activeRestaurant)) ? (
         // Same flat skeleton as `loading.tsx` (identical geometry, no spinner):
         // the route fallback → client transition is not a second skeleton.
         <GoogleReviewsBodySkeleton />
@@ -264,45 +241,20 @@ export function GoogleReviewsClient({
         />
       ) : (
         <>
-          {restaurants.length > 1 && (
-            <div className="space-y-2">
-              <p id="google-switcher-summary" className="text-[12.5px] leading-[1.5] text-[#525252]">
-                {formatBusinessSummary(matchedCount, restaurants.length, locale)}
-              </p>
-              <PulseSelect
-                value={activeRestaurantId ?? ''}
-                onChange={(id) => {
-                  // A manual switch never moves focus into a search field (that
-                  // is only for "Next: …", which sets the hint itself).
-                  setFocusSearchFor(null);
-                  selectRestaurant(id);
-                }}
-                options={switcherOptions}
-                ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
-                aria-describedby="google-switcher-summary"
-                className="w-full max-w-md"
-              />
+          {/* §49 — no page-level business picker: the shell's switcher
+              (sidebar / mobile top bar) picks the business. For owners with
+              several businesses one line says which business is on screen,
+              its Google state and how many are matched overall. */}
+          {restaurants.length > 1 && activeRestaurant && activeState && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12.5px] leading-[1.5] text-[#525252]">
+              <span className="min-w-0 break-words font-medium text-[#0A0A0A]">{activeRestaurant.name}</span>
+              <Badge kind={STATE_BADGE[activeState]}>{placesOptionStateLabel(activeState, locale)}</Badge>
+              <span aria-hidden="true" className="hidden text-[#A3A3A3] sm:inline">
+                ·
+              </span>
+              <span className="w-full sm:w-auto">{formatBusinessSummary(matchedCount, restaurants.length, locale)}</span>
             </div>
           )}
-
-          {/* §38.72 — Workspace cross-link hint (navigation, kept). Google
-              Yorumları tek-platform; tüm platform durumu için
-              /dashboard/platforms workspace overview'a link. */}
-          <div className="flex min-h-11 items-center gap-2 text-[12px] text-[#525252]">
-            <Plug size={12} strokeWidth={2} className="shrink-0" aria-hidden="true" />
-            <span>
-              {isTr ? 'Diğer platformları da yönetmek için ' : 'Manage other platforms in '}
-              <Link
-                href={`/${locale}/dashboard/platforms${
-                  activeRestaurantId ? `?restaurantId=${encodeURIComponent(activeRestaurantId)}` : ''
-                }`}
-                className="inline-flex min-h-11 items-center rounded font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
-              >
-                {isTr ? 'Platform bağlantıları' : 'Platform links'}
-              </Link>
-              {isTr ? ' sayfasına git.' : '.'}
-            </span>
-          </div>
 
           {/* The profile section is mounted ONLY once the active business is
               resolved (never for a provisional one: each Details call is

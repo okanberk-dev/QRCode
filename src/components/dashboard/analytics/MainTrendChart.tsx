@@ -259,7 +259,11 @@ export function MainTrendChart({ points, isTr = true }: MainTrendChartProps) {
   return (
     <section
       className="bz-card p-5 sm:p-6"
-      aria-label={isTr ? '30 günlük yorum hacmi trendi' : '30-day review volume trend'}
+      aria-label={
+        isTr
+          ? `${points.length} günlük yorum hacmi trendi`
+          : `${points.length}-day review volume trend`
+      }
     >
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>

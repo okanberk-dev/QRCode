@@ -20,6 +20,7 @@
  */
 
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { ExternalLink, Info } from 'lucide-react';
 import { AlertBanner, ErrorState } from '@/components/ui';
 import {
@@ -52,6 +53,11 @@ const COPY = {
       'Adını yaz, listeden seç. Puanın ve yorumların hemen gelir; Google hesabına giriş gerekmez.',
     unmatched:
       "Google yorum linkin kayıtlı ama Google'daki işletmeyle eşleşmedi. İşletmeni seçersen link otomatik güncellenir ve puanını hemen görürsün.",
+    manualTitle: 'Google yorum linki',
+    manualBody: 'Google araması şu an kullanılamıyor. Yorum linkini elle ekleyebilirsin.',
+    unmatchedShort: "Google yorum linkin kayıtlı ama Google'daki işletmeyle eşleşmedi.",
+    manualAdd: 'Linki elle ekle',
+    manualEdit: 'Linki düzenle',
     matched: (name: string) => `${name} Google'da bulundu ve eşlendi.`,
     next: (name: string) => `Sıradaki: ${name} →`,
     cancel: 'Vazgeç',
@@ -68,6 +74,11 @@ const COPY = {
       'Type its name and pick it from the list. Your rating and reviews appear right away — no Google sign-in needed.',
     unmatched:
       'Your Google review link is saved but not matched to a Google listing. Pick your business and the link updates automatically.',
+    manualTitle: 'Google review link',
+    manualBody: "Google search isn't available right now. You can add your review link manually.",
+    unmatchedShort: 'Your Google review link is saved but not matched to a Google listing.',
+    manualAdd: 'Add the link manually',
+    manualEdit: 'Edit the link',
     matched: (name: string) => `${name} is matched to its Google listing.`,
     next: (name: string) => `Next: ${name} →`,
     cancel: 'Cancel',
@@ -165,14 +176,24 @@ function ConnectCard({
 }: ConnectCardProps) {
   const copy = COPY[locale];
   const headingId = useId();
+  // Search is known to be off (server said so) and the actor may edit: one
+  // short card — what is wrong, at most one notice, the manual-link button —
+  // instead of a disabled search form plus a second "unavailable" banner.
+  // A read-only member still gets the picker's own read-only line.
+  const searchOff = placesConfigured === false && canWrite !== false;
+  const shownNotice =
+    searchOff && notice?.kind === 'info' ? { kind: 'info' as const, text: copy.unmatchedShort } : notice;
+  const manualLinkHref = `/${locale}/dashboard/platforms/google?restaurantId=${encodeURIComponent(restaurant.id)}`;
   return (
     <section aria-labelledby={headingId} className="bz-card space-y-4 p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id={headingId} className="bz-h-tight text-[20px] leading-tight">
-            {copy.connectTitle}
+            {searchOff ? copy.manualTitle : copy.connectTitle}
           </h2>
-          <p className="mt-1.5 text-[13px] leading-[1.6] text-[#525252]">{copy.connectBody}</p>
+          <p className="mt-1.5 text-[13px] leading-[1.6] text-[#525252]">
+            {searchOff ? copy.manualBody : copy.connectBody}
+          </p>
         </div>
         {onCancel && (
           <button type="button" onClick={onCancel} className="bz-btn-ghost min-h-11 shrink-0">
@@ -180,25 +201,35 @@ function ConnectCard({
           </button>
         )}
       </div>
-      {notice && (
+      {shownNotice && (
         <AlertBanner
-          kind={notice.kind}
-          icon={notice.kind === 'info' ? <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" /> : undefined}
+          kind={shownNotice.kind}
+          icon={
+            shownNotice.kind === 'info' ? (
+              <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+            ) : undefined
+          }
         >
-          {notice.text}
+          {shownNotice.text}
         </AlertBanner>
       )}
-      <PlacesBusinessPicker
-        restaurant={restaurant}
-        restaurants={restaurants}
-        locale={locale}
-        canWrite={canWrite}
-        placesConfigured={placesConfigured}
-        autoSearch={autoSearch}
-        autoFocus={autoFocus}
-        onSelected={onSelected}
-        onForbidden={onForbidden}
-      />
+      {searchOff ? (
+        <Link href={manualLinkHref} className="bz-btn-ghost min-h-11 w-full sm:w-auto">
+          {hasManualReviewLink(restaurant) ? copy.manualEdit : copy.manualAdd}
+        </Link>
+      ) : (
+        <PlacesBusinessPicker
+          restaurant={restaurant}
+          restaurants={restaurants}
+          locale={locale}
+          canWrite={canWrite}
+          placesConfigured={placesConfigured}
+          autoSearch={autoSearch}
+          autoFocus={autoFocus}
+          onSelected={onSelected}
+          onForbidden={onForbidden}
+        />
+      )}
     </section>
   );
 }

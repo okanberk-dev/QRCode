@@ -7,7 +7,8 @@ import {
 
 /**
  * Owner dashboard home — structural clone of `dashboard/page.tsx`.
- * Hero greeting + 4 KPI cards + 2-col content grid + activity strip.
+ * Greeting header + 4 KPI cards + two columns on lg (chart on the left,
+ * pending tasks + recent activity on the right).
  * (CLAUDE.md §40.10 — structural skeleton during server render window.)
  */
 export default function Loading() {
@@ -17,26 +18,30 @@ export default function Loading() {
 
       <SkStatGrid count={4} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bz-card p-5 space-y-3">
-          <SkBox className="h-5 w-40" />
-          <SkBox className="h-4 w-full" />
-          <SkBox className="h-4 w-3/4" />
-          <SkBox className="h-4 w-5/6" />
-          <SkBox className="h-4 w-2/3" />
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
+        <div className="bz-card p-5 sm:p-6 hidden sm:block space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1.5">
+              <SkBox className="h-3 w-16" />
+              <SkBox className="h-4 w-48" />
+            </div>
+            <SkBox className="h-8 w-36" />
+          </div>
+          <SkBox className="h-4 w-28" />
+          <SkBox className="h-[300px] w-full" />
         </div>
-        <div className="bz-card p-5 space-y-3">
-          <SkBox className="h-5 w-36" />
-          <SkBox className="h-32 w-full" />
-        </div>
-      </div>
-
-      <div className="bz-card p-5 space-y-3">
-        <SkBox className="h-5 w-44" />
-        <div className="space-y-2">
-          <SkBox className="h-12 w-full" />
-          <SkBox className="h-12 w-full" />
-          <SkBox className="h-12 w-full" />
+        <div className="flex flex-col gap-3">
+          <div className="bz-card p-5 sm:p-6 space-y-3">
+            <SkBox className="h-3 w-28" />
+            <SkBox className="h-6 w-24" />
+            <SkBox className="h-12 w-full" />
+          </div>
+          <div className="bz-card p-5 sm:p-6 space-y-3">
+            <SkBox className="h-3 w-32" />
+            <SkBox className="h-10 w-full" />
+            <SkBox className="h-10 w-full" />
+            <SkBox className="h-10 w-full" />
+          </div>
         </div>
       </div>
     </SkPageShell>

@@ -126,7 +126,7 @@ export function PulseRangeToggle({
             <p className="bz-mono text-[11px] text-[#737373]">
               {isTr
                 ? `Pik · ${peak.dateText} · ${peak.count} yorum`
-                : `Peak · ${peak.dateText} · ${peak.count} reviews`}
+                : `Peak · ${peak.dateText} · ${peak.count} ${peak.count === 1 ? 'review' : 'reviews'}`}
             </p>
           ) : (
             <span />

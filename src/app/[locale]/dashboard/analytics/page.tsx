@@ -5,6 +5,7 @@ import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
+import { Download } from 'lucide-react';
 import {
   BarChart,
   Eyebrow,
@@ -64,12 +65,12 @@ import { AnalyticsKpiGrid } from '@/components/dashboard/analytics/AnalyticsKpiG
 import { AiInsightsCard } from '@/components/dashboard/analytics/AiInsightsCard';
 import { ChannelDistributionMini } from '@/components/dashboard/analytics/ChannelDistributionMini';
 import { TopLocationCard } from '@/components/dashboard/analytics/TopLocationCard';
-import { MobileAnalyticsHero } from '@/components/dashboard/analytics/MobileAnalyticsHero';
-// Stage 66 §38.147 — HANDOFF AnalyticsDesktop redesign yeni component'lar.
-// LiveIndicator (compliance-safe static), MainTrendChart (30-day stacked
-// area + crosshair tooltip), SentimentDonut (SVG arc + center %),
-// TopMentionsPolarity (theme list + ↑↓· arrow).
-import { AnalyticsLiveIndicator } from '@/components/dashboard/analytics/AnalyticsLiveIndicator';
+// Stage 66 §38.147 — HANDOFF AnalyticsDesktop redesign component'ları:
+// MainTrendChart (stacked area + crosshair tooltip), SentimentDonut (SVG arc
+// + center %), TopMentionsPolarity (theme list + ↑↓· arrow).
+// §49 — the static "GÜNCEL · BU SAYFA" live label and the mobile-only average
+// rating hero were removed: the header subtitle names the business + period,
+// and the ORTALAMA PUAN KPI card already shows the rating with its sparkline.
 import { MainTrendChart } from '@/components/dashboard/analytics/MainTrendChart';
 import { SentimentDonut } from '@/components/dashboard/analytics/SentimentDonut';
 import { TopMentionsPolarity } from '@/components/dashboard/analytics/TopMentionsPolarity';
@@ -103,11 +104,10 @@ export async function generateMetadata({
   };
 }
 
-function pctDelta(curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } {
-  if (prev === 0) {
-    if (curr === 0) return { value: '0%', kind: 'neutral' };
-    return { value: 'Yeni', kind: 'up' };
-  }
+function pctDelta(curr: number, prev: number): { value: string | null; kind: 'up' | 'down' | 'neutral' } {
+  // No reviews in the previous period: a percentage is meaningless (the old
+  // "Yeni" label was unclear and untranslated) — the subtitle says why.
+  if (prev === 0) return { value: null, kind: 'neutral' };
   const pct = Math.round(((curr - prev) / prev) * 1000) / 10;
   return {
     value: `${pct >= 0 ? '+' : ''}${pct}%`,
@@ -387,11 +387,13 @@ async function renderAnalyticsPage({
     // paterni reuse edilir (lib/analytics-weekly-trend.ts intact).
   ]);
 
-  // Distinct branches for filter dropdown (across owned restaurants, not
-  // affected by current branch filter so user can pick a different one).
-  const branchRows = ownedIds.length
+  // Distinct branches for the filter dropdown — limited to the business(es)
+  // in scope (a branch of another business would only ever show an empty
+  // page), not affected by the current branch filter so the owner can pick a
+  // different one.
+  const branchRows = restaurantIds.length
     ? await prisma.feedback.findMany({
-        where: { restaurantId: { in: ownedIds }, branch: { not: null } },
+        where: { restaurantId: { in: restaurantIds }, branch: { not: null } },
         distinct: ['branch'],
         select: { branch: true },
         take: 50,
@@ -401,6 +403,39 @@ async function renderAnalyticsPage({
     .map((r) => r.branch as string)
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, isTr ? 'tr-TR' : 'en-US'));
+  // Keep an active branch filter selectable (and clearable) even when the
+  // business in scope has no reviews from it.
+  if (branchFilter && !branches.includes(branchFilter)) branches.push(branchFilter);
+
+  // Header subtitle: what the page shows — the business in scope (the shell's
+  // business switcher writes `?restaurantId`) and the period.
+  const scopeLabel =
+    restaurantIds.length === 1
+      ? (user.restaurants.find((r) => r.id === restaurantIds[0])?.name ?? '')
+      : isTr
+        ? `Tüm işletmeler (${restaurantIds.length})`
+        : `All businesses (${restaurantIds.length})`;
+  const periodLabel = (() => {
+    if (customRange) {
+      const fmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      });
+      return `${fmt.format(customRange.start)} – ${fmt.format(customRange.end)}`;
+    }
+    if (rangeKey === '1y') return isTr ? 'Son 12 ay' : 'Last 12 months';
+    return isTr ? `Son ${windowDays} gün` : `Last ${windowDays} days`;
+  })();
+  // CSV export keeps the current scope + filters (same params as the page).
+  const exportQuery = new URLSearchParams();
+  for (const key of ['range', 'platform', 'branch', 'restaurantId', 'customStart', 'customEnd'] as const) {
+    const value = sp[key];
+    if (typeof value === 'string' && value) exportQuery.set(key, value);
+  }
+  const exportQs = exportQuery.toString();
+  const exportHref = `/api/dashboard/analytics/export${exportQs ? `?${exportQs}` : ''}`;
 
   // KPI calculations — scans gerçek QrScan'den, reviews feedback'ten ayrı.
   const reviewsCount = feedbacksWindow.length;
@@ -754,40 +789,28 @@ async function renderAnalyticsPage({
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
-      {/* Stage 66 §38.147 — Live indicator (compliance-safe static). HANDOFF
-          "8 sn ÖNCE GÜNCELLENDİ" fake real-time timer compliance variation
-          ile değiştirildi: "GÜNCEL · BU SAYFA" / "LIVE · THIS PAGE". */}
-      <AnalyticsLiveIndicator isTr={isTr} />
-
       <PageHeader
         /* §38.66 — Analytics 5-col KPI + chart + heatmap + topic grid yoğun
-           dashboard; hero h1 ezici hissedilir. titleScale="compact"
-           22-32px mütevazı kalır. */
+           dashboard; hero h1 ezici hissedilir. titleScale="compact".
+           §49 — no eyebrow (the topbar breadcrumb already says "Analitik");
+           the subtitle names the business in scope and the period. */
         titleScale="compact"
-        eyebrow={isTr ? 'ANALİTİK' : 'ANALYTICS'}
         title={isTr ? 'Analitik' : 'Analytics'}
-        description={
-          isTr
-            ? 'Yorum, yönlendirme ve trafik metriklerini filtrele.'
-            : 'Filter review, redirect, and traffic metrics.'
+        subtitle={scopeLabel ? `${scopeLabel} · ${periodLabel}` : periodLabel}
+        actions={
+          <a
+            href={exportHref}
+            download
+            className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-0"
+            aria-label={isTr ? 'Rapor indir (CSV)' : 'Export report (CSV)'}
+          >
+            <Download size={14} strokeWidth={2} aria-hidden="true" />
+            {isTr ? 'Rapor indir' : 'Export report'}
+          </a>
         }
       />
 
-      <AnalyticsFilterBar
-        isTr={isTr}
-        branches={branches}
-        restaurants={user.restaurants}
-      />
-
-      {/* §38.34 — Mobile hero (sm:hidden) — graphite + lime 4.71 + sparkline */}
-      <MobileAnalyticsHero
-        avgRating={avgRatingNow}
-        // Önceki dönem ortalaması hesaplanmıyor; sabit 4.0'a göre "↑" delta
-        // gerçek bir değişim değildi (hep yeşil). Gerçek delta gelene dek gizli.
-        delta={null}
-        sparkline={sparkAvgRating}
-        isTr={isTr}
-      />
+      <AnalyticsFilterBar isTr={isTr} branches={branches} />
 
       {/* §38.50 — KPI 5-col single row (tasarım birebir parity).
           Toplam yorum / Ortalama puan / Yanıt süresi / NPS / Tekrar gelme.
@@ -799,9 +822,14 @@ async function renderAnalyticsPage({
             value: reviewsCount.toLocaleString(isTr ? 'tr-TR' : 'en-US'),
             delta: reviewsDelta.value,
             deltaKind: reviewsDelta.kind,
-            subtitle: isTr
-              ? `${feedbacksPrevWindow} önceki dönem`
-              : `${feedbacksPrevWindow} prev period`,
+            subtitle:
+              feedbacksPrevWindow > 0
+                ? isTr
+                  ? `önceki dönemde ${feedbacksPrevWindow.toLocaleString('tr-TR')}`
+                  : `${feedbacksPrevWindow.toLocaleString('en-US')} in previous period`
+                : isTr
+                  ? 'önceki dönemde yorum yok'
+                  : 'none in previous period',
             sparkline: sparkReviews,
             sparklineColor: '#0A0A0A',
           },
@@ -837,12 +865,13 @@ async function renderAnalyticsPage({
           {
             label: isTr ? 'NPS' : 'NPS',
             value: npsResult.total > 0 ? String(npsResult.npsScore) : '—',
-            delta:
-              npsResult.total > 0 ? `Promoter %${npsResult.promoterPct}` : null,
-            deltaKind: 'flat',
+            // 5★ destekçi, 4★ pasif, 1-3★ eleştiren (lib/analytics-nps.ts).
+            delta: null,
             subtitle:
               npsResult.total > 0
-                ? `${npsResult.promoters}P · ${npsResult.passives}Pa · ${npsResult.detractors}D`
+                ? isTr
+                  ? `${npsResult.promoters}\u00a0destekçi · ${npsResult.passives}\u00a0pasif · ${npsResult.detractors}\u00a0eleştiren`
+                  : `${npsResult.promoters}\u00a0promoters · ${npsResult.passives}\u00a0passive · ${npsResult.detractors}\u00a0detractors`
                 : isTr
                   ? 'yeterli veri yok'
                   : 'not enough data',
@@ -923,6 +952,11 @@ async function renderAnalyticsPage({
               })(),
             ]}
             isTr={isTr}
+            caption={
+              isTr
+                ? '4-5 yıldızlı yorumların geldiği kanallar'
+                : 'Where 4-5 star reviews came from'
+            }
           />
 
           {/* Stage 66 §38.147 — DUYGU DAĞILIMI donut. Rating distribution
@@ -1092,7 +1126,9 @@ async function renderAnalyticsPage({
       {/* §38.50 — TopLocationCard sayfa altına taşındı (multi-restaurant owner
           için faydalı, 2-up grid sağ kart KONU SENTİMENT'a verildi). */}
       {(() => {
-        if (user.restaurants.length < 2) return null;
+        // Only meaningful across several businesses — with one business in
+        // scope it would just repeat the business already selected.
+        if (restaurantIds.length < 2) return null;
         const counts = new Map<string, number>();
         const ratings = new Map<string, { sum: number; count: number }>();
         for (const f of feedbacksWindow) {

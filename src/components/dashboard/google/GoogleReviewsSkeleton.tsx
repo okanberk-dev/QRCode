@@ -1,4 +1,4 @@
-import { SkBox, SkPageHeader, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
  * Flat (animation-free) skeletons of the Google reviews page, shared by the
@@ -7,8 +7,10 @@ import { SkBox, SkPageHeader, SkPageShell } from '@/components/ui/skeletons/Page
  * geometry: loading → loaded does not shift the wrapper (CLS = 0, CLAUDE.md
  * §40.10). No "use client": pure markup, importable from both worlds.
  *
- * Geometry mirrors the loaded page: an optional `h-11` business select row,
- * then the 2-col grid (rating card, tall checklist, review rows — same
+ * Geometry mirrors the loaded page: the header (title + description, no
+ * eyebrow), an optional one-line business status row (owners with several
+ * businesses — the page has no business picker of its own, the shell's
+ * switcher picks it), then the 2-col grid (rating card, tall checklist, review rows — same
  * `lg:grid-cols-[minmax(0,1fr)_380px]` as the real section) and one reply
  * card row. DOM order = mobile order (rating → checklist → reviews → reply).
  */
@@ -85,11 +87,27 @@ export function ReplyRowSkeleton() {
   );
 }
 
-/** Everything under the page header. */
+/**
+ * The page header: title + description, no eyebrow (the page dropped it —
+ * it only repeated the title). `mb-5` like `PageHeader`.
+ */
+export function GoogleReviewsHeaderSkeleton() {
+  return (
+    <div className="mb-5 space-y-3" aria-hidden="true">
+      <SkBox className="h-8 w-56 max-w-full" />
+      <SkBox className="h-4 w-80 max-w-full" />
+    </div>
+  );
+}
+
+/**
+ * Everything under the page header. `withSwitcher` keeps its name for
+ * backward compatibility: it is now the one-line business status row.
+ */
 export function GoogleReviewsBodySkeleton({ withSwitcher = true }: { withSwitcher?: boolean }) {
   return (
     <>
-      {withSwitcher && <SkBox className="h-11 w-full max-w-sm" />}
+      {withSwitcher && <SkBox className="h-5 w-full max-w-md" />}
       <PlacesProfileSkeleton />
       <ReplyRowSkeleton />
     </>
@@ -100,7 +118,7 @@ export function GoogleReviewsBodySkeleton({ withSwitcher = true }: { withSwitche
 export function GoogleReviewsLoadingShell() {
   return (
     <SkPageShell max={1440}>
-      <SkPageHeader titleWidth="w-56" />
+      <GoogleReviewsHeaderSkeleton />
       <GoogleReviewsBodySkeleton />
     </SkPageShell>
   );

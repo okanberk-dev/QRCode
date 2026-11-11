@@ -1,35 +1,27 @@
-import {
-  SkBox,
-  SkPageHeader,
-  SkPageShell,
-} from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
- * Owner analytics — live line + header + filter bar + 5 KPI cards + main
- * trend chart + lower cards. Mirrors page.tsx (space-y-3.5, 5-col KPI
- * grid, header without actions). (CLAUDE.md §40.10)
+ * Owner analytics — header (title + scope/period subtitle + export) + one
+ * filter toolbar + 5 KPI cards + main trend chart + lower cards. Mirrors
+ * page.tsx (space-y-3.5, no eyebrow, toolbar without a card, 5-col KPI
+ * grid). (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
     <SkPageShell max={1440} space={3.5}>
-      <SkBox className="h-3 w-36" />
-
-      <SkPageHeader titleWidth="w-56" />
-
-      {/* Filter bar */}
-      <div className="bz-card p-4 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <SkBox className="h-8 w-48" />
-          <SkBox className="h-8 w-28" />
-          <SkBox className="h-8 w-24" />
-          <SkBox className="h-8 w-44" />
+      {/* PageHeader: title + subtitle, export action */}
+      <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end md:gap-4">
+        <div className="space-y-2.5">
+          <SkBox className="h-7 w-36" />
+          <SkBox className="h-3.5 w-52" />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          <SkBox className="h-7 w-14" />
-          <SkBox className="h-7 w-20" />
-          <SkBox className="h-7 w-24" />
-          <SkBox className="h-7 w-24" />
-        </div>
+        <SkBox className="h-11 w-32 sm:h-9" />
+      </div>
+
+      {/* Filter toolbar: period segment + platform (+ branch) select */}
+      <div className="flex flex-wrap items-center gap-2">
+        <SkBox className="h-[50px] w-full sm:h-[34px] sm:w-72" />
+        <SkBox className="h-11 w-full sm:h-[34px] sm:w-[170px]" />
       </div>
 
       {/* 5 KPI cards — same grid as AnalyticsKpiGrid */}

@@ -1244,8 +1244,10 @@ async function renderDashboardPage({
               }}
               defaultRange="30g"
               isTr={isTr}
+              // Slot elements cross the server→client boundary; explicit keys
+              // keep React's key check quiet where they render next to siblings.
               header={
-                <div>
+                <div key="pulse-header">
                   <Eyebrow>{isTr ? 'NABIZ' : 'PULSE'}</Eyebrow>
                   <p className="mt-1.5 text-[13px] text-[#525252]">
                     {isTr ? 'Platformlara göre günlük yorum' : 'Daily reviews by platform'}
@@ -1254,6 +1256,7 @@ async function renderDashboardPage({
               }
               footerAction={
                 <Link
+                  key="pulse-analytics"
                   href={scopedHref(`/${locale}/dashboard/analytics`)}
                   className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md text-[12px] font-medium text-[#525252] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
                 >
