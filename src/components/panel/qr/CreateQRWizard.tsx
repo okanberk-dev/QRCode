@@ -425,7 +425,9 @@ export function CreateQRWizard({
     setError(null);
 
     try {
-      const params = new URLSearchParams({ format: "svg" });
+      // `save=1` — record this QR in the history list (previews and
+      // downloads of existing QRs don't).
+      const params = new URLSearchParams({ format: "svg", save: "1" });
       if (tableNumber.trim()) params.set("table", tableNumber.trim());
       if (linkType === "platform") params.set("platform", platform);
       if (persistColors) {
@@ -677,6 +679,12 @@ export function CreateQRWizard({
                   options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
                 />
               </Field>
+            )}
+            {restaurants.length === 1 && activeRestaurant && (
+              <p className="text-[12.5px] text-[#525252]">
+                {isTr ? "İşletme: " : "Location: "}
+                <span className="font-medium text-[#0A0A0A]">{activeRestaurant.name}</span>
+              </p>
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

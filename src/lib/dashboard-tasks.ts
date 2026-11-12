@@ -30,9 +30,9 @@ export interface DashboardTask {
   id: string;
   type: TaskType;
   severity: TaskSeverity;
-  /** "12 yorum yanıtsız" | "Google senkronizasyon hatası" | "8 müşteri 30 gün+ dönüş yok". */
+  /** "12 yorum yanıtsız" | "Google bağlantı sorunu" | "8 müşteri 30 gündür geri gelmedi". */
   title: string;
-  /** Sağda mute renk inline meta (örn. "Acil · 2 saat önce"); opsiyonel. */
+  /** Sağda mute renk inline meta (örn. "en eski 2 saat önce"); opsiyonel. */
   meta?: string;
   /** Tıklanabilir deep link. */
   href: string;
@@ -72,24 +72,26 @@ export interface BuildPendingTasksInput {
 
 const COPY = {
   tr: {
+    // Urgency is shown by the badge next to each task, so the meta line
+    // does not repeat "Acil / Orta / Düşük".
     replyTitle: (n: number) => `${n} yorum yanıtsız`,
-    replyMeta: (when: string) => `Acil · en eski ${when}`,
-    replyMetaNoTime: 'Acil yanıt bekliyor',
-    platformTitle: 'Google senkronizasyon hatası',
-    platformMeta: (when: string) => `Orta · ${when}`,
-    platformMetaNow: 'Orta · az önce',
-    reminderTitle: (n: number) => `${n} müşteri 30 gün+ dönüş yok`,
-    reminderMeta: 'Düşük · win-back fırsatı',
+    replyMeta: (when: string) => `en eski ${when}`,
+    replyMetaNoTime: 'Yanıt bekliyor',
+    platformTitle: 'Google bağlantı sorunu',
+    platformMeta: (when: string) => when,
+    platformMetaNow: 'az önce',
+    reminderTitle: (n: number) => `${n} müşteri 30 gündür geri gelmedi`,
+    reminderMeta: 'Geri kazanma fırsatı',
   },
   en: {
     replyTitle: (n: number) => `${n} reviews awaiting reply`,
-    replyMeta: (when: string) => `Urgent · oldest ${when}`,
-    replyMetaNoTime: 'Urgent reply pending',
-    platformTitle: 'Google sync error',
-    platformMeta: (when: string) => `Medium · ${when}`,
-    platformMetaNow: 'Medium · just now',
-    reminderTitle: (n: number) => `${n} customers no return in 30+ days`,
-    reminderMeta: 'Low · win-back opportunity',
+    replyMeta: (when: string) => `oldest ${when}`,
+    replyMetaNoTime: 'Reply pending',
+    platformTitle: 'Google connection problem',
+    platformMeta: (when: string) => when,
+    platformMetaNow: 'just now',
+    reminderTitle: (n: number) => `${n} customers haven't returned in 30 days`,
+    reminderMeta: 'Win-back opportunity',
   },
 } as const;
 

@@ -45,16 +45,19 @@ export function SkBox({ className = '' }: BoxProps) {
 export function SkPageHeader({
   withActions = false,
   withDescription = true,
+  withEyebrow = true,
   titleWidth = 'w-64',
 }: {
   withActions?: boolean;
   withDescription?: boolean;
+  /** `false` for pages whose PageHeader has no eyebrow line. */
+  withEyebrow?: boolean;
   titleWidth?: string;
 }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="space-y-3 min-w-0 flex-1">
-        <SkBox className="h-3 w-24" />
+        {withEyebrow && <SkBox className="h-3 w-24" />}
         <SkBox className={`h-9 ${titleWidth} max-w-full`} />
         {withDescription && (
           <SkBox className="h-4 w-80 max-w-full" />

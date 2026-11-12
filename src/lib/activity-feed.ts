@@ -159,7 +159,8 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 function platformTarget(rating: number | null, platform: string | null): string {
   const stars = rating && rating > 0 ? '★'.repeat(Math.round(rating)) : '';
-  const platLabel = platform ? PLATFORM_LABELS[platform] || platform : 'Buaze';
+  // Same name the dashboard chart legend uses for reviews left on Buaze.
+  const platLabel = platform ? PLATFORM_LABELS[platform] || platform : 'Buaze QR';
   return stars ? `${stars} ${platLabel}` : platLabel;
 }
 

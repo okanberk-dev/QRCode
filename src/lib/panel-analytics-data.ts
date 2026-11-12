@@ -291,9 +291,18 @@ export async function buildPanelAnalyticsData({
     {
       label: isTr ? 'TOPLAM YORUM' : 'TOTAL REVIEWS',
       value: reviewsCount.toLocaleString(isTr ? 'tr-TR' : 'en-US'),
-      delta: reviewsDelta.value,
+      // No previous-period reviews → no percentage to show ("Yeni" was
+      // unclear); the subtitle says why instead (same as the owner page).
+      delta: feedbacksPrevWindow === 0 ? null : reviewsDelta.value,
       deltaKind: reviewsDelta.kind,
-      subtitle: isTr ? `${feedbacksPrevWindow} önceki dönem` : `${feedbacksPrevWindow} prev period`,
+      subtitle:
+        feedbacksPrevWindow === 0
+          ? isTr
+            ? 'önceki dönemde yorum yok'
+            : 'none in previous period'
+          : isTr
+            ? `önceki dönemde ${feedbacksPrevWindow.toLocaleString('tr-TR')}`
+            : `${feedbacksPrevWindow.toLocaleString('en-US')} in previous period`,
       sparkline: sparkReviews,
       sparklineColor: '#0A0A0A',
     },
@@ -325,11 +334,14 @@ export async function buildPanelAnalyticsData({
     {
       label: 'NPS',
       value: npsResult.total > 0 ? String(npsResult.npsScore) : '—',
-      delta: npsResult.total > 0 ? `Promoter %${npsResult.promoterPct}` : null,
+      delta: null,
       deltaKind: 'flat',
+      // 5★ promoter, 4★ passive, 1-3★ detractor (lib/analytics-nps.ts).
       subtitle:
         npsResult.total > 0
-          ? `${npsResult.promoters}P · ${npsResult.passives}Pa · ${npsResult.detractors}D`
+          ? isTr
+            ? `${npsResult.promoters}\u00a0destekçi · ${npsResult.passives}\u00a0pasif · ${npsResult.detractors}\u00a0eleştiren`
+            : `${npsResult.promoters}\u00a0promoters · ${npsResult.passives}\u00a0passive · ${npsResult.detractors}\u00a0detractors`
           : isTr
             ? 'yeterli veri yok'
             : 'not enough data',
