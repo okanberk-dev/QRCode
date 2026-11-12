@@ -6,6 +6,7 @@ import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { PublicPlan } from '@/lib/subscription-plans';
 import { PLAN_LABELS } from '@/lib/constants';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 /** Workspace counts the caller already has (no extra fetch here). */
 export interface BillingUsageCounts {
@@ -225,6 +226,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         day: '2-digit',
         month: 'short',
         year: 'numeric',
+        timeZone: resolveDisplayTimeZone(),
       });
     } catch {
       return iso;

@@ -20,6 +20,7 @@ import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, PageHeader, type BadgeKind } from '@/components/ui';
 import { PlatformSummaryLine } from '@/components/dashboard/platforms/PlatformBusinessContext';
 import { getSectorByLabel } from '@/lib/sectors';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { PLATFORM_LINKS_LABEL } from '@/lib/platform-management';
 import {
   parseLatestChecksPayload,
@@ -178,10 +179,13 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
   const publicBase =
     envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : 'https://www.buaze.com';
   const publicUrl = `${publicBase}/r/${data.slug}`;
+  // Business time zone (CLAUDE.md §46): the server renders this page, so a
+  // browser-local date would not match it and break hydration.
   const dateFmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    timeZone: resolveDisplayTimeZone(),
   });
   const numberFmt = new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US');
 
