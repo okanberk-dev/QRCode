@@ -130,6 +130,8 @@ function parseHistoryRows(data: unknown, restaurantId: string): QrHistoryItem[] 
 function safeFileName(name: string): string {
   return (
     name
+      .replace(/ı/g, 'i')
+      .replace(/İ/g, 'I')
       .normalize('NFKD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-zA-Z0-9_-]+/g, '-')

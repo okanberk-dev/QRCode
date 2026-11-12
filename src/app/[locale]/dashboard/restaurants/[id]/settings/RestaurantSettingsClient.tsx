@@ -513,7 +513,7 @@ export default function RestaurantSettingsClient({
                 </button>
               }
               // Rows meet the 44px touch target on phones.
-              className="min-w-[220px] max-sm:[&_.bz-menu-item]:min-h-[44px]"
+              className="min-w-[220px]"
             >
               <PulseMenuItem
                 icon={<ExternalLink size={13} />}

@@ -14,6 +14,7 @@ import {
 import { PlatformChip, type PlatformId } from "@/components/ui";
 import { PulseMenu, PulseMenuDivider, PulseMenuItem } from "@/components/ui/PulseMenu";
 import { copyToClipboard } from "@/lib/clipboard";
+import { resolveDisplayTimeZone } from "@/lib/timezone";
 
 export interface QRCardItem {
   id: string;
@@ -119,6 +120,8 @@ function buildQrUrl(
 
 function safeFileName(name: string): string {
   return name
+    .replace(/ı/g, "i")
+    .replace(/İ/g, "I")
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-zA-Z0-9_-]+/g, "-")
@@ -330,10 +333,15 @@ export function QRCard({
   };
 
   const created = new Date(item.createdAt);
-  const createdLabel = created.toLocaleDateString(isTr ? "tr-TR" : "en-US", {
-    day: "2-digit",
-    month: "short",
-  });
+  // Business time zone (CLAUDE.md §46): the server renders this card, so a
+  // browser-local date would not match it and break hydration.
+  const createdLabel = Number.isNaN(created.getTime())
+    ? ""
+    : created.toLocaleDateString(isTr ? "tr-TR" : "en-US", {
+        day: "2-digit",
+        month: "short",
+        timeZone: resolveDisplayTimeZone(),
+      });
 
   // Inline preview — plain QR (sadece module matrix, kullanıcı renkleri).
   // Kullanıcı talebi: arka plan Pulse Lime tasarımı yok, "sadece QR kod
