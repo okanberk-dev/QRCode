@@ -193,9 +193,9 @@ export default function AuditResponseDetailClient({ locale, detail, canWrite }: 
       <div>
         <Link
           href={`${base}/${template.id}/results`}
-          className="inline-flex min-h-9 items-center gap-1 text-[12px] text-[#737373] hover:text-[#0A0A0A]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-[#0A0A0A] sm:min-h-0 sm:text-[12px]"
         >
-          <ArrowLeft size={12} aria-hidden="true" /> {isTr ? 'Sonuçlara dön' : 'Back to results'}
+          <ArrowLeft size={13} aria-hidden="true" /> {isTr ? 'Sonuçlara dön' : 'Back to results'}
         </Link>
       </div>
 

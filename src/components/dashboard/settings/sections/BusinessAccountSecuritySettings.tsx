@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Check, Key, Loader2, Monitor, Smartphone, Globe, X } from "lucide-react";
 import { AlertBanner, Field, Modal } from "@/components/ui";
+import { SkBox } from "@/components/ui/skeletons/PageSkeleton";
 import type { Locale } from "@/lib/translations";
 import { SettingsCard } from "../SettingsCard";
 
@@ -345,9 +346,18 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
           )}
 
           {sessionsLoading ? (
-            <div className="flex items-center justify-center gap-2 p-8 text-[13px] text-[#737373]">
-              <Loader2 size={14} className="animate-spin" />
-              {isTr ? "Yükleniyor…" : "Loading…"}
+            // Placeholder rows shaped like the session list below.
+            <div role="status" aria-busy="true" className="flex flex-col divide-y divide-[#EDEDED]">
+              <span className="sr-only">{isTr ? "Oturumlar yükleniyor" : "Loading sessions"}</span>
+              {[0, 1].map((i) => (
+                <div key={i} className="flex items-center gap-3 py-3">
+                  <SkBox className="h-9 w-9 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <SkBox className="h-3.5 w-40 max-w-full" />
+                    <SkBox className="h-3 w-28" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : sessions.length === 0 ? (
             <p className="text-center text-[13px] text-[#737373] p-6">

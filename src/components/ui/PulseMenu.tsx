@@ -71,7 +71,10 @@ export function PulseMenu({
           side={side}
           sideOffset={sideOffset}
           collisionPadding={collisionPadding}
-          className={`bz-menu focus:outline-none ${className}`}
+          // Above the mobile bottom nav (z-40) and modals (z-50); Radix copies
+          // the content's z-index to its positioning wrapper. Callers can
+          // still pass their own z-* class.
+          className={`bz-menu focus:outline-none ${/(^|\s)z-/.test(className) ? '' : 'z-[70] '}${className}`}
         >
           {children}
         </DropdownMenu.Content>

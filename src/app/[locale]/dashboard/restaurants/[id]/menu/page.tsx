@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, Eye, Palette, QrCode, RefreshCw, Smartphone, X,
+  AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, Eye, MoreHorizontal, Palette, QrCode, RefreshCw, Smartphone, X,
 } from 'lucide-react';
 import PublicMenuView, { type MenuItemView } from '@/components/menu/PublicMenuView';
-import { AlertBanner, Modal, PageHeader, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, Modal, PageHeader, PulseMenu, PulseMenuItem, useConfirmDialog } from '@/components/ui';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getMenuReadiness } from '@/lib/menu-readiness';
 import { detectSector } from '@/lib/sector-platforms';
@@ -25,7 +25,7 @@ import { MenuSetupWizard } from './_components/MenuSetupWizard';
 import { MenuStatusBar, type MenuLockReason, type MenuStepId } from './_components/MenuStatusBar';
 import type { ItemPatch } from './_components/menu-item-form';
 import type { CategoryShape } from './_components/menu-types';
-import { useIsDesktop } from './_components/menu-ui';
+import { afterMenuCloses, useIsDesktop, useMediaQuery } from './_components/menu-ui';
 import { useMenuBuilder } from './_components/useMenuBuilder';
 
 type ItemDraft = Partial<MenuItemView> & { categoryId?: string };
@@ -56,13 +56,17 @@ export default function RestaurantMenuBuilderPage() {
 
   const { isViewer, loading: roleLoading } = useCurrentRole();
   const isDesktop = useIsDesktop();
+  // 1024–1399px: two columns, no live-preview rail — the phone-size preview
+  // opens from the header's "Diğer" menu instead (phones already get a
+  // phone-size full preview; from 1400px the rail is on the page).
+  const noPreviewRail = useMediaQuery('(min-width: 1024px) and (max-width: 1399px)');
 
   const [categoryModal, setCategoryModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<CategoryShape> }>(null);
   const [itemModal, setItemModal] = useState<null | { mode: 'create' | 'edit'; data: ItemDraft }>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [designOpen, setDesignOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [phonePreviewOpen, setPhonePreviewOpen] = useState(false);
   const [justPublished, setJustPublished] = useState(false);
   const [confirmDialog, askConfirm] = useConfirmDialog();
 
@@ -242,9 +246,10 @@ export default function RestaurantMenuBuilderPage() {
   if (previewMode) {
     return (
       <div className="min-h-full">
-        {/* Shell topbar'ları da sticky top-0 (mobil ~61px z-40, masaüstü ~71px
-            z-30); bar onların altına yerleşmeli, üstüne/altına kaymamalı. */}
-        <div className="sticky top-[61px] z-20 flex items-center justify-between gap-3 border-b border-[#1A1A1A] bg-[#0A0A0A] px-5 py-3.5 text-white lg:top-[71px]">
+        {/* Shell topbar'ları da sticky top-0 (mobil ~61px z-40, masaüstü h-14 =
+            56px z-30); bar onların hemen altına yapışmalı — eski 71px masaüstünde
+            15px'lik boşluk bırakıyor, kayan içerik aradan görünüyordu. */}
+        <div className="sticky top-[61px] z-20 flex items-center justify-between gap-3 border-b border-[#1A1A1A] bg-[#0A0A0A] px-5 py-3.5 text-white lg:top-14">
           <div className="flex min-w-0 items-center gap-3">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#C6F24E]">
               <Eye size={14} strokeWidth={2.25} className="text-[#0A0A0A]" />
@@ -271,60 +276,75 @@ export default function RestaurantMenuBuilderPage() {
   const activeIndex = activeCategory ? categories.findIndex((c) => c.id === activeCategory.id) : -1;
   const canDesign = restaurant.menuEnabled && !isViewer;
 
-  const previewButton = (
-    <button
-      type="button"
-      onClick={() => setPreviewOpen(true)}
-      className="bz-btn-ghost hidden lg:max-[1399px]:inline-flex"
-    >
-      <Smartphone size={14} strokeWidth={2} />
-      {copy.previewRail}
-    </button>
-  );
-
   return (
     // Mobil bottom-nav boşluğu zaten shell <main>'de; burada tekrarlamak ~190px
     // boşluk bırakıyordu.
     <div className="mx-auto max-w-[1600px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
-      <div className="space-y-3">
-        {/* Back goes to the business page (not the menu hub: with one business
-            the hub redirects straight back here). */}
-        <Link
-          href={`/${locale}/dashboard/restaurants/${id}`}
-          className="pulse-eyebrow inline-flex min-h-[32px] items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
-        >
-          <ArrowLeft size={12} strokeWidth={2.25} />
-          {copy.backToMenus}
-        </Link>
+      {/* §49 — one row of page tools: preview + share visible, the rest under
+          "Diğer". The business is the shell switcher's; the name is repeated in
+          the description so a multi-business owner knows whose menu this is.
+          The wrapper carries the parent's space-y gap (PageHeader's own margin
+          is zeroed with !mb-0, which would also cancel that gap). */}
+      <div>
         <PageHeader
           className="!mb-0"
-          eyebrow={copy.eyebrow}
-          title={restaurant.name}
+          title={copy.title}
           titleScale="compact"
-          description={<span className="hidden sm:inline">{copy.pageDescription}</span>}
+          // The status strip below says whether changes are live — only the
+          // business name here.
+          description={<span className="font-medium text-[#0A0A0A]">{restaurant.name}</span>}
           actions={
-            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-              <Link href={`${menuHref}?preview=1`} className="bz-btn">
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <Link href={`${menuHref}?preview=1`} className="bz-btn flex-1 sm:flex-none">
                 <Eye size={14} strokeWidth={2} />
                 {copy.preview}
               </Link>
-              {canDesign && (
-                <button type="button" onClick={() => setDesignOpen(true)} disabled={roleLoading} className="bz-btn">
-                  <Palette size={14} strokeWidth={2} />
-                  {copy.design}
-                </button>
-              )}
               {restaurant.menuEnabled && (
-                <button type="button" onClick={() => setShareOpen(true)} className="bz-btn">
+                <button
+                  type="button"
+                  onClick={() => setShareOpen(true)}
+                  className="bz-btn flex-1 sm:flex-none"
+                >
                   <QrCode size={14} strokeWidth={2} />
-                  <span className="sm:hidden">{copy.shareShort}</span>
-                  <span className="hidden sm:inline">{copy.shareAndQr}</span>
+                  {copy.shareAndQr}
                 </button>
               )}
-              <Link href={`${menuHref}/analytics`} className="bz-btn">
-                <BarChart3 size={14} strokeWidth={2} />
-                {copy.analytics}
-              </Link>
+              <PulseMenu
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={copy.moreActions}
+                    className="bz-btn w-11 shrink-0 px-0 sm:w-auto sm:px-3"
+                  >
+                    <MoreHorizontal size={16} strokeWidth={2} />
+                    <span className="hidden sm:inline">{copy.more}</span>
+                  </button>
+                }
+              >
+                {canDesign && (
+                  <PulseMenuItem
+                    icon={<Palette size={14} strokeWidth={2} />}
+                    disabled={roleLoading}
+                    onSelect={() => afterMenuCloses(() => setDesignOpen(true))}
+                  >
+                    {copy.design}
+                  </PulseMenuItem>
+                )}
+                {noPreviewRail && categories.length > 0 && (
+                  <PulseMenuItem
+                    icon={<Smartphone size={14} strokeWidth={2} />}
+                    onSelect={() => afterMenuCloses(() => setPhonePreviewOpen(true))}
+                  >
+                    {copy.phonePreview}
+                  </PulseMenuItem>
+                )}
+                <PulseMenuItem
+                  icon={<BarChart3 size={14} strokeWidth={2} />}
+                  onSelect={() => router.push(`${menuHref}/analytics`)}
+                >
+                  {copy.analytics}
+                </PulseMenuItem>
+              </PulseMenu>
             </div>
           }
         />
@@ -344,11 +364,9 @@ export default function RestaurantMenuBuilderPage() {
           readOnly={readOnly}
           publishBusy={publishBusy}
           justPublished={justPublished}
-          analyticsHref={`${menuHref}/analytics`}
           onDismissPublished={() => setJustPublished(false)}
           onPublish={publish}
           onUnpublish={askUnpublish}
-          onOpenShare={() => setShareOpen(true)}
           onStep={onStep}
         />
       )}
@@ -401,7 +419,7 @@ export default function RestaurantMenuBuilderPage() {
               as exclusive media queries: Tailwind emits arbitrary `min-[1400px]`
               rules BEFORE the named `lg:` ones, so a plain `lg:` + `min-[1400px]:`
               pair would let `lg:` win at 1440. */}
-          <div className="grid items-start gap-5 lg:max-[1399px]:grid-cols-[240px_minmax(0,1fr)] min-[1400px]:grid-cols-[240px_minmax(0,1fr)_320px]">
+          <div className="grid items-start gap-5 lg:max-[1399px]:grid-cols-[240px_minmax(0,1fr)] min-[1400px]:grid-cols-[240px_minmax(0,1fr)_342px]">
             <CategoryColumn
               categories={categories}
               activeId={activeCategoryId}
@@ -429,7 +447,6 @@ export default function RestaurantMenuBuilderPage() {
                 isDesktop={isDesktop}
                 copy={copy}
                 fmt={fmt}
-                headerExtra={previewButton}
                 onAddItem={openItemCreate}
                 onBulkAdd={openBulk}
                 onEditItem={openItemEdit}
@@ -444,7 +461,7 @@ export default function RestaurantMenuBuilderPage() {
                 onDeleteCategory={() => askDeleteCategory(activeCategory)}
               />
             ) : (
-              <p className="rounded-3xl border border-[#EDEDED] bg-white px-6 py-16 text-center text-[13px] text-[#525252] shadow-sm">
+              <p className="bz-card px-6 py-16 text-center text-[13px] text-[#525252]">
                 {copy.noCategorySelected}
               </p>
             )}
@@ -529,9 +546,10 @@ export default function RestaurantMenuBuilderPage() {
         />
       )}
 
-      {/* 1024–1399px: no side column, so the live preview opens in a dialog. */}
-      {previewOpen && (
-        <Modal size={420} title={copy.previewRail} onClose={() => setPreviewOpen(false)}>
+      {/* 1024–1399px phone-size preview (from "Diğer"); closes itself if the
+          window grows past the rail breakpoint or shrinks to phone width. */}
+      {phonePreviewOpen && noPreviewRail && (
+        <Modal size={420} title={copy.phonePreview} onClose={() => setPhonePreviewOpen(false)}>
           <MenuLivePreview
             variant="inline"
             restaurant={restaurant}

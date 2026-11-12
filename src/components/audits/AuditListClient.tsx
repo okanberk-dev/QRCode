@@ -2,17 +2,18 @@
 
 // Denetim Merkezi — owner liste sayfası (spec §3.1).
 //
-// İki sekme: "Denetimlerim" ve "Hazır şablonlar". İstatistik kutusu, sektör /
-// durum süzgeci, "Aktif işletme" kartı YOK: işletme seçimi kabuktaki tek
-// anahtardır. Veri sunucudan gelir (ilk boyamada iskelet yok); başka işletmeye
-// geçince yalnız liste alanı iskelet gösterir ve hiçbir zaman bir işletmenin
-// satırları başka işletmenin başlığı altında çizilmez (`byBusiness` önbelleği
-// etkin işletme id'sine göre anahtarlıdır).
+// İki sekme: "Denetimlerim" ve "Hazır şablonlar"; sekmeler, arama ve hazır
+// şablon süzgeçleri tek araç çubuğundadır. İstatistik kutusu, "Aktif işletme"
+// kartı YOK: işletme seçimi kabuktaki tek anahtardır. Veri sunucudan gelir (ilk
+// boyamada iskelet yok); başka işletmeye geçince yalnız liste alanı iskelet
+// gösterir ve hiçbir zaman bir işletmenin satırları başka işletmenin başlığı
+// altında çizilmez (`byBusiness` önbelleği etkin işletme id'sine göre anahtarlıdır).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  BarChart3,
   ClipboardCheck,
   Copy as CopyIcon,
   Link2,
@@ -42,7 +43,7 @@ import { parseAuditErrorResponse, summarizeAuditError } from '@/lib/audits/error
 import { auditSectorForBusiness, deriveAuditStatus } from '@/lib/audits/kind';
 import type { CatalogTemplateRow, OwnerAuditTemplateRow } from '@/lib/audits/queries';
 import { useActiveBusinessSelection } from './useActiveBusinessSelection';
-import ReadyTemplatesTab from './ReadyTemplatesTab';
+import ReadyTemplatesTab, { ReadyTemplatesFilters, useReadyTemplatesFilter } from './ReadyTemplatesTab';
 import ShareLinksModal from './ShareLinksModal';
 import Disclosure from './Disclosure';
 import {
@@ -186,14 +187,16 @@ export default function AuditListClient({
   const archived = useMemo(() => (rows ?? []).filter((r) => r.status === 'archived'), [rows]);
 
   // Sekme: `?tab=mine|ready` açık seçimdir; yoksa denetimi (arşivlenmiş olsa bile) varsa
-  // "Denetimlerim", hiç yoksa "Hazır şablonlar". Son denetimi arşivleyince sayfa
-  // başka sekmeye sıçramasın: arşiv bölümü "Denetimlerim"in içinde.
+  // "Denetimlerim", hiç yoksa ve katalogda şablon varsa "Hazır şablonlar". Son
+  // denetimi arşivleyince sayfa başka sekmeye sıçramasın: arşiv bölümü
+  // "Denetimlerim"in içinde. Katalog boşsa boş bir sekmeye açılmaz.
   const filters = useUrlFilter({ tab: '', q: '' });
   const tabParam = filters.values.tab;
+  const hasCatalog = catalog.length > 0;
   const effectiveTab: TabId =
     tabParam === 'mine' || tabParam === 'ready'
       ? tabParam
-      : loadingRows || (rows ?? []).length > 0
+      : loadingRows || (rows ?? []).length > 0 || !hasCatalog
         ? 'mine'
         : 'ready';
 
@@ -400,6 +403,7 @@ export default function AuditListClient({
   }, [nonArchived]);
 
   const businessSector = auditSectorForBusiness(activeRestaurant?.category);
+  const readyFilter = useReadyTemplatesFilter(catalog, locale, businessSector);
 
   function setTab(id: string) {
     filters.set('tab', id === 'mine' || id === 'ready' ? id : '');
@@ -446,8 +450,8 @@ export default function AuditListClient({
         }
         actions={
           canWrite ? (
-            <Link href={newHref} className="bz-btn-ghost">
-              <Plus size={14} aria-hidden="true" /> {isTr ? 'Sıfırdan oluştur' : 'Create from scratch'}
+            <Link href={newHref} className="bz-btn-primary min-h-11 sm:min-h-9">
+              <Plus size={14} aria-hidden="true" /> {isTr ? 'Yeni denetim' : 'New audit'}
             </Link>
           ) : undefined
         }
@@ -464,27 +468,52 @@ export default function AuditListClient({
         </AlertBanner>
       )}
 
-      <Tabs
-        className="[&_[role=tab]]:min-h-11"
-        ariaLabel={isTr ? 'Denetim Merkezi bölümleri' : 'Audit Center sections'}
-        active={effectiveTab}
-        onChange={setTab}
-        items={[
-          {
-            id: 'mine',
-            label: isTr ? 'Denetimlerim' : 'My audits',
-            count: loadingRows ? undefined : nonArchived.length,
-          },
-          { id: 'ready', label: isTr ? 'Hazır şablonlar' : 'Ready-made templates' },
-        ]}
-      />
+      {/* Tek araç çubuğu: sekmeler + (Denetimlerim) arama / (Hazır şablonlar) süzgeçler. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+        <Tabs
+          className="shrink-0 [&_[role=tab]]:min-h-11 sm:[&_[role=tab]]:min-h-0"
+          ariaLabel={isTr ? 'Denetim Merkezi bölümleri' : 'Audit Center sections'}
+          active={effectiveTab}
+          onChange={setTab}
+          items={[
+            {
+              id: 'mine',
+              label: isTr ? 'Denetimlerim' : 'My audits',
+              count: loadingRows ? undefined : nonArchived.length,
+            },
+            { id: 'ready', label: isTr ? 'Hazır şablonlar' : 'Ready-made templates' },
+          ]}
+        />
+        {effectiveTab === 'ready' ? (
+          <ReadyTemplatesFilters filter={readyFilter} locale={locale} />
+        ) : (
+          showSearch &&
+          !loadingRows && (
+            <div className="relative w-full min-w-0 sm:max-w-[360px] sm:flex-1">
+              <Search
+                size={14}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]"
+              />
+              <input
+                type="search"
+                className="bz-input pl-9"
+                value={search.input}
+                onChange={(e) => search.setInput(e.target.value)}
+                placeholder={isTr ? 'Denetim ara…' : 'Search audits…'}
+                aria-label={isTr ? 'Denetim ara' : 'Search audits'}
+                enterKeyHint="search"
+              />
+            </div>
+          )
+        )}
+      </div>
 
       {effectiveTab === 'ready' ? (
         <div role="tabpanel" aria-label={isTr ? 'Hazır şablonlar' : 'Ready-made templates'}>
           <ReadyTemplatesTab
             locale={locale}
-            catalog={catalog}
-            businessSector={businessSector}
+            filter={readyFilter}
             inUse={inUse}
             canWrite={canWrite}
             usingId={usingId}
@@ -531,47 +560,28 @@ export default function AuditListClient({
                     : 'No audits yet'
               }
               body={
-                canWrite
+                !canWrite
                   ? isTr
-                    ? 'Hazır şablonlardan birini seç; linkini tek tıkla alırsın.'
-                    : 'Pick a ready-made template; you get its link in one click.'
-                  : isTr
                     ? 'Bu işletmede henüz denetim yok.'
                     : 'This business has no audits yet.'
+                  : hasCatalog
+                    ? isTr
+                      ? 'Hazır şablonlardan birini seç; linkini tek tıkla alırsın. Ya da "Yeni denetim" ile kendin oluştur.'
+                      : 'Pick a ready-made template; you get its link in one click. Or create your own with "New audit".'
+                    : isTr
+                      ? 'İlk kontrol listeni ya da testini "Yeni denetim" ile oluştur, linkini ekibinle paylaş.'
+                      : 'Create your first checklist or test with "New audit" and share its link with your team.'
               }
               action={
-                canWrite ? (
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <button type="button" className="bz-btn-primary" onClick={() => setTab('ready')}>
-                      {isTr ? 'Hazır şablonlara bak' : 'Browse ready-made templates'}
-                    </button>
-                    <Link href={newHref} className="bz-btn-ghost">
-                      {isTr ? 'Sıfırdan oluştur' : 'Create from scratch'}
-                    </Link>
-                  </div>
+                canWrite && hasCatalog ? (
+                  <button type="button" className="bz-btn-ghost min-h-11 sm:min-h-9" onClick={() => setTab('ready')}>
+                    {isTr ? 'Hazır şablonlara bak' : 'Browse ready-made templates'}
+                  </button>
                 ) : undefined
               }
             />
           ) : (
             <>
-              {showSearch && (
-                <div className="relative w-full sm:max-w-[360px]">
-                  <Search
-                    size={14}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]"
-                  />
-                  <input
-                    type="search"
-                    className="bz-input pl-9"
-                    value={search.input}
-                    onChange={(e) => search.setInput(e.target.value)}
-                    placeholder={isTr ? 'Denetim ara…' : 'Search audits…'}
-                    aria-label={isTr ? 'Denetim ara' : 'Search audits'}
-                    enterKeyHint="search"
-                  />
-                </div>
-              )}
               {visible.length === 0 ? (
                 <EmptyState
                   icon={<Search size={20} />}
@@ -604,6 +614,7 @@ export default function AuditListClient({
                         onShare={(autoPublish) =>
                           activeId && setShareFor({ row, restaurantId: activeId, autoPublish })
                         }
+                        onResults={() => router.push(`${detailHref(row.id)}/results`)}
                         onEdit={() => router.push(`${detailHref(row.id)}/edit`)}
                         onDuplicate={() => void handleDuplicate(row)}
                         onPause={() => askPause(row)}
@@ -628,10 +639,7 @@ export default function AuditListClient({
               {archivedOpen && (
                 <ul id="audit-archived-list" className="mt-2 space-y-2">
                   {archived.map((row) => (
-                    <li
-                      key={row.id}
-                      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[#EDEDED] bg-white p-3"
-                    >
+                    <li key={row.id} className="bz-card flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
                       <div className="min-w-0 flex-1">
                         <Link
                           href={detailHref(row.id)}
@@ -651,14 +659,22 @@ export default function AuditListClient({
                           {isTr ? 'Sonuçlar' : 'Results'}
                         </Link>
                         {canWrite && (
-                          <button
-                            type="button"
-                            className="bz-btn-ghost min-h-11 sm:min-h-9"
-                            onClick={() => void handleDuplicate(row)}
-                            disabled={busyId === row.id}
+                          <PulseMenu
+                            trigger={
+                              <button
+                                type="button"
+                                className="bz-btn-icon h-11 w-11 sm:h-9 sm:w-9"
+                                aria-label={isTr ? `${row.title}: diğer işlemler` : `${row.title}: more actions`}
+                                disabled={busyId === row.id}
+                              >
+                                <MoreHorizontal size={16} aria-hidden="true" />
+                              </button>
+                            }
                           >
-                            <CopyIcon size={13} aria-hidden="true" /> {isTr ? 'Kopyala' : 'Duplicate'}
-                          </button>
+                            <PulseMenuItem icon={<CopyIcon size={14} />} onSelect={() => void handleDuplicate(row)}>
+                              {isTr ? 'Kopyala' : 'Duplicate'}
+                            </PulseMenuItem>
+                          </PulseMenu>
                         )}
                       </div>
                     </li>
@@ -705,6 +721,7 @@ function AuditCard({
   detailHref,
   resultsHref,
   onShare,
+  onResults,
   onEdit,
   onDuplicate,
   onPause,
@@ -717,6 +734,7 @@ function AuditCard({
   detailHref: string;
   resultsHref: string;
   onShare: (autoPublish: boolean) => void;
+  onResults: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
   onPause: () => void;
@@ -774,7 +792,7 @@ function AuditCard({
       </div>
 
       <div className="relative z-10 mt-auto flex flex-wrap items-center gap-2 pt-1">
-        {primary && (
+        {primary ? (
           <button
             type="button"
             className="bz-btn-primary min-h-11 sm:min-h-9"
@@ -784,10 +802,11 @@ function AuditCard({
           >
             <Link2 size={14} aria-hidden="true" /> {primary.label}
           </button>
+        ) : (
+          <Link href={resultsHref} className="bz-btn-ghost min-h-11 sm:min-h-9">
+            {isTr ? 'Sonuçlar' : 'Results'}
+          </Link>
         )}
-        <Link href={resultsHref} className="bz-btn-ghost min-h-11 sm:min-h-9">
-          {isTr ? 'Sonuçlar' : 'Results'}
-        </Link>
         {primary?.hint && <span className="text-[11.5px] text-[#737373]">{primary.hint}</span>}
 
         {canWrite && (
@@ -804,6 +823,9 @@ function AuditCard({
                 </button>
               }
             >
+              <PulseMenuItem icon={<BarChart3 size={14} />} onSelect={onResults}>
+                {isTr ? `Sonuçlar (${row._count.responses})` : `Results (${row._count.responses})`}
+              </PulseMenuItem>
               <PulseMenuItem icon={<Pencil size={14} />} onSelect={onEdit}>
                 {isTr ? 'Düzenle' : 'Edit'}
               </PulseMenuItem>

@@ -32,7 +32,7 @@ test('buildPendingTasks: platform task only when Google sync failing', () => {
   assert.equal(tasks.length, 1);
   assert.equal(tasks[0].type, 'platform');
   assert.equal(tasks[0].severity, 'medium');
-  assert.match(tasks[0].title, /Google senkronizasyon/);
+  assert.match(tasks[0].title, /Google bağlantı sorunu/);
 });
 
 test('buildPendingTasks: reminder task only when churned > 0', () => {
@@ -79,8 +79,8 @@ test('buildPendingTasks: locale EN', () => {
     isTr: false,
   });
   assert.match(tasks[0].title, /5 reviews awaiting reply/);
-  assert.match(tasks[1].title, /Google sync error/);
-  assert.match(tasks[2].title, /3 customers no return/);
+  assert.match(tasks[1].title, /Google connection problem/);
+  assert.match(tasks[2].title, /3 customers haven't returned/);
 });
 
 test('buildPendingTasks: reply task no oldestUnrepliedAt fallback', () => {
@@ -90,7 +90,7 @@ test('buildPendingTasks: reply task no oldestUnrepliedAt fallback', () => {
     churnedCustomers: { count: 0 },
   });
   assert.equal(tasks.length, 1);
-  assert.equal(tasks[0].meta, 'Acil yanıt bekliyor');
+  assert.equal(tasks[0].meta, 'Yanıt bekliyor');
 });
 
 test('buildPendingTasks: href format type-prefixed', () => {

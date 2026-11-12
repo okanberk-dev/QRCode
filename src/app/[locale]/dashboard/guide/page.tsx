@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Locale } from '@/lib/translations';
-import { Eyebrow, PageHeader } from '@/components/ui';
+import { PageHeader } from '@/components/ui';
 
 interface Step {
   icon: React.ReactNode;
@@ -246,7 +246,6 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
   return (
     <div className="mx-auto max-w-[1280px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        eyebrow={isTr ? 'KILAVUZ' : 'GUIDE'}
         title={isTr ? 'Buaze\'yi nasıl kullanırım?' : 'How to use Buaze'}
         description={
           isTr
@@ -268,10 +267,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
               <Wand2 size={18} strokeWidth={2.2} />
             </span>
             <div>
-              <Eyebrow color="#0A0A0A">
-                {isTr ? '3 SANİYE ÖZET' : '3-SECOND SUMMARY'}
-              </Eyebrow>
-              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px] text-[#0A0A0A]">
+              <h2 className="bz-h-tight text-[18px] sm:text-[20px] text-[#0A0A0A]">
                 {isTr ? 'QR oluştur · Yapıştır · Cevapla' : 'Create QR · Stick · Reply'}
               </h2>
               <p className="mt-1.5 text-[13px] leading-[1.55] text-[#525252]">
@@ -284,14 +280,14 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
           <div className="flex flex-wrap gap-2 lg:shrink-0 lg:flex-nowrap">
             <Link
               href={`/${locale}/dashboard/qr?new=1`}
-              className="bz-btn-primary inline-flex items-center justify-center gap-1.5 text-[12.5px]"
+              className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] sm:min-h-[36px]"
             >
               <Wand2 size={13} strokeWidth={2.2} />
               {isTr ? 'QR sihirbazı' : 'QR wizard'}
             </Link>
             <Link
               href={`/${locale}/dashboard`}
-              className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 text-[12.5px]"
+              className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] sm:min-h-[36px]"
             >
               <CheckCircle2 size={13} strokeWidth={2.2} />
               {isTr ? 'Aktivasyon listesi' : 'Activation list'}
@@ -310,7 +306,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         {steps.map((step) => (
           <article
             key={step.num}
-            className="bz-card flex flex-col gap-3 p-5 sm:p-6 transition-all hover:border-[#0A0A0A]"
+            className="bz-card flex flex-col gap-3 p-5 sm:p-6"
           >
             <header className="flex items-start justify-between gap-3">
               <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
@@ -348,10 +344,10 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             {step.link && (
               <Link
                 href={step.link}
-                className="mt-1 inline-flex items-center gap-1.5 self-start text-[12px] font-medium text-[#0A0A0A] transition-colors hover:text-[#A8D62E]"
+                className="mt-1 inline-flex min-h-[44px] items-center gap-1.5 self-start rounded text-[12.5px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
               >
                 {isTr ? step.linkLabelTr : step.linkLabelEn}
-                <ArrowRight size={12} strokeWidth={2} />
+                <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
               </Link>
             )}
           </article>
@@ -365,8 +361,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         className="overflow-hidden rounded-2xl bg-[#0A0A0A] text-white"
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
-          <Eyebrow color="#C6F24E">{isTr ? 'PRATİK KURALLAR' : 'PRACTICAL RULES'}</Eyebrow>
-          <h2 className="bz-h-tight mt-1.5 text-[20px] sm:text-[22px]">
+          <h2 className="bz-h-tight text-[20px] sm:text-[22px]">
             {isTr ? 'Hızlı ve net 6 ipucu' : 'Six fast and clear tips'}
           </h2>
         </div>
@@ -383,12 +378,12 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
                 i < 3 ? 'lg:border-t-0' : 'lg:border-t'
               } ${i % 3 !== 0 ? 'lg:border-l' : 'lg:border-l-0'}`}
             >
-              <span className="inline-flex items-center gap-1.5 text-[#C6F24E]">
-                {tip.icon}
-                <span className="bz-mono text-[10px] font-semibold tracking-[0.18em] uppercase">
-                  {isTr ? tip.titleTr : tip.titleEn}
+              <h3 className="flex items-center gap-1.5 text-[13.5px] font-semibold text-white">
+                <span className="shrink-0 text-[#C6F24E]" aria-hidden="true">
+                  {tip.icon}
                 </span>
-              </span>
+                {isTr ? tip.titleTr : tip.titleEn}
+              </h3>
               <p className="text-[13px] leading-[1.6] text-white/75">
                 {isTr ? tip.bodyTr : tip.bodyEn}
               </p>
@@ -424,7 +419,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
             <Link
               key={s.slug}
               href={`/${locale}/solutions/${s.slug}`}
-              className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA]"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
             >
               {isTr ? s.labelTr : s.labelEn}
               <ArrowRight size={11} strokeWidth={2} className="text-[#A3A3A3]" />
@@ -453,14 +448,14 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/${locale}/help`}
-            className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
+            className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5 text-[12px] sm:min-h-[36px]"
           >
             <BookOpen size={12} strokeWidth={2} />
             {isTr ? 'Yardım merkezi' : 'Help center'}
           </Link>
           <Link
             href={`/${locale}/contact`}
-            className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
+            className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5 text-[12px] sm:min-h-[36px]"
           >
             <Users size={12} strokeWidth={2} />
             {isTr ? 'Ekibe yaz' : 'Contact us'}

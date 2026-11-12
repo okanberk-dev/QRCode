@@ -13,7 +13,9 @@
 // state badge.
 //
 // Disable durumu (env yok / token endpoint 503): hook status='disabled'
-// döner — Live badge "Pasif" görünür, page reload mode korunur.
+// döner — rozet gösterilmez (idle / disabled / ilk bağlantı denemesi),
+// sayfa yenileme modu korunur. Rozet yalnız "Canlı" ve bağlantı koptuğunda
+// ("Bağlanıyor" / "Çevrimdışı") görünür.
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -162,6 +164,11 @@ function describeStatus(status: RealtimeStatus, isTr: boolean): BadgeStyle {
 }
 
 function ConnectionBadge({ status, isTr }: { status: RealtimeStatus; isTr: boolean }) {
+  // Only meaningful states get a badge: "Canlı" while connected and a warning
+  // when a live connection drops. The first connect attempt and the
+  // no-realtime fallback (idle / disabled) show nothing — a permanent
+  // "Pasif" chip next to the title was noise.
+  if (status === 'idle' || status === 'disabled' || status === 'connecting') return null;
   const style = describeStatus(status, isTr);
   // `bz-pulse-dot` lime nabız animasyonu zaten globals.css'te (CLAUDE.md
   // §11). Burada sadece connected status için reuse, diğer durumlarda
@@ -260,7 +267,7 @@ export function ActivityFeed({
     return (
       <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
         <header className="mb-3 flex items-center justify-between gap-3">
-          <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
+          <Eyebrow>{isTr ? 'SON AKTİVİTE' : 'RECENT ACTIVITY'}</Eyebrow>
           <ConnectionBadge status={status} isTr={isTr} />
         </header>
         <div className="flex flex-col items-center gap-2.5 py-6 text-center">
@@ -284,7 +291,7 @@ export function ActivityFeed({
     <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
+          <Eyebrow>{isTr ? 'SON AKTİVİTE' : 'RECENT ACTIVITY'}</Eyebrow>
           <ConnectionBadge status={status} isTr={isTr} />
         </div>
         {/*
@@ -300,7 +307,7 @@ export function ActivityFeed({
         */}
         <Link
           href={viewAllHref}
-          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 sm:mx-0 rounded-lg sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
+          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 -my-3 sm:m-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
         >
           {isTr ? 'Tüm aktiviteyi gör' : 'View all activity'}
           <ArrowRight size={11} strokeWidth={2} />
@@ -356,7 +363,9 @@ export function ActivityFeed({
                       aria-hidden="true"
                       title={fullTime}
                     >
-                      <span>{relativeTime}</span>
+                      {/* Relative time moves with the clock: server render and
+                          hydration can land in different minutes. */}
+                      <span suppressHydrationWarning>{relativeTime}</span>
                       <span className="text-[#A3A3A3]">{clockTime}</span>
                     </span>
                     <span
@@ -391,8 +400,12 @@ export function ActivityFeed({
                       )}
                       {targetWithoutStars && (
                         <>
-                          {' — '}
-                          <span className="text-[#737373]">{targetWithoutStars}</span>
+                          {' '}
+                          {/* Short label (platform or customer first name):
+                              keep "— Buaze QR" on one line. */}
+                          <span className="whitespace-nowrap text-[#737373]">
+                            — {targetWithoutStars}
+                          </span>
                         </>
                       )}
                     </span>
@@ -406,8 +419,12 @@ export function ActivityFeed({
                     )}
                   </>
                 );
+                // Same vertical padding on every row. The old `first:pt-0
+                // last:pb-0` matched the row element itself (the only child
+                // of its <li>), so every row lost its padding and links
+                // were ~38px tall on mobile. Rows are ≥44px tall there now.
                 const baseClass =
-                  'group flex items-start gap-2 py-2.5 first:pt-0 last:pb-0 ' +
+                  'group flex min-h-[44px] items-start gap-2 py-2 sm:min-h-0 ' +
                   (idx < group.events.length - 1 ? 'border-b border-[#F2F2F2]' : '');
                 const slideStyle = isNew
                   ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }

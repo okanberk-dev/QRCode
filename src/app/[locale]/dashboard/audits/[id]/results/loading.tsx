@@ -8,7 +8,9 @@ import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 export default function Loading() {
   return (
     <SkPageShell max={1280} space={4}>
-      <SkBox className="h-3 w-28" />
+      <div className="flex min-h-11 items-center sm:min-h-[18px]">
+        <SkBox className="h-3 w-28" />
+      </div>
 
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-3">

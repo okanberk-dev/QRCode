@@ -8,8 +8,9 @@ import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
  * same tree in both places means loading → loading → content never swaps
  * layers — the visitor sees a single skeleton, then the report.
  *
- * It clones the top of `page.tsx` box for box (header card, four KPI cards,
- * the start of "Ne yapmalı?") so the report replaces it without a jump. The
+ * It clones the top of `page.tsx` box for box (back link + header, the
+ * filter toolbar, four KPI cards, the start of "Ne yapmalı?") so the report
+ * replaces it without a jump. The
  * numbers below are the real element heights at phone width and at ≥ sm, kept
  * in step with `page.tsx`. Everything under the KPI row is data-dependent
  * (how many rows a report has) and only approximates a typical report.
@@ -17,21 +18,39 @@ import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 export function AnalyticsSkeleton() {
   return (
     <SkPageShell max={1440} space={6}>
-      {/* Header card: back link, title, subtitle, window label, refresh, filters */}
-      <div className="bz-card flex flex-col gap-4 p-5 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1 space-y-1">
-            <SkBox className="h-11 w-36 sm:h-5" />
-            <SkBox className="h-8 w-64 max-w-full sm:h-9" />
-            <SkBox className="h-10 w-full max-w-xl sm:h-5" />
-            <SkBox className="h-[21px] w-48 max-w-full" />
-          </div>
-          <SkBox className="h-11 w-[85px] shrink-0 rounded-full sm:h-[35px]" />
+      {/* Back link (44px tall on phones, 32px from sm) + PageHeader: compact h1
+          (clamp(20px, 2.6vw, 24px) × 1.15 after 4px), date range (12px × 1.5
+          after 8px), description (13px × 1.55 after 8px; two lines on phones). */}
+      <div className="space-y-2">
+        <div className="flex h-11 items-center sm:h-8">
+          <SkBox className="h-4 w-32" />
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <SkBox className="h-[102px] w-full rounded-xl sm:h-[39px] sm:w-[401px]" />
-          <SkBox className="h-11 w-full sm:h-[34px] sm:w-[142px]" />
-          <SkBox className="h-11 w-full sm:h-[34px] sm:w-[135px]" />
+        {/* flex: PageHeader's text column is a flex item, so the h1's top margin
+            does not collapse into the gap above — same here. */}
+        <div className="flex flex-col">
+          <div className="mt-1" style={{ height: 'calc(clamp(20px, 2.6vw, 24px) * 1.15)' }}>
+            <SkBox className="h-full w-56 max-w-full" />
+          </div>
+          <div className="mt-2 flex h-[18px] items-center">
+            <SkBox className="h-3 w-44" />
+          </div>
+          <div className="mt-2 flex h-10 flex-col justify-around sm:h-5">
+            <SkBox className="h-4 w-full max-w-xl" />
+            <SkBox className="h-4 w-2/3 sm:hidden" />
+          </div>
+        </div>
+      </div>
+
+      {/* Toolbar: period segments (full width on phones), then category +
+          source + refresh in one row. From sm the controls sit beside the
+          segments when they fit and wrap to their own line when they do not —
+          the same flex rules as page.tsx, so the break happens at the same width. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <SkBox className="h-[50px] w-full rounded-lg sm:h-[34px] sm:w-[378px]" />
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:flex-auto">
+          <SkBox className="h-11 flex-1 rounded-lg sm:h-[34px] sm:w-[170px] sm:flex-none" />
+          <SkBox className="h-11 flex-1 rounded-lg sm:h-[34px] sm:w-[160px] sm:flex-none" />
+          <SkBox className="h-11 w-11 shrink-0 rounded-lg sm:ml-auto sm:h-[35px] sm:w-[83px]" />
         </div>
       </div>
 

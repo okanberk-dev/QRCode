@@ -1,10 +1,10 @@
 import AuditBuilderSkeleton from '@/components/audits/AuditBuilderSkeleton';
 
 /**
- * Yeni denetim (tek sayfa builder) — sarmalayıcı sayfayla birebir aynı
- * (`max-w-[920px] space-y-5`, CLS=0, CLAUDE.md §40.10). Düzenleme ekranıyla
- * aynı iskeleti paylaşır; yalnız burada "Ne tür bir denetim?" kartları var.
+ * Yeni denetim (3 adımlı sihirbaz) — sarmalayıcı sayfayla birebir aynı
+ * (`max-w-[920px] space-y-5`, CLS=0, CLAUDE.md §40.10). Sayfa 1. adımda
+ * ("Başla") açılır; ilk kartta "Kontrol listesi / Test" seçimi var.
  */
 export default function Loading() {
-  return <AuditBuilderSkeleton withKindPicker />;
+  return <AuditBuilderSkeleton withKindPicker step={0} />;
 }

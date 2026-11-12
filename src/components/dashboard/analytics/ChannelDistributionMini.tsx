@@ -25,12 +25,15 @@ export interface ChannelDistributionMiniProps {
   channels: ChannelMiniRow[];
   isTr?: boolean;
   className?: string;
+  /** Optional one-line note under the title (e.g. which reviews are counted). */
+  caption?: string;
 }
 
 export function ChannelDistributionMini({
   channels,
   isTr = true,
   className = '',
+  caption,
 }: ChannelDistributionMiniProps) {
   if (channels.length === 0) return null;
 
@@ -41,6 +44,7 @@ export function ChannelDistributionMini({
     <section className={`bz-card p-5 sm:p-6 ${className}`}>
       <header className="mb-3.5">
         <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
+        {caption && <p className="mt-1 text-[12px] text-[#737373]">{caption}</p>}
       </header>
       <ul className="flex flex-col gap-2.5">
         {sorted.map((c) => {
@@ -62,7 +66,8 @@ export function ChannelDistributionMini({
                 />
               </div>
               <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[78px] text-right">
-                {c.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')} · %{Math.round(pct)}
+                {c.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')} ·{' '}
+                {isTr ? `%${Math.round(pct)}` : `${Math.round(pct)}%`}
               </span>
             </li>
           );

@@ -13,18 +13,15 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  ExternalLink,
   Info,
   Loader2,
   MapPin,
   Palette,
   Search,
-  ShieldCheck,
   Sparkles,
-  Store,
   X,
 } from 'lucide-react';
-import { AlertBanner, PlatformChip } from '@/components/ui';
+import { AlertBanner, PageHeader, WizardSteps } from '@/components/ui';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
 import { getSectorByLabel, SECTORS } from '@/lib/sectors';
 import { ACTIVE_BUSINESS_STORAGE_KEY } from '@/lib/active-business';
@@ -51,6 +48,10 @@ const CREATE_STEPS = [
   { tr: 'Kanallar', en: 'Channels' },
   { tr: 'Önizleme', en: 'Preview' },
 ] as const;
+
+// Visible field label (sentence case, not a mono eyebrow).
+const FIELD_LABEL_CLASS = 'text-[12.5px] font-medium text-[#0A0A0A]';
+const FIELD_ERROR_CLASS = 'text-[11.5px] text-[#B91C1C]';
 
 const PLATFORM_INPUTS = [
   { id: 'google', field: 'googlePlaceId', label: 'Google', placeholder: 'https://maps.google.com/... veya Place ID' },
@@ -188,7 +189,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
     allowedPlatforms.has(input.id as Parameters<typeof allowedPlatforms.has>[0]),
   );
   const googleAllowed = allowedPlatforms.has('google');
-  const stepLabel = CREATE_STEPS[createStep][locale];
+  const otherPlatformInputs = platformInputs.filter((input) => input.id !== 'google');
 
   const handleNameChange = (name: string) => {
     if (isManualSlug) {
@@ -422,60 +423,41 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
     }
   };
 
+  const goBack = () => {
+    setCreateError('');
+    setCreateStep((createStep - 1) as CreateStep);
+  };
+
   return (
     <div className="mx-auto max-w-[920px] px-4 sm:px-7 py-6 lg:py-8">
       <Link
         href={`/${locale}/dashboard/restaurants`}
-        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#737373] transition-colors hover:text-[#0A0A0A]"
+        className="mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
       >
-        <ArrowLeft size={15} strokeWidth={2} />
+        <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
         {isTr ? 'İşletmelere dön' : 'Back to businesses'}
       </Link>
 
-      <div className="mt-4">
-        <p className="pulse-eyebrow text-[#737373]">{isTr ? 'YENİ İŞLETME' : 'NEW BUSINESS'}</p>
-        <h1 className="mt-1 text-[26px] sm:text-[30px] font-semibold tracking-[-0.025em] text-[#0A0A0A] bz-h-tight">
-          {isTr ? 'İşletme oluştur' : 'Create a business'}
-        </h1>
-        <p className="mt-1.5 text-[13px] leading-[1.55] text-[#525252]">
-          {isTr
-            ? `${stepLabel} adımı · hızlı ve sektörüne uygun kurulum`
-            : `${stepLabel} step · fast setup matched to your sector`}
-        </p>
-      </div>
+      <PageHeader
+        title={isTr ? 'İşletme oluştur' : 'Create a business'}
+        description={
+          isTr
+            ? 'Üç kısa adım. Bilgilerin hepsini sonradan ayarlardan değiştirebilirsin.'
+            : 'Three short steps. You can change everything later in the settings.'
+        }
+      />
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-5">
-        {/* Step indicator */}
-        <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#F5F5F5] p-1.5">
-          {CREATE_STEPS.map((step, index) => {
-            const active = index === createStep;
-            const complete = index < createStep;
-            return (
-              <button
-                key={step.tr}
-                type="button"
-                onClick={() => {
-                  if (index <= createStep || canContinueIdentity) {
-                    setCreateError('');
-                    setCreateStep(index as CreateStep);
-                  }
-                }}
-                className={`flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-2 text-[12px] font-semibold transition-all ${
-                  active ? 'bg-white text-[#0A0A0A] shadow-sm' : complete ? 'text-[#0A0A0A]' : 'text-[#737373]'
-                }`}
-              >
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
-                    active || complete ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-white text-[#737373]'
-                  }`}
-                >
-                  {complete ? <Check size={12} strokeWidth={2.4} /> : index + 1}
-                </span>
-                <span className="truncate">{step[locale]}</span>
-              </button>
-            );
-          })}
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <WizardSteps
+          ariaLabel={isTr ? 'Kurulum adımları' : 'Setup steps'}
+          steps={CREATE_STEPS.map((step) => ({ label: step[locale] }))}
+          current={createStep}
+          canSelect={(index) => index <= createStep || canContinueIdentity}
+          onSelect={(index) => {
+            setCreateError('');
+            setCreateStep(index as CreateStep);
+          }}
+        />
 
         {createError && (
           <AlertBanner kind="danger" onDismiss={() => setCreateError('')}>
@@ -486,46 +468,38 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
         {/* STEP 0 — Identity */}
         {createStep === 0 && (
           <div className="space-y-5">
-            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A]">
-                  <Store size={18} strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-[15px] font-semibold text-[#0A0A0A]">
-                    {isTr ? 'İşletme kimliği' : 'Business identity'}
-                  </p>
-                  <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-                    {isTr
-                      ? 'Panel dili, platformlar ve ilk kurulum önerileri seçtiğin sektöre göre şekillenir.'
-                      : 'Panel language, platforms, and setup hints adapt to the sector you choose.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 sm:col-span-2">
-                <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'İşletme adı' : 'Business name'}</span>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="cb-name" className={FIELD_LABEL_CLASS}>
+                  {isTr ? 'İşletme adı' : 'Business name'}
+                </label>
                 <input
+                  id="cb-name"
                   type="text"
                   required
                   value={formData.name}
                   onChange={(event) => handleNameChange(event.target.value)}
                   className="bz-input"
                   placeholder={isTr ? 'Örn. Maya Klinik' : 'Ex. Maya Clinic'}
+                  autoCapitalize="words"
+                  enterKeyHint="next"
                 />
-              </label>
+              </div>
 
-              <label className="flex flex-col gap-2 sm:col-span-2">
-                <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Sayfa adresi' : 'URL Slug'}</span>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="cb-slug" className={FIELD_LABEL_CLASS}>
+                  {isTr ? 'Sayfa adresi' : 'URL slug'}
+                </label>
                 <div
-                  className={`flex items-center gap-2 rounded-2xl border bg-white px-4 transition-colors ${
+                  className={`flex items-center gap-2 rounded-lg border bg-white px-3 transition-colors ${
                     formData.slug && !slugValid ? 'border-[#FCA5A5]' : 'border-[#EDEDED] focus-within:border-[#C6F24E]'
                   }`}
                 >
-                  <span className="shrink-0 font-mono text-[11px] text-[#737373]">buaze.com/r/</span>
+                  <span className="shrink-0 font-mono text-[11px] text-[#737373]" aria-hidden="true">
+                    buaze.com/r/
+                  </span>
                   <input
+                    id="cb-slug"
                     type="text"
                     required
                     value={formData.slug}
@@ -534,25 +508,40 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                       setIsManualSlug(true);
                     }}
                     // 16px below sm stops iOS Safari zooming into the field.
-                    className="min-w-0 w-full bg-transparent py-3.5 text-[16px] sm:text-[14px] font-medium text-[#0A0A0A] outline-none"
+                    className="min-w-0 w-full bg-transparent py-3 text-[16px] sm:text-[14px] font-medium text-[#0A0A0A] outline-none"
                     placeholder="maya-klinik"
                     autoCapitalize="off"
                     autoCorrect="off"
                     spellCheck={false}
+                    aria-invalid={formData.slug && !slugValid ? true : undefined}
+                    aria-describedby="cb-slug-help"
                   />
                 </div>
-                {formData.slug && !slugValid ? (
-                  <p className="ml-1 text-[11.5px] text-[#B91C1C]">
-                    {isTr
+                {/* The field already shows "buaze.com/r/<slug>" (its prefix is
+                    aria-hidden), so the address is only read out for screen
+                    readers; the error stays visible under the field. */}
+                <p
+                  id="cb-slug-help"
+                  className={formData.slug && !slugValid ? FIELD_ERROR_CLASS : 'sr-only'}
+                >
+                  {formData.slug && !slugValid
+                    ? isTr
                       ? 'Adres yalnız küçük harf, rakam ve tire içerebilir.'
-                      : 'Use lowercase letters, numbers, and hyphen groups only.'}
-                  </p>
-                ) : null}
-              </label>
+                      : 'Use lowercase letters, numbers, and hyphen groups only.'
+                    : isTr
+                      ? `Müşteri sayfan: buaze.com/r/${formData.slug || '…'}`
+                      : `Customer page: buaze.com/r/${formData.slug || '…'}`}
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Sektör' : 'Sector'}</span>
+            <fieldset className="space-y-2">
+              <legend className={FIELD_LABEL_CLASS}>{isTr ? 'Sektör' : 'Sector'}</legend>
+              <p className="text-[11.5px] leading-[1.5] text-[#737373]">
+                {isTr
+                  ? 'Önerilen platformlar ve kurulum ipuçları sektöre göre değişir.'
+                  : 'Suggested platforms and setup hints follow the sector.'}
+              </p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {SECTORS.map((sector) => {
                   const active = formData.category === sector.label;
@@ -560,71 +549,62 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                     <button
                       key={sector.id}
                       type="button"
+                      aria-pressed={active}
                       onClick={() => setFormField('category', sector.label)}
-                      className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all ${
+                      className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 ${
                         active
-                          ? 'border-[#C6F24E] bg-[#F7FAEF] shadow-[0_10px_30px_-24px_rgba(10,10,10,0.35)]'
-                          : 'border-[#EDEDED] bg-white hover:border-[#C6F24E]/70'
+                          ? 'border-[#A8D62E] bg-[#F7FAEF]'
+                          : 'border-[#EDEDED] bg-white hover:border-[#C6F24E]'
                       }`}
                     >
-                      <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-full ${active ? 'bg-[#C6F24E]' : 'bg-[#E5E5E5]'}`} />
+                      <span
+                        aria-hidden="true"
+                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                          active ? 'border-[#0A0A0A] bg-[#C6F24E]' : 'border-[#D4D4D4] bg-white'
+                        }`}
+                      >
+                        {active && <Check size={10} strokeWidth={3} className="text-[#0A0A0A]" />}
+                      </span>
                       <span className="min-w-0">
                         <span className="block text-[13px] font-semibold text-[#0A0A0A]">{sector.display[locale]}</span>
-                        <span className="mt-1 block text-[11.5px] leading-[1.45] text-[#737373]">{sector.sub[locale]}</span>
+                        <span className="mt-0.5 block text-[11.5px] leading-[1.45] text-[#737373]">{sector.sub[locale]}</span>
                       </span>
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </fieldset>
           </div>
         )}
 
         {/* STEP 1 — Channels (with Google Places search) */}
         {createStep === 1 && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[#EAF9B8] bg-[#F7FAEF] p-4 sm:p-5">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A]">
-                  {isClinic ? <ShieldCheck size={18} strokeWidth={2} /> : <MapPin size={18} strokeWidth={2} />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold text-[#0A0A0A]">
-                    {isClinic
-                      ? isTr ? 'Klinik yorum kanalları' : 'Clinic review channels'
-                      : isTr ? 'Yorum ve sipariş kanalları' : 'Review and order channels'}
-                  </p>
-                  <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-                    {isClinic
-                      ? isTr
-                        ? 'Klinikler için Google ve Yandex görünür; yemek sipariş platformları bu kurulumda gizlenir.'
-                        : 'Clinics show Google and Yandex; food delivery platforms stay hidden in this setup.'
-                      : isTr
-                        ? 'Google önerilir. İşletmeni aşağıdan arayıp tek tıkla bağlayabilirsin.'
-                        : 'Google is recommended. Search your business below and link it in one click.'}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {Array.from(allowedPlatforms).map((platform) => (
-                      <PlatformChip key={platform} id={platform} size={20} withLabel />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <p className="text-[12.5px] leading-[1.55] text-[#525252]">
+              {isClinic
+                ? isTr
+                  ? 'Klinikler için Google ve Yandex gösterilir; yemek sipariş platformları bu kurulumda yer almaz. Hepsi isteğe bağlı.'
+                  : 'Clinics show Google and Yandex; food delivery platforms are left out of this setup. All optional.'
+                : isTr
+                  ? 'Hepsi isteğe bağlı; linkleri sonradan Platform bağlantıları sayfasından da ekleyebilirsin.'
+                  : 'All optional; you can also add links later on the Platform links page.'}
+            </p>
 
             {/* Google Places search panel */}
             {googleAllowed && (
-              <div className="rounded-2xl border-2 border-[#C6F24E]/60 bg-gradient-to-br from-[#C6F24E]/15 via-[#F7FAEF] to-white p-4">
+              <section aria-labelledby="cb-google-title" className="bz-card p-4 sm:p-5">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#C6F24E]" aria-hidden="true">
                       <Search size={15} strokeWidth={2} className="text-[#0A0A0A]" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-[#0A0A0A]">
-                        {isTr ? "Google'da işletmeni ara" : 'Find your business on Google'}
-                        <span className="ml-1 text-[#A8D62E]">{isTr ? 'önerilir' : 'recommended'}</span>
-                      </p>
+                      <h2 id="cb-google-title" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+                        {isTr ? "Google'da işletmeni bul" : 'Find your business on Google'}
+                        <span className="ml-1.5 rounded-full bg-[#EAF9B8] px-1.5 py-0.5 align-middle text-[10.5px] font-medium text-[#3F6212]">
+                          {isTr ? 'önerilir' : 'recommended'}
+                        </span>
+                      </h2>
                       <p className="mt-0.5 text-[11.5px] leading-snug text-[#737373]">
                         {isTr
                           ? 'İşletme adını yaz, listeden seç; yorum linkini biz oluştururuz.'
@@ -635,7 +615,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   <button
                     type="button"
                     onClick={() => setShowGoogleInfo((v) => !v)}
-                    className="bz-btn-icon shrink-0"
+                    className="bz-btn-icon h-11 w-11 shrink-0 sm:h-8 sm:w-8"
                     aria-label={isTr ? 'Google araması hakkında ipucu' : 'Tip about Google search'}
                     aria-expanded={showGoogleInfo}
                   >
@@ -644,20 +624,17 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                 </div>
 
                 {showGoogleInfo && (
-                  <div className="mb-3 rounded-xl border border-[#EDEDED] bg-white p-3.5 text-[12px] leading-relaxed text-[#525252]">
-                    <p className="pulse-eyebrow mb-2 text-[#0A0A0A]">{isTr ? 'İpucu' : 'Tip'}</p>
-                    <ul className="ml-4 list-disc space-y-1">
-                      <li>{isTr ? 'İşletme adını + şehir yazarsan sonuç daha isabetli olur.' : 'Add the city for more accurate results.'}</li>
-                      <li>{isTr ? 'Bulamazsan Place ID veya yorum linkini elle yapıştırabilirsin.' : 'Not found? Paste the Place ID or review link manually.'}</li>
-                    </ul>
-                  </div>
+                  <ul className="mb-3 ml-4 list-disc space-y-1 rounded-lg bg-[#FAFAFA] py-2.5 pl-4 pr-3 text-[12px] leading-relaxed text-[#525252]">
+                    <li>{isTr ? 'İşletme adını + şehir yazarsan sonuç daha isabetli olur.' : 'Add the city for more accurate results.'}</li>
+                    <li>{isTr ? 'Bulamazsan Place ID veya yorum linkini elle yapıştırabilirsin.' : 'Not found? Paste the Place ID or review link manually.'}</li>
+                  </ul>
                 )}
 
                 {/* Selected place chip */}
                 {selectedPlace ? (
-                  <div className="flex items-start justify-between gap-3 rounded-xl border border-[#C6F24E] bg-white p-3">
+                  <div className="flex items-start justify-between gap-3 rounded-lg border border-[#A8D62E] bg-[#F7FAEF] p-3">
                     <div className="flex min-w-0 items-start gap-2.5">
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]">
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]" aria-hidden="true">
                         <Check size={13} strokeWidth={2.5} className="text-[#0A0A0A]" />
                       </div>
                       <div className="min-w-0">
@@ -665,7 +642,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                         {selectedPlace.formattedAddress && (
                           <p className="mt-0.5 truncate text-[11.5px] text-[#737373]">{selectedPlace.formattedAddress}</p>
                         )}
-                        <p className="mt-1 truncate font-mono text-[10.5px] text-[#A8D62E]">
+                        <p className="mt-1 truncate font-mono text-[10.5px] text-[#3F6212]">
                           {isTr ? 'Yorum linki hazır' : 'Review link ready'} · {selectedPlace.placeId}
                         </p>
                       </div>
@@ -673,7 +650,7 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                     <button
                       type="button"
                       onClick={clearSelectedPlace}
-                      className="bz-btn-icon shrink-0"
+                      className="bz-btn-icon h-11 w-11 shrink-0 sm:h-8 sm:w-8"
                       aria-label={isTr ? 'Seçimi kaldır' : 'Remove selection'}
                     >
                       <X size={15} strokeWidth={2} />
@@ -681,8 +658,12 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   </div>
                 ) : (
                   <>
+                    <label htmlFor="cb-place-query" className="sr-only">
+                      {isTr ? 'Google’da aranacak işletme adı' : 'Business name to search on Google'}
+                    </label>
                     <div className="flex gap-2">
                       <input
+                        id="cb-place-query"
                         type="text"
                         value={placeQuery}
                         onChange={(event) => setPlaceQuery(event.target.value)}
@@ -700,99 +681,109 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                         type="button"
                         onClick={() => void runPlacesSearch()}
                         disabled={placesLoading || placeQuery.trim().length < 2}
-                        className="bz-btn-primary shrink-0 disabled:opacity-50"
+                        aria-busy={placesLoading || undefined}
+                        className="bz-btn-primary min-h-[44px] shrink-0 disabled:opacity-50 sm:min-h-[36px]"
                       >
-                        {placesLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search size={14} strokeWidth={2} />}
+                        {placesLoading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Search size={14} strokeWidth={2} aria-hidden="true" />}
                         {isTr ? 'Ara' : 'Search'}
                       </button>
                     </div>
 
                     {placesError && (
-                      <p className="mt-2 text-[12px] leading-snug text-[#92400E]">{placesError}</p>
+                      <p className="mt-2 text-[12px] leading-snug text-[#92400E]" role="status">
+                        {placesError}
+                      </p>
                     )}
 
                     {placeResults && placeResults.length > 0 && (
-                      <div className="mt-3 space-y-1.5">
+                      <ul className="mt-3 space-y-1.5" aria-label={isTr ? 'Arama sonuçları' : 'Search results'}>
                         {placeResults.map((place) => (
-                          <button
-                            key={place.placeId}
-                            type="button"
-                            onClick={() => selectPlace(place)}
-                            className="flex w-full items-start gap-2.5 rounded-xl border border-[#EDEDED] bg-white p-3 text-left transition-all hover:border-[#C6F24E] hover:bg-[#F7FAEF]"
-                          >
-                            <MapPin size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-[#737373]" />
-                            <span className="min-w-0">
-                              <span className="block truncate text-[13px] font-semibold text-[#0A0A0A]">{place.displayName}</span>
-                              {place.formattedAddress && (
-                                <span className="mt-0.5 block truncate text-[11.5px] text-[#737373]">{place.formattedAddress}</span>
-                              )}
-                            </span>
-                          </button>
+                          <li key={place.placeId}>
+                            <button
+                              type="button"
+                              onClick={() => selectPlace(place)}
+                              className="flex min-h-[44px] w-full items-start gap-2.5 rounded-lg border border-[#EDEDED] bg-white p-3 text-left transition-colors hover:border-[#C6F24E] hover:bg-[#F7FAEF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A]"
+                            >
+                              <MapPin size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-[#737373]" aria-hidden="true" />
+                              <span className="min-w-0">
+                                <span className="block truncate text-[13px] font-semibold text-[#0A0A0A]">{place.displayName}</span>
+                                {place.formattedAddress && (
+                                  <span className="mt-0.5 block truncate text-[11.5px] text-[#737373]">{place.formattedAddress}</span>
+                                )}
+                              </span>
+                            </button>
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     )}
 
                     {/* Manual fallback */}
-                    <div className="mt-3">
-                      <span className="ml-1 pulse-eyebrow text-[#737373]">
-                        {isTr ? 'veya elle yapıştır' : 'or paste manually'}
-                      </span>
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      <label htmlFor="cb-google-manual" className={FIELD_LABEL_CLASS}>
+                        {isTr ? 'Ya da linki elle yapıştır' : 'Or paste the link'}
+                      </label>
                       <input
+                        id="cb-google-manual"
                         type="text"
                         value={formData.googlePlaceId}
                         onChange={(event) => setFormField('googlePlaceId', event.target.value)}
                         placeholder={isTr ? PLATFORM_INPUTS[0].placeholder : PLATFORM_INPUTS[0].placeholder.replace('veya', 'or')}
-                        className={`bz-input mt-1.5 ${fieldErrors.googlePlaceId ? 'border-[#FCA5A5]' : ''}`}
+                        className={`bz-input ${fieldErrors.googlePlaceId ? 'border-[#FCA5A5]' : ''}`}
                         aria-invalid={fieldErrors.googlePlaceId ? true : undefined}
+                        aria-describedby={fieldErrors.googlePlaceId ? 'cb-google-manual-error' : undefined}
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                       />
                       {fieldErrors.googlePlaceId && (
-                        <p className="ml-1 mt-1.5 text-[11.5px] text-[#B91C1C]" role="alert">
+                        <p id="cb-google-manual-error" className={FIELD_ERROR_CLASS} role="alert">
                           {fieldErrors.googlePlaceId}
                         </p>
                       )}
                     </div>
                   </>
                 )}
-              </div>
+              </section>
             )}
 
-            {/* Non-Google platform inputs */}
-            {platformInputs
-              .filter((input) => input.id !== 'google')
-              .map((input) => {
-                const field = input.field as CreateFormField;
-                return (
-                  <div key={input.id} className="rounded-2xl border border-[#EDEDED] bg-white p-4">
-                    <div className="mb-3 flex items-start gap-2.5">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F5F5F5]">
-                        <MapPin size={15} strokeWidth={2} className="text-[#0A0A0A]" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-[#0A0A0A]">{input.label}</p>
-                        <p className="mt-0.5 text-[11.5px] leading-snug text-[#737373]">
-                          {isTr
-                            ? 'Boş bırakabilirsin; sonradan Platform Bağlantıları ekranından eklenir.'
-                            : 'Optional now; you can add it later from Platform Links.'}
+            {/* Other platform links — one card, one labelled field each. */}
+            {otherPlatformInputs.length > 0 && (
+              <section aria-labelledby="cb-other-title" className="bz-card space-y-4 p-4 sm:p-5">
+                <h2 id="cb-other-title" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+                  {isTr ? 'Diğer platformlar' : 'Other platforms'}
+                </h2>
+                {otherPlatformInputs.map((input) => {
+                  const field = input.field as CreateFormField;
+                  const inputId = `cb-${input.id}`;
+                  return (
+                    <div key={input.id} className="flex flex-col gap-1.5">
+                      <label htmlFor={inputId} className={FIELD_LABEL_CLASS}>
+                        {input.label}
+                      </label>
+                      <input
+                        id={inputId}
+                        type="url"
+                        inputMode="url"
+                        value={formData[field]}
+                        onChange={(event) => setFormField(field, event.target.value)}
+                        placeholder={isTr ? input.placeholder : input.placeholder.replace('veya', 'or')}
+                        className={`bz-input ${fieldErrors[field] ? 'border-[#FCA5A5]' : ''}`}
+                        aria-invalid={fieldErrors[field] ? true : undefined}
+                        aria-describedby={fieldErrors[field] ? `${inputId}-error` : undefined}
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                      />
+                      {fieldErrors[field] && (
+                        <p id={`${inputId}-error`} className={FIELD_ERROR_CLASS} role="alert">
+                          {fieldErrors[field]}
                         </p>
-                      </div>
+                      )}
                     </div>
-                    <input
-                      type="url"
-                      value={formData[field]}
-                      onChange={(event) => setFormField(field, event.target.value)}
-                      placeholder={isTr ? input.placeholder : input.placeholder.replace('veya', 'or')}
-                      className={`bz-input ${fieldErrors[field] ? 'border-[#FCA5A5]' : ''}`}
-                      aria-label={input.label}
-                      aria-invalid={fieldErrors[field] ? true : undefined}
-                    />
-                    {fieldErrors[field] && (
-                      <p className="ml-1 mt-1.5 text-[11.5px] text-[#B91C1C]" role="alert">
-                        {fieldErrors[field]}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </section>
+            )}
           </div>
         )}
 
@@ -800,97 +791,128 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
         {createStep === 2 && (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
-              <label className="flex flex-col gap-2">
-                <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Bildirim e-postası' : 'Notification email'}</span>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="cb-email" className={FIELD_LABEL_CLASS}>
+                  {isTr ? 'Bildirim e-postası' : 'Notification email'}
+                </label>
                 <input
+                  id="cb-email"
                   type="email"
                   value={formData.notificationEmail}
                   onChange={(event) => setFormField('notificationEmail', event.target.value)}
                   className={`bz-input ${fieldErrors.notificationEmail ? 'border-[#FCA5A5]' : ''}`}
                   aria-invalid={fieldErrors.notificationEmail ? true : undefined}
+                  aria-describedby={fieldErrors.notificationEmail ? 'cb-email-error' : 'cb-email-help'}
                   inputMode="email"
+                  autoComplete="email"
                   autoCapitalize="off"
                   autoCorrect="off"
                   spellCheck={false}
+                  enterKeyHint="next"
                 />
-                {fieldErrors.notificationEmail && (
-                  <p className="ml-1 text-[11.5px] text-[#B91C1C]" role="alert">
+                {fieldErrors.notificationEmail ? (
+                  <p id="cb-email-error" className={FIELD_ERROR_CLASS} role="alert">
                     {fieldErrors.notificationEmail}
                   </p>
+                ) : (
+                  <p id="cb-email-help" className="text-[11.5px] text-[#737373]">
+                    {isTr ? 'Yeni yorum ve düşük puan bildirimleri bu adrese gelir.' : 'New review and low-rating alerts go here.'}
+                  </p>
                 )}
-              </label>
+              </div>
 
-              <label className="flex flex-col gap-2">
-                <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Adres' : 'Address'}</span>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="cb-address" className={FIELD_LABEL_CLASS}>
+                  {isTr ? 'Adres' : 'Address'}
+                </label>
                 <input
+                  id="cb-address"
                   type="text"
                   value={formData.address}
                   onChange={(event) => setFormField('address', event.target.value)}
                   className="bz-input"
                   placeholder={isClinic && isTr ? 'Klinik adresi' : undefined}
+                  autoComplete="street-address"
+                  enterKeyHint="next"
                 />
-              </label>
+              </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="flex flex-col gap-2">
-                  <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Telefon' : 'Phone'}</span>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="cb-phone" className={FIELD_LABEL_CLASS}>
+                    {isTr ? 'Telefon' : 'Phone'}
+                  </label>
                   <input
-                    type="text"
+                    id="cb-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={formData.phone}
                     onChange={(event) => setFormField('phone', event.target.value)}
                     className="bz-input"
+                    enterKeyHint="done"
                   />
-                </label>
+                </div>
 
-                <label className="flex flex-col gap-2">
-                  <span className="ml-1 pulse-eyebrow text-[#737373]">{isTr ? 'Tema rengi' : 'Theme color'}</span>
-                  <div className="flex h-[46px] items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="cb-color" className={FIELD_LABEL_CLASS}>
+                    {isTr ? 'Tema rengi' : 'Theme color'}
+                  </label>
+                  {/* flex-1 + sm:min-h-0: on sm+ the box stretches to the
+                      phone field next to it (same grid row), so both line up. */}
+                  <div className="flex min-h-[44px] flex-1 items-center gap-3 rounded-lg border border-[#E5E5E5] bg-white px-3 shadow-[var(--bz-shadow-xs)] sm:min-h-0">
                     <input
+                      id="cb-color"
                       type="color"
                       value={formData.primaryColor}
                       onChange={(event) => setFormField('primaryColor', event.target.value)}
-                      className="h-9 w-11 cursor-pointer rounded-xl border-0 bg-transparent"
+                      className="h-8 w-10 cursor-pointer rounded-md border-0 bg-transparent"
                     />
-                    <span className="font-mono text-sm text-[#0A0A0A]">{formData.primaryColor}</span>
+                    <span className="font-mono text-[13px] text-[#0A0A0A]">{formData.primaryColor}</span>
                   </div>
-                </label>
+                </div>
               </div>
             </div>
 
-            <aside className="rounded-2xl border border-[#EDEDED] bg-[#0A0A0A] p-4 text-white">
+            {/* Dark summary card — stays dark (§38.202). */}
+            <aside
+              aria-label={isTr ? 'Özet' : 'Summary'}
+              className="rounded-xl border border-[#EDEDED] bg-[#0A0A0A] p-4 text-white"
+            >
               <div className="flex items-center justify-between gap-3">
-                <span className="pulse-eyebrow text-white/60">{isTr ? 'PANEL ÖNİZLEME' : 'PANEL PREVIEW'}</span>
-                <Sparkles size={15} className="text-[#C6F24E]" />
+                <span className="text-[12px] font-medium text-white/70">{isTr ? 'Özet' : 'Summary'}</span>
+                <Sparkles size={15} className="text-[#C6F24E]" aria-hidden="true" />
               </div>
-              <div className="mt-5 flex items-center gap-3">
+              <div className="mt-4 flex items-center gap-3">
                 <div
                   className="flex h-11 w-11 items-center justify-center rounded-xl text-[16px] font-semibold text-[#0A0A0A]"
                   style={{ background: formData.primaryColor || '#C6F24E' }}
+                  aria-hidden="true"
                 >
                   {(formData.name || 'B').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-[16px] font-semibold">{formData.name || (isTr ? 'Yeni işletme' : 'New business')}</p>
-                  <p className="mt-1 text-[12px] text-white/55">{selectedSector?.display[locale] ?? formData.category}</p>
+                  <p className="mt-1 text-[12px] text-white/70">{selectedSector?.display[locale] ?? formData.category}</p>
                 </div>
               </div>
-              <div className="mt-5 space-y-2 rounded-2xl bg-white/8 p-3">
-                <div className="flex items-center justify-between gap-2 text-[12px]">
-                  <span className="text-white/55">{isClinic ? (isTr ? 'Hasta geri bildirimi' : 'Patient feedback') : isTr ? 'Yorum akışı' : 'Review flow'}</span>
-                  <span className="font-semibold text-[#C6F24E]">{isTr ? 'Hazır' : 'Ready'}</span>
+              <dl className="mt-4 space-y-2 rounded-xl bg-white/[0.08] p-3 text-[12px]">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-white/70">{isClinic ? (isTr ? 'Hasta geri bildirimi' : 'Patient feedback') : isTr ? 'Yorum akışı' : 'Review flow'}</dt>
+                  <dd className="font-semibold text-[#C6F24E]">{isTr ? 'Hazır' : 'Ready'}</dd>
                 </div>
-                <div className="flex items-center justify-between gap-2 text-[12px]">
-                  <span className="text-white/55">{isTr ? 'Google bağlantısı' : 'Google link'}</span>
-                  <span className="font-semibold text-[#C6F24E]">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-white/70">{isTr ? 'Google bağlantısı' : 'Google link'}</dt>
+                  <dd className="font-semibold text-[#C6F24E]">
                     {formData.googlePlaceId ? (isTr ? 'Bağlı' : 'Linked') : (isTr ? 'Yok' : 'None')}
-                  </span>
+                  </dd>
                 </div>
-                <div className="flex items-center justify-between gap-2 text-[12px]">
-                  <span className="text-white/55">{isTr ? 'Müşteri sayfası' : 'Customer page'}</span>
-                  <span className="truncate font-mono text-white">/r/{formData.slug || 'slug'}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-white/70">{isTr ? 'Müşteri sayfası' : 'Customer page'}</dt>
+                  <dd className="truncate font-mono text-white">/r/{formData.slug || 'slug'}</dd>
                 </div>
-              </div>
-              <p className="mt-4 text-[12px] leading-[1.55] text-white/60">
+              </dl>
+              <p className="mt-4 text-[12px] leading-[1.55] text-white/70">
                 {isClinic
                   ? isTr
                     ? 'Klinik modu; hasta deneyimi, KVKK hassasiyeti ve sektör platformlarıyla açılır.'
@@ -903,20 +925,22 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
           </div>
         )}
 
-        {/* Footer nav — below lg it sits above the shell's floating bottom
-            nav (`--dash-bottom-nav-h`, safe-area included) instead of under it. */}
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] lg:bottom-0 -mx-4 flex flex-col gap-2 border-t border-[#EDEDED] bg-white/95 px-4 py-4 backdrop-blur sm:-mx-7 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-          <Link href={`/${locale}/dashboard/restaurants`} className="bz-btn-ghost order-2 justify-center sm:order-1">
+        {/* Footer nav — one row. Below lg it sits above the shell's floating
+            bottom nav (`--dash-bottom-nav-h`, safe-area included); the white
+            shadow fills the 12px gap so the form does not show through. On phones
+            the first step shows "İptal", later steps "Geri" (the back link at
+            the top still leaves the wizard). */}
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] lg:bottom-0 -mx-4 flex items-center gap-2 border-t border-[#EDEDED] bg-white px-4 py-3 max-lg:shadow-[0_12px_0_0_#FFFFFF] sm:-mx-7 sm:px-7">
+          <Link
+            href={`/${locale}/dashboard/restaurants`}
+            className={`bz-btn-ghost min-h-[44px] justify-center sm:min-h-[36px] ${createStep > 0 ? 'hidden sm:inline-flex' : ''}`}
+          >
             {isTr ? 'İptal' : 'Cancel'}
           </Link>
-          <div className="order-1 flex gap-2 sm:order-2">
+          <div className="flex flex-1 justify-end gap-2">
             {createStep > 0 ? (
-              <button
-                type="button"
-                onClick={() => setCreateStep((createStep - 1) as CreateStep)}
-                className="bz-btn-ghost flex-1 sm:flex-none"
-              >
-                <ArrowLeft size={14} strokeWidth={2} />
+              <button type="button" onClick={goBack} className="bz-btn-ghost min-h-[44px] sm:min-h-[36px]">
+                <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
                 {isTr ? 'Geri' : 'Back'}
               </button>
             ) : null}
@@ -924,29 +948,25 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
               <button
                 type="submit"
                 disabled={createStep === 0 && !canContinueIdentity}
-                className="bz-btn-primary flex-1 disabled:opacity-50 sm:flex-none"
+                className="bz-btn-primary min-h-[44px] flex-1 disabled:opacity-50 sm:min-h-[36px] sm:flex-none"
               >
                 {isTr ? 'Devam' : 'Continue'}
-                <ArrowRight size={14} strokeWidth={2} />
+                <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
               </button>
             ) : (
-              <button type="submit" disabled={creating || !canContinueIdentity} className="bz-btn-primary flex-1 disabled:opacity-60 sm:flex-none">
-                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Palette size={14} strokeWidth={2} />}
+              <button
+                type="submit"
+                disabled={creating || !canContinueIdentity}
+                aria-busy={creating || undefined}
+                className="bz-btn-primary min-h-[44px] flex-1 disabled:opacity-60 sm:min-h-[36px] sm:flex-none"
+              >
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Palette size={14} strokeWidth={2} aria-hidden="true" />}
                 {isTr ? 'İşletmeyi oluştur' : 'Create business'}
               </button>
             )}
           </div>
         </div>
       </form>
-
-      {/* Public page preview link helper (step 2) */}
-      {createStep === 2 && formData.slug && (
-        <p className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-[#737373]">
-          <ExternalLink size={13} strokeWidth={2} />
-          {isTr ? 'Oluşturduktan sonra:' : 'After creation:'}{' '}
-          <span className="font-mono text-[#0A0A0A]">/r/{formData.slug}</span>
-        </p>
-      )}
     </div>
   );
 }

@@ -98,19 +98,19 @@ export function AIInsightBanner({
         </div>
         <Link
           href={actionHref}
-          className="bz-btn-lime bz-btn-sm mt-2 shrink-0 self-start sm:mt-0 sm:self-center"
+          className="bz-btn-lime bz-btn-sm mt-2 min-h-[44px] shrink-0 self-start sm:mt-0 sm:min-h-[32px] sm:self-center"
         >
           {actionLabel ?? (isTr ? 'İncele' : 'Explore')}
-          <ArrowRight size={12} strokeWidth={2.2} />
+          <ArrowRight size={12} strokeWidth={2.2} aria-hidden="true" />
         </Link>
       </div>
       <button
         type="button"
         onClick={handleDismiss}
-        aria-label={isTr ? 'Gizle' : 'Dismiss'}
-        className="bz-btn-icon bz-btn-icon-on-dark shrink-0"
+        aria-label={isTr ? 'Bu haftalık içgörüyü gizle' : "Hide this week's insight"}
+        className="bz-btn-icon bz-btn-icon-on-dark -mr-2 -mt-2 h-11 w-11 shrink-0 sm:m-0 sm:h-8 sm:w-8"
       >
-        <X size={14} strokeWidth={2.2} />
+        <X size={14} strokeWidth={2.2} aria-hidden="true" />
       </button>
     </section>
   );

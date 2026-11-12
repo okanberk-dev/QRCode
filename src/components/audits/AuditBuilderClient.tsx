@@ -490,11 +490,9 @@ export default function AuditBuilderClient({
   const filledQuestions = questions.filter((q) => q.prompt.trim()).length;
   const languageLabel = auditLocale === 'en' ? 'English' : 'Türkçe';
 
+  // Adım numarası üstteki adım göstergesinde; burada ikinci bir "Adım 1 / 3" etiketi yok.
   const stepHeading = (index: WizardStepIndex, text: string, sub: string) => (
     <div className="space-y-1">
-      <p className="pulse-eyebrow text-[#737373]">
-        {isTr ? `Adım ${index + 1} / 3` : `Step ${index + 1} of 3`}
-      </p>
       <h2
         ref={(el) => {
           stepHeadingRefs.current[index] = el;
@@ -597,9 +595,13 @@ export default function AuditBuilderClient({
                 ? isTr
                   ? `"${fork.title}" hazır şablonundan kopyalandı. Maddeleri sonraki adımda değiştirebilirsin.`
                   : `Copied from the "${fork.title}" ready-made template. You can change the items in the next step.`
-                : isTr
-                  ? 'Sıfırdan bir tür seç ya da hazır bir şablonla saniyeler içinde başla.'
-                  : 'Pick a type to start from scratch, or start in seconds with a ready-made template.',
+                : suggestions.length > 0
+                  ? isTr
+                    ? 'Sıfırdan bir tür seç ya da hazır bir şablonla saniyeler içinde başla.'
+                    : 'Pick a type to start from scratch, or start in seconds with a ready-made template.'
+                  : isTr
+                    ? 'Kontrol listesi ya da test seç, adını yaz.'
+                    : 'Pick a checklist or a test and give it a name.',
           )}
         </div>
 
@@ -900,8 +902,9 @@ export default function AuditBuilderClient({
         </div>
       </section>
 
-      {/* Sabit eylem çubuğu — mobilde yüzen alt gezinmenin ÜSTÜNDE (--dash-bottom-nav-h). */}
-      <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur sm:-mx-7 sm:px-7 lg:bottom-0">
+      {/* Sabit eylem çubuğu — mobilde yüzen alt gezinmenin ÜSTÜNDE (--dash-bottom-nav-h).
+          Düz beyaz: yarı saydam yüzeyde arkadaki metin düğmelerin içinden görünüyordu. */}
+      <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-[#EDEDED] bg-white px-4 py-3 sm:-mx-7 sm:px-7 lg:bottom-0">
         <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-end">
           {step === 0 ? (
             <Link href={backHref} className="bz-btn-ghost hidden min-h-11 sm:mr-auto sm:inline-flex sm:min-h-9">

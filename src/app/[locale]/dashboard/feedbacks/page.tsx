@@ -10,7 +10,11 @@ import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { getOwnerShellActiveRestaurantId } from '@/components/dashboard/UserDashboardShell';
-import { InboxToolbar } from '@/components/dashboard/feedbacks/InboxToolbar';
+import {
+  InboxToolbar,
+  ratingFilterOptions,
+  type InboxToggle,
+} from '@/components/dashboard/feedbacks/InboxToolbar';
 import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';
 
 import type {
@@ -148,7 +152,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(focusId ?? idParam);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filtersModal, setFiltersModal] = useState<null | 'all' | 'more'>(null);
+  // < md filter sheet (md+ shows every filter inline in the toolbar).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Pagination — "Daha fazla göster" (20 per page).
   const PAGE_SIZE = 20;
@@ -1036,12 +1041,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [filteredList],
   );
 
-  const moreFiltersCount = (hasReply !== 'all' ? 1 : 0) + (flagged ? 1 : 0);
   const allFiltersCount =
     (days !== 'all' ? 1 : 0) +
     (rating !== 'all' ? 1 : 0) +
     (platform !== 'all' ? 1 : 0) +
-    moreFiltersCount;
+    (hasReply !== 'all' ? 1 : 0) +
+    (flagged ? 1 : 0);
   const hasActiveFilter = allFiltersCount > 0 || tab !== 'all' || searchTerm.trim() !== '';
 
   // §0.5 — CSV export follows the selected business + toolbar filters.
@@ -1071,6 +1076,45 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     { id: 'replied', label: isTr ? 'Yanıtlandı' : 'Replied', count: countsExact ? counts.replied : null },
     { id: 'pending', label: isTr ? 'Beklemede' : 'Pending', count: countsExact ? counts.pending : null },
   ];
+
+  // "Yanıtlandı" (tab) and "Yanıtsızlar" (filter) exclude each other —
+  // together they always give an empty list. Choosing one clears the other.
+  const onTabChange = (id: string) =>
+    writeFilters(
+      id === 'replied' && hasReply === 'pending'
+        ? { tab: id, hasReply: 'all' }
+        : { tab: id as ActiveTab },
+    );
+  const setUnrepliedOnly = (on: boolean) =>
+    writeFilters(
+      on && tab === 'replied' ? { hasReply: 'pending', tab: 'all' } : { hasReply: on ? 'pending' : 'all' },
+    );
+
+  // md+ inline on/off filters (server-side). No icons and plural / "only"
+  // wording, so they read as filters and not as the detail pane's "İşaretle"
+  // action. Same labels in the mobile filter sheet.
+  const stateToggles: InboxToggle[] = [
+    {
+      id: 'no-reply',
+      label: isTr ? 'Yanıtsızlar' : 'Unreplied',
+      title: isTr ? 'Yalnız yanıtı olmayan yorumlar' : 'Only reviews without a reply',
+      pressed: hasReply === 'pending',
+      onToggle: () => setUnrepliedOnly(hasReply !== 'pending'),
+    },
+    {
+      id: 'flagged',
+      label: isTr ? 'Yalnız işaretliler' : 'Flagged only',
+      title: isTr ? 'Yalnız işaretli yorumlar' : 'Only flagged reviews',
+      pressed: flagged,
+      onToggle: () => writeFilters({ flagged: !flagged }),
+    },
+  ];
+
+  // The "Düşük puan" tab already covers 1–3 ★, so the rating select drops
+  // its "1–3 ★ düşük" option — unless a ?rating=low link selected it.
+  const ratingOptions = ratingFilterOptions(isTr).filter(
+    (o) => o.value !== 'low' || rating === 'low',
+  );
 
   const fmtAvg = (n: number) =>
     n.toLocaleString(isTr ? 'tr-TR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1162,7 +1206,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <a
               href={exportHref}
               download
-              className="bz-btn bz-btn-sm"
+              className="bz-btn bz-btn-sm max-sm:min-h-[44px]"
               title={
                 isTr
                   ? 'Seçili işletme ve filtrelerle CSV indir'
@@ -1176,7 +1220,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               type="button"
               onClick={onBulkAiReply}
               disabled={bulkBusy || loading || bulkEligibleCount === 0}
-              className="bz-btn-primary bz-btn-sm"
+              className="bz-btn-primary bz-btn-sm max-sm:min-h-[44px]"
               title={
                 bulkEligibleCount === 0
                   ? isTr
@@ -1208,7 +1252,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         className={isMobileDetailView ? 'hidden lg:block' : ''}
         tabs={statusTabs}
         activeTab={tab}
-        onTabChange={(id) => writeFilters({ tab: id as ActiveTab })}
+        onTabChange={onTabChange}
         listId="feedback-list"
         search={searchTerm}
         onSearchChange={setSearchTerm}
@@ -1218,10 +1262,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         onRatingChange={(v) => writeFilters({ rating: v })}
         days={String(days)}
         onDaysChange={(v) => writeFilters({ days: v })}
-        moreFiltersCount={moreFiltersCount}
+        ratingOptions={ratingOptions}
+        toggles={stateToggles}
         allFiltersCount={allFiltersCount}
-        onOpenMoreFilters={() => setFiltersModal('more')}
-        onOpenAllFilters={() => setFiltersModal('all')}
+        onOpenAllFilters={() => setFiltersOpen(true)}
         showClear={hasActiveFilter}
         onClear={onResetFilters}
       />
@@ -1265,6 +1309,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               feedback={active}
               locale={locale}
               showBackButton={isMobileDetailView}
+              showBusiness={!scopedRestaurantId}
               onBack={onBackToList}
               onFlag={flagFeedback}
               onTogglePending={togglePending}
@@ -1327,28 +1372,22 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       </div>
 
       <FeedbackFiltersModal
-        open={filtersModal !== null}
-        compact={filtersModal === 'more'}
-        onClose={() => setFiltersModal(null)}
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
         locale={locale}
         daysFilter={String(days)}
         setDaysFilter={(v) => writeFilters({ days: v })}
         filterRating={String(rating)}
         setFilterRating={(v) => writeFilters({ rating: v })}
+        ratingOptions={ratingOptions}
         platformFilter={platform}
         setPlatformFilter={(v) => writeFilters({ platform: v })}
         hasReplyFilter={hasReply}
-        setHasReplyFilter={(v) => writeFilters({ hasReply: v })}
+        setHasReplyFilter={(v) => setUnrepliedOnly(v === 'pending')}
         flaggedOnly={flagged}
         setFlaggedOnly={(v) => writeFilters({ flagged: v })}
-        hasActiveFilter={filtersModal === 'more' ? moreFiltersCount > 0 : allFiltersCount > 0}
-        onResetFilters={() => {
-          if (filtersModal === 'more') {
-            writeFilters({ hasReply: 'all', flagged: false });
-          } else {
-            onResetFilters();
-          }
-        }}
+        hasActiveFilter={allFiltersCount > 0}
+        onResetFilters={onResetFilters}
       />
 
       {/* §38.58 / §38.171 — bulk + flag/pending notice, above the mobile

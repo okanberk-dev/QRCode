@@ -3,9 +3,10 @@
 // Denetim Merkezi — owner denetim detayı (spec §3.2).
 //
 // Sunucudan gelir (ilk boyamada iskelet yok). Yukarıdan aşağıya: geri bağlantısı,
-// başlık + tek birincil eylem + menü, (yeni oluşturulduysa) "Hazır" bandı,
-// paylaşım kartı, özet, maddeler, son yanıtlar. Link kartı iki görünümde de
-// ekranın üst yarısındadır. Arşivlenmiş denetimde link / düzenleme yoktur.
+// başlık + (yanıt varsa) "Sonuçlar" + "Diğer" menüsü, (yeni oluşturulduysa) "Hazır" bandı,
+// paylaşım kartı, özet, maddeler, son yanıtlar. Yayınla / yeniden başlat / linki
+// kopyala eylemleri başlığın hemen altındaki paylaşım kartındadır (başlıkta
+// ikinci bir kopyası yok). Arşivlenmiş denetimde link / düzenleme yoktur.
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -15,7 +16,6 @@ import {
   ChevronRight,
   Copy as CopyIcon,
   Download,
-  Link2,
   MoreHorizontal,
   Pause,
   Pencil,
@@ -34,7 +34,7 @@ import type { Locale } from '@/lib/translations';
 import type { AuditDetail } from '@/lib/audits/queries';
 import { humanQuestionType } from '@/lib/audits/kind';
 import { parseAuditErrorResponse, summarizeAuditError } from '@/lib/audits/error-humanizer';
-import ShareLinksPanel, { SHARE_CARD_ID, SHARE_COPY_BUTTON_ID } from './ShareLinksPanel';
+import ShareLinksPanel, { SHARE_CARD_ID } from './ShareLinksPanel';
 import { useShareLinks } from './useShareLinks';
 import {
   deleteConfirmCopy,
@@ -156,12 +156,6 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
     }
   }
 
-  function focusShareCard() {
-    const target = document.getElementById(SHARE_COPY_BUTTON_ID) ?? document.getElementById(SHARE_CARD_ID);
-    target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    (target as HTMLElement | null)?.focus?.({ preventScroll: true });
-  }
-
   function handleDuplicate() {
     void run(
       () => fetch(`${api}/duplicate`, { method: 'POST' }),
@@ -238,26 +232,6 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
     });
   }
 
-  // ─── Birincil eylem ───────────────────────────────────────────────────
-  let primary: { label: string; onClick: () => void; disabled?: boolean } | null = null;
-  if (canWrite && !archived) {
-    if (live) {
-      primary = { label: isTr ? 'Linki paylaş' : 'Share link', onClick: focusShareCard };
-    } else if (template.status === 'paused') {
-      primary = {
-        label: isTr ? 'Yeniden başlat' : 'Restart',
-        onClick: () => void controller.publishAndGetLink(),
-        disabled: template.questions.length === 0,
-      };
-    } else {
-      primary = {
-        label: isTr ? 'Yayınla ve linki al' : 'Publish and get link',
-        onClick: () => void controller.publishAndGetLink(),
-        disabled: template.questions.length === 0,
-      };
-    }
-  }
-
   const heading = itemsHeading(template.kind, locale);
   const visibleQuestions = showAll ? template.questions : template.questions.slice(0, QUESTION_PREVIEW);
 
@@ -295,82 +269,68 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {primary && (
-            <button
-              type="button"
-              className="bz-btn-primary min-h-11 sm:min-h-9"
-              onClick={primary.onClick}
-              disabled={primary.disabled || busy || controller.busy !== null}
-            >
-              <Link2 size={14} aria-hidden="true" /> {controller.busy === 'publish' ? (isTr ? 'Yayınlanıyor…' : 'Publishing…') : primary.label}
-            </button>
-          )}
-          <Link href={resultsHref} className="bz-btn-ghost min-h-11 sm:min-h-9">
-            {isTr ? `Sonuçlar (${template._count.responses})` : `Results (${template._count.responses})`}
-          </Link>
+        {(hasResponses || canWrite) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {/* Yanıt yokken sonuç sayfası boş; "Son yanıtlar" bölümü bunu zaten söylüyor. */}
+            {hasResponses && (
+              <Link href={resultsHref} className="bz-btn-ghost min-h-11 sm:min-h-9">
+                {isTr ? `Sonuçlar (${template._count.responses})` : `Results (${template._count.responses})`}
+              </Link>
+            )}
 
-          {canWrite && (
-            <PulseMenu
-              trigger={
-                <button
-                  type="button"
-                  className="bz-btn-icon h-11 w-11 sm:h-9 sm:w-9"
-                  aria-label={isTr ? 'Diğer işlemler' : 'More actions'}
-                  disabled={busy}
-                >
-                  <MoreHorizontal size={16} aria-hidden="true" />
-                </button>
-              }
-            >
-              {!archived && (
-                <PulseMenuItem icon={<Pencil size={14} />} onSelect={() => router.push(editHref)}>
-                  {isTr ? 'Düzenle' : 'Edit'}
-                </PulseMenuItem>
-              )}
-              <PulseMenuItem icon={<CopyIcon size={14} />} onSelect={handleDuplicate}>
-                {isTr ? 'Kopyala' : 'Duplicate'}
-              </PulseMenuItem>
-              {hasResponses && (
-                <PulseMenuItem
-                  icon={<Download size={14} />}
-                  onSelect={() => window.location.assign(csvHref)}
-                >
-                  {isTr ? 'Tablo olarak indir (CSV)' : 'Download as table (CSV)'}
-                </PulseMenuItem>
-              )}
-              {canRestore && (
-                <PulseMenuItem icon={<RotateCcw size={14} />} onSelect={askRestore}>
-                  {isTr ? 'Hazır şablona geri dön' : 'Restore the ready-made version'}
-                </PulseMenuItem>
-              )}
-              {live && (
-                <PulseMenuItem icon={<Pause size={14} />} onSelect={askPause}>
-                  {isTr ? 'Duraklat' : 'Pause'}
-                </PulseMenuItem>
-              )}
-              {!archived && (
-                <>
-                  <PulseMenuDivider />
-                  <PulseMenuItem icon={<Trash2 size={14} />} danger onSelect={askDelete}>
-                    {isTr ? 'Sil' : 'Delete'}
+            {canWrite && (
+              <PulseMenu
+                trigger={
+                  <button
+                    type="button"
+                    className="bz-btn-ghost min-h-11 min-w-11 px-0 sm:min-h-9 sm:min-w-0 sm:px-3"
+                    aria-label={isTr ? 'Diğer işlemler' : 'More actions'}
+                    disabled={busy}
+                  >
+                    <MoreHorizontal size={16} aria-hidden="true" />
+                    <span className="hidden sm:inline">{isTr ? 'Diğer' : 'More'}</span>
+                  </button>
+                }
+              >
+                {!archived && (
+                  <PulseMenuItem icon={<Pencil size={14} />} onSelect={() => router.push(editHref)}>
+                    {isTr ? 'Düzenle' : 'Edit'}
                   </PulseMenuItem>
-                </>
-              )}
-            </PulseMenu>
-          )}
-        </div>
+                )}
+                <PulseMenuItem icon={<CopyIcon size={14} />} onSelect={handleDuplicate}>
+                  {isTr ? 'Kopyala' : 'Duplicate'}
+                </PulseMenuItem>
+                {hasResponses && (
+                  <PulseMenuItem
+                    icon={<Download size={14} />}
+                    onSelect={() => window.location.assign(csvHref)}
+                  >
+                    {isTr ? 'Tablo olarak indir (CSV)' : 'Download as table (CSV)'}
+                  </PulseMenuItem>
+                )}
+                {canRestore && (
+                  <PulseMenuItem icon={<RotateCcw size={14} />} onSelect={askRestore}>
+                    {isTr ? 'Hazır şablona geri dön' : 'Restore the ready-made version'}
+                  </PulseMenuItem>
+                )}
+                {live && (
+                  <PulseMenuItem icon={<Pause size={14} />} onSelect={askPause}>
+                    {isTr ? 'Duraklat' : 'Pause'}
+                  </PulseMenuItem>
+                )}
+                {!archived && (
+                  <>
+                    <PulseMenuDivider />
+                    <PulseMenuItem icon={<Trash2 size={14} />} danger onSelect={askDelete}>
+                      {isTr ? 'Sil' : 'Delete'}
+                    </PulseMenuItem>
+                  </>
+                )}
+              </PulseMenu>
+            )}
+          </div>
+        )}
       </header>
-
-      {primary?.disabled && template.questions.length === 0 && (
-        <p className="-mt-2 text-[12px] text-[#737373]">
-          {isTr ? 'Yayınlamak için önce ' : 'To publish, first '}
-          <Link href={editHref} className="font-semibold underline">
-            {isTr ? 'madde ekle' : 'add an item'}
-          </Link>
-          .
-        </p>
-      )}
 
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
@@ -409,6 +369,8 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
           locale={locale}
           questionCount={template.questions.length}
           autoFocusCopy={justCreated}
+          paused={template.status === 'paused'}
+          addItemHref={editHref}
         />
       )}
 
@@ -514,12 +476,19 @@ export default function AuditDetailClient({ locale, detail, appUrl, canWrite }: 
                 </li>
               ))}
             </ul>
-            <Link
-              href={resultsHref}
-              className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-[#0A0A0A] hover:underline sm:min-h-9"
-            >
-              {isTr ? 'Tüm sonuçlar' : 'All results'} <span aria-hidden="true">→</span>
-            </Link>
+            {/* Başlıktaki "Sonuçlar (N)" aynı sayfaya gider; bu bağlantı yalnız önizlemede
+                görünmeyen yanıtlar varken gösterilir. */}
+            {template._count.responses > recentResponses.length && (
+              <Link
+                href={resultsHref}
+                className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-[#0A0A0A] hover:underline sm:min-h-9"
+              >
+                {isTr
+                  ? `Tüm yanıtlar (${template._count.responses})`
+                  : `All responses (${template._count.responses})`}{' '}
+                <span aria-hidden="true">→</span>
+              </Link>
+            )}
           </>
         )}
       </section>

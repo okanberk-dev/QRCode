@@ -2,12 +2,14 @@
 
 // Owner `/dashboard/platforms` — simplified platform links overview.
 //
-// One business at a time (the page-level PlatformBusinessContext card is the
-// only business control on the page), one list of review platforms with a
-// single action per row, the business-level customer routing pickers in one
-// place, and the contact channels. All data for every scoped business is in
-// props, so switching business never needs a server round trip and never
-// shows another business's numbers.
+// One business at a time — the business is picked with the shell's business
+// switcher (sidebar / mobile top bar) and the page follows `?restaurantId`;
+// the PlatformBusinessContext card only names it. One list of review
+// platforms with a single action per row, the business-level customer
+// routing pickers in one place, and the contact channels. All data for every
+// scoped business is in props, so following a switch never needs a server
+// round trip and never shows another business's numbers. Franchise owners
+// also get the "Tüm işletmeler" matrix (?view=all) on the same tab row.
 //
 // Hydration: nothing reads localStorage during render. When the URL has no
 // ?restaurantId and the owner has more than one business, a skeleton renders
@@ -15,24 +17,17 @@
 // active-business effect and this page then agree on the same id).
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, ChevronRight, Download, Loader2, RefreshCw } from 'lucide-react';
+import { ChevronRight, Download, Loader2, RefreshCw } from 'lucide-react';
 import { AlertBanner, PageHeader, Tabs } from '@/components/ui';
 import { PlatformsPortfolio } from '@/components/dashboard/platforms/PlatformsPortfolio';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
 import RedirectThresholdPicker from '@/components/dashboard/RedirectThresholdPicker';
 import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
-import {
-  PlatformBusinessContext,
-  settingsPlatformsHref,
-} from '@/components/dashboard/platforms/PlatformBusinessContext';
+import { PlatformBusinessContext } from '@/components/dashboard/platforms/PlatformBusinessContext';
 import { PlatformLinkRow } from '@/components/dashboard/platforms/PlatformLinkRow';
 import { useFocusClearance } from '@/components/dashboard/platforms/useFocusClearance';
-import {
-  PlatformBackLinkSkeleton,
-  PlatformsOverviewBodySkeleton,
-} from '@/components/dashboard/platforms/PlatformSkeletons';
+import { PlatformsOverviewBodySkeleton } from '@/components/dashboard/platforms/PlatformSkeletons';
 import {
   ACTIVE_BUSINESS_STORAGE_KEY,
   resolveActiveRestaurantId,
@@ -71,6 +66,8 @@ interface PlatformsClientProps {
   /** Server render time — first client render uses the same reference so
    *  "son kontrol 2 sa önce" text hydrates identically. */
   serverNow: number;
+  /** Paused businesses left out of this page (named in the matrix note). */
+  hiddenPausedCount?: number;
 }
 
 interface RetestResult {
@@ -98,6 +95,7 @@ export default function PlatformsClient({
   checksByRestaurant,
   initialRestaurantId,
   serverNow,
+  hiddenPausedCount = 0,
 }: PlatformsClientProps) {
   const isTr = locale === 'tr';
   const router = useRouter();
@@ -157,6 +155,13 @@ export default function PlatformsClient({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [resolved]);
+
+  // A finished "Tümünü kontrol et" message belongs to the business it ran
+  // for — clear it when the page follows a business switch.
+  useEffect(() => {
+    setRetestNotice('');
+    setRetestError(null);
+  }, [selectedId]);
 
   const restaurant = rows.find((row) => row.id === selectedId) ?? rows[0];
   const restaurantChecks = useMemo(() => checks[restaurant.id] ?? {}, [checks, restaurant.id]);
@@ -269,9 +274,9 @@ export default function PlatformsClient({
   };
 
   const title = isTr ? PLATFORM_LINKS_LABEL.tr : PLATFORM_LINKS_LABEL.en;
+  // No eyebrow: it only repeated the title and the breadcrumb.
   const header = (
     <PageHeader
-      eyebrow={title.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}
       title={title}
       description={
         isTr
@@ -284,47 +289,42 @@ export default function PlatformsClient({
   if (!resolved) {
     return (
       <>
-        <div>
-          <PlatformBackLinkSkeleton />
-          {header}
-        </div>
-        <PlatformsOverviewBodySkeleton />
+        {header}
+        {/* Unresolved only happens with 2+ businesses, so the view tabs come. */}
+        <PlatformsOverviewBodySkeleton withTabs />
       </>
     );
   }
 
   const exportHref = `/api/dashboard/platforms/log/export?locale=${locale}&restaurantId=${encodeURIComponent(restaurant.id)}`;
 
+  // §49 — franchise owners switch between this business and the matrix.
+  // In the matrix view the same row also carries its filter and check-all
+  // action (one toolbar instead of a tab row + a section header).
+  const viewTabs =
+    rows.length > 1 ? (
+      <Tabs
+        items={[
+          { id: 'business', label: isTr ? 'Bu işletme' : 'This business' },
+          { id: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses', count: rows.length },
+        ]}
+        active={view}
+        onChange={(id) => changeView(id as 'business' | 'all')}
+        ariaLabel={isTr ? 'Görünüm' : 'View'}
+      />
+    ) : null;
+
   return (
     <>
-      <div>
-        <Link
-          href={settingsPlatformsHref(locale, restaurant.id)}
-          className={`bz-mono mb-3 inline-flex min-h-[44px] items-center sm:min-h-[32px] gap-1 rounded text-[11px] text-[#737373] hover:text-[#0A0A0A] ${FOCUS_RING}`}
-        >
-          <ArrowLeft size={12} aria-hidden="true" />
-          {isTr ? `${restaurant.name} ayarları` : `${restaurant.name} settings`}
-        </Link>
-        {header}
-      </div>
-
-      {rows.length > 1 && (
-        <Tabs
-          items={[
-            { id: 'business', label: isTr ? 'Bu işletme' : 'This business' },
-            { id: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses', count: rows.length },
-          ]}
-          active={view}
-          onChange={(id) => changeView(id as 'business' | 'all')}
-          ariaLabel={isTr ? 'Görünüm' : 'View'}
-        />
-      )}
+      {header}
 
       {view === 'all' && rows.length > 1 ? (
         <PlatformsPortfolio
           locale={locale}
           businesses={rows}
           checksById={checks}
+          toolbarStart={viewTabs}
+          hiddenPausedCount={hiddenPausedCount}
           onOpenBusiness={openBusinessFromPortfolio}
           onChecks={(restaurantId, next) => {
             setChecks((current) => ({ ...current, [restaurantId]: next }));
@@ -333,13 +333,9 @@ export default function PlatformsClient({
         />
       ) : (
       <>
-      <PlatformBusinessContext
-        locale={locale}
-        restaurant={restaurant}
-        restaurants={rows}
-        summary={summary}
-        onSelect={selectRestaurant}
-      />
+      {viewTabs}
+
+      <PlatformBusinessContext locale={locale} restaurant={restaurant} summary={summary} />
 
       {restaurant.externalPlatformsEnabled === false && (
         <AlertBanner kind="info">

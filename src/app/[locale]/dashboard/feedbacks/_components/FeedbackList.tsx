@@ -178,7 +178,7 @@ export function FeedbackList({
                 }
                 action={
                   hasActiveFilter ? (
-                    <button type="button" onClick={onResetFilters} className="bz-btn bz-btn-sm">
+                    <button type="button" onClick={onResetFilters} className="bz-btn bz-btn-sm max-sm:min-h-[44px]">
                       <RotateCcw size={12} strokeWidth={2.2} aria-hidden="true" />
                       {isTr ? 'Filtreleri temizle' : 'Clear filters'}
                     </button>
@@ -214,7 +214,7 @@ export function FeedbackList({
                 type="button"
                 onClick={onLoadMore}
                 disabled={loadingMore}
-                className="bz-btn-ghost bz-btn-sm disabled:cursor-not-allowed disabled:opacity-60"
+                className="bz-btn-ghost bz-btn-sm max-sm:min-h-[44px] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loadingMore ? (
                   <>
@@ -255,7 +255,7 @@ export function FeedbackList({
           <button
             type="button"
             onClick={() => setActiveTab('ai_ready')}
-            className="inline-flex min-h-[36px] shrink-0 items-center rounded-full bg-[#C6F24E] px-3.5 text-[12px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-[#C6F24E] px-4 text-[12px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
           >
             {isTr ? 'Aç' : 'Open'}
           </button>

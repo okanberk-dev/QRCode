@@ -244,8 +244,12 @@ export async function GET(
     // light/dark to leak into an otherwise default flow.
     const persistColors = !!(darkRaw && lightRaw);
     // Persisting a QrGeneration row is a write — viewers still get the image
-    // (QRCard previews / downloads) but don't mutate history.
-    const canWrite = await canWriteRestaurant(actor, restaurant.id);
+    // (QRCard previews / downloads) but don't mutate history. Only the
+    // create wizard asks for it (`save=1`): card thumbnails, lazy previews
+    // and downloads used to rewrite `createdAt` on every view, which
+    // reshuffled the QR list each time the page was opened.
+    const saveToHistory = searchParams.get('save') === '1';
+    const canWrite = saveToHistory && (await canWriteRestaurant(actor, restaurant.id));
     if (canWrite) await rememberFeedbackQr({
       restaurantId: restaurant.id,
       qrUrl,

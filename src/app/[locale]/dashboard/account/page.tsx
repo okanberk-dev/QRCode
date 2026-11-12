@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import AccountSettingsClient from './AccountSettingsClient';
 
 export const dynamic = 'force-dynamic';
@@ -44,9 +45,18 @@ export default async function AccountSettingsPage({
       const payload = await verifyJwt(userToken);
       const userId = typeof payload?.userId === 'string' ? payload.userId : null;
       if (userId) {
+        // Same scope the API resolves (CLAUDE.md §38.240): `where: { userId }`
+        // gave an invited team member an empty list, and the client-fetch
+        // path (`/api/restaurants?status=all`) returned a different set than
+        // this one, so the "İşletme" usage count changed with the load path.
+        const scopedIds = await getScopedRestaurantIdsForUserPayload({
+          userId,
+          role: payload?.role,
+          email: payload?.email,
+        });
         const [restaurants, profile, teamCount] = await prisma.$transaction([
           prisma.restaurant.findMany({
-            where: { userId },
+            where: { id: { in: scopedIds } },
             select: { id: true, name: true },
             orderBy: { createdAt: 'asc' },
             take: 100,

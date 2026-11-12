@@ -24,8 +24,9 @@ const PublicMenuView = dynamic(
 // gezinebilir (Firefox 126+, Chrome/Safari her zaman destekledi).
 //
 // 375 native × 0.78 zoom = 292 visual. Bezel padding 8px (p-2), toplam
-// 308 + stage padding 16 (px-4) = 340. Grid column `lg:grid-cols-
-// [1fr_340px]` ile parity (page.tsx).
+// 308 + stage padding 2×16 (px-4) + kart kenarlığı 2×1 = 342. Builder grid'i
+// rail sütununu `342px` verir (page.tsx + loading.tsx); daha dar sütun
+// telefonun sağ kenarını kesiyordu.
 const PHONE_NATIVE_WIDTH = 375;
 const PHONE_NATIVE_HEIGHT = 660;
 const PREVIEW_ZOOM = 0.78;
@@ -56,11 +57,12 @@ export function MenuLivePreview({ restaurant, categories, locale, published, var
   const previewHref = `/${locale}/dashboard/restaurants/${restaurant.id}/menu?preview=1`;
 
   const label = isTr ? 'Menü canlı önizlemesi' : 'Live menu preview';
-  // Masaüstü shell topbar'ı (~71px) da sticky; top-4 önizlemenin üst kısmını
-  // onun altına sokuyordu → topbar + 16px boşluk. `self-start`: a stretched
-  // grid item is as tall as the row and has no room to stick. The side column
-  // exists only from 1400px up (narrower, the item list would shrink to
-  // ~376px); between 1024 and 1399 the preview opens in a modal instead.
+  // Masaüstü shell topbar'ı (h-14 = 56px) da sticky; top-4 önizlemenin üst
+  // kısmını onun altına sokuyordu → topbar + 16px boşluk (72px). `self-start`:
+  // a stretched grid item is as tall as the row and has no room to stick. The
+  // side column exists only from 1400px up (narrower, the item list would
+  // shrink to ~376px); between 1024 and 1399 the same preview opens in a modal
+  // from the header's "Diğer → Telefon önizlemesi".
   const Tag = variant === 'inline' ? 'div' : 'aside';
 
   // Inside a dialog on a narrow phone the stage is narrower than the frame
@@ -80,11 +82,11 @@ export function MenuLivePreview({ restaurant, categories, locale, published, var
     observer.observe(stage);
     return () => observer.disconnect();
   }, [variant]);
-  const wrapperClass = variant === 'inline' ? '' : 'sticky top-[87px] hidden self-start min-[1400px]:block';
+  const wrapperClass = variant === 'inline' ? '' : 'sticky top-[72px] hidden self-start min-[1400px]:block';
 
   return (
     <Tag className={wrapperClass} aria-label={label} role={variant === 'inline' ? 'group' : undefined}>
-      <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+      <div className="bz-card overflow-hidden">
         {/* Header — eyebrow + spec + new-tab open shortcut */}
         <header className="flex items-center justify-between gap-2 border-b border-[#EDEDED] px-4 py-3">
           <div className="flex items-center gap-2">

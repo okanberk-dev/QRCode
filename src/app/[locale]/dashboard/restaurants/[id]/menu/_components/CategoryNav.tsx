@@ -51,10 +51,10 @@ export function CategoryColumn({
   return (
     <section
       aria-label={copy.categories}
-      className="hidden overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm lg:block"
+      className="bz-card hidden overflow-hidden lg:block"
     >
       <div className="border-b border-[#EDEDED] px-5 py-4">
-        <p className="pulse-eyebrow text-[#737373]">{copy.categories}</p>
+        <h2 className="text-[14px] font-semibold text-[#0A0A0A]">{copy.categories}</h2>
         <p className="mt-0.5 text-[11px] text-[#737373]">{fmt.categoryCount(categories.length)}</p>
       </div>
       <DndContext

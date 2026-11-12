@@ -147,12 +147,21 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
         // Stage 97 — WhatsApp review opt-in (CLAUDE.md §19.1).
         whatsappReviewEnabled: true,
         whatsappReviewMessage: true,
+        isActive: true,
       },
       orderBy: { createdAt: 'asc' },
     }),
     latestChecksForRestaurants(scopedIds, since),
   ]);
-  const restaurants = restaurantRows as RestaurantProviderRow[];
+  // The shell's business switcher only offers active businesses: a paused
+  // business can never be the active scope (the shell puts the URL back to
+  // an active one), so "Ayrıntı" / a matrix cell for it silently opened
+  // another business. List the same set as the switcher. A workspace whose
+  // businesses are all paused still sees them (the shell has no scope then).
+  const activeRows = restaurantRows.filter((restaurant) => restaurant.isActive);
+  const restaurants = (activeRows.length > 0 ? activeRows : restaurantRows).map(
+    ({ isActive: _isActive, ...restaurant }) => restaurant,
+  ) as RestaurantProviderRow[];
 
   const externalDisabledIds = new Set(
     restaurants.filter((restaurant) => !restaurant.externalPlatformsEnabled).map((restaurant) => restaurant.id),
@@ -193,7 +202,6 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
           </Link>
           <PageHeader
             titleScale="compact"
-            eyebrow={linksLabel.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}
             title={platform.name}
             description={
               isTr

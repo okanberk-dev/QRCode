@@ -2,21 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import {
-  Bell,
-  CreditCard,
-  Download,
-  Loader2,
-  ShieldCheck,
-  ShieldQuestion,
-  Sparkles,
-  User,
-  Users,
-} from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { AlertBanner, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
-import { useCompactSettingsNav } from "@/components/dashboard/settings/useCompactSettingsNav";
 import { AccountOverviewCard } from "@/components/dashboard/account/AccountOverviewCard";
 import { BusinessProfileSettings } from "@/components/dashboard/settings/sections/BusinessProfileSettings";
 import { BusinessAccountSecuritySettings } from "@/components/dashboard/settings/sections/BusinessAccountSecuritySettings";
@@ -26,59 +15,31 @@ import { BusinessUsersRolesSettings } from "@/components/dashboard/settings/sect
 import { BusinessLegalSettings } from "@/components/dashboard/settings/sections/BusinessLegalSettings";
 import { BusinessActivityLogSettings } from "@/components/dashboard/settings/sections/BusinessActivityLogSettings";
 import { BusinessPulseAiSettings } from "@/components/dashboard/settings/sections/BusinessPulseAiSettings";
-import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
-import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
 import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
 import { GoogleConnectFlashBanner } from "@/components/dashboard/google/GoogleConnectFlashBanner";
-// Stage 79 §38.159 — AccountDangerZone removed (kullanıcı kararı) → §38.193
-// Stage 113'te Wave B4 ile geri eklendi (account deletion + 30g grace + cron).
-// Wave B4 backend canlı; DangerZone import edilebilir, bu dosya right-rail
-// 2 widget'la (Plan + Invoices) intact kalır.
 import AdminBackLink from "@/components/dashboard/AdminBackLink";
 import AccountLoading from "./loading";
 
 /**
- * Workspace-level Settings hub (`/dashboard/account`) — unified Hub.
+ * Workspace-level settings hub (`/dashboard/account`).
  *
- * 6 grouped tabs replace the legacy split between `/account` (3 tabs)
- * and `/profile` (5 cards). See PR description and CLAUDE.md.
+ * Tabs: Profil · Güvenlik · Hesap aktivitesi · Bildirimler · Pulse AI ·
+ * Plan ve faturalama · Ekip ve roller · KVKK ve yasal. Each section saves its
+ * own form. Per-business settings (name, address, brand, platform links)
+ * live at /dashboard/restaurants/[id]/settings.
  *
- *   KİŞİSEL
- *     1. profile       — name + email + locale   (BusinessProfileSettings)
- *     2. security      — password + 2FA + sessions (BusinessAccountSecuritySettings)
- *
- *   ÇALIŞMA ALANI
- *     3. notifications — low-rating mail + weekly report
- *     4. ai            — Pulse AI auto-draft preferences
- *     5. billing       — read-only plan + invoices
- *     6. team          — members + roles + locations
- *     7. legal         — KVKK + consent posture (read-only)
- *
- * Per-restaurant business identity (name, address, brand) lives at
- * /dashboard/restaurants/[id]/settings — single source of truth.
+ * API & Webhook is deliberately absent (Stage 153): owners don't manage API
+ * keys; `/api/api-keys` stays admin-only (`/admin/api`).
  */
-
-// §38.59 — Tasarım birebir tek "AYARLAR" group + tasarım terminolojisi
-// (kullanıcı ekran görüntüsü Hesabım/Profil & ayarlar). Eski 2-group
-// (KİŞİSEL + ÇALIŞMA ALANI) tek group'a sıkıştırıldı; tab label'ları
-// tasarımda gösterilen formata align edildi:
-//   "Bildirim" → "Bildirimler" (tasarım line 8)
-//   "Faturalandırma" → "Plan & Faturalama" (tasarım line 10)
-//   "Kullanıcılar" → "Ekip & Roller" (tasarım line 6)
-// 3 tasarım tab'ı (İşletme bilgileri / Dil & Bölge / API & Webhook) DEFER
-// edildi. API & Webhook owner panelden bilinçle ÇIKARILDI (Stage 153 — kullanıcı
-// kararı: restoran sahibi API erişimi görmemeli; geliştirici konusu, owner için
-// kafa karıştırıcı). Backend `/api/api-keys` korunuyor ve yalnızca admin
-// `/admin/api`'de yönetilir. Prod backend'i olmayan placeholder tab eklemiyoruz.
 const TAB_LABELS: Array<{ id: string; tr: string; en: string }> = [
   { id: "profile", tr: "Profil", en: "Profile" },
   { id: "security", tr: "Güvenlik", en: "Security" },
   { id: "activity", tr: "Hesap aktivitesi", en: "Account activity" },
   { id: "notifications", tr: "Bildirimler", en: "Notifications" },
   { id: "ai", tr: "Pulse AI", en: "Pulse AI" },
-  { id: "billing", tr: "Plan & Faturalama", en: "Plan & billing" },
-  { id: "team", tr: "Ekip & Roller", en: "Team & roles" },
-  { id: "legal", tr: "KVKK & Yasal", en: "KVKK & legal" },
+  { id: "billing", tr: "Plan ve faturalama", en: "Plan & billing" },
+  { id: "team", tr: "Ekip ve roller", en: "Team & roles" },
+  { id: "legal", tr: "KVKK ve yasal", en: "KVKK & legal" },
 ];
 
 const VALID_SECTION_IDS = new Set(TAB_LABELS.map((t) => t.id));
@@ -111,18 +72,12 @@ export default function AccountSettingsClient({
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = params.locale === "en" ? "en" : "tr";
-  const compact = useCompactSettingsNav();
   const tabs = useMemo<SettingsTab[]>(
     () =>
       TAB_LABELS.map((t) => ({
         id: t.id,
         label: locale === "tr" ? t.tr : t.en,
-        group: "settings",
       })),
-    [locale],
-  );
-  const groups = useMemo(
-    () => [{ id: "settings", label: locale === "tr" ? "AYARLAR" : "SETTINGS" }],
     [locale],
   );
 
@@ -133,6 +88,14 @@ export default function AccountSettingsClient({
   }, [searchParams]);
 
   const [active, setActive] = useState<string>(initialSection);
+  // Follow `?section=` when it changes without a remount — e.g. the sidebar
+  // "Faturalama" / "Bildirimler" links while this page is already open used
+  // to change the URL but leave the old tab on screen.
+  const [syncedSection, setSyncedSection] = useState(initialSection);
+  if (initialSection !== syncedSection) {
+    setSyncedSection(initialSection);
+    setActive(initialSection);
+  }
   // §40.10 server-hydration — initialRestaurants undefined ise client'ta fetch
   // yapılır, doluysa çift skeleton flash önlenir (loading.tsx → mount → data
   // hazır). Account hub'da SSR data tek hop'ta gelir; section component'ler
@@ -157,7 +120,9 @@ export default function AccountSettingsClient({
     const load = async () => {
       try {
         const [resR, resP, resT] = await Promise.all([
-          fetch("/api/restaurants?limit=100"),
+          // status=all: inactive businesses count too, same set as the
+          // server path (owner-scoped by the API).
+          fetch("/api/restaurants?limit=100&status=all"),
           fetch("/api/user/profile"),
           fetch("/api/team"),
         ]);
@@ -218,14 +183,11 @@ export default function AccountSettingsClient({
   };
 
   const isTr = locale === "tr";
-
-  // Plan widget "Yönet" → billing tab, scrolled into view (the rail sits
-  // below the content until 2xl, so the tab switch alone was off-screen).
-  const openBillingSection = () => {
-    handleSectionChange("billing");
-    window.requestAnimationFrame(() => {
-      document.getElementById("section-billing")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+  // One source for each section's name: the tab label and the section
+  // heading used to drift ("KVKK & Yasal" vs "KVKK ve yasal").
+  const sectionTitle = (id: string): string => {
+    const entry = TAB_LABELS.find((t) => t.id === id);
+    return entry ? (isTr ? entry.tr : entry.en) : id;
   };
 
   // KVKK data export. A plain <form method="POST"> navigated the whole tab to
@@ -273,50 +235,38 @@ export default function AccountSettingsClient({
     }
   };
 
-  // §38.51 — Header actions tasarım birebir parity. "Değişiklikleri kaydet"
-  // header'da SKIP edildi (drift kabul, CLAUDE.md §38.51): mevcut akış
-  // her-section-kendi-form paterni — generic header save tetikleyici hangi
-  // section aktif belirsiz, UX confusing. UnsavedChangesBar bottom paterni
-  // mevcut, redundant olur. Sadece "Veri indir" eklendi (KVKK export).
+  // One header action: the KVKK data export. (A generic "save" here would be
+  // ambiguous — every section saves its own form.)
   const header = (
     <PageHeader
-      eyebrow={isTr ? "HESABIM" : "ACCOUNT"}
       title={isTr ? "Hesabım" : "Account"}
       description={
         isTr
-          ? "Profilini, işletme bilgilerini, ekibini ve aboneliğini yönet."
-          : "Manage your profile, business, team and subscription."
+          ? "Profil, güvenlik, bildirim, ekip ve abonelik ayarların."
+          : "Your profile, security, notifications, team and subscription."
       }
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          {/* CLAUDE.md §38.93 (Stage A1) — admin actor için "Admin paneline dön"
-              link, owner actor'lar için transparent (component fetch'le karar
-              verir). Manager scope'lu admin → /admin/restaurants/[id], superadmin
-              → /admin/dashboard. */}
+          {/* Admin actor → "Admin paneline dön"; renders nothing for owners. */}
           <AdminBackLink />
-          {/*
-            Stage 80 §38.160 — Mobile (<sm) icon-only "Veri indir"; sm:+
-            text label görünür. 44px touch target garantisi mobile için
-            (`bz-touch-target`). Pulse §11 + WCAG 2.5.5 + §38.74 dense
-            chip exception (44×44 minimum action button mobile'da).
-          */}
           <button
             type="button"
             onClick={() => void handleExport()}
             disabled={exporting}
             aria-busy={exporting}
-            className="bz-btn bz-touch-target sm:min-h-0 sm:min-w-0 disabled:opacity-60"
+            className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] disabled:opacity-60"
             title={
               isTr
-                ? 'Hesap verilerini indir (saatte bir kez)'
-                : 'Download your account data (once an hour)'
+                ? "Hesap verilerini indir (saatte bir kez)"
+                : "Download your account data (once an hour)"
             }
-            aria-label={isTr ? 'Veri indir' : 'Export data'}
           >
-            {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-            <span className="hidden sm:inline">
-              {isTr ? 'Veri indir' : 'Export data'}
-            </span>
+            {exporting ? (
+              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Download size={14} aria-hidden="true" />
+            )}
+            {isTr ? "Verilerimi indir" : "Export my data"}
           </button>
         </div>
       }
@@ -327,31 +277,13 @@ export default function AccountSettingsClient({
   // hand-off matches loading.tsx instead of flashing a spinner.
   if (loading) return <AccountLoading />;
 
-  // §38.37 — Right rail (3. kolon 2xl:+, altında içeriğin altına iner) — tasarım .design-owner-2026/page-account.jsx
-  // 320px sağ kolon paterni: Plan dark hero (usage bars) + Recent invoices.
-  // Stage 79 §38.159 — AccountDangerZone (Hesabı dondur/sil placeholder)
-  // kaldırıldı. Backend yoktu, owner UX confusing idi. 2 widget kalır.
-  const rightRail = (
-    <>
-      <AccountPlanWidget
-        locale={locale}
-        teamCount={teamCount}
-        restaurantCount={restaurants.length}
-        onManage={openBillingSection}
-      />
-      <AccountInvoicesWidget locale={locale} />
-    </>
-  );
-
   return (
     <SettingsLayout
       tabs={tabs}
-      groups={groups}
       active={active}
       onChange={handleSectionChange}
       header={header}
       ariaLabel={isTr ? "Hesap ayarları bölümleri" : "Account settings sections"}
-      rightRail={rightRail}
     >
       {/* §38 audit Fix #1 — OAuth callback ?google=* flash banner.
           Default callback target /tr/dashboard/account?section=notifications
@@ -370,77 +302,36 @@ export default function AccountSettingsClient({
         </AlertBanner>
       )}
 
-      {/* KİŞİSEL */}
-      {/* §38.51 — Profile content aggregation (Apple System Settings paterni,
-          tasarım .design-owner-2026/page-account.jsx birebir):
-            - Profil Fotoğrafı (AccountOverviewCard, read-only avatar)
-            - Kişisel Bilgiler (BusinessProfileSettings, 6-field + emailVerified)
-            - Ekip Üyeleri (BusinessUsersRolesSettings, online dot)
-            - Güvenlik (BusinessAccountSecuritySettings, Şifre + Sessions)
-          Drilldown için Team + Security tab'lar hâlâ var; Profile tab AKTİFKEN
-          4 card senkronize scroll. Owner tek bakışta hesabını görür.
-          Ekip + Güvenlik kopyaları yalnız desktop'ta ve Profil aktifken:
-          mobil accordion'da ayrı Ekip/Güvenlik kartları zaten var (aynı
-          liste iki kez görünüyordu); aktif değilken unmount edilir ki Ekip
-          sekmesinde yapılan değişiklikten sonra eski listeyi göstermesin. */}
+      {/* Profile: account summary + the profile form. Team and security
+          used to be repeated here on desktop; they are one tab away. */}
       <SettingsSection
         id="profile"
         active={active === "profile"}
-        eyebrow={isTr ? "01 — PROFİL" : "01 — PROFILE"}
-        title={isTr ? "Profil" : "Profile"}
+        title={sectionTitle("profile")}
         description={
-          isTr
-            ? "Profilini, ekibini ve güvenlik ayarlarını tek ekranda yönet."
-            : "Manage your profile, team and security in one place."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <User size={18} />
-          </span>
+          isTr ? "Adın, e-postan ve panel dilin." : "Your name, email and panel language."
         }
       >
         <div className="space-y-4">
           <AccountOverviewCard locale={locale} profile={profile} />
           <BusinessProfileSettings locale={locale} />
-          {!compact && active === "profile" && (
-            <>
-              {profile && (
-                <BusinessUsersRolesSettings
-                  restaurants={restaurants}
-                  ownerEmail={profile.email}
-                  ownerName={profile.name}
-                  locale={locale}
-                />
-              )}
-              <BusinessAccountSecuritySettings locale={locale} />
-            </>
-          )}
         </div>
       </SettingsSection>
 
       <SettingsSection
         id="security"
         active={active === "security"}
-        eyebrow={isTr ? "02 — GÜVENLİK" : "02 — SECURITY"}
-        title={isTr ? "Güvenlik" : "Security"}
+        title={sectionTitle("security")}
         description={
           isTr
-            ? "Şifren ve aktif oturumların."
-            : "Your password and active sessions."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <ShieldCheck size={18} />
-          </span>
+            ? "Şifren, aktif oturumların ve hesabını silme."
+            : "Your password, active sessions and account deletion."
         }
       >
         <div className="space-y-4">
           <BusinessAccountSecuritySettings locale={locale} />
-          {/* Wave B4 (CLAUDE.md §38.193) — danger zone re-introduced now that
-              POST /api/account/delete + POST /api/account/delete/cancel are
-              live. Hidden until the profile fetch resolves so the SSR/CSR
-              boundary doesn't briefly render the destructive card with stale
-              state. */}
+          {/* Account deletion (30-day grace, §38.193). Hidden until the
+              profile resolves so a stale "no deletion" state never flashes. */}
           {profile && (
             <AccountDangerZone
               locale={locale}
@@ -451,42 +342,27 @@ export default function AccountSettingsClient({
         </div>
       </SettingsSection>
 
-      {/* Stage A3 §38.95 — KVKK transparency: owner kendi audit log'unu görür. */}
+      {/* KVKK transparency: the owner sees their own audit log (§38.95). */}
       <SettingsSection
         id="activity"
         active={active === "activity"}
         keepMounted={false}
-        eyebrow={isTr ? "03 — HESAP AKTİVİTESİ" : "03 — ACCOUNT ACTIVITY"}
-        title={isTr ? "Hesap aktivitesi" : "Account activity"}
+        title={sectionTitle("activity")}
         description={
           isTr
-            ? "Hesabında yapılan işlemler — kendi yaptıkların ve Buaze yöneticilerinin yaptıkları."
-            : "Changes made to your account — by you and by Buaze administrators."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <ShieldCheck size={18} />
-          </span>
+            ? "Hesabında yapılan işlemler: senin ve Buaze yöneticilerinin yaptıkları."
+            : "Changes made to your account, by you and by Buaze administrators."
         }
       >
         <BusinessActivityLogSettings locale={locale} restaurants={restaurants} />
       </SettingsSection>
 
-      {/* ÇALIŞMA ALANI */}
       <SettingsSection
         id="notifications"
         active={active === "notifications"}
-        eyebrow={isTr ? "04 — BİLDİRİMLER" : "04 — NOTIFICATIONS"}
-        title={isTr ? "Bildirim ayarları" : "Notification settings"}
+        title={sectionTitle("notifications")}
         description={
-          isTr
-            ? "Düşük puan uyarısı, haftalık rapor ve deneme süresi hatırlatmaları için e-posta tercihlerin."
-            : "Email preferences for low-rating alerts, the weekly report and trial reminders."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Bell size={18} />
-          </span>
+          isTr ? "Hangi e-postaları alacağını seç." : "Choose which emails you receive."
         }
       >
         <BusinessNotificationSettings locale={locale} />
@@ -495,17 +371,11 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="ai"
         active={active === "ai"}
-        eyebrow={isTr ? "05 — PULSE AI" : "05 — PULSE AI"}
-        title={isTr ? "Pulse AI yanıt taslakları" : "Pulse AI reply drafts"}
+        title={sectionTitle("ai")}
         description={
           isTr
-            ? "Yorumlara otomatik yanıt taslağı hazırlama ve varsayılan ton seçimi (her işletme için)."
-            : "Auto-prepared reply drafts and the default tone (per business)."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Sparkles size={18} />
-          </span>
+            ? "Yorumlara otomatik yanıt taslağı ve varsayılan ton, her işletme için ayrı."
+            : "Automatic reply drafts for reviews and the default tone, per business."
         }
       >
         <BusinessPulseAiSettings restaurants={restaurants} locale={locale} />
@@ -515,37 +385,28 @@ export default function AccountSettingsClient({
         id="billing"
         active={active === "billing"}
         keepMounted={false}
-        eyebrow={isTr ? "06 — PLAN & FATURALAMA" : "06 — PLAN & BILLING"}
-        title={isTr ? "Plan ve fatura geçmişi" : "Plan & invoices"}
+        title={sectionTitle("billing")}
         description={
           isTr
-            ? "Planını yükselt, aboneliğini yönet ve fatura geçmişini gör."
-            : "Upgrade your plan, manage your subscription and see your invoices."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <CreditCard size={18} />
-          </span>
+            ? "Planın, kullanımın ve faturaların."
+            : "Your plan, usage and invoices."
         }
       >
-        <BusinessBillingSettings locale={locale} />
+        <BusinessBillingSettings
+          locale={locale}
+          usage={{ restaurantCount: restaurants.length, teamCount }}
+        />
       </SettingsSection>
 
       <SettingsSection
         id="team"
         active={active === "team"}
         keepMounted={false}
-        eyebrow={isTr ? "07 — EKİP & ROLLER" : "07 — TEAM & ROLES"}
-        title={isTr ? "Ekip ve roller" : "Team & roles"}
+        title={sectionTitle("team")}
         description={
           isTr
             ? "Ekip üyelerin, rolleri ve erişebildikleri işletmeler."
             : "Your team members, their roles and the businesses they can access."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Users size={18} />
-          </span>
         }
       >
         <BusinessUsersRolesSettings
@@ -560,17 +421,11 @@ export default function AccountSettingsClient({
         id="legal"
         active={active === "legal"}
         keepMounted={false}
-        eyebrow={isTr ? "08 — KVKK & YASAL" : "08 — KVKK & LEGAL"}
-        title={isTr ? "KVKK & yasal" : "KVKK & legal"}
+        title={sectionTitle("legal")}
         description={
           isTr
             ? "Aktif yasal metinler ve müşteri akışında nasıl uygulandıkları."
             : "Active legal documents and how they apply in the customer flow."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <ShieldQuestion size={18} />
-          </span>
         }
       >
         <BusinessLegalSettings locale={locale} />

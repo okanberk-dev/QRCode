@@ -1,13 +1,11 @@
 'use client';
 
-import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, Star } from 'lucide-react';
+import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles } from 'lucide-react';
 import { AlertBanner, PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
 import { FeedbackStatusChips } from '@/components/dashboard/feedbacks/FeedbackStatusChips';
-import FeedbackTimeline from '@/components/dashboard/feedbacks/FeedbackTimeline';
-import { buildFeedbackTimeline } from '@/lib/feedback-timeline';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone, SentReply } from './types';
 import {
   formatDateTime,
@@ -25,6 +23,11 @@ interface FeedbackDetailProps {
 
   /** Mobile push-route geri butonu (yalnız mobil görünümde göster). */
   showBackButton: boolean;
+  /**
+   * Show the business name in the header. Off when the inbox is scoped to a
+   * single business — the business switcher already names it.
+   */
+  showBusiness?: boolean;
   onBack: () => void;
 
   /** Flag toggle */
@@ -84,6 +87,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
     feedback: active,
     locale,
     showBackButton,
+    showBusiness = true,
     onBack,
     onFlag,
     onTogglePending,
@@ -138,7 +142,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           <button
             type="button"
             onClick={onBack}
-            className="bz-btn bz-btn-sm"
+            className="bz-btn bz-btn-sm max-sm:min-h-[44px]"
             aria-label={isTr ? 'Yorumlar listesine dön' : 'Back to reviews'}
           >
             <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
@@ -148,7 +152,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <button
               type="button"
               onClick={onTogglePending}
-              className={`${isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
+              className={`${isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px] max-sm:min-w-[44px]`}
               aria-pressed={isPending}
               aria-label={pendingLabel}
               title={pendingLabel}
@@ -164,7 +168,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <button
               type="button"
               onClick={onFlag}
-              className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm`}
+              className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px] max-sm:min-w-[44px]`}
               aria-pressed={isFlagged}
               aria-label={flagLabel}
               title={flagLabel}
@@ -204,7 +208,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                     )}
                     {pLabel}
                   </span>
-                  {active.restaurant?.name && (
+                  {showBusiness && active.restaurant?.name && (
                     <>
                       <span aria-hidden="true" className="text-[#D4D4D4]">
                         ·
@@ -223,26 +227,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                 <p className="mt-0.5 text-[12px] tabular-nums text-[#737373]">
                   <time dateTime={active.createdAt}>{formatDateTime(active.createdAt, locale)}</time>
                 </p>
-                {/* Stars + status chips share one wrapping row (keeps the
-                    header short so the body shows more above the docked
-                    composer). */}
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className="inline-flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star
-                        key={i}
-                        size={16}
-                        strokeWidth={1.8}
-                        aria-hidden="true"
-                        className={i <= active.rating ? 'fill-[#0A0A0A] text-[#0A0A0A]' : 'text-[#D4D4D4]'}
-                      />
-                    ))}
-                    <span className="ml-1.5 text-[13px] font-semibold text-[#0A0A0A]">
-                      {active.rating} / 5
-                    </span>
-                  </span>
-                  <FeedbackStatusChips feedback={active} isTr={isTr} />
-                </div>
+                {/* Status chips. The rating itself is the badge on the left
+                    (it has a spoken "N / 5" label), so no second star strip. */}
+                <FeedbackStatusChips feedback={active} isTr={isTr} className="mt-2" />
               </div>
             </div>
             {/* Desktop actions (mobile copies live in the sticky back bar). */}
@@ -289,7 +276,12 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           {/* §38.53 — AI özet (fallback / kısa yorumda kart gizlenir). */}
           {active.comment && active.comment.trim().length >= 10 && (
             <div className="mt-3">
-              <AiSummaryCard feedbackId={active.id} isTr={isTr} locale={isTr ? 'tr' : 'en'} />
+              <AiSummaryCard
+                key={active.id}
+                feedbackId={active.id}
+                isTr={isTr}
+                locale={isTr ? 'tr' : 'en'}
+              />
             </div>
           )}
 
@@ -379,7 +371,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             </div>
           )}
 
-          {sentLoading && sentReplies.length === 0 && (
+          {/* Only reviews that have a reply can have a thread to load (a
+              failed send also sets isReplied), so no loader flash otherwise. */}
+          {sentLoading && sentReplies.length === 0 && active.isReplied && (
             <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
               <Loader2 size={12} className="animate-spin" aria-hidden="true" />
               {isTr ? 'Yanıtlar yükleniyor…' : 'Loading replies…'}
@@ -450,26 +444,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             </div>
           ) : null}
 
-          {/* §38.33 — Zaman çizelgesi (received + replies). */}
-          <div className="mt-6">
-            <FeedbackTimeline
-              events={buildFeedbackTimeline({
-                feedback: {
-                  id: active.id,
-                  createdAt: new Date(active.createdAt),
-                  platform: active.platform,
-                },
-                replies: sentReplies.map((r) => ({
-                  id: r.id,
-                  createdAt: new Date(r.createdAt),
-                  source: null, // FeedbackReply.source feedbacks API'de exposed değil
-                  channel: r.channel,
-                })),
-                isTr,
-              })}
-              isTr={isTr}
-            />
-          </div>
+          {/* The old "Zaman çizelgesi" block is gone: it only repeated the
+              received time + platform (header) and each sent reply (thread
+              above). */}
         </div>
       </div>
 

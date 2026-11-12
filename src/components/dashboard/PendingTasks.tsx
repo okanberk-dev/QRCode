@@ -27,7 +27,8 @@ const TASK_ICON: Record<TaskType, typeof MessageSquareText> = {
 export interface PendingTasksProps {
   tasks: DashboardTask[];
   isTr?: boolean;
-  /** "Tümü" CTA href; default /tr/dashboard/feedbacks. */
+  /** Optional "Tümü" header link. Omitted by default: every task row is
+   *  already a link, and the list is never truncated. */
   viewAllHref?: string;
   className?: string;
 }
@@ -35,7 +36,7 @@ export interface PendingTasksProps {
 export function PendingTasks({
   tasks,
   isTr = true,
-  viewAllHref = isTr ? '/tr/dashboard/feedbacks' : '/en/dashboard/feedbacks',
+  viewAllHref,
   className = '',
 }: PendingTasksProps) {
   const totalLabel =
@@ -51,10 +52,10 @@ export function PendingTasks({
     <section className={`bz-card p-5 sm:p-6 ${className}`}>
       <header className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <Eyebrow>{isTr ? 'BUGÜN BEKLEYEN' : 'PENDING TODAY'}</Eyebrow>
+          <Eyebrow>{isTr ? 'BEKLEYEN İŞLER' : 'PENDING TASKS'}</Eyebrow>
           <div className="bz-h-tight mt-1.5 text-[18px] sm:text-[20px]">{totalLabel}</div>
         </div>
-        {tasks.length > 0 && (
+        {tasks.length > 0 && viewAllHref && (
           <Link
             href={viewAllHref}
             className="text-[12px] text-[#525252] hover:text-[#0A0A0A] inline-flex items-center gap-1"
@@ -68,14 +69,21 @@ export function PendingTasks({
       {tasks.length === 0 ? (
         <p className="text-[13px] text-[#737373]">
           {isTr
-            ? 'Yanıt bekleyen yorum yok, Google senkron sağlıklı, müşteri kaybı sinyali yok 🎉'
-            : 'No pending replies, Google sync healthy, no customer churn signal 🎉'}
+            ? 'Yanıt bekleyen yorum, Google bağlantı sorunu ya da geri dönmeyen müşteri yok.'
+            : 'No reviews waiting for a reply, no Google link problem and no customers lost.'}
         </p>
       ) : (
         <ol className="flex flex-col">
           {tasks.map((task, idx) => {
             const Icon = TASK_ICON[task.type];
             const sev = SEVERITY_LABEL[task.severity];
+            const sevLabel = isTr ? sev.tr : sev.en;
+            // Task meta starts with the same severity word as the badge
+            // ("Acil · en eski 2 gün önce") — drop it so it is not said twice.
+            const sevPrefix = `${sevLabel} · `;
+            const meta = task.meta?.startsWith(sevPrefix)
+              ? task.meta.slice(sevPrefix.length)
+              : task.meta;
             return (
               <li key={task.id}>
                 {/*
@@ -108,14 +116,14 @@ export function PendingTasks({
                     <p className="text-[13px] font-medium text-[#0A0A0A] truncate">
                       {task.title}
                     </p>
-                    {task.meta && (
+                    {meta && (
                       <p className="bz-mono text-[10.5px] text-[#737373] mt-0.5">
-                        {task.meta}
+                        {meta}
                       </p>
                     )}
                   </div>
                   <Badge kind={sev.kind} dot={false} className="shrink-0 text-[10.5px]">
-                    {isTr ? sev.tr : sev.en}
+                    {sevLabel}
                   </Badge>
                   <ArrowRight
                     size={12}

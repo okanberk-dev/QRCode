@@ -13,20 +13,17 @@ import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
 import {
   ArrowRight,
-  BarChart3,
-  Building2,
   Inbox,
+  MessageSquareReply,
   Plus,
-  QrCode,
-  ShieldCheck,
   Star,
+  UserPlus,
 } from 'lucide-react';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import { computeActivation } from '@/lib/activation';
 import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
 import PulseRangeToggle from '@/components/dashboard/PulseRangeToggle';
-import ViewportMount from '@/components/ui/ViewportMount';
 import ChannelDistribution from '@/components/dashboard/ChannelDistribution';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import ScopeDropdown from '@/components/dashboard/ScopeDropdown';
@@ -35,8 +32,6 @@ import { buildPlatformDailyTrend, type PlatformDailyPoint } from '@/lib/analytic
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
-import { providerColumnsSelect } from '@/lib/platform-link-test';
-import { computePlatformLinkStatuses } from '@/lib/platform-link-status';
 import { isSameDayInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
@@ -106,7 +101,7 @@ async function renderDashboardPage({
   const { locale } = await params;
   const isTr = locale === 'tr';
 
-  // Phase 8c+ §38.31 — Header "Bu hafta" dropdown URL searchParam scope.
+  // Phase 8c+ §38.31 — Header date-range dropdown (URL searchParam scope).
   // Default '7d'; KPI window'ları + prev window delta için kullanılır.
   // YTD: prev_year_YTD karmaşık (1 yıl önce data); delta gizlenir (null).
   const sp = searchParams ? await searchParams : {};
@@ -156,10 +151,6 @@ async function renderDashboardPage({
         currentGoogleRating: true,
         // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
         aiAnalyticsEnabled: true,
-        // Onboarding step 4 ("Yorum platformu linki ekle") — done once a
-        // review-platform link is connected (§14.1 defensive select).
-        externalPlatformsEnabled: true,
-        ...providerColumnsSelect(),
         _count: { select: { feedbacks: true } },
       },
     }),
@@ -757,15 +748,30 @@ async function renderDashboardPage({
     isTr,
   });
 
-  // ---- Onboarding nudge (mevcut signal'lardan türet) ----
+  // ---- Welcome card (only while the account has no business) ----
+  // QR codes, review links and feedback all belong to a business, so the
+  // one useful step here is adding the first one. With a business the
+  // per-business setup checklist (ActivationChecklistCard) takes over.
+  // Team members cannot add businesses — they get a short note instead.
   const hasRestaurant = user.restaurants.length > 0;
-  const hasActiveRestaurant = user.restaurants.some((r) => r.isActive);
-  const hasReviews = totalReviews > 0;
-  // A saved, enabled, well-formed review-platform link on any business —
-  // checks are not needed to call the setup step done.
-  const hasReviewPlatformLink = user.restaurants.some((r) =>
-    computePlatformLinkStatuses(r, {}, { categories: ['review'] }).some((s) => s.state === 'connected'),
-  );
+  const isTeamMember = payload.role === 'team_member';
+  const onboardingSteps: OnboardingStep[] = isTeamMember
+    ? []
+    : [
+        {
+          id: 1,
+          label: isTr ? 'İlk işletmeni ekle' : 'Add your first business',
+          done: false,
+          href: `/${locale}/dashboard/restaurants/new`,
+        },
+      ];
+  const onboardingDescription = isTeamMember
+    ? isTr
+      ? 'Sana henüz bir işletme atanmadı. Erişim için işletme sahibine başvur.'
+      : 'No business has been assigned to you yet. Ask the business owner for access.'
+    : isTr
+      ? 'QR kodları, yorum linkleri ve geri bildirimler bir işletmeye bağlıdır. Başlamak için ilk işletmeni ekle.'
+      : 'QR codes, review links and feedback all belong to a business. Add your first business to get started.';
   const scopedHref = (href: string) => {
     if (!selectedRestaurantId) return href;
     const [path, query = ''] = href.split('?');
@@ -774,38 +780,6 @@ async function renderDashboardPage({
     const search = params.toString();
     return search ? `${path}?${search}` : path;
   };
-  const onboardingSteps: OnboardingStep[] = [
-    {
-      id: 1,
-      label: isTr ? 'İşletme profilini tamamla' : 'Complete business profile',
-      done: !!user.name && hasRestaurant,
-      href: `/${locale}/dashboard/account?section=profile`,
-    },
-    {
-      id: 2,
-      label: isTr ? 'İlk işletmeyi ekle' : 'Add first business',
-      done: hasRestaurant,
-      href: scopedHref(`/${locale}/dashboard/restaurants`),
-    },
-    {
-      id: 3,
-      label: isTr ? 'İlk QR kodunu oluştur' : 'Generate first QR code',
-      done: hasActiveRestaurant,
-      href: scopedHref(`/${locale}/dashboard/qr`),
-    },
-    {
-      id: 4,
-      label: isTr ? 'Yorum platformu linki ekle' : 'Add a review-platform link',
-      done: hasReviewPlatformLink,
-      href: scopedHref(`/${locale}/dashboard/platforms`),
-    },
-    {
-      id: 5,
-      label: isTr ? 'Müşteri yorumlarını izle' : 'Track customer feedback',
-      done: hasReviews,
-      href: scopedHref(`/${locale}/dashboard/feedbacks`),
-    },
-  ];
 
   // ---- KPI delta hesaplamaları (tek pencere: 7d vs prev 7d) ----
   const pctDelta = (curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } => {
@@ -840,34 +814,6 @@ async function renderDashboardPage({
   // ratingDelta değerleri '—' / '0' / '+0.3'; eski `!== '0%'` kontrolü hiç
   // eşleşmiyor ve veri yokken "↑ —" basıyordu.
   const showRatingDelta = ratingDeltaNum !== null && ratingDeltaNum !== 0;
-
-  // ---- Quick actions (mobile + desktop unified) ----
-  const quickActions = [
-    {
-      id: 'qr',
-      icon: <QrCode size={18} strokeWidth={2} />,
-      label: isTr ? 'QR' : 'QR',
-      href: scopedHref(`/${locale}/dashboard/qr`),
-    },
-    {
-      id: 'feedback',
-      icon: <Star size={18} strokeWidth={2} />,
-      label: isTr ? 'Yorumlar' : 'Reviews',
-      href: scopedHref(`/${locale}/dashboard/feedbacks`),
-    },
-    {
-      id: 'menu',
-      icon: <Building2 size={18} strokeWidth={2} />,
-      label: isTr ? 'Menü' : 'Menu',
-      href: scopedHref(`/${locale}/dashboard/menu`),
-    },
-    {
-      id: 'platforms',
-      icon: <ShieldCheck size={18} strokeWidth={2} />,
-      label: isTr ? 'Platformlar' : 'Platforms',
-      href: scopedHref(`/${locale}/dashboard/platforms`),
-    },
-  ];
 
   // ---- Google Rating Impact ----
   const impactStats = user.restaurants
@@ -975,13 +921,15 @@ async function renderDashboardPage({
   const userFirstName = user.name?.trim().split(/\s+/)[0] || (isTr ? 'Hoş geldin' : 'Welcome');
   // §38.32 — pendingCount line 729'da unrepliedAggregate._count._all'dan
   // tanımlandı; greeting hook için reuse.
+  // Every unreplied low-rated review counts, not only today's — so no
+  // "Bugün" here (the pending card below shows how old the oldest one is).
   const pendingHook = isTr
     ? pendingCount > 0
-      ? `Bugün ${pendingCount} yorum yanıt bekliyor.`
-      : 'Bugün yanıtsız yorumun yok 🎉'
+      ? `${pendingCount} yorum yanıt bekliyor.`
+      : 'Yanıt bekleyen yorum yok.'
     : pendingCount > 0
-      ? `Today ${pendingCount} ${pendingCount > 1 ? 'reviews await' : 'review awaits'} a reply.`
-      : "You're all caught up today 🎉";
+      ? `${pendingCount} ${pendingCount === 1 ? 'review is' : 'reviews are'} waiting for a reply.`
+      : 'No reviews are waiting for a reply.';
   const primaryRestaurantName = selectedRestaurant?.name ?? user.restaurants[0]?.name ?? '';
 
   // §40.10 anti-double-skeleton — server-compute activation here so the
@@ -1064,17 +1012,20 @@ async function renderDashboardPage({
           ? 'prev 90 days'
           : 'same period last year';
 
+  // Mobile hero card (below sm) replaces the "Genel puan" + "Toplam yorum"
+  // KPI cards, so it also carries the scope-window review count + change.
+  const showMobileHero = avgRating > 0;
+  const reviewDeltaText =
+    totalReviewsDelta.value === '0%' || totalReviewsDelta.value === (isTr ? 'Yeni' : 'New')
+      ? ''
+      : ` (${totalReviewsDelta.value})`;
+  const responseRate =
+    lowRated30dCount > 0 ? Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100) : null;
+  const pendingTaskItems = dashboardTasks.map((task) => ({ ...task, href: scopedHref(task.href) }));
+
   return (
-    <div
-      /* §38.67 — Apple HIG generous whitespace: section padding ↑.
-         py-6 lg:py-8 (24/32px) → py-8 lg:py-12 (32/48px). Hesabım §38.37'de
-         zaten `py-12` generous; Dashboard daha breathing room kazanır.
-         Yoğun layout sayfaları (Yorumlar/Müşteriler/Analitik) korunur. */
-      className="mx-auto max-w-[1440px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
-    >
+    <div className="mx-auto max-w-[1440px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        eyebrow={isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW'}
-        eyebrowPulse
         title={`${greeting}, ${userFirstName}. ${pendingHook}`}
         subtitle={
           primaryRestaurantName
@@ -1083,51 +1034,43 @@ async function renderDashboardPage({
         }
         actions={
           <>
-            <Link
-              href={scopedHref(`/${locale}/dashboard/analytics`)}
-              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
-            >
-              <BarChart3 size={13} strokeWidth={2} />
-              {isTr ? 'Analitiğe git' : 'Open analytics'}
-            </Link>
-            {/* §38.31 — Header dynamic ScopeDropdown (önceki §38.30 sade
-                Link'ti). 4 option: Bu hafta / Bu ay / Son 90 gün / Bu yıl.
-                URL searchParam `?scope=` ile server component'i tetikler;
-                KPI window'ları (Toplam yorum / Yanıt oranı / Yeni müşteri)
-                + delta + AI banner kapsam değişir. Default '7d'. */}
+            {/* Date window for the KPI cards (?scope=). The chart below has
+                its own 30G / 90G / YTD switch. */}
             <ScopeDropdown current={scopeUrlValue} isTr={isTr} />
-            {/* "Yorum iste" = create a QR customers scan to leave a review
-                (same flow as the sidebar "QR oluştur"); the inbox has its own
-                nav item. */}
-            <Link
-              href={scopedHref(`/${locale}/dashboard/qr?new=1`)}
-              className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
-            >
-              <Plus size={13} strokeWidth={2} />
-              {isTr ? 'Yorum İste' : 'Request review'}
-            </Link>
+            {/* "Yorum iste" = create a QR customers scan to leave a review.
+                Hidden until there is a business: a QR needs one, and the
+                welcome card's "İlk işletmeni ekle" is then the one action. */}
+            {hasRestaurant && (
+              <Link
+                href={scopedHref(`/${locale}/dashboard/qr?new=1`)}
+                className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
+              >
+                <Plus size={13} strokeWidth={2} aria-hidden="true" />
+                {isTr ? 'Yorum İste' : 'Request review'}
+              </Link>
+            )}
           </>
         }
       />
 
-      {/* Phase 8c+ §38.28 — Mobile-only hero card. Tasarım kaynağı:
-          .design-owner-2026/page-mobile-v2.jsx MobileDashboard hero —
-          graphite bg + lime accent + büyük rating + 7-gün sparkline.
-          Desktop'ta gizli (KPI 4-card zaten "Genel puan" gösteriyor); mobil
-          dar ekranda owner anasayfaya açtığında ilk gördüğü "nabız"
-          özetlemesi. */}
-      {avgRating > 0 && (
+      {/* Mobile-only summary (graphite + lime, 7-day sparkline). Below sm it
+          stands in for the "Genel puan" and "Toplam yorum" KPI cards. */}
+      {showMobileHero && (
         <section
           className="sm:hidden rounded-[18px] bg-[#0A0A0A] text-white p-[18px] relative overflow-hidden"
-          aria-label={isTr ? 'Bugünün özeti' : "Today's summary"}
+          aria-label={isTr ? 'Puan özeti' : 'Rating summary'}
         >
-          <div className="pulse-eyebrow text-white/60 text-[9.5px]">
-            {isTr ? 'BUGÜN · ' : 'TODAY · '}
-            {nowDate.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-              day: 'numeric',
-              month: 'long',
-              timeZone: displayTz,
-            })}
+          <div className="flex items-center justify-between gap-3">
+            <span className="pulse-eyebrow text-white/60 text-[9.5px]">
+              {isTr ? 'GENEL PUAN' : 'AVG RATING'}
+            </span>
+            <Link
+              href={scopedHref(`/${locale}/dashboard/analytics`)}
+              className="-my-3 -mr-2 inline-flex min-h-[44px] items-center gap-1 rounded-lg px-2 text-[12px] font-medium text-white/75 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            >
+              {isTr ? 'Analitik' : 'Analytics'}
+              <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+            </Link>
           </div>
           <div className="mt-2 mb-3">
             <div className="flex items-baseline gap-1.5">
@@ -1142,7 +1085,7 @@ async function renderDashboardPage({
               >
                 {avgRating.toFixed(2)}
               </span>
-              <span className="flex gap-0.5">
+              <span className="flex gap-0.5" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
@@ -1153,22 +1096,25 @@ async function renderDashboardPage({
                 ))}
               </span>
             </div>
-            <div className="bz-mono text-[11px] text-white/60 mt-1.5">
-              {/* Puan genel ortalama; delta scope penceresi vs önceki pencere,
-                  sayı tüm zamanlar — etiketler bunu söylemeli. */}
-              {showRatingDelta && (
-                <span className="text-[#C6F24E] font-semibold">
-                  {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}{' '}
-                  {scopeLabel}
-                </span>
-              )}
-              {showRatingDelta && ' · '}
-              {totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-              {isTr ? 'toplam yorum' : 'total reviews'}
+            <div className="bz-mono text-[11px] text-white/70 mt-1.5 space-y-0.5">
+              <p>
+                {totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
+                {isTr ? 'toplam yorum' : 'total reviews'}
+              </p>
+              <p>
+                {scopeLabel}: {last7Total.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
+                {isTr ? 'yorum' : last7Total === 1 ? 'review' : 'reviews'}
+                {reviewDeltaText}
+                {showRatingDelta && (
+                  <span className="text-[#C6F24E] font-semibold">
+                    {' · '}
+                    {isTr ? 'puan' : 'rating'} {ratingDelta.kind === 'down' ? '↓' : '↑'}{' '}
+                    {ratingDelta.value.replace(/^[+-]/, '')}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
-          {/* Mini 7-gün sparkline (trendsChartData.count series) — graphite
-              bg üzerinde lime gradient area + lime stroke. */}
           {trendsChartData.length >= 2 && (
             <div className="h-[50px] -mx-[18px] -mb-[18px] px-[18px] pb-[18px]">
               <Sparkline
@@ -1183,9 +1129,7 @@ async function renderDashboardPage({
         </section>
       )}
 
-      {/* Phase 8c+ §38.27 — AI İçgörü banner. extractThemes synthesis dolu
-          ise mount edilir; haftalık dismiss localStorage ile (ertesi hafta
-          tekrar gelir). */}
+      {/* Weekly AI insight (dismissible per ISO week). */}
       {dashboardThemes.synthesis && (
         <AIInsightBanner
           insight={dashboardThemes.synthesis}
@@ -1194,43 +1138,34 @@ async function renderDashboardPage({
         />
       )}
 
-      <OnboardingNudge locale={locale} steps={onboardingSteps} />
-
-      {/* §38.43 — Activation checklist mobile'da gizli (tasarım .design-owner-2026/
-          page-mobile-v2.jsx MobileDashboard'da yok). sm:block ile sadece tablet+
-          desktop'ta görünür. CLAUDE.md §19.5 paterni intact. */}
-      {(selectedRestaurant ?? user.restaurants[0]) && (
-        <div className="hidden sm:block">
-          <ViewportMount query="(min-width: 640px)">
-            <ActivationChecklistCard
-              // Seeded once from initialResult — remount per business so a
-              // switch does not keep the previous business's checklist.
-              key={(selectedRestaurant ?? user.restaurants[0]).id}
-              restaurantId={(selectedRestaurant ?? user.restaurants[0]).id}
-              locale={locale}
-              initialResult={initialActivation}
-            />
-          </ViewportMount>
-        </div>
+      {/* One setup card at a time: the account-level checklist only while
+          there is no business yet; afterwards the per-business checklist
+          (same steps, plus manual "printed/shared" mark and dismiss). */}
+      {!hasRestaurant && (
+        <OnboardingNudge
+          locale={locale}
+          steps={onboardingSteps}
+          description={onboardingDescription}
+        />
+      )}
+      {activationTarget && (
+        <ActivationChecklistCard
+          // Seeded once from initialResult — remount per business so a
+          // switch does not keep the previous business's checklist.
+          key={activationTarget.id}
+          restaurantId={activationTarget.id}
+          locale={locale}
+          initialResult={initialActivation}
+        />
       )}
 
-      {/* §38.44 — PendingTasks position değişti: tasarım .design-owner-2026/
-          page-dashboard.jsx line 218-265 NABIZ chart + BUGÜN BEKLEYEN yan yana
-          2-col grid (1.55fr/1fr). PendingTasks artık NABIZ section ile aynı
-          wrapper'da render ediliyor (KPI sonrası, hidden sm:block grid wrapper).
-          Mobile'da PendingTasks görünür (NABIZ hidden), tablet+ 2-col. */}
-
-      {/* Phase 8c+ §38.27 — KPI 4-card 1:1 tasarım parity. Tasarım kaynağı
-          .design-owner-2026/page-dashboard.jsx: GENEL PUAN / TOPLAM YORUM /
-          YANIT ORANI / YENİ MÜŞTERİ. QR taranma + Platform yönlendirme
-          metrikleri /dashboard/analytics'te zaten zengin; ana dashboard
-          owner action-odaklı 4-card'a sade. */}
+      {/* KPI cards. Below sm the first two live in the summary card above. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
+          className={showMobileHero ? 'hidden sm:block' : ''}
           label={isTr ? 'Genel puan' : 'Avg rating'}
           value={avgRating > 0 ? `${avgRating.toFixed(1)}` : '—'}
-          // Veri yokken ('—') delta satırı gösterilmez; değer tüm zamanlar
-          // ortalaması, delta scope penceresi ortalaması vs önceki pencere.
+          // Value = all-time average; delta = scope window vs previous window.
           delta={ratingDeltaNum !== null ? ratingDelta.value : undefined}
           deltaKind={ratingDelta.kind}
           deltaSuffix={`${scopeLabel} vs. ${prevScopeLabel}`}
@@ -1238,6 +1173,7 @@ async function renderDashboardPage({
           accent="#C6F24E"
         />
         <StatCard
+          className={showMobileHero ? 'hidden sm:block' : ''}
           label={isTr ? 'Toplam yorum' : 'Total reviews'}
           value={totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
           delta={totalReviewsDelta.value}
@@ -1248,274 +1184,183 @@ async function renderDashboardPage({
         <StatCard
           label={isTr ? 'Yanıt oranı' : 'Response rate'}
           value={
-            lowRated30dCount > 0
+            responseRate === null ? '—' : isTr ? `%${responseRate}` : `${responseRate}%`
+          }
+          // StatCard shows the suffix only next to a delta, so the "x/y"
+          // count goes in the (neutral) delta slot.
+          delta={
+            responseRate === null
               ? isTr
-                ? `%${Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100)}`
-                : `${Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100)}%`
-              : '—'
+                ? 'Düşük puanlı yorum yok'
+                : 'No low ratings'
+              : `${lowRated30dRepliedCount}/${lowRated30dCount}`
           }
+          deltaKind="neutral"
           deltaSuffix={
-            lowRated30dCount > 0
-              ? `${lowRated30dRepliedCount}/${lowRated30dCount} · ${scopeLabel}`
+            responseRate === null
+              ? scopeLabel
               : isTr
-                ? 'düşük puan yorum yok'
-                : 'no low rating reviews'
+                ? `düşük puanlı yorum · ${scopeLabel}`
+                : `low ratings · ${scopeLabel}`
           }
-          icon={<ShieldCheck size={14} strokeWidth={2} />}
+          icon={<MessageSquareReply size={14} strokeWidth={2} />}
         />
         <StatCard
           label={isTr ? 'Yeni müşteri' : 'New customers'}
           value={Number(newCustomers30dRows[0]?.count ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          deltaSuffix={isTr ? `${scopeLabel} · CRM'de aktif` : `${scopeLabel} · in CRM`}
-          icon={<Building2 size={14} strokeWidth={2} />}
+          delta={scopeLabel}
+          deltaKind="neutral"
+          icon={<UserPlus size={14} strokeWidth={2} />}
         />
       </div>
 
-      {/* §38.43 — Quick Actions mobile'da gizli (tasarım .design-owner-2026/
-          page-mobile-v2.jsx MobileDashboard'da yok; mobile bottom nav zaten
-          5-item primary nav sağlıyor). sm:grid ile sadece tablet+ desktop. */}
-      <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        {quickActions.map((a) => (
-          <Link
-            key={a.id}
-            href={a.href}
-            className="flex flex-col items-center gap-1.5 rounded-[14px] border border-[#EDEDED] bg-white px-1 py-3.5 transition-colors hover:border-[#0A0A0A]"
+      {/* Two independent columns on lg (no empty holes when a card is
+          missing or short): chart + channels + topics on the left, pending
+          tasks + activity on the right. Below lg the column wrappers are
+          `display: contents`, so `order-*` keeps the single-column order:
+          chart, pending, channels, topics, activity.
+          Keyboard order still matches what is on screen: the channel and
+          topic sections are read-only (no links or buttons), so Tab goes
+          chart → pending tasks → activity in both layouts. Do not add a
+          focusable element to those two sections without revisiting this. */}
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3">
+          <section
+            className="bz-card p-5 sm:p-6 hidden sm:block order-1 lg:order-none"
+            aria-label={isTr ? 'Nabız' : 'Pulse'}
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#FAFAFA] text-[#0A0A0A]">
-              {a.icon}
-            </span>
-            <span className="text-[11px] sm:text-[12px] font-medium text-[#0A0A0A]">
-              {a.label}
-            </span>
-          </Link>
-        ))}
-      </div>
-
-      {/* §38.44 — 2-col grid wrapper: NABIZ chart (1.55fr) + PendingTasks (1fr).
-          Tasarım .design-owner-2026/page-dashboard.jsx line 218-265 birebir.
-          Mobile: NABIZ gizli (hidden sm:block, §38.43), grid 1-col → PendingTasks
-          tek görünür. Tablet (sm-lg): NABIZ + PendingTasks alt alta (1-col).
-          Desktop (lg+): yan yana 2-col (1.55fr / 1fr). */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_minmax(0,1fr)] gap-3">
-      <section className="bz-card p-5 sm:p-6 hidden sm:block">
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
-          <div>
-            {/* Grafik penceresi (30G/90G/YTD) kendi toggle'ında; başlıktaki
-                puan tüm zamanlar ortalaması, delta ise scope penceresi. */}
-            <Eyebrow>{isTr ? 'NABIZ' : 'PULSE'}</Eyebrow>
-            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 mt-1.5">
-              <span
-                className="bz-h-tight"
-                style={{ fontSize: 24, lineHeight: 1 }}
-              >
-                {avgRating > 0 ? avgRating.toFixed(2) : '—'}
-              </span>
-              <span className="text-[12px] text-[#737373]">
-                {isTr ? 'genel ortalama' : 'overall average'}
-              </span>
-              {showRatingDelta && (
-                <span
-                  className={`text-[11px] font-semibold ${
-                    ratingDelta.kind === 'down' ? 'text-[#DC2626]' : 'text-[#16A34A]'
-                  }`}
+            <PulseRangeToggle
+              ranges={{
+                '30g': { data: trend30, peak: peak30 },
+                '90g': { data: trend90, peak: peak90 },
+                ytd: { data: trendYtd, peak: peakYtd },
+              }}
+              defaultRange="30g"
+              isTr={isTr}
+              // Slot elements cross the server→client boundary; explicit keys
+              // keep React's key check quiet where they render next to siblings.
+              header={
+                <div key="pulse-header">
+                  <Eyebrow>{isTr ? 'NABIZ' : 'PULSE'}</Eyebrow>
+                  <p className="mt-1.5 text-[13px] text-[#525252]">
+                    {isTr ? 'Platformlara göre günlük yorum' : 'Daily reviews by platform'}
+                  </p>
+                </div>
+              }
+              footerAction={
+                <Link
+                  key="pulse-analytics"
+                  href={scopedHref(`/${locale}/dashboard/analytics`)}
+                  className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md text-[12px] font-medium text-[#525252] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
                 >
-                  {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}
-                </span>
-              )}
-              {showRatingDelta && (
-                <span className="text-[12px] text-[#737373]">
-                  {scopeLabel} vs. {prevScopeLabel}
-                </span>
-              )}
-            </div>
-          </div>
-          <Link
-            href={scopedHref(`/${locale}/dashboard/analytics`)}
-            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#525252] hover:text-[#0A0A0A] transition-colors self-start sm:self-end"
-          >
-            {isTr ? 'Detaylı analitik' : 'Detailed analytics'}
-            <ArrowRight size={12} strokeWidth={2} />
-          </Link>
-        </header>
+                  {isTr ? 'Detaylı analitik' : 'Detailed analytics'}
+                  <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+                </Link>
+              }
+            />
+          </section>
 
-        <PulseRangeToggle
-          ranges={{
-            '30g': { data: trend30, peak: peak30 },
-            '90g': { data: trend90, peak: peak90 },
-            ytd: { data: trendYtd, peak: peakYtd },
-          }}
-          defaultRange="30g"
-          isTr={isTr}
-        />
+          {/* Channel cards (Google card adds the rating-before/after strip). */}
+          {platformDistData.length > 0 && (
+            <section className="order-3 lg:order-none" aria-label={isTr ? 'Kanal dağılımı' : 'Channel breakdown'}>
+              {/* No link here: "Detaylı analitik" in the chart card (and
+                  "Analitik" in the mobile summary card) already opens the
+                  same page. */}
+              <header className="mb-3">
+                <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
+              </header>
+              <ChannelDistribution
+                channels={channelStats}
+                googleImpact={googleImpact}
+                isTr={isTr}
+              />
+            </section>
+          )}
 
-        {/* Legend dots — analytics ana grafiğiyle aynı platform dağılımı. Mobile'da
-            NABIZ kartı zaten gizli; desktop'ta hızlı okuma için kısa açıklama. */}
-        <div className="hidden sm:flex items-center gap-4 mt-3 text-[11.5px] text-[#737373]">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block w-3.5 h-0.5 rounded-sm bg-[#0A0A0A]" />
-            {isTr ? 'Platform dağılımı' : 'Platform breakdown'}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-sm bg-[#EDEDED]" />
-            {isTr ? 'Günlük yorum hacmi' : 'Daily review volume'}
-          </span>
+          {/* AI topics (last 30 days) — tablet + desktop only. */}
+          {dashboardThemes.themes.length > 0 && (
+            <section className="bz-card p-5 sm:p-6 hidden sm:block order-4 lg:order-none">
+              <header className="mb-5 flex items-center justify-between gap-3">
+                <Eyebrow>{isTr ? 'SIK BAHSEDİLEN KONULAR' : 'TRENDING TOPICS'}</Eyebrow>
+                <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
+                  {isTr ? 'SON 30 GÜN' : 'LAST 30 DAYS'}
+                </span>
+              </header>
+              <ul className="space-y-3.5">
+                {dashboardThemes.themes.slice(0, 5).map((t) => {
+                  // 3-segment sentiment bar (pos / neu / neg). Older cache
+                  // entries without sentiment fall back to a count bar.
+                  const hasSentiment = typeof t.sentimentPositivePct === 'number';
+                  const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
+                  const neu = hasSentiment ? (t.sentimentNeutralPct ?? 0) : 0;
+                  const neg = hasSentiment ? (t.sentimentNegativePct ?? Math.max(0, 100 - pos - neu)) : 0;
+                  return (
+                    <li key={t.theme}>
+                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
+                        <span className="font-medium text-[#0A0A0A] truncate">{t.theme}</span>
+                        <span className="bz-mono tabular-nums text-[11px] text-[#737373] shrink-0">
+                          {t.count} {isTr ? 'bahsedilme' : 'mentions'}
+                        </span>
+                      </div>
+                      {hasSentiment ? (
+                        <>
+                          <div
+                            className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
+                            role="img"
+                            aria-label={
+                              isTr
+                                ? `${pos}% pozitif, ${neu}% nötr, ${neg}% negatif`
+                                : `${pos}% positive, ${neu}% neutral, ${neg}% negative`
+                            }
+                          >
+                            <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
+                            <div className="h-full" style={{ width: `${neu}%`, background: '#A3A3A3' }} />
+                            <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
+                          </div>
+                          <div className="mt-1 flex justify-between gap-3 bz-mono text-[10px]">
+                            <span className="text-[#16A34A] font-semibold">
+                              +{pos}% {isTr ? 'pozitif' : 'positive'}
+                            </span>
+                            <span className="text-[#737373]">
+                              {isTr ? 'nötr' : 'neutral'} {neu}%
+                            </span>
+                            <span className="text-[#DC2626] font-semibold">
+                              -{neg}% {isTr ? 'negatif' : 'negative'}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-[#0A0A0A] transition-all duration-500"
+                            style={{
+                              width: `${Math.max(8, (t.count / (dashboardThemes.themes[0]?.count ?? 1)) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </div>
-      </section>
 
-        {/* §38.44 — PendingTasks (BUGÜN BEKLEYEN) sağ kolon (lg+ 2-col grid).
-            §38.32 task tipi (reply / platform / reminder), §38.41 url fix
-            (?tab=low&hasReply=false). Mobile'da NABIZ gizli olduğunda tek
-            sütun grid'de görünür. */}
-        <PendingTasks
-          tasks={dashboardTasks}
-          isTr={isTr}
-          viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`)}
-        />
-      </div>
-
-      {/* §38.44 — 2-col grid wrapper: KANAL + SIK BAHSEDİLEN sol stack (1.55fr)
-          + ActivityFeed sağ kolon (1fr). Tasarım .design-owner-2026/
-          page-dashboard.jsx line 266-340 birebir. Mobile: SIK BAHSEDİLEN
-          gizli (hidden sm:block, §38.43), KANAL ve ActivityFeed tek sütun. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_minmax(0,1fr)] gap-3">
-        <div className="space-y-3">
-
-      {/* KANAL DAĞILIMI — Phase 8c+ §38.31. Tasarım kaynağı:
-          .design-owner-2026/project/page-dashboard.jsx ChannelCard line
-          134-157 (4-card grid + delta + 5 yıldız + count). Google card'da
-          ek "impact strip" (initialGoogleRating → currentGoogleRating)
-          Buaze etkisi (CLAUDE.md §37.3). prevPlatformGroups ile delta
-          hesabı (önceki scope window vs current). */}
-      {platformDistData.length > 0 && (
-        <section>
-          <header className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
-              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
-                {isTr ? 'Platform performansı' : 'Platform performance'}
-              </h2>
-            </div>
-            <Link
-              href={scopedHref(`/${locale}/dashboard/analytics`)}
-              className="text-[12px] text-[#525252] hover:text-[#0A0A0A] inline-flex items-center gap-1"
-            >
-              {isTr ? 'Tüm kanallar' : 'All channels'}
-              <ArrowRight size={11} strokeWidth={2} />
-            </Link>
-          </header>
-          <ChannelDistribution
-            channels={channelStats}
-            googleImpact={googleImpact}
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3">
+          <PendingTasks className="order-2 lg:order-none" tasks={pendingTaskItems} isTr={isTr} />
+          <ActivityFeed
+            // Keyed by business scope: the feed keeps its own list after mount
+            // (live pushes), so a business switch must remount it.
+            key={restIds.join(',')}
+            className="order-5 lg:order-none"
+            events={activityEvents}
+            restaurantIds={restIds}
             isTr={isTr}
+            viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks`)}
           />
-        </section>
-      )}
-
-      {/* §38.43 — SIK BAHSEDİLEN KONULAR mobile'da gizli (tasarım .design-owner-2026/
-          page-mobile-v2.jsx MobileDashboard'da yok). sm:block ile sadece tablet+
-          desktop. AI tema kart desktop için intact. */}
-      {dashboardThemes.themes.length > 0 && (
-        <section className="bz-card p-5 sm:p-6 hidden sm:block">
-          <header className="mb-5 flex items-end justify-between gap-3">
-            <div>
-              <Eyebrow>{isTr ? 'SIK BAHSEDİLEN KONULAR' : 'TRENDING TOPICS'}</Eyebrow>
-              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
-                {isTr ? 'Müşteriler ne konuşuyor' : 'What customers talk about'}
-              </h2>
-            </div>
-            <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
-              {isTr ? 'SON 30 GÜN' : 'LAST 30 DAYS'}
-            </span>
-          </header>
-          <ul className="space-y-3.5">
-            {dashboardThemes.themes.slice(0, 5).map((t) => {
-              // §38.58 — 3-segment stacked sentiment bar (tasarım birebir
-              // a/page-dashboard.jsx:294-298 pos / neu / neg). extractThemes
-              // helper artık 3 yüzde döndürür (CACHE_KEY_VERSION 'v3'). Eski
-              // v2 cache entry'lerinde sentiment alanları yok → fallback
-              // tek-renk count bar (graceful).
-              const hasSentiment = typeof t.sentimentPositivePct === 'number';
-              const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
-              const neu = hasSentiment ? (t.sentimentNeutralPct ?? 0) : 0;
-              const neg = hasSentiment ? (t.sentimentNegativePct ?? Math.max(0, 100 - pos - neu)) : 0;
-              return (
-                <li key={t.theme}>
-                  <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
-                    <span className="font-medium text-[#0A0A0A] truncate">{t.theme}</span>
-                    <span className="bz-mono tabular-nums text-[11px] text-[#737373] shrink-0">
-                      {t.count} {isTr ? 'bahsedilme' : 'mentions'}
-                    </span>
-                  </div>
-                  {hasSentiment ? (
-                    <>
-                      <div
-                        className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
-                        role="img"
-                        aria-label={
-                          isTr
-                            ? `${pos}% pozitif, ${neu}% nötr, ${neg}% negatif`
-                            : `${pos}% positive, ${neu}% neutral, ${neg}% negative`
-                        }
-                      >
-                        <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
-                        <div className="h-full" style={{ width: `${neu}%`, background: '#A3A3A3' }} />
-                        <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
-                      </div>
-                      <div className="mt-1 flex justify-between gap-3 bz-mono text-[10px]">
-                        <span className="text-[#16A34A] font-semibold">
-                          +{pos}% {isTr ? 'pozitif' : 'positive'}
-                        </span>
-                        <span className="text-[#737373]">
-                          {isTr ? 'nötr' : 'neutral'} {neu}%
-                        </span>
-                        <span className="text-[#DC2626] font-semibold">
-                          -{neg}% {isTr ? 'negatif' : 'negative'}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[#0A0A0A] transition-all duration-500"
-                        style={{
-                          width: `${Math.max(8, (t.count / (dashboardThemes.themes[0]?.count ?? 1)) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {/* Inner synthesis card kaldırıldı — AIInsightBanner page üstünde
-              aynı synthesis'i taşıyor; duplicate UX önlemi (§38.27). */}
-        </section>
-      )}
-
-        </div>{/* §38.44 — sol stack close (KANAL + SIK BAHSEDİLEN) */}
-
-      {/* §38.41 + §38.44 — CANLI AKIŞ timeline (tasarım .design-owner-2026/
-          page-dashboard.jsx line 309-340). §38.44'te 2-col grid sağ kolon
-          olarak konumlandırıldı (sol KANAL+SIK BAHSEDİLEN stack ile yan yana).
-          Feedback + Reply + AI Draft + Sistem Notification union.
-          §38.40 audit'inde kullanıcı raporu: eski custom inline 8-item CANLI AKIŞ
-          + ActivityFeed component duplicate + "Tümünü gör" 404 → eski section
-          silindi, viewAllHref locale-aware override edildi. Tasarımda olmayan
-          YORUM GÖRÜNÜMÜ + QR performansı + Konum performansı + Restaurants
-          list + Upgrade CTA section'ları da bu PR'da kaldırıldı (kullanıcı
-          talebi: "tasarımda yoksa sil"). */}
-      <ActivityFeed
-        // Keyed by business scope: the feed keeps its own list after mount
-        // (live pushes), so a business switch must remount it — otherwise the
-        // previous business's activity stayed on screen.
-        key={restIds.join(',')}
-        events={activityEvents}
-        restaurantIds={restIds}
-        isTr={isTr}
-        viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks`)}
-      />
-
-      </div>{/* §38.44 — KANAL+SIK BAHSEDİLEN+ActivityFeed 2-col grid wrapper close */}
+        </div>
+      </div>
     </div>
   );
 }

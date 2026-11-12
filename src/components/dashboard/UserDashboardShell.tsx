@@ -282,11 +282,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     return true;
   };
   // Account base item için: query param'sız Account href'i match etsin AMA
-  // section=billing aktifken active OLMASIN (Faturalama o anda lime).
+  // section=billing / notifications aktifken active OLMASIN (o alt öğe lime).
   const matchAccountBase = (href: string): boolean => {
     if (!pathname) return false;
     if (!(pathname === href || pathname.startsWith(`${href}/`))) return false;
-    return searchParams.get('section') !== 'billing';
+    const section = searchParams.get('section') ?? '';
+    return section !== 'billing' && section !== 'notifications';
   };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -1244,7 +1245,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             )}
           </nav>
           <div className="flex items-center gap-2.5 shrink-0">
-            {workspaceRestaurants.length > 1 && (
+            {/* The expanded sidebar already shows the switcher; the topbar
+                copy only appears when the sidebar is collapsed to icons. */}
+            {workspaceRestaurants.length > 1 && isCollapsed && (
               <BusinessSwitcher
                 locale={locale}
                 variant="topbar"

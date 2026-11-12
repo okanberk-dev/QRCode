@@ -5,6 +5,7 @@ import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
+import { Download } from 'lucide-react';
 import {
   BarChart,
   Eyebrow,
@@ -14,24 +15,11 @@ import {
 } from '@/components/ui';
 import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilterBar';
 import { HeatmapDayHour } from '@/components/dashboard/analytics/HeatmapDayHour';
-// §38.158 — Stage 78: PulseTrendChart (14 haftalık trend) kullanıcı talebiyle
-// kaldırıldı ("analitik sayfasındaki 14 günlük analitik kısmını da kaldır").
-// Aşağıdaki §38.107 + §38.50 yorum satırları historical context için intact.
-// §38.107 — InteractionTrendChart + WeeklyTrendChart component'leri silindi
-// (CLAUDE.md §38.34 + §34.5 dead code cleanup). InteractionTrendPoint type
-// inline taşındı (KPI sparkline için interactionData hâlâ compute ediliyor;
-// chart render'ı PulseTrendChart Puan/Hacim/Sentiment toggle ile konsolide
-// edildi).
-interface InteractionTrendPoint {
-  /** Display label, dd/mm formatlı (ör. "01/05"). */
-  date: string;
-  /** Toplam QR taranma — qr_scans tablosundan gerçek event sayımı. */
-  scans: number;
-  /** Yorum count — Feedback tablosundan. Funnel: scans ⊇ reviews. */
+/** One day of the window, for the KPI sparklines. */
+interface DailyPoint {
+  /** Review count that day. */
   reviews: number;
-  /** Yönlendirme — rating ≥ 4 + platform set. Funnel: reviews ⊇ redirects. */
-  redirects: number;
-  /** O günün ortalama puanı; yorum yoksa null (ORTALAMA PUAN sparkline). */
+  /** That day's average rating; null when there were no reviews. */
   avgRating: number | null;
 }
 
@@ -63,13 +51,12 @@ function makeZonedDayHour(timeZone: string) {
 import { AnalyticsKpiGrid } from '@/components/dashboard/analytics/AnalyticsKpiGrid';
 import { AiInsightsCard } from '@/components/dashboard/analytics/AiInsightsCard';
 import { ChannelDistributionMini } from '@/components/dashboard/analytics/ChannelDistributionMini';
-import { TopLocationCard } from '@/components/dashboard/analytics/TopLocationCard';
-import { MobileAnalyticsHero } from '@/components/dashboard/analytics/MobileAnalyticsHero';
-// Stage 66 §38.147 — HANDOFF AnalyticsDesktop redesign yeni component'lar.
-// LiveIndicator (compliance-safe static), MainTrendChart (30-day stacked
-// area + crosshair tooltip), SentimentDonut (SVG arc + center %),
-// TopMentionsPolarity (theme list + ↑↓· arrow).
-import { AnalyticsLiveIndicator } from '@/components/dashboard/analytics/AnalyticsLiveIndicator';
+// Stage 66 §38.147 — HANDOFF AnalyticsDesktop redesign component'ları:
+// MainTrendChart (stacked area + crosshair tooltip), SentimentDonut (SVG arc
+// + center %), TopMentionsPolarity (theme list + ↑↓· arrow).
+// §49 — the static "GÜNCEL · BU SAYFA" live label and the mobile-only average
+// rating hero were removed: the header subtitle names the business + period,
+// and the ORTALAMA PUAN KPI card already shows the rating with its sparkline.
 import { MainTrendChart } from '@/components/dashboard/analytics/MainTrendChart';
 import { SentimentDonut } from '@/components/dashboard/analytics/SentimentDonut';
 import { TopMentionsPolarity } from '@/components/dashboard/analytics/TopMentionsPolarity';
@@ -103,11 +90,10 @@ export async function generateMetadata({
   };
 }
 
-function pctDelta(curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } {
-  if (prev === 0) {
-    if (curr === 0) return { value: '0%', kind: 'neutral' };
-    return { value: 'Yeni', kind: 'up' };
-  }
+function pctDelta(curr: number, prev: number): { value: string | null; kind: 'up' | 'down' | 'neutral' } {
+  // No reviews in the previous period: a percentage is meaningless (the old
+  // "Yeni" label was unclear and untranslated) — the subtitle says why.
+  if (prev === 0) return { value: null, kind: 'neutral' };
   const pct = Math.round(((curr - prev) / prev) * 1000) / 10;
   return {
     value: `${pct >= 0 ? '+' : ''}${pct}%`,
@@ -141,6 +127,8 @@ const RANGE_DAYS: Record<string, number> = {
   '1y': 365,
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 function isExpectedNavigationError(error: unknown) {
   const digest = (error as { digest?: unknown })?.digest;
   return typeof digest === 'string' && digest.startsWith('NEXT_');
@@ -160,9 +148,16 @@ function parseCustomRange(
   const endMs = Date.parse(customEnd);
   if (Number.isNaN(startMs) || Number.isNaN(endMs)) return null;
   if (endMs <= startMs) return null;
-  const days = Math.round((endMs - startMs) / (24 * 60 * 60 * 1000));
-  if (days < 1 || days > 365) return null;
-  return { start: new Date(startMs), end: new Date(endMs), days };
+  const spanDays = Math.round((endMs - startMs) / DAY_MS);
+  if (spanDays < 1 || spanDays > 365) return null;
+  // The end date is inclusive ("Bitiş" in the picker, "20 Eki – 5 Kas" in the
+  // header): the window runs to the last millisecond of that day, so reviews
+  // left on the end date are counted.
+  return {
+    start: new Date(startMs),
+    end: new Date(endMs + DAY_MS - 1),
+    days: spanDays + 1,
+  };
 }
 
 export default async function AnalyticsPage(props: {
@@ -230,7 +225,7 @@ async function renderAnalyticsPage({
     id: userRow.id,
     restaurants: await prisma.restaurant.findMany({
       where: { id: { in: scopedIds } },
-      select: { id: true, name: true, aiAnalyticsEnabled: true, targetRating: true },
+      select: { id: true, name: true, isActive: true, aiAnalyticsEnabled: true, targetRating: true },
       orderBy: { createdAt: 'asc' },
     }),
   };
@@ -251,28 +246,32 @@ async function renderAnalyticsPage({
   const platformFilter = sp.platform && sp.platform !== 'all' ? sp.platform : null;
   const branchFilter = sp.branch && sp.branch !== 'all' ? sp.branch : null;
 
-  // Multi-restaurant owner: optional restaurantId filter (whitelist scope).
+  // The panel works on one business at a time: the shell's business switcher
+  // writes `?restaurantId` (whitelisted against the scope here). Without a
+  // valid one this is the first active business — the one the switcher
+  // selects by default — instead of "every business", which showed totals for
+  // all of them under the switcher's single-business label until the shell
+  // rewrote the URL (same rule as the dashboard home).
   const ownedIds = user.restaurants.map((r) => r.id);
-  const restaurantIds =
+  const selectedRestaurantId =
     sp.restaurantId && sp.restaurantId !== 'all' && ownedIds.includes(sp.restaurantId)
-      ? [sp.restaurantId]
-      : ownedIds;
+      ? sp.restaurantId
+      : (user.restaurants.find((r) => r.isActive)?.id ?? null);
+  const restaurantIds = selectedRestaurantId ? [selectedRestaurantId] : ownedIds;
 
   const now = Date.now();
   // §38.50 — Custom range: explicit start/end. Aksi halde rolling window
   // (now - windowDays). prevWindow custom range için: aynı uzunlukta
   // önceki pencere (start - windowDays → start).
-  const windowStart = customRange ? customRange.start : new Date(now - windowDays * 24 * 60 * 60 * 1000);
+  const windowStart = customRange ? customRange.start : new Date(now - windowDays * DAY_MS);
   const windowEnd = customRange ? customRange.end : new Date(now);
   const prevWindowStart = customRange
-    ? new Date(customRange.start.getTime() - windowDays * 24 * 60 * 60 * 1000)
-    : new Date(now - windowDays * 2 * 24 * 60 * 60 * 1000);
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-  // §38.158 — `trendWindow` (14-haftalık ISO week range) PulseTrendChart
-  // ile birlikte silindi. KPI / heatmap / sentiment compute'ları
-  // `windowStart`/`windowEnd` kullanmaya devam eder.
+    ? new Date(customRange.start.getTime() - windowDays * DAY_MS)
+    : new Date(now - windowDays * 2 * DAY_MS);
+  // Daily series (trend chart + KPI sparklines) end on the last day of the
+  // window. They used to count back from today, so a custom range in the past
+  // drew an empty chart next to KPIs that had reviews.
+  const seriesAnchor = customRange ? customRange.end : new Date(now);
 
   // Apply platform + branch filters to all queries via shared base WHERE.
   const baseWhere = {
@@ -281,29 +280,11 @@ async function renderAnalyticsPage({
     ...(branchFilter ? { branch: branchFilter } : {}),
   } as const;
 
-  // QR scan tracking — feedback proxy yerine gerçek scan event'i
-  // (CLAUDE.md §34.x). Branch + platform filter feedback'e özel; QrScan
-  // tablosunda branch alanı yok, sadece restaurantId + tableNumber + platform.
-  // Platform filter QrScan'e de uygulanabilir, branch filter sadece feedback.
-  const scanWhere = {
-    restaurantId: { in: restaurantIds },
-    ...(platformFilter ? { platform: platformFilter } : {}),
-  } as const;
-
-  const [
-    feedbacksWindow,
-    feedbacksPrevWindow,
-    feedbacks7d,
-    redirectedWindow,
-    redirectedPrevWindow,
-    lowRatedWindow,
-    lowRatedPrevWindow,
-    _todayCount,
-    scansWindowCount,
-    scansPrevWindowCount,
-    scansWindowDaily,
-  ] = await prisma.$transaction([
-    // Window feedback'leri — multi-purpose select: hour bucket, aspect avg,
+  // Only what the page renders is queried. The QR scan, redirect, low-rating
+  // and "today" counts fed KPIs that were removed earlier (§38.50) and were
+  // still run on every load.
+  const [feedbacksWindow, feedbacksPrevWindow] = await prisma.$transaction([
+    // Window feedback'leri — multi-purpose select: day/hour buckets,
     // theme analysis (comment), response time (replies). Tek query
     // multiple-section'ı besler (CLAUDE.md §7 — replication önleme).
     // §38.50 — `email/phone/hasKvkkConsent` field'ları yeni `returnRate` KPI
@@ -317,9 +298,6 @@ async function renderAnalyticsPage({
         platform: true,
         comment: true,
         createdAt: true,
-        foodRating: true,
-        serviceRating: true,
-        atmosphereRating: true,
         email: true,
         phone: true,
         hasKvkkConsent: true,
@@ -333,65 +311,15 @@ async function renderAnalyticsPage({
     prisma.feedback.count({
       where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
     }),
-    prisma.feedback.findMany({
-      where: { ...baseWhere, createdAt: { gte: sevenDaysAgo } },
-      select: { createdAt: true },
-    }),
-    prisma.feedback.count({
-      where: {
-        ...baseWhere,
-        createdAt: { gte: windowStart, lte: windowEnd },
-        rating: { gte: 4 },
-        platform: { not: null },
-      },
-    }),
-    prisma.feedback.count({
-      where: {
-        ...baseWhere,
-        createdAt: { gte: prevWindowStart, lt: windowStart },
-        rating: { gte: 4 },
-        platform: { not: null },
-      },
-    }),
-    prisma.feedback.count({
-      where: {
-        ...baseWhere,
-        createdAt: { gte: windowStart, lte: windowEnd },
-        rating: { lte: 3 },
-      },
-    }),
-    prisma.feedback.count({
-      where: {
-        ...baseWhere,
-        createdAt: { gte: prevWindowStart, lt: windowStart },
-        rating: { lte: 3 },
-      },
-    }),
-    prisma.feedback.count({
-      where: { ...baseWhere, createdAt: { gte: startOfToday } },
-    }),
-    // QR scans — window + delta + daily bucket (interaction chart 3. seri)
-    prisma.qrScan.count({
-      where: { ...scanWhere, createdAt: { gte: windowStart, lte: windowEnd } },
-    }),
-    prisma.qrScan.count({
-      where: { ...scanWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
-    }),
-    prisma.qrScan.findMany({
-      where: { ...scanWhere, createdAt: { gte: windowStart, lte: windowEnd } },
-      select: { createdAt: true },
-    }),
-    // §38.158 — 14 haftalık trend query (`feedbacks98d`) PulseTrendChart
-    // ile birlikte silindi. Yeni surface'ler için tekrar gerekirse
-    // `getWeeklyTrendWindow(now, N)` + `findMany({ rating, createdAt })`
-    // paterni reuse edilir (lib/analytics-weekly-trend.ts intact).
   ]);
 
-  // Distinct branches for filter dropdown (across owned restaurants, not
-  // affected by current branch filter so user can pick a different one).
-  const branchRows = ownedIds.length
+  // Distinct branches for the filter dropdown — limited to the business(es)
+  // in scope (a branch of another business would only ever show an empty
+  // page), not affected by the current branch filter so the owner can pick a
+  // different one.
+  const branchRows = restaurantIds.length
     ? await prisma.feedback.findMany({
-        where: { restaurantId: { in: ownedIds }, branch: { not: null } },
+        where: { restaurantId: { in: restaurantIds }, branch: { not: null } },
         distinct: ['branch'],
         select: { branch: true },
         take: 50,
@@ -401,39 +329,56 @@ async function renderAnalyticsPage({
     .map((r) => r.branch as string)
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, isTr ? 'tr-TR' : 'en-US'));
+  // Keep an active branch filter selectable (and clearable) even when the
+  // business in scope has no reviews from it.
+  if (branchFilter && !branches.includes(branchFilter)) branches.push(branchFilter);
 
-  // KPI calculations — scans gerçek QrScan'den, reviews feedback'ten ayrı.
+  // Header subtitle: what the page shows — the business in scope (the shell's
+  // business switcher writes `?restaurantId`) and the period.
+  const scopeLabel = (() => {
+    if (restaurantIds.length === 0) return '';
+    if (restaurantIds.length === 1) {
+      return user.restaurants.find((r) => r.id === restaurantIds[0])?.name ?? '';
+    }
+    return isTr
+      ? `Tüm işletmeler (${restaurantIds.length})`
+      : `All businesses (${restaurantIds.length})`;
+  })();
+  const periodLabel = (() => {
+    if (customRange) {
+      const fmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      });
+      return `${fmt.format(customRange.start)} – ${fmt.format(customRange.end)}`;
+    }
+    if (rangeKey === '1y') return isTr ? 'Son 12 ay' : 'Last 12 months';
+    return isTr ? `Son ${windowDays} gün` : `Last ${windowDays} days`;
+  })();
+  // CSV export keeps the current scope + filters (same params as the page).
+  // The business is the resolved one, so the export never silently widens to
+  // every business when the URL has no `?restaurantId` yet.
+  const exportQuery = new URLSearchParams();
+  for (const key of ['range', 'platform', 'branch', 'customStart', 'customEnd'] as const) {
+    const value = sp[key];
+    if (typeof value === 'string' && value) exportQuery.set(key, value);
+  }
+  if (selectedRestaurantId) exportQuery.set('restaurantId', selectedRestaurantId);
+  const exportQs = exportQuery.toString();
+  const exportHref = `/api/dashboard/analytics/export${exportQs ? `?${exportQs}` : ''}`;
+
+  // KPI calculations.
   const reviewsCount = feedbacksWindow.length;
-  const scansCount = scansWindowCount;
   const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow);
-  const _scansDelta = pctDelta(scansCount, scansPrevWindowCount);
 
-  // §38.50 — Secondary KPI silindi (Dönüşüm/Yönlendirme/AI Yanıt → tasarım
-  // birebir 5 single row). Dead compute'lar `_` prefix ile suspended (gelecek
-  // export endpoint veya analytics extension'da yine gerekebilir).
-  const _conversionRate = scansCount > 0 ? Math.round((reviewsCount / scansCount) * 100) : 0;
-  const _prevConversionRate =
-    scansPrevWindowCount > 0
-      ? Math.round((feedbacksPrevWindow / scansPrevWindowCount) * 100)
-      : 0;
-
-  const _redirectRate = reviewsCount > 0 ? Math.round((redirectedWindow / reviewsCount) * 100) : 0;
-  const _prevRedirectRate = feedbacksPrevWindow > 0 ? Math.round((redirectedPrevWindow / feedbacksPrevWindow) * 100) : 0;
-
-  const _lowRatingRate = reviewsCount > 0 ? Math.round((lowRatedWindow / reviewsCount) * 100) : 0;
-  const _prevLowRatingRate = feedbacksPrevWindow > 0 ? Math.round((lowRatedPrevWindow / feedbacksPrevWindow) * 100) : 0;
-
-  // §38.34 — Yeni KPI hesaplamaları (4 top tasarım + 3 secondary Buaze)
-  // 1) Ortalama Puan + delta
+  // 1) Ortalama Puan — no delta yet (the previous period's average is not
+  // queried).
   const avgRatingNow =
     reviewsCount > 0
       ? feedbacksWindow.reduce((s, f) => s + (f.rating ?? 0), 0) / reviewsCount
       : 0;
-  const prevFeedbacksAvgInput = feedbacksWindow; // fallback for prev compute (server-side)
-  // Prev avg rating: feedbacksPrevWindow count yeter ama avg ayrı query gerek;
-  // şu anki transaction'da prev rating breakdown yok — heuristic: 0 fallback,
-  // delta sadece count-bazlı bilgilendirici görünmez (delta string gizli).
-  void prevFeedbacksAvgInput; // intentionally unused — prev avg rating compute deferred
   // 2) NPS — calculateNPS saf helper
   const npsResult = calculateNPS(feedbacksWindow.map((f) => ({ rating: f.rating ?? 0 })));
   // 3) Yanıt sayısı (all feedback) — replied count, "Yanıt süresi" KPI subtitle.
@@ -488,14 +433,10 @@ async function renderAnalyticsPage({
       ? Math.round((returningCustomers / totalUniqueCustomers) * 100)
       : null;
 
-  // Window-day daily distribution (etkileşim chart) — dynamic length, 3-seri funnel.
-  // Funnel: scans (qrScan, üst) ⊇ reviews (feedback) ⊇ redirects (rating≥4+platform).
-  const dateFmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-  });
-  const interactionData: InteractionTrendPoint[] = Array.from({ length: windowDays }, (_, i) => {
-    const dayStart = new Date();
+  // Daily series for the KPI sparklines — one point per day of the window,
+  // ending on the window's last day (same days as the trend chart).
+  const dailySeries: DailyPoint[] = Array.from({ length: windowDays }, (_, i) => {
+    const dayStart = new Date(seriesAnchor);
     dayStart.setHours(0, 0, 0, 0);
     dayStart.setDate(dayStart.getDate() - (windowDays - 1 - i));
     const dayEnd = new Date(dayStart);
@@ -503,17 +444,10 @@ async function renderAnalyticsPage({
     const dayFbs = feedbacksWindow.filter(
       (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
     );
-    const scans = scansWindowDaily.filter(
-      (s) => s.createdAt >= dayStart && s.createdAt < dayEnd,
-    ).length;
-    const reviews = dayFbs.length;
-    const redirects = dayFbs.filter(
-      (f) => (f.rating ?? 0) >= 4 && f.platform != null && f.platform !== '',
-    ).length;
     const rated = dayFbs.filter((f) => (f.rating ?? 0) > 0);
     const avgRating =
       rated.length > 0 ? rated.reduce((sum, f) => sum + f.rating, 0) / rated.length : null;
-    return { date: dateFmt.format(dayStart), scans, reviews, redirects, avgRating };
+    return { reviews: dayFbs.length, avgRating };
   });
 
   // Platform paylaşımı — sadece "Tümü" filter'ında anlamlı (tek platform
@@ -527,14 +461,33 @@ async function renderAnalyticsPage({
     .filter((p) => p.count > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
-  const _totalRedirects = platformShare.reduce((a, p) => a + p.count, 0);
-  const showPlatformShare = !platformFilter;
+  // KANAL DAĞILIMI rows: platforms + 'Buaze QR' (rating ≥4 with no platform).
+  const buazeQrCount = feedbacksWindow.filter(
+    (f) => (f.rating ?? 0) >= 4 && !f.platform,
+  ).length;
+  const channelRows = [
+    ...platformShare.map((p) => ({
+      platform: p.key,
+      label: PLATFORMS[p.id].label,
+      count: p.count,
+      color: PLATFORMS[p.id].color,
+    })),
+    ...(buazeQrCount > 0
+      ? [{ platform: 'buaze_qr', label: 'Buaze QR', count: buazeQrCount, color: '#0A0A0A' }]
+      : []),
+  ];
+  // Only meaningful across platforms (hidden under a platform filter) and
+  // only when there is something to show — the card renders nothing for an
+  // empty list, which left an empty grid column.
+  const showPlatformShare = !platformFilter && channelRows.length > 0;
 
-  // Günlük dağılım (7-day day-of-week) — fixed 7d window
+  // Günlük dağılım (day-of-week) — over the selected period, like every other
+  // card. It used a fixed last-7-days window, so with "Son 90 gün" or a custom
+  // range in the past it counted reviews the header said were not shown.
   const dayLabels = isTr ? DAY_LABELS_TR : DAY_LABELS_EN;
   const zonedDayHour = makeZonedDayHour(resolveDisplayTimeZone());
   const dayBuckets: number[] = Array(7).fill(0);
-  for (const f of feedbacks7d) {
+  for (const f of feedbacksWindow) {
     const { day: idx } = zonedDayHour(f.createdAt);
     if (idx >= 0 && idx < 7) dayBuckets[idx] = (dayBuckets[idx] || 0) + 1;
   }
@@ -586,7 +539,7 @@ async function renderAnalyticsPage({
       platform: f.platform,
       createdAt: f.createdAt,
     })),
-    { windowDays, locale: isTr ? 'tr' : 'en', now: new Date(now) },
+    { windowDays, locale: isTr ? 'tr' : 'en', now: seriesAnchor },
   );
 
   // Stage 66 §38.147 — HANDOFF AnalyticsDesktop sentiment donut overall
@@ -625,53 +578,6 @@ async function renderAnalyticsPage({
         Math.round((targets.reduce((sum, t) => sum + t, 0) / targets.length) * 10) / 10;
     }
   }
-
-  // ---- Aspect breakdown (yemek / servis / atmosfer) ----
-  // Schema'da rating'lere ek olarak 3 alt-rating var (Feedback.foodRating, vb.).
-  // Public review formu opsiyonel sorduğu için sparse data — yeterli sample
-  // (≥5) varsa StatCard 3'lüsü göster, yoksa section gizlenir.
-  const aspectAvg = (key: 'foodRating' | 'serviceRating' | 'atmosphereRating') => {
-    const rated = feedbacksWindow.filter((f) => f[key] != null);
-    if (rated.length < 5) return null;
-    const sum = rated.reduce((a, f) => a + (f[key] ?? 0), 0);
-    return { avg: sum / rated.length, count: rated.length };
-  };
-  const aspectFood = aspectAvg('foodRating');
-  const aspectService = aspectAvg('serviceRating');
-  const aspectAtmosphere = aspectAvg('atmosphereRating');
-  const showAspects = !!(aspectFood || aspectService || aspectAtmosphere);
-
-  // ---- Yanıt süresi metric ----
-  // Düşük puan (≤3★) yorumlar için ilk yanıta kadar geçen süre. Reputation
-  // guard: 8h+ yanıtsız "incident" sayılır, owner aksiyon alır.
-  const lowRatingFeedbacks = feedbacksWindow.filter((f) => f.rating <= 3);
-  const respondedLatencies: number[] = []; // ms
-  let pendingOver8h = 0;
-  let pendingTotal = 0;
-  const nowMs = Date.now();
-  const EIGHT_H = 8 * 60 * 60 * 1000;
-  for (const f of lowRatingFeedbacks) {
-    const reply = f.replies[0];
-    if (reply) {
-      respondedLatencies.push(reply.createdAt.getTime() - f.createdAt.getTime());
-    } else {
-      pendingTotal += 1;
-      if (nowMs - f.createdAt.getTime() > EIGHT_H) pendingOver8h += 1;
-    }
-  }
-  // Median latency hesabı (saat cinsinden)
-  let medianResponseHours: number | null = null;
-  if (respondedLatencies.length > 0) {
-    const sorted = [...respondedLatencies].sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    const medianMs =
-      sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-    medianResponseHours = Math.round((medianMs / (60 * 60 * 1000)) * 10) / 10;
-  }
-  const responseRate =
-    lowRatingFeedbacks.length > 0
-      ? Math.round((respondedLatencies.length / lowRatingFeedbacks.length) * 100)
-      : null;
 
   // ---- AI sentiment themes (CLAUDE.md §15 + §34.x — OpenAI extractThemes) ----
   // Feedback yorumlarından top 5 şikayet + top 5 övgü teması. Cache key
@@ -725,69 +631,46 @@ async function renderAnalyticsPage({
       )
     : { trend: '', win: '', risk: '', source: 'fallback' as const };
 
-  const _windowLabel = isTr ? `${windowDays} GÜNLÜK` : `${windowDays}-DAY`;
-  const _windowSuffix = isTr ? `önceki ${windowDays} güne göre` : `vs prev ${windowDays}d`;
-
-  // Phase 8c+ (CLAUDE.md §38.18) — KPI mini sparkline data
-  // (.design-owner-2026/page-analytics.jsx parity). interactionData zaten
-  // window-bazlı günlük seri taşıyor; her bir KPI kendi metric'ini
-  // çıkartarak ham series verir. Min 2 nokta gerekir (StatCard guard).
-  const _sparkScans = interactionData.map((d) => d.scans);
-  const sparkReviews = interactionData.map((d) => d.reviews);
+  // Phase 8c+ (CLAUDE.md §38.18) — KPI mini sparkline data from the daily
+  // series. Min 2 nokta gerekir (StatCard guard).
+  const sparkReviews = dailySeries.map((d) => d.reviews);
   // ORTALAMA PUAN — günlük ortalama. Yorumsuz günler son bilinen değeri
   // taşır (sahte 0 çukuru olmasın); ilk yorumdan önceki günler atlanır.
   // En az 2 günde yorum yoksa trend yok → sparkline gizli.
-  const ratedDays = interactionData.filter((d) => d.avgRating !== null).length;
+  const ratedDays = dailySeries.filter((d) => d.avgRating !== null).length;
   const sparkAvgRating: number[] = [];
   if (ratedDays >= 2) {
     let lastAvg: number | null = null;
-    for (const d of interactionData) {
+    for (const d of dailySeries) {
       if (d.avgRating !== null) lastAvg = d.avgRating;
       if (lastAvg !== null) sparkAvgRating.push(Math.round(lastAvg * 100) / 100);
     }
   }
-  const _sparkRedirects = interactionData.map((d) => d.redirects);
-  // Conversion = reviews / scans (her gün için, NaN guard 0 fallback).
-  const _sparkConversion = interactionData.map((d) =>
-    d.scans > 0 ? Math.round((d.reviews / d.scans) * 100) : 0,
-  );
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
-      {/* Stage 66 §38.147 — Live indicator (compliance-safe static). HANDOFF
-          "8 sn ÖNCE GÜNCELLENDİ" fake real-time timer compliance variation
-          ile değiştirildi: "GÜNCEL · BU SAYFA" / "LIVE · THIS PAGE". */}
-      <AnalyticsLiveIndicator isTr={isTr} />
-
       <PageHeader
         /* §38.66 — Analytics 5-col KPI + chart + heatmap + topic grid yoğun
-           dashboard; hero h1 ezici hissedilir. titleScale="compact"
-           22-32px mütevazı kalır. */
+           dashboard; hero h1 ezici hissedilir. titleScale="compact".
+           §49 — no eyebrow (the topbar breadcrumb already says "Analitik");
+           the subtitle names the business in scope and the period. */
         titleScale="compact"
-        eyebrow={isTr ? 'ANALİTİK' : 'ANALYTICS'}
         title={isTr ? 'Analitik' : 'Analytics'}
-        description={
-          isTr
-            ? 'Yorum, yönlendirme ve trafik metriklerini filtrele.'
-            : 'Filter review, redirect, and traffic metrics.'
+        subtitle={scopeLabel ? `${scopeLabel} · ${periodLabel}` : periodLabel}
+        actions={
+          <a
+            href={exportHref}
+            download
+            className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-0"
+            aria-label={isTr ? 'Rapor indir (CSV)' : 'Export report (CSV)'}
+          >
+            <Download size={14} strokeWidth={2} aria-hidden="true" />
+            {isTr ? 'Rapor indir' : 'Export report'}
+          </a>
         }
       />
 
-      <AnalyticsFilterBar
-        isTr={isTr}
-        branches={branches}
-        restaurants={user.restaurants}
-      />
-
-      {/* §38.34 — Mobile hero (sm:hidden) — graphite + lime 4.71 + sparkline */}
-      <MobileAnalyticsHero
-        avgRating={avgRatingNow}
-        // Önceki dönem ortalaması hesaplanmıyor; sabit 4.0'a göre "↑" delta
-        // gerçek bir değişim değildi (hep yeşil). Gerçek delta gelene dek gizli.
-        delta={null}
-        sparkline={sparkAvgRating}
-        isTr={isTr}
-      />
+      <AnalyticsFilterBar isTr={isTr} branches={branches} />
 
       {/* §38.50 — KPI 5-col single row (tasarım birebir parity).
           Toplam yorum / Ortalama puan / Yanıt süresi / NPS / Tekrar gelme.
@@ -799,9 +682,14 @@ async function renderAnalyticsPage({
             value: reviewsCount.toLocaleString(isTr ? 'tr-TR' : 'en-US'),
             delta: reviewsDelta.value,
             deltaKind: reviewsDelta.kind,
-            subtitle: isTr
-              ? `${feedbacksPrevWindow} önceki dönem`
-              : `${feedbacksPrevWindow} prev period`,
+            subtitle:
+              feedbacksPrevWindow > 0
+                ? isTr
+                  ? `önceki dönemde ${feedbacksPrevWindow.toLocaleString('tr-TR')}`
+                  : `${feedbacksPrevWindow.toLocaleString('en-US')} in previous period`
+                : isTr
+                  ? 'önceki dönemde yorum yok'
+                  : 'none in previous period',
             sparkline: sparkReviews,
             sparklineColor: '#0A0A0A',
           },
@@ -837,31 +725,30 @@ async function renderAnalyticsPage({
           {
             label: isTr ? 'NPS' : 'NPS',
             value: npsResult.total > 0 ? String(npsResult.npsScore) : '—',
-            delta:
-              npsResult.total > 0 ? `Promoter %${npsResult.promoterPct}` : null,
-            deltaKind: 'flat',
+            // 5★ destekçi, 4★ pasif, 1-3★ eleştiren (lib/analytics-nps.ts).
+            delta: null,
             subtitle:
               npsResult.total > 0
-                ? `${npsResult.promoters}P · ${npsResult.passives}Pa · ${npsResult.detractors}D`
+                ? isTr
+                  ? `${npsResult.promoters}\u00a0destekçi · ${npsResult.passives}\u00a0pasif · ${npsResult.detractors}\u00a0eleştiren`
+                  : `${npsResult.promoters}\u00a0promoters · ${npsResult.passives}\u00a0passive · ${npsResult.detractors}\u00a0detractors`
                 : isTr
                   ? 'yeterli veri yok'
                   : 'not enough data',
           },
           {
             label: isTr ? 'TEKRAR GELME' : 'RETURN RATE',
-            value: returnRate !== null ? `%${returnRate}` : '—',
-            delta:
-              returnRate !== null && totalUniqueCustomers > 0
-                ? isTr
-                  ? `${returningCustomers}/${totalUniqueCustomers}`
-                  : `${returningCustomers}/${totalUniqueCustomers}`
-                : null,
-            deltaKind: 'flat',
+            value: returnRate !== null ? (isTr ? `%${returnRate}` : `${returnRate}%`) : '—',
+            // The bare "2/6" next to the value was unclear — the subtitle
+            // says it in words.
+            delta: null,
             subtitle:
               totalUniqueCustomers > 0
                 ? isTr
-                  ? `${totalUniqueCustomers} tekil müşteri`
-                  : `${totalUniqueCustomers} unique`
+                  ? `${totalUniqueCustomers} müşteriden ${returningCustomers} kişi tekrar geldi`
+                  : `${returningCustomers} of ${totalUniqueCustomers} ${
+                      totalUniqueCustomers === 1 ? 'customer' : 'customers'
+                    } came back`
                 : isTr
                   ? 'KVKK onaylı veri yok'
                   : 'no consented data',
@@ -895,54 +782,43 @@ async function renderAnalyticsPage({
           AI-bağımsız) + TopMentionsPolarity per-theme polarity arrow
           (extractThemes data) ikilisi HANDOFF spec'ine birebir uyar +
           owner için 2 farklı sentiment angle sunar (overall + per-theme). */}
-      {showPlatformShare && (
-        <div className="grid gap-3.5 lg:grid-cols-[1.4fr_1fr_1fr]">
+      {/* Channel breakdown only means something across platforms: with a
+          platform filter it is hidden, but sentiment + top mentions stay
+          (they used to disappear with it). */}
+      <div
+        className={`grid gap-3.5 ${
+          showPlatformShare ? 'lg:grid-cols-[1.4fr_1fr_1fr]' : 'lg:grid-cols-2'
+        }`}
+      >
+        {showPlatformShare && (
           <ChannelDistributionMini
-            channels={[
-              ...platformShare.map((p) => ({
-                platform: p.key,
-                label: PLATFORMS[p.id].label,
-                count: p.count,
-                color: PLATFORMS[p.id].color,
-              })),
-              // 'Buaze QR' UI runtime label: platform null yorumlar (rating ≥4).
-              ...(() => {
-                const buazeQrCount = feedbacksWindow.filter(
-                  (f) => (f.rating ?? 0) >= 4 && !f.platform,
-                ).length;
-                return buazeQrCount > 0
-                  ? [
-                      {
-                        platform: 'buaze_qr',
-                        label: isTr ? 'Buaze QR' : 'Buaze QR',
-                        count: buazeQrCount,
-                        color: '#0A0A0A',
-                      },
-                    ]
-                  : [];
-              })(),
-            ]}
+            channels={channelRows}
             isTr={isTr}
+            caption={
+              isTr
+                ? '4-5 yıldızlı yorumların geldiği kanallar'
+                : 'Where 4-5 star reviews came from'
+            }
           />
+        )}
 
-          {/* Stage 66 §38.147 — DUYGU DAĞILIMI donut. Rating distribution
-              NPS-style heuristic (rating 5 = positive, 3-4 = neutral,
-              1-2 = negative). AI-bağımsız, her zaman compute edilebilir. */}
-          <SentimentDonut
-            pos={sentimentPos}
-            neu={sentimentNeu}
-            neg={sentimentNeg}
-            isTr={isTr}
-            totalSample={sentimentTotal}
-          />
+        {/* Stage 66 §38.147 — DUYGU DAĞILIMI donut. Rating distribution
+            NPS-style heuristic (rating 5 = positive, 3-4 = neutral,
+            1-2 = negative). AI-bağımsız, her zaman compute edilebilir. */}
+        <SentimentDonut
+          pos={sentimentPos}
+          neu={sentimentNeu}
+          neg={sentimentNeg}
+          isTr={isTr}
+          totalSample={sentimentTotal}
+        />
 
-          {/* Stage 66 §38.147 — EN ÇOK BAHSEDİLENLER per-theme polarity.
-              extractThemes themes[] data direkt. Polarity derive: pos% ≥60
-              → ↑ green, <35 → ↓ red, else → · neutral. AI yok ise empty
-              state ("yeterli veri yok"). */}
-          <TopMentionsPolarity themes={themes.themes} isTr={isTr} />
-        </div>
-      )}
+        {/* Stage 66 §38.147 — EN ÇOK BAHSEDİLENLER per-theme polarity.
+            extractThemes themes[] data direkt. Polarity derive: pos% ≥60
+            → ↑ green, <35 → ↓ red, else → · neutral. AI yok ise empty
+            state ("yeterli veri yok"). */}
+        <TopMentionsPolarity themes={themes.themes} isTr={isTr} />
+      </div>
 
       {/* 2-col 1fr/1fr: Günlük dağılım + Saat-bazlı dağılım */}
       <div className="grid gap-3.5 lg:grid-cols-2">
@@ -973,112 +849,6 @@ async function renderAnalyticsPage({
         <HeatmapDayHour cells={heatmapCells} isTr={isTr} />
       </section>
 
-      {/* Yanıt performansı + Aspect breakdown (conditional) */}
-      {/* §38.34 — YANIT PERFORMANSI + Aspect Breakdown silindi (kullanıcı kararı):
-          KPI Yanıt Oranı + KONU & DUYGU section'ları bu metric'leri özetler. */}
-      {false && (lowRatingFeedbacks.length > 0 || showAspects) && (
-        <div className="grid gap-3.5 lg:grid-cols-2">
-          {lowRatingFeedbacks.length > 0 && (
-            <section className="bz-card p-5 sm:p-6">
-              <Eyebrow>{isTr ? 'YANIT PERFORMANSI' : 'RESPONSE PERFORMANCE'}</Eyebrow>
-              <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
-                {isTr ? 'Düşük puanlara yanıt süresi' : 'Reply latency for low ratings'}
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div>
-                  <div className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'YANIT ORANI' : 'REPLY RATE'}
-                  </div>
-                  <div className="bz-h-tight-2 mt-1 tabular-nums" style={{ fontSize: 22 }}>
-                    {responseRate !== null ? `${responseRate}%` : '—'}
-                  </div>
-                  <div className="text-[11px] text-[#737373] mt-0.5">
-                    {respondedLatencies.length}/{lowRatingFeedbacks.length}
-                  </div>
-                </div>
-                <div>
-                  <div className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'MEDYAN SÜRE' : 'MEDIAN TIME'}
-                  </div>
-                  <div className="bz-h-tight-2 mt-1 tabular-nums" style={{ fontSize: 22 }}>
-                    {medianResponseHours !== null ? `${medianResponseHours}s` : '—'}
-                  </div>
-                  <div className="text-[11px] text-[#737373] mt-0.5">
-                    {isTr ? 'yanıt geliş süresi' : 'time to first reply'}
-                  </div>
-                </div>
-                <div>
-                  <div className="pulse-eyebrow text-[#737373]">
-                    {isTr ? '8 SAAT+ BEKLEYEN' : 'PENDING 8H+'}
-                  </div>
-                  <div
-                    className="bz-h-tight-2 mt-1 tabular-nums text-[#0A0A0A]"
-                    style={{ fontSize: 22 }}
-                  >
-                    {pendingOver8h}
-                  </div>
-                  <div className="text-[11px] text-[#737373] mt-0.5">
-                    {isTr ? `toplam ${pendingTotal} bekleyen` : `${pendingTotal} pending total`}
-                  </div>
-                </div>
-              </div>
-              {pendingOver8h > 0 && (
-                <p className="mt-3 inline-flex items-start gap-2 rounded-md border-l-2 border-[#FCA5A5] bg-[#FAFAFA] px-2.5 py-1.5 text-[11px] leading-[1.55] text-[#525252]">
-                  <span aria-hidden="true" className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#FCA5A5]" />
-                  <span>
-                    {isTr
-                      ? `${pendingOver8h} yorum 8 saati aştı. İlk fırsatta yanıtlamak müşteri ilişkisini güçlendirir.`
-                      : `${pendingOver8h} reviews exceeded 8h. Replying soon strengthens customer rapport.`}
-                  </span>
-                </p>
-              )}
-            </section>
-          )}
-
-          {showAspects && (
-            <section className="bz-card p-5 sm:p-6">
-              <Eyebrow>{isTr ? 'KATEGORİ ANALİZİ' : 'ASPECT BREAKDOWN'}</Eyebrow>
-              <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
-                {isTr ? 'Yemek · Servis · Atmosfer' : 'Food · Service · Atmosphere'}
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {[
-                  { key: 'food', data: aspectFood, tr: 'Yemek', en: 'Food' },
-                  { key: 'service', data: aspectService, tr: 'Servis', en: 'Service' },
-                  { key: 'atmosphere', data: aspectAtmosphere, tr: 'Atmosfer', en: 'Atmosphere' },
-                ].map((row) => (
-                  <div key={row.key}>
-                    <div className="pulse-eyebrow text-[#737373]">
-                      {(isTr ? row.tr : row.en).toUpperCase()}
-                    </div>
-                    {row.data ? (
-                      <>
-                        <div className="bz-h-tight-2 mt-1 tabular-nums" style={{ fontSize: 22 }}>
-                          {row.data.avg.toFixed(1)}
-                          <span className="text-[12px] text-[#737373] font-normal"> /5</span>
-                        </div>
-                        <div className="text-[11px] text-[#737373] mt-0.5">
-                          {row.data.count} {isTr ? 'değerlendirme' : 'ratings'}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="bz-h-tight-2 mt-1 tabular-nums text-[#A3A3A3]" style={{ fontSize: 22 }}>
-                        —
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 text-[11px] text-[#737373]">
-                {isTr
-                  ? 'Müşterinin opsiyonel olarak verdiği alt-kategori puanları (≥5 örneklem).'
-                  : 'Optional sub-category ratings from customers (≥5 sample).'}
-              </p>
-            </section>
-          )}
-        </div>
-      )}
-
       {/* §38.50 — Bottom row: Heatmap + AI İÇGÖRÜLER 2-up grid (tasarım birebir).
           AI İÇGÖRÜLER artık light card (CLAUDE.md §38.50). KONU SENTİMENT
           (eski bottom dark) yukarı 2-up grid sağ kart'a taşındı. */}
@@ -1088,40 +858,6 @@ async function renderAnalyticsPage({
         risk={structuredInsight.risk}
         isTr={isTr}
       />
-
-      {/* §38.50 — TopLocationCard sayfa altına taşındı (multi-restaurant owner
-          için faydalı, 2-up grid sağ kart KONU SENTİMENT'a verildi). */}
-      {(() => {
-        if (user.restaurants.length < 2) return null;
-        const counts = new Map<string, number>();
-        const ratings = new Map<string, { sum: number; count: number }>();
-        for (const f of feedbacksWindow) {
-          if (!f.restaurantId) continue;
-          counts.set(f.restaurantId, (counts.get(f.restaurantId) ?? 0) + 1);
-          const r = ratings.get(f.restaurantId) ?? { sum: 0, count: 0 };
-          r.sum += f.rating ?? 0;
-          r.count += 1;
-          ratings.set(f.restaurantId, r);
-        }
-        if (counts.size === 0) return null;
-        const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0];
-        const restaurant = user.restaurants.find((r) => r.id === top[0]);
-        if (!restaurant) return null;
-        const ratingAgg = ratings.get(top[0])!;
-        return (
-          <TopLocationCard
-            topLocation={{
-              id: restaurant.id,
-              name: restaurant.name,
-              branch: null,
-              count: top[1],
-              avgRating: ratingAgg.count > 0 ? ratingAgg.sum / ratingAgg.count : 0,
-            }}
-            locale={locale}
-            isTr={isTr}
-          />
-        );
-      })()}
     </div>
   );
 }

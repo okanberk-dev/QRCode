@@ -25,17 +25,29 @@ export interface AiSummaryCardProps {
   locale: 'tr' | 'en';
 }
 
+// Session cache: a review opened again shows its result at once (no loader,
+// no repeat request). `null` = no summary to show (fallback / empty). Errors
+// are not cached, so the next open retries. The parent keys this card by
+// feedback id, so state below is read from the cache on mount.
+const summaryCache = new Map<string, SummaryData | null>();
+
 const INTENT_LABELS = {
   tr: { high: 'Yüksek', medium: 'Orta', low: 'Düşük' },
   en: { high: 'High', medium: 'Medium', low: 'Low' },
 };
 
 export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) {
-  const [data, setData] = useState<SummaryData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const cacheKey = `${feedbackId}:${locale}`;
+  const [data, setData] = useState<SummaryData | null>(() => summaryCache.get(cacheKey) ?? null);
+  const [loading, setLoading] = useState(() => !summaryCache.has(cacheKey));
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (summaryCache.has(cacheKey)) {
+      setData(summaryCache.get(cacheKey) ?? null);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setData(null);
     setError(false);
@@ -44,12 +56,12 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
     fetch(`/api/feedback/${feedbackId}/summary?locale=${locale}`, { method: 'POST' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: SummaryData | null) => {
-        if (cancelled) return;
         if (!d) {
-          setError(true);
-        } else {
-          setData(d);
+          if (!cancelled) setError(true);
+          return;
         }
+        summaryCache.set(cacheKey, d.source === 'fallback' ? null : d);
+        if (!cancelled) setData(d);
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -61,7 +73,7 @@ export function AiSummaryCard({ feedbackId, isTr, locale }: AiSummaryCardProps) 
     return () => {
       cancelled = true;
     };
-  }, [feedbackId, locale]);
+  }, [cacheKey, feedbackId, locale]);
 
   if (loading) {
     return (

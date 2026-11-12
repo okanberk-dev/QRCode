@@ -3,21 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, ExternalLink, Link2, MoreHorizontal, QrCode } from "lucide-react";
 import {
-  AlertOctagon,
-  ArrowLeft,
-  Building2,
-  Check,
-  Clock,
-  ExternalLink,
-  Globe,
-  Link2,
-  Lock,
-  Palette,
-  Plug,
-  QrCode,
-} from "lucide-react";
-import { AlertBanner, BusinessStatusBadge, PageHeader } from "@/components/ui";
+  AlertBanner,
+  Badge,
+  PageHeader,
+  PulseMenu,
+  PulseMenuItem,
+} from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
 import { BusinessGeneralSettings } from "@/components/dashboard/settings/sections/BusinessGeneralSettings";
@@ -115,14 +108,27 @@ const SECTION_IDS = [
   "brand",
   "website",
   "operations",
-  "security",
-  "danger",
+  "status",
 ] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 const VALID_SECTION_IDS = new Set<string>(SECTION_IDS);
-// Legacy deep links (`?section=integrations` — old "Entegrasyonlar" tab,
-// still used by onboarding mails / bookmarks) open the platforms tab.
-const SECTION_ALIASES: Record<string, SectionId> = { integrations: "platforms" };
+// One name per section: the tab label and the section heading both read it.
+const SECTION_LABELS: Record<SectionId, { tr: string; en: string }> = {
+  general: { tr: "Genel bilgiler", en: "General details" },
+  platforms: { tr: "Platform bağlantıları", en: "Platform links" },
+  brand: { tr: "Marka", en: "Brand" },
+  website: { tr: "Web sitesi", en: "Website" },
+  operations: { tr: "Çalışma saatleri", en: "Opening hours" },
+  status: { tr: "Durum ve silme", en: "Status & deletion" },
+};
+// Legacy deep links: `?section=integrations` (old "Entegrasyonlar" tab, still
+// used by onboarding mails / bookmarks) opens the platforms tab; the former
+// "Güvenlik" and "Tehlikeli bölge" tabs were merged into "Durum ve silme".
+const SECTION_ALIASES: Record<string, SectionId> = {
+  integrations: "platforms",
+  security: "status",
+  danger: "status",
+};
 
 function resolveSectionId(raw: string | null): SectionId {
   if (!raw) return "general";
@@ -177,7 +183,16 @@ export default function RestaurantSettingsClient({
   const [loading, setLoading] = useState(initialRestaurant === undefined);
   const skipFirstFetchRef = useRef(initialRestaurant !== undefined);
   const [error, setError] = useState<string | null>(null);
-  const [copyNotice, setCopyNotice] = useState<string | null>(null);
+  // "Linki kopyala" result. Shown as an overlay pill (no layout shift) and
+  // announced through an always-mounted live region.
+  const [copyNotice, setCopyNotice] = useState<{ text: string; ok: boolean } | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    },
+    [],
+  );
 
   const initialSection = useMemo<string>(
     () => resolveSectionId(searchParams.get("section")),
@@ -185,6 +200,14 @@ export default function RestaurantSettingsClient({
   );
 
   const [active, setActive] = useState<string>(initialSection);
+  // Follow `?section=` when it changes without a remount — e.g. the sidebar
+  // "Faturalama" / "Bildirimler" links while this page is already open used
+  // to change the URL but leave the old tab on screen.
+  const [syncedSection, setSyncedSection] = useState(initialSection);
+  if (initialSection !== syncedSection) {
+    setSyncedSection(initialSection);
+    setActive(initialSection);
+  }
 
   // Platform link checks power the "Platform bağlantıları" tab (summary +
   // tab dot). `null` = still loading → untested until the response lands.
@@ -235,8 +258,7 @@ export default function RestaurantSettingsClient({
         brand: 0,
         website: 0,
         operations: 0,
-        security: 0,
-        danger: 0,
+        status: 0,
       };
     }
     // The website URL is edited in Genel › "Web ve haritalar"; the Website
@@ -258,27 +280,17 @@ export default function RestaurantSettingsClient({
       brand: 0,
       website: 0,
       operations: operationsMissing,
-      security: 0,
-      danger: 0,
+      status: 0,
     };
   }, [restaurant, reviewLinkSummary]);
 
   const sectionTabs = useMemo<SettingsTab[]>(() => {
     const isTrLabel = locale === "tr";
-    const labels: Record<SectionId, { tr: string; en: string }> = {
-      general: { tr: "Genel", en: "General" },
-      platforms: { tr: "Platform bağlantıları", en: "Platform links" },
-      brand: { tr: "Marka", en: "Brand" },
-      website: { tr: "Web sitesi", en: "Website" },
-      operations: { tr: "Operasyonel", en: "Operations" },
-      security: { tr: "Güvenlik", en: "Security" },
-      danger: { tr: "Tehlikeli bölge", en: "Danger zone" },
-    };
     return SECTION_IDS.map((id) => {
       const issues = sectionIssues[id];
       return {
         id,
-        label: isTrLabel ? labels[id].tr : labels[id].en,
+        label: isTrLabel ? SECTION_LABELS[id].tr : SECTION_LABELS[id].en,
         badge:
           issues > 0 ? (
             <IncompleteDot
@@ -420,6 +432,8 @@ export default function RestaurantSettingsClient({
   }
 
   const isTr = locale === "tr";
+  const sectionTitle = (sectionId: SectionId) =>
+    isTr ? SECTION_LABELS[sectionId].tr : SECTION_LABELS[sectionId].en;
 
   // Public review surface URL — used by the quick action chips. Falls back
   // to relative `/r/{slug}` when env app URL is missing or local-host
@@ -433,75 +447,102 @@ export default function RestaurantSettingsClient({
   const handleCopyPublicLink = async () => {
     try {
       await navigator.clipboard.writeText(publicReviewUrl);
-      setCopyNotice(locale === "tr" ? "Link kopyalandı." : "Link copied.");
+      setCopyNotice({ text: isTr ? "Link kopyalandı." : "Link copied.", ok: true });
     } catch {
-      setCopyNotice(
-        locale === "tr"
-          ? "Link kopyalanamadı — tarayıcı izin vermedi."
-          : "Could not copy link — browser blocked it.",
-      );
+      setCopyNotice({
+        text: isTr
+          ? "Link kopyalanamadı. Tarayıcı izin vermedi."
+          : "Could not copy the link. Your browser blocked it.",
+        ok: false,
+      });
     }
-    setTimeout(() => setCopyNotice(null), 2400);
+    if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = window.setTimeout(() => setCopyNotice(null), 2400);
   };
 
+  // One primary action (QR oluştur) + a "Diğer" menu for the customer-page
+  // link actions. The status badge sits with the public URL under the title.
   const header = (
-    <div>
+    <div className="relative">
       <Link
         href={`/${locale}/dashboard/restaurants/${id}`}
-        className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex min-h-[44px] items-center gap-1 mb-3 sm:min-h-[32px]"
+        className="inline-flex min-h-[44px] items-center gap-1.5 text-[12px] text-[#737373] hover:text-[#0A0A0A] mb-2 sm:min-h-[32px]"
       >
-        <ArrowLeft size={12} />
-        {locale === "tr" ? "İşletme özetine dön" : "Back to business summary"}
+        <ArrowLeft size={13} aria-hidden="true" />
+        {isTr ? "İşletme özetine dön" : "Back to business summary"}
       </Link>
       <PageHeader
-        eyebrow={locale === "tr" ? "İŞLETME AYARLARI" : "BUSINESS SETTINGS"}
+        eyebrow={isTr ? "İŞLETME AYARLARI" : "BUSINESS SETTINGS"}
         // Long names must wrap instead of overflowing at 375px.
         title={<span className="break-words [overflow-wrap:anywhere]">{restaurant.name}</span>}
-        description={`/r/${restaurant.slug}`}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <span className="bz-mono text-[12px] text-[#737373] break-all">
+              /r/{restaurant.slug}
+            </span>
+            {/* Local badge: BusinessStatusBadge only has Turkish labels. */}
+            <Badge kind={restaurant.isActive ? "ok" : "off"} dot>
+              {restaurant.isActive
+                ? isTr
+                  ? "Aktif"
+                  : "Active"
+                : isTr
+                  ? "Devre dışı"
+                  : "Disabled"}
+            </Badge>
+          </span>
+        }
         actions={
-          <BusinessStatusBadge status={restaurant.isActive ? "active" : "disabled"} />
+          <>
+            <Link
+              href={`/${locale}/dashboard/qr?new=1&restaurantId=${restaurant.id}`}
+              className="bz-btn-primary min-h-[44px] sm:min-h-[36px]"
+            >
+              <QrCode size={14} strokeWidth={2.2} aria-hidden="true" />
+              {isTr ? "QR oluştur" : "Create QR"}
+            </Link>
+            <PulseMenu
+              trigger={
+                <button
+                  type="button"
+                  className="bz-btn-ghost min-h-[44px] min-w-[44px] justify-center sm:min-h-[36px] sm:min-w-0"
+                  aria-label={isTr ? "Diğer işlemler" : "More actions"}
+                >
+                  <MoreHorizontal size={14} strokeWidth={2} aria-hidden="true" />
+                  <span className="hidden sm:inline">{isTr ? "Diğer" : "More"}</span>
+                </button>
+              }
+              // Rows meet the 44px touch target on phones.
+              className="min-w-[220px]"
+            >
+              <PulseMenuItem
+                icon={<ExternalLink size={13} />}
+                onSelect={() => window.open(publicReviewUrl, "_blank", "noopener,noreferrer")}
+              >
+                {isTr ? "Müşteri sayfasını gör" : "View customer page"}
+              </PulseMenuItem>
+              <PulseMenuItem icon={<Link2 size={13} />} onSelect={() => void handleCopyPublicLink()}>
+                {isTr ? "Linki kopyala" : "Copy link"}
+              </PulseMenuItem>
+            </PulseMenu>
+          </>
         }
       />
-      {/* Quick action strip — three chip-style links the owner reaches
-          from any settings tab. "Görüntüle" opens public review surface
-          in a new tab, "Linki kopyala" lands the same URL into clipboard
-          with a transient confirmation, "QR oluştur" deep-links into
-          the wizard with the restaurant pre-selected. */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <a
-          href={publicReviewUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
+      <span role="status" aria-live="polite" className="sr-only">
+        {copyNotice?.text ?? ""}
+      </span>
+      {copyNotice && (
+        <p
+          aria-hidden="true"
+          className={`pointer-events-none absolute left-0 top-full z-10 mt-1 rounded-full px-3 py-1.5 text-[12px] font-medium shadow-sm sm:left-auto sm:right-0 ${
+            copyNotice.ok
+              ? "bg-[#0A0A0A] text-white"
+              : "border border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]"
+          }`}
         >
-          <ExternalLink size={12} strokeWidth={2.2} />
-          {locale === "tr" ? "Müşteri sayfasını gör" : "View customer page"}
-        </a>
-        <button
-          type="button"
-          onClick={handleCopyPublicLink}
-          className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
-        >
-          {copyNotice ? (
-            <>
-              <Check size={12} strokeWidth={2.4} className="text-[#16A34A]" />
-              <span>{copyNotice}</span>
-            </>
-          ) : (
-            <>
-              <Link2 size={12} strokeWidth={2.2} />
-              <span>{locale === "tr" ? "Linki kopyala" : "Copy link"}</span>
-            </>
-          )}
-        </button>
-        <Link
-          href={`/${locale}/dashboard/qr?new=1&restaurantId=${restaurant.id}`}
-          className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
-        >
-          <QrCode size={12} strokeWidth={2.2} />
-          {locale === "tr" ? "QR oluştur" : "Create QR"}
-        </Link>
-      </div>
+          {copyNotice.text}
+        </p>
+      )}
     </div>
   );
 
@@ -516,17 +557,11 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="general"
         active={active === "general"}
-        eyebrow={isTr ? "01 — KİMLİK" : "01 — IDENTITY"}
-        title={isTr ? "Genel Bilgiler" : "General details"}
+        title={sectionTitle("general")}
         description={
           isTr
-            ? "İşletmenin temel kimliği ve iletişim bilgileri."
-            : "Your business identity and contact details."
-        }
-        actions={
-          <span className="text-[#737373] text-[20px]" aria-hidden="true">
-            <Building2 size={18} />
-          </span>
+            ? "İşletmenin adı, sayfa adresi ve iletişim bilgileri."
+            : "Your business name, page address and contact details."
         }
       >
         <BusinessGeneralSettings restaurant={restaurant} locale={locale} onSaved={handleSaved} />
@@ -535,17 +570,11 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="platforms"
         active={active === "platforms"}
-        eyebrow={isTr ? "02 — PLATFORMLAR" : "02 — PLATFORMS"}
-        title={isTr ? "Platform bağlantıları" : "Platform links"}
+        title={sectionTitle("platforms")}
         description={
           isTr
             ? "Bu işletmenin yorum platformu linkleri ve müşteri yönlendirmesi."
             : "This business's review-platform links and customer routing."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Plug size={18} />
-          </span>
         }
       >
         <BusinessPlatformLinksSummary
@@ -559,17 +588,11 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="brand"
         active={active === "brand"}
-        eyebrow={isTr ? "03 — MARKA" : "03 — BRAND"}
-        title={isTr ? "Marka Kimliği" : "Brand identity"}
+        title={sectionTitle("brand")}
         description={
           isTr
-            ? "Logo, kapak, renk paleti, font ve slogan — müşteri sayfasının görsel dili."
-            : "Logo, cover, colour palette, font and tagline — the look of your public page."
-        }
-        actions={
-          <span className="text-[#737373] text-[20px]" aria-hidden="true">
-            <Palette size={18} />
-          </span>
+            ? "Logo, kapak görseli, renkler, yazı tipi ve slogan: müşteri sayfasının görünümü."
+            : "Logo, cover image, colours, font and tagline: how your public page looks."
         }
       >
         <BusinessBrandSettings
@@ -582,17 +605,11 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="website"
         active={active === "website"}
-        eyebrow={isTr ? "04 — WEB SİTESİ" : "04 — WEBSITE"}
-        title={isTr ? "Web sitesi entegrasyonu" : "Website integration"}
+        title={sectionTitle("website")}
         description={
           isTr
-            ? "İşletmenizin web sitesine yorum widget'ı yerleştirin."
+            ? "Web sitene yorum kutusu yerleştir."
             : "Embed a review widget on your website."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Globe size={18} />
-          </span>
         }
       >
         <BusinessWebsiteSettings
@@ -607,52 +624,33 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="operations"
         active={active === "operations"}
-        eyebrow={isTr ? "05 — OPERASYONEL" : "05 — OPERATIONS"}
-        title={isTr ? "Operasyonel ayarlar" : "Operational settings"}
+        title={sectionTitle("operations")}
         description={
           isTr ? "Çalışma saatleri ve geçici kapalı durumu." : "Opening hours and temporary closure."
-        }
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Clock size={18} />
-          </span>
         }
       >
         <BusinessOperationalSettings restaurant={restaurant} locale={locale} onSaved={handleSaved} />
       </SettingsSection>
 
+      {/* Former "Güvenlik" + "Tehlikeli bölge" tabs: both offered "İşletmeyi
+          devre dışı bırak". One switch (on/off, reversible) + permanent delete. */}
       <SettingsSection
-        id="security"
-        active={active === "security"}
-        eyebrow={isTr ? "06 — GÜVENLİK" : "06 — SECURITY"}
-        title={isTr ? "Güvenlik & erişim" : "Security & access"}
-        description={isTr ? "İşletme aktiflik durumu." : "Whether the business is active."}
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Lock size={18} />
-          </span>
-        }
-      >
-        <BusinessSecuritySettings restaurant={restaurant} locale={locale} onSaved={handleSaved} />
-      </SettingsSection>
-
-      <SettingsSection
-        id="danger"
-        active={active === "danger"}
-        eyebrow={isTr ? "07 — TEHLİKELİ BÖLGE" : "07 — DANGER ZONE"}
-        title={isTr ? "Tehlikeli bölge" : "Danger zone"}
+        id="status"
+        active={active === "status"}
+        title={sectionTitle("status")}
         description={
           isTr
-            ? "Geri alınamaz veya yıkıcı işlemler. Dikkatli kullan."
-            : "Destructive or irreversible actions. Use with care."
-        }
-        actions={
-          <span className="text-[#991B1B]" aria-hidden="true">
-            <AlertOctagon size={18} />
-          </span>
+            ? "İşletmeyi geçici olarak devre dışı bırak ya da kalıcı olarak sil."
+            : "Disable the business for a while, or delete it permanently."
         }
       >
-        <DangerZone restaurant={restaurant} locale={locale} onDeactivated={(next) => handleSaved(next)} />
+        <BusinessSecuritySettings
+          restaurant={restaurant}
+          locale={locale}
+          onSaved={handleSaved}
+          onOpenHours={() => handleSectionChange("operations")}
+        />
+        <DangerZone restaurant={restaurant} locale={locale} />
       </SettingsSection>
     </SettingsLayout>
   );

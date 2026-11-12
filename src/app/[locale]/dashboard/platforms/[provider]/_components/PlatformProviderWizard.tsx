@@ -2,16 +2,18 @@
 
 // Owner `/dashboard/platforms/[provider]` — one platform, one business.
 //
-// Layout: single back link → header (name + the only status pill on the
-// page) → business context (multi-business owners only) → [Google search
-// panel] → Link card (labelled field, "show to customers" switch row, inline
-// action row + polite live region) → [WhatsApp review card] → customer
-// routing summary (business-level pickers live on the overview).
+// Layout: single back link → header (platform name, "<business> için …"
+// line and the only status pill on the page; the business is picked with
+// the shell's business switcher, the page follows `?restaurantId`) →
+// [Google search panel] → Link card (labelled field, "show to customers"
+// switch row, Kaydet + Kontrol et + a "Diğer" menu with Linki aç / Linki
+// temizle, polite live region) → [WhatsApp review card] → customer routing
+// summary (business-level pickers live on the overview).
 //
 // The sticky UnsavedChangesBar is intentionally not used here: at 390px it
 // covered the URL input being typed into (WCAG 2.4.11). Dirty edits are
-// guarded by an inline Save, `beforeunload`, the back links and the business
-// switch.
+// guarded by an inline Save, `beforeunload`, the back links and a confirm when
+// the shell switches business with an unsaved edit.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -23,18 +25,18 @@ import {
   ExternalLink,
   Loader2,
   MessageCircle,
+  MoreHorizontal,
   RefreshCw,
   Star,
   Trash2,
   Wand2,
   XCircle,
 } from 'lucide-react';
-import { AlertBanner, APSwitch, Field, PageHeader } from '@/components/ui';
+import { AlertBanner, APSwitch, Field, PageHeader, PulseMenu, PulseMenuItem } from '@/components/ui';
 import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
 import { ApplyLinkToBusinesses } from '@/components/dashboard/platforms/ApplyLinkToBusinesses';
 import { GoogleBusinessIntegrationPanel } from '@/components/dashboard/settings/sections/GoogleBusinessIntegrationPanel';
 import { WhatsAppReviewWizard } from '@/components/dashboard/settings/WhatsAppReviewWizard';
-import { PlatformBusinessContext } from '@/components/dashboard/platforms/PlatformBusinessContext';
 import { PlatformLogo } from '@/components/dashboard/platforms/PlatformLogo';
 import { PlatformStatusPill } from '@/components/dashboard/platforms/PlatformStatusPill';
 import { PlatformProviderSkeleton } from '@/components/dashboard/platforms/PlatformSkeletons';
@@ -55,11 +57,8 @@ import {
 } from '@/lib/platform-management';
 import {
   computePlatformLinkStatus,
-  computePlatformLinkStatuses,
   formatRelativeTime,
-  isPlatformLinkVisible,
   redirectThresholdLabel,
-  summarizePlatformLinks,
   type LatestCheckLite,
 } from '@/lib/platform-link-status';
 import { localizeCheckError } from '@/lib/platform-link-messages';
@@ -195,6 +194,10 @@ export default function PlatformProviderWizard({
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const changeLinkRef = useRef<HTMLAnchorElement | null>(null);
+  // "Linki temizle" lives in the "Diğer" menu: the menu hands focus back to
+  // its trigger after closing, so the next focus of the trigger is moved on
+  // to the cleared field instead.
+  const refocusFieldRef = useRef(false);
   useFocusClearance();
 
   useEffect(() => {
@@ -218,8 +221,19 @@ export default function PlatformProviderWizard({
 
   useEffect(() => setNowMs(Date.now()), []);
 
+  // Read by the effect below without re-running it on every keystroke.
+  const dirtyRef = useRef(false);
+  const selectedIdRef = useRef(selectedRestaurantId);
+  selectedIdRef.current = selectedRestaurantId;
+  // The `?restaurantId` the owner chose to stay away from — the effect can
+  // re-run for it (fresh server rows) before the URL change lands.
+  const declinedQueryRef = useRef<string | null>(null);
+
   // Resolve the active business after mount (?restaurantId → remembered →
-  // first) and keep the URL in sync without a server round trip.
+  // first) and keep the URL in sync without a server round trip. This also
+  // follows the shell's business switcher. A switch with an unsaved edit
+  // asks first; "cancel" puts the previous business back in the URL, which
+  // the shell follows too.
   useEffect(() => {
     const next = resolveActiveRestaurantId({
       restaurants: restaurantRows,
@@ -227,12 +241,36 @@ export default function PlatformProviderWizard({
       storedRestaurantId: readStoredRestaurantId(),
     });
     if (!next) return;
+    if (queryRestaurantId && queryRestaurantId === declinedQueryRef.current) return;
+    declinedQueryRef.current = null;
+    const current = selectedIdRef.current;
+    if (next !== current && dirtyRef.current && restaurantRows.some((row) => row.id === current)) {
+      const discard = window.confirm(
+        isTr
+          ? 'Kaydedilmemiş değişiklikler var. Başka bir işletmeye geçerseniz bu değişiklikler kaybolur. Devam edilsin mi?'
+          : 'You have unsaved changes. Switching business discards them. Continue?',
+      );
+      if (!discard) {
+        declinedQueryRef.current = queryRestaurantId;
+        try {
+          window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, current);
+        } catch {
+          /* storage blocked — the URL still carries the selection */
+        }
+        const search = setRestaurantParam(window.location.search, current);
+        window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
+        window.dispatchEvent(new CustomEvent('buaze:active-restaurant-change', { detail: { restaurantId: current } }));
+        return;
+      }
+    }
     setSelectedRestaurantId(next);
     setResolved(true);
     if (queryRestaurantId !== next) {
       const search = setRestaurantParam(window.location.search, next);
       window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
     }
+    // isTr is stable for the page's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryRestaurantId, restaurantRows]);
 
   // Resync the form ONLY when the selected business (or the platform page)
@@ -252,6 +290,7 @@ export default function PlatformProviderWizard({
   }, [platform.enabledField, platform.urlField, selectedRestaurantRowId]);
 
   const dirty = url !== currentUrl || enabled !== currentEnabled;
+  dirtyRef.current = dirty;
   const gated = selectedRestaurant?.externalPlatformsEnabled === false && platform.externalReview === true;
 
   // Leaving with unsaved edits (reload / tab close / external navigation).
@@ -280,12 +319,6 @@ export default function PlatformProviderWizard({
     () => (selectedRestaurant ? computePlatformLinkStatus(platform, selectedRestaurant, checks) : null),
     [checks, platform, selectedRestaurant],
   );
-  const reviewSummary = useMemo(() => {
-    if (!selectedRestaurant) return { connected: 0, issue: 0, missing: 0, off: 0 };
-    return summarizePlatformLinks(
-      computePlatformLinkStatuses(selectedRestaurant, checks, { categories: ['review'] }).filter(isPlatformLinkVisible),
-    );
-  }, [checks, selectedRestaurant]);
 
   const confirmDiscard = () =>
     window.confirm(
@@ -296,21 +329,6 @@ export default function PlatformProviderWizard({
 
   const guardLeave = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (dirty && !confirmDiscard()) event.preventDefault();
-  };
-
-  const selectRestaurant = (restaurantId: string) => {
-    if (restaurantId === selectedRestaurantId) return;
-    // Switching businesses resets the form — don't silently drop an edit.
-    if (dirty && !confirmDiscard()) return;
-    setSelectedRestaurantId(restaurantId);
-    try {
-      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
-    } catch {
-      /* storage blocked — URL still carries the selection */
-    }
-    window.dispatchEvent(new CustomEvent('buaze:active-restaurant-change', { detail: { restaurantId } }));
-    const search = setRestaurantParam(window.location.search, restaurantId);
-    window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
   };
 
   const updateSelectedRestaurant = (patch: Partial<ProviderRestaurantInfo>) => {
@@ -518,14 +536,13 @@ export default function PlatformProviderWizard({
         <Link
           href={overviewHref}
           onClick={guardLeave}
-          className={`bz-mono mb-3 inline-flex min-h-[44px] items-center sm:min-h-[32px] gap-1 rounded text-[11px] text-[#737373] hover:text-[#0A0A0A] ${FOCUS_RING}`}
+          className={`mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-[#0A0A0A] sm:min-h-[32px] ${FOCUS_RING}`}
         >
-          <ArrowLeft size={12} aria-hidden="true" />
+          <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
           {linksLabel}
         </Link>
         <PageHeader
           titleScale="compact"
-          eyebrow={linksLabel.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}
           title={
             <span className="inline-flex min-w-0 items-center gap-3">
               <PlatformLogo platform={platform} size={36} />
@@ -540,16 +557,6 @@ export default function PlatformProviderWizard({
           actions={<PlatformStatusPill state={savedStatus.state} locale={locale} />}
         />
       </div>
-
-      {restaurantRows.length > 1 && (
-        <PlatformBusinessContext
-          locale={locale}
-          restaurant={selectedRestaurant}
-          restaurants={restaurantRows}
-          summary={reviewSummary}
-          onSelect={selectRestaurant}
-        />
-      )}
 
       {gated && (
         <AlertBanner kind="warn">
@@ -715,36 +722,54 @@ export default function PlatformProviderWizard({
                 )}
                 {testing ? (isTr ? 'Kontrol ediliyor…' : 'Checking…') : isTr ? 'Kontrol et' : 'Check link'}
               </button>
-              {currentUrl && (
-                <a
-                  href={currentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={
-                    isTr ? `${platform.name} linkini yeni sekmede aç` : `Open ${platform.name} link in a new tab`
+              {(currentUrl || (url && !gated)) && (
+                <PulseMenu
+                  align="start"
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label={isTr ? 'Diğer link işlemleri' : 'More link actions'}
+                      className={`bz-btn-ghost ${BUTTON_ROW_ITEM}`}
+                      onFocus={() => {
+                        if (!refocusFieldRef.current) return;
+                        refocusFieldRef.current = false;
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      <MoreHorizontal size={14} aria-hidden="true" />
+                      {isTr ? 'Diğer' : 'More'}
+                    </button>
                   }
-                  className={`bz-btn-ghost ${BUTTON_ROW_ITEM}`}
                 >
-                  <ExternalLink size={14} aria-hidden="true" />
-                  {isTr ? 'Linki aç' : 'Open link'}
-                </a>
-              )}
-              {url && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUrl('');
-                    setSuccess(null);
-                    // The button unmounts — keep keyboard focus in the form.
-                    window.requestAnimationFrame(() => inputRef.current?.focus());
-                  }}
-                  disabled={gated}
-                  title={isTr ? 'Link temizlenir; Kaydet ile kalıcı olur.' : 'Clears the link; Save to persist.'}
-                  className={`bz-btn-danger ${BUTTON_ROW_ITEM}`}
-                >
-                  <Trash2 size={14} aria-hidden="true" />
-                  {isTr ? 'Linki temizle' : 'Clear link'}
-                </button>
+                  {currentUrl && (
+                    <PulseMenuItem
+                      icon={<ExternalLink size={14} />}
+                      onSelect={() => window.open(currentUrl, '_blank', 'noopener,noreferrer')}
+                    >
+                      {isTr ? 'Linki yeni sekmede aç' : 'Open link in a new tab'}
+                    </PulseMenuItem>
+                  )}
+                  {url && !gated && (
+                    <PulseMenuItem
+                      danger
+                      icon={<Trash2 size={14} />}
+                      onSelect={() => {
+                        setUrl('');
+                        setSuccess(null);
+                        refocusFieldRef.current = true;
+                        // Fallback when the trigger itself unmounts (an
+                        // unsaved link was cleared): nothing gets focus back.
+                        window.setTimeout(() => {
+                          if (!refocusFieldRef.current) return;
+                          refocusFieldRef.current = false;
+                          inputRef.current?.focus();
+                        }, 120);
+                      }}
+                    >
+                      {isTr ? 'Linki temizle' : 'Clear link'}
+                    </PulseMenuItem>
+                  )}
+                </PulseMenu>
               )}
             </div>
             {dirty && currentUrl && !gated && (

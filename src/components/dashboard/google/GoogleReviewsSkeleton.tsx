@@ -1,4 +1,4 @@
-import { SkBox, SkPageHeader, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
  * Flat (animation-free) skeletons of the Google reviews page, shared by the
@@ -7,8 +7,10 @@ import { SkBox, SkPageHeader, SkPageShell } from '@/components/ui/skeletons/Page
  * geometry: loading → loaded does not shift the wrapper (CLS = 0, CLAUDE.md
  * §40.10). No "use client": pure markup, importable from both worlds.
  *
- * Geometry mirrors the loaded page: an optional `h-11` business select row,
- * then the 2-col grid (rating card, tall checklist, review rows — same
+ * Geometry mirrors the loaded page: the header (title + description, no
+ * eyebrow), an optional one-line business status row (owners with several
+ * businesses — the page has no business picker of its own, the shell's
+ * switcher picks it), then the 2-col grid (rating card, tall checklist, review rows — same
  * `lg:grid-cols-[minmax(0,1fr)_380px]` as the real section) and one reply
  * card row. DOM order = mobile order (rating → checklist → reviews → reply).
  */
@@ -85,23 +87,71 @@ export function ReplyRowSkeleton() {
   );
 }
 
-/** Everything under the page header. */
-export function GoogleReviewsBodySkeleton({ withSwitcher = true }: { withSwitcher?: boolean }) {
+/**
+ * The page header: title + description, no eyebrow (the page dropped it —
+ * it only repeated the title). Box heights follow `PageHeader` exactly
+ * (`SkPageHeader` has a one-line description and a fixed 36px title, which is
+ * ~15px short on phones, where this description wraps to two lines):
+ *  - h1: `mt-1`, clamp(24px, 3vw, 30px) × 1.1 → 26px on phones, 33px on lg;
+ *  - description: `mt-2`, 13px × 1.55 → two lines on phones, one from sm;
+ *  - `mb-5` like `PageHeader`.
+ */
+export function GoogleReviewsHeaderSkeleton() {
+  return (
+    <div className="mb-5" aria-hidden="true">
+      <SkBox className="mt-1 h-[26px] w-56 max-w-full lg:h-[33px]" />
+      <div className="mt-2 space-y-[4px] sm:space-y-0">
+        <SkBox className="h-[18px] w-80 max-w-full sm:h-5" />
+        <SkBox className="h-[18px] w-44 max-w-full sm:hidden" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Everything under the page header. `withSwitcher` keeps its name for
+ * backward compatibility: it is now the one-line business status row (owners
+ * with several businesses). On phones that row is two lines (name + badge,
+ * then the "X işletmeden …" summary) unless `withSummary` is false (the page
+ * hides the summary when Google search is off).
+ */
+export function GoogleReviewsBodySkeleton({
+  withSwitcher = true,
+  withSummary = true,
+}: {
+  withSwitcher?: boolean;
+  withSummary?: boolean;
+}) {
   return (
     <>
-      {withSwitcher && <SkBox className="h-11 w-full max-w-sm" />}
+      {withSwitcher && (
+        <div className="space-y-1.5 sm:space-y-0" aria-hidden="true">
+          <SkBox className="h-[22px] w-48 max-w-full sm:w-full sm:max-w-md" />
+          {withSummary && <SkBox className="h-[19px] w-64 max-w-full sm:hidden" />}
+        </div>
+      )}
       <PlacesProfileSkeleton />
       <ReplyRowSkeleton />
     </>
   );
 }
 
-/** Complete page skeleton (route `loading.tsx` + Suspense fallback). */
-export function GoogleReviewsLoadingShell() {
+/**
+ * Complete page skeleton (route `loading.tsx` + Suspense fallback). The route
+ * fallback knows nothing and shows the status row; the page's own Suspense
+ * fallback passes what the server already read.
+ */
+export function GoogleReviewsLoadingShell({
+  withSwitcher = true,
+  withSummary = true,
+}: {
+  withSwitcher?: boolean;
+  withSummary?: boolean;
+} = {}) {
   return (
     <SkPageShell max={1440}>
-      <SkPageHeader titleWidth="w-56" />
-      <GoogleReviewsBodySkeleton />
+      <GoogleReviewsHeaderSkeleton />
+      <GoogleReviewsBodySkeleton withSwitcher={withSwitcher} withSummary={withSummary} />
     </SkPageShell>
   );
 }

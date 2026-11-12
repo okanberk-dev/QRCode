@@ -339,7 +339,8 @@ export function MenuSetupWizard({
 
   const heading = (index: Step, title: string, body: string) => (
     <div className="space-y-1">
-      <p className="pulse-eyebrow text-[#737373]">{t.stepOf(index + 1)}</p>
+      {/* The step tracker above already shows "1 of 3" visually; the number
+          stays in the heading for screen readers (focus moves here on each step). */}
       <h3
         ref={(el) => {
           headingRefs.current[index] = el;
@@ -347,6 +348,7 @@ export function MenuSetupWizard({
         tabIndex={-1}
         className="bz-h-tight text-[18px] text-[#0A0A0A] outline-none sm:text-[20px]"
       >
+        <span className="sr-only">{t.stepOf(index + 1)}: </span>
         {title}
       </h3>
       <p className="text-[13px] leading-[1.55] text-[#525252]">{body}</p>
@@ -366,7 +368,8 @@ export function MenuSetupWizard({
     // screen) — the first template has to sit high above the bottom nav.
     <section
       ref={topRef}
-      className="scroll-mt-24 sm:rounded-3xl sm:border sm:border-[#EDEDED] sm:bg-white sm:px-8 sm:py-8 sm:shadow-sm"
+      // ≥sm: the panel card look (bz-card: 12px radius, hairline border + shadow).
+      className="scroll-mt-24 sm:rounded-xl sm:border sm:border-[#E8E8E8] sm:bg-white sm:px-8 sm:py-8 sm:shadow-[0_1px_2px_rgba(10,10,10,0.05)]"
     >
       <div className="mx-auto max-w-[760px] space-y-4 sm:space-y-5">
         <div className="flex items-start gap-3.5">

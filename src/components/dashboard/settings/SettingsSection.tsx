@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Eyebrow } from "@/components/ui";
 import { useCompactSettingsNav } from "./useCompactSettingsNav";
@@ -10,6 +10,8 @@ interface SettingsSectionProps {
   id: string;
   /** Whether this section is the active tab (≥md) / initially open (<md). */
   active: boolean;
+  /** Optional small label above the title. The settings hubs no longer pass
+   *  one (numbered "01 — PROFİL" labels only repeated the tab name). */
   eyebrow?: string;
   title: string;
   description?: ReactNode;
@@ -67,8 +69,46 @@ export function SettingsSection({
   const titleId = `section-${id}-title`;
   const panelId = `section-${id}-panel`;
 
+  // < md: bring the section into view when it becomes the active one. On a
+  // phone the sections are stacked accordions, so a deep link such as the
+  // "Faturalama" entry in the bottom-nav sheet (`?section=billing`) opened
+  // the right card but left the page at the top with that card off-screen.
+  // - Active changes while the page is open (`?section=` sync) → scroll.
+  // - First compact render → scroll only for an explicit `?section=` link
+  //   (not the default tab), and not while a `?google=` sign-in result
+  //   banner sits above the sections.
+  const sectionRef = useRef<HTMLElement>(null);
+  const seenActiveRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!compact) return;
+    if (!active) {
+      seenActiveRef.current = false;
+      return;
+    }
+    const previous = seenActiveRef.current;
+    if (previous === true) return;
+    if (previous === null) {
+      const query = new URLSearchParams(window.location.search);
+      if (!query.has("section") || query.has("google")) {
+        seenActiveRef.current = true;
+        return;
+      }
+    }
+    // Next.js restores the scroll position after a navigation commits; wait
+    // two frames so this runs after it. The ref is only marked once the
+    // scroll ran, so React StrictMode's effect re-run still scrolls.
+    let frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => {
+        seenActiveRef.current = true;
+        sectionRef.current?.scrollIntoView({ block: "start" });
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [active, compact]);
+
   return (
     <section
+      ref={sectionRef}
       id={`section-${id}`}
       aria-labelledby={titleId}
       className={`scroll-mt-20 max-md:rounded-2xl max-md:border max-md:border-[#EDEDED] max-md:bg-white ${
@@ -88,7 +128,9 @@ export function SettingsSection({
           >
             <span className="min-w-0">
               {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-              <span className="mt-1 block truncate bz-h-tight text-[18px]">{title}</span>
+              <span className={`block truncate bz-h-tight text-[16px] ${eyebrow ? "mt-1" : ""}`}>
+                {title}
+              </span>
             </span>
             <ChevronDown
               size={16}
@@ -104,11 +146,14 @@ export function SettingsSection({
       <header className="mb-5 hidden items-start justify-between gap-4 sm:mb-6 md:flex">
         <div className="min-w-0">
           {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-          <h2 id={titleId} className="bz-h-tight-2 mt-1 text-[24px] sm:text-[28px]">
+          <h2
+            id={titleId}
+            className={`bz-h-tight-2 text-[20px] sm:text-[22px] ${eyebrow ? "mt-1" : ""}`}
+          >
             {title}
           </h2>
           {description && (
-            <p className="mt-2 max-w-[640px] text-[13px] leading-[1.6] text-[#525252] sm:text-[14px]">
+            <p className="mt-1.5 max-w-[640px] text-[13px] leading-[1.6] text-[#525252]">
               {description}
             </p>
           )}

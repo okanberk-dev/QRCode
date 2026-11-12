@@ -3,7 +3,7 @@ import { PLATFORMS } from '@/components/ui';
 
 // Phase 8c+ §38.31 — KANAL DAĞILIMI 4-card grid. Tasarım kaynağı:
 // .design-owner-2026/project/page-dashboard.jsx ChannelCard line 134-157.
-// Mobile horizontal scroll, sm+ 4-col grid (CLAUDE.md §38.28 paterni reuse).
+// Mobile horizontal scroll, sm+ fill grid (CLAUDE.md §38.28 paterni reuse).
 //
 // Google card'da ek "impact strip" — initialGoogleRating → currentGoogleRating
 // karşılaştırması (CLAUDE.md §37.3). null-safe; impact set olmamış restoran
@@ -227,7 +227,10 @@ export function ChannelDistribution({
 }: ChannelDistributionProps) {
   if (channels.length === 0) return null;
   return (
-    <div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible">
+    // sm+: fill grid (≥150px per card). The section sits in the narrower
+    // left column on lg, so a fixed 4-col grid cut names to "Goo…" at
+    // ~1100px and left half the row empty with only two channels.
+    <div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(150px,1fr))] sm:gap-3 sm:overflow-visible">
       {channels.slice(0, 4).map((channel) => (
         <ChannelCard
           key={channel.platform}

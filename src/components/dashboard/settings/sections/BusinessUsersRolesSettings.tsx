@@ -19,6 +19,7 @@ import {
   type BadgeKind,
   useConfirmDialog,
 } from "@/components/ui";
+import { SkBox } from "@/components/ui/skeletons/PageSkeleton";
 import { SettingsCard } from "../SettingsCard";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
 
@@ -390,9 +391,20 @@ export function BusinessUsersRolesSettings({
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-[13px] text-[#737373] py-4">
-            <Loader2 size={14} className="animate-spin" />
-            {t.loading}
+          <div className="space-y-2" aria-busy="true" aria-label={t.loading}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3"
+                style={{ border: "1px solid #EDEDED", borderRadius: 10 }}
+              >
+                <SkBox className="h-9 w-9 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <SkBox className="h-3.5 w-36" />
+                  <SkBox className="h-3 w-48 max-w-full" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : members.length === 0 ? (
           <p className="text-[13px] text-[#737373] py-2">{t.empty}</p>

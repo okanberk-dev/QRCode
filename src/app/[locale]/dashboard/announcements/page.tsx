@@ -92,7 +92,6 @@ export default async function OwnerAnnouncementsPage({
   return (
     <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        eyebrow={isTr ? 'SİSTEM DUYURULARI' : 'SYSTEM ANNOUNCEMENTS'}
         title={isTr ? 'Buaze\'den haberler' : 'News from Buaze'}
         description={
           isTr
@@ -115,24 +114,17 @@ export default async function OwnerAnnouncementsPage({
         <div className="flex flex-col gap-2.5">
           {announcements.map((a) => (
             <article key={a.id} className="bz-card p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="min-w-0 flex-1">
-                  <div className="flex gap-2 mb-1.5 flex-wrap">
-                    <Badge kind={severityKind(a.severity)}>{severityLabel(a.severity)}</Badge>
-                    <Badge kind="ghost">
-                      {a.locale === 'all' ? (isTr ? 'Tüm kullanıcılar' : 'All users') : a.locale.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <h2 className="bz-h-tight" style={{ fontSize: 16, marginBottom: 6 }}>
-                    {a.title}
-                  </h2>
-                  <p style={{ fontSize: 13, color: '#525252', lineHeight: 1.55 }}>{a.message}</p>
-                  <div className="mt-2" style={{ fontSize: 11, color: '#A3A3A3' }}>
-                    {/* §46 — sunucu UTC'de render ediyor; işletme saat dilimine sabitle. */}
-                    {formatFullDateTimeInTimeZone(a.createdAt, isTr ? 'tr' : 'en')}
-                  </div>
-                </div>
+              {/* The audience badge ("Tüm kullanıcılar" / "TR") was dropped:
+                  owners only ever see announcements meant for them. */}
+              <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                <Badge kind={severityKind(a.severity)}>{severityLabel(a.severity)}</Badge>
+                <span className="text-[11.5px] text-[#737373]">
+                  {/* §46 — sunucu UTC'de render ediyor; işletme saat dilimine sabitle. */}
+                  {formatFullDateTimeInTimeZone(a.createdAt, isTr ? 'tr' : 'en')}
+                </span>
               </div>
+              <h2 className="bz-h-tight mb-1.5 text-[16px] text-[#0A0A0A]">{a.title}</h2>
+              <p className="text-[13px] leading-[1.55] text-[#525252]">{a.message}</p>
             </article>
           ))}
         </div>

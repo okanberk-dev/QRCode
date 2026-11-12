@@ -45,13 +45,13 @@ export function AdminReviewsSkeleton({ isTr }: { isTr: boolean }) {
       <div className="border-y border-[#EDEDED] bg-white px-4 py-3 sm:px-7" aria-hidden="true">
         <div className="flex gap-1.5 overflow-hidden">
           {['w-20', 'w-36', 'w-32', 'w-32'].map((w, i) => (
-            <SkBox key={i} className={`h-9 shrink-0 rounded-full ${w}`} />
+            <SkBox key={i} className={`h-11 shrink-0 rounded-full sm:h-9 ${w}`} />
           ))}
         </div>
         <div className="mt-2.5 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
           <div className="flex items-center gap-2 md:contents">
-            <SkBox className="h-10 min-w-0 flex-1 rounded-full md:h-[34px] md:flex-[1_1_240px] xl:max-w-[340px]" />
-            <SkBox className="h-10 w-10 shrink-0 rounded-full md:hidden" />
+            <SkBox className="h-11 min-w-0 flex-1 rounded-full md:h-[34px] md:flex-[1_1_240px] xl:max-w-[340px]" />
+            <SkBox className="h-11 w-11 shrink-0 rounded-full md:hidden" />
           </div>
           <div className="hidden items-center gap-2 md:flex">
             <SkBox className="h-[34px] w-[150px] rounded-[10px]" />

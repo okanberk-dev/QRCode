@@ -8,7 +8,7 @@
 // "Tümünü kontrol et" checks the links of every business, one business after
 // the other (the per-business retest endpoint is rate limited per business).
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { APSwitch } from '@/components/ui';
@@ -40,6 +40,12 @@ interface PlatformsPortfolioProps<T extends PlatformLinkRow & { id: string; name
   checksById: Record<string, Record<string, LatestCheckLite>>;
   onOpenBusiness: (id: string) => void;
   onChecks: (restaurantId: string, checks: Record<string, LatestCheckLite>) => void;
+  /** Rendered at the start of the toolbar row (the page's view tabs), so the
+   *  tabs, the "only to fix" filter and the check-all action share one row. */
+  toolbarStart?: ReactNode;
+  /** Paused businesses left out of the matrix (the business switcher cannot
+   *  open them). Shown as one line so the count matches İşletmeler. */
+  hiddenPausedCount?: number;
 }
 
 export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; name: string }>({
@@ -48,6 +54,8 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
   checksById,
   onOpenBusiness,
   onChecks,
+  toolbarStart,
+  hiddenPausedCount = 0,
 }: PlatformsPortfolioProps<T>) {
   const isTr = locale === 'tr';
   const [onlyWork, setOnlyWork] = useState(false);
@@ -105,23 +113,11 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
   };
 
   return (
-    <section aria-labelledby="pl-portfolio-title" className="space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h2 id="pl-portfolio-title" className="bz-h-tight text-[18px] text-[#0A0A0A]">
-            {isTr ? 'Tüm işletmeler' : 'All businesses'}
-          </h2>
-          <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-            {needsWork > 0
-              ? isTr
-                ? `${matrix.rows.length} işletmeden ${needsWork} tanesinde düzeltilecek link var. Bir hücreye basınca o işletmenin linki açılır.`
-                : `${needsWork} of ${matrix.rows.length} businesses have links to fix. Press a cell to open that business's link.`
-              : isTr
-                ? 'Tüm işletmelerinizin yorum linkleri yerinde.'
-                : 'Every business has its review links in place.'}
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <section aria-label={isTr ? 'Tüm işletmeler' : 'All businesses'} className="space-y-3">
+      {/* One toolbar: view tabs (from the page) · filter · check-all. */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        {toolbarStart ? <div className="min-w-0">{toolbarStart}</div> : null}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:ml-auto">
           <APSwitch
             size="sm"
             checked={onlyWork}
@@ -132,18 +128,34 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
             type="button"
             onClick={checkAll}
             aria-busy={running || undefined}
-            className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] sm:min-h-[36px]"
+            className="bz-btn-ghost inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[12.5px] sm:w-auto sm:min-h-[36px]"
           >
             {running ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={14} aria-hidden="true" />}
             {running ? (isTr ? 'Kontrol ediliyor…' : 'Checking…') : isTr ? 'Tüm işletmeleri kontrol et' : 'Check all businesses'}
           </button>
         </div>
       </div>
+      <p className="text-[12.5px] leading-[1.55] text-[#525252]">
+        {needsWork > 0
+          ? isTr
+            ? `${matrix.rows.length} işletmeden ${needsWork} tanesinde düzeltilecek link var. Bir hücreye basınca o işletmenin linki açılır.`
+            : `${needsWork} of ${matrix.rows.length} businesses have links to fix. Press a cell to open that business's link.`
+          : isTr
+            ? 'Tüm işletmelerinizin yorum linkleri yerinde.'
+            : 'Every business has its review links in place.'}
+        {hiddenPausedCount > 0
+          ? isTr
+            ? ` ${hiddenPausedCount} devre dışı işletme burada gösterilmez.`
+            : ` ${hiddenPausedCount} disabled ${hiddenPausedCount === 1 ? 'business is' : 'businesses are'} not shown here.`
+          : null}
+      </p>
       <p role="status" aria-live="polite" className="text-[12px] text-[#525252] [&:empty]:hidden">
         {progress}
       </p>
 
-      <div className="bz-card overflow-x-auto p-0">
+      {/* `relative`: the sr-only header label is absolutely positioned; without
+          a positioned wrapper it escaped the scroll box and widened the page. */}
+      <div className="bz-card relative overflow-x-auto p-0">
         <table className="bz-table min-w-[560px]">
           <thead>
             <tr>
@@ -218,7 +230,8 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
                     <button
                       type="button"
                       onClick={() => onOpenBusiness(row.id)}
-                      className="bz-btn-ghost bz-btn-sm whitespace-nowrap"
+                      aria-label={isTr ? `Ayrıntı: ${row.name}` : `Details: ${row.name}`}
+                      className="bz-btn-ghost bz-btn-sm min-h-[44px] whitespace-nowrap sm:min-h-[32px]"
                     >
                       {isTr ? 'Ayrıntı' : 'Details'}
                     </button>

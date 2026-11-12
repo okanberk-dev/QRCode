@@ -62,7 +62,7 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
   // One connection, one snapshot (CLAUDE.md §40.1 — pooler connection_limit=1).
   // Checks are loaded for EVERY scoped business so switching business on the
   // page is instant and never shows another business's numbers.
-  const [restaurants, checkRows] = await prisma.$transaction([
+  const [restaurantRows, checkRows] = await prisma.$transaction([
     prisma.restaurant.findMany({
       where: { id: { in: scopedIds } },
       select: {
@@ -95,20 +95,29 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
         yandexEnabled: true,
         yelpEnabled: true,
         foursquareEnabled: true,
+        isActive: true,
       },
       orderBy: { createdAt: 'asc' },
     }),
     latestChecksForRestaurants(scopedIds, since),
   ]);
+  // The shell's business switcher only offers active businesses: a paused
+  // business can never be the active scope (the shell puts the URL back to
+  // an active one), so "Ayrıntı" / a matrix cell for it silently opened
+  // another business. List the same set as the switcher. A workspace whose
+  // businesses are all paused still sees them (the shell has no scope then).
+  const activeRows = restaurantRows.filter((restaurant) => restaurant.isActive);
+  const hiddenPausedCount = activeRows.length > 0 ? restaurantRows.length - activeRows.length : 0;
+  const restaurants = (activeRows.length > 0 ? activeRows : restaurantRows).map(
+    ({ isActive: _isActive, ...restaurant }) => restaurant,
+  );
 
   const title = isTr ? PLATFORM_LINKS_LABEL.tr : PLATFORM_LINKS_LABEL.en;
-  const eyebrow = title.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US');
 
   if (restaurants.length === 0) {
     return (
       <div className={PAGE_WRAPPER} data-focus-clearance>
         <PageHeader
-          eyebrow={eyebrow}
           title={title}
           description={
             isTr
@@ -170,6 +179,7 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
         checksByRestaurant={checksByRestaurant}
         initialRestaurantId={initialRestaurantId}
         serverNow={Date.now()}
+        hiddenPausedCount={hiddenPausedCount}
       />
     </div>
   );

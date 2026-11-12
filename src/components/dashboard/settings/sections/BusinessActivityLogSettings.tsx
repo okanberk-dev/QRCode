@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, ChevronDown, ChevronRight, Clock, Loader2, ShieldCheck } from 'lucide-react';
+import { Activity, ChevronDown, ChevronRight, Clock, ShieldCheck } from 'lucide-react';
 import { AlertBanner, EmptyState } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import { ACTION_LABELS } from '@/lib/audit-log-labels';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 import type { Locale } from '@/lib/translations';
@@ -147,12 +148,14 @@ export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props)
 
   return (
     <div className="space-y-4">
-      <AlertBanner kind="info" icon={<ShieldCheck size={14} strokeWidth={2} />}>
-        <strong>{isTr ? 'KVKK şeffaflığı' : 'KVKK transparency'}:</strong>{' '}
+      {/* The section description says who/what; this line keeps only the
+          retention + masking facts the KVKK note used to repeat it with. */}
+      <p className="inline-flex items-start gap-1.5 text-[12px] leading-[1.55] text-[#525252]">
+        <ShieldCheck size={13} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
         {isTr
-          ? 'Hesabınla ilgili işlemler — kendi yaptıkların ve Buaze yöneticilerinin yaptıkları — son 2 yıl boyunca burada listelenir. E-posta ve telefon bilgileri gizlenerek gösterilir.'
-          : 'Changes to your account — yours and those made by Buaze administrators — are listed here for the last 2 years. Email and phone details are shown masked.'}
-      </AlertBanner>
+          ? 'Son 2 yılın kaydı tutulur; e-posta ve telefon bilgileri gizlenerek gösterilir.'
+          : 'The last 2 years are kept; email and phone details are shown masked.'}
+      </p>
 
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
@@ -161,10 +164,14 @@ export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props)
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-12 text-[13px] text-[#737373]">
-          <Loader2 size={14} className="animate-spin" />
-          {isTr ? 'Yükleniyor…' : 'Loading…'}
-        </div>
+        <ol className="space-y-2" aria-busy="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <li key={i} className="rounded-xl border border-[#EDEDED] bg-white p-4 space-y-2">
+              <SkBox className="h-4 w-40" />
+              <SkBox className="h-3 w-24" />
+            </li>
+          ))}
+        </ol>
       ) : data.length === 0 ? (
         <EmptyState
           icon={<Activity size={20} strokeWidth={2} />}

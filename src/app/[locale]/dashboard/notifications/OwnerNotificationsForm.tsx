@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Bell, Loader2, Mail, Clock } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, APSwitch } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 
 // Wave A5/A7 (CLAUDE.md §38.A) — dailyDigestEmail removed (orphan toggle);
 // receiveTrialReminders added. UI keeps every toggle in POSITIVE semantics
@@ -142,8 +142,6 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
     key: keyof Prefs;
     label: { tr: string; en: string };
     desc: { tr: string; en: string };
-    icon: React.ComponentType<{ size?: number }>;
-    accent?: string;
   }> = [
     {
       key: 'lowRatingEmail',
@@ -152,8 +150,6 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         tr: '1-3 yıldız bir yorum geldiğinde sana ve bildirim e-posta adresine anında uyarı gönderilir. İtibar yönetimi için kritik.',
         en: 'Sends an instant email to you and your notification address whenever a 1-3 star review arrives. Critical for reputation work.',
       },
-      icon: Mail,
-      accent: '#FCA5A5',
     },
     {
       key: 'weeklyReport',
@@ -163,8 +159,6 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         tr: 'Her pazartesi öğle saatlerinde (Türkiye saati) haftalık puan trendi, en çok tıklanan platform ve öne çıkan yorumlarla özet e-posta.',
         en: 'Every Monday around noon (Istanbul time): an email with your weekly rating trend, top platform and standout reviews.',
       },
-      icon: Bell,
-      accent: '#C6F24E',
     },
     {
       // Wave A5 — trial reminder opt-out. ON = receive (D-3 + D-1 reminders);
@@ -178,16 +172,21 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         tr: 'Deneme bitimine 3 gün ve 1 gün kala bilgilendirme e-postası. Kapatırsan hiçbir hatırlatma gönderilmez.',
         en: 'Heads-up email at 3 days and 1 day before your trial ends. Switch off to silence both reminders.',
       },
-      icon: Clock,
-      accent: '#FDE68A',
     },
   ];
 
   if (loading) {
     return (
-      <div className="bz-card flex items-center justify-center gap-2 p-12 text-[13px] text-[#737373]">
-        <Loader2 size={14} className="animate-spin" />
-        {isTr ? 'Yükleniyor…' : 'Loading…'}
+      <div className="bz-card divide-y divide-[#EDEDED] p-0" aria-busy="true">
+        {rows.map((row) => (
+          <div key={row.key} className="flex items-center justify-between gap-4 p-4 sm:p-5">
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkBox className="h-4 w-40" />
+              <SkBox className="h-3 w-full max-w-[420px]" />
+            </div>
+            <SkBox className="h-6 w-11 shrink-0 rounded-full" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -223,61 +222,37 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         </AlertBanner>
       )}
 
-      <section className="space-y-3">
+      {/* One card, one row per email. The switch is the state — the old
+          "Aktif / Pasif" pill next to each label repeated it. */}
+      <div className="bz-card divide-y divide-[#EDEDED] p-0">
         {rows.map((row) => {
-          const Icon = row.icon;
           // Unknown state after a failed load — render neutral, not "on".
           const on = !loadFailed && Boolean(prefs[row.key]);
           const isPending = pendingKey === row.key;
+          const label = row.label[isTr ? 'tr' : 'en'];
           return (
             <div
               key={row.key}
-              className="bz-card p-4 transition-colors hover:border-[#D4D4D4] sm:p-5"
+              className="flex items-start justify-between gap-4 p-4 sm:items-center sm:p-5"
             >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-start gap-3">
-                  <span
-                    className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[#0A0A0A] ring-1 ring-black/5"
-                    style={{ background: row.accent ? `${row.accent}33` : '#F5F5F5' }}
-                  >
-                    <Icon size={16} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[14px] font-semibold text-[#0A0A0A]">
-                        {row.label[isTr ? 'tr' : 'en']}
-                      </p>
-                      <span
-                        role="status"
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                          on ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#737373]'
-                        }`}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={`inline-block h-1.5 w-1.5 rounded-full ${on ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'}`}
-                        />
-                        {loadFailed ? '—' : on ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Off')}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-                      {row.desc[isTr ? 'tr' : 'en']}
-                    </p>
-                  </div>
-                </div>
-                <APSwitch
-                  checked={on}
-                  onChange={() => toggle(row.key)}
-                  loading={isPending}
-                  disabled={loadFailed || Boolean(pendingKey && !isPending)}
-                  ariaLabel={row.label[isTr ? 'tr' : 'en']}
-                  className="self-start sm:self-center"
-                />
+              <div className="min-w-0">
+                <p className="text-[14px] font-medium text-[#0A0A0A]">{label}</p>
+                <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+                  {row.desc[isTr ? 'tr' : 'en']}
+                </p>
               </div>
+              <APSwitch
+                checked={on}
+                onChange={() => toggle(row.key)}
+                loading={isPending}
+                disabled={loadFailed || Boolean(pendingKey && !isPending)}
+                ariaLabel={label}
+                className="shrink-0"
+              />
             </div>
           );
         })}
-      </section>
+      </div>
 
       <p className="text-[11.5px] leading-[1.55] text-[#737373]">
         {isTr

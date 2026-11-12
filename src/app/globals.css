@@ -1759,6 +1759,10 @@ select.bz-input option:checked {
 :root:has(.bz-panel) .bz-menu { border-radius: 10px; padding: 4px; border-color: #E8E8E8; }
 :root:has(.bz-panel) .bz-menu-item { border-radius: 6px; padding: 8px 10px; }
 :root:has(.bz-panel) .bz-menu-item:hover { background: #F5F5F5; }
+/* Phones: 44px rows so every panel menu meets the touch-target rule. */
+@media (max-width: 639px) {
+  :root:has(.bz-panel) .bz-menu-item { min-height: 44px; }
+}
 :root:has(.bz-panel) .bz-menu-label {
   font-family: var(--font-body);
   font-size: 12px;

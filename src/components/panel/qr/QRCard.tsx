@@ -3,17 +3,18 @@
 import { useState } from "react";
 import {
   ArrowUpRight,
-  Check,
   Copy,
-  Download,
   Eye,
   FileImage,
   FileText,
   Loader2,
+  MoreHorizontal,
   Trash2,
 } from "lucide-react";
-import { Badge, Eyebrow, PlatformChip, type PlatformId } from "@/components/ui";
+import { PlatformChip, type PlatformId } from "@/components/ui";
+import { PulseMenu, PulseMenuDivider, PulseMenuItem } from "@/components/ui/PulseMenu";
 import { copyToClipboard } from "@/lib/clipboard";
+import { resolveDisplayTimeZone } from "@/lib/timezone";
 
 export interface QRCardItem {
   id: string;
@@ -55,7 +56,7 @@ interface QRCardProps {
   defaultPlatformLabel?: string;
   locale?: "tr" | "en";
   /** Optional delete handler. When omitted (e.g. read-only contexts), the
-   *  trash button isn't rendered — the card stays a 3-action row. */
+   *  "…" menu has no delete item. */
   onDelete?: () => void;
 }
 
@@ -119,6 +120,8 @@ function buildQrUrl(
 
 function safeFileName(name: string): string {
   return name
+    .replace(/ı/g, "i")
+    .replace(/İ/g, "I")
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-zA-Z0-9_-]+/g, "-")
@@ -330,29 +333,66 @@ export function QRCard({
   };
 
   const created = new Date(item.createdAt);
-  const createdLabel = created.toLocaleDateString(isTr ? "tr-TR" : "en-US", {
-    day: "2-digit",
-    month: "short",
-  });
+  // Business time zone (CLAUDE.md §46): the server renders this card, so a
+  // browser-local date would not match it and break hydration.
+  const createdLabel = Number.isNaN(created.getTime())
+    ? ""
+    : created.toLocaleDateString(isTr ? "tr-TR" : "en-US", {
+        day: "2-digit",
+        month: "short",
+        timeZone: resolveDisplayTimeZone(),
+      });
 
   // Inline preview — plain QR (sadece module matrix, kullanıcı renkleri).
   // Kullanıcı talebi: arka plan Pulse Lime tasarımı yok, "sadece QR kod
   // gözüksün". `style=plain` server `QRCode.toBuffer` mono mode'a yönelir.
   const previewSrc = buildQrUrl(item, { format: "png", width: 240, style: "plain" });
+  // Admin passes the business as `branch`; skip it when the name already
+  // starts with it ("Kadıköy Şube · Masa 3").
+  const showBranch = Boolean(item.branch) && !item.name.startsWith(item.branch ?? "");
 
   return (
     <div className="bz-card relative overflow-hidden p-[18px]">
-      {/* Header */}
+      {/* Header — name + one "…" menu for the less common actions
+          (copy link, open target, delete). */}
       <div className="flex items-start justify-between gap-2 mb-3.5">
         <div className="flex-1 min-w-0">
           <div className="bz-h-tight truncate" style={{ fontSize: 15 }} title={item.name}>
             {item.name}
           </div>
-          {item.branch && (
+          {showBranch && (
             <div className="mt-1 text-[11px] text-[#737373] truncate">{item.branch}</div>
           )}
         </div>
-        <Badge kind="ok">{isTr ? "Aktif" : "Active"}</Badge>
+        <PulseMenu
+          trigger={
+            <button
+              type="button"
+              aria-label={isTr ? `${item.name} için diğer işlemler` : `More actions for ${item.name}`}
+              className="bz-btn-icon -mr-1.5 -mt-1.5 inline-flex h-11 w-11 shrink-0 items-center justify-center sm:h-8 sm:w-8"
+            >
+              <MoreHorizontal size={16} />
+            </button>
+          }
+        >
+          <PulseMenuItem icon={<Copy size={14} />} onSelect={copy}>
+            {isTr ? "Bağlantıyı kopyala" : "Copy link"}
+          </PulseMenuItem>
+          <PulseMenuItem
+            icon={<Eye size={14} />}
+            onSelect={() => window.open(item.qrUrl, "_blank", "noopener,noreferrer")}
+          >
+            {isTr ? "Müşterinin gördüğü sayfayı aç" : "Open the customer page"}
+          </PulseMenuItem>
+          {onDelete && (
+            <>
+              <PulseMenuDivider />
+              <PulseMenuItem icon={<Trash2 size={14} />} danger onSelect={onDelete}>
+                {isTr ? "QR'ı sil" : "Delete QR"}
+              </PulseMenuItem>
+            </>
+          )}
+        </PulseMenu>
       </div>
 
       {/* Inline preview — plain QR thumbnail (sadece module matrix, kullanıcı
@@ -375,39 +415,28 @@ export function QRCard({
         />
       </div>
 
-      {/* Platform binding row */}
+      {/* Platform binding + created date. The table is already in the
+          card name, so it is not repeated here. */}
       <div className="mt-3 flex items-center gap-2 rounded-lg bg-[#FAFAFA] px-2.5 py-2">
-        <ArrowUpRight size={12} className="text-[#737373]" />
+        <ArrowUpRight size={12} className="shrink-0 text-[#737373]" />
         {platformChip ? (
           <>
             <PlatformChip id={platformChip} size={16} />
-            <span className="text-[12px] text-[#525252] font-medium truncate">
+            <span className="min-w-0 truncate text-[12px] font-medium text-[#525252]">
               {platformLabel}
             </span>
           </>
         ) : (
-          <span className="text-[12px] text-[#737373] truncate">
+          <span className="min-w-0 truncate text-[12px] text-[#737373]">
             {isTr ? "Varsayılan platform" : "Default platform"} · {defaultPlatformLabel}
           </span>
         )}
-      </div>
-
-      {/* Stats */}
-      <div className="mt-3 grid grid-cols-2 gap-2.5 text-[12px]">
-        <div>
-          <Eyebrow>{isTr ? "Hedef" : "Target"}</Eyebrow>
-          <div className="bz-h-tight mt-1" style={{ fontSize: 14 }}>
-            {item.tableNumber
-              ? `${isTr ? "Masa" : "Table"} ${item.tableNumber}`
-              : isTr
-                ? "Genel"
-                : "General"}
-          </div>
-        </div>
-        <div>
-          <Eyebrow>{isTr ? "Oluşturuldu" : "Created"}</Eyebrow>
-          <div className="mt-1 text-[12px] text-[#525252]">{createdLabel}</div>
-        </div>
+        <span
+          className="ml-auto shrink-0 text-[11.5px] text-[#737373]"
+          title={isTr ? "Oluşturulma tarihi" : "Created"}
+        >
+          {createdLabel}
+        </span>
       </div>
 
       {/* Primary download row — plain QR (sadece module matrix, kullanıcı
@@ -449,51 +478,11 @@ export function QRCard({
             {downloadError}
           </p>
         )}
+        <p aria-live="polite" className="col-span-2 -mt-1 text-[11.5px] text-[#3F6212] empty:hidden">
+          {copied ? (isTr ? "Bağlantı kopyalandı." : "Link copied.") : ""}
+        </p>
       </div>
 
-      {/* Utility actions — copy URL, open target, optional delete */}
-      <div className={`mt-2 grid gap-1 ${onDelete ? "grid-cols-4" : "grid-cols-3"}`}>
-        <button
-          type="button"
-          onClick={downloadPng}
-          aria-label={isTr ? "PNG indir" : "Download PNG"}
-          title={isTr ? "PNG indir" : "Download PNG"}
-          className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
-        >
-          <Download size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={copy}
-          aria-label={isTr ? "URL'yi kopyala" : "Copy URL"}
-          title={isTr ? "URL'yi kopyala" : "Copy URL"}
-          className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
-        >
-          {copied ? <Check size={14} className="text-[#A8D62E]" /> : <Copy size={14} />}
-        </button>
-        <a
-          href={item.qrUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={isTr ? "Hedef sayfayı aç" : "Open target page"}
-          title={isTr ? "Hedef sayfayı aç" : "Open target page"}
-          className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
-        >
-          <Eye size={14} />
-        </a>
-        {onDelete && (
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={isTr ? "QR'ı sil" : "Delete QR"}
-            title={isTr ? "Sil" : "Delete"}
-            className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
-            style={{ color: "#DC2626" }}
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
-      </div>
     </div>
   );
 }

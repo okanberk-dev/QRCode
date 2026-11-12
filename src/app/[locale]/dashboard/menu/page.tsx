@@ -111,7 +111,6 @@ export default async function DashboardMenuPage({
     return (
       <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
         <PageHeader
-          eyebrow={isTr ? 'MENÜ' : 'MENU'}
           title={isTr ? 'Menü' : 'Menu'}
           description={
             isTr
@@ -129,10 +128,7 @@ export default async function DashboardMenuPage({
           }
           action={
             canCreateBusiness ? (
-              <Link
-                href={`/${locale}/dashboard/restaurants/new`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors"
-              >
+              <Link href={`/${locale}/dashboard/restaurants/new`} className="bz-btn-lime">
                 <Plus size={14} strokeWidth={2} />
                 {isTr ? 'İşletme ekle' : 'Add business'}
               </Link>
@@ -171,7 +167,6 @@ export default async function DashboardMenuPage({
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
       <PageHeader
-        eyebrow={isTr ? 'MENÜ' : 'MENU'}
         title={isTr ? 'Menü' : 'Menu'}
         description={
           isTr
@@ -180,10 +175,7 @@ export default async function DashboardMenuPage({
         }
         actions={
           canCreateBusiness ? (
-            <Link
-              href={`/${locale}/dashboard/restaurants/new`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] hover:bg-[#FAFAFA] transition-all"
-            >
+            <Link href={`/${locale}/dashboard/restaurants/new`} className="bz-btn">
               <Plus size={14} strokeWidth={2} />
               {isTr ? 'İşletme ekle' : 'Add business'}
             </Link>

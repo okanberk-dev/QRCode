@@ -131,7 +131,9 @@ export function UnsavedChangesBar({
           }}
         >
           <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 flex-wrap">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* The message may wrap on phones (it used to truncate to
+                "Kaydedilme…"); the buttons then drop to their own line. */}
+            <div className="flex min-w-0 flex-1 basis-[180px] items-center gap-2">
               <span
                 aria-hidden="true"
                 className="shrink-0"
@@ -142,7 +144,7 @@ export function UnsavedChangesBar({
                   background: error ? "#DC2626" : dirty ? "#C6F24E" : "#16A34A",
                 }}
               />
-              <span className="bz-mono text-[12px] truncate text-[#0A0A0A]">
+              <span className="bz-mono text-[12px] text-[#0A0A0A] sm:truncate">
                 {error ? error : dirty ? (dirtyLabel ?? copy.dirty) : success}
               </span>
             </div>
@@ -152,8 +154,8 @@ export function UnsavedChangesBar({
                 type="button"
                 onClick={onReset}
                 disabled={!dirty || saving}
-                className="bz-btn-ghost inline-flex items-center gap-1.5"
-                style={{ height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13 }}
+                className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[36px]"
+                style={{ padding: "0 14px", borderRadius: 999, fontSize: 13 }}
               >
                 <RotateCcw size={14} aria-hidden="true" />
                 {resetLabel ?? copy.reset}
@@ -162,8 +164,8 @@ export function UnsavedChangesBar({
                 type="button"
                 onClick={() => void onSave()}
                 disabled={!dirty || saving}
-                className="bz-btn-primary inline-flex items-center gap-1.5"
-                style={{ height: 36, padding: "0 16px", borderRadius: 999, fontSize: 13 }}
+                className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[36px]"
+                style={{ padding: "0 16px", borderRadius: 999, fontSize: 13 }}
                 aria-keyshortcuts="Meta+S Control+S"
               >
                 {saving && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}

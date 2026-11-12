@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
-import QrClient from './QrClient';
+import { dedupeQrRows } from '@/lib/qr-signature';
+import QrClient, { type QrHistoryItem } from './QrClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,15 @@ interface Restaurant {
   externalPlatformsEnabled?: boolean;
 }
 
+/**
+ * Upper bound for the server-rendered QR history (all scoped businesses in
+ * one query, ~70 KB of page payload at most). Above it the page skips
+ * hydration and QrClient loads each business through
+ * `/api/restaurants/[id]/qr/history` when it is shown, so a large franchise
+ * neither ships every business's list in the HTML nor gets a truncated one.
+ */
+const HISTORY_HYDRATION_LIMIT = 300;
+
 export default async function DashboardQrPage() {
   // Auth — owner panel (user_token). Admin bypass handled by dashboard/layout.
   const cookieStore = await cookies();
@@ -31,6 +41,7 @@ export default async function DashboardQrPage() {
   const adminToken = cookieStore.get('admin_token')?.value;
 
   let initialRestaurants: Restaurant[] | undefined;
+  let initialHistories: Record<string, QrHistoryItem[]> | undefined;
 
   // Only hydrate from user_token — admin sessions keep client-fetch path
   // (consistent with /dashboard/account hydration scope, §38).
@@ -77,5 +88,50 @@ export default async function DashboardQrPage() {
     }
   }
 
-  return <QrClient initialRestaurants={initialRestaurants} />;
+  // QR history for every listed business in one query — the page used to
+  // show skeleton cards until one request per business had returned
+  // (§40.10 server hydration). Same filter and fields as
+  // GET /api/restaurants/[id]/qr/history. Any failure (e.g. a preview DB
+  // without the newer colour columns) leaves `initialHistories` undefined
+  // and QrClient fetches per business as before.
+  if (initialRestaurants) {
+    const ids = initialRestaurants.map((r) => r.id);
+    if (ids.length === 0) {
+      initialHistories = {};
+    } else {
+      try {
+        const rows = await prisma.qrGeneration.findMany({
+          where: { restaurantId: { in: ids }, type: 'feedback' },
+          orderBy: { createdAt: 'desc' },
+          take: HISTORY_HYDRATION_LIMIT + 1,
+          select: {
+            id: true,
+            restaurantId: true,
+            qrUrl: true,
+            tableNumber: true,
+            platform: true,
+            serviceType: true,
+            type: true,
+            darkColor: true,
+            lightColor: true,
+            templateId: true,
+            createdAt: true,
+          },
+        });
+        if (rows.length <= HISTORY_HYDRATION_LIMIT) {
+          const byRestaurant: Record<string, QrHistoryItem[]> = {};
+          for (const id of ids) byRestaurant[id] = [];
+          for (const row of rows) {
+            byRestaurant[row.restaurantId]?.push({ ...row, createdAt: row.createdAt.toISOString() });
+          }
+          for (const id of ids) byRestaurant[id] = dedupeQrRows(byRestaurant[id]);
+          initialHistories = byRestaurant;
+        }
+      } catch (error) {
+        console.error('[DashboardQrPage] QR history hydration failed', error);
+      }
+    }
+  }
+
+  return <QrClient initialRestaurants={initialRestaurants} initialHistories={initialHistories} />;
 }
