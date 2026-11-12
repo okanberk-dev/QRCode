@@ -22,6 +22,9 @@ interface BusinessSecuritySettingsProps {
   restaurant: RestaurantData;
   locale?: "tr" | "en";
   onSaved?: (partial: Partial<RestaurantData>) => void;
+  /** Opens the "Çalışma saatleri" tab, where "geçici kapalı" lives. When
+   *  omitted the pointer to it is shown as plain text. */
+  onOpenHours?: () => void;
 }
 
 interface FormState {
@@ -59,6 +62,7 @@ export function BusinessSecuritySettings({
   restaurant,
   locale = "tr",
   onSaved,
+  onOpenHours,
 }: BusinessSecuritySettingsProps) {
   const t = locale === "en" ? COPY.en : COPY.tr;
   const suspended = restaurant.suspendedByAdmin === true;
@@ -151,6 +155,22 @@ export function BusinessSecuritySettings({
             {form.isActive ? t.stateActive : t.stateDisabled}
           </span>
         </div>
+        {/* "Geçici kapalı" is a different control in another tab; point to
+            it so an owner closing for a holiday does not disable the page. */}
+        <p className="mt-4 border-t border-[#EDEDED] pt-3 text-[12.5px] leading-[1.55] text-[#525252]">
+          {t.closedHint}{" "}
+          {onOpenHours ? (
+            <button
+              type="button"
+              onClick={onOpenHours}
+              className="inline-flex min-h-[44px] items-center font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-2 hover:decoration-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] rounded sm:min-h-0"
+            >
+              {t.closedHintLink}
+            </button>
+          ) : (
+            t.closedHintPlain
+          )}
+        </p>
       </SettingsCard>
 
       <UnsavedChangesBar
@@ -176,6 +196,9 @@ const COPY = {
     switchAria: "İşletme aktif",
     stateActive: "İşletme aktif",
     stateDisabled: "İşletme devre dışı",
+    closedHint: "Tatil ya da tadilat için kısa süre kapatacaksan geçici kapalı ayarını kullan.",
+    closedHintLink: "Çalışma saatlerine git",
+    closedHintPlain: "Bu ayar Çalışma saatleri sekmesinde.",
   },
   en: {
     saveFailed: "Could not save.",
@@ -186,6 +209,9 @@ const COPY = {
     switchAria: "Business active",
     stateActive: "Business is active",
     stateDisabled: "Business is disabled",
+    closedHint: "Closing for a holiday or renovation? Use the temporarily closed setting instead.",
+    closedHintLink: "Go to opening hours",
+    closedHintPlain: "It is in the Opening hours tab.",
   },
 };
 

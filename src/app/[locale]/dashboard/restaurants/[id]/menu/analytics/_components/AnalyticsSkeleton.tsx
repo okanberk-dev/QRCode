@@ -42,10 +42,12 @@ export function AnalyticsSkeleton() {
       </div>
 
       {/* Toolbar: period segments (full width on phones), then category +
-          source + refresh in one row. */}
+          source + refresh in one row. From sm the controls sit beside the
+          segments when they fit and wrap to their own line when they do not —
+          the same flex rules as page.tsx, so the break happens at the same width. */}
       <div className="flex flex-wrap items-center gap-2">
         <SkBox className="h-[50px] w-full rounded-lg sm:h-[34px] sm:w-[378px]" />
-        <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-1">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:flex-auto">
           <SkBox className="h-11 flex-1 rounded-lg sm:h-[34px] sm:w-[170px] sm:flex-none" />
           <SkBox className="h-11 flex-1 rounded-lg sm:h-[34px] sm:w-[160px] sm:flex-none" />
           <SkBox className="h-11 w-11 shrink-0 rounded-lg sm:ml-auto sm:h-[35px] sm:w-[83px]" />

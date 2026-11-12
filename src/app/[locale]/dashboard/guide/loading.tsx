@@ -18,7 +18,6 @@ export default function Loading() {
         <div className="flex flex-1 items-start gap-3">
           <SkBox className="h-10 w-10 shrink-0 rounded-full" />
           <div className="flex-1 space-y-2">
-            <SkBox className="h-3 w-28" />
             <SkBox className="h-5 w-64 max-w-full" />
             <SkBox className="h-4 w-full max-w-[560px]" />
           </div>

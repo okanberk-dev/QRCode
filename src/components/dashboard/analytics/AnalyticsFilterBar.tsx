@@ -173,7 +173,7 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
     >
       {/* Period — presets + custom range in one segmented control. */}
       <div
-        className="flex w-full items-center gap-0.5 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex sm:w-auto"
+        className="flex w-full flex-wrap items-center gap-0.5 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex sm:w-auto sm:flex-nowrap"
         role="group"
         aria-label={isTr ? 'Dönem' : 'Period'}
       >
@@ -190,7 +190,7 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
                   ['customEnd', null],
                 ]);
               }}
-              className={`${segmentClass(active)} flex-1 sm:flex-none`}
+              className={`${segmentClass(active)} min-w-[44px] flex-1 sm:flex-none`}
               aria-pressed={active}
               title={isTr ? r.trLong : r.enLong}
             >
@@ -201,7 +201,11 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
         <button
           type="button"
           onClick={() => setCustomOpen(true)}
-          className={`${segmentClass(customActive)} flex-auto sm:flex-none`}
+          // With dates in it the custom segment gets its own row on mobile,
+          // so it never squeezes the presets below 44px.
+          className={`${segmentClass(customActive)} ${
+            customActive ? 'basis-full' : 'flex-auto'
+          } sm:flex-none sm:basis-auto`}
           aria-pressed={customActive}
           aria-haspopup="dialog"
           aria-label={
@@ -219,8 +223,10 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
         </button>
       </div>
 
-      {/* Platform (+ branch) select and reset share one row on mobile too. */}
-      <div className="flex w-full items-center gap-2 sm:w-auto">
+      {/* Platform (+ branch) select and the reset / progress slot. On mobile
+          the platform select gets its own row when a branch select is shown,
+          so neither label is cut off. */}
+      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
         <PulseSelect
           value={platform}
           onChange={(v) => updateMany([['platform', v]])}
@@ -229,7 +235,9 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
             ...PLATFORM_OPTIONS.map((pid) => ({ value: pid, label: PLATFORMS[pid].label })),
           ]}
           ariaLabel={isTr ? 'Platform' : 'Platform'}
-          className="min-w-0 flex-1 sm:w-[170px] sm:flex-none"
+          className={`min-w-0 sm:w-[170px] sm:flex-none ${
+            showBranches ? 'basis-full sm:basis-auto' : 'flex-1'
+          }`}
         />
         {showBranches && (
           <PulseSelect
@@ -237,13 +245,28 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
             onChange={(v) => updateMany([['branch', v]])}
             options={[
               { value: 'all', label: isTr ? 'Tüm şubeler' : 'All branches' },
-              ...(branches ?? []).map((b) => ({ value: b, label: b })),
+              // "Şube: Merkez" — a bare branch name in the closed select gave
+              // no hint of what it filters.
+              ...(branches ?? []).map((b) => ({
+                value: b,
+                label: `${isTr ? 'Şube' : 'Branch'}: ${b}`,
+              })),
             ]}
             ariaLabel={isTr ? 'Şube' : 'Branch'}
-            className="min-w-0 flex-1 sm:w-[170px] sm:flex-none"
+            className="min-w-0 flex-1 sm:w-[190px] sm:flex-none"
           />
         )}
-        {hasActiveFilter && (
+        {/* One slot for reset and progress: while the page reloads it shows a
+            spinner in place of reset, so the toolbar never grows a line. */}
+        {pending ? (
+          <span
+            aria-hidden="true"
+            className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 text-[12px] text-[#737373] sm:h-[34px] sm:min-h-0 sm:min-w-0 sm:px-2"
+          >
+            <Loader2 size={13} className="animate-spin" />
+            <span className="hidden sm:inline">{isTr ? 'Güncelleniyor…' : 'Updating…'}</span>
+          </span>
+        ) : hasActiveFilter ? (
           <button
             type="button"
             onClick={reset}
@@ -253,18 +276,13 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
             <RotateCcw size={13} aria-hidden="true" />
             <span className="hidden sm:inline">{isTr ? 'Temizle' : 'Reset'}</span>
           </button>
-        )}
+        ) : null}
       </div>
 
-      {pending && (
-        <span
-          role="status"
-          className="inline-flex items-center gap-1.5 text-[12px] text-[#737373]"
-        >
-          <Loader2 size={13} className="animate-spin" aria-hidden="true" />
-          {isTr ? 'Güncelleniyor…' : 'Updating…'}
-        </span>
-      )}
+      {/* Always mounted so screen readers hear the change; takes no space. */}
+      <span role="status" aria-live="polite" className="sr-only">
+        {pending ? (isTr ? 'Güncelleniyor…' : 'Updating…') : ''}
+      </span>
 
       {customOpen && (
         <Modal

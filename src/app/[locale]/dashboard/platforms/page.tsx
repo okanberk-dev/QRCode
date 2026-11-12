@@ -107,6 +107,7 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
   // another business. List the same set as the switcher. A workspace whose
   // businesses are all paused still sees them (the shell has no scope then).
   const activeRows = restaurantRows.filter((restaurant) => restaurant.isActive);
+  const hiddenPausedCount = activeRows.length > 0 ? restaurantRows.length - activeRows.length : 0;
   const restaurants = (activeRows.length > 0 ? activeRows : restaurantRows).map(
     ({ isActive: _isActive, ...restaurant }) => restaurant,
   );
@@ -178,6 +179,7 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
         checksByRestaurant={checksByRestaurant}
         initialRestaurantId={initialRestaurantId}
         serverNow={Date.now()}
+        hiddenPausedCount={hiddenPausedCount}
       />
     </div>
   );

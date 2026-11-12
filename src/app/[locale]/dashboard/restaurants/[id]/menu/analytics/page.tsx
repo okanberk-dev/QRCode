@@ -281,10 +281,6 @@ export default function MenuAnalyticsPage() {
     : 0;
 
   const live = !!data?.menu?.enabled && !!data?.menu?.published;
-  // A draft menu with no visits and default filters has nothing to filter —
-  // the empty state below says what to do. Any other case keeps the toolbar
-  // (a live menu may still have older visits under "Tümü").
-  const showToolbar = !data || hasAnyData || hasActiveFilters || range !== '30d' || live;
   const categoryOptions = data?.categories ?? [];
   // One category = the same numbers as "all": only offer the filter from two up
   // (or while it is in use, so it can be cleared).
@@ -311,85 +307,87 @@ export default function MenuAnalyticsPage() {
           className="!mb-0"
           title={copy.title}
           titleScale="compact"
-          subtitle={showToolbar ? windowLabel : null}
+          subtitle={windowLabel}
           description={copy.subtitle}
         />
       </div>
 
       {/* §49 — one toolbar: period segments, category + source selects, reset,
-          refresh. Filters apply immediately. */}
-      {showToolbar && (
-        <div role="group" aria-label={copy.filters} className="flex flex-wrap items-center gap-2">
-          <div
-            role="group"
-            aria-label={copy.period}
-            className="flex w-full items-center gap-0.5 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex sm:w-auto"
-          >
-            {ranges.map((opt) => {
-              const active = range === opt.key;
-              return (
-                <button
-                  type="button"
-                  key={opt.key}
-                  onClick={() => setRange(opt.key)}
-                  aria-pressed={active}
-                  className={`inline-flex min-h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:h-[28px] sm:min-h-0 sm:flex-none sm:text-[12px] ${
-                    active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5] hover:text-[#0A0A0A]'
-                  }`}
-                >
-                  <span className="sm:hidden">{opt.short}</span>
-                  <span className="hidden sm:inline">{opt.long}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
-            {showCategoryFilter && (
-              <PulseSelect
-                value={categoryId}
-                onChange={setCategoryId}
-                ariaLabel={copy.categoryLabel}
-                className="min-w-0 flex-1 sm:w-[170px] sm:flex-none"
-                options={[
-                  { value: '', label: copy.allCategories },
-                  ...categoryOptions.map((c) => ({ value: c.id, label: c.name })),
-                ]}
-              />
-            )}
-            <PulseSelect
-              value={sourceType}
-              onChange={setSourceType}
-              ariaLabel={copy.sourceLabel}
-              className="min-w-0 flex-1 sm:w-[160px] sm:flex-none"
-              options={[
-                { value: '', label: copy.allSources },
-                ...Object.entries(copy.sourceLabels).map(([key, label]) => ({ value: key, label })),
-              ]}
-            />
-            {hasActiveFilters && (
+          refresh. Filters apply immediately. Always shown — even with no visits
+          in the period, an older (or taken-offline) menu may have data under a
+          wider range. Phones: segments full width, the rest one row below.
+          From sm the controls group sits beside the segments when it fits and
+          moves to its own line (refresh right-aligned) when it does not. */}
+      <div role="group" aria-label={copy.filters} className="flex flex-wrap items-center gap-2">
+        <div
+          role="group"
+          aria-label={copy.period}
+          className="flex w-full items-center gap-0.5 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex sm:w-auto"
+        >
+          {ranges.map((opt) => {
+            const active = range === opt.key;
+            return (
               <button
                 type="button"
-                onClick={resetFilters}
-                aria-label={copy.resetFilters}
-                className="bz-btn-ghost w-11 shrink-0 px-0 sm:w-auto sm:px-3"
+                key={opt.key}
+                onClick={() => setRange(opt.key)}
+                aria-pressed={active}
+                className={`inline-flex min-h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:h-[28px] sm:min-h-0 sm:flex-none sm:text-[12px] ${
+                  active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5] hover:text-[#0A0A0A]'
+                }`}
               >
-                <RotateCcw size={13} strokeWidth={2} aria-hidden />
-                <span className="hidden sm:inline">{copy.reset}</span>
+                <span className="sm:hidden">{opt.short}</span>
+                <span className="hidden sm:inline">{opt.long}</span>
               </button>
-            )}
+            );
+          })}
+        </div>
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:flex-auto">
+          {showCategoryFilter && (
+            <PulseSelect
+              value={categoryId}
+              onChange={setCategoryId}
+              ariaLabel={copy.categoryLabel}
+              className="min-w-0 flex-1 sm:w-[170px] sm:flex-none"
+              options={[
+                { value: '', label: copy.allCategories },
+                ...categoryOptions.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
+          )}
+          <PulseSelect
+            value={sourceType}
+            onChange={setSourceType}
+            ariaLabel={copy.sourceLabel}
+            className="min-w-0 flex-1 sm:w-[160px] sm:flex-none"
+            options={[
+              { value: '', label: copy.allSources },
+              ...Object.entries(copy.sourceLabels).map(([key, label]) => ({ value: key, label })),
+            ]}
+          />
+          {hasActiveFilters && (
             <button
               type="button"
-              onClick={fetchAnalytics}
-              disabled={loading}
-              aria-label={copy.refresh}
-              className="bz-btn w-11 shrink-0 px-0 disabled:opacity-50 sm:ml-auto sm:w-auto sm:px-3"
+              onClick={resetFilters}
+              aria-label={copy.resetFilters}
+              className="bz-btn-ghost w-11 shrink-0 px-0 sm:w-auto sm:px-3"
             >
-              {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <RefreshCw size={14} strokeWidth={2} aria-hidden />}
-              <span className="hidden sm:inline">{copy.refresh}</span>
+              <RotateCcw size={13} strokeWidth={2} aria-hidden />
+              <span className="hidden sm:inline">{copy.reset}</span>
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={fetchAnalytics}
+            disabled={loading}
+            aria-label={copy.refresh}
+            className="bz-btn w-11 shrink-0 px-0 disabled:opacity-50 sm:ml-auto sm:w-auto sm:px-3"
+          >
+            {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <RefreshCw size={14} strokeWidth={2} aria-hidden />}
+            <span className="hidden sm:inline">{copy.refresh}</span>
+          </button>
         </div>
-      )}
+      </div>
 
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>

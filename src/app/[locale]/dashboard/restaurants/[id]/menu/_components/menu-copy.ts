@@ -8,9 +8,6 @@
 export function buildMenuCopy(isTr: boolean) {
   return {
     title: isTr ? 'Menü' : 'Menu',
-    pageDescription: isTr
-      ? 'Değişiklikler kaydedilir kaydedilmez menüne yansır.'
-      : 'Changes appear on your menu as soon as you save them.',
     backToMenus: isTr ? 'İşletmeye dön' : 'Back to business',
 
     // ── header actions ──
@@ -18,6 +15,7 @@ export function buildMenuCopy(isTr: boolean) {
     exitPreview: isTr ? 'Önizlemeden çık' : 'Exit preview',
     design: isTr ? 'Görünüm' : 'Design',
     shareAndQr: isTr ? 'Paylaş ve QR' : 'Share & QR',
+    phonePreview: isTr ? 'Telefon önizlemesi' : 'Phone preview',
     analytics: isTr ? 'Analitik' : 'Analytics',
 
     // ── status strip ──
@@ -49,6 +47,8 @@ export function buildMenuCopy(isTr: boolean) {
     copied: isTr ? 'Kopyalandı' : 'Copied',
     openMenu: isTr ? 'Menüyü aç' : 'Open menu',
     moreActions: isTr ? 'Diğer işlemler' : 'More actions',
+    // The live strip's own "⋯" (take offline) — distinct from the header's "Diğer".
+    publishActions: isTr ? 'Yayın işlemleri' : 'Publishing actions',
     more: isTr ? 'Diğer' : 'More',
     lastUpdated: isTr ? 'Son güncelleme' : 'Last updated',
     lockedTitle: isTr ? 'Menü düzenleme bu işletme için kapalı.' : 'Menu editing is turned off for this business.',

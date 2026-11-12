@@ -33,6 +33,8 @@ export default function Loading() {
             <div className="min-w-0 flex-1 space-y-2">
               <SkBox className="h-4 w-20" />
               <SkBox className="h-3 w-32 max-w-full" />
+              {/* The description wraps to a 2nd line between sm and xl. */}
+              <SkBox className="hidden h-3 w-20 sm:block xl:hidden" />
             </div>
             <SkBox className="h-6 w-8 shrink-0" />
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
-import { Flag, Mail, RotateCcw } from 'lucide-react';
-import { Modal, PulseSelect } from '@/components/ui';
+import { RotateCcw } from 'lucide-react';
+import { Modal, PulseSelect, type PulseSelectOption } from '@/components/ui';
 import {
   dateFilterOptions,
   platformFilterOptions,
@@ -12,9 +12,9 @@ import type { HasReplyFilter, PlatformFilter } from './types';
 
 /**
  * Mobile (< md) filter sheet. md+ shows the same filters inline in the
- * toolbar (selects + "Yanıtsız" / "İşaretli" toggles), so there is no md+
- * modal any more. Every control applies immediately; the footer button only
- * closes the sheet.
+ * toolbar (selects + "Yanıtsızlar" / "Yalnız işaretliler" toggles, same
+ * labels as here), so there is no md+ modal any more. Every control applies
+ * immediately; the footer button only closes the sheet.
  */
 interface FeedbackFiltersModalProps {
   open: boolean;
@@ -26,6 +26,8 @@ interface FeedbackFiltersModalProps {
 
   filterRating: string;
   setFilterRating: (v: string) => void;
+  /** Rating options (defaults to `ratingFilterOptions`). */
+  ratingOptions?: PulseSelectOption[];
 
   platformFilter: PlatformFilter;
   setPlatformFilter: (v: PlatformFilter) => void;
@@ -48,6 +50,7 @@ export function FeedbackFiltersModal({
   setDaysFilter,
   filterRating,
   setFilterRating,
+  ratingOptions,
   platformFilter,
   setPlatformFilter,
   hasReplyFilter,
@@ -73,7 +76,7 @@ export function FeedbackFiltersModal({
       label: isTr ? 'Puan' : 'Rating',
       value: filterRating,
       onChange: setFilterRating,
-      options: ratingFilterOptions(isTr),
+      options: ratingOptions ?? ratingFilterOptions(isTr),
     },
     {
       id: 'feedback-filter-platform-label',
@@ -131,16 +134,14 @@ export function FeedbackFiltersModal({
               className={`${hasReplyFilter === 'pending' ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px]`}
               aria-pressed={hasReplyFilter === 'pending'}
             >
-              <Mail size={12} strokeWidth={2.2} aria-hidden="true" />
-              {isTr ? 'Yanıtı olmayanlar' : 'Without a reply'}
+              {isTr ? 'Yanıtsızlar' : 'Unreplied'}
             </button>
             <button
               type="button"
               onClick={() => setFlaggedOnly(!flaggedOnly)}
-              className={`${flaggedOnly ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px]`}
+              className={`${flaggedOnly ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm max-sm:min-h-[44px]`}
               aria-pressed={flaggedOnly}
             >
-              <Flag size={12} strokeWidth={2.2} aria-hidden="true" />
               {isTr ? 'Yalnız işaretliler' : 'Flagged only'}
             </button>
           </div>

@@ -32,8 +32,6 @@ import { buildPlatformDailyTrend, type PlatformDailyPoint } from '@/lib/analytic
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
-import { providerColumnsSelect } from '@/lib/platform-link-test';
-import { computePlatformLinkStatuses } from '@/lib/platform-link-status';
 import { isSameDayInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
@@ -103,7 +101,7 @@ async function renderDashboardPage({
   const { locale } = await params;
   const isTr = locale === 'tr';
 
-  // Phase 8c+ §38.31 — Header "Bu hafta" dropdown URL searchParam scope.
+  // Phase 8c+ §38.31 — Header date-range dropdown (URL searchParam scope).
   // Default '7d'; KPI window'ları + prev window delta için kullanılır.
   // YTD: prev_year_YTD karmaşık (1 yıl önce data); delta gizlenir (null).
   const sp = searchParams ? await searchParams : {};
@@ -153,10 +151,6 @@ async function renderDashboardPage({
         currentGoogleRating: true,
         // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
         aiAnalyticsEnabled: true,
-        // Onboarding step 4 ("Yorum platformu linki ekle") — done once a
-        // review-platform link is connected (§14.1 defensive select).
-        externalPlatformsEnabled: true,
-        ...providerColumnsSelect(),
         _count: { select: { feedbacks: true } },
       },
     }),
@@ -754,15 +748,30 @@ async function renderDashboardPage({
     isTr,
   });
 
-  // ---- Onboarding nudge (mevcut signal'lardan türet) ----
+  // ---- Welcome card (only while the account has no business) ----
+  // QR codes, review links and feedback all belong to a business, so the
+  // one useful step here is adding the first one. With a business the
+  // per-business setup checklist (ActivationChecklistCard) takes over.
+  // Team members cannot add businesses — they get a short note instead.
   const hasRestaurant = user.restaurants.length > 0;
-  const hasActiveRestaurant = user.restaurants.some((r) => r.isActive);
-  const hasReviews = totalReviews > 0;
-  // A saved, enabled, well-formed review-platform link on any business —
-  // checks are not needed to call the setup step done.
-  const hasReviewPlatformLink = user.restaurants.some((r) =>
-    computePlatformLinkStatuses(r, {}, { categories: ['review'] }).some((s) => s.state === 'connected'),
-  );
+  const isTeamMember = payload.role === 'team_member';
+  const onboardingSteps: OnboardingStep[] = isTeamMember
+    ? []
+    : [
+        {
+          id: 1,
+          label: isTr ? 'İlk işletmeni ekle' : 'Add your first business',
+          done: false,
+          href: `/${locale}/dashboard/restaurants/new`,
+        },
+      ];
+  const onboardingDescription = isTeamMember
+    ? isTr
+      ? 'Sana henüz bir işletme atanmadı. Erişim için işletme sahibine başvur.'
+      : 'No business has been assigned to you yet. Ask the business owner for access.'
+    : isTr
+      ? 'QR kodları, yorum linkleri ve geri bildirimler bir işletmeye bağlıdır. Başlamak için ilk işletmeni ekle.'
+      : 'QR codes, review links and feedback all belong to a business. Add your first business to get started.';
   const scopedHref = (href: string) => {
     if (!selectedRestaurantId) return href;
     const [path, query = ''] = href.split('?');
@@ -771,38 +780,6 @@ async function renderDashboardPage({
     const search = params.toString();
     return search ? `${path}?${search}` : path;
   };
-  const onboardingSteps: OnboardingStep[] = [
-    {
-      id: 1,
-      label: isTr ? 'İşletme profilini tamamla' : 'Complete business profile',
-      done: !!user.name && hasRestaurant,
-      href: `/${locale}/dashboard/account?section=profile`,
-    },
-    {
-      id: 2,
-      label: isTr ? 'İlk işletmeyi ekle' : 'Add first business',
-      done: hasRestaurant,
-      href: scopedHref(`/${locale}/dashboard/restaurants`),
-    },
-    {
-      id: 3,
-      label: isTr ? 'İlk QR kodunu oluştur' : 'Generate first QR code',
-      done: hasActiveRestaurant,
-      href: scopedHref(`/${locale}/dashboard/qr`),
-    },
-    {
-      id: 4,
-      label: isTr ? 'Yorum platformu linki ekle' : 'Add a review-platform link',
-      done: hasReviewPlatformLink,
-      href: scopedHref(`/${locale}/dashboard/platforms`),
-    },
-    {
-      id: 5,
-      label: isTr ? 'Müşteri yorumlarını izle' : 'Track customer feedback',
-      done: hasReviews,
-      href: scopedHref(`/${locale}/dashboard/feedbacks`),
-    },
-  ];
 
   // ---- KPI delta hesaplamaları (tek pencere: 7d vs prev 7d) ----
   const pctDelta = (curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } => {
@@ -944,12 +921,14 @@ async function renderDashboardPage({
   const userFirstName = user.name?.trim().split(/\s+/)[0] || (isTr ? 'Hoş geldin' : 'Welcome');
   // §38.32 — pendingCount line 729'da unrepliedAggregate._count._all'dan
   // tanımlandı; greeting hook için reuse.
+  // Every unreplied low-rated review counts, not only today's — so no
+  // "Bugün" here (the pending card below shows how old the oldest one is).
   const pendingHook = isTr
     ? pendingCount > 0
-      ? `Bugün ${pendingCount} yorum yanıt bekliyor.`
+      ? `${pendingCount} yorum yanıt bekliyor.`
       : 'Yanıt bekleyen yorum yok.'
     : pendingCount > 0
-      ? `Today ${pendingCount} ${pendingCount > 1 ? 'reviews await' : 'review awaits'} a reply.`
+      ? `${pendingCount} ${pendingCount === 1 ? 'review is' : 'reviews are'} waiting for a reply.`
       : 'No reviews are waiting for a reply.';
   const primaryRestaurantName = selectedRestaurant?.name ?? user.restaurants[0]?.name ?? '';
 
@@ -1058,14 +1037,18 @@ async function renderDashboardPage({
             {/* Date window for the KPI cards (?scope=). The chart below has
                 its own 30G / 90G / YTD switch. */}
             <ScopeDropdown current={scopeUrlValue} isTr={isTr} />
-            {/* "Yorum iste" = create a QR customers scan to leave a review. */}
-            <Link
-              href={scopedHref(`/${locale}/dashboard/qr?new=1`)}
-              className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
-            >
-              <Plus size={13} strokeWidth={2} aria-hidden="true" />
-              {isTr ? 'Yorum İste' : 'Request review'}
-            </Link>
+            {/* "Yorum iste" = create a QR customers scan to leave a review.
+                Hidden until there is a business: a QR needs one, and the
+                welcome card's "İlk işletmeni ekle" is then the one action. */}
+            {hasRestaurant && (
+              <Link
+                href={scopedHref(`/${locale}/dashboard/qr?new=1`)}
+                className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
+              >
+                <Plus size={13} strokeWidth={2} aria-hidden="true" />
+                {isTr ? 'Yorum İste' : 'Request review'}
+              </Link>
+            )}
           </>
         }
       />
@@ -1158,7 +1141,13 @@ async function renderDashboardPage({
       {/* One setup card at a time: the account-level checklist only while
           there is no business yet; afterwards the per-business checklist
           (same steps, plus manual "printed/shared" mark and dismiss). */}
-      {!hasRestaurant && <OnboardingNudge locale={locale} steps={onboardingSteps} />}
+      {!hasRestaurant && (
+        <OnboardingNudge
+          locale={locale}
+          steps={onboardingSteps}
+          description={onboardingDescription}
+        />
+      )}
       {activationTarget && (
         <ActivationChecklistCard
           // Seeded once from initialResult — remount per business so a
@@ -1229,7 +1218,11 @@ async function renderDashboardPage({
           missing or short): chart + channels + topics on the left, pending
           tasks + activity on the right. Below lg the column wrappers are
           `display: contents`, so `order-*` keeps the single-column order:
-          chart, pending, channels, topics, activity. */}
+          chart, pending, channels, topics, activity.
+          Keyboard order still matches what is on screen: the channel and
+          topic sections are read-only (no links or buttons), so Tab goes
+          chart → pending tasks → activity in both layouts. Do not add a
+          focusable element to those two sections without revisiting this. */}
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
         <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3">
           <section
@@ -1270,15 +1263,11 @@ async function renderDashboardPage({
           {/* Channel cards (Google card adds the rating-before/after strip). */}
           {platformDistData.length > 0 && (
             <section className="order-3 lg:order-none" aria-label={isTr ? 'Kanal dağılımı' : 'Channel breakdown'}>
-              <header className="mb-3 flex items-center justify-between gap-3">
+              {/* No link here: "Detaylı analitik" in the chart card (and
+                  "Analitik" in the mobile summary card) already opens the
+                  same page. */}
+              <header className="mb-3">
                 <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
-                <Link
-                  href={scopedHref(`/${locale}/dashboard/analytics`)}
-                  className="-my-2 inline-flex min-h-[44px] items-center gap-1 rounded-md text-[12px] text-[#525252] hover:text-[#0A0A0A] sm:min-h-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-                >
-                  {isTr ? 'Tüm kanallar' : 'All channels'}
-                  <ArrowRight size={11} strokeWidth={2} aria-hidden="true" />
-                </Link>
               </header>
               <ChannelDistribution
                 channels={channelStats}

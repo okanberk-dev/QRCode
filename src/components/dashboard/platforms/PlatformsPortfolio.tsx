@@ -43,6 +43,9 @@ interface PlatformsPortfolioProps<T extends PlatformLinkRow & { id: string; name
   /** Rendered at the start of the toolbar row (the page's view tabs), so the
    *  tabs, the "only to fix" filter and the check-all action share one row. */
   toolbarStart?: ReactNode;
+  /** Paused businesses left out of the matrix (the business switcher cannot
+   *  open them). Shown as one line so the count matches İşletmeler. */
+  hiddenPausedCount?: number;
 }
 
 export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; name: string }>({
@@ -52,6 +55,7 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
   onOpenBusiness,
   onChecks,
   toolbarStart,
+  hiddenPausedCount = 0,
 }: PlatformsPortfolioProps<T>) {
   const isTr = locale === 'tr';
   const [onlyWork, setOnlyWork] = useState(false);
@@ -139,12 +143,19 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
           : isTr
             ? 'Tüm işletmelerinizin yorum linkleri yerinde.'
             : 'Every business has its review links in place.'}
+        {hiddenPausedCount > 0
+          ? isTr
+            ? ` ${hiddenPausedCount} devre dışı işletme burada gösterilmez.`
+            : ` ${hiddenPausedCount} disabled ${hiddenPausedCount === 1 ? 'business is' : 'businesses are'} not shown here.`
+          : null}
       </p>
       <p role="status" aria-live="polite" className="text-[12px] text-[#525252] [&:empty]:hidden">
         {progress}
       </p>
 
-      <div className="bz-card overflow-x-auto p-0">
+      {/* `relative`: the sr-only header label is absolutely positioned; without
+          a positioned wrapper it escaped the scroll box and widened the page. */}
+      <div className="bz-card relative overflow-x-auto p-0">
         <table className="bz-table min-w-[560px]">
           <thead>
             <tr>

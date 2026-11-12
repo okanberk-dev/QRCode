@@ -595,9 +595,13 @@ export default function AuditBuilderClient({
                 ? isTr
                   ? `"${fork.title}" hazır şablonundan kopyalandı. Maddeleri sonraki adımda değiştirebilirsin.`
                   : `Copied from the "${fork.title}" ready-made template. You can change the items in the next step.`
-                : isTr
-                  ? 'Sıfırdan bir tür seç ya da hazır bir şablonla saniyeler içinde başla.'
-                  : 'Pick a type to start from scratch, or start in seconds with a ready-made template.',
+                : suggestions.length > 0
+                  ? isTr
+                    ? 'Sıfırdan bir tür seç ya da hazır bir şablonla saniyeler içinde başla.'
+                    : 'Pick a type to start from scratch, or start in seconds with a ready-made template.'
+                  : isTr
+                    ? 'Kontrol listesi ya da test seç, adını yaz.'
+                    : 'Pick a checklist or a test and give it a name.',
           )}
         </div>
 

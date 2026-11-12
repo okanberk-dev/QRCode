@@ -39,10 +39,15 @@ function RowSkeleton() {
   );
 }
 
-/** Overview body: context card + review list + routing card. */
-export function PlatformsOverviewBodySkeleton() {
+/**
+ * Overview body: [view tabs] + context card + review list + routing card.
+ * `withTabs` — the "Bu işletme / Tüm işletmeler" tabs every multi-business
+ * owner sees above the card (without it the content jumped down on load).
+ */
+export function PlatformsOverviewBodySkeleton({ withTabs = false }: { withTabs?: boolean } = {}) {
   return (
     <>
+      {withTabs && <SkBox className="h-[38px] w-60 max-w-full rounded-lg" />}
       <SkBox className="h-[84px] w-full rounded-2xl" />
       <div className="space-y-3">
         <SkBox className="h-5 w-40" />
@@ -63,7 +68,9 @@ export function PlatformsOverviewSkeleton() {
   return (
     <>
       <HeaderSkeleton titleWidth="w-60" />
-      <PlatformsOverviewBodySkeleton />
+      {/* Route loading can't know the business count; the panel is built for
+          franchises, so the tabs placeholder is shown by default. */}
+      <PlatformsOverviewBodySkeleton withTabs />
     </>
   );
 }
@@ -86,7 +93,7 @@ export function PlatformProviderBodySkeleton() {
         <div className="flex flex-col gap-2 sm:flex-row">
           <SkBox className="h-11 w-full rounded-full sm:h-9 sm:w-24" />
           <SkBox className="h-11 w-full rounded-full sm:h-9 sm:w-32" />
-          <SkBox className="h-11 w-full rounded-full sm:h-9 sm:w-28" />
+          <SkBox className="h-11 w-full rounded-full sm:h-9 sm:w-20" />
         </div>
       </div>
       <SkBox className="h-[96px] w-full rounded-2xl" />

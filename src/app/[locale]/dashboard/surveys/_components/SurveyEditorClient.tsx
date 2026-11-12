@@ -564,8 +564,8 @@ export default function SurveyEditorClient({
         ? 'Bir şablon seç; sorular ve teşekkür mesajı hazır gelir, hepsini düzenleyebilirsin.'
         : 'Pick a template — questions and the thank-you message come ready, and you can edit everything.'
       : isTr
-        ? 'Soruları düzenle; sağdaki ekran müşterinin göreceği şeydir.'
-        : 'Edit the questions; the screen on the right is what customers will see.';
+        ? 'Soruları düzenle; önizleme müşterinin göreceği ekranı gösterir.'
+        : 'Edit the questions; the preview shows what customers will see.';
 
   const previewBusiness = restaurant
     ? { id: restaurant.id, name: restaurant.name, slug: restaurant.slug, primaryColor: restaurant.primaryColor }
@@ -576,8 +576,8 @@ export default function SurveyEditorClient({
   // it (no second picker on the page); edit: the survey's own business.
   const businessHint = multiBusiness
     ? isTr
-      ? '(başka işletme için işletme seçiciyi kullan)'
-      : '(use the business switcher for another business)'
+      ? 'Değiştirmek için menüden başka bir işletme seç.'
+      : 'To change it, pick another business in the menu.'
     : null;
 
   const missingMessage =

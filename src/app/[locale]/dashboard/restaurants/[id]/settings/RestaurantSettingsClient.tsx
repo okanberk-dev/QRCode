@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, Link2, MoreHorizontal, QrCode } from "lucide-react";
 import {
   AlertBanner,
-  BusinessStatusBadge,
+  Badge,
   PageHeader,
   PulseMenu,
   PulseMenuItem,
@@ -112,6 +112,15 @@ const SECTION_IDS = [
 ] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 const VALID_SECTION_IDS = new Set<string>(SECTION_IDS);
+// One name per section: the tab label and the section heading both read it.
+const SECTION_LABELS: Record<SectionId, { tr: string; en: string }> = {
+  general: { tr: "Genel bilgiler", en: "General details" },
+  platforms: { tr: "Platform bağlantıları", en: "Platform links" },
+  brand: { tr: "Marka", en: "Brand" },
+  website: { tr: "Web sitesi", en: "Website" },
+  operations: { tr: "Çalışma saatleri", en: "Opening hours" },
+  status: { tr: "Durum ve silme", en: "Status & deletion" },
+};
 // Legacy deep links: `?section=integrations` (old "Entegrasyonlar" tab, still
 // used by onboarding mails / bookmarks) opens the platforms tab; the former
 // "Güvenlik" and "Tehlikeli bölge" tabs were merged into "Durum ve silme".
@@ -174,7 +183,16 @@ export default function RestaurantSettingsClient({
   const [loading, setLoading] = useState(initialRestaurant === undefined);
   const skipFirstFetchRef = useRef(initialRestaurant !== undefined);
   const [error, setError] = useState<string | null>(null);
-  const [copyNotice, setCopyNotice] = useState<string | null>(null);
+  // "Linki kopyala" result. Shown as an overlay pill (no layout shift) and
+  // announced through an always-mounted live region.
+  const [copyNotice, setCopyNotice] = useState<{ text: string; ok: boolean } | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    },
+    [],
+  );
 
   const initialSection = useMemo<string>(
     () => resolveSectionId(searchParams.get("section")),
@@ -268,19 +286,11 @@ export default function RestaurantSettingsClient({
 
   const sectionTabs = useMemo<SettingsTab[]>(() => {
     const isTrLabel = locale === "tr";
-    const labels: Record<SectionId, { tr: string; en: string }> = {
-      general: { tr: "Genel", en: "General" },
-      platforms: { tr: "Platform bağlantıları", en: "Platform links" },
-      brand: { tr: "Marka", en: "Brand" },
-      website: { tr: "Web sitesi", en: "Website" },
-      operations: { tr: "Çalışma saatleri", en: "Opening hours" },
-      status: { tr: "Durum ve silme", en: "Status & deletion" },
-    };
     return SECTION_IDS.map((id) => {
       const issues = sectionIssues[id];
       return {
         id,
-        label: isTrLabel ? labels[id].tr : labels[id].en,
+        label: isTrLabel ? SECTION_LABELS[id].tr : SECTION_LABELS[id].en,
         badge:
           issues > 0 ? (
             <IncompleteDot
@@ -422,6 +432,8 @@ export default function RestaurantSettingsClient({
   }
 
   const isTr = locale === "tr";
+  const sectionTitle = (sectionId: SectionId) =>
+    isTr ? SECTION_LABELS[sectionId].tr : SECTION_LABELS[sectionId].en;
 
   // Public review surface URL — used by the quick action chips. Falls back
   // to relative `/r/{slug}` when env app URL is missing or local-host
@@ -435,21 +447,23 @@ export default function RestaurantSettingsClient({
   const handleCopyPublicLink = async () => {
     try {
       await navigator.clipboard.writeText(publicReviewUrl);
-      setCopyNotice(locale === "tr" ? "Link kopyalandı." : "Link copied.");
+      setCopyNotice({ text: isTr ? "Link kopyalandı." : "Link copied.", ok: true });
     } catch {
-      setCopyNotice(
-        locale === "tr"
-          ? "Link kopyalanamadı — tarayıcı izin vermedi."
-          : "Could not copy link — browser blocked it.",
-      );
+      setCopyNotice({
+        text: isTr
+          ? "Link kopyalanamadı. Tarayıcı izin vermedi."
+          : "Could not copy the link. Your browser blocked it.",
+        ok: false,
+      });
     }
-    setTimeout(() => setCopyNotice(null), 2400);
+    if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = window.setTimeout(() => setCopyNotice(null), 2400);
   };
 
   // One primary action (QR oluştur) + a "Diğer" menu for the customer-page
   // link actions. The status badge sits with the public URL under the title.
   const header = (
-    <div>
+    <div className="relative">
       <Link
         href={`/${locale}/dashboard/restaurants/${id}`}
         className="inline-flex min-h-[44px] items-center gap-1.5 text-[12px] text-[#737373] hover:text-[#0A0A0A] mb-2 sm:min-h-[32px]"
@@ -466,7 +480,16 @@ export default function RestaurantSettingsClient({
             <span className="bz-mono text-[12px] text-[#737373] break-all">
               /r/{restaurant.slug}
             </span>
-            <BusinessStatusBadge status={restaurant.isActive ? "active" : "disabled"} />
+            {/* Local badge: BusinessStatusBadge only has Turkish labels. */}
+            <Badge kind={restaurant.isActive ? "ok" : "off"} dot>
+              {restaurant.isActive
+                ? isTr
+                  ? "Aktif"
+                  : "Active"
+                : isTr
+                  ? "Devre dışı"
+                  : "Disabled"}
+            </Badge>
           </span>
         }
         actions={
@@ -489,7 +512,8 @@ export default function RestaurantSettingsClient({
                   <span className="hidden sm:inline">{isTr ? "Diğer" : "More"}</span>
                 </button>
               }
-              className="min-w-[220px]"
+              // Rows meet the 44px touch target on phones.
+              className="min-w-[220px] max-sm:[&_.bz-menu-item]:min-h-[44px]"
             >
               <PulseMenuItem
                 icon={<ExternalLink size={13} />}
@@ -504,9 +528,19 @@ export default function RestaurantSettingsClient({
           </>
         }
       />
+      <span role="status" aria-live="polite" className="sr-only">
+        {copyNotice?.text ?? ""}
+      </span>
       {copyNotice && (
-        <p role="status" className="-mt-2 text-[12px] text-[#525252]">
-          {copyNotice}
+        <p
+          aria-hidden="true"
+          className={`pointer-events-none absolute left-0 top-full z-10 mt-1 rounded-full px-3 py-1.5 text-[12px] font-medium shadow-sm sm:left-auto sm:right-0 ${
+            copyNotice.ok
+              ? "bg-[#0A0A0A] text-white"
+              : "border border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]"
+          }`}
+        >
+          {copyNotice.text}
         </p>
       )}
     </div>
@@ -523,7 +557,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="general"
         active={active === "general"}
-        title={isTr ? "Genel bilgiler" : "General details"}
+        title={sectionTitle("general")}
         description={
           isTr
             ? "İşletmenin adı, sayfa adresi ve iletişim bilgileri."
@@ -536,7 +570,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="platforms"
         active={active === "platforms"}
-        title={isTr ? "Platform bağlantıları" : "Platform links"}
+        title={sectionTitle("platforms")}
         description={
           isTr
             ? "Bu işletmenin yorum platformu linkleri ve müşteri yönlendirmesi."
@@ -554,7 +588,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="brand"
         active={active === "brand"}
-        title={isTr ? "Marka" : "Brand"}
+        title={sectionTitle("brand")}
         description={
           isTr
             ? "Logo, kapak görseli, renkler, yazı tipi ve slogan: müşteri sayfasının görünümü."
@@ -571,7 +605,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="website"
         active={active === "website"}
-        title={isTr ? "Web sitesi" : "Website"}
+        title={sectionTitle("website")}
         description={
           isTr
             ? "Web sitene yorum kutusu yerleştir."
@@ -590,7 +624,7 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="operations"
         active={active === "operations"}
-        title={isTr ? "Çalışma saatleri" : "Opening hours"}
+        title={sectionTitle("operations")}
         description={
           isTr ? "Çalışma saatleri ve geçici kapalı durumu." : "Opening hours and temporary closure."
         }
@@ -603,14 +637,19 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="status"
         active={active === "status"}
-        title={isTr ? "Durum ve silme" : "Status & deletion"}
+        title={sectionTitle("status")}
         description={
           isTr
             ? "İşletmeyi geçici olarak devre dışı bırak ya da kalıcı olarak sil."
             : "Disable the business for a while, or delete it permanently."
         }
       >
-        <BusinessSecuritySettings restaurant={restaurant} locale={locale} onSaved={handleSaved} />
+        <BusinessSecuritySettings
+          restaurant={restaurant}
+          locale={locale}
+          onSaved={handleSaved}
+          onOpenHours={() => handleSectionChange("operations")}
+        />
         <DangerZone restaurant={restaurant} locale={locale} />
       </SettingsSection>
     </SettingsLayout>

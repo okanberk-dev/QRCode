@@ -90,7 +90,7 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
             : "These documents are managed centrally by Buaze; the same version applies to all your businesses. Click a card to read it (opens in a new tab)."
         }
       >
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2" aria-busy={loading || undefined}>
           {docs.map((d) => (
             <a
               key={d.key}
@@ -112,7 +112,11 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
                 </div>
                 <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-[#737373]">
                   {loading ? (
-                    isTr ? "Yükleniyor..." : "Loading..."
+                    // Badge-sized placeholder until the document status loads.
+                    <span
+                      aria-hidden="true"
+                      className="inline-block h-[18px] w-14 rounded-full bg-[#EDEDED]"
+                    />
                   ) : d.active ? (
                     <Badge kind="ok">{isTr ? "Aktif" : "Active"}</Badge>
                   ) : (

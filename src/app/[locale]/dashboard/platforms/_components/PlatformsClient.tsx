@@ -66,6 +66,8 @@ interface PlatformsClientProps {
   /** Server render time — first client render uses the same reference so
    *  "son kontrol 2 sa önce" text hydrates identically. */
   serverNow: number;
+  /** Paused businesses left out of this page (named in the matrix note). */
+  hiddenPausedCount?: number;
 }
 
 interface RetestResult {
@@ -93,6 +95,7 @@ export default function PlatformsClient({
   checksByRestaurant,
   initialRestaurantId,
   serverNow,
+  hiddenPausedCount = 0,
 }: PlatformsClientProps) {
   const isTr = locale === 'tr';
   const router = useRouter();
@@ -287,7 +290,8 @@ export default function PlatformsClient({
     return (
       <>
         {header}
-        <PlatformsOverviewBodySkeleton />
+        {/* Unresolved only happens with 2+ businesses, so the view tabs come. */}
+        <PlatformsOverviewBodySkeleton withTabs />
       </>
     );
   }
@@ -320,6 +324,7 @@ export default function PlatformsClient({
           businesses={rows}
           checksById={checks}
           toolbarStart={viewTabs}
+          hiddenPausedCount={hiddenPausedCount}
           onOpenBusiness={openBusinessFromPortfolio}
           onChecks={(restaurantId, next) => {
             setChecks((current) => ({ ...current, [restaurantId]: next }));

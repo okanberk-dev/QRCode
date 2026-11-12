@@ -24,7 +24,7 @@ import AccountLoading from "./loading";
  * Workspace-level settings hub (`/dashboard/account`).
  *
  * Tabs: Profil · Güvenlik · Hesap aktivitesi · Bildirimler · Pulse AI ·
- * Plan & Faturalama · Ekip & Roller · KVKK & Yasal. Each section saves its
+ * Plan ve faturalama · Ekip ve roller · KVKK ve yasal. Each section saves its
  * own form. Per-business settings (name, address, brand, platform links)
  * live at /dashboard/restaurants/[id]/settings.
  *
@@ -37,9 +37,9 @@ const TAB_LABELS: Array<{ id: string; tr: string; en: string }> = [
   { id: "activity", tr: "Hesap aktivitesi", en: "Account activity" },
   { id: "notifications", tr: "Bildirimler", en: "Notifications" },
   { id: "ai", tr: "Pulse AI", en: "Pulse AI" },
-  { id: "billing", tr: "Plan & Faturalama", en: "Plan & billing" },
-  { id: "team", tr: "Ekip & Roller", en: "Team & roles" },
-  { id: "legal", tr: "KVKK & Yasal", en: "KVKK & legal" },
+  { id: "billing", tr: "Plan ve faturalama", en: "Plan & billing" },
+  { id: "team", tr: "Ekip ve roller", en: "Team & roles" },
+  { id: "legal", tr: "KVKK ve yasal", en: "KVKK & legal" },
 ];
 
 const VALID_SECTION_IDS = new Set(TAB_LABELS.map((t) => t.id));
@@ -120,7 +120,9 @@ export default function AccountSettingsClient({
     const load = async () => {
       try {
         const [resR, resP, resT] = await Promise.all([
-          fetch("/api/restaurants?limit=100"),
+          // status=all: inactive businesses count too, same set as the
+          // server path (owner-scoped by the API).
+          fetch("/api/restaurants?limit=100&status=all"),
           fetch("/api/user/profile"),
           fetch("/api/team"),
         ]);
@@ -181,6 +183,12 @@ export default function AccountSettingsClient({
   };
 
   const isTr = locale === "tr";
+  // One source for each section's name: the tab label and the section
+  // heading used to drift ("KVKK & Yasal" vs "KVKK ve yasal").
+  const sectionTitle = (id: string): string => {
+    const entry = TAB_LABELS.find((t) => t.id === id);
+    return entry ? (isTr ? entry.tr : entry.en) : id;
+  };
 
   // KVKK data export. A plain <form method="POST"> navigated the whole tab to
   // the API response: fine for the file download, but the second click
@@ -299,7 +307,7 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="profile"
         active={active === "profile"}
-        title={isTr ? "Profil" : "Profile"}
+        title={sectionTitle("profile")}
         description={
           isTr ? "Adın, e-postan ve panel dilin." : "Your name, email and panel language."
         }
@@ -313,7 +321,7 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="security"
         active={active === "security"}
-        title={isTr ? "Güvenlik" : "Security"}
+        title={sectionTitle("security")}
         description={
           isTr
             ? "Şifren, aktif oturumların ve hesabını silme."
@@ -339,7 +347,7 @@ export default function AccountSettingsClient({
         id="activity"
         active={active === "activity"}
         keepMounted={false}
-        title={isTr ? "Hesap aktivitesi" : "Account activity"}
+        title={sectionTitle("activity")}
         description={
           isTr
             ? "Hesabında yapılan işlemler: senin ve Buaze yöneticilerinin yaptıkları."
@@ -352,7 +360,7 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="notifications"
         active={active === "notifications"}
-        title={isTr ? "Bildirimler" : "Notifications"}
+        title={sectionTitle("notifications")}
         description={
           isTr ? "Hangi e-postaları alacağını seç." : "Choose which emails you receive."
         }
@@ -363,11 +371,11 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="ai"
         active={active === "ai"}
-        title={isTr ? "Pulse AI yanıt taslakları" : "Pulse AI reply drafts"}
+        title={sectionTitle("ai")}
         description={
           isTr
-            ? "Otomatik yanıt taslağı ve varsayılan ton, her işletme için ayrı."
-            : "Automatic reply drafts and the default tone, per business."
+            ? "Yorumlara otomatik yanıt taslağı ve varsayılan ton, her işletme için ayrı."
+            : "Automatic reply drafts for reviews and the default tone, per business."
         }
       >
         <BusinessPulseAiSettings restaurants={restaurants} locale={locale} />
@@ -377,7 +385,7 @@ export default function AccountSettingsClient({
         id="billing"
         active={active === "billing"}
         keepMounted={false}
-        title={isTr ? "Plan ve faturalama" : "Plan & billing"}
+        title={sectionTitle("billing")}
         description={
           isTr
             ? "Planın, kullanımın ve faturaların."
@@ -394,7 +402,7 @@ export default function AccountSettingsClient({
         id="team"
         active={active === "team"}
         keepMounted={false}
-        title={isTr ? "Ekip ve roller" : "Team & roles"}
+        title={sectionTitle("team")}
         description={
           isTr
             ? "Ekip üyelerin, rolleri ve erişebildikleri işletmeler."
@@ -413,7 +421,7 @@ export default function AccountSettingsClient({
         id="legal"
         active={active === "legal"}
         keepMounted={false}
-        title={isTr ? "KVKK ve yasal" : "KVKK & legal"}
+        title={sectionTitle("legal")}
         description={
           isTr
             ? "Aktif yasal metinler ve müşteri akışında nasıl uygulandıkları."

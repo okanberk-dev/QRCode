@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Eyebrow } from "@/components/ui";
 import { useCompactSettingsNav } from "./useCompactSettingsNav";
@@ -69,8 +69,46 @@ export function SettingsSection({
   const titleId = `section-${id}-title`;
   const panelId = `section-${id}-panel`;
 
+  // < md: bring the section into view when it becomes the active one. On a
+  // phone the sections are stacked accordions, so a deep link such as the
+  // "Faturalama" entry in the bottom-nav sheet (`?section=billing`) opened
+  // the right card but left the page at the top with that card off-screen.
+  // - Active changes while the page is open (`?section=` sync) → scroll.
+  // - First compact render → scroll only for an explicit `?section=` link
+  //   (not the default tab), and not while a `?google=` sign-in result
+  //   banner sits above the sections.
+  const sectionRef = useRef<HTMLElement>(null);
+  const seenActiveRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!compact) return;
+    if (!active) {
+      seenActiveRef.current = false;
+      return;
+    }
+    const previous = seenActiveRef.current;
+    if (previous === true) return;
+    if (previous === null) {
+      const query = new URLSearchParams(window.location.search);
+      if (!query.has("section") || query.has("google")) {
+        seenActiveRef.current = true;
+        return;
+      }
+    }
+    // Next.js restores the scroll position after a navigation commits; wait
+    // two frames so this runs after it. The ref is only marked once the
+    // scroll ran, so React StrictMode's effect re-run still scrolls.
+    let frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => {
+        seenActiveRef.current = true;
+        sectionRef.current?.scrollIntoView({ block: "start" });
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [active, compact]);
+
   return (
     <section
+      ref={sectionRef}
       id={`section-${id}`}
       aria-labelledby={titleId}
       className={`scroll-mt-20 max-md:rounded-2xl max-md:border max-md:border-[#EDEDED] max-md:bg-white ${

@@ -6,7 +6,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import {
   Copy,
   Download,
-  ExternalLink,
+  Eye,
   Grid3x3,
   List as ListIcon,
   Loader2,
@@ -34,6 +34,7 @@ import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
 import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 import { copyToClipboard } from '@/lib/clipboard';
 import { dedupeQrRows } from '@/lib/qr-signature';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { QrGridSkeleton } from './_components/QrGridSkeleton';
 
 interface Restaurant {
@@ -124,8 +125,18 @@ function parseHistoryRows(data: unknown, restaurantId: string): QrHistoryItem[] 
     .map((row) => ({ ...row, restaurantId }));
 }
 
-function slugPart(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+/** Same file-name rule as QRCard's "PNG indir", so the list and the card
+ *  download the same QR under the same name. */
+function safeFileName(name: string): string {
+  return (
+    name
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9_-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 60) || 'qr'
+  );
 }
 
 interface QrClientProps {
@@ -176,6 +187,15 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
     restaurants,
     preselected || null,
   );
+
+  // "Tüm işletmeler" is a local view. Picking a business in the shell
+  // switcher (even the one already active) brings the page back to that
+  // business, otherwise the switch would look like it did nothing.
+  useEffect(() => {
+    const back = () => setScope('business');
+    window.addEventListener('buaze:active-restaurant-change', back);
+    return () => window.removeEventListener('buaze:active-restaurant-change', back);
+  }, []);
 
   useEffect(() => {
     if (!notice) return;
@@ -331,26 +351,20 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
     [isTr],
   );
 
-  // List rows show the platform in their own column, so the row title is
-  // just the table (or "Genel QR").
-  const rowLabel = useCallback(
+  // The card name doubles as the download file name, so it keeps the
+  // business name ("Kadıköy Şube · Masa 3"). The list view downloads under
+  // the same name.
+  const displayName = useCallback(
     (it: QrHistoryItem) =>
-      it.tableNumber
-        ? `${isTr ? 'Masa' : 'Table'} ${it.tableNumber}`
-        : isTr
-          ? 'Genel QR'
-          : 'General QR',
-    [isTr],
+      `${restaurantById.get(it.restaurantId)?.name || (isTr ? 'İşletme' : 'Business')} · ${targetLabel(it)}`,
+    [restaurantById, targetLabel, isTr],
   );
 
-  // The card name doubles as the download file name, so it keeps the
-  // business name ("Kadıköy Şube · Masa 3").
   const cardItems: QRCardItem[] = useMemo(() => {
     return filteredItems.map((it) => {
-      const restName = restaurantById.get(it.restaurantId)?.name || (isTr ? 'İşletme' : 'Location');
       return {
         id: it.id,
-        name: `${restName} · ${targetLabel(it)}`,
+        name: displayName(it),
         platform: it.platform,
         createdAt: it.createdAt,
         qrUrl: it.qrUrl,
@@ -363,7 +377,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
         templateId: it.templateId ?? null,
       };
     });
-  }, [filteredItems, restaurantById, targetLabel, isTr]);
+  }, [filteredItems, displayName]);
 
   // Wizard target: the active business (the switcher picks it). The
   // all-businesses view keeps the wizard's business picker, as does a paused
@@ -379,6 +393,16 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
   const wizardDefaultId =
     activeId && wizardRestaurants.some((r) => r.id === activeId) ? activeId : undefined;
   const canCreate = restaurantsLoaded && activeRestaurants.length > 0;
+  // Every business is paused — new QR codes cannot be created, so say why
+  // instead of leaving a disabled button with no reason.
+  const allPaused = restaurantsLoaded && restaurants.length > 0 && activeRestaurants.length === 0;
+  const pausedText = isTr
+    ? multi
+      ? 'İşletmelerin duraklatılmış. Yeni QR oluşturmak için bir işletmeyi yeniden etkinleştir.'
+      : 'İşletmen duraklatılmış. Yeni QR oluşturmak için işletmeyi yeniden etkinleştir.'
+    : multi
+      ? 'Your businesses are paused. Reactivate one to create new QR codes.'
+      : 'Your business is paused. Reactivate it to create new QR codes.';
 
   // Auto-open the wizard when sidebar/CTA passes `?new=1`. Strip the flag
   // after consuming so a refresh doesn't re-open the modal.
@@ -500,16 +524,9 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
       const blob = await res.blob();
       if (blob.size < 100) throw new Error('Empty file');
       const objUrl = URL.createObjectURL(blob);
-      const slug = restaurantById.get(item.restaurantId)?.slug || 'qr';
-      const suffix = [
-        item.tableNumber ? `masa-${slugPart(item.tableNumber)}` : '',
-        item.platform ? slugPart(item.platform) : '',
-      ]
-        .filter(Boolean)
-        .join('-');
       const a = document.createElement('a');
       a.href = objUrl;
-      a.download = `qr-${slug}${suffix ? `-${suffix}` : ''}.png`;
+      a.download = `qr-${safeFileName(displayName(item))}.png`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -555,33 +572,34 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
               <MoreHorizontal size={16} strokeWidth={2} />
             </button>
           }
-          // z-[60]: above the mobile bottom nav (z-40), which otherwise
-          // covers the last items of a menu opened near the screen bottom.
-          className="z-[60] min-w-[210px]"
+          className="min-w-[210px]"
         >
           <PulseMenuItem icon={<Copy size={14} />} onSelect={() => void copyLink(item)}>
             {isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
           </PulseMenuItem>
           <PulseMenuItem
-            icon={<ExternalLink size={14} />}
+            icon={<Eye size={14} />}
             onSelect={() => window.open(item.qrUrl, '_blank', 'noopener,noreferrer')}
           >
-            {isTr ? 'Müşteri sayfasını aç' : 'Open customer page'}
+            {isTr ? 'Müşterinin gördüğü sayfayı aç' : 'Open the customer page'}
           </PulseMenuItem>
           <PulseMenuDivider />
           <PulseMenuItem icon={<Trash2 size={14} />} danger onSelect={() => setPendingDelete(item)}>
-            {isTr ? 'Sil' : 'Delete'}
+            {isTr ? "QR'ı sil" : 'Delete QR'}
           </PulseMenuItem>
         </PulseMenu>
       </div>
     );
   };
 
+  // Fixed display time zone (CLAUDE.md §46) — the same day on the server and
+  // in every browser.
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
+      timeZone: resolveDisplayTimeZone(),
     });
 
   const showSkeleton = pending && items.length === 0;
@@ -602,6 +620,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
             type="button"
             onClick={() => setShowCreate(true)}
             disabled={!canCreate}
+            title={allPaused ? pausedText : undefined}
             className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center gap-1.5 sm:min-h-[36px] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus size={14} />
@@ -619,6 +638,18 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
       {notice && (
         <AlertBanner kind="success" onDismiss={() => setNotice(null)}>
           {notice}
+        </AlertBanner>
+      )}
+
+      {allPaused && items.length > 0 && (
+        <AlertBanner kind="info">
+          {pausedText}{' '}
+          <Link
+            href={`/${locale}/dashboard/restaurants`}
+            className="font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+          >
+            {isTr ? 'İşletmelere git' : 'Go to businesses'}
+          </Link>
         </AlertBanner>
       )}
 
@@ -772,26 +803,21 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
                 : 'No QR codes yet'
           }
           body={
-            isTr
-              ? 'Yeni QR oluştur ile ilk QR kodunu hazırla ve masaya koy; okutan müşteri puan verir.'
-              : 'Use Create QR code to make your first one and put it on the table; customers who scan it give a rating.'
+            allPaused
+              ? pausedText
+              : isTr
+                ? 'Yeni QR oluştur ile ilk QR kodunu hazırla ve masaya koy; okutan müşteri puan verir.'
+                : 'Use Create QR code to make your first one and put it on the table; customers who scan it give a rating.'
           }
-        />
-      )}
-
-      {/* Filtered out */}
-      {items.length > 0 && filteredItems.length === 0 && (
-        <EmptyState
-          icon={<QrCode size={28} />}
-          title={isTr ? 'Bu platformda QR kodu yok' : 'No QR codes for this platform'}
           action={
-            <button
-              type="button"
-              onClick={() => setPlatformFilter('all')}
-              className="bz-btn-ghost inline-flex min-h-[44px] items-center sm:min-h-[36px]"
-            >
-              {isTr ? 'Tüm platformları göster' : 'Show all platforms'}
-            </button>
+            allPaused ? (
+              <Link
+                href={`/${locale}/dashboard/restaurants`}
+                className="bz-btn-ghost inline-flex min-h-[44px] items-center sm:min-h-[36px]"
+              >
+                {isTr ? 'İşletmelere git' : 'Go to businesses'}
+              </Link>
+            ) : undefined
           }
         />
       )}
@@ -818,7 +844,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
         <>
           <ul className="bz-card divide-y divide-[#EDEDED] lg:hidden">
             {filteredItems.map((it) => {
-              const label = rowLabel(it);
+              const label = targetLabel(it);
               const branch = restaurantById.get(it.restaurantId)?.name;
               return (
                 <li key={it.id} className="flex items-center gap-3 px-4 py-3">
@@ -858,7 +884,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
                 </thead>
                 <tbody>
                   {filteredItems.map((it) => {
-                    const label = rowLabel(it);
+                    const label = targetLabel(it);
                     const branch = restaurantById.get(it.restaurantId)?.name;
                     return (
                       <tr key={it.id}>

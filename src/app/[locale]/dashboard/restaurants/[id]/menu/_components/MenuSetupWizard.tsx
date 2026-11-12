@@ -339,7 +339,8 @@ export function MenuSetupWizard({
 
   const heading = (index: Step, title: string, body: string) => (
     <div className="space-y-1">
-      <p className="pulse-eyebrow text-[#737373]">{t.stepOf(index + 1)}</p>
+      {/* The step tracker above already shows "1 of 3" visually; the number
+          stays in the heading for screen readers (focus moves here on each step). */}
       <h3
         ref={(el) => {
           headingRefs.current[index] = el;
@@ -347,6 +348,7 @@ export function MenuSetupWizard({
         tabIndex={-1}
         className="bz-h-tight text-[18px] text-[#0A0A0A] outline-none sm:text-[20px]"
       >
+        <span className="sr-only">{t.stepOf(index + 1)}: </span>
         {title}
       </h3>
       <p className="text-[13px] leading-[1.55] text-[#525252]">{body}</p>

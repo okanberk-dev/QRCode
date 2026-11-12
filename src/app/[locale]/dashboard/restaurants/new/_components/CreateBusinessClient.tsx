@@ -517,9 +517,12 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                     aria-describedby="cb-slug-help"
                   />
                 </div>
+                {/* The field already shows "buaze.com/r/<slug>" (its prefix is
+                    aria-hidden), so the address is only read out for screen
+                    readers; the error stays visible under the field. */}
                 <p
                   id="cb-slug-help"
-                  className={formData.slug && !slugValid ? FIELD_ERROR_CLASS : 'text-[11.5px] text-[#737373]'}
+                  className={formData.slug && !slugValid ? FIELD_ERROR_CLASS : 'sr-only'}
                 >
                   {formData.slug && !slugValid
                     ? isTr
@@ -855,7 +858,9 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                   <label htmlFor="cb-color" className={FIELD_LABEL_CLASS}>
                     {isTr ? 'Tema rengi' : 'Theme color'}
                   </label>
-                  <div className="flex min-h-[44px] items-center gap-3 rounded-lg border border-[#EDEDED] bg-white px-3">
+                  {/* flex-1 + sm:min-h-0: on sm+ the box stretches to the
+                      phone field next to it (same grid row), so both line up. */}
+                  <div className="flex min-h-[44px] flex-1 items-center gap-3 rounded-lg border border-[#E5E5E5] bg-white px-3 shadow-[var(--bz-shadow-xs)] sm:min-h-0">
                     <input
                       id="cb-color"
                       type="color"

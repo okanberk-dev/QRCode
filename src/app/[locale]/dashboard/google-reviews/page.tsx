@@ -81,7 +81,14 @@ export default async function GoogleReviewsPage({
   }
 
   return (
-    <Suspense fallback={<GoogleReviewsLoadingShell />}>
+    <Suspense
+      fallback={
+        <GoogleReviewsLoadingShell
+          withSwitcher={initialRestaurants === undefined || initialRestaurants.length > 1}
+          withSummary={placesConfigured !== false}
+        />
+      }
+    >
       <GoogleReviewsClient
         locale={locale}
         initialRestaurants={initialRestaurants}

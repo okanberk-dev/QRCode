@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, Eye, MoreHorizontal, Palette, QrCode, RefreshCw, X,
+  AlertTriangle, ArrowLeft, BarChart3, CheckCircle2, Eye, MoreHorizontal, Palette, QrCode, RefreshCw, Smartphone, X,
 } from 'lucide-react';
 import PublicMenuView, { type MenuItemView } from '@/components/menu/PublicMenuView';
-import { AlertBanner, PageHeader, PulseMenu, PulseMenuItem, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, Modal, PageHeader, PulseMenu, PulseMenuItem, useConfirmDialog } from '@/components/ui';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getMenuReadiness } from '@/lib/menu-readiness';
 import { detectSector } from '@/lib/sector-platforms';
@@ -25,7 +25,7 @@ import { MenuSetupWizard } from './_components/MenuSetupWizard';
 import { MenuStatusBar, type MenuLockReason, type MenuStepId } from './_components/MenuStatusBar';
 import type { ItemPatch } from './_components/menu-item-form';
 import type { CategoryShape } from './_components/menu-types';
-import { afterMenuCloses, useIsDesktop } from './_components/menu-ui';
+import { afterMenuCloses, useIsDesktop, useMediaQuery } from './_components/menu-ui';
 import { useMenuBuilder } from './_components/useMenuBuilder';
 
 type ItemDraft = Partial<MenuItemView> & { categoryId?: string };
@@ -56,12 +56,17 @@ export default function RestaurantMenuBuilderPage() {
 
   const { isViewer, loading: roleLoading } = useCurrentRole();
   const isDesktop = useIsDesktop();
+  // 1024–1399px: two columns, no live-preview rail — the phone-size preview
+  // opens from the header's "Diğer" menu instead (phones already get a
+  // phone-size full preview; from 1400px the rail is on the page).
+  const noPreviewRail = useMediaQuery('(min-width: 1024px) and (max-width: 1399px)');
 
   const [categoryModal, setCategoryModal] = useState<null | { mode: 'create' | 'edit'; data: Partial<CategoryShape> }>(null);
   const [itemModal, setItemModal] = useState<null | { mode: 'create' | 'edit'; data: ItemDraft }>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [designOpen, setDesignOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [phonePreviewOpen, setPhonePreviewOpen] = useState(false);
   const [justPublished, setJustPublished] = useState(false);
   const [confirmDialog, askConfirm] = useConfirmDialog();
 
@@ -285,12 +290,9 @@ export default function RestaurantMenuBuilderPage() {
           className="!mb-0"
           title={copy.title}
           titleScale="compact"
-          description={
-            <>
-              <span className="font-medium text-[#0A0A0A]">{restaurant.name}</span>
-              <span className="hidden sm:inline"> · {copy.pageDescription}</span>
-            </>
-          }
+          // The status strip below says whether changes are live — only the
+          // business name here.
+          description={<span className="font-medium text-[#0A0A0A]">{restaurant.name}</span>}
           actions={
             <div className="flex w-full items-center gap-2 sm:w-auto">
               <Link href={`${menuHref}?preview=1`} className="bz-btn flex-1 sm:flex-none">
@@ -326,6 +328,14 @@ export default function RestaurantMenuBuilderPage() {
                     onSelect={() => afterMenuCloses(() => setDesignOpen(true))}
                   >
                     {copy.design}
+                  </PulseMenuItem>
+                )}
+                {noPreviewRail && categories.length > 0 && (
+                  <PulseMenuItem
+                    icon={<Smartphone size={14} strokeWidth={2} />}
+                    onSelect={() => afterMenuCloses(() => setPhonePreviewOpen(true))}
+                  >
+                    {copy.phonePreview}
                   </PulseMenuItem>
                 )}
                 <PulseMenuItem
@@ -534,6 +544,20 @@ export default function RestaurantMenuBuilderPage() {
           onPublish={publish}
           onClose={() => setShareOpen(false)}
         />
+      )}
+
+      {/* 1024–1399px phone-size preview (from "Diğer"); closes itself if the
+          window grows past the rail breakpoint or shrinks to phone width. */}
+      {phonePreviewOpen && noPreviewRail && (
+        <Modal size={420} title={copy.phonePreview} onClose={() => setPhonePreviewOpen(false)}>
+          <MenuLivePreview
+            variant="inline"
+            restaurant={restaurant}
+            categories={categories}
+            locale={locale}
+            published={restaurant.menuEnabled && restaurant.menuPublished}
+          />
+        </Modal>
       )}
 
       {/* Imperative confirm dialog (delete category / item, take offline) */}

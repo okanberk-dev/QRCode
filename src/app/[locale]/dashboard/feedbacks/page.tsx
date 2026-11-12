@@ -3,14 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode } from 'react';
 import { blockedReplyMessage, issuesFromBody } from '@/components/reply/ReplyRiskNotice';
 import { useSearchParams, usePathname } from 'next/navigation';
-import { Download, Flag, Inbox, Loader2, Mail, Sparkles, X } from 'lucide-react';
+import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { getOwnerShellActiveRestaurantId } from '@/components/dashboard/UserDashboardShell';
-import { InboxToolbar, type InboxToggle } from '@/components/dashboard/feedbacks/InboxToolbar';
+import {
+  InboxToolbar,
+  ratingFilterOptions,
+  type InboxToggle,
+} from '@/components/dashboard/feedbacks/InboxToolbar';
 import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';
 
 import type {
@@ -1073,27 +1077,44 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     { id: 'pending', label: isTr ? 'Beklemede' : 'Pending', count: countsExact ? counts.pending : null },
   ];
 
-  // md+ inline on/off filters (server-side) — they used to sit alone in a
-  // "Diğer filtreler" modal.
+  // "Yanıtlandı" (tab) and "Yanıtsızlar" (filter) exclude each other —
+  // together they always give an empty list. Choosing one clears the other.
+  const onTabChange = (id: string) =>
+    writeFilters(
+      id === 'replied' && hasReply === 'pending'
+        ? { tab: id, hasReply: 'all' }
+        : { tab: id as ActiveTab },
+    );
+  const setUnrepliedOnly = (on: boolean) =>
+    writeFilters(
+      on && tab === 'replied' ? { hasReply: 'pending', tab: 'all' } : { hasReply: on ? 'pending' : 'all' },
+    );
+
+  // md+ inline on/off filters (server-side). No icons and plural / "only"
+  // wording, so they read as filters and not as the detail pane's "İşaretle"
+  // action. Same labels in the mobile filter sheet.
   const stateToggles: InboxToggle[] = [
     {
       id: 'no-reply',
-      label: isTr ? 'Yanıtsız' : 'No reply',
+      label: isTr ? 'Yanıtsızlar' : 'Unreplied',
       title: isTr ? 'Yalnız yanıtı olmayan yorumlar' : 'Only reviews without a reply',
-      icon: <Mail size={12} strokeWidth={2.2} aria-hidden="true" />,
       pressed: hasReply === 'pending',
-      onToggle: () => writeFilters({ hasReply: hasReply === 'pending' ? 'all' : 'pending' }),
+      onToggle: () => setUnrepliedOnly(hasReply !== 'pending'),
     },
     {
       id: 'flagged',
-      label: isTr ? 'İşaretli' : 'Flagged',
+      label: isTr ? 'Yalnız işaretliler' : 'Flagged only',
       title: isTr ? 'Yalnız işaretli yorumlar' : 'Only flagged reviews',
-      icon: <Flag size={12} strokeWidth={2.2} aria-hidden="true" />,
       pressed: flagged,
       onToggle: () => writeFilters({ flagged: !flagged }),
-      tone: 'danger',
     },
   ];
+
+  // The "Düşük puan" tab already covers 1–3 ★, so the rating select drops
+  // its "1–3 ★ düşük" option — unless a ?rating=low link selected it.
+  const ratingOptions = ratingFilterOptions(isTr).filter(
+    (o) => o.value !== 'low' || rating === 'low',
+  );
 
   const fmtAvg = (n: number) =>
     n.toLocaleString(isTr ? 'tr-TR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1231,7 +1252,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         className={isMobileDetailView ? 'hidden lg:block' : ''}
         tabs={statusTabs}
         activeTab={tab}
-        onTabChange={(id) => writeFilters({ tab: id as ActiveTab })}
+        onTabChange={onTabChange}
         listId="feedback-list"
         search={searchTerm}
         onSearchChange={setSearchTerm}
@@ -1241,6 +1262,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         onRatingChange={(v) => writeFilters({ rating: v })}
         days={String(days)}
         onDaysChange={(v) => writeFilters({ days: v })}
+        ratingOptions={ratingOptions}
         toggles={stateToggles}
         allFiltersCount={allFiltersCount}
         onOpenAllFilters={() => setFiltersOpen(true)}
@@ -1357,10 +1379,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         setDaysFilter={(v) => writeFilters({ days: v })}
         filterRating={String(rating)}
         setFilterRating={(v) => writeFilters({ rating: v })}
+        ratingOptions={ratingOptions}
         platformFilter={platform}
         setPlatformFilter={(v) => writeFilters({ platform: v })}
         hasReplyFilter={hasReply}
-        setHasReplyFilter={(v) => writeFilters({ hasReply: v })}
+        setHasReplyFilter={(v) => setUnrepliedOnly(v === 'pending')}
         flaggedOnly={flagged}
         setFlaggedOnly={(v) => writeFilters({ flagged: v })}
         hasActiveFilter={allFiltersCount > 0}

@@ -117,11 +117,14 @@ function formatDateTimeStamp(iso: string, locale: Locale): string {
 }
 
 function formatDate(iso: string, locale: Locale): string {
-  return new Date(iso).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+    timeZone: resolveDisplayTimeZone(),
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  });
+  }).format(d);
 }
 
 export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
@@ -273,15 +276,30 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] p-5">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="bz-avatar flex h-11 w-11 shrink-0 items-center justify-center text-[14px]">
-              {initial}
-            </div>
+            {data ? (
+              <div className="bz-avatar flex h-11 w-11 shrink-0 items-center justify-center text-[14px]">
+                {initial}
+              </div>
+            ) : (
+              // Still loading (or failed): a neutral placeholder, not a "?"
+              // avatar that reads like an unknown customer.
+              <div aria-hidden="true" className="h-11 w-11 shrink-0 rounded-full bg-[#EDEDED]" />
+            )}
             <div className="min-w-0">
               <h2
                 id="customer-drawer-heading"
                 className="bz-h-tight text-[18px] truncate text-[#0A0A0A]"
               >
-                {data?.customer.name || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
+                {data ? (
+                  data.customer.name || (isTr ? 'Anonim müşteri' : 'Anonymous customer')
+                ) : error ? (
+                  isTr ? 'Müşteri detayı' : 'Customer details'
+                ) : (
+                  <>
+                    <span className="sr-only">{isTr ? 'Müşteri yükleniyor' : 'Loading customer'}</span>
+                    <span aria-hidden="true" className="mt-1 inline-block h-5 w-40 max-w-full rounded bg-[#EDEDED] align-middle" />
+                  </>
+                )}
               </h2>
               {data?.customer.restaurantName && (
                 <p className="mt-0.5 text-[12px] text-[#525252] truncate">

@@ -46,9 +46,9 @@ export default function Loading() {
             <SkBox className="h-[34px] w-[150px] rounded-[10px]" />
             <SkBox className="h-[34px] w-[150px] rounded-[10px]" />
             <SkBox className="h-[34px] w-[150px] rounded-[10px]" />
-            {/* "Yanıtsız" + "İşaretli" toggles */}
-            <SkBox className="h-[34px] w-24 rounded-full" />
-            <SkBox className="h-[34px] w-24 rounded-full" />
+            {/* "Yanıtsızlar" + "Yalnız işaretliler" toggles */}
+            <SkBox className="h-[34px] w-[84px] rounded-full" />
+            <SkBox className="h-[34px] w-[112px] rounded-full" />
           </div>
         </div>
       </div>

@@ -55,7 +55,9 @@ const COPY = {
       "Google yorum linkin kayıtlı ama Google'daki işletmeyle eşleşmedi. İşletmeni seçersen link otomatik güncellenir ve puanını hemen görürsün.",
     manualTitle: 'Google yorum linki',
     manualBody: 'Google araması şu an kullanılamıyor. Yorum linkini elle ekleyebilirsin.',
-    unmatchedShort: "Google yorum linkin kayıtlı ama Google'daki işletmeyle eşleşmedi.",
+    manualBodyEdit: 'Google araması şu an kullanılamıyor. Kayıtlı linki elle düzenleyebilirsin.',
+    manualBodyUnmatched:
+      "Kayıtlı yorum linkin Google'daki işletmeyle eşleşmedi. Google araması şu an kullanılamıyor; linki elle düzenleyebilirsin.",
     manualAdd: 'Linki elle ekle',
     manualEdit: 'Linki düzenle',
     matched: (name: string) => `${name} Google'da bulundu ve eşlendi.`,
@@ -76,7 +78,9 @@ const COPY = {
       'Your Google review link is saved but not matched to a Google listing. Pick your business and the link updates automatically.',
     manualTitle: 'Google review link',
     manualBody: "Google search isn't available right now. You can add your review link manually.",
-    unmatchedShort: 'Your Google review link is saved but not matched to a Google listing.',
+    manualBodyEdit: "Google search isn't available right now. You can edit your saved link manually.",
+    manualBodyUnmatched:
+      "Your saved review link isn't matched to a Google listing. Google search isn't available right now; you can edit the link manually.",
     manualAdd: 'Add the link manually',
     manualEdit: 'Edit the link',
     matched: (name: string) => `${name} is matched to its Google listing.`,
@@ -177,12 +181,16 @@ function ConnectCard({
   const copy = COPY[locale];
   const headingId = useId();
   // Search is known to be off (server said so) and the actor may edit: one
-  // short card — what is wrong, at most one notice, the manual-link button —
-  // instead of a disabled search form plus a second "unavailable" banner.
+  // short card — one sentence saying what is wrong and what to do, the
+  // manual-link button — instead of a disabled search form plus stacked
+  // banners. The "saved link not matched" info is folded into that sentence;
+  // only the "Google no longer finds this listing" warning stays a banner.
   // A read-only member still gets the picker's own read-only line.
   const searchOff = placesConfigured === false && canWrite !== false;
-  const shownNotice =
-    searchOff && notice?.kind === 'info' ? { kind: 'info' as const, text: copy.unmatchedShort } : notice;
+  const hasLink = hasManualReviewLink(restaurant);
+  const shownNotice = searchOff && notice?.kind === 'info' ? null : notice;
+  const searchOffBody =
+    notice?.kind === 'info' ? copy.manualBodyUnmatched : hasLink ? copy.manualBodyEdit : copy.manualBody;
   const manualLinkHref = `/${locale}/dashboard/platforms/google?restaurantId=${encodeURIComponent(restaurant.id)}`;
   return (
     <section aria-labelledby={headingId} className="bz-card space-y-4 p-5 sm:p-6">
@@ -192,7 +200,7 @@ function ConnectCard({
             {searchOff ? copy.manualTitle : copy.connectTitle}
           </h2>
           <p className="mt-1.5 text-[13px] leading-[1.6] text-[#525252]">
-            {searchOff ? copy.manualBody : copy.connectBody}
+            {searchOff ? searchOffBody : copy.connectBody}
           </p>
         </div>
         {onCancel && (
@@ -215,7 +223,7 @@ function ConnectCard({
       )}
       {searchOff ? (
         <Link href={manualLinkHref} className="bz-btn-ghost min-h-11 w-full sm:w-auto">
-          {hasManualReviewLink(restaurant) ? copy.manualEdit : copy.manualAdd}
+          {hasLink ? copy.manualEdit : copy.manualAdd}
         </Link>
       ) : (
         <PlacesBusinessPicker

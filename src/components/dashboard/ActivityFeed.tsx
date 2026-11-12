@@ -13,7 +13,9 @@
 // state badge.
 //
 // Disable durumu (env yok / token endpoint 503): hook status='disabled'
-// döner — Live badge "Pasif" görünür, page reload mode korunur.
+// döner — rozet gösterilmez (idle / disabled / ilk bağlantı denemesi),
+// sayfa yenileme modu korunur. Rozet yalnız "Canlı" ve bağlantı koptuğunda
+// ("Bağlanıyor" / "Çevrimdışı") görünür.
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -398,8 +400,12 @@ export function ActivityFeed({
                       )}
                       {targetWithoutStars && (
                         <>
-                          {' — '}
-                          <span className="text-[#737373]">{targetWithoutStars}</span>
+                          {' '}
+                          {/* Short label (platform or customer first name):
+                              keep "— Buaze QR" on one line. */}
+                          <span className="whitespace-nowrap text-[#737373]">
+                            — {targetWithoutStars}
+                          </span>
                         </>
                       )}
                     </span>
@@ -413,8 +419,12 @@ export function ActivityFeed({
                     )}
                   </>
                 );
+                // Same vertical padding on every row. The old `first:pt-0
+                // last:pb-0` matched the row element itself (the only child
+                // of its <li>), so every row lost its padding and links
+                // were ~38px tall on mobile. Rows are ≥44px tall there now.
                 const baseClass =
-                  'group flex items-start gap-2 py-2.5 first:pt-0 last:pb-0 ' +
+                  'group flex min-h-[44px] items-start gap-2 py-2 sm:min-h-0 ' +
                   (idx < group.events.length - 1 ? 'border-b border-[#F2F2F2]' : '');
                 const slideStyle = isNew
                   ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }

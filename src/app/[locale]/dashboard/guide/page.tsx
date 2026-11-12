@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Locale } from '@/lib/translations';
-import { Eyebrow, PageHeader } from '@/components/ui';
+import { PageHeader } from '@/components/ui';
 
 interface Step {
   icon: React.ReactNode;
@@ -267,10 +267,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
               <Wand2 size={18} strokeWidth={2.2} />
             </span>
             <div>
-              <Eyebrow color="#0A0A0A">
-                {isTr ? '3 SANİYE ÖZET' : '3-SECOND SUMMARY'}
-              </Eyebrow>
-              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px] text-[#0A0A0A]">
+              <h2 className="bz-h-tight text-[18px] sm:text-[20px] text-[#0A0A0A]">
                 {isTr ? 'QR oluştur · Yapıştır · Cevapla' : 'Create QR · Stick · Reply'}
               </h2>
               <p className="mt-1.5 text-[13px] leading-[1.55] text-[#525252]">
@@ -364,8 +361,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
         className="overflow-hidden rounded-2xl bg-[#0A0A0A] text-white"
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
-          <Eyebrow color="#C6F24E">{isTr ? 'PRATİK KURALLAR' : 'PRACTICAL RULES'}</Eyebrow>
-          <h2 className="bz-h-tight mt-1.5 text-[20px] sm:text-[22px]">
+          <h2 className="bz-h-tight text-[20px] sm:text-[22px]">
             {isTr ? 'Hızlı ve net 6 ipucu' : 'Six fast and clear tips'}
           </h2>
         </div>
@@ -382,12 +378,12 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
                 i < 3 ? 'lg:border-t-0' : 'lg:border-t'
               } ${i % 3 !== 0 ? 'lg:border-l' : 'lg:border-l-0'}`}
             >
-              <span className="inline-flex items-center gap-1.5 text-[#C6F24E]">
-                {tip.icon}
-                <span className="bz-mono text-[10px] font-semibold tracking-[0.18em] uppercase">
-                  {isTr ? tip.titleTr : tip.titleEn}
+              <h3 className="flex items-center gap-1.5 text-[13.5px] font-semibold text-white">
+                <span className="shrink-0 text-[#C6F24E]" aria-hidden="true">
+                  {tip.icon}
                 </span>
-              </span>
+                {isTr ? tip.titleTr : tip.titleEn}
+              </h3>
               <p className="text-[13px] leading-[1.6] text-white/75">
                 {isTr ? tip.bodyTr : tip.bodyEn}
               </p>

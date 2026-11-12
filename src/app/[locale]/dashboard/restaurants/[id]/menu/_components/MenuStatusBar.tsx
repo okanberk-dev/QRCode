@@ -55,7 +55,8 @@ export function MenuStatusBar({
   }, []);
 
   const menuUrl = `${SITE_URL}/menu/${restaurant.slug}`;
-  const shownUrl = `${SITE_HOST}/menu/${restaurant.slug}`;
+  const shownPath = `/menu/${restaurant.slug}`;
+  const shownUrl = `${SITE_HOST}${shownPath}`;
   const live = restaurant.menuPublished;
   const updated = restaurant.menuUpdatedAt
     ? `${copy.lastUpdated}: ${formatFullDateTimeInTimeZone(restaurant.menuUpdatedAt, isTr ? 'tr' : 'en')}`
@@ -70,7 +71,7 @@ export function MenuStatusBar({
   };
 
   const copyButton = (
-    <button type="button" onClick={doCopy} className="bz-btn-ghost shrink-0" aria-live="polite">
+    <button type="button" onClick={doCopy} className="bz-btn-ghost flex-1 shrink-0 sm:flex-none" aria-live="polite">
       {copied ? <Check size={14} strokeWidth={2.25} /> : <Copy size={14} strokeWidth={2} />}
       {copied ? copy.copied : copy.copyLink}
     </button>
@@ -152,16 +153,23 @@ export function MenuStatusBar({
             </p>
             {updated && <p className="mt-0.5 text-[11px] text-[#737373]">{updated}</p>}
           </div>
-          <div className="flex min-w-0 items-center gap-2">
+          {/* Phones: the link chip has its own row, "Linki kopyala" + "⋯"
+              below it. From sm they share one row; the chip may shrink (and
+              truncate) there, the two buttons never do, so "⋯" (the only way to
+              take the menu offline) keeps its full hit area. */}
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
             <a
               href={menuUrl}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${copy.openMenu}: ${shownUrl}`}
-              className="inline-flex min-h-[44px] min-w-0 flex-1 items-center gap-1.5 rounded-lg bg-[#FAFAFA] px-2.5 text-[12px] text-[#525252] ring-1 ring-[#EDEDED] hover:text-[#0A0A0A] lg:min-h-[36px] lg:flex-none"
+              className="inline-flex min-h-[44px] w-full min-w-0 items-center gap-1.5 rounded-lg bg-[#FAFAFA] px-2.5 text-[12px] text-[#525252] ring-1 ring-[#EDEDED] hover:text-[#0A0A0A] sm:w-auto sm:flex-1 lg:min-h-[36px] lg:flex-initial"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
-              <span className="min-w-0 truncate">{shownUrl}</span>
+              {/* The slug is the part worth seeing; the host is the same for
+                  every business, so it is shown only where there is room (xl). */}
+              <span className="min-w-0 truncate xl:hidden">{shownPath}</span>
+              <span className="hidden min-w-0 truncate xl:inline">{shownUrl}</span>
               <ExternalLink size={12} strokeWidth={2} className="shrink-0" aria-hidden />
             </a>
             {copyButton}
@@ -170,8 +178,8 @@ export function MenuStatusBar({
                 <button
                   type="button"
                   disabled={readOnly || publishBusy}
-                  aria-label={copy.moreActions}
-                  className="bz-btn-icon h-11 w-11 border border-[#EDEDED] disabled:opacity-40 lg:h-9 lg:w-9"
+                  aria-label={copy.publishActions}
+                  className="bz-btn-icon h-11 w-11 shrink-0 border border-[#EDEDED] disabled:opacity-40 lg:h-9 lg:w-9"
                 >
                   {publishBusy ? <Loader2 size={16} className="animate-spin" /> : <MoreHorizontal size={16} strokeWidth={2} />}
                 </button>

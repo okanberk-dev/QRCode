@@ -165,9 +165,15 @@ export function ReadyTemplatesFilters({
   const showLang = filter.lang !== null;
   if (!filter.showKind && !filter.showSector && !showLang) return null;
 
+  // Mobilde: tek seçici tam genişlik, iki seçici yan yana, üçüncü seçici alt satırı
+  // tam genişlik doldurur (yarım genişlikte yalnız kalan seçici kırık görünüyordu).
+  const visible = [filter.showKind, filter.showSector, showLang].filter(Boolean).length;
   const cell = 'w-full min-w-0 sm:w-auto';
+  const lastCell = visible === 3 ? `${cell} col-span-2 sm:col-span-1` : cell;
   return (
-    <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap sm:items-center">
+    <div
+      className={`grid ${visible === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-2 sm:flex sm:shrink-0 sm:flex-wrap sm:items-center`}
+    >
       {filter.showKind && (
         <PulseSelect
           ariaLabel={isTr ? 'Tür' : 'Type'}
@@ -196,7 +202,7 @@ export function ReadyTemplatesFilters({
       {showLang && filter.lang && (
         <PulseSelect
           ariaLabel={isTr ? 'Dil' : 'Language'}
-          className={`${cell} sm:min-w-[120px]`}
+          className={`${lastCell} sm:min-w-[120px]`}
           value={filter.lang}
           onChange={filter.setLang}
           options={filter.langs.map((l) => ({
@@ -271,7 +277,16 @@ export default function ReadyTemplatesTab({
               className="bz-btn-primary min-h-11 sm:min-h-9"
               onClick={() => onUse(c.id)}
               disabled={!hasBusiness || usingId !== null}
-              aria-label={isTr ? `Kullan: ${c.title}` : `Use: ${c.title}`}
+              aria-busy={busyHere || undefined}
+              aria-label={
+                busyHere
+                  ? isTr
+                    ? `Hazırlanıyor: ${c.title}`
+                    : `Preparing: ${c.title}`
+                  : isTr
+                    ? `Kullan: ${c.title}`
+                    : `Use: ${c.title}`
+              }
             >
               {busyHere ? (
                 <Loader2 size={14} className="animate-spin" aria-hidden="true" />

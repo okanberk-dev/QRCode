@@ -276,7 +276,12 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           {/* §38.53 — AI özet (fallback / kısa yorumda kart gizlenir). */}
           {active.comment && active.comment.trim().length >= 10 && (
             <div className="mt-3">
-              <AiSummaryCard feedbackId={active.id} isTr={isTr} locale={isTr ? 'tr' : 'en'} />
+              <AiSummaryCard
+                key={active.id}
+                feedbackId={active.id}
+                isTr={isTr}
+                locale={isTr ? 'tr' : 'en'}
+              />
             </div>
           )}
 
@@ -366,7 +371,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             </div>
           )}
 
-          {sentLoading && sentReplies.length === 0 && (
+          {/* Only reviews that have a reply can have a thread to load (a
+              failed send also sets isReplied), so no loader flash otherwise. */}
+          {sentLoading && sentReplies.length === 0 && active.isReplied && (
             <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
               <Loader2 size={12} className="animate-spin" aria-hidden="true" />
               {isTr ? 'Yanıtlar yükleniyor…' : 'Loading replies…'}

@@ -7,8 +7,10 @@ import {
 /**
  * Owner CRM customers — header + KPI cards + one-row toolbar + table.
  * Mirrors page.tsx (CLAUDE.md §40.10): no eyebrow, KPI grid 2 → 6 (2 + 3)
- * → 5, bare toolbar (segment tabs · search · period on lg+; search then two
- * selects below lg), table on lg+ / cards below.
+ * → 5 on xl, toolbar with the same container-query layout as
+ * CustomersToolbar (tabs · search · period ≥ 68rem; search · two selects
+ * ≥ 48rem; search, then the two selects in a row below that), table on
+ * lg+ / cards below.
  */
 export default function Loading() {
   return (
@@ -22,16 +24,16 @@ export default function Loading() {
         <SkBox className="h-11 w-28 shrink-0 sm:h-10" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
             className={`bz-card space-y-3 p-4 ${
               i === 0
-                ? 'col-span-2 md:col-span-3 lg:col-span-1'
+                ? 'col-span-2 md:col-span-3 xl:col-span-1'
                 : i === 1
-                  ? 'md:col-span-3 lg:col-span-1'
-                  : 'md:col-span-2 lg:col-span-1'
+                  ? 'md:col-span-3 xl:col-span-1'
+                  : 'md:col-span-2 xl:col-span-1'
             }`}
           >
             <SkBox className="h-3 w-16" />
@@ -40,12 +42,14 @@ export default function Loading() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-2">
-        <SkBox className="hidden h-9 w-[440px] shrink-0 lg:block" />
-        <SkBox className="h-11 w-full lg:h-9 lg:flex-1" />
-        <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0">
-          <SkBox className="h-11 w-full lg:hidden" />
-          <SkBox className="h-11 w-full lg:h-9 lg:w-[150px]" />
+      <div className="@container">
+        <div className="flex flex-col gap-2.5 @min-[48rem]:flex-row @min-[48rem]:items-center @min-[48rem]:gap-2">
+          <SkBox className="hidden h-[38px] w-[470px] shrink-0 @min-[68rem]:block" />
+          <SkBox className="h-11 w-full lg:h-[38px] @min-[48rem]:flex-1" />
+          <div className="grid grid-cols-2 gap-2 @min-[40rem]:flex @min-[48rem]:shrink-0">
+            <SkBox className="h-11 w-full lg:h-[38px] @min-[40rem]:w-[190px] @min-[68rem]:hidden" />
+            <SkBox className="h-11 w-full lg:h-[38px] @min-[40rem]:w-[150px]" />
+          </div>
         </div>
       </div>
 

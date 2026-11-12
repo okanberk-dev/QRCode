@@ -17,8 +17,9 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, BusinessStatusBadge, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, PageHeader, type BadgeKind } from '@/components/ui';
 import { PlatformSummaryLine } from '@/components/dashboard/platforms/PlatformBusinessContext';
+import { getSectorByLabel } from '@/lib/sectors';
 import { PLATFORM_LINKS_LABEL } from '@/lib/platform-management';
 import {
   parseLatestChecksPayload,
@@ -124,12 +125,13 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     };
   }, [id, isTr]);
 
+  // Same back-link style as /restaurants/new and the platform pages.
   const backLink = (
     <Link
       href={`/${locale}/dashboard/restaurants`}
-      className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex min-h-[44px] items-center gap-1 mb-3 sm:min-h-[32px]"
+      className="mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
     >
-      <ArrowLeft size={12} />
+      <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
       {isTr ? 'İşletmelere dön' : 'Back to businesses'}
     </Link>
   );
@@ -155,11 +157,19 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     );
   }
 
-  const status = data.temporarilyClosed
-    ? 'temporarily_closed'
+  // Locale-aware status badge (the shared BusinessStatusBadge is TR-only).
+  const status: { kind: BadgeKind; label: string } = data.temporarilyClosed
+    ? { kind: 'warn', label: isTr ? 'Geçici kapalı' : 'Temporarily closed' }
     : data.isActive
-      ? 'active'
-      : 'disabled';
+      ? { kind: 'ok', label: isTr ? 'Aktif' : 'Active' }
+      : { kind: 'off', label: isTr ? 'Devre dışı' : 'Disabled' };
+  // The platform pages only open active businesses (the business switcher
+  // cannot select a disabled one, so they would show another business). A
+  // disabled business's card goes to "Durum ve silme", where it is
+  // reactivated, and says so.
+  const platformLinksHref = data.isActive
+    ? `/${locale}/dashboard/platforms?restaurantId=${encodeURIComponent(data.id)}`
+    : `/${locale}/dashboard/restaurants/${encodeURIComponent(data.id)}/settings?section=status`;
   // Same origin on server and client (a `window` check printed `/r/slug` in
   // the SSR HTML and an absolute URL after hydration → mismatch). Mirrors the
   // settings page: env app URL, falling back to the production host when the
@@ -223,7 +233,11 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[#525252]">
             <span className="bz-mono text-[12px] text-[#0A0A0A]">/{data.slug}</span>
             <span aria-hidden="true" className="text-[#A3A3A3]">·</span>
-            <span className="text-[12.5px] capitalize">{data.category}</span>
+            {/* Same label as the business switcher: the stored (Turkish)
+                category, or the sector's English name on /en. */}
+            <span className="text-[12.5px]">
+              {isTr ? data.category : getSectorByLabel(data.category)?.display.en ?? data.category}
+            </span>
             <span aria-hidden="true" className="text-[#A3A3A3]">·</span>
             <span className="inline-flex items-center gap-1 text-[12px] text-[#737373]">
               <Calendar size={11} strokeWidth={2} />
@@ -233,7 +247,9 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <BusinessStatusBadge status={status} />
+            <Badge kind={status.kind} dot>
+              {status.label}
+            </Badge>
             <Link
               href={settingsHref}
               className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[36px]"
@@ -275,7 +291,9 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[14px] font-semibold text-[#0A0A0A]">{section.label}</span>
-                <span className="mt-0.5 block truncate text-[12px] text-[#525252]">{section.description}</span>
+                {/* Wraps instead of truncating: on tablet / desktop-with-sidebar
+                    the cut-off part was the one that says what the count is. */}
+                <span className="mt-0.5 block text-[12px] leading-snug text-[#525252]">{section.description}</span>
               </span>
               <span className="bz-h-tight shrink-0 text-[22px] leading-none tabular-nums text-[#0A0A0A]">
                 {numberFmt.format(section.count)}
@@ -335,9 +353,10 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
       </div>
 
       {/* Platform links strip — status at a glance, one tap to the editor
-          for THIS business (the overview opens on it via ?restaurantId). */}
+          for THIS business (the overview opens on it via ?restaurantId; a
+          disabled business opens the place to reactivate it). */}
       <Link
-        href={`/${locale}/dashboard/platforms?restaurantId=${encodeURIComponent(data.id)}`}
+        href={platformLinksHref}
         className="bz-card mt-3 flex min-h-[56px] items-center gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
       >
         <span
@@ -356,6 +375,13 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
               </span>
             }
           />
+          {!data.isActive && (
+            <span className="mt-0.5 block text-[12px] text-[#737373]">
+              {isTr
+                ? 'Linkleri düzenlemek için önce işletmeyi etkinleştir.'
+                : 'Reactivate the business to edit its links.'}
+            </span>
+          )}
         </span>
         <ChevronRight size={14} strokeWidth={2} aria-hidden="true" className="shrink-0 text-[#737373]" />
       </Link>

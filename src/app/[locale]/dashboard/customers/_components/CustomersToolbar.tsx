@@ -10,9 +10,17 @@ import type { Locale } from '@/lib/translations';
 /**
  * Customers list toolbar (§49 — one row, filters apply immediately).
  *
- *   lg+   segment tabs · search · period select · archive toggle · clear
- *   < lg  search, then segment + period selects side by side, then the
- *         archive toggle / clear (44px touch targets)
+ * The layout follows the toolbar's own width (container query), so it also
+ * adapts when the shell sidebar is collapsed or expanded:
+ *
+ *   ≥ 68rem   segment tabs · search · period · archive toggle · clear
+ *   ≥ 48rem   search · segment select · period select · archive · clear
+ *   ≥ 40rem   search, then segment · period · archive · clear in one row
+ *   < 40rem   search, then segment + period selects side by side, then
+ *             archive toggle / clear
+ *
+ * Heights: 44px below lg (touch), 38px on lg+ (pointer). The same breakpoints
+ * are used by loading.tsx (§40.10).
  *
  * The page is a server component; every change writes the URL
  * (`router.replace`) and the server re-renders the list. The active business
@@ -31,7 +39,8 @@ export type CustomersRangeKey = '7d' | '30d' | '90d' | 'all';
 
 interface CustomersToolbarProps {
   locale: Locale;
-  /** Archived customers in scope. 0 → the archive toggle is hidden (nothing to show). */
+  /** Archived customers in the current list (active business + period +
+   *  search). 0 → the archive toggle is hidden (nothing to show). */
   archivedCount: number;
   segmentCounts: Record<'all' | CustomerSegment, number>;
 }
@@ -44,7 +53,7 @@ const SEGMENTS: Array<{ key: 'all' | CustomerSegment; tr: string; en: string }> 
   { key: 'vip', tr: 'VIP', en: 'VIP' },
   { key: 'loyal', tr: 'Düzenli', en: 'Loyal' },
   { key: 'new', tr: 'Yeni', en: 'New' },
-  { key: 'risk', tr: 'Risk', en: 'At risk' },
+  { key: 'risk', tr: 'Risk', en: 'Risk' },
   { key: 'churned', tr: 'Kayıp', en: 'Churned' },
 ];
 
@@ -176,97 +185,106 @@ export function CustomersToolbar({
   // The toggle is useless when nothing is archived — unless it is on.
   const showArchiveToggle = archivedCount > 0 || showArchived;
 
-  return (
-    <div
-      className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-2"
-      aria-busy={isPending}
-    >
-      <Tabs
-        items={SEGMENTS.map((s) => ({
-          id: s.key,
-          label: isTr ? s.tr : s.en,
-          count: fmt(segmentCounts[s.key]),
-        }))}
-        active={segment}
-        onChange={setSegment}
-        ariaLabel="Segment"
-        className="hidden shrink-0 lg:inline-flex"
-      />
+  // On narrow toolbars archive / clear share a two-column row; when only one
+  // of them is shown it takes the full row instead of half of it.
+  const singleExtra = showArchiveToggle !== hasFilter;
+  const extraBtn = `w-full gap-1.5 text-[13px] h-11 min-h-0 lg:h-[38px] @min-[40rem]:w-auto @min-[40rem]:shrink-0 @min-[40rem]:px-3 ${
+    singleExtra ? 'col-span-2 @min-[40rem]:col-auto' : ''
+  }`;
 
-      <form
-        role="search"
-        onSubmit={onSearchSubmit}
-        className="relative min-w-0 lg:flex-1"
+  return (
+    <div className="@container">
+      <div
+        className="flex flex-col gap-2.5 @min-[48rem]:flex-row @min-[48rem]:items-center @min-[48rem]:gap-2"
+        aria-busy={isPending}
       >
-        <Search
-          size={14}
-          strokeWidth={2}
-          aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
+        <Tabs
+          items={SEGMENTS.map((s) => ({
+            id: s.key,
+            label: isTr ? s.tr : s.en,
+            count: fmt(segmentCounts[s.key]),
+          }))}
+          active={segment}
+          onChange={setSegment}
+          ariaLabel="Segment"
+          className="hidden shrink-0 @min-[68rem]:inline-flex"
         />
-        <input
-          type="search"
-          ref={inputRef}
-          value={typed}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder={isTr ? 'Ad, e-posta veya telefon' : 'Name, email or phone'}
-          aria-label={isTr ? 'Müşteri ara' : 'Search customers'}
-          maxLength={100}
-          enterKeyHint="search"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          className="bz-input w-full lg:h-[38px]"
-          style={{ paddingLeft: 34, paddingRight: 34 }}
-        />
-        {isPending && (
-          <Loader2
+
+        <form
+          role="search"
+          onSubmit={onSearchSubmit}
+          className="relative min-w-0 @min-[48rem]:min-w-[200px] @min-[48rem]:flex-1"
+        >
+          <Search
             size={14}
             strokeWidth={2}
-            aria-label={isTr ? 'Yükleniyor' : 'Loading'}
-            className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#737373]"
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
           />
-        )}
-      </form>
+          <input
+            type="search"
+            ref={inputRef}
+            value={typed}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder={isTr ? 'Ad, e-posta veya telefon' : 'Name, email or phone'}
+            aria-label={isTr ? 'Müşteri ara' : 'Search customers'}
+            maxLength={100}
+            enterKeyHint="search"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="bz-input h-11 w-full py-0 lg:h-[38px]"
+            style={{ paddingLeft: 34, paddingRight: 34 }}
+          />
+          {isPending && (
+            <Loader2
+              size={14}
+              strokeWidth={2}
+              aria-label={isTr ? 'Yükleniyor' : 'Loading'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#737373]"
+            />
+          )}
+        </form>
 
-      <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0 lg:items-center">
-        <PulseSelect
-          value={segment}
-          onChange={setSegment}
-          options={segmentOptions}
-          ariaLabel="Segment"
-          className="w-full lg:hidden"
-        />
-        <PulseSelect
-          value={range}
-          onChange={setRange}
-          options={rangeOptions}
-          ariaLabel={isTr ? 'Dönem' : 'Period'}
-          className="w-full lg:w-[150px] lg:[&>button]:h-[38px]"
-        />
-        {showArchiveToggle && (
-          <button
-            type="button"
-            onClick={toggleArchived}
-            aria-pressed={showArchived}
-            title={isTr ? 'Arşivlenen müşterileri de göster' : 'Also show archived customers'}
-            className={`${showArchived ? 'bz-btn-primary' : 'bz-btn-ghost'} w-full gap-1.5 text-[13px] lg:h-[38px] lg:min-h-0 lg:w-auto lg:px-3`}
-          >
-            <Archive size={13} strokeWidth={2} aria-hidden="true" />
-            {isTr ? 'Arşiv' : 'Archived'}
-            <span className="tabular-nums opacity-70">({fmt(archivedCount)})</span>
-          </button>
-        )}
-        {hasFilter && (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="bz-btn-ghost w-full gap-1.5 text-[13px] lg:h-[38px] lg:min-h-0 lg:w-auto lg:px-3"
-          >
-            <X size={13} strokeWidth={2} aria-hidden="true" />
-            {isTr ? 'Temizle' : 'Clear'}
-          </button>
-        )}
+        <div className="grid grid-cols-2 gap-2 @min-[40rem]:flex @min-[40rem]:items-center @min-[48rem]:shrink-0">
+          <PulseSelect
+            value={segment}
+            onChange={setSegment}
+            options={segmentOptions}
+            ariaLabel="Segment"
+            className="w-full [&>button]:h-11 lg:[&>button]:h-[38px] @min-[40rem]:w-[190px] @min-[68rem]:hidden"
+          />
+          <PulseSelect
+            value={range}
+            onChange={setRange}
+            options={rangeOptions}
+            ariaLabel={isTr ? 'Dönem' : 'Period'}
+            className="w-full [&>button]:h-11 lg:[&>button]:h-[38px] @min-[40rem]:w-[150px]"
+          />
+          {showArchiveToggle && (
+            <button
+              type="button"
+              onClick={toggleArchived}
+              aria-pressed={showArchived}
+              title={isTr ? 'Arşivlenen müşterileri de göster' : 'Also show archived customers'}
+              className={`${showArchived ? 'bz-btn-primary' : 'bz-btn-ghost'} ${extraBtn}`}
+            >
+              <Archive size={13} strokeWidth={2} aria-hidden="true" />
+              {isTr ? 'Arşiv' : 'Archived'}
+              <span className="tabular-nums opacity-70">({fmt(archivedCount)})</span>
+            </button>
+          )}
+          {hasFilter && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className={`bz-btn-ghost ${extraBtn}`}
+            >
+              <X size={13} strokeWidth={2} aria-hidden="true" />
+              {isTr ? 'Temizle' : 'Clear'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

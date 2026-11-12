@@ -125,7 +125,7 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
   return (
     <div className="space-y-5">
       {!neverAnswered && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div role="group" aria-label={isTr ? 'Zaman aralığı' : 'Time range'} className="flex gap-2 sm:gap-1.5">
             {RANGES.map((r) => (
               <button
@@ -310,7 +310,7 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
                 return (
                   <li key={pq.id} className="bz-card p-5 sm:p-6">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-[#737373]">
-                      <Badge kind="ghost">{typeLabel(type, isTr)}</Badge>
+                      <Badge kind="ghost" dot={false}>{typeLabel(type, isTr)}</Badge>
                       <span>
                         {pq.count} {isTr ? 'yanıt' : pq.count === 1 ? 'answer' : 'answers'}
                       </span>

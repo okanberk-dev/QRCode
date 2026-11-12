@@ -159,6 +159,10 @@ export function GoogleReviewsClient({
     return base === 'found' && notFoundIds.has(r.id) ? 'unmatched' : base;
   };
   const matchedCount = restaurants.filter((r) => optionStateOf(r) === 'found').length;
+  // "X işletmeden …" asks the owner to pick Google profiles; when Google
+  // search is known to be off that is impossible, so the line keeps only the
+  // business name and its state.
+  const showMatchSummary = placesConfigured !== false;
   const activeState = activeRestaurant ? optionStateOf(activeRestaurant) : null;
 
   const handleLinked = (restaurantId: string, result: PlacesSelectResponse) => {
@@ -223,7 +227,10 @@ export function GoogleReviewsClient({
       ) : loadingInitial || (restaurants.length > 0 && (!selectionReady || !activeRestaurant)) ? (
         // Same flat skeleton as `loading.tsx` (identical geometry, no spinner):
         // the route fallback → client transition is not a second skeleton.
-        <GoogleReviewsBodySkeleton />
+        <GoogleReviewsBodySkeleton
+          withSwitcher={loadingInitial || restaurants.length > 1}
+          withSummary={showMatchSummary}
+        />
       ) : restaurants.length === 0 ? (
         <EmptyState
           icon={<Building2 size={22} aria-hidden="true" />}
@@ -249,10 +256,16 @@ export function GoogleReviewsClient({
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12.5px] leading-[1.5] text-[#525252]">
               <span className="min-w-0 break-words font-medium text-[#0A0A0A]">{activeRestaurant.name}</span>
               <Badge kind={STATE_BADGE[activeState]}>{placesOptionStateLabel(activeState, locale)}</Badge>
-              <span aria-hidden="true" className="hidden text-[#A3A3A3] sm:inline">
-                ·
-              </span>
-              <span className="w-full sm:w-auto">{formatBusinessSummary(matchedCount, restaurants.length, locale)}</span>
+              {showMatchSummary && (
+                <>
+                  <span aria-hidden="true" className="hidden text-[#A3A3A3] sm:inline">
+                    ·
+                  </span>
+                  <span className="w-full sm:w-auto">
+                    {formatBusinessSummary(matchedCount, restaurants.length, locale)}
+                  </span>
+                </>
+              )}
             </div>
           )}
 

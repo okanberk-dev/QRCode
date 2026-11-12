@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Tag,
   Archive,
@@ -13,12 +13,20 @@ import type { CustomerSegment } from '@/lib/customers';
 import type { Locale } from '@/lib/translations';
 
 // §38.48 Wave 2 — Customers bulk action bar (CLAUDE.md §23.3.1 paterni).
-// Page server component renders the table; bu client island'ı mount edip:
-//   - selectedKeys state taşır (filter değişiminde clear, CLAUDE.md §11.21)
-//   - Tablodaki .bz-customer-checkbox elementlerini hydrate eder
-//   - Floating bottom toolbar (selection > 0)
-//   - 2 modal (Segment picker / Archive confirm)
-//   - POST /api/customers/bulk + auto-refresh router
+// The server component renders the rows with plain checkboxes
+// (`data-customer-key`, header `data-select-all`). This client island:
+//   - listens to them through one delegated `change` listener on document,
+//     so rows that arrive later (filter change, refresh — the page stays
+//     mounted because the toolbar uses `router.replace`) keep working
+//   - clears the selection (state + ticked boxes) whenever the filters
+//     change, so an action never hits customers that are no longer listed
+//   - shows the floating bottom toolbar (selection > 0)
+//   - 2 modals (segment picker / archive confirm)
+//   - POST /api/customers/bulk + router.refresh()
+//
+// Each row is rendered twice (desktop table + mobile card, one of them
+// hidden), so keys are counted uniquely and both boxes of a key are kept in
+// sync.
 
 interface CustomersBulkBarProps {
   locale: Locale;
@@ -37,6 +45,27 @@ const SEGMENT_OPTIONS: Array<{ key: CustomerSegment; tr: string; en: string }> =
 
 type BulkBusy = 'archive' | 'unarchive' | 'segment' | null;
 
+function rowCheckboxes(): HTMLInputElement[] {
+  return Array.from(document.querySelectorAll<HTMLInputElement>('input[data-customer-key]'));
+}
+
+function uniqueKeys(boxes: HTMLInputElement[]): Set<string> {
+  return new Set(
+    boxes.map((cb) => cb.dataset.customerKey).filter((k): k is string => Boolean(k)),
+  );
+}
+
+function untickAll() {
+  rowCheckboxes().forEach((cb) => {
+    cb.checked = false;
+  });
+  const selectAll = document.querySelector<HTMLInputElement>('[data-select-all]');
+  if (selectAll) {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+  }
+}
+
 export default function CustomersBulkBar({ locale, showArchived = false }: CustomersBulkBarProps) {
   const router = useRouter();
   const isTr = locale === 'tr';
@@ -49,17 +78,27 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
   const [segmentOpen, setSegmentOpen] = useState(false);
   const [confirmDialog, askConfirm] = useConfirmDialog();
 
-  // Hydrate checkbox elements rendered by the server. `data-customer-key`
-  // attribute on each <input type="checkbox"> in the table tells us the row
-  // key. Header checkbox carries `data-select-all`.
+  // Delegated listener — survives server re-renders that swap the rows.
   useEffect(() => {
-    const checkboxes = document.querySelectorAll<HTMLInputElement>('[data-customer-key]');
-    const selectAll = document.querySelector<HTMLInputElement>('[data-select-all]');
-
     const onChange = (e: Event) => {
-      const target = e.target as HTMLInputElement;
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+
+      if (target.hasAttribute('data-select-all')) {
+        const boxes = rowCheckboxes();
+        boxes.forEach((cb) => {
+          cb.checked = target.checked;
+        });
+        setSelected(target.checked ? uniqueKeys(boxes) : new Set());
+        return;
+      }
+
       const key = target.dataset.customerKey;
       if (!key) return;
+      // Keep the twin box (desktop row / mobile card) in the same state.
+      rowCheckboxes().forEach((cb) => {
+        if (cb !== target && cb.dataset.customerKey === key) cb.checked = target.checked;
+      });
       setSelected((prev) => {
         const next = new Set(prev);
         if (target.checked) next.add(key);
@@ -67,47 +106,33 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
         return next;
       });
     };
-
-    const onSelectAll = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      const allKeys = Array.from(checkboxes)
-        .map((cb) => cb.dataset.customerKey)
-        .filter((k): k is string => Boolean(k));
-      // Lock state machine to avoid feedback loops: we set new Set, then
-      // sync each row checkbox to match.
-      if (target.checked) {
-        setSelected(new Set(allKeys));
-        checkboxes.forEach((cb) => {
-          cb.checked = true;
-        });
-      } else {
-        setSelected(new Set());
-        checkboxes.forEach((cb) => {
-          cb.checked = false;
-        });
-      }
-    };
-
-    checkboxes.forEach((cb) => cb.addEventListener('change', onChange));
-    selectAll?.addEventListener('change', onSelectAll);
-    return () => {
-      checkboxes.forEach((cb) => cb.removeEventListener('change', onChange));
-      selectAll?.removeEventListener('change', onSelectAll);
-    };
+    document.addEventListener('change', onChange);
+    return () => document.removeEventListener('change', onChange);
   }, []);
 
-  // When filter changes (URL changes → server re-render → checkbox elements
-  // re-mount with new keys), reset selection.
+  // Filter change (URL changes, the rows are re-rendered in place) → drop the
+  // selection. Opening / closing the detail drawer (`?detail=`) is not a
+  // filter change and keeps it.
+  const searchParams = useSearchParams();
+  const filterKey = (() => {
+    const q = new URLSearchParams(searchParams.toString());
+    q.delete('detail');
+    return q.toString();
+  })();
+  const lastFilterKey = useRef(filterKey);
   useEffect(() => {
+    if (lastFilterKey.current === filterKey) return;
+    lastFilterKey.current = filterKey;
+    untickAll();
     setSelected(new Set());
-  }, []);
+  }, [filterKey]);
 
-  // Sync select-all indeterminate state.
+  // Sync select-all checked / indeterminate state.
   useEffect(() => {
     const selectAll = document.querySelector<HTMLInputElement>('[data-select-all]');
     if (!selectAll) return;
-    const all = document.querySelectorAll<HTMLInputElement>('[data-customer-key]').length;
-    selectAll.checked = selected.size > 0 && selected.size === all;
+    const all = uniqueKeys(rowCheckboxes()).size;
+    selectAll.checked = all > 0 && selected.size === all;
     selectAll.indeterminate = selected.size > 0 && selected.size < all;
   }, [selected]);
 
@@ -120,12 +145,8 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
 
   const count = selected.size;
   const clearSelection = () => {
+    untickAll();
     setSelected(new Set());
-    document
-      .querySelectorAll<HTMLInputElement>('[data-customer-key]')
-      .forEach((cb) => {
-        cb.checked = false;
-      });
   };
 
   if (count === 0 && !confirmDialog && !segmentOpen && !notice) {
@@ -161,7 +182,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
               ? `${body.processed ?? 0} müşteri arşivlendi.`
               : `${body.processed ?? 0} customer${body.processed === 1 ? '' : 's'} archived.`,
           });
-          setSelected(new Set());
+          clearSelection();
           router.refresh();
         } else {
           setNotice({
@@ -184,7 +205,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
           ? `${body.processed ?? 0} müşteri geri yüklendi.`
           : `${body.processed ?? 0} customer${body.processed === 1 ? '' : 's'} restored.`,
       });
-      setSelected(new Set());
+      clearSelection();
       router.refresh();
     } else {
       setNotice({
@@ -206,7 +227,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
           ? `${body.processed ?? 0} müşteri segmenti güncellendi.`
           : `${body.processed ?? 0} customer segment${body.processed === 1 ? '' : 's'} updated.`,
       });
-      setSelected(new Set());
+      clearSelection();
       router.refresh();
     } else {
       setNotice({

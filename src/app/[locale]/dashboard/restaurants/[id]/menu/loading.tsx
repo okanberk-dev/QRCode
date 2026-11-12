@@ -22,7 +22,8 @@ export default function Loading() {
             <SkBox className="h-full w-24" />
           </div>
           <div className="mt-2 flex h-5 items-center">
-            <SkBox className="h-4 w-80 max-w-full" />
+            {/* Business name only */}
+            <SkBox className="h-4 w-36 max-w-full" />
           </div>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto">

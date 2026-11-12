@@ -17,6 +17,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { PageHeader, StatCard, EmptyState, Badge, AlertBanner } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import {
@@ -195,7 +196,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const segmentFilter = VALID_SEGMENTS.has(segmentParamRaw as CustomerSegment)
     ? (segmentParamRaw as CustomerSegment)
     : null;
-  const page = Math.max(1, Number.parseInt(sp.page || '1', 10) || 1);
+  const requestedPage = Math.max(1, Number.parseInt(sp.page || '1', 10) || 1);
   // §38.48 Wave 2 — `?showArchived=1` toggle. Default: archived müşteriler
   // listede gizli. Toggle on iken filter overlay bypass edilir.
   const showArchived = sp.showArchived === '1' || sp.showArchived === 'true';
@@ -274,13 +275,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       `),
       // §38.48 — Archive overlay (showArchived ise filter hâlâ sorgulanır
       // ama UI bypass eder; "geri al" butonu için archived state gerekir).
+      // Scoped to the active business when one is selected.
       prisma.customerArchive.findMany({
-        where: { restaurantId: { in: scopedIds } },
+        where: { restaurantId: restaurantIdParam ?? { in: scopedIds } },
         select: { restaurantId: true, contactKey: true },
       }),
       // §38.48 — Segment override (manualSegment varsa derived'i replace eder).
       prisma.customerSegmentOverride.findMany({
-        where: { restaurantId: { in: scopedIds } },
+        where: { restaurantId: restaurantIdParam ?? { in: scopedIds } },
         select: { restaurantId: true, contactKey: true, manualSegment: true },
       }),
     ]);
@@ -380,7 +382,17 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   // §38.36 + §38.47 — 5-stat KPI grid (Toplam / VIP / Ortalama LTV /
   // Tekrar gelme / Risk altında). YoY + sektör benchmark deltaları SKIP
   // (CLAUDE.md §35.8 — verifiable olmayan iddia, "sektör %48" gibi).
-  const totalCustomers = summaryRow ? Number(summaryRow.customers) : 0;
+  // Archived customers in the current list (business + period + search) —
+  // drives the archive toggle and its "(n)" count.
+  const archivedInView = enriched.reduce((n, r) => n + (r.archived ? 1 : 0), 0);
+
+  // Same base as the tabs and the other KPIs (archived customers excluded
+  // unless shown). Only when the row cap was hit does the SQL summary (which
+  // counts every customer) give the better total.
+  const truncated = aggregates.length >= MAX_AGGREGATE_ROWS;
+  const totalCustomers = truncated
+    ? summaryRow ? Number(summaryRow.customers) : 0
+    : visibleEnriched.length;
   const vipCount = segmentCounts.vip;
   const vipPct = totalCustomers > 0 ? (vipCount / totalCustomers) * 100 : 0;
   const avgLtv =
@@ -403,9 +415,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
 
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // `?page` can point past the end (e.g. kept by the business switcher when
+  // moving to a smaller business) — fall back to the last page.
+  const page = Math.min(requestedPage, totalPages);
   const offset = (page - 1) * PAGE_SIZE;
   const rows = filtered.slice(offset, offset + PAGE_SIZE);
-  const truncated = aggregates.length >= MAX_AGGREGATE_ROWS;
 
   // The active business (`restaurantId`) is the shell's scope, not a filter:
   // the topbar switcher always writes it into the URL on this page, so it
@@ -428,12 +442,17 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     return `/${locale}/dashboard/customers${qs ? `?${qs}` : ''}`;
   }
 
+  // §46 — dates in the business time zone (the server runs in UTC), same as
+  // the detail drawer.
+  const dateFormat = new Intl.DateTimeFormat(intLocale, {
+    timeZone: resolveDisplayTimeZone(),
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
   function fmtDate(iso: string | Date) {
-    return new Date(iso).toLocaleDateString(intLocale, {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '—' : dateFormat.format(d);
   }
 
   // CSV export keeps the same filters as the list on screen.
@@ -495,17 +514,18 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       )}
 
       {/* §38.36 + §38.47 — 5 KPI cards (Toplam / VIP / Ort. LTV / Geri dönüş /
-          Risk altında). Mobile: total full width, then 2 × 2. md: 2 + 3.
-          lg: one row of 5. Same grid in loading.tsx (§40.10). */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 lg:grid-cols-5">
+          Risk altında). Mobile: total full width, then 2 × 2. md–lg: 2 + 3
+          (five cards at 1024px would break the labels mid-word). xl: one
+          row of 5. Same grid in loading.tsx (§40.10). */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 xl:grid-cols-5">
         <StatCard
-          className="col-span-2 md:col-span-3 lg:col-span-1"
+          className="col-span-2 md:col-span-3 xl:col-span-1"
           label={isTr ? 'Toplam misafir' : 'Total guests'}
           value={totalCustomers.toLocaleString(intLocale)}
           icon={<Users size={14} />}
         />
         <StatCard
-          className="md:col-span-3 lg:col-span-1"
+          className="md:col-span-3 xl:col-span-1"
           label="VIP"
           value={vipCount.toLocaleString(intLocale)}
           icon={<Crown size={14} className="text-[#A8D62E]" />}
@@ -519,16 +539,16 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           deltaKind="neutral"
         />
         <StatCard
-          className="md:col-span-2 lg:col-span-1"
+          className="md:col-span-2 xl:col-span-1"
           label={isTr ? 'Ort. LTV' : 'Avg LTV'}
           value={avgLtv > 0 ? avgLtv.toLocaleString(intLocale) : '—'}
           icon={<Wallet size={14} />}
         />
         <StatCard
-          className="md:col-span-2 lg:col-span-1"
+          className="md:col-span-2 xl:col-span-1"
           label={isTr ? 'Geri dönüş oranı' : 'Return rate'}
           value={
-            enriched.length > 0
+            visibleEnriched.length > 0
               ? isTr
                 ? `%${Math.round(returnRate)}`
                 : `${Math.round(returnRate)}%`
@@ -536,14 +556,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           }
           icon={<Repeat2 size={14} />}
           delta={
-            enriched.length > 0
+            visibleEnriched.length > 0
               ? `${returningCount.toLocaleString(intLocale)} ${isTr ? 'tekrar gelen' : 'returning'}`
               : null
           }
           deltaKind="neutral"
         />
         <StatCard
-          className="md:col-span-2 lg:col-span-1"
+          className="md:col-span-2 xl:col-span-1"
           label={isTr ? 'Risk altında' : 'At risk'}
           value={atRiskCount.toLocaleString(intLocale)}
           icon={<AlertTriangle size={14} className="text-[#DC2626]" />}
@@ -563,7 +583,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           comes from the shell's switcher (`?restaurantId`), never from here. */}
       <CustomersToolbar
         locale={locale}
-        archivedCount={archivedKeys.size}
+        archivedCount={archivedInView}
         segmentCounts={segmentCounts}
       />
 

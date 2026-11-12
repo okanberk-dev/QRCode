@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Image as ImageIcon, Loader2, Sparkles, Upload, X } from "lucide-react";
 import { AlertBanner, Eyebrow, ProgressBar } from "@/components/ui";
+import { SkBox } from "@/components/ui/skeletons/PageSkeleton";
 import BrandIdentityCard from "@/components/dashboard/BrandIdentityCard";
 import { compressImage } from "@/lib/client-image";
 import { SettingsCard } from "../SettingsCard";
@@ -248,9 +249,13 @@ export function BusinessBrandSettings({
         icon={<Sparkles size={18} />}
         title={t.completionTitle}
         description={
-          loading
-            ? t.loading
-            : completionPct === 100
+          loading ? (
+            // Inline placeholder: the description renders inside a <p>.
+            <span
+              aria-hidden="true"
+              className="inline-block h-3 w-44 max-w-full rounded bg-[#EDEDED] align-middle"
+            />
+          ) : completionPct === 100
               ? t.complete
               : t.progress(filledCount, COMPLETION_FIELDS.length)
         }
@@ -261,9 +266,11 @@ export function BusinessBrandSettings({
         }
       >
         {loading ? (
-          <div className="flex items-center gap-2 text-[13px] text-[#737373]">
-            <Loader2 size={14} className="animate-spin" />
-            {t.loading}
+          // Same shape as the progress bar + "missing" line below.
+          <div role="status" aria-busy="true" className="space-y-3">
+            <span className="sr-only">{t.loading}</span>
+            <SkBox className="h-2 w-full rounded-full" />
+            <SkBox className="h-3 w-56 max-w-full" />
           </div>
         ) : (
           <>

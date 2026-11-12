@@ -89,37 +89,69 @@ export function ReplyRowSkeleton() {
 
 /**
  * The page header: title + description, no eyebrow (the page dropped it —
- * it only repeated the title). `mb-5` like `PageHeader`.
+ * it only repeated the title). Box heights follow `PageHeader` exactly
+ * (`SkPageHeader` has a one-line description and a fixed 36px title, which is
+ * ~15px short on phones, where this description wraps to two lines):
+ *  - h1: `mt-1`, clamp(24px, 3vw, 30px) × 1.1 → 26px on phones, 33px on lg;
+ *  - description: `mt-2`, 13px × 1.55 → two lines on phones, one from sm;
+ *  - `mb-5` like `PageHeader`.
  */
 export function GoogleReviewsHeaderSkeleton() {
   return (
-    <div className="mb-5 space-y-3" aria-hidden="true">
-      <SkBox className="h-8 w-56 max-w-full" />
-      <SkBox className="h-4 w-80 max-w-full" />
+    <div className="mb-5" aria-hidden="true">
+      <SkBox className="mt-1 h-[26px] w-56 max-w-full lg:h-[33px]" />
+      <div className="mt-2 space-y-[4px] sm:space-y-0">
+        <SkBox className="h-[18px] w-80 max-w-full sm:h-5" />
+        <SkBox className="h-[18px] w-44 max-w-full sm:hidden" />
+      </div>
     </div>
   );
 }
 
 /**
  * Everything under the page header. `withSwitcher` keeps its name for
- * backward compatibility: it is now the one-line business status row.
+ * backward compatibility: it is now the one-line business status row (owners
+ * with several businesses). On phones that row is two lines (name + badge,
+ * then the "X işletmeden …" summary) unless `withSummary` is false (the page
+ * hides the summary when Google search is off).
  */
-export function GoogleReviewsBodySkeleton({ withSwitcher = true }: { withSwitcher?: boolean }) {
+export function GoogleReviewsBodySkeleton({
+  withSwitcher = true,
+  withSummary = true,
+}: {
+  withSwitcher?: boolean;
+  withSummary?: boolean;
+}) {
   return (
     <>
-      {withSwitcher && <SkBox className="h-5 w-full max-w-md" />}
+      {withSwitcher && (
+        <div className="space-y-1.5 sm:space-y-0" aria-hidden="true">
+          <SkBox className="h-[22px] w-48 max-w-full sm:w-full sm:max-w-md" />
+          {withSummary && <SkBox className="h-[19px] w-64 max-w-full sm:hidden" />}
+        </div>
+      )}
       <PlacesProfileSkeleton />
       <ReplyRowSkeleton />
     </>
   );
 }
 
-/** Complete page skeleton (route `loading.tsx` + Suspense fallback). */
-export function GoogleReviewsLoadingShell() {
+/**
+ * Complete page skeleton (route `loading.tsx` + Suspense fallback). The route
+ * fallback knows nothing and shows the status row; the page's own Suspense
+ * fallback passes what the server already read.
+ */
+export function GoogleReviewsLoadingShell({
+  withSwitcher = true,
+  withSummary = true,
+}: {
+  withSwitcher?: boolean;
+  withSummary?: boolean;
+} = {}) {
   return (
     <SkPageShell max={1440}>
       <GoogleReviewsHeaderSkeleton />
-      <GoogleReviewsBodySkeleton />
+      <GoogleReviewsBodySkeleton withSwitcher={withSwitcher} withSummary={withSummary} />
     </SkPageShell>
   );
 }

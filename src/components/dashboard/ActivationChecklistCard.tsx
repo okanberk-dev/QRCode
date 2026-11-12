@@ -64,20 +64,23 @@ const STEP_META: Record<
   },
 };
 
+// Every link carries this card's business (?restaurantId) so a step never
+// opens another business than the one the checklist is about.
 function ctaHref(step: ActivationStep, restaurantId: string, locale: string): string {
+  const scope = `restaurantId=${encodeURIComponent(restaurantId)}`;
   switch (step) {
     case "profile":
       return `/${locale}/dashboard/restaurants/${restaurantId}/settings?section=general`;
     case "google_link":
       // Straight to the Google link page for this business (not the overview).
-      return `/${locale}/dashboard/platforms/google?restaurantId=${encodeURIComponent(restaurantId)}`;
+      return `/${locale}/dashboard/platforms/google?${scope}`;
     case "qr_downloaded":
-      return `/${locale}/dashboard/qr`;
+      return `/${locale}/dashboard/qr?${scope}`;
     case "qr_printed_shared":
       // Manuel mark — CTA yok, action button var
-      return `/${locale}/dashboard/qr`;
+      return `/${locale}/dashboard/qr?${scope}`;
     case "first_feedback":
-      return `/${locale}/dashboard/feedbacks`;
+      return `/${locale}/dashboard/feedbacks?${scope}`;
   }
 }
 
@@ -223,34 +226,34 @@ export default function ActivationChecklistCard({
     "bz-btn-ghost shrink-0 inline-flex items-center justify-center gap-1 rounded-full text-[12px] min-h-[44px] px-3 sm:min-h-[32px] disabled:opacity-50";
 
   return (
-    <div className="bz-card p-5 sm:p-6">
+    <div className="bz-card relative p-5 sm:p-6">
+      {/* Dismiss sits in the card's top-right corner in both layouts; the
+          title (and on lg the step list) keep clear of it. */}
+      {canDismiss && (
+        <button
+          type="button"
+          onClick={() => performAction("dismiss")}
+          disabled={busy !== null}
+          className="bz-btn-icon absolute right-1.5 top-1.5 h-11 w-11 sm:right-2 sm:top-2 sm:h-8 sm:w-8"
+          aria-label={isTr ? "Kurulum kartını kapat" : "Dismiss setup card"}
+          title={isTr ? "Kapat" : "Dismiss"}
+        >
+          <X size={14} aria-hidden="true" />
+        </button>
+      )}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
         <div className="lg:w-[260px] lg:shrink-0">
-          <div className="flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="bz-h-tight text-[15px] sm:text-[16px]">
-                {isTr
-                  ? `Kurulum %${result.percentage} tamamlandı`
-                  : `Setup ${result.percentage}% complete`}
-              </h2>
-              <p className="text-[12px] text-[#737373] mt-0.5">
-                {isTr
-                  ? `${result.completedCount} / ${result.totalCount} adım · ${incompleteSteps.length} adım kaldı`
-                  : `${result.completedCount} / ${result.totalCount} steps · ${incompleteSteps.length} left`}
-              </p>
-            </div>
-            {canDismiss && (
-              <button
-                type="button"
-                onClick={() => performAction("dismiss")}
-                disabled={busy !== null}
-                className="bz-btn-icon shrink-0 -mr-2 -mt-2 h-11 w-11 sm:-mr-1 sm:-mt-1 sm:h-8 sm:w-8"
-                aria-label={isTr ? "Kurulum kartını kapat" : "Dismiss setup card"}
-                title={isTr ? "Kapat" : "Dismiss"}
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
-            )}
+          <div className={`min-w-0 ${canDismiss ? "pr-9 lg:pr-0" : ""}`}>
+            <h2 className="bz-h-tight text-[15px] sm:text-[16px]">
+              {isTr
+                ? `Kurulum %${result.percentage} tamamlandı`
+                : `Setup ${result.percentage}% complete`}
+            </h2>
+            <p className="text-[12px] text-[#737373] mt-0.5">
+              {isTr
+                ? `${result.completedCount} / ${result.totalCount} adım · ${incompleteSteps.length} adım kaldı`
+                : `${result.completedCount} / ${result.totalCount} steps · ${incompleteSteps.length} left`}
+            </p>
           </div>
 
           <div
@@ -285,7 +288,7 @@ export default function ActivationChecklistCard({
           )}
         </div>
 
-        <ul className="min-w-0 flex-1 space-y-1">
+        <ul className={`min-w-0 flex-1 space-y-1 ${canDismiss ? "lg:pr-8" : ""}`}>
           {visibleSteps.map((s) => {
             const meta = STEP_META[s.step];
             const Icon = s.done ? Check : meta.icon;

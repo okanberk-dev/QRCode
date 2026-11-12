@@ -112,10 +112,13 @@ export function PulseRangeToggle({
         })}
       </div>
 
+      {/* No min-width: on lg the card sits in a ~400-480px column and a
+          520px floor made the newest days scroll out of view (the wrapper
+          hides its scrollbar). Below lg the card is never under ~536px. */}
       <PlatformTrendChartBody
         points={activeRange.data}
         isTr={isTr}
-        heightClassName="h-[260px] w-full min-w-[520px] sm:h-[300px] md:h-[330px]"
+        heightClassName="h-[260px] w-full sm:h-[300px] md:h-[330px]"
         emptyClassName="mt-4 rounded-[14px] border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-8 text-center"
       />
 

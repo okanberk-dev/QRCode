@@ -279,7 +279,7 @@ export default function SurveyDetailClient({
               {survey.isPublished ? (
                 <Badge kind="lime">{isTr ? 'Yayında' : 'Live'}</Badge>
               ) : (
-                <Badge kind="ghost">{isTr ? 'Taslak' : 'Draft'}</Badge>
+                <Badge kind="ghost" dot={false}>{isTr ? 'Taslak' : 'Draft'}</Badge>
               )}
               <span className="text-[#737373]">{restaurant.name}</span>
             </span>

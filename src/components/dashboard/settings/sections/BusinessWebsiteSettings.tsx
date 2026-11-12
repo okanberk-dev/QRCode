@@ -84,7 +84,7 @@ export function BusinessWebsiteSettings({
         <div>
           <p className="text-[12.5px] text-[#525252]">
             {isTr
-              ? 'Sitenize aşağıdaki kodu yapıştırın — ziyaretçileriniz son yorumları, ortalama puanınızı görür ve yorum bırakabilir.'
+              ? 'Aşağıdaki kodu sitene yapıştır; ziyaretçilerin son yorumları ve ortalama puanını görür, yorum bırakabilir.'
               : 'Paste this code into your site — visitors see recent reviews, average rating, and can leave a review.'}
           </p>
         </div>
@@ -110,7 +110,7 @@ export function BusinessWebsiteSettings({
                   key={t}
                   type="button"
                   onClick={() => setTheme(t)}
-                  className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
+                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors sm:min-h-0 ${
                     theme === t
                       ? 'bg-[#0A0A0A] text-white'
                       : 'text-[#525252] hover:bg-[#F5F5F5]'
@@ -143,7 +143,7 @@ export function BusinessWebsiteSettings({
                   key={v.id}
                   type="button"
                   onClick={() => setVariant(v.id)}
-                  className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
+                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors sm:min-h-0 ${
                     variant === v.id
                       ? 'bg-[#0A0A0A] text-white'
                       : 'text-[#525252] hover:bg-[#F5F5F5]'
@@ -163,13 +163,14 @@ export function BusinessWebsiteSettings({
             <div
               className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1"
               role="group"
+              aria-label={isTr ? 'Kod türü' : 'Code type'}
             >
               {(['iframe', 'script'] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setScriptMode(m)}
-                  className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
+                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors sm:min-h-0 ${
                     scriptMode === m
                       ? 'bg-[#0A0A0A] text-white'
                       : 'text-[#525252] hover:bg-[#F5F5F5]'
@@ -193,7 +194,7 @@ export function BusinessWebsiteSettings({
             <button
               type="button"
               onClick={handleCopy}
-              className="bz-btn bz-btn-sm shrink-0"
+              className="bz-btn bz-btn-sm min-h-[44px] shrink-0 sm:min-h-0"
             >
               {copied ? (
                 <>
@@ -219,7 +220,7 @@ export function BusinessWebsiteSettings({
         {/* Privacy disclosure */}
         <AlertBanner kind="info" icon={<Info size={14} />}>
           {isTr
-            ? 'Widget kullan\u0131m\u0131nda anonim trafik verisi (IP, referans alan ad\u0131) toplan\u0131r. Sitenizin Gizlilik Politikas\u0131\u2019nda belirtmenizi \u00f6neririz.'
+            ? 'Yorum kutusu anonim trafik verisi (IP, ziyaretçinin geldiği site) toplar. Bunu sitenin gizlilik politikasında belirtmeni öneririz.'
             : "Widget collects anonymous traffic data (IP, referrer hostname). Mention this in your site\u2019s Privacy Policy."}
         </AlertBanner>
       </div>
@@ -228,7 +229,7 @@ export function BusinessWebsiteSettings({
       <section className="bz-card p-4 sm:p-5">
         <header className="mb-3 flex items-center gap-2">
           <Sparkles size={14} className="text-[#0A0A0A]" />
-          <Eyebrow>{isTr ? 'SİTENİZDE NASIL GÖRÜNECEK' : 'HOW IT LOOKS ON YOUR SITE'}</Eyebrow>
+          <Eyebrow>{isTr ? 'SİTENDE NASIL GÖRÜNECEK' : 'HOW IT LOOKS ON YOUR SITE'}</Eyebrow>
         </header>
         <EmbedBrowserPreview
           slug={slug}

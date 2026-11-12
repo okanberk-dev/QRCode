@@ -577,14 +577,40 @@ function ReviewCard({
  * When the full reviews experience is on screen (`full`) the header drops the
  * card chrome, because what follows is made of cards itself.
  */
+/**
+ * What the section's one-line description says:
+ *  - `full`: the reviews experience is on screen;
+ *  - `connect`: the "Google hesabını bağla" button is below, so invite it;
+ *  - `info`: anything else (loading, plan off, not open yet, signed in but no
+ *    location) — a neutral line, never an invitation the body contradicts.
+ */
+type ReplyIntro = 'full' | 'connect' | 'info';
+
+const REPLY_INTRO: Record<ReplyIntro, { tr: string; en: string }> = {
+  full: {
+    tr: 'Tüm Google yorumlarını burada oku ve Pulse AI taslağıyla yanıtla.',
+    en: 'Read all your Google reviews here and reply with a Pulse AI draft.',
+  },
+  connect: {
+    tr: 'Google İşletme Profili hesabını bağlarsan tüm yorumlarını burada okuyup Pulse AI taslağıyla yanıtlayabilirsin.',
+    en: 'Connect your Google Business Profile account to read all your reviews here and reply with a Pulse AI draft.',
+  },
+  info: {
+    tr: 'Google yorumlarını burada okuyup Pulse AI taslağıyla yanıtlamanı sağlar.',
+    en: 'Lets you read your Google reviews here and reply with a Pulse AI draft.',
+  },
+};
+
 function ReplySection({
   isTr,
   full,
+  intro,
   actions,
   children,
 }: {
   isTr: boolean;
   full: boolean;
+  intro: ReplyIntro;
   actions?: ReactNode;
   children: ReactNode;
 }) {
@@ -600,13 +626,7 @@ function ReplySection({
           </Badge>
         </div>
         <p className="mt-1 max-w-2xl text-[13px] leading-[1.6] text-[#525252]">
-          {full
-            ? isTr
-              ? 'Tüm Google yorumlarını burada oku ve Pulse AI taslağıyla yanıtla.'
-              : 'Read all your Google reviews here and reply with a Pulse AI draft.'
-            : isTr
-              ? 'Google İşletme Profili hesabını bağlarsan tüm yorumlarını burada okuyup Pulse AI taslağıyla yanıtlayabilirsin. Yukarıdaki profil kontrolü bu bağlantı olmadan da çalışır.'
-              : 'Connect your Google Business Profile account to read all your reviews here and reply with a Pulse AI draft. The profile check above works without it.'}
+          {REPLY_INTRO[intro][isTr ? 'tr' : 'en']}
         </p>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div> : null}
@@ -1344,6 +1364,20 @@ export function GoogleReplySection({
     !(reviewsError && !statusIsReady) &&
     Boolean(status?.googleReviewManagementEnabled && status?.connected && status?.selectedLocation);
 
+  // The connect button is in the body (not connected, reply access open,
+  // plan on, sign-in configured): only then does the description invite it.
+  const replyIntro: ReplyIntro = replyFull
+    ? 'full'
+    : !shouldShowStatusLoading &&
+        !(reviewsError && !statusIsReady) &&
+        status &&
+        !status.connected &&
+        replyAvailability === 'available' &&
+        status.googleReviewManagementEnabled &&
+        status.oauthConfigured
+      ? 'connect'
+      : 'info';
+
   // Disconnect asks first (the reviews list disappears until the owner signs
   // in again). Accessible dialog instead of the native `confirm()`.
   const [disconnectDialog, askConfirm] = useConfirmDialog();
@@ -1370,6 +1404,35 @@ export function GoogleReplySection({
       },
     });
 
+  // "Diğer" → "Google bağlantısını kes": Radix gives focus back to the menu
+  // trigger only after the menu has unmounted (on a timer). A dialog opened
+  // straight from the menu item would therefore lose focus to the trigger and
+  // keyboard users could not Tab to "Bağlantıyı kes" / "Vazgeç". The item only
+  // marks the request; the dialog opens once focus is back on the trigger,
+  // with a short fallback in case that focus never arrives.
+  const disconnectPendingRef = useRef(false);
+  const openPendingDisconnect = () => {
+    if (!disconnectPendingRef.current) return;
+    disconnectPendingRef.current = false;
+    disconnectGoogle();
+  };
+
+  // "Yanıt sırası" filters the list to unanswered reviews AND takes the owner
+  // there: the list sits below the health card, rating hero and KPIs, so
+  // without the scroll the button looked like it did nothing (mobile).
+  const reviewsListRef = useRef<HTMLElement | null>(null);
+  const unrepliedTabRef = useRef<HTMLButtonElement | null>(null);
+  const showReplyQueue = () => {
+    setActiveTab('unreplied');
+    requestAnimationFrame(() => {
+      const reduce =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      reviewsListRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      unrepliedTabRef.current?.focus({ preventScroll: true });
+    });
+  };
+
   // §49 — one primary action ("Reply queue") + one "More" menu (refresh,
   // disconnect). Refresh used to appear twice (header "Sync" + body "Refresh
   // reviews", same request); both now live in the menu once.
@@ -1379,9 +1442,9 @@ export function GoogleReplySection({
         {reviewsPayload && (
           <button
             type="button"
-            onClick={() => setActiveTab('unreplied')}
+            onClick={showReplyQueue}
             className="bz-btn-primary min-h-11 text-[12.5px] sm:min-h-[36px]"
-            title={isTr ? 'Yanıtlanmamış yorumlara odaklan' : 'Focus on unanswered reviews'}
+            title={isTr ? 'Yanıtlanmamış yorumlara git' : 'Go to unanswered reviews'}
           >
             <Send size={13} strokeWidth={2} aria-hidden="true" />
             {isTr ? 'Yanıt sırası' : 'Reply queue'} ({reviewAnalysis.unanswered})
@@ -1393,6 +1456,7 @@ export function GoogleReplySection({
               type="button"
               className="bz-btn-ghost min-h-11 min-w-11 text-[12.5px] sm:min-h-[36px]"
               aria-label={isTr ? 'Diğer işlemler' : 'More actions'}
+              onFocus={openPendingDisconnect}
             >
               <MoreHorizontal size={14} strokeWidth={2} aria-hidden="true" />
               <span className="hidden sm:inline">{isTr ? 'Diğer' : 'More'}</span>
@@ -1406,7 +1470,14 @@ export function GoogleReplySection({
           >
             {isTr ? 'Yorumları yenile' : 'Refresh reviews'}
           </PulseMenuItem>
-          <PulseMenuItem danger icon={<Unplug size={14} strokeWidth={2} />} onSelect={disconnectGoogle}>
+          <PulseMenuItem
+            danger
+            icon={<Unplug size={14} strokeWidth={2} />}
+            onSelect={() => {
+              disconnectPendingRef.current = true;
+              window.setTimeout(openPendingDisconnect, 400);
+            }}
+          >
             {isTr ? 'Google bağlantısını kes' : 'Disconnect Google'}
           </PulseMenuItem>
         </PulseMenu>
@@ -1427,7 +1498,7 @@ export function GoogleReplySection({
 
   return (
     <>
-          <ReplySection isTr={isTr} full={replyFull} actions={replyActions}>
+          <ReplySection isTr={isTr} full={replyFull} intro={replyIntro} actions={replyActions}>
             {shouldShowStatusLoading ? (
               <div className="space-y-3" aria-busy="true">
                 <SkBox className="h-4 w-full max-w-xl" />
@@ -1870,7 +1941,24 @@ export function GoogleReplySection({
             )}
           </div>
 
-          {reviewsError && <AlertBanner kind="danger">{reviewsError}</AlertBanner>}
+          {reviewsError && (
+            <div className="space-y-3">
+              <AlertBanner kind="danger">{reviewsError}</AlertBanner>
+              {/* The reviews request itself failed (nothing to show): retry
+                  right here, next to the error (manual only, §5.1.1). A draft
+                  or reply error keeps the list, so it needs no reload. */}
+              {!reviewsPayload && !reviewsLoading && activeRestaurantId && (
+                <button
+                  type="button"
+                  className="bz-btn-ghost min-h-11 sm:min-h-[36px]"
+                  onClick={() => void loadStatusAndReviews(activeRestaurantId)}
+                >
+                  <RefreshCw size={13} aria-hidden="true" />
+                  {isTr ? 'Tekrar dene' : 'Try again'}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Reputation OS Suite — health score + recommendations card.
               Üstte yer alır, owner ilk göz attığında bugün/baseline/öneri
@@ -2040,7 +2128,7 @@ export function GoogleReplySection({
                     {/* §38.55 — SOL: Reviews stream (tasarım page-google.jsx
                         line 119-179 birebir). bz-card + header (h3 + count
                         badge + 3-tab inline) + divide-y card list. */}
-                    <section className="bz-card overflow-hidden p-0">
+                    <section ref={reviewsListRef} className="bz-card scroll-mt-24 overflow-hidden p-0">
                       {/* Header */}
                       <div className="flex flex-col gap-3 border-b border-[#EDEDED] px-5 py-4 sm:flex-row sm:items-center">
                         <div className="flex items-center gap-2.5">
@@ -2068,6 +2156,7 @@ export function GoogleReplySection({
                             return (
                               <button
                                 key={tab.id}
+                                ref={tab.id === 'unreplied' ? unrepliedTabRef : undefined}
                                 type="button"
                                 role="tab"
                                 aria-selected={active}

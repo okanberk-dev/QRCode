@@ -264,7 +264,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
   const intLocale = isTr ? 'tr-TR' : 'en-US';
   const usageItems: Array<{ label: string; used: number; limit: number | null }> = usage
     ? [
-        { label: isTr ? 'İşletme' : 'Businesses', used: usage.restaurantCount, limit: null },
+        { label: isTr ? 'Toplam işletme' : 'Total businesses', used: usage.restaurantCount, limit: null },
         { label: isTr ? 'Ekip üyesi' : 'Team members', used: usage.teamCount, limit: null },
         {
           label: isTr ? 'AI yanıt (bu ay)' : 'AI replies (this month)',

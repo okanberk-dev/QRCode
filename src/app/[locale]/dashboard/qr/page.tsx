@@ -27,11 +27,12 @@ interface Restaurant {
 
 /**
  * Upper bound for the server-rendered QR history (all scoped businesses in
- * one query). Above it the page skips hydration and QrClient loads each
- * business through `/api/restaurants/[id]/qr/history` instead, so a very
- * large franchise never gets a truncated list.
+ * one query, ~70 KB of page payload at most). Above it the page skips
+ * hydration and QrClient loads each business through
+ * `/api/restaurants/[id]/qr/history` when it is shown, so a large franchise
+ * neither ships every business's list in the HTML nor gets a truncated one.
  */
-const HISTORY_HYDRATION_LIMIT = 2000;
+const HISTORY_HYDRATION_LIMIT = 300;
 
 export default async function DashboardQrPage() {
   // Auth — owner panel (user_token). Admin bypass handled by dashboard/layout.

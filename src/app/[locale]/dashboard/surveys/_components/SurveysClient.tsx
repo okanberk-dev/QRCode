@@ -460,11 +460,7 @@ export default function SurveysClient({
             <Tabs
               items={[
                 { id: 'business', label: isTr ? 'Bu işletme' : 'This business' },
-                {
-                  id: 'all',
-                  label: isTr ? 'Tüm işletmeler' : 'All businesses',
-                  count: restaurants.length,
-                },
+                { id: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses' },
               ]}
               active={scope}
               onChange={(id) => setScope(id === 'all' ? 'all' : 'business')}
@@ -568,7 +564,7 @@ export default function SurveysClient({
                       {row.isPublished ? (
                         <Badge kind="lime">{isTr ? 'Yayında' : 'Live'}</Badge>
                       ) : (
-                        <Badge kind="ghost">{isTr ? 'Taslak' : 'Draft'}</Badge>
+                        <Badge kind="ghost" dot={false}>{isTr ? 'Taslak' : 'Draft'}</Badge>
                       )}
                       {!row.isActive && <Badge kind="warn">{isTr ? 'Pasif' : 'Inactive'}</Badge>}
                     </div>

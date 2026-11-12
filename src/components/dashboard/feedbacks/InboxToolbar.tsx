@@ -12,10 +12,16 @@ import { INBOX_PLATFORM_FILTER_IDS, platformLabel } from './inbox-format';
  * "Filtre" button — one place owns every filter.
  *
  *   Row 1  status tabs (InboxStatusTabs, horizontally scrollable on mobile)
+ *          · [md+] "Temizle / Clear" on the right
  *   Row 2  search · [md+] platform / rating / date selects · state toggles
- *          (or a "more filters" button) · clear · optional right slot
+ *          (or a "more filters" button) · optional right slot
  *          (admin restaurant chip)
  *          [< md] search + one filter icon button (opens the full modal)
+ *          + clear icon button
+ *
+ * The md+ "Temizle" sits in the tabs row (not after the filters) so it never
+ * changes the filter row's width: showing it on the first filter click used
+ * to wrap the filters to a new line at 1024–1280px and push the list down.
  *
  * Every control applies immediately — no "Apply" step. Touch targets are
  * 44px below md (tabs, search, icon buttons).
@@ -42,11 +48,13 @@ export interface InboxToolbarProps {
   onRatingChange: (value: string) => void;
   days: string;
   onDaysChange: (value: string) => void;
+  /** Rating select options (md+). Defaults to `ratingFilterOptions(isTr)`. */
+  ratingOptions?: PulseSelectOption[];
 
   /**
-   * md+: on/off filters shown inline next to the selects (e.g. "Yanıtsız",
-   * "İşaretli"). When given, they replace the "more filters" button — a
-   * couple of toggles don't need a modal.
+   * md+: on/off filters shown inline next to the selects (owner:
+   * "Yanıtsızlar", "Yalnız işaretliler"). When given, they replace the "more
+   * filters" button — a couple of toggles don't need a modal.
    */
   toggles?: InboxToggle[];
   /** Count of the "other" filters (reply state / flagged / assigned) — md+ button badge. */
@@ -136,6 +144,7 @@ export function InboxToolbar({
   onRatingChange,
   days,
   onDaysChange,
+  ratingOptions,
   toggles,
   moreFiltersCount = 0,
   allFiltersCount,
@@ -153,13 +162,26 @@ export function InboxToolbar({
     <div
       className={`sticky top-[61px] z-20 border-y border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur sm:px-7 lg:static lg:bg-white lg:backdrop-blur-none ${className}`}
     >
-      <InboxStatusTabs
-        tabs={tabs}
-        active={activeTab}
-        onChange={onTabChange}
-        ariaLabel={isTr ? 'Yorum durumu' : 'Review status'}
-        controlsId={listId}
-      />
+      <div className="flex items-center gap-2">
+        <InboxStatusTabs
+          tabs={tabs}
+          active={activeTab}
+          onChange={onTabChange}
+          ariaLabel={isTr ? 'Yorum durumu' : 'Review status'}
+          controlsId={listId}
+          className="min-w-0 flex-1"
+        />
+        {showClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="hidden h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] md:inline-flex"
+          >
+            <RotateCcw size={13} strokeWidth={2} aria-hidden="true" />
+            {isTr ? 'Temizle' : 'Clear'}
+          </button>
+        )}
+      </div>
 
       <div className="mt-2.5 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
         <div className="flex items-center gap-2 md:contents">
@@ -236,7 +258,7 @@ export function InboxToolbar({
           <PulseSelect
             value={rating}
             onChange={onRatingChange}
-            options={ratingFilterOptions(isTr)}
+            options={ratingOptions ?? ratingFilterOptions(isTr)}
             ariaLabel={isTr ? 'Puan' : 'Rating'}
             className="min-w-[150px]"
           />
@@ -279,16 +301,6 @@ export function InboxToolbar({
                   <CountBadge count={moreFiltersCount} label={activeLabel(moreFiltersCount)} />
                 </button>
               )}
-          {showClear && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="inline-flex h-[34px] items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-            >
-              <RotateCcw size={13} strokeWidth={2} aria-hidden="true" />
-              {isTr ? 'Temizle' : 'Clear'}
-            </button>
-          )}
         </div>
 
         {rightSlot && <div className="md:ml-auto">{rightSlot}</div>}

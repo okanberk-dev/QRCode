@@ -1,10 +1,13 @@
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
- * Surveys list — header (no eyebrow) + one toolbar (business segment ·
- * summary) + three stacked survey cards. Wrapper (`mx-auto max-w-[1440px]
- * px-4 py-6 sm:px-7 lg:py-8`) and card chrome match SurveysClient exactly so
- * the swap has no layout shift (CLAUDE.md §40.10).
+ * Surveys list — header (no eyebrow) + one toolbar row + three stacked
+ * survey cards. Wrapper (`mx-auto max-w-[1440px] px-4 py-6 sm:px-7 lg:py-8`)
+ * and card chrome match SurveysClient so the swap has no layout shift
+ * (CLAUDE.md §40.10). The toolbar is a single summary-line placeholder in a
+ * segment-height row: the "This business / All businesses" segment only
+ * exists for multi-business owners, which the skeleton cannot know, so one
+ * neutral row keeps the shift small in both cases.
  */
 export default function Loading() {
   return (
@@ -19,10 +22,9 @@ export default function Loading() {
       </div>
 
       <div aria-busy="true">
-        {/* Toolbar: "This business / All businesses" segment · summary. */}
-        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <SkBox className="h-[50px] w-[240px] rounded-[10px] sm:h-9" />
-          <SkBox className="h-4 w-56" />
+        {/* Toolbar: summary line (segment only for multi-business owners). */}
+        <div className="mb-4 flex min-h-9 items-center">
+          <SkBox className="h-4 w-56 max-w-full" />
         </div>
 
         <div className="space-y-3">
