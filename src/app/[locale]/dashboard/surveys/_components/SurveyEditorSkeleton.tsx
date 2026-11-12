@@ -2,10 +2,11 @@
 //
 // The wrapper matches SurveyEditorClient exactly (`mx-auto max-w-[1280px]
 // space-y-5 px-4 py-6 sm:px-7 lg:py-8`), so the swap has no layout shift
-// (CLAUDE.md §40.10): back link row, header, then the form column and — from
-// `lg` — the phone preview column.
+// (CLAUDE.md §40.10): back link row, header (eyebrow · title · description ·
+// read-only business line), then the form column and — from `lg` — the phone
+// preview column.
 
-import { SkBox, SkPageHeader, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
 export default function SurveyEditorSkeleton() {
   return (
@@ -14,9 +15,17 @@ export default function SurveyEditorSkeleton() {
         <SkBox className="h-3 w-24" />
       </div>
 
-      <SkPageHeader titleWidth="w-56" />
+      <div className="mb-5 space-y-3">
+        <SkBox className="h-3 w-24" />
+        <SkBox className="h-8 w-56 max-w-full" />
+        <div className="space-y-2">
+          <SkBox className="h-4 w-80 max-w-full" />
+          <SkBox className="h-4 w-48 max-w-full" />
+        </div>
+      </div>
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-6">
+      {/* Same breakpoint as the editor: two columns only on a wide AND tall screen. */}
+      <div className="[@media(min-width:1024px)_and_(min-height:740px)]:grid [@media(min-width:1024px)_and_(min-height:740px)]:grid-cols-[minmax(0,1fr)_380px] [@media(min-width:1024px)_and_(min-height:740px)]:items-start [@media(min-width:1024px)_and_(min-height:740px)]:gap-6">
         <div className="min-w-0 space-y-5">
           {/* Title card */}
           <div className="bz-card space-y-4 p-4 sm:p-5">
@@ -26,9 +35,6 @@ export default function SurveyEditorSkeleton() {
               <SkBox className="h-11 w-full" />
             </div>
             <SkBox className="h-5 w-36" />
-            <div className="border-t border-[#EDEDED] pt-3">
-              <SkBox className="h-4 w-48" />
-            </div>
           </div>
 
           {/* Questions */}
@@ -66,7 +72,7 @@ export default function SurveyEditorSkeleton() {
         </div>
 
         {/* Phone preview column (desktop only) */}
-        <div className="hidden self-start lg:sticky lg:top-[88px] lg:block">
+        <div className="hidden self-start [@media(min-width:1024px)_and_(min-height:740px)]:sticky [@media(min-width:1024px)_and_(min-height:740px)]:top-[88px] [@media(min-width:1024px)_and_(min-height:740px)]:block">
           <div className="mb-2 flex justify-center">
             <SkBox className="h-3 w-44" />
           </div>

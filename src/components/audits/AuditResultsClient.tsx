@@ -254,9 +254,9 @@ export default function AuditResultsClient({
       <div>
         <Link
           href={`${base}/${template.id}`}
-          className="inline-flex min-h-9 items-center gap-1 text-[12px] text-[#737373] hover:text-[#0A0A0A]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#737373] hover:text-[#0A0A0A] sm:min-h-0 sm:text-[12px]"
         >
-          <ArrowLeft size={12} aria-hidden="true" /> {isTr ? 'Denetime dön' : 'Back to audit'}
+          <ArrowLeft size={13} aria-hidden="true" /> {isTr ? 'Denetime dön' : 'Back to audit'}
         </Link>
       </div>
 
@@ -278,19 +278,22 @@ export default function AuditResultsClient({
           </>
         }
         actions={
-          <button
-            type="button"
-            className="bz-btn-ghost min-h-11 sm:min-h-0"
-            onClick={handleExport}
-            disabled={exporting || noResponsesAtAll}
-          >
-            {exporting ? (
-              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <Download size={14} aria-hidden="true" />
-            )}
-            {isTr ? 'Tablo olarak indir (CSV)' : 'Download as table (CSV)'}
-          </button>
+          // Hiç yanıt yokken indirilecek bir şey yok: düğme gösterilmez.
+          noResponsesAtAll ? undefined : (
+            <button
+              type="button"
+              className="bz-btn-ghost min-h-11 sm:min-h-0"
+              onClick={handleExport}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Download size={14} aria-hidden="true" />
+              )}
+              {isTr ? 'Tablo olarak indir (CSV)' : 'Download as table (CSV)'}
+            </button>
+          )
         }
       />
 

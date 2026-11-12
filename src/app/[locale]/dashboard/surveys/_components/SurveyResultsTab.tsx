@@ -8,6 +8,9 @@
 // Never shows a fake "0" while loading: the cards are skeletons until the
 // numbers arrive. "No responses at all" and "none in this range" are told apart
 // (the default range is 30 days, so an old survey would otherwise read as empty).
+// One toolbar row: range · CSV download (the only CSV link on the tab). A survey
+// that never had a response has nothing to filter or download, so the toolbar
+// is hidden and the empty state offers the link instead.
 
 import { useCallback, useEffect, useState } from 'react';
 import { ClipboardList, Download, MessageSquare, Star, ThumbsUp, UserRound } from 'lucide-react';
@@ -114,35 +117,44 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
   const rangeLabel = (r: Range) =>
     r === '7d' ? (isTr ? '7g' : '7d') : r === '30d' ? (isTr ? '30g' : '30d') : r === '90d' ? (isTr ? '90g' : '90d') : isTr ? 'Tümü' : 'All';
 
+  const csvLabel = isTr ? "CSV indir (Excel'de açılır)" : 'Download CSV (opens in Excel)';
+  const neverAnswered =
+    survey._count.responses === 0 &&
+    !(state.status === 'ready' && state.data.summary.responsesAllTime > 0);
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label={isTr ? 'Zaman aralığı' : 'Time range'} className="flex flex-wrap gap-2">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              type="button"
-              aria-pressed={range === r}
-              onClick={() => setRange(r)}
-              className={[
-                'inline-flex min-h-[44px] min-w-[52px] items-center justify-center rounded-full border px-4 text-[13px] font-medium transition-colors',
-                range === r
-                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                  : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]',
-              ].join(' ')}
-            >
-              {rangeLabel(r)}
-            </button>
-          ))}
+      {!neverAnswered && (
+        <div className="flex items-center gap-2">
+          <div role="group" aria-label={isTr ? 'Zaman aralığı' : 'Time range'} className="flex gap-2 sm:gap-1.5">
+            {RANGES.map((r) => (
+              <button
+                key={r}
+                type="button"
+                aria-pressed={range === r}
+                onClick={() => setRange(r)}
+                className={[
+                  'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 sm:min-h-8 sm:min-w-0',
+                  range === r
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]',
+                ].join(' ')}
+              >
+                {rangeLabel(r)}
+              </button>
+            ))}
+          </div>
+          <a
+            href={`/api/surveys/${survey.id}/export`}
+            aria-label={csvLabel}
+            className="bz-btn-ghost ml-auto min-h-11 shrink-0 gap-2 sm:min-h-9"
+          >
+            <Download size={14} aria-hidden="true" />
+            <span className="sm:hidden">CSV</span>
+            <span className="hidden sm:inline">{csvLabel}</span>
+          </a>
         </div>
-        <a
-          href={`/api/surveys/${survey.id}/export`}
-          className="bz-btn-ghost min-h-[44px] gap-2 text-[13px] sm:ml-auto"
-        >
-          <Download size={14} aria-hidden="true" />
-          {isTr ? "CSV indir (Excel'de açılır)" : 'Download CSV (opens in Excel)'}
-        </a>
-      </div>
+      )}
 
       {state.status === 'loading' && <ResultsSkeleton />}
 
@@ -176,7 +188,7 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
                 <button
                   type="button"
                   onClick={() => void copyLink()}
-                  className="bz-btn-primary min-h-[44px]"
+                  className="bz-btn-primary min-h-11 sm:min-h-9"
                 >
                   {copied ? (isTr ? 'Kopyalandı' : 'Copied') : isTr ? 'Linki kopyala' : 'Copy link'}
                 </button>
@@ -202,7 +214,7 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
                 <button
                   type="button"
                   onClick={() => setRange('all')}
-                  className="bz-btn-primary min-h-[44px]"
+                  className="bz-btn-primary min-h-11 sm:min-h-9"
                 >
                   {isTr ? 'Tümünü göster' : 'Show all time'}
                 </button>
@@ -273,16 +285,12 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
                   label={isTr ? 'İletişim bırakan' : 'Left contact details'}
                   value={`${summary.withContact} / ${summary.responses}`}
                   icon={<UserRound size={14} />}
-                  delta={isTr ? 'E-posta veya telefon' : 'Email or phone'}
-                  deltaKind="neutral"
-                  deltaSuffix={
-                    <a
-                      href={`/api/surveys/${survey.id}/export`}
-                      className="inline-flex min-h-[44px] items-center underline underline-offset-2"
-                    >
-                      {isTr ? "Listeyi CSV'de indir" : 'Download the list as CSV'}
-                    </a>
+                  delta={
+                    isTr
+                      ? 'E-posta veya telefon · listesi CSV dosyasında'
+                      : 'Email or phone · listed in the CSV file'
                   }
+                  deltaKind="neutral"
                 />
               )}
             </div>

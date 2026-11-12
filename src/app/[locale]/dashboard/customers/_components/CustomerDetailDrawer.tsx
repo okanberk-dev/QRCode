@@ -247,12 +247,14 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
 
   return (
     <>
-      {/* Overlay */}
-      <button
-        type="button"
-        aria-label={isTr ? 'Kapat' : 'Close'}
+      {/* Overlay — click outside to close. A plain div: the X button is the
+          accessible close control (a second "Kapat" button here was a
+          duplicate tab stop, and a <button> did not stretch to the full
+          viewport height, leaving an uncovered strip at the bottom). */}
+      <div
+        aria-hidden="true"
         onClick={closeDrawer}
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm bz-fade-in cursor-default"
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm bz-fade-in"
       />
       {/* Slide-in panel — sağ taraftan */}
       <aside
@@ -275,10 +277,9 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
               {initial}
             </div>
             <div className="min-w-0">
-              <span className="pulse-eyebrow text-[#737373]">CRM</span>
               <h2
                 id="customer-drawer-heading"
-                className="bz-h-tight mt-0.5 text-[18px] truncate text-[#0A0A0A]"
+                className="bz-h-tight text-[18px] truncate text-[#0A0A0A]"
               >
                 {data?.customer.name || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
               </h2>
@@ -332,39 +333,37 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
 
           {data && !loading && (
             <>
-              {/* Contact actions */}
-              <div className="flex flex-col gap-2">
-                {data.customer.email && (
-                  <a
-                    href={`mailto:${data.customer.email}`}
-                    className="inline-flex items-center gap-2.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2.5 text-[13px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
-                  >
-                    <Mail size={14} strokeWidth={2} className="text-[#525252] shrink-0" />
-                    <span className="truncate flex-1">{data.customer.email}</span>
-                    <span className="pulse-eyebrow text-[#737373]">
-                      {isTr ? 'E-POSTA' : 'EMAIL'}
-                    </span>
-                  </a>
-                )}
-                {data.customer.phone && (
-                  <a
-                    href={`tel:${data.customer.phone}`}
-                    className="inline-flex items-center gap-2.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2.5 text-[13px] text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
-                  >
-                    <Phone size={14} strokeWidth={2} className="text-[#525252] shrink-0" />
-                    <span className="truncate flex-1">{data.customer.phone}</span>
-                    <span className="pulse-eyebrow text-[#737373]">
-                      {isTr ? 'TELEFON' : 'PHONE'}
-                    </span>
-                  </a>
-                )}
-              </div>
+              {/* Contact details — plain, selectable text (to copy). Email /
+                  call actions are the footer buttons, so they are not
+                  repeated here. */}
+              {(data.customer.email || data.customer.phone) && (
+                <dl className="space-y-1.5 text-[13px]">
+                  {data.customer.email && (
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <dt className="shrink-0 text-[#737373]">
+                        <Mail size={14} strokeWidth={2} aria-hidden="true" />
+                        <span className="sr-only">{isTr ? 'E-posta' : 'Email'}</span>
+                      </dt>
+                      <dd className="min-w-0 truncate select-all text-[#0A0A0A]">{data.customer.email}</dd>
+                    </div>
+                  )}
+                  {data.customer.phone && (
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <dt className="shrink-0 text-[#737373]">
+                        <Phone size={14} strokeWidth={2} aria-hidden="true" />
+                        <span className="sr-only">{isTr ? 'Telefon' : 'Phone'}</span>
+                      </dt>
+                      <dd className="min-w-0 truncate select-all text-[#0A0A0A]">{data.customer.phone}</dd>
+                    </div>
+                  )}
+                </dl>
+              )}
 
               {/* Stats — Phase 8c 4 tile (LTV eklendi) */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'YORUM' : 'REVIEWS'}
+                  <span className="text-[12px] text-[#737373]">
+                    {isTr ? 'Yorum' : 'Reviews'}
                   </span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="bz-h-tight text-[20px] tabular-nums text-[#0A0A0A]">
@@ -374,8 +373,8 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'ORT.' : 'AVG'}
+                  <span className="text-[12px] text-[#737373]">
+                    {isTr ? 'Ortalama puan' : 'Average rating'}
                   </span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="bz-h-tight text-[20px] tabular-nums text-[#0A0A0A]">
@@ -385,9 +384,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'LTV' : 'LTV'}
-                  </span>
+                  <span className="text-[12px] text-[#737373]">LTV</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span
                       className="bz-mono tabular-nums text-[18px] font-semibold text-[#0A0A0A]"
@@ -405,8 +402,8 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'SON' : 'LAST'}
+                  <span className="text-[12px] text-[#737373]">
+                    {isTr ? 'Son ziyaret' : 'Last visit'}
                   </span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="bz-h-tight text-[14px] text-[#0A0A0A]">
@@ -422,9 +419,9 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
               {/* §38.47 — Son konu + Kanal meta row (helper'lar ile derive,
                   drawer-locale'e duyarlı). Tasarım .design-owner-2026/page-customers.jsx
                   meta satırı paterni. */}
-              <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                <span className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'SON KONU' : 'LAST TOPIC'}
+              <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                <span className="text-[#737373]">
+                  {isTr ? 'Son konu' : 'Last topic'}
                 </span>
                 <span className="text-[#262626] font-medium">
                   {computeLastTopic(
@@ -437,9 +434,9 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                     locale,
                   )}
                 </span>
-                <span className="text-[#A3A3A3]">·</span>
-                <span className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'KANAL' : 'CHANNEL'}
+                <span className="text-[#A3A3A3]" aria-hidden="true">·</span>
+                <span className="text-[#737373]">
+                  {isTr ? 'Kanal' : 'Channel'}
                 </span>
                 <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
                   {computeLastChannel(data.stats.lastPlatform ?? null, locale)}
@@ -450,7 +447,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
               <div className="flex items-center justify-between text-[11px] text-[#737373]">
                 <span className="inline-flex items-center gap-1.5">
                   <TrendingUp size={11} strokeWidth={2} />
-                  {isTr ? 'Üye:' : 'Since:'}{' '}
+                  {isTr ? 'İlk ziyaret:' : 'First visit:'}{' '}
                   <strong className="text-[#0A0A0A]">
                     {data.stats.firstSeenAt
                       ? formatDate(data.stats.firstSeenAt, locale)
@@ -466,13 +463,13 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
 
               {/* Feedback timeline */}
               <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'YORUM GEÇMİŞİ' : 'REVIEW HISTORY'}
-                  </span>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <h3 className="text-[13px] font-semibold text-[#0A0A0A]">
+                    {isTr ? 'Yorum geçmişi' : 'Review history'}
+                  </h3>
                   <Link
                     href={`/${locale}/dashboard/feedbacks?focus=${data.feedbacks[0]?.id ?? ''}`}
-                    className="inline-flex items-center gap-1 text-[11px] text-[#525252] hover:text-[#0A0A0A] transition-colors"
+                    className="inline-flex min-h-[44px] items-center gap-1 rounded-md text-[12px] font-medium text-[#525252] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:min-h-0"
                     onClick={closeDrawer}
                   >
                     {isTr ? 'Yorumlarda aç' : 'Open in inbox'}
@@ -544,24 +541,24 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
           )}
         </div>
 
-        {/* Footer — primary action */}
-        {data && data.feedbacks.length > 0 && (
-          <div className="border-t border-[#EDEDED] bg-[#FAFAFA] p-4 flex gap-2">
+        {/* Footer — contact actions (email primary, call secondary). */}
+        {data && !loading && (data.customer.email || data.customer.phone) && (
+          <div className="flex gap-2 border-t border-[#EDEDED] bg-[#FAFAFA] p-4 pb-[calc(16px+env(safe-area-inset-bottom,0px))]">
             {data.customer.email && (
               <a
                 href={`mailto:${data.customer.email}`}
-                className="bz-btn-primary inline-flex flex-1 items-center justify-center gap-1.5 rounded-full text-[12px]"
+                className="bz-btn-primary inline-flex flex-1 items-center justify-center gap-1.5 text-[13px]"
               >
-                <Mail size={13} strokeWidth={2} />
+                <Mail size={14} strokeWidth={2} aria-hidden="true" />
                 {isTr ? 'E-posta gönder' : 'Send email'}
               </a>
             )}
             {data.customer.phone && (
               <a
                 href={`tel:${data.customer.phone}`}
-                className="bz-btn-ghost inline-flex flex-1 items-center justify-center gap-1.5 rounded-full text-[12px]"
+                className={`${data.customer.email ? 'bz-btn-ghost' : 'bz-btn-primary'} inline-flex flex-1 items-center justify-center gap-1.5 text-[13px]`}
               >
-                <Phone size={13} strokeWidth={2} />
+                <Phone size={14} strokeWidth={2} aria-hidden="true" />
                 {isTr ? 'Ara' : 'Call'}
               </a>
             )}

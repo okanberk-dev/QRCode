@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { AlertBanner, Eyebrow, Field, PulseSelect } from "@/components/ui";
+import { AlertBanner, Field, PulseSelect } from "@/components/ui";
+import { SkBox } from "@/components/ui/skeletons/PageSkeleton";
 import type { Locale } from "@/lib/translations";
 
 interface BusinessProfileSettingsProps {
@@ -134,10 +135,24 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
   };
 
   if (loading) {
+    // Shape-matching skeleton: profile form (2-col fields) + language card.
     return (
-      <div className="bz-card flex items-center justify-center gap-2 p-10 text-[13px] text-[#737373]">
-        <Loader2 size={14} className="animate-spin" />
-        {isTr ? "Yükleniyor…" : "Loading…"}
+      <div className="space-y-4" aria-busy="true">
+        <div className="bz-card p-5 sm:p-6 space-y-4">
+          <SkBox className="h-5 w-36" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <SkBox className="h-3 w-20" />
+                <SkBox className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bz-card p-5 sm:p-6 space-y-3">
+          <SkBox className="h-5 w-28" />
+          <SkBox className="h-10 w-full md:w-[260px]" />
+        </div>
       </div>
     );
   }
@@ -157,8 +172,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
 
       <form onSubmit={handleSubmit} className="bz-card p-5 sm:p-6 space-y-4">
         <div>
-          <Eyebrow>{isTr ? "KİMLİK" : "IDENTITY"}</Eyebrow>
-          <h3 className="bz-h-tight mt-1 text-[16px] text-[#0A0A0A]">
+          <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">
             {isTr ? "Profil bilgilerin" : "Your profile"}
           </h3>
           <p className="mt-1 text-[12px] leading-[1.55] text-[#737373]">
@@ -288,8 +302,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
 
       <div className="bz-card p-5 sm:p-6 space-y-4">
         <div>
-          <Eyebrow>{isTr ? "TERCİH" : "PREFERENCE"}</Eyebrow>
-          <h3 className="bz-h-tight mt-1 text-[16px] text-[#0A0A0A]">
+          <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">
             {isTr ? "Panel dili" : "Panel language"}
           </h3>
           <p className="mt-1 text-[12px] leading-[1.55] text-[#737373]">

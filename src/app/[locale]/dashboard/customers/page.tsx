@@ -2,8 +2,6 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
-  Mail,
-  Phone,
   Users,
   Crown,
   Wallet,
@@ -11,7 +9,6 @@ import {
   AlertTriangle,
   Inbox,
   Download,
-  Search,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -36,6 +33,7 @@ import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import { SentimentSparkbar } from '@/components/customers/SentimentSparkbar';
 import { CustomerDetailDrawer } from './_components/CustomerDetailDrawer';
 import CustomersBulkBar from './_components/CustomersBulkBar';
+import { CustomersToolbar } from './_components/CustomersToolbar';
 
 // Phase 8 — Owner Customers CRM (CLAUDE.md §23.7 Phase 12.x).
 // Phase 8c (CLAUDE.md §38.16): segment + LTV + sentiment columns + segment
@@ -157,7 +155,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     return (
       <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
         <PageHeader
-          eyebrow={isTr ? 'CRM' : 'CRM'}
+          titleScale="compact"
           title={isTr ? 'Müşteriler' : 'Customers'}
           description={
             isTr
@@ -414,26 +412,18 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   // must not light up "Temizle" or the "no match for these filters" copy.
   const hasFilter = Boolean(search || segmentFilter || rangeKey !== '30d' || showArchived);
 
-  // URL builder for filter forms / pagination / drawer detail links.
-  function buildHref(
-    over: Partial<Record<'range' | 'search' | 'restaurantId' | 'page' | 'detail' | 'segment' | 'showArchived', string>>,
-  ) {
+  // URL builder for pagination + drawer detail links (filters are written by
+  // the client toolbar). Keeps every current filter and the business scope.
+  function buildHref(over: { page?: string; detail?: string }) {
     const q = new URLSearchParams();
-    const r = over.range ?? rangeKey;
-    if (r !== '30d') q.set('range', r);
-    const s = over.search ?? search ?? '';
-    if (s) q.set('search', s);
-    const rid = over.restaurantId ?? restaurantIdParam ?? '';
-    if (rid) q.set('restaurantId', rid);
-    // segment: '' explicitly clears; undefined keeps current.
-    const seg = over.segment !== undefined ? over.segment : (segmentFilter ?? '');
-    if (seg) q.set('segment', seg);
+    if (rangeKey !== '30d') q.set('range', rangeKey);
+    if (search) q.set('search', search);
+    if (restaurantIdParam) q.set('restaurantId', restaurantIdParam);
+    if (segmentFilter) q.set('segment', segmentFilter);
     const p = over.page ?? String(page);
     if (p && p !== '1') q.set('page', p);
     if (over.detail) q.set('detail', over.detail);
-    // §38.48 — showArchived toggle URL state.
-    const arch = over.showArchived !== undefined ? over.showArchived : (showArchived ? '1' : '');
-    if (arch) q.set('showArchived', arch);
+    if (showArchived) q.set('showArchived', '1');
     const qs = q.toString();
     return `/${locale}/dashboard/customers${qs ? `?${qs}` : ''}`;
   }
@@ -446,28 +436,32 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     });
   }
 
-  // Segment pills config — table-of-truth, render desktop + mobile.
-  // §38.47 — 6. chip "Kayıp" (churned) eklendi (tasarım birebir).
-  const SEGMENT_PILLS: Array<{
-    key: 'all' | CustomerSegment;
-    labelTr: string;
-    labelEn: string;
-  }> = [
-    { key: 'all', labelTr: 'Tümü', labelEn: 'All' },
-    { key: 'vip', labelTr: 'VIP', labelEn: 'VIP' },
-    { key: 'loyal', labelTr: 'Düzenli', labelEn: 'Loyal' },
-    { key: 'new', labelTr: 'Yeni', labelEn: 'New' },
-    { key: 'risk', labelTr: 'Risk', labelEn: 'Risk' },
-    { key: 'churned', labelTr: 'Kayıp', labelEn: 'Churned' },
-  ];
+  // CSV export keeps the same filters as the list on screen.
+  const exportHref = (() => {
+    const q = new URLSearchParams();
+    if (rangeKey !== '30d') q.set('range', rangeKey);
+    if (search) q.set('search', search);
+    if (restaurantIdParam) q.set('restaurantId', restaurantIdParam);
+    if (segmentFilter) q.set('segment', segmentFilter);
+    const qs = q.toString();
+    return `/api/customers/export${qs ? `?${qs}` : ''}`;
+  })();
+
+  // "Clear filters" keeps the active business (the shell's scope).
+  const resetHref = restaurantIdParam
+    ? `/${locale}/dashboard/customers?restaurantId=${encodeURIComponent(restaurantIdParam)}`
+    : `/${locale}/dashboard/customers`;
+
+  // With one business active its name would repeat on every row; it is only
+  // shown when the list spans several businesses.
+  const showBusinessName = !restaurantIdParam;
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader
-        /* §38.66 — Customers 8-col tablo + filter toolbar + KPI grid yoğun
-           layout; hero h1 ezici. titleScale="compact" mütevazı kalır. */
+        /* §38.66 — dense list page: compact title. §49 — no eyebrow (the
+           topbar breadcrumb already says where we are). */
         titleScale="compact"
-        eyebrow="CRM"
         title={isTr ? 'Müşteriler' : 'Customers'}
         description={
           isTr
@@ -475,26 +469,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             : 'Reach customers who left a review by email or phone.'
         }
         actions={
-          /* §38.64 — Manuel "Müşteri ekle" + CSV "İçe aktar" kullanıcı kararıyla
-             iptal (CLAUDE.md §38.16 + §38.48 + §38.64 disipline). Tasarımdaki
-             3-button trio'dan sadece "Dışa aktar" görünür kalır (export-only).
-             Yeniden eklemek için: kullanıcı açık talep + Customer ana modeli
-             yaklaşımı (CLAUDE.md §34.4 silinmiş feature paterni). */
+          /* §38.64 — export is the only header action (manual add / CSV
+             import were dropped by product decision). */
           rows.length > 0 ? (
-            <a
-              href={(() => {
-                const q = new URLSearchParams();
-                if (rangeKey !== '30d') q.set('range', rangeKey);
-                if (search) q.set('search', search);
-                if (restaurantIdParam) q.set('restaurantId', restaurantIdParam);
-                if (segmentFilter) q.set('segment', segmentFilter);
-                const qs = q.toString();
-                return `/api/customers/export${qs ? `?${qs}` : ''}`;
-              })()}
-              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
-              download
-            >
-              <Download size={13} strokeWidth={2} />
+            <a href={exportHref} className="bz-btn-ghost gap-1.5 text-[13px]" download>
+              <Download size={14} strokeWidth={2} aria-hidden="true" />
               {isTr ? 'CSV indir' : 'Export CSV'}
             </a>
           ) : undefined
@@ -510,41 +489,51 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       {truncated && !errored && (
         <AlertBanner kind="warn">
           {isTr
-            ? `Çok fazla müşteri var; yalnızca ilk ${MAX_AGGREGATE_ROWS.toLocaleString('tr-TR')} kayıt gösteriliyor. Daha dar bir tarih aralığı veya işletme filtresi seçebilirsin.`
-            : `Too many customers; showing the first ${MAX_AGGREGATE_ROWS.toLocaleString('en-US')} records. Narrow the date range or business filter to refine.`}
+            ? `Çok fazla müşteri var; yalnızca ilk ${MAX_AGGREGATE_ROWS.toLocaleString('tr-TR')} kayıt gösteriliyor. Daha kısa bir dönem seçebilirsin.`
+            : `Too many customers; showing the first ${MAX_AGGREGATE_ROWS.toLocaleString('en-US')} records. Pick a shorter period to narrow it down.`}
         </AlertBanner>
       )}
 
-      {/* §38.36 + §38.47 — 5-stat KPI grid (TOPLAM / VIP / ORT. LTV / GERİ
-          DÖNÜŞ / RİSK ALTINDA). §38.74 — Tablet portrait cascade: mobile
-          2-col → sm:3 → md:4 → lg:5 (CLAUDE.md §25.5 md: ara kademe).
-          768-1023px iPad'de 4-col real-estate kullanılır. */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+      {/* §38.36 + §38.47 — 5 KPI cards (Toplam / VIP / Ort. LTV / Geri dönüş /
+          Risk altında). Mobile: total full width, then 2 × 2. md: 2 + 3.
+          lg: one row of 5. Same grid in loading.tsx (§40.10). */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 lg:grid-cols-5">
         <StatCard
+          className="col-span-2 md:col-span-3 lg:col-span-1"
           label={isTr ? 'Toplam misafir' : 'Total guests'}
           value={totalCustomers.toLocaleString(intLocale)}
           icon={<Users size={14} />}
         />
         <StatCard
+          className="md:col-span-3 lg:col-span-1"
           label="VIP"
           value={vipCount.toLocaleString(intLocale)}
-          icon={<Crown size={14} className="text-[#C6F24E]" />}
-          accent="#C6F24E"
+          icon={<Crown size={14} className="text-[#A8D62E]" />}
           delta={
             totalCustomers > 0
-              ? `%${vipPct.toFixed(1).replace('.', ',')} ${isTr ? 'segment' : 'segment'}`
+              ? isTr
+                ? `%${vipPct.toFixed(1).replace('.', ',')} pay`
+                : `${vipPct.toFixed(1)}% share`
               : null
           }
           deltaKind="neutral"
         />
         <StatCard
+          className="md:col-span-2 lg:col-span-1"
           label={isTr ? 'Ort. LTV' : 'Avg LTV'}
           value={avgLtv > 0 ? avgLtv.toLocaleString(intLocale) : '—'}
           icon={<Wallet size={14} />}
         />
         <StatCard
+          className="md:col-span-2 lg:col-span-1"
           label={isTr ? 'Geri dönüş oranı' : 'Return rate'}
-          value={enriched.length > 0 ? `%${Math.round(returnRate)}` : '—'}
+          value={
+            enriched.length > 0
+              ? isTr
+                ? `%${Math.round(returnRate)}`
+                : `${Math.round(returnRate)}%`
+              : '—'
+          }
           icon={<Repeat2 size={14} />}
           delta={
             enriched.length > 0
@@ -554,6 +543,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           deltaKind="neutral"
         />
         <StatCard
+          className="md:col-span-2 lg:col-span-1"
           label={isTr ? 'Risk altında' : 'At risk'}
           value={atRiskCount.toLocaleString(intLocale)}
           icon={<AlertTriangle size={14} className="text-[#DC2626]" />}
@@ -561,188 +551,47 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             atRiskCount > 0
               ? isTr
                 ? `${riskCount} risk · ${churnedCount} kayıp`
-                : `${riskCount} risk · ${churnedCount} churned`
+                : `${riskCount} at risk · ${churnedCount} churned`
               : null
           }
           deltaKind="neutral"
         />
       </div>
 
-      {/* §38.36 — TEK KONSOLİDE TOOLBAR (eski 2 ayrı bz-card filter section'ı
-          birleştirildi: segment pills card + filter form card duplicate → tek
-          toolbar). Search (URL form) + segment pills (URL Link) + range chips
-          + restaurant select. "Daha fazla filtre" + "Görünüm" tasarım
-          button'ları SKIP (CLAUDE.md §7 — backend yok). */}
-      <form
-        action={`/${locale}/dashboard/customers`}
-        method="get"
-        className="bz-card p-3 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2.5"
-      >
-        {/* Hidden inputs — URL state preservation across search submit */}
-        <input type="hidden" name="range" value={rangeKey} />
-        {segmentFilter && <input type="hidden" name="segment" value={segmentFilter} />}
-        {/* The business scope comes from the shell's topbar switcher, which
-            keeps `?restaurantId` in the URL. It is carried as a hidden input so
-            "Uygula" never submits a stale or empty business. (A separate
-            business <select> used to live here; being uncontrolled it kept
-            showing "Tüm işletmeler" after the switcher changed scope, and its
-            "all" option was immediately overwritten by the shell anyway.) */}
-        {restaurantIdParam && (
-          <input type="hidden" name="restaurantId" value={restaurantIdParam} />
-        )}
-
-        {/* Search input — sol icon, max 320px lg, full mobile */}
-        <div className="relative w-full lg:w-auto lg:min-w-[240px] lg:max-w-[320px] lg:flex-1">
-          <Search
-            size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
-            strokeWidth={2}
-          />
-          <input
-            type="search"
-            name="search"
-            defaultValue={search ?? ''}
-            placeholder={isTr ? 'Ad, e-posta veya telefon ara…' : 'Search name, email or phone…'}
-            className="bz-input w-full pl-9"
-            maxLength={100}
-            aria-label={isTr ? 'Müşteri ara' : 'Search customers'}
-          />
-        </div>
-
-        {/* Divider lg+ */}
-        <div className="hidden lg:block h-6 w-px bg-[#EDEDED]" aria-hidden />
-
-        {/* Segment pills inline — count INLINE label, horizontal scroll mobile */}
-        <div
-          className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 lg:mx-0 lg:px-0 lg:flex-wrap"
-          role="tablist"
-          aria-label={isTr ? 'Segment filtresi' : 'Segment filter'}
-        >
-          {SEGMENT_PILLS.map((pill) => {
-            const active = pill.key === 'all' ? segmentFilter === null : segmentFilter === pill.key;
-            const count = segmentCounts[pill.key];
-            return (
-              <Link
-                key={pill.key}
-                href={buildHref({ segment: pill.key === 'all' ? '' : pill.key, page: '1' })}
-                role="tab"
-                aria-selected={active}
-                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-                  active
-                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
-                }`}
-              >
-                {isTr ? pill.labelTr : pill.labelEn}
-                <span
-                  className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
-                    active ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
-                  }`}
-                >
-                  {count.toLocaleString(intLocale)}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* spacer lg+ */}
-        <div className="hidden lg:block flex-1" aria-hidden />
-
-        {/* Range chips — horizontal scroll mobile.
-            §38.106 — title attribute hint: default '30d' için "Varsayılan
-            filtre" tooltip'i, diğerleri için range açıklaması. Visceral
-            feedback: kullanıcı hangi pencerenin aktif olduğunu hover'da
-            görür (mobile'da uzun-tap iOS Safari + Android). */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 lg:mx-0 lg:px-0 lg:flex-wrap">
-          {(['7d', '30d', '90d', 'all'] as RangeKey[]).map((k) => {
-            const labelMap = {
-              '7d': { tr: 'Son 7 gün', en: 'Last 7d' },
-              '30d': { tr: '30 gün', en: '30d' },
-              '90d': { tr: '90 gün', en: '90d' },
-              all: { tr: 'Tümü', en: 'All' },
-            } as const;
-            const label = isTr ? labelMap[k].tr : labelMap[k].en;
-            const titleMap = {
-              '7d': { tr: 'Son 7 günün müşterileri', en: 'Customers from last 7 days' },
-              '30d': { tr: 'Son 30 gün — varsayılan filtre', en: 'Last 30 days — default filter' },
-              '90d': { tr: 'Son 90 günün müşterileri', en: 'Customers from last 90 days' },
-              all: { tr: 'Tüm müşteri geçmişi', en: 'Entire customer history' },
-            } as const;
-            return (
-              <Link
-                key={k}
-                href={buildHref({ range: k, page: '1' })}
-                title={isTr ? titleMap[k].tr : titleMap[k].en}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring ${
-                  rangeKey === k
-                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
-                }`}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* §38.48 — Arşiv toggle (Wave 2). Default off; on iken muted styling
-            tablo satırlarında + "Geri al" buton. */}
-        <Link
-          href={buildHref({ showArchived: showArchived ? '' : '1', page: '1' })}
-          className={`self-start lg:self-auto shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-            showArchived
-              ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-              : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
-          }`}
-          title={isTr ? 'Arşivlenenler dahil' : 'Include archived'}
-        >
-          {isTr ? 'Arşiv' : 'Archive'}
-          {archivedKeys.size > 0 && (
-            <span
-              className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
-                showArchived ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
-              }`}
-            >
-              {archivedKeys.size.toLocaleString(intLocale)}
-            </span>
-          )}
-        </Link>
-
-        {/* Apply / Reset — search submit + filter clear */}
-        <div className="flex gap-2 lg:gap-1.5">
-          <button type="submit" className="bz-btn-primary">
-            {isTr ? 'Uygula' : 'Apply'}
-          </button>
-          {hasFilter && (
-            <Link
-              href={
-                restaurantIdParam
-                  ? `/${locale}/dashboard/customers?restaurantId=${encodeURIComponent(restaurantIdParam)}`
-                  : `/${locale}/dashboard/customers`
-              }
-              className="bz-btn-ghost"
-            >
-              {isTr ? 'Temizle' : 'Reset'}
-            </Link>
-          )}
-        </div>
-      </form>
+      {/* §49 — one toolbar: segment · search · period · archive · clear.
+          Every control applies immediately (no "Uygula"). The business scope
+          comes from the shell's switcher (`?restaurantId`), never from here. */}
+      <CustomersToolbar
+        locale={locale}
+        archivedCount={archivedKeys.size}
+        segmentCounts={segmentCounts}
+      />
 
       {/* Table — desktop, card list on mobile (CLAUDE.md §23.6 paterni) */}
       {rows.length === 0 && !errored ? (
         <div className="bz-card p-10">
           <EmptyState
             icon={<Inbox size={22} strokeWidth={1.5} />}
-            title={isTr ? 'Henüz müşteri yok' : 'No customers yet'}
+            title={
+              hasFilter
+                ? isTr ? 'Bu filtreye uyan müşteri yok' : 'No customers match these filters'
+                : isTr ? 'Henüz müşteri yok' : 'No customers yet'
+            }
             body={
-              isTr
-                ? hasFilter
-                  ? 'Filtre koşullarına uyan müşteri bulunamadı. Filtreleri temizleyebilirsin.'
-                  : 'QR ile yorum gelince burada görünmeye başlayacaklar.'
-                : hasFilter
-                  ? 'No customers match these filters.'
-                  : 'Customers will appear here as QR feedback arrives.'
+              hasFilter
+                ? isTr
+                  ? 'Dönemi genişletmeyi ya da filtreleri temizlemeyi dene.'
+                  : 'Try a longer period or clear the filters.'
+                : isTr
+                  ? 'İletişim bilgisi bırakarak yorum yapan müşteriler burada görünür.'
+                  : 'Customers who leave a review with their contact details appear here.'
+            }
+            action={
+              hasFilter ? (
+                <Link href={resetHref} className="bz-btn-ghost">
+                  {isTr ? 'Filtreleri temizle' : 'Clear filters'}
+                </Link>
+              ) : undefined
             }
           />
         </div>
@@ -761,7 +610,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   {/* §38.48 Wave 2 — bulk select-all checkbox; client island hydrates.
                       Sticky left-0: isim kolonu left-10'da sabitken checkbox kolonu
                       kayıp onun altından geçiyordu. */}
-                  <th className="w-10 text-left sticky left-0 z-10 bg-[#FAFAFA]">
+                  <th className="w-10 text-left sticky left-0 z-10 bg-white">
                     <input
                       type="checkbox"
                       data-select-all
@@ -769,16 +618,16 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
                     />
                   </th>
-                  <th className="text-left sticky left-10 z-10 bg-[#FAFAFA]">
+                  <th className="text-left sticky left-10 z-10 bg-white">
                     {isTr ? 'Misafir' : 'Guest'}
                   </th>
-                  <th className="text-left">{isTr ? 'Segment' : 'Segment'}</th>
+                  <th className="text-left">Segment</th>
                   <th className="text-right">{isTr ? 'Ziyaret' : 'Visits'}</th>
-                  <th className="text-right">{isTr ? 'LTV' : 'LTV'}</th>
+                  <th className="text-right">LTV</th>
                   <th className="text-left">{isTr ? 'Son konu' : 'Last topic'}</th>
                   <th className="text-left">{isTr ? 'Kanal' : 'Channel'}</th>
                   <th className="text-right">{isTr ? 'Son ziyaret' : 'Last seen'}</th>
-                  <th className="text-left">{isTr ? 'Sentiment' : 'Sentiment'}</th>
+                  <th className="text-left">{isTr ? 'Memnuniyet' : 'Sentiment'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -834,11 +683,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                                 {r.email}
                               </div>
                             )}
-                            {(r.restaurant_name || r.branch) && (
+                            {((showBusinessName && r.restaurant_name) || r.branch) && (
                               <div className="text-[11px] text-[#737373] truncate">
-                                {r.restaurant_name}
-                                {r.branch && r.restaurant_name && ' · '}
-                                {r.branch}
+                                {[showBusinessName ? r.restaurant_name : null, r.branch]
+                                  .filter(Boolean)
+                                  .join(' · ')}
                               </div>
                             )}
                           </div>
@@ -882,8 +731,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             </table>
           </div>
 
-          {/* Mobile card list — Phase 8c: Segment chip + Sentiment dot eklendi
-              (audit önerisi: drawer-centric, LTV mobile card'da gösterilmez). */}
+          {/* Mobile card list (§23.6). One action per card: the whole card
+              opens the detail drawer, where email / call live. The checkbox
+              sits above the stretched link with a 44px hit area. */}
           <div className="grid gap-3 lg:hidden">
             {rows.map((r) => {
               const initials = (r.name || r.email || r.phone || '?')
@@ -891,38 +741,44 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                 .toUpperCase();
               const detailKey = `${r.restaurant_id}|${r.contact_key}`;
               const detailHref = buildHref({ detail: detailKey });
-              // §38.40 — Mobile card sentiment-based avatar bg (desktop'taki
-              // pattern mobile'a port): pos lime-soft / neg red-soft / neu n100.
               const avatarBg =
                 r.sentiment === 'neg' ? '#FEF2F2'
                 : r.sentiment === 'pos' ? '#EAF9B8'
                 : '#F5F5F5';
               const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#0A0A0A';
+              const displayName = r.name || (isTr ? 'Anonim' : 'Anonymous');
+              const subline = [r.email || r.phone, showBusinessName ? r.restaurant_name : null, r.branch]
+                .filter(Boolean)
+                .join(' · ');
               return (
-                <div key={detailKey} className={`bz-card p-4 space-y-2.5 ${r.archived ? 'opacity-60' : ''}`}>
+                <div
+                  key={detailKey}
+                  className={`bz-card relative p-4 transition-colors hover:border-[#D4D4D4] ${r.archived ? 'opacity-60' : ''}`}
+                >
                   <div className="flex items-start gap-3">
-                    {/* §38.48 — bulk select checkbox (mobile card) */}
-                    <input
-                      type="checkbox"
-                      data-customer-key={detailKey}
-                      aria-label={isTr ? 'Bu satırı seç' : 'Select row'}
-                      className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer accent-[#0A0A0A]"
-                    />
+                    <label className="relative z-10 -my-2.5 -ml-2.5 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
+                      <input
+                        type="checkbox"
+                        data-customer-key={detailKey}
+                        aria-label={isTr ? `${displayName} seç` : `Select ${displayName}`}
+                        className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
+                      />
+                    </label>
                     <div
-                      className="bz-avatar h-9 w-9 text-[13px]"
+                      aria-hidden="true"
+                      className="bz-avatar h-9 w-9 shrink-0 text-[13px]"
                       style={{ backgroundColor: avatarBg, color: avatarFg }}
                     >
                       {initials}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline justify-between gap-2">
+                      <div className="flex items-start justify-between gap-2">
                         <Link
                           href={detailHref}
                           scroll={false}
-                          className="truncate text-[14px] font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                          aria-label={`${r.name || 'Anonim'} — ${isTr ? 'detayı aç' : 'open detail'}`}
+                          className="min-w-0 truncate text-[14px] font-semibold text-[#0A0A0A] after:absolute after:inset-0 after:rounded-[12px] after:content-[''] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-[#C6F24E]"
                         >
-                          {r.name || (isTr ? 'Anonim' : 'Anonymous')}
+                          {displayName}
                         </Link>
                         {r.last_rating != null && (
                           <Badge kind={r.last_rating >= 4 ? 'lime' : r.last_rating >= 3 ? 'warn' : 'danger'}>
@@ -930,50 +786,21 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                           </Badge>
                         )}
                       </div>
-                      <div className="text-[11px] text-[#737373] truncate">
-                        {r.restaurant_name}
-                        {r.branch && ` · ${r.branch}`}
+                      {subline && (
+                        <div className="mt-0.5 truncate text-[12px] text-[#737373]">{subline}</div>
+                      )}
+                      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <SegmentChip segment={r.segment} locale={locale} size="sm" />
+                        <SentimentBadge sentiment={r.sentiment} locale={locale} />
+                      </div>
+                      <div className="mt-2 text-[12px] text-[#737373]">
+                        {r.feedback_count} {isTr ? 'yorum' : r.feedback_count === 1 ? 'review' : 'reviews'}
+                        {' · '}
+                        {r.last_channel}
+                        {' · '}
+                        {fmtDate(r.last_at)}
                       </div>
                     </div>
-                  </div>
-                  {/* Phase 8c: Segment + Sentiment row */}
-                  <div className="flex items-center justify-between gap-2">
-                    <SegmentChip segment={r.segment} locale={locale} size="sm" />
-                    <SentimentBadge sentiment={r.sentiment} locale={locale} />
-                  </div>
-                  <div className="flex flex-col gap-1 text-[12px] min-w-0">
-                    {r.email && (
-                      <a
-                        href={`mailto:${r.email}`}
-                        className="flex items-center gap-1.5 text-[#0A0A0A] min-w-0"
-                      >
-                        <Mail size={11} strokeWidth={2} className="shrink-0" />
-                        <span className="truncate min-w-0 flex-1">{r.email}</span>
-                      </a>
-                    )}
-                    {r.phone && (
-                      <a
-                        href={`tel:${r.phone}`}
-                        className="flex items-center gap-1.5 text-[#525252] min-w-0"
-                      >
-                        <Phone size={11} strokeWidth={2} className="shrink-0" />
-                        <span className="truncate min-w-0 flex-1">{r.phone}</span>
-                      </a>
-                    )}
-                  </div>
-                  {/* §38.47 — Mobile card meta: kanal pill + son konu metni */}
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#737373]">
-                    <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
-                      {r.last_channel}
-                    </span>
-                    <span className="text-[#525252]">{r.last_topic}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-[#EDEDED] pt-2 text-[11px] text-[#737373]">
-                    <span>
-                      <strong className="text-[#0A0A0A]">{r.feedback_count}</strong>{' '}
-                      {isTr ? 'yorum' : 'reviews'}
-                    </span>
-                    <span>{fmtDate(r.last_at)}</span>
                   </div>
                 </div>
               );
@@ -1013,14 +840,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                     {page > 1 ? (
                       <Link
                         href={buildHref({ page: String(page - 1) })}
-                        className="bz-btn-icon"
+                        className="bz-btn-icon h-11 w-11 sm:h-8 sm:w-8"
                         aria-label={isTr ? 'Önceki sayfa' : 'Previous page'}
                       >
                         <ChevronLeft size={14} strokeWidth={2} />
                       </Link>
                     ) : (
                       <span
-                        className="bz-btn-icon opacity-40 cursor-not-allowed"
+                        className="bz-btn-icon h-11 w-11 sm:h-8 sm:w-8 opacity-40 cursor-not-allowed"
                         aria-disabled="true"
                       >
                         <ChevronLeft size={14} strokeWidth={2} />
@@ -1055,14 +882,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                     {page < totalPages ? (
                       <Link
                         href={buildHref({ page: String(page + 1) })}
-                        className="bz-btn-icon"
+                        className="bz-btn-icon h-11 w-11 sm:h-8 sm:w-8"
                         aria-label={isTr ? 'Sonraki sayfa' : 'Next page'}
                       >
                         <ChevronRight size={14} strokeWidth={2} />
                       </Link>
                     ) : (
                       <span
-                        className="bz-btn-icon opacity-40 cursor-not-allowed"
+                        className="bz-btn-icon h-11 w-11 sm:h-8 sm:w-8 opacity-40 cursor-not-allowed"
                         aria-disabled="true"
                       >
                         <ChevronRight size={14} strokeWidth={2} />
@@ -1075,15 +902,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </>
       )}
 
-      {/* Customer detail drawer — URL state ?detail=KEY ile mount/unmount.
-          Client island; useSearchParams ile detect, fetch, ESC + outside click
-          + body scroll lock. (CLAUDE.md §23.7 Phase 12 Phase 8d) */}
-      <CustomerDetailDrawer locale={locale} />
-
-      {/* §38.48 Wave 2 — Bulk action bar client island. Tablodaki checkbox'ları
-          hydrate eder + selection state + 2 modal trigger (Segmentle/
-          Arşivle). showArchived prop'u "Geri al" eylemi için. */}
-      <CustomersBulkBar locale={locale} showArchived={showArchived} />
+      {/* Overlays: detail drawer (`?detail=KEY`) + bulk action bar. Wrapped in
+          a `display: contents` box so the page's `space-y-5` margin never
+          lands on their fixed-position elements (a 20px bottom margin used
+          to shrink the drawer backdrop and leave an uncovered strip). */}
+      <div className="contents">
+        <CustomerDetailDrawer locale={locale} />
+        <CustomersBulkBar locale={locale} showArchived={showArchived} />
+      </div>
     </div>
   );
 }

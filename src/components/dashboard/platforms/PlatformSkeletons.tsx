@@ -1,4 +1,4 @@
-import { SkBox, SkPageHeader } from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
  * Structural skeletons for the platform-links pages (CLAUDE.md §40.10).
@@ -12,6 +12,16 @@ export function PlatformBackLinkSkeleton() {
   return (
     <div className="mb-3 flex h-11 items-center sm:h-8">
       <SkBox className="h-3 w-40" />
+    </div>
+  );
+}
+
+/** PageHeader without an eyebrow: title + one description line (mb-5). */
+function HeaderSkeleton({ titleWidth }: { titleWidth: string }) {
+  return (
+    <div className="mb-5 space-y-3">
+      <SkBox className={`h-8 ${titleWidth} max-w-full`} />
+      <SkBox className="h-4 w-80 max-w-full" />
     </div>
   );
 }
@@ -48,13 +58,11 @@ export function PlatformsOverviewBodySkeleton() {
   );
 }
 
+/** Overview: header (no back link — the business card links to settings). */
 export function PlatformsOverviewSkeleton() {
   return (
     <>
-      <div>
-        <PlatformBackLinkSkeleton />
-        <SkPageHeader titleWidth="w-60" />
-      </div>
+      <HeaderSkeleton titleWidth="w-60" />
       <PlatformsOverviewBodySkeleton />
     </>
   );
@@ -91,7 +99,7 @@ export function PlatformProviderSkeleton() {
     <>
       <div>
         <PlatformBackLinkSkeleton />
-        <SkPageHeader titleWidth="w-48" />
+        <HeaderSkeleton titleWidth="w-48" />
       </div>
       <PlatformProviderBodySkeleton />
     </>

@@ -195,15 +195,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
       const controlsDisabled = Boolean(s?.saving) || !pulseEnabled || loadError;
         return (
           <div key={r.id} className="bz-card p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="pulse-eyebrow text-[#737373]">{isTr ? "İŞLETME" : "LOCATION"}</p>
-                <h3 className="bz-h-tight text-[16px] mt-1 truncate">{r.name}</h3>
-              </div>
-              {!loaded && (
-                <Loader2 size={14} className="animate-spin text-[#737373]" />
-              )}
-            </div>
+            <h3 className="bz-h-tight text-[16px] truncate">{r.name}</h3>
 
             {/* APSwitch + tone radios — fetch tamamlanana kadar APSwitch yanlış
                 "PASIF" göstermesin diye skeleton placeholder. CLAUDE.md §23.3
@@ -269,11 +261,6 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       <span className="font-semibold">
                         {isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"}
                       </span>
-                      {Boolean(s?.enableAiDraft) && pulseEnabled && !loadError && (
-                        <span className="text-[10px] tracking-[0.16em] uppercase bg-[#EAF9B8] text-[#0A0A0A] rounded px-1.5 py-0.5 font-mono">
-                          {isTr ? "AKTİF" : "ACTIVE"}
-                        </span>
-                      )}
                     </div>
                     <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
@@ -297,11 +284,6 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       <span className="font-semibold">
                         {isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"}
                       </span>
-                      {Boolean(s?.googleAiEnabled) && pulseEnabled && !loadError && (
-                        <span className="text-[10px] tracking-[0.16em] uppercase bg-[#EAF9B8] text-[#0A0A0A] rounded px-1.5 py-0.5 font-mono">
-                          {isTr ? "AKTİF" : "ACTIVE"}
-                        </span>
-                      )}
                     </div>
                     <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
@@ -312,8 +294,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                 </div>
 
                 <div className="mt-5">
-                  <p className="pulse-eyebrow text-[#737373] mb-2">
-                    {isTr ? "VARSAYILAN TON" : "DEFAULT TONE"}
+                  <p className="mb-2 text-[13px] font-medium text-[#0A0A0A]">
+                    {isTr ? "Varsayılan ton" : "Default tone"}
                   </p>
                   <div role="radiogroup" aria-label={isTr ? "Varsayılan ton" : "Default tone"} className="grid gap-2.5 sm:grid-cols-3">
                     {TONE_OPTIONS.map((opt) => (

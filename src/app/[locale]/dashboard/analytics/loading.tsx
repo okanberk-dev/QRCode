@@ -2,9 +2,9 @@ import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
  * Owner analytics — header (title + scope/period subtitle + export) + one
- * filter toolbar + 5 KPI cards + main trend chart + lower cards. Mirrors
- * page.tsx (space-y-3.5, no eyebrow, toolbar without a card, 5-col KPI
- * grid). (CLAUDE.md §40.10)
+ * filter toolbar + 5 KPI cards + main trend chart + 3-up breakdown row +
+ * day/hour row + heatmap. Mirrors page.tsx (space-y-3.5, no eyebrow,
+ * toolbar without a card, same grids and gaps). (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
@@ -35,27 +35,40 @@ export default function Loading() {
         ))}
       </div>
 
-      <div className="bz-card p-5 space-y-3">
-        <SkBox className="h-5 w-44" />
+      {/* Main trend chart (MainTrendChart) */}
+      <div className="bz-card p-5 sm:p-6 space-y-3">
+        <SkBox className="h-3 w-28" />
+        <SkBox className="h-5 w-52" />
         <SkBox className="h-72 w-full" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bz-card p-5 space-y-3">
-          <SkBox className="h-5 w-40" />
-          <SkBox className="h-56 w-full" />
-        </div>
-        <div className="bz-card p-5 space-y-3">
-          <SkBox className="h-5 w-36" />
-          <SkBox className="h-56 w-full" />
-        </div>
+      {/* Channel · sentiment · top mentions — same 3-up grid as page.tsx */}
+      <div className="grid gap-3.5 lg:grid-cols-[1.4fr_1fr_1fr]">
+        {['w-32', 'w-36', 'w-40'].map((w) => (
+          <div key={w} className="bz-card p-5 sm:p-6 space-y-3">
+            <SkBox className="h-3 w-28" />
+            <SkBox className={`h-5 ${w}`} />
+            <SkBox className="h-28 w-full" />
+          </div>
+        ))}
       </div>
 
-      <div className="bz-card p-5 space-y-3">
-        <SkBox className="h-5 w-48" />
-        <SkBox className="h-4 w-full" />
-        <SkBox className="h-4 w-5/6" />
-        <SkBox className="h-4 w-3/4" />
+      {/* Day + hour distribution */}
+      <div className="grid gap-3.5 lg:grid-cols-2">
+        {['w-56', 'w-48'].map((w) => (
+          <div key={w} className="bz-card p-5 sm:p-6 space-y-3">
+            <SkBox className="h-3 w-28" />
+            <SkBox className={`h-5 ${w}`} />
+            <SkBox className="h-40 w-full" />
+          </div>
+        ))}
+      </div>
+
+      {/* Day × hour heatmap */}
+      <div className="bz-card p-5 sm:p-6 space-y-3">
+        <SkBox className="h-3 w-28" />
+        <SkBox className="h-5 w-32" />
+        <SkBox className="h-48 w-full" />
       </div>
     </SkPageShell>
   );

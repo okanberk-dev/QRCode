@@ -10,6 +10,8 @@ interface SettingsSectionProps {
   id: string;
   /** Whether this section is the active tab (≥md) / initially open (<md). */
   active: boolean;
+  /** Optional small label above the title. The settings hubs no longer pass
+   *  one (numbered "01 — PROFİL" labels only repeated the tab name). */
   eyebrow?: string;
   title: string;
   description?: ReactNode;
@@ -88,7 +90,9 @@ export function SettingsSection({
           >
             <span className="min-w-0">
               {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-              <span className="mt-1 block truncate bz-h-tight text-[18px]">{title}</span>
+              <span className={`block truncate bz-h-tight text-[16px] ${eyebrow ? "mt-1" : ""}`}>
+                {title}
+              </span>
             </span>
             <ChevronDown
               size={16}
@@ -104,11 +108,14 @@ export function SettingsSection({
       <header className="mb-5 hidden items-start justify-between gap-4 sm:mb-6 md:flex">
         <div className="min-w-0">
           {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-          <h2 id={titleId} className="bz-h-tight-2 mt-1 text-[24px] sm:text-[28px]">
+          <h2
+            id={titleId}
+            className={`bz-h-tight-2 text-[20px] sm:text-[22px] ${eyebrow ? "mt-1" : ""}`}
+          >
             {title}
           </h2>
           {description && (
-            <p className="mt-2 max-w-[640px] text-[13px] leading-[1.6] text-[#525252] sm:text-[14px]">
+            <p className="mt-1.5 max-w-[640px] text-[13px] leading-[1.6] text-[#525252]">
               {description}
             </p>
           )}

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, BarChart3, Eye, Info, Loader2, Lightbulb, MousePointerClick,
-  Minus, Pencil, RefreshCw, Sparkles, TrendingDown, TrendingUp, X,
+  ArrowLeft, Eye, Info, Loader2, Lightbulb, MousePointerClick,
+  Minus, Pencil, RefreshCw, RotateCcw, Sparkles, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend,
@@ -14,7 +14,7 @@ import type { Locale } from '@/lib/translations';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { mapMenuApiError } from '@/lib/menu-api-error';
 import { MeasuredChart } from '@/components/charts/MeasuredChart';
-import { AlertBanner, PulseSelect } from '@/components/ui';
+import { AlertBanner, PageHeader, PulseSelect } from '@/components/ui';
 import { AnalyticsSkeleton } from './_components/AnalyticsSkeleton';
 
 type Range = '7d' | '30d' | '90d' | 'all';
@@ -75,6 +75,9 @@ interface AnalyticsResponse {
   menu?: { enabled: boolean; published: boolean };
 }
 
+/** Legend text in body grey: Recharts paints it in the series colour, and lime on white is unreadable. */
+const legendLabel = (value: string) => <span style={{ color: '#525252' }}>{value}</span>;
+
 /** A report needs at least this many days with traffic before a time chart means anything. */
 const MIN_TREND_DAYS = 3;
 
@@ -89,10 +92,19 @@ function buildCopy(isTr: boolean) {
     range30: isTr ? 'Son 30 gün' : 'Last 30 days',
     range90: isTr ? 'Son 90 gün' : 'Last 90 days',
     rangeAll: isTr ? 'Tüm zamanlar' : 'All time',
+    range7Short: isTr ? '7G' : '7D',
+    range30Short: isTr ? '30G' : '30D',
+    range90Short: isTr ? '90G' : '90D',
+    rangeAllShort: isTr ? 'Tümü' : 'All',
+    period: isTr ? 'Dönem' : 'Period',
+    filters: isTr ? 'Rapor filtreleri' : 'Report filters',
+    categoryLabel: isTr ? 'Kategori' : 'Category',
+    sourceLabel: isTr ? 'Kaynak' : 'Source',
     allCategories: isTr ? 'Tüm kategoriler' : 'All categories',
     allSources: isTr ? 'Tüm kaynaklar' : 'All sources',
     refresh: isTr ? 'Yenile' : 'Refresh',
     resetFilters: isTr ? 'Filtreleri temizle' : 'Reset filters',
+    reset: isTr ? 'Temizle' : 'Reset',
     retry: isTr ? 'Tekrar dene' : 'Try again',
     allTimeTrendNote: isTr
       ? 'Zaman içi grafik “Son 7/30/90 gün” seçildiğinde görünür.'
@@ -268,95 +280,116 @@ export default function MenuAnalyticsPage() {
     ? data.trend.filter((d) => d.menuViews > 0 || d.productClicks > 0).length
     : 0;
 
+  const live = !!data?.menu?.enabled && !!data?.menu?.published;
+  // A draft menu with no visits and default filters has nothing to filter —
+  // the empty state below says what to do. Any other case keeps the toolbar
+  // (a live menu may still have older visits under "Tümü").
+  const showToolbar = !data || hasAnyData || hasActiveFilters || range !== '30d' || live;
+  const categoryOptions = data?.categories ?? [];
+  // One category = the same numbers as "all": only offer the filter from two up
+  // (or while it is in use, so it can be cleared).
+  const showCategoryFilter = categoryOptions.length > 1 || !!categoryId;
+  const ranges = [
+    { key: '7d', short: copy.range7Short, long: copy.range7 },
+    { key: '30d', short: copy.range30Short, long: copy.range30 },
+    { key: '90d', short: copy.range90Short, long: copy.range90 },
+    { key: 'all', short: copy.rangeAllShort, long: copy.rangeAll },
+  ] as const;
+
   return (
     <div className="mx-auto max-w-[1440px] space-y-6 px-4 py-6 sm:px-7 lg:py-8">
-      {/* Header */}
-      <div className="bz-card flex flex-col gap-4 p-5 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 space-y-1">
-            <Link
-              href={`${base}/menu`}
-              className="inline-flex min-h-[44px] items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A] hover:text-[#0A0A0A] sm:min-h-0"
-            >
-              <ArrowLeft size={14} strokeWidth={2} />
-              {copy.back}
-            </Link>
-            <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">
-              <BarChart3 size={22} strokeWidth={2} className="shrink-0" />
-              <span className="min-w-0">{copy.title}</span>
-            </h1>
-            <p className="text-sm font-medium text-[#6B7280]">{copy.subtitle}</p>
-            {windowLabel && (
-              <p className="pt-1 text-[11px] font-bold uppercase tracking-widest text-[#6B7280]">
-                {windowLabel}
-              </p>
-            )}
+      <div className="space-y-2">
+        {/* Analytics is opened from the builder ("Diğer → Analitik"): back goes there. */}
+        <Link
+          href={`${base}/menu`}
+          className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-medium text-[#525252] transition-colors hover:text-[#0A0A0A] sm:min-h-[32px]"
+        >
+          <ArrowLeft size={14} strokeWidth={2} />
+          {copy.back}
+        </Link>
+        <PageHeader
+          className="!mb-0"
+          title={copy.title}
+          titleScale="compact"
+          subtitle={showToolbar ? windowLabel : null}
+          description={copy.subtitle}
+        />
+      </div>
+
+      {/* §49 — one toolbar: period segments, category + source selects, reset,
+          refresh. Filters apply immediately. */}
+      {showToolbar && (
+        <div role="group" aria-label={copy.filters} className="flex flex-wrap items-center gap-2">
+          <div
+            role="group"
+            aria-label={copy.period}
+            className="flex w-full items-center gap-0.5 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex sm:w-auto"
+          >
+            {ranges.map((opt) => {
+              const active = range === opt.key;
+              return (
+                <button
+                  type="button"
+                  key={opt.key}
+                  onClick={() => setRange(opt.key)}
+                  aria-pressed={active}
+                  className={`inline-flex min-h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:h-[28px] sm:min-h-0 sm:flex-none sm:text-[12px] ${
+                    active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5] hover:text-[#0A0A0A]'
+                  }`}
+                >
+                  <span className="sm:hidden">{opt.short}</span>
+                  <span className="hidden sm:inline">{opt.long}</span>
+                </button>
+              );
+            })}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
+            {showCategoryFilter && (
+              <PulseSelect
+                value={categoryId}
+                onChange={setCategoryId}
+                ariaLabel={copy.categoryLabel}
+                className="min-w-0 flex-1 sm:w-[170px] sm:flex-none"
+                options={[
+                  { value: '', label: copy.allCategories },
+                  ...categoryOptions.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
+            )}
+            <PulseSelect
+              value={sourceType}
+              onChange={setSourceType}
+              ariaLabel={copy.sourceLabel}
+              className="min-w-0 flex-1 sm:w-[160px] sm:flex-none"
+              options={[
+                { value: '', label: copy.allSources },
+                ...Object.entries(copy.sourceLabels).map(([key, label]) => ({ value: key, label })),
+              ]}
+            />
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                aria-label={copy.resetFilters}
+                className="bz-btn-ghost w-11 shrink-0 px-0 sm:w-auto sm:px-3"
+              >
+                <RotateCcw size={13} strokeWidth={2} aria-hidden />
+                <span className="hidden sm:inline">{copy.reset}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={fetchAnalytics}
               disabled={loading}
-              className="bz-btn disabled:opacity-50"
+              aria-label={copy.refresh}
+              className="bz-btn w-11 shrink-0 px-0 disabled:opacity-50 sm:ml-auto sm:w-auto sm:px-3"
             >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
-              {copy.refresh}
+              {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <RefreshCw size={14} strokeWidth={2} aria-hidden />}
+              <span className="hidden sm:inline">{copy.refresh}</span>
             </button>
           </div>
         </div>
-
-        {/* Filters */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <div
-            // Phones: a 2x2 grid of 44px targets (four long labels in one row
-            // would not fit on 320-414px screens). ≥ sm: one compact row.
-            className="grid grid-cols-2 gap-1 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 text-[11px] font-semibold uppercase tracking-widest sm:inline-flex sm:gap-0"
-          >
-            {([
-              { key: '7d', label: copy.range7 },
-              { key: '30d', label: copy.range30 },
-              { key: '90d', label: copy.range90 },
-              { key: 'all', label: copy.rangeAll },
-            ] as const).map((opt) => (
-              <button
-                type="button"
-                key={opt.key}
-                onClick={() => setRange(opt.key)}
-                aria-pressed={range === opt.key}
-                className={`min-h-[44px] whitespace-nowrap rounded-lg px-3 transition-all sm:min-h-0 sm:py-1.5 ${
-                  range === opt.key ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          <PulseSelect
-            value={categoryId}
-            onChange={setCategoryId}
-            ariaLabel={copy.allCategories}
-            options={[
-              { value: '', label: copy.allCategories },
-              ...(data?.categories ?? []).map((c) => ({ value: c.id, label: c.name })),
-            ]}
-          />
-          <PulseSelect
-            value={sourceType}
-            onChange={setSourceType}
-            ariaLabel={copy.allSources}
-            options={[
-              { value: '', label: copy.allSources },
-              ...Object.entries(copy.sourceLabels).map(([key, label]) => ({ value: key, label })),
-            ]}
-          />
-          {hasActiveFilters && (
-            <button type="button" onClick={resetFilters} className="bz-btn bz-btn-sm">
-              <X size={12} strokeWidth={2} />
-              {copy.resetFilters}
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
@@ -377,7 +410,7 @@ export default function MenuAnalyticsPage() {
         <EmptyReport
           copy={copy}
           base={base}
-          live={!!data.menu?.enabled && !!data.menu?.published}
+          live={live}
           filtered={hasActiveFilters}
           onReset={resetFilters}
           // A live menu can be quiet in "Son 7 gün" and still have older
@@ -446,7 +479,7 @@ function EmptyReport({
     );
   }
   return (
-    <div className="bz-card p-8 text-center shadow-sm sm:p-16">
+    <div className="bz-card px-6 py-10 text-center sm:p-12">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FAFAFA]">
         <Sparkles size={26} strokeWidth={2} className="text-[#6B7280]" />
       </div>
@@ -554,9 +587,9 @@ function TodoSection({
   const empty = data.lowInterest.length === 0 && data.insights.length === 0;
 
   return (
-    <section className="bz-card min-w-0 p-5 shadow-sm sm:p-6" aria-labelledby="menu-analytics-todo">
+    <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-todo">
       <div className="mb-4">
-        <h2 id="menu-analytics-todo" className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">
+        <h2 id="menu-analytics-todo" className="text-[15px] font-semibold text-[#0A0A0A]">
           {copy.todo}
         </h2>
         <p className="mt-1 text-xs font-medium text-[#6B7280]">{copy.todoSub}</p>
@@ -573,7 +606,7 @@ function TodoSection({
               <div className="hidden overflow-x-auto sm:block">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">
+                    <tr className="text-[12px] font-medium text-[#737373]">
                       <th scope="col" className="pb-2 pr-2">{copy.columns.product}</th>
                       <th scope="col" className="pb-2 pr-2">{copy.columns.category}</th>
                       <th scope="col" className="pb-2 pr-2 text-right">{copy.columns.views}</th>
@@ -668,8 +701,8 @@ function TopProducts({
 }) {
   const shown = rows.slice(0, 10);
   return (
-    <section className="bz-card min-w-0 p-5 shadow-sm sm:p-6" aria-labelledby="menu-analytics-products">
-      <h2 id="menu-analytics-products" className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">
+    <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-products">
+      <h2 id="menu-analytics-products" className="mb-4 text-[15px] font-semibold text-[#0A0A0A]">
         {copy.topProducts}
       </h2>
       {shown.length === 0 ? (
@@ -679,7 +712,7 @@ function TopProducts({
           <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">
+                <tr className="text-[12px] font-medium text-[#737373]">
                   <th scope="col" className="pb-2 pr-2">#</th>
                   <th scope="col" className="pb-2 pr-2">{copy.columns.product}</th>
                   <th scope="col" className="pb-2 pr-2">{copy.columns.category}</th>
@@ -733,8 +766,8 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
     .slice(0, 8)
     .map((r) => ({ name: truncate(r.categoryName), fullName: r.categoryName, clicks: r.clicks, views: r.views }));
   return (
-    <section className="bz-card min-w-0 p-5 shadow-sm sm:p-6" aria-labelledby="menu-analytics-categories">
-      <h2 id="menu-analytics-categories" className="mb-4 text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">
+    <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-categories">
+      <h2 id="menu-analytics-categories" className="mb-4 text-[15px] font-semibold text-[#0A0A0A]">
         {copy.topCategories}
       </h2>
       {dataRows.length === 0 ? (
@@ -750,7 +783,7 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #EDEDED', borderRadius: 12, fontSize: 12 }}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
               />
-              <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+              <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" formatter={legendLabel} />
               <Bar dataKey="views" fill="#0A0A0A" radius={[0, 6, 6, 0]} name={copy.legendViews} />
               <Bar dataKey="clicks" fill="#C6F24E" radius={[0, 6, 6, 0]} name={copy.legendClicks} />
             </BarChart>
@@ -770,9 +803,9 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
   // ~7 labels on 7-day, ~6 labels on 30-day, ~6 labels on 90-day.
   const tickInterval = trend.length <= 7 ? 0 : trend.length <= 30 ? 5 : Math.floor(trend.length / 6);
   return (
-    <section className="bz-card min-w-0 p-5 shadow-sm sm:p-6" aria-labelledby="menu-analytics-trend">
+    <section className="bz-card min-w-0 p-5 sm:p-6" aria-labelledby="menu-analytics-trend">
       <div className="mb-4">
-        <h2 id="menu-analytics-trend" className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
+        <h2 id="menu-analytics-trend" className="text-[15px] font-semibold text-[#0A0A0A]">{copy.trends}</h2>
       </div>
       <MeasuredChart className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
         {({ width, height }) => (
@@ -794,7 +827,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
               contentStyle={{ backgroundColor: '#fff', border: '1px solid #EDEDED', borderRadius: 12, fontSize: 12 }}
               labelFormatter={(label) => dateFmt(label as string)}
             />
-            <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+            <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" formatter={legendLabel} />
             <Area type="monotone" dataKey="menuViews" stroke="#C6F24E" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
             <Area type="monotone" dataKey="productClicks" stroke="#0A0A0A" strokeWidth={2} fill="url(#gradClicks)" name={copy.trendTaps} />
           </AreaChart>

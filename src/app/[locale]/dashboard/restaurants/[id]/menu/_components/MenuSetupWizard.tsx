@@ -366,7 +366,8 @@ export function MenuSetupWizard({
     // screen) — the first template has to sit high above the bottom nav.
     <section
       ref={topRef}
-      className="scroll-mt-24 sm:rounded-3xl sm:border sm:border-[#EDEDED] sm:bg-white sm:px-8 sm:py-8 sm:shadow-sm"
+      // ≥sm: the panel card look (bz-card: 12px radius, hairline border + shadow).
+      className="scroll-mt-24 sm:rounded-xl sm:border sm:border-[#E8E8E8] sm:bg-white sm:px-8 sm:py-8 sm:shadow-[0_1px_2px_rgba(10,10,10,0.05)]"
     >
       <div className="mx-auto max-w-[760px] space-y-4 sm:space-y-5">
         <div className="flex items-start gap-3.5">

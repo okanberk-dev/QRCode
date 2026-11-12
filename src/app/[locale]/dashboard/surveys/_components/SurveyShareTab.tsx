@@ -1,10 +1,11 @@
 'use client';
 
 // "Paylaş" tab of the survey detail page: the customer link (copy / WhatsApp),
-// the QR code with ONE primary download, and a compact info card.
+// the QR code with ONE primary download, and a compact info card. A draft
+// gets a note here; its "Publish" button is the page header's (one place).
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Download, Eye, Loader2, MessageCircle } from 'lucide-react';
+import { Check, Copy, Download, MessageCircle } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, PulseMenu, PulseMenuItem } from '@/components/ui';
 import { MENU_TOUCH } from './menu-touch';
@@ -15,11 +16,6 @@ interface Props {
   locale: Locale;
   survey: DetailSurvey;
   publicUrl: string;
-  canWrite: boolean;
-  /** Admin switched the module off for this business: publishing is blocked. */
-  moduleOff: boolean;
-  publishing: boolean;
-  onPublish: () => void;
 }
 
 /** Print-ready designed QR (the one primary action) and the other formats. */
@@ -34,15 +30,7 @@ function triggerDownload(url: string) {
   document.body.removeChild(a);
 }
 
-export default function SurveyShareTab({
-  locale,
-  survey,
-  publicUrl,
-  canWrite,
-  moduleOff,
-  publishing,
-  onPublish,
-}: Props) {
+export default function SurveyShareTab({ locale, survey, publicUrl }: Props) {
   const isTr = locale === 'tr';
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -92,28 +80,9 @@ export default function SurveyShareTab({
           {!survey.isPublished && (
             <div className="mt-3">
               <AlertBanner kind="warn">
-                <span className="block">
-                  {isTr
-                    ? 'Bu anket henüz yayında değil. Müşteriler linki açınca "şu anda yanıt almıyor" mesajını görür.'
-                    : 'This survey isn\'t live yet. Customers who open the link will see "not accepting responses right now".'}
-                </span>
-                {canWrite && (
-                  <span className="mt-3 block">
-                    <button
-                      type="button"
-                      onClick={onPublish}
-                      disabled={publishing || moduleOff}
-                      className="bz-btn-primary min-h-[44px] gap-2 text-[13px]"
-                    >
-                      {publishing ? (
-                        <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Eye size={14} aria-hidden="true" />
-                      )}
-                      {isTr ? 'Yayınla' : 'Publish'}
-                    </button>
-                  </span>
-                )}
+                {isTr
+                  ? 'Bu anket henüz yayında değil. Yayınlayana kadar müşteriler linki açınca "şu anda yanıt almıyor" mesajını görür.'
+                  : 'This survey isn\'t live yet. Until you publish it, customers who open the link will see "not accepting responses right now".'}
               </AlertBanner>
             </div>
           )}
@@ -126,13 +95,13 @@ export default function SurveyShareTab({
             readOnly
             value={publicUrl}
             onFocus={(e) => e.currentTarget.select()}
-            className="bz-input bz-mono mt-4 min-h-[44px] w-full text-[13px]"
+            className="bz-input bz-mono mt-4 min-h-11 w-full text-[13px] sm:min-h-9"
           />
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={() => void handleCopy()}
-              className="bz-btn-primary min-h-[44px] flex-1 gap-2 text-[13px] sm:flex-none"
+              className="bz-btn-primary min-h-11 flex-1 gap-2 sm:min-h-9 sm:flex-none"
             >
               {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
               {copied ? (isTr ? 'Kopyalandı' : 'Copied') : isTr ? 'Kopyala' : 'Copy'}
@@ -141,7 +110,7 @@ export default function SurveyShareTab({
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="bz-btn-ghost min-h-[44px] flex-1 gap-2 text-[13px] sm:flex-none"
+              className="bz-btn-ghost min-h-11 flex-1 gap-2 sm:min-h-9 sm:flex-none"
             >
               <MessageCircle size={14} aria-hidden="true" />
               {isTr ? "WhatsApp'ta paylaş" : 'Share on WhatsApp'}
@@ -169,7 +138,7 @@ export default function SurveyShareTab({
               : 'Print it for table cards, receipts or the counter.'}
           </p>
           <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-2xl border border-[#EDEDED] bg-white">
+            <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-xl border border-[#EDEDED] bg-white">
               {/* Inline SVG preview straight from the API: a raw <img> avoids
                   next/image for an already authorised, rate-limited SVG.
                   `preview=1` returns the frame-less variant that stays legible
@@ -185,7 +154,7 @@ export default function SurveyShareTab({
             <div className="flex w-full flex-col gap-2 sm:w-auto">
               <a
                 href={qrUrl(survey.id, 'format=png&width=1200')}
-                className="bz-btn-primary min-h-[44px] gap-2 text-[13px]"
+                className="bz-btn-primary min-h-11 gap-2 sm:min-h-9"
               >
                 <Download size={14} aria-hidden="true" />
                 {isTr ? "QR'ı indir (baskıya hazır PNG)" : 'Download QR (print-ready PNG)'}
@@ -193,7 +162,7 @@ export default function SurveyShareTab({
               <PulseMenu
                 align="start"
                 trigger={
-                  <button type="button" className="bz-btn-ghost min-h-[44px] w-full text-[13px]">
+                  <button type="button" className="bz-btn-ghost min-h-11 w-full sm:min-h-9">
                     {isTr ? 'Diğer biçimler' : 'Other formats'}
                   </button>
                 }

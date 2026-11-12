@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Calendar, Crown, Loader2, MessageSquareText, Reply, Store } from "lucide-react";
+import { AlertTriangle, Calendar, Crown, MessageSquareText, Reply, Store } from "lucide-react";
 import type { Locale } from "@/lib/translations";
-import { Avatar, Badge, Eyebrow } from "@/components/ui";
+import { Avatar, Badge } from "@/components/ui";
+import { SkBox } from "@/components/ui/skeletons/PageSkeleton";
 import { resolveDisplayTimeZone } from "@/lib/timezone";
 
 interface OverviewData {
@@ -115,10 +116,28 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
   }, []);
 
   if (loading) {
+    // Shape-matching skeleton (avatar + name row, 4 stat cells).
     return (
-      <div className="bz-card flex items-center justify-center gap-2 p-8 text-[13px] text-[#737373]">
-        <Loader2 size={14} className="animate-spin" />
-        {isTr ? "Hesap özeti yükleniyor…" : "Loading account overview…"}
+      <div
+        className="bz-card overflow-hidden p-0"
+        aria-busy="true"
+        aria-label={isTr ? "Hesap özeti yükleniyor" : "Loading account overview"}
+      >
+        <div className="flex items-center gap-4 border-b border-[#EDEDED] p-5 sm:p-6">
+          <SkBox className="h-[52px] w-[52px] shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkBox className="h-5 w-40 max-w-full" />
+            <SkBox className="h-3 w-52 max-w-full" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-2 p-4 sm:p-5">
+              <SkBox className="h-3 w-20" />
+              <SkBox className="h-6 w-14" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -133,8 +152,7 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
           <div className="flex items-center gap-4 min-w-0">
             <Avatar size={52} name={initials(profile.name, profile.email)} />
             <div className="min-w-0">
-              <Eyebrow>{isTr ? "HESAP SAHİBİ" : "ACCOUNT OWNER"}</Eyebrow>
-              <h3 className="bz-h-tight mt-0.5 truncate text-[18px] text-[#0A0A0A]">
+              <h3 className="bz-h-tight truncate text-[18px] text-[#0A0A0A]">
                 {profile.name || profile.email}
               </h3>
               <p className="bz-mono mt-0.5 truncate text-[12px] text-[#737373]">{profile.email}</p>
@@ -199,8 +217,7 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
         <div className="flex items-center gap-4 min-w-0">
           <Avatar size={52} name={initials(data.name, data.email)} />
           <div className="min-w-0">
-            <Eyebrow>{isTr ? "HESAP SAHİBİ" : "ACCOUNT OWNER"}</Eyebrow>
-            <h3 className="bz-h-tight mt-0.5 truncate text-[18px] text-[#0A0A0A]">
+            <h3 className="bz-h-tight truncate text-[18px] text-[#0A0A0A]">
               {data.name || data.email}
             </h3>
             <p className="bz-mono mt-0.5 truncate text-[12px] text-[#737373]">{data.email}</p>
@@ -223,11 +240,15 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
         {stats.map((s, i) => (
           <div
             key={s.label}
-            className={`flex flex-col gap-1 p-4 sm:p-5 ${
-              i < stats.length - 1 ? "border-b sm:border-b-0 sm:border-r" : ""
-            } ${i % 2 === 1 ? "" : "border-r sm:border-r"} border-[#EDEDED]`}
+            // 2×2 on phones (bottom border on the first row, right border on
+            // the left column); one row of 4 from sm (right borders only).
+            className={`flex flex-col gap-1 border-[#EDEDED] p-4 sm:p-5 ${
+              i < 2 ? "border-b sm:border-b-0" : ""
+            } ${i % 2 === 0 ? "border-r" : ""} ${
+              i < stats.length - 1 ? "sm:border-r" : "sm:border-r-0"
+            }`}
           >
-            <span className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373]">
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-[#737373]">
               <span className="text-[#A3A3A3]" aria-hidden="true">
                 {s.icon}
               </span>

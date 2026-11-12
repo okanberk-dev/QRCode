@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Lock } from "lucide-react";
-import { AlertBanner, Badge, APSwitch } from "@/components/ui";
+import { Power } from "lucide-react";
+import { AlertBanner, APSwitch } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
 import {
@@ -37,11 +37,9 @@ function isDirty(a: FormState, b: FormState) {
 }
 
 /**
- * Section 8 — Güvenlik & Erişim.
- *
- * Tek alt-bölüm: İşletmeyi devre dışı bırak (isActive APSwitch). Panelde
- * aktiflik durumunu açıp kapatan tek kontrol budur (Genel sekmesindeki kopya
- * kaldırıldı; Tehlikeli bölge yalnız tek yönlü devre dışı bırakma sunar).
+ * "Durum ve silme" → İşletme durumu (isActive APSwitch). The only control in
+ * the panel that turns a business off and back on (the one-way "devre dışı
+ * bırak" button that used to sit in the danger zone was removed).
  *
  * Admin duraklatması (`suspendedByAdmin`) varken switch kilitlenir — owner
  * PUT `{ isActive: true }` zaten 403 `SUSPENDED_BY_ADMIN` döner.
@@ -141,16 +139,7 @@ export function BusinessSecuritySettings({
       )}
 
       {/* isActive */}
-      <SettingsCard
-        icon={<Lock size={18} />}
-        title={t.cardTitle}
-        description={t.cardDesc}
-        actions={
-          <Badge kind={form.isActive ? "ok" : "danger"}>
-            {form.isActive ? t.badgeActive : t.badgeDisabled}
-          </Badge>
-        }
-      >
+      <SettingsCard icon={<Power size={18} />} title={t.cardTitle} description={t.cardDesc}>
         <div className="flex items-center gap-3">
           <APSwitch
             checked={form.isActive}
@@ -158,7 +147,7 @@ export function BusinessSecuritySettings({
             locked={suspended}
             ariaLabel={t.switchAria}
           />
-          <span className="text-[13px]">
+          <span className="text-[13px] font-medium text-[#0A0A0A]">
             {form.isActive ? t.stateActive : t.stateDisabled}
           </span>
         </div>
@@ -180,22 +169,20 @@ export function BusinessSecuritySettings({
 const COPY = {
   tr: {
     saveFailed: "Kaydedilemedi.",
-    saved: "Güvenlik ayarları güncellendi.",
-    cardTitle: "İşletmeyi devre dışı bırak",
-    cardDesc: "Devre dışıyken müşteri sayfası kapalı görünür. Geri alınabilir.",
-    badgeActive: "Aktif",
-    badgeDisabled: "Devre dışı",
+    saved: "İşletme durumu güncellendi.",
+    cardTitle: "İşletme durumu",
+    cardDesc:
+      "Devre dışıyken müşteri sayfası \"aktif değil\" uyarısı gösterir ve yorum almaz. İstediğin zaman tekrar açabilirsin.",
     switchAria: "İşletme aktif",
     stateActive: "İşletme aktif",
     stateDisabled: "İşletme devre dışı",
   },
   en: {
     saveFailed: "Could not save.",
-    saved: "Security settings updated.",
-    cardTitle: "Disable business",
-    cardDesc: "While disabled, the customer page shows as closed. You can undo this.",
-    badgeActive: "Active",
-    badgeDisabled: "Disabled",
+    saved: "Business status updated.",
+    cardTitle: "Business status",
+    cardDesc:
+      "While disabled, the customer page shows a \"not active\" notice and stops taking reviews. You can turn it back on any time.",
     switchAria: "Business active",
     stateActive: "Business is active",
     stateDisabled: "Business is disabled",

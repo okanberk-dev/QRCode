@@ -1,10 +1,11 @@
 'use client';
 
-// Survey detail (CLAUDE.md §42): header with the actions an owner needs
-// (edit, publish / unpublish, preview, duplicate, delete) and two tabs —
-// Share (link + QR) and Results. The preview shows the REAL customer screen in
-// a phone frame (no network, no stored session), so a draft can be checked
-// without opening a link that 404s.
+// Survey detail (CLAUDE.md §42): header with at most "Edit" + one primary
+// action ("Publish" for a draft) and a "More" menu for the rest (preview,
+// unpublish, duplicate, delete); status and business sit under the title. Two
+// tabs — Share (link + QR) and Results. The preview shows the REAL customer
+// screen in a phone frame (no network, no stored session), so a draft can be
+// checked without opening a link that 404s.
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -262,55 +263,46 @@ export default function SurveyDetailClient({
       <div className="mb-3">
         <Link
           href={`/${locale}/dashboard/surveys`}
-          className="inline-flex min-h-[44px] items-center gap-1 text-xs text-[#525252] hover:text-[#0A0A0A]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#525252] hover:text-[#0A0A0A] sm:min-h-9"
         >
-          <ArrowLeft size={12} aria-hidden="true" />
+          <ArrowLeft size={14} aria-hidden="true" />
           {isTr ? 'Anketler' : 'Surveys'}
         </Link>
       </div>
 
       <PageHeader
-        eyebrow={restaurant.name.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}
         title={survey.title}
-        description={survey.description || undefined}
+        description={
+          <>
+            {/* Status + business in one meta line (no eyebrow). */}
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              {survey.isPublished ? (
+                <Badge kind="lime">{isTr ? 'Yayında' : 'Live'}</Badge>
+              ) : (
+                <Badge kind="ghost">{isTr ? 'Taslak' : 'Draft'}</Badge>
+              )}
+              <span className="text-[#737373]">{restaurant.name}</span>
+            </span>
+            {survey.description && <span className="mt-2 block">{survey.description}</span>}
+          </>
+        }
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {survey.isPublished ? (
-              <Badge kind="lime">{isTr ? 'Yayında' : 'Live'}</Badge>
-            ) : (
-              <Badge kind="ghost">{isTr ? 'Taslak' : 'Draft'}</Badge>
-            )}
-            {canWrite && (
+          canWrite ? (
+            <>
               <Link
                 href={`/${locale}/dashboard/surveys/${survey.id}/edit`}
-                className="bz-btn-ghost min-h-[44px] gap-2 text-[13px]"
+                className="bz-btn-ghost min-h-11 gap-2 sm:min-h-9"
               >
                 <Pencil size={14} aria-hidden="true" />
                 {isTr ? 'Düzenle' : 'Edit'}
               </Link>
-            )}
-            {canWrite &&
-              (survey.isPublished ? (
-                <button
-                  type="button"
-                  onClick={() => void setPublished(false)}
-                  disabled={busy !== null}
-                  className="bz-btn-ghost min-h-[44px] gap-2 text-[13px]"
-                >
-                  {busy === 'publish' ? (
-                    <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <EyeOff size={14} aria-hidden="true" />
-                  )}
-                  {isTr ? 'Yayından kaldır' : 'Unpublish'}
-                </button>
-              ) : (
+              {!survey.isPublished && (
                 <button
                   type="button"
                   onClick={() => void setPublished(true)}
                   disabled={busy !== null || moduleOff}
                   title={moduleOff ? moduleOffText : undefined}
-                  className="bz-btn-primary min-h-[44px] gap-2 text-[13px]"
+                  className="bz-btn-primary min-h-11 gap-2 sm:min-h-9"
                 >
                   {busy === 'publish' ? (
                     <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -319,44 +311,65 @@ export default function SurveyDetailClient({
                   )}
                   {isTr ? 'Yayınla' : 'Publish'}
                 </button>
-              ))}
-            <PulseMenu
-              trigger={
-                <button
-                  type="button"
-                  aria-label={isTr ? 'Diğer işlemler' : 'More actions'}
-                  className="bz-btn-icon h-11 w-11 border border-[#EDEDED]"
-                >
-                  <MoreHorizontal size={18} aria-hidden="true" />
-                </button>
-              }
-              className={`min-w-[200px] ${MENU_TOUCH}`}
-            >
-              <PulseMenuItem icon={<Smartphone size={14} />} onSelect={() => setPreviewOpen(true)}>
-                {isTr ? 'Önizle' : 'Preview'}
-              </PulseMenuItem>
-              {canWrite && (
-                <>
-                  <PulseMenuItem
-                    icon={<Copy size={14} />}
-                    disabled={moduleOff || busy !== null}
-                    onSelect={() => void duplicate()}
-                  >
-                    {isTr ? 'Kopyasını oluştur' : 'Duplicate'}
-                  </PulseMenuItem>
-                  <PulseMenuDivider />
-                  <PulseMenuItem
-                    icon={<Trash2 size={14} />}
-                    danger
-                    disabled={busy !== null}
-                    onSelect={askDelete}
-                  >
-                    {isTr ? 'Sil' : 'Delete'}
-                  </PulseMenuItem>
-                </>
               )}
-            </PulseMenu>
-          </div>
+              <PulseMenu
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={isTr ? 'Diğer işlemler' : 'More actions'}
+                    className="bz-btn-ghost min-h-11 min-w-11 justify-center px-0 sm:min-h-9 sm:min-w-0 sm:px-3"
+                  >
+                    {busy === 'publish' && survey.isPublished ? (
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <MoreHorizontal size={16} aria-hidden="true" />
+                    )}
+                    <span className="hidden sm:inline">{isTr ? 'Diğer' : 'More'}</span>
+                  </button>
+                }
+                className={`min-w-[220px] ${MENU_TOUCH}`}
+              >
+                <PulseMenuItem icon={<Smartphone size={14} />} onSelect={() => setPreviewOpen(true)}>
+                  {isTr ? 'Önizle' : 'Preview'}
+                </PulseMenuItem>
+                {survey.isPublished && (
+                  <PulseMenuItem
+                    icon={<EyeOff size={14} />}
+                    disabled={busy !== null}
+                    onSelect={() => void setPublished(false)}
+                  >
+                    {isTr ? 'Yayından kaldır' : 'Unpublish'}
+                  </PulseMenuItem>
+                )}
+                <PulseMenuItem
+                  icon={<Copy size={14} />}
+                  disabled={moduleOff || busy !== null}
+                  onSelect={() => void duplicate()}
+                >
+                  {isTr ? 'Kopyasını oluştur' : 'Duplicate'}
+                </PulseMenuItem>
+                <PulseMenuDivider />
+                <PulseMenuItem
+                  icon={<Trash2 size={14} />}
+                  danger
+                  disabled={busy !== null}
+                  onSelect={askDelete}
+                >
+                  {isTr ? 'Sil' : 'Delete'}
+                </PulseMenuItem>
+              </PulseMenu>
+            </>
+          ) : (
+            // A viewer only has "Preview": one button, no menu.
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="bz-btn-ghost min-h-11 gap-2 sm:min-h-9"
+            >
+              <Smartphone size={14} aria-hidden="true" />
+              {isTr ? 'Önizle' : 'Preview'}
+            </button>
+          )
         }
       />
 
@@ -387,7 +400,7 @@ export default function SurveyDetailClient({
 
       <div className="mt-5">
         <Tabs
-          className="[&_[role=tab]]:min-h-11"
+          className="[&_.bz-tab]:min-h-[44px] sm:[&_.bz-tab]:min-h-0"
           ariaLabel={isTr ? 'Anket bölümleri' : 'Survey sections'}
           items={[
             { id: 'share', label: isTr ? 'Paylaş' : 'Share' },
@@ -404,15 +417,7 @@ export default function SurveyDetailClient({
         className="mt-6"
       >
         {tab === 'share' ? (
-          <SurveyShareTab
-            locale={locale}
-            survey={survey}
-            publicUrl={publicUrl}
-            canWrite={canWrite}
-            moduleOff={moduleOff}
-            publishing={busy === 'publish'}
-            onPublish={() => void setPublished(true)}
-          />
+          <SurveyShareTab locale={locale} survey={survey} publicUrl={publicUrl} />
         ) : (
           <SurveyResultsTab locale={locale} survey={survey} publicUrl={publicUrl} />
         )}

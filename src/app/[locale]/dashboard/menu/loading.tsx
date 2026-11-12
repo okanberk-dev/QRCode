@@ -1,18 +1,11 @@
-import {
-  SkCardGrid,
-  SkPageHeader,
-  SkPageShell,
-} from '@/components/ui/skeletons/PageSkeleton';
+import MenuBuilderSkeleton from '../restaurants/[id]/menu/loading';
 
 /**
- * Owner menu hub (restaurant picker) — PageHeader + restaurant card
- * grid. (CLAUDE.md §40.10)
+ * Owner menu hub (CLAUDE.md §40.10). The hub almost always redirects to the
+ * active business's builder (the shell adds `?restaurantId`), so its loading
+ * state is the builder's skeleton: menu → builder never swaps skeletons. Only
+ * an owner whose shell has not picked a business yet sees the picker grid.
  */
 export default function Loading() {
-  return (
-    <SkPageShell max={1440}>
-      <SkPageHeader titleWidth="w-44" />
-      <SkCardGrid count={4} cols={2} />
-    </SkPageShell>
-  );
+  return <MenuBuilderSkeleton />;
 }

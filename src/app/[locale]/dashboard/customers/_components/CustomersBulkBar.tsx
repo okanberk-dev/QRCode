@@ -146,8 +146,8 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
     askConfirm({
       title: isTr ? 'Müşteri arşivle' : 'Archive customers',
       body: isTr
-        ? `${count} müşteriyi arşivleyeceksin. Listeden gizlenir; "Arşiv" toggle ile geri görebilirsin.`
-        : `Archive ${count} customer${count === 1 ? '' : 's'}? They'll be hidden from the list; toggle "Archive" to view them again.`,
+        ? `${count} müşteri arşivlenecek ve listeden gizlenecek. "Arşiv" düğmesiyle yeniden görebilirsin.`
+        : `Archive ${count} customer${count === 1 ? '' : 's'}? They'll be hidden from the list; use the "Archived" button to see them again.`,
       confirmLabel: isTr ? 'Arşivle' : 'Archive',
       variant: 'default',
       onConfirm: async () => {
@@ -332,7 +332,8 @@ function SegmentPickerModal({
               key={opt.key}
               type="button"
               onClick={() => setPicked(opt.key)}
-              className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition-colors ${
+              aria-pressed={picked === opt.key}
+              className={`min-h-[44px] rounded-lg border px-3 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:min-h-[36px] ${
                 picked === opt.key
                   ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
                   : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'

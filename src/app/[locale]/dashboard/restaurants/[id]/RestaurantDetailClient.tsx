@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import {
   AlertTriangle,
   ArrowLeft,
-  ArrowUpRight,
   Calendar,
   ChevronRight,
   ExternalLink,
@@ -18,13 +17,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import {
-  AlertBanner,
-  BusinessStatusBadge,
-  Eyebrow,
-  PageHeader,
-  StatCard,
-} from '@/components/ui';
+import { AlertBanner, BusinessStatusBadge, PageHeader } from '@/components/ui';
 import { PlatformSummaryLine } from '@/components/dashboard/platforms/PlatformBusinessContext';
 import { PLATFORM_LINKS_LABEL } from '@/lib/platform-management';
 import {
@@ -35,24 +28,16 @@ import {
 import DetailLoading from './loading';
 
 /**
- * Owner restaurant detail page — Pulse redesign (PR after merge of /account hub).
+ * Owner restaurant detail page.
  *
- * The previous detail surface stacked an identity-meta strip + a public
- * preview row + a 2-up Quick Links grid (one full-width Settings tile).
- * It worked but skipped the StatCard primitive, made the metric ranks
- * indistinguishable from Settings descriptions, and let a single primary
- * CTA dominate the layout. Owners told us the page felt heavy without
- * giving them a fast read on "what's happening with this location".
- *
- * Redesign keeps backend contracts (`/api/restaurants/[id]`) untouched
- * and reuses Pulse primitives only — no new dep, no new UI primitive:
- *   - <PageHeader> with status badge + slug + category in the description
- *   - <StatCard> 3-grid for the actual numbers (yorum/qr/menü)
- *   - Public preview as a single-row affordance with copy + "open"
- *   - 2×2 Quick Actions grid: equal-weighted cards, "Ayarlar" gets a
- *     lime accent dot to signal it's the most-used jump
- *   - Clean loading state (null until data arrives — §40.10 clean slate)
- *   - Optional warn banner when the location is temporarily closed
+ *   - <PageHeader>: name, slug · category · added date, status badge and the
+ *     one primary action (Ayarlar).
+ *   - Three link cards (Yorumlar / QR kodlar / Menü), each with its count —
+ *     the numbers and the shortcuts used to be two separate grids showing
+ *     the same three counts.
+ *   - Customer page row (copy + open) and the platform-links strip.
+ *   - Optional warn banner when the location is temporarily closed.
+ * Backend contract (`/api/restaurants/[id]`) unchanged.
  */
 
 interface RestaurantSummary {
@@ -190,34 +175,21 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
   });
   const numberFmt = new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US');
 
-  // Quick actions — Pulse 2×2 grid. "Ayarlar" gets a lime accent dot to
-  // signal it's the most-frequented jump from this page; the other three
-  // are equal weight so the layout doesn't feel lopsided.
-  const quickActions: Array<{
+  const settingsHref = `/${locale}/dashboard/restaurants/${id}/settings`;
+
+  // One card per area of this business: the count and the way in.
+  const sections: Array<{
     id: string;
     label: string;
     description: string;
     href: string;
     icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
-    accent?: boolean;
-    count?: number;
+    count: number;
   }> = [
-    {
-      id: 'settings',
-      label: isTr ? 'Ayarlar' : 'Settings',
-      description: isTr
-        ? 'Genel, platform bağlantıları, marka, operasyon, güvenlik'
-        : 'General, platform links, brand, operations, security',
-      href: `/${locale}/dashboard/restaurants/${id}/settings`,
-      icon: SettingsIcon,
-      accent: true,
-    },
     {
       id: 'feedbacks',
       label: isTr ? 'Yorumlar' : 'Reviews',
-      description: isTr
-        ? 'Müşteri yorumlarını oku, yanıtla, etiketle'
-        : 'Read, reply and tag customer reviews',
+      description: isTr ? 'Toplam yorum · oku ve yanıtla' : 'Total reviews · read and reply',
       href: `/${locale}/dashboard/feedbacks?restaurantId=${id}`,
       icon: MessageSquare,
       count: data.feedbacks,
@@ -225,9 +197,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     {
       id: 'qr',
       label: isTr ? 'QR kodlar' : 'QR codes',
-      description: isTr
-        ? 'Üretilen QR geçmişi ve yeni kart'
-        : 'Generated QR history and new code',
+      description: isTr ? 'Üretilen QR · geçmiş ve yeni' : 'QR codes made · history and new',
       href: `/${locale}/dashboard/qr?restaurantId=${id}`,
       icon: QrCode,
       count: data.qrGenerations,
@@ -235,9 +205,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     {
       id: 'menu',
       label: isTr ? 'Menü' : 'Menu',
-      description: isTr
-        ? 'Kategoriler, ürünler, tema ve QR'
-        : 'Categories, items, theme and QR',
+      description: isTr ? 'Menüdeki ürün · kategoriler ve tema' : 'Menu items · categories and theme',
       href: `/${locale}/dashboard/restaurants/${id}/menu`,
       icon: UtensilsCrossed,
       count: data.menuItems,
@@ -249,7 +217,6 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
       {backLink}
 
       <PageHeader
-        eyebrow={isTr ? 'İŞLETME ÖZETİ' : 'BUSINESS OVERVIEW'}
         // Long names wrap instead of clipping at 375px.
         title={<span className="break-words [overflow-wrap:anywhere]">{data.name}</span>}
         description={
@@ -264,13 +231,24 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
             </span>
           </span>
         }
-        actions={<BusinessStatusBadge status={status} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <BusinessStatusBadge status={status} />
+            <Link
+              href={settingsHref}
+              className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[36px]"
+            >
+              <SettingsIcon size={14} strokeWidth={2} aria-hidden="true" />
+              {isTr ? 'Ayarlar' : 'Settings'}
+            </Link>
+          </div>
+        }
       />
 
       {/* Temporarily-closed soft warning. Active/disabled is already in the
           status badge; this is only the "right now I'm temp-closing" flag. */}
       {data.temporarilyClosed && (
-        <div className="mt-5">
+        <div className="mb-3">
           <AlertBanner kind="warn" icon={<AlertTriangle size={14} strokeWidth={2} />}>
             {isTr
               ? 'Geçici olarak kapalı olarak işaretlenmiş. Müşteri sayfası kapalı görünür. Ayarlar → Operasyonel\'den geri açabilirsin.'
@@ -279,30 +257,42 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
         </div>
       )}
 
-      {/* Stat grid — pure metrics. */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <StatCard
-          label={isTr ? 'Toplam yorum' : 'Total reviews'}
-          value={numberFmt.format(data.feedbacks)}
-          icon={<MessageSquare size={16} />}
-        />
-        <StatCard
-          label={isTr ? 'QR kodlar' : 'QR codes'}
-          value={numberFmt.format(data.qrGenerations)}
-          icon={<QrCode size={16} />}
-        />
-        <StatCard
-          label={isTr ? 'Menü ürünü' : 'Menu items'}
-          value={numberFmt.format(data.menuItems)}
-          icon={<UtensilsCrossed size={16} />}
-        />
+      {/* Areas of this business — count + the way in, one card each. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {sections.map((section) => {
+          const Icon = section.icon;
+          return (
+            <Link
+              key={section.id}
+              href={section.href}
+              className="bz-card group flex min-h-[64px] items-center gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:p-5"
+            >
+              <span
+                aria-hidden="true"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] text-[#0A0A0A]"
+              >
+                <Icon size={16} strokeWidth={2} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-semibold text-[#0A0A0A]">{section.label}</span>
+                <span className="mt-0.5 block truncate text-[12px] text-[#525252]">{section.description}</span>
+              </span>
+              <span className="bz-h-tight shrink-0 text-[22px] leading-none tabular-nums text-[#0A0A0A]">
+                {numberFmt.format(section.count)}
+              </span>
+              <ChevronRight
+                size={14}
+                strokeWidth={2}
+                aria-hidden="true"
+                className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
+              />
+            </Link>
+          );
+        })}
       </div>
 
       {/* Public preview — single-row affordance. */}
-      <div
-        className="mt-4 bz-card-soft flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-4"
-        style={{ borderRadius: 12 }}
-      >
+      <div className="mt-3 bz-card-soft flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-4">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span
             className="shrink-0 inline-flex items-center justify-center rounded-lg bg-white"
@@ -312,7 +302,9 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
             <Sparkles size={13} strokeWidth={2} />
           </span>
           <div className="min-w-0">
-            <Eyebrow>{isTr ? 'MÜŞTERİ SAYFASI' : 'CUSTOMER PAGE'}</Eyebrow>
+            <span className="block text-[12px] font-medium text-[#525252]">
+              {isTr ? 'Müşteri sayfası' : 'Customer page'}
+            </span>
             <a
               href={publicUrl}
               target="_blank"
@@ -328,12 +320,12 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           <span className="text-[11px] text-[#737373] whitespace-nowrap">
             {isTr ? 'Son güncelleme' : 'Updated'} {dateFmt.format(new Date(data.updatedAt))}
           </span>
-          <CopyUrlButton url={publicUrl} locale={locale} />
+          <CopyUrlButton url={publicUrl} locale={locale} className="h-11 w-11 sm:h-8 sm:w-8" />
           <a
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="bz-btn-icon"
+            className="bz-btn-icon h-11 w-11 sm:h-8 sm:w-8"
             aria-label={isTr ? 'Yeni sekmede aç' : 'Open in new tab'}
             title={isTr ? 'Yeni sekmede aç' : 'Open in new tab'}
           >
@@ -346,7 +338,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           for THIS business (the overview opens on it via ?restaurantId). */}
       <Link
         href={`/${locale}/dashboard/platforms?restaurantId=${encodeURIComponent(data.id)}`}
-        className="bz-card mt-3 flex min-h-[56px] items-center gap-3 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+        className="bz-card mt-3 flex min-h-[56px] items-center gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
       >
         <span
           aria-hidden="true"
@@ -367,71 +359,6 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
         </span>
         <ChevronRight size={14} strokeWidth={2} aria-hidden="true" className="shrink-0 text-[#737373]" />
       </Link>
-
-      {/* Quick actions — 2×2 equal-weight grid. */}
-      <div className="mt-6">
-        <Eyebrow>{isTr ? 'HIZLI AKSİYONLAR' : 'QUICK ACTIONS'}</Eyebrow>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {quickActions.map((q) => {
-            const Icon = q.icon;
-            return (
-              <Link
-                key={q.id}
-                href={q.href}
-                className="bz-card relative flex items-start gap-3 p-4 sm:p-5 group transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                {q.accent && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute top-3 right-3 w-2 h-2 rounded-full"
-                    style={{ background: '#C6F24E' }}
-                  />
-                )}
-                <div
-                  className="shrink-0 flex items-center justify-center"
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    background: '#FAFAFA',
-                    border: '1px solid #EDEDED',
-                    color: '#0A0A0A',
-                  }}
-                >
-                  <Icon size={16} strokeWidth={2} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="bz-h-tight text-[14px] text-[#0A0A0A]">{q.label}</h3>
-                    <span className="inline-flex items-center gap-1 text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors">
-                      {typeof q.count === 'number' && (
-                        <span className="bz-mono text-[12px] text-[#525252]">
-                          {numberFmt.format(q.count)}
-                        </span>
-                      )}
-                      <ArrowUpRight
-                        size={14}
-                        strokeWidth={2}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      />
-                      {typeof q.count !== 'number' && (
-                        <ChevronRight
-                          size={14}
-                          strokeWidth={2}
-                          className="group-hover:opacity-0 transition-opacity"
-                        />
-                      )}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[12px] leading-[1.55] text-[#525252]">
-                    {q.description}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

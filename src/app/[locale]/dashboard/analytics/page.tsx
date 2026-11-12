@@ -230,7 +230,7 @@ async function renderAnalyticsPage({
     id: userRow.id,
     restaurants: await prisma.restaurant.findMany({
       where: { id: { in: scopedIds } },
-      select: { id: true, name: true, aiAnalyticsEnabled: true, targetRating: true },
+      select: { id: true, name: true, isActive: true, aiAnalyticsEnabled: true, targetRating: true },
       orderBy: { createdAt: 'asc' },
     }),
   };
@@ -251,12 +251,18 @@ async function renderAnalyticsPage({
   const platformFilter = sp.platform && sp.platform !== 'all' ? sp.platform : null;
   const branchFilter = sp.branch && sp.branch !== 'all' ? sp.branch : null;
 
-  // Multi-restaurant owner: optional restaurantId filter (whitelist scope).
+  // The panel works on one business at a time: the shell's business switcher
+  // writes `?restaurantId` (whitelisted against the scope here). Without a
+  // valid one this is the first active business — the one the switcher
+  // selects by default — instead of "every business", which showed totals for
+  // all of them under the switcher's single-business label until the shell
+  // rewrote the URL (same rule as the dashboard home).
   const ownedIds = user.restaurants.map((r) => r.id);
-  const restaurantIds =
+  const selectedRestaurantId =
     sp.restaurantId && sp.restaurantId !== 'all' && ownedIds.includes(sp.restaurantId)
-      ? [sp.restaurantId]
-      : ownedIds;
+      ? sp.restaurantId
+      : (user.restaurants.find((r) => r.isActive)?.id ?? null);
+  const restaurantIds = selectedRestaurantId ? [selectedRestaurantId] : ownedIds;
 
   const now = Date.now();
   // §38.50 — Custom range: explicit start/end. Aksi halde rolling window
@@ -269,7 +275,6 @@ async function renderAnalyticsPage({
     : new Date(now - windowDays * 2 * 24 * 60 * 60 * 1000);
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
-  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
   // §38.158 — `trendWindow` (14-haftalık ISO week range) PulseTrendChart
   // ile birlikte silindi. KPI / heatmap / sentiment compute'ları
   // `windowStart`/`windowEnd` kullanmaya devam eder.
@@ -293,7 +298,6 @@ async function renderAnalyticsPage({
   const [
     feedbacksWindow,
     feedbacksPrevWindow,
-    feedbacks7d,
     redirectedWindow,
     redirectedPrevWindow,
     lowRatedWindow,
@@ -332,10 +336,6 @@ async function renderAnalyticsPage({
     }),
     prisma.feedback.count({
       where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
-    }),
-    prisma.feedback.findMany({
-      where: { ...baseWhere, createdAt: { gte: sevenDaysAgo } },
-      select: { createdAt: true },
     }),
     prisma.feedback.count({
       where: {
@@ -409,12 +409,15 @@ async function renderAnalyticsPage({
 
   // Header subtitle: what the page shows — the business in scope (the shell's
   // business switcher writes `?restaurantId`) and the period.
-  const scopeLabel =
-    restaurantIds.length === 1
-      ? (user.restaurants.find((r) => r.id === restaurantIds[0])?.name ?? '')
-      : isTr
-        ? `Tüm işletmeler (${restaurantIds.length})`
-        : `All businesses (${restaurantIds.length})`;
+  const scopeLabel = (() => {
+    if (restaurantIds.length === 0) return '';
+    if (restaurantIds.length === 1) {
+      return user.restaurants.find((r) => r.id === restaurantIds[0])?.name ?? '';
+    }
+    return isTr
+      ? `Tüm işletmeler (${restaurantIds.length})`
+      : `All businesses (${restaurantIds.length})`;
+  })();
   const periodLabel = (() => {
     if (customRange) {
       const fmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-US', {
@@ -429,11 +432,14 @@ async function renderAnalyticsPage({
     return isTr ? `Son ${windowDays} gün` : `Last ${windowDays} days`;
   })();
   // CSV export keeps the current scope + filters (same params as the page).
+  // The business is the resolved one, so the export never silently widens to
+  // every business when the URL has no `?restaurantId` yet.
   const exportQuery = new URLSearchParams();
-  for (const key of ['range', 'platform', 'branch', 'restaurantId', 'customStart', 'customEnd'] as const) {
+  for (const key of ['range', 'platform', 'branch', 'customStart', 'customEnd'] as const) {
     const value = sp[key];
     if (typeof value === 'string' && value) exportQuery.set(key, value);
   }
+  if (selectedRestaurantId) exportQuery.set('restaurantId', selectedRestaurantId);
   const exportQs = exportQuery.toString();
   const exportHref = `/api/dashboard/analytics/export${exportQs ? `?${exportQs}` : ''}`;
 
@@ -563,13 +569,33 @@ async function renderAnalyticsPage({
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
   const _totalRedirects = platformShare.reduce((a, p) => a + p.count, 0);
-  const showPlatformShare = !platformFilter;
+  // KANAL DAĞILIMI rows: platforms + 'Buaze QR' (rating ≥4 with no platform).
+  const buazeQrCount = feedbacksWindow.filter(
+    (f) => (f.rating ?? 0) >= 4 && !f.platform,
+  ).length;
+  const channelRows = [
+    ...platformShare.map((p) => ({
+      platform: p.key,
+      label: PLATFORMS[p.id].label,
+      count: p.count,
+      color: PLATFORMS[p.id].color,
+    })),
+    ...(buazeQrCount > 0
+      ? [{ platform: 'buaze_qr', label: 'Buaze QR', count: buazeQrCount, color: '#0A0A0A' }]
+      : []),
+  ];
+  // Only meaningful across platforms (hidden under a platform filter) and
+  // only when there is something to show — the card renders nothing for an
+  // empty list, which left an empty grid column.
+  const showPlatformShare = !platformFilter && channelRows.length > 0;
 
-  // Günlük dağılım (7-day day-of-week) — fixed 7d window
+  // Günlük dağılım (day-of-week) — over the selected period, like every other
+  // card. It used a fixed last-7-days window, so with "Son 90 gün" or a custom
+  // range in the past it counted reviews the header said were not shown.
   const dayLabels = isTr ? DAY_LABELS_TR : DAY_LABELS_EN;
   const zonedDayHour = makeZonedDayHour(resolveDisplayTimeZone());
   const dayBuckets: number[] = Array(7).fill(0);
-  for (const f of feedbacks7d) {
+  for (const f of feedbacksWindow) {
     const { day: idx } = zonedDayHour(f.createdAt);
     if (idx >= 0 && idx < 7) dayBuckets[idx] = (dayBuckets[idx] || 0) + 1;
   }
@@ -924,33 +950,17 @@ async function renderAnalyticsPage({
           AI-bağımsız) + TopMentionsPolarity per-theme polarity arrow
           (extractThemes data) ikilisi HANDOFF spec'ine birebir uyar +
           owner için 2 farklı sentiment angle sunar (overall + per-theme). */}
-      {showPlatformShare && (
-        <div className="grid gap-3.5 lg:grid-cols-[1.4fr_1fr_1fr]">
+      {/* Channel breakdown only means something across platforms: with a
+          platform filter it is hidden, but sentiment + top mentions stay
+          (they used to disappear with it). */}
+      <div
+        className={`grid gap-3.5 ${
+          showPlatformShare ? 'lg:grid-cols-[1.4fr_1fr_1fr]' : 'lg:grid-cols-2'
+        }`}
+      >
+        {showPlatformShare && (
           <ChannelDistributionMini
-            channels={[
-              ...platformShare.map((p) => ({
-                platform: p.key,
-                label: PLATFORMS[p.id].label,
-                count: p.count,
-                color: PLATFORMS[p.id].color,
-              })),
-              // 'Buaze QR' UI runtime label: platform null yorumlar (rating ≥4).
-              ...(() => {
-                const buazeQrCount = feedbacksWindow.filter(
-                  (f) => (f.rating ?? 0) >= 4 && !f.platform,
-                ).length;
-                return buazeQrCount > 0
-                  ? [
-                      {
-                        platform: 'buaze_qr',
-                        label: isTr ? 'Buaze QR' : 'Buaze QR',
-                        count: buazeQrCount,
-                        color: '#0A0A0A',
-                      },
-                    ]
-                  : [];
-              })(),
-            ]}
+            channels={channelRows}
             isTr={isTr}
             caption={
               isTr
@@ -958,25 +968,25 @@ async function renderAnalyticsPage({
                 : 'Where 4-5 star reviews came from'
             }
           />
+        )}
 
-          {/* Stage 66 §38.147 — DUYGU DAĞILIMI donut. Rating distribution
-              NPS-style heuristic (rating 5 = positive, 3-4 = neutral,
-              1-2 = negative). AI-bağımsız, her zaman compute edilebilir. */}
-          <SentimentDonut
-            pos={sentimentPos}
-            neu={sentimentNeu}
-            neg={sentimentNeg}
-            isTr={isTr}
-            totalSample={sentimentTotal}
-          />
+        {/* Stage 66 §38.147 — DUYGU DAĞILIMI donut. Rating distribution
+            NPS-style heuristic (rating 5 = positive, 3-4 = neutral,
+            1-2 = negative). AI-bağımsız, her zaman compute edilebilir. */}
+        <SentimentDonut
+          pos={sentimentPos}
+          neu={sentimentNeu}
+          neg={sentimentNeg}
+          isTr={isTr}
+          totalSample={sentimentTotal}
+        />
 
-          {/* Stage 66 §38.147 — EN ÇOK BAHSEDİLENLER per-theme polarity.
-              extractThemes themes[] data direkt. Polarity derive: pos% ≥60
-              → ↑ green, <35 → ↓ red, else → · neutral. AI yok ise empty
-              state ("yeterli veri yok"). */}
-          <TopMentionsPolarity themes={themes.themes} isTr={isTr} />
-        </div>
-      )}
+        {/* Stage 66 §38.147 — EN ÇOK BAHSEDİLENLER per-theme polarity.
+            extractThemes themes[] data direkt. Polarity derive: pos% ≥60
+            → ↑ green, <35 → ↓ red, else → · neutral. AI yok ise empty
+            state ("yeterli veri yok"). */}
+        <TopMentionsPolarity themes={themes.themes} isTr={isTr} />
+      </div>
 
       {/* 2-col 1fr/1fr: Günlük dağılım + Saat-bazlı dağılım */}
       <div className="grid gap-3.5 lg:grid-cols-2">

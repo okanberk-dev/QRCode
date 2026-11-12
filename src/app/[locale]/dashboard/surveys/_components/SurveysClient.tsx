@@ -6,6 +6,9 @@
 //   skeleton. Rows are cached per business, so a business that was NOT
 //   hydrated shows a skeleton and fetches, and one business's surveys are never
 //   drawn under another business's heading.
+// - The shell's business switcher is the only business picker. Owners with
+//   several businesses get one toolbar segment: "This business" (follows the
+//   switcher) or "All businesses" (a local list filter), next to the summary.
 // - One summary line replaces the four stat cards.
 // - Each survey is a card with the actions owners actually need without
 //   opening it: copy the customer link, publish a draft in one tap, and a
@@ -47,7 +50,7 @@ import {
   PulseMenu,
   PulseMenuDivider,
   PulseMenuItem,
-  PulseSelect,
+  Tabs,
   useConfirmDialog,
 } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
@@ -90,6 +93,8 @@ interface Props {
 /** Cache key for the "all businesses" list. */
 const ALL_KEY = '__all__';
 
+type Scope = 'business' | 'all';
+
 const TEMPLATE_ICONS: Record<SurveyTemplateIcon, LucideIcon> = {
   Smile,
   Gauge,
@@ -113,12 +118,22 @@ export default function SurveysClient({
   const isTr = locale === 'tr';
   const router = useRouter();
 
-  // Follows the shell's business switcher; `null` = "All businesses".
-  const {
-    activeId: activeRestaurantId,
-    ready: businessReady,
-    select: setActiveRestaurantId,
-  } = useActiveBusinessSelection(restaurants, initialActiveRestaurantId);
+  // Follows the shell's business switcher (the only business picker).
+  const { activeId: activeRestaurantId, ready: businessReady } = useActiveBusinessSelection(
+    restaurants,
+    initialActiveRestaurantId,
+  );
+  // "All businesses" is a local list filter; picking a business in the shell
+  // switcher brings the list back to that business.
+  const multiBusiness = restaurants.length > 1;
+  const [scope, setScope] = useState<Scope>('business');
+  useEffect(() => {
+    const back = () => setScope('business');
+    window.addEventListener('buaze:active-restaurant-change', back);
+    return () => window.removeEventListener('buaze:active-restaurant-change', back);
+  }, []);
+  // `null` = every business the owner may see.
+  const listRestaurantId = scope === 'all' && multiBusiness ? null : activeRestaurantId;
 
   const [cache, setCache] = useState<Record<string, SurveyListRow[]>>(() =>
     initialSurveysFor ? { [initialSurveysFor]: initialSurveys } : {},
@@ -130,7 +145,7 @@ export default function SurveysClient({
     setCache((prev) => ({ ...prev, [initialSurveysFor]: initialSurveys }));
   }, [initialSurveysFor, initialSurveys]);
 
-  const key = activeRestaurantId ?? ALL_KEY;
+  const key = listRestaurantId ?? ALL_KEY;
   const rows = cache[key];
   const requestedRef = useRef<Set<string>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -144,8 +159,8 @@ export default function SurveysClient({
     requested.add(key);
     setLoadError(null);
     let cancelled = false;
-    const url = activeRestaurantId
-      ? `/api/surveys?restaurantId=${encodeURIComponent(activeRestaurantId)}`
+    const url = listRestaurantId
+      ? `/api/surveys?restaurantId=${encodeURIComponent(listRestaurantId)}`
       : '/api/surveys';
     (async () => {
       try {
@@ -172,7 +187,7 @@ export default function SurveysClient({
       cancelled = true;
       requested.delete(key);
     };
-  }, [businessReady, rows, key, activeRestaurantId, retryTick, isTr]);
+  }, [businessReady, rows, key, listRestaurantId, retryTick, isTr]);
 
   const loadingRows = rows === undefined;
   const surveys = useMemo(() => rows ?? [], [rows]);
@@ -195,19 +210,21 @@ export default function SurveysClient({
     [restaurants],
   );
   const activeRestaurant = restaurants.find((r) => r.id === activeRestaurantId) ?? null;
-  // The business the "new survey" links and the template suggestions refer to.
+  // The business the "new survey" links and the template suggestions refer to:
+  // always the switcher's business, also while "All businesses" is shown.
   const targetRestaurant = activeRestaurant ?? restaurants[0] ?? null;
-  const moduleOff = activeRestaurant
-    ? !activeRestaurant.surveysEnabled
-    : restaurants.length > 0 && restaurants.every((r) => !r.surveysEnabled);
+  // "New survey" is blocked when the target business has the module off.
+  const moduleOff = targetRestaurant ? !targetRestaurant.surveysEnabled : false;
   const moduleOffMessage = (names: string) =>
     isTr
       ? `Anket modülü ${names} için Buaze yönetimi tarafından kapatıldı. Mevcut anketlerin korunur; yeni anket yayınlanamaz ve yayındaki linkler yanıt toplamaz.`
       : `The Surveys module is turned off by Buaze for ${names}. Your existing surveys are kept, but new surveys can't be published and live links stop collecting answers.`;
+  // Banner: the shown business, or every business with the module off.
   const disabledNames = restaurants
-    .filter((r) => !r.surveysEnabled && (!activeRestaurantId || r.id === activeRestaurantId))
+    .filter((r) => !r.surveysEnabled && (!listRestaurantId || r.id === listRestaurantId))
     .map((r) => r.name)
     .join(', ');
+  const targetOffMessage = moduleOffMessage(targetRestaurant?.name ?? '');
 
   const newBase = `/${locale}/dashboard/surveys/new`;
   const businessQuery = targetRestaurant
@@ -217,16 +234,17 @@ export default function SurveysClient({
   const detailHref = (id: string, tab?: string) =>
     `/${locale}/dashboard/surveys/${id}${tab ? `?tab=${tab}` : ''}`;
 
-  const patchRow = useCallback(
-    (id: string, fn: (r: SurveyListRow) => SurveyListRow) => {
-      setCache((prev) => {
-        const list = prev[key];
-        if (!list) return prev;
-        return { ...prev, [key]: list.map((r) => (r.id === id ? fn(r) : r)) };
-      });
-    },
-    [key],
-  );
+  // A survey can sit in two cached lists (its business and "All businesses"):
+  // a change is applied to every list that holds it.
+  const patchRow = useCallback((id: string, fn: (r: SurveyListRow) => SurveyListRow) => {
+    setCache((prev) => {
+      const next: Record<string, SurveyListRow[]> = {};
+      for (const [k, list] of Object.entries(prev)) {
+        next[k] = list.map((r) => (r.id === id ? fn(r) : r));
+      }
+      return next;
+    });
+  }, []);
 
   async function handleCopy(row: SurveyListRow) {
     const ok = await copyText(surveyPublicUrl(publicBaseUrl, row.slug));
@@ -314,12 +332,9 @@ export default function SurveysClient({
         return;
       }
       setNotice(isTr ? 'Kopya oluşturuldu.' : 'Copy created.');
-      setCache((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-      requestedRef.current.delete(key);
+      // The copy belongs in several lists: drop them all and reload this one.
+      setCache({});
+      requestedRef.current.clear();
       setRetryTick((n) => n + 1);
     } catch {
       setError(connectionErrorMessage(locale));
@@ -351,9 +366,11 @@ export default function SurveysClient({
             return;
           }
           setCache((prev) => {
-            const list = prev[key];
-            if (!list) return prev;
-            return { ...prev, [key]: list.filter((r) => r.id !== row.id) };
+            const next: Record<string, SurveyListRow[]> = {};
+            for (const [k, list] of Object.entries(prev)) {
+              next[k] = list.filter((r) => r.id !== row.id);
+            }
+            return next;
           });
           setNotice(isTr ? 'Anket silindi.' : 'Survey deleted.');
         } catch {
@@ -379,26 +396,21 @@ export default function SurveysClient({
     : `${totals.total} ${totals.total === 1 ? 'survey' : 'surveys'} · ${totals.live} live · ${totals.responses} ${totals.responses === 1 ? 'response' : 'responses'}`;
 
   const newSurveyLabel = isTr ? 'Yeni anket' : 'New survey';
+  const pageDescription = isTr
+    ? 'Müşterilerinden kısa, hedefli geri bildirim topla. QR ile paylaş, sonuçları burada oku.'
+    : 'Collect short, targeted feedback. Share by QR and read the results here.';
 
   // ─── No business at all ──────────────────────────────────────────────
   if (restaurants.length === 0) {
     return (
       <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-7 lg:py-8">
-        <PageHeader
-          eyebrow={isTr ? 'ANKETLER' : 'SURVEYS'}
-          title={isTr ? 'Anketler' : 'Surveys'}
-          description={
-            isTr
-              ? 'Müşterilerinden kısa, hedefli geri bildirim topla. QR ile paylaş, sonuçları burada oku.'
-              : 'Collect short, targeted feedback. Share by QR and read the results here.'
-          }
-        />
+        <PageHeader title={isTr ? 'Anketler' : 'Surveys'} description={pageDescription} />
         <EmptyState
           icon={<ClipboardList size={20} />}
           title={isTr ? 'Önce bir işletme ekle' : 'Add a business first'}
           body={isTr ? 'Anketler bir işletmeye bağlıdır.' : 'Surveys belong to a business.'}
           action={
-            <Link href={`/${locale}/dashboard/restaurants`} className="bz-btn-primary min-h-[44px]">
+            <Link href={`/${locale}/dashboard/restaurants`} className="bz-btn-primary min-h-11 sm:min-h-9">
               {isTr ? 'İşletmelerime git' : 'Go to my businesses'}
             </Link>
           }
@@ -410,27 +422,22 @@ export default function SurveysClient({
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-7 lg:py-8">
       <PageHeader
-        eyebrow={isTr ? 'ANKETLER' : 'SURVEYS'}
         title={isTr ? 'Anketler' : 'Surveys'}
-        description={
-          isTr
-            ? 'Müşterilerinden kısa, hedefli geri bildirim topla. QR ile paylaş, sonuçları burada oku.'
-            : 'Collect short, targeted feedback. Share by QR and read the results here.'
-        }
+        description={pageDescription}
         actions={
           canWrite ? (
             moduleOff ? (
               <button
                 type="button"
                 disabled
-                title={moduleOffMessage(disabledNames)}
-                className="bz-btn-primary min-h-[44px] gap-2 text-sm"
+                title={targetOffMessage}
+                className="bz-btn-primary min-h-11 gap-2 sm:min-h-9"
               >
                 <Plus size={16} aria-hidden="true" />
                 {newSurveyLabel}
               </button>
             ) : (
-              <Link href={newSurveyHref} className="bz-btn-primary min-h-[44px] gap-2 text-sm">
+              <Link href={newSurveyHref} className="bz-btn-primary min-h-11 gap-2 sm:min-h-9">
                 <Plus size={16} aria-hidden="true" />
                 {newSurveyLabel}
               </Link>
@@ -439,27 +446,35 @@ export default function SurveysClient({
         }
       />
 
-      {moduleOff || (!activeRestaurantId && disabledNames) ? (
+      {disabledNames ? (
         <div className="mb-4">
           <AlertBanner kind="warn">{moduleOffMessage(disabledNames)}</AlertBanner>
         </div>
       ) : null}
 
-      {restaurants.length > 1 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <label className="text-xs font-medium text-[#525252]">
-            {isTr ? 'İşletme' : 'Business'}
-          </label>
-          <PulseSelect
-            value={activeRestaurantId ?? ''}
-            onChange={(v) => setActiveRestaurantId(v || null)}
-            options={[
-              { value: '', label: isTr ? 'Tüm işletmeler' : 'All businesses' },
-              ...restaurants.map((r) => ({ value: r.id, label: r.name })),
-            ]}
-            ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
-            className="min-w-[220px]"
-          />
+      {/* One toolbar: which businesses are shown · summary. Hidden while
+          there is nothing to sum up for a single-business owner. */}
+      {(multiBusiness || (!loadingRows && surveys.length > 0)) && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+          {multiBusiness && (
+            <Tabs
+              items={[
+                { id: 'business', label: isTr ? 'Bu işletme' : 'This business' },
+                {
+                  id: 'all',
+                  label: isTr ? 'Tüm işletmeler' : 'All businesses',
+                  count: restaurants.length,
+                },
+              ]}
+              active={scope}
+              onChange={(id) => setScope(id === 'all' ? 'all' : 'business')}
+              ariaLabel={isTr ? 'Gösterilen işletmeler' : 'Businesses shown'}
+              className="shrink-0 [&_.bz-tab]:min-h-[44px] sm:[&_.bz-tab]:min-h-0"
+            />
+          )}
+          {!loadingRows && surveys.length > 0 && (
+            <p className="text-sm text-[#525252]">{summaryLine}</p>
+          )}
         </div>
       )}
 
@@ -503,13 +518,11 @@ export default function SurveysClient({
           canWrite={canWrite}
           moduleOff={moduleOff}
           targetRestaurant={targetRestaurant}
-          newSurveyHref={newSurveyHref}
           businessQuery={businessQuery}
           newBase={newBase}
         />
       ) : (
         <>
-          <p className="mb-3 text-sm text-[#525252]">{summaryLine}</p>
           <ul className="space-y-3">
             {surveys.map((row) => {
               const rowOff = moduleOffIds.has(row.restaurantId);
@@ -548,7 +561,7 @@ export default function SurveysClient({
                           action buttons sit above it (relative z-10). */}
                       <Link
                         href={detailHref(row.id)}
-                        className="bz-h-tight inline-flex min-h-[44px] max-w-full items-center truncate text-[16px] after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[#0A0A0A]"
+                        className="bz-h-tight inline-flex min-h-[44px] max-w-full items-center truncate text-[16px] after:absolute after:inset-0 after:rounded-xl after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[#0A0A0A]"
                       >
                         {row.title}
                       </Link>
@@ -560,7 +573,7 @@ export default function SurveysClient({
                       {!row.isActive && <Badge kind="warn">{isTr ? 'Pasif' : 'Inactive'}</Badge>}
                     </div>
                     <p className="mt-1.5 text-[13px] text-[#737373]">
-                      {!activeRestaurantId && restaurants.length > 1 && (
+                      {!listRestaurantId && multiBusiness && (
                         <span className="font-medium text-[#525252]">
                           {row.restaurant.name} ·{' '}
                         </span>
@@ -574,7 +587,7 @@ export default function SurveysClient({
                       <button
                         type="button"
                         onClick={() => void handleCopy(row)}
-                        className="bz-btn-ghost min-h-[44px] gap-2 text-[13px]"
+                        className="bz-btn-ghost min-h-11 gap-2 sm:min-h-9"
                       >
                         {copied ? (
                           <Check size={14} aria-hidden="true" />
@@ -595,7 +608,7 @@ export default function SurveysClient({
                         onClick={() => void setPublished(row, true)}
                         disabled={busy || rowOff}
                         title={rowOff ? moduleOffMessage(row.restaurant.name) : undefined}
-                        className="bz-btn-primary min-h-[44px] gap-2 text-[13px]"
+                        className="bz-btn-primary min-h-11 gap-2 sm:min-h-9"
                       >
                         {busy ? (
                           <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -615,7 +628,7 @@ export default function SurveysClient({
                               ? `${row.title} için diğer işlemler`
                               : `More actions for ${row.title}`
                           }
-                          className="bz-btn-icon h-11 w-11 border border-[#EDEDED]"
+                          className="bz-btn-icon h-11 w-11 border border-[#EDEDED] sm:h-9 sm:w-9"
                         >
                           <MoreHorizontal size={18} aria-hidden="true" />
                         </button>
@@ -645,21 +658,14 @@ export default function SurveysClient({
                           >
                             {isTr ? 'Kopyasını oluştur' : 'Duplicate'}
                           </PulseMenuItem>
-                          {row.isPublished ? (
+                          {/* A draft's "Publish" is the card's own button. */}
+                          {row.isPublished && (
                             <PulseMenuItem
                               icon={<EyeOff size={14} />}
                               disabled={busy}
                               onSelect={() => void setPublished(row, false)}
                             >
                               {isTr ? 'Yayından kaldır' : 'Unpublish'}
-                            </PulseMenuItem>
-                          ) : (
-                            <PulseMenuItem
-                              icon={<Eye size={14} />}
-                              disabled={rowOff || busy}
-                              onSelect={() => void setPublished(row, true)}
-                            >
-                              {isTr ? 'Yayınla' : 'Publish'}
                             </PulseMenuItem>
                           )}
                           <PulseMenuDivider />
@@ -691,11 +697,10 @@ export default function SurveysClient({
   );
 }
 
-/** Three stacked card placeholders; the page wrapper and card chrome match the real list. */
+/** Three stacked card placeholders; the card chrome matches the real list. */
 function SurveyCardsSkeleton() {
   return (
     <div className="space-y-3" aria-busy="true">
-      <SkBox className="h-4 w-56" />
       {[0, 1, 2].map((i) => (
         <div
           key={i}
@@ -706,8 +711,8 @@ function SurveyCardsSkeleton() {
             <SkBox className="h-3.5 w-72 max-w-full" />
           </div>
           <div className="flex items-center gap-2">
-            <SkBox className="h-11 w-36" />
-            <SkBox className="h-11 w-11" />
+            <SkBox className="h-11 w-36 sm:h-9" />
+            <SkBox className="h-11 w-11 sm:h-9 sm:w-9" />
           </div>
         </div>
       ))}
@@ -725,7 +730,6 @@ function EmptyStart({
   canWrite,
   moduleOff,
   targetRestaurant,
-  newSurveyHref,
   businessQuery,
   newBase,
 }: {
@@ -733,7 +737,6 @@ function EmptyStart({
   canWrite: boolean;
   moduleOff: boolean;
   targetRestaurant: RestaurantOption | null;
-  newSurveyHref: string;
   businessQuery: string;
   newBase: string;
 }) {
@@ -762,8 +765,8 @@ function EmptyStart({
   const sectorLabel =
     sector === 'other' ? undefined : SECTORS.find((s) => s.sectorKey === sector)?.display[locale];
   const suggested = templatesForSector(sector).slice(0, 3);
-  const withTemplate = (t: SurveyTemplate) =>
-    `${newBase}?template=${t.id}${businessQuery ? `&${businessQuery}` : ''}`;
+  const withTemplate = (id: SurveyTemplate['id'] | 'blank') =>
+    `${newBase}?template=${id}${businessQuery ? `&${businessQuery}` : ''}`;
 
   return (
     <section className="bz-card p-5 sm:p-7">
@@ -790,8 +793,8 @@ function EmptyStart({
           return (
             <li key={template.id}>
               <Link
-                href={withTemplate(template)}
-                className="group flex h-full min-h-[44px] flex-col gap-2 rounded-2xl border border-[#EDEDED] bg-white p-4 transition-colors hover:border-[#0A0A0A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A]"
+                href={withTemplate(template.id)}
+                className="group flex h-full min-h-[44px] flex-col gap-2 rounded-xl border border-[#EDEDED] bg-white p-4 transition-colors hover:border-[#0A0A0A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A]"
               >
                 <span
                   aria-hidden="true"
@@ -814,8 +817,10 @@ function EmptyStart({
       </ul>
 
       <p className="mt-4">
+        {/* Opens the editor with no questions; "New survey" above opens
+            every template. */}
         <Link
-          href={newSurveyHref}
+          href={withTemplate('blank')}
           className="inline-flex min-h-[44px] items-center text-sm font-medium text-[#525252] underline underline-offset-4 hover:text-[#0A0A0A]"
         >
           {isTr ? 'Boş anketle başla' : 'Start from blank'}

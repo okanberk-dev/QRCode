@@ -1,40 +1,69 @@
 import {
   SkBox,
-  SkPageHeader,
   SkPageShell,
   SkTable,
 } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
- * Owner CRM customers — KPI + filter strip + customer table.
- * (CLAUDE.md §40.10)
+ * Owner CRM customers — header + KPI cards + one-row toolbar + table.
+ * Mirrors page.tsx (CLAUDE.md §40.10): no eyebrow, KPI grid 2 → 6 (2 + 3)
+ * → 5, bare toolbar (segment tabs · search · period on lg+; search then two
+ * selects below lg), table on lg+ / cards below.
  */
 export default function Loading() {
   return (
     <SkPageShell max={1600}>
-      <SkPageHeader withActions titleWidth="w-44" />
+      {/* PageHeader: title + description, CSV button below on mobile. */}
+      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end md:gap-4">
+        <div className="min-w-0 flex-1 space-y-3">
+          <SkBox className="h-7 w-40 max-w-full" />
+          <SkBox className="h-4 w-80 max-w-full" />
+        </div>
+        <SkBox className="h-11 w-28 shrink-0 sm:h-10" />
+      </div>
 
-      {/* 5 KPI cards — same grid as page.tsx (2 → 3 → 4 → 5 cols). */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 lg:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="bz-card p-4 space-y-3">
+          <div
+            key={i}
+            className={`bz-card space-y-3 p-4 ${
+              i === 0
+                ? 'col-span-2 md:col-span-3 lg:col-span-1'
+                : i === 1
+                  ? 'md:col-span-3 lg:col-span-1'
+                  : 'md:col-span-2 lg:col-span-1'
+            }`}
+          >
             <SkBox className="h-3 w-16" />
             <SkBox className="h-7 w-20" />
           </div>
         ))}
       </div>
 
-      <div className="bz-card p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <SkBox className="h-9 w-56" />
-          <SkBox className="h-9 w-32" />
-          <SkBox className="h-9 w-28" />
-          <SkBox className="h-9 w-32" />
-          <SkBox className="h-9 w-24" />
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-2">
+        <SkBox className="hidden h-9 w-[440px] shrink-0 lg:block" />
+        <SkBox className="h-11 w-full lg:h-9 lg:flex-1" />
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0">
+          <SkBox className="h-11 w-full lg:hidden" />
+          <SkBox className="h-11 w-full lg:h-9 lg:w-[150px]" />
         </div>
       </div>
 
-      <SkTable rows={8} cols={6} />
+      <div className="hidden lg:block">
+        <SkTable rows={8} cols={6} />
+      </div>
+      <div className="grid gap-3 lg:hidden">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bz-card flex items-start gap-3 p-4">
+            <SkBox className="h-9 w-9 shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkBox className="h-4 w-36 max-w-full" />
+              <SkBox className="h-3 w-48 max-w-full" />
+              <SkBox className="h-5 w-28" />
+            </div>
+          </div>
+        ))}
+      </div>
     </SkPageShell>
   );
 }

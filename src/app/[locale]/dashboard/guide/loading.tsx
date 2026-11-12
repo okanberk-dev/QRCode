@@ -1,8 +1,4 @@
-import {
-  SkBox,
-  SkPageHeader,
-  SkPageShell,
-} from '@/components/ui/skeletons/PageSkeleton';
+import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
  * Owner getting-started guide — mirrors page.tsx (CLAUDE.md §40.10):
@@ -12,7 +8,11 @@ import {
 export default function Loading() {
   return (
     <SkPageShell max={1280} space={6}>
-      <SkPageHeader titleWidth="w-72" />
+      {/* PageHeader without an eyebrow: title + description (+ mb-5). */}
+      <div className="space-y-2.5">
+        <SkBox className="h-8 w-72 max-w-full" />
+        <SkBox className="h-4 w-96 max-w-full" />
+      </div>
 
       <div className="bz-card flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 items-start gap-3">
@@ -24,8 +24,8 @@ export default function Loading() {
           </div>
         </div>
         <div className="flex gap-2">
-          <SkBox className="h-9 w-32 rounded-full" />
-          <SkBox className="h-9 w-36 rounded-full" />
+          <SkBox className="h-11 w-32 sm:h-9" />
+          <SkBox className="h-11 w-36 sm:h-9" />
         </div>
       </div>
 
@@ -51,8 +51,22 @@ export default function Loading() {
         <SkBox className="h-4 w-80 max-w-full" />
         <div className="flex flex-wrap gap-1.5">
           {Array.from({ length: 6 }).map((_, i) => (
-            <SkBox key={i} className="h-8 w-20 rounded-full" />
+            <SkBox key={i} className="h-11 w-20 rounded-full sm:h-8" />
           ))}
+        </div>
+      </div>
+
+      <div className="bz-card-soft flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="flex items-start gap-3">
+          <SkBox className="h-9 w-9 shrink-0 rounded-full" />
+          <div className="space-y-2">
+            <SkBox className="h-4 w-44" />
+            <SkBox className="h-4 w-72 max-w-full" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <SkBox className="h-11 w-32 sm:h-9" />
+          <SkBox className="h-11 w-28 sm:h-9" />
         </div>
       </div>
     </SkPageShell>

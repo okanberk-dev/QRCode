@@ -6,12 +6,12 @@ import {
   Check,
   Image as ImageIcon,
   Loader2,
-  Palette,
   RotateCcw,
   Upload,
   X,
 } from 'lucide-react';
 import { AlertBanner, ColorPicker, Eyebrow, PulseSelect } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import { compressImage } from '@/lib/client-image';
 
 interface BrandIdentityCardProps {
@@ -217,18 +217,18 @@ export default function BrandIdentityCard({
   const previewFontFamily = FONT_FAMILY_MAP[form.accentFont] || FONT_FAMILY_MAP['Space Grotesk'];
 
   if (loading) {
+    // Shape-matching skeleton: title + logo/favicon row + colour rows.
     return (
-      <section id="brand" className="bz-card p-6 sm:p-7 scroll-mt-20">
-        <div className="flex items-center gap-2 mb-1">
-          <Palette size={14} strokeWidth={2} className="text-[#0A0A0A]" />
-          <Eyebrow>{isTr ? 'MARKA KİMLİĞİ' : 'BRAND IDENTITY'}</Eyebrow>
-        </div>
-        <div className="bz-h-tight mt-1 mb-5" style={{ fontSize: 18 }}>
-          {isTr ? 'Marka kimliği' : 'Brand identity'}
-        </div>
-        <div className="flex items-center gap-2 text-[13px] text-[#737373]">
-          <Loader2 size={14} className="animate-spin" />
-          {isTr ? 'Yükleniyor…' : 'Loading…'}
+      <section id="brand" className="bz-card p-6 sm:p-7 scroll-mt-20" aria-busy="true">
+        <SkBox className="h-5 w-32" />
+        <SkBox className="mt-2 h-3 w-72 max-w-full" />
+        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <SkBox className="h-3 w-20" />
+              <SkBox className="h-14 w-full" />
+            </div>
+          ))}
         </div>
       </section>
     );
@@ -236,11 +236,7 @@ export default function BrandIdentityCard({
 
   return (
     <section id="brand" className="bz-card p-6 sm:p-7 scroll-mt-20">
-      <div className="flex items-center gap-2 mb-1">
-        <Palette size={14} strokeWidth={2} className="text-[#0A0A0A]" />
-        <Eyebrow>{isTr ? 'MARKA KİMLİĞİ' : 'BRAND IDENTITY'}</Eyebrow>
-      </div>
-      <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+      <div className="bz-h-tight" style={{ fontSize: 18 }}>
         {isTr ? 'Marka kimliği' : 'Brand identity'}
       </div>
       <p className="mt-1 text-[13px] text-[#737373] leading-[1.55]">

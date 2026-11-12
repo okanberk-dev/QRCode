@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import {
-  BarChart3, Check, Copy, ExternalLink, Eye, EyeOff, Loader2, Lock, MoreHorizontal, Plus, QrCode,
+  Check, Copy, ExternalLink, Eye, EyeOff, Loader2, Lock, MoreHorizontal, Plus,
 } from 'lucide-react';
 import { AlertBanner, PulseMenu, PulseMenuItem } from '@/components/ui';
 import type { MenuReadiness } from '@/lib/menu-readiness';
@@ -24,13 +23,14 @@ const DOT = {
 /**
  * The one strip that says where the menu stands and what to do next:
  * - draft: three steps (add categories → add items → publish) + "Publish";
- * - live: link, copy, QR, analytics, open, and "take offline" behind "⋯";
+ * - live: the link (opens the menu), "Copy link", and "take offline" behind
+ *   "⋯". QR and analytics live in the page header — not repeated here;
  * - locked (admin switch) / viewer: the page is read-only, said honestly —
  *   no upgrade promise, just how to ask for editing to be turned on.
  */
 export function MenuStatusBar({
   isTr, copy, fmt, restaurant, readiness, lockReason, readOnly, publishBusy, justPublished,
-  analyticsHref, onDismissPublished, onPublish, onUnpublish, onOpenShare, onStep,
+  onDismissPublished, onPublish, onUnpublish, onStep,
 }: {
   isTr: boolean;
   copy: MenuCopy;
@@ -43,11 +43,9 @@ export function MenuStatusBar({
   publishBusy: boolean;
   /** Show the one-time "your menu is live" banner. */
   justPublished: boolean;
-  analyticsHref: string;
   onDismissPublished: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
-  onOpenShare: () => void;
   onStep: (step: MenuStepId) => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -82,20 +80,17 @@ export function MenuStatusBar({
     <div className="space-y-3">
       <section
         role="status"
-        className={`bz-card p-4 sm:px-5 lg:min-h-[96px] ${tone === 'muted' ? 'bg-[#FAFAFA]' : ''}`}
+        // Same height in every state from 1024px; the content sits in the
+        // middle of it instead of leaving an empty band under a one-line state.
+        className={`bz-card p-4 sm:px-5 lg:flex lg:min-h-[96px] lg:flex-col lg:justify-center ${tone === 'muted' ? 'bg-[#FAFAFA]' : ''}`}
       >
         {children}
       </section>
+      {/* One-time confirmation; the copy button sits in the strip above and
+          "Paylaş ve QR" in the page header, so no buttons are repeated here. */}
       {justPublished && live && !lockReason && (
         <AlertBanner kind="lime" onDismiss={onDismissPublished}>
-          <span className="block">{copy.justPublished}</span>
-          <span className="mt-2 flex flex-wrap gap-2">
-            {copyButton}
-            <button type="button" onClick={onOpenShare} className="bz-btn-ghost">
-              <QrCode size={14} strokeWidth={2} />
-              {copy.downloadQrShort}
-            </button>
-          </span>
+          <span aria-live="polite">{copy.justPublished}</span>
         </AlertBanner>
       )}
     </div>
@@ -157,29 +152,19 @@ export function MenuStatusBar({
             </p>
             {updated && <p className="mt-0.5 text-[11px] text-[#737373]">{updated}</p>}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <a
               href={menuUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="min-w-0 max-w-full truncate rounded-lg bg-[#FAFAFA] px-2.5 py-2 text-[12px] text-[#525252] ring-1 ring-[#EDEDED] hover:text-[#0A0A0A]"
+              aria-label={`${copy.openMenu}: ${shownUrl}`}
+              className="inline-flex min-h-[44px] min-w-0 flex-1 items-center gap-1.5 rounded-lg bg-[#FAFAFA] px-2.5 text-[12px] text-[#525252] ring-1 ring-[#EDEDED] hover:text-[#0A0A0A] lg:min-h-[36px] lg:flex-none"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
-              {shownUrl}
+              <span className="min-w-0 truncate">{shownUrl}</span>
+              <ExternalLink size={12} strokeWidth={2} className="shrink-0" aria-hidden />
             </a>
             {copyButton}
-            <button type="button" onClick={onOpenShare} className="bz-btn-ghost">
-              <QrCode size={14} strokeWidth={2} />
-              {copy.downloadQrShort}
-            </button>
-            <Link href={analyticsHref} className="bz-btn-ghost">
-              <BarChart3 size={14} strokeWidth={2} />
-              {copy.analytics}
-            </Link>
-            <a href={menuUrl} target="_blank" rel="noopener noreferrer" className="bz-btn-ghost">
-              <ExternalLink size={14} strokeWidth={2} />
-              {copy.openMenu}
-            </a>
             <PulseMenu
               trigger={
                 <button
@@ -271,10 +256,12 @@ export function MenuStatusBar({
             );
             return (
               <li key={step.id} className="min-w-0">
-                {current && !readOnly && (step.id !== 'publish' || readiness.canPublish) ? (
+                {/* The publish step is a marker only — the "Yayına al" button next
+                    to the steps is the one action, not repeated here. */}
+                {current && !readOnly && step.id !== 'publish' ? (
                   <button
                     type="button"
-                    onClick={() => (step.id === 'publish' ? onPublish() : onStep(step.id))}
+                    onClick={() => onStep(step.id)}
                     className={`${base} border-[#C6F24E] bg-[#EAF9B8]/60 text-[#0A0A0A] hover:bg-[#EAF9B8]`}
                   >
                     {marker}

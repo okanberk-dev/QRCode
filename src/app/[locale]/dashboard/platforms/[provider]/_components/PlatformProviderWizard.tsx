@@ -3,15 +3,17 @@
 // Owner `/dashboard/platforms/[provider]` — one platform, one business.
 //
 // Layout: single back link → header (name + the only status pill on the
-// page) → business context (multi-business owners only) → [Google search
+// page) → business context (multi-business owners only; the business is
+// picked with the shell's business switcher, the page follows
+// `?restaurantId`) → [Google search
 // panel] → Link card (labelled field, "show to customers" switch row, inline
 // action row + polite live region) → [WhatsApp review card] → customer
 // routing summary (business-level pickers live on the overview).
 //
 // The sticky UnsavedChangesBar is intentionally not used here: at 390px it
 // covered the URL input being typed into (WCAG 2.4.11). Dirty edits are
-// guarded by an inline Save, `beforeunload`, the back links and the business
-// switch.
+// guarded by an inline Save, `beforeunload`, the back links and a confirm when
+// the shell switches business with an unsaved edit.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -218,8 +220,19 @@ export default function PlatformProviderWizard({
 
   useEffect(() => setNowMs(Date.now()), []);
 
+  // Read by the effect below without re-running it on every keystroke.
+  const dirtyRef = useRef(false);
+  const selectedIdRef = useRef(selectedRestaurantId);
+  selectedIdRef.current = selectedRestaurantId;
+  // The `?restaurantId` the owner chose to stay away from — the effect can
+  // re-run for it (fresh server rows) before the URL change lands.
+  const declinedQueryRef = useRef<string | null>(null);
+
   // Resolve the active business after mount (?restaurantId → remembered →
-  // first) and keep the URL in sync without a server round trip.
+  // first) and keep the URL in sync without a server round trip. This also
+  // follows the shell's business switcher. A switch with an unsaved edit
+  // asks first; "cancel" puts the previous business back in the URL, which
+  // the shell follows too.
   useEffect(() => {
     const next = resolveActiveRestaurantId({
       restaurants: restaurantRows,
@@ -227,12 +240,36 @@ export default function PlatformProviderWizard({
       storedRestaurantId: readStoredRestaurantId(),
     });
     if (!next) return;
+    if (queryRestaurantId && queryRestaurantId === declinedQueryRef.current) return;
+    declinedQueryRef.current = null;
+    const current = selectedIdRef.current;
+    if (next !== current && dirtyRef.current && restaurantRows.some((row) => row.id === current)) {
+      const discard = window.confirm(
+        isTr
+          ? 'Kaydedilmemiş değişiklikler var. Başka bir işletmeye geçerseniz bu değişiklikler kaybolur. Devam edilsin mi?'
+          : 'You have unsaved changes. Switching business discards them. Continue?',
+      );
+      if (!discard) {
+        declinedQueryRef.current = queryRestaurantId;
+        try {
+          window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, current);
+        } catch {
+          /* storage blocked — the URL still carries the selection */
+        }
+        const search = setRestaurantParam(window.location.search, current);
+        window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
+        window.dispatchEvent(new CustomEvent('buaze:active-restaurant-change', { detail: { restaurantId: current } }));
+        return;
+      }
+    }
     setSelectedRestaurantId(next);
     setResolved(true);
     if (queryRestaurantId !== next) {
       const search = setRestaurantParam(window.location.search, next);
       window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
     }
+    // isTr is stable for the page's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryRestaurantId, restaurantRows]);
 
   // Resync the form ONLY when the selected business (or the platform page)
@@ -252,6 +289,7 @@ export default function PlatformProviderWizard({
   }, [platform.enabledField, platform.urlField, selectedRestaurantRowId]);
 
   const dirty = url !== currentUrl || enabled !== currentEnabled;
+  dirtyRef.current = dirty;
   const gated = selectedRestaurant?.externalPlatformsEnabled === false && platform.externalReview === true;
 
   // Leaving with unsaved edits (reload / tab close / external navigation).
@@ -296,21 +334,6 @@ export default function PlatformProviderWizard({
 
   const guardLeave = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (dirty && !confirmDiscard()) event.preventDefault();
-  };
-
-  const selectRestaurant = (restaurantId: string) => {
-    if (restaurantId === selectedRestaurantId) return;
-    // Switching businesses resets the form — don't silently drop an edit.
-    if (dirty && !confirmDiscard()) return;
-    setSelectedRestaurantId(restaurantId);
-    try {
-      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
-    } catch {
-      /* storage blocked — URL still carries the selection */
-    }
-    window.dispatchEvent(new CustomEvent('buaze:active-restaurant-change', { detail: { restaurantId } }));
-    const search = setRestaurantParam(window.location.search, restaurantId);
-    window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
   };
 
   const updateSelectedRestaurant = (patch: Partial<ProviderRestaurantInfo>) => {
@@ -525,7 +548,6 @@ export default function PlatformProviderWizard({
         </Link>
         <PageHeader
           titleScale="compact"
-          eyebrow={linksLabel.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}
           title={
             <span className="inline-flex min-w-0 items-center gap-3">
               <PlatformLogo platform={platform} size={36} />
@@ -542,13 +564,7 @@ export default function PlatformProviderWizard({
       </div>
 
       {restaurantRows.length > 1 && (
-        <PlatformBusinessContext
-          locale={locale}
-          restaurant={selectedRestaurant}
-          restaurants={restaurantRows}
-          summary={reviewSummary}
-          onSelect={selectRestaurant}
-        />
+        <PlatformBusinessContext locale={locale} restaurant={selectedRestaurant} summary={reviewSummary} />
       )}
 
       {gated && (

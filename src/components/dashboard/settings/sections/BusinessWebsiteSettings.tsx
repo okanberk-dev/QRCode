@@ -78,16 +78,11 @@ export function BusinessWebsiteSettings({
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {/* The section heading above already names this ("Web sitesi"), so
+          only the how-to line + BETA badge stay here. */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Eyebrow>{isTr ? 'WEB SİTESİ ENTEGRASYONU' : 'WEBSITE INTEGRATION'}</Eyebrow>
-          <div className="bz-h-tight mt-1 text-[18px]">
-            {isTr
-              ? 'İşletmenizin web sitesine Buaze yorum widget\u2019ı'
-              : 'Buaze review widget for your business website'}
-          </div>
-          <p className="mt-1 text-[12.5px] text-[#525252]">
+          <p className="text-[12.5px] text-[#525252]">
             {isTr
               ? 'Sitenize aşağıdaki kodu yapıştırın — ziyaretçileriniz son yorumları, ortalama puanınızı görür ve yorum bırakabilir.'
               : 'Paste this code into your site — visitors see recent reviews, average rating, and can leave a review.'}

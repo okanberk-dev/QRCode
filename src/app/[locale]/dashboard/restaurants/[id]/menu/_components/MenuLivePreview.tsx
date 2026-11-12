@@ -24,8 +24,9 @@ const PublicMenuView = dynamic(
 // gezinebilir (Firefox 126+, Chrome/Safari her zaman destekledi).
 //
 // 375 native × 0.78 zoom = 292 visual. Bezel padding 8px (p-2), toplam
-// 308 + stage padding 16 (px-4) = 340. Grid column `lg:grid-cols-
-// [1fr_340px]` ile parity (page.tsx).
+// 308 + stage padding 2×16 (px-4) + kart kenarlığı 2×1 = 342. Builder grid'i
+// rail sütununu `342px` verir (page.tsx + loading.tsx); daha dar sütun
+// telefonun sağ kenarını kesiyordu.
 const PHONE_NATIVE_WIDTH = 375;
 const PHONE_NATIVE_HEIGHT = 660;
 const PREVIEW_ZOOM = 0.78;
@@ -84,7 +85,7 @@ export function MenuLivePreview({ restaurant, categories, locale, published, var
 
   return (
     <Tag className={wrapperClass} aria-label={label} role={variant === 'inline' ? 'group' : undefined}>
-      <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+      <div className="bz-card overflow-hidden">
         {/* Header — eyebrow + spec + new-tab open shortcut */}
         <header className="flex items-center justify-between gap-2 border-b border-[#EDEDED] px-4 py-3">
           <div className="flex items-center gap-2">

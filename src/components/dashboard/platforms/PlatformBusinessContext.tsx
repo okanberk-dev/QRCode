@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
-import { PulseSelect } from '@/components/ui';
 import { detectSector, type SectorKey } from '@/lib/sector-platforms';
 import type { PlatformLinkState, PlatformLinkSummary } from '@/lib/platform-link-status';
 import { PlatformStateIcon } from './PlatformStatusPill';
@@ -82,23 +81,20 @@ export function PlatformSummaryLine({
 }
 
 /**
- * The single page-level business control on the platform pages: which
- * business you are editing, its sector, the review-link summary, a
- * labelled business picker (multi-business owners only) and the way back to
- * that business's settings.
+ * Which business the platform page is editing: name, sector, the
+ * review-link summary and the way to that business's settings. The business
+ * itself is picked with the shell's business switcher (sidebar / mobile top
+ * bar) — the page follows it through `?restaurantId`, so there is no second
+ * picker here.
  */
 export function PlatformBusinessContext({
   locale,
   restaurant,
-  restaurants,
   summary,
-  onSelect,
 }: {
   locale: 'tr' | 'en';
   restaurant: { id: string; name: string; category: string | null };
-  restaurants: Array<{ id: string; name: string }>;
   summary: PlatformLinkSummary;
-  onSelect: (restaurantId: string) => void;
 }) {
   const isTr = locale === 'tr';
   const initial = restaurant.name.trim().charAt(0).toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US') || '•';
@@ -127,23 +123,9 @@ export function PlatformBusinessContext({
           </p>
         </div>
       </div>
-      {restaurants.length > 1 && (
-        <div className="flex w-full flex-col gap-1 sm:w-[240px]">
-          <span id="pb-select-label" className="text-[12px] font-semibold text-[#0A0A0A]">
-            {isTr ? 'İşletme' : 'Business'}
-          </span>
-          <PulseSelect
-            aria-labelledby="pb-select-label"
-            value={restaurant.id}
-            onChange={onSelect}
-            options={restaurants.map((item) => ({ value: item.id, label: item.name }))}
-            className="w-full"
-          />
-        </div>
-      )}
       <Link
         href={settingsPlatformsHref(locale, restaurant.id)}
-        className={`bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:min-h-[38px] ${restaurants.length > 1 ? 'sm:self-end' : ''}`}
+        className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:min-h-[38px]"
       >
         <Settings size={14} aria-hidden="true" />
         {isTr ? 'İşletme ayarları' : 'Business settings'}

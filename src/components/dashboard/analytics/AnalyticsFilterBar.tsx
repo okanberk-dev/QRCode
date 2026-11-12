@@ -219,9 +219,8 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
         </button>
       </div>
 
-      <div
-        className={`grid w-full gap-2 sm:flex sm:w-auto ${showBranches ? 'grid-cols-2' : 'grid-cols-1'}`}
-      >
+      {/* Platform (+ branch) select and reset share one row on mobile too. */}
+      <div className="flex w-full items-center gap-2 sm:w-auto">
         <PulseSelect
           value={platform}
           onChange={(v) => updateMany([['platform', v]])}
@@ -230,7 +229,7 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
             ...PLATFORM_OPTIONS.map((pid) => ({ value: pid, label: PLATFORMS[pid].label })),
           ]}
           ariaLabel={isTr ? 'Platform' : 'Platform'}
-          className="w-full sm:w-[170px]"
+          className="min-w-0 flex-1 sm:w-[170px] sm:flex-none"
         />
         {showBranches && (
           <PulseSelect
@@ -241,22 +240,21 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
               ...(branches ?? []).map((b) => ({ value: b, label: b })),
             ]}
             ariaLabel={isTr ? 'Şube' : 'Branch'}
-            className="w-full sm:w-[170px]"
+            className="min-w-0 flex-1 sm:w-[170px] sm:flex-none"
           />
         )}
+        {hasActiveFilter && (
+          <button
+            type="button"
+            onClick={reset}
+            className="bz-btn-ghost inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 text-[12px] sm:h-[34px] sm:min-h-0 sm:min-w-0 sm:py-0"
+            aria-label={isTr ? 'Filtreleri temizle' : 'Reset filters'}
+          >
+            <RotateCcw size={13} aria-hidden="true" />
+            <span className="hidden sm:inline">{isTr ? 'Temizle' : 'Reset'}</span>
+          </button>
+        )}
       </div>
-
-      {hasActiveFilter && (
-        <button
-          type="button"
-          onClick={reset}
-          className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5 text-[12px] sm:min-h-0"
-          aria-label={isTr ? 'Filtreleri temizle' : 'Reset filters'}
-        >
-          <RotateCcw size={13} aria-hidden="true" />
-          {isTr ? 'Temizle' : 'Reset'}
-        </button>
-      )}
 
       {pending && (
         <span

@@ -8,9 +8,12 @@ import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 export default function Loading() {
   return (
     <SkPageShell max={1280} space={4}>
-      <SkBox className="h-3 w-32" />
+      <div className="flex min-h-11 items-center sm:min-h-[18px]">
+        <SkBox className="h-3 w-32" />
+      </div>
 
-      <div className="flex items-start justify-between gap-4">
+      {/* Başlık: sağda "Sonuçlar" + "Diğer" (mobilde başlığın altında). */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1 space-y-3">
           <SkBox className="h-8 w-72 max-w-full" />
           <div className="flex gap-1.5">
@@ -18,16 +21,15 @@ export default function Loading() {
             <SkBox className="h-5 w-20" />
           </div>
         </div>
-        <div className="hidden shrink-0 items-center gap-2 sm:flex">
-          <SkBox className="h-9 w-32" />
-          <SkBox className="h-9 w-24" />
-          <SkBox className="h-9 w-9" />
+        <div className="flex shrink-0 items-center gap-2">
+          <SkBox className="h-11 w-32 sm:h-9 sm:w-28" />
+          <SkBox className="h-11 w-11 sm:h-9 sm:w-20" />
         </div>
       </div>
 
       <div className="bz-card space-y-3 p-4 sm:p-5">
         <SkBox className="h-5 w-32" />
-        <div className="space-y-3 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4">
+        <div className="space-y-3 rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4">
           <SkBox className="h-11 w-full" />
           <SkBox className="h-9 w-2/3" />
         </div>

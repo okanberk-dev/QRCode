@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ClipboardList, Image as ImageIcon, Plus } from 'lucide-react';
@@ -18,7 +17,7 @@ import { useDndAccessibility, useMenuDndSensors } from './menu-ui';
  */
 export function ItemList({
   category, categoryIndex, categoryTotal, isTr, locale, readOnly, isDesktop, copy, fmt,
-  headerExtra, onAddItem, onBulkAdd,
+  onAddItem, onBulkAdd,
   onEditItem, onToggleSoldOut, onToggleHidden, onMoveItem, onDeleteItem, onReorderItems,
   onRenameCategory, onToggleCategoryVisible, onMoveCategory, onDeleteCategory,
 }: {
@@ -31,8 +30,6 @@ export function ItemList({
   isDesktop: boolean;
   copy: MenuCopy;
   fmt: MenuFmt;
-  /** Extra header control (the 1024–1399px "Preview" button). */
-  headerExtra?: ReactNode;
   onAddItem: () => void;
   /** "Paste a list" — the button only exists when this is provided. */
   onBulkAdd?: () => void;
@@ -88,13 +85,12 @@ export function ItemList({
     <section
       id="menu-items-pane"
       aria-label={copy.items}
-      className="scroll-mt-32 overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm"
+      className="bz-card scroll-mt-32 overflow-hidden"
     >
       <div className="border-b border-[#EDEDED] px-4 py-4 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="pulse-eyebrow text-[#737373]">{copy.itemsEyebrow}</p>
-            <h2 className="mt-1 truncate text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
+            <h2 className="truncate text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
               {category.name}
             </h2>
             {category.description && (
@@ -106,7 +102,6 @@ export function ItemList({
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {headerExtra}
             <div className="hidden items-center gap-2 sm:flex">
               {pasteButton}
               {addButton}

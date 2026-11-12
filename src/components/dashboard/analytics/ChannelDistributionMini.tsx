@@ -66,7 +66,8 @@ export function ChannelDistributionMini({
                 />
               </div>
               <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[78px] text-right">
-                {c.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')} · %{Math.round(pct)}
+                {c.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')} ·{' '}
+                {isTr ? `%${Math.round(pct)}` : `${Math.round(pct)}%`}
               </span>
             </li>
           );

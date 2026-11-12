@@ -18,6 +18,10 @@
 // anything: create shows only the notice; edit shows it on top and hides the
 // buttons that publish.
 //
+// Business: create targets the business picked in the shell's switcher (the
+// only business picker — `useActiveBusinessSelection` follows it); the page
+// shows that business as read-only text.
+//
 // Layout: two columns from `lg` (form | sticky phone preview), one column below
 // with a "Preview" button that opens the same phone in a modal. The action bar
 // is sticky above the floating bottom nav on phones.
@@ -41,7 +45,6 @@ import {
   Field,
   Modal,
   PageHeader,
-  PulseSelect,
   useConfirmDialog,
 } from '@/components/ui';
 import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
@@ -228,7 +231,6 @@ export default function SurveyEditorClient({
   });
   const [descriptionOpen, setDescriptionOpen] = useState(() => form.description.trim() !== '');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [businessPickerOpen, setBusinessPickerOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const isDesktop = useIsDesktop();
 
@@ -569,8 +571,14 @@ export default function SurveyEditorClient({
     ? { id: restaurant.id, name: restaurant.name, slug: restaurant.slug, primaryColor: restaurant.primaryColor }
     : null;
 
-  const businessOptions = restaurants.map((r) => ({ value: r.id, label: r.name }));
   const multiBusiness = !isEdit && restaurants.length > 1;
+  // Read-only target business. Create: the shell's business switcher changes
+  // it (no second picker on the page); edit: the survey's own business.
+  const businessHint = multiBusiness
+    ? isTr
+      ? '(başka işletme için işletme seçiciyi kullan)'
+      : '(use the business switcher for another business)'
+    : null;
 
   const missingMessage =
     attempted && !validation.ok
@@ -601,19 +609,8 @@ export default function SurveyEditorClient({
         <PageHeader
           eyebrow={eyebrow}
           title={isTr ? 'Yeni anket' : 'New survey'}
+          description={<BusinessLine locale={locale} name={restaurant.name} hint={businessHint} />}
         />
-        {multiBusiness && (
-          <div className="max-w-[360px]">
-            <Field label={isTr ? 'İşletme' : 'Business'}>
-              <PulseSelect
-                className="w-full"
-                value={restaurant.id}
-                options={businessOptions}
-                onChange={(v) => business.select(v)}
-              />
-            </Field>
-          </div>
-        )}
         <AlertBanner kind="warn">{MODULE_OFF_MESSAGE[locale]}</AlertBanner>
         <Link href={listHref} className="bz-btn-primary inline-flex min-h-11 items-center justify-center">
           {isTr ? 'Anketlere dön' : 'Back to surveys'}
@@ -770,7 +767,16 @@ export default function SurveyEditorClient({
         )}
       </div>
 
-      <PageHeader eyebrow={eyebrow} title={pageTitle} description={pageDescription} />
+      <PageHeader
+        eyebrow={eyebrow}
+        title={pageTitle}
+        description={
+          <>
+            {pageDescription}
+            <BusinessLine locale={locale} name={restaurant.name} hint={businessHint} />
+          </>
+        }
+      />
 
       {isEdit && moduleOff && <AlertBanner kind="warn">{MODULE_OFF_MESSAGE[locale]}</AlertBanner>}
 
@@ -815,18 +821,6 @@ export default function SurveyEditorClient({
 
       {phase === 'pick' ? (
         <>
-          {multiBusiness && (
-            <div className="max-w-[360px]">
-              <Field label={isTr ? 'İşletme' : 'Business'}>
-                <PulseSelect
-                  className="w-full"
-                  value={restaurant.id}
-                  options={businessOptions}
-                  onChange={(v) => business.select(v)}
-                />
-              </Field>
-            </div>
-          )}
           <SurveyTemplatePicker
             locale={locale}
             sector={sector}
@@ -893,38 +887,6 @@ export default function SurveyEditorClient({
                     <Plus size={15} aria-hidden="true" />
                     {isTr ? 'Açıklama ekle' : 'Add a description'}
                   </button>
-                )}
-
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[#EDEDED] pt-3 text-[13px] text-[#525252]">
-                  <span>
-                    {isTr ? 'İşletme: ' : 'Business: '}
-                    <strong className="font-semibold text-[#0A0A0A]">{restaurant.name}</strong>
-                  </span>
-                  {multiBusiness && (
-                    <button
-                      type="button"
-                      className="inline-flex min-h-11 items-center rounded-full px-2 font-medium text-[#0A0A0A] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-                      aria-expanded={businessPickerOpen}
-                      onClick={() => setBusinessPickerOpen((v) => !v)}
-                    >
-                      {isTr ? 'Değiştir' : 'Change'}
-                    </button>
-                  )}
-                </div>
-                {multiBusiness && businessPickerOpen && (
-                  <div className="max-w-[360px]">
-                    <Field label={isTr ? 'İşletme' : 'Business'}>
-                      <PulseSelect
-                        className="w-full"
-                        value={restaurant.id}
-                        options={businessOptions}
-                        onChange={(v) => {
-                          business.select(v);
-                          setBusinessPickerOpen(false);
-                        }}
-                      />
-                    </Field>
-                  </div>
                 )}
               </section>
 
@@ -1154,6 +1116,30 @@ export default function SurveyEditorClient({
       {guardDialog}
       {confirmEl}
     </div>
+  );
+}
+
+// ── Business (read-only) ────────────────────────────────────────────────────
+
+function BusinessLine({
+  locale,
+  name,
+  hint,
+}: {
+  locale: EditorLocale;
+  name: string;
+  /** Multi-business create: where to change the business. */
+  hint: string | null;
+}) {
+  return (
+    <span className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-[13px] leading-[1.5] text-[#525252]">
+      <span>
+        {locale === 'tr' ? 'İşletme: ' : 'Business: '}
+        <strong className="font-semibold text-[#0A0A0A]">{name}</strong>
+      </span>
+      {/* Own flex item: moves to the next line as one piece on narrow screens. */}
+      {hint && <span className="text-[#737373]">{hint}</span>}
+    </span>
   );
 }
 

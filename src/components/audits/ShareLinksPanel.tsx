@@ -8,6 +8,7 @@
 // denetimlere mount edilir (salt-okunur üyeler link token'ı hiç almaz).
 
 import { useEffect, useId, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   Check,
   Copy,
@@ -35,7 +36,7 @@ import {
 import Disclosure from './Disclosure';
 import type { ShareLinksController } from './useShareLinks';
 
-/** Kopyala düğmesinin sabit id'si (detay başlığındaki "Linki paylaş" buna odaklanır). */
+/** Kopyala düğmesinin sabit id'si. */
 export const SHARE_COPY_BUTTON_ID = 'audit-share-copy';
 /** Detay sayfasındaki paylaşım kartının sabit id'si. */
 export const SHARE_CARD_ID = 'audit-share-card';
@@ -53,6 +54,10 @@ export interface ShareLinksPanelProps {
   variant?: 'card' | 'plain';
   /** Varsayılan link görünür olunca Kopyala düğmesine odaklan (`?share=1`, modal). */
   autoFocusCopy?: boolean;
+  /** Daha önce yayınlanıp duraklatılmış denetim: düğme "Yeniden başlat" der. */
+  paused?: boolean;
+  /** Verilirse "Önce madde ekle" bu adrese giden bağlantı olur (detay sayfası). */
+  addItemHref?: string;
   id?: string;
 }
 
@@ -85,6 +90,8 @@ export default function ShareLinksPanel({
   questionCount,
   variant = 'card',
   autoFocusCopy = false,
+  paused = false,
+  addItemHref,
   id,
 }: ShareLinksPanelProps) {
   const isTr = locale === 'tr';
@@ -192,9 +199,13 @@ export default function ShareLinksPanel({
           </h2>
         )}
         <AlertBanner kind="warn">
-          {isTr
-            ? 'Bu denetim yayında değil. Yayınlayınca linkler çalışır.'
-            : 'This audit is not live. Links work once you publish it.'}
+          {paused
+            ? isTr
+              ? 'Bu denetim duraklatıldı. Yeniden başlatınca linkler yine çalışır.'
+              : 'This audit is paused. Links work again once you restart it.'
+            : isTr
+              ? 'Bu denetim yayında değil. Yayınlayınca linkler çalışır.'
+              : 'This audit is not live. Links work once you publish it.'}
         </AlertBanner>
         {error && (
           <AlertBanner kind="danger" onDismiss={controller.clearError}>
@@ -208,13 +219,31 @@ export default function ShareLinksPanel({
             onClick={() => void controller.publishAndGetLink()}
             disabled={busy !== null || questionCount === 0}
           >
-            {busy === 'publish' ? (isTr ? 'Yayınlanıyor…' : 'Publishing…') : isTr ? 'Yayınla ve linki al' : 'Publish and get link'}
+            {busy === 'publish'
+              ? isTr
+                ? 'Yayınlanıyor…'
+                : 'Publishing…'
+              : paused
+                ? isTr
+                  ? 'Yeniden başlat'
+                  : 'Restart'
+                : isTr
+                  ? 'Yayınla ve linki al'
+                  : 'Publish and get link'}
           </button>
-          {questionCount === 0 && (
-            <span className="text-[12px] text-[#737373]">
-              {isTr ? 'Önce madde ekle.' : 'Add an item first.'}
-            </span>
-          )}
+          {questionCount === 0 &&
+            (addItemHref ? (
+              <Link
+                href={addItemHref}
+                className="inline-flex min-h-11 items-center text-[12.5px] font-semibold text-[#0A0A0A] underline underline-offset-2 sm:min-h-0"
+              >
+                {isTr ? 'Önce madde ekle' : 'Add an item first'}
+              </Link>
+            ) : (
+              <span className="text-[12px] text-[#737373]">
+                {isTr ? 'Önce madde ekle.' : 'Add an item first.'}
+              </span>
+            ))}
         </div>
         <p role="status" aria-live="polite" className="sr-only">
           {live}
@@ -263,7 +292,7 @@ export default function ShareLinksPanel({
           </p>
         </div>
       ) : (
-        <div className="space-y-3 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4">
+        <div className="space-y-3 rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4">
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               ref={inputRef}

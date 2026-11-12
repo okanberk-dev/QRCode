@@ -51,7 +51,7 @@ export default function ChipRadioGroup<T extends string>({
           />
           <span
             className={[
-              'inline-flex min-h-9 cursor-pointer select-none items-center rounded-full border px-3',
+              'inline-flex min-h-11 cursor-pointer select-none items-center rounded-full border px-3',
               'text-[12.5px] font-medium transition-colors sm:min-h-8',
               'border-[#EDEDED] bg-white text-[#525252] hover:bg-[#FAFAFA]',
               checkedCls,

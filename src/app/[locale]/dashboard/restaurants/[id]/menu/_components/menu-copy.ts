@@ -8,7 +8,6 @@
 export function buildMenuCopy(isTr: boolean) {
   return {
     title: isTr ? 'Menü' : 'Menu',
-    eyebrow: isTr ? 'MENÜ' : 'MENU',
     pageDescription: isTr
       ? 'Değişiklikler kaydedilir kaydedilmez menüne yansır.'
       : 'Changes appear on your menu as soon as you save them.',
@@ -19,9 +18,7 @@ export function buildMenuCopy(isTr: boolean) {
     exitPreview: isTr ? 'Önizlemeden çık' : 'Exit preview',
     design: isTr ? 'Görünüm' : 'Design',
     shareAndQr: isTr ? 'Paylaş ve QR' : 'Share & QR',
-    shareShort: 'QR',
     analytics: isTr ? 'Analitik' : 'Analytics',
-    previewRail: isTr ? 'Önizleme' : 'Preview',
 
     // ── status strip ──
     draft: isTr ? 'Taslak' : 'Draft',
@@ -50,9 +47,9 @@ export function buildMenuCopy(isTr: boolean) {
       : 'Your menu is live! Copy the link or download the QR and put it on your tables.',
     copyLink: isTr ? 'Linki kopyala' : 'Copy link',
     copied: isTr ? 'Kopyalandı' : 'Copied',
-    downloadQrShort: isTr ? 'QR indir' : 'Download QR',
     openMenu: isTr ? 'Menüyü aç' : 'Open menu',
     moreActions: isTr ? 'Diğer işlemler' : 'More actions',
+    more: isTr ? 'Diğer' : 'More',
     lastUpdated: isTr ? 'Son güncelleme' : 'Last updated',
     lockedTitle: isTr ? 'Menü düzenleme bu işletme için kapalı.' : 'Menu editing is turned off for this business.',
     lockedBody: isTr
@@ -96,7 +93,6 @@ export function buildMenuCopy(isTr: boolean) {
 
     // ── items ──
     items: isTr ? 'Ürünler' : 'Items',
-    itemsEyebrow: isTr ? 'ÜRÜNLER' : 'ITEMS',
     addItem: isTr ? 'Ürün ekle' : 'Add item',
     editItem: isTr ? 'Ürünü düzenle' : 'Edit item',
     pasteList: isTr ? 'Liste yapıştır' : 'Paste a list',

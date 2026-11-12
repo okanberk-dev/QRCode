@@ -1,22 +1,40 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Download, Grid3x3, List as ListIcon, Plus, QrCode, Trash2 } from 'lucide-react';
+import {
+  Copy,
+  Download,
+  ExternalLink,
+  Grid3x3,
+  List as ListIcon,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  QrCode,
+  Trash2,
+} from 'lucide-react';
 import {
   AlertBanner,
   ConfirmDialog,
   EmptyState,
+  ErrorState,
   PageHeader,
   PlatformChip,
+  PulseMenu,
+  PulseMenuDivider,
+  PulseMenuItem,
   PulseSelect,
+  Tabs,
   type PlatformId,
 } from '@/components/ui';
-import { SkCardGrid } from '@/components/ui/skeletons/PageSkeleton';
 import { CreateQRWizard, type QRGenerationResult } from '@/components/panel/qr/CreateQRWizard';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
+import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
+import { copyToClipboard } from '@/lib/clipboard';
 import { dedupeQrRows } from '@/lib/qr-signature';
-import { ACTIVE_BUSINESS_STORAGE_KEY } from '@/lib/active-business';
+import { QrGridSkeleton } from './_components/QrGridSkeleton';
 
 interface Restaurant {
   id: string;
@@ -39,7 +57,7 @@ interface Restaurant {
   externalPlatformsEnabled?: boolean;
 }
 
-interface QrHistoryItem {
+export interface QrHistoryItem {
   id: string;
   qrUrl: string;
   tableNumber: string | null;
@@ -55,6 +73,18 @@ interface QrHistoryItem {
   createdAt: string;
   restaurantId: string;
 }
+
+/** One business's QR list — loaded once, kept while the owner switches. */
+interface HistoryState {
+  status: 'loading' | 'ok' | 'error';
+  rows: QrHistoryItem[];
+}
+
+type Scope = 'business' | 'all';
+
+/** A history request that hangs is aborted and shown as an error with retry
+ *  instead of leaving the page on skeleton cards. */
+const HISTORY_TIMEOUT_MS = 15_000;
 
 const PLATFORM_TO_CHIP: Record<string, PlatformId> = {
   google: 'google',
@@ -78,73 +108,82 @@ const PLATFORM_LABELS: Record<string, string> = {
   yandex: 'Yandex',
 };
 
-interface QrClientProps {
-  initialRestaurants?: Restaurant[];
+/** `/qr/history` returns a bare array; tolerate `{ data: [] }` too. */
+function parseHistoryRows(data: unknown, restaurantId: string): QrHistoryItem[] | null {
+  const list = Array.isArray(data)
+    ? data
+    : data && typeof data === 'object' && Array.isArray((data as { data?: unknown }).data)
+      ? ((data as { data: unknown[] }).data)
+      : null;
+  if (!list) return null;
+  return list
+    .filter(
+      (row): row is Omit<QrHistoryItem, 'restaurantId'> =>
+        !!row && typeof row === 'object' && typeof (row as { id?: unknown }).id === 'string',
+    )
+    .map((row) => ({ ...row, restaurantId }));
 }
 
-export default function QrClient({ initialRestaurants }: QrClientProps) {
+function slugPart(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+interface QrClientProps {
+  initialRestaurants?: Restaurant[];
+  /** Server-rendered QR list per business (every listed business has an
+   *  entry, `[]` when it has none). Undefined → loaded per business here. */
+  initialHistories?: Record<string, QrHistoryItem[]>;
+}
+
+export default function QrClient({ initialRestaurants, initialHistories }: QrClientProps) {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const locale = params.locale === 'en' ? 'en' : 'tr';
   const isTr = locale === 'tr';
-  const preselected = searchParams.get('restaurant') || searchParams.get('restaurantId') || '';
+  const preselected = searchParams.get('restaurantId') || searchParams.get('restaurant') || '';
   const autoOpenWizard = searchParams.get('new') === '1';
 
-  // §40.10 server-hydration — initialRestaurants undefined ise client fetch yapar,
-  // doluysa çift skeleton flash önlenir. QR history hâlâ client-side fetch (her
-  // restoran için ayrı endpoint; defer/lazy concern).
+  // §40.10 server-hydration — undefined → client fetch (admin session).
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants ?? []);
-  const [items, setItems] = useState<QrHistoryItem[]>([]);
   const [restaurantsLoaded, setRestaurantsLoaded] = useState(initialRestaurants !== undefined);
-  const [loading, setLoading] = useState(true);
   const skipFirstRestaurantsFetchRef = useRef(initialRestaurants !== undefined);
+
+  const [histories, setHistories] = useState<Record<string, HistoryState>>(() => {
+    const out: Record<string, HistoryState> = {};
+    for (const [id, rows] of Object.entries(initialHistories ?? {})) {
+      out[id] = { status: 'ok', rows };
+    }
+    return out;
+  });
+  const inflightRef = useRef(new Map<string, AbortController>());
+
+  const [scope, setScope] = useState<Scope>('business');
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [showCreate, setShowCreate] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
+  // Short success note — "QR kodu oluşturuldu" / "Bağlantı kopyalandı".
+  const [notice, setNotice] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<QrHistoryItem | null>(null);
   const [deleting, setDeleting] = useState(false);
-  // Modal kapanışında "QR oluşturuldu / yeniden oluşturuldu" görünür
-  // feedback. Backend `rememberFeedbackQr` aynı tuple varsa update yapar
-  // (CLAUDE.md §34.5 distinct count) — kullanıcı için "yeni" gibi görünür.
-  const [createNotice, setCreateNotice] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // Filters
-  const [branchFilter, setBranchFilter] = useState<string>('all');
-  const [platformFilter, setPlatformFilter] = useState<string>('all');
-  const selectBranchFilter = (restaurantId: string) => {
-    setBranchFilter(restaurantId);
-    // "Tüm şubeler" is a local list filter only. The shell's business switcher
-    // owns `?restaurantId` and re-adds it whenever it is missing, so clearing
-    // it here used to snap the filter straight back to a single business.
-    if (restaurantId === 'all') return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('restaurant');
-    params.set('restaurantId', restaurantId);
-    if (typeof window !== 'undefined') window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
+  // The page follows the shell's business switcher (?restaurantId + the
+  // `buaze:active-restaurant-change` event) — no second business picker here.
+  const { activeId, ready: selectionReady } = useActiveBusinessSelection(
+    restaurants,
+    preselected || null,
+  );
 
-  // Auto-open the wizard when sidebar/CTA passes `?new=1` and at least
-  // one restaurant exists. Strip the flag from URL after consuming so a
-  // refresh doesn't re-open the modal indefinitely.
   useEffect(() => {
-    if (!autoOpenWizard) return;
-    if (!restaurantsLoaded) return;
-    if (restaurants.length === 0) return;
-    setShowCreate(true);
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete('new');
-    const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [autoOpenWizard, restaurantsLoaded, restaurants.length, pathname, router, searchParams]);
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 3000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
-  // 1) Load restaurants once — §40.10 skip if SSR hydrated. This used to
-  // depend on `preselected`, so the shell writing `?restaurantId` right after
-  // mount re-fetched the list, which in turn re-fetched every QR history
-  // (spinner shown twice, histories loaded three times).
+  // 1) Load restaurants once — §40.10 skip if SSR hydrated.
   useEffect(() => {
     if (skipFirstRestaurantsFetchRef.current) {
       skipFirstRestaurantsFetchRef.current = false;
@@ -169,54 +208,86 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
     };
   }, []);
 
-  // 1b) Follow the active business from the URL (the shell's switcher keeps
-  // `?restaurantId` in sync) without re-fetching anything.
-  useEffect(() => {
-    if (preselected && restaurants.some((r) => r.id === preselected)) {
-      setBranchFilter(preselected);
-    }
-  }, [preselected, restaurants]);
-
-  // 2) After restaurants load, fetch each restaurant's QR history in parallel
-  useEffect(() => {
-    if (!restaurantsLoaded) return;
-    if (restaurants.length === 0) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    Promise.all(
-      restaurants.map((r) =>
-        fetch(`/api/restaurants/${r.id}/qr/history`)
-          .then((res) => (res.ok ? res.json() : []))
-          .then((rows: Array<Omit<QrHistoryItem, 'restaurantId'>>) =>
-            rows.map((row) => ({ ...row, restaurantId: r.id })),
-          )
-          .catch(() => [] as QrHistoryItem[]),
-      ),
-    )
-      .then((results) => {
-        if (cancelled) return;
-        const flat: QrHistoryItem[] = ([] as QrHistoryItem[]).concat(...results);
-        setItems(dedupeQrRows(flat));
+  // 2) QR history per business. Each request has its own state, so one slow
+  // or failing business never keeps the whole page on skeleton cards, and a
+  // business that was already loaded is not fetched again when the owner
+  // switches back to it.
+  const loadHistory = useCallback((restaurantId: string) => {
+    inflightRef.current.get(restaurantId)?.abort();
+    const controller = new AbortController();
+    inflightRef.current.set(restaurantId, controller);
+    const isCurrent = () => inflightRef.current.get(restaurantId) === controller;
+    const timer = window.setTimeout(() => controller.abort(), HISTORY_TIMEOUT_MS);
+    setHistories((prev) => ({
+      ...prev,
+      [restaurantId]: { status: 'loading', rows: prev[restaurantId]?.rows ?? [] },
+    }));
+    fetch(`/api/restaurants/${restaurantId}/qr/history`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rows = parseHistoryRows(await res.json(), restaurantId);
+        if (!rows) throw new Error('Unexpected response');
+        if (isCurrent()) {
+          setHistories((prev) => ({
+            ...prev,
+            [restaurantId]: { status: 'ok', rows: dedupeQrRows(rows) },
+          }));
+        }
+      })
+      .catch(() => {
+        if (isCurrent()) {
+          setHistories((prev) => ({
+            ...prev,
+            [restaurantId]: { status: 'error', rows: prev[restaurantId]?.rows ?? [] },
+          }));
+        }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        window.clearTimeout(timer);
+        if (isCurrent()) inflightRef.current.delete(restaurantId);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantsLoaded, restaurants]);
+  }, []);
 
-  // (A lazy per-item SVG prefetch used to live here. QRCard renders its own
-  // <img> preview and ignores the `svg` prop, so the prefetch was dead
-  // weight — and every one of those GET /qr calls re-ran rememberFeedbackQr,
-  // bumping each QR's "Oluşturuldu" date on every page view.)
+  const multi = restaurants.length > 1;
+  const effectiveScope: Scope = multi ? scope : 'business';
 
-  // Platform filter options come from the QRs that actually exist, so hotel
-  // QRs pinned to Tripadvisor / Booking / Airbnb / Yandex are filterable too
-  // (the list used to be hardcoded to the four food-delivery platforms).
+  const scopeIds = useMemo(
+    () =>
+      effectiveScope === 'all' ? restaurants.map((r) => r.id) : activeId ? [activeId] : [],
+    [effectiveScope, restaurants, activeId],
+  );
+  const scopeIdsKey = scopeIds.join(',');
+
+  useEffect(() => {
+    if (!restaurantsLoaded || !selectionReady) return;
+    for (const id of scopeIdsKey ? scopeIdsKey.split(',') : []) {
+      if (!histories[id] && !inflightRef.current.has(id)) loadHistory(id);
+    }
+  }, [restaurantsLoaded, selectionReady, scopeIdsKey, histories, loadHistory]);
+
+  const pending =
+    !restaurantsLoaded ||
+    !selectionReady ||
+    scopeIds.some((id) => !histories[id] || histories[id].status === 'loading');
+  const failedIds = scopeIds.filter((id) => histories[id]?.status === 'error');
+
+  const items = useMemo(
+    () => dedupeQrRows(scopeIds.flatMap((id) => histories[id]?.rows ?? [])),
+    [scopeIds, histories],
+  );
+
+  const restaurantById = useMemo(() => {
+    const m = new Map<string, Restaurant>();
+    for (const r of restaurants) m.set(r.id, r);
+    return m;
+  }, [restaurants]);
+  const activeRestaurant = activeId ? restaurantById.get(activeId) ?? null : null;
+
+  // Platform options come from the QRs that actually exist. The filter is
+  // hidden when it could only offer one choice.
   const platformOptions = useMemo(() => {
     const present = new Set<string>();
     let hasGeneral = false;
@@ -228,63 +299,107 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
     const unknown = [...present].filter((key) => !(key in PLATFORM_LABELS)).sort();
     return [
       { value: 'all', label: isTr ? 'Tüm platformlar' : 'All platforms' },
-      ...(hasGeneral ? [{ value: 'general', label: isTr ? 'Genel (sabitsiz)' : 'General (no pin)' }] : []),
+      ...(hasGeneral
+        ? [{ value: 'general', label: isTr ? 'Varsayılan platform' : 'Default platform' }]
+        : []),
       ...[...known, ...unknown].map((key) => ({ value: key, label: PLATFORM_LABELS[key] ?? key })),
     ];
   }, [items, isTr]);
-
-  // A deleted QR can remove the selected platform from the list — fall back
-  // to "all" instead of leaving a filter value that is no longer offered.
-  useEffect(() => {
-    if (platformFilter === 'all') return;
-    if (!platformOptions.some((o) => o.value === platformFilter)) setPlatformFilter('all');
-  }, [platformOptions, platformFilter]);
-
-  const restaurantById = useMemo(() => {
-    const m = new Map<string, Restaurant>();
-    for (const r of restaurants) m.set(r.id, r);
-    return m;
-  }, [restaurants]);
+  const showPlatformFilter = platformOptions.length > 2;
+  // A deleted QR or a business switch can remove the selected platform —
+  // fall back to "all" instead of filtering by a choice that is not offered.
+  const activePlatform =
+    showPlatformFilter && platformOptions.some((o) => o.value === platformFilter)
+      ? platformFilter
+      : 'all';
 
   const filteredItems = useMemo(() => {
-    return items.filter((it) => {
-      if (branchFilter !== 'all' && it.restaurantId !== branchFilter) return false;
-      if (platformFilter === 'general' && it.platform) return false;
-      if (platformFilter !== 'all' && platformFilter !== 'general') {
-        if (it.platform !== platformFilter) return false;
-      }
-      return true;
-    });
-  }, [items, branchFilter, platformFilter]);
+    if (activePlatform === 'all') return items;
+    if (activePlatform === 'general') return items.filter((it) => !it.platform);
+    return items.filter((it) => it.platform === activePlatform);
+  }, [items, activePlatform]);
 
+  const targetLabel = useCallback(
+    (it: QrHistoryItem) =>
+      it.tableNumber
+        ? `${isTr ? 'Masa' : 'Table'} ${it.tableNumber}`
+        : it.platform
+          ? PLATFORM_LABELS[it.platform] || it.platform
+          : isTr
+            ? 'Genel QR'
+            : 'General QR',
+    [isTr],
+  );
+
+  // List rows show the platform in their own column, so the row title is
+  // just the table (or "Genel QR").
+  const rowLabel = useCallback(
+    (it: QrHistoryItem) =>
+      it.tableNumber
+        ? `${isTr ? 'Masa' : 'Table'} ${it.tableNumber}`
+        : isTr
+          ? 'Genel QR'
+          : 'General QR',
+    [isTr],
+  );
+
+  // The card name doubles as the download file name, so it keeps the
+  // business name ("Kadıköy Şube · Masa 3").
   const cardItems: QRCardItem[] = useMemo(() => {
     return filteredItems.map((it) => {
-      const rest = restaurantById.get(it.restaurantId);
-      const restName = rest?.name || (isTr ? 'İşletme' : 'Location');
-      const label = it.tableNumber
-        ? `${restName} · ${isTr ? 'Masa' : 'Table'} ${it.tableNumber}`
-        : it.platform
-          ? `${restName} · ${PLATFORM_LABELS[it.platform] || it.platform}`
-          : restName;
+      const restName = restaurantById.get(it.restaurantId)?.name || (isTr ? 'İşletme' : 'Location');
       return {
         id: it.id,
-        name: label,
-        branch: restaurants.length > 1 ? restName : undefined,
+        name: `${restName} · ${targetLabel(it)}`,
         platform: it.platform,
         createdAt: it.createdAt,
         qrUrl: it.qrUrl,
         restaurantId: it.restaurantId,
         tableNumber: it.tableNumber,
         // Forward owner-chosen palette so QRCard's download buttons
-        // (PNG + Premium PDF) request the API with `dark`/`light` params.
+        // (PNG + PDF) request the API with `dark`/`light` params.
         darkColor: it.darkColor,
         lightColor: it.lightColor,
-        // Wave A — surface the selected print/share template on the card
-        // (badge + threaded through downloads).
         templateId: it.templateId ?? null,
       };
     });
-  }, [filteredItems, restaurantById, restaurants.length, isTr]);
+  }, [filteredItems, restaurantById, targetLabel, isTr]);
+
+  // Wizard target: the active business (the switcher picks it). The
+  // all-businesses view keeps the wizard's business picker, as does a paused
+  // active business (paused businesses cannot get new QR codes).
+  const activeRestaurants = useMemo(
+    () => restaurants.filter((r) => r.isActive !== false),
+    [restaurants],
+  );
+  const wizardRestaurants =
+    effectiveScope === 'business' && activeRestaurant && activeRestaurant.isActive !== false
+      ? [activeRestaurant]
+      : activeRestaurants;
+  const wizardDefaultId =
+    activeId && wizardRestaurants.some((r) => r.id === activeId) ? activeId : undefined;
+  const canCreate = restaurantsLoaded && activeRestaurants.length > 0;
+
+  // Auto-open the wizard when sidebar/CTA passes `?new=1`. Strip the flag
+  // after consuming so a refresh doesn't re-open the modal.
+  useEffect(() => {
+    if (!autoOpenWizard) return;
+    if (!restaurantsLoaded || !selectionReady) return;
+    if (activeRestaurants.length === 0) return;
+    setShowCreate(true);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('new');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [
+    autoOpenWizard,
+    restaurantsLoaded,
+    selectionReady,
+    activeRestaurants.length,
+    pathname,
+    router,
+    searchParams,
+  ]);
 
   const handleCreated = (result: QRGenerationResult) => {
     const newItem: QrHistoryItem = {
@@ -300,129 +415,199 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
       createdAt: result.createdAt,
       restaurantId: result.restaurantId,
     };
-    setItems((prev) => dedupeQrRows([newItem, ...prev]));
-    // Görünür feedback — modal kapandı + kullanıcı listede yeni satırı görür.
-    // 3 saniye sonra otomatik kaybolur.
-    setCreateNotice(isTr ? 'QR kodu oluşturuldu.' : 'QR code created.');
-    setTimeout(() => setCreateNotice(null), 3000);
-    // Refresh from API to get the canonical id
-    setTimeout(() => {
-      fetch(`/api/restaurants/${result.restaurantId}/qr/history`)
-        .then((res) => (res.ok ? res.json() : []))
-        .then((rows: Array<Omit<QrHistoryItem, 'restaurantId'>>) => {
-          const enriched = rows.map((row) => ({ ...row, restaurantId: result.restaurantId }));
-          setItems((prev) => {
-            const otherRestaurants = prev.filter((p) => p.restaurantId !== result.restaurantId);
-            const merged = [...otherRestaurants, ...enriched];
-            return dedupeQrRows(merged);
-          });
-        })
-        .catch(() => {});
-    }, 400);
+    setHistories((prev) => ({
+      ...prev,
+      [result.restaurantId]: {
+        status: prev[result.restaurantId]?.status ?? 'ok',
+        rows: dedupeQrRows([newItem, ...(prev[result.restaurantId]?.rows ?? [])]),
+      },
+    }));
+    const visible = effectiveScope === 'all' || result.restaurantId === activeId;
+    setNotice(
+      visible
+        ? isTr
+          ? 'QR kodu oluşturuldu.'
+          : 'QR code created.'
+        : isTr
+          ? `QR kodu ${result.restaurantName} için oluşturuldu.`
+          : `QR code created for ${result.restaurantName}.`,
+    );
+    // Refresh that business from the API to get the saved id.
+    window.setTimeout(() => loadHistory(result.restaurantId), 400);
   };
 
-  // Delete confirms via ConfirmDialog (`pendingDelete` state) then runs
-  // optimistically — the row vanishes from the grid the moment the
-  // dialog confirms. On API failure we restore it and surface a banner.
-  const requestDelete = useCallback((item: QrHistoryItem) => {
-    setPendingDelete(item);
-  }, []);
+  const retryFailed = () => {
+    for (const id of failedIds) loadHistory(id);
+  };
 
+  // Delete confirms via ConfirmDialog, then runs optimistically; on failure
+  // the row comes back and a banner explains.
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete) return;
     const target = pendingDelete;
     setDeleting(true);
     setPageError(null);
-
-    // Optimistic removal — grid updates immediately. We keep the
-    // SVG cache entry around so a rollback re-renders without a
-    // re-fetch flash.
-    setItems((prev) => prev.filter((it) => it.id !== target.id));
-
+    setHistories((prev) => {
+      const current = prev[target.restaurantId];
+      if (!current) return prev;
+      return {
+        ...prev,
+        [target.restaurantId]: { ...current, rows: current.rows.filter((it) => it.id !== target.id) },
+      };
+    });
     try {
-      const res = await fetch(
-        `/api/restaurants/${target.restaurantId}/qr/history/${target.id}`,
-        { method: 'DELETE' },
-      );
-      if (!res.ok) {
-        // Rollback — re-insert by createdAt order.
-        setItems((prev) => dedupeQrRows([...prev, target]));
-        const body = await res.json().catch(() => ({}));
-        setPageError(
-          isTr
-            ? `QR silinemedi${body?.error ? ` — ${body.error}` : ''}.`
-            : `Failed to delete QR${body?.error ? ` — ${body.error}` : ''}.`,
-        );
-      }
+      const res = await fetch(`/api/restaurants/${target.restaurantId}/qr/history/${target.id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch {
-      setItems((prev) => dedupeQrRows([...prev, target]));
-      setPageError(isTr ? 'Ağ hatası — QR silinemedi.' : 'Network error — could not delete QR.');
+      setHistories((prev) => {
+        const current = prev[target.restaurantId];
+        return {
+          ...prev,
+          [target.restaurantId]: {
+            status: current?.status ?? 'ok',
+            rows: dedupeQrRows([...(current?.rows ?? []), target]),
+          },
+        };
+      });
+      setPageError(isTr ? 'QR kaydı silinemedi. Tekrar dene.' : 'Could not delete the QR record. Please try again.');
     } finally {
       setDeleting(false);
       setPendingDelete(null);
     }
   }, [pendingDelete, isTr]);
 
-  const downloadOne = async (item: QrHistoryItem, format: 'svg' | 'png' = 'png') => {
-    const params = new URLSearchParams({ format });
-    if (item.tableNumber) params.set('table', item.tableNumber);
-    if (item.platform) params.set('platform', item.platform);
-    // Stage 96 — carry the persisted colour pair so downloads match the
-    // owner's saved palette (not platform default black/white).
-    if (item.darkColor && item.lightColor) {
-      params.set('dark', item.darkColor);
-      params.set('light', item.lightColor);
+  // List view PNG download — same plain, print-size file as the card's
+  // "PNG indir" (the list used to request the framed default style).
+  const downloadPng = async (item: QrHistoryItem) => {
+    if (downloadingId) return;
+    setDownloadingId(item.id);
+    setPageError(null);
+    try {
+      const query = new URLSearchParams({ format: 'png', width: '1080', style: 'plain' });
+      if (item.tableNumber) query.set('table', item.tableNumber);
+      if (item.platform) query.set('platform', item.platform);
+      // Stage 96 — keep the saved colour pair.
+      if (item.darkColor && item.lightColor) {
+        query.set('dark', item.darkColor);
+        query.set('light', item.lightColor);
+      }
+      const res = await fetch(`/api/restaurants/${item.restaurantId}/qr?${query.toString()}`);
+      if (!res.ok || !(res.headers.get('content-type') || '').includes('image/png')) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      if (blob.size < 100) throw new Error('Empty file');
+      const objUrl = URL.createObjectURL(blob);
+      const slug = restaurantById.get(item.restaurantId)?.slug || 'qr';
+      const suffix = [
+        item.tableNumber ? `masa-${slugPart(item.tableNumber)}` : '',
+        item.platform ? slugPart(item.platform) : '',
+      ]
+        .filter(Boolean)
+        .join('-');
+      const a = document.createElement('a');
+      a.href = objUrl;
+      a.download = `qr-${slug}${suffix ? `-${suffix}` : ''}.png`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      // Deferred cleanup — revoking at once cancels the download on iOS Safari.
+      window.setTimeout(() => {
+        a.remove();
+        URL.revokeObjectURL(objUrl);
+      }, 1000);
+    } catch {
+      setPageError(isTr ? 'QR indirilemedi. Tekrar dene.' : 'Could not download the QR. Please try again.');
+    } finally {
+      setDownloadingId(null);
     }
-    const res = await fetch(`/api/restaurants/${item.restaurantId}/qr?${params.toString()}`);
-    if (!res.ok) return;
-    const blob = await res.blob();
-    const objUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = objUrl;
-    const rest = restaurantById.get(item.restaurantId);
-    const slug = rest?.slug || 'qr';
-    a.download = `qr-${slug}${item.tableNumber ? `-table-${item.tableNumber}` : ''}.${format}`;
-    a.click();
-    URL.revokeObjectURL(objUrl);
   };
 
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => setView(view === 'grid' ? 'list' : 'grid')}
-        className="bz-btn-ghost inline-flex items-center gap-1.5"
-        aria-label={isTr ? 'Görünümü değiştir' : 'Toggle view'}
-      >
-        {view === 'grid' ? <ListIcon size={14} /> : <Grid3x3 size={14} />}
-        <span className="hidden sm:inline">
-          {view === 'grid' ? (isTr ? 'Liste' : 'List') : isTr ? 'Izgara' : 'Grid'}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setShowCreate(true)}
-        className="bz-btn-primary inline-flex items-center gap-1.5"
-        disabled={restaurants.length === 0}
-      >
-        <Plus size={14} />
-        <span className="hidden sm:inline">{isTr ? 'Yeni QR oluştur' : 'Create QR'}</span>
-        <span className="sm:hidden">{isTr ? 'Yeni' : 'New'}</span>
-      </button>
-    </div>
-  );
+  const copyLink = async (item: QrHistoryItem) => {
+    const ok = await copyToClipboard(item.qrUrl);
+    if (ok) setNotice(isTr ? 'Bağlantı kopyalandı.' : 'Link copied.');
+    else setPageError(isTr ? 'Bağlantı kopyalanamadı.' : 'Could not copy the link.');
+  };
+
+  const rowActions = (item: QrHistoryItem, label: string) => {
+    const busy = downloadingId === item.id;
+    return (
+      <div className="flex shrink-0 items-center justify-end gap-1">
+        <button
+          type="button"
+          onClick={() => downloadPng(item)}
+          disabled={busy}
+          aria-label={isTr ? `${label} — PNG indir` : `${label} — download PNG`}
+          className="bz-btn-ghost inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-3 sm:min-h-[32px] sm:min-w-0 disabled:opacity-60"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          <span className="hidden sm:inline">PNG</span>
+        </button>
+        <PulseMenu
+          trigger={
+            <button
+              type="button"
+              className="bz-btn-icon inline-flex h-11 w-11 items-center justify-center sm:h-8 sm:w-8"
+              aria-label={isTr ? `${label} — diğer işlemler` : `${label} — more actions`}
+            >
+              <MoreHorizontal size={16} strokeWidth={2} />
+            </button>
+          }
+          // z-[60]: above the mobile bottom nav (z-40), which otherwise
+          // covers the last items of a menu opened near the screen bottom.
+          className="z-[60] min-w-[210px]"
+        >
+          <PulseMenuItem icon={<Copy size={14} />} onSelect={() => void copyLink(item)}>
+            {isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
+          </PulseMenuItem>
+          <PulseMenuItem
+            icon={<ExternalLink size={14} />}
+            onSelect={() => window.open(item.qrUrl, '_blank', 'noopener,noreferrer')}
+          >
+            {isTr ? 'Müşteri sayfasını aç' : 'Open customer page'}
+          </PulseMenuItem>
+          <PulseMenuDivider />
+          <PulseMenuItem icon={<Trash2 size={14} />} danger onSelect={() => setPendingDelete(item)}>
+            {isTr ? 'Sil' : 'Delete'}
+          </PulseMenuItem>
+        </PulseMenu>
+      </div>
+    );
+  };
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+
+  const showSkeleton = pending && items.length === 0;
+  const loadFailed = !pending && items.length === 0 && failedIds.length > 0;
+  const showBranch = effectiveScope === 'all';
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <PageHeader
-        eyebrow={isTr ? 'QR KODLARI' : 'QR CODES'}
         title={isTr ? 'QR kodları' : 'QR codes'}
         description={
           isTr
-            ? 'QR kodunu okutan müşteri puan verir; yüksek puanda seçtiğin yorum platformu önerilir. Her müşteri yorumunu istediği yerde yazabilir.'
-            : 'Customers who scan the QR give a rating; with a high rating your chosen review platform is suggested. Every customer can still post their review wherever they like.'
+            ? 'Müşteri QR kodunu okutup puan verir; yüksek puanda seçtiğin yorum platformu önerilir. Her müşteri yorumunu istediği yerde yazabilir.'
+            : 'Customers scan the QR code and give a rating; with a high rating your chosen review platform is suggested. Every customer can post their review wherever they like.'
         }
-        actions={headerActions}
+        actions={
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            disabled={!canCreate}
+            className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center gap-1.5 sm:min-h-[36px] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Plus size={14} />
+            {isTr ? 'Yeni QR oluştur' : 'Create QR code'}
+          </button>
+        }
       />
 
       {pageError && (
@@ -431,143 +616,189 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
         </AlertBanner>
       )}
 
-      {createNotice && (
-        <AlertBanner kind="success" onDismiss={() => setCreateNotice(null)}>
-          {createNotice}
+      {notice && (
+        <AlertBanner kind="success" onDismiss={() => setNotice(null)}>
+          {notice}
         </AlertBanner>
       )}
 
-      {/* Filter strip — Pulse `PulseSelect` (iOS chevron fix + lime focus
-          ring + bz-menu dropdown). CLAUDE.md §23.3 kanonik form select
-          primitive. */}
-      {restaurants.length > 0 && items.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {restaurants.length > 1 && (
-            <PulseSelect
-              value={branchFilter}
-              onChange={selectBranchFilter}
-              ariaLabel={isTr ? 'Şube filtresi' : 'Branch filter'}
-              className="min-w-[170px]"
-              options={[
-                { value: 'all', label: isTr ? 'Tüm şubeler' : 'All branches' },
-                ...restaurants.map((r) => ({ value: r.id, label: r.name })),
+      {failedIds.length > 0 && items.length > 0 && (
+        <AlertBanner kind="warn">
+          {isTr
+            ? 'Bazı işletmelerin QR kodları yüklenemedi. '
+            : "Some businesses' QR codes could not be loaded. "}
+          <button
+            type="button"
+            onClick={retryFailed}
+            className="font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+          >
+            {isTr ? 'Tekrar dene' : 'Try again'}
+          </button>
+        </AlertBanner>
+      )}
+
+      {/* One toolbar: business scope · platform · count + view. Mobile:
+          scope + view on the first row, the platform filter below. */}
+      {(multi || items.length > 0) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {multi && (
+            <Tabs
+              items={[
+                { id: 'business', label: isTr ? 'Bu işletme' : 'This business' },
+                { id: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses', count: restaurants.length },
               ]}
+              active={effectiveScope}
+              onChange={(id) => setScope(id as Scope)}
+              ariaLabel={isTr ? 'Gösterilen işletmeler' : 'Businesses shown'}
+              className="order-1 shrink-0 [&_.bz-tab]:min-h-[44px] sm:[&_.bz-tab]:min-h-0"
             />
           )}
-          <PulseSelect
-            value={platformFilter}
-            onChange={setPlatformFilter}
-            ariaLabel={isTr ? 'Platform filtresi' : 'Platform filter'}
-            className="min-w-[200px]"
-            options={platformOptions}
-          />
-        </div>
-      )}
-
-      {/* Mobile-only aggregate stats (mobile-screens-2.jsx MOwnerQR line 112-123 1:1)
-          Toplam · Bu hafta · Toplam taranma — yatay 3-col stat strip */}
-      {!loading && items.length > 0 && (
-        <div className="md:hidden bz-card grid grid-cols-3 gap-2.5 p-3.5">
-          {(() => {
-            const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-            const thisWeek = items.filter(
-              (it) => new Date(it.createdAt).getTime() >= oneWeekAgo,
-            ).length;
-            // Total scans proxy: aggregate count per qr (we don't track real
-            // scans yet — show items.length as total).
-            return [
-              { l: isTr ? 'Toplam' : 'Total', v: items.length.toString() },
-              { l: isTr ? 'Bu hafta' : 'This week', v: thisWeek.toString() },
-              { l: isTr ? 'Aktif' : 'Active', v: items.length.toString() },
-            ];
-          })().map((s, i) => (
-            <div
-              key={s.l}
-              className={i ? 'border-l border-[#EDEDED] pl-3' : ''}
+          {showPlatformFilter && (
+            <PulseSelect
+              value={activePlatform}
+              onChange={setPlatformFilter}
+              ariaLabel={isTr ? 'Platform filtresi' : 'Platform filter'}
+              className={
+                multi
+                  ? 'order-3 w-full sm:order-2 sm:w-[200px]'
+                  : 'order-2 min-w-0 flex-1 sm:flex-none sm:w-[200px]'
+              }
+              options={platformOptions}
+            />
+          )}
+          {items.length > 0 && (
+            <span
+              className={`order-2 text-[13px] text-[#525252] sm:order-3 sm:ml-auto ${
+                multi || showPlatformFilter ? 'hidden sm:inline' : ''
+              }`}
             >
-              <div className="pulse-eyebrow text-[#737373]" style={{ fontSize: 9 }}>
-                {s.l}
-              </div>
-              <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
-                {s.v}
-              </div>
+              {activePlatform === 'all'
+                ? isTr
+                  ? `${items.length} QR kodu`
+                  : `${items.length} QR ${items.length === 1 ? 'code' : 'codes'}`
+                : isTr
+                  ? `${filteredItems.length} / ${items.length} QR kodu`
+                  : `${filteredItems.length} of ${items.length} QR codes`}
+            </span>
+          )}
+          {items.length > 0 && (
+            <div
+              role="group"
+              aria-label={isTr ? 'Görünüm' : 'View'}
+              className="order-2 ml-auto inline-flex gap-0.5 rounded-[10px] bg-[#F2F2F2] p-[3px] sm:order-4 sm:ml-0"
+            >
+              {(
+                [
+                  { id: 'grid', icon: <Grid3x3 size={14} />, label: isTr ? 'Kart' : 'Cards' },
+                  { id: 'list', icon: <ListIcon size={14} />, label: isTr ? 'Liste' : 'List' },
+                ] as const
+              ).map((opt) => {
+                const selected = view === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    aria-pressed={selected}
+                    aria-label={opt.label}
+                    onClick={() => setView(opt.id)}
+                    className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-[7px] px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:min-h-[30px] sm:min-w-0 ${
+                      selected
+                        ? 'bg-white text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]'
+                        : 'text-[#525252] hover:text-[#0A0A0A]'
+                    }`}
+                  >
+                    {opt.icon}
+                    <span className="hidden sm:inline">{opt.label}</span>
+                  </button>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* Loading — same card-grid skeleton as loading.tsx, so the route
-          skeleton and the in-page history load look like one state (§40.10). */}
-      {loading && (
+      {showSkeleton && (
         <div aria-busy="true" aria-label={isTr ? 'QR kodları yükleniyor' : 'Loading QR codes'}>
-          <SkCardGrid count={6} cols={3} />
+          <QrGridSkeleton count={6} />
         </div>
       )}
 
-      {/* Empty state — no restaurants */}
-      {!loading && restaurants.length === 0 && (
+      {/* No business yet */}
+      {!pending && restaurants.length === 0 && (
         <EmptyState
           icon={<QrCode size={28} />}
-          title={isTr ? 'Henüz işletme eklenmemiş' : 'No locations yet'}
+          title={isTr ? 'Henüz işletme eklenmemiş' : 'No business yet'}
           body={
             isTr
-              ? 'QR kodu oluşturabilmek için önce bir işletme ekleyin.'
-              : 'Add a location first to start generating QR codes.'
-          }
-        />
-      )}
-
-      {/* Empty state — no QRs yet */}
-      {!loading && restaurants.length > 0 && items.length === 0 && (
-        <EmptyState
-          icon={<QrCode size={28} />}
-          title={isTr ? 'Henüz QR oluşturulmadı' : 'No QR codes yet'}
-          body={
-            isTr
-              ? 'İlk QR\'ını oluştur — masaya yapıştır, müşterileri yorum kanalına yönlendir.'
-              : 'Create your first QR — stick it on the table and route customers to feedback.'
+              ? 'QR kodu oluşturabilmek için önce bir işletme ekle.'
+              : 'Add a business first to create QR codes.'
           }
           action={
-            <button
-              type="button"
-              onClick={() => setShowCreate(true)}
-              className="bz-btn-primary inline-flex items-center gap-1.5"
+            <Link
+              href={`/${locale}/dashboard/restaurants/new`}
+              className="bz-btn-primary inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[36px]"
             >
               <Plus size={14} />
-              {isTr ? 'Yeni QR oluştur' : 'Create QR'}
-            </button>
+              {isTr ? 'İşletme ekle' : 'Add business'}
+            </Link>
           }
         />
       )}
 
-      {/* Empty state — filtered out */}
-      {!loading && items.length > 0 && cardItems.length === 0 && (
-        <EmptyState
-          icon={<QrCode size={28} />}
-          title={isTr ? 'Filtreyle eşleşen QR yok' : 'No QRs match the filter'}
+      {loadFailed && (
+        <ErrorState
+          title={isTr ? 'QR kodları yüklenemedi' : 'QR codes could not be loaded'}
           body={
             isTr
-              ? 'Filtreleri sıfırla veya yeni bir QR oluştur.'
-              : 'Reset the filters or create a new QR.'
+              ? 'Bağlantında bir sorun olabilir. Tekrar dene.'
+              : 'There may be a connection problem. Please try again.'
           }
+          onRetry={retryFailed}
+          retryLabel={isTr ? 'Tekrar dene' : 'Try again'}
+        />
+      )}
+
+      {/* No QR codes yet — "Yeni QR oluştur" sits in the header. */}
+      {!pending && !loadFailed && restaurants.length > 0 && items.length === 0 && (
+        <EmptyState
+          icon={<QrCode size={28} />}
+          title={
+            effectiveScope === 'business' && activeRestaurant && multi
+              ? isTr
+                ? `${activeRestaurant.name} için henüz QR kodu yok`
+                : `No QR codes for ${activeRestaurant.name} yet`
+              : isTr
+                ? 'Henüz QR kodu yok'
+                : 'No QR codes yet'
+          }
+          body={
+            isTr
+              ? 'Yeni QR oluştur ile ilk QR kodunu hazırla ve masaya koy; okutan müşteri puan verir.'
+              : 'Use Create QR code to make your first one and put it on the table; customers who scan it give a rating.'
+          }
+        />
+      )}
+
+      {/* Filtered out */}
+      {items.length > 0 && filteredItems.length === 0 && (
+        <EmptyState
+          icon={<QrCode size={28} />}
+          title={isTr ? 'Bu platformda QR kodu yok' : 'No QR codes for this platform'}
           action={
             <button
               type="button"
-              onClick={() => {
-                setBranchFilter('all');
-                setPlatformFilter('all');
-              }}
-              className="bz-btn-ghost"
+              onClick={() => setPlatformFilter('all')}
+              className="bz-btn-ghost inline-flex min-h-[44px] items-center sm:min-h-[36px]"
             >
-              {isTr ? 'Filtreleri temizle' : 'Reset filters'}
+              {isTr ? 'Tüm platformları göster' : 'Show all platforms'}
             </button>
           }
         />
       )}
 
-      {/* Grid view */}
-      {!loading && cardItems.length > 0 && view === 'grid' && (
-        <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Card view */}
+      {cardItems.length > 0 && view === 'grid' && (
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
           {cardItems.map((c) => {
             const raw = filteredItems.find((it) => it.id === c.id);
             return (
@@ -575,68 +806,38 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
                 key={c.id}
                 item={c}
                 locale={locale}
-                onDelete={raw ? () => requestDelete(raw) : undefined}
+                onDelete={raw ? () => setPendingDelete(raw) : undefined}
               />
             );
           })}
         </div>
       )}
 
-      {/* List view — §23.6: masaüstünde tablo, mobil/tablette kart listesi
-          (önceki tablo gizli scrollbar ile yatay taşıyordu). "Durum" sütunu
-          kaldırıldı: QR için gerçek durum verisi yok, hep "Aktif" basıyordu. */}
-      {!loading && cardItems.length > 0 && view === 'list' && (
+      {/* List view — §23.6: table on desktop, compact list below lg. */}
+      {filteredItems.length > 0 && view === 'list' && (
         <>
           <ul className="bz-card divide-y divide-[#EDEDED] lg:hidden">
-            {cardItems.map((c) => {
-              const rawItem = filteredItems.find((it) => it.id === c.id)!;
-              const created = new Date(c.createdAt);
+            {filteredItems.map((it) => {
+              const label = rowLabel(it);
+              const branch = restaurantById.get(it.restaurantId)?.name;
               return (
-                <li key={c.id} className="flex items-center gap-3 px-4 py-3">
+                <li key={it.id} className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">{c.name}</p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-[#737373]">
-                      {c.platform && PLATFORM_TO_CHIP[c.platform] ? (
+                    <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">{label}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12px] text-[#737373]">
+                      {it.platform && PLATFORM_TO_CHIP[it.platform] ? (
                         <span className="inline-flex items-center gap-1">
-                          <PlatformChip id={PLATFORM_TO_CHIP[c.platform]} size={12} />
-                          {PLATFORM_LABELS[c.platform]}
+                          <PlatformChip id={PLATFORM_TO_CHIP[it.platform]} size={12} />
+                          {PLATFORM_LABELS[it.platform]}
                         </span>
                       ) : (
-                        <span>{isTr ? 'Genel' : 'General'}</span>
+                        <span>{isTr ? 'Varsayılan platform' : 'Default platform'}</span>
                       )}
-                      {restaurants.length > 1 && c.branch && <span>· {c.branch}</span>}
-                      {c.tableNumber && <span className="bz-mono">· {c.tableNumber}</span>}
-                      <span>
-                        ·{' '}
-                        {created.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </span>
+                      {showBranch && branch && <span>· {branch}</span>}
+                      <span>· {formatDate(it.createdAt)}</span>
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => downloadOne(rawItem, 'png')}
-                      aria-label={isTr ? 'PNG indir' : 'Download PNG'}
-                      title={isTr ? 'PNG indir' : 'Download PNG'}
-                      className="bz-btn-icon"
-                    >
-                      <Download size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => requestDelete(rawItem)}
-                      aria-label={isTr ? 'QR\'ı sil' : 'Delete QR'}
-                      title={isTr ? 'Sil' : 'Delete'}
-                      className="bz-btn-icon"
-                      style={{ color: '#DC2626' }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  {rowActions(it, showBranch && branch ? `${branch} · ${label}` : label)}
                 </li>
               );
             })}
@@ -646,74 +847,37 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
               <table className="bz-table w-full">
                 <thead>
                   <tr>
-                    <th>{isTr ? 'QR adı' : 'Name'}</th>
-                    {restaurants.length > 1 && <th>{isTr ? 'Şube' : 'Branch'}</th>}
-                    <th>{isTr ? 'Platform' : 'Platform'}</th>
-                    <th>{isTr ? 'Hedef' : 'Target'}</th>
-                    <th>{isTr ? 'Tarih' : 'Date'}</th>
-                    <th aria-label="actions" />
+                    {showBranch && <th>{isTr ? 'İşletme' : 'Business'}</th>}
+                    <th>{isTr ? 'QR' : 'QR'}</th>
+                    <th>{isTr ? 'Yönlendirme' : 'Redirect'}</th>
+                    <th>{isTr ? 'Oluşturuldu' : 'Created'}</th>
+                    <th>
+                      <span className="sr-only">{isTr ? 'İşlemler' : 'Actions'}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cardItems.map((c) => {
-                    const rawItem = filteredItems.find((it) => it.id === c.id)!;
-                    const created = new Date(c.createdAt);
+                  {filteredItems.map((it) => {
+                    const label = rowLabel(it);
+                    const branch = restaurantById.get(it.restaurantId)?.name;
                     return (
-                      <tr key={c.id}>
-                        <td style={{ fontWeight: 600 }}>{c.name}</td>
-                        {restaurants.length > 1 && (
-                          <td style={{ color: '#525252' }}>{c.branch || '—'}</td>
-                        )}
+                      <tr key={it.id}>
+                        {showBranch && <td style={{ color: '#525252' }}>{branch || '—'}</td>}
+                        <td style={{ fontWeight: 600 }}>{label}</td>
                         <td>
-                          {c.platform && PLATFORM_TO_CHIP[c.platform] ? (
+                          {it.platform && PLATFORM_TO_CHIP[it.platform] ? (
                             <span className="inline-flex items-center gap-1.5">
-                              <PlatformChip
-                                id={PLATFORM_TO_CHIP[c.platform]}
-                                size={14}
-                              />
-                              <span className="text-[12px]">
-                                {PLATFORM_LABELS[c.platform]}
-                              </span>
+                              <PlatformChip id={PLATFORM_TO_CHIP[it.platform]} size={14} />
+                              <span className="text-[12px]">{PLATFORM_LABELS[it.platform]}</span>
                             </span>
                           ) : (
                             <span style={{ color: '#737373' }}>
-                              {isTr ? 'Genel' : 'General'}
+                              {isTr ? 'Varsayılan platform' : 'Default platform'}
                             </span>
                           )}
                         </td>
-                        <td className="bz-mono" style={{ fontWeight: 600 }}>
-                          {c.tableNumber || '—'}
-                        </td>
-                        <td style={{ color: '#737373' }}>
-                          {created.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </td>
-                        <td>
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => downloadOne(rawItem, 'png')}
-                              aria-label={isTr ? 'PNG indir' : 'Download PNG'}
-                              title={isTr ? 'PNG indir' : 'Download PNG'}
-                              className="bz-btn-icon"
-                            >
-                              <Download size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => requestDelete(rawItem)}
-                              aria-label={isTr ? 'QR\'ı sil' : 'Delete QR'}
-                              title={isTr ? 'Sil' : 'Delete'}
-                              className="bz-btn-icon"
-                              style={{ color: '#DC2626' }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
+                        <td style={{ color: '#737373' }}>{formatDate(it.createdAt)}</td>
+                        <td>{rowActions(it, showBranch && branch ? `${branch} · ${label}` : label)}</td>
                       </tr>
                     );
                   })}
@@ -726,25 +890,23 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
 
       {showCreate && (
         <CreateQRWizard
-          restaurants={restaurants
-            .filter((r) => r.isActive !== false)
-            .map((r) => ({
-              id: r.id,
-              name: r.name,
-              slug: r.slug,
-              primaryColor: r.primaryColor ?? null,
-              category: r.category ?? null,
-              googlePlaceId: r.googlePlaceId ?? null,
-              yemekSepetiUrl: r.yemekSepetiUrl ?? null,
-              getirYemekUrl: r.getirYemekUrl ?? null,
-              trendyolYemekUrl: r.trendyolYemekUrl ?? null,
-              tripAdvisorUrl: r.tripAdvisorUrl ?? null,
-              airbnbUrl: r.airbnbUrl ?? null,
-              bookingUrl: r.bookingUrl ?? null,
-              yandexUrl: r.yandexUrl ?? null,
-              externalPlatformsEnabled: r.externalPlatformsEnabled ?? true,
-            }))}
-          defaultRestaurantId={preselected || undefined}
+          restaurants={wizardRestaurants.map((r) => ({
+            id: r.id,
+            name: r.name,
+            slug: r.slug,
+            primaryColor: r.primaryColor ?? null,
+            category: r.category ?? null,
+            googlePlaceId: r.googlePlaceId ?? null,
+            yemekSepetiUrl: r.yemekSepetiUrl ?? null,
+            getirYemekUrl: r.getirYemekUrl ?? null,
+            trendyolYemekUrl: r.trendyolYemekUrl ?? null,
+            tripAdvisorUrl: r.tripAdvisorUrl ?? null,
+            airbnbUrl: r.airbnbUrl ?? null,
+            bookingUrl: r.bookingUrl ?? null,
+            yandexUrl: r.yandexUrl ?? null,
+            externalPlatformsEnabled: r.externalPlatformsEnabled ?? true,
+          }))}
+          defaultRestaurantId={wizardDefaultId}
           locale={locale}
           panelBase={`/${locale}/dashboard`}
           onClose={() => setShowCreate(false)}
@@ -758,8 +920,8 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
         title={isTr ? 'Bu QR kaydını sil' : 'Delete this QR record'}
         body={
           isTr
-            ? 'QR sadece panel listenizden kaldırılır. Daha önce basılan QR sticker\'ları çalışmaya devam eder; aynı masa veya platform için yeni bir QR oluşturmak isterseniz tekrar üretebilirsiniz.'
-            : "The QR is only removed from your panel list. Previously printed stickers keep working; you can re-create one for the same table or platform anytime."
+            ? 'QR yalnızca panel listenden kaldırılır. Basılmış QR kodları çalışmaya devam eder; aynı masa veya platform için istediğin zaman yeniden oluşturabilirsin.'
+            : 'The QR is only removed from your panel list. Printed QR codes keep working; you can re-create one for the same table or platform anytime.'
         }
         confirmLabel={isTr ? 'Sil' : 'Delete'}
         cancelLabel={isTr ? 'Vazgeç' : 'Cancel'}

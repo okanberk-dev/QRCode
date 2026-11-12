@@ -308,7 +308,7 @@ const QuestionRow = memo(function QuestionRow({
               aria-pressed={!q.isRequired}
               onClick={() => onToggleOptional(q.clientKey)}
               className={[
-                'inline-flex min-h-9 items-center gap-1 rounded-full border px-3 text-[12.5px] font-medium transition-colors sm:min-h-8',
+                'inline-flex min-h-11 items-center gap-1 rounded-full border px-3 text-[12.5px] font-medium transition-colors sm:min-h-8',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]',
                 !q.isRequired
                   ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]'
@@ -336,7 +336,7 @@ const QuestionRow = memo(function QuestionRow({
               <button
                 type="button"
                 onClick={() => onDetail(q.clientKey)}
-                className="bz-btn-ghost min-h-9 sm:min-h-8"
+                className="bz-btn-ghost min-h-11 sm:min-h-8"
                 aria-label={isTr ? `${noun} ${index + 1}: detay` : `${noun} ${index + 1}: details`}
               >
                 <SlidersHorizontal size={13} aria-hidden="true" />

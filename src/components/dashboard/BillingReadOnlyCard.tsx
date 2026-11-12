@@ -1,13 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, CreditCard, Download, FileText, Loader2, Lock, Receipt } from 'lucide-react';
+import { Check, Download, FileText, Loader2, Receipt } from 'lucide-react';
 import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { PublicPlan } from '@/lib/subscription-plans';
 import { PLAN_LABELS } from '@/lib/constants';
 
+/** Workspace counts the caller already has (no extra fetch here). */
+export interface BillingUsageCounts {
+  restaurantCount: number;
+  teamCount: number;
+}
+
 interface BillingReadOnlyCardProps {
   isTr: boolean;
+  /**
+   * Optional "Kullanım" row: businesses + team members (+ this month's AI
+   * replies from the summary). Omitted → the row is not rendered.
+   */
+  usage?: BillingUsageCounts;
 }
 
 interface BillingSummary {
@@ -17,6 +29,8 @@ interface BillingSummary {
   trialDaysLeft: number | null;
   renewsAt: string | null;
   quota: { used: number; limit: number };
+  /** Pulse AI replies this month (FeedbackReply.source='ai_copilot'). */
+  aiReplies?: { used: number; limit: number };
   paymentMethod: { brand: string; last4: string } | null;
   amount: number | null;
   /** §15.2 canonical billing — yıllık toplam (tier'a bağlı subscription'da). */
@@ -96,7 +110,7 @@ function formatCurrency(amount: number, currency: string | null, locale: 'tr' | 
  * `summary.source === 'dodo_payments'`; otherwise admin-managed (manual
  * override hybrid §44.5). Owner sees "Aboneliği yönet" → Dodo portal redirect.
  */
-export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) {
+export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCardProps) {
   const [summary, setSummary] = useState<BillingSummary | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,55 +232,65 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
   };
 
   if (loading) {
+    // Shape-matching skeleton: plan hero + payment/address column + invoices.
     return (
-      <section id="billing" className="bz-card p-6 sm:p-7 scroll-mt-20">
-        <div className="flex items-center gap-2 mb-1">
-          <CreditCard size={14} strokeWidth={2} className="text-[#0A0A0A]" />
-          <Eyebrow>{isTr ? 'FATURALANDIRMA' : 'BILLING'}</Eyebrow>
+      <section id="billing" className="space-y-4 scroll-mt-20" aria-busy="true">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
+          <div className="rounded-2xl bg-[#0A0A0A] p-5 sm:p-6 space-y-3">
+            <div className="h-3 w-24 rounded bg-white/15" />
+            <div className="h-9 w-40 rounded bg-white/15" />
+            <div className="h-3 w-32 rounded bg-white/10" />
+            <div className="h-10 w-36 rounded-full bg-white/15 mt-6" />
+          </div>
+          <div className="flex flex-col gap-3.5">
+            <div className="bz-card p-5 space-y-3">
+              <SkBox className="h-3 w-28" />
+              <SkBox className="h-4 w-48 max-w-full" />
+            </div>
+            <div className="bz-card p-5 space-y-3">
+              <SkBox className="h-3 w-24" />
+              <SkBox className="h-4 w-44 max-w-full" />
+            </div>
+          </div>
         </div>
-        <div className="bz-h-tight mt-1 mb-3" style={{ fontSize: 18 }}>
-          {isTr ? 'Plan ve faturalar' : 'Plan & invoices'}
-        </div>
-        <div className="flex items-center gap-2 text-[13px] text-[#737373]">
-          <Loader2 size={14} className="animate-spin" />
-          {isTr ? 'Yükleniyor…' : 'Loading…'}
+        <div className="bz-card p-5 space-y-3">
+          <SkBox className="h-4 w-24" />
+          <SkBox className="h-10 w-full" />
         </div>
       </section>
     );
   }
 
-  return (
-    <section id="billing" className="bz-card p-6 sm:p-7 scroll-mt-20">
-      <div className="flex items-center gap-2 mb-1">
-        <CreditCard size={14} strokeWidth={2} className="text-[#0A0A0A]" />
-        <Eyebrow>{isTr ? 'FATURALANDIRMA' : 'BILLING'}</Eyebrow>
-      </div>
-      <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
-        {isTr ? 'Plan ve faturalar' : 'Plan & invoices'}
-      </div>
-      <p className="mt-1 mb-5 text-[13px] text-[#737373] leading-[1.55] flex items-center gap-1.5">
-        <Lock size={12} className="text-[#737373]" strokeWidth={2} />
-        {isTr
-          ? 'Plan değişikliği ve fatura bilgileri için bizimle iletişime geçebilirsin.'
-          : 'Contact us to change your plan or update billing details.'}
-      </p>
+  const intLocale = isTr ? 'tr-TR' : 'en-US';
+  const usageItems: Array<{ label: string; used: number; limit: number | null }> = usage
+    ? [
+        { label: isTr ? 'İşletme' : 'Businesses', used: usage.restaurantCount, limit: null },
+        { label: isTr ? 'Ekip üyesi' : 'Team members', used: usage.teamCount, limit: null },
+        {
+          label: isTr ? 'AI yanıt (bu ay)' : 'AI replies (this month)',
+          used: summary?.aiReplies?.used ?? 0,
+          limit: summary?.aiReplies?.limit ?? null,
+        },
+      ]
+    : [];
 
+  // The settings section above already titles this block ("Plan ve
+  // faturalama"), so the old in-card eyebrow + title + "contact us" caption
+  // (which contradicted the self-service upgrade button) are gone.
+  return (
+    <section id="billing" className="space-y-4 scroll-mt-20">
       {error && (
-        <div className="mb-4">
-          <AlertBanner kind="danger" onDismiss={() => setError(null)}>
-            {error}
-          </AlertBanner>
-        </div>
+        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
+          {error}
+        </AlertBanner>
       )}
       {notice && (
-        <div className="mb-4">
-          <AlertBanner
-            kind={notice.kind === 'success' ? 'success' : 'danger'}
-            onDismiss={() => setNotice(null)}
-          >
-            {notice.message}
-          </AlertBanner>
-        </div>
+        <AlertBanner
+          kind={notice.kind === 'success' ? 'success' : 'danger'}
+          onDismiss={() => setNotice(null)}
+        >
+          {notice.message}
+        </AlertBanner>
       )}
 
       {/* ─── Top row: Plan hero (dark) + Payment method ─── */}
@@ -390,7 +414,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
 
         {/* Payment method + Billing address (right column stacked) */}
         <div className="flex flex-col gap-3.5">
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+          <div className="bz-card p-5">
             <Eyebrow>{isTr ? 'ÖDEME YÖNTEMİ' : 'PAYMENT METHOD'}</Eyebrow>
             {summary?.paymentMethod ? (
               <div className="mt-3 flex items-center gap-3">
@@ -416,7 +440,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+          <div className="bz-card p-5">
             <Eyebrow>{isTr ? 'FATURA ADRESİ' : 'BILLING ADDRESS'}</Eyebrow>
             {summary?.billingAddress?.companyName ||
             summary?.billingAddress?.address ||
@@ -448,8 +472,53 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
         </div>
       </div>
 
+      {/* ─── Usage (businesses, team, AI replies this month) ─── */}
+      {usageItems.length > 0 && (
+        <div className="bz-card grid grid-cols-3 divide-x divide-[#EDEDED]">
+          {usageItems.map((item) => {
+            const pct =
+              item.limit && item.limit > 0
+                ? Math.min(100, Math.round((item.used / item.limit) * 100))
+                : null;
+            return (
+              <div key={item.label} className="min-w-0 p-3 sm:p-5">
+                <div className="text-[12px] leading-tight text-[#737373]">{item.label}</div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="bz-h-tight tabular-nums text-[20px] text-[#0A0A0A]">
+                    {item.used.toLocaleString(intLocale)}
+                  </span>
+                  {item.limit != null && (
+                    <span className="tabular-nums text-[12px] text-[#737373]">
+                      / {item.limit.toLocaleString(intLocale)}
+                    </span>
+                  )}
+                </div>
+                {pct != null && (
+                  <div
+                    className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#EDEDED]"
+                    role="progressbar"
+                    aria-label={item.label}
+                    aria-valuenow={pct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${pct}%`,
+                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#A8D62E',
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ─── Invoice list ─── */}
-      <div className="mt-6 bz-card">
+      <div className="bz-card">
         <div className="flex items-center gap-2 border-b border-[#EDEDED] px-5 py-4">
           <Receipt size={14} className="text-[#0A0A0A]" strokeWidth={2} />
           <h3 className="text-[15px] font-semibold text-[#0A0A0A]">

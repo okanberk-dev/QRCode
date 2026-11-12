@@ -2,8 +2,9 @@
 //
 // `new/loading.tsx` ve `[id]/edit/loading.tsx` aynı iskeleti paylaşır. Sarmalayıcı
 // gerçek sayfayla birebir aynıdır (`max-w-[920px] space-y-5 px-4 sm:px-7 py-6
-// lg:py-8`, CLAUDE.md §40.10 CLS=0): geri bağlantısı + başlık + "Bilgiler" kartı +
-// madde listesi + eylem çubuğu. Oluşturmada "Ne tür bir denetim?" kartları da var.
+// lg:py-8`, CLAUDE.md §40.10 CLS=0) ve sihirbazın ilk adımını taklit eder: geri
+// bağlantısı + başlık + adım göstergesi + adım başlığı + ilk adım kartı + eylem
+// çubuğu. Oluşturmada ilk kartta "Kontrol listesi / Test" seçimi de var.
 
 import { SkBox, SkPageHeader, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 
@@ -16,74 +17,49 @@ export default function AuditBuilderSkeleton({ withKindPicker = false }: { withK
 
       <SkPageHeader titleWidth="w-56" />
 
-      {/* Bilgiler */}
-      <div className="bz-card space-y-4 p-4 sm:p-5">
-        <SkBox className="h-5 w-24" />
-
-        {withKindPicker && (
-          <div className="space-y-1.5">
-            <SkBox className="h-3 w-40" />
-            <div className="grid gap-2 sm:grid-cols-2">
-              <SkBox className="h-[82px] w-full" />
-              <SkBox className="h-[82px] w-full" />
-            </div>
+      {/* Adım göstergesi (WizardSteps) */}
+      <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-[#F5F5F5] p-1.5">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex min-h-[44px] items-center justify-center sm:min-h-[40px]">
+            <SkBox className="h-4 w-16 sm:w-20" />
           </div>
-        )}
-
-        <div className="space-y-2">
-          <SkBox className="h-3 w-16" />
-          <SkBox className="h-11 w-full" />
-        </div>
-        <div className="space-y-2">
-          <SkBox className="h-3 w-44" />
-          <SkBox className="h-3 w-56 max-w-full" />
-          <SkBox className="h-[84px] w-full" />
-        </div>
-        <div className="space-y-2">
-          <SkBox className="h-3 w-10" />
-          <SkBox className="h-3 w-48 max-w-full" />
-          <SkBox className="h-11 w-full sm:max-w-[240px]" />
-        </div>
-        <div className="border-t border-[#EDEDED] pt-1">
-          <SkBox className="my-2 h-5 w-36" />
-        </div>
+        ))}
       </div>
 
-      {/* Maddeler */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <SkBox className="h-5 w-24" />
-          <SkBox className="h-5 w-28" />
+      {/* Adım 1 */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <SkBox className="h-6 w-60 max-w-full" />
+          <SkBox className="h-4 w-80 max-w-full" />
         </div>
-        <div className="bz-card space-y-2.5 p-3">
-          <div className="flex gap-2">
-            <SkBox className="h-11 min-w-0 flex-1" />
-            <SkBox className="h-11 w-20" />
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <SkBox key={i} className="h-9 w-20 rounded-full sm:h-8" />
-            ))}
-          </div>
-        </div>
-        <ol className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <li key={i} className="bz-card space-y-2 p-2.5 sm:p-3">
-              <SkBox className="h-8 w-full" />
-              <div className="flex gap-2 px-2">
-                <SkBox className="h-5 w-20" />
-                <SkBox className="h-8 w-32" />
+
+        <div className="bz-card space-y-4 p-4 sm:p-5">
+          {withKindPicker && (
+            <div className="space-y-2">
+              <SkBox className="h-3 w-24" />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <SkBox className="h-[82px] w-full" />
+                <SkBox className="h-[82px] w-full" />
               </div>
-            </li>
-          ))}
-        </ol>
+            </div>
+          )}
+          <div className="space-y-2">
+            <SkBox className="h-3 w-28" />
+            <SkBox className="h-11 w-full" />
+          </div>
+          <div className="space-y-2">
+            <SkBox className="h-3 w-10" />
+            <SkBox className="h-3 w-56 max-w-full" />
+            <SkBox className="h-11 w-full sm:max-w-[240px]" />
+          </div>
+        </div>
       </div>
 
       {/* Eylem çubuğu */}
       <div className="-mx-4 border-t border-[#EDEDED] px-4 py-3 sm:-mx-7 sm:px-7">
-        <div className="flex items-center gap-2 sm:justify-end">
-          <SkBox className="h-11 flex-1 sm:h-9 sm:w-40 sm:flex-none" />
-          <SkBox className="h-11 flex-1 sm:h-9 sm:w-44 sm:flex-none" />
+        <div className="flex items-center gap-2 sm:justify-between">
+          <SkBox className="hidden h-9 w-24 sm:block" />
+          <SkBox className="h-11 flex-1 sm:h-9 sm:w-24 sm:flex-none" />
         </div>
       </div>
     </SkPageShell>
