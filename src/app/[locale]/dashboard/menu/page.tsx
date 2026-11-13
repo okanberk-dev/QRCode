@@ -2,13 +2,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Plus, UtensilsCrossed } from 'lucide-react';
+import { Plus, UtensilsCrossed } from 'lucide-react';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import type { Locale } from '@/lib/translations';
-import { resolveDisplayTimeZone } from '@/lib/timezone';
-import { Badge, EmptyState, Eyebrow, PageHeader } from '@/components/ui';
+import { EmptyState, PageHeader } from '@/components/ui';
+import MenuHubRedirect from './_components/MenuHubRedirect';
 
 export async function generateMetadata({
   params,
@@ -23,45 +23,6 @@ export async function generateMetadata({
 }
 
 export const dynamic = 'force-dynamic';
-
-type RestaurantSummary = {
-  id: string;
-  name: string;
-  slug: string;
-  menuEnabled: boolean;
-  menuPublished: boolean;
-  menuLogoUrl: string | null;
-  menuUpdatedAt: Date | null;
-  categoryCount: number;
-  itemCount: number;
-};
-
-function isPrismaSchemaDriftError(error: unknown) {
-  const code = (error as { code?: string } | null)?.code;
-  return code === 'P2021' || code === 'P2022';
-}
-
-async function fetchMenuCounts(restaurantId: string) {
-  try {
-    const [categoryCount, itemCount] = await prisma.$transaction([
-      prisma.menuCategory.count({ where: { restaurantId, deletedAt: null } }),
-      prisma.menuItem.count({ where: { restaurantId, deletedAt: null } }),
-    ]);
-    return { categoryCount, itemCount };
-  } catch (error) {
-    if (!isPrismaSchemaDriftError(error)) throw error;
-    // Schema drift on preview deploys — fall back to count without deletedAt filter.
-    try {
-      const [categoryCount, itemCount] = await prisma.$transaction([
-        prisma.menuCategory.count({ where: { restaurantId } }),
-        prisma.menuItem.count({ where: { restaurantId } }),
-      ]);
-      return { categoryCount, itemCount };
-    } catch {
-      return { categoryCount: 0, itemCount: 0 };
-    }
-  }
-}
 
 export default async function DashboardMenuPage({
   params,
@@ -93,15 +54,7 @@ export default async function DashboardMenuPage({
   const canCreateBusiness = payload.role !== 'team_member';
   const restaurants = await prisma.restaurant.findMany({
     where: { id: { in: scopedIds } },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      menuEnabled: true,
-      menuPublished: true,
-      menuLogoUrl: true,
-      menuUpdatedAt: true,
-    },
+    select: { id: true, isActive: true },
     orderBy: { createdAt: 'asc' },
   });
 
@@ -148,157 +101,19 @@ export default async function DashboardMenuPage({
     redirect(`/${locale}/dashboard/restaurants/${requestedId}/menu`);
   }
 
-  // Single restaurant — skip the picker and drop the user straight into the
-  // builder. Most operators have one location; this eliminates the historic
-  // "Ürün ekle" → route change kopukluğu by removing the hub bounce entirely.
+  // One business — open its menu builder straight away.
   if (restaurants.length === 1) {
     redirect(`/${locale}/dashboard/restaurants/${restaurants[0].id}/menu`);
   }
 
-  // 2+ restaurants — show a clean picker. Each card carries enough context
-  // (status, counts, last updated) for the operator to pick the right menu
-  // without bouncing through a read-only summary first.
-  const summaries: RestaurantSummary[] = [];
-  for (const restaurant of restaurants) {
-    const counts = await fetchMenuCounts(restaurant.id);
-    summaries.push({ ...restaurant, ...counts });
-  }
-
-  return (
-    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
-      <PageHeader
-        title={isTr ? 'Menü' : 'Menu'}
-        description={
-          isTr
-            ? 'Düzenlemek istediğin işletmenin menüsünü seç.'
-            : 'Pick which business menu you want to manage.'
-        }
-        actions={
-          canCreateBusiness ? (
-            <Link href={`/${locale}/dashboard/restaurants/new`} className="bz-btn">
-              <Plus size={14} strokeWidth={2} />
-              {isTr ? 'İşletme ekle' : 'Add business'}
-            </Link>
-          ) : undefined
-        }
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {summaries.map((r) => (
-          <RestaurantMenuCard key={r.id} restaurant={r} locale={locale} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RestaurantMenuCard({
-  restaurant,
-  locale,
-}: {
-  restaurant: RestaurantSummary;
-  locale: Locale;
-}) {
-  const isTr = locale === 'tr';
-  const href = `/${locale}/dashboard/restaurants/${restaurant.id}/menu`;
-
-  const statusKind: 'ok' | 'warn' | 'ghost' = !restaurant.menuEnabled
-    ? 'ghost'
-    : restaurant.menuPublished
-    ? 'ok'
-    : 'warn';
-  const statusLabel = !restaurant.menuEnabled
-    ? isTr
-      ? 'Kapalı'
-      : 'Disabled'
-    : restaurant.menuPublished
-    ? isTr
-      ? 'Yayında'
-      : 'Published'
-    : isTr
-    ? 'Taslak'
-    : 'Draft';
-
-  const initial = restaurant.name.trim().charAt(0).toUpperCase() || '·';
-
-  return (
-    <Link
-      href={href}
-      className="group block bz-card overflow-hidden transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
-    >
-      <div className="flex items-start gap-3 p-4 sm:p-5">
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#0A0A0A] text-[#C6F24E]"
-          aria-hidden="true"
-        >
-          {restaurant.menuLogoUrl ? (
-             
-            <img
-              src={restaurant.menuLogoUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="bz-h-tight text-[18px]">{initial}</span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="bz-h-tight truncate text-[15px] text-[#0A0A0A]">
-                {restaurant.name}
-              </p>
-              <p className="mt-0.5 truncate text-[11px] text-[#737373]">
-                /{restaurant.slug}
-              </p>
-            </div>
-            <Badge kind={statusKind}>{statusLabel}</Badge>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-px bg-[#EDEDED]">
-        <div className="bg-white px-4 py-3 sm:px-5">
-          <Eyebrow>{isTr ? 'KATEGORİ' : 'CATEGORIES'}</Eyebrow>
-          <p className="bz-mono mt-1 text-[18px] text-[#0A0A0A]" style={{ fontWeight: 600 }}>
-            {restaurant.categoryCount}
-          </p>
-        </div>
-        <div className="bg-white px-4 py-3 sm:px-5">
-          <Eyebrow>{isTr ? 'ÜRÜN' : 'ITEMS'}</Eyebrow>
-          <p className="bz-mono mt-1 text-[18px] text-[#0A0A0A]" style={{ fontWeight: 600 }}>
-            {restaurant.itemCount}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 border-t border-[#EDEDED] px-4 py-3 sm:px-5">
-        <p className="truncate text-[11px] text-[#737373]">
-          {restaurant.menuUpdatedAt
-            ? `${isTr ? 'Son güncelleme' : 'Last updated'}: ${new Date(
-                restaurant.menuUpdatedAt,
-              ).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-                // Server render — pin the business timezone (§46), not UTC.
-                timeZone: resolveDisplayTimeZone(),
-              })}`
-            : isTr
-            ? 'Henüz güncellenmemiş'
-            : 'Not yet updated'}
-        </p>
-        <span className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-[#0A0A0A] group-hover:gap-1.5 transition-all">
-          {restaurant.categoryCount === 0
-            ? isTr
-              ? 'Menü oluştur'
-              : 'Build menu'
-            : isTr
-            ? 'Menüyü düzenle'
-            : 'Edit menu'}
-          <ArrowRight size={13} strokeWidth={2} />
-        </span>
-      </div>
-    </Link>
-  );
+  // Several businesses and no usable `?restaurantId` (bookmark, typed URL,
+  // command palette). There is no business picker here: the menu always
+  // belongs to the business chosen in the panel's business switcher, and the
+  // shell's "Menü" links already open that business's builder directly. The
+  // client resolves the switcher's business and opens its builder.
+  const restaurantIds = [
+    ...restaurants.filter((r) => r.isActive).map((r) => r.id),
+    ...restaurants.filter((r) => !r.isActive).map((r) => r.id),
+  ];
+  return <MenuHubRedirect locale={locale} restaurantIds={restaurantIds} />;
 }
