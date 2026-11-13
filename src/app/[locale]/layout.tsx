@@ -1,12 +1,12 @@
 import '../globals.css';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL, SOCIAL_PROFILES } from '@/lib/site';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import ContactFloat from '@/components/marketing/LazyContactFloat';
 import type { Metadata } from 'next';
 import { type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { getSiteSettings } from '@/lib/site-settings';
-import { getCompanyLegalInfo } from '@/lib/legal/variables';
+import { getCompanyFacts, ORGANIZATION_ID, WEBSITE_ID } from '@/lib/company-facts';
 import DocumentLang from '@/components/providers/DocumentLang';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -129,7 +129,7 @@ export default async function LocaleLayout({
   const locale = rawLocale as Locale;
 
   const s = await getSiteSettings();
-  const legal = await getCompanyLegalInfo();
+  const company = await getCompanyFacts();
   const siteUrl = SITE_URL;
 
   // Stage 83 §38.163 — auth-aware ContactFloat visibility moved to the
@@ -148,21 +148,20 @@ export default async function LocaleLayout({
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
+      '@id': ORGANIZATION_ID,
       name: 'Buaze',
-      ...(legal.name ? { legalName: legal.name } : {}),
+      ...(company.legalName ? { legalName: company.legalName } : {}),
       alternateName: ['Buaze (the company)', 'Buaze SaaS'],
       url: siteUrl,
       logo: s.logoUrl || `${siteUrl}/favicon.svg`,
       description: locale === 'tr' ? s.descriptionTr : s.descriptionEn,
       // sameAs disambiguates the Buaze SaaS entity from the Securidaca
       // longipedunculata plant (Chichewa "buaze") in dictionaries. Social
-      // profiles are fixed; Wikidata / G2 / Crunchbase / Capterra come from
-      // SiteSettings so ops can plug them in without a code deploy.
+      // profiles come from SOCIAL_PROFILES (same list as the footer icons);
+      // Wikidata / G2 / Crunchbase / Capterra come from SiteSettings so ops
+      // can plug them in without a code deploy.
       sameAs: [
-        'https://www.instagram.com/buazerating',
-        'https://twitter.com/buaze',
-        'https://www.linkedin.com/company/buaze',
-        'https://www.youtube.com/@buaze',
+        ...SOCIAL_PROFILES.map((profile) => profile.url),
         s.wikidataUrl,
         s.g2Url,
         s.crunchbaseUrl,
@@ -172,31 +171,24 @@ export default async function LocaleLayout({
         {
           '@type': 'ContactPoint',
           contactType: 'customer support',
-          email: 'support@buaze.com',
+          email: company.supportEmail,
           availableLanguage: ['Turkish', 'English'],
           areaServed: 'TR',
         },
       ],
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: 'Workinton Maslak, Floor 4',
-        addressLocality: 'Maslak',
-        addressRegion: 'İstanbul',
-        addressCountry: 'TR',
-      },
-      // Service geography + company founding year — Google rich result
-      // hints. `areaServed` doubles up at the contactPoint level (per-
-      // channel) but the Organization-level signal is what knowledge-graph
-      // entries pick up. CLAUDE.md §34.18.
+      // Same facts as the footer <address> (getCompanyFacts, NAP parity).
+      address: company.postalAddress,
       areaServed: 'TR',
       foundingDate: '2023',
     },
     {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
+      '@id': WEBSITE_ID,
       name: 'Buaze',
       url: siteUrl,
       inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+      publisher: { '@id': ORGANIZATION_ID },
       // No SearchAction: Google retired the sitelinks search box (2024) and
       // the target (/help/search) is noindex + robots-disallowed anyway.
     },

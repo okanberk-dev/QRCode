@@ -8,6 +8,15 @@
   --color-brand-lime: #C6F24E;         /* Lime — vurgu / "pulse" */
   --color-brand-lime-deep: #A8D62E;    /* Lime Deep — hover state */
   --color-brand-lime-soft: #EAF9B8;    /* Lime Soft — tint / arkaplan */
+  /* Animation component tokens (src/components/animations/*). tailwind.config.ts
+   * is NOT loaded by Tailwind v4 (no @config), so these utilities were never
+   * generated: text-brand-ink icons rendered invisible, bg-brand-paper cards
+   * transparent (2026-11 audit). Values = Pulse §11. */
+  --color-brand-ink: #0A0A0A;
+  --color-brand-paper: #FFFFFF;
+  --color-brand-bg: #FAFAFA;
+  --color-brand-mute: #525252;
+  --color-brand-mute-soft: #737373;
 
   /* Neutrals */
   --color-brand-n50:  #FAFAFA;
@@ -513,6 +522,14 @@ body {
 @keyframes brand-marquee {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
+}
+
+/* PulseLine (src/components/animations/PulseLine.tsx) inline
+   `animation: brand-draw …` — same story as brand-marquee: the keyframe only
+   existed in the unloaded tailwind.config.ts. */
+@keyframes brand-draw {
+  0% { stroke-dashoffset: 500; }
+  60%, 100% { stroke-dashoffset: 0; }
 }
 
 /* CSS Performance §38.61 — 3 keyframe styled-jsx/inline `<style>` block'larından

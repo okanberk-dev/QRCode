@@ -16,7 +16,8 @@ import type { SceneFactory } from '../scene-types';
  * "Pulse field" — a dark terrain of points with heartbeat (ECG) waves
  * travelling across it: the brand line "Her yorum bir nabız" as a living
  * surface. Decorative only (CLAUDE.md §50); used behind the marketing
- * footer's top band.
+ * footer's top band. Dark backgrounds only (additive blending): the
+ * `theme` context value is ignored.
  *
  * Cost: one draw call, a few thousand points, all motion in the vertex
  * shader (no per-frame CPU work besides uniforms). The GLSL `ecg()` mirrors
@@ -76,16 +77,22 @@ const FRAGMENT = /* glsl */ `
     float alpha = soft * vFade * mix(0.5, 1.0, lit);
     // Straight (non-premultiplied) color: additive blending applies alpha.
     gl_FragColor = vec4(color, alpha);
+    // Uniform colors are stored in linear space; convert back to sRGB so the
+    // brand lime renders as #C6F24E (ShaderMaterial skips this otherwise).
+    #include <colorspace_fragment>
   }
 `;
 
 const LOOK_AT = new Vector3(0, 0.15, -3.2);
 
-export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, mode }) => {
+export const createScene: SceneFactory = ({ canvas, gl, width, height, pixelRatio, mode }) => {
+  // ThreeStage created the WebGL2 context (see SCENE_CONTEXT_ATTRIBUTES).
   const renderer = new WebGLRenderer({
     canvas,
+    context: gl,
     alpha: true,
     antialias: false,
+    depth: false,
     powerPreference: 'low-power',
     premultipliedAlpha: true,
   });
@@ -152,6 +159,15 @@ export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, m
   const eased = { x: 0, y: 0 };
 
   return {
+    async prepare() {
+      // Parallel compile where the driver supports it; otherwise a plain
+      // compile (compileAsync would only log a warning and fall back).
+      if (renderer.extensions.has('KHR_parallel_shader_compile')) {
+        await renderer.compileAsync(scene, camera);
+      } else {
+        renderer.compile(scene, camera);
+      }
+    },
     render(time) {
       material.uniforms.uTime.value = time;
       if (mode === 'animate') {

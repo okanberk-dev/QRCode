@@ -22,12 +22,16 @@ import {
 import type { SceneFactory } from '../scene-types';
 
 /**
- * "Platform orbit" — the ten review platforms Buaze links to circle one
- * core (the Buaze panel). Every few seconds a signal travels from a platform
- * node into the core: one place for every review. Decorative only
- * (CLAUDE.md §50); the platform names stay in the page's HTML next to it.
+ * "Platform orbit" — the ten public review platforms whose links Buaze
+ * manages circle one core (the business's Buaze page). Every few seconds a
+ * pulse travels from the core out to one platform: the customer is sent on
+ * to that platform's review page. Decorative only (CLAUDE.md §50): no logos,
+ * counters or text in the scene — the platform names stay in the page's
+ * HTML next to it, and nothing here implies an API connection or review
+ * import (§19.4).
  *
- * Node colors are the platforms' own brand colors (§11 keeps those hexes).
+ * Node colors are the platforms' own brand colors (§11 keeps those hexes;
+ * Booking uses its lighter #0A5CC2 so it stays visible on dark).
  */
 
 const PLATFORM_COLORS = [
@@ -37,7 +41,7 @@ const PLATFORM_COLORS = [
   '#F27A1A', // Trendyol GO
   '#34E0A1', // Tripadvisor
   '#FF5A5F', // Airbnb
-  '#0A5CC2', // Booking
+  '#0A5CC2', // Booking.com
   '#FC3F1D', // Yandex
   '#D32323', // Yelp
   '#F94877', // Foursquare
@@ -58,19 +62,24 @@ function cameraDistance(aspect: number): number {
   return Math.max(9.4, 3.8 / (HALF_FOV_TAN * Math.max(aspect, 0.4)));
 }
 
-/** Seconds between two signals, and one signal's travel time. */
+/** Seconds between two pulses, and one pulse's travel time. */
 const SIGNAL_EVERY = 1.15;
 const SIGNAL_TRAVEL = 1.25;
 
+/** World-unit diameters of the glow sprites. */
+const HALO_SIZE = 2.6;
+const SIGNAL_SIZE = 0.62;
+
+// Point sizes are in world units: uScale = drawing-buffer height / (2·tan(fov/2)).
 const GLOW_VERTEX = /* glsl */ `
   attribute float aSize;
   attribute float aAlpha;
-  uniform float uPixelRatio;
+  uniform float uScale;
   varying float vAlpha;
   void main() {
     vAlpha = aAlpha;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = aSize * uPixelRatio / -mv.z;
+    gl_PointSize = aSize * uScale / -mv.z;
     gl_Position = projectionMatrix * mv;
   }
 `;
@@ -83,6 +92,7 @@ const GLOW_FRAGMENT = /* glsl */ `
     if (d > 0.5) discard;
     float a = smoothstep(0.5, 0.0, d);
     gl_FragColor = vec4(uColor, a * a * vAlpha);
+    #include <colorspace_fragment>
   }
 `;
 
@@ -96,13 +106,28 @@ function ringPoint(radius: number, angle: number, tiltX: number, tiltZ: number, 
   return out;
 }
 
-export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, mode, theme }) => {
+function glowMaterial(color: Color, scale: number, dark: boolean, depthTest: boolean) {
+  return new ShaderMaterial({
+    vertexShader: GLOW_VERTEX,
+    fragmentShader: GLOW_FRAGMENT,
+    transparent: true,
+    depthWrite: false,
+    depthTest,
+    blending: dark ? AdditiveBlending : NormalBlending,
+    uniforms: { uColor: { value: color }, uScale: { value: scale } },
+  });
+}
+
+export const createScene: SceneFactory = ({ canvas, gl, width, height, pixelRatio, mode, theme }) => {
   const dark = theme === 'dark';
+  // ThreeStage created the WebGL2 context (see SCENE_CONTEXT_ATTRIBUTES).
   const renderer = new WebGLRenderer({
     canvas,
+    context: gl,
     alpha: true,
     antialias: true,
     powerPreference: 'low-power',
+    premultipliedAlpha: true,
   });
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(pixelRatio);
@@ -110,8 +135,15 @@ export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, m
 
   const scene = new Scene();
   const camera = new PerspectiveCamera(FOV, width / height, 0.1, 80);
-  camera.position.set(0, 1.1, cameraDistance(width / height));
-  camera.lookAt(0, 0, 0);
+  const placeCamera = (aspect: number) => {
+    camera.aspect = aspect;
+    camera.position.set(0, 1.1, cameraDistance(aspect));
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  };
+  placeCamera(width / height);
+
+  const pointScale = () => (height * pixelRatio) / (2 * HALF_FOV_TAN);
 
   const world = new Group();
   scene.add(world);
@@ -119,14 +151,36 @@ export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, m
   const lime = new Color('#C6F24E');
   const ink = new Color(dark ? '#FFFFFF' : '#0A0A0A');
 
+  // Halo: a soft lime disc sitting just behind the core, outside the
+  // rotating group so it always faces the camera from behind the heart.
+  const haloGeometry = new BufferGeometry();
+  haloGeometry.setAttribute('position', new BufferAttribute(new Float32Array(3), 3));
+  haloGeometry.setAttribute('aSize', new BufferAttribute(new Float32Array([HALO_SIZE]), 1));
+  const haloAlpha = new Float32Array([dark ? 0.6 : 0.55]);
+  haloGeometry.setAttribute('aAlpha', new BufferAttribute(haloAlpha, 1));
+  const haloMaterial = glowMaterial(lime, pointScale(), dark, true);
+  const halo = new Points(haloGeometry, haloMaterial);
+  halo.renderOrder = -1;
+  scene.add(halo);
+  const placeHalo = () => {
+    // 0.9 units behind the origin, along the view direction.
+    const behind = camera.position.clone().normalize().multiplyScalar(-0.9);
+    halo.position.copy(behind);
+  };
+  placeHalo();
+
   // Core: a slowly turning wireframe icosahedron with a solid heart.
   const coreGeometry = new IcosahedronGeometry(0.78, 1);
-  const coreWire = new Mesh(
-    coreGeometry,
-    new MeshBasicMaterial({ color: dark ? lime : new Color('#0A0A0A'), wireframe: true, transparent: true, opacity: dark ? 0.85 : 0.7 }),
-  );
+  const coreMaterial = new MeshBasicMaterial({
+    color: dark ? lime : new Color('#0A0A0A'),
+    wireframe: true,
+    transparent: true,
+    opacity: dark ? 0.85 : 0.7,
+  });
+  const coreWire = new Mesh(coreGeometry, coreMaterial);
   const heartGeometry = new SphereGeometry(0.34, 24, 16);
-  const heart = new Mesh(heartGeometry, new MeshBasicMaterial({ color: lime }));
+  const heartMaterial = new MeshBasicMaterial({ color: lime });
+  const heart = new Mesh(heartGeometry, heartMaterial);
   world.add(coreWire, heart);
 
   // Rings.
@@ -148,10 +202,10 @@ export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, m
     world.add(new LineLoop(g, ringMaterial));
   }
 
-  // Platform nodes: spread over the rings.
+  // Platform nodes: 3 + 4 + 3, evenly spaced on their ring, each ring
+  // phase-shifted so no two nodes start stacked.
   const nodeGeometry = new SphereGeometry(0.13, 20, 14);
   const nodeMaterials = PLATFORM_COLORS.map((hex) => new MeshBasicMaterial({ color: new Color(hex) }));
-  // 3 + 4 + 3 nodes, evenly spaced on their ring, each ring phase-shifted.
   const perRing = [3, 4, 3];
   const nodes = PLATFORM_COLORS.map((_, index) => {
     const mesh = new Mesh(nodeGeometry, nodeMaterials[index]);
@@ -162,79 +216,66 @@ export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, m
     return { mesh, ring: RINGS[ringIndex], offset };
   });
 
-  // Spokes: node → core, faint.
+  // Spokes: core → node, faint.
   const spokePositions = new Float32Array(PLATFORM_COLORS.length * 2 * 3);
   const spokeGeometry = new BufferGeometry();
   spokeGeometry.setAttribute('position', new BufferAttribute(spokePositions, 3));
   const spokeMaterial = new LineBasicMaterial({ color: ink, transparent: true, opacity: dark ? 0.09 : 0.08 });
   world.add(new LineSegments(spokeGeometry, spokeMaterial));
 
-  // Glows: one around the core + one travelling signal per platform.
-  const glowCount = 1 + PLATFORM_COLORS.length;
-  const glowPositions = new Float32Array(glowCount * 3);
-  const glowSizes = new Float32Array(glowCount);
-  const glowAlphas = new Float32Array(glowCount);
-  const glowGeometry = new BufferGeometry();
-  glowGeometry.setAttribute('position', new BufferAttribute(glowPositions, 3));
-  glowGeometry.setAttribute('aSize', new BufferAttribute(glowSizes, 1));
-  glowGeometry.setAttribute('aAlpha', new BufferAttribute(glowAlphas, 1));
-  const glowMaterial = new ShaderMaterial({
-    vertexShader: GLOW_VERTEX,
-    fragmentShader: GLOW_FRAGMENT,
-    transparent: true,
-    depthWrite: false,
-    blending: dark ? AdditiveBlending : NormalBlending,
-    uniforms: { uColor: { value: lime }, uPixelRatio: { value: pixelRatio } },
-  });
-  world.add(new Points(glowGeometry, glowMaterial));
+  // Pulses: one travelling sprite per platform (core → platform).
+  const signalPositions = new Float32Array(PLATFORM_COLORS.length * 3);
+  const signalSizes = new Float32Array(PLATFORM_COLORS.length);
+  const signalAlphas = new Float32Array(PLATFORM_COLORS.length);
+  const signalGeometry = new BufferGeometry();
+  signalGeometry.setAttribute('position', new BufferAttribute(signalPositions, 3));
+  signalGeometry.setAttribute('aSize', new BufferAttribute(signalSizes, 1));
+  signalGeometry.setAttribute('aAlpha', new BufferAttribute(signalAlphas, 1));
+  const signalMaterial = glowMaterial(lime, pointScale(), dark, false);
+  world.add(new Points(signalGeometry, signalMaterial));
 
   const pointer = { x: 0, y: 0 };
   const eased = { x: 0, y: 0 };
   const nodePos = new Vector3();
 
   const draw = (time: number) => {
-    // Nodes and spokes.
     nodes.forEach((node, index) => {
       ringPoint(node.ring.radius, node.offset + time * node.ring.speed, node.ring.tiltX, node.ring.tiltZ, nodePos);
       node.mesh.position.copy(nodePos);
-      spokePositions.set([nodePos.x, nodePos.y, nodePos.z, 0, 0, 0], index * 6);
+      spokePositions.set([0, 0, 0, nodePos.x, nodePos.y, nodePos.z], index * 6);
     });
     spokeGeometry.attributes.position.needsUpdate = true;
 
-    // Core breathing + a brighter flash when a signal lands.
+    // Core breathing + a small flash when a pulse leaves the core.
     const cycle = time / SIGNAL_EVERY;
-    const sinceLanding = ((time - SIGNAL_TRAVEL) % SIGNAL_EVERY + SIGNAL_EVERY) % SIGNAL_EVERY;
-    const flash = time > SIGNAL_TRAVEL ? Math.exp(-sinceLanding * 5) : 0;
-    const coreScale = 1 + 0.035 * Math.sin(time * 1.6) + flash * 0.12;
-    coreWire.scale.setScalar(coreScale);
-    heart.scale.setScalar(1 + flash * 0.25);
+    const sinceLaunch = ((time % SIGNAL_EVERY) + SIGNAL_EVERY) % SIGNAL_EVERY;
+    const flash = Math.exp(-sinceLaunch * 5);
+    coreWire.scale.setScalar(1 + 0.035 * Math.sin(time * 1.6) + flash * 0.1);
+    heart.scale.setScalar(1 + flash * 0.2);
     coreWire.rotation.set(time * 0.12, time * 0.19, 0);
+    haloAlpha[0] = (dark ? 0.55 : 0.5) + flash * 0.25;
+    haloGeometry.attributes.aAlpha.needsUpdate = true;
 
-    glowPositions.set([0, 0, 0], 0);
-    glowSizes[0] = (dark ? 420 : 320) * (1 + flash * 0.5);
-    glowAlphas[0] = dark ? 0.55 + flash * 0.35 : 0.6 + flash * 0.3;
-
-    // Signals: platform k emits at k * SIGNAL_EVERY (+ every N cycles).
+    // Platform k receives a pulse at k·SIGNAL_EVERY, then every N cycles.
     for (let k = 0; k < PLATFORM_COLORS.length; k++) {
-      const slot = 1 + k;
-      const emittedAt = Math.floor((cycle - k) / PLATFORM_COLORS.length) * PLATFORM_COLORS.length + k;
-      const age = time - emittedAt * SIGNAL_EVERY;
+      const launchedAt = Math.floor((cycle - k) / PLATFORM_COLORS.length) * PLATFORM_COLORS.length + k;
+      const age = time - launchedAt * SIGNAL_EVERY;
       const node = nodes[k].mesh.position;
       if (age >= 0 && age <= SIGNAL_TRAVEL) {
         const t = age / SIGNAL_TRAVEL;
         const ease = t * t * (3 - 2 * t);
-        glowPositions.set([node.x * (1 - ease), node.y * (1 - ease), node.z * (1 - ease)], slot * 3);
-        glowSizes[slot] = 120;
-        glowAlphas[slot] = Math.sin(Math.PI * t) * 0.95;
+        signalPositions.set([node.x * ease, node.y * ease, node.z * ease], k * 3);
+        signalSizes[k] = SIGNAL_SIZE;
+        signalAlphas[k] = Math.sin(Math.PI * t) * 0.95;
       } else {
-        glowPositions.set([node.x, node.y, node.z], slot * 3);
-        glowSizes[slot] = 0;
-        glowAlphas[slot] = 0;
+        signalPositions.set([node.x, node.y, node.z], k * 3);
+        signalSizes[k] = 0;
+        signalAlphas[k] = 0;
       }
     }
-    glowGeometry.attributes.position.needsUpdate = true;
-    glowGeometry.attributes.aSize.needsUpdate = true;
-    glowGeometry.attributes.aAlpha.needsUpdate = true;
+    signalGeometry.attributes.position.needsUpdate = true;
+    signalGeometry.attributes.aSize.needsUpdate = true;
+    signalGeometry.attributes.aAlpha.needsUpdate = true;
 
     if (mode === 'animate') {
       eased.x += (pointer.x - eased.x) * 0.035;
@@ -245,17 +286,26 @@ export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, m
   };
 
   return {
+    async prepare() {
+      // Parallel compile where the driver supports it; otherwise a plain
+      // compile (compileAsync would only log a warning and fall back).
+      if (renderer.extensions.has('KHR_parallel_shader_compile')) {
+        await renderer.compileAsync(scene, camera);
+      } else {
+        renderer.compile(scene, camera);
+      }
+    },
     render(time) {
       draw(time);
     },
     resize(w, h, pr) {
       renderer.setPixelRatio(pr);
       renderer.setSize(w, h, false);
-      glowMaterial.uniforms.uPixelRatio.value = pr;
-      camera.aspect = w / h;
-      camera.position.set(0, 1.1, cameraDistance(w / h));
-      camera.lookAt(0, 0, 0);
-      camera.updateProjectionMatrix();
+      const scale = (h * pr) / (2 * HALF_FOV_TAN);
+      haloMaterial.uniforms.uScale.value = scale;
+      signalMaterial.uniforms.uScale.value = scale;
+      placeCamera(w / h);
+      placeHalo();
     },
     setPointer(x, y) {
       pointer.x = x;
@@ -266,14 +316,16 @@ export const createScene: SceneFactory = ({ canvas, width, height, pixelRatio, m
       heartGeometry.dispose();
       nodeGeometry.dispose();
       spokeGeometry.dispose();
-      glowGeometry.dispose();
+      signalGeometry.dispose();
+      haloGeometry.dispose();
       ringGeometries.forEach((g) => g.dispose());
       nodeMaterials.forEach((m) => m.dispose());
-      (coreWire.material as MeshBasicMaterial).dispose();
-      (heart.material as MeshBasicMaterial).dispose();
+      coreMaterial.dispose();
+      heartMaterial.dispose();
       ringMaterial.dispose();
       spokeMaterial.dispose();
-      glowMaterial.dispose();
+      signalMaterial.dispose();
+      haloMaterial.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
     },

@@ -21,7 +21,7 @@ const PLATFORM_COLORS = [
 ];
 
 /** Dark band: a dotted floor with one lime heartbeat line. */
-export function PulseFieldFallback() {
+export function PulseFieldFallback({ id = 'bz-pulse' }: { id?: string }) {
   const width = 1200;
   const height = 320;
   return (
@@ -32,26 +32,26 @@ export function PulseFieldFallback() {
       focusable="false"
     >
       <defs>
-        <pattern id="bz-pulse-dots" width="14" height="14" patternUnits="userSpaceOnUse">
+        <pattern id={`${id}-dots`} width="14" height="14" patternUnits="userSpaceOnUse">
           <circle cx="7" cy="7" r="1.1" fill="#FFFFFF" fillOpacity="0.09" />
         </pattern>
-        <linearGradient id="bz-pulse-floor" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${id}-floor`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#0A0A0A" stopOpacity="1" />
           <stop offset="0.45" stopColor="#0A0A0A" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id="bz-pulse-line" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`${id}-line`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#C6F24E" stopOpacity="0" />
           <stop offset="0.25" stopColor="#C6F24E" stopOpacity="0.55" />
           <stop offset="0.75" stopColor="#C6F24E" stopOpacity="0.55" />
           <stop offset="1" stopColor="#C6F24E" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect x="0" y={height * 0.42} width={width} height={height * 0.58} fill="url(#bz-pulse-dots)" />
-      <rect x="0" y={height * 0.42} width={width} height={height * 0.58} fill="url(#bz-pulse-floor)" />
+      <rect x="0" y={height * 0.42} width={width} height={height * 0.58} fill={`url(#${id}-dots)`} />
+      <rect x="0" y={height * 0.42} width={width} height={height * 0.58} fill={`url(#${id}-floor)`} />
       <path
-        d={ecgPath(width, height, { beats: 3, samples: 360, amplitude: 0.3 })}
+        d={ecgPath(width, height, { beats: 3, amplitude: 0.3 })}
         fill="none"
-        stroke="url(#bz-pulse-line)"
+        stroke={`url(#${id}-line)`}
         strokeWidth="2"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -61,7 +61,13 @@ export function PulseFieldFallback() {
 }
 
 /** Platform orbit: three tilted rings, ten brand-colored nodes, lime core. */
-export function PlatformOrbitFallback({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
+export function PlatformOrbitFallback({
+  theme = 'dark',
+  id = 'bz-orbit',
+}: {
+  theme?: 'dark' | 'light';
+  id?: string;
+}) {
   const ink = theme === 'dark' ? '#FFFFFF' : '#0A0A0A';
   const rings = [
     { rx: 150, ry: 62, rotate: 14 },
@@ -74,7 +80,8 @@ export function PlatformOrbitFallback({ theme = 'dark' }: { theme?: 'dark' | 'li
   rings.forEach((ring, ringIndex) => {
     const count = perRing[ringIndex];
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 + ringIndex * 0.9;
+      // Ring phase step chosen so no two nodes overlap in this flat view.
+      const angle = (i / count) * Math.PI * 2 + ringIndex * 0.4;
       const x = Math.cos(angle) * ring.rx;
       const y = Math.sin(angle) * ring.ry;
       const rad = (ring.rotate * Math.PI) / 180;
@@ -88,7 +95,7 @@ export function PlatformOrbitFallback({ theme = 'dark' }: { theme?: 'dark' | 'li
   return (
     <svg viewBox="0 0 600 440" preserveAspectRatio="xMidYMid meet" className="h-full w-full" focusable="false">
       <defs>
-        <radialGradient id={`bz-orbit-glow-${theme}`}>
+        <radialGradient id={`${id}-glow`}>
           <stop offset="0" stopColor="#C6F24E" stopOpacity="0.55" />
           <stop offset="1" stopColor="#C6F24E" stopOpacity="0" />
         </radialGradient>
@@ -109,7 +116,7 @@ export function PlatformOrbitFallback({ theme = 'dark' }: { theme?: 'dark' | 'li
       {nodes.map((node, i) => (
         <line key={`l${i}`} x1="300" y1="220" x2={node.x} y2={node.y} stroke={ink} strokeOpacity="0.07" />
       ))}
-      <circle cx="300" cy="220" r="70" fill={`url(#bz-orbit-glow-${theme})`} />
+      <circle cx="300" cy="220" r="70" fill={`url(#${id}-glow)`} />
       <circle cx="300" cy="220" r="34" fill="none" stroke={theme === 'dark' ? '#C6F24E' : '#0A0A0A'} strokeOpacity="0.8" />
       <circle cx="300" cy="220" r="15" fill="#C6F24E" />
       {nodes.map((node, i) => (
