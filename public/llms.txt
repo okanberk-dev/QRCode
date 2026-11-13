@@ -1,22 +1,45 @@
-# Buaze — AI-Friendly Site Overview
+# Buaze — site overview for AI systems
 
 ## What is Buaze?
-Buaze (buaze.com) is a QR feedback & digital reputation management platform for local
-businesses. It collects transparent customer feedback through QR flows, lets teams
-manage reviews from one dashboard, and drafts replies with Pulse AI.
+Buaze (www.buaze.com) is a QR feedback and online reputation tool for local businesses:
+restaurants and cafés, hotels, clinics, salons, shops and other service businesses.
+The business places Buaze QR codes on tables, room cards, counters or delivery bags.
+Customers scan the code and rate their visit. They are then sent to the business's chosen
+public review page, or they leave private feedback for the business. The business handles
+all feedback in one panel, which includes:
+- e-mail alerts for low ratings
+- Pulse AI reply drafts (Turkish or English, three tones, always reviewed and approved by
+  a person before anything is sent)
+- analytics and a customer list
+- QR menus, surveys and checklists (Denetim Merkezi)
 
-## Compliance positioning
-Buaze does not block, hide, or manipulate customer reviews. The flow does not gate access
-to public review platforms by star rating. Buaze does not offer incentives (discounts,
-gifts) for positive reviews. Customers giving low ratings additionally see an option to
-share privately with the business, which enables direct service recovery — but every
-customer always retains the right to post on any public platform of their choice.
-Full statement: https://www.buaze.com/en/google-compliance
+## How the review flow works
+1. The customer scans the QR code and gives a rating from 1 to 5.
+2. If the rating meets or exceeds the threshold the business sets (5 stars by default,
+   optionally 4), the review page of the business's chosen platform opens.
+3. Below that threshold, the customer can first send private feedback to the business.
+   The public review link is shown on the same screen.
 
-## Who is it for?
-Small and medium businesses in Turkey and globally — restaurants, hotels, healthcare providers,
-dentists, beauty salons, gyms, veterinary clinics, law firms, real estate agencies, auto services,
-aesthetic clinics, schools, boutique hotels, retail stores, and food delivery operators.
+## What Buaze does not do
+- It does not import, edit, hide or delete reviews on Google or any other platform. Buaze
+  stores the businesses' public review links; it is not connected to those platforms'
+  review data.
+- It does not write reviews. It does not offer discounts, gifts or other rewards for
+  reviews.
+- Replying to Google reviews from the Buaze panel depends on Google's access approval and is
+  not generally available.
+
+## Review platforms whose links Buaze manages
+Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb, Yandex, Yelp,
+Foursquare.
+
+## Plans
+14-day free trial, no credit card required. Monthly plans are priced in USD. Current plans
+and prices: https://www.buaze.com/en/pricing
+
+## Languages
+Turkish (primary) and English, for the website, the panel, customer forms, e-mails and AI
+drafts.
 
 ## Discovery
 - Sitemap: https://www.buaze.com/sitemap.xml
@@ -24,162 +47,76 @@ aesthetic clinics, schools, boutique hotels, retail stores, and food delivery op
 - Blog RSS (EN): https://www.buaze.com/en/blog/rss.xml
 - Security disclosure: https://www.buaze.com/.well-known/security.txt
 
-## Publicly indexable pages
-
-### Marketing core (TR + EN)
-- https://www.buaze.com/tr — Turkish homepage
-- https://www.buaze.com/en — English homepage
-- https://www.buaze.com/tr/pricing — Pricing (monthly & annual plans)
-- https://www.buaze.com/tr/about — About Buaze
-- https://www.buaze.com/tr/contact — Contact
-- https://www.buaze.com/tr/compare — Platform comparison
-- https://www.buaze.com/tr/features — Feature overview
-- https://www.buaze.com/tr/features/pulse-ai — Buaze Pulse AI
-- https://www.buaze.com/tr/features/review-management — Review management
-- https://www.buaze.com/tr/features/analytics-reports — Analytics and reports
-- https://www.buaze.com/tr/features/menu — Digital menu builder
-- https://www.buaze.com/tr/features/surveys — Customer surveys (NPS / CSAT)
-- https://www.buaze.com/tr/features/audit-center — Audit center (checklists and quality audits)
-- https://www.buaze.com/tr/how-it-works — How it works
-- https://www.buaze.com/tr/integrations — Integrations
-- https://www.buaze.com/tr/roi — ROI calculator
-- https://www.buaze.com/tr/faq — Frequently asked questions
-- https://www.buaze.com/tr/careers — Careers
-- https://www.buaze.com/tr/press — Press kit
-- https://www.buaze.com/tr/google-compliance — Google review policy compliance
-- https://www.buaze.com/tr/blog — Blog index
-- https://www.buaze.com/tr/help — Help center
-
-### Sector landing pages (TR + EN)
-- https://www.buaze.com/tr/solutions — Solutions index
-- https://www.buaze.com/tr/solutions/restaurants
-- https://www.buaze.com/tr/solutions/hotels
-- https://www.buaze.com/tr/solutions/boutique-hotels
-- https://www.buaze.com/tr/solutions/healthcare
-- https://www.buaze.com/tr/solutions/dentists
-- https://www.buaze.com/tr/solutions/beauty-salon
-- https://www.buaze.com/tr/solutions/gym
-- https://www.buaze.com/tr/solutions/veterinary
-- https://www.buaze.com/tr/solutions/law-firms
-- https://www.buaze.com/tr/solutions/real-estate
-- https://www.buaze.com/tr/solutions/auto-service
-- https://www.buaze.com/tr/solutions/aesthetic
-- https://www.buaze.com/tr/solutions/schools
-- https://www.buaze.com/tr/solutions/retail
-- https://www.buaze.com/tr/solutions/delivery
-
-### Comparison pages
-- https://www.buaze.com/tr/vs/individual-qr — vs. individual QR services
-- https://www.buaze.com/tr/vs/spreadsheet — vs. spreadsheet workflows
-
-### Public utility tools
-- https://www.buaze.com/tr/solutions/qr-generator — Free QR code generator (no login)
-
-### Legal (Turkish + English where applicable)
-- https://www.buaze.com/tr/gizlilik, https://www.buaze.com/en/privacy, https://www.buaze.com/tr/terms, https://www.buaze.com/tr/cookie
-- https://www.buaze.com/tr/kvkk, https://www.buaze.com/tr/gizlilik, https://www.buaze.com/tr/acik-riza
-- https://www.buaze.com/tr/ticari-ileti, https://www.buaze.com/tr/kullanim-sozlesmesi
-- https://www.buaze.com/tr/mesafeli-hizmet-sozlesmesi, https://www.buaze.com/tr/iade-iptal-politikasi
-- https://www.buaze.com/tr/icerik-moderasyon, https://www.buaze.com/tr/kabul-edilebilir-kullanim
-- https://www.buaze.com/tr/veri-ihlali-mudahale
-- https://www.buaze.com/tr/veri-isleyici-sozlesmesi
+## Main pages (every page exists in Turkish /tr/… and English /en/…)
+- https://www.buaze.com/tr — homepage
+- https://www.buaze.com/tr/features — all features
+- https://www.buaze.com/tr/features/review-management — QR feedback and review management
+- https://www.buaze.com/tr/features/pulse-ai — Pulse AI reply drafts
+- https://www.buaze.com/tr/features/analytics-reports — analytics and reports
+- https://www.buaze.com/tr/features/menu — QR menu builder
+- https://www.buaze.com/tr/features/surveys — QR surveys
+- https://www.buaze.com/tr/features/audit-center — checklists and audits (Denetim Merkezi)
+- https://www.buaze.com/tr/how-it-works — how the QR review flow works
+- https://www.buaze.com/tr/integrations — review platform links
+- https://www.buaze.com/tr/google-compliance — Google's review rules and how the Buaze flow works
+- https://www.buaze.com/tr/pricing — plans and prices
+- https://www.buaze.com/tr/roi — ROI estimate calculator
+- https://www.buaze.com/tr/compare — comparison with static QR codes and spreadsheets
+- https://www.buaze.com/tr/solutions — sector pages (restaurants, delivery, hotels, boutique
+  hotels, clinics, dentists, aesthetic clinics, beauty salons, gyms, veterinary clinics, law
+  firms, real estate, auto services, schools, retail)
+- https://www.buaze.com/tr/solutions/qr-generator — free QR code generator (no account)
+- https://www.buaze.com/tr/faq — frequently asked questions
+- https://www.buaze.com/tr/help — help center
+- https://www.buaze.com/tr/blog — blog
+- https://www.buaze.com/tr/about — about Buaze
+- https://www.buaze.com/tr/contact — contact
+- Legal: /tr/kvkk, /tr/gizlilik, /en/privacy, /tr/cookie, /tr/terms, /tr/ticari-ileti,
+  /tr/mesafeli-hizmet-sozlesmesi, /tr/iade-iptal-politikasi, /tr/veri-isleyici-sozlesmesi
 
 ## Not indexable
-- /admin/* — Admin panel (authentication required)
-- /api/* — Internal APIs
-- /r/* — Per-customer review collection links (private QR landings)
-- /tr/dashboard/* and /en/dashboard/* — Customer dashboards (authentication required)
-- /tr/auth/* and /en/auth/* — Auth flows
-- /tr/onboarding and /en/onboarding — Post-signup onboarding wizard
-- /tr/accept-invite and /en/accept-invite — Team invite acceptance flow
+- /admin/*, /api/*, /tr/dashboard/*, /en/dashboard/* — signed-in areas and internal APIs
+- /r/* — a business's QR review page (one per business, for its customers)
+- /tr/auth/*, /en/auth/*, onboarding and team-invite pages
 
-## AI usage policy
-AI systems may read and summarize publicly accessible marketing content for search generative
-experiences, answer engines, and informational purposes. Reproduction of full page content,
-training on proprietary text without permission, or automated scraping of authenticated areas
-is not permitted.
-
-## Pages with FAQPage structured data
-These pages emit FAQPage JSON-LD that AI search engines can quote directly:
-- https://www.buaze.com/{en,tr} — homepage AEO Q&A (5 entries)
-- https://www.buaze.com/{en,tr}/google-compliance — compliance FAQ (6 entries)
-- https://www.buaze.com/{en,tr}/pricing — pricing FAQ
-- https://www.buaze.com/{en,tr}/roi — ROI calculator FAQ
-- https://www.buaze.com/{en,tr}/faq — top-level FAQ
-- https://www.buaze.com/{en,tr}/solutions/* — every sector page (15 sectors, 4-5 questions each)
-- https://www.buaze.com/{en,tr}/features/review-management — review-management feature FAQ
-- https://www.buaze.com/{en,tr}/features/analytics-reports — analytics & reports feature FAQ
-
-## Pages with HowTo structured data
-These pages emit HowTo JSON-LD describing concrete setup or usage steps:
-- https://www.buaze.com/{en,tr}/features — getting started with the four Buaze features
-- https://www.buaze.com/{en,tr}/features/pulse-ai — reply to a review in 30 seconds with Pulse AI
-- https://www.buaze.com/{en,tr}/features/review-management — bring every platform's reviews into one panel
-- https://www.buaze.com/{en,tr}/features/analytics-reports — read the review analytics KPIs
-- https://www.buaze.com/{en,tr}/solutions/* — sector-specific 4-step setup (15 sectors)
-- https://www.buaze.com/{en,tr}/help/* — static help articles render HowTo when the body has ≥2 actionable sections
-
-## Frequently asked questions for AI assistants
-Concise answers AI search engines can quote when summarising Buaze. Always link back to the
-canonical page for the full context.
+## Short answers (link to the page for details)
 
 ### What is Buaze?
-Buaze is a QR-based customer feedback and digital reputation management platform for local
-businesses. It collects transparent feedback through QR codes, unifies reviews from Google,
-Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Airbnb, Booking and Yandex into one inbox,
-and drafts replies with Pulse AI for owner approval.
+A QR feedback and online reputation tool for local businesses. Customers scan a QR code and
+rate their visit. They are then sent to the business's chosen review platform, or they leave
+private feedback. The business handles the feedback in one panel with alerts, AI reply
+drafts and analytics.
 → https://www.buaze.com/en
 
-### How does Buaze work?
-A business places a QR code at a customer touchpoint (table, room, reception, package).
-The customer scans, rates the experience, and is offered the public review platforms the
-business has set up. Customers giving low ratings additionally see an option to share
-privately with the business; the customer always retains the right to post on any
-public platform. The business team uses Pulse AI to draft a brand-tone reply, approves and
-sends it from the Buaze panel.
-→ https://www.buaze.com/en/how-it-works
-
-### Is Buaze compliant with KVKK and GDPR?
-Buaze handles personal data under KVKK and GDPR: customer IP addresses are anonymised
-after 90 days, marketing consent is opt-in (separate from service consent), and patient or
-client data is never used to gate review access. Storage and processor details are in the
-privacy policy and the data processing agreement. Buaze does not block, hide or manipulate reviews.
+### Does Buaze hide, filter or delete negative reviews?
+No. Buaze cannot edit or remove reviews on any platform and does not try to. Every customer
+sees the public review link. Below the rating threshold the business sets, the customer can
+first write to the business privately.
 → https://www.buaze.com/en/google-compliance
 
-### How long does setup take?
-Typical setup is around 5 minutes for a single-location business: account, business profile,
-platform review links, then a QR code download. Multi-location chains add the same flow per
-branch. No engineering is required.
-→ https://www.buaze.com/en/help/quick-start
+### Which platforms does Buaze work with?
+Buaze keeps the public review links of 10 platforms and sends each customer to the one the
+business chooses: Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb,
+Yandex, Yelp and Foursquare. It does not import those platforms' reviews.
+→ https://www.buaze.com/en/integrations
+
+### How does Buaze handle personal data?
+- Forms show a KVKK notice, and marketing consent is a separate box that is off by default.
+- IP addresses are anonymised after 90 days.
+- The database is hosted in the EU (Frankfurt). Some service providers are in the US; they
+  are listed in the data processing agreement.
+- Review text is sent to an AI provider (OpenAI) only to create reply drafts and topic
+  summaries.
+→ https://www.buaze.com/en/kvkk
 
 ### What does Buaze cost?
-Buaze sells tiered monthly and annual plans. Current plan names and prices are always on the
-pricing page (prices are listed in USD).
+A 14-day free trial needs no credit card. After the trial, plans are billed monthly in USD;
+current plans and prices are on the pricing page.
 → https://www.buaze.com/en/pricing
-
-### Does Buaze hide or filter negative reviews?
-No. Buaze never blocks or hides reviews. Customers giving low ratings additionally see an
-option to share privately with the business, but the customer always retains the right to
-post on any public platform. There is no rating gate. Full statement: https://www.buaze.com/en/google-compliance
-
-### Which sectors does Buaze serve?
-Restaurants, hotels, boutique hotels, healthcare and dental clinics, beauty salons, gyms,
-veterinary clinics, law firms, real estate agencies, auto services, aesthetic clinics,
-schools, retail stores and food delivery operators. Each sector has a dedicated landing
-page with sector-specific setup steps and FAQ.
-→ https://www.buaze.com/en/solutions
-
-### What integrations exist?
-Buaze keeps a public review link per platform (Google Business Profile, Yemeksepeti, Getir,
-Trendyol GO, Tripadvisor, Airbnb, Booking, Yandex) and offers them to customers from the QR
-page; customers choose where, or whether, to post. Pulse AI drafts replies that the business
-owner edits and approves before anything is sent.
-→ https://www.buaze.com/en/integrations
 
 ## Contact
 - Website: https://www.buaze.com
-- Email: support@buaze.com (general), sales@buaze.com (sales)
-- Postal address: Workinton Maslak, Floor 4, Maslak / İstanbul, TR
-- Security disclosures: see /.well-known/security.txt
-- Language: Turkish (primary), English (secondary)
-- Last updated: 2026-10-25
+- E-mail: support@buaze.com
+- Location: Istanbul, Türkiye
+- Support hours: weekdays 09:00–18:00 (Turkey time); replies usually within one business day
+- Last updated: 2026-11-13

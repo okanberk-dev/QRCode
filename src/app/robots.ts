@@ -7,8 +7,10 @@ const PRIVATE_PATHS = [
   '/r/',
   '/tr/dashboard/',
   '/en/dashboard/',
-  '/tr/auth/',
-  '/en/auth/',
+  // /tr/auth/ and /en/auth/ are NOT disallowed on purpose: the auth pages
+  // carry <meta name="robots" content="noindex">, and Google can only see a
+  // noindex on a page it is allowed to crawl. Every marketing page links to
+  // them (rel="nofollow").
   '/tr/onboarding',
   '/en/onboarding',
   '/tr/accept-invite',

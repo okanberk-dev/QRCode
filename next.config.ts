@@ -225,6 +225,13 @@ const nextConfig: NextConfig = {
         destination: '/:locale/features',
         permanent: true,
       },
+      // 2026-11 (Stage 172): /blog/google-2026 was a static page of invented
+      // "Google 2026 update" news with a fictional author — deleted.
+      {
+        source: '/:locale(tr|en)/blog/google-2026',
+        destination: '/:locale/blog',
+        permanent: true,
+      },
       {
         source: '/:locale(tr|en)/legal/kvkk-aydinlatma',
         destination: '/:locale/kvkk',
@@ -288,11 +295,20 @@ const nextConfig: NextConfig = {
       'browsing-topics=()',
       'payment=()',
       'usb=()',
-      'bluetooth=()',
+      // `bluetooth` is not a Permissions-Policy feature Chrome recognises; it
+      // only produced an "Unrecognized feature" console warning on every page.
       'serial=()',
     ].join(', ');
 
     return [
+      // Language of each locale tree, as an HTTP signal too: the root layout
+      // serves <html lang="tr"> for every route (an inline script switches
+      // /en/* before paint), so non-JS crawlers (Bing, Yandex, AI bots) get
+      // the right language from this header plus hreflang.
+      { source: '/tr', headers: [{ key: 'Content-Language', value: 'tr' }] },
+      { source: '/tr/:path*', headers: [{ key: 'Content-Language', value: 'tr' }] },
+      { source: '/en', headers: [{ key: 'Content-Language', value: 'en' }] },
+      { source: '/en/:path*', headers: [{ key: 'Content-Language', value: 'en' }] },
       {
         source: '/:path*',
         headers: [
