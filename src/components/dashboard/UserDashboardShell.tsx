@@ -501,6 +501,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const hrefWithActiveRestaurant = (href: string) => {
     if (!activeRestaurantId || !isBusinessScopedHref(href)) return href;
     const [hrefPath, hrefQuery = ''] = href.split('?');
+    // "Menü" opens the active business's menu builder directly; there is no
+    // business picker in between (CLAUDE.md §49). Active state still matches
+    // on the item's own `/dashboard/menu` href (see `onMenuBuilder`).
+    if (hrefPath === `/${locale}/dashboard/menu`) {
+      return `/${locale}/dashboard/restaurants/${activeRestaurantId}/menu`;
+    }
     const nextSearch = setRestaurantParam(hrefQuery, activeRestaurantId);
     return nextSearch ? `${hrefPath}?${nextSearch}` : hrefPath;
   };

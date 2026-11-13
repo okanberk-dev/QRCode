@@ -55,12 +55,14 @@ export default function MenuBuilderError({
             <RefreshCw size={14} strokeWidth={2} />
             {isTr ? 'Tekrar dene' : 'Try again'}
           </button>
+          {/* There is no menu list to go back to (the menu hub only opens
+              this builder), so the way out is the panel home. */}
           <Link
-            href={`/${locale}/dashboard/menu`}
+            href={`/${locale}/dashboard`}
             className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
           >
             <ArrowLeft size={14} strokeWidth={2} />
-            {isTr ? 'Menülere dön' : 'Back to menus'}
+            {isTr ? 'Panele dön' : 'Back to dashboard'}
           </Link>
         </div>
       </div>
