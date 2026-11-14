@@ -232,14 +232,14 @@ const SHARED = {
     platformsEyebrow: 'Review platforms',
     platformsListLabel: 'Review platforms the panel shows for this industry',
     platformsFootnote:
-      "Buaze doesn't import reviews from these platforms; it sends the customer to your chosen platform's review page. Your links are checked automatically every day.",
+      "Buaze doesn’t import reviews from these platforms; it sends the customer to your chosen platform’s review page. Your links are checked automatically every day.",
     platformsLink: 'See platform links',
     questionsEyebrow: 'Surveys and audits',
     questionsHeading: 'Sample survey questions',
     questionsHint: 'You write the questions yourself in Surveys; a survey can have up to 30 questions.',
     surveyTemplatesHeading: 'Ready-made survey templates',
     auditTemplatesHeading: 'Ready-made audit templates',
-    auditTemplatesLead: "The Audit Center is for your team's internal checks; these forms are not shown to customers.",
+    auditTemplatesLead: "The Audit Center is for your team’s internal checks; these forms are not shown to customers.",
     auditsNote:
       'The ready-made audit templates are currently written in Turkish; you can also build your own checklist in English.',
     surveysLink: 'See Surveys',
@@ -363,7 +363,7 @@ export default function SolutionPageLayout({
             <nav aria-label={shared.breadcrumb} className="text-[13px] text-[#737373]">
               <ol className="flex flex-wrap items-center gap-1.5">
                 <li>
-                  <Link href={base} className={`rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}>
+                  <Link href={base} className={`-my-3 inline-flex min-h-[44px] items-center rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}>
                     {shared.home}
                   </Link>
                 </li>
@@ -371,7 +371,10 @@ export default function SolutionPageLayout({
                   <ChevronRight size={12} className="text-[#A3A3A3]" />
                 </li>
                 <li>
-                  <Link href={`${base}/solutions`} className={`rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}>
+                  <Link
+                    href={`${base}/solutions`}
+                    className={`-my-3 inline-flex min-h-[44px] items-center rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}
+                  >
                     {shared.solutions}
                   </Link>
                 </li>
@@ -582,7 +585,7 @@ export default function SolutionPageLayout({
               lead={content.questions.lead}
             />
             <div className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 lg:grid-cols-[1.1fr_1fr] lg:items-start lg:gap-8">
-              <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+              <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8 lg:sticky lg:top-28">
                 <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
                   <span
                     aria-hidden="true"

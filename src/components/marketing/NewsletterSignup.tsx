@@ -179,7 +179,7 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
                 maxLength={200}
                 aria-invalid={emailInvalid || undefined}
                 aria-describedby={emailInvalid ? errorId : undefined}
-                className={`min-h-[48px] w-full min-w-0 flex-1 rounded-full border bg-[#141414] px-4 text-[16px] text-white outline-none transition-colors placeholder:text-white/40 focus:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E]/40 ${
+                className={`min-h-[48px] w-full min-w-0 flex-1 rounded-full border bg-[#141414] px-4 text-[16px] text-white outline-none transition-colors placeholder:text-white/50 focus:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E]/40 ${
                   stacked ? '' : 'sm:px-5 sm:text-[15px]'
                 } ${emailInvalid ? 'border-[#FCA5A5]' : 'border-white/15'}`}
               />
@@ -241,11 +241,8 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
             </p>
           ) : null}
 
-          {/* Required because the floating reCAPTCHA badge is hidden site-wide.
-              The wrapper lifts the notice to readable size and contrast on dark. */}
-          <div className="[&_p]:text-[11px] [&_p]:leading-[1.5] [&_p]:text-white/70">
-            <RecaptchaNotice locale={locale} dark />
-          </div>
+          {/* Required because the floating reCAPTCHA badge is hidden site-wide. */}
+          <RecaptchaNotice locale={locale} dark />
         </form>
       )}
       <p className="sr-only" role="status" aria-live="polite">

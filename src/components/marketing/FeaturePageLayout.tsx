@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ArrowRight, Info, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Info, Plus, type LucideIcon } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import { buildFeaturePageJsonLd } from '@/lib/seo/feature-schema';
 import { RELATED_SOLUTIONS_LIST, SECTOR_COUNT } from '@/lib/related-solutions';
+import { SUPPORT_EMAIL, SUPPORT_HOURS } from '@/lib/company-constants';
 
 /**
  * Shared layout for the /features pages (marketing spec §4, D11, D12).
@@ -84,7 +85,14 @@ export interface FeaturePageCopy {
   secondary: { href: string; label: string };
   /** Screen-reader description of the sample screen. */
   mockCaption: string;
-  definition: { eyebrow: string; title: string; paragraphs: readonly string[]; note?: string };
+  definition: {
+    eyebrow: string;
+    title: string;
+    paragraphs: readonly string[];
+    note?: string;
+    /** Optional link after the note, e.g. the Data Processing Agreement. */
+    noteLink?: { href: string; label: string };
+  };
   capabilities: { eyebrow: string; title: string; lead?: string; items: readonly FeatureCapability[] };
   steps: { eyebrow: string; title: string; lead?: string; items: readonly FeatureStep[] };
   facts: { eyebrow: string; title: string; items: readonly FeatureFact[] };
@@ -135,6 +143,7 @@ const SHARED = {
     allSectors: `${SECTOR_COUNT} sektör sayfasının hepsini görün`,
     ctaFacts: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal edebilirsiniz'],
     ctaSecondary: 'Fiyatları inceleyin',
+    contactTitle: 'Başka bir sorunuz mu var?',
   },
   en: {
     primary: 'Start free trial',
@@ -144,6 +153,7 @@ const SHARED = {
     allSectors: `See all ${SECTOR_COUNT} industry pages`,
     ctaFacts: ['14-day free trial', 'No credit card required', 'Cancel anytime'],
     ctaSecondary: 'See pricing',
+    contactTitle: 'Have another question?',
   },
 } as const;
 
@@ -231,12 +241,12 @@ export function FeatureHero({
   const shared = SHARED[locale];
   return (
     <section aria-labelledby="feature-title" className="bg-white pb-[60px] pt-[60px] sm:pb-24 sm:pt-24">
-      <div className={`${FEATURE_CONTAINER} lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-14`}>
+      <div className={`${FEATURE_CONTAINER} lg:grid lg:grid-cols-[1.12fr_1fr] lg:items-center lg:gap-14`}>
         <div className="max-w-[640px]">
           <p className="pulse-eyebrow text-[#737373]">{eyebrow}</p>
           <h1
             id="feature-title"
-            className="mt-5 text-balance text-[38px] leading-[1.06] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
+            className="mt-5 text-balance text-[38px] leading-[1.06] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[52px]"
           >
             {title}
           </h1>
@@ -277,50 +287,80 @@ export function FeatureHero({
   );
 }
 
-/** FAQ in <details>; pass the same `items` to the FAQPage JSON-LD. */
+/**
+ * FAQ in native <details> (keyboard-operable, every answer in the server
+ * HTML); pass the same `items` to the FAQPage JSON-LD. Same two-column
+ * pattern as the homepage FAQ: heading on the left, questions on the right.
+ */
 export function FeatureFaqSection({
+  locale,
   eyebrow,
   title,
   items,
   more,
   className = 'bg-[#FAFAFA]',
 }: {
+  locale: FeatureLocale;
   eyebrow: string;
   title: string;
   items: readonly FeatureFaq[];
   more?: { href: string; label: string };
   className?: string;
 }) {
+  const shared = SHARED[locale];
   return (
     <section aria-labelledby="feature-faq-title" className={`${className} ${FEATURE_SECTION_Y}`}>
-      <div className="mx-auto w-full max-w-[920px] px-5 sm:px-10">
-        <FeatureSectionHeading id="feature-faq-title" eyebrow={eyebrow} title={title} />
-        <div className="mt-10 divide-y divide-[#E5E5E5] border-y border-[#E5E5E5]">
+      <div
+        className={`${FEATURE_CONTAINER} grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16`}
+      >
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <FeatureSectionHeading id="feature-faq-title" eyebrow={eyebrow} title={title} />
+          {more ? (
+            <p className="mt-4">
+              <Link href={more.href} className={FEATURE_TEXT_LINK}>
+                {more.label}
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </p>
+          ) : null}
+          <div className="mt-8 hidden rounded-[20px] border border-[#EDEDED] bg-white p-6 lg:block">
+            <p className="text-[16px] font-medium text-[#0A0A0A]">{shared.contactTitle}</p>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className={`mt-1 ${FEATURE_TEXT_LINK}`}>
+              {SUPPORT_EMAIL}
+            </a>
+            <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">{SUPPORT_HOURS[locale]}</p>
+          </div>
+        </div>
+
+        <div className="divide-y divide-[#EDEDED] rounded-[20px] border border-[#EDEDED] bg-white px-5 sm:px-8">
           {items.map((item, i) => (
-            <details key={item.q} id={`faq-${i + 1}`} open={i === 0 ? true : undefined} className="group scroll-mt-28">
+            <details
+              key={item.q}
+              id={`faq-${i + 1}`}
+              open={i === 0 ? true : undefined}
+              className="group scroll-mt-28 py-5 sm:py-6"
+            >
               <summary
-                className={`flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-5 text-left [&::-webkit-details-marker]:hidden ${FEATURE_FOCUS}`}
+                className={`flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 rounded-[8px] [&::-webkit-details-marker]:hidden ${FEATURE_FOCUS}`}
               >
-                <span className="bz-h-tight text-[17px] leading-[1.35] text-[#0A0A0A] sm:text-[18px]">{item.q}</span>
+                <span className="pt-1.5 text-[17px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[19px]">{item.q}</span>
                 <span
                   aria-hidden="true"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D4D4D4] bg-white text-[18px] leading-none text-[#0A0A0A] transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none"
+                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#D4D4D4] text-[#0A0A0A] transition-colors group-open:border-[#0A0A0A] group-open:bg-[#0A0A0A] group-open:text-[#C6F24E]"
                 >
-                  +
+                  <Plus
+                    size={16}
+                    strokeWidth={2}
+                    className="transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none"
+                  />
                 </span>
               </summary>
-              <p className="max-w-[700px] pb-6 pr-2 text-[15px] leading-[1.65] text-[#525252] sm:pr-12">{item.a}</p>
+              <p className="mt-3 max-w-[640px] pr-2 text-[15px] leading-[1.7] text-[#525252] sm:pr-12 sm:text-[16px]">
+                {item.a}
+              </p>
             </details>
           ))}
         </div>
-        {more ? (
-          <p className="mt-8">
-            <Link href={more.href} className={FEATURE_TEXT_LINK}>
-              {more.label}
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-          </p>
-        ) : null}
       </div>
     </section>
   );
@@ -436,7 +476,20 @@ export default function FeaturePageLayout({
             {copy.definition.note ? (
               <p className="flex gap-3 rounded-[16px] border border-[#EDEDED] bg-white p-5 text-[15px] leading-[1.6] text-[#333333]">
                 <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[#0A0A0A]" />
-                <span>{copy.definition.note}</span>
+                <span>
+                  {copy.definition.note}
+                  {copy.definition.noteLink ? (
+                    <>
+                      {' '}
+                      <Link
+                        href={copy.definition.noteLink.href}
+                        className={`rounded-sm font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FEATURE_FOCUS}`}
+                      >
+                        {copy.definition.noteLink.label}
+                      </Link>
+                    </>
+                  ) : null}
+                </span>
               </p>
             ) : null}
           </div>
@@ -517,7 +570,7 @@ export default function FeaturePageLayout({
           <FeatureSectionHeading id="feature-facts-title" eyebrow={copy.facts.eyebrow} title={copy.facts.title} tone="dark" />
           <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-12 lg:grid-cols-4">
             {copy.facts.items.map((fact) => (
-              <div key={fact.label} className="flex flex-col-reverse gap-2 border-t border-white/15 pt-5">
+              <div key={fact.label} className="flex flex-col-reverse justify-end gap-2 border-t border-white/15 pt-5">
                 <dt className="text-[14px] leading-[1.5] text-white/75 sm:text-[15px]">{fact.label}</dt>
                 <dd className="bz-h-tight text-[30px] leading-none text-[#C6F24E] sm:text-[40px]">{fact.value}</dd>
               </div>
@@ -579,6 +632,7 @@ export default function FeaturePageLayout({
 
       {/* 7 · FAQ */}
       <FeatureFaqSection
+        locale={locale}
         eyebrow={copy.faq.eyebrow}
         title={copy.faq.title}
         items={copy.faq.items}

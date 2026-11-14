@@ -76,7 +76,7 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
     { href: base, label: isTr ? 'Ana sayfa' : 'Home', Icon: Home },
     { href: `${base}/pricing`, label: isTr ? 'Fiyatlandırma' : 'Pricing', Icon: Tag },
     null, // centre action
-    { href: `${base}/solutions/qr-generator`, label: isTr ? 'QR oluştur' : 'QR generator', Icon: QrCode },
+    { href: `${base}/solutions/qr-generator`, label: isTr ? 'QR oluşturucu' : 'QR generator', Icon: QrCode },
     { href: `${base}/contact`, label: isTr ? 'İletişim' : 'Contact', Icon: Mail },
   ];
 
@@ -102,6 +102,7 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
                   <Link
                     href={center.href}
                     rel={center.rel}
+                    prefetch={center.rel ? false : undefined}
                     onClick={tapHaptic}
                     aria-current={active ? 'page' : undefined}
                     className="group flex flex-col items-center gap-1 rounded-2xl px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"

@@ -1,431 +1,338 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { ArrowRight, Check, Sparkles } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { getTranslations } from '@/lib/translations';
-import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
+import { FileText, Languages, LifeBuoy, PenLine, SlidersHorizontal, Zap } from 'lucide-react';
+import FeaturePageLayout, { type FeaturePageCopy, type FeatureSchemaInfo } from '@/components/marketing/FeaturePageLayout';
+import { buildFeatureMetadata, isFeatureLocale, type FeatureLocale } from '@/lib/seo/feature-schema';
+import { relatedFeatureLinks } from '../_components/feature-catalog';
+import { PulseAiMock } from '../_components/mocks';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// /features/pulse-ai — reply drafts for QR feedback. Facts from
+// src/lib/ai-draft.ts (3 tones, TR/EN, 2–4 sentences, ≤ 80 words, no
+// freebies, no emoji), the inbox (drafts and replies only for 1–3★
+// feedback), the reply risk gate (§48) and src/lib/scaffolding.ts (template
+// fallback). No brand-voice learning, no order history, no quota or speed
+// numbers (marketing spec §3).
 
-const VALID = ['tr', 'en'] as const;
+const SLUG = 'pulse-ai';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Buaze Pulse AI — Yanıtları saniyelerde yaz'
-      : 'Buaze Pulse AI — Draft replies in seconds';
-  const description =
-    locale === 'tr'
-      ? 'Buaze Pulse AI, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. Onay kontrollü, hızlı yanıt akışı.'
-      : 'Buaze Pulse AI drafts rating-aware replies for every review. Approval-led, fast response flow.';
-  return {
-    metadataBase: new URL('https://www.buaze.com'),
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/features/pulse-ai`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/features/pulse-ai',
-        en: 'https://www.buaze.com/en/features/pulse-ai',
-        'x-default': 'https://www.buaze.com/tr/features/pulse-ai',
+const META = {
+  tr: {
+    title: 'Pulse AI: yapay zekâ ile yorum yanıtı taslağı',
+    description:
+      'Pulse AI, düşük puanlı geri bildirimlere sıcak, resmi veya özür dileyen tonda 2–4 cümlelik yanıt taslağı hazırlar. Onayınız olmadan hiçbir yanıt gönderilmez.',
+  },
+  en: {
+    title: 'Pulse AI: AI reply drafts for customer feedback',
+    description:
+      'Pulse AI drafts 2–4 sentence replies to low-rated feedback in a warm, formal or apologetic tone, in Turkish or English. Nothing is sent without your approval.',
+  },
+} as const;
+
+const SCHEMA: Record<FeatureLocale, FeatureSchemaInfo> = {
+  tr: {
+    name: 'Pulse AI',
+    serviceType: 'Yapay zekâ destekli yanıt taslağı',
+    howToName: 'Pulse AI ile yanıt taslağı nasıl hazırlanır',
+  },
+  en: {
+    name: 'Pulse AI',
+    serviceType: 'AI-assisted reply drafting',
+    howToName: 'How to prepare a reply draft with Pulse AI',
+  },
+};
+
+function getCopy(locale: FeatureLocale): FeaturePageCopy {
+  const base = `/${locale}`;
+  if (locale === 'tr') {
+    return {
+      eyebrow: 'Pulse AI',
+      title: 'Yapay zekâ ile yorum yanıtı taslağı',
+      lead: 'Pulse AI, düşük puanlı geri bildirimi okuyup seçtiğiniz tonda 2–4 cümlelik bir yanıt taslağı hazırlar; taslağı siz düzenler, siz onaylarsınız.',
+      secondary: { href: `${base}/features/review-management`, label: 'Yorum yönetimini inceleyin' },
+      mockCaption:
+        'Örnek ekran: 2 yıldızlı bir QR geri bildirimi, ton seçimi ve Pulse AI’ın önerdiği yanıt taslağı.',
+      definition: {
+        eyebrow: 'Tanım',
+        title: 'Pulse AI nedir?',
+        paragraphs: [
+          'Pulse AI, Buaze gelen kutusundaki yanıt yardımcısıdır. 1–3 yıldızlık bir geri bildirimi açtığınızda işletmenizin adını, müşterinin puanını ve yorumunu okur, size bir yanıt taslağı önerir.',
+          'Taslaklar 2–4 cümle ve en fazla 80 kelimedir; emoji içermez, olumsuz yorumlarda ikram, indirim ya da hediye vaat etmez. Tonu sıcak, resmi veya özür dileyen olarak siz seçersiniz; taslak, paneli kullandığınız dile göre Türkçe ya da İngilizce hazırlanır.',
+          'Pulse AI yanıtı sizin yerinize göndermez. Taslağı olduğu gibi kullanabilir, düzenleyebilir ya da silip kendi yanıtınızı yazabilirsiniz; gönder düğmesine basan her zaman sizsiniz.',
+        ],
+        note: 'Taslak ve özet hazırlamak için geri bildirim metni yapay zekâ sağlayıcımız OpenAI’a gönderilir.',
+        noteLink: { href: `${base}/veri-isleyici-sozlesmesi`, label: 'Alt işleyicileri görün' },
       },
+      capabilities: {
+        eyebrow: 'Neler var',
+        title: 'Pulse AI neler yapar',
+        items: [
+          {
+            icon: SlidersHorizontal,
+            title: 'Üç ton',
+            body: 'Sıcak, resmi veya özür dileyen tonu seçin. İşletmenizin varsayılan tonunu ayarlardan belirler, tek bir geri bildirim için değiştirebilirsiniz; ton değişince taslak yeniden yazılır.',
+          },
+          {
+            icon: Languages,
+            title: 'Türkçe ve İngilizce',
+            body: 'Taslaklar, paneli kullandığınız dile göre Türkçe ya da İngilizce hazırlanır. Pulse AI başka dillerde yazmaz ve yorumun dilini tespit etmez.',
+          },
+          {
+            icon: PenLine,
+            title: 'Düzenleyin, sonra gönderin',
+            body: 'Taslağı yanıt kutusuna aktarıp düzenleyin ya da olduğu gibi gönderin. Her gönderimde içerikten sorumlu olduğunuzu onaylarsınız; riskli ifadeler içeren yanıtlar gönderilmez.',
+          },
+          {
+            icon: Zap,
+            title: 'İsteğe bağlı otomatik taslak',
+            body: 'Ayarlardan açarsanız yeni bir 1–3 yıldızlık geri bildirim geldiğinde taslak arka planda hazırlanır ve gelen kutusunda sizi bekler. Otomatik taslak da onayınız olmadan gönderilmez.',
+          },
+          {
+            icon: FileText,
+            title: 'Kısa özet',
+            body: 'Yorum metni olan geri bildirimlerde Pulse AI olumlu noktaları, iyileştirme alanlarını ve müşterinin tekrar gelme ihtimalini kısa bir özetle gösterir.',
+          },
+          {
+            icon: LifeBuoy,
+            title: 'Yapay zekâ yoksa şablon',
+            body: 'Yapay zekâ o an kullanılamazsa yerine genel bir şablon taslak gösterilir. Taslağı düzenleyip yanıtınızı yine gönderebilirsiniz.',
+          },
+        ],
+      },
+      steps: {
+        eyebrow: 'Nasıl çalışır',
+        title: 'Taslaktan gönderime dört adım',
+        items: [
+          {
+            title: 'Geri bildirimi açın',
+            body: 'Gelen kutusunda 1–3 yıldızlık bir geri bildirim seçin. Otomatik taslak açıksa Pulse AI’ın önerisi hazırdır; değilse tek tıkla taslak oluşturursunuz.',
+          },
+          {
+            title: 'Tonu seçin',
+            body: 'Sıcak, resmi veya özür dileyen tonu seçin; Pulse AI taslağı o tonda yeniden yazar.',
+          },
+          {
+            title: 'Düzenleyin',
+            body: 'Taslağı yanıt kutusuna aktarın ve işletmenize özgü ayrıntıları ekleyin.',
+          },
+          {
+            title: 'Onaylayıp gönderin',
+            body: 'İçerikten sorumlu olduğunuzu onaylayın ve gönderin. Müşteri e-posta bıraktıysa yanıt ona e-postayla gider.',
+          },
+        ],
+      },
+      facts: {
+        eyebrow: 'Kısaca',
+        title: 'Pulse AI rakamlarla',
+        items: [
+          { value: '3', label: 'Ton seçeneği: sıcak, resmi, özür dileyen' },
+          { value: '2–4', label: 'Cümlelik taslak, en fazla 80 kelime' },
+          { value: 'TR + EN', label: 'Taslak dilleri' },
+          { value: '0', label: 'Onayınız olmadan gönderilen yanıt' },
+        ],
+      },
+      sectors: {
+        eyebrow: 'Sektörler',
+        title: 'Hangi işletmelerde işe yarar',
+        lead: 'Tonu, işletmenizin müşterileriyle konuşma biçimine göre seçersiniz.',
+        items: [
+          { slug: 'restaurants', use: 'Gecikme ya da lezzetle ilgili düşük puanlara kısa ve sakin yanıtlar.' },
+          { slug: 'hotels', use: 'Misafir şikâyetlerine resmi tonda, özenli yanıtlar.' },
+          { slug: 'healthcare', use: 'Hasta geri bildirimlerine resmi ve saygılı yanıtlar.' },
+          { slug: 'beauty-salon', use: 'Randevu ve hizmet deneyimine sıcak tonda yanıtlar.' },
+        ],
+      },
+      faq: {
+        eyebrow: 'Sık sorulan sorular',
+        title: 'Pulse AI hakkında sorular',
+        items: [
+          {
+            q: 'Taslak onayım olmadan gönderilebilir mi?',
+            a: 'Hayır. Pulse AI yalnızca taslak hazırlar. Yanıtı okuyan, gerekirse düzenleyen ve gönderen sizsiniz; göndermeden önce içerikten sorumlu olduğunuzu da onaylarsınız. Otomatik taslak açık olsa bile hiçbir yanıt kendiliğinden gönderilmez.',
+          },
+          {
+            q: 'Pulse AI hangi dillerde taslak hazırlar?',
+            a: 'Türkçe ve İngilizce. Taslak, paneli kullandığınız dile göre hazırlanır. Pulse AI yorumun dilini tespit etmez ve başka dillerde taslak yazmaz.',
+          },
+          {
+            q: 'Pulse AI işletmemin üslubunu öğrenir mi?',
+            a: 'Hayır. Her taslakta seçtiğiniz ton (sıcak, resmi veya özür dileyen) ve sabit yazım kuralları kullanılır; Pulse AI geçmiş yanıtlarınızdan öğrenmez. Taslak için yalnızca işletmenizin adı ve türü, müşterinin adı, puanı, yorumu ve geldiği platform kullanılır.',
+          },
+          {
+            q: 'Taslak indirim veya ikram önerir mi?',
+            a: 'Hayır. Olumsuz yorumlara yanıt verirken ikram, indirim veya hediye vaat etmemek Pulse AI’ın yazım kurallarındandır. Yorum karşılığında ödül sözü içeren yanıtlar da gönderim öncesi kontrolde durdurulur.',
+          },
+          {
+            q: 'Hangi yapay zekâ sağlayıcısı kullanılıyor?',
+            a: 'Taslak ve özet hazırlamak için yorum metni, puan ve varsa müşterinin adı yapay zekâ sağlayıcımız OpenAI’a gönderilir; müşterinin e-posta adresi gönderilmez. Kullandığımız alt işleyiciler Veri İşleyici Sözleşmesi’nde listelenir.',
+          },
+          {
+            q: 'Yapay zekâ kullanılamazsa ne olur?',
+            a: 'Yapay zekâ o an yanıt veremezse genel bir şablon taslak gösterilir. Şablonu düzenleyip yanıtınızı yine gönderebilirsiniz; yanıt akışınız durmaz.',
+          },
+        ],
+        more: { href: `${base}/faq`, label: 'Tüm soruları görün' },
+      },
+      related: {
+        eyebrow: 'İlgili özellikler',
+        title: 'Pulse AI ile birlikte çalışır',
+        items: relatedFeatureLinks(['review-management', 'analytics-reports', 'surveys'], locale),
+      },
+      ctaTitle: 'İlk yanıt taslağınızı Pulse AI ile hazırlayın',
+    };
+  }
+
+  return {
+    eyebrow: 'Pulse AI',
+    title: 'AI drafts for your review replies',
+    lead: 'Pulse AI reads low-rated feedback and prepares a 2–4 sentence reply draft in the tone you choose; you edit it and you approve it.',
+    secondary: { href: `${base}/features/review-management`, label: 'Explore review management' },
+    mockCaption: 'Sample screen: a 2-star QR feedback entry, the tone picker and the reply draft Pulse AI suggests.',
+    definition: {
+      eyebrow: 'Definition',
+      title: 'What is Pulse AI?',
+      paragraphs: [
+        'Pulse AI is the reply assistant in the Buaze inbox. When you open a piece of 1–3★ feedback, it reads your business name, the customer’s rating and their comment and suggests a reply draft.',
+        'Drafts are 2–4 sentences and at most 80 words; they contain no emoji and never promise free items, discounts or gifts in reply to a negative review. You choose a warm, formal or apologetic tone, and the draft is written in Turkish or English, matching the language of your panel.',
+        'Pulse AI never sends a reply for you. You can use the draft as it is, edit it, or delete it and write your own; you are always the one who presses send.',
+      ],
+      note: 'To prepare drafts and summaries, the feedback text is sent to our AI provider, OpenAI.',
+      noteLink: { href: `${base}/veri-isleyici-sozlesmesi`, label: 'See our sub-processors' },
     },
-    openGraph: {
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/features/pulse-ai`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze Pulse AI' }],
+    capabilities: {
+      eyebrow: 'What you get',
+      title: 'What Pulse AI does',
+      items: [
+        {
+          icon: SlidersHorizontal,
+          title: 'Three tones',
+          body: 'Choose a warm, formal or apologetic tone. Set your business’s default tone in settings and change it for a single piece of feedback; the draft is rewritten when the tone changes.',
+        },
+        {
+          icon: Languages,
+          title: 'Turkish and English',
+          body: 'Drafts are written in Turkish or English, matching the language you use the panel in. Pulse AI does not write in other languages or detect the language of the comment.',
+        },
+        {
+          icon: PenLine,
+          title: 'Edit, then send',
+          body: 'Copy the draft into the reply box and edit it, or send it as it is. Each time you send, you confirm you are responsible for the content, and replies with risky wording are not sent.',
+        },
+        {
+          icon: Zap,
+          title: 'Optional automatic drafts',
+          body: 'Turn it on in settings and a draft is prepared in the background whenever new 1–3★ feedback arrives, ready in the inbox. Automatic drafts are never sent without your approval either.',
+        },
+        {
+          icon: FileText,
+          title: 'Short summary',
+          body: 'For feedback with a written comment, Pulse AI shows a short summary: the positives, the areas to improve and how likely the customer is to come back.',
+        },
+        {
+          icon: LifeBuoy,
+          title: 'A template when AI is unavailable',
+          body: 'If AI is unavailable at that moment, a general template draft is shown instead. You can edit it and still send your reply.',
+        },
+      ],
     },
+    steps: {
+      eyebrow: 'How it works',
+      title: 'Four steps from draft to sent',
+      items: [
+        {
+          title: 'Open the feedback',
+          body: 'Pick a piece of 1–3★ feedback in the inbox. If automatic drafts are on, Pulse AI’s suggestion is already there; if not, you create a draft with one click.',
+        },
+        {
+          title: 'Choose a tone',
+          body: 'Choose warm, formal or apologetic, and Pulse AI rewrites the draft in that tone.',
+        },
+        {
+          title: 'Edit',
+          body: 'Copy the draft into the reply box and add the details that are specific to your business.',
+        },
+        {
+          title: 'Approve and send',
+          body: 'Confirm that you are responsible for the content and send. If the customer left an e-mail address, the reply goes to them by e-mail.',
+        },
+      ],
+    },
+    facts: {
+      eyebrow: 'At a glance',
+      title: 'Pulse AI in numbers',
+      items: [
+        { value: '3', label: 'Tone options: warm, formal, apologetic' },
+        { value: '2–4', label: 'Sentences per draft, 80 words at most' },
+        { value: 'TR + EN', label: 'Draft languages' },
+        { value: '0', label: 'Replies sent without your approval' },
+      ],
+    },
+    sectors: {
+      eyebrow: 'Industries',
+      title: 'Where it helps',
+      lead: 'You pick the tone that matches the way your business talks to its customers.',
+      items: [
+        { slug: 'restaurants', use: 'Short, calm replies to low ratings about delays or taste.' },
+        { slug: 'hotels', use: 'Careful replies to guest complaints in a formal tone.' },
+        { slug: 'healthcare', use: 'Formal, respectful replies to patient feedback.' },
+        { slug: 'beauty-salon', use: 'Warm replies about appointments and the service.' },
+      ],
+    },
+    faq: {
+      eyebrow: 'Frequently asked questions',
+      title: 'Questions about Pulse AI',
+      items: [
+        {
+          q: 'Can a draft be sent without my approval?',
+          a: 'No. Pulse AI only prepares drafts. You read the reply, edit it if needed and send it; before sending you also confirm that you are responsible for its content. Even with automatic drafts on, no reply is ever sent on its own.',
+        },
+        {
+          q: 'Which languages does Pulse AI write in?',
+          a: 'Turkish and English. The draft follows the language you use the panel in. Pulse AI does not detect the language of the comment and does not write drafts in other languages.',
+        },
+        {
+          q: 'Does Pulse AI learn my business’s voice?',
+          a: 'No. Every draft uses the tone you choose (warm, formal or apologetic) and fixed writing rules; Pulse AI does not learn from your past replies. A draft uses only your business name and type, the customer’s name, rating and comment, and the platform it came from.',
+        },
+        {
+          q: 'Will a draft offer a discount or a free item?',
+          a: 'No. Not promising free items, discounts or gifts in reply to a negative review is one of Pulse AI’s writing rules. Replies that offer a reward in exchange for a review are also stopped by the check before sending.',
+        },
+        {
+          q: 'Which AI provider is used?',
+          a: 'To prepare drafts and summaries, the comment, the rating and, if given, the customer’s name are sent to our AI provider, OpenAI; the customer’s e-mail address is not sent. The sub-processors we use are listed in the Data Processing Agreement.',
+        },
+        {
+          q: 'What happens if AI is unavailable?',
+          a: 'If AI cannot respond at that moment, a general template draft is shown. You can edit the template and still send your reply, so your replies never stall.',
+        },
+      ],
+      more: { href: `${base}/faq`, label: 'See all questions' },
+    },
+    related: {
+      eyebrow: 'Related features',
+      title: 'Works together with Pulse AI',
+      items: relatedFeatureLinks(['review-management', 'analytics-reports', 'surveys'], locale),
+    },
+    ctaTitle: 'Prepare your first reply draft with Pulse AI',
   };
 }
 
-export default async function PulseAiPage({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  if (!VALID.includes(locale as typeof VALID[number])) notFound();
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-  const base = `/${locale}`;
+  if (!isFeatureLocale(locale)) return {};
+  return buildFeatureMetadata({ locale, slug: SLUG, ...META[locale] });
+}
 
-  const cards = isTr
-    ? [
-        {
-          title: 'Puan-farkında taslaklar',
-          body: 'Müşterinin yıldızına göre ton değişir — 5 yıldıza teşekkür + geri davet, 1-2 yıldıza özür + somut düzeltme. Ücretsiz ikram önermez (platform kuralları).',
-        },
-        {
-          title: 'TR ve EN, saniyeler içinde',
-          body: 'Restoran adı, konum, yorum metni ve geçmiş sipariş bağlamı birlikte okunur; Buaze Pulse AI ortalama 1-2 saniyede taslak üretir.',
-        },
-        {
-          title: 'Düzenle & gönder',
-          body: 'Taslak doldurulur, sen onaylarsın. İstersen tek tıkla gönder, istersen ayarla. Buaze Pulse AI hiçbir zaman senin yerine publish yapmaz.',
-        },
-        {
-          title: 'Fallback ile güvende',
-          body: 'Pulse AI geçici olarak yanıt vermezse sistem otomatik olarak deterministik şablona düşer — yanıt kutun asla boş kalmaz.',
-        },
-      ]
-    : [
-        {
-          title: 'Rating-aware drafts',
-          body: "Tone changes with the star — 5★ gets a thank-you + invite back; 1–2★ gets an apology + concrete fix. Never offers free items (platform rules).",
-        },
-        {
-          title: 'TR and EN, in seconds',
-          body: 'Business name, location, review text and order context are read together; Buaze Pulse AI drafts a reply in 1-2 seconds on average.',
-        },
-        {
-          title: 'Edit & send',
-          body: 'The draft fills in; you approve. One-click send, or tweak first. Buaze Pulse AI never publishes without you.',
-        },
-        {
-          title: 'Safe fallback',
-          body: 'Temporary Pulse AI hiccup? The system falls back to a deterministic template — your reply box never stays empty.',
-        },
-      ];
-
-  const exampleReview = isTr
-    ? {
-        name: 'Mert D.',
-        stars: 2,
-        text:
-          'Yemek güzeldi ama servis çok yavaştı. Ana yemek 40 dakikayı geçtikten sonra geldi, bir daha gelir miyim emin değilim.',
-      }
-    : {
-        name: 'Mark D.',
-        stars: 2,
-        text:
-          'Food was decent but service was painfully slow — the main took over 40 minutes. Not sure I\'d return.',
-      };
-
-  const exampleReply = isTr
-    ? 'Merhaba Mert, 40 dakikalık bekleyiş için özür dileriz — ana yemekler için standart hedefimiz 18 dakika. Aynı akşam servis sorumlumuzla değerlendirdik ve mutfak-salon koordinasyonunda bir iyileştirme planı çıkardık. Bir sonraki ziyaretinde şef özel olarak ilgilenmek ister — rezervasyonda adımı hatırlatman yeterli.'
-    : "Hi Mark, we're sorry about the 40-minute wait — our standard target for mains is 18 minutes. We reviewed the service that evening and drew up a kitchen-to-floor coordination fix the same night. On your next visit our head chef would like to look after you personally — just mention my name at booking.";
-
-  const canonicalUrl = `https://www.buaze.com/${locale}/features/pulse-ai`;
-  const softwareSchema = {
-    '@context': 'https://schema.org',
-    // Service, not SoftwareApplication: Google's software-app rich result
-    // requires a price plus a real aggregateRating/review, which we don't
-    // have — the item was reported as invalid.
-    '@type': 'Service',
-    serviceType: isTr ? 'AI yanıt asistanı' : 'AI reply assistant',
-    name: 'Buaze Pulse AI',
-    description: isTr
-      ? 'Yorumlara saniyeler içinde markaya özel taslak yanıt üreten Buaze\'nin AI yanıt asistanı.'
-      : "Buaze's AI reply copilot — generates brand-aligned draft responses to reviews in seconds.",
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    url: canonicalUrl,
-    // No `offers`: a price-0 Offer read as "this product is free" while
-    // the module is part of paid plans (only the trial is free).
-    publisher: {
-      '@type': 'Organization',
-      name: 'Buaze',
-      url: 'https://www.buaze.com',
-      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
-    },
-  };
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
-      { '@type': 'ListItem', position: 3, name: 'Buaze Pulse AI', item: canonicalUrl },
-    ],
-  };
-
-  const howToSchema = buildHowToSchema({
-    locale,
-    name: isTr ? 'Pulse AI ile yoruma 30 saniyede yanıt yazma' : 'Reply to a review in 30 seconds with Pulse AI',
-    description: isTr
-      ? 'Yeni bir yorum geldiğinde Pulse AI’ın taslağı nasıl üretip operatörün nasıl onayladığını gösterir.'
-      : 'Walks through how Pulse AI drafts a reply and how the operator approves and sends it.',
-    url: canonicalUrl,
-    steps: isTr
-      ? [
-          { name: 'Yorumu seç', text: 'Buaze gelen kutusunda yeni bir yorumu aç. Puan, platform ve müşteri adı solda görünür.' },
-          { name: 'Pulse AI taslağını üret', text: 'Sağ panelde "Taslak oluştur" butonuna bas. Pulse AI puana uygun tonda (sıcak, resmi veya özür) 2-4 cümlelik bir yanıt önerir.' },
-          { name: 'Düzenle veya onayla', text: 'Taslağı işletme ses tonuna uydurmak için doğrudan editörde değiştir. Tonu değiştirmek için tek tıkla yeniden öner.' },
-          { name: 'Yanıtı gönder', text: 'E-posta veya dahili kayıt seçeneğiyle "Gönder" butonuna bas. Yanıt müşteri kaydına işlenir ve raporlamaya yansır.' },
-        ]
-      : [
-          { name: 'Pick the review', text: 'Open a new review from the Buaze inbox. Rating, platform and customer name appear on the left.' },
-          { name: 'Generate the Pulse AI draft', text: 'Click "Generate draft" in the right pane. Pulse AI suggests a 2-4 sentence reply in a tone that matches the rating (warm, formal or apologetic).' },
-          { name: 'Edit or approve', text: 'Refine the draft in the editor to match your brand voice. One click re-runs the draft in a different tone.' },
-          { name: 'Send the reply', text: 'Click "Send" and pick email or internal-only. The reply is logged on the customer record and surfaces in reporting.' },
-        ],
-  });
-
+export default async function PulseAiPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isFeatureLocale(locale)) notFound();
   return (
-    <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(softwareSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
-      {howToSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(howToSchema) }} />
-      )}
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Hero — dark, dual CTA, live draft mockup (1:1 with .design/site/site-pages4.jsx:FeatureAIPage) */}
-      <section className="relative overflow-hidden bg-[#0A0A0A] px-6 sm:px-10 py-20 sm:py-24 text-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-40 -right-40 h-[620px] w-[620px] rounded-full bg-[#C6F24E]/10 blur-[140px]"
-        />
-        <div className="relative mx-auto max-w-[1200px] grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-3 py-1.5">
-              <Sparkles size={12} className="text-[#C6F24E]" />
-              <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'YENİ · BUAZE PULSE AI v2.4' : 'NEW · BUAZE PULSE AI v2.4'}
-              </span>
-            </div>
-            <h1
-              className="mt-5 text-[40px] sm:text-[60px] md:text-[48px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-white"
-            >
-              {isTr ? (
-                <>
-                  Yapay zekâ ile{' '}
-                  <span className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 py-0.5 text-[#0A0A0A]">
-                    yorum yanıtı
-                  </span>{' '}
-                  taslağı
-                </>
-              ) : (
-                <>
-                  AI{' '}
-                  <span className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 py-0.5 text-[#0A0A0A]">
-                    review reply
-                  </span>{' '}
-                  drafts
-                </>
-              )}
-            </h1>
-            <p className="mt-6 max-w-[560px] text-[17px] leading-[1.6] text-white/70 sm:text-[18px]">
-              {isTr
-                ? 'Buaze Pulse AI markanızın sesini öğrenir; puanı, yorum tonunu ve geçmiş sipariş bağlamını dikkate alarak 30 saniye içinde kişiselleştirilmiş bir yanıt taslağı üretir. Onay sizde kalır.'
-                : 'Buaze Pulse AI learns your brand voice; it reads the rating, tone and order context to draft a personalised reply in 30 seconds. You stay in control.'}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 py-3 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
-              >
-                {isTr ? 'Pulse AI\'ı dene' : 'Try Pulse AI'}
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href={`${base}/how-it-works`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/20 bg-transparent px-6 py-3 text-[15px] font-medium text-white transition-colors hover:border-white/60 hover:bg-white/5"
-              >
-                {isTr ? 'Nasıl çalışır?' : 'How it works?'}
-              </Link>
-            </div>
-            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/60">
-              {(isTr
-                ? ['Growth planda dahil', 'Aylık 1.000 öneri', 'TR + EN dil desteği']
-                : ['Included on Growth', '1,000 drafts / mo', 'TR + EN output']
-              ).map((item) => (
-                <li key={item} className="flex items-center gap-1.5">
-                  <Check size={13} className="text-[#C6F24E]" strokeWidth={2.5} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Live demo mockup — static but feels alive */}
-          <div className="relative">
-            <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.18)] sm:p-6">
-              {/* Incoming review */}
-              <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-white">
-                      {exampleReview.name.charAt(0)}
-                    </span>
-                    <div>
-                      <p className="text-[13px] font-semibold text-[#0A0A0A]">{exampleReview.name}</p>
-                      <p className="pulse-eyebrow text-[#737373]">{isTr ? 'GOOGLE · BUGÜN' : 'GOOGLE · TODAY'}</p>
-                    </div>
-                  </div>
-                  <span className="pulse-eyebrow rounded bg-[#0A0A0A] px-1.5 py-0.5 text-[#C6F24E]">
-                    {'★'.repeat(exampleReview.stars)}
-                    {'☆'.repeat(5 - exampleReview.stars)}
-                  </span>
-                </div>
-                <p className="mt-3 text-[13px] leading-[1.6] text-[#525252]">{exampleReview.text}</p>
-              </div>
-
-              {/* Buaze Pulse AI response */}
-              <div className="mt-3 rounded-xl border border-[#C6F24E] bg-[#0A0A0A] p-4 text-white">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={12} className="text-[#C6F24E]" />
-                  <p className="pulse-eyebrow text-[#C6F24E]">
-                    {isTr ? 'BUAZE PULSE AI ÖNERİSİ' : 'BUAZE PULSE AI DRAFT'}
-                  </p>
-                </div>
-                <p className="mt-2.5 text-[13px] leading-[1.65] text-white/85">{exampleReply}</p>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-2 text-[12px] font-semibold text-[#0A0A0A]"
-                  >
-                    {isTr ? 'Gönder' : 'Send'}
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center rounded-full border border-white/20 px-3 py-2 text-[12px] font-medium text-white"
-                  >
-                    {isTr ? 'Düzenle' : 'Edit'}
-                  </button>
-                </div>
-              </div>
-            </div>
-            <span className="absolute -top-3 -right-3 inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1 text-[11px] font-semibold text-[#0A0A0A]">
-              ⚡ 1.4s
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Definitional — AEO conversational H2 (CLAUDE.md §35 sweep) */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
-        <div className="mx-auto max-w-[820px]">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'KISA TANIM' : 'IN BRIEF'}
-          </span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
-            {isTr ? 'Buaze Pulse AI nedir?' : 'What is Buaze Pulse AI?'}
-          </h2>
-          <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
-            <p>
-              {isTr
-                ? 'Buaze Pulse AI, restoran, otel, klinik ve perakende işletmelerinin müşteri yorumlarına saniyeler içinde marka tonunda taslak yanıt üreten bir AI yardımcısıdır. Puanı, yorum dilini ve geçmiş sipariş bağlamını birlikte okur; işletmenin ses tonuna uygun, 2-4 cümlelik bir taslak hazırlar.'
-                : 'Buaze Pulse AI is an in-product assistant that drafts brand-tone replies to customer reviews in seconds for restaurants, hotels, clinics and retail operations. It reads the rating, the language of the review and the prior order context, then prepares a 2-4 sentence draft that fits the business voice.'}
-            </p>
-            <p>
-              {isTr
-                ? 'Pulse AI hiçbir yanıtı sizin yerinize göndermez — taslak panele düşer, operatör onaylar veya düzenler, sonra gönderir. AI hata yaparsa veya yetersiz kalırsa sistem otomatik olarak deterministik bir şablona düşer; yanıt kutusu hiçbir zaman boş kalmaz.'
-                : 'Pulse AI never publishes on your behalf — the draft lands in the panel, the operator approves or edits, and then sends. If the AI is unavailable, the system falls back to a deterministic template; the reply box is never left empty.'}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature cards */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20 bg-[#FAFAFA] border-y border-[#EDEDED]">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="max-w-[640px]">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'NASIL ÇALIŞIR' : 'HOW IT WORKS'}
-            </span>
-            <h2 className="mt-3 text-[32px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A] sm:text-[42px]">
-              {isTr ? 'Doğru taslak, ilk seferde.' : 'The right draft, first time.'}
-            </h2>
-          </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {cards.map((c, i) => (
-              <article
-                key={c.title}
-                className="rounded-2xl border border-[#EDEDED] bg-white p-6"
-              >
-                <span className="pulse-eyebrow text-[#C6F24E] bg-[#0A0A0A] inline-block rounded px-2 py-1">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <h3
-                  className="mt-4 text-[18px] font-semibold leading-tight text-[#0A0A0A]"
-                >
-                  {c.title}
-                </h3>
-                <p className="mt-2 text-[13px] leading-[1.65] text-[#525252]">{c.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Spec row */}
-      <section className="px-6 sm:px-10 py-16 sm:py-20">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {[
-            {
-              l: isTr ? 'MODEL' : 'MODEL',
-              v: 'Pulse AI',
-              sub: isTr ? 'Buaze yanıt motoru' : 'Buaze reply engine',
-            },
-            {
-              l: isTr ? 'ORTALAMA SÜRE' : 'AVG LATENCY',
-              v: '1.4s',
-              sub: isTr ? 'İlk token ≤ 400ms' : 'First token ≤ 400ms',
-            },
-            {
-              l: isTr ? 'FİYAT / ÖNERİ' : 'COST / DRAFT',
-              v: '~$0.0001',
-              sub: isTr ? '10.000 öneri ≈ $1' : '10,000 drafts ≈ $1',
-            },
-          ].map((k) => (
-            <div key={k.l} className="rounded-2xl border border-[#EDEDED] bg-white p-6">
-              <p className="pulse-eyebrow text-[#737373]">{k.l}</p>
-              <p
-                className="mt-2 text-[28px] sm:text-[36px] font-medium leading-none tracking-tight text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
-              >
-                {k.v}
-              </p>
-              <p className="mt-2 text-[12px] text-[#525252]">{k.sub}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20 sm:py-24">
-        <div className="mx-auto max-w-[1200px] text-center">
-          <h2 className="text-[36px] font-medium tracking-[-0.03em] text-[#0A0A0A] sm:text-[48px]">
-            {isTr ? 'Bugün başla, yarın ilk yanıtını gönder.' : 'Start today, send your first reply tomorrow.'}
-          </h2>
-          <p className="mt-3 text-[15px] text-[#0A0A0A]/80 sm:text-[17px]">
-            {isTr
-              ? 'Buaze Pulse AI Growth planın bir parçası — 14 gün ücretsiz dene.'
-              : 'Buaze Pulse AI is part of the Growth plan — free for 14 days.'}
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-7 py-3.5 text-[15px] font-semibold text-white hover:bg-[#1A1A1A] transition-colors"
-            >
-              {isTr ? 'Ücretsiz dene' : 'Try free'}
-              <ArrowRight size={16} />
-            </Link>
-            <Link
-              href={`${base}/pricing`}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0A0A0A] bg-transparent px-7 py-3.5 text-[15px] font-semibold text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
-            >
-              {isTr ? 'Plan detayları' : 'Plan details'}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <FeaturePageLayout
+      locale={locale}
+      slug={SLUG}
+      copy={getCopy(locale)}
+      mock={<PulseAiMock locale={locale} />}
+      schema={SCHEMA[locale]}
+    />
   );
 }

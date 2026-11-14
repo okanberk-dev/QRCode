@@ -1,84 +1,85 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
 import { notFound } from 'next/navigation';
-import { ChevronRight, ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { getTranslations } from '@/lib/translations';
-import type { Locale } from '@/lib/translations';
-import { prisma } from '@/lib/prisma';
-import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
-import { getStaticHelpArticle, getStaticHelpArticles, type StaticHelpArticle, type BodyInput } from '@/lib/help-articles';
+import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
+import { ORGANIZATION_ID } from '@/lib/company-constants';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { sanitizeBlogContent } from '@/lib/blog-content';
-import { buildHowToSchema, type HowToStep } from '@/lib/seo/howto-schema';
+import type { Locale } from '@/lib/translations';
+import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
+import { getStaticHelpArticle, inlineToPlain } from '@/lib/help-articles';
+import HelpBreadcrumb from '../_components/HelpBreadcrumb';
+import HelpCategoryIcon from '../_components/HelpCategoryIcon';
+import HelpArticleBody, { HelpInline, helpArticleToc, type HelpTocEntry } from '../_components/HelpArticleBody';
+import HelpSupportCta from '../_components/HelpSupportCta';
+import { helpArticleMetaTitle, helpLabels, loadHelpArticle, loadHelpArticleList } from '../_lib/help-data';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+/**
+ * /help/[slug] — one help article. Static articles render from their
+ * structured body (HelpArticleBody); database articles render sanitized
+ * HTML. Static page: no headers()/cookies()/searchParams (§35.12.3); ISR
+ * from the [locale] layout. JSON-LD (Article, BreadcrumbList, FAQPage) is
+ * built from the same content the page shows.
+ */
 
 interface PageParams {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
-// Cache each help article after its first request (ISR, revalidate from the
-// [locale] layout). Without generateStaticParams a dynamic segment renders on
-// every request: slower for crawlers and no CDN copy. An empty list means
-// "nothing prerendered at build, everything cached on first visit".
+// Nothing is prerendered at build time: each article is rendered on its
+// first request and then cached (ISR). Unknown slugs return 404.
 export async function generateStaticParams() {
   return [];
 }
 
 export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
   const { locale, slug } = await params;
-  let article: { title: string; excerpt: string | null } | null = null;
-  try {
-    article = await prisma.helpArticle.findUnique({
-      where: { slug_locale: { slug, locale } },
-      select: { title: true, excerpt: true },
-    });
-  } catch {
-    /* table may not exist yet */
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const loaded = await loadHelpArticle(lang, slug);
+  if (!loaded) {
+    return { title: lang === 'tr' ? 'Makale bulunamadı' : 'Article not found', robots: { index: false, follow: true } };
   }
-  article = article ?? getStaticHelpArticle(locale, slug);
-  if (!article) return { title: locale === 'tr' ? 'Makale bulunamadı' : 'Article not found' };
-  const title = `${article.title} — ${locale === 'tr' ? 'Yardım' : 'Help'}`;
+  const { article } = loaded;
+  const title = helpArticleMetaTitle(article.title, lang);
   const description =
     article.excerpt ||
-    (locale === 'tr'
-      ? 'Buaze yardım merkezi makalesi.'
-      : 'Buaze help center article.');
+    (lang === 'tr' ? `${article.title}: Buaze yardım merkezi rehberi.` : `${article.title}: a Buaze help center guide.`);
+  const other = lang === 'tr' ? 'en' : 'tr';
+  const hasOther = loaded.kind === 'static' && Boolean(getStaticHelpArticle(other, slug));
+  const ogImage = lang === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
   return {
     title,
     description,
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/help/${slug}`,
-      languages: {
-        tr: `https://www.buaze.com/tr/help/${slug}`,
-        en: `https://www.buaze.com/en/help/${slug}`,
-        'x-default': `https://www.buaze.com/tr/help/${slug}`,
-      },
+      canonical: `/${lang}/help/${slug}`,
+      ...(hasOther
+        ? { languages: { tr: `/tr/help/${slug}`, en: `/en/help/${slug}`, 'x-default': `/tr/help/${slug}` } }
+        : {}),
     },
-    openGraph: { type: 'article', url: `https://www.buaze.com/${locale}/help/${slug}`, title, description, images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }] },
+    openGraph: {
+      type: 'article',
+      siteName: 'Buaze',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/help/${slug}`,
+      title,
+      description,
+      modifiedTime: article.updatedAt.toISOString(),
+      images: [{ url: ogImage, width: 1200, height: 630, alt: article.title }],
+    },
   };
-}
-
-function extractHeadings(html: string) {
-  const matches = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi)];
-  return matches
-    .map((match) => match[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-    .slice(0, 8)
-    .map((text) => ({ text, id: slugifyHeading(text) }));
 }
 
 function slugifyHeading(value: string) {
   return value
     .toLocaleLowerCase('tr-TR')
+    .replace(/ı/g, 'i')
+    .replace(/ş/g, 's')
     .replace(/ğ/g, 'g')
     .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ı/g, 'i')
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c')
     .replace(/[^a-z0-9\s-]/g, '')
@@ -87,317 +88,260 @@ function slugifyHeading(value: string) {
     .replace(/-+/g, '-');
 }
 
-function addHeadingAnchors(html: string) {
-  return html.replace(/<h2>(.*?)<\/h2>/gi, (_match, inner: string) => {
+/** Adds ids to <h2> tags of database HTML and returns them for the contents list. */
+function anchorHtmlHeadings(html: string): { html: string; toc: HelpTocEntry[] } {
+  const toc: HelpTocEntry[] = [];
+  const used = new Set<string>();
+  const out = html.replace(/<h2>(.*?)<\/h2>/gi, (_match, inner: string) => {
     const text = inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-    return `<h2 id="${slugifyHeading(text)}">${inner}</h2>`;
+    const base = slugifyHeading(text) || 'bolum';
+    let id = base;
+    let n = 2;
+    while (used.has(id)) id = `${base}-${n++}`;
+    used.add(id);
+    toc.push({ id, label: text });
+    return `<h2 id="${id}">${inner}</h2>`;
   });
+  return { html: out, toc };
 }
 
-/**
- * Help article detail — breadcrumb, prose body, related articles.
- * Follows the blog/[slug] pattern with category eyebrow, TOC sidebar,
- * and related list below.
- */
 export default async function HelpArticlePage({ params }: PageParams) {
   const { locale, slug } = await params;
-  const t = getTranslations(locale);
-  const base = `/${locale}`;
-  const isTr = locale === 'tr';
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const isTr = lang === 'tr';
+  const loaded = await loadHelpArticle(lang, slug);
+  if (!loaded) notFound();
 
-  let article: Awaited<ReturnType<typeof prisma.helpArticle.findUnique>> | StaticHelpArticle | null = null;
-  try {
-    article = await prisma.helpArticle.findUnique({
-      where: { slug_locale: { slug, locale } },
-    });
-  } catch {
-    article = null;
+  const { article } = loaded;
+  const category = CATEGORY_BY_SLUG[article.category];
+  if (!category) notFound();
+  const categoryTitle = category[lang].title;
+  const labels = helpLabels(lang);
+  const base = `/${lang}`;
+  const pageUrl = `${SITE_URL}/${lang}/help/${slug}`;
+
+  const list = await loadHelpArticleList(lang);
+  const related = list.filter((item) => item.category === article.category && item.slug !== article.slug).slice(0, 3);
+
+  const struct = loaded.kind === 'static' ? loaded.article.bodyStruct : undefined;
+  let tocEntries: HelpTocEntry[] = [];
+  let dbHtml: string | null = null;
+  if (struct) {
+    const toc = helpArticleToc(struct, lang);
+    tocEntries = [...toc.sections, ...(toc.checklist ? [toc.checklist] : []), ...(toc.faq ? [toc.faq] : [])];
+  } else if (loaded.kind === 'db') {
+    const anchored = anchorHtmlHeadings(sanitizeBlogContent(loaded.article.body));
+    dbHtml = anchored.html;
+    tocEntries = anchored.toc.slice(0, 10);
   }
-  article = article ?? getStaticHelpArticle(locale, slug);
-  if (!article || !article.isPublished) notFound();
 
-  const cat = CATEGORY_BY_SLUG[article.category];
-  const categoryLabel = cat ? cat[locale].title : article.category;
+  const updatedLabel = article.updatedAt.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: resolveDisplayTimeZone(),
+  });
 
-  // Related — same category, excluding the current article
-  let related: { slug: string; title: string; excerpt: string | null }[] = [];
-  try {
-    related = await prisma.helpArticle.findMany({
-      where: {
-        locale,
-        category: article.category,
-        isPublished: true,
-        NOT: { id: article.id },
+  const copy = isTr
+    ? { updated: 'Güncelleme', contents: 'Bu sayfada', related: 'Bu konudaki diğer rehberler', seeAll: 'Konudaki tüm rehberler' }
+    : { updated: 'Updated', contents: 'On this page', related: 'More guides on this topic', seeAll: 'All guides on this topic' };
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Article',
+        '@id': `${pageUrl}#article`,
+        headline: article.title,
+        description: article.excerpt || undefined,
+        inLanguage: isTr ? 'tr-TR' : 'en-US',
+        datePublished: article.updatedAt.toISOString(),
+        dateModified: article.updatedAt.toISOString(),
+        image: `${SITE_URL}/images/open-graph-${lang}.png`,
+        author: { '@id': ORGANIZATION_ID },
+        publisher: { '@id': ORGANIZATION_ID },
+        mainEntityOfPage: pageUrl,
+        articleSection: categoryTitle,
       },
-      orderBy: [{ order: 'asc' }, { updatedAt: 'desc' }],
-      take: 3,
-      select: { slug: true, title: true, excerpt: true },
-    });
-  } catch {
-    /* ignore */
-  }
-  if (related.length === 0) {
-    related = getStaticHelpArticles(locale, article.category)
-      .filter((item) => item.slug !== article.slug)
-      .slice(0, 3)
-      .map((item) => ({ slug: item.slug, title: item.title, excerpt: item.excerpt }));
-  }
-
-  const contentWithAnchors = addHeadingAnchors(sanitizeBlogContent(article.body));
-  const tocItems = extractHeadings(contentWithAnchors);
-
-  const articleJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: article.title,
-    description: article.excerpt ?? '',
-    datePublished: article.updatedAt.toISOString(),
-    dateModified: article.updatedAt.toISOString(),
-    inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-    image: 'https://www.buaze.com/favicon.svg',
-    author: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Buaze',
-      url: 'https://www.buaze.com',
-      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
-    },
-    mainEntityOfPage: `https://www.buaze.com/${locale}/help/${slug}`,
-  };
-
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://www.buaze.com/${locale}/help` },
-      { '@type': 'ListItem', position: 3, name: categoryLabel, item: `https://www.buaze.com/${locale}/help/category/${article.category}` },
-      { '@type': 'ListItem', position: 4, name: article.title, item: `https://www.buaze.com/${locale}/help/${slug}` },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: labels.home, item: `${SITE_URL}/${lang}` },
+          { '@type': 'ListItem', position: 2, name: labels.helpCenter, item: `${SITE_URL}/${lang}/help` },
+          { '@type': 'ListItem', position: 3, name: categoryTitle, item: `${SITE_URL}/${lang}/help/category/${article.category}` },
+          { '@type': 'ListItem', position: 4, name: article.title, item: pageUrl },
+        ],
+      },
+      ...(struct && struct.faq.length
+        ? [
+            {
+              '@type': 'FAQPage',
+              '@id': `${pageUrl}#faq`,
+              url: pageUrl,
+              inLanguage: isTr ? 'tr-TR' : 'en-US',
+              mainEntity: struct.faq.map((item) => ({
+                '@type': 'Question',
+                name: item.q,
+                acceptedAnswer: { '@type': 'Answer', text: inlineToPlain(item.a) },
+              })),
+            },
+          ]
+        : []),
     ],
   };
 
-  // HowTo schema — only emitted for static articles where the structured
-  // body is preserved (CLAUDE.md §22). DB articles ship without HowTo
-  // until a structured-body migration lands. Helper drops the node when
-  // step count < 2 (Google validator threshold).
-  const struct: BodyInput | undefined = (article as StaticHelpArticle).bodyStruct;
-  const howToSteps: HowToStep[] = struct
-    ? struct.sections
-        .filter((section) => (section.paragraphs?.length ?? 0) > 0 || (section.items?.length ?? 0) > 0)
-        .map((section) => ({
-          name: section.title,
-          text: [
-            ...(section.paragraphs ?? []),
-            ...(section.items?.length ? [section.items.join(' ')] : []),
-          ]
-            .join(' ')
-            .replace(/<[^>]+>/g, '')
-            .replace(/\s+/g, ' ')
-            .trim(),
-        }))
-        .filter((step) => step.text.length > 0)
-    : [];
-  const howToJsonLd = struct
-    ? buildHowToSchema({
-        locale,
-        name: article.title,
-        description: article.excerpt ?? struct.lead.replace(/<[^>]+>/g, '').slice(0, 160),
-        url: `https://www.buaze.com/${locale}/help/${slug}`,
-        steps: howToSteps,
-      })
-    : null;
-
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(articleJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbJsonLd) }}
-      />
-      {howToJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLdString(howToJsonLd) }}
-        />
-      )}
-      <MarketingNavbar locale={locale} t={t} />
-
-      {/* Header — breadcrumb + category + title */}
-      <section className="border-b border-[#EDEDED] bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1000px]">
-          <nav
-            aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
-            className="mb-6 flex flex-wrap items-center gap-1.5 text-[12px] text-[#737373]"
-          >
-            <Link href={base} className="hover:text-[#0A0A0A] transition-colors">
-              {isTr ? 'Ana sayfa' : 'Home'}
-            </Link>
-            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-            <Link href={`${base}/help`} className="hover:text-[#0A0A0A] transition-colors">
-              {isTr ? 'Yardım' : 'Help'}
-            </Link>
-            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-            <Link
-              href={`${base}/help/category/${article.category}`}
-              className="hover:text-[#0A0A0A] transition-colors"
-            >
-              {categoryLabel}
-            </Link>
-          </nav>
-
-          <span className="pulse-eyebrow text-[#737373]">
-            {(cat ? cat.symbol + '  ' : '') + categoryLabel.toUpperCase()}
-          </span>
-          <h1
-            className="mt-3 text-[28px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
-          >
-            {article.title}
-          </h1>
-          {article.excerpt && (
-            <p className="mt-4 max-w-[640px] text-[16px] leading-[1.6] text-[#525252] sm:text-[17px]">
-              {article.excerpt}
-            </p>
-          )}
-          <p className="mt-5 text-[12px] text-[#737373]">
-            {isTr ? 'Güncelleme: ' : 'Updated: '}
-            <time dateTime={article.updatedAt.toISOString()}>
-              {article.updatedAt.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </time>
-          </p>
-        </div>
-      </section>
-
-      {/* Body */}
-      <main className="mx-auto max-w-[1000px] px-5 sm:px-10 py-[60px] sm:py-14">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-16">
-          {/* Left - TOC */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
-              {tocItems.length > 0 && (
-                <nav aria-label={isTr ? 'İçindekiler' : 'Table of Contents'}>
-                  <div className="pulse-eyebrow text-[#737373] mb-3.5">
-                    {isTr ? 'İçindekiler' : 'Contents'}
-                  </div>
-                  <div className="flex flex-col border-l border-[#EDEDED]">
-                    {tocItems.map((item, index) => (
-                      <a
-                        key={`${item.id}-${index}`}
-                        href={`#${item.id}`}
-                        className={`relative -ml-px py-2.5 pl-4 text-[13px] leading-[1.4] transition-colors border-l-2 ${
-                          index === 0
-                            ? 'border-[#C6F24E] font-semibold text-[#0A0A0A]'
-                            : 'border-transparent text-[#737373] hover:text-[#0A0A0A]'
-                        }`}
-                      >
-                        <span
-                          className="mr-2 text-[10px] tracking-[0.08em] text-[#A3A3A3]"
-                          style={{ fontFamily: 'var(--font-mono)' }}
-                        >
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                        {item.text}
-                      </a>
-                    ))}
-                  </div>
-                </nav>
-              )}
-            </div>
-          </aside>
-
-          {/* Right - Content */}
-          <div className="min-w-0">
-            <article
-              className="pulse-blog-content prose prose-lg max-w-none
-                prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
-                prose-h2:text-[26px] sm:prose-h2:text-[32px] prose-h2:mt-12 prose-h2:mb-4
-                prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
-                prose-p:text-[#525252] prose-p:leading-[1.75] prose-p:mb-6 prose-p:text-[16px]
-                prose-strong:font-semibold prose-strong:text-[#0A0A0A]
-                prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
-                prose-li:text-[#525252] prose-li:leading-[1.7]
-                prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
-                prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
-                prose-hr:border-[#EDEDED]
-                break-words"
-              style={{ fontFamily: 'var(--font-body)' }}
-              dangerouslySetInnerHTML={{ __html: contentWithAnchors }}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
+      <main id="main-content">
+        {/* Header */}
+        <header className="border-b border-[#EDEDED] bg-[#FAFAFA]">
+          <div className="mx-auto w-full max-w-[1200px] px-5 pb-10 pt-6 sm:px-10 sm:pb-14 sm:pt-8">
+            <HelpBreadcrumb
+              label={labels.breadcrumb}
+              items={[
+                { label: labels.home, href: base },
+                { label: labels.helpCenter, href: `${base}/help` },
+                { label: categoryTitle, href: `${base}/help/category/${article.category}` },
+              ]}
             />
-
-            {/* Contact CTA (footer-of-article) */}
-            <div className="mt-16 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:p-7">
-              <h2 className="text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
-                {isTr ? 'Sorun çözülmedi mi?' : 'Did this not solve it?'}
-              </h2>
-              <p className="mt-2 text-[14px] text-[#525252]">
-                {isTr
-                  ? 'Destek ekibimize yaz, 2 saat içinde dönelim. Ortalama yanıt süremiz 12 dakika.'
-                  : "Write to our support team — we reply within 2 hours. Our median reply time is 12 minutes."}
+            <div className="mt-6 max-w-[760px] sm:mt-8">
+              <p lang={lang} className="pulse-eyebrow flex items-center gap-2 text-[#525252]">
+                <HelpCategoryIcon icon={category.icon} size={14} />
+                {categoryTitle}
               </p>
-              <Link
-                href={`${base}/contact`}
-                className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-              >
-                {isTr ? 'İletişime geç' : 'Contact support'}
-                <ArrowRight size={14} />
-              </Link>
+              <h1 className="mt-4 text-balance text-[32px] leading-[1.08] tracking-[-0.03em] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]">
+                {article.title}
+              </h1>
+              {(struct?.lead || article.excerpt) && (
+                <p className="mt-5 max-w-[680px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+                  {struct ? <HelpInline text={struct.lead} locale={lang} /> : article.excerpt}
+                </p>
+              )}
+              <p className="mt-5 text-[13px] text-[#737373]">
+                {copy.updated}: <time dateTime={article.updatedAt.toISOString()}>{updatedLabel}</time>
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {/* Body */}
+        <div className="mx-auto w-full max-w-[1200px] px-5 py-[48px] sm:px-10 sm:py-16">
+          <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-16">
+            {tocEntries.length > 1 && (
+              <aside className="hidden lg:block">
+                <nav aria-label={copy.contents} className="sticky top-28">
+                  <p lang={lang} className="pulse-eyebrow text-[#737373]">
+                    {copy.contents}
+                  </p>
+                  <ol className="mt-4 border-l border-[#EDEDED]">
+                    {tocEntries.map((entry, index) => (
+                      <li key={entry.id}>
+                        <a
+                          href={`#${entry.id}`}
+                          className="-ml-px flex gap-2 border-l-2 border-transparent py-2 pl-4 text-[13px] leading-[1.45] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                        >
+                          <span aria-hidden="true" className="w-5 shrink-0 font-mono text-[11px] leading-[1.75] text-[#A3A3A3] tabular-nums">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <span>{entry.label}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                </nav>
+              </aside>
+            )}
+
+            <div className={tocEntries.length > 1 ? 'min-w-0' : 'min-w-0 lg:col-span-2'}>
+              <div className="max-w-[720px]">
+                {tocEntries.length > 1 && (
+                  <details className="group mb-10 rounded-[16px] border border-[#EDEDED] bg-white lg:hidden">
+                    <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between gap-3 px-5 text-[15px] font-medium text-[#0A0A0A] [&::-webkit-details-marker]:hidden">
+                      {copy.contents}
+                      <ChevronDown size={16} className="shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+                    </summary>
+                    <ol className="border-t border-[#EDEDED] px-5 py-2">
+                      {tocEntries.map((entry, index) => (
+                        <li key={entry.id}>
+                          <a
+                            href={`#${entry.id}`}
+                            className="flex min-h-[44px] items-center gap-3 text-[15px] text-[#404040] hover:text-[#0A0A0A]"
+                          >
+                            <span aria-hidden="true" className="w-5 shrink-0 font-mono text-[11px] text-[#A3A3A3] tabular-nums">
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            {entry.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                )}
+
+                {struct ? (
+                  <HelpArticleBody body={struct} locale={lang} />
+                ) : (
+                  <article
+                    className="pulse-blog-content break-words [&_a]:font-medium [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4 [&_h2]:scroll-mt-28 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6"
+                    dangerouslySetInnerHTML={{ __html: dbHtml ?? '' }}
+                  />
+                )}
+
+                <div className="mt-14 sm:mt-16">
+                  <HelpSupportCta locale={lang} variant="card" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </main>
 
-      {/* Related */}
-      {related.length > 0 && (
-        <section className="border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-14">
-          <div className="mx-auto max-w-[1100px]">
-            <div className="mb-6 flex items-end justify-between gap-4">
-              <h2
-                className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-              >
-                {isTr ? 'Aynı kategoride' : 'In this category'}
-              </h2>
-              <Link
-                href={`${base}/help/category/${article.category}`}
-                className="pulse-eyebrow inline-flex items-center gap-1 text-[#737373] hover:text-[#0A0A0A] transition-colors"
-              >
-                {isTr ? 'TÜMÜNÜ GÖR' : 'SEE ALL'} <ArrowRight size={12} />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {related.map((r) => (
-                <Link
-                  key={r.slug}
-                  href={`${base}/help/${r.slug}`}
-                  className="group flex flex-col rounded-2xl border border-[#EDEDED] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[#C6F24E]"
+        {/* Related */}
+        {related.length > 0 && (
+          <section aria-labelledby="help-related-title" className="border-t border-[#EDEDED] bg-[#FAFAFA] py-[60px] sm:py-20">
+            <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <h2
+                  id="help-related-title"
+                  className="text-balance text-[26px] leading-[1.15] tracking-[-0.02em] text-[#0A0A0A] sm:text-[32px]"
                 >
-                  <h3
-                    className="text-[16px] font-semibold leading-[1.3] tracking-[-0.015em] text-[#0A0A0A]"
-                  >
-                    {r.title}
-                  </h3>
-                  {r.excerpt && (
-                    <p className="mt-2 line-clamp-3 text-[13px] leading-[1.55] text-[#525252]">
-                      {r.excerpt}
-                    </p>
-                  )}
-                  <span className="mt-4 inline-flex items-center gap-1 text-[12px] font-medium text-[#737373] transition-colors group-hover:text-[#0A0A0A]">
-                    {isTr ? 'Oku' : 'Read'}
-                    <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
-                  </span>
+                  {copy.related}
+                </h2>
+                <Link
+                  href={`${base}/help/category/${article.category}`}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 self-start text-[15px] font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 sm:self-auto"
+                >
+                  {copy.seeAll}
+                  <ArrowRight size={14} aria-hidden="true" />
                 </Link>
-              ))}
+              </div>
+              <ul role="list" className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {related.map((item) => (
+                  <li
+                    key={item.slug}
+                    className="group relative flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2"
+                  >
+                    <h3 className="text-pretty text-[18px] font-medium leading-[1.3] tracking-[-0.015em] text-[#0A0A0A]">
+                      <Link href={`${base}/help/${item.slug}`} className="after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none">
+                        {item.title}
+                      </Link>
+                    </h3>
+                    {item.excerpt && (
+                      <p className="mt-3 line-clamp-3 text-[14px] leading-[1.6] text-[#525252]">{item.excerpt}</p>
+                    )}
+                    <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[14px] font-medium text-[#0A0A0A]">
+                      {labels.readMore}
+                      <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </section>
-      )}
-
-      <MarketingFooter locale={locale} t={t} />
+          </section>
+        )}
+      </main>
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

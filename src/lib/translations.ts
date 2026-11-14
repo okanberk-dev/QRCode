@@ -301,65 +301,17 @@ export const translations = {
     sol_hea_p: 'Tedavi sonrası bekleme salonunda veya çıkış bankosunda hastalarınızdan en taze geri bildirimleri alın. Gizliliği koruyarak etik çerçevede profesyonel bir dijital itibar oluşturun.',
 
     // New Industries
-    sol_den_title: 'Diş Klinikleri için Dijital İtibar Yönetimi',
-    sol_den_desc: 'Hasta güvenini otomatiğe bağlayın, profesyonel geri bildirimlerle yeni hastalar kazanın.',
-    sol_den_h1: 'Gülüşünüzü Dijitalde Parlatın',
-    sol_den_p: 'Tedavi sonrası hastalarınızdan en taze geri bildirimleri alın. Diş hekimliğinde güveni dijital referanslarla pekiştirin.',
-    sol_den_badge: 'DİŞ KLİNİKLERİ İÇİN',
-
-    sol_aes_title: 'Estetik Klinikleri için İtibar Yönetimi',
-    sol_aes_desc: 'Doğrulanmış hasta sonuçlarıyla rakiplerinizin önüne geçin ve dijital itibarınızı profesyonelce koruyun.',
-    sol_aes_h1: 'Güzelliği Güvenle Birleştirin',
-    sol_aes_p: 'Estetik operasyonlar sonrası hasta memnuniyetini şeffaf geri bildirimlere dönüştürün. Marka değerinizi zirveye taşıyın.',
-    sol_aes_badge: 'ESTETİK KLİNİKLER İÇİN',
-
-    sol_vet_title: 'Veteriner Klinikleri için Dijital İtibar Yönetimi',
-    sol_vet_desc: 'Evcil hayvan sahiplerinden gelen pozitif yorumlarla kliniğinizin görünürlüğünü artırın.',
-    sol_vet_h1: 'Dostlarımızın Güveni Size Emanet',
-    sol_vet_p: 'Pati dostu sahiplerinden anında geri bildirim toplayın. Veterinerlikte uzmanlığınızı dijital skorlarla kanıtlayın.',
-    sol_vet_badge: 'VETERİNERLER İÇİN',
-
-    sol_rea_title: 'Emlak Ofisleri için Dijital İtibar Yönetimi',
-    sol_rea_desc: 'Gayrimenkul sektöründe güven en önemli faktördür. Müşteri yorumlarıyla portföyünüzü güçlendirin.',
-    sol_rea_h1: 'Gayrimenkulde Güvenin Adresi Olun',
-    sol_rea_p: 'Her başarılı işlem sonrası müşterilerinizden referans alın. Google Haritalar\'da bölgenizin lider emlakçısı olun.',
-    sol_rea_badge: 'EMLAK OFİSLERİ İÇİN',
-
-    sol_aut_title: 'Oto Servisler için Dijital İtibar Yönetimi',
-    sol_aut_desc: 'Müşteri memnuniyetini profesyonel bir operasyona dönüştürerek servisinizin trafiğini artırın.',
-    sol_aut_h1: 'Aracınızın Bakımı, Sizin İtibarınız',
-    sol_aut_p: 'Servis sonrası müşterilerinizden kolayca geri bildirim toplayın. Güvenilir oto servis arayanların ilk tercihi olun.',
-    sol_aut_badge: 'OTO SERVİSLER İÇİN',
-
     sol_be_title: 'Güzellik Salonları için İtibar Yönetimi',
     sol_be_desc: 'Müşterileriniz salondan çıkmadan görüşlerini alın ve profesyonel itibarınızla randevularınızı doldurun.',
     sol_be_h1: 'Güzelliğin Yeni Referansı Olun',
     sol_be_p: 'Sunulan hizmetin kalitesini dijital dünyada belgeleyin. Sosyal kanıt ile yeni müşterileri salonunuza çekin.',
     sol_be_badge: 'GÜZELLİK SALONLARI İÇİN',
 
-    sol_gym_title: 'Spor Salonları için Dijital İtibar Yönetimi',
-    sol_gym_desc: 'Üyelerinizden gelen geri bildirimlerle dijital görünürlüğünüzü artırın ve topluluğunuzu büyütün.',
-    sol_gym_h1: 'Sınırları Dijitalde Zorlayın',
-    sol_gym_p: 'Antrenman sonrası üyelerinizden gelen motivasyonu profesyonel geri bildirimlere dönüştürün. Fitness dünyasında puanınızla fark yaratın.',
-    sol_gym_badge: 'SPOR SALONLARI İÇİN',
-
     sol_law_title: 'Hukuk Ofisleri için Dijital Güven İnşası',
     sol_law_desc: 'Müvekkil güvenini KVKK uyumlu geri bildirimlerle pekiştirin ve marka değerinizi koruyun.',
     sol_law_h1: 'Hukukta Tecrübe, Dijitalde Referans',
     sol_law_p: 'Gizlilik prensiplerine uygun şekilde müvekkil memnuniyetini yönetin. Hukuki uzmanlığınızı güvenle dijitale yansıtın.',
     sol_law_badge: 'HUKUK OFİSLERİ İÇİN',
-
-    sol_sch_title: 'Özel Okullar için Veli Geri Bildirim Yönetimi',
-    sol_sch_desc: 'Veli memnuniyetini okulunuzun marka değerine dönüştürün ve kayıt süreçlerinizi destekleyin.',
-    sol_sch_h1: 'Eğitimin Geleceğine Güvenle Bakın',
-    sol_sch_p: 'Veli görüşlerini yapıcı bir gelişim fırsatına ve güçlü bir tanıtım aracına dönüştürün. Eğitimde farkınızı itibarınızla gösterin.',
-    sol_sch_badge: 'ÖZEL OKULLAR İÇİN',
-
-    sol_bou_title: 'Butik Oteller için Dijital İtibar Yönetimi',
-    sol_bou_desc: 'Kişiselleştirilmiş deneyimi global platformlarda yüksek itibar skorlarına ve daha fazla rezervasyona dönüştürün.',
-    sol_bou_h1: 'Butik Hizmet, Dev Skorlar',
-    sol_bou_p: 'Misafirleriniz henüz otelden ayrılmadan deneyimlerini ölümsüzleştirin. Butik otelcilikte dijital itibarınızı zirveye taşıyın.',
-    sol_bou_badge: 'BUTİK OTELLER İÇİN',
 
     // Case Studies
 
@@ -774,65 +726,17 @@ export const translations = {
     sol_hea_p: 'Gather the freshest feedback from your patients in the waiting room or at the discharge desk. Build a professional digital reputation ethically and while maintaining confidentiality.',
 
     // New Industries
-    sol_den_title: 'Digital Reputation Management for Dentists',
-    sol_den_desc: 'Automate patient trust, gain new patients with professional feedback management.',
-    sol_den_h1: 'Make Your Smile Shine Online',
-    sol_den_p: 'Gather the freshest feedback from patients post-treatment. Build trust in dentistry with digital references.',
-    sol_den_badge: 'FOR DENTAL CLINICS',
-
-    sol_aes_title: 'Reputation Management for Aesthetic Clinics',
-    sol_aes_desc: 'Outperform competitors with verified patient results and protect your digital reputation professionally.',
-    sol_aes_h1: 'Combine Beauty with Trust',
-    sol_aes_p: 'Turn patient satisfaction into transparent feedback post-surgery. Reach the peak of your brand value.',
-    sol_aes_badge: 'FOR AESTHETIC CLINICS',
-
-    sol_vet_title: 'Digital Reputation Management for Veterinary Clinics',
-    sol_vet_desc: 'Increase your clinic\'s visibility with professional feedback from pet owners.',
-    sol_vet_h1: 'Trust for Our Furry Friends',
-    sol_vet_p: 'Gather instant feedback from pet-friendly parents. Prove your veterinary expertise with digital scores.',
-    sol_vet_badge: 'FOR VETERINARIES',
-
-    sol_rea_title: 'Digital Reputation Management for Real Estate',
-    sol_rea_desc: 'Trust is the key factor in real estate. Strengthen your portfolio with customer reviews.',
-    sol_rea_h1: 'Be the Trusted Address in Real Estate',
-    sol_rea_p: 'Get references from clients after every successful transaction. Be the leading agent in your area on Google Maps.',
-    sol_rea_badge: 'FOR REAL ESTATE OFFICES',
-
-    sol_aut_title: 'Digital Reputation Management for Auto Services',
-    sol_aut_desc: 'Increase service traffic by turning customer satisfaction into professional operations.',
-    sol_aut_h1: 'Vehicle Maintenance, Your Reputation',
-    sol_aut_p: 'Easily collect feedback after service. Be the first choice for those seeking reliable auto care.',
-    sol_aut_badge: 'FOR AUTO SERVICES',
-
     sol_be_title: 'Reputation Management for Beauty Salons',
     sol_be_desc: 'Get feedback before clients leave and fill up your appointments with your professional reputation.',
     sol_be_h1: 'Be the New Reference for Beauty',
     sol_be_p: 'Document service quality in the digital world. Attract new clients with social proof.',
     sol_be_badge: 'FOR BEAUTY SALONS',
 
-    sol_gym_title: 'Digital Reputation Management for Gyms',
-    sol_gym_desc: 'Increase your digital visibility with member feedback and grow your community.',
-    sol_gym_h1: 'Push the Limits Online',
-    sol_gym_p: 'Turn member motivation post-workout into professional feedback. Stand out in the fitness world with your rating.',
-    sol_gym_badge: 'FOR GYMS',
-
     sol_law_title: 'Digital Trust Building for Law Firms',
     sol_law_desc: 'Reinforce client trust with GDPR-compliant feedback and protect your brand value.',
     sol_law_h1: 'Experience in Law, Reference Online',
     sol_law_p: 'Manage client satisfaction while respecting privacy principles. Reflect your legal expertise digitally with trust.',
     sol_law_badge: 'FOR LAW FIRMS',
-
-    sol_sch_title: 'Parent Feedback Management for Private Schools',
-    sol_sch_desc: 'Turn parent satisfaction into brand value and support your enrollment processes.',
-    sol_sch_h1: 'Trust the Future of Education',
-    sol_sch_p: 'Transform parent views into constructive growth opportunities and strong promotion tools. Show your difference with your reputation.',
-    sol_sch_badge: 'FOR PRIVATE SCHOOLS',
-
-    sol_bou_title: 'Digital Reputation Management for Boutique Hotels',
-    sol_bou_desc: 'Turn personalized experiences into high reputation scores on global platforms and more bookings.',
-    sol_bou_h1: 'Boutique Service, Giant Scores',
-    sol_bou_p: 'Immortalize guest experiences before they even leave. Reach the peak of your reputation in boutique hospitality.',
-    sol_bou_badge: 'FOR BOUTIQUE HOTELS',
 
     // Case Studies
 

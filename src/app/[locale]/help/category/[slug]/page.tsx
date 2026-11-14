@@ -1,255 +1,245 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
 import { notFound } from 'next/navigation';
-import { ChevronRight, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import HelpSearchBar from '@/components/marketing/HelpSearchBar';
-import { getTranslations } from '@/lib/translations';
+import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
+import { WEBSITE_ID } from '@/lib/company-constants';
 import type { Locale } from '@/lib/translations';
-import { prisma } from '@/lib/prisma';
 import { CATEGORY_BY_SLUG, HELP_CATEGORIES } from '@/lib/help-categories';
-import { getStaticHelpArticles } from '@/lib/help-articles';
+import HelpBreadcrumb from '../../_components/HelpBreadcrumb';
+import HelpCategoryIcon from '../../_components/HelpCategoryIcon';
+import HelpSupportCta from '../../_components/HelpSupportCta';
+import { countByCategory, helpLabels, loadHelpArticleList } from '../../_lib/help-data';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+/**
+ * /help/category/[slug] — every article in one help topic, in the editorial
+ * order. Static (ISR from the [locale] layout, §35.12.3); the 7 topics are
+ * prerendered for both locales. Unknown topics (including the removed
+ * `api-webhook`) return 404.
+ */
 
 interface PageParams {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
-// The category list is static: prerender every category page at build time
-// (both locales come from the [locale] layout's generateStaticParams).
 export async function generateStaticParams() {
-  return HELP_CATEGORIES.map((cat) => ({ slug: cat.slug }));
+  return HELP_CATEGORIES.map((category) => ({ slug: category.slug }));
 }
 
 export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
   const { locale, slug } = await params;
-  const cat = CATEGORY_BY_SLUG[slug];
-  if (!cat) return { title: 'Not Found' };
-  const meta = cat[locale];
-  const title = `${meta.title} — ${locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'}`;
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const category = CATEGORY_BY_SLUG[slug];
+  if (!category) {
+    return { title: lang === 'tr' ? 'Konu bulunamadı' : 'Topic not found', robots: { index: false, follow: true } };
+  }
+  const { seoTitle: title, seoDescription: description } = category[lang];
+  const ogImage = lang === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
   return {
     title,
-    description: meta.desc,
+    description,
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/help/category/${slug}`,
+      canonical: `/${lang}/help/category/${slug}`,
       languages: {
-        tr: `https://www.buaze.com/tr/help/category/${slug}`,
-        en: `https://www.buaze.com/en/help/category/${slug}`,
-        'x-default': `https://www.buaze.com/tr/help/category/${slug}`,
+        tr: `/tr/help/category/${slug}`,
+        en: `/en/help/category/${slug}`,
+        'x-default': `/tr/help/category/${slug}`,
       },
     },
-    openGraph: { title, description: meta.desc, url: `https://www.buaze.com/${locale}/help/category/${slug}`, images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }] },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/help/category/${slug}`,
+      title,
+      description,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: category[lang].title }],
+    },
   };
 }
 
-/**
- * Category listing — shows all published articles in one category
- * ordered by (order ASC, updatedAt DESC). If the category slug is
- * unknown, 404s.
- */
 export default async function HelpCategoryPage({ params }: PageParams) {
   const { locale, slug } = await params;
-  const cat = CATEGORY_BY_SLUG[slug];
-  if (!cat) notFound();
-  const t = getTranslations(locale);
-  const base = `/${locale}`;
-  const isTr = locale === 'tr';
-  const meta = cat[locale];
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const category = CATEGORY_BY_SLUG[slug];
+  if (!category) notFound();
 
-  let articles: { slug: string; title: string; excerpt: string | null; updatedAt: Date }[] = [];
-  try {
-    articles = await prisma.helpArticle.findMany({
-      where: { locale, category: slug, isPublished: true },
-      orderBy: [{ order: 'asc' }, { updatedAt: 'desc' }],
-      select: { slug: true, title: true, excerpt: true, updatedAt: true },
-    });
-  } catch {
-    /* table may not exist yet; render empty state */
-  }
-  if (articles.length === 0) {
-    articles = getStaticHelpArticles(locale, slug).map((article) => ({
-      slug: article.slug,
-      title: article.title,
-      excerpt: article.excerpt,
-      updatedAt: article.updatedAt,
-    }));
-  }
+  const meta = category[lang];
+  const labels = helpLabels(lang);
+  const base = `/${lang}`;
+  const pageUrl = `${SITE_URL}/${lang}/help/category/${slug}`;
 
-  const breadcrumbJsonLd = {
+  const list = await loadHelpArticleList(lang);
+  const articles = list.filter((item) => item.category === slug);
+  const counts = countByCategory(list);
+  const otherTopics = HELP_CATEGORIES.filter((item) => item.slug !== slug && (counts[item.slug] ?? 0) > 0);
+
+  const copy =
+    lang === 'tr'
+      ? {
+          listTitle: 'Bu konudaki rehberler',
+          empty: 'Bu konuda henüz rehber yok.',
+          otherTopics: 'Diğer konular',
+        }
+      : {
+          listTitle: 'Guides on this topic',
+          empty: 'There are no guides on this topic yet.',
+          otherTopics: 'Other topics',
+        };
+
+  const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://www.buaze.com/${locale}/help` },
-      { '@type': 'ListItem', position: 3, name: meta.title, item: `https://www.buaze.com/${locale}/help/category/${slug}` },
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${pageUrl}#page`,
+        url: pageUrl,
+        name: meta.title,
+        description: meta.seoDescription,
+        inLanguage: lang === 'tr' ? 'tr-TR' : 'en-US',
+        isPartOf: { '@id': WEBSITE_ID },
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: articles.length,
+          itemListElement: articles.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            url: `${SITE_URL}/${lang}/help/${item.slug}`,
+            name: item.title,
+          })),
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: labels.home, item: `${SITE_URL}/${lang}` },
+          { '@type': 'ListItem', position: 2, name: labels.helpCenter, item: `${SITE_URL}/${lang}/help` },
+          { '@type': 'ListItem', position: 3, name: meta.title, item: pageUrl },
+        ],
+      },
     ],
   };
 
-  const itemListJsonLd =
-    articles.length > 0
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'ItemList',
-          name: meta.title,
-          description: meta.desc,
-          itemListElement: articles.map((a, i) => ({
-            '@type': 'ListItem',
-            position: i + 1,
-            url: `https://www.buaze.com/${locale}/help/${a.slug}`,
-            name: a.title,
-          })),
-        }
-      : null;
-
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbJsonLd) }}
-      />
-      {itemListJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLdString(itemListJsonLd) }}
-        />
-      )}
-      <MarketingNavbar locale={locale} t={t} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
       <main id="main-content">
-
-      {/* Hero */}
-      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px]">
-          {/* Breadcrumb */}
-          <nav
-            aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
-            className="mb-6 flex flex-wrap items-center gap-1.5 text-[12px] text-[#737373]"
-          >
-            <Link href={base} className="hover:text-[#0A0A0A] transition-colors">
-              {isTr ? 'Ana sayfa' : 'Home'}
-            </Link>
-            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-            <Link href={`${base}/help`} className="hover:text-[#0A0A0A] transition-colors">
-              {isTr ? 'Yardım' : 'Help'}
-            </Link>
-            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-            <span className="font-medium text-[#0A0A0A]">{meta.title}</span>
-          </nav>
-
-          <div className="flex flex-col items-start gap-3">
-            <span
-              className="text-[36px] leading-none text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-              aria-hidden
-            >
-              {cat.symbol}
-            </span>
-            <h1
-              className="text-[32px] sm:text-[48px] lg:text-[56px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            >
-              {meta.title}
-            </h1>
-            <p className="max-w-[620px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">{meta.desc}</p>
-            <p className="pulse-eyebrow text-[#737373]">
-              {articles.length > 0
-                ? isTr
-                  ? `${articles.length} MAKALE`
-                  : `${articles.length} ARTICLE${articles.length === 1 ? '' : 'S'}`
-                : isTr
-                  ? 'YAKINDA'
-                  : 'COMING SOON'}
-            </p>
-          </div>
-
-          <div className="mt-7 max-w-[580px]">
-            <HelpSearchBar locale={locale} size="compact" />
-          </div>
-        </div>
-      </section>
-
-      {/* Article list */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[900px]">
-          {articles.length === 0 ? (
-            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
-              <p className="text-[16px] text-[#525252]">
-                {isTr
-                  ? 'Bu kategoride henüz yayımlanmış makale yok. Yakında ekleyeceğiz.'
-                  : 'No published articles in this category yet. Coming soon.'}
-              </p>
-              <Link
-                href={`${base}/help`}
-                className="mt-5 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#0A0A0A] px-5 py-2 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
-              >
-                {isTr ? 'Yardım merkezine dön' : 'Back to help center'}
-              </Link>
+        {/* Header */}
+        <header className="border-b border-[#EDEDED] bg-[#FAFAFA]">
+          <div className="mx-auto w-full max-w-[1200px] px-5 pb-10 pt-6 sm:px-10 sm:pb-14 sm:pt-8">
+            <HelpBreadcrumb
+              label={labels.breadcrumb}
+              items={[
+                { label: labels.home, href: base },
+                { label: labels.helpCenter, href: `${base}/help` },
+                { label: meta.title },
+              ]}
+            />
+            <div className="mt-6 flex flex-col gap-8 sm:mt-8 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
+              <div className="max-w-[680px]">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#0A0A0A] text-[#C6F24E]"
+                >
+                  <HelpCategoryIcon icon={category.icon} size={22} />
+                </span>
+                <h1 className="mt-5 text-balance text-[38px] leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] sm:text-[56px] md:text-[52px] lg:text-[64px]">
+                  {meta.title}
+                </h1>
+                <p className="mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+                  {meta.desc}
+                </p>
+                <p className="mt-3 text-[14px] text-[#737373]">{labels.articles(articles.length)}</p>
+              </div>
+              <div className="w-full lg:max-w-[420px]">
+                <HelpSearchBar locale={lang} size="compact" />
+              </div>
             </div>
-          ) : (
-            <ul className="divide-y divide-[#EDEDED] border-t-2 border-[#0A0A0A]">
-              {articles.map((a) => (
-                <li key={a.slug}>
-                  <Link
-                    href={`${base}/help/${a.slug}`}
-                    className="group flex flex-col gap-1.5 py-[22px] sm:flex-row sm:items-center sm:justify-between sm:gap-8"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <h3
-                        className="text-[17px] sm:text-[19px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
+          </div>
+        </header>
+
+        {/* Articles + other topics */}
+        <div className="mx-auto w-full max-w-[1200px] px-5 py-[60px] sm:px-10 sm:py-20">
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-16">
+            <section aria-labelledby="help-category-list">
+              <h2
+                id="help-category-list"
+                className="text-balance text-[26px] leading-[1.15] tracking-[-0.02em] text-[#0A0A0A] sm:text-[32px]"
+              >
+                {copy.listTitle}
+              </h2>
+              {articles.length === 0 ? (
+                <p className="mt-6 text-[16px] text-[#525252]">{copy.empty}</p>
+              ) : (
+                <ol role="list" className="mt-6 border-t border-[#EDEDED]">
+                  {articles.map((item) => (
+                    <li key={item.slug} className="group relative border-b border-[#EDEDED] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2">
+                      <div className="flex items-start justify-between gap-6 py-6 sm:py-7">
+                        <div className="min-w-0">
+                          <h3 className="text-pretty text-[18px] font-medium leading-[1.3] tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
+                            <Link
+                              href={`${base}/help/${item.slug}`}
+                              className="decoration-[#C6F24E] decoration-2 underline-offset-4 after:absolute after:inset-0 group-hover:underline focus-visible:outline-none"
+                            >
+                              {item.title}
+                            </Link>
+                          </h3>
+                          {item.excerpt && (
+                            <p className="mt-2 max-w-[640px] text-pretty text-[15px] leading-[1.6] text-[#525252]">{item.excerpt}</p>
+                          )}
+                        </div>
+                        <ArrowRight
+                          size={18}
+                          aria-hidden="true"
+                          className="mt-1 shrink-0 text-[#A3A3A3] transition-all group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]"
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+
+            {otherTopics.length > 0 && (
+              <aside aria-labelledby="help-other-topics" className="mt-14 lg:mt-0">
+                <h2 id="help-other-topics" className="text-[20px] leading-[1.2] tracking-[-0.02em] text-[#0A0A0A]">
+                  {copy.otherTopics}
+                </h2>
+                <ul role="list" className="mt-5 space-y-2">
+                  {otherTopics.map((item) => (
+                    <li key={item.slug}>
+                      <Link
+                        href={`${base}/help/category/${item.slug}`}
+                        className="group flex min-h-[52px] items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-4 py-2 transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                       >
-                        {a.title}
-                      </h3>
-                      {a.excerpt && (
-                        <p className="mt-1.5 max-w-[620px] text-[13px] leading-[1.55] text-[#525252]">
-                          {a.excerpt}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      aria-hidden
-                      className="inline-flex shrink-0 items-center gap-1 text-[13px] font-medium text-[#737373] transition-colors group-hover:text-[#0A0A0A]"
-                    >
-                      {isTr ? 'Oku' : 'Read'}
-                      <ArrowRight
-                        size={14}
-                        strokeWidth={2}
-                        className="transition-transform group-hover:translate-x-0.5"
-                      />
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                        <span
+                          aria-hidden="true"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#F5F5F5] text-[#0A0A0A] transition-colors group-hover:bg-[#C6F24E]"
+                        >
+                          <HelpCategoryIcon icon={item.icon} size={16} />
+                        </span>
+                        <span className="min-w-0 flex-1 text-[15px] font-medium text-[#0A0A0A]">{item[lang].title}</span>
+                        <span className="shrink-0 text-[13px] text-[#737373] tabular-nums">
+                          {counts[item.slug] ?? 0}
+                          <span className="sr-only"> {lang === 'tr' ? 'makale' : 'articles'}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            )}
+          </div>
         </div>
-      </section>
 
-      {/* Contact CTA */}
-      <section className="border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-14">
-        <div className="mx-auto max-w-[720px] text-center">
-          <h2
-            className="text-[22px] sm:text-[26px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-          >
-            {isTr ? 'Yardımcı olamadık mı?' : 'Still stuck?'}
-          </h2>
-          <p className="mt-2 text-[14px] text-[#525252]">
-            {isTr ? 'Destek ekibimize yaz, 2 saat içinde dönelim.' : 'Write to our support team — we reply within 2 hours.'}
-          </p>
-          <Link
-            href={`${base}/contact`}
-            className="mt-5 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3 text-[14px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-          >
-            {isTr ? 'İletişime geç' : 'Contact support'}
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-      </section>
-
+        <HelpSupportCta locale={lang} />
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

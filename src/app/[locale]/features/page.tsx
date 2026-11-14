@@ -1,292 +1,278 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import {
-  IllusCompass,
-  IllusInbox,
-  IllusChart,
-  IllusShield,
-} from '@/components/marketing/PulseIllustrations';
-import { getTranslations } from '@/lib/translations';
-import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
+import {
+  FEATURE_CARD,
+  FEATURE_CONTAINER,
+  FEATURE_SECTION_Y,
+  FEATURE_TEXT_LINK,
+  FeatureCtaSection,
+  FeatureFaqSection,
+  FeatureHero,
+  FeaturePageShell,
+  FeatureSectionHeading,
+  type FeatureFaq,
+} from '@/components/marketing/FeaturePageLayout';
+import { SITE_URL } from '@/lib/site';
+import {
+  buildFeatureHubJsonLd,
+  buildFeatureMetadata,
+  isFeatureLocale,
+  type FeatureLocale,
+} from '@/lib/seo/feature-schema';
+import { FEATURE_CATALOG, type FeatureCatalogEntry } from './_components/feature-catalog';
+import { HubMock } from './_components/mocks';
 
-const VALID_LOCALES = ['tr', 'en'] as const;
+// /features — the index of every product surface. Each card carries two or
+// three sentences that are true today (copy lives in feature-catalog.ts, so
+// a surface is described the same way here and in "related features").
+// JSON-LD: ItemList with URLs + BreadcrumbList; no HowTo (spec D12).
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+const META = {
+  tr: {
+    title: 'Özellikler: QR geri bildirim, Pulse AI ve analitik',
+    description:
+      'QR geri bildirim gelen kutusu, Pulse AI yanıt taslakları, analitik, QR Menü, anketler ve Denetim Merkezi; 10 yorum platformunun bağlantısı tek panelde.',
+  },
+  en: {
+    title: 'Features: QR feedback, Pulse AI and analytics',
+    description:
+      'A QR feedback inbox, Pulse AI reply drafts, analytics, QR Menu, surveys and the Audit Center, with links to 10 review platforms managed in one panel.',
+  },
+} as const;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'QR yorum yönetimi özellikleri — Buaze Pulse AI, gelen kutusu, analitik'
-      : 'QR review management features — Buaze Pulse AI, inbox, analytics';
-  const description =
-    locale === 'tr'
-      ? 'Tüm platformları tek gelen kutuda yönetin: Buaze Pulse AI taslak yanıt, QR stüdyosu, çoklu platform yönlendirme, canlı analitik ve haftalık rapor.'
-      : 'Manage every platform in one inbox: Buaze Pulse AI reply drafts, QR studio, multi-platform routing, live analytics and weekly reports.';
-  return {
-    metadataBase: new URL('https://www.buaze.com'),
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/features`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/features',
-        en: 'https://www.buaze.com/en/features',
-        'x-default': 'https://www.buaze.com/tr/features',
+interface HubCopy {
+  eyebrow: string;
+  title: string;
+  lead: string;
+  secondary: { href: string; label: string };
+  mockCaption: string;
+  listName: string;
+  feedback: { eyebrow: string; title: string; lead: string };
+  tools: { eyebrow: string; title: string; lead: string };
+  freeBadge: string;
+  faq: { eyebrow: string; title: string; items: readonly FeatureFaq[]; more: { href: string; label: string } };
+  ctaTitle: string;
+}
+
+function getCopy(locale: FeatureLocale): HubCopy {
+  const base = `/${locale}`;
+  if (locale === 'tr') {
+    return {
+      eyebrow: 'Özellikler',
+      title: 'QR geri bildirim ve yorum yönetimi özellikleri',
+      lead: 'QR kodla gelen geri bildirimleri toplayın, yanıtlayın ve ölçün; menünüzü, anketlerinizi ve denetimlerinizi de aynı panelden yönetin.',
+      secondary: { href: `${base}/how-it-works`, label: 'Nasıl çalıştığını görün' },
+      mockCaption:
+        'Örnek ekran: Buaze panelinin bölümleri; bir geri bildirim, Pulse AI önerisi, ortalama puan ve menü QR kodu.',
+      listName: 'Buaze özellikleri',
+      feedback: {
+        eyebrow: 'Geri bildirim',
+        title: 'Geri bildirimi toplayın, yanıtlayın ve ölçün',
+        lead: 'Müşteri QR kodunuzu okutup puan verir. Her müşteri herkese açık yorum bağlantısını görür; belirlediğiniz eşiğin altındaki puanlarda önce size yazabilir.',
       },
+      tools: {
+        eyebrow: 'İşletme araçları',
+        title: 'Menü, anket ve denetim araçları',
+        lead: 'QR Menü, Anketler ve Denetim Merkezi aynı hesapta çalışır; ücretsiz QR kod oluşturucuyu ise hesap açmadan kullanabilirsiniz.',
+      },
+      freeBadge: 'Ücretsiz · hesap gerekmez',
+      faq: {
+        eyebrow: 'Sık sorulan sorular',
+        title: 'Özellikler hakkında sorular',
+        items: [
+          {
+            q: 'Ücretsiz denemede hangi özellikleri kullanabilirim?',
+            a: '14 günlük denemede yorum yönetimi, Pulse AI, analitik, QR Menü, Anketler ve Denetim Merkezi açıktır; kredi kartı istenmez. Google yorumlarına panelden yanıt vermek ise Google’ın erişim onayına bağlıdır ve şu an genel kullanıma açık değildir.',
+          },
+          {
+            q: 'Panelde hangi yorumları görürüm?',
+            a: 'QR kodunuzla gelen geri bildirimleri ve Google işletme profilinizin özetini görürsünüz: Google puanınız, yorum sayınız ve Google’ın paylaştığı en fazla 5 yorum. Yemeksepeti, Tripadvisor veya Booking.com gibi platformlardaki yorumlar panele aktarılmaz; Buaze bu platformlar için yorum sayfasının bağlantısını tutar.',
+          },
+          {
+            q: 'Özellikler hangi dillerde çalışır?',
+            a: 'Panel, müşteri geri bildirim formu, denetimler ve e-postalar Türkçe ve İngilizcedir; Pulse AI taslakları da bu iki dilde hazırlanır. Anket formundaki düğmeler ve onay metinleri şu an Türkçedir.',
+          },
+          {
+            q: 'Ekibimle birlikte kullanabilir miyim?',
+            a: 'Evet. Ekip üyelerini e-postayla davet edip yönetici, personel veya görüntüleyici rolü verirsiniz; davet 7 gün geçerlidir. Her üyenin hangi işletmelere erişeceğini siz seçersiniz.',
+          },
+        ],
+        more: { href: `${base}/faq`, label: 'Tüm soruları görün' },
+      },
+      ctaTitle: 'Buaze’yi kendi işletmenizde deneyin',
+    };
+  }
+
+  return {
+    eyebrow: 'Features',
+    title: 'QR feedback and review management features',
+    lead: 'Collect, answer and measure the feedback that comes in through your QR codes, and run your menu, surveys and audits from the same panel.',
+    secondary: { href: `${base}/how-it-works`, label: 'See how it works' },
+    mockCaption:
+      'Sample screen: sections of the Buaze panel, with a piece of feedback, a Pulse AI suggestion, the average rating and the menu QR code.',
+    listName: 'Buaze features',
+    feedback: {
+      eyebrow: 'Feedback',
+      title: 'Collect, answer and measure feedback',
+      lead: 'The customer scans your QR code and gives a rating. Every customer sees the public review link; below your threshold they can write to you first.',
     },
-    openGraph: {
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/features`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    tools: {
+      eyebrow: 'Business tools',
+      title: 'Menu, survey and audit tools',
+      lead: 'QR Menu, Surveys and the Audit Center run in the same account; the free QR code generator works without one.',
     },
+    freeBadge: 'Free · no account needed',
+    faq: {
+      eyebrow: 'Frequently asked questions',
+      title: 'Questions about the features',
+      items: [
+        {
+          q: 'Which features can I use during the free trial?',
+          a: 'The 14-day trial includes review management, Pulse AI, analytics, QR Menu, Surveys and the Audit Center, and no credit card is required. Replying to Google reviews from the panel depends on Google’s access approval and is not generally available yet.',
+        },
+        {
+          q: 'Which reviews do I see in the panel?',
+          a: 'You see the feedback that comes through your QR codes and an overview of your Google Business Profile: your Google rating, your review count and up to 5 reviews Google shares. Reviews on platforms such as Yemeksepeti, Tripadvisor or Booking.com are not imported; for those platforms Buaze keeps the link to the review page.',
+        },
+        {
+          q: 'Which languages do the features work in?',
+          a: 'The panel, the customer feedback form, audits and e-mails are in Turkish and English, and Pulse AI drafts are written in these two languages. The buttons and consent text on the survey form are in Turkish for now.',
+        },
+        {
+          q: 'Can I use it with my team?',
+          a: 'Yes. Invite teammates by e-mail and give them a manager, staff or viewer role; invitations are valid for 7 days. You choose which businesses each member can access.',
+        },
+      ],
+      more: { href: `${base}/faq`, label: 'See all questions' },
+    },
+    ctaTitle: 'Try Buaze with your own business',
   };
 }
 
-export default async function FeaturesPage({
-  params,
+function CatalogCard({
+  entry,
+  locale,
+  badge,
 }: {
-  params: Promise<{ locale: Locale }>;
+  entry: FeatureCatalogEntry;
+  locale: FeatureLocale;
+  badge?: string;
 }) {
+  const Icon = entry.icon;
+  return (
+    <li>
+      <article className={`flex h-full flex-col ${FEATURE_CARD}`}>
+        <div className="flex items-start justify-between gap-3">
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+          >
+            <Icon size={20} strokeWidth={2} />
+          </span>
+          {badge ? (
+            <span className="rounded-full border border-[#E5E5E5] bg-[#FAFAFA] px-2.5 py-1 text-[12px] font-medium text-[#525252]">
+              {badge}
+            </span>
+          ) : null}
+        </div>
+        <h3 className="mt-5 text-[22px] leading-[1.2] text-[#0A0A0A]">{entry.name[locale]}</h3>
+        <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{entry.summary[locale]}</p>
+        <p className="mt-auto pt-5">
+          <Link href={`/${locale}${entry.path}`} className={FEATURE_TEXT_LINK}>
+            {entry.linkLabel[locale]}
+            <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        </p>
+      </article>
+    </li>
+  );
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  if (!VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
-    notFound();
-  }
-  const t = getTranslations(locale);
-  const base = `/${locale}`;
-  const isTr = locale === 'tr';
+  if (!isFeatureLocale(locale)) return {};
+  return buildFeatureMetadata({ locale, slug: '', ...META[locale] });
+}
 
-  const features = isTr
-    ? [
-        {
-          n: '01',
-          t: 'Yorum gelen kutusu',
-          d: 'Google, Yelp, Yemeksepeti — tüm platformlardan gelen yorumlar tek bir inbox\'ta. Atama, SLA, arşivleme.',
-          Ill: IllusInbox,
-          href: `${base}/features/review-management`,
-        },
-        {
-          n: '02',
-          t: 'Buaze Pulse AI yanıt',
-          d: 'Her yoruma 30 sn\'de markanıza özel yanıt. Buaze Pulse AI işletmenizin tonunu öğrenir.',
-          Ill: IllusShield,
-          href: `${base}/features/pulse-ai`,
-        },
-        {
-          n: '03',
-          t: 'QR kod stüdyosu',
-          d: 'Masa başına, paket içine, hizmet sonrası. Branded, izlenebilir, yeniden basılabilir.',
-          Ill: IllusCompass,
-          href: `${base}/solutions/qr-generator`,
-        },
-        {
-          n: '04',
-          t: 'Analiz & raporlama',
-          d: 'NPS, duygu, personel performansı, konum karşılaştırma. Haftalık e-posta raporu.',
-          Ill: IllusChart,
-          href: `${base}/features/analytics-reports`,
-        },
-      ]
-    : [
-        {
-          n: '01',
-          t: 'Unified review inbox',
-          d: 'Google, Yelp, Yemeksepeti — reviews from every platform in a single inbox. Assign, SLA, archive.',
-          Ill: IllusInbox,
-          href: `${base}/features/review-management`,
-        },
-        {
-          n: '02',
-          t: 'Buaze Pulse AI replies',
-          d: 'Brand-tone response to every review in 30 seconds. Buaze Pulse AI learns your business voice.',
-          Ill: IllusShield,
-          href: `${base}/features/pulse-ai`,
-        },
-        {
-          n: '03',
-          t: 'QR studio',
-          d: 'Per table, per package, per service — branded, trackable, reprintable.',
-          Ill: IllusCompass,
-          href: `${base}/solutions/qr-generator`,
-        },
-        {
-          n: '04',
-          t: 'Analytics & reporting',
-          d: 'NPS, sentiment, staff performance, location benchmarks. Weekly email digest.',
-          Ill: IllusChart,
-          href: `${base}/features/analytics-reports`,
-        },
-      ];
+export default async function FeaturesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isFeatureLocale(locale)) notFound();
+  const copy = getCopy(locale);
 
-  const canonicalUrl = `https://www.buaze.com/${locale}/features`;
-  const itemListSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: isTr ? 'Buaze özellikleri' : 'Buaze features',
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    url: canonicalUrl,
-    numberOfItems: features.length,
-    itemListElement: features.map((feature, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      name: feature.t,
-      description: feature.d,
-    })),
-  };
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: canonicalUrl },
-    ],
-  };
+  const feedbackEntries = FEATURE_CATALOG.filter((f) => f.group === 'feedback');
+  const toolEntries = FEATURE_CATALOG.filter((f) => f.group !== 'feedback');
 
-  const howToSchema = buildHowToSchema({
+  const jsonLd = buildFeatureHubJsonLd({
     locale,
-    name: isTr ? 'Buaze ile yorum yönetimine başlama' : 'Get started with Buaze review management',
-    description: isTr
-      ? 'Buaze’in dört özelliğini tek panelde çalıştırmak için adımlar.'
-      : 'Steps to run all four Buaze features from a single panel.',
-    url: canonicalUrl,
-    steps: features.map((feature) => ({
-      name: feature.t,
-      text: feature.d,
-      url: `https://www.buaze.com${feature.href}`,
+    listName: copy.listName,
+    items: FEATURE_CATALOG.map((entry) => ({
+      name: entry.name[locale],
+      description: entry.summary[locale],
+      url: `${SITE_URL}/${locale}${entry.path}`,
     })),
+    faqs: copy.faq.items,
   });
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(itemListSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
-      {howToSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(howToSchema) }} />
-      )}
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
+    <FeaturePageShell locale={locale} jsonLd={jsonLd}>
+      <FeatureHero
+        locale={locale}
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        lead={copy.lead}
+        secondary={copy.secondary}
+        mock={<HubMock locale={locale} />}
+        mockCaption={copy.mockCaption}
+      />
 
-      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-8">
-        <div className="max-w-[1200px] mx-auto">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Ürün' : 'Product'}
-          </span>
-          <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] max-w-[900px]">
-            {isTr ? (
-              <>
-                Bir panel. Her yorum.{' '}
-                <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
-                  Her platform.
-                </span>
-              </>
-            ) : (
-              <>
-                One panel. Every review.{' '}
-                <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
-                  Every platform.
-                </span>
-              </>
-            )}
-          </h1>
-          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[620px] leading-[1.6]">
-            {isTr
-              ? 'Buaze\'in tüm özellikleri nabız metaforunda buluşuyor: topla, yönet, iyileştir, büyü.'
-              : 'Every Buaze feature meets in the pulse metaphor: collect, manage, improve, grow.'}
-          </p>
+      <section aria-labelledby="features-feedback-title" className={`bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="features-feedback-title"
+            eyebrow={copy.feedback.eyebrow}
+            title={copy.feedback.title}
+            lead={copy.feedback.lead}
+          />
+          <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
+            {feedbackEntries.map((entry) => (
+              <CatalogCard key={entry.id} entry={entry} locale={locale} />
+            ))}
+          </ul>
         </div>
       </section>
 
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
-        <div className="max-w-[1200px] mx-auto">
-          {features.map((f, i) => (
-            <div
-              key={f.n}
-              className={`grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-8 lg:gap-14 items-center py-10 sm:py-14 lg:py-16 ${
-                i === 0 ? 'border-t-2 border-[#0A0A0A]' : 'border-t border-[#EDEDED]'
-              }`}
-            >
-              <div className={i % 2 === 0 ? 'order-1' : 'order-1 lg:order-2'}>
-                <span className="pulse-eyebrow text-[#A8D62E]">
-                  {isTr ? 'ÖZELLİK' : 'FEATURE'} {f.n}
-                </span>
-                <h2 className="mt-3 text-[26px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.02] tracking-[-0.03em]">
-                  {f.t}
-                </h2>
-                <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.6] max-w-[480px]">
-                  {f.d}
-                </p>
-                <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                  <Link
-                    href={f.href}
-                    className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-5 py-3 rounded-full text-[13px] font-medium hover:bg-[#1A1A1A] transition-colors"
-                  >
-                    {isTr ? 'Detaylı bak' : 'Take a closer look'}
-                    <span aria-hidden>→</span>
-                  </Link>
-                  <Link
-                    href={`${base}/contact`}
-                    className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-5 py-3 rounded-full text-[13px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-                  >
-                    {isTr ? 'Canlı demo' : 'Live demo'}
-                  </Link>
-                </div>
-              </div>
-              <div
-                className={`flex items-center justify-center bg-[#FAFAFA] rounded-2xl p-8 sm:p-12 aspect-[5/3] ${
-                  i % 2 === 0 ? 'order-2' : 'order-2 lg:order-1'
-                }`}
-              >
-                <f.Ill size={200} />
-              </div>
-            </div>
-          ))}
+      <section aria-labelledby="features-tools-title" className={`bg-white ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="features-tools-title"
+            eyebrow={copy.tools.eyebrow}
+            title={copy.tools.title}
+            lead={copy.tools.lead}
+          />
+          <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
+            {toolEntries.map((entry) => (
+              <CatalogCard
+                key={entry.id}
+                entry={entry}
+                locale={locale}
+                badge={entry.group === 'free' ? copy.freeBadge : undefined}
+              />
+            ))}
+          </ul>
         </div>
       </section>
 
-      <section className="bg-[#C6F24E] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-            {isTr
-              ? 'Tüm özellikler, ilk dakikadan itibaren.'
-              : 'Every feature, from the first minute.'}
-          </h2>
-          <p className="mt-4 text-[16px] text-[#1A1A1A]">
-            {isTr
-              ? '14 gün ücretsiz · Kredi kartı gerekmez'
-              : '14-day free trial · No credit card required'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-            >
-              {isTr ? 'Ücretsiz başla' : 'Start free'}
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              href={`${base}/pricing`}
-              className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-            >
-              {isTr ? 'Fiyatları gör' : 'See pricing'}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <FeatureFaqSection
+        locale={locale}
+        eyebrow={copy.faq.eyebrow}
+        title={copy.faq.title}
+        items={copy.faq.items}
+        more={copy.faq.more}
+      />
 
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+      <FeatureCtaSection locale={locale} title={copy.ctaTitle} />
+    </FeaturePageShell>
   );
 }

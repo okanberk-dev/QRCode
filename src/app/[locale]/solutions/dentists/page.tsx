@@ -21,7 +21,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
     eyebrow: 'Diş klinikleri',
     h1: 'Diş klinikleri için QR ile hasta geri bildirimi ve Google yorumları',
     lead:
-      'Hasta muayeneden sonra kliniğinizdeki QR kodu okutur ve deneyimini puanlar. Eşiğin üzerindeki puanlar Google yorum sayfanıza gider; eşiğin altında hasta önce size yazabilir ve herkese açık yorum bağlantısını aynı ekranda görür.',
+      'Hasta muayeneden sonra kliniğinizdeki QR kodu okutur ve deneyimini puanlar. Eşik ve üzerindeki puanlar Google yorum sayfanıza gider; eşiğin altında hasta önce size yazabilir ve herkese açık yorum bağlantısını aynı ekranda görür.',
     flow: {
       title: 'Diş kliniğinde QR ile geri bildirim üç adımda işler',
       steps: [
@@ -140,7 +140,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         'Geri bildirim formunda ad ve e-posta isteğe bağlıdır ve sağlık bilgisi soran bir alan yoktur. Yorum alanı ise serbest metindir; hasta tedavisiyle ilgili ayrıntı yazabilir. Sağlık verisi özel nitelikli kişisel veridir, bu yüzden hastalarınıza tedavi ayrıntısı yazmamalarını hatırlatın. Hazır “Randevu sonrası” anket şablonu, açık uçlu sorusunda bunu hastadan açıkça ister.',
         'Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrı bir kutudur ve varsayılan olarak işaretsizdir. Onaylar kayıt altına alınır, IP adresleri 90 gün sonra anonimleştirilir.',
-        'Veritabanı AB’de (Frankfurt) tutulur. E-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI ile taslak istediğinizde geri bildirim metni, taslak üretmek için OpenAI’a gönderilir.',
+        'Veritabanı AB’de (Frankfurt) tutulur. E-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI ile taslak istediğinizde ya da otomatik taslakları açtığınızda geri bildirim metni, taslak üretmek için OpenAI’a gönderilir.',
         'Sağlık kuruluşlarının tanıtım faaliyetleri ayrıca düzenlenmiştir. Hasta yorumlarını web sitenizde veya reklamlarınızda kullanmadan önce ve kliniğinizin kendi aydınlatma yükümlülükleri için hukuk danışmanınıza başvurun.',
       ],
     },
@@ -157,7 +157,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           q: 'Eşiği nasıl belirlerim?',
-          a: 'Eşik 4 ya da 5 yıldız olabilir; varsayılan değer 5 yıldızdır. Eşiği panelden istediğiniz zaman değiştirebilirsiniz. QR kod Buaze sayfanızı açtığı için bu değişiklik için QR’ı yeniden basmanız gerekmez.',
+          a: 'Eşik 4 ya da 5 yıldız olabilir; varsayılan değer 5 yıldızdır. Eşiği panelden istediğiniz zaman değiştirebilirsiniz. QR kod Buaze sayfanızı açtığından, eşiği değiştirdiğinizde QR’ı yeniden basmanız gerekmez.',
         },
         {
           q: 'Yorum karşılığında indirim veya hediye sunabilir miyim?',
@@ -189,7 +189,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
     eyebrow: 'Dental clinics',
     h1: 'QR codes for patient feedback and Google reviews at dental clinics',
     lead:
-      'After their appointment, patients scan the QR code in your clinic and rate their visit. Ratings above your threshold go to your Google review page; below it, the patient can write to you first and sees the public review link on the same screen.',
+      'After their appointment, patients scan the QR code in your clinic and rate their visit. Ratings at or above your threshold go to your Google review page; below it, the patient can write to you first and sees the public review link on the same screen.',
     flow: {
       title: 'Patient feedback by QR code works in three steps',
       steps: [
@@ -239,7 +239,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         'If you have several treatment rooms, create a separate QR code for each. When you create one, type a label such as “Room 2” in the “Table number” field; the label appears in the low-rating e-mail and in the feedback CSV file.',
     },
     uses: {
-      title: 'What helps a dental clinic in the panel',
+      title: 'Panel features that help a dental clinic',
       items: [
         {
           icon: Mail,
@@ -277,14 +277,14 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
     questions: {
       title: 'What to ask patients',
       lead:
-        "A star rating shows overall satisfaction. To learn what to improve, build a short survey and share it the same way, with a QR code. Don't ask about health in surveys.",
+        "A star rating shows overall satisfaction. To learn what to improve, build a short survey and share it the same way, with a QR code. Don’t ask about health in surveys.",
       items: [
         { text: 'How would you rate how well we kept to your appointment time?', type: 'rating' },
         { text: 'Were the explanations before your treatment clear?', type: 'multiple_choice' },
         { text: 'Were you told about the cost before the procedure?', type: 'multiple_choice' },
         { text: 'How likely are you to recommend our clinic to friends and family?', type: 'nps' },
         {
-          text: "What would make your next visit better? (Please don't include health details.)",
+          text: "What would make your next visit better? (Please don’t include health details.)",
           type: 'long_text',
         },
       ],
@@ -308,8 +308,8 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         "Name and e-mail are optional on the feedback form, and no field asks about health. The comment box is free text, though, and patients may write about their treatment. Health data is a special category of personal data, so remind patients not to include treatment details. The ready-made “After the appointment” survey template asks for exactly that in its open question.",
         'The form records the KVKK privacy notice acknowledgement; marketing consent is a separate box and is unticked by default. Consents are logged, and IP addresses are anonymised after 90 days.',
-        'The database is kept in the EU (Frankfurt). Some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. When you ask Pulse AI for a draft, the feedback text is sent to OpenAI to generate it.',
-        "Advertising by healthcare providers is separately regulated. Check with your legal adviser before using patient reviews on your website or in ads, and for your clinic's own privacy-notice obligations.",
+        'The database is kept in the EU (Frankfurt). Some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. When you ask Pulse AI for a draft or turn on automatic drafts, the feedback text is sent to OpenAI to generate it.',
+        "Advertising by healthcare providers is separately regulated. Check with your legal adviser before using patient reviews on your website or in ads, and for your clinic’s own privacy-notice obligations.",
       ],
     },
     faq: {
@@ -321,27 +321,27 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           q: 'Can a patient who gives a low rating still post on Google?',
-          a: "Yes. A patient who rates below your threshold can first send you private feedback, and the Google review link is shown on the same screen; they can post a public review from there if they want. Buaze doesn't delete, hide or edit reviews.",
+          a: "Yes. A patient who rates below your threshold can first send you private feedback, and the Google review link is shown on the same screen; they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.",
         },
         {
           q: 'How do I set the threshold?',
-          a: "The threshold can be 4 or 5 stars; the default is 5 stars. You can change it in the panel at any time. The QR code opens your Buaze page, so you don't need to reprint it.",
+          a: "The threshold can be 4 or 5 stars; the default is 5 stars. You can change it in the panel at any time. The QR code opens your Buaze page, so you don’t need to reprint it.",
         },
         {
           q: 'Can I offer a discount or gift for a review?',
-          a: "Buaze doesn't offer discounts, gifts or rewards for reviews, and Google prohibits incentives for reviews. Surveys can show an optional thank-you coupon, but it must not be tied to posting a public review.",
+          a: "Buaze doesn’t offer discounts, gifts or rewards for reviews, and Google prohibits incentives for reviews. Surveys can show an optional thank-you coupon, but it must not be tied to posting a public review.",
         },
         {
           q: 'Which language does the patient see?',
-          a: "The form opens in Turkish or English, based on the language of the patient's phone. Pulse AI drafts are written in Turkish or English too.",
+          a: "The form opens in Turkish or English, based on the language of the patient’s phone. Pulse AI drafts are written in Turkish or English too.",
         },
         {
           q: 'We have several branches. Can I manage them all from one account?',
           a: 'Yes. You add each branch as a separate business. The businesses table shows last-30-day review counts, average rating, pending low ratings and link health side by side. You can give team members a manager, staff or viewer role and limit them to their own branch.',
         },
         {
-          q: "Can I reply if the patient didn't leave an e-mail address?",
-          a: "You can keep your reply on record in the panel, but it won't reach the patient. To send a reply by e-mail, the patient needs to have left an e-mail address on the form.",
+          q: "Can I reply if the patient didn’t leave an e-mail address?",
+          a: "You can keep your reply on record in the panel, but it won’t reach the patient. To send a reply by e-mail, the patient needs to have left an e-mail address on the form.",
         },
       ],
     },

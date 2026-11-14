@@ -27,7 +27,6 @@ import { usePathname } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 import { RELATED_SOLUTIONS_LIST } from '@/lib/related-solutions';
 import BuazeLogo from './BuazeLogo';
-import WatchDemoButton from './WatchDemoButton';
 import LanguageLink from './footer/LanguageLink';
 import { useMarketingAuth } from '@/hooks/useMarketingAuth';
 
@@ -48,13 +47,15 @@ interface NavItem {
 /** Most-visited sectors, shown with a short line each; the rest follow. */
 const FEATURED_SECTORS = ['restaurants', 'delivery', 'hotels', 'healthcare', 'beauty-salon', 'retail'] as const;
 
+// One concrete, true line per sector: where the QR goes or which platforms
+// matter. Nothing that implies an integration or an automatic trigger.
 const SECTOR_SUBLABELS: Record<(typeof FEATURED_SECTORS)[number], { tr: string; en: string }> = {
   restaurants: { tr: 'Masa ve menü QR kodları', en: 'Table and menu QR codes' },
   delivery: { tr: 'Yemeksepeti, Getir, Trendyol GO', en: 'Yemeksepeti, Getir, Trendyol GO' },
   hotels: { tr: 'Booking.com ve Tripadvisor', en: 'Booking.com and Tripadvisor' },
   healthcare: { tr: 'KVKK onayıyla geri bildirim', en: 'Feedback with KVKK consent' },
-  'beauty-salon': { tr: 'Randevu sonrası geri bildirim', en: 'Feedback after appointments' },
-  retail: { tr: 'Mağazalar ve yerel hizmetler', en: 'Shops and local services' },
+  'beauty-salon': { tr: 'Resepsiyonda ve aynada QR kodu', en: 'QR codes at the front desk and mirror' },
+  retail: { tr: 'Kasada ve vitrinde QR kodu', en: 'QR codes at the till and in the window' },
 };
 
 const AUTH_REL = 'nofollow';
@@ -79,6 +80,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSection, setMobileSection] = useState<DropdownId | null>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const barRef = useRef<HTMLElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const drawerId = useId();
 
@@ -184,6 +186,52 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
     };
   }, [mobileOpen]);
 
+  // Drawer open: the page behind is covered and scroll-locked, so Tab and
+  // Shift+Tab cycle through the top bar and the drawer only. The drawer also
+  // closes when the viewport reaches the desktop layout (a tablet rotated to
+  // landscape) — it is lg:hidden, and the body would otherwise stay locked.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const onViewport = () => {
+      if (desktop.matches) setMobileOpen(false);
+    };
+    onViewport();
+    desktop.addEventListener?.('change', onViewport);
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const scopes = [barRef.current, drawerRef.current].filter((el): el is HTMLElement => Boolean(el));
+      const items = scopes
+        .flatMap((el) =>
+          Array.from(
+            el.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+          ),
+        )
+        .filter((el) => !el.closest('[inert]') && el.getClientRects().length > 0);
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      const inside = active instanceof HTMLElement && scopes.some((el) => el.contains(active));
+      if (!inside) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      desktop.removeEventListener?.('change', onViewport);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [mobileOpen]);
+
   const closeDrawer = () => {
     setMobileOpen(false);
     hamburgerRef.current?.focus();
@@ -258,7 +306,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
   const resources: NavItem[] = [
     {
       href: `${base}/how-it-works`,
-      label: isTr ? 'Nasıl çalışır?' : 'How it works',
+      label: isTr ? 'Nasıl çalışır' : 'How it works',
       sub: isTr ? 'QR kodundan yorum sayfasına' : 'From QR scan to review page',
       icon: <Compass size={16} />,
     },
@@ -326,6 +374,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
       {/* Mobile/tablet: inline bar (fixed while the drawer is open).
           Desktop: full-width bar, then a floating pill after 80px. */}
       <nav
+        ref={barRef}
         aria-label={isTr ? 'Ana menü' : 'Main navigation'}
         className={`${mobileOpen ? 'fixed inset-x-0 top-0' : 'relative'} z-40 h-[64px] backdrop-blur-2xl transition-all duration-300 ${
           scrolled
@@ -375,6 +424,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                     <li>
                       <Link
                         href={`${base}/features`}
+                        prefetch={false}
                         onClick={closeDropdown}
                         className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-[13px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A]"
                       >
@@ -394,10 +444,14 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                       : 'Every customer sees the public review link; below your threshold they can write to you first.'}
                   </p>
                   <div className="mt-auto pt-4">
-                    <WatchDemoButton
-                      locale={locale}
+                    <Link
+                      href={`${base}/how-it-works`}
+                      prefetch={false}
+                      onClick={closeDropdown}
                       className="inline-flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-4 text-[13px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-                    />
+                    >
+                      {isTr ? 'Nasıl çalışır' : 'How it works'} <span aria-hidden>→</span>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -431,6 +485,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                       <li key={item.href}>
                         <Link
                           href={item.href}
+                          prefetch={false}
                           onClick={closeDropdown}
                           className="flex min-h-[36px] items-center rounded-lg px-3 text-[13px] font-medium text-[#404040] transition-colors hover:bg-[#FAFAFA] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A]"
                         >
@@ -441,6 +496,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                   </ul>
                   <Link
                     href={`${base}/solutions`}
+                    prefetch={false}
                     onClick={closeDropdown}
                     className="mt-3 inline-flex min-h-[40px] items-center gap-1.5 self-start rounded-full bg-[#0A0A0A] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
                   >
@@ -452,6 +508,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                 {isTr ? 'Sektörünüzü bulamadınız mı?' : "Can't find your sector?"}{' '}
                 <Link
                   href={`${base}/contact`}
+                  prefetch={false}
                   onClick={closeDropdown}
                   className="font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-2 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A]"
                 >
@@ -515,6 +572,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                 <Link
                   href={`${base}/auth/login`}
                   rel={AUTH_REL}
+                  prefetch={false}
                   className="hidden min-h-[40px] items-center rounded-full px-2 text-[14px] font-medium text-[#404040] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:inline-flex"
                 >
                   {signInLabel}
@@ -522,6 +580,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                 <Link
                   href={`${base}/auth/register`}
                   rel={AUTH_REL}
+                  prefetch={false}
                   className="inline-flex min-h-[40px] items-center rounded-full bg-[#0A0A0A] px-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
                 >
                   {trialLabel}
@@ -534,7 +593,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
               aria-expanded={mobileOpen}
-              aria-controls={drawerId}
+              aria-controls={mobileOpen ? drawerId : undefined}
               aria-label={mobileOpen ? (isTr ? 'Menüyü kapat' : 'Close menu') : isTr ? 'Menüyü aç' : 'Open menu'}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#E5E5E5] bg-white text-[#0A0A0A] transition-colors hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 lg:hidden"
             >
@@ -546,7 +605,8 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
 
       {/* Mobile/tablet drawer. Backdrop and panel are separate fixed siblings
           (a relative child of a fixed parent breaks touch scrolling in iOS
-          Safari while the body is locked). */}
+          Safari while the body is locked). z-[55] keeps them above the
+          contact button (z-50), which would otherwise cover drawer links. */}
       {mobileOpen ? (
         <>
           <button
@@ -554,12 +614,12 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
             tabIndex={-1}
             aria-label={isTr ? 'Menüyü kapat' : 'Close menu'}
             onClick={closeDrawer}
-            className="fixed inset-x-0 bottom-0 top-[64px] z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+            className="fixed inset-x-0 bottom-0 top-[64px] z-[55] bg-black/30 backdrop-blur-sm lg:hidden"
           />
           <div
             ref={drawerRef}
             id={drawerId}
-            className="no-scrollbar fixed bottom-0 right-0 top-[64px] z-40 w-full max-w-md overflow-y-auto overscroll-contain rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl lg:hidden"
+            className="no-scrollbar fixed bottom-0 right-0 top-[64px] z-[55] w-full max-w-md overflow-y-auto overscroll-contain rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl lg:hidden"
             style={{
               paddingBottom: 'env(safe-area-inset-bottom)',
               paddingLeft: 'env(safe-area-inset-left)',
@@ -594,6 +654,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        prefetch={false}
                         onClick={() => setMobileOpen(false)}
                         className="flex min-h-[44px] items-center rounded-lg px-3 text-[14px] font-medium text-[#404040] hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0A0A0A]"
                       >
@@ -648,6 +709,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                     <Link
                       href={`${base}/auth/register`}
                       rel={AUTH_REL}
+                      prefetch={false}
                       onClick={() => setMobileOpen(false)}
                       className="flex min-h-[48px] items-center justify-center rounded-full bg-[#C6F24E] px-4 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
                     >
@@ -656,6 +718,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
                     <Link
                       href={`${base}/auth/login`}
                       rel={AUTH_REL}
+                      prefetch={false}
                       onClick={() => setMobileOpen(false)}
                       className="flex min-h-[48px] items-center justify-center rounded-full border border-[#E5E5E5] px-4 text-[15px] font-medium text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
                     >
@@ -684,6 +747,7 @@ function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
   return (
     <Link
       href={item.href}
+      prefetch={false}
       onClick={onClick}
       className="flex min-h-[44px] items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0A0A0A]"
     >
@@ -709,6 +773,7 @@ function MobileAllLink({ href, label, onClick }: { href: string; label: string; 
   return (
     <Link
       href={href}
+      prefetch={false}
       onClick={onClick}
       className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 text-[14px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
     >

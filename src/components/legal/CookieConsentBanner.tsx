@@ -18,7 +18,9 @@
  *  - Withdrawal / change at any time (GDPR Art. 7(3)): the footer's "Çerez
  *    tercihleri" button fires OPEN_COOKIE_PREFERENCES_EVENT and the settings
  *    dialog opens with the stored choices — without the card when a decision
- *    already exists. The cookie policy promises this link.
+ *    already exists. The cookie policy promises this link. Turning analytics
+ *    off expires the GA / Yandex cookies and reloads the page, so tracking
+ *    stops immediately.
  *  - The settings dialog moves focus inside, keeps Tab inside, closes on
  *    Escape or backdrop, and returns focus to the control that opened it.
  *
@@ -69,6 +71,36 @@ function detectLocaleFromBrowser(): 'tr' | 'en' {
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** First-party cookies set by Google Analytics (_ga*, _gid, _gat*) and Yandex Metrica (_ym*). */
+const ANALYTICS_COOKIE = /^(_ga|_gid|_gat|_ym)/;
+
+/**
+ * After analytics consent is withdrawn: expire the analytics cookies (on the
+ * host and on the parent domain, where both tools set them) and reload, so
+ * the scripts already running on this page stop at once instead of on the
+ * next full page load (GDPR Art. 7(3) — withdrawing must actually stop it).
+ */
+function stopAnalyticsNow() {
+  try {
+    const host = window.location.hostname;
+    const parts = host.split('.');
+    const domains = ['', host, `.${host}`];
+    if (parts.length > 2) domains.push(`.${parts.slice(-2).join('.')}`);
+    const names = document.cookie
+      .split(';')
+      .map((part) => part.split('=')[0]?.trim() ?? '')
+      .filter((name) => ANALYTICS_COOKIE.test(name));
+    for (const name of names) {
+      for (const domain of domains) {
+        document.cookie = `${name}=; Max-Age=0; path=/${domain ? `; domain=${domain}` : ''}`;
+      }
+    }
+  } catch {
+    /* cookies blocked: nothing was stored either */
+  }
+  window.location.reload();
+}
 
 export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: CookieConsentBannerProps) {
   const [mounted, setMounted] = useState(false);
@@ -177,13 +209,17 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     setVisible(false);
   };
   const onlyEssential = () => {
+    const hadAnalytics = readCookieConsent()?.analytics === true;
     writeCookieConsent({ analytics: false, marketing: false, personalization: false });
     setVisible(false);
+    if (hadAnalytics) stopAnalyticsNow();
   };
   const saveCustom = () => {
+    const hadAnalytics = readCookieConsent()?.analytics === true;
     writeCookieConsent({ analytics, marketing, personalization });
     setShowCustomize(false);
     setVisible(false);
+    if (hadAnalytics && !analytics) stopAnalyticsNow();
   };
   const acceptAllFromModal = () => {
     setAnalytics(true);

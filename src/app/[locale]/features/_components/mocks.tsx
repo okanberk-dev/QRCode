@@ -202,7 +202,7 @@ export function PulseAiMock({ locale }: { locale: Locale }) {
       <div className="rounded-[14px] border border-[#C6F24E] bg-white p-3.5 shadow-[0_0_0_3px_rgba(198,242,78,0.18)]">
         <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3F5408]">
           <Sparkles size={13} strokeWidth={2} />
-          {tr ? 'Pulse AI taslağı' : 'Pulse AI draft'}
+          {tr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
         </p>
         <p className="mt-2 text-[13px] leading-[1.6] text-[#1A1A1A]">
           {tr
@@ -220,11 +220,11 @@ export function PulseAiMock({ locale }: { locale: Locale }) {
 
       <div className="flex gap-2">
         <span className="inline-flex items-center justify-center rounded-full border border-[#D4D4D4] px-4 py-2 text-[13px] font-medium text-[#0A0A0A]">
-          {tr ? 'Düzenle' : 'Edit'}
+          {tr ? 'Yanıta aktar' : 'Copy to reply'}
         </span>
         <span className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-semibold text-white">
           <Mail size={13} strokeWidth={2} />
-          {tr ? 'Onayla ve gönder' : 'Approve and send'}
+          {tr ? 'Olduğu gibi gönder' : 'Send as is'}
         </span>
       </div>
     </div>
@@ -348,7 +348,7 @@ export function MenuMock({ locale }: { locale: Locale }) {
         </span>
         <div>
           <p className="text-[15px] font-semibold leading-tight text-[#0A0A0A]">{tr ? 'Örnek Kafe' : 'Sample Café'}</p>
-          <p className="mt-0.5 text-[12px] text-[#737373]">{tr ? 'Menü · Klasik tema' : 'Menu · Classic theme'}</p>
+          <p className="mt-0.5 text-[12px] text-[#737373]">{tr ? 'Dijital menü' : 'Digital menu'}</p>
         </div>
       </div>
       <div className="mt-4 flex flex-wrap gap-1.5">
@@ -373,7 +373,7 @@ export function MenuMock({ locale }: { locale: Locale }) {
               ) : null}
               {item.soldOut ? (
                 <span className="rounded-full bg-[#F2F2F2] px-2 py-0.5 text-[11px] font-semibold text-[#525252]">
-                  {tr ? 'Tükendi' : 'Sold out'}
+                  {tr ? 'Tükendi' : 'Out of stock'}
                 </span>
               ) : null}
               <span className="text-[12px] text-[#737373]">{item.allergens}</span>
@@ -405,10 +405,12 @@ export function AuditMock({ locale }: { locale: Locale }) {
           <p className="text-[14px] font-semibold leading-tight text-[#0A0A0A]">
             {tr ? 'Mutfak açılış kontrolü' : 'Kitchen opening check'}
           </p>
-          <p className="mt-1 text-[12px] text-[#737373]">{tr ? 'Kontrol listesi · 4 madde' : 'Checklist · 4 items'}</p>
+          <p className="mt-1 text-[12px] text-[#737373]">
+            {tr ? 'Kontrol listesi · 4 madde · geçme puanı 80' : 'Checklist · 4 items · pass mark 80'}
+          </p>
         </div>
-        <span className="shrink-0 rounded-full bg-[#F2F2F2] px-2.5 py-1 text-[11px] font-semibold text-[#525252]">
-          {tr ? 'Puanlama: yüzde' : 'Scoring: percentage'}
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-[#F2F2F2] px-2.5 py-1 text-[11px] font-semibold text-[#525252]">
+          {tr ? 'Geçti / Kaldı' : 'Pass / Fail'}
         </span>
       </div>
 
@@ -514,7 +516,7 @@ export function SurveyMock({ locale }: { locale: Locale }) {
             {tr ? 'Şablon: Masa servisi sonrası · adım adım' : 'Template: After table service · step by step'}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[11px] font-semibold text-[#3F5408]">
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[11px] font-semibold text-[#3F5408]">
           {tr ? 'Yayında' : 'Published'}
         </span>
       </div>
@@ -536,12 +538,13 @@ export function SurveyMock({ locale }: { locale: Locale }) {
         })}
       </ol>
 
-      <div className="mt-3 flex items-center gap-2 text-[12px]">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1.5 font-medium text-white">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#0A0A0A] px-3 py-1.5 font-medium text-white">
           <QrCode size={13} strokeWidth={2} />
-          {tr ? 'QR kod · PNG · SVG' : 'QR code · PNG · SVG'}
+          {tr ? 'QR kod' : 'QR code'}
+          <span className="text-white/70">PNG · SVG</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4D4D4] px-3 py-1.5 font-medium text-[#0A0A0A]">
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#D4D4D4] px-3 py-1.5 font-medium text-[#0A0A0A]">
           <Copy size={13} strokeWidth={2} />
           {tr ? 'Bağlantıyı kopyala' : 'Copy link'}
         </span>
@@ -555,15 +558,15 @@ export function SurveyMock({ locale }: { locale: Locale }) {
 export function HubMock({ locale }: { locale: Locale }) {
   const tr = locale === 'tr';
   const nav = tr
-    ? ['Yorumlar', 'Analitik', 'QR kodlar', 'Menü', 'Anketler', 'Denetimler']
-    : ['Reviews', 'Analytics', 'QR codes', 'Menu', 'Surveys', 'Audits'];
+    ? ['Yorumlar', 'Google Yorumları', 'Analitik', 'QR', 'Menü', 'Anketler', 'Denetim Merkezi']
+    : ['Reviews', 'Google Reviews', 'Analytics', 'QR', 'Menu', 'Surveys', 'Audit Center'];
   return (
     <div className="flex">
-      <ul className="hidden w-[132px] shrink-0 space-y-1 border-r border-[#F2F2F2] p-3 sm:block">
+      <ul className="hidden w-[150px] shrink-0 space-y-1 border-r border-[#F2F2F2] p-3 sm:block">
         {nav.map((item, i) => (
           <li
             key={item}
-            className={`rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium ${
+            className={`whitespace-nowrap rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium ${
               i === 0 ? 'bg-[#F2F2F2] text-[#0A0A0A]' : 'text-[#737373]'
             }`}
           >
@@ -582,7 +585,7 @@ export function HubMock({ locale }: { locale: Locale }) {
         <div className="rounded-[12px] border border-[#C6F24E] p-3">
           <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#3F5408]">
             <Sparkles size={12} strokeWidth={2} />
-            {tr ? 'Pulse AI taslağı' : 'Pulse AI draft'}
+            {tr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
           </p>
           <p className="mt-1.5 text-[12px] leading-[1.5] text-[#1A1A1A]">
             {tr ? 'Geri bildiriminiz için teşekkür ederiz…' : 'Thank you for your feedback…'}

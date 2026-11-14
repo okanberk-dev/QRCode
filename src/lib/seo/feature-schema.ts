@@ -144,54 +144,59 @@ export function buildFeaturePageJsonLd(input: FeatureSchemaInput) {
     });
   }
 
-  if (faqs.length > 0) {
-    graph.push({
-      '@type': 'FAQPage',
-      '@id': `${url}#faq`,
-      inLanguage,
-      mainEntity: faqs.map((faq) => ({
-        '@type': 'Question',
-        name: faq.q,
-        acceptedAnswer: { '@type': 'Answer', text: faq.a },
-      })),
-    });
-  }
+  if (faqs.length > 0) graph.push(faqNode(url, locale, faqs));
 
   return { '@context': 'https://schema.org', '@graph': graph };
 }
 
-/** /features hub: ItemList of every surface (with URLs) + BreadcrumbList. */
+/** FAQPage built from the same array the page renders in <details>. */
+function faqNode(url: string, locale: FeatureLocale, faqs: readonly { q: string; a: string }[]) {
+  return {
+    '@type': 'FAQPage',
+    '@id': `${url}#faq`,
+    inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: { '@type': 'Answer', text: faq.a },
+    })),
+  };
+}
+
+/** /features hub: ItemList of every surface (with URLs) + BreadcrumbList + FAQPage. */
 export function buildFeatureHubJsonLd({
   locale,
   listName,
   items,
+  faqs = [],
 }: {
   locale: FeatureLocale;
   listName: string;
   /** Absolute URLs. */
   items: readonly { name: string; description: string; url: string }[];
+  /** The visible FAQ. */
+  faqs?: readonly { q: string; a: string }[];
 }) {
   const url = featureUrl(locale, '');
-  return {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'ItemList',
-        '@id': `${url}#list`,
-        name: listName,
-        url,
-        numberOfItems: items.length,
-        itemListElement: items.map((item, i) => ({
-          '@type': 'ListItem',
-          position: i + 1,
-          name: item.name,
-          description: item.description,
-          url: item.url,
-        })),
-      },
-      breadcrumbNode(`${url}#breadcrumb`, homeAndHubCrumbs(locale)),
-    ],
-  };
+  const graph: object[] = [
+    {
+      '@type': 'ItemList',
+      '@id': `${url}#list`,
+      name: listName,
+      url,
+      numberOfItems: items.length,
+      itemListElement: items.map((item, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: item.name,
+        description: item.description,
+        url: item.url,
+      })),
+    },
+    breadcrumbNode(`${url}#breadcrumb`, homeAndHubCrumbs(locale)),
+  ];
+  if (faqs.length > 0) graph.push(faqNode(url, locale, faqs));
+  return { '@context': 'https://schema.org', '@graph': graph };
 }
 
 /** Route guard for /[locale]/features/*: only tr and en render. */

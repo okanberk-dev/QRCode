@@ -165,8 +165,11 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
       <footer id="site-footer" className="relative bg-[#0A0A0A] text-white">
         <FooterPulseHorizon locale={locale} className="h-[180px] sm:h-[220px] lg:h-[260px]">
           {/* Logo lockup in the dark sky above the field (top third is
-              scrimmed and holds no points), so it stays fully legible. */}
-          <div className="mx-auto w-full max-w-[1200px] px-5 pt-7 sm:px-10 sm:pt-10">
+              scrimmed and holds no points), so it stays fully legible. The
+              top padding keeps it clear of the SVG fallback's heartbeat
+              peaks at every width (they rise to ~60px on phones and
+              ~70px on desktop). */}
+          <div className="mx-auto w-full max-w-[1200px] px-5 pt-4 sm:px-10 sm:pt-6 lg:pt-8">
             <Link
               href={base}
               aria-label={isTr ? 'Buaze ana sayfa' : 'Buaze home'}
@@ -175,10 +178,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
               <span aria-hidden="true" className="inline-flex">
                 <BuazeLogo size={36} variant="on-dark" />
               </span>
-              <span
-                className="text-[30px] font-medium leading-none tracking-[-0.04em] text-white sm:text-[34px]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
+              <span className="bz-h-tight text-[30px] leading-none tracking-[-0.04em] text-white sm:text-[34px]">
                 buaze<span className="text-[#C6F24E]">.</span>
               </span>
             </Link>
@@ -189,10 +189,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
           {/* 2 — Brand + newsletter */}
           <div className="grid gap-10 pb-14 pt-2 sm:pb-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-16">
             <div>
-              <p
-                className="max-w-[560px] text-[22px] font-medium leading-[1.3] tracking-[-0.02em] text-white sm:text-[26px]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
+              <p className="bz-h-tight max-w-[560px] text-[22px] leading-[1.3] text-white sm:text-[26px]">
                 {isTr
                   ? 'QR kodla müşteri geri bildirimi toplayın, yorum bağlantılarınızı tek yerden yönetin'
                   : 'Collect customer feedback with QR codes and manage your review links in one place'}
@@ -265,7 +262,8 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
                       <li key={link.href}>
                         <Link
                           href={link.href}
-                          className={`inline-flex min-h-[44px] items-center rounded py-1 text-[15px] leading-[1.35] text-white/75 transition-colors hover:text-white md:text-[14px] lg:min-h-[34px] ${FOCUS_RING}`}
+                          prefetch={false}
+                          className={`-mx-1.5 inline-flex min-h-[44px] items-center rounded px-1.5 py-1 text-[15px] leading-[1.35] text-white/75 transition-colors hover:text-white md:text-[14px] lg:min-h-[34px] ${FOCUS_RING}`}
                         >
                           {link.label}
                         </Link>
@@ -292,7 +290,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
               </span>
               <a
                 href={`mailto:${company.supportEmail}`}
-                className={`inline-flex min-h-[32px] items-center rounded text-white underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-[#C6F24E] ${FOCUS_RING}`}
+                className={`-mx-1 inline-flex min-h-[32px] items-center rounded px-1 text-white underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-[#C6F24E] ${FOCUS_RING}`}
               >
                 {company.supportEmail}
               </a>
@@ -304,7 +302,8 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className={`inline-flex min-h-[32px] items-center rounded text-[13px] text-white/70 transition-colors hover:text-white ${FOCUS_RING}`}
+                      prefetch={false}
+                      className={`-mx-1.5 inline-flex min-h-[32px] items-center rounded px-1.5 text-[13px] text-white/70 transition-colors hover:text-white ${FOCUS_RING}`}
                     >
                       {link.label}
                     </Link>
@@ -313,7 +312,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
                 <li>
                   <CookiePreferencesButton
                     label={isTr ? 'Çerez tercihleri' : 'Cookie preferences'}
-                    className={`inline-flex min-h-[32px] items-center rounded text-[13px] text-white/70 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white ${FOCUS_RING}`}
+                    className={`-mx-1.5 inline-flex min-h-[32px] items-center rounded px-1.5 text-[13px] text-white/70 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white ${FOCUS_RING}`}
                   />
                 </li>
               </ul>

@@ -45,7 +45,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
   if (locale === 'tr') {
     return {
       eyebrow: 'Yorum yönetimi',
-      title: 'QR geri bildirimlerinizi tek gelen kutusunda yönetin',
+      title: 'QR geri bildirimleriniz tek panelde',
       lead: 'Müşterilerinizin QR kodla bıraktığı puan ve yorumlar tek gelen kutusuna düşer; 1–3 yıldızlık geri bildirimde anında e-posta alır, yanıtınızı panelden yazarsınız.',
       secondary: { href: `${base}/how-it-works`, label: 'Nasıl çalıştığını görün' },
       mockCaption:
@@ -58,17 +58,17 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           'Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) seçtiğiniz platformun yorum sayfası açılır. Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
           'Google işletme profilinizi adıyla arayıp seçtiğinizde, Google Yorumları sayfasında Google puanınızı, yorum sayınızı ve Google’ın paylaştığı en fazla 5 yorumu da görürsünüz.',
         ],
-        note: 'Buaze; Yemeksepeti, Tripadvisor veya diğer platformlardaki yorumları panele aktarmaz, bu platformlar için yalnızca yorum sayfasının bağlantısını yönetirsiniz. Google yorumlarına panelden yanıt vermek Google’ın erişim onayına bağlıdır ve şu an genel kullanıma açık değildir.',
+        note: 'Yemeksepeti, Tripadvisor veya diğer platformlardaki yorumlar panele aktarılmaz; bu platformlar için yalnızca yorum sayfasının bağlantısını yönetirsiniz. Google yorumlarına panelden yanıt vermek Google’ın erişim onayına bağlıdır ve şu an genel kullanıma açık değildir.',
       },
       capabilities: {
         eyebrow: 'Neler var',
-        title: 'Gelen kutusunda neler yapabilirsiniz',
-        lead: 'Geri bildirimleri ayırmak, takip etmek ve yanıtlamak için gereken araçlar tek ekranda.',
+        title: 'Yorum yönetiminde neler var',
+        lead: 'Geri bildirimleri ayırmak, takip etmek ve yanıtlamak için gereken araçlar aynı panelde.',
         items: [
           {
             icon: Inbox,
             title: 'Tek gelen kutusu',
-            body: 'QR akışından gelen her geri bildirim tek listede. Tarihe, puana ve platforma göre filtreleyin; okunmamış, düşük puanlı, yanıtlanmış ve beklemedeki kayıtları sekmelerle ayırın, listeyi CSV olarak indirin.',
+            body: 'QR akışından gelen her geri bildirim tek listede. Tarihe, puana ve platforma göre daraltın; okunmamış, düşük puanlı, yanıtlanmış ve beklemedeki kayıtları sekmelerle ayırın. Tüm listeyi CSV olarak indirebilirsiniz.',
           },
           {
             icon: Mail,
@@ -184,7 +184,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
 
   return {
     eyebrow: 'Review management',
-    title: 'Manage your QR feedback in one inbox',
+    title: 'Your QR feedback in one panel',
     lead: 'Ratings and comments your customers leave through your QR codes land in one inbox; you get an instant e-mail for 1–3★ feedback and write your reply in the panel.',
     secondary: { href: `${base}/how-it-works`, label: 'See how it works' },
     mockCaption: 'Sample screen: three QR feedback entries in the inbox, with their ratings, comments and reply status.',
@@ -196,17 +196,17 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         'At or above the threshold you set (5 stars by default), your chosen platform’s review page opens. Below it, the customer can first send you private feedback; the public review link is shown on the same screen.',
         'Once you search for your Google Business Profile by name and pick it, the Google Reviews page also shows your Google rating, your review count and up to 5 reviews that Google shares.',
       ],
-      note: 'Buaze does not import reviews from Yemeksepeti, Tripadvisor or any other platform; for those platforms you only manage the link to the review page. Replying to Google reviews from the panel depends on Google’s access approval and is not generally available yet.',
+      note: 'Reviews on Yemeksepeti, Tripadvisor or any other platform are not imported into the panel; for those platforms you only manage the link to the review page. Replying to Google reviews from the panel depends on Google’s access approval and is not generally available yet.',
     },
     capabilities: {
       eyebrow: 'What you get',
-      title: 'What you can do in the inbox',
-      lead: 'The tools to sort, follow up and answer feedback, on one screen.',
+      title: 'What review management includes',
+      lead: 'The tools to sort, follow up and answer feedback, in the same panel.',
       items: [
         {
           icon: Inbox,
           title: 'One inbox',
-          body: 'Every piece of feedback from your QR flow in one list. Filter by date, rating and platform, use tabs to separate unread, low-rated, replied and pending items, and export the list as CSV.',
+          body: 'Every piece of feedback from your QR flow in one list. Narrow it down by date, rating and platform and use tabs to separate unread, low-rated, replied and pending items. You can export the whole list as CSV.',
         },
         {
           icon: Mail,
