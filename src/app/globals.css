@@ -8,7 +8,6 @@
   --color-brand-lime: #C6F24E;         /* Lime — vurgu / "pulse" */
   --color-brand-lime-deep: #A8D62E;    /* Lime Deep — hover state */
   --color-brand-lime-soft: #EAF9B8;    /* Lime Soft — tint / arkaplan */
-
   /* Neutrals */
   --color-brand-n50:  #FAFAFA;
   --color-brand-n100: #F2F2F2;
@@ -122,36 +121,10 @@ body {
   font-weight: 500;
 }
 
-.pulse-chip-soft {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 999px;
-  padding: 0.5rem 0.875rem;
-  background: linear-gradient(180deg, #f7fddb 0%, #eaf9b8 100%);
-  border: 1px solid rgba(168, 214, 46, 0.35);
-  box-shadow: 0 12px 28px -22px rgba(10, 10, 10, 0.3);
-}
-
 /* CSS Performance §38.60 — `.pulse-dark-badge` ve `.pulse-star-pill`
  * (32 satır, eski neo-brutalist, 2026-04 Pulse redesign'da değiştirildi)
  * 0 callsite ile silindi. Geri eklenirse: <span> elementine inline
  * Tailwind ile aynı görsel kompozisyonu yap (lime + graphite + shadow). */
-
-.pulse-icon-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.875rem;
-  height: 1.875rem;
-  border-radius: 999px;
-  background: linear-gradient(145deg, #0a0a0a 0%, #181818 100%);
-  border: 1px solid rgba(198, 242, 78, 0.18);
-  color: #c6f24e;
-  box-shadow:
-    0 16px 30px -22px rgba(10, 10, 10, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
 
 /* ── Pulse button system ─────────────────────────────────────
  * `pulse-btn-dark` graphite CTA primary surface. `pulse-btn-primary`
@@ -415,30 +388,6 @@ body {
   animation: slideIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* Premium homepage micro-animations from the Pulse v2 design canvas. */
-@keyframes bzFadeUp {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes bzScaleIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-.bz-fade-up {
-  animation: bzFadeUp 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.bz-scale-in {
-  animation: bzScaleIn 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.bz-d1 { animation-delay: 0.08s; }
-.bz-d2 { animation-delay: 0.16s; }
-.bz-d3 { animation-delay: 0.24s; }
-.bz-d4 { animation-delay: 0.32s; }
-
 /* ECG draw — stroke-dashoffset reveal for the lime heartbeat line (footer) */
 @keyframes ecgDraw {
   from { stroke-dashoffset: 2000; }
@@ -459,60 +408,10 @@ body {
   }
 }
 
-/* CSS Performance §38.61 — `@keyframes bzFloat` + `.bz-float` class silindi
- * (0 callsite). Eski hero floating badge animasyonu marketing redesign
- * sürecinde değişti; geri eklenirse mevcut `bz-fade-up`/`bz-scale-in`
- * paternine paralel restore et. */
-
-/* Hero — kinetic sector word swap (rotates inside the headline). */
-@keyframes bzWordSwap {
-  0%   { opacity: 0; transform: rotate(-0.6deg) translateY(0.6em); filter: blur(4px); }
-  60%  { opacity: 1; filter: blur(0); }
-  100% { opacity: 1; transform: rotate(-0.6deg) translateY(0); }
-}
-
-.bz-word-swap {
-  animation: bzWordSwap 0.55s cubic-bezier(0.5, 0, 0.2, 1) both;
-}
-
 /* Hero — typewriter caret blink for AI draft. */
 @keyframes bzCaretBlink {
   from { opacity: 1; }
   to   { opacity: 0; }
-}
-
-.bz-caret-blink {
-  animation: bzCaretBlink 1s steps(2) infinite;
-}
-
-/* Marquee — horizontal logo strip, GPU-friendly, respects reduced motion */
-@keyframes marqueeSlide {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-.animate-marquee {
-  animation: marqueeSlide 40s linear infinite;
-  will-change: transform;
-}
-
-/* Stage 87 §38.167 — `brand-marquee` keyframe (Marquee component
-   `src/components/animations/Marquee.tsx` Stage 66 §38.147 PR0 base
-   inline `style={{ animation: 'brand-marquee 22s linear infinite' }}`
-   kullanır). Eski `tailwind.config.ts` (v3-style) keyframe definition
-   Tailwind v4 `@theme {}` paterniyle uyumsuz — keyframe browser'a
-   inject edilmiyordu; kullanıcı raporu "heronun altıdna bahsedilen
-   markalar otomatik belli hızda yana doğru kaysın" fix.
-
-   3x duplicate (`tripled` array Marquee.tsx) sayesinde 0 → -50%
-   translateX seamless loop (orta kopyaya geri döner, ekrandan kayma
-   yok). Reduced-motion: blanket selector universal `*` reset zaten
-   kapatır (CLAUDE.md §38.61 paterni); bu inline `style={{ animation }}`
-   callsite ek selector gerektirmez (Marquee component kendi
-   `useReducedMotion` check'i ile static fallback render eder). */
-@keyframes brand-marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
 }
 
 /* CSS Performance §38.61 — 3 keyframe styled-jsx/inline `<style>` block'larından
@@ -575,16 +474,6 @@ body {
   to   { transform: translateY(0);    opacity: 1; }
 }
 
-/* Stage 42 §38.123 — HANDOFF premium-footer.jsx `bzEchoSweep`.
- * Traveling lime spark animation: SVG hairline + ECG divider'a
- * left-to-right sweep ekler (footer premium editorial polish).
- * Reduced-motion blanket'a [style*='bzEchoSweep'] selector eklendi.
- */
-@keyframes bzEchoSweep {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(800%); }
-}
-
 /* Stage 48 §38.129 — HANDOFF feedback-flow.jsx `DoneHigh/DoneLow`
  * radial pulse rays for the public review surface (`/r/[slug]`)
  * thanks step. Two concentric lime rings expand outward + fade to 0,
@@ -628,33 +517,13 @@ body {
   50%      { opacity: 1;   transform: scale(1); }
 }
 
-/* Stage 53 §38.134 — homepage FAQ editorial accordion (HANDOFF FAQSection
- * birebir). `faqOpen` answer reveal (320ms cubic-bezier ease-out + 4px
- * translateY); `faqDot` bottom rail status dot pulse (2.4s ease-in-out
- * scale + opacity). Inline `style={{ animation }}` paterni (Tailwind
- * arbitrary class yok); reduced-motion blanket aşağıdaki [style*='X']
- * selector'la otomatik yakalanır. */
-@keyframes faqOpen {
-  0%   { opacity: 0; transform: translateY(-4px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-@keyframes faqDot {
-  0%, 100% { transform: scale(1);   opacity: 0.6; }
-  50%      { transform: scale(1.6); opacity: 0.2; }
-}
-
 /* ─────────────────────────────────────────────────────────────
- * Stage 57 §38.138 — Sticky CTA bar + ContactFloat chat bubble
- * keyframes (HANDOFF premium editorial redesign).
+ * ContactFloat button keyframes (scbPulse, scbRing).
  *
  * Inline `style={{ animation }}` paterni; reduced-motion blanket
  * (aşağıda) `[style*='scbX']` selector'larıyla yakalar (CLAUDE.md
  * §38.61 paterni reuse).
  * ───────────────────────────────────────────────────────────── */
-@keyframes scbDot {
-  0%, 100% { transform: scale(1);   opacity: 1;   }
-  50%      { transform: scale(1.5); opacity: 0.5; }
-}
 @keyframes scbPulse {
   0%, 100% { transform: scale(1);    opacity: 0.18; }
   50%      { transform: scale(1.15); opacity: 0.06; }
@@ -663,33 +532,10 @@ body {
   0%   { transform: scale(0.95); opacity: 0.6; }
   100% { transform: scale(1.5);  opacity: 0;   }
 }
-@keyframes scbHair {
-  0%   { transform: translateX(-30%); }
-  100% { transform: translateX(30%);  }
-}
-@keyframes scbSweep {
-  0%, 100% { transform: translateX(0);    }
-  50%      { transform: translateX(60px); }
-}
-@keyframes scbShine {
-  0%        { transform: translateX(-100%); }
-  60%, 100% { transform: translateX(100%);  }
-}
-@keyframes scbWave {
-  0%, 100% { transform: rotate(0);     }
-  25%      { transform: rotate(20deg); }
-  75%      { transform: rotate(-12deg);}
-}
-@keyframes scbBlink {
-  50% { opacity: 0; }
-}
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-marquee,
   .pulse-heartbeat,
-  .animate-slide-in,
-  .bz-fade-up,
-  .bz-scale-in {
+  .animate-slide-in {
     animation: none !important;
   }
 }
@@ -709,22 +555,12 @@ body {
   [style*='bzProgress'],
   [style*='activity-row-in'],
   [style*='bz-cookie-card-in'],
-  [style*='bzEchoSweep'],
   [style*='bz-done-ring-pulse'],
   [style*='bz-rr-spin'],
   [style*='bz-rr-pulse'],
   [style*='bz-rr-dot'],
-  [style*='bzFadeUp'],
-  [style*='faqOpen'],
-  [style*='faqDot'],
-  [style*='scbDot'],
   [style*='scbPulse'],
   [style*='scbRing'],
-  [style*='scbHair'],
-  [style*='scbSweep'],
-  [style*='scbShine'],
-  [style*='scbWave'],
-  [style*='scbBlink'],
   .animate-\[bzProgress_2\.2s_linear_forwards\],
   .animate-\[bzProgress_1\.5s_linear_forwards\] {
     animation: none !important;
@@ -735,11 +571,6 @@ body {
   .pulse-eyebrow {
     font-size: 11px;
     letter-spacing: 0.12em;
-  }
-  /* Slow long-running animations on small screens to save battery and
-   * reduce visual noise (low-power mode users + scroll context). */
-  .animate-marquee {
-    animation-duration: 28s;
   }
 }
 
@@ -1309,7 +1140,7 @@ select.bz-input option:checked {
   display: inline-block;
 }
 
-/* ── Generic fade-in (panel-scope, separate from .bz-fade-up keyframe) ── */
+/* ── Generic fade-in (panel-scope) ── */
 @keyframes bz-fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1805,21 +1636,14 @@ select.bz-input option:checked {
      animate-* utilities (which don't auto-respect this preference).
      §38.101 — `star-anim-pulse` + `animate-slide-up` removed (0 callsite
      dead code dropped from blanket). */
-  .confetti-fly,
   .bz-pulse-dot,
   .bz-fade-in,
-  .bz-fade-up,
-  .bz-scale-in,
   .bz-skeleton,
-  .bz-float,
-  .bz-word-swap,
-  .bz-caret-blink,
   .bz-menu,
   .bz-menu--sheet,
   .bz-menu-backdrop,
   .bz-user-menu,
   .pulse-heartbeat,
-  .animate-marquee,
   .animate-slide-in,
   .animate-spin,
   .animate-pulse,
@@ -1906,6 +1730,10 @@ select.bz-input option:checked {
   text-decoration: none;
   font-size: 0.85em;
   transition: opacity 0.15s ease;
+}
+/* Drawn here, not in the DOM, so it stays out of the heading text. */
+.prose-legal .legal-anchor::before {
+  content: '#';
 }
 .prose-legal h2:hover .legal-anchor,
 .prose-legal h3:hover .legal-anchor,

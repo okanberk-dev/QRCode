@@ -71,10 +71,10 @@ export default function BlogReadingProgress({ readTime, locale }: Props) {
         />
       </div>
       <div
-        className="mt-1.5 text-[10px] font-semibold tracking-[0.1em] text-[#737373]"
+        className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#737373]"
         style={{ fontFamily: 'var(--font-mono)' }}
       >
-        %{pct} {isTr ? 'OKUNDU' : 'READ'}
+        {isTr ? `%${pct} okundu` : `${pct}% read`}
       </div>
     </div>
   );

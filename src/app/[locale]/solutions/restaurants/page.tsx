@@ -1,525 +1,355 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { ArrowRight, ChevronRight, MessageSquare, Utensils, Sparkles, BarChart3 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import { getTranslations } from '@/lib/translations';
+import { BarChart3, Mail, Sparkles, UtensilsCrossed } from 'lucide-react';
+import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
+import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
-import { buildSolutionSchema } from '@/lib/solution-schema';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { getRelatedSolutions } from '@/lib/related-solutions';
+import { IllusRestaurant } from '../_components/sector-illustrations';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`. Reads only
+// `params`, so the page stays static. Sector "food" drives the platform list
+// (SECTOR_PLATFORMS) and the survey templates the layout shows.
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Restoran & Kafe İtibar Yönetimi'
-      : 'Restaurant & Café Reputation Management';
-  const description =
-    locale === 'tr'
-      ? 'Masaya QR koy, her misafire Google yorum bağlantısını sun; isteyen ekibinize özel geri bildirim de bıraksın. Restoran ve kafeler için yorum yönetimi.'
-      : 'Put a QR on the table and offer every guest your Google review link; guests can also leave private feedback. Review management for restaurants and cafés.';
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/solutions/restaurants`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/solutions/restaurants',
-        en: 'https://www.buaze.com/en/solutions/restaurants',
-        'x-default': 'https://www.buaze.com/tr/solutions/restaurants',
-      },
+const SLUG = 'restaurants';
+
+const CONTENT: Record<Locale, SolutionPageContent> = {
+  tr: {
+    name: 'Restoranlar ve kafeler',
+    meta: {
+      title: 'Restoranlar için QR ile Google yorum toplama',
+      description:
+        'Restoran ve kafeler için masa QR kodu: misafir puan verir, eşiğin altında önce size yazabilir. 1–3 yıldızda masa etiketiyle size anında e-posta gelir.',
     },
-    openGraph: {
-      type: 'website',
-      siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/solutions/restaurants`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    eyebrow: 'Restoranlar ve kafeler',
+    h1: 'Restoran ve kafeler için QR ile misafir geri bildirimi ve Google yorumları',
+    lead:
+      'Misafir hesabı beklerken masadaki QR kodu okutur ve puan verir. Eşik ve üzerindeki puanlarda Google yorum sayfanız açılır; eşiğin altında misafir önce size yazabilir, herkese açık yorum bağlantısı da aynı ekranda görünür.',
+    flow: {
+      title: 'Restoranda QR ile geri bildirim nasıl işler',
+      steps: [
+        {
+          title: 'Masalara etiketli QR koyun',
+          body:
+            'Panelde istediğiniz kadar QR kod oluşturun ve her masaya ya da bölüme kısa bir etiket verin (ör. A12, Teras-4, Bar). Kodu PNG olarak indirip masa kartına bastırırsınız.',
+        },
+        {
+          title: 'Misafir puan verir',
+          body:
+            'Misafir QR kodu okutur ve 1–5 yıldız verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) Google yorum sayfanız ya da QR koda sabitlediğiniz platform açılır. Eşiğin altındaki puanlarda misafir önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        },
+        {
+          title: 'Servis bitmeden haberdar olun',
+          body:
+            '1–3 yıldızlık her geri bildirim için masa etiketiyle birlikte anında e-posta alırsınız. Misafir hâlâ restorandaysa sorunu masada çözebilir, e-posta adresini bıraktıysa sonradan yazılı yanıt gönderebilirsiniz.',
+        },
+      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    placements: {
+      title: 'Restoranda QR kodu nereye koymalı',
+      lead: 'QR kod, misafirin yemeğini bitirdiği ve birkaç dakika beklediği anlara denk gelmeli.',
+      items: [
+        {
+          title: 'Masa kartı veya peçetelik',
+          body:
+            'Masadaki küçük bir kart, kahve ya da tatlı beklenirken okutulur. Her masaya ayrı etiketli QR koyabilirsiniz; etiket, geri bildirimin hangi masadan geldiğini gösterir.',
+        },
+        {
+          title: 'Hesap sümeni',
+          body:
+            'Hesap getirildiğinde sümenin içindeki QR kod, ödeme beklenirken puan vermeyi kolaylaştırır. Yemek deneyimini bütünüyle değerlendirmek için en doğal andır.',
+        },
+        {
+          title: 'Tepsi bırakma noktası ve çıkış',
+          body:
+            'Tezgâhtan servis yapan kafe ve hızlı servis restoranlarında QR kodu tepsi bırakma noktasına ya da çıkış kapısına koyun; misafir yemeğini bitirdikten sonra görür.',
+        },
+        {
+          title: 'Gel-al poşeti',
+          body:
+            'Paket ve gel-al siparişlerinde poşete eklenen küçük kart, misafirin yemeği yedikten sonra puan vermesini sağlar. Bu kartlara “Paket” gibi ayrı bir etiket verin.',
+        },
+      ],
+      tip:
+        'QR oluştururken “Masa numarası” alanına harf, rakam ve kısa çizgi yazabilirsiniz; boşluk ve Türkçe karakter kullanılmaz (ör. A12, Teras-4). Etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür. Masa sayınız fazlaysa salon, teras ve bar için birer QR ile başlamak da yeterlidir.',
     },
-  };
+    uses: {
+      title: 'Restoran panelinde işinize yarayanlar',
+      items: [
+        {
+          icon: Mail,
+          title: 'Şikâyet masadan e-postanıza',
+          body:
+            '1–3 yıldızlık geri bildirim geldiğinde masa etiketi, puan ve yorum anında e-postanıza düşer; panelde de bildirim görünür. Uyarıların gideceği adresi işletme ayarlarından seçersiniz.',
+        },
+        {
+          icon: UtensilsCrossed,
+          title: 'QR Menü aynı panelde',
+          body:
+            'Sürükle-bırak menü oluşturucuyla kategori, fiyat, açıklama ve ürün görseli ekleyin; 7 tema, 12 rozet ve 12 alerjen etiketi hazır. Tükenen ürünü tek dokunuşla işaretlersiniz. Menünün kendi QR kodu ve görüntülenme analitiği vardır; menü sipariş almaz.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Pulse AI yanıt taslağı',
+          body:
+            'Şikâyete 2–4 cümlelik bir yanıt taslağı alırsınız; sıcak, resmi veya özür dileyen tonu seçersiniz. Taslağı düzenler ve onaylarsınız; siz onaylamadan hiçbir yanıt gönderilmez.',
+        },
+        {
+          icon: BarChart3,
+          title: 'Yoğun saatleri görün',
+          body:
+            'Analitik ekranındaki gün ve saat haritası geri bildirimlerin hangi saatlerde yoğunlaştığını gösterir. Ortalama puanı, platformlara göre dağılımı ve puanlardan tahmin edilen NPS’i 7, 30 ya da 90 günlük dönemlerle izlersiniz.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Restoranlarda öne çıkan yorum platformları',
+      lead:
+        'Sektör olarak “Restoran & Kafe”yi seçtiğinizde panel sekiz platformun bağlantısını gösterir. Masada oturan misafir için Google yorum sayfanız genellikle ilk tercihtir; turistlerin uğradığı restoranlarda Tripadvisor da önem taşır.',
+      note:
+        'QR akışında misafir tek bir platforma gönderilir: QR koda sabitlediğiniz platform ya da varsayılan platformunuz. Örneğin salondaki kodları Google’a, terastakileri Tripadvisor’a sabitleyebilirsiniz. Tripadvisor veya Yandex bağlantınızı eklerseniz, özel geri bildirim bırakan misafirin teşekkür ekranında bu platformlarda da paylaşma seçeneği görünür.',
+    },
+    questions: {
+      title: 'Misafirlere ne sormalı',
+      lead:
+        'Yıldız puanı genel memnuniyeti özetler. Yemek, servis ve bekleme süresini ayrı ayrı öğrenmek için hazır “Masa servisi sonrası” şablonuyla bir anket başlatıp aynı şekilde QR kodla paylaşabilirsiniz.',
+      items: [
+        { text: 'Bugün hangi öğün için geldiniz?', type: 'multiple_choice' },
+        { text: 'Servisin hızını nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Fiyatlar aldığınız lezzet ve porsiyonla uyumlu muydu?', type: 'multiple_choice' },
+        { text: 'Menüde görmek istediğiniz bir yemek var mı?', type: 'short_text' },
+        { text: 'Restoranımızı bir arkadaşınıza önerme olasılığınız nedir?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Günlük mutfak açılış kontrol listesi',
+          body: 'Servisten önce mutfak ekibinin temizlik, ekipman ve gıda hazırlığı maddelerini her gün işaretlemesi için.',
+        },
+        {
+          title: 'Haftalık derin temizlik denetimi',
+          body: 'Şube müdürünün haftada bir doldurduğu, sonucu yüzde puan olarak gösteren temizlik denetimi.',
+        },
+        {
+          title: 'Servis personeli senaryo testi',
+          body: 'Garsonların itiraz, alerji sorusu ve yoğun saat gibi durumlarda nasıl davrandığını ölçen kısa test.',
+        },
+        {
+          title: 'F&B yeni eleman temel quiz',
+          body: 'Yeni başlayan servis elemanlarına hijyen ve misafir ilişkisinin temellerini sormak için.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Restoranlar için sık sorulan sorular',
+      items: [
+        {
+          q: 'Masa bazında rapor alabilir miyim?',
+          a: 'Hayır, analitik ekranları restoranın tamamını gösterir. Masa etiketi düşük puan e-postasında ve geri bildirim CSV dosyasında yer alır; dosyayı bir tabloda masaya göre sıralayabilirsiniz.',
+        },
+        {
+          q: 'Yemeksepeti veya Getir yorumlarımı panelde görebilir miyim?',
+          a: 'Hayır. Buaze bu platformlardan yorum çekmez; yalnızca yorum bağlantılarınızı saklar ve misafiri seçtiğiniz platformun yorum sayfasına gönderir. Panelde QR akışından gelen geri bildirimleri ve Google profilinizin özetini (puan, yorum sayısı ve Google’ın gösterdiği en fazla 5 yorum) görürsünüz.',
+        },
+        {
+          q: 'Düşük puan veren misafir Google’da yorum yazabilir mi?',
+          a: 'Evet. Eşiğin altında puan veren misafir önce size özel geri bildirim yazabilir; Google yorum bağlantısı aynı ekranda görünür ve misafir isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
+        },
+        {
+          q: 'Yorum yapan misafire ikram verebilir miyim?',
+          a: 'Yorum karşılığında ikram, indirim veya hediye vermeyin; Google yorum karşılığı teşviki yasaklar ve Buaze böyle bir özellik sunmaz. Anketlerde isteğe bağlı bir teşekkür kuponu gösterebilirsiniz; bu kupon herkese açık yorum yazmaya bağlanmamalıdır.',
+        },
+        {
+          q: 'QR Menü kodu ile geri bildirim QR kodu aynı mı?',
+          a: 'Hayır, iki ayrı QR koddur. Menü QR’ı menünüzü açar, geri bildirim QR’ı puan ekranını açar. İkisini aynı masa kartına yan yana basabilirsiniz.',
+        },
+        {
+          q: 'Birden çok şubemiz var, nasıl yönetiriz?',
+          a: 'Her şubeyi ayrı işletme olarak eklersiniz. İşletmeler tablosunda şubelerin son 30 günlük yorum sayısını, ortalama puanını, bekleyen düşük puanlarını ve bağlantı sağlığını yan yana görürsünüz. Şube müdürlerine yalnızca kendi şubelerine erişim verebilirsiniz.',
+        },
+        {
+          q: 'Turist misafirler formu hangi dilde görür?',
+          a: 'Form, misafirin telefon diline göre Türkçe veya İngilizce açılır; telefonu başka bir dile ayarlı olan misafir formu Türkçe görür. Pulse AI taslakları da Türkçe veya İngilizce hazırlanır.',
+        },
+      ],
+    },
+    ctaTitle: 'Restoranınızda misafir geri bildirimi toplamaya başlayın',
+  },
+  en: {
+    name: 'Restaurants and cafés',
+    meta: {
+      title: 'Collect Google reviews for restaurants with QR',
+      description:
+        'Table QR codes for restaurants and cafés: guests rate their visit, and below your threshold they can write to you first. Every 1–3★ rating e-mails you.',
+    },
+    eyebrow: 'Restaurants and cafés',
+    h1: 'QR codes for guest feedback and Google reviews at restaurants and cafés',
+    lead:
+      'While they wait for the bill, guests scan the QR code on the table and give a rating. At or above your threshold, your Google review page opens; below it, the guest can write to you first, and the public review link is shown on the same screen.',
+    flow: {
+      title: 'How QR feedback works in a restaurant',
+      steps: [
+        {
+          title: 'Put labelled QR codes on your tables',
+          body:
+            'Create as many QR codes as you need in the panel and give each table or area a short label (for example A12, Terrace-4 or Bar). Download the code as a PNG and print it on a table card.',
+        },
+        {
+          title: 'The guest gives a rating',
+          body:
+            'The guest scans the QR code and gives 1–5 stars. At or above the threshold you set (5 stars by default), your Google review page or the platform pinned to that QR code opens. Below it, the guest can first send you private feedback; the public review link is shown on the same screen.',
+        },
+        {
+          title: 'Hear about it before service ends',
+          body:
+            'Every 1–3★ piece of feedback sends you an instant e-mail with the table label. If the guest is still there, you can sort it out at the table; if they left an e-mail address, you can reply in writing later.',
+        },
+      ],
+    },
+    placements: {
+      title: 'Where to put the QR code in a restaurant',
+      lead: 'The QR code should meet guests when they have finished eating and have a few minutes to wait.',
+      items: [
+        {
+          title: 'Table card or napkin holder',
+          body:
+            'A small card on the table gets scanned while guests wait for coffee or dessert. You can put a separately labelled QR code on each table; the label shows which table the feedback came from.',
+        },
+        {
+          title: 'Bill folder',
+          body:
+            'A QR code inside the bill folder makes it easy to rate the visit while waiting to pay. It is the most natural moment to look back on the whole meal.',
+        },
+        {
+          title: 'Tray return and exit',
+          body:
+            'In counter-service cafés and quick-service restaurants, put the QR code at the tray return or by the exit, where guests see it after they have eaten.',
+        },
+        {
+          title: 'Takeaway bag',
+          body:
+            'For takeaway and collection orders, a small card in the bag lets guests rate the food after they have eaten it. Give these cards their own label, such as “Takeaway”.',
+        },
+      ],
+      tip:
+        'When you create a QR code, the “Table number” field takes letters, numbers and hyphens, without spaces or accented letters (for example A12 or Terrace-4). The label appears in the low-rating e-mail and in the feedback CSV file. If you have many tables, one code each for the dining room, terrace and bar is a good start.',
+    },
+    uses: {
+      title: 'Panel features that help a restaurant',
+      items: [
+        {
+          icon: Mail,
+          title: 'Complaints go straight to your inbox',
+          body:
+            'When a 1–3★ piece of feedback arrives, the table label, rating and comment land in your e-mail instantly, and a notification appears in the panel. You choose the alert address in your business settings.',
+        },
+        {
+          icon: UtensilsCrossed,
+          title: 'QR Menu in the same panel',
+          body:
+            'Add categories, prices, descriptions and product photos with the drag-and-drop menu builder; 7 themes, 12 badges and 12 allergen labels are ready to use. Mark an item as sold out with one tap. The menu has its own QR code and view analytics; it doesn’t take orders.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Pulse AI reply drafts',
+          body:
+            'You get a 2–4 sentence reply draft for a complaint and choose a warm, formal or apologetic tone. You edit and approve the draft; no reply is sent without your approval.',
+        },
+        {
+          icon: BarChart3,
+          title: 'See your busy hours',
+          body:
+            'The day-and-hour map on the analytics screen shows when feedback comes in. You follow your average rating, the split across platforms and the NPS estimated from ratings over 7, 30 or 90 days.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Review platforms that matter for restaurants',
+      lead:
+        'When you pick “Restaurant & Café” as your industry, the panel shows links for eight platforms. For guests at the table, your Google review page is usually the first choice; in restaurants that tourists visit, Tripadvisor matters too.',
+      note:
+        'In the QR flow the guest is sent to one platform: the one pinned to the QR code, or your default platform. For example, you can pin the dining-room codes to Google and the terrace codes to Tripadvisor. If you add your Tripadvisor or Yandex link, guests who leave private feedback also see the option to share on those platforms on the thank-you screen.',
+    },
+    questions: {
+      title: 'What to ask your guests',
+      lead:
+        'A star rating sums up overall satisfaction. To learn about the food, service and waiting time separately, start a survey from the ready-made “After table service” template and share it the same way, with a QR code.',
+      items: [
+        { text: 'Which meal did you come for today?', type: 'multiple_choice' },
+        { text: 'How would you rate the speed of service?', type: 'rating' },
+        { text: 'Did the prices match the taste and portion size?', type: 'multiple_choice' },
+        { text: 'Is there a dish you would like to see on the menu?', type: 'short_text' },
+        { text: 'How likely are you to recommend our restaurant to a friend?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Daily kitchen opening checklist',
+          body: 'For the kitchen team to tick off cleaning, equipment and food preparation items every day before service.',
+        },
+        {
+          title: 'Weekly deep-clean inspection',
+          body: 'A cleaning inspection the branch manager fills in once a week, with the result shown as a percentage score.',
+        },
+        {
+          title: 'Service staff scenario test',
+          body: 'A short test of how waiting staff handle complaints, allergy questions and busy periods.',
+        },
+        {
+          title: 'F&B new starter basics quiz',
+          body: 'Asks new service staff about the basics of hygiene and guest relations.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Restaurant FAQ',
+      items: [
+        {
+          q: 'Can I get reports per table?',
+          a: 'No, the analytics screens cover the whole restaurant. The table label is included in the low-rating e-mail and the feedback CSV file, so you can sort the file by table in a spreadsheet.',
+        },
+        {
+          q: 'Can I see my Yemeksepeti or Getir reviews in the panel?',
+          a: 'No. Buaze doesn’t import reviews from these platforms; it only stores your review links and sends the guest to the review page of the platform you choose. In the panel you see the feedback from your QR flow and a summary of your Google profile (rating, review count and up to 5 reviews Google returns).',
+        },
+        {
+          q: 'Can a guest who gives a low rating still post on Google?',
+          a: 'Yes. A guest who rates below your threshold can first send you private feedback; the Google review link is shown on the same screen, and they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.',
+        },
+        {
+          q: 'Can I offer guests something for leaving a review?',
+          a: 'Don’t offer treats, discounts or gifts in exchange for reviews; Google prohibits incentives for reviews, and Buaze has no such feature. Surveys can show an optional thank-you coupon, but it must not be tied to posting a public review.',
+        },
+        {
+          q: 'Is the QR Menu code the same as the feedback QR code?',
+          a: 'No, they are two separate QR codes. The menu QR code opens your menu; the feedback QR code opens the rating screen. You can print both side by side on the same table card.',
+        },
+        {
+          q: 'We have several branches. How do we manage them?',
+          a: 'You add each branch as a separate business. The businesses table shows each branch’s last-30-day review count, average rating, pending low ratings and link health side by side. You can give branch managers access to their own branch only.',
+        },
+        {
+          q: 'Which language do tourists see on the form?',
+          a: 'The form opens in Turkish or English, based on the language of the guest’s phone; guests whose phone is set to another language see it in Turkish. Pulse AI drafts are written in Turkish or English too.',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting guest feedback at your restaurant',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
+  return buildSolutionMetadata({ locale, slug: SLUG, ...CONTENT[locale].meta });
 }
 
-/**
- * 1:1 with .design/site/site-marketing.jsx:SolutionPage (lines 393-481).
- * Light gray hero + table/QR/coffee/plate/star-bubble SVG + 3-stat grid
- * + 4-use-case grid.
- */
-export default async function RestaurantsSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-  const base = `/${locale}`;
-
-  const stats = isTr
-    ? [
-        { k: '10', l: 'Yorum platformu', d: 'Google, Yemeksepeti, Getir, Trendyol GO dahil' },
-        { k: '7', l: 'QR menü teması', d: 'Sürükle-bırak menü oluşturucu' },
-        { k: '14 gün', l: 'Ücretsiz deneme', d: 'Kredi kartı gerekmez' },
-      ]
-    : [
-        { k: '10', l: 'Review platforms', d: 'Incl. Google, Yemeksepeti, Getir, Trendyol GO' },
-        { k: '7', l: 'QR menu themes', d: 'Drag-and-drop menu builder' },
-        { k: '14 days', l: 'Free trial', d: 'No credit card required' },
-      ];
-
-  const useCases = isTr
-    ? [
-        { t: 'Masa QR', d: 'Her masa için özel kod — masa numarasıyla eşleştir.' },
-        { t: 'Fatura QR', d: 'Fiş altına kod bas, ödeme sonrası yorum.' },
-        { t: 'Kapıda veda', d: 'Kapıdaki stand, çıkışta son dokunuş.' },
-        { t: 'Paket siparişte', d: "Pakete sticker'lı kart; evde yorum bırakır." },
-      ]
-    : [
-        { t: 'Table QR', d: 'One code per table — maps to the table number.' },
-        { t: 'Receipt QR', d: 'Print the code at the bottom of the bill.' },
-        { t: 'Door farewell', d: 'A stand by the exit — the last-touch moment.' },
-        { t: 'Inside packaging', d: 'A stickered card in the bag; review from home.' },
-      ];
-
-  // Sector-specific benefits — 4 tiles. Pulse design (graphite + lime),
-  // each tile shows an icon, h3 headline, and a tight body.
-  const benefits = isTr
-    ? [
-        {
-          Icon: MessageSquare,
-          h: 'Masada anlık geri bildirim',
-          d: 'Misafir masadayken QR\'ı taradığında deneyim taze; düşük puanı servisin son saniyesinde yakalarsın, kapıda mutsuz uğurlamak yerine hemen çözüm sun.',
-        },
-        {
-          Icon: Utensils,
-          h: 'Çoklu platform yönlendirme',
-          d: 'Google + Yemeksepeti + Getir + Trendyol GO + isteğe bağlı Tripadvisor / Foursquare aynı akışta. Müşteriye seçtiğin platformlar sunulur, tercih müşteride kalır.',
-        },
-        {
-          Icon: Sparkles,
-          h: 'Pulse AI yanıt taslağı',
-          d: 'Düşük puanlı yorumlara saniyeler içinde kişiselleştirilmiş yanıt taslağı. İşletme sahibi onaylar veya düzenler, otomatik gönderim yok.',
-        },
-        {
-          Icon: BarChart3,
-          h: 'Şube + masa analitiği',
-          d: 'Hangi masa, hangi şube, hangi vardiya en çok yorum çekiyor? QR scan + feedback funnel\'ını birleştir, operasyonel kararı veriyle al.',
-        },
-      ]
-    : [
-        {
-          Icon: MessageSquare,
-          h: 'Live feedback at the table',
-          d: 'When the guest scans the QR while still seated, the experience is fresh — you catch low ratings in the last seconds of service and resolve them in person, not at the door.',
-        },
-        {
-          Icon: Utensils,
-          h: 'Multi-platform routing',
-          d: 'Google + Yemeksepeti + Getir + Trendyol GO + optionally Tripadvisor / Foursquare in one flow. Customers see the platforms you select; the choice stays with the customer.',
-        },
-        {
-          Icon: Sparkles,
-          h: 'Pulse AI reply drafts',
-          d: 'A personalized reply draft for every low-rating review in seconds. The owner approves or edits; nothing is auto-sent.',
-        },
-        {
-          Icon: BarChart3,
-          h: 'Branch + table analytics',
-          d: 'Which table, which branch, which shift attracts the most reviews? Combine the QR scan + feedback funnel and make operational calls from data.',
-        },
-      ];
-
-  // Sector-specific FAQ — 5 questions feeding both the visible accordion
-  // and the FAQPage JSON-LD via buildSolutionSchema's faqs prop. Every
-  // answer reinforces customer agency (CLAUDE.md §19.1.1) and avoids the
-  // four review-gating signals (block / hide / star-branching / incentive).
-  const faqs: FaqItem[] = isTr
-    ? [
-        {
-          q: 'Restoran için Buaze kurulumu ne kadar sürer?',
-          a: 'Genellikle birkaç dakika sürer. Hesabını aç, Google İşletme bağlantını yapıştır (isteğe bağlı: Yemeksepeti / Getir / Trendyol GO), masaya yapıştırılacak QR kartını PDF olarak indir, yazdır. Onboarding sihirbazı (5 adım) tüm bağlantıları sırayla toplar.',
-        },
-        {
-          q: 'Yemeksepeti, Getir ve Trendyol GO yönlendirmesi nasıl çalışır?',
-          a: 'Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; QR akışında müşteriye seçilen platformlar sunulur. Her müşteri istediği platforma yorum yazma hakkını korur. Yıldız bazlı erişim kısıtlaması yok; akış sadece müşteri tercihiyle yönlendirir.',
-        },
-        {
-          q: 'Masa-bazlı QR kullanabilir miyim?',
-          a: 'Evet. Her masa için ayrı QR oluşturabilir, masa numarasını URL parametresine gömebilirsin. Yorum geldiğinde admin paneli "Masa 7 - 23:14" gibi gösterir; hangi vardiya, hangi servis ekibi, hangi masa konfigürasyonu en çok yorum çekiyor — analytics raporunda görürsün.',
-        },
-        {
-          q: 'Düşük puan veren müşteri "kaybolur" mu?',
-          a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platforma yorum yazma hakkını korur; siz sadece sorunu özelden çözme şansı kazanırsınız.',
-        },
-        {
-          q: 'Çoklu şubem var, nasıl yönetilir?',
-          a: 'Her şube için ayrı işletme oluştur veya tek işletme + şube etiketleri (Buaze branch field) kullan. Analitik şube bazlı ayrılır: şubelerin ortalama puanını, yoğun saatleri ve müşteri yorumlarını yan yana karşılaştırabilirsin.',
-        },
-      ]
-    : [
-        {
-          q: 'How long does Buaze setup take for a restaurant?',
-          a: 'Usually a few minutes. Open an account, paste your Google Business link (optionally Yemeksepeti / Getir / Trendyol GO), download the table-QR PDF and print it. The 5-step onboarding wizard collects all links in sequence.',
-        },
-        {
-          q: 'How does Yemeksepeti, Getir, and Trendyol GO routing work?',
-          a: 'You add the public review links of these platforms in the owner panel; the selected platforms are surfaced to customers in the QR flow. Every customer keeps the right to post on any platform of their choice. There is no star-rating gate; the flow only routes by customer preference.',
-        },
-        {
-          q: 'Can I use table-level QRs?',
-          a: 'Yes. You can generate a separate QR per table and embed the table number in the URL parameter. When a review arrives, the admin panel shows it as "Table 7 - 11:14 PM"; which shift, which service team, which table configuration attracts the most reviews — visible in the analytics report.',
-        },
-        {
-          q: 'Will customers giving low ratings simply "disappear"?',
-          a: 'No. Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team. The customer always retains the right to post on a public platform; you simply gain a chance to resolve the issue privately first.',
-        },
-        {
-          q: 'I have multiple branches — how do I manage them?',
-          a: 'Either create a separate business per branch or use a single business + branch tags (Buaze branch field). Analytics splits per branch: compare average ratings, busy hours and customer comments side by side.',
-        },
-      ];
-
-  const relatedSolutions = getRelatedSolutions('restaurants', 4);
-
-  const jsonLd = buildSolutionSchema({
-    locale,
-    slug: 'restaurants',
-    industryLabel: isTr ? 'Restoran & Kafe' : 'Restaurant & Café',
-    serviceName: isTr ? 'Restoran & Kafe İtibar Yönetimi' : 'Restaurant & Café Reputation Management',
-    description: isTr
-      ? 'Masaya QR koyun: misafir puanını verir ve Google yorum bağlantısını görür. İsteyen ek olarak ekibinize özel geri bildirim de gönderebilir; tüm geri bildirimler tek panelde toplanır.'
-      : 'Put a QR on the table: guests rate their visit and see your Google review link. Anyone who wants can also send private feedback to your team, and all feedback lands in one panel.',
-    faqs,
-  });
-
-  const howTo = buildHowToSchema({
-    locale,
-    name: isTr ? 'Restoran ve kafede Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a restaurant or café',
-    description: isTr
-      ? 'Masa, fatura, kapı veya paket noktasına QR koyup yorumları Buaze panelinden yönetmek için adımlar.'
-      : 'Steps to place QR codes at table, receipt, door or package touchpoints and run reviews from the Buaze panel.',
-    url: `https://www.buaze.com/${locale}/solutions/restaurants`,
-    steps: isTr
-      ? [
-          { name: 'İşletmeni tanımla', text: 'Buaze panelinde restoran/kafe adını, kategorisini, adresini ve bildirim e-postasını gir; Google Place ID veya yorum bağlantısını ekle.' },
-          { name: 'QR’ı doğru noktaya yerleştir', text: 'Masa QR’ı (masa numarasıyla), fatura QR’ı, kapıdaki veda standı veya paket içine kart — operasyon akışına uygun olanı seç.' },
-          { name: 'Mutfak ve servis ekibini davet et', text: 'Şube yöneticisi ve servis sorumlularını Buaze ekibine ekle; düşük puanlar için yanıt sorumluluğunu birlikte paylaş.' },
-          { name: 'Pulse AI ile dakikalar içinde yanıtla', text: 'Yeni yorum geldiğinde Pulse AI taslağı üret, gerekirse düzenle, gönder ve raporu kapat — şube/masa bazlı analitiklerden hangi vardiya kazandı oku.' },
-        ]
-      : [
-          { name: 'Identify your business', text: 'In the Buaze panel, enter restaurant/café name, category, address and notification email; add your Google Place ID or review link.' },
-          { name: 'Place the QR at the right touchpoint', text: 'Choose what fits your service: table QR (with table number), receipt QR, a stand at the exit, or a stickered card inside delivery bags.' },
-          { name: 'Invite kitchen and service leads', text: 'Add branch managers and floor leads to your Buaze team so the response load on low ratings is shared, not stuck on the owner.' },
-          { name: 'Reply within minutes via Pulse AI', text: 'When a review arrives, generate a Pulse AI draft, edit if needed, send and close the loop — then read branch/table-level analytics to see which shift won.' },
-        ],
-  });
-  if (howTo) jsonLd.push(howTo);
-
+export default async function RestaurantsSolutionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
   return (
-    <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Hero — light gray bg, 2-column */}
-      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
-          <div>
-            <span className="pulse-eyebrow font-semibold text-[#C6F24E]">
-              {isTr ? 'ÇÖZÜM · RESTORAN & KAFE' : 'SOLUTION · RESTAURANT & CAFÉ'}
-            </span>
-            <h1
-              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            >
-              {isTr ? (
-                <>
-                  Masanın sesi,
-                  <br />
-                  Google&apos;da.
-                </>
-              ) : (
-                <>
-                  Your table&apos;s voice,
-                  <br />
-                  on Google.
-                </>
-              )}
-            </h1>
-            <p className="mt-5 max-w-[520px] text-[15px] leading-[1.55] text-[#525252] sm:text-[18px]">
-              {isTr
-                ? "Masaya QR koyun: misafir puanını verir ve Google yorum bağlantısını görür. İsteyen ek olarak ekibinize özel geri bildirim de gönderebilir; tüm geri bildirimler tek panelde toplanır."
-                : 'Put a QR on the table: guests rate their visit and see your Google review link. Anyone who wants can also send private feedback to your team, and all feedback lands in one panel.'}
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-              >
-                {isTr ? 'Ücretsiz dene' : 'Try for free'}
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href={`${base}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
-              >
-                {isTr ? 'Demo iste' : 'Request demo'}
-              </Link>
-            </div>
-          </div>
-
-          {/* Restaurant table scene SVG (1:1 design) */}
-          <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 320 280" className="h-auto w-full max-w-[420px]" aria-hidden>
-              <ellipse cx="160" cy="180" rx="140" ry="30" fill="#0A0A0A" />
-              <ellipse cx="160" cy="175" rx="140" ry="30" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2" />
-              <path d="M110 190 L100 260 M210 190 L220 260" stroke="#0A0A0A" strokeWidth="3" />
-              <rect x="140" y="80" width="60" height="95" rx="4" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2" />
-              <rect x="148" y="90" width="44" height="44" fill="#0A0A0A" rx="3" />
-              {[
-                [0, 0], [1, 0], [3, 0], [0, 1], [2, 1], [3, 1],
-                [0, 3], [2, 3], [1, 2], [3, 2],
-              ].map(([x, y], i) => (
-                <rect key={i} x={150 + x * 9} y={92 + y * 9} width="7" height="7" fill="#C6F24E" />
-              ))}
-              <text x="170" y="152" textAnchor="middle" fontFamily="Space Grotesk" fontSize="9" fontWeight="500" fill="#0A0A0A">
-                {isTr ? 'TARA' : 'SCAN'}
-              </text>
-              <text x="170" y="164" textAnchor="middle" fontFamily="Space Grotesk" fontSize="7" fill="#737373">
-                buaze.com
-              </text>
-              <ellipse cx="70" cy="165" rx="20" ry="6" fill="#0A0A0A" />
-              <path d="M55 160 L55 145 Q55 140 60 140 L80 140 Q85 140 85 145 L85 160 Z" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2" />
-              <path d="M85 146 Q92 146 92 152 Q92 158 85 158" fill="none" stroke="#0A0A0A" strokeWidth="2" />
-              <path d="M62 132 Q65 125 68 132 M72 132 Q75 125 78 132" stroke="#A3A3A3" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-              <ellipse cx="250" cy="165" rx="30" ry="8" fill="#EDEDED" />
-              <ellipse cx="250" cy="163" rx="30" ry="8" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2" />
-              <path
-                d="M220 15 Q220 5 230 5 L290 5 Q300 5 300 15 L300 45 Q300 55 290 55 L260 55 L250 65 L250 55 L230 55 Q220 55 220 45 Z"
-                fill="#C6F24E"
-                stroke="#0A0A0A"
-                strokeWidth="2"
-              />
-              <text x="260" y="34" textAnchor="middle" fontFamily="Inter" fontSize="13" fontWeight="700" fill="#0A0A0A">
-                ★★★★★
-              </text>
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      {/* 3-stat grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {stats.map((s) => (
-              <div key={s.l} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-7">
-                <div
-                  className="text-[48px] sm:text-[56px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {s.k}
-                </div>
-                <div className="mt-2.5 text-[15px] font-semibold text-[#0A0A0A]">{s.l}</div>
-                <div className="mt-1 text-[12px] text-[#737373]">{s.d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Use cases — 4-col */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px]">
-          <h2
-            className="text-[26px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]"
-          >
-            {isTr
-              ? 'Restoranın her noktasında, bir nabız.'
-              : 'A pulse at every point in your restaurant.'}
-          </h2>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {useCases.map((u) => (
-              <div
-                key={u.t}
-                className="flex flex-col gap-2.5 rounded-[12px] border border-[#EDEDED] p-[22px]"
-              >
-                <svg viewBox="0 0 32 32" className="h-8 w-8" aria-hidden>
-                  <path
-                    d="M4 6 Q4 2 8 2 L24 2 Q28 2 28 6 L28 18 Q28 22 24 22 L12 22 L6 28 L6 22 Q4 22 4 18 Z"
-                    fill="#C6F24E"
-                    stroke="#0A0A0A"
-                    strokeWidth="1.5"
-                  />
-                  <circle cx="16" cy="12" r="2" fill="#0A0A0A" />
-                </svg>
-                <h3
-                  className="text-[18px] font-semibold text-[#0A0A0A]"
-                >
-                  {u.t}
-                </h3>
-                <p className="text-[13px] leading-[1.55] text-[#525252]">{u.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits — 4-tile grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">
-            {isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}
-          </span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
-            {isTr
-              ? 'Restoran operasyonuna özel dört kazanç'
-              : 'Four wins built for restaurant operations'}
-          </h2>
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => (
-              <div key={i} className="bz-card p-6 sm:p-7">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]">
-                  <b.Icon size={16} />
-                </div>
-                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">
-                  {b.h}
-                </h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">
-            {isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
-          </span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Restoran kurulumu için merak edilenler' : 'Common questions for restaurant setup'}
-          </h2>
-          <div className="mt-8">
-            <FaqAccordion faqs={faqs} defaultOpen={[0]} />
-          </div>
-        </div>
-      </section>
-
-      {/* Resources / Related Solutions */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">
-            {isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}
-          </span>
-          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Daha fazlasını keşfet' : 'Explore more'}
-          </h2>
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <Link
-              href={`${base}/pricing`}
-              className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
-            >
-              <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
-                {isTr ? 'Fiyatlandırma' : 'Pricing'}
-              </span>
-              <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-            </Link>
-            <Link
-              href={`${base}/roi`}
-              className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
-            >
-              <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
-                {isTr ? 'ROI Hesaplayıcı' : 'ROI Calculator'}
-              </span>
-              <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-            </Link>
-            <Link
-              href={`${base}/solutions/qr-generator`}
-              className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
-            >
-              <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
-                {isTr ? 'Ücretsiz QR Oluştur' : 'Free QR Generator'}
-              </span>
-              <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-            </Link>
-            <Link
-              href={`${base}/google-compliance`}
-              className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
-            >
-              <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
-                {isTr ? 'Google Uyumluluğu' : 'Google Compliance'}
-              </span>
-              <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-            </Link>
-          </div>
-          {relatedSolutions.length > 0 && (
-            <>
-              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">
-                {isTr ? 'Diğer sektörler' : 'Other sectors'}
-              </h3>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {relatedSolutions.map((sol) => (
-                  <Link
-                    key={sol.slug}
-                    href={`${base}/solutions/${sol.slug}`}
-                    className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
-                  >
-                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                      <sol.Icon size={16} />
-                    </span>
-                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
-                      {isTr ? sol.tr : sol.en}
-                    </span>
-                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="mx-auto max-w-[900px] text-center">
-          <h2
-            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-          >
-            {isTr ? 'Her masa, bir fırsat.' : 'Every table, an opportunity.'}
-          </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
-            {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
-              : '14-day free · No credit card'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Ücretsiz başla' : 'Start free'}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <SolutionPageLayout
+      locale={locale}
+      slug={SLUG}
+      sector="food"
+      content={CONTENT[locale]}
+      illustration={<IllusRestaurant />}
+    />
   );
 }

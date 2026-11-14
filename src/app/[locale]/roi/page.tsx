@@ -1,18 +1,32 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import RoiCalculator from '@/components/marketing/RoiCalculator';
-import { getTranslations } from '@/lib/translations';
+import RoiCalculator, { type RoiPlanOption } from '@/components/marketing/RoiCalculator';
+import PageHero from '@/components/marketing/commercial/PageHero';
+import SectionHeader from '@/components/marketing/commercial/SectionHeader';
+import FaqList, { type FaqEntry } from '@/components/marketing/commercial/FaqList';
+import CtaBand from '@/components/marketing/commercial/CtaBand';
+import { CONTAINER, CONTAINER_NARROW, SECTION_Y } from '@/components/marketing/commercial/styles';
+import { getActivePlans } from '@/lib/subscription-plans';
 import type { Locale } from '@/lib/translations';
-import { notFound } from 'next/navigation';
 
-const VALID_LOCALES = ['tr', 'en'] as const;
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`; plan saves
+// revalidate the pricing pages, and this page picks the prices up hourly.
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+const META = {
+  tr: {
+    title: 'ROI hesaplayıcı: yanıt süresi ve plan maliyeti',
+    description:
+      'Kendi rakamlarınızla Pulse AI taslaklarının yanıt yazmaya harcadığınız süreyi ne kadar kısaltabileceğini ve bunu plan fiyatıyla karşılaştırın. Kayıt gerekmez.',
+  },
+  en: {
+    title: 'ROI calculator: reply time saved and plan cost',
+    description:
+      'Use your own numbers to estimate how much reply-writing time Pulse AI drafts could save and compare it with the plan price. No sign-up needed.',
+  },
+} as const;
 
 export async function generateMetadata({
   params,
@@ -20,438 +34,250 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isTr = locale === 'tr';
-  const title = isTr
-    ? 'ROI Hesaplayıcı — QR yorum akışının 12 aylık getirisi'
-    : 'ROI Calculator — 12-month return of a QR review flow';
-  const description = isTr
-    ? 'QR yorum akışının 12 aylık getirisini slider\'larla hesaplayın: Pulse AI yanıt taslağı, müşteri tercihli platform seçimi, haftalık rapor. KVKK + Google uyumlu.'
-    : 'Calculate the 12-month net gain of QR review routing with sliders: Pulse AI reply drafts, customer-chosen platform and weekly reports. KVKK + Google compliant.';
-  const url = `https://www.buaze.com/${locale}/roi`;
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const { title, description } = META[lang];
   return {
-    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
-    keywords: isTr
-      ? [
-          'ROI hesaplayıcı',
-          'restoran yorum yönetimi',
-          'müşteri geri bildirim yönetimi',
-          'QR geri bildirim',
-          'müşteri itibar yönetimi',
-          'Buaze',
-          'çoklu platform yorum',
-          'Yemeksepeti Getir Trendyol yorum',
-        ]
-      : [
-          'ROI calculator',
-          'restaurant review management',
-          'customer feedback management',
-          'QR feedback',
-          'reputation management',
-          'Buaze',
-          'multi-platform reviews',
-        ],
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/roi`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/roi',
-        en: 'https://www.buaze.com/en/roi',
-        'x-default': 'https://www.buaze.com/tr/roi',
-      },
+      canonical: `/${lang}/roi`,
+      languages: { tr: '/tr/roi', en: '/en/roi', 'x-default': '/tr/roi' },
     },
     openGraph: {
-      title,
-      description,
-      url,
       type: 'website',
       siteName: 'Buaze',
-      locale: isTr ? 'tr_TR' : 'en_US',
-      images: [
-        {
-          // Social platforms don't render SVG previews — use the PNG card.
-          url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png',
-          width: 1200,
-          height: 630,
-          alt: isTr ? 'Buaze ROI Hesaplayıcı' : 'Buaze ROI Calculator',
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/roi`,
       title,
       description,
-      images: [isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: { index: true, follow: true, 'max-snippet': -1, 'max-image-preview': 'large' },
+      images: [{ url: `/images/open-graph-${lang}.png`, width: 1200, height: 630, alt: title }],
     },
   };
 }
+
+const COPY = {
+  tr: {
+    eyebrow: 'ROI hesaplayıcı',
+    title: 'ROI hesaplayıcı: Buaze size ne kadar zaman kazandırabilir?',
+    lead:
+      'Kendi rakamlarınızı girin; ayda kaç puan toplayabileceğinizi, yanıtlara ne kadar zaman ayıracağınızı ve bunun plan fiyatıyla karşılaştırmasını görün. Sonuçlar tahminidir, kayıt gerekmez.',
+    methodEyebrow: 'Yöntem',
+    methodTitle: 'Hesap nasıl yapılır',
+    methodLead: 'Gizli bir çarpan yok. Her sonuç, girdiğiniz değerlerden şu adımlarla çıkar.',
+    method: [
+      { title: 'Tahmini puan', body: 'Aylık müşteri sayınız × QR kodu okutup puan veren müşteri oranı.' },
+      { title: 'Yanıt sayısı', body: 'Tahmini puan × yanıt yazdığınız geri bildirim oranı.' },
+      {
+        title: 'Yanıt süresi',
+        body: 'Yanıt sayısı × bir yanıtın süresi; elle yazma ve Pulse AI taslağı için ayrı ayrı hesaplanır.',
+      },
+      {
+        title: 'Zaman tasarrufunun değeri',
+        body: 'Kazanılan saat × bir çalışma saatinin maliyeti. Bu tutardan plan fiyatını çıkarınca aylık farkı bulursunuz.',
+      },
+    ],
+    excludedTitle: 'Hesaba katmadıklarımız',
+    excludedBody:
+      'Daha fazla herkese açık yorumun, daha iyi bir puanın ya da geri kazanılan müşterilerin gelire etkisini hesaplamıyoruz. Bu etkiler işletmeden işletmeye çok değişir ve önceden bilinemez.',
+    faqEyebrow: 'Sık sorulan sorular',
+    faqTitle: 'Hesaplayıcı hakkında',
+    faqs: [
+      {
+        q: 'Varsayılan oranlar nereden geliyor?',
+        a: 'Hiçbir araştırmaya ya da Buaze müşteri verisine dayanmazlar; hesaplayıcı boş açılmasın diye konmuş başlangıç değerleridir. Kendi işletmenizin rakamlarını girdiğinizde sonuç size özel olur.',
+      },
+      {
+        q: 'Pulse AI yanıt süresini nasıl kısaltır?',
+        a: 'Pulse AI her geri bildirim için sıcak, resmi ya da özür dileyen tonda 2–4 cümlelik bir taslak hazırlar. Taslağı okuyup düzenler ve onaylarsınız; onayınız olmadan hiçbir yanıt gönderilmez.',
+      },
+      {
+        q: 'Sonuç garanti mi?',
+        a: 'Hayır. Sonuçlar girdiğiniz değerlere dayanan tahminlerdir. Gerçek tasarruf, aldığınız geri bildirim sayısına ve ekibinizin yanıt alışkanlığına göre değişir.',
+      },
+      {
+        q: 'Fiyatlar neden USD?',
+        a: 'Buaze planları tüm dillerde USD ile faturalandırılır. Hesaplayıcı, fiyatlandırma sayfasındaki güncel plan fiyatlarını kullanır.',
+      },
+      {
+        q: 'Raporu e-postayla alabilir miyim?',
+        a: 'Evet. Formu doldurursanız bu hesabın özeti ve PDF’i birkaç dakika içinde e-postanıza gelir. Rapor için hesap açmanız gerekmez.',
+      },
+    ],
+    cta: {
+      title: '14 gün ücretsiz deneyin, kendi rakamlarınızı görün',
+      facts: ['Kredi kartı gerekmez', 'Pulse AI taslakları dahil', 'İstediğiniz zaman iptal'],
+      primary: 'Ücretsiz deneyin',
+      secondary: 'Planları görün',
+    },
+    breadcrumbHome: 'Ana sayfa',
+    breadcrumbSelf: 'ROI hesaplayıcı',
+  },
+  en: {
+    eyebrow: 'ROI calculator',
+    title: 'ROI calculator: how much time could Buaze save you?',
+    lead:
+      'Enter your own numbers to see how many ratings you could collect each month, how much time replies would take and how that compares with the plan price. Results are estimates; no sign-up needed.',
+    methodEyebrow: 'Method',
+    methodTitle: 'How the calculation works',
+    methodLead: 'There is no hidden multiplier. Every result comes from the values you enter, in these steps.',
+    method: [
+      { title: 'Estimated ratings', body: 'Your customers per month × the share who scan the QR code and leave a rating.' },
+      { title: 'Number of replies', body: 'Estimated ratings × the share of feedback you reply to.' },
+      {
+        title: 'Reply time',
+        body: 'Number of replies × the time one reply takes, calculated separately for writing by hand and for Pulse AI drafts.',
+      },
+      {
+        title: 'Value of the time saved',
+        body: 'Hours saved × the cost of one working hour. Subtract the plan price from it to get the monthly difference.',
+      },
+    ],
+    excludedTitle: 'What we leave out',
+    excludedBody:
+      'We do not calculate any revenue effect of more public reviews, a better rating or customers you win back. Those effects vary widely between businesses and cannot be known in advance.',
+    faqEyebrow: 'Frequently asked questions',
+    faqTitle: 'About the calculator',
+    faqs: [
+      {
+        q: 'Where do the default rates come from?',
+        a: 'They are not based on research or on Buaze customer data; they are starting values so the calculator does not open empty. When you enter your own numbers, the result is specific to you.',
+      },
+      {
+        q: 'How does Pulse AI shorten reply time?',
+        a: 'Pulse AI prepares a 2–4 sentence draft for each piece of feedback in a warm, formal or apologetic tone. You read, edit and approve it; no reply is sent without your approval.',
+      },
+      {
+        q: 'Is the result guaranteed?',
+        a: 'No. The results are estimates based on the values you enter. The real saving depends on how much feedback you receive and how your team handles replies.',
+      },
+      {
+        q: 'Why are prices in USD?',
+        a: 'Buaze plans are billed in USD in every language. The calculator uses the current plan prices from the pricing page.',
+      },
+      {
+        q: 'Can I get the report by e-mail?',
+        a: 'Yes. If you fill in the form, a summary of this calculation and a PDF reach your inbox within a few minutes. You do not need an account for the report.',
+      },
+    ],
+    cta: {
+      title: 'Try it free for 14 days and see your own numbers',
+      facts: ['No credit card required', 'Pulse AI drafts included', 'Cancel anytime'],
+      primary: 'Start free trial',
+      secondary: 'See plans',
+    },
+    breadcrumbHome: 'Home',
+    breadcrumbSelf: 'ROI calculator',
+  },
+} as const;
 
 export default async function RoiPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
-  const { locale } = await params;
-  if (!VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
-    notFound();
-  }
-  const t = getTranslations(locale);
+  const { locale: rawLocale } = await params;
+  const locale: 'tr' | 'en' = rawLocale === 'en' ? 'en' : 'tr';
   const base = `/${locale}`;
-  const isTr = locale === 'tr';
-  const url = `https://www.buaze.com/${locale}/roi`;
+  const copy = COPY[locale];
+  const pageUrl = `${SITE_URL}/${locale}/roi`;
+  const faqs: FaqEntry[] = [...copy.faqs];
 
-  // SSS — hem görünür accordion'a hem FAQPage JSON-LD'ye beslenir.
-  // AI ajanları (ChatGPT, Perplexity, Gemini) JSON-LD FAQPage şemasını
-  // doğrudan tüketir; aynı zamanda Google rich snippet'leri için kritik.
-  const faq = isTr
-    ? [
-        {
-          q: 'Buaze ROI hesaplayıcısı sayıları nereden alıyor?',
-          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve Buaze müşteri kohortundan gözlemlenen ortalamalara kalibre edilmiştir. Üç temel sürücü kullanılır: şahsi geri bildirim oranı (düşük puan veren müşterilerin ~%85\'i ekibe özel iletişimi tercih eder), çoklu platform dağılım ağırlıkları (Google %30 / Yemeksepeti %18 / Getir %12 / Trendyol GO %8 + opsiyonel Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb) ve Pulse AI zaman tasarrufu (yanıt başına ~4 dakika).',
-        },
-        {
-          q: 'Müşteri akışı tam olarak nasıl çalışır?',
-          a: 'Buaze QR akışında her müşteri herkese açık platformlara (Google, Yemeksepeti, Getir, Trendyol GO ve isteğe bağlı Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb) yorum yapma hakkını korur. Her müşteriye işletmenin seçtiği herkese açık yorum bağlantısı gösterilir; düşük puan veren müşteri dilerse aynı ekranda ekibe özel geri bildirim de bırakabilir. Buaze müşteri kohortunda düşük puan veren müşterilerin ~%85\'i bu özel kanalı tercih eder; işletme sahibi müşteriyle doğrudan iletişim kurar ve hızlı bir yanıtla sorunu çözme şansı bulur. Bu pattern Google\'ın yorum politikasıyla uyumludur — Buaze yorumları engellemez, gizlemez veya manipüle etmez; seçim her zaman müşterinindir.',
-        },
-        {
-          q: 'Hesap bana özel mi yoksa genel ortalama mı?',
-          a: 'Slider\'lar kendi rakamlarınla doldurulur (sektör, aylık müşteri, ortalama sepet, mevcut Google puanı, aylık 1-3★ yorum, aktif platformlar, plan). Sektör çarpanları, plan başına QR tarama oranları ve şahsi geri bildirim tercih oranı sabit kalır; geri kalan tüm hesap kullanıcının girdiği değerlerle dinamik olarak çıkar.',
-        },
-        {
-          q: 'Hesabı kaydetmek zorunda mıyım?',
-          a: 'Hayır. Slider\'ları sürüklemek için kayıt gerekmez. İstersen sayfanın altındaki opsiyonel formdan e-posta + işletme adı bırakarak detaylı 12 aylık projeksiyon PDF\'i ve 1-1 kurulum daveti talep edebilirsin; ekibimiz hazırlayıp en geç 24 saat içinde mailbox\'ına gönderir, ortalama yanıt süresi 2 saattir.',
-        },
-        {
-          q: 'Pulse AI zaman tasarrufu nasıl hesaplanıyor?',
-          a: 'Manuel yanıt yazmak ortalama 5-7 dakika sürerken Pulse AI taslak + düzeltme akışı 1-2 dakikaya iner; yanıt başına ~4 dakika tasarruf. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülünü kullanır ve sonucu saat olarak gösterir.',
-        },
-      ]
-    : [
-        {
-          q: 'Where do the numbers in the Buaze ROI calculator come from?',
-          a: 'The model is calibrated on BrightLocal 2024 local search data and averages observed across the Buaze customer cohort. Three drivers anchor the math: private feedback preference rate (~85% of customers giving low ratings choose to share privately with the team first), multi-platform routing weights (Google 30% / Yemeksepeti 18% / Getir 12% / Trendyol GO 8% + optional Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb), and Pulse AI time savings (~4 min per reply).',
-        },
-        {
-          q: 'How does the customer flow actually work?',
-          a: 'In the Buaze QR flow, every customer keeps the right to post a review on any public platform (Google, Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb). Every customer is shown the public review link for the platforms the business has selected; customers giving a low rating can also choose to send private feedback to the team on the same screen. Across the Buaze customer cohort, ~85% of customers giving low ratings prefer this private channel; the owner can reach out directly and resolve the issue with a quick reply. This pattern is compliant with Google\'s review policy — Buaze does not block, hide, or manipulate reviews; the choice always stays with the customer.',
-        },
-        {
-          q: 'Is the calculation specific to my business or a generic average?',
-          a: 'You fill the sliders with your own numbers: sector, monthly customers, average ticket, current Google rating, monthly 1-3 star reviews, active platforms, plan. Sector multipliers, per-plan QR scan rates and the private-feedback preference rate stay constant; everything else recomputes dynamically from your inputs.',
-        },
-        {
-          q: 'Do I need to sign up to see the result?',
-          a: 'No. Dragging sliders requires no signup. Optionally, the form at the bottom of the page accepts email + business name in exchange for a detailed 12-month PDF projection and a 1-1 setup invite; our team prepares it and emails you within 24 hours at the latest — average response time is 2 hours.',
-        },
-        {
-          q: 'How is the Pulse AI time saving calculated?',
-          a: 'Writing a manual reply averages 5-7 minutes; Pulse AI drafting + edit loop drops it to 1-2 minutes — about 4 minutes saved per reply. The calculator multiplies projected monthly reviews × 4 minutes and reports the result in hours.',
-        },
-      ];
+  // Real plan prices from the DB (USD). If they cannot be loaded, the
+  // calculator asks for the monthly cost instead — it still works.
+  const plans: RoiPlanOption[] = await getActivePlans(locale)
+    .then((rows) =>
+      rows.map((p) => ({
+        id: p.id,
+        name: p.name,
+        priceMonthly:
+          p.discount.active && p.discount.discountedMonthly < p.priceMonthly
+            ? p.discount.discountedMonthly
+            : p.priceMonthly,
+      })),
+    )
+    .catch((err: unknown) => {
+      console.error('[roi] plans unavailable', err instanceof Error ? err.message : err);
+      return [];
+    });
 
-  // JSON-LD — three schemas: WebApplication (calculator surface),
-  // BreadcrumbList (nav context), FAQPage (rich snippet + AI agent feed).
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': 'WebApplication',
-        '@id': `${url}#calculator`,
-        name: isTr ? 'Buaze ROI Hesaplayıcı' : 'Buaze ROI Calculator',
-        url,
-        description: isTr
-          ? 'Buaze QR yorum akışının 12 ayda işletmene ne kadar net kazanç getireceğini hesaplar. Şahsi geri bildirim akışı, çoklu platform yönlendirme ve Pulse AI zaman tasarrufu bağımsız parametrelerle modellenir.'
-          : 'Calculates the 12-month net gain of the Buaze QR review flow for your business. Models private feedback preference, multi-platform routing and Pulse AI time savings as independent parameters.',
-        applicationCategory: 'BusinessApplication',
-        operatingSystem: 'Web',
-        inLanguage: isTr ? 'tr-TR' : 'en-US',
-        isAccessibleForFree: true,
-        offers: {
-          '@type': 'Offer',
-          price: '0',
-          priceCurrency: isTr ? 'TRY' : 'USD',
-        },
-        publisher: {
-          '@type': 'Organization',
-          name: 'Buaze',
-          url: 'https://www.buaze.com',
-          logo: 'https://www.buaze.com/favicon.svg',
-        },
+        '@type': 'FAQPage',
+        '@id': `${pageUrl}#faq`,
+        inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+        mainEntity: faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.q,
+          acceptedAnswer: { '@type': 'Answer', text: faq.a },
+        })),
       },
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          {
-            '@type': 'ListItem',
-            position: 1,
-            name: isTr ? 'Ana Sayfa' : 'Home',
-            item: `https://www.buaze.com/${locale}`,
-          },
-          {
-            '@type': 'ListItem',
-            position: 2,
-            name: isTr ? 'ROI Hesaplayıcı' : 'ROI Calculator',
-            item: url,
-          },
+          { '@type': 'ListItem', position: 1, name: copy.breadcrumbHome, item: `${SITE_URL}/${locale}` },
+          { '@type': 'ListItem', position: 2, name: copy.breadcrumbSelf, item: pageUrl },
         ],
-      },
-      {
-        '@type': 'FAQPage',
-        mainEntity: faq.map((item) => ({
-          '@type': 'Question',
-          name: item.q,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: item.a,
-          },
-        })),
       },
     ],
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
+    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 lg:pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
       <main id="main-content">
+        <PageHero align="center" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
 
-      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-8">
-        <div className="max-w-[1100px] mx-auto text-center">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'ROI hesaplayıcı' : 'ROI calculator'}
-          </span>
-          <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em]">
-            {isTr ? (
-              <>
-                Her{' '}
-                <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
-                  ₺1
-                </span>
-                , 12 ay sonra ne kadar?
-              </>
-            ) : (
-              <>
-                Every{' '}
-                <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
-                  $1
-                </span>{' '}
-                — how much in 12 months?
-              </>
-            )}
-          </h1>
-          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[640px] mx-auto leading-[1.6]">
-            {isTr
-              ? 'Düşük puan veren müşterilerin ekibinle özel paylaşımı tercih oranını, hangi platforma kaç yorum yönlendirildiğini ve Pulse AI\'ın sana ne kadar zaman kazandırdığını gör — sürükle, hesap çıkar. Kaydolmadan.'
-              : 'See how often customers giving low ratings choose to share privately with your team, how reviews distribute across platforms and how much time Pulse AI saves — drag, see. No signup.'}
-          </p>
-        </div>
-      </section>
-
-      {/* Trust strip — calculator hemen üstü. Uydurma logo / fake aciliyet
-          yok; sadece CLAUDE.md §11'de geçen kohort metriği + kalibrasyon
-          kaynağı + tek hat halinde 4 stat. */}
-      <section className="px-5 sm:px-10 pb-6">
-        <div className="max-w-[1100px] mx-auto">
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-stretch sm:justify-center gap-x-4 sm:gap-x-12 gap-y-3 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 sm:px-5 py-4">
-            {(isTr
-              ? [
-                                    { v: '+0,4★', l: 'Ortalama yıldız lift / 90 gün' },
-                  { v: '%85', l: 'Şahsi paylaşım tercih oranı' },
-                  { v: 'BrightLocal 2024', l: 'Kalibrasyon kaynağı' },
-                ]
-              : [
-                                    { v: '+0.4★', l: 'Avg. star lift / 90 days' },
-                  { v: '85%', l: 'Choose private feedback' },
-                  { v: 'BrightLocal 2024', l: 'Calibration source' },
-                ]
-            ).map((m, i) => (
-              <div key={i} className="flex items-center gap-2.5 min-w-0">
-                <span
-                  aria-hidden
-                  className="h-1.5 w-1.5 rounded-full bg-[#A8D62E] shrink-0"
-                />
-                <div className="flex flex-col leading-tight min-w-0">
-                  <span className="bz-mono text-[13px] sm:text-[14px] font-semibold text-[#0A0A0A] tabular-nums truncate">
-                    {m.v}
-                  </span>
-                  <span className="text-[11px] text-[#737373] truncate">{m.l}</span>
-                </div>
-              </div>
-            ))}
+        <section className="pb-[60px] sm:pb-24">
+          <div className={CONTAINER}>
+            <RoiCalculator locale={locale} plans={plans} />
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
-        <div className="max-w-[1100px] mx-auto">
-          <RoiCalculator locale={locale} />
-        </div>
-      </section>
-
-      {/* "Hesap nasıl çalışır?" — AI ajan + SEO için crawlable prose. Slider
-          tabanlı UI'ı LLM'ler render edemediği için üç sürücüyü düz metin
-          olarak açıklıyoruz. JSON-LD WebApplication şeması üst tarafta. */}
-      <section
-        id="how-it-works"
-        className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-20"
-      >
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'HESAP NASIL ÇALIŞIR' : 'HOW IT WORKS'}
-          </span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A] max-w-[720px]">
-            {isTr
-              ? 'Üç sürücü, somut Buaze metrikleriyle modellenir.'
-              : 'Three drivers, modeled with concrete Buaze metrics.'}
-          </h2>
-          <p className="mt-4 text-[15px] text-[#525252] max-w-[720px] leading-[1.6]">
-            {isTr
-              ? 'ROI hesaplayıcısı tek bir "büyü çarpan"a güvenmez. İşletmenin gerçek operasyonel rakamlarını alır, Buaze\'nin üç ölçülebilir faydasıyla çarpar ve 12 aylık net kazancı ortaya çıkarır. Aşağıdaki üç sürücü, Buaze müşteri kohortundan gözlemlenen ortalamalar üzerinde kalibre edilmiştir.'
-              : 'The ROI calculator does not rely on one black-box multiplier. It takes your actual operational numbers, multiplies them by Buaze\'s three measurable benefits and surfaces the 12-month net gain. The three drivers below are calibrated on averages observed across the Buaze customer cohort.'}
-          </p>
-
-          <ol className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {(isTr
-              ? [
-                  {
-                    n: '01',
-                    h: 'Şahsi geri bildirim akışı',
-                    body: 'Buaze QR akışında her müşteri herkese açık platformlara yorum yapma hakkını korur. Düşük puan veren müşteriler dilerse ekiple özel geri bildirim de paylaşabilir; Buaze müşteri kohortunda ~%85\'i bu kanalı tercih eder ve doğrudan işletme sahibinin admin paneline ulaşır. Herkese açık yorum bağlantısı aynı ekranda kalır; hızlı özel yanıt sorunu çözmeye yardım eder ve bu akış Google ortalamasına projeksiyonda +0,012 ★ marjinal etki bırakır (toplam 0,6 ★ cap içinde).',
-                  },
-                  {
-                    n: '02',
-                    h: 'Çoklu platform bağlantısı',
-                    body: 'Herkese açık yorumlar sadece Google\'da toplanmaz; Yemeksepeti, Getir, Trendyol GO ve istersen Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb\'ye de dağılır. Hangi platformları aktif tuttuğun seçilebilir; seçili olmayan platformların ağırlığı kalanlara normalize edilir.',
-                  },
-                  {
-                    n: '03',
-                    h: 'Pulse AI zaman tasarrufu',
-                    body: 'Manuel yanıt yazmak ortalama 5-7 dakika sürer; Pulse AI taslak + düzeltme akışı bunu 1-2 dakikaya indirir. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülüyle saat tasarrufunu çıkarır.',
-                  },
-                ]
-              : [
-                  {
-                    n: '01',
-                    h: 'Private feedback flow',
-                    body: 'In the Buaze QR flow, every customer keeps the right to post on any public platform. Customers giving low ratings can also choose to share private feedback with the team — across the Buaze customer cohort about 85% prefer this channel and reach the owner\'s admin panel directly. The public review link stays on the same screen; a quick private reply helps resolve the issue, and this option contributes a projected +0.012 ★ marginal lift to the Google average (capped at 0.6 ★ total).',
-                  },
-                  {
-                    n: '02',
-                    h: 'Multi-platform links',
-                    body: 'Public reviews are not limited to Google; they spread across Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb. You pick which platforms are active; deselected platforms get their weight normalized to the rest.',
-                  },
-                  {
-                    n: '03',
-                    h: 'Pulse AI time savings',
-                    body: 'Manual replies average 5-7 minutes; Pulse AI draft + edit drops it to 1-2 minutes. The calculator multiplies projected monthly reviews × 4 minutes saved and reports hours per month.',
-                  },
-                ]
-            ).map((step) => (
-              <li key={step.n} className="bz-card p-5 sm:p-6">
-                <span className="bz-mono text-[11px] tracking-[0.18em] text-[#A8D62E]">
-                  {step.n}
-                </span>
-                <h3 className="bz-h-tight mt-2 text-[18px] sm:text-[20px] font-semibold tracking-[-0.02em] text-[#0A0A0A]">
-                  {step.h}
-                </h3>
-                <p className="mt-2 text-[13.5px] sm:text-[14px] text-[#525252] leading-[1.6]">
-                  {step.body}
-                </p>
-              </li>
-            ))}
-          </ol>
-
-          <p className="mt-6 text-[12px] text-[#737373] leading-[1.55] max-w-[720px]">
-            {isTr
-              ? 'Veri kaynağı: BrightLocal 2024 yerel arama raporu (yıldız delta vs. local-pack CTR korelasyonu) + Buaze müşteri kohortu gözlemleri. Sektör çarpanları restoran 1.0× / kafe 0.85× / otel 0.65× / klinik 0.55× / diğer 0.75×.'
-              : 'Sources: BrightLocal 2024 local search report (star delta vs. local-pack CTR correlation) + observations across the Buaze customer cohort. Sector multipliers: restaurant 1.0× / cafe 0.85× / hotel 0.65× / clinic 0.55× / other 0.75×.'}
-          </p>
-        </div>
-      </section>
-
-      {/* SSS — JSON-LD FAQPage şemasıyla 1:1 eşleşir; rich snippet hak eder. */}
-      <section
-        id="faq"
-        className="px-5 sm:px-10 py-[60px] sm:py-20"
-        aria-labelledby="roi-faq-title"
-      >
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'SIK SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
-          </span>
-          <h2
-            id="roi-faq-title"
-            className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]"
-          >
-            {isTr
-              ? 'Hesabın arkasındaki sorular.'
-              : 'Questions behind the math.'}
-          </h2>
-
-          <dl className="mt-8 space-y-3">
-            {faq.map((item, i) => (
-              <details
-                key={i}
-                className="bz-card group p-5 sm:p-6 [&[open]>summary>span:last-child]:rotate-180"
-              >
-                <summary className="cursor-pointer list-none flex items-start justify-between gap-4">
-                  <dt className="bz-h-tight text-[15px] sm:text-[17px] font-semibold tracking-[-0.015em] text-[#0A0A0A] flex-1">
-                    {item.q}
-                  </dt>
+        <section aria-labelledby="roi-method-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeader id="roi-method-title" eyebrow={copy.methodEyebrow} title={copy.methodTitle} lead={copy.methodLead} />
+            <ol className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+              {copy.method.map((step, i) => (
+                <li key={step.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6">
                   <span
-                    aria-hidden
-                    className="shrink-0 mt-0.5 text-[#737373] transition-transform"
+                    aria-hidden="true"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
                   >
-                    ▾
+                    {i + 1}
                   </span>
-                </summary>
-                <dd className="mt-3 text-[13.5px] sm:text-[14px] text-[#525252] leading-[1.65]">
-                  {item.a}
-                </dd>
-              </details>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      <section className="bg-[#C6F24E] px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[26px] sm:text-[40px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
-            {isTr ? 'Sıra senin işletmende.' : 'Your business is next.'}
-          </h2>
-          <p className="mt-4 text-[15px] text-[#1A1A1A] max-w-[540px] mx-auto leading-[1.6]">
-            {isTr
-              ? '30 dakika, canlı demo, işletmene özel rakamlar. Kredi kartı sormuyoruz.'
-              : '30 minutes, live demo, numbers tailored to your business. No credit card asked.'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/contact`}
-              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-            >
-              {isTr ? 'Ücretsiz danışmanlık' : 'Free consultation'}
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              href={`${base}/pricing`}
-              className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-            >
-              {isTr ? 'Planları gör' : 'See plans'}
-            </Link>
+                  <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">{step.title}</h3>
+                  <p className="mt-2 text-[15px] leading-[1.6] text-[#525252]">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-8 max-w-[760px] rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+              <h3 className="text-[20px] leading-[1.25] text-[#0A0A0A]">{copy.excludedTitle}</h3>
+              <p className="mt-2 text-[15px] leading-[1.65] text-[#525252]">{copy.excludedBody}</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
+        <section aria-labelledby="roi-faq-title" className={SECTION_Y}>
+          <div className={CONTAINER_NARROW}>
+            <SectionHeader id="roi-faq-title" eyebrow={copy.faqEyebrow} title={copy.faqTitle} />
+            <div className="mt-10">
+              <FaqList items={faqs} idPrefix="roi-faq" />
+            </div>
+          </div>
+        </section>
+
+        <CtaBand
+          id="roi-cta-title"
+          title={copy.cta.title}
+          facts={copy.cta.facts}
+          primary={{ href: `${base}/auth/register`, label: copy.cta.primary, nofollow: true }}
+          secondary={{ href: `${base}/pricing`, label: copy.cta.secondary }}
+        />
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

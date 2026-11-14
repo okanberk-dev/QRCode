@@ -1,263 +1,520 @@
-import { ExternalLink } from 'lucide-react';
+import type { Metadata } from 'next';
+import { ArrowRight, Check, ExternalLink, X } from 'lucide-react';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import { getTranslations } from '@/lib/translations';
+import PageHero from '@/components/marketing/commercial/PageHero';
+import SectionHeader from '@/components/marketing/commercial/SectionHeader';
+import FaqList, { type FaqEntry } from '@/components/marketing/commercial/FaqList';
+import CtaBand from '@/components/marketing/commercial/CtaBand';
+import {
+  BTN_DARK,
+  BTN_OUTLINE,
+  CONTAINER,
+  CONTAINER_NARROW,
+  SECTION_Y,
+  TEXT_LINK,
+} from '@/components/marketing/commercial/styles';
 import type { Locale } from '@/lib/translations';
-import Link from 'next/link';
 
-// Stage 83 §38.163 — ISR (1 day) for legal/regulatory content. Save endpoints
-// hook revalidatePath() to invalidate immediately on edit (CLAUDE.md §38.163).
+// ISR (1 day): trust/policy content changes rarely.
 export const revalidate = 86400;
+
+const POLICY_URL = {
+  tr: 'https://support.google.com/contributionpolicy/answer/7400114?hl=tr',
+  en: 'https://support.google.com/contributionpolicy/answer/7400114?hl=en',
+} as const;
+
+const META = {
+  tr: {
+    title: 'Google yorum kuralları ve QR yorum akışı',
+    description:
+      'Google’ın sahte yorum, teşvik ve seçici yorum isteme kuralları ile Buaze’nin müşteri akışı: herkese açık yorum bağlantısı her puanda gösterilir.',
+  },
+  en: {
+    title: 'Google review rules and our QR review flow',
+    description:
+      'Google’s rules on fake reviews, incentives and selective review requests, and how the Buaze flow works: the public review link is shown at every rating.',
+  },
+} as const;
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
-}) {
+}): Promise<Metadata> {
   const { locale } = await params;
-  const isTr = locale === 'tr';
-  // SEO-tuned metadata overrides the on-page t.google_compliance_page_title
-  // string (used as H1 + body context). Keep both surfaces in sync if the
-  // policy framing changes — search snippets and on-page heading should
-  // tell the same story.
-  const title = isTr
-    ? 'Google Yorum Politikası Uyumu — Sahte yorum yok, teşvik yok'
-    : 'Google Review Policy Compliance — No fake reviews, no incentives';
-  const description = isTr
-    ? 'Buaze, Google yorum politikalarına tam uyum sağlar: sahte yorum yok, teşvik yok, filtreleme yok. Her müşteri istediği platformda yorum yazma hakkını korur.'
-    : 'Buaze strictly adheres to Google review policies: no fake reviews, no incentives, no filtering. Every customer keeps the right to post on any platform.';
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const { title, description } = META[lang];
   return {
     title,
     description,
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/google-compliance`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/google-compliance',
-        en: 'https://www.buaze.com/en/google-compliance',
-        'x-default': 'https://www.buaze.com/tr/google-compliance',
-      },
+      canonical: `/${lang}/google-compliance`,
+      languages: { tr: '/tr/google-compliance', en: '/en/google-compliance', 'x-default': '/tr/google-compliance' },
     },
     openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/google-compliance`,
       title,
       description,
-      url: `https://www.buaze.com/${locale}/google-compliance`,
-      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+      images: [{ url: `/images/open-graph-${lang}.png`, width: 1200, height: 630, alt: title }],
     },
   };
 }
+
+const COPY = {
+  tr: {
+    eyebrow: 'Şeffaflık',
+    title: 'Google yorum kuralları ve Buaze akışı',
+    lead:
+      'Google’ın işletme yorumlarıyla ilgili kurallarını, Buaze’de müşterinin hangi adımlardan geçtiğini ve işletme olarak nelere dikkat etmeniz gerektiğini tek sayfada anlatıyoruz.',
+    heroPrimary: 'Akışı adım adım görün',
+    heroSecondary: 'Sık sorulan sorular',
+    rulesEyebrow: 'Google’ın kuralları',
+    rulesTitle: 'Google yorumlarında neler yasak',
+    rulesLead:
+      'Aşağıdaki özet, Google Haritalar kullanıcı katkısı politikasının işletmeleri en çok ilgilendiren maddeleridir. Hukuki görüş değildir; güncel metin için Google’ın politika sayfasına bakın.',
+    rules: [
+      {
+        title: 'Sahte yorum',
+        body: 'Gerçek bir deneyime dayanmayan yorumlar: işletme sahibinin, çalışanların ya da para karşılığı tutulan kişilerin yazdığı yorumlar.',
+      },
+      {
+        title: 'Yorum karşılığı teşvik',
+        body: 'Yorum yazdırmak, yorumu değiştirtmek ya da kaldırtmak için indirim, hediye, ikram veya ödeme sunmak.',
+      },
+      {
+        title: 'Seçici yorum isteme',
+        body: 'Yalnızca memnun müşterilerden yorum istemek ya da olumsuz yorum yazılmasını caydırmak.',
+      },
+      {
+        title: 'Çıkar çatışması',
+        body: 'Kendi işletmenize kendiniz ya da yakınlarınız aracılığıyla yorum yazmak; rakip bir işletmeye olumsuz yorum yazmak ya da yazdırmak.',
+      },
+    ],
+    rulesNote:
+      'İşletmeler müşteri yorumlarını düzenleyemez veya silemez; kurallara aykırı bir yorumu yalnızca Google’a bildirebilir.',
+    policyLink: 'Google Haritalar kullanıcı katkısı politikası',
+    roleEyebrow: 'Buaze’nin rolü',
+    roleTitle: 'Buaze ne yapar, ne yapmaz',
+    does: {
+      title: 'Buaze bunları yapar',
+      items: [
+        'QR koduyla her müşteriye puan verme imkânı sunar.',
+        'Herkese açık yorum bağlantısını her puanda gösterir; belirlediğiniz eşik ve üzerindeki puanlarda yorum sayfasını kendiliğinden açar.',
+        'Özel geri bildirimleri panelinizde toplar; 1–3 yıldızlık her geri bildirimde size e-posta gönderir.',
+        'Pulse AI ile yanıt taslağı hazırlar; siz onaylamadan hiçbir yanıt gönderilmez.',
+      ],
+    },
+    doesNot: {
+      title: 'Buaze bunları yapmaz',
+      items: [
+        'Yorum silmez, gizlemez veya değiştirmez.',
+        'Sahte yorum yazmaz ya da yazdırmaz.',
+        'Yorum karşılığında indirim, hediye veya ödül sunmaz.',
+        'Müşteri adına herkese açık platformlara yorum göndermez.',
+        'Müşteriden yorumunu değiştirmesini ya da silmesini isteyen yanıtları göndermez; bu ifadeleri içeren yanıtlar engellenir.',
+      ],
+    },
+    flowEyebrow: 'Müşteri akışı',
+    flowTitle: 'Akış adım adım',
+    flowLead: 'Müşterinin QR kodu okuttuğu andan geri bildiriminin panelinize düştüğü ana kadar olanlar.',
+    flow: [
+      {
+        title: 'QR kodu okutur',
+        body: 'Müşteri masadaki, adisyondaki ya da kapıdaki QR kodu telefonuyla okutur; uygulama indirmez, hesap açmaz.',
+      },
+      {
+        title: 'Puan verir',
+        body: 'Açılan ilk ekran puan ekranıdır. Müşteri 1 ile 5 yıldız arasında puan verir.',
+      },
+      {
+        title: 'Eşik ve üzerinde yorum sayfası açılır',
+        body: 'Puan, belirlediğiniz eşik ve üzerindeyse (varsayılan 5 yıldız, isterseniz 4 yıldız) seçtiğiniz platformun yorum sayfası açılır. Müşteri yorumunu orada, kendi hesabıyla yazar.',
+      },
+      {
+        title: 'Eşiğin altında özel form ve herkese açık bağlantı',
+        body: 'Puan eşiğin altındaysa müşteri önce size özel geri bildirim yazabilir. Formun altında, aynı ekranda “Google üzerinde yorum yaz” gibi bir bağlantı görünür; müşteri isterse oradan herkese açık yorum yazar.',
+      },
+      {
+        title: 'Geri bildirim panelinize düşer',
+        body: 'Özel geri bildirim panelinize düşer ve 1–3 yıldızlık her geri bildirimde size e-posta gelir. Müşteri e-posta adresini bıraktıysa yanıtınızı e-postayla gönderirsiniz.',
+      },
+    ],
+    dutiesEyebrow: 'Sizin payınız',
+    dutiesTitle: 'İşletme olarak dikkat etmeniz gerekenler',
+    dutiesLead:
+      'Buaze bir araçtır. Google’ın kurallarına uymak ve Google İşletme Profilinizi yönetmek işletmenin sorumluluğundadır.',
+    duties: [
+      'QR kodu tüm müşterilerinize gösterin; yalnızca memnun görünen müşterilere vermeyin.',
+      'Yorum karşılığında indirim, ikram ya da hediye vermeyin. Anketlerde gösterebileceğiniz teşekkür kuponu yalnızca anketi tamamlayana verilir ve herkese açık bir yoruma bağlanmamalıdır.',
+      'Çalışanlarınıza, ailenize ya da tanıdıklarınıza yorum yazdırmayın.',
+      'Müşteriden yorumunu değiştirmesini ya da silmesini istemeyin.',
+      'Kişisel verileri KVKK’ya uygun işleyin. Buaze formlarında aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır.',
+    ],
+    faqEyebrow: 'Sık sorulan sorular',
+    faqTitle: 'Google kuralları ve Buaze hakkında',
+    faqs: [
+      {
+        q: 'Buaze yorumları siliyor veya gizliyor mu?',
+        a: 'Hayır. Buaze herkese açık platformlardaki yorumları silemez, gizleyemez ya da değiştiremez. Müşteri yorumunu doğrudan Google’da ya da seçtiğiniz platformda, kendi hesabıyla yazar.',
+      },
+      {
+        q: 'Eşiğin altında puan veren müşteri Google’a yorum yazabilir mi?',
+        a: 'Evet. Müşteri önce size özel geri bildirim yazabilir; aynı ekranda seçtiğiniz platformun yorum bağlantısı görünür ve müşteri istediği yere yorum yazabilir.',
+      },
+      {
+        q: 'Eşik neyi değiştirir?',
+        a: 'Eşik yalnızca yorum sayfasının hangi puanda kendiliğinden açılacağını belirler. Panelde 4 ya da 5 yıldız seçebilirsiniz; varsayılan 5 yıldızdır. Herkese açık yorum bağlantısı her puanda gösterilir.',
+      },
+      {
+        q: 'Buaze yorum karşılığında kupon veya indirim sunuyor mu?',
+        a: 'Hayır. Buaze’de yoruma bağlı bir ödül özelliği yoktur. Anketlerde isteğe bağlı bir teşekkür kuponu gösterebilirsiniz; bu kupon yalnızca anketi tamamlayana gösterilir ve herkese açık bir yoruma bağlanmamalıdır.',
+      },
+      {
+        q: 'Pulse AI müşteri yorumlarını değiştiriyor mu?',
+        a: 'Hayır. Pulse AI yalnızca sizin yanıtınız için taslak hazırlar; taslağı siz düzenler ve onaylarsınız, onayınız olmadan hiçbir yanıt gönderilmez. Taslak hazırlanırken geri bildirim metni yapay zekâ sağlayıcımız OpenAI’ye gönderilir.',
+      },
+      {
+        q: 'Buaze, Google’ın iş ortağı mı?',
+        a: 'Hayır. Buaze bağımsız bir yazılımdır; Google’ın iş ortağı değildir ve Google tarafından onaylanmamıştır. Google adı yalnızca hizmeti tanımlamak için kullanılır.',
+      },
+      {
+        q: 'Müşteri verileri nasıl işleniyor?',
+        a: 'Formlarda KVKK aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanımız AB’de (Frankfurt) çalışır; bazı alt işleyicilerimiz ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir.',
+      },
+    ],
+    cta: {
+      title: 'Akışı kendi işletmenizde deneyin',
+      facts: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal'],
+      primary: 'Ücretsiz deneyin',
+      secondary: 'Nasıl çalıştığını görün',
+    },
+    breadcrumbHome: 'Ana sayfa',
+    breadcrumbSelf: 'Google yorum kuralları',
+  },
+  en: {
+    eyebrow: 'Transparency',
+    title: 'Google review rules and the Buaze flow',
+    lead:
+      'On one page: Google’s rules on business reviews, the steps a customer goes through in Buaze, and what you need to watch out for as a business.',
+    heroPrimary: 'See the flow step by step',
+    heroSecondary: 'Frequently asked questions',
+    rulesEyebrow: 'Google’s rules',
+    rulesTitle: 'What Google does not allow in reviews',
+    rulesLead:
+      'This summary covers the points of the Google Maps user-contributed content policy that matter most to businesses. It is not legal advice; see Google’s policy page for the current text.',
+    rules: [
+      {
+        title: 'Fake reviews',
+        body: 'Reviews that are not based on a real experience: reviews written by the owner, by staff or by people paid to write them.',
+      },
+      {
+        title: 'Incentives for reviews',
+        body: 'Offering discounts, gifts, free items or payment to get a review written, changed or removed.',
+      },
+      {
+        title: 'Selective review requests',
+        body: 'Asking only happy customers for reviews, or discouraging people from writing negative ones.',
+      },
+      {
+        title: 'Conflicts of interest',
+        body: 'Reviewing your own business yourself or through people close to you; writing, or arranging, negative reviews of a competitor.',
+      },
+    ],
+    rulesNote: 'Businesses cannot edit or delete customer reviews; they can only report a review that breaks the rules to Google.',
+    policyLink: 'Google Maps user-contributed content policy',
+    roleEyebrow: 'Buaze’s role',
+    roleTitle: 'What Buaze does, and what it does not',
+    does: {
+      title: 'What Buaze does',
+      items: [
+        'Gives every customer a way to leave a rating through a QR code.',
+        'Shows the public review link at every rating, and opens the review page on its own at or above the threshold you set.',
+        'Collects private feedback in your panel and e-mails you about every 1–3 star piece of feedback.',
+        'Drafts replies with Pulse AI; nothing is sent until you approve it.',
+      ],
+    },
+    doesNot: {
+      title: 'What Buaze does not do',
+      items: [
+        'Does not delete, hide or change reviews.',
+        'Does not write fake reviews or have them written.',
+        'Offers no discount, gift or reward for a review.',
+        'Does not post reviews to public platforms on a customer’s behalf.',
+        'Does not send replies that ask a customer to change or delete their review; replies with such wording are blocked.',
+      ],
+    },
+    flowEyebrow: 'Customer flow',
+    flowTitle: 'The flow, step by step',
+    flowLead: 'What happens from the moment a customer scans the QR code until their feedback reaches your panel.',
+    flow: [
+      {
+        title: 'Scans the QR code',
+        body: 'The customer scans the QR code on the table, bill or door with their phone; no app download, no account.',
+      },
+      {
+        title: 'Gives a rating',
+        body: 'The first screen is the rating screen. The customer gives between 1 and 5 stars.',
+      },
+      {
+        title: 'At or above the threshold, the review page opens',
+        body: 'If the rating is at or above the threshold you set (5 stars by default, or 4 if you prefer), your chosen platform’s review page opens. The customer writes the review there, with their own account.',
+      },
+      {
+        title: 'Below the threshold, a private form and the public link',
+        body: 'If the rating is below the threshold, the customer can first send you private feedback. Under the form, on the same screen, a link such as “Write a review on Google” is shown; the customer can post a public review from there if they wish.',
+      },
+      {
+        title: 'The feedback reaches your panel',
+        body: 'Private feedback lands in your panel, and every 1–3 star piece of feedback triggers an e-mail to you. If the customer left an e-mail address, you reply by e-mail.',
+      },
+    ],
+    dutiesEyebrow: 'Your part',
+    dutiesTitle: 'What to watch out for as a business',
+    dutiesLead:
+      'Buaze is a tool. Following Google’s rules and managing your Google Business Profile is the business’s responsibility.',
+    duties: [
+      'Show the QR code to all your customers; do not hand it only to customers who seem happy.',
+      'Do not give discounts, free items or gifts for reviews. A thank-you coupon you show in a survey goes to people who complete the survey and must not be tied to a public review.',
+      'Do not have staff, family or friends write reviews.',
+      'Do not ask customers to change or delete their review.',
+      'Process personal data in line with KVKK. Buaze forms show a notice and an explicit consent box; marketing consent is separate and off by default.',
+    ],
+    faqEyebrow: 'Frequently asked questions',
+    faqTitle: 'About Google’s rules and Buaze',
+    faqs: [
+      {
+        q: 'Does Buaze delete or hide reviews?',
+        a: 'No. Buaze cannot delete, hide or change reviews on public platforms. Customers write their reviews directly on Google or the platform you chose, with their own account.',
+      },
+      {
+        q: 'Can a customer who rates below the threshold post on Google?',
+        a: 'Yes. The customer can first send you private feedback; the review link for your chosen platform is shown on the same screen, and the customer can post a review wherever they like.',
+      },
+      {
+        q: 'What does the threshold change?',
+        a: 'The threshold only sets the rating at which the review page opens on its own. You choose 4 or 5 stars in the panel; the default is 5 stars. The public review link is shown at every rating.',
+      },
+      {
+        q: 'Does Buaze offer coupons or discounts for reviews?',
+        a: 'No. Buaze has no reward feature tied to reviews. You can show an optional thank-you coupon in a survey; it is shown only to people who complete the survey and must not be tied to a public review.',
+      },
+      {
+        q: 'Does Pulse AI change customer reviews?',
+        a: 'No. Pulse AI only drafts your reply; you edit and approve the draft, and no reply is sent without your approval. To prepare the draft, the feedback text is sent to our AI provider, OpenAI.',
+      },
+      {
+        q: 'Is Buaze a Google partner?',
+        a: 'No. Buaze is independent software; it is not a Google partner and is not endorsed by Google. The Google name is used only to describe the service.',
+      },
+      {
+        q: 'How is customer data processed?',
+        a: 'Forms show a KVKK notice and an explicit consent box; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. Our database runs in the EU (Frankfurt); some of our sub-processors are in the US and are listed in the Data Processing Agreement.',
+      },
+    ],
+    cta: {
+      title: 'Try the flow in your own business',
+      facts: ['14 days free', 'No credit card required', 'Cancel anytime'],
+      primary: 'Start free trial',
+      secondary: 'See how it works',
+    },
+    breadcrumbHome: 'Home',
+    breadcrumbSelf: 'Google review rules',
+  },
+} as const;
 
 export default async function GoogleCompliancePage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
+  const { locale: rawLocale } = await params;
+  const locale: 'tr' | 'en' = rawLocale === 'en' ? 'en' : 'tr';
+  const base = `/${locale}`;
+  const copy = COPY[locale];
+  const pageUrl = `${SITE_URL}/${locale}/google-compliance`;
+  const faqs: FaqEntry[] = [...copy.faqs];
 
-  const points = [
-    { title: t.google_compliance_point1_title, desc: t.google_compliance_point1_desc },
-    { title: t.google_compliance_point2_title, desc: t.google_compliance_point2_desc },
-    { title: t.google_compliance_point3_title, desc: t.google_compliance_point3_desc },
-  ];
-
-  // FAQ — locale-aware. Mirrors CLAUDE.md §19.1.1 compliance copy
-  // parity (audit fix 2026-05): every answer reinforces customer
-  // agency and explicitly disclaims the four review-gating signals
-  // (block / hide / star-branching / incentive). Same questions get
-  // emitted as FAQPage JSON-LD below for AI search engines.
-  const faqs: FaqItem[] = isTr
-    ? [
-        {
-          q: 'Buaze müşteri yorumlarını engelliyor veya gizliyor mu?',
-          a: 'Hayır. Buaze hiçbir müşteri yorumunu engellemez, gizlemez veya manipüle etmez. Müşterileriniz Google, Yemeksepeti, Getir, Trendyol GO ve diğer herkese açık platformlara her zaman istedikleri yorumu yazma hakkına sahiptir. Buaze yalnızca müşteri tercihiyle yönlendirme yapar; yorum içeriğine müdahale etmez.',
-        },
-        {
-          q: 'Düşük puan veren müşterilere Google bağlantısı gösterilmiyor mu?',
-          a: 'Gösteriliyor. Akışta her müşteriye herkese açık platform bağlantıları sunulur. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür; pratikte ~%85\'i bu özel kanalı tercih eder. Tercih müşteriye aittir; Buaze yıldıza göre erişimi kısıtlamaz.',
-        },
-        {
-          q: 'Buaze pozitif yorum için teşvik (indirim, hediye) sunuyor mu?',
-          a: 'Hayır. Buaze hiçbir teşvik, indirim, ikram veya kupon sunmaz. Google\'ın yorum politikası bu tür incentive\'leri açıkça yasaklar; biz de aynı politikayı uygularız. İşletme sahibi tarafından oluşturulabilecek herhangi bir teşvik, müşteriye yorum yazdırmaya bağlı olarak verilemez.',
-        },
-        {
-          q: 'Müşteri verilerim KVKK ve GDPR ile uyumlu mu saklanıyor?',
-          a: 'Evet. Müşteri verileri AB ve ABD\'de bulunan altyapı sağlayıcılarında işlenir; sağlayıcıların tam listesi ve bulundukları ülkeler Veri İşleyici Sözleşmesi\'nde yer alır, yurt dışı aktarım KVKK m. 9 açık rızasına dayanır. KVKK aydınlatma metni her form altında görünür ve onay açık (opt-in) şekilde alınır. Pazarlama izni ayrıca onaylanır — hizmet onayıyla aynı checkbox\'a bundle edilmez. IP adresleri 90 gün sonra otomatik anonimleştirilir, müşteri talep ederse kişisel verileri silinir veya export edilir.',
-        },
-        {
-          q: 'Buaze Google\'ın resmi iş ortağı mı?',
-          a: 'Hayır, Buaze bağımsız bir SaaS platformudur ve Google\'ın resmi partner programının parçası değildir. Akışımız Google\'ın yorum politikalarına uygun şekilde tasarlanmıştır; Buaze.com sayfalarında Google ürünlerine yapılan referanslar (Google İşletme, Google Maps) tanımlama amaçlıdır.',
-        },
-        {
-          q: 'Pulse AI yanıt taslakları Google\'ın yorum politikasına uygun mu?',
-          a: 'Evet. Pulse AI sadece işletme tarafının yanıtı için taslak üretir — müşteri tarafından yazılan yorumun içeriğini değiştirmez veya manipüle etmez. Üretilen taslak yayınlanmadan önce işletme sahibi tarafından düzenlenir ve onaylanır. Hiçbir AI taslağı otomatik olarak gönderilmez; her yanıt insan onayından geçer.',
-        },
-      ]
-    : [
-        {
-          q: 'Does Buaze block or hide customer reviews?',
-          a: 'No. Buaze never blocks, hides, or manipulates customer reviews. Your customers always retain the right to post on Google, Yemeksepeti, Getir, Trendyol GO, and other public platforms. Buaze only routes by customer preference; we never alter review content.',
-        },
-        {
-          q: 'Are customers giving low ratings denied access to the Google link?',
-          a: 'No. Public-platform links are surfaced to every customer in the flow. Customers giving low ratings additionally see an option to share privately with your team; in practice, ~85% of them choose this private channel. The choice belongs to the customer; Buaze does not gate access by star rating.',
-        },
-        {
-          q: 'Does Buaze offer incentives (discounts, gifts) for positive reviews?',
-          a: 'No. Buaze never offers any incentive, discount, freebie, or coupon. Google\'s review policy explicitly prohibits such incentives, and we apply the same policy. Any incentive a business owner may create cannot be conditioned on a customer leaving a review.',
-        },
-        {
-          q: 'Is my customer data stored in compliance with KVKK and GDPR?',
-          a: 'Yes. Customer data is processed by infrastructure providers located in the EU and the USA; the full provider list and their locations are set out in the Data Processing Agreement, and cross-border transfers rely on explicit consent under KVKK art. 9. The KVKK notice is visible under every form and consent is collected explicitly (opt-in). Marketing consent is collected separately — never bundled into the same checkbox as service consent. IP addresses are automatically anonymized after 90 days; on customer request, personal data is deleted or exported.',
-        },
-        {
-          q: 'Is Buaze an official Google partner?',
-          a: 'No. Buaze is an independent SaaS platform and is not part of Google\'s official partner program. Our flow is designed to comply with Google\'s review policies; references to Google products (Google Business, Google Maps) on Buaze.com are descriptive only.',
-        },
-        {
-          q: 'Are Pulse AI reply drafts compliant with Google\'s review policy?',
-          a: 'Yes. Pulse AI only generates drafts for the business-side reply — it never modifies or manipulates the content of a review written by a customer. The generated draft is edited and approved by the business owner before it is published. No AI draft is sent automatically; every reply passes through human approval.',
-        },
-      ];
-
-  // FAQPage JSON-LD — emitted alongside the visible accordion. Same
-  // questions feed both surfaces so AI search engines (Perplexity, Bing
-  // Chat, Gemini AIO) and Google Rich Results pull from one source of
-  // truth. CLAUDE.md §35.6 schema matrix updated to include this entry.
-  const faqJsonLd = {
+  const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map((f) => ({
-      '@type': 'Question',
-      name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a },
-    })),
+    '@graph': [
+      {
+        '@type': 'FAQPage',
+        '@id': `${pageUrl}#faq`,
+        inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+        mainEntity: faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.q,
+          acceptedAnswer: { '@type': 'Answer', text: faq.a },
+        })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: copy.breadcrumbHome, item: `${SITE_URL}/${locale}` },
+          { '@type': 'ListItem', position: 2, name: copy.breadcrumbSelf, item: pageUrl },
+        ],
+      },
+    ],
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
-      <script
-        type="application/ld+json"
-        // FAQPage schema — feeds Google Rich Results + AI search engines.
-        dangerouslySetInnerHTML={{ __html: jsonLdString(faqJsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
+    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 lg:pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
       <main id="main-content">
+        <PageHero
+          align="center"
+          eyebrow={copy.eyebrow}
+          title={copy.title}
+          lead={copy.lead}
+          actions={
+            <>
+              <a href="#akis" className={BTN_DARK}>
+                {copy.heroPrimary}
+                <ArrowRight size={16} aria-hidden="true" />
+              </a>
+              <a href="#sss" className={BTN_OUTLINE}>
+                {copy.heroSecondary}
+              </a>
+            </>
+          }
+        />
 
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-20 pb-[60px] sm:pb-20 border-b border-[#EDEDED]">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="gcGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#gcGrid)" />
-        </svg>
-        <div className="relative max-w-[820px] mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full px-3 py-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
-            <span className="pulse-eyebrow text-[#0A0A0A]">{t.google_compliance_badge}</span>
-          </div>
-          <h1 className="mt-5 text-[38px] sm:text-[52px] font-medium leading-[0.95] tracking-[-0.03em] text-[#0A0A0A]">
-            {t.google_compliance_page_title}
-          </h1>
-          <p className="mt-5 text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[640px] mx-auto">
-            {t.google_compliance_page_subtitle}
-          </p>
-        </div>
-      </section>
-
-      {/* ─── Points ─── */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {points.map((point, i) => (
-            <div key={i} className="bz-card p-6 sm:p-7">
-              <span className="pulse-eyebrow text-[#A8D62E]">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <h3 className="mt-3 text-[19px] font-medium text-[#0A0A0A] tracking-[-0.01em] leading-tight">
-                {point.title}
-              </h3>
-              <p className="mt-3 text-[14px] text-[#525252] leading-[1.65]">{point.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Policy card ─── */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="max-w-[1000px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12 relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-[360px] h-[360px] bg-[#C6F24E]/12 rounded-full blur-[100px] pointer-events-none" />
-          <div className="relative max-w-[620px]">
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'POLİTİKA BİLGİSİ' : 'POLICY INFORMATION'}
-            </span>
-            <h2 className="mt-4 text-[24px] sm:text-[36px] font-medium text-white tracking-[-0.02em] leading-[1.1]">
-              {t.google_compliance_policy_title}
-            </h2>
-            <p className="mt-4 text-[15px] sm:text-[16px] text-white/70 leading-[1.7]">
-              {t.google_compliance_policy_desc}
+        <section aria-labelledby="gc-rules-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeader id="gc-rules-title" eyebrow={copy.rulesEyebrow} title={copy.rulesTitle} lead={copy.rulesLead} />
+            <ul className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-6">
+              {copy.rules.map((rule) => (
+                <li key={rule.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                  <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A]">{rule.title}</h3>
+                  <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{rule.body}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 max-w-[720px] text-[15px] leading-[1.65] text-[#525252]">{copy.rulesNote}</p>
+            <p className="mt-4 text-[15px]">
+              <a
+                href={POLICY_URL[locale]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${TEXT_LINK} inline-flex items-center gap-1.5`}
+              >
+                {copy.policyLink}
+                <ExternalLink size={14} aria-hidden="true" />
+              </a>
             </p>
-            <Link
-              href="https://support.google.com/contributionpolicy/answer/7400114?hl=en"
-              target="_blank"
-              className="inline-flex items-center gap-2 mt-7 bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {t.google_compliance_link_text}
-              <ExternalLink size={14} />
-            </Link>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── FAQ ─── */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24" id="faq">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">
-            {isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
-          </span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr
-              ? 'Politika ve uyumluluk hakkında merak edilenler'
-              : 'Common questions about policy and compliance'}
-          </h2>
-          <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.6]">
-            {isTr
-              ? 'Buaze akışının Google yorum politikalarına nasıl uyduğunu, müşteri verilerinizin nasıl korunduğunu ve Pulse AI yanıt taslaklarının neden uyumlu olduğunu açıklıyoruz.'
-              : 'How the Buaze flow aligns with Google\'s review policies, how your customer data is protected, and why Pulse AI reply drafts are compliant.'}
-          </p>
-          <div className="mt-8">
-            <FaqAccordion faqs={faqs} defaultOpen={[0]} />
+        <section aria-labelledby="gc-role-title" className={SECTION_Y}>
+          <div className={CONTAINER}>
+            <SectionHeader id="gc-role-title" eyebrow={copy.roleEyebrow} title={copy.roleTitle} />
+            <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:gap-6 md:grid-cols-2">
+              {[
+                { group: copy.does, positive: true },
+                { group: copy.doesNot, positive: false },
+              ].map(({ group, positive }) => (
+                <div
+                  key={group.title}
+                  className={`rounded-[20px] border p-6 sm:p-8 ${
+                    positive ? 'border-[#C6F24E] bg-[#EAF9B8]/50' : 'border-[#EDEDED] bg-white'
+                  }`}
+                >
+                  <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A]">{group.title}</h3>
+                  <ul className="mt-5 space-y-3">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-[15px] leading-[1.55] text-[#1A1A1A]">
+                        <span
+                          aria-hidden="true"
+                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                            positive ? 'bg-[#C6F24E]' : 'bg-[#F2F2F2]'
+                          }`}
+                        >
+                          {positive ? (
+                            <Check size={12} strokeWidth={2.75} className="text-[#0A0A0A]" />
+                          ) : (
+                            <X size={12} strokeWidth={2.75} className="text-[#525252]" />
+                          )}
+                        </span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── Closing quote ─── */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="max-w-[720px] mx-auto text-center">
-          <div className="flex justify-center gap-1 text-[#C6F24E] text-[18px]">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <span key={i}>★</span>
-            ))}
+        <section id="akis" aria-labelledby="gc-flow-title" className={`scroll-mt-20 bg-[#FAFAFA] ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeader id="gc-flow-title" eyebrow={copy.flowEyebrow} title={copy.flowTitle} lead={copy.flowLead} />
+            <ol className="mt-10 space-y-4 sm:mt-12">
+              {copy.flow.map((step, i) => (
+                <li
+                  key={step.title}
+                  id={`step-${i + 1}`}
+                  className="flex scroll-mt-24 gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:gap-6 sm:p-8"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                  >
+                    {i + 1}
+                  </span>
+                  <div>
+                    <h3 className="text-[20px] leading-[1.25] text-[#0A0A0A] sm:text-[22px]">{step.title}</h3>
+                    <p className="mt-2 max-w-[760px] text-[15px] leading-[1.65] text-[#525252]">{step.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
-          <p className="mt-6 text-[17px] sm:text-[20px] text-[#0A0A0A] leading-[1.5] font-medium tracking-[-0.01em]">
-            {isTr
-              ? '"İşletmenizin başarısı, müşterilerinizle kurduğunuz gerçek ve güvene dayalı bağdadır. Buaze olarak bu bağı teknolojiyle korumayı taahhüt ediyoruz."'
-              : '"Your business success lies in the genuine, trust-based bond you build with your customers. As Buaze, we commit to protecting this bond through technology."'}
-          </p>
-        </div>
-      </section>
+        </section>
 
+        <section aria-labelledby="gc-duties-title" className={SECTION_Y}>
+          <div className={`${CONTAINER} lg:grid lg:grid-cols-[1fr_1.2fr] lg:gap-16`}>
+            <SectionHeader id="gc-duties-title" eyebrow={copy.dutiesEyebrow} title={copy.dutiesTitle} lead={copy.dutiesLead} />
+            <ul className="mt-8 space-y-4 lg:mt-12">
+              {copy.duties.map((duty) => (
+                <li key={duty} className="flex items-start gap-3 text-[16px] leading-[1.6] text-[#1A1A1A]">
+                  <span
+                    aria-hidden="true"
+                    className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8]"
+                  >
+                    <Check size={12} strokeWidth={2.75} className="text-[#0A0A0A]" />
+                  </span>
+                  {duty}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section id="sss" aria-labelledby="gc-faq-title" className={`scroll-mt-20 border-t border-[#EDEDED] ${SECTION_Y}`}>
+          <div className={CONTAINER_NARROW}>
+            <SectionHeader id="gc-faq-title" eyebrow={copy.faqEyebrow} title={copy.faqTitle} />
+            <div className="mt-10">
+              <FaqList items={faqs} idPrefix="gc-faq" />
+            </div>
+          </div>
+        </section>
+
+        <CtaBand
+          id="gc-cta-title"
+          title={copy.cta.title}
+          facts={copy.cta.facts}
+          primary={{ href: `${base}/auth/register`, label: copy.cta.primary, nofollow: true }}
+          secondary={{ href: `${base}/how-it-works`, label: copy.cta.secondary }}
+        />
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

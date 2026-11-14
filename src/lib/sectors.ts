@@ -69,7 +69,7 @@ export const SECTORS: readonly SectorOption[] = [
     label: 'Klinik',
     sectorKey: 'clinic',
     display: { tr: 'Klinik & Sağlık', en: 'Clinic & Health' },
-    sub: { tr: 'KVKK uyumlu anket akışı', en: 'KVKK-compliant survey flow' },
+    sub: { tr: 'Sağlık bilgisi sormayan anket akışı', en: 'Survey flow that asks no health questions' },
   },
   {
     id: 'hukuk',
@@ -83,14 +83,14 @@ export const SECTORS: readonly SectorOption[] = [
     label: 'Spa',
     sectorKey: 'spa',
     display: { tr: 'Güzellik & Spa', en: 'Beauty & Spa' },
-    sub: { tr: 'Randevu sonrası, usta bazlı', en: 'Post-appointment, per-specialist' },
+    sub: { tr: 'Hizmet sonrası geri bildirim', en: 'Post-service feedback' },
   },
   {
     id: 'perakende',
     label: 'Perakende',
     sectorKey: 'retail',
     display: { tr: 'Perakende', en: 'Retail' },
-    sub: { tr: 'Fiş altı QR, çok mağaza', en: 'QR on receipt, multi-store' },
+    sub: { tr: 'Kasa QR, çok mağaza', en: 'Checkout QR, multi-store' },
   },
   {
     id: 'fitness',

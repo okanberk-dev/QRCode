@@ -1,63 +1,74 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Search } from 'lucide-react';
 
 interface Props {
   locale: 'tr' | 'en';
-  /** Optional initial query (used on /help/search page). */
+  /** Optional initial query (used on /help/search). */
   initial?: string;
-  /** Larger variant for hero; compact for inline results header. */
+  /** Larger variant for the hub hero; compact for page headers. */
   size?: 'hero' | 'compact';
 }
 
+const COPY = {
+  tr: { label: 'Yardım merkezinde ara', placeholder: 'Bir konu arayın', button: 'Ara' },
+  en: { label: 'Search the help center', placeholder: 'Search for a topic', button: 'Search' },
+} as const;
+
 /**
- * URL-driven help search — submit navigates to `/{locale}/help/search?q=...`
- * where a server page renders results from Prisma. Client state is only the
- * current input value; nothing else is kept here so the bar is reusable
- * across the hub and the results page.
+ * Help search box. Submitting navigates to `/{locale}/help/search?q=...`,
+ * where results are matched on the client against a static index (the page
+ * stays static). An empty query goes back to the hub.
  */
 export default function HelpSearchBar({ locale, initial = '', size = 'hero' }: Props) {
   const router = useRouter();
-  const isTr = locale === 'tr';
+  const inputId = useId();
+  const copy = COPY[locale === 'en' ? 'en' : 'tr'];
   const [q, setQ] = useState(initial);
 
-  const placeholder = isTr
-    ? "Sorunuzu yazın — 'QR nasıl oluşturulur?'"
-    : "Type your question — 'How do I create a QR?'";
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = q.trim();
-    if (!trimmed) {
-      router.push(`/${locale}/help`);
-      return;
-    }
-    router.push(`/${locale}/help/search?q=${encodeURIComponent(trimmed)}`);
+  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = q.trim().slice(0, 100);
+    router.push(trimmed ? `/${locale}/help/search?q=${encodeURIComponent(trimmed)}` : `/${locale}/help`);
   };
 
-  const wrapperCls =
+  const wrapper =
     size === 'hero'
-      ? 'mx-auto mt-7 flex w-full max-w-[580px] items-center gap-3 rounded-full border border-[#E5E5E5] bg-white px-4 py-2 shadow-[0_2px_8px_rgba(10,10,10,0.04)]'
-      : 'flex w-full items-center gap-3 rounded-full border border-[#E5E5E5] bg-white px-4 py-2';
+      ? 'flex w-full items-center gap-2 rounded-full border border-[#E5E5E5] bg-white py-1.5 pl-5 pr-1.5 shadow-[0_2px_8px_rgba(10,10,10,0.04)]'
+      : 'flex w-full items-center gap-2 rounded-full border border-[#E5E5E5] bg-white py-1 pl-4 pr-1';
 
   return (
-    <form onSubmit={submit} className={wrapperCls} role="search">
-      <Search size={16} className="shrink-0 text-[#A3A3A3]" strokeWidth={2} aria-hidden />
+    <form
+      role="search"
+      action={`/${locale}/help/search`}
+      method="get"
+      onSubmit={submit}
+      className={`${wrapper} transition-colors focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2`}
+    >
+      <label htmlFor={inputId} className="sr-only">
+        {copy.label}
+      </label>
+      <Search size={18} className="shrink-0 text-[#737373]" strokeWidth={2} aria-hidden="true" />
       <input
+        id={inputId}
         type="search"
+        name="q"
         value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={placeholder}
-        aria-label={isTr ? 'Yardım merkezinde ara' : 'Search the help center'}
-        className="min-h-[36px] flex-1 bg-transparent text-[14px] text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+        onChange={(event) => setQ(event.target.value)}
+        placeholder={copy.placeholder}
+        maxLength={100}
+        autoComplete="off"
+        spellCheck={false}
+        enterKeyHint="search"
+        className="min-h-[44px] min-w-0 flex-1 bg-transparent text-[16px] text-[#0A0A0A] outline-none placeholder:text-[#737373] sm:text-[15px] [&::-webkit-search-cancel-button]:cursor-pointer"
       />
       <button
         type="submit"
-        className="min-h-[32px] shrink-0 rounded-full bg-[#0A0A0A] px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
+        className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-[#0A0A0A] px-5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
       >
-        {isTr ? 'Ara' : 'Search'}
+        {copy.button}
       </button>
     </form>
   );

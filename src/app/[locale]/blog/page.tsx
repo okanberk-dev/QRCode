@@ -1,16 +1,92 @@
 import type { Metadata } from 'next';
+import { Rss } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { getTranslations } from '@/lib/translations';
-import type { Locale } from '@/lib/translations';
+import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
+import { ORGANIZATION_ID, WEBSITE_ID } from '@/lib/company-constants';
+import { blogDateToIso } from '@/lib/blog-date';
 import { prisma } from '@/lib/prisma';
-import Link from 'next/link';
-import Image from 'next/image';
+import type { Locale } from '@/lib/translations';
+import BlogIndexList, { type BlogCard } from './_components/BlogIndexList';
+import { displayBlogAuthor } from './_lib/author';
 
-// Stage 94 §38.174 — force-dynamic → ISR. Blog list uses Prisma
-// `findMany` (no cookies/headers); 1h cache acceptable for marketing
-// surface, matches sitemap revalidate cadence.
+/**
+ * /blog — statically generated (ISR, 1 h). The category filter runs on the
+ * client over the full, server-rendered list, so the page never reads
+ * searchParams (that used to force a render on every request and linked to
+ * robots-blocked ?cat= URLs). Posts and bylines come from the DB.
+ */
+
 export const revalidate = 3600;
+
+type Lang = 'tr' | 'en';
+
+const META = {
+  tr: {
+    title: 'Blog: yorum yönetimi ve QR geri bildirim rehberleri',
+    description:
+      'Restoran, otel, klinik ve mağazalar için yorum yönetimi, QR kodla müşteri geri bildirimi toplama ve müşteri deneyimi üzerine rehberler ve yazılar.',
+  },
+  en: {
+    title: 'Blog: guides to review management and QR feedback',
+    description:
+      'Guides and articles for restaurants, hotels, clinics and shops on review management, collecting customer feedback with QR codes and customer experience.',
+  },
+} as const;
+
+const COPY = {
+  tr: {
+    eyebrow: 'Blog',
+    h1: 'Yorum yönetimi blogu',
+    lead: 'Restoran, otel, klinik ve mağazalar için yorum yönetimi, QR kodla geri bildirim toplama ve müşteri deneyimi üzerine yazılar.',
+    rss: 'RSS ile takip edin',
+    all: 'Tümü',
+    filterGroup: 'Kategoriye göre filtrele',
+    latest: 'En yeni yazı',
+    results: '{n} yazı gösteriliyor',
+    empty: 'Henüz yayımlanmış bir yazı yok.',
+    home: 'Ana sayfa',
+  },
+  en: {
+    eyebrow: 'Blog',
+    h1: 'Review management blog',
+    lead: 'Articles for restaurants, hotels, clinics and shops on review management, collecting feedback with QR codes and customer experience.',
+    rss: 'Follow via RSS',
+    all: 'All',
+    filterGroup: 'Filter by category',
+    latest: 'Latest post',
+    results: 'Showing {n} posts',
+    empty: 'No posts have been published yet.',
+    home: 'Home',
+  },
+} as const;
+
+/** Filter key → tag variants (TR + EN, whichever language the admin tagged in). */
+const FILTER_TAGS: Record<string, { label: { tr: string; en: string }; tags: string[] }> = {
+  guide: { label: { tr: 'Rehber', en: 'Guide' }, tags: ['rehber', 'guide', 'kılavuz'] },
+  strategy: { label: { tr: 'Strateji', en: 'Strategy' }, tags: ['strateji', 'strategy', 'büyüme', 'growth'] },
+  industry: { label: { tr: 'Sektör', en: 'Industry' }, tags: ['sektör', 'industry'] },
+  product: { label: { tr: 'Ürün', en: 'Product' }, tags: ['ürün', 'product'] },
+};
+
+/**
+ * The site-wide default share image is not a post cover (it is a generic
+ * brand graphic); cards without a real cover get the plain branded pad.
+ */
+const DEFAULT_SHARE_IMAGE = /\/images\/open-graph-(tr|en)\.png$/;
+
+function coverFor(raw: string | null | undefined): string {
+  const url = raw?.trim() ?? '';
+  return url && !DEFAULT_SHARE_IMAGE.test(url) ? url : '';
+}
+
+function categoriesFor(tags: string[]): string[] {
+  const lower = tags.map((t) => t.toLocaleLowerCase('tr-TR').trim());
+  return Object.entries(FILTER_TAGS)
+    .filter(([, def]) => def.tags.some((tag) => lower.includes(tag)))
+    .map(([key]) => key);
+}
 
 export async function generateMetadata({
   params,
@@ -18,337 +94,157 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isTr = locale === 'tr';
-  const title = isTr
-    ? 'Blog & Rehberler — Yorum yönetimi & müşteri büyüme'
-    : 'Blog & Guides — Review management & customer growth';
-  const description = isTr
-    ? 'Yorum yönetimi, müşteri psikolojisi, KVKK + Google policy uyumu, QR strateji ve büyüme taktikleri — restoran, otel ve klinikler için uzman rehberleri.'
-    : 'Review management, customer psychology, KVKK + Google policy compliance, QR strategy and growth tactics — expert guides for restaurants, hotels & clinics.';
+  const lang: Lang = locale === 'en' ? 'en' : 'tr';
+  const { title, description } = META[lang];
+  const ogImage = lang === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
   return {
-    title: { absolute: title },
+    title,
     description,
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/blog`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/blog',
-        en: 'https://www.buaze.com/en/blog',
-        'x-default': 'https://www.buaze.com/tr/blog',
-      },
+      canonical: `/${lang}/blog`,
+      languages: { tr: '/tr/blog', en: '/en/blog', 'x-default': '/tr/blog' },
+      types: { 'application/rss+xml': `${SITE_URL}/${lang}/blog/rss.xml` },
     },
     openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/blog`,
       title,
       description,
-      url: `https://www.buaze.com/${locale}/blog`,
-      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
   };
 }
 
-/**
- * 1:1 with .design/site/site-more.jsx:BlogPage (lines 236-303) —
- * eyebrow + "İtibar kütüphanesi." + filter chips, then featured post
- * (1.5fr/1fr split with lime pad + chart line overlay), then 3-col grid
- * with color-rotating pads and oversized numeric backdrop per card.
- */
-/**
- * Filter chip → eşleşen tag varyantları. Admin yazı oluştururken hangi
- * dilde tag eklediğine göre filter yakalasın diye TR + EN listelenir.
- */
-const FILTER_TAGS: Record<string, { label: { tr: string; en: string }; tags: string[] }> = {
-  all: {
-    label: { tr: 'Tümü', en: 'All' },
-    tags: [],
-  },
-  strategy: {
-    label: { tr: 'Strateji', en: 'Strategy' },
-    tags: ['Strateji', 'strateji', 'Strategy', 'strategy', 'Büyüme', 'Growth'],
-  },
-  case: {
-    label: { tr: 'Vaka', en: 'Case' },
-    tags: ['Vaka', 'vaka', 'Case', 'case', 'Vaka çalışması', 'Case study'],
-  },
-  guide: {
-    label: { tr: 'Rehber', en: 'Guide' },
-    tags: ['Rehber', 'rehber', 'Guide', 'guide', 'Kılavuz'],
-  },
-  product: {
-    label: { tr: 'Ürün', en: 'Product' },
-    tags: ['Ürün', 'ürün', 'Product', 'product'],
-  },
-  industry: {
-    label: { tr: 'Sektör', en: 'Industry' },
-    tags: ['Sektör', 'sektör', 'Industry', 'industry'],
-  },
-};
-
 export default async function BlogIndexPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: Locale }>;
-  searchParams: Promise<{ cat?: string }>;
 }) {
   const { locale } = await params;
-  const { cat } = await searchParams;
-  const t = getTranslations(locale);
-  const base = `/${locale}`;
-  const isTr = locale === 'tr';
+  const lang: Lang = locale === 'en' ? 'en' : 'tr';
+  const copy = COPY[lang];
+  const pageUrl = `${SITE_URL}/${lang}/blog`;
 
-  const activeFilter = cat && FILTER_TAGS[cat] ? cat : 'all';
-  const tagsToMatch = FILTER_TAGS[activeFilter]?.tags ?? [];
-
-  const posts = await prisma.blogPost.findMany({
-    where: {
-      locale,
-      isActive: true,
-      ...(tagsToMatch.length > 0 ? { tags: { hasSome: tagsToMatch } } : {}),
-    },
+  // No catch on purpose: if a revalidation fails, ISR keeps serving the last
+  // good page instead of caching an empty list for an hour.
+  const rows = await prisma.blogPost.findMany({
+    where: { locale: lang, isActive: true },
     orderBy: { createdAt: 'desc' },
-    // List fields only — the index never renders the post body, so loading
-    // every article's full content on each request was wasted DB + memory.
+    // List fields only — the index never renders the post body.
     select: {
       id: true,
       slug: true,
       title: true,
+      description: true,
       coverImage: true,
       author: true,
       date: true,
       readTime: true,
+      tags: true,
     },
   });
 
-  const featured = posts[0];
-  const rest = posts.slice(1);
-  // Category color rotation for rest grid: first neutral, then greyscale
-  const padColor = (i: number) => (i === 0 ? '#EAF9B8' : '#F5F5F5');
+  const posts: BlogCard[] = rows.map((row) => {
+    const categories = categoriesFor(row.tags ?? []);
+    return {
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      description: row.description ?? '',
+      coverImage: coverFor(row.coverImage),
+      author: displayBlogAuthor(row.author, lang),
+      date: row.date,
+      dateIso: blogDateToIso(row.date),
+      readTime: row.readTime,
+      categories,
+      categoryLabel: categories[0] ? FILTER_TAGS[categories[0]].label[lang] : null,
+    };
+  });
 
-  const filterChips = (Object.keys(FILTER_TAGS) as Array<keyof typeof FILTER_TAGS>).map(
-    (key) => ({
-      key,
-      label: FILTER_TAGS[key].label[isTr ? 'tr' : 'en'],
-      href:
-        key === 'all'
-          ? `${base}/blog`
-          : `${base}/blog?cat=${key}`,
-      active: activeFilter === key,
-    }),
-  );
+  const filters = Object.entries(FILTER_TAGS)
+    .filter(([key]) => posts.some((p) => p.categories.includes(key)))
+    .map(([key, def]) => ({ key, label: def.label[lang] }));
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Blog',
+        '@id': `${pageUrl}#blog`,
+        url: pageUrl,
+        name: copy.h1,
+        description: META[lang].description,
+        inLanguage: lang === 'tr' ? 'tr-TR' : 'en-US',
+        isPartOf: { '@id': WEBSITE_ID },
+        publisher: { '@id': ORGANIZATION_ID },
+        ...(posts.length > 0
+          ? {
+              blogPost: posts.map((p) => ({
+                '@type': 'BlogPosting',
+                headline: p.title,
+                url: `${SITE_URL}/${lang}/blog/${p.slug}`,
+                ...(p.dateIso ? { datePublished: p.dateIso } : {}),
+              })),
+            }
+          : {}),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: copy.home, item: `${SITE_URL}/${lang}` },
+          { '@type': 'ListItem', position: 2, name: copy.eyebrow, item: pageUrl },
+        ],
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Header */}
-      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
-        <div className="max-w-[1200px] mx-auto">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'BLOG' : 'BLOG'}
-          </span>
-          <h1
-            className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-          >
-            {isTr ? 'Yorum yönetimi blogu' : 'Review management blog'}
-          </h1>
-          <p className="mt-4 max-w-[560px] text-[16px] text-[#525252] leading-[1.55]">
-            {isTr
-              ? 'Yorum yönetimi, müşteri psikolojisi, büyüme taktikleri — haftalık uzman rehberleri.'
-              : 'Review management, customer psychology, growth tactics — weekly expert guides.'}
-          </p>
-
-          {/* Filter chips — server-side filter via ?cat=... query param.
-              Tag-based; admin yazıya tag eklediğinde filtre yakalar. */}
-          <div className="mt-7 flex flex-wrap gap-2">
-            {filterChips.map((c) => (
-              <Link
-                key={c.key}
-                href={c.href}
-                aria-current={c.active ? 'page' : undefined}
-                className={`inline-flex items-center rounded-full border px-4 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-                  c.active
-                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                    : 'bg-white text-[#0A0A0A] border-[#EDEDED] hover:border-[#0A0A0A]'
-                }`}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={lang} />
+      <main id="main-content" className="pb-[60px] sm:pb-24">
+        <section aria-labelledby="blog-title" className="pt-[60px] pb-8 sm:pt-20 sm:pb-10">
+          <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
+            <div className="max-w-[720px]">
+              <p className="pulse-eyebrow text-[#737373]">{copy.eyebrow}</p>
+              <h1
+                id="blog-title"
+                className="mt-4 text-balance text-[38px] leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] sm:text-[56px] md:text-[52px] lg:text-[64px]"
               >
-                {c.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {posts.length === 0 ? (
-        <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
-          <div className="max-w-[1200px] mx-auto py-16 text-center">
-            <p className="text-[15px] text-[#737373]">
-              {activeFilter !== 'all'
-                ? isTr
-                  ? `"${FILTER_TAGS[activeFilter].label.tr}" kategorisinde henüz yazı yok.`
-                  : `No posts in "${FILTER_TAGS[activeFilter].label.en}" yet.`
-                : isTr
-                  ? 'Henüz blog yazısı yok.'
-                  : 'No blog posts yet.'}
-            </p>
-            {activeFilter !== 'all' && (
-              <Link
-                href={`${base}/blog`}
-                className="mt-4 inline-flex items-center gap-1 text-[13px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+                {copy.h1}
+              </h1>
+              <p className="mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+                {copy.lead}
+              </p>
+              <a
+                href={`/${lang}/blog/rss.xml`}
+                className="mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
               >
-                {isTr ? 'Tüm yazılara dön' : 'View all posts'}
-              </Link>
-            )}
+                <Rss size={15} aria-hidden="true" />
+                {copy.rss}
+              </a>
+            </div>
           </div>
         </section>
-      ) : (
-        <>
-          {/* Featured post — 1.5fr / 1fr split · cover image if uploaded, else lime pad with chart */}
-          {featured && (
-            <section className="px-5 sm:px-10 pt-5">
-              <div className="max-w-[1200px] mx-auto">
-                <Link
-                  href={`${base}/blog/${featured.slug}`}
-                  className="group grid grid-cols-1 overflow-hidden rounded-[18px] border border-[#EDEDED] bg-[#FAFAFA] md:grid-cols-[1.5fr_1fr]"
-                >
-                  {/* Left pad — cover image overlay or lime fallback */}
-                  <div className="relative aspect-[16/10] overflow-hidden bg-[#C6F24E] md:aspect-auto md:min-h-[340px]">
-                    {featured.coverImage ? (
-                      <>
-                        <Image
-                          src={featured.coverImage}
-                          alt={featured.title}
-                          fill
-                          sizes="(max-width: 767px) 100vw, 50vw"
-                          priority
-                          className="object-cover transition-transform duration-[600ms] group-hover:scale-[1.03]"
-                        />
-                        {/* Graphite gradient to keep FEATURED eyebrow readable */}
-                        <div
-                          aria-hidden
-                          className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A]/55 via-[#0A0A0A]/10 to-transparent"
-                        />
-                        {/* Lime accent corner chip */}
-                        <span
-                          className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] text-[#0A0A0A]"
-                          style={{ fontFamily: 'var(--font-mono)' }}
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" />
-                          {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span
-                          className="absolute left-6 top-6 text-[10px] font-semibold tracking-[0.14em] text-[#0A0A0A]"
-                          style={{ fontFamily: 'var(--font-mono)' }}
-                        >
-                          {isTr ? 'ÖNE ÇIKAN' : 'FEATURED'}
-                        </span>
-                        <svg
-                          viewBox="0 0 200 120"
-                          className="absolute bottom-8 right-8 w-[70%] max-w-[280px]"
-                          aria-hidden
-                        >
-                          <path
-                            d="M0 90 L30 80 L60 85 L90 50 L120 60 L150 20 L200 30"
-                            fill="none"
-                            stroke="#0A0A0A"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <circle cx="90" cy="50" r="5" fill="#0A0A0A" />
-                          <circle cx="150" cy="20" r="6" fill="#0A0A0A" />
-                        </svg>
-                      </>
-                    )}
-                  </div>
 
-                  {/* Right text */}
-                  <div className="flex flex-col justify-center p-7 sm:p-8 lg:p-10">
-                    <span
-                      className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                    >
-                      {isTr ? 'STRATEJİ' : 'STRATEGY'}
-                    </span>
-                    <h2
-                      className="mt-2.5 text-[24px] sm:text-[28px] lg:text-[32px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] group-hover:text-[#0A0A0A]"
-                    >
-                      {featured.title}
-                    </h2>
-                    <div className="mt-3.5 text-[12px] text-[#737373]">
-                      {featured.author} · {featured.date} · {featured.readTime}
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            </section>
-          )}
-
-          {/* Rest grid — 3-col · cover image if uploaded, else colored pad fallback */}
-          {rest.length > 0 && (
-            <section className="px-5 sm:px-10 pt-8 pb-[60px] sm:pb-24">
-              <div className="max-w-[1200px] mx-auto grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {rest.map((p, i) => (
-                  <Link
-                    key={p.id}
-                    href={`${base}/blog/${p.slug}`}
-                    className="group flex flex-col"
-                  >
-                    <div
-                      className="relative aspect-[4/3] overflow-hidden rounded-xl transition-transform duration-300 group-hover:-translate-y-1"
-                      style={{ background: padColor(i) }}
-                    >
-                      {p.coverImage ? (
-                        <>
-                          <Image
-                            src={p.coverImage}
-                            alt={p.title}
-                            fill
-                            sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
-                            className="object-cover transition-transform duration-[600ms] group-hover:scale-[1.04]"
-                          />
-                          <div
-                            aria-hidden
-                            className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/40 via-transparent to-transparent"
-                          />
-                        </>
-                      ) : (
-                        <span
-                          className="absolute bottom-3 left-5 text-[72px] font-medium leading-none tracking-[-0.04em] text-[#0A0A0A] opacity-[0.12]"
-                          style={{ fontFamily: 'var(--font-heading)' }}
-                        >
-                          0{i + 2}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-3.5">
-                      <span
-                        className="text-[10px] font-semibold tracking-[0.14em] text-[#737373]"
-                        style={{ fontFamily: 'var(--font-mono)' }}
-                      >
-                        {p.readTime}
-                      </span>
-                      <h3
-                        className="mt-1.5 text-[18px] sm:text-[20px] font-medium leading-[1.25] tracking-[-0.02em] text-[#0A0A0A]"
-                      >
-                        {p.title}
-                      </h3>
-                      <div className="mt-2.5 text-[12px] text-[#737373]">
-                        {p.author} · {p.date} · {p.readTime}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
+        {posts.length > 0 ? (
+          <BlogIndexList
+            locale={lang}
+            posts={posts}
+            filters={filters}
+            labels={{ all: copy.all, filterGroup: copy.filterGroup, latest: copy.latest, results: copy.results }}
+          />
+        ) : (
+          <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
+            <p className="rounded-[20px] border border-[#EDEDED] bg-[#FAFAFA] px-6 py-14 text-center text-[16px] text-[#525252]">
+              {copy.empty}
+            </p>
+          </div>
+        )}
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={lang} />
     </div>
   );
 }

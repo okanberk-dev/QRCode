@@ -1,18 +1,39 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
+import { ArrowRight } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import HelpSearchBar from '@/components/marketing/HelpSearchBar';
-import { getTranslations } from '@/lib/translations';
+import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
+import { WEBSITE_ID } from '@/lib/company-constants';
 import type { Locale } from '@/lib/translations';
-import { prisma } from '@/lib/prisma';
-import { HELP_CATEGORIES } from '@/lib/help-categories';
-import { getStaticHelpCategoryCounts, getStaticPopularHelpArticles } from '@/lib/help-articles';
+import { CATEGORY_BY_SLUG, HELP_CATEGORIES } from '@/lib/help-categories';
+import { HELP_START_HERE_SLUGS } from '@/lib/help-articles';
+import HelpCategoryIcon from './_components/HelpCategoryIcon';
+import HelpSupportCta from './_components/HelpSupportCta';
+import { countByCategory, helpLabels, loadHelpArticleList } from './_lib/help-data';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+/**
+ * /help — help center hub: search, the 7 topics (counts computed from the
+ * article list) and an editorial "start here" list. Static (ISR from the
+ * [locale] layout, §35.12.3). JSON-LD lists only what the page shows.
+ */
+
+const META = {
+  tr: {
+    title: 'Yardım merkezi: kurulum ve kullanım rehberleri',
+    description:
+      'Buaze’yi kurmak ve her gün kullanmak için rehberler: QR kodları, yorum yönetimi, platform bağlantıları, ekip, faturalandırma ve KVKK, Türkçe ve İngilizce.',
+  },
+  en: {
+    title: 'Help center: guides for setup and daily use',
+    description:
+      'Guides to setting up Buaze and using it day to day: QR codes, review management, platform links, your team, billing and privacy, in Turkish and English.',
+  },
+} as const;
+
+const FEATURED_CATEGORY = 'getting-started';
 
 export async function generateMetadata({
   params,
@@ -20,264 +41,262 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isTr = locale === 'tr';
-  const title = isTr
-    ? 'Yardım Merkezi — Kurulum, QR, yorum yönetimi'
-    : 'Help Center — Setup, QR codes and review guides';
-  const description = isTr
-    ? 'Buaze yardım merkezi: kurulum, QR kodları, yorum yönetimi, entegrasyonlar, ekip yönetimi ve güvenlik rehberleri. Sorunuzun cevabı burada.'
-    : 'Buaze Help Center: setup, QR codes, review management, integrations, team roles, security and KVKK guides — your question, answered in seconds.';
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const { title, description } = META[lang];
+  const ogImage = lang === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
   return {
     title,
     description,
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/help`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/help',
-        en: 'https://www.buaze.com/en/help',
-        'x-default': 'https://www.buaze.com/tr/help',
-      },
+      canonical: `/${lang}/help`,
+      languages: { tr: '/tr/help', en: '/en/help', 'x-default': '/tr/help' },
     },
     openGraph: {
       type: 'website',
       siteName: 'Buaze',
-      locale: isTr ? 'tr_TR' : 'en_US',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/help`,
       title,
       description,
-      url: `https://www.buaze.com/${locale}/help`,
-      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
   };
 }
 
-/**
- * 1:1 with .design/site/site-pages3.jsx:HelpCenterPage (lines 536-595).
- * Hero (eyebrow + H1 + search bar), 8-category grid, popular questions
- * list. Every card and question is a real link — category slug or
- * article slug. Counts come live from Prisma.
- */
 export default async function HelpCenterPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  const t = getTranslations(locale);
-  const base = `/${locale}`;
-  const isTr = locale === 'tr';
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const isTr = lang === 'tr';
+  const base = `/${lang}`;
+  const labels = helpLabels(lang);
 
-  // Live counts per category
-  let countBySlug: Record<string, number> = {};
-  let popular: { slug: string; title: string; category: string }[] = [];
-  const staticCounts = getStaticHelpCategoryCounts(locale);
-  try {
-    const counts = await prisma.helpArticle.groupBy({
-      by: ['category'],
-      where: { locale, isPublished: true },
-      _count: { category: true },
-    });
-    countBySlug = Object.fromEntries(counts.map((c) => [c.category, c._count.category]));
+  const list = await loadHelpArticleList(lang);
+  const counts = countByCategory(list);
+  const topics = HELP_CATEGORIES.filter((category) => (counts[category.slug] ?? 0) > 0);
+  const featured = topics.find((category) => category.slug === FEATURED_CATEGORY) ?? null;
+  const otherTopics = topics.filter((category) => category !== featured);
+  const featuredArticles = featured ? list.filter((item) => item.category === featured.slug).slice(0, 3) : [];
+  const startHere = HELP_START_HERE_SLUGS.map((slug) => list.find((item) => item.slug === slug)).filter(
+    (item): item is (typeof list)[number] => Boolean(item),
+  );
 
-    popular = await prisma.helpArticle.findMany({
-      where: { locale, isPublished: true },
-      orderBy: [{ order: 'asc' }, { updatedAt: 'desc' }],
-      take: 5,
-      select: { slug: true, title: true, category: true },
-    });
-  } catch {
-    // If the table is missing (pre-first schema migration) fall back to
-    // an empty state — the layout still renders "Coming soon".
-  }
-  countBySlug = { ...staticCounts, ...Object.fromEntries(Object.entries(countBySlug).filter(([, count]) => count > 0)) };
-  if (popular.length === 0) {
-    popular = getStaticPopularHelpArticles(locale).map((article) => ({
-      slug: article.slug,
-      title: article.title,
-      category: article.category,
-    }));
-  }
+  const copy = isTr
+    ? {
+        eyebrow: 'Destek',
+        h1: 'Buaze yardım merkezi',
+        lead: `Kurulumdan günlük kullanıma kadar adım adım rehberler: ${topics.length} konuda ${list.length} makale. Aradığınızı yazın ya da bir konu seçin.`,
+        topicsTitle: 'Konular',
+        startTitle: 'Önce bunları okuyun',
+        startLead: 'Müşteri akışını ve günlük işi anlamaya bu rehberlerle başlayın.',
+      }
+    : {
+        eyebrow: 'Support',
+        h1: 'Buaze help center',
+        lead: `Step-by-step guides from setup to daily use: ${list.length} articles across ${topics.length} topics. Search for what you need or pick a topic.`,
+        topicsTitle: 'Topics',
+        startTitle: 'Start with these',
+        startLead: 'Begin with these guides to understand the customer flow and the daily work.',
+      };
 
-  const helpUrl = `https://www.buaze.com/${locale}/help`;
+  const pageUrl = `${SITE_URL}/${lang}/help`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
+        '@type': 'CollectionPage',
+        '@id': `${pageUrl}#page`,
+        url: pageUrl,
+        name: copy.h1,
+        description: META[lang].description,
+        inLanguage: isTr ? 'tr-TR' : 'en-US',
+        isPartOf: { '@id': WEBSITE_ID },
+        mainEntity: {
+          '@type': 'ItemList',
+          name: copy.topicsTitle,
+          numberOfItems: topics.length,
+          itemListElement: topics.map((category, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            url: `${SITE_URL}/${lang}/help/category/${category.slug}`,
+            name: category[lang].title,
+          })),
+        },
+      },
+      {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-          { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım Merkezi' : 'Help Center', item: helpUrl },
+          { '@type': 'ListItem', position: 1, name: labels.home, item: `${SITE_URL}/${lang}` },
+          { '@type': 'ListItem', position: 2, name: labels.helpCenter, item: pageUrl },
         ],
-      },
-      {
-        '@type': 'CollectionPage',
-        name: isTr ? 'Buaze Yardım Merkezi' : 'Buaze Help Center',
-        url: helpUrl,
-        inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-        isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://www.buaze.com' },
-        about: HELP_CATEGORIES.map((cat) => ({
-          '@type': 'Thing',
-          name: cat[locale].title,
-          description: cat[locale].desc,
-          url: `https://www.buaze.com/${locale}/help/category/${cat.slug}`,
-        })),
-        hasPart: popular.map((p) => ({
-          '@type': 'Article',
-          headline: p.title,
-          url: `https://www.buaze.com/${locale}/help/${p.slug}`,
-          inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-        })),
-      },
-      {
-        '@type': 'ItemList',
-        name: isTr ? 'Yardım kategorileri' : 'Help categories',
-        itemListElement: HELP_CATEGORIES.map((cat, i) => ({
-          '@type': 'ListItem',
-          position: i + 1,
-          url: `https://www.buaze.com/${locale}/help/category/${cat.slug}`,
-          name: cat[locale].title,
-        })),
       },
     ],
   };
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
       <main id="main-content">
+        {/* Hero + search */}
+        <section aria-labelledby="help-title" className="border-b border-[#EDEDED] bg-[#FAFAFA] pb-[60px] pt-[60px] sm:pb-20 sm:pt-20">
+          <div className="mx-auto w-full max-w-[1200px] px-5 text-center sm:px-10">
+            <p lang={lang} className="pulse-eyebrow text-[#737373]">
+              {copy.eyebrow}
+            </p>
+            <h1
+              id="help-title"
+              className="mx-auto mt-4 max-w-[860px] text-balance text-[38px] leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] sm:text-[56px] md:text-[52px] lg:text-[64px]"
+            >
+              {copy.h1}
+            </h1>
+            <p className="mx-auto mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+              {copy.lead}
+            </p>
+            <div className="mx-auto mt-8 max-w-[600px]">
+              <HelpSearchBar locale={lang} />
+            </div>
+          </div>
+        </section>
 
-      {/* Hero */}
-      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20 text-center">
-        <div className="mx-auto max-w-[800px]">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'YARDIM MERKEZI' : 'HELP CENTER'}
-          </span>
-          <h1
-            className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-          >
-            {isTr ? 'Sorunuzun cevabı burada.' : 'Your answer is right here.'}
-          </h1>
-          <HelpSearchBar locale={locale} />
-        </div>
-      </section>
-
-      {/* Categories grid */}
-      <section className="px-5 sm:px-10 py-12 sm:py-16">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {HELP_CATEGORIES.map((cat) => {
-              const meta = cat[locale];
-              const count = countBySlug[cat.slug] ?? 0;
-              return (
-                <Link
-                  key={cat.slug}
-                  href={`${base}/help/category/${cat.slug}`}
-                  className="group flex flex-col rounded-[14px] border border-[#EDEDED] bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-[#C6F24E] hover:shadow-[0_8px_24px_rgba(10,10,10,0.05)]"
+        {/* Topics */}
+        <section aria-labelledby="help-topics-title" className="py-[60px] sm:py-24">
+          <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
+            <h2
+              id="help-topics-title"
+              className="text-balance text-[28px] leading-[1.08] tracking-[-0.02em] text-[#0A0A0A] sm:text-[40px] lg:text-[48px]"
+            >
+              {copy.topicsTitle}
+            </h2>
+            <ul role="list" className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+              {featured && (
+                <li className="rounded-[20px] bg-[#0A0A0A] p-6 text-white sm:col-span-2 sm:p-8 lg:col-span-3 lg:p-10">
+                  <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-x-14">
+                    <div className="flex items-start gap-4 lg:col-start-1 lg:row-start-1">
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#C6F24E] text-[#0A0A0A]"
+                      >
+                        <HelpCategoryIcon icon={featured.icon} size={20} />
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="text-[22px] leading-[1.2] tracking-[-0.02em] text-white sm:text-[26px]">
+                          <Link
+                            href={`${base}/help/category/${featured.slug}`}
+                            className="rounded-sm hover:underline hover:decoration-[#C6F24E] hover:decoration-2 hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                          >
+                            {featured[lang].title}
+                          </Link>
+                        </h3>
+                        <p className="mt-2 max-w-[440px] text-pretty text-[15px] leading-[1.6] text-white/70">{featured[lang].desc}</p>
+                      </div>
+                    </div>
+                    <ul role="list" className="mt-6 border-t border-white/10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+                      {featuredArticles.map((item) => (
+                        <li key={item.slug} className="border-b border-white/10">
+                          <Link
+                            href={`${base}/help/${item.slug}`}
+                            className="group flex min-h-[52px] items-center justify-between gap-4 py-3 text-[15px] font-medium text-white transition-colors hover:text-[#C6F24E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                          >
+                            <span className="text-pretty">{item.title}</span>
+                            <ArrowRight size={16} aria-hidden="true" className="shrink-0 transition-transform group-hover:translate-x-0.5" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href={`${base}/help/category/${featured.slug}`}
+                      className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 self-start text-[14px] font-semibold text-[#C6F24E] hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] lg:col-start-1 lg:row-start-2 lg:mt-6 lg:self-end lg:pl-[60px]"
+                    >
+                      {labels.seeAll(counts[featured.slug] ?? 0)}
+                      <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                  </div>
+                </li>
+              )}
+              {otherTopics.map((category) => (
+                <li
+                  key={category.slug}
+                  className="group relative flex gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:flex-col sm:gap-0 sm:p-8"
                 >
                   <span
-                    className="text-[28px] leading-none text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                    aria-hidden
+                    aria-hidden="true"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#F5F5F5] text-[#0A0A0A] transition-colors group-hover:bg-[#C6F24E]"
                   >
-                    {cat.symbol}
+                    <HelpCategoryIcon icon={category.icon} size={20} />
                   </span>
-                  <h3
-                    className="mt-3 text-[18px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
-                  >
-                    {meta.title}
-                  </h3>
-                  <p className="mt-1 text-[12px] text-[#737373]">
-                    {count > 0
-                      ? isTr
-                        ? `${count} makale`
-                        : `${count} article${count === 1 ? '' : 's'}`
-                      : isTr
-                        ? 'Yakında'
-                        : 'Coming soon'}
-                  </p>
-                  <p className="mt-3 text-[13px] leading-[1.55] text-[#525252]">{meta.desc}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Popular questions */}
-      {popular.length > 0 && (
-        <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
-          <div className="mx-auto max-w-[1200px]">
-            <h2
-              className="text-[28px] sm:text-[32px] font-medium leading-[1.1] tracking-[-0.02em] text-[#0A0A0A]"
-            >
-              {isTr ? 'Popüler sorular' : 'Popular questions'}
-            </h2>
-            <ul className="mt-5">
-              {popular.map((p, i) => (
-                <li
-                  key={p.slug}
-                  className={
-                    i === 0
-                      ? 'border-t-2 border-[#0A0A0A]'
-                      : 'border-t border-[#EDEDED]'
-                  }
-                >
-                  <Link
-                    href={`${base}/help/${p.slug}`}
-                    className="group flex items-center justify-between gap-4 py-[18px]"
-                  >
-                    <span
-                      className="text-[16px] sm:text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-heading)' }}
-                    >
-                      {p.title}
-                    </span>
-                    <span
-                      aria-hidden
-                      className="shrink-0 text-[14px] text-[#737373] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]"
-                    >
-                      →
-                    </span>
-                  </Link>
+                  <div className="flex min-w-0 flex-1 flex-col sm:mt-5">
+                    <h3 className="text-[18px] font-medium leading-[1.25] tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
+                      <Link
+                        href={`${base}/help/category/${category.slug}`}
+                        className="after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none"
+                      >
+                        {category[lang].title}
+                      </Link>
+                    </h3>
+                    <p className="mt-1.5 text-pretty text-[15px] leading-[1.6] text-[#525252] sm:mt-2">{category[lang].desc}</p>
+                    <p className="mt-3 text-[13px] text-[#737373] sm:mt-auto sm:pt-5">{labels.articles(counts[category.slug] ?? 0)}</p>
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
         </section>
-      )}
 
-      {/* Contact CTA */}
-      <section className="border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[720px] text-center">
-          <h2
-            className="text-[24px] sm:text-[28px] font-medium tracking-[-0.02em] text-[#0A0A0A]"
-          >
-            {isTr ? 'Cevabını bulamadın mı?' : "Still can't find it?"}
-          </h2>
-          <p className="mt-3 text-[15px] text-[#525252]">
-            {isTr ? 'Destek ekibimize yaz, 2 saat içinde dönelim.' : 'Write to our support team — we reply within 2 hours.'}
-          </p>
-          <Link
-            href={`${base}/contact`}
-            className="mt-6 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-          >
-            {isTr ? 'Destek ekibine yaz' : 'Contact support'}
-            <span aria-hidden>→</span>
-          </Link>
-        </div>
-      </section>
+        {/* Start here */}
+        {startHere.length > 0 && (
+          <section aria-labelledby="help-start-title" className="border-t border-[#EDEDED] bg-[#FAFAFA] py-[60px] sm:py-24">
+            <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
+              <h2
+                id="help-start-title"
+                className="text-balance text-[28px] leading-[1.08] tracking-[-0.02em] text-[#0A0A0A] sm:text-[40px] lg:text-[48px]"
+              >
+                {copy.startTitle}
+              </h2>
+              <p className="mt-4 max-w-[640px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+                {copy.startLead}
+              </p>
+              <ul role="list" className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 sm:gap-6 md:grid-cols-2">
+                {startHere.map((item) => {
+                  const category = CATEGORY_BY_SLUG[item.category];
+                  return (
+                    <li
+                      key={item.slug}
+                      className="group relative flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:p-8"
+                    >
+                      {category && (
+                        <p lang={lang} className="pulse-eyebrow flex items-center gap-2 text-[#737373]">
+                          <HelpCategoryIcon icon={category.icon} size={13} />
+                          {category[lang].title}
+                        </p>
+                      )}
+                      <h3 className="mt-4 text-pretty text-[20px] font-medium leading-[1.25] tracking-[-0.015em] text-[#0A0A0A] sm:text-[22px]">
+                        <Link
+                          href={`${base}/help/${item.slug}`}
+                          className="after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none"
+                        >
+                          {item.title}
+                        </Link>
+                      </h3>
+                      <p className="mt-3 text-pretty text-[15px] leading-[1.6] text-[#525252]">{item.excerpt}</p>
+                      <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[14px] font-medium text-[#0A0A0A]">
+                        {labels.readMore}
+                        <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </section>
+        )}
 
+        <HelpSupportCta locale={lang} />
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

@@ -150,13 +150,13 @@ export function renderLegalContentWithToc(
           className="bz-h-tight mt-10 mb-3 text-[20px] sm:text-[24px] tracking-[-0.02em] text-[#0A0A0A]"
         >
           {renderInline(text, `h2-${id}`, locale)}
+          {/* The '#' is drawn by CSS (::before) so it never becomes part of
+              the heading text that search engines and screen readers read. */}
           <a
             href={`#${id}`}
-            aria-label={`${text} bölümüne bağlantı`}
+            aria-label={locale === 'en' ? `Link to the section “${text}”` : `${text} bölümüne bağlantı`}
             className="legal-anchor"
-          >
-            #
-          </a>
+          />
         </h2>,
       );
       i++;
@@ -176,11 +176,9 @@ export function renderLegalContentWithToc(
           {renderInline(text, `h3-${id}`, locale)}
           <a
             href={`#${id}`}
-            aria-label={`${text} alt-bölümüne bağlantı`}
+            aria-label={locale === 'en' ? `Link to the subsection “${text}”` : `${text} alt bölümüne bağlantı`}
             className="legal-anchor"
-          >
-            #
-          </a>
+          />
         </h3>,
       );
       i++;

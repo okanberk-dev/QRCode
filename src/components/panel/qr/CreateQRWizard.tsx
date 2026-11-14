@@ -729,8 +729,8 @@ export function CreateQRWizard({
               label={isTr ? "Yüksek puan yönlendirmesi" : "High-rating redirect"}
               hint={
                 isTr
-                  ? "1–3 yıldız her zaman dahili kaydedilir."
-                  : "1–3 stars always captured internally."
+                  ? "Eşiğin altındaki puanlar önce işletmenize özel forma düşer."
+                  : "Ratings below your threshold go to your private form first."
               }
             >
               <div className="flex flex-col gap-2">

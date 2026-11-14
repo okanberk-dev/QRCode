@@ -8,7 +8,9 @@
  *   - Flat vector, 2–2.5px #0A0A0A stroke, stroke-linejoin round
  *   - Lime (#C6F24E) as primary accent; lime-soft (#EAF9B8) for surfaces
  *   - White + graphite + neutral #E4E4E4 / #EDEDED for depth
- *   - viewBox ~240×220 so the layout grid cell (~1fr) renders ~280-300px
+ *   - viewBox ~240×220; the layout scales the SVG to its container width
+ *   - Decoration only (aria-hidden) and no SVG text elements: inline SVG
+ *     text is indexable, so no ratings, scores or labels are drawn as text.
  */
 
 type IllusProps = { size?: number };
@@ -20,36 +22,32 @@ const svgBase = (w: number, h: number, size: number) => ({
 });
 
 // ─── Aesthetic / Dermatology ──────────────────────────────────────────
-// Face profile silhouette with a lime shimmer/sparkle cluster.
+// Hand mirror with a lime shimmer/sparkle cluster and a feedback pill.
 export const IllusAesthetic = ({ size = 280 }: IllusProps) => (
   <svg {...svgBase(240, 220, size)} aria-hidden>
     {/* Soft background ring */}
-    <circle cx="120" cy="120" r="90" fill="#EAF9B8" opacity="0.55" />
-    <circle cx="120" cy="120" r="90" fill="none" stroke="#0A0A0A" strokeWidth="1.5" strokeDasharray="2 4" />
-    {/* Face profile (stylised) */}
-    <path
-      d="M90 60 Q140 55 150 90 Q160 125 140 150 Q145 170 130 178 Q115 180 105 172 L95 180 Q80 180 75 165 L80 150 Q60 125 70 95 Q75 68 90 60 Z"
-      fill="#FFFFFF"
-      stroke="#0A0A0A"
-      strokeWidth="2.5"
-      strokeLinejoin="round"
-    />
-    {/* Eye */}
-    <path d="M110 115 Q120 110 130 115" fill="none" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
-    <circle cx="122" cy="115" r="2" fill="#0A0A0A" />
-    {/* Lip hint */}
-    <path d="M108 148 Q118 152 128 148" fill="none" stroke="#0A0A0A" strokeWidth="1.8" strokeLinecap="round" />
+    <circle cx="120" cy="112" r="90" fill="#EAF9B8" opacity="0.55" />
+    <circle cx="120" cy="112" r="90" fill="none" stroke="#0A0A0A" strokeWidth="1.5" strokeDasharray="2 4" />
+    {/* Mirror handle */}
+    <rect x="100" y="138" width="20" height="12" rx="4" fill="#0A0A0A" />
+    <rect x="103" y="148" width="14" height="50" rx="7" fill="#0A0A0A" />
+    {/* Mirror frame + glass */}
+    <circle cx="110" cy="90" r="52" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" />
+    <circle cx="110" cy="90" r="41" fill="#EAF9B8" stroke="#0A0A0A" strokeWidth="1.5" />
+    {/* Glass shine */}
+    <path d="M84 78 Q90 60 110 56" fill="none" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
+    <path d="M86 92 Q86 86 89 81" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" />
     {/* Sparkle cluster (lime) */}
     <g>
       <path d="M178 55 L182 65 L192 69 L182 73 L178 83 L174 73 L164 69 L174 65 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M200 95 L203 101 L209 104 L203 107 L200 113 L197 107 L191 104 L197 101 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M185 135 L187 139 L191 141 L187 143 L185 147 L183 143 L179 141 L183 139 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M200 100 L203 106 L209 109 L203 112 L200 118 L197 112 L191 109 L197 106 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M44 120 L46 124 L50 126 L46 128 L44 132 L42 128 L38 126 L42 124 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.3" strokeLinejoin="round" />
     </g>
-    {/* Rating pill */}
-    <rect x="45" y="180" width="90" height="26" rx="13" fill="#0A0A0A" />
-    <text x="90" y="197" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="10" fill="#C6F24E" fontWeight="600" letterSpacing="0.1em">
-      ★ 4.9 · GLOW
-    </text>
+    {/* Feedback pill (three dots, no text) */}
+    <rect x="146" y="166" width="70" height="26" rx="13" fill="#0A0A0A" />
+    <circle cx="166" cy="179" r="3" fill="#C6F24E" />
+    <circle cx="181" cy="179" r="3" fill="#C6F24E" />
+    <circle cx="196" cy="179" r="3" fill="#C6F24E" />
   </svg>
 );
 
@@ -93,13 +91,11 @@ export const IllusAuto = ({ size = 280 }: IllusProps) => (
 );
 
 // ─── Boutique Hotels ─────────────────────────────────────────────────
-// Small townhouse hotel facade with lime awning + pulse bubble.
+// Small townhouse hotel facade with lime awning + feedback bubble.
 export const IllusBoutique = ({ size = 280 }: IllusProps) => (
   <svg {...svgBase(240, 220, size)} aria-hidden>
-    {/* Soft sky */}
-    <rect x="0" y="0" width="240" height="140" fill="#EAF9B8" opacity="0.4" />
     {/* Ground */}
-    <rect x="0" y="180" width="240" height="40" fill="#E4E4E4" />
+    <rect x="22" y="176" width="196" height="12" rx="6" fill="#E4E4E4" />
     {/* Main facade */}
     <path d="M60 180 L60 80 L120 40 L180 80 L180 180 Z" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" strokeLinejoin="round" />
     {/* Roof trim */}
@@ -127,10 +123,12 @@ export const IllusBoutique = ({ size = 280 }: IllusProps) => (
     {/* Flag on top */}
     <path d="M120 40 L120 22" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
     <path d="M120 22 L135 26 L128 31 L135 36 L120 32 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" strokeLinejoin="round" />
-    {/* 5-star pulse bubble floating */}
+    {/* Feedback bubble floating (message lines, no text) */}
     <path d="M185 30 Q185 22 193 22 L222 22 Q230 22 230 30 L230 50 Q230 58 222 58 L205 58 L198 65 L198 58 L193 58 Q185 58 185 50 Z"
       fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2" strokeLinejoin="round" />
-    <text x="207" y="44" textAnchor="middle" fontFamily="Inter" fontSize="11" fontWeight="700" fill="#0A0A0A">★★★★★</text>
+    <line x1="194" y1="34" x2="221" y2="34" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
+    <line x1="194" y1="41" x2="215" y2="41" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
+    <line x1="194" y1="48" x2="208" y2="48" stroke="#A8D62E" strokeWidth="3" strokeLinecap="round" />
   </svg>
 );
 
@@ -167,8 +165,8 @@ export const IllusDentist = ({ size = 280 }: IllusProps) => (
 // Dumbbell + ECG pulse line + lime heart.
 export const IllusGym = ({ size = 280 }: IllusProps) => (
   <svg {...svgBase(240, 220, size)} aria-hidden>
-    {/* Background wave */}
-    <path d="M0 165 Q60 155 120 165 T240 165 L240 220 L0 220 Z" fill="#EAF9B8" opacity="0.6" />
+    {/* Soft floor */}
+    <ellipse cx="120" cy="184" rx="104" ry="12" fill="#EAF9B8" />
     {/* ECG pulse line across the middle */}
     <path
       d="M0 115 L40 115 L55 85 L70 145 L85 100 L100 115 L130 115 L140 95 L155 135 L170 105 L180 115 L240 115"
@@ -210,11 +208,11 @@ export const IllusGym = ({ size = 280 }: IllusProps) => (
 );
 
 // ─── Real Estate ─────────────────────────────────────────────────────
-// House with a lime "SOLD" sign out front + little window light.
+// House with a lime yard sign out front + little window light.
 export const IllusRealEstate = ({ size = 280 }: IllusProps) => (
   <svg {...svgBase(240, 220, size)} aria-hidden>
     {/* Ground */}
-    <rect x="0" y="175" width="240" height="45" fill="#E4E4E4" />
+    <rect x="12" y="176" width="216" height="12" rx="6" fill="#E4E4E4" />
     {/* House body */}
     <path d="M70 180 L70 110 L130 65 L190 110 L190 180 Z" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" strokeLinejoin="round" />
     {/* Roof */}
@@ -236,13 +234,11 @@ export const IllusRealEstate = ({ size = 280 }: IllusProps) => (
       <rect x="30" y="6" width="3" height="7" fill="#0A0A0A" />
       <rect x="24" y="6" width="3" height="7" fill="#0A0A0A" />
     </g>
-    {/* SOLD sign */}
+    {/* Yard sign with a check mark (no text) */}
     <g transform="translate(22 140)">
       <rect x="6" y="0" width="4" height="40" fill="#0A0A0A" />
       <rect x="0" y="6" width="56" height="22" rx="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
-      <text x="28" y="22" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="11" fontWeight="700" fill="#0A0A0A" letterSpacing="0.1em">
-        SOLD
-      </text>
+      <path d="M20 17 L26 22 L37 11" fill="none" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </g>
   </svg>
 );
@@ -251,8 +247,8 @@ export const IllusRealEstate = ({ size = 280 }: IllusProps) => (
 // Open book + graduation cap + lime star accent.
 export const IllusSchool = ({ size = 280 }: IllusProps) => (
   <svg {...svgBase(240, 220, size)} aria-hidden>
-    {/* Soft bg band */}
-    <path d="M0 175 Q60 168 120 172 T240 168 L240 220 L0 220 Z" fill="#EAF9B8" opacity="0.6" />
+    {/* Soft floor */}
+    <ellipse cx="120" cy="186" rx="104" ry="11" fill="#EAF9B8" />
     {/* Open book base */}
     <path
       d="M30 180 L30 140 Q30 130 45 130 L110 130 Q120 130 120 140 L120 180 Q120 170 110 170 L45 170 Q30 170 30 180 Z"

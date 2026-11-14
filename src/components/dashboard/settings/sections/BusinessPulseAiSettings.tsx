@@ -264,8 +264,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     </div>
                     <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
-                        ? "Yeni bir yorum geldiğinde taslak otomatik hazırlanır; Yorumlar sayfasını açtığında seni bekler. Eksik kalan taslaklar her saat tamamlanır. Otomatik gönderim yoktur — her yanıt senin onayınla gider."
-                        : "When a new review arrives, a draft is prepared automatically and waits for you on the Reviews page. Missing drafts are filled in every hour. Nothing is sent automatically — every reply needs your approval."}
+                        ? "Yeni bir yorum geldiğinde taslak otomatik hazırlanır; Yorumlar sayfasını açtığında seni bekler. Eksik kalan taslaklar günde bir kez tamamlanır. Otomatik gönderim yoktur — her yanıt senin onayınla gider."
+                        : "When a new review arrives, a draft is prepared automatically and waits for you on the Reviews page. Missing drafts are filled in once a day. Nothing is sent automatically — every reply needs your approval."}
                     </span>
                   </div>
                 </div>
@@ -287,8 +287,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     </div>
                     <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
-                        ? "Google'da yanıtlanmamış yorumlar için her saat taslak hazırlanır; Google Yorumları sayfasını açtığında seni bekler. Yanıt yalnızca sen onaylayınca Google'a gönderilir."
-                        : "Drafts are prepared every hour for unanswered Google reviews and wait for you on the Google Reviews page. A reply is posted to Google only after you approve it."}
+                        ? "Google'da yanıtlanmamış yorumlar için günde bir kez taslak hazırlanır; Google Yorumları sayfasını açtığında seni bekler. Yanıt yalnızca sen onaylayınca Google'a gönderilir."
+                        : "Drafts are prepared once a day for unanswered Google reviews and wait for you on the Google Reviews page. A reply is posted to Google only after you approve it."}
                     </span>
                   </div>
                 </div>

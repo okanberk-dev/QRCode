@@ -83,13 +83,11 @@ const nextConfig: NextConfig = {
   // tree-shake bu volume'da fail edebilir. `optimizePackageImports` Next 14+
   // feature: yalnız import edilen icon'lar bundle'a girer. CLAUDE.md §34.13.
   //
-  // Stage 83 §38.163 — extended:
-  //   - framer-motion (~12 marketing/animation imports) is barrel-exported
-  //     and prone to dragging unused motion features into the chunk.
-  //   - date-fns is used by blog/case-study date formatting; the package
-  //     ships every locale + every fn unless tree-shake is hinted.
+  // Stage 83 §38.163 — extended: date-fns is used by blog date formatting;
+  // the package ships every locale + every fn unless tree-shake is hinted.
+  // (framer-motion was removed in 2026-11: nothing imported it any more.)
   experimental: {
-    optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
+    optimizePackageImports: ['lucide-react', 'date-fns'],
   },
 
   async rewrites() {
@@ -225,6 +223,31 @@ const nextConfig: NextConfig = {
         destination: '/:locale/features',
         permanent: true,
       },
+      // 2026-11 (Stage 172): /blog/google-2026 was a static page of invented
+      // "Google 2026 update" news with a fictional author — deleted.
+      {
+        source: '/:locale(tr|en)/blog/google-2026',
+        destination: '/:locale/blog',
+        permanent: true,
+      },
+      // 2026-11 (Stage 172): help articles that described features Buaze
+      // does not have (API keys, webhooks, Slack routing, tags/assignment,
+      // 2FA, group billing…) were removed. Each old URL goes to the article
+      // that answers the same question truthfully.
+      {
+        source:
+          '/:locale(tr|en)/help/:slug(api-key-basics|webhook-events|webhook-payload-anatomy|rate-limit-strategy|sandbox-and-staging|integration-resilience-runbook)',
+        destination: '/:locale/help/csv-export-bi',
+        permanent: true,
+      },
+      { source: '/:locale(tr|en)/help/campaign-qr-utm', destination: '/:locale/help/qr-platform-table-links', permanent: true },
+      { source: '/:locale(tr|en)/help/tags-and-assignment', destination: '/:locale/help/review-search-and-filters', permanent: true },
+      { source: '/:locale(tr|en)/help/slack-discord-webhook-routing', destination: '/:locale/help/notification-emails', permanent: true },
+      { source: '/:locale(tr|en)/help/usage-thresholds-alerts', destination: '/:locale/help/plans-trial-upgrade', permanent: true },
+      { source: '/:locale(tr|en)/help/invoice-vat-and-titles', destination: '/:locale/help/invoices-cancelation', permanent: true },
+      { source: '/:locale(tr|en)/help/multi-account-and-franchise-billing', destination: '/:locale/help/multi-location-management', permanent: true },
+      { source: '/:locale(tr|en)/help/two-factor-and-session-management', destination: '/:locale/help/security-best-practices', permanent: true },
+      { source: '/:locale(tr|en)/help/category/api-webhook', destination: '/:locale/help', permanent: true },
       {
         source: '/:locale(tr|en)/legal/kvkk-aydinlatma',
         destination: '/:locale/kvkk',
@@ -288,11 +311,20 @@ const nextConfig: NextConfig = {
       'browsing-topics=()',
       'payment=()',
       'usb=()',
-      'bluetooth=()',
+      // `bluetooth` is not a Permissions-Policy feature Chrome recognises; it
+      // only produced an "Unrecognized feature" console warning on every page.
       'serial=()',
     ].join(', ');
 
     return [
+      // Language of each locale tree, as an HTTP signal too: the root layout
+      // serves <html lang="tr"> for every route (an inline script switches
+      // /en/* before paint), so non-JS crawlers (Bing, Yandex, AI bots) get
+      // the right language from this header plus hreflang.
+      { source: '/tr', headers: [{ key: 'Content-Language', value: 'tr' }] },
+      { source: '/tr/:path*', headers: [{ key: 'Content-Language', value: 'tr' }] },
+      { source: '/en', headers: [{ key: 'Content-Language', value: 'en' }] },
+      { source: '/en/:path*', headers: [{ key: 'Content-Language', value: 'en' }] },
       {
         source: '/:path*',
         headers: [

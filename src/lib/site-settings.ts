@@ -38,9 +38,9 @@ export const SITE_SETTINGS_DEFAULTS: SiteSettings = {
   titleDefaultEn: 'Buaze | QR Feedback & Digital Reputation Management Platform',
   titleTemplate: '%s | Buaze',
   descriptionTr:
-    'Buaze ile QR akışlarıyla şeffaf müşteri geri bildirimi toplayın, yorumları tek panelden yönetin ve Pulse AI taslaklarıyla daha hızlı yanıt verin. Restoran, otel, klinik ve yerel hizmet işletmeleri için.',
+    'Buaze ile QR kodla müşteri geri bildirimi toplayın, 10 yorum platformundaki bağlantılarınızı tek yerden yönetin ve Pulse AI taslaklarıyla daha hızlı yanıt verin. Restoran, otel, klinik ve yerel işletmeler için.',
   descriptionEn:
-    'Collect transparent customer feedback through QR flows, manage reviews from one dashboard, and respond faster with Pulse AI drafts. Built for restaurants, hotels, clinics and local service businesses.',
+    'Collect customer feedback with QR codes, manage your links on 10 review platforms in one place and reply faster with Pulse AI drafts. Built for restaurants, hotels, clinics and local businesses.',
   keywordsTr: [
     'Dijital itibar yönetimi',
     'Google haritalar geri bildirim toplama',

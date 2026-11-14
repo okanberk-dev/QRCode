@@ -1,398 +1,341 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { ArrowRight, ChevronRight, Hotel, Globe, Sparkles, BarChart3 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import PlatformLogo from '@/components/marketing/PlatformLogo';
-import { getTranslations } from '@/lib/translations';
+import { BellRing, Mail, UsersRound, UtensilsCrossed } from 'lucide-react';
+import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
+import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
-import { buildSolutionSchema } from '@/lib/solution-schema';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { getRelatedSolutions } from '@/lib/related-solutions';
+import { IllusHotel } from '../_components/sector-illustrations';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`. Reads only
+// `params`, so the page stays static. Sector "hospitality" drives the
+// platform list (seven platforms) and the "After the stay" survey template.
+// Written for hotels with several outlets (rooms, restaurant, spa); the
+// boutique-hotels page covers small, owner-run properties.
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Otel & Konaklama İtibar Yönetimi'
-      : 'Hotel & Hospitality Reputation Management';
-  const description =
-    locale === 'tr'
-      ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, her geri bildirime hızlı yanıt ver."
-      : 'Booking.com, Tripadvisor, Airbnb and Google — manage all four from one panel. Collect reviews at check-out with room QRs.';
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/solutions/hotels`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/solutions/hotels',
-        en: 'https://www.buaze.com/en/solutions/hotels',
-        'x-default': 'https://www.buaze.com/tr/solutions/hotels',
-      },
+const SLUG = 'hotels';
+
+const CONTENT: Record<Locale, SolutionPageContent> = {
+  tr: {
+    name: 'Oteller',
+    meta: {
+      title: 'Oteller için QR ile misafir geri bildirimi',
+      description:
+        'Oteller için oda, restoran ve resepsiyon QR kodu: misafir puan verir, eşiğin altında önce size yazabilir. Google, Tripadvisor ve Booking.com bağlantıları.',
     },
-    openGraph: {
-      type: 'website',
-      siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/solutions/hotels`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    eyebrow: 'Oteller',
+    h1: 'Oteller için QR kodlu misafir geri bildirim sistemi',
+    lead:
+      'Oda, restoran ve resepsiyondaki QR kodlarla misafir görüşünü konaklama sırasında iletir. Eşik ve üzerindeki puanlarda Google veya Tripadvisor gibi seçtiğiniz platformun yorum sayfası açılır; eşiğin altında misafir önce size yazabilir, herkese açık yorum bağlantısı aynı ekranda görünür.',
+    flow: {
+      title: 'Otelde QR ile geri bildirim nasıl işler',
+      steps: [
+        {
+          title: 'Her alan için QR oluşturun',
+          body:
+            'Odalar, restoran, havuz barı ve resepsiyon için ayrı QR kodlar oluşturun; etiket olarak oda numarasını ya da alanın adını yazın (ör. 204, Restoran, Spa). İsterseniz her koda farklı bir yorum platformu sabitleyebilirsiniz.',
+        },
+        {
+          title: 'Misafir puan verir',
+          body:
+            'Misafir QR kodu okutur ve 1–5 yıldız verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) seçtiğiniz platformun yorum sayfası açılır. Eşiğin altındaki puanlarda misafir önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        },
+        {
+          title: 'Misafir ilişkileri hemen görsün',
+          body:
+            'Uyarıların gideceği adresi işletme ayarlarından seçersiniz. Misafir ilişkileri ekibinin adresini yazarsanız 1–3 yıldızlık her geri bildirim, alan etiketiyle birlikte doğrudan onlara gider; misafir otelden ayrılmadan ilgilenebilirsiniz.',
+        },
+      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    placements: {
+      title: 'Otelde QR kodu nereye koymalı',
+      lead: 'Misafirin bir hizmeti kullandıktan hemen sonra rahatça durduğu yerler en uygun yerlerdir.',
+      items: [
+        {
+          title: 'Oda bilgi dosyası',
+          body:
+            'Odadaki bilgi dosyasına veya televizyonun yanındaki karta basılan QR kod, misafirin konaklama sırasında yaşadığı bir sorunu ayrılmadan iletmesini sağlar. Oda numarasını etiket olarak kullanın.',
+        },
+        {
+          title: 'Restoran ve bar',
+          body:
+            'Hesap kapatılırken ya da kahvaltı çıkışında masadaki QR kod, yeme-içme deneyimini ayrı bir etiketle toplar. Restoranınızın kendi Google profili varsa onu ayrı işletme olarak da ekleyebilirsiniz.',
+        },
+        {
+          title: 'Spa, havuz ve ortak alanlar',
+          body:
+            'Spa resepsiyonundaki ya da havuz barındaki QR kod, bu alanlara özgü geri bildirimleri “Spa” veya “Havuz” etiketiyle ayırır.',
+        },
+        {
+          title: 'Lobi ve çıkış bankosu',
+          body:
+            'Çıkış işlemi sırasında bankodaki QR kod, konaklamanın tamamını değerlendirmek için doğal bir andır. Transfer beklenirken lobideki bir stant da işe yarar.',
+        },
+      ],
+      tip:
+        'Etiket alanına harf, rakam ve kısa çizgi yazılabilir; boşluk ve Türkçe karakter kullanılmaz (ör. 204, Spa, Havuz-Bar). Etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür; analitik ekranları ise oteli bütün olarak gösterir.',
     },
-  };
+    uses: {
+      title: 'Otel panelinde işinize yarayanlar',
+      items: [
+        {
+          icon: Mail,
+          title: 'Şikâyet doğru ekibe gider',
+          body:
+            '1–3 yıldızlık geri bildirimde oda veya alan etiketi, puan ve yorum anında e-postayla gelir; panelde de bildirim görünür. Misafir e-posta bıraktıysa yanıtınızı e-postayla gönderirsiniz.',
+        },
+        {
+          icon: UtensilsCrossed,
+          title: 'Restoran ve oda servisi için QR Menü',
+          body:
+            'Otel restoranınızın ya da oda servisinizin menüsünü QR Menü ile yayınlayabilirsiniz; 7 tema, 12 rozet ve 12 alerjen etiketi hazır. Menü tek dilde yayımlanır ve sipariş almaz.',
+        },
+        {
+          icon: UsersRound,
+          title: 'Ekip ve erişim',
+          body:
+            'Ön büro ve misafir ilişkileri ekibini e-postayla davet edin; yönetici, personel veya görüntüleyici rolü verip hangi otellere erişeceklerini seçin. Etkinlik günlüğünde kimin neyi değiştirdiğini görürsünüz.',
+        },
+        {
+          icon: BellRing,
+          title: 'Haftalık özet ve puan düşüşü uyarısı',
+          body:
+            'Geri bildirim gelen haftalarda her pazartesi geçen haftanın özetini e-postayla alırsınız. Son 7 günün ortalama puanı, ondan önceki üç haftanın ortalamasından en az 0,5 yıldız düşükse (her iki dönemde en az 5 geri bildirimle) ayrıca uyarı e-postası gelir.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Otellerde öne çıkan yorum platformları',
+      lead:
+        'Sektör olarak “Otel & Konaklama”yı seçtiğinizde panel yedi platformun bağlantısını gösterir: Google, Tripadvisor, Booking.com, Airbnb, Yelp, Foursquare ve Yandex. Hangi QR kodun hangi platforma gideceğini siz seçersiniz.',
+      note:
+        'Booking.com ve Airbnb’de yalnızca o platformdan rezervasyon yapan misafirler yorum yazabilir ve davetlerini platformun kendisi gönderir; QR akışında genellikle Google veya Tripadvisor’ı seçmek daha anlamlıdır. Tripadvisor veya Yandex bağlantınızı eklerseniz, özel geri bildirim bırakan misafirin teşekkür ekranında bu platformlarda da paylaşma seçeneği görünür. Buaze rezervasyon sisteminize ya da kanal yöneticinize bağlanmaz.',
+    },
+    questions: {
+      title: 'Misafirlere ne sormalı',
+      lead:
+        'Hazır “Konaklama sonrası” şablonu oda temizliğini, personelin ilgisini ve tavsiye isteğini sorar. Restoran veya spa için ayrı birer kısa anket hazırlayıp o alanlardaki QR kodlarla paylaşabilirsiniz.',
+      items: [
+        { text: 'Giriş işleminiz ne kadar sürdü?', type: 'multiple_choice' },
+        { text: 'Odanızdaki internet bağlantısını nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Konaklamanızın amacı neydi?', type: 'multiple_choice' },
+        { text: 'Restoranımızın kahvaltısını nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Bir sonraki konaklamanızda neyin farklı olmasını istersiniz?', type: 'long_text' },
+      ],
+      audits: [
+        {
+          title: 'Kat hizmetleri günlük açılış kontrolü',
+          body: 'Vardiya başında ekip liderinin oda hazırlığını ve temizlik standartlarını işaretlemesi için.',
+        },
+        {
+          title: 'Check-out süreç değerlendirme',
+          body: 'Çıkış işlemindeki deneyimi resepsiyon temsilcisinin gözünden değerlendirmek için.',
+        },
+        {
+          title: 'Açık büfe kahvaltı servisi açılış quiz',
+          body: 'Kahvaltı servisi açılmadan önce gıda güvenliği ve sunum noktalarını gözden geçirmek için.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Oteller için sık sorulan sorular',
+      items: [
+        {
+          q: 'Booking.com, Airbnb veya Tripadvisor yorumlarını panelde görebilir miyim?',
+          a: 'Hayır. Buaze bu platformlardan yorum çekmez; yorum bağlantılarınızı saklar ve misafiri seçtiğiniz platformun yorum sayfasına gönderir. Panelde QR akışından gelen geri bildirimleri ve Google profilinizin özetini (puan, yorum sayısı ve Google’ın gösterdiği en fazla 5 yorum) görürsünüz.',
+        },
+        {
+          q: 'Oda veya departman bazında rapor alabilir miyim?',
+          a: 'Hayır, oda ya da departman bazında rapor yoktur. Oda numarası ve alan etiketleri düşük puan e-postasında ve CSV dosyasında görünür; dosyayı bir tabloda etikete göre sıralayabilirsiniz. Restoran veya spa gibi ayrı tutmak istediğiniz bölümleri ayrı işletme olarak da ekleyebilirsiniz.',
+        },
+        {
+          q: 'Check-out sonrasında misafire otomatik yorum daveti gider mi?',
+          a: 'Hayır. Buaze misafirlere SMS, WhatsApp ya da e-postayla yorum daveti göndermez ve otel yönetim sisteminize bağlanmaz. Misafir QR kodu odada, restoranda ya da lobide istediği an okutur.',
+        },
+        {
+          q: 'Yabancı misafirler formu kendi dillerinde görür mü?',
+          a: 'Form Türkçe ve İngilizce olarak hazırdır ve misafirin telefon diline göre açılır. Telefonu Almanca ya da Rusça gibi başka bir dile ayarlı olan misafir formu Türkçe görür; başka diller için form yoktur. Pulse AI taslakları da Türkçe veya İngilizce hazırlanır.',
+        },
+        {
+          q: 'Düşük puan veren misafir Tripadvisor’da yorum yazabilir mi?',
+          a: 'Evet. Eşiğin altında puan veren misafir önce size özel geri bildirim yazabilir; aynı ekranda seçtiğiniz platformun yorum bağlantısı görünür ve misafir isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
+        },
+        {
+          q: 'Misafir verileri nerede saklanır?',
+          a: 'Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz. Formda ad ve e-posta isteğe bağlıdır, pazarlama izni ayrı ve varsayılan olarak işaretsizdir; IP adresleri 90 gün sonra anonimleştirilir.',
+        },
+      ],
+    },
+    ctaTitle: 'Otelinizde misafir geri bildirimi toplamaya başlayın',
+  },
+  en: {
+    name: 'Hotels',
+    meta: {
+      title: 'Hotel guest feedback system with QR codes',
+      description:
+        'Hotel room, restaurant and reception QR codes: guests rate the stay and can write to you first below your threshold. Google, Tripadvisor and Booking.com links.',
+    },
+    eyebrow: 'Hotels',
+    h1: 'QR guest feedback system for hotels',
+    lead:
+      'With QR codes in rooms, the restaurant and reception, guests share their views during their stay. At or above your threshold, the review page of your chosen platform, such as Google or Tripadvisor, opens; below it, the guest can write to you first, and the public review link is shown on the same screen.',
+    flow: {
+      title: 'How QR feedback works in a hotel',
+      steps: [
+        {
+          title: 'Create a QR code for each area',
+          body:
+            'Create separate QR codes for rooms, the restaurant, the pool bar and reception, and use the room number or the area’s name as the label (for example 204, Restaurant or Spa). If you like, pin a different review platform to each code.',
+        },
+        {
+          title: 'The guest gives a rating',
+          body:
+            'The guest scans the QR code and gives 1–5 stars. At or above the threshold you set (5 stars by default), your chosen platform’s review page opens. Below it, the guest can first send you private feedback; the public review link is shown on the same screen.',
+        },
+        {
+          title: 'Guest relations sees it right away',
+          body:
+            'You choose the alert address in your business settings. Enter your guest relations team’s address and every 1–3★ piece of feedback goes straight to them with the area label, so you can follow up before the guest leaves.',
+        },
+      ],
+    },
+    placements: {
+      title: 'Where to put the QR code in a hotel',
+      lead: 'The best spots are where guests pause comfortably right after using a service.',
+      items: [
+        {
+          title: 'In-room guest directory',
+          body:
+            'A QR code in the room’s guest directory or on a card by the TV lets guests report a problem during their stay, before they leave. Use the room number as the label.',
+        },
+        {
+          title: 'Restaurant and bar',
+          body:
+            'A QR code on the table when the bill is settled or on the way out of breakfast collects food and drink feedback under its own label. If your restaurant has its own Google profile, you can also add it as a separate business.',
+        },
+        {
+          title: 'Spa, pool and shared areas',
+          body:
+            'A QR code at the spa reception or the pool bar keeps feedback about those areas apart with a “Spa” or “Pool” label.',
+        },
+        {
+          title: 'Lobby and checkout desk',
+          body:
+            'A QR code on the desk during checkout is a natural moment to rate the whole stay. A stand in the lobby also works while guests wait for their transfer.',
+        },
+      ],
+      tip:
+        'The label field takes letters, numbers and hyphens, without spaces or accented letters (for example 204, Spa or Pool-Bar). The label shows in the low-rating e-mail and the feedback CSV file; the analytics screens cover the hotel as a whole.',
+    },
+    uses: {
+      title: 'Panel features that help a hotel',
+      items: [
+        {
+          icon: Mail,
+          title: 'Complaints reach the right team',
+          body:
+            'For every 1–3★ piece of feedback, the room or area label, rating and comment arrive by e-mail at once, and a notification appears in the panel. If the guest left an e-mail address, you reply by e-mail.',
+        },
+        {
+          icon: UtensilsCrossed,
+          title: 'QR Menu for the restaurant and room service',
+          body:
+            'Publish your hotel restaurant’s or room service menu with QR Menu; 7 themes, 12 badges and 12 allergen labels are ready to use. The menu is published in one language and doesn’t take orders.',
+        },
+        {
+          icon: UsersRound,
+          title: 'Team and access',
+          body:
+            'Invite your front office and guest relations team by e-mail, give them a manager, staff or viewer role and choose which hotels they can access. The activity log shows who changed what.',
+        },
+        {
+          icon: BellRing,
+          title: 'Weekly summary and rating-drop alert',
+          body:
+            'In weeks with feedback, you receive a summary of the past week by e-mail every Monday. If the last 7 days’ average rating is at least 0.5 stars below the average of the three weeks before (with at least 5 pieces of feedback in each period), you also get an alert e-mail.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Review platforms that matter for hotels',
+      lead:
+        'When you pick “Hotel & Hospitality” as your industry, the panel shows links for seven platforms: Google, Tripadvisor, Booking.com, Airbnb, Yelp, Foursquare and Yandex. You decide which QR code goes to which platform.',
+      note:
+        'On Booking.com and Airbnb, only guests who booked through that platform can write a review, and the platform sends the invitation itself, so in the QR flow Google or Tripadvisor is usually the better choice. If you add your Tripadvisor or Yandex link, guests who leave private feedback also see the option to share on those platforms on the thank-you screen. Buaze doesn’t connect to your booking system or channel manager.',
+    },
+    questions: {
+      title: 'What to ask your guests',
+      lead:
+        'The ready-made “After the stay” template asks about room cleanliness, staff care and willingness to recommend. You can build a short survey for the restaurant or spa as well and share it with the QR codes in those areas.',
+      items: [
+        { text: 'How long did your check-in take?', type: 'multiple_choice' },
+        { text: 'How would you rate the internet connection in your room?', type: 'rating' },
+        { text: 'What was the purpose of your stay?', type: 'multiple_choice' },
+        { text: 'How would you rate breakfast in our restaurant?', type: 'rating' },
+        { text: 'What would you like to be different on your next stay?', type: 'long_text' },
+      ],
+      audits: [
+        {
+          title: 'Daily housekeeping opening check',
+          body: 'For the team leader to tick off room preparation and cleaning standards at the start of each shift.',
+        },
+        {
+          title: 'Check-out process review',
+          body: 'Reviews the checkout experience through the eyes of the reception agent.',
+        },
+        {
+          title: 'Buffet breakfast opening quiz',
+          body: 'Goes over food safety and presentation points before breakfast service opens.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Hotel FAQ',
+      items: [
+        {
+          q: 'Can I see Booking.com, Airbnb or Tripadvisor reviews in the panel?',
+          a: 'No. Buaze doesn’t import reviews from these platforms; it stores your review links and sends the guest to the review page of the platform you choose. In the panel you see the feedback from your QR flow and a summary of your Google profile (rating, review count and up to 5 reviews Google returns).',
+        },
+        {
+          q: 'Can I get reports per room or department?',
+          a: 'No, there are no per-room or per-department reports. Room numbers and area labels show in the low-rating e-mail and the CSV file, which you can sort by label in a spreadsheet. You can also add parts you want to keep separate, such as the restaurant or spa, as separate businesses.',
+        },
+        {
+          q: 'Do guests get an automatic review invitation after checkout?',
+          a: 'No. Buaze doesn’t send guests review invitations by SMS, WhatsApp or e-mail, and it doesn’t connect to your property management system. Guests scan the QR code whenever they like, in the room, at the restaurant or in the lobby.',
+        },
+        {
+          q: 'Do international guests see the form in their own language?',
+          a: 'The form is available in Turkish and English and opens based on the language of the guest’s phone. Guests whose phone is set to another language, such as German or Russian, see it in Turkish; there is no form in other languages. Pulse AI drafts are written in Turkish or English too.',
+        },
+        {
+          q: 'Can a guest who gives a low rating still post on Tripadvisor?',
+          a: 'Yes. A guest who rates below your threshold can first send you private feedback; the review link of your chosen platform is shown on the same screen, and they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.',
+        },
+        {
+          q: 'Where is guest data stored?',
+          a: 'The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business. Name and e-mail are optional on the form, marketing consent is a separate box that is unticked by default, and IP addresses are anonymised after 90 days.',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting guest feedback at your hotel',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
+  return buildSolutionMetadata({ locale, slug: SLUG, ...CONTENT[locale].meta });
 }
 
-/**
- * 1:1 with .design/site/site-pages4.jsx:HotelSolutionPage (lines 22-75).
- * Light gray hero (#FAFAFA) + lighthouse illustration + PlatformLogo row
- * + 4-stat grid + 6-feature grid.
- */
-export default async function HotelsSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-  const base = `/${locale}`;
-
-  const stats = isTr
-    ? [
-        { value: '10', label: 'Yorum platformu (Booking, Tripadvisor, Airbnb dahil)' },
-        { value: 'Oda', label: 'Oda numarası etiketli QR' },
-        { value: 'TR + EN', label: 'Türkçe ve İngilizce arayüz' },
-        { value: '14 gün', label: 'Ücretsiz deneme, kredi kartı gerekmez' },
-      ]
-    : [
-        { value: '10', label: 'Review platforms (incl. Booking, Tripadvisor, Airbnb)' },
-        { value: 'Room', label: 'Room-number tagged QR' },
-        { value: 'TR + EN', label: 'Turkish and English interface' },
-        { value: '14 days', label: 'Free trial, no credit card' },
-      ];
-
-  const features = isTr
-    ? [
-        { t: 'Oda QR sistemi', d: 'Her oda numarası kendi QR koduna sahip. Misafir tararken oda bilgisi otomatik eşleşir.' },
-        { t: 'Check-out tetikleyici', d: 'PMS entegrasyonu ile check-out anında SMS/WhatsApp ile yorum daveti.' },
-        { t: 'Dil tespiti', d: 'Misafirin tarayıcı diline göre form otomatik dil değiştirir. 12 dil desteği.' },
-        { t: 'Personel skoru', d: 'Resepsiyonist, temizlik, restoran — her departman ayrı raporlanır.' },
-        { t: 'OTA entegrasyonu', d: 'Booking.com, Airbnb, Expedia, Agoda — yorumları panele çeker, yanıt şablonları çalışır.' },
-        { t: 'Misafir profili', d: 'Tekrar gelen misafiri tanı, geçmiş yorumlarıyla bağlantı kur.' },
-      ]
-    : [
-        { t: 'Room-level QR', d: 'Each room has its own QR; guest scans auto-match the room.' },
-        { t: 'Check-out trigger', d: 'PMS integration sends an SMS/WhatsApp review invite at check-out.' },
-        { t: 'Language detection', d: 'Form auto-switches by browser language — 12 languages supported.' },
-        { t: 'Staff scoring', d: 'Front desk, housekeeping, F&B — each department reported separately.' },
-        { t: 'OTA integration', d: 'Booking.com, Airbnb, Expedia, Agoda — reviews pulled in; reply templates ready.' },
-        { t: 'Guest profile', d: 'Recognise returning guests and tie them back to prior reviews.' },
-      ];
-
-  const benefits = isTr
-    ? [
-        { Icon: Hotel, h: 'Oda + check-out QR\'ları', d: 'Her oda için ayrı QR (oda numarası URL\'de) + check-out tezgahında genel QR. Misafir hâlâ tesisteyken yorum bırakır — 3 hafta sonra Booking review değil, anlık deneyim.' },
-        { Icon: Globe, h: 'Booking + Tripadvisor + Airbnb + Google', d: 'Dört platformu tek akışta sun. Misafir tercih ettiği platforma yönlendirilir; her misafir istediği yere yorum yazma hakkını korur, yıldız bazlı kısıtlama yok.' },
-        { Icon: Sparkles, h: 'Pulse AI çoklu-dil yanıt taslağı', d: 'Misafirin yorumunun dilini algılar (TR / EN / DE / RU), kültürel ton uygun yanıt taslağı üretir. İşletme onaylar, otomatik gönderim yok.' },
-        { Icon: BarChart3, h: 'Kat / oda tipi analitiği', d: 'Hangi katta, hangi oda tipinde (deluxe / standart / suite) memnuniyet düşük? Klima şikayeti hangi yöne bakan odalarda yoğun? Operasyonel kararı veriyle al.' },
-      ]
-    : [
-        { Icon: Hotel, h: 'Room + check-out QRs', d: 'A separate QR per room (room number in URL) + a general QR at the check-out desk. Guests leave reviews while still on premise — instant experience, not a Booking review three weeks later.' },
-        { Icon: Globe, h: 'Booking + Tripadvisor + Airbnb + Google', d: 'Surface all four platforms in one flow. The guest is routed to their preferred platform; every guest keeps the right to post anywhere, no star-rating gate.' },
-        { Icon: Sparkles, h: 'Pulse AI multi-language reply drafts', d: 'Detects the language of the guest review (TR / EN / DE / RU), produces a culturally appropriate reply draft. Owner approves; nothing auto-sent.' },
-        { Icon: BarChart3, h: 'Floor / room-type analytics', d: 'Which floor, which room type (deluxe / standard / suite) has the lowest satisfaction? Which orientation gets the most AC complaints? Make operational calls from data.' },
-      ];
-
-  const faqs: FaqItem[] = isTr
-    ? [
-        { q: 'Otel için Buaze nasıl çalışır?', a: 'Her oda için bir QR sticker (oda numarası URL\'ye gömülü) + check-out tezgahında bir genel QR yerleştirirsin. Misafir QR\'ı tarar, deneyimini puanlar ve seçtiğin platformların (Booking, Tripadvisor, Airbnb, Google) herkese açık yorum bağlantılarını görür. Deneyim tesisteyken taze olduğu için yorum bırakma olasılığı, haftalar sonra gelen platform e-postasına kıyasla daha yüksektir.' },
-        { q: 'Booking.com / Tripadvisor / Airbnb yorumlarını da topluyor mu?', a: 'Evet. Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; akış misafire seçtiğin platformları sunar. Misafir tercih ettiği platforma yorum yazar. Booking gibi closed-loop platformlarda link doğrudan booking ID\'siyle eşleşmez (Booking bunu API\'de açmıyor) — ama misafire bağlantı sunulur.' },
-        { q: 'Oda numarası bazlı analitik var mı?', a: 'Evet. QR\'a oda numarası URL parametresi ekleyebilirsin (örn. `?room=412`); yorum geldiğinde oda numarası + kat + oda tipi loglanır. Analytics raporunda hangi katlarda memnuniyet düşük, hangi odalarda klima/gürültü/manzara şikayeti yoğun — operasyonel ekip görür.' },
-        { q: 'Düşük puan veren misafir Booking\'e yorum yazmaz mı?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren misafirler ek olarak otelinizle özel paylaşım yapma seçeneği görür. Misafir her zaman herkese açık platformlara (Booking, Tripadvisor, Google) yorum yazma hakkını korur; hızlı bir özel yanıtla (oda değişimi, fatura iadesi vb.) sorunu çözme şansı kazanırsınız.' },
-        { q: 'Çoklu-dil destek var mı?', a: 'Evet. Misafir yorumunu hangi dilde yazarsa, Pulse AI o dilde yanıt taslağı üretir (TR, EN, DE, RU şu an desteklenen). Genelde otel müşteri profili çok-dilli, bu kritik — manuel çeviri yapmak yanıt süresini saatlerce uzatıyor.' },
-      ]
-    : [
-        { q: 'How does Buaze work for a hotel?', a: 'You place a QR sticker per room (with the room number embedded in the URL) + a general QR at the check-out desk. The guest scans, rates the experience, and sees the public review links for the platforms you have selected (Booking, Tripadvisor, Airbnb, Google). The experience is still fresh on site, so guests are more likely to post than after an email that arrives weeks later.' },
-        { q: 'Does it also collect Booking.com / Tripadvisor / Airbnb reviews?', a: 'Yes. You add the public review links of these platforms in the owner panel; the flow surfaces the platforms you select to the guest. The guest posts on their preferred platform. For closed-loop platforms like Booking, the link does not match a specific booking ID (Booking does not expose that API) — but the public link is presented to the guest.' },
-        { q: 'Is there room-number-level analytics?', a: 'Yes. You can add a room number URL parameter to the QR (e.g. `?room=412`); when a review arrives, the room number + floor + room type are logged. The analytics report shows where satisfaction drops by floor, where AC / noise / view complaints concentrate — visible to the operational team.' },
-        { q: 'Will guests giving low ratings simply not post on Booking?', a: 'No. Buaze never blocks or hides any review. Guests giving low ratings additionally see an option to share privately with your hotel. The guest always retains the right to post on any public platform (Booking, Tripadvisor, Google); a quick private reply gives you a chance to resolve the issue (room change, refund, etc.).' },
-        { q: 'Is there multi-language support?', a: 'Yes. Pulse AI detects the language the guest writes in (TR, EN, DE, RU currently supported) and produces a reply draft in that language. Hotels typically have a multi-language guest profile — this is critical, manual translation adds hours to reply latency.' },
-      ];
-
-  const relatedSolutions = getRelatedSolutions('hotels', 4);
-
-  const jsonLd = buildSolutionSchema({
-    locale,
-    slug: 'hotels',
-    industryLabel: isTr ? 'Otel & Konaklama' : 'Hotel & Hospitality',
-    serviceName: isTr ? 'Otel & Konaklama İtibar Yönetimi' : 'Hotel & Hospitality Reputation Management',
-    description: isTr
-      ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, her geri bildirime hızlı yanıt ver."
-      : 'Booking.com, Tripadvisor, Airbnb and Google — manage all four from one panel. Collect reviews at check-out with room QRs.',
-    faqs,
-  });
-
-  const howTo = buildHowToSchema({
-    locale,
-    name: isTr ? 'Otelde Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a hotel',
-    description: isTr
-      ? 'Oda ve check-out QR’larıyla Booking, Tripadvisor, Airbnb ve Google yorumlarını tek panelden yönetmek için adımlar.'
-      : 'Steps to manage Booking, Tripadvisor, Airbnb and Google reviews from one panel via room and check-out QRs.',
-    url: `https://www.buaze.com/${locale}/solutions/hotels`,
-    steps: isTr
-      ? [
-          { name: 'Tesisi tanımla', text: 'Buaze panelinde otel adı, kategori, adres ve resepsiyon e-postasını gir; Booking, Tripadvisor, Airbnb ve Google yorum bağlantılarını ekle.' },
-          { name: 'QR’ları doğru noktalara yerleştir', text: 'Her oda için oda numaralı QR sticker + check-out tezgahında genel QR + kahvaltı/SPA gibi temas noktalarında ek QR’lar yerleştir.' },
-          { name: 'Resepsiyon ve operasyonu davet et', text: 'Resepsiyon, kat hizmetleri ve F&B sorumlularını Buaze ekibine ekle; oda/kat bazlı düşük puanları doğru ekip görsün.' },
-          { name: 'Pulse AI ile çoklu dil yanıt yaz', text: 'Misafir TR/EN/DE/RU hangisinde yazarsa Pulse AI o dilde yanıt taslağı üretir — resepsiyon onaylar, gönderir; oda numarası bazlı analitiklerden örüntüleri oku.' },
-        ]
-      : [
-          { name: 'Identify the property', text: 'In the Buaze panel, enter hotel name, category, address and front-desk email; add your Booking, Tripadvisor, Airbnb and Google review links.' },
-          { name: 'Place QRs at the right touchpoints', text: 'Place a room-numbered QR sticker in every room + a general QR at the check-out desk + extra QRs at breakfast/spa touchpoints if relevant.' },
-          { name: 'Invite front desk and operations', text: 'Add front-desk, housekeeping and F&B leads to your Buaze team so the right owner sees room/floor-level low ratings.' },
-          { name: 'Reply in any language via Pulse AI', text: 'Whichever language the guest writes in (TR/EN/DE/RU), Pulse AI drafts the reply in that language — front desk approves and sends; read room-level analytics to spot patterns.' },
-        ],
-  });
-  if (howTo) jsonLd.push(howTo);
-
+export default async function HotelsSolutionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
   return (
-    <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Hero — light gray bg */}
-      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
-          <div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'SEKTÖR · OTEL & KONAKLAMA' : 'SECTOR · HOTEL & HOSPITALITY'}
-            </span>
-            <h1
-              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            >
-              {isTr ? (
-                <>
-                  Misafirin sesi,
-                  <br />
-                  her platformda
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">yankılanır.</span>
-                </>
-              ) : (
-                <>
-                  Your guests&apos; voice,
-                  <br />
-                  echoed on
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">every platform.</span>
-                </>
-              )}
-            </h1>
-            <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
-              {isTr
-                ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, her geri bildirime hızlı yanıt ver."
-                : 'Booking.com, Tripadvisor, Airbnb and Google — run all four from one panel. Room QRs capture feedback at check-out; reply to every signal quickly.'}
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-              >
-                {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href={`${base}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
-              >
-                {isTr ? 'Demo iste' : 'Request demo'}
-              </Link>
-            </div>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'BAĞLANTI' : 'CONNECT'}
-              </span>
-              {(['booking', 'tripadvisor', 'google'] as const).map((id) => (
-                <PlatformLogo key={id} id={id} size={36} rounded={8} />
-              ))}
-            </div>
-          </div>
-
-          {/* IllusLighthouse — exact SVG from .design/site/site-shared.jsx:114-140 */}
-          <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 240 260" className="h-auto w-full max-w-[280px]" aria-hidden>
-              {/* Waves */}
-              <path d="M0 220 Q30 215 60 220 T120 220 T180 220 T240 220 L240 260 L0 260 Z" fill="#EAF9B8" />
-              <path d="M0 234 Q30 229 60 234 T120 234 T180 234 T240 234 L240 260 L0 260 Z" fill="#C6F24E" opacity="0.6" />
-              {/* Rock base */}
-              <path d="M70 220 L170 220 L160 205 L80 205 Z" fill="#0A0A0A" />
-              {/* Tower */}
-              <path d="M100 205 L100 90 L140 90 L140 205 Z" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" />
-              <path
-                d="M100 120 L140 120 M100 150 L140 150 M100 180 L140 180"
-                stroke="#0A0A0A"
-                strokeWidth="1.2"
-              />
-              {/* Light chamber */}
-              <rect x="94" y="70" width="52" height="24" fill="#0A0A0A" />
-              <rect x="98" y="74" width="44" height="16" fill="#C6F24E" />
-              {/* Roof */}
-              <path d="M92 70 L148 70 L142 55 L98 55 Z" fill="#0A0A0A" />
-              {/* Spike */}
-              <path d="M120 55 L120 38" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" />
-              <circle cx="120" cy="32" r="5" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
-              {/* Light beams */}
-              <path d="M148 82 L215 50 L215 98 Z" fill="#C6F24E" opacity="0.35" />
-              <path d="M92 82 L25 50 L25 98 Z" fill="#C6F24E" opacity="0.2" />
-              {/* Stars */}
-              <circle cx="200" cy="30" r="2" fill="#0A0A0A" />
-              <circle cx="180" cy="18" r="1.5" fill="#0A0A0A" />
-              <circle cx="40" cy="25" r="1.5" fill="#0A0A0A" />
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      {/* 4-stat grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="bz-card p-5 sm:p-6">
-                <div
-                  className="text-[28px] sm:text-[34px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {s.value}
-                </div>
-                <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6-feature grid */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <div key={f.t} className="rounded-[14px] border border-[#EDEDED] bg-white p-6">
-              <h3
-                className="text-[20px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
-              >
-                {f.t}
-              </h3>
-              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Benefits — 4-tile grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
-            {isTr ? 'Otel operasyonuna özel dört kazanç' : 'Four wins built for hotel operations'}
-          </h2>
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => (
-              <div key={i} className="bz-card p-6 sm:p-7">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
-                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Otel kurulumu için merak edilenler' : 'Common questions for hotels'}
-          </h2>
-          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
-        </div>
-      </section>
-
-      {/* Resources / Related Solutions */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
-          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
-              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
-              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
-              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
-            ].map((r) => (
-              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
-                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-              </Link>
-            ))}
-          </div>
-          {relatedSolutions.length > 0 && (
-            <>
-              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {relatedSolutions.map((sol) => (
-                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
-                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
-                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="mx-auto max-w-[900px] text-center">
-          <h2
-            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-          >
-            {isTr ? 'Her oda, bir yıldız.' : 'Every room, a star.'}
-          </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
-            {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
-              : '14-day free · No credit card'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Ücretsiz başla' : 'Start free'}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <SolutionPageLayout
+      locale={locale}
+      slug={SLUG}
+      sector="hospitality"
+      content={CONTENT[locale]}
+      illustration={<IllusHotel />}
+    />
   );
 }

@@ -814,7 +814,7 @@ if (!quota.allowed) {
 
 **Mount koşulları:**
 - `src/app/[locale]/layout.tsx:240` — `[locale]/*` tree'sinin tüm sayfalarında mount edilir (marketing + dashboard); component kendi içinde gizleme kararını verir.
-- Component-içi gating (`ContactFloat.tsx:150-157`) — `auth/*`, `onboarding/*` ve `dashboard/*` path'lerinde **deterministik** gizli; ayrıca auth probe sonrası logged-in user'larda gizli. Path-based dashboard gate kritik: async auth probe çözülene kadar (~50-200ms) baloncuk owner panelde flash etmez. **Homepage hariç değil** — ana conversion surface'ında baloncuk görünür.
+- Component-içi gating — `auth/*`, `onboarding/*`, `dashboard/*` ve `/contact` (tam form zaten orada) path'lerinde **deterministik** gizli; ayrıca auth probe sonrası logged-in user'larda gizli. Sabit CTA şeridi silindiği için ofset mantığı (`buaze:sticky-cta-visibility`) da kaldırıldı; düğme bir kez nabız atar, "çevrimiçi" noktası yok. Path-based dashboard gate kritik: async auth probe çözülene kadar (~50-200ms) baloncuk owner panelde flash etmez. **Homepage hariç değil** — ana conversion surface'ında baloncuk görünür.
 
 **Bot guard parity:** `/contact` sayfasıyla aynı honeypot + dwell-time gate (`MIN_FILL_MS`).
 
@@ -911,7 +911,7 @@ Tüm motion `prefers-reduced-motion: reduce` altında devre dışı (globals.css
 
 ### Marketing component'leri (`src/components/marketing/`)
 
-`AnimatedCounter`, `MarqueeRow`, `StickyCtaBar`, `SocialProofToast`, `VideoModal`, `WatchDemoButton`, `HomeIndustryTabs`, `NewsletterSignup`, `LiveReviewTicker`, `HomeHeroDashboard`, `BuazeLogo`, `PlatformLogo`. Hepsi client-side; SSR-safe değil.
+Güncel (2026-11, §51): `MarketingFooter` / `MarketingNavbar(Client)` / `MobileBottomNav`, `NewsletterSignup`, `ContactFloat`, `BuazeLogo`, `PlatformLogo`, `FeaturePageLayout`, `SolutionPageLayout`, `ComparisonLayout`, klasörler `home/`, `commercial/`, `company/`, `footer/`, `heroes/`, `three/`. **Silindi, geri ekleme**: `AnimatedCounter`, `MarqueeRow`, `StickyCtaBar`, `SocialProofToast`, `VideoModal`, `WatchDemoButton`, `HomeIndustryTabs`, `LiveReviewTicker`, `HomeHeroDashboard`, `HomeHero`, `PulseIllustrations`, `FooterLiveTicker`, `PricingFaq`, hero varyantları (`HeroStarClimb`, `HeroParallax`, `HeroVariantPicker`, `NEXT_PUBLIC_HERO_VARIANT`) ve `src/components/animations/` klasörünün tamamı (§34.5).
 
 ### Faz log'u
 
@@ -3486,6 +3486,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 | `jose ^6.2` | ✅ Kurulu | Custom JWT auth — edge compatible, Vercel middleware ile uyumlu (§4) |
 | `@vercel/speed-insights ^2.0` | ✅ Kurulu | Real-user Core Web Vitals (LCP/CLS/INP/FCP/TTFB). `<SpeedInsights />` root layout'ta mount'lı; alt layout'lar inherit eder (§31). Lokal dev'de no-op, sadece Vercel deployment'ta data toplar. Sentry'yi (§26) **replace etmez** — paralel rol |
 | `@vercel/analytics ^2.0` | ✅ Kurulu (2026-05) | Page views + custom events. `<Analytics />` root layout'ta `<SpeedInsights />` ile birlikte mount'lı; ikisi paralel beacon emit eder. RES (Real Experience Score) hesaplaması her iki sample stream'i tüketir — Analytics olmadan RES sample context yetersiz kalıyordu (Vercel dashboard "No data available" uyarısı). Lokal dev'de no-op. Custom event tracking şu an wired değil (passive page views) — gerekirse `track('event_name', { ... })` API'si var. |
+| `three 0.186.1` (+ `@types/three` dev) | ✅ Kurulu (2026-11, Stage 172) | Yalnız pazarlama sitesinde dekoratif iki sahne (alt bilgi nabız bandı, platform yörüngesi). Kullanıcı açık talebiyle eklendi ("bazı yerlerde three js kullan"); §30.2 gerekçesi: başka bağımlılıkla yapılamayan WebGL sahnesi, sayfa ilk JS'ine girmez (~110 KB brotli ayrı chunk, yalnız yeteneği olan cihazda ve görünüme yaklaşınca). Kurallar §50. `@react-three/fiber`/`drei` EKLENMEZ. |
 
 ### 30.4 Önerilen ama kurulmaya gerek olmayan lib'ler (revised)
 
@@ -3706,6 +3707,7 @@ Detaylı bağlam için `git log` + PR referansı. Bu tablo sadece "neyin silindi
 | 2026-05-02 | — | 3 zero-risk security bundle: X-Permitted-Cross-Domain-Policies + `/api/health` uptime probe + robots `crawlDelay: 2` AI bot; X-Robots-Tag `/api`+`/admin`+`/r`; OG metadata + Apple PWA + Sentry release `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` |
 | 2026-05-02 | — | Image attribute sweep — 18 raw `<img>` → `loading="lazy" decoding="async"` (below-fold) veya sadece `decoding="async"` (LCP candidate hero/menu logo) |
 | 2026-05-02 | — | Auth flow paralelize — login + Google sign-in 4-tetik `Promise.all` (reCAPTCHA + rate-limit IP/email + findUnique). bcrypt sequential intact. |
+| 2026-11-14 | §38.254 | Pazarlama sitesi yeniden yazımı: `src/components/animations/` (tümü), `HomeHero`, `HomeIndustryTabs`, `MarqueeRow`, `StickyCtaBar`, `WatchDemoButton`, `FooterLiveTicker`, `PulseIllustrations`, `PricingFaq`, hero varyantları, `/blog/google-2026`, 13 yardım makalesi + api-webhook kategorisi (308 yönlendirmeli), `framer-motion` paketi, 30 kullanılmayan çeviri anahtarı (google_compliance_*, siteDescription), ölü CSS (marquee, faq/scb/bzEchoSweep keyframe'leri, brand-ink/paper token'ları). Geri eklemek için kullanıcı talebi gerekir. |
 | 2026-10-09 | §38.241 | Müşteri kampanya maili özelliği tamamen kaldırıldı — owner `/dashboard/campaigns` + admin `/admin/campaign-approvals` + `/admin/customer-campaign-templates` + `/admin/notifications` (yalnız kampanya olaylarını taşıyordu) + tüm `/api/customer-campaigns/*`, `/api/admin/campaigns/*`, `/api/admin/customer-campaign-templates/*`, `/api/admin/notifications/*` + 3 mail template + sender + ops alert + `admin-notifications.ts` + `legal/iys.ts` + `/features/campaigns` pazarlama sayfası + `campaignsEnabled` şalteri + rbac `campaigns` kaynağı. **Korunan**: `/api/customers/unsubscribe` (gönderilmiş maillerdeki link, KVKK/ETK) + `customer-unsubscribe-token.ts`; Prisma modelleri/kolonları (veri kaybı yok, DEPRECATED yorumlu); `/admin/campaigns` (QR baskı kampanyası, mail değil); bülten (`/admin/newsletters/campaigns`). Geri eklemek için kullanıcı açık talebi gerekir. |
 | 2026-05-12 | (this PR) | Dead code + dead .md sweep — `src/lib/sentiment.ts` (orphan word cloud helper) + `src/lib/buaze/use-in-view.ts` (barrel-only, 0 consumer) + 3 .md dosya (`design.md` 1220 satır 8-phase complete; `performance_report.md` 1189 satır superseded; `docs/RESTAURANT_GUIDE_TR.md` 52 satır help center §22 supersedes); CLAUDE.md §34 compact (880→~200 satır) + §41 future-session note-taking discipline |
 
@@ -3813,25 +3815,16 @@ About sayfası (`src/app/[locale]/about/page.tsx`) "numbers" bölümü kasıtlı
 - Gerçek müşteri kohortunu büyüme halinde anonim ama özelleştirilmiş case study'ye dönüştürme (kullanıcı izniyle)
 - Sayı vermek gerekirse **attribution + window**: "Buaze müşteri kohortu, 90 gün ortalama"
 
-### 35.9 ROI insight wording compliance (Google review-gating)
+### 35.9 ROI hesaplayıcı (2026-11 modeli)
 
-`src/lib/roi/generate-insight.ts` ve `src/lib/roi/RoiPdf.tsx` ROI hesaplama sonrası kullanıcıya gösterilen insight + PDF template'leri içerir. Bu dosyalarda **review-gating-implying wording yasak** (CLAUDE.md §19.1.1 audit'i ile birebir aynı disiplin):
+/roi yalnız **zaman tasarrufu tahmini** yapar: `src/lib/roi/roi-model.ts` (`normalizeRoiInputs`, `computeRoi`) — aylık müşteri × puan oranı × yanıt payı × (elle yazma − Pulse AI taslağıyla) dakika × saatlik maliyet; seçilen planın aylık USD fiyatıyla (DB, `getActivePlans`) karşılaştırılır. Puan artışı, gelir, "filtrelenen yorum", kohort, 12 aylık projeksiyon ve ROI çarpanı yoktur; her çıktı "tahmini" etiketlidir.
 
-**Yasak (Google review platform policy ihlali sınıfında):**
-- "Google'a sızmadan / leak to Google / stay off Google" — selective access implication
-- "filtreleme / filtering" review context'inde — review gating implication
-- "düşük puan engelleme / block low rating / hide low rating" — paternalistic
-- "X kat / X% guarantee" kohort baseline olmadan
-
-**Yap:**
-- "Şahsi geri bildirim akışı / private feedback path" — owner-customer dialog framing
-- "Müşteri tercih akışı / customer preference flow" — agency-preserving
-- "Düşük puan veren müşterilerin %X'i ekibe özel iletişimi tercih ediyor" — preference language
-- Her low-rating flow açıklamasında customer agency disclosure: "müşteri her zaman istediği yere yorum yazma hakkını korur / every customer keeps the right to post wherever they want"
-
-**leverageKey enum literal'ı:** `'private' | 'rating' | 'ai' | 'platform'`. Eski `'filter'` literal'ı **kaldırıldı** — semantic drift kaynağıydı.
-
-Yeni ROI template eklerken: TR + EN parallel + aynı agency disclosure cümlesi + leverageKey extension için 4 enum + `T.tr.highlight + T.en.highlight` block'una record entry zorunlu.
+- `/api/roi/save` tahmini sunucuda girdilerden yeniden hesaplar (istemcinin sonucuna güvenmez); iki e-posta `after()` ile gönderilir (fonksiyon donunca kesilmesin).
+- `generate-insight.ts`: OpenAI yanıtı `BANNED_CLAIMS` ile eşleşirse (filtre, sızma, garanti, kat, kohort, "araştırmaya göre") atılır, `buildRoiTemplateInsight` kullanılır. `leverageKey` kaldırıldı.
+- `RoiPdf` iki sayfa, otomatik heceleme kapalı; fontlar gönderimde cdn.jsdelivr.net'ten iner, ulaşılamazsa ek düşer, e-posta yine gider.
+- ROI e-posta anahtarları korunur; `netGainEyebrow` artık zaman tasarrufu kartı, `calibrationFooter` tahmin uyarısı. Varsayılanlar `mail-template-defaults.ts`'te şablonla aynı; canlı DB satırı eski metni taşıyorsa admin "Varsayılana dön".
+- `revalidatePricing()` /pricing ile birlikte /roi'yi de yeniler.
+- **Yapma**: akışı "düşük puanları Google'dan uzak tutar" diye anlatma; tercih oranı (%85 vb.) ya da kohort rakamı yazma.
 
 ### 35.10 Bilinçli olarak ertelenen audit bulguları (kullanıcı kararı bekleyen)
 
@@ -3847,6 +3840,8 @@ Site-wide audit (2026-05) aşağıdaki bulguları işaret etti — fix gerekli a
 | OG image eksik: Features (fix sonrası), Solutions, Contact, Pricing | İlgili sayfa metadata | ✅ **KAPATILDI** — Stage 94 §38.174 Contact + Pricing + FAQ + Features + features/pulse-ai için `/opengraph-image` root handler wired; analytics-reports + review-management + about hardcoded URL drift'i temizlendi |
 | `LiveReviewTicker` + `SocialProofToast` mount call-site doğrulama | Marketing layout / homepage | ✅ **KAPATILDI** — SocialProofToast removed (Stage 86), LiveReviewTicker → LiveTicker generic (Stage 67) |
 | `SoftwareApplication` JSON-LD hardcoded TRY 500 price | `src/app/[locale]/layout.tsx` | ✅ **KAPATILDI** — Stage 94 §38.174 `offers` field removed (drift from actual plan DB Pro 1499 / Growth 899 / Starter 499); schema valid without offers, rich result skips price until DB-driven plan injection |
+
+**2026-11 (Stage 172)**: tablodaki kalan maddeler kapandı — LiveTicker ve diğer uydurma canlı akış/alıntı bileşenleri silindi, tüm pazarlama metni §51 kurallarıyla yeniden yazıldı.
 
 **Yapma:** Audit raporu gördüğünde toplu olarak hepsini fixleme — yukarıdaki listede `marketing pozisyon kararı` etiketli olanlar **kullanıcı talebi** gerektirir. Sadece deterministik teknik defect'leri (canonical drift, BCP 47 format, robots.txt host protocol vs.) açık talep olmadan da fix edilir.
 
@@ -4587,6 +4582,8 @@ GitHub PR referansı.
 - **Chat prompt history (Stage 170)**: 2026-11-12 kullanıcı: *"owner panelindeki diğer sayfaları da aynı şekilde sadeleştir ve maine gönder"* (Stage 169 admin sadeleştirmesinin owner karşılığı). Kullanıcı ayrıca "ui-ux-pro-max" beceri metnini yapıştırdı; betikleri kurulu olmadığı için öncelik tablosu (erişilebilirlik, 44px dokunma alanı, yatay kaydırma yok, görünür etiket, yükleme geri bildirimi) yerleşik varsayılan olarak uygulandı ve kullanıcıya söylendi. Hukuki/disipline override yok. Ürün kararı gerektirdiği için yapılmayanlar: analitikteki iki dağılım grafiği ile ısı haritasının birleştirilmesi, menü merkezindeki işletme kartlarının kaldırılması, shell'de durdurulmuş işletme seçimi.
 - §38.253 — Stage 171 (PR TBD) Menü merkezindeki işletme kartları kaldırıldı. `/dashboard/menu` artık kendi sayfasını çizmez: geçerli `?restaurantId` veya tek işletme → builder'a sunucu yönlendirmesi; çok işletmede parametre yoksa `MenuHubRedirect` (shell kapsamı → `localStorage` hatırlanan işletme → ilk aktif işletme) builder'ı açar, builder iskeleti ekranda kalır. Shell `hrefWithActiveRestaurant` "Menü" linkini (kenar çubuğu, mobil alt menü) doğrudan `/restaurants/<aktif>/menu`'ya çevirir; aktif durum yine `/dashboard/menu` href'i + `onMenuBuilder` ile eşleşir. Builder hata sayfasındaki "Menülere dön" → "Panele dön" (`/dashboard`; menü listesi artık yok, eski link aynı hatalı sayfaya dönerdi). Doğrulama: 5 işletmenin her biri için hatırlanan işletmeyle `/tr/dashboard/menu` doğru builder'ı açtı, eski seçici metni hiç render edilmedi (MutationObserver), masaüstü + mobil "Menü" tıklaması doğru builder + `aria-current`. **Disipline**: işletmeye bağlı bir sayfaya ikinci bir işletme seçici (kart ızgarası dahil) ekleme; gerekiyorsa panelin seçili işletmesini çözüp ilgili sayfayı aç.
 - **Chat prompt history (Stage 171)**: 2026-11-13 kullanıcı: *"menü sayfasındaki işletme kartlarını da kaldır ve maine gönder ve sitenin pazarlama sayfalarındaki yazıları vs. footer tasarımını daha düzenli invoatif güzel yap bazı yerlerde three js kullan ve ayrıca google'da indeks alsın kötü düşünülmsisn. sonra maine at."* Bu kayıt yalnız ilk kısmı (menü kartları) kapsar; pazarlama/footer/three.js kısmı ayrı aşamada. Hukuki/disipline override yok.
+- §38.254 — Stage 172 (PR TBD) Pazarlama sitesi yeniden yazımı + three.js + Google'da güvenilirlik. Alt bilgi, menü, ana sayfa, 7 özellik, 15 sektör + sektörler + QR oluşturucu, 8 ticari, şirket/blog ve yardım merkezi sayfaları iş akışıyla birim birim yeniden yazıldı, her birim bağımsız gözden geçirildi (§51). Uydurma içerik kaldırıldı (isimli ekip/yazar/alıntı, canlı akış, "+%184", "340K", "5 dakikada kurulum", 7/24, hello@/legal@/kvkk@), yorum akışı tek doğru anlatımla (D1), uyum davranışla (D2). three.js iki sahne (§50). SEO: kök Organization `disambiguatingDescription`, sabit koordinatlar kaldırıldı, paylaşım görselleri doğrulanabilir bilgilerle yeniden üretildi, RSS (sıralama, tarih, dc:creator), hukuk başlıklarında `#` CSS'e taşındı, 28 yardım yönlendirmesi, sitemap kaldırılan kategorileri dışlar. Yan düzeltmeler: tek iletişim adresi (support@), onay e-postaları gerçek destek saatleriyle, giriş/kayıt uydurma alıntı, deneme sonu sayfasındaki eski TL fiyatları, panel "PDF yazdır" (noopener) hatası, müşteri formundaki "AKŞAM ZİYARETİ", anket "KVKK uyumlu" rozeti, "Masa No" → "QR etiketi" (e-posta + CSV), Pulse AI taslak sıklığı "günde bir kez", hero duraklatma o anki karede (`Stage paused`), ROI e-postaları `after()`, onay günlüğünde e-posta gizleme. Doğrulama: tsc 0, eslint 0, 1868 test, üretim derlemesi (pazarlama sayfaları statik), üretim sunucusunda 194 sayfalık tarama (canonical www, hreflang, tek H1, JSON-LD, kırık bağlantı yok; tek uyarı panelden gelen bir hukuk başlığı), three.js sayfa paketlerinde yok. **Disipline**: §51 içerik kuralları; yeni pazarlama metni için sonuç vaadi ve doğrulanamayan rakam yok; iş akışı devam ettirirken önbellek çağrı sırasına bağlıdır — sırayı değiştirecek betik için önceki raporları dosyaya yazıp yeni çalıştırma başlat.
+- **Chat prompt history (Stage 172)**: 2026-11-13 kullanıcı: *"menü sayfasındaki işletme kartlarını da kaldır ve maine gönder ve sitenin pazarlama sayfalarındaki yazıları vs. footer tasarımını daha düzenli invoatif güzel yap bazı yerlerde three js kullan ve ayrıca google'da indeks alsın kötü düşünülmsisn. sonra maine at."* (bu kayıt pazarlama/footer/three.js kısmı); ara mesajlar *"Devam"*, *"Continue"*; 2026-11-14 *"Kaldırabilirsin"* (framer-motion paketinin kaldırılmasına onay, CLAUDE.md §10 bağımlılık kuralı). Hukuki/disipline override yok; yorum akışındaki eşik yönlendirmesi ürün kararı olarak kullanıcıya bildirildi.
 - §38.245 — Stage 163 (PR TBD) Google girişi penceresi kapanmıyor + yavaş giriş, site hızı, SEO ve Google uyumu. **Disipline**: (i) proxy'lenen üçüncü taraf sayfalara (`/__/*`) site güvenlik başlıklarını körlemesine uygulama — özellikle COOP opener'ı koparır; (ii) layout metadata'sına sayfaya özgü alan (canonical, hreflang, og:url, twitter başlığı) koyma, miras kalır; (iii) `'use client'` dosyası `@/lib/prisma` içeren modülü dolaylı da olsa import etmemeli (sabitleri ayrı modüle al); (iv) IntersectionObserver hedefi gerçek kutu olmalı (`display: contents` asla). **Not**: Firebase `authDomain` ve OAuth ayarlarına dokunulmadı; düzeltme… (Ayrıntı: git log.)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
@@ -5312,6 +5309,8 @@ Yeni session bir kural belirlediyse, hangi §'ye gider:
 | Cross-stage patterns | §40 |
 | Note-taking disiplini (bu §) | §41 |
 | Panel teması (Geist + shadcn yoğunluğu), işletme/franchise geçişi ve yönetimi | §49 |
+| three.js dekoratif sahneler | §50 |
+| Pazarlama sitesi içerik doğruluğu ve sayfa düzenleri | §51 |
 
 Yeni konu ortaya çıkarsa yeni `## §X` ekle; ama önce `grep -n "^## " CLAUDE.md` ile mevcut §-lere baktıktan sonra (overlap riski).
 
@@ -5612,8 +5611,8 @@ Tüm field'lar nullable + default'lu (CLAUDE.md §21.18).
 
 | Path | Schedule | Görev |
 |---|---|---|
-| `/api/cron/feedback-autodraft` | `15 * * * *` | Son 48h içinde draft'sız Buaze feedback'leri tara (safety net) |
-| `/api/cron/google-reviews-autodraft` | `30 * * * *` | Bağlı tüm Google integrations × unreplied reviews → draft |
+| `/api/cron/feedback-autodraft` | `0 5 * * *` (günlük) | Son 48h içinde draft'sız Buaze feedback'leri tara (safety net) |
+| `/api/cron/google-reviews-autodraft` | `0 6 * * *` (günlük) | Bağlı tüm Google integrations × unreplied reviews → draft |
 | `/api/cron/monthly-health-snapshot` | `0 2 1 * *` | Aylık snapshot — 02:00 UTC |
 | `/api/cron/monthly-health-report` | `0 10 1 * *` | Aylık rapor maili — 10:00 UTC (snapshot'tan 8 saat sonra) |
 
@@ -6075,3 +6074,42 @@ Kategoriler (`ReplyRiskKind`): `threat`, `hate`, `profanity` (§47 sözlüğü +
 - **Ana panel**: tek kurulum kartı (işletme yoksa karanlık karşılama kartı, varsa `ActivationChecklistCard`, mobilde de); hızlı bağlantı kutuları kaldırıldı (kenar çubuğu / alt menü zaten var); masaüstünde iki bağımsız sütun.
 - **Sunucuda render edilen tarih**: `toLocaleDateString` / `Intl.DateTimeFormat` her zaman `timeZone: resolveDisplayTimeZone()` alır (§46); almazsa uzak saat dilimindeki tarayıcıda hidrasyon hatası (#418) olur.
 
+## §50 — three.js dekoratif sahneler (kanonik, 2026-11, Stage 172)
+
+Pazarlama sitesinde yalnız iki sahne vardır: `pulse-field` (alt bilgi üst bandı, her sayfada, `FooterPulseHorizon`) ve `platform-orbit` (ana sayfa platform bölümü koyu tema + /integrations hero açık tema yalnız masaüstü, `PlatformOrbitStage`). Kod `src/components/marketing/three/` altında.
+
+- **Yükleme**: `ThreeStage` ('use client') sunucuda yalnız SVG yedeği (`fallbacks.tsx`) basar; three ve sahne modülü `import()` ile, kutu görünüme bir ekran kala (`loadMargin` '100% 0px') ve tarayıcı boştayken yüklenir. Üst kısımdaki kutular `afterLoad` ile window `load` sonrasını bekler. Yalnız `src/components/marketing/three/scenes/*` `three`'den değer import edebilir; sahneler yalnız ThreeStage'in import haritasından yüklenir — `tests/three-boundary.test.ts` zorunlu kılar (tek statik import her sayfaya ~130 KB gzip ekler).
+- **Kapı** (`three-support.ts`, saf + test): WebGL2 yoksa, veri tasarrufu / 2G / <2 GB bellek / `media` eşleşmiyorsa → `off` (three hiç inmez). Azaltılmış hareket veya <4 çekirdek → tek statik kare. Yüklemeden önce WebGL2 bağlamı açılır, renderer adı okunur; yazılım rasterleyici (SwiftShader, llvmpipe, Microsoft Basic Render Driver) → yedek kalır (başsız tarayıcı, tarayıcı-render'lı tarayıcılar, GPU'su kara listede makineler). Aynı HTML herkese gider; kapı yeteneğe göredir, user-agent'a göre değil (cloaking değil). Test için `window.__BZ_THREE_ALLOW_SOFTWARE__ = true` (Playwright: `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`).
+- **Çalışma**: yükleme adımları arasında `scheduler.yield`; `KHR_parallel_shader_compile` varsa `compileAsync`, yoksa `compile`; döngü yalnız kutu ekrandayken ve sekme görünürken, `maxFps` 30; tek ortak duraklat düğmesi (`AmbientMotionToggle`, WCAG 2.2.2) yalnız sahne gerçekten oynarken görünür, seçim sessionStorage'da; unmount'ta önce `webglcontextlost` dinleyicisi kaldırılır, sonra `dispose()` + `forceContextLoss()`.
+- **Renk**: özel `ShaderMaterial` fragment'larının sonunda `#include <colorspace_fragment>` zorunlu (yoksa lime #C6F24E soluk ve yanlış görünür, SVG yedekten geçişte renk değişir).
+- **Anlam**: sahnelerde metin, logo, sayaç veya bağlantı yok; `aria-hidden`. Platform yörüngesinde nabız merkezden platforma gider (müşteri seçilen platformun yorum sayfasına gönderilir) — "yorumlar Buaze'ye akar / içe aktarılır" izlenimi verme (§19.4: Buaze yalnız bağlantı yönetir). Platform adları yanında HTML olarak yazılır.
+- **Yapma**: hero'ya, fiyatlandırma / ROI / uyum / sektör sayfalarına yeni sahne ekleme; sunucuda Save-Data / Device-Memory başlığı okuma (ISR bozulur, §35.12.3); MarketingFooter'ı client component yapma; aynı sayfada 2'den fazla canvas.
+
+## §51 — Pazarlama sitesi: içerik doğruluğu ve sayfa düzeni (kanonik, 2026-11, Stage 172)
+
+Pazarlama sitesi (alt bilgi, menü, ana sayfa, özellik, sektör, ticari, şirket ve yardım sayfaları) 2026-11'de baştan yazıldı. Amaç: her cümle bugünkü ürün için doğru olsun, Google uydurma içerik görmesin, sayfalar statik üretilsin.
+
+**İçerik kuralları (her yeni metin için):**
+- **Yorum akışı (D1)** tek anlatım: müşteri QR'ı okutup puan verir; işletmenin belirlediği eşik (varsayılan 5★, isteğe göre 4★) ve üzerindeki puanda seçilen platformun yorum sayfası açılır; eşiğin altında müşteri önce işletmeye özel geri bildirim yazabilir ve herkese açık yorum bağlantısı aynı ekranda durur. "Düşük puanları filtreler / Google'dan uzak tutar" deme.
+- **Uyum (D2)** davranışla anlatılır ("yorumları düzenlemez, gizlemez, silmez; yorum karşılığında ödül vermez"); "tam uyum", mühür, rozet yok.
+- **Uydurma yok (D3):** isimli ekip/müşteri/yazar, kurgusal vaka, alıntı, canlı akış, sayaç yok. Blog yazarı DB'de gerçek değilse "Buaze ekibi" (`blog/_lib/author.ts`).
+- **Rakam yalnız üründen doğrulanabilir olanlar:** 10 yorum platformu, 14 gün ücretsiz deneme, TR + EN, 3 ton Pulse AI, 6 denetim soru tipi / 3 puanlama modu, 5 anket soru tipi / 8 şablon, analitik dönemleri 7/30/90 gün + 12 ay + özel. Sonuç vaadi (puan artışı %, gelir, "X dakikada kurulum", kohort, "%85 tercih eder") yasak.
+- **Tek iletişim:** `SUPPORT_EMAIL` (support@buaze.com) ve `SUPPORT_HOURS` (`src/lib/company-constants.ts`); şirket unvanı/adresi `getCompanyFacts()` (§47). Başka posta kutusu yazma.
+- **Pulse AI:** "taslak, siz onaylamadan gönderilmez". Google yanıtı yalnız "Google erişim onayına bağlı" diye anılır. Yorum içe aktarma iddiası yok (Buaze yalnız bağlantı yönetir, bağlantıları her gün kontrol eder).
+- **Türkçe:** resmi "siz", cümle düzeni doğal, başlık sonunda nokta yok, H1 anahtar kelimeyle başlar.
+
+**Sayfa düzenleri:**
+- **Alt bilgi** (`MarketingFooter.tsx`, sunucu bileşeni, `id="site-footer"`): FooterPulseHorizon bandı (logo) → marka satırı + aylık "Pulse bülteni" kartı (onay kutusu boş gelir) → tek `<nav>` site haritası (gizli h2, h3 sütunlar, sektörler `RELATED_SOLUTIONS_LIST`'ten) → alt şerit: `<address>` (getCompanyFacts), hukuk bağlantıları, "Çerez tercihleri" düğmesi, taranabilir dil bağlantısı. Mobil alt boşluğu alt bilgi verir; MobileBottomNav'da ara boşluk yok.
+- **Menü:** Ürün / Çözümler / Kaynaklar / Fiyatlandırma / İletişim. Açılır paneller kapalıyken `inert` ama HTML'de durur; bu yüzden alt bilgi, açılır menü, çekmece ve /auth bağlantıları `prefetch={false}`. /auth bağlantıları `rel="nofollow"`. İstemciye yalnız `{locale, logoUrl}` gider (çeviri nesnesi gönderilmez).
+- **Çerez tercihleri:** alt bilgideki düğme `buaze:open-cookie-preferences` olayını yayar (`footer/events.ts`); CookieConsentBanner kayıtlı seçimlerle ayar penceresini açar. Analitik kapatılınca _ga/_gid/_gat/_ym çerezleri silinir.
+- **Bülten:** `/api/newsletter` `consent: true` ister, ticari-ileti + kvkk-aydinlatma onayını kaydeder; içerik ayda bir son blog yazılarıdır.
+- **Ana sayfa:** 10 bölüm, `src/components/marketing/home/*` (hero → nasıl çalışır → özellikler → platform bağlantıları (koyu, three.js yörüngesi) → yorumların ötesinde → güven → sektörler → ücretsiz QR → SSS → son CTA). `HOME_FAQ` (`home-faq.ts`) hem görünür SSS'yi hem FAQPage'i besler. HeroCinematic sunucu bileşeni + `HeroStage` istemci adası (duraklat düğmesi three.js ile aynı `AMBIENT_MOTION_*` tercihini paylaşır).
+- **Özellik sayfaları:** `FeaturePageLayout` sabit sıra: hero ("Örnek ekran" etiketli HTML maket) → "… nedir?" → yetenekler → görünür adımlar (`id="step-N"`) → doğrulanabilir bilgiler → sektör bağlantıları → SSS → ilgili özellikler → son CTA. Meta + JSON-LD `src/lib/seo/feature-schema.ts`; açıklamalar `features/_components/feature-catalog.ts`.
+- **Sektör sayfaları:** `SolutionPageLayout` içerik odaklı şablon (`SolutionPageContent`); her sayfa sektöre özgü (QR'ı nereye koyarsınız, ne sormalısınız, sektör platformları `SECTOR_PLATFORMS`, şablonlar, gizlilik notu, ≥5 SSS, `getRelatedSolutions`). `solution-schema.ts` HowTo / hasOfferCatalog / areaServed üretmez; meta `buildSolutionMetadata`. 15 sektör sayfasının hepsi bu şablonu kullanır (7 özel sayfa da taşındı); sektörler sayfası `RELATED_SOLUTIONS_LIST` + `SECTOR_COUNT`'tan, kart verisi `solutions/_components/sector-directory.ts`. Etiket örnekleri panel kuralına uyar (ASCII harf, rakam, `-`, `_`, en çok 20 karakter). Ücretsiz QR oluşturucu PNG + A5 PDF yazdırma (§24.3) sunar, tarama verisi tutmaz.
+- **Ticari sayfalar:** ortak parçalar `src/components/marketing/commercial/` (PageHero, SectionHeader, FaqList, CtaBand, ComparisonTable, PlatformChips). ROI modeli §35.9.
+- **Şirket sayfaları:** JSON-LD organizasyonu yalnız `@id` ile anar (AboutPage, ContactPage, Blog, BlogPosting); /blog searchParams okumaz (kategori filtresi istemcide).
+- **Yardım merkezi:** `src/lib/help-articles.ts` TR/EN tek `pair()` çağrısıyla; api-webhook kategorisi ve var olmayan özellikleri anlatan 13 makale kaldırıldı, eski adresler `next.config.ts`'te en yakın makaleye 308. `tests/help-articles.test.ts` TR/EN eşliğini, iç bağlantıları ve kaldırılan adresleri korur. /help/search istemcide eşleşir (noindex).
+
+**Paylaşım görseli:** `public/images/open-graph-{tr,en}.png` (1200×630) yalnız doğrulanabilir bilgi taşır. Yeniden üretmek için HTML + yerel woff2 fontlarıyla Playwright ekran görüntüsü alınır, sharp ile palet PNG'ye sıkıştırılır (~60 KB). Sosyal ağ önbelleği için Facebook Sharing Debugger / LinkedIn Post Inspector'da yeniden çek.
+
+**Yapma:** sayfaya sahte "canlı" sayaç, isimli alıntı, müşteri logosu, mühür ekleme; yeni posta kutusu adı yazma; HowTo'yu görünür adım olmadan ekleme; SoftwareApplication / AggregateRating ekleme; pazarlama sayfasında `headers()/cookies()/searchParams` okuma (§35.12.3).

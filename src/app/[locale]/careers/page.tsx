@@ -1,16 +1,82 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
+import { notFound } from 'next/navigation';
+import { ArrowRight, Mail } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { getTranslations } from '@/lib/translations';
+import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
+import { ORGANIZATION_ID, SUPPORT_EMAIL, WEBSITE_ID } from '@/lib/company-constants';
 import type { Locale } from '@/lib/translations';
-import { notFound } from 'next/navigation';
 
-const VALID_LOCALES = ['tr', 'en'] as const;
+/**
+ * /careers — honest state: no published openings right now, general
+ * applications go to the one public mailbox. The earlier role list and
+ * team-size line came from the design prototype and were not real (spec D3).
+ * When a real opening exists, publish it here with JobPosting JSON-LD
+ * (datePosted / validThrough) — never an undated list.
+ * Static: nothing here reads headers()/cookies()/searchParams.
+ */
 
-// Stage 83 §38.163 — ISR (1 day) for static corporate content.
 export const revalidate = 86400;
+
+type Lang = 'tr' | 'en';
+
+const META = {
+  tr: {
+    title: 'Kariyer: genel başvuru ve açık pozisyon duyuruları',
+    description:
+      "Buaze'de şu anda yayımlanmış bir açık pozisyon yok. Genel başvurunuzu kısa bir tanıtım ve özgeçmişinizle birlikte support@buaze.com adresine gönderebilirsiniz.",
+  },
+  en: {
+    title: 'Careers: general applications and future openings',
+    description:
+      'There are no published openings at Buaze right now. You can send a general application with a short introduction and your CV to support@buaze.com.',
+  },
+} as const;
+
+const COPY = {
+  tr: {
+    eyebrow: 'Kariyer',
+    h1: "Buaze'de kariyer",
+    lead: 'Şu anda yayımlanmış bir açık pozisyonumuz yok. Açık pozisyonlar yayımlandığında bu sayfada yer alır.',
+    applyTitle: 'Genel başvuru',
+    applyBody:
+      "Buaze'de çalışmak istiyorsanız kısa bir tanıtım ve özgeçmişinizi, varsa portfolyo bağlantınızla birlikte support@buaze.com adresine gönderebilirsiniz. Konu satırına “Genel başvuru” yazmanız yeterli.",
+    applyNote:
+      'Başvurunuzda yalnızca değerlendirme için gereken bilgileri paylaşın; kimlik numarası veya sağlık bilgisi gibi verileri göndermeyin.',
+    applyButton: 'E-postayla başvurun',
+    mailSubject: 'Genel başvuru',
+    workTitle: 'Ne üzerinde çalışıyoruz',
+    workBody:
+      "Buaze, işletmelerin müşteri geri bildirimini QR kodla toplamasına, müşterilerini yorum sayfalarına yönlendirmesine ve gelen geri bildirimleri tek panelde yanıtlamasına yardımcı olan bir yazılım. Ürünü İstanbul'da, Türkçe ve İngilizce kullanan işletmeler için geliştiriyoruz.",
+    links: [
+      { path: '/about', label: 'Buaze hakkında' },
+      { path: '/how-it-works', label: 'Nasıl çalışır' },
+    ],
+    home: 'Ana sayfa',
+  },
+  en: {
+    eyebrow: 'Careers',
+    h1: 'Careers at Buaze',
+    lead: 'We have no published openings right now. When we open a role, it will be listed on this page.',
+    applyTitle: 'General applications',
+    applyBody:
+      'If you would like to work at Buaze, send a short introduction and your CV, plus a portfolio link if you have one, to support@buaze.com. Writing “General application” in the subject line is enough.',
+    applyNote:
+      'Share only what we need to review your application; please do not send data such as ID numbers or health information.',
+    applyButton: 'Apply by e-mail',
+    mailSubject: 'General application',
+    workTitle: 'What we work on',
+    workBody:
+      'Buaze is software that helps businesses collect customer feedback with QR codes, send customers on to their review pages and reply to feedback from one panel. We build it in Istanbul for businesses that work in Turkish and English.',
+    links: [
+      { path: '/about', label: 'About Buaze' },
+      { path: '/how-it-works', label: 'How it works' },
+    ],
+    home: 'Home',
+  },
+} as const;
 
 export async function generateMetadata({
   params,
@@ -18,35 +84,24 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const title = locale === 'tr'
-    ? 'Kariyer — Buaze\'de açık pozisyonlar ve değerler'
-    : 'Careers at Buaze — Open roles and how we work';
-  const description =
-    locale === 'tr'
-      ? 'Buaze\'de çalış: İstanbul merkezli, uzaktan-uyumlu, ürün odaklı bir SaaS ekibi. Tasarım, mühendislik, ürün ve müşteri başarısı için açık pozisyonları incele.'
-      : 'Work at Buaze: an Istanbul-based, remote-friendly, product-driven SaaS team. Explore open roles across design, engineering, product and customer success.';
+  const lang: Lang = locale === 'en' ? 'en' : 'tr';
+  const { title, description } = META[lang];
+  const ogImage = lang === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
   return {
-    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
-      canonical: `/${locale}/careers`,
+      canonical: `/${lang}/careers`,
       languages: { tr: '/tr/careers', en: '/en/careers', 'x-default': '/tr/careers' },
     },
     openGraph: {
       type: 'website',
       siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/careers`,
       title,
       description,
-      url: `https://www.buaze.com/${locale}/careers`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
   };
 }
@@ -57,191 +112,111 @@ export default async function CareersPage({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  if (!VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
-    notFound();
-  }
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
+  if (locale !== 'tr' && locale !== 'en') notFound();
+  const lang: Lang = locale;
+  const copy = COPY[lang];
+  const pageUrl = `${SITE_URL}/${lang}/careers`;
+  const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(copy.mailSubject)}`;
 
-  const values = isTr
-    ? [
-        { n: '01', t: 'Nabız gibi hızlı', d: 'Haftalık sprintler, günlük push\'lar. Kullanıcılar feedback\'i 24 saatte görür.' },
-        { n: '02', t: 'Veri ile konuş', d: 'Her karar bir metriğe bağlı. Fikir değil, ölçüm.' },
-        { n: '03', t: 'Birlikte inşa et', d: 'Ürün + destek + tasarım + satış — hepsi aynı Slack kanalında.' },
-        { n: '04', t: 'Yerelden globale', d: 'İstanbul\'da başladık, ürünü TR ve EN olarak kurguladık. Uzaktan çalışıyoruz.' },
-      ]
-    : [
-        { n: '01', t: 'Pulse-fast', d: 'Weekly sprints, daily pushes. Users see feedback within 24 hours.' },
-        { n: '02', t: 'Speak with data', d: 'Every decision maps to a metric. No opinions, measurements.' },
-        { n: '03', t: 'Build together', d: 'Product + support + design + sales — all on the same Slack channel.' },
-        { n: '04', t: 'Local to global', d: 'Started in Istanbul, built the product in TR and EN. We work remotely.' },
-      ];
-
-  const roles = isTr
-    ? [
-        { title: 'Senior Full-Stack Engineer', team: 'Mühendislik', location: 'İstanbul / Remote (TR)', type: 'Tam zamanlı' },
-        { title: 'Product Designer', team: 'Tasarım', location: 'İstanbul', type: 'Tam zamanlı' },
-        { title: 'Customer Success Manager', team: 'Müşteri başarısı', location: 'İstanbul', type: 'Tam zamanlı' },
-        { title: 'Growth Marketing Lead', team: 'Pazarlama', location: 'İstanbul / Remote (TR)', type: 'Tam zamanlı' },
-        { title: 'Data Analyst', team: 'Ürün', location: 'Remote (TR)', type: 'Tam zamanlı' },
-      ]
-    : [
-        { title: 'Senior Full-Stack Engineer', team: 'Engineering', location: 'Istanbul / Remote (EU)', type: 'Full-time' },
-        { title: 'Product Designer', team: 'Design', location: 'Istanbul', type: 'Full-time' },
-        { title: 'Customer Success Manager', team: 'Customer success', location: 'Istanbul', type: 'Full-time' },
-        { title: 'Growth Marketing Lead', team: 'Marketing', location: 'Istanbul / Remote (EU)', type: 'Full-time' },
-        { title: 'Data Analyst', team: 'Product', location: 'Remote (EU)', type: 'Full-time' },
-      ];
-
-  const canonicalUrl = `https://www.buaze.com/${locale}/careers`;
-  const itemListSchema = {
+  const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: isTr ? 'Açık pozisyonlar' : 'Open positions',
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    url: canonicalUrl,
-    numberOfItems: roles.length,
-    itemListElement: roles.map((role, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      name: role.title,
-      description: `${role.team} · ${role.location} · ${role.type}`,
-    })),
-  };
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Kariyer' : 'Careers', item: canonicalUrl },
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: copy.h1,
+        description: META[lang].description,
+        inLanguage: lang === 'tr' ? 'tr-TR' : 'en-US',
+        isPartOf: { '@id': WEBSITE_ID },
+        about: { '@id': ORGANIZATION_ID },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: copy.home, item: `${SITE_URL}/${lang}` },
+          { '@type': 'ListItem', position: 2, name: copy.eyebrow, item: pageUrl },
+        ],
+      },
     ],
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(itemListSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
-      <MarketingNavbar locale={locale} t={t} />
+    <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={lang} />
       <main id="main-content">
-
-      <section className="px-5 sm:px-10 pt-[60px] sm:pt-20 pb-10">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-12 items-center">
-          <div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Kariyer' : 'Careers'}
-            </span>
-            <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
-              {isTr ? (
-                <>
-                  Gerçek işletmeler için
-                  <br />
-                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
-                    gerçek ürün
-                  </span>{' '}
-                  yap.
-                </>
-              ) : (
-                <>
-                  Build a{' '}
-                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
-                    real product
-                  </span>{' '}
-                  for real businesses.
-                </>
-              )}
-            </h1>
-            <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[520px] leading-[1.6]">
-              {isTr
-                ? '14 kişilik bir ekibiz. 3 ay içinde 22\'ye çıkıyoruz. Sen de bu hikayenin parçası olabilirsin.'
-                : 'We\'re a team of 14 scaling to 22 in the next 3 months. You could be part of this story.'}
-            </p>
-          </div>
-          <div className="bz-card p-6 sm:p-10">
-            <div className="pulse-eyebrow text-[#737373]">{isTr ? 'Sayılarla biz' : 'By the numbers'}</div>
-            <div className="mt-5 grid grid-cols-2 gap-6">
-              {[
-                { k: '2023', l: isTr ? 'Kuruluş' : 'Founded' },
-                { k: '10', l: isTr ? 'Yorum platformu' : 'Review platforms' },
-                { k: 'TR + EN', l: isTr ? 'Ürün dili' : 'Product languages' },
-                { k: '<5dk', l: isTr ? 'Kurulum' : 'Setup' },
-              ].map((x) => (
-                <div key={x.l}>
-                  <div
-                    className="text-[28px] sm:text-[36px] font-medium leading-none tracking-[-0.03em]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    {x.k}
-                  </div>
-                  <div className="pulse-eyebrow text-[#737373] mt-3">{x.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-[#FAFAFA]">
-        <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[26px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1]">
-            {isTr ? 'Değerlerimiz' : 'Our values'}
-          </h2>
-          <div className="mt-8 sm:mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {values.map((v) => (
-              <div key={v.n} className="bz-card p-6 sm:p-7">
-                <span className="pulse-eyebrow text-[#A8D62E]">{v.n}</span>
-                <h3 className="mt-3 text-[20px] sm:text-[22px] font-medium tracking-[-0.02em]">{v.t}</h3>
-                <p className="mt-3 text-[14px] text-[#525252] leading-[1.6]">{v.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-end justify-between flex-wrap gap-4">
-            <div>
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Açık pozisyonlar' : 'Open roles'}
-              </span>
-              <h2 className="mt-3 text-[26px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1]">
-                {isTr ? `${roles.length} pozisyon` : `${roles.length} open roles`}
-              </h2>
-            </div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Hepsi uzaktan-uyumlu' : 'All remote-friendly'}
-            </span>
-          </div>
-
-          <ul className="mt-10 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
-            {roles.map((r) => (
-              <li
-                key={r.title}
-                className="py-6 grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 md:gap-6 items-center"
+        <section aria-labelledby="careers-title" className="pt-[60px] pb-10 sm:pt-20 sm:pb-16">
+          <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
+            <div className="max-w-[720px]">
+              <p className="pulse-eyebrow text-[#737373]">{copy.eyebrow}</p>
+              <h1
+                id="careers-title"
+                className="mt-4 text-balance text-[38px] leading-[1.02] tracking-[-0.035em] text-[#0A0A0A] sm:text-[56px] md:text-[52px] lg:text-[64px]"
               >
-                <div>
-                  <h3 className="text-[18px] sm:text-[20px] font-semibold tracking-[-0.015em]">
-                    {r.title}
-                  </h3>
-                  <div className="pulse-eyebrow text-[#737373] mt-1">{r.team}</div>
-                </div>
-                <div className="text-[14px] text-[#525252]">{r.location}</div>
-                <div className="text-[14px] text-[#525252]">{r.type}</div>
-                <Link
-                  href={`mailto:kariyer@buaze.com?subject=${encodeURIComponent(r.title)}`}
-                  className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-5 py-2.5 rounded-full text-[13px] font-medium hover:bg-[#1A1A1A] transition-colors"
-                >
-                  {isTr ? 'Başvur' : 'Apply'}
-                  <span aria-hidden>→</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+                {copy.h1}
+              </h1>
+              <p className="mt-6 max-w-[620px] text-pretty text-[17px] leading-[1.65] text-[#525252] sm:text-[19px]">
+                {copy.lead}
+              </p>
+            </div>
+          </div>
+        </section>
 
+        <div className="bg-[#FAFAFA] py-[60px] sm:py-24">
+          <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 px-5 sm:gap-6 sm:px-10 lg:grid-cols-2">
+            <section
+              aria-labelledby="careers-apply-title"
+              className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8"
+            >
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+              >
+                <Mail size={20} strokeWidth={2} />
+              </span>
+              <h2 id="careers-apply-title" className="mt-5 text-[26px] leading-[1.15] text-[#0A0A0A] sm:text-[30px]">
+                {copy.applyTitle}
+              </h2>
+              <p className="mt-4 text-[16px] leading-[1.65] text-[#333333]">{copy.applyBody}</p>
+              <p className="mt-3 text-[14px] leading-[1.6] text-[#737373]">{copy.applyNote}</p>
+              <div className="mt-auto pt-7">
+                <a
+                  href={mailHref}
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                >
+                  {copy.applyButton}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </a>
+              </div>
+            </section>
+
+            <section
+              aria-labelledby="careers-work-title"
+              className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8"
+            >
+              <h2 id="careers-work-title" className="text-[26px] leading-[1.15] text-[#0A0A0A] sm:text-[30px]">
+                {copy.workTitle}
+              </h2>
+              <p className="mt-4 text-[16px] leading-[1.65] text-[#333333]">{copy.workBody}</p>
+              <ul className="mt-auto flex flex-wrap gap-x-6 gap-y-1 pt-6">
+                {copy.links.map((link) => (
+                  <li key={link.path}>
+                    <Link
+                      href={`/${lang}${link.path}`}
+                      className="inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                    >
+                      {link.label}
+                      <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        </div>
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={lang} />
     </div>
   );
 }

@@ -51,8 +51,8 @@ export default async function RegisterPage({
   const isTr = locale === 'tr';
 
   const benefits = isTr
-    ? ['5 dakikada kurulum', 'Kredi kartı gerekmez', 'İstediğin zaman iptal et', 'Türkçe destek']
-    : ['5-minute setup', 'No credit card required', 'Cancel anytime', 'Turkish support'];
+    ? ['10 yorum platformu', 'Kredi kartı gerekmez', 'İstediğin zaman iptal et', 'Türkçe destek']
+    : ['10 review platforms', 'No credit card required', 'Cancel anytime', 'Turkish support'];
 
   return (
     <div className="min-h-screen bg-white font-sans lg:grid lg:grid-cols-2">
@@ -108,7 +108,9 @@ export default async function RegisterPage({
             {isTr ? 'Hesap oluştur' : 'Create account'}
           </h1>
           <p className="mt-2.5 text-[14px] text-[#737373]">
-            {isTr ? 'Kredi kartı gerekmez. 2 dakikada başla.' : 'No credit card. Start in 2 minutes.'}
+            {isTr
+              ? 'Hesabını oluştur, işletmeni ekle ve QR kodunu indir.'
+              : 'Create your account, add your business and download your QR code.'}
           </p>
 
           <div className="mt-7">

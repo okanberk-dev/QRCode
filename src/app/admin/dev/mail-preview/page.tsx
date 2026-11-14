@@ -16,8 +16,8 @@ const TEMPLATES = [
   { key: 'trial-ending', label: 'Deneme bitiyor', desc: 'Plan kartları + ÖNERİLEN rozeti' },
   { key: 'contact-admin', label: 'İletişim formu (admin)', desc: 'Yeni iletişim talebi bildirimi' },
   { key: 'verify-email', label: 'E-posta onayı', desc: 'Davet sonrası zorunlu e-posta doğrulaması' },
-  { key: 'roi-customer-report', label: 'ROI raporu (müşteri)', desc: '12 aylık projeksiyon + yapay zekâ analizi + iletişim bağlantısı' },
-  { key: 'roi-admin-notification', label: 'ROI talebi (yönetici)', desc: 'Satış ekibine yeni ROI talebi bildirimi' },
+  { key: 'roi-customer-report', label: 'ROI raporu (müşteri)', desc: 'Tahmini zaman tasarrufu + özet + PDF' },
+  { key: 'roi-admin-notification', label: 'ROI talebi (yönetici)', desc: 'Satış ekibine ROI hesabı bildirimi' },
 ] as const;
 
 // /api/admin/dev/send-test answers with machine codes; the page used to print

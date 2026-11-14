@@ -13,18 +13,38 @@ import { revalidatePricing } from '@/lib/marketing-revalidate';
 //   Starter: pdt_0NfZCuJmSmGXX3FoIkdIu ($1.00 test, sonra prod fiyatı)
 //   Growth:  pdt_0NfZD3pbkJVz1Zx0972sy ($39.99)
 //   Scale:   pdt_0NfZDHioCEcSDhghMHLae ($99.99)
+//
+// Default copy must stay true for today's product (marketing spec D8): no
+// plan limits or feature gates are enforced in code, so every plan lists the
+// same capabilities and the descriptions only say who the plan is meant for.
+// Add tier-specific bullets only together with the code that enforces them.
+const SHARED_FEATURES_TR = [
+  'Sınırsız QR kod, işletme ve ekip üyesi',
+  '10 yorum platformu bağlantısı',
+  'Pulse AI yanıt taslakları',
+  'Düşük puanda anında e-posta uyarısı',
+  'Analitik ve CSV dışa aktarma',
+];
+const SHARED_FEATURES_EN = [
+  'Unlimited QR codes, businesses and team members',
+  'Links to 10 review platforms',
+  'Pulse AI reply drafts',
+  'Instant e-mail alert for low ratings',
+  'Analytics and CSV export',
+];
+
 const DEFAULTS = [
   {
     nameTr: 'Starter',
     nameEn: 'Starter',
-    descriptionTr: 'Küçük işletmeler için ideal başlangıç.',
-    descriptionEn: 'Ideal start for small businesses.',
+    descriptionTr: 'Tek işletmesi olanlar için.',
+    descriptionEn: 'For a single business.',
     priceTry: 0,
     priceUsd: 1,
     period: 'month',
-    featuresTr: ['Sınırsız QR kod', 'Yorum yönetimi', 'Akıllı filtreleme', 'E-posta desteği'],
-    featuresEn: ['Unlimited QR codes', 'Review management', 'Smart filtering', 'Email support'],
-    buttonTextTr: 'Hemen başla',
+    featuresTr: SHARED_FEATURES_TR,
+    featuresEn: SHARED_FEATURES_EN,
+    buttonTextTr: 'Hemen başlayın',
     buttonTextEn: 'Get started',
     buttonHref: '/auth/register',
     isActive: true,
@@ -36,26 +56,14 @@ const DEFAULTS = [
   {
     nameTr: 'Growth',
     nameEn: 'Growth',
-    descriptionTr: 'Hızlı büyüyen ve çok şubeli işletmeler için.',
-    descriptionEn: 'For fast-growing and multi-location businesses.',
+    descriptionTr: 'Birden çok şubesi olan işletmeler için.',
+    descriptionEn: 'For businesses with several locations.',
     priceTry: 0,
     priceUsd: 40,
     period: 'month',
-    featuresTr: [
-      "Starter'daki her şey",
-      'Buaze Pulse AI dahil',
-      "Çoklu lokasyon (3'e kadar)",
-      'Gelişmiş analitik',
-      'Öncelikli destek',
-    ],
-    featuresEn: [
-      'Everything in Starter',
-      'Buaze Pulse AI included',
-      'Multi-location (up to 3)',
-      'Advanced analytics',
-      'Priority support',
-    ],
-    buttonTextTr: 'Hemen başla',
+    featuresTr: SHARED_FEATURES_TR,
+    featuresEn: SHARED_FEATURES_EN,
+    buttonTextTr: 'Hemen başlayın',
     buttonTextEn: 'Get started',
     buttonHref: '/auth/register',
     isActive: true,
@@ -67,26 +75,14 @@ const DEFAULTS = [
   {
     nameTr: 'Scale',
     nameEn: 'Scale',
-    descriptionTr: 'Kurumsal ihtiyaçlar ve sınırsız kapasite.',
-    descriptionEn: 'Enterprise needs with unlimited capacity.',
+    descriptionTr: 'Zincirler ve çok sayıda işletmesi olan gruplar için.',
+    descriptionEn: 'For chains and groups with many businesses.',
     priceTry: 0,
     priceUsd: 100,
     period: 'month',
-    featuresTr: [
-      "Growth'daki her şey",
-      'Sınırsız şube',
-      'API & Webhook erişimi',
-      '7/24 öncelikli destek',
-      'Özel SLA',
-    ],
-    featuresEn: [
-      'Everything in Growth',
-      'Unlimited locations',
-      'API & Webhook access',
-      '24/7 priority support',
-      'Dedicated SLA',
-    ],
-    buttonTextTr: 'Hemen başla',
+    featuresTr: SHARED_FEATURES_TR,
+    featuresEn: SHARED_FEATURES_EN,
+    buttonTextTr: 'Hemen başlayın',
     buttonTextEn: 'Get started',
     buttonHref: '/auth/register',
     isActive: true,

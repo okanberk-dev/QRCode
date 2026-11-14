@@ -19,3 +19,15 @@ export const SITE_URL =
 
 /** Host portion only — used by `robots.txt`'s `Host:` directive. */
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, '');
+
+/**
+ * Official social profiles — one list for the footer icons and the
+ * Organization `sameAs` (they used to differ: x.com vs twitter.com, with and
+ * without www). Canonical host forms only.
+ */
+export const SOCIAL_PROFILES = [
+  { id: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/buazerating' },
+  { id: 'x', label: 'X', url: 'https://x.com/buaze' },
+  { id: 'linkedin', label: 'LinkedIn', url: 'https://www.linkedin.com/company/buaze' },
+  { id: 'youtube', label: 'YouTube', url: 'https://www.youtube.com/@buaze' },
+] as const;

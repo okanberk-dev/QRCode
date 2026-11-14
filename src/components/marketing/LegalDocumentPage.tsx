@@ -5,6 +5,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { renderLegalContentWithToc } from '@/lib/legal/render';
 import type { LegalDocumentSnapshot } from '@/lib/legal/loader';
+import { SUPPORT_EMAIL } from '@/lib/company-constants';
 
 /**
  * DB-driven hukuki metin sayfa shell'i (CLAUDE.md §32). Eski `LegalPageLayout`
@@ -47,6 +48,9 @@ export default function LegalDocumentPage({
         <MarketingNavbar locale={locale} t={t} />
       </div>
 
+      {/* The title is inside <main id="main-content"> so the skip link lands
+          on it and no content sits outside a landmark. */}
+      <main id="main-content" className="flex-1">
       {/* Hero — sade, breadcrumb + eyebrow + title + meta. Eski grid pattern
           kaldırıldı; yerine ince alt-border + N50 yumuşak alt-band kontrast. */}
       <section className="relative px-5 sm:px-10 pt-10 sm:pt-14 pb-10 border-b border-[#EDEDED] bg-[#FAFAFA]">
@@ -60,18 +64,18 @@ export default function LegalDocumentPage({
           </Link>
 
           <div className="mt-6 max-w-[760px]">
-            <span className="pulse-eyebrow text-[#A8D62E]">{eyebrow}</span>
+            <span className="pulse-eyebrow text-[#525252]">{eyebrow}</span>
             <h1 className="bz-h-tight mt-3 text-[28px] sm:text-[44px] leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
               {doc.title || fallbackTitle}
             </h1>
             {lastUpdatedLabel && (
-              <div className="mt-4 pulse-eyebrow text-[#A3A3A3]">{lastUpdatedLabel}</div>
+              <div className="mt-4 pulse-eyebrow text-[#737373]">{lastUpdatedLabel}</div>
             )}
           </div>
         </div>
       </section>
 
-      <main className="flex-1 px-5 sm:px-10 py-10 sm:py-14">
+      <div className="px-5 sm:px-10 py-10 sm:py-14">
         <div className="mx-auto max-w-[1100px] grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-10 lg:gap-14">
           {/* Content column */}
           <div className="min-w-0 max-w-[760px]">
@@ -95,14 +99,14 @@ export default function LegalDocumentPage({
               <span>
                 {isTr ? 'Sorularınız için ' : 'Questions? '}
                 <a
-                  href="mailto:legal@buaze.com"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                   className="font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-[3px] transition-colors hover:decoration-[#A8D62E]"
                 >
-                  legal@buaze.com
+                  {SUPPORT_EMAIL}
                 </a>
               </span>
               {lastUpdatedLabel && (
-                <span className="pulse-eyebrow text-[#A3A3A3] text-[10px]">
+                <span className="pulse-eyebrow text-[#737373] text-[10px]">
                   {lastUpdatedLabel}
                 </span>
               )}
@@ -122,7 +126,7 @@ export default function LegalDocumentPage({
                 <ol className="mt-3 space-y-2 text-[13px] leading-[1.5]">
                   {tocItems.map((h, idx) => (
                     <li key={h.id} className="flex gap-2">
-                      <span className="bz-mono text-[11px] text-[#A3A3A3] tabular-nums shrink-0 mt-0.5">
+                      <span className="bz-mono text-[11px] text-[#737373] tabular-nums shrink-0 mt-0.5">
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                       <a
@@ -138,6 +142,7 @@ export default function LegalDocumentPage({
             </aside>
           )}
         </div>
+      </div>
       </main>
 
       <div className="legal-print-hide">

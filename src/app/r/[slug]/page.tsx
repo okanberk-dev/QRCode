@@ -713,10 +713,10 @@ function ReviewContent() {
               }`}
               style={{ fontSize: 9.5, marginTop: 4 }}
             >
+              {/* Only the QR label the owner chose (it may be a table, a room
+                  or a desk), no invented context. */}
               {tableParam
-                ? `${locale === 'tr' ? 'MASA' : 'TABLE'} ${tableParam} · ${
-                    locale === 'tr' ? 'AKŞAM ZİYARETİ' : 'EVENING VISIT'
-                  }`
+                ? tableParam
                 : restaurant.address
                   ? restaurant.address.toUpperCase()
                   : 'BUAZE'}

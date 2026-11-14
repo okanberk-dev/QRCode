@@ -21,14 +21,23 @@ export default function BlogCopyLinkButton({ url, locale }: Props) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
-      title={isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
-    >
-      {copied ? <Check size={14} strokeWidth={2.5} className="text-[#A8D62E]" /> : <Link2 size={14} strokeWidth={2} />}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
+        title={isTr ? 'Bağlantıyı kopyala' : 'Copy link'}
+        className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+      >
+        {copied ? (
+          <Check size={14} strokeWidth={2.5} className="text-[#0A0A0A]" aria-hidden="true" />
+        ) : (
+          <Link2 size={14} strokeWidth={2} aria-hidden="true" />
+        )}
+      </button>
+      <span className="sr-only" aria-live="polite">
+        {copied ? (isTr ? 'Bağlantı kopyalandı' : 'Link copied') : ''}
+      </span>
+    </>
   );
 }

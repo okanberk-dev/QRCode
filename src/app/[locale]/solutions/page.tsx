@@ -1,411 +1,622 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
 import {
+  ArrowRight,
   ChevronRight,
-  Utensils,
-  Hotel,
+  ClipboardCheck,
+  Layers,
+  QrCode,
+  Star,
   Stethoscope,
-  Scissors,
-  Dumbbell,
-  Scale,
-  Home as HomeIcon,
-  Car,
-  Sparkles,
-  GraduationCap,
-  PawPrint,
-  Building2,
+  Tag,
+  type LucideIcon,
 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
 import {
-  IllusCompass,
-  IllusInbox,
-  IllusChart,
-  IllusShield,
-} from '@/components/marketing/PulseIllustrations';
-import { getTranslations } from '@/lib/translations';
+  FEATURE_CARD,
+  FEATURE_CONTAINER,
+  FEATURE_SECTION_Y,
+  FeatureCtaSection,
+  FeatureFaqSection,
+  FeaturePageShell,
+  FeatureSectionHeading,
+  type FeatureFaq,
+} from '@/components/marketing/FeaturePageLayout';
+import { SECTOR_COUNT } from '@/lib/related-solutions';
+import { SECTOR_PLATFORMS } from '@/lib/sector-platforms';
+import { SITE_URL } from '@/lib/site';
+import { WEBSITE_ID } from '@/lib/company-constants';
 import type { Locale } from '@/lib/translations';
+import {
+  getSectorDirectory,
+  getSectorDirectoryFlat,
+  joinNames,
+  platformNamesForSector,
+  platformSummary,
+} from './_components/sector-directory';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// /solutions — the directory of every sector page. The grid, its groups and
+// the page count come from RELATED_SOLUTIONS_LIST (via sector-directory), so a
+// new sector page shows up here and in the count without editing this file.
+// Static (ISR from the locale layout): reads only `params`.
+// JSON-LD: CollectionPage + BreadcrumbList + ItemList of the sector pages +
+// FAQPage built from the visible FAQ.
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const isTr = locale === 'tr';
-  const title = isTr
-    ? 'Sektörel çözümler — Restoran, otel, klinik ve perakende'
-    : 'Industry solutions — Restaurants, hotels, clinics and retail';
-  const description = isTr
-    ? 'Restoran, otel, klinik, güzellik salonu ve mağazalar için QR ile müşteri geri bildirimi ve Google yorum yönetimi. Sektörünüzü seçin, 14 gün ücretsiz deneyin.'
-    : 'Manage your digital reputation with Buaze: capture via QR, collect in one panel, route smartly, measure growth. Ready for every sector.';
+const PATH = '/solutions';
+
+/** Platform facts quoted in the copy, read from the panel's own whitelist. */
+const FOOD_PLATFORM_COUNT = SECTOR_PLATFORMS.food.length;
+const OTHER_PLATFORM_NAMES = platformNamesForSector('other');
+
+interface ChangeItem {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+}
+
+interface HubCopy {
+  meta: { title: string; description: string };
+  breadcrumb: { label: string; home: string; current: string };
+  eyebrow: string;
+  h1: string;
+  lead: string;
+  primary: string;
+  secondary: string;
+  note: string;
+  flow: {
+    label: string;
+    title: string;
+    steps: ReadonlyArray<{ title: string; body: string }>;
+    privateLabel: string;
+    publicLabel: string;
+    footnote: string;
+  };
+  directory: {
+    eyebrow: string;
+    title: string;
+    lead: string;
+    where: string;
+    platforms: string;
+    listName: string;
+  };
+  changes: { eyebrow: string; title: string; lead: string; items: readonly ChangeItem[] };
+  tool: { eyebrow: string; title: string; lead: string; cta: string };
+  faq: { eyebrow: string; title: string; items: readonly FeatureFaq[]; more: string };
+  ctaTitle: string;
+}
+
+function getCopy(locale: Locale): HubCopy {
+  if (locale === 'tr') {
+    return {
+      meta: {
+        title: 'Sektörlere göre QR geri bildirim çözümleri',
+        description: `Restoran, otel, klinik, mağaza ve hukuk bürosu dahil ${SECTOR_COUNT} sektör için QR ile müşteri geri bildirimi ve Google yorumları. 14 gün ücretsiz deneyin.`,
+      },
+      breadcrumb: { label: 'Sayfa konumu', home: 'Ana sayfa', current: 'Çözümler' },
+      eyebrow: 'Sektörel çözümler',
+      h1: 'Sektörlere göre QR ile müşteri geri bildirimi ve Google yorumları',
+      lead: `Restorandan hukuk bürosuna ${SECTOR_COUNT} sektör için ayrı sayfa hazırladık. Her sayfada QR kodu nereye koyacağınızı, panelin o sektörde hangi yorum platformlarını gösterdiğini ve müşterilerinize neler sorabileceğinizi bulursunuz.`,
+      primary: 'Ücretsiz deneyin',
+      secondary: 'Sektörünüzü seçin',
+      note: '14 gün ücretsiz deneme · Kredi kartı gerekmez',
+      flow: {
+        label: 'Örnek akış',
+        title: 'Her sektörde aynı akış',
+        steps: [
+          {
+            title: 'Müşteri QR kodu okutur',
+            body: 'Masadaki, odadaki ya da kasadaki QR kodu okutur ve 1–5 yıldız verir.',
+          },
+          {
+            title: 'Eşik ve üzerindeki puanlar',
+            body: 'Eşiği 4 ya da 5 yıldız olarak siz belirlersiniz; varsayılan 5 yıldızdır. Bu puanlarda seçtiğiniz platformun yorum sayfası açılır.',
+          },
+          {
+            title: 'Eşiğin altındaki puanlar',
+            body: 'Müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+          },
+        ],
+        privateLabel: 'Size özel geri bildirim',
+        publicLabel: 'Herkese açık yorum bağlantısı',
+        footnote: '1–3 yıldızlık her geri bildirimde size anında e-posta gelir.',
+      },
+      directory: {
+        eyebrow: 'Sektörler',
+        title: `${SECTOR_COUNT} sektör için hazırlanmış sayfalar`,
+        lead: 'Her sayfada QR yerleşimi, panelin o sektörde gösterdiği yorum platformları, örnek anket soruları, hazır şablonlar ve sık sorulan sorular yer alır.',
+        where: 'QR yeri',
+        platforms: 'Platformlar',
+        listName: 'Buaze sektör sayfaları',
+      },
+      changes: {
+        eyebrow: 'Sektöre göre değişenler',
+        title: 'Akış aynı kalır, ayrıntılar sektörünüze göre değişir',
+        lead: 'Puan akışı, düşük puan uyarıları, Pulse AI yanıt taslakları ve analitik her sektörde aynıdır. Sektör sayfalarında anlatılan farklar şunlardır:',
+        items: [
+          {
+            icon: Tag,
+            title: 'QR kodun yeri ve etiketi',
+            body: 'Restoranda masa, otelde oda, salonda koltuk: her QR koda kısa bir etiket verirsiniz (ör. A12, 204). Etikette boşluk ve Türkçe karakter kullanılmaz. Etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür.',
+          },
+          {
+            icon: Layers,
+            title: 'Panelin gösterdiği yorum platformları',
+            body: `Kurulumda seçtiğiniz sektör, panelde hangi platformların görüneceğini belirler: restoranlarda ${FOOD_PLATFORM_COUNT} platform, hukuk bürolarında yalnızca Google. Buaze bu platformlardaki yorumları gelen kutunuza aktarmaz; müşteriyi seçtiğiniz yorum sayfasına gönderir.`,
+          },
+          {
+            icon: ClipboardCheck,
+            title: 'Önerilen anket ve denetim şablonları',
+            body: 'Restoran, otel, klinik, güzellik salonu ve mağazalar için ayrı anket şablonları vardır. Denetim Merkezi de yeni denetim oluştururken önce işletmenizin sektörüne uygun şablonları önerir.',
+          },
+          {
+            icon: Stethoscope,
+            title: 'Kliniklerde hasta dili',
+            body: 'Sektör olarak “Klinik & Sağlık”ı seçerseniz panel geri bildirimleri “Hasta geri bildirimleri”, müşteri listesini “Hastalar” olarak adlandırır ve QR Menü bölümünü gizler.',
+          },
+        ],
+      },
+      tool: {
+        eyebrow: 'Ücretsiz araç',
+        title: 'Ücretsiz QR kod oluşturucu',
+        lead: 'Bir bağlantıyı hesap açmadan QR koda dönüştürün: 4 kart temasından birini seçin, PNG olarak indirin ya da A5 sayfaya PDF olarak yazdırın. Bu kodlar statiktir; puan akışı ve uyarılar için Buaze hesabınızdaki QR kodları kullanılır.',
+        cta: 'QR kod oluşturucuyu açın',
+      },
+      faq: {
+        eyebrow: 'Sık sorulan sorular',
+        title: 'Sektör sayfaları hakkında sorular',
+        more: 'Tüm soruları görün',
+        items: [
+          {
+            q: 'Sektörüm listede yok, Buaze’yi kullanabilir miyim?',
+            a: `Evet. Kurulumda “Diğer” sektörünü seçebilirsiniz; panel bu durumda ${joinNames(OTHER_PLATFORM_NAMES, 'tr')} bağlantılarını gösterir. Puan akışı, uyarılar ve analitik her sektörde aynı çalışır.`,
+          },
+          {
+            q: 'Sektörümü sonradan değiştirebilir miyim?',
+            a: 'Evet. İşletme ayarlarından sektörü değiştirdiğinizde panelin gösterdiği yorum platformları ve önerilen şablonlar da değişir. Daha önce kaydettiğiniz platform bağlantıları silinmez.',
+          },
+          {
+            q: 'Farklı sektörlerde birden çok işletmem var, ne olur?',
+            a: 'Her işletmenin kendi sektörü vardır. Panelde işletmeler arasında geçtiğinizde platform listesi ve önerilen şablonlar o işletmeye göre değişir; hepsini aynı hesaptan yönetirsiniz.',
+          },
+          {
+            q: 'Buaze diğer platformlardaki yorumları panele getirir mi?',
+            a: 'Hayır. Buaze Yemeksepeti, Tripadvisor veya Booking.com gibi platformlardan yorum çekmez; bu platformların yorum bağlantılarını yönetir ve müşteriyi seçtiğiniz yorum sayfasına gönderir. Panelde QR akışından gelen geri bildirimleri ve Google profilinizin özetini (puan, yorum sayısı ve Google’ın gösterdiği en fazla 5 yorum) görürsünüz.',
+          },
+        ],
+      },
+      ctaTitle: 'Sektörünüz için geri bildirim toplamaya başlayın',
+    };
+  }
+  return {
+    meta: {
+      title: 'QR feedback and review solutions by industry',
+      description: `QR customer feedback and Google reviews for ${SECTOR_COUNT} industries, from restaurants and hotels to clinics, stores and law firms. Try it free for 14 days.`,
+    },
+    breadcrumb: { label: 'Breadcrumb', home: 'Home', current: 'Solutions' },
+    eyebrow: 'Industry solutions',
+    h1: 'QR customer feedback and Google reviews by industry',
+    lead: `From restaurants to law firms, we have a separate page for each of ${SECTOR_COUNT} industries. Each one covers where to put the QR code, which review platforms the panel shows for that industry and what you can ask your customers.`,
+    primary: 'Start free trial',
+    secondary: 'Choose your industry',
+    note: '14-day free trial · No credit card required',
+    flow: {
+      label: 'Sample flow',
+      title: 'The same flow in every industry',
+      steps: [
+        {
+          title: 'The customer scans the QR code',
+          body: 'They scan the code on the table, in the room or at the till and give 1–5 stars.',
+        },
+        {
+          title: 'Ratings at or above your threshold',
+          body: 'You set the threshold at 4 or 5 stars; the default is 5. At these ratings, your chosen platform’s review page opens.',
+        },
+        {
+          title: 'Ratings below your threshold',
+          body: 'The customer can first send you private feedback; the public review link is shown on the same screen.',
+        },
+      ],
+      privateLabel: 'Private feedback to you',
+      publicLabel: 'Public review link',
+      footnote: 'Every 1–3★ piece of feedback sends you an instant e-mail.',
+    },
+    directory: {
+      eyebrow: 'Industries',
+      title: `Pages for ${SECTOR_COUNT} industries`,
+      lead: 'Each page covers QR placement, the review platforms the panel shows for that industry, sample survey questions, ready-made templates and common questions.',
+      where: 'QR placement',
+      platforms: 'Platforms',
+      listName: 'Buaze industry pages',
+    },
+    changes: {
+      eyebrow: 'What changes by industry',
+      title: 'The flow stays the same; the details follow your industry',
+      lead: 'The rating flow, low-rating alerts, Pulse AI reply drafts and analytics work the same in every industry. These are the differences the industry pages cover:',
+      items: [
+        {
+          icon: Tag,
+          title: 'Where the QR code goes and its label',
+          body: 'A table in a restaurant, a room in a hotel, a chair in a salon: you give each QR code a short label (for example A12 or 204). Labels can’t contain spaces or accented letters. The label shows in the low-rating e-mail and in the feedback CSV file.',
+        },
+        {
+          icon: Layers,
+          title: 'The review platforms the panel shows',
+          body: `The industry you pick at setup decides which platforms the panel shows: ${FOOD_PLATFORM_COUNT} for restaurants, only Google for law firms. Buaze doesn’t bring these platforms’ reviews into your inbox; it sends the customer to the review page you choose.`,
+        },
+        {
+          icon: ClipboardCheck,
+          title: 'Suggested survey and audit templates',
+          body: 'Restaurants, hotels, clinics, beauty salons and stores each have their own survey template. When you create a new audit, the Audit Center also suggests templates for your industry first.',
+        },
+        {
+          icon: Stethoscope,
+          title: 'Patient wording for clinics',
+          body: 'If you pick “Clinic & Health” as your industry, the panel calls feedback “Patient feedback” and the customer list “Patients”, and hides the QR Menu section.',
+        },
+      ],
+    },
+    tool: {
+      eyebrow: 'Free tool',
+      title: 'Free QR code generator',
+      lead: 'Turn a link into a QR code without an account: pick one of 4 card themes, then download a PNG or print it on an A5 page as a PDF. These codes are static; the rating flow and alerts use the QR codes in your Buaze account.',
+      cta: 'Open the QR code generator',
+    },
+    faq: {
+      eyebrow: 'FAQ',
+      title: 'Questions about the industry pages',
+      more: 'See all questions',
+      items: [
+        {
+          q: 'My industry isn’t listed. Can I still use Buaze?',
+          a: `Yes. Pick “Other” at setup; the panel then shows ${joinNames(OTHER_PLATFORM_NAMES, 'en')} links. The rating flow, alerts and analytics work the same in every industry.`,
+        },
+        {
+          q: 'Can I change my industry later?',
+          a: 'Yes. When you change the industry in your business settings, the review platforms the panel shows and the suggested templates change too. Platform links you saved before are not deleted.',
+        },
+        {
+          q: 'I have businesses in different industries. What happens?',
+          a: 'Each business has its own industry. When you switch between businesses in the panel, the platform list and suggested templates follow that business; you manage them all from the same account.',
+        },
+        {
+          q: 'Does Buaze bring reviews from other platforms into the panel?',
+          a: 'No. Buaze doesn’t import reviews from platforms such as Yemeksepeti, Tripadvisor or Booking.com; it manages their review links and sends the customer to the review page you choose. In the panel you see the feedback from your QR flow and a summary of your Google profile (rating, review count and up to 5 reviews Google returns).',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting feedback for your industry',
+  };
+}
+
+function resolveLocale(raw: string): Locale {
+  return raw === 'en' ? 'en' : 'tr';
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const locale = resolveLocale((await params).locale);
+  const { title, description } = getCopy(locale).meta;
   return {
     title,
     description,
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/solutions`,
-      languages: { tr: 'https://www.buaze.com/tr/solutions', en: 'https://www.buaze.com/en/solutions', 'x-default': 'https://www.buaze.com/tr/solutions' },
+      canonical: `/${locale}${PATH}`,
+      languages: { tr: `/tr${PATH}`, en: `/en${PATH}`, 'x-default': `/tr${PATH}` },
     },
     openGraph: {
       type: 'website',
       siteName: 'Buaze',
-      locale: isTr ? 'tr_TR' : 'en_US',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${locale}${PATH}`,
       title,
       description,
-      url: `https://www.buaze.com/${locale}/solutions`,
-      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+      images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630, alt: title }],
     },
   };
 }
 
-const SECTORS = [
-  { slug: 'restaurants', icon: <Utensils size={18} />, tr: 'Restoran & Kafeler', en: 'Restaurants & Cafes' },
-  { slug: 'hotels', icon: <Hotel size={18} />, tr: 'Oteller', en: 'Hotels' },
-  { slug: 'boutique-hotels', icon: <Building2 size={18} />, tr: 'Butik Oteller', en: 'Boutique Hotels' },
-  { slug: 'healthcare', icon: <Stethoscope size={18} />, tr: 'Sağlık Klinikleri', en: 'Healthcare Clinics' },
-  { slug: 'dentists', icon: <Stethoscope size={18} />, tr: 'Diş Klinikleri', en: 'Dental Clinics' },
-  { slug: 'aesthetic', icon: <Sparkles size={18} />, tr: 'Estetik & Kozmetik', en: 'Aesthetic & Cosmetic' },
-  { slug: 'beauty-salon', icon: <Scissors size={18} />, tr: 'Güzellik Salonları', en: 'Beauty Salons' },
-  { slug: 'veterinary', icon: <PawPrint size={18} />, tr: 'Veterinerler', en: 'Veterinary Clinics' },
-  { slug: 'gym', icon: <Dumbbell size={18} />, tr: 'Spor Salonları', en: 'Gyms & Fitness' },
-  { slug: 'law-firms', icon: <Scale size={18} />, tr: 'Hukuk Firmaları', en: 'Law Firms' },
-  { slug: 'real-estate', icon: <HomeIcon size={18} />, tr: 'Emlak', en: 'Real Estate' },
-  { slug: 'auto-service', icon: <Car size={18} />, tr: 'Araç Servisleri', en: 'Auto Services' },
-  { slug: 'schools', icon: <GraduationCap size={18} />, tr: 'Okullar & Kurslar', en: 'Schools & Courses' },
-];
+const FOCUS =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+const BTN = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors ${FOCUS}`;
 
-export default async function SolutionsOverviewPage({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
+export default async function SolutionsHubPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = resolveLocale((await params).locale);
+  const copy = getCopy(locale);
   const base = `/${locale}`;
-  const isTr = locale === 'tr';
-
-  const capabilities = [
-    {
-      Ill: IllusCompass,
-      eyebrow: isTr ? 'YAKALA' : 'CAPTURE',
-      title: isTr ? 'QR ile geri bildirim yakala' : 'Capture feedback via QR',
-      desc: isTr
-        ? 'Masaya, menüye, faturaya yapıştır. Müşteri tek tarama ile akıllı akışa düşer. Konum, masa ve kanal otomatik etiketlenir.'
-        : 'Stick it on tables, menus, receipts. One scan routes the customer into your smart flow. Location, table and channel auto-tag.',
-      cta: isTr ? 'QR oluşturucuyu dene' : 'Try the QR generator',
-      href: `${base}/solutions/qr-generator`,
-    },
-    {
-      Ill: IllusInbox,
-      eyebrow: isTr ? 'TOPLA' : 'COLLECT',
-      title: isTr ? 'Tek panelde topla' : 'Collect in one panel',
-      desc: isTr
-        ? 'Google, Yemeksepeti, Getir, Trendyol ve dahili kanal yorumları aynı akışta birleşir. Her müşteriye herkese açık yorum bağlantısı sunulur; dileyen ayrıca ekibe özel geri bildirim gönderebilir.'
-        : 'Google, Yemeksepeti, Getir, Trendyol and internal channel reviews merge into one feed. Every customer is offered the public review link; anyone who prefers can also send private feedback to the team.',
-      cta: isTr ? 'Nasıl çalışır' : 'See how it works',
-      href: `${base}/how-it-works`,
-    },
-    {
-      Ill: IllusChart,
-      eyebrow: isTr ? 'ÖLÇ' : 'MEASURE',
-      title: isTr ? 'Büyümeyi ölç' : 'Measure growth',
-      desc: isTr
-        ? 'Puan, kanal, şube ve saat bazında trendleri oku. Hangi aksiyonun neyi değiştirdiğini net gör; ekibi veriyle yönet.'
-        : 'Read trends by rating, channel, branch and hour. See exactly which action moved what; manage the team with data.',
-      cta: isTr ? 'Planları incele' : 'View plans',
-      href: `${base}/pricing`,
-    },
-    {
-      Ill: IllusShield,
-      eyebrow: isTr ? 'KORU' : 'PROTECT',
-      title: isTr ? 'Politikaya uyumlu büyü' : 'Grow policy-compliant',
-      desc: isTr
-        ? 'Gating yok, gizleme yok. Google\'a organik deneyim gider. Buaze panelinde tüm yorumlar şeffaf görünür.'
-        : 'No gating, no hiding. The customer journey stays organic on Google. Every review is transparent in your Buaze panel.',
-      cta: isTr ? 'Detayları gör' : 'See the details',
-      href: `${base}/google-compliance`,
-    },
-  ];
-
-  const numbers = [
-    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS' },
-    { num: '15', label: isTr ? 'SEKTÖR ÇÖZÜMÜ' : 'SECTOR SOLUTIONS' },
-    { num: 'TR + EN', label: isTr ? 'ÜRÜN DİLİ' : 'PRODUCT LANGUAGES' },
-    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL' },
-  ];
+  const url = `${SITE_URL}/${locale}${PATH}`;
+  const inLanguage = locale === 'tr' ? 'tr-TR' : 'en-US';
+  const groups = getSectorDirectory();
+  const flat = getSectorDirectoryFlat();
+  const directoryId = locale === 'tr' ? 'sektorler' : 'industries';
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: isTr ? 'Buaze Çözümleri' : 'Buaze Solutions',
-    url: `https://www.buaze.com/${locale}/solutions`,
-    description: isTr
-      ? 'Buaze platformunun dijital itibar yönetimi çözümleri ve desteklediği sektörler.'
-      : 'Digital reputation management solutions and supported industries by Buaze.',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${url}#webpage`,
+        url,
+        name: copy.meta.title,
+        description: copy.meta.description,
+        inLanguage,
+        isPartOf: { '@id': WEBSITE_ID },
+        breadcrumb: { '@id': `${url}#breadcrumb` },
+        mainEntity: { '@id': `${url}#sectors` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `${url}#breadcrumb`,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: copy.breadcrumb.home, item: `${SITE_URL}/${locale}` },
+          { '@type': 'ListItem', position: 2, name: copy.breadcrumb.current, item: url },
+        ],
+      },
+      {
+        '@type': 'ItemList',
+        '@id': `${url}#sectors`,
+        name: copy.directory.listName,
+        numberOfItems: flat.length,
+        itemListElement: flat.map((entry, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: entry.name[locale],
+          url: `${SITE_URL}/${locale}/solutions/${entry.slug}`,
+        })),
+      },
+      {
+        '@type': 'FAQPage',
+        '@id': `${url}#faq`,
+        inLanguage,
+        mainEntity: copy.faq.items.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      },
+    ],
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-20 pb-[60px] sm:pb-20">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="solIndexGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#solIndexGrid)" />
-        </svg>
-
-        <div className="relative max-w-[1200px] mx-auto">
-          <nav
-            aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
-            className="mb-6 text-[12px] text-[#737373] flex items-center flex-wrap gap-1.5"
-          >
-            <Link href={base} className="hover:text-[#0A0A0A] transition-colors">
-              {isTr ? 'Ana sayfa' : 'Home'}
-            </Link>
-            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-            <span className="text-[#0A0A0A] font-medium">
-              {isTr ? 'Çözümler' : 'Solutions'}
-            </span>
+    <FeaturePageShell locale={locale} jsonLd={jsonLd}>
+      {/* 1 · Hero: what the section is, with the flow every sector shares */}
+      <section aria-labelledby="solutions-title" className="bg-white pb-[60px] pt-10 sm:pb-24 sm:pt-16">
+        <div className={FEATURE_CONTAINER}>
+          <nav aria-label={copy.breadcrumb.label} className="text-[13px] text-[#737373]">
+            <ol className="flex flex-wrap items-center gap-1.5">
+              <li>
+                <Link href={base} className={`-my-3 inline-flex min-h-[44px] items-center rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}>
+                  {copy.breadcrumb.home}
+                </Link>
+              </li>
+              <li aria-hidden="true">
+                <ChevronRight size={12} className="text-[#A3A3A3]" />
+              </li>
+              <li>
+                <span aria-current="page" className="font-medium text-[#0A0A0A]">
+                  {copy.breadcrumb.current}
+                </span>
+              </li>
+            </ol>
           </nav>
 
-          <div className="max-w-[820px] space-y-6">
-            <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#16A34A] pulse-heartbeat" />
-              <span className="pulse-eyebrow text-[#0A0A0A]">
-                {isTr ? 'ÇÖZÜMLER' : 'SOLUTIONS'}
-              </span>
-            </div>
-            <h1 className="text-[38px] sm:text-[60px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? (
-                <>
-                  Dört adım, tek panel.{' '}
-                  <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">
-                    Her sektör
-                  </span>{' '}
-                  için.
-                </>
-              ) : (
-                <>
-                  Four steps, one panel.{' '}
-                  <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">
-                    Every sector
-                  </span>
-                  .
-                </>
-              )}
-            </h1>
-            <p className="text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[640px]">
-              {isTr
-                ? 'Her yorum bir işarettir. Buaze, QR ile topladığınız sinyalleri tek panelde toplar, ekibinize yönlendirir ve itibarınızı büyütür.'
-                : 'Every review is a signal. Buaze collects the pulses you capture via QR into one dashboard, routes them to your team, and grows your reputation.'}
-            </p>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
+          <div className="mt-8 lg:mt-10 lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-14">
+            <div className="max-w-[680px]">
+              <p className="pulse-eyebrow text-[#737373]">{copy.eyebrow}</p>
+              <h1
+                id="solutions-title"
+                className="mt-5 text-balance text-[38px] leading-[1.06] tracking-[-0.03em] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
               >
-                {isTr ? 'Ücretsiz başla' : 'Start free'}
-                <span aria-hidden>→</span>
-              </Link>
+                {copy.h1}
+              </h1>
+              <p className="mt-6 max-w-[620px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+                {copy.lead}
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Link
+                  href={`${base}/auth/register`}
+                  rel="nofollow"
+                  className={`${BTN} bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]`}
+                >
+                  {copy.primary}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+                <a
+                  href={`#${directoryId}`}
+                  className={`${BTN} border border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]`}
+                >
+                  {copy.secondary}
+                </a>
+              </div>
+              <p className="mt-5 text-[14px] leading-[1.5] text-[#737373]">{copy.note}</p>
+            </div>
+
+            <div className="mx-auto mt-12 w-full max-w-[520px] lg:mt-0">
+              <div className="rounded-[24px] border border-[#EDEDED] bg-[#FAFAFA] p-3 shadow-[0_24px_60px_-32px_rgba(10,10,10,0.28)] sm:p-4">
+                <p className="pulse-eyebrow px-2 pb-3 pt-1 text-[#737373]">{copy.flow.label}</p>
+                <div className="rounded-[16px] border border-[#EDEDED] bg-white p-5 sm:p-6">
+                  <p className="text-[18px] font-semibold leading-[1.3] text-[#0A0A0A]">{copy.flow.title}</p>
+                  <ol className="mt-5 space-y-5">
+                    {copy.flow.steps.map((step, i) => (
+                      <li key={step.title} className="flex gap-4">
+                        <span
+                          aria-hidden="true"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[13px] font-semibold text-[#C6F24E]"
+                        >
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-[15px] font-semibold leading-[1.4] text-[#0A0A0A]">{step.title}</p>
+                          <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">{step.body}</p>
+                          {i === 1 ? (
+                            <span aria-hidden="true" className="mt-2.5 flex gap-1">
+                              {[0, 1, 2, 3, 4].map((star) => (
+                                <Star key={star} size={16} className="fill-[#C6F24E] text-[#0A0A0A]" strokeWidth={1.5} />
+                              ))}
+                            </span>
+                          ) : null}
+                          {i === 2 ? (
+                            <span aria-hidden="true" className="mt-2.5 flex flex-wrap gap-2">
+                              <span className="inline-flex min-h-[30px] items-center rounded-full bg-[#0A0A0A] px-3 text-[12px] font-medium text-white">
+                                {copy.flow.privateLabel}
+                              </span>
+                              <span className="inline-flex min-h-[30px] items-center rounded-full border border-[#D4D4D4] bg-white px-3 text-[12px] font-medium text-[#0A0A0A]">
+                                {copy.flow.publicLabel}
+                              </span>
+                            </span>
+                          ) : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="mt-6 border-t border-[#EDEDED] pt-4 text-[13px] leading-[1.5] text-[#525252]">
+                    {copy.flow.footnote}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2 · Directory: every sector page, grouped */}
+      <section
+        id={directoryId}
+        aria-labelledby="solutions-directory-title"
+        className={`scroll-mt-24 bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}
+      >
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="solutions-directory-title"
+            eyebrow={copy.directory.eyebrow}
+            title={copy.directory.title}
+            lead={copy.directory.lead}
+          />
+          <div className="mt-12 divide-y divide-[#E5E5E5] border-y border-[#E5E5E5] sm:mt-14">
+            {groups.map((group) => (
+              <div key={group.id} className="grid grid-cols-1 gap-5 py-8 lg:grid-cols-[220px_1fr] lg:gap-8 lg:py-10">
+                <h3 className="text-[20px] leading-[1.25] text-[#0A0A0A] lg:pt-4">{group.title[locale]}</h3>
+                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {group.entries.map((entry) => {
+                    const Icon = entry.Icon;
+                    return (
+                      <li
+                        key={entry.slug}
+                        className="group relative flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:p-6"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            aria-hidden="true"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
+                          >
+                            <Icon size={18} strokeWidth={2} />
+                          </span>
+                          <p className="min-w-0 flex-1 text-[17px] font-semibold leading-[1.3] text-[#0A0A0A]">
+                            <Link
+                              href={`${base}/solutions/${entry.slug}`}
+                              className="after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none"
+                            >
+                              {entry.name[locale]}
+                            </Link>
+                          </p>
+                          <ArrowRight
+                            size={16}
+                            aria-hidden="true"
+                            className="shrink-0 text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0A0A0A] motion-reduce:transition-none"
+                          />
+                        </div>
+                        {entry.where ? (
+                          <p className="mt-4 text-[14px] leading-[1.55] text-[#525252]">
+                            <span className="font-medium text-[#0A0A0A]">{copy.directory.where}:</span>{' '}
+                            {entry.where[locale]}
+                          </p>
+                        ) : null}
+                        {entry.platforms.length > 0 ? (
+                          <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">
+                            <span className="font-medium text-[#0A0A0A]">{copy.directory.platforms}:</span>{' '}
+                            {platformSummary(entry.platforms)}
+                          </p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3 · What changes by sector */}
+      <section aria-labelledby="solutions-changes-title" className={`bg-white ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="solutions-changes-title"
+            eyebrow={copy.changes.eyebrow}
+            title={copy.changes.title}
+            lead={copy.changes.lead}
+          />
+          <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
+            {copy.changes.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.title} className={FEATURE_CARD}>
+                  <span
+                    aria-hidden="true"
+                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+                  >
+                    <Icon size={20} strokeWidth={2} />
+                  </span>
+                  <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">{item.title}</h3>
+                  <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{item.body}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* 4 · Free QR generator */}
+      <section aria-labelledby="solutions-tool-title" className={`bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <div className="relative overflow-hidden rounded-[28px] bg-[#0A0A0A] px-6 py-10 text-white sm:px-12 sm:py-14">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-28 -top-28 h-[360px] w-[360px] rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(198,242,78,0.16), transparent 70%)' }}
+            />
+            <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
+              <div className="max-w-[640px]">
+                <p className="pulse-eyebrow text-[#C6F24E]">{copy.tool.eyebrow}</p>
+                <h2
+                  id="solutions-tool-title"
+                  className="mt-4 text-balance text-[28px] leading-[1.08] text-white sm:text-[40px]"
+                >
+                  {copy.tool.title}
+                </h2>
+                <p className="mt-5 text-[16px] leading-[1.6] text-white/75 sm:text-[17px]">{copy.tool.lead}</p>
+              </div>
               <Link
                 href={`${base}/solutions/qr-generator`}
-                className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
+                className={`${BTN} shrink-0 bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E] focus-visible:ring-offset-[#0A0A0A]`}
               >
-                {isTr ? 'QR oluşturucuyu dene' : 'Try the QR generator'}
+                <QrCode size={18} aria-hidden="true" />
+                {copy.tool.cta}
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── Capabilities (4 solutions) ─── */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="mb-10 sm:mb-14 max-w-[720px]">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Ne sunuyoruz' : 'What we offer'}
-            </span>
-            <h2 className="mt-4 text-[26px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Sinyalden etkiye.' : 'From signal to impact.'}
-            </h2>
-          </div>
+      {/* 5 · FAQ (same array as the FAQPage JSON-LD) */}
+      <FeatureFaqSection
+        locale={locale}
+        eyebrow={copy.faq.eyebrow}
+        title={copy.faq.title}
+        items={copy.faq.items}
+        more={{ href: `${base}/faq`, label: copy.faq.more }}
+        className="bg-white"
+      />
 
-          <div className="space-y-6">
-            {capabilities.map((cap, i) => (
-              <div
-                key={cap.eyebrow}
-                className={`bz-card-soft p-6 sm:p-12 grid grid-cols-1 ${
-                  i % 2 === 0 ? 'lg:grid-cols-[1.1fr_1fr]' : 'lg:grid-cols-[1fr_1.1fr]'
-                } gap-8 lg:gap-12 items-center`}
-              >
-                <div className={i % 2 === 1 ? 'lg:order-2' : ''}>
-                  <span className="pulse-eyebrow text-[#A8D62E]">
-                    {String(i + 1).padStart(2, '0')} · {cap.eyebrow}
-                  </span>
-                  <h3 className="mt-4 text-[22px] sm:text-[36px] font-medium text-[#0A0A0A] tracking-[-0.025em] leading-[1.1]">
-                    {cap.title}
-                  </h3>
-                  <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.65] max-w-[520px]">
-                    {cap.desc}
-                  </p>
-                  <Link
-                    href={cap.href}
-                    className="inline-flex items-center gap-1.5 mt-6 text-[14px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                  >
-                    {cap.cta}
-                    <span aria-hidden>→</span>
-                  </Link>
-                </div>
-                <div className={`flex justify-center ${i % 2 === 1 ? 'lg:order-1' : ''}`}>
-                  <cap.Ill size={260} className="w-full h-auto max-w-[280px]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Numbers strip ─── */}
-      <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-5 sm:px-10 py-12 sm:py-14">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-          {numbers.map((item, i) => (
-            <div key={i}>
-              <div
-                className="text-[28px] sm:text-[52px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {item.num}
-              </div>
-              <div className="pulse-eyebrow text-[#0A0A0A]/70 mt-3">{item.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Sectors ─── */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="mb-10 sm:mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Sektörler' : 'Industries'}
-              </span>
-              <h2 className="mt-4 text-[26px] sm:text-[44px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
-                {isTr ? 'Her sektör için, tam oturur.' : 'Fits every sector, perfectly.'}
-              </h2>
-            </div>
-            <p className="text-[15px] text-[#525252] max-w-[420px]">
-              {isTr
-                ? '13 farklı sektör için özel akış ve içgörü. Kendi sektörünü seç, detaylı sayfaya geç.'
-                : 'Tailored flows and insights for 13 different sectors. Pick yours, see the detail page.'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {SECTORS.map((sector) => (
-              <Link
-                key={sector.slug}
-                href={`${base}/solutions/${sector.slug}`}
-                className="group flex items-center gap-3 bz-card p-4 hover:border-[#C6F24E] transition-colors"
-              >
-                <span className="shrink-0 w-10 h-10 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                  {sector.icon}
-                </span>
-                <span className="text-[13px] sm:text-[14px] font-medium text-[#0A0A0A] leading-tight">
-                  {isTr ? sector.tr : sector.en}
-                </span>
-                <ChevronRight
-                  size={14}
-                  className="ml-auto text-[#A3A3A3] shrink-0 group-hover:text-[#0A0A0A] transition-colors"
-                />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── QR Tool callout ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="max-w-[1000px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#C6F24E]/15 rounded-full blur-[80px] pointer-events-none" />
-          <div className="relative max-w-[520px] text-center lg:text-left">
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
-            </span>
-            <h3 className="mt-3 text-[24px] sm:text-[32px] font-medium text-white tracking-[-0.02em] leading-tight">
-              {isTr ? 'Saniyede QR oluştur.' : 'Generate a QR in seconds.'}
-            </h3>
-            <p className="mt-3 text-[15px] text-white/70 leading-[1.6]">
-              {isTr
-                ? 'Web sitenizin, menünüzün veya bir linkinizin yüksek çözünürlüklü QR kodunu hemen indirin. Kayıt gerekmez.'
-                : 'Instantly download a high-resolution QR code for your website, menu, or any link. No signup.'}
-            </p>
-          </div>
-          <Link
-            href={`${base}/solutions/qr-generator`}
-            className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors shrink-0"
-          >
-            {isTr ? 'QR oluşturucuya git' : 'Open QR generator'}
-            <span aria-hidden>→</span>
-          </Link>
-        </div>
-      </section>
-
-      {/* ─── CTA ─── */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[800px] mx-auto text-center">
-          <h2 className="text-[28px] sm:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-[#0A0A0A]">
-            {isTr ? 'Çözümü bugün devreye al.' : 'Put the solution to work today.'}
-          </h2>
-          <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[480px] mx-auto">
-            {isTr ? '14 gün ücretsiz. Kredi kartı gerekmez.' : '14-day free trial. No card required.'}
-          </p>
-          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-            >
-              {isTr ? 'Hemen başla' : 'Get started'}
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              href={`${base}/contact`}
-              className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-            >
-              {isTr ? 'Satışla görüş' : 'Talk to sales'}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+      {/* 6 · Closing CTA */}
+      <FeatureCtaSection locale={locale} title={copy.ctaTitle} />
+    </FeaturePageShell>
   );
 }

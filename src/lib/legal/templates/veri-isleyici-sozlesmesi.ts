@@ -65,7 +65,7 @@ Buaze, hizmetin sunulması için aşağıdaki alt yüklenicileri **açıkça ona
 | Supabase | PostgreSQL veritabanı + dosya depolama | EU (Frankfurt) |
 | Vercel | Hosting / serverless çalıştırma | ABD (us-east-1) |
 | Resend | İşlemsel e-posta gönderimi | ABD |
-| OpenAI | Pulse AI yanıt önerileri (taslak) | ABD |
+| OpenAI | Pulse AI yanıt taslakları ve geri bildirim özetleri; analitikte öne çıkan konular ve haftalık özet değerlendirmesi | ABD |
 | Sentry | Hata izleme + performans | ABD |
 | Upstash | Rate limit + cache | EU (Frankfurt) |
 | Firebase | Google OAuth (yalnız oturum açma) | AB / ABD |
@@ -169,7 +169,7 @@ Buaze relies on the following **explicitly approved** sub-processors:
 | Supabase | PostgreSQL database + file storage | EU (Frankfurt) |
 | Vercel | Hosting / serverless runtime | USA (us-east-1) |
 | Resend | Transactional e-mail | USA |
-| OpenAI | Pulse AI draft suggestions | USA |
+| OpenAI | Pulse AI reply drafts and feedback summaries; analytics topics and the weekly summary assessment | USA |
 | Sentry | Error tracking + performance | USA |
 | Upstash | Rate limit + cache | EU (Frankfurt) |
 | Firebase | Google OAuth (sign-in only) | EU / USA |

@@ -1,406 +1,339 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { ArrowRight, ChevronRight, Scissors, Calendar, Sparkles, BarChart3 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import { getTranslations } from '@/lib/translations';
+import { MapPin, MessageCircle, Sparkles, UsersRound } from 'lucide-react';
+import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
+import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
-import { buildSolutionSchema } from '@/lib/solution-schema';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { getRelatedSolutions } from '@/lib/related-solutions';
+import { IllusSalon } from '../_components/sector-illustrations';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`. Reads only
+// `params`, so the page stays static. Sector "spa" drives the platform list
+// (Google, Yandex) and the "After the service" survey template.
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Güzellik & Spa İtibar Yönetimi'
-      : 'Beauty & Spa Reputation Management';
-  const description =
-    locale === 'tr'
-      ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür."
-      : "The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare.";
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/solutions/beauty-salon`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/solutions/beauty-salon',
-        en: 'https://www.buaze.com/en/solutions/beauty-salon',
-        'x-default': 'https://www.buaze.com/tr/solutions/beauty-salon',
-      },
+const SLUG = 'beauty-salon';
+
+const CONTENT: Record<Locale, SolutionPageContent> = {
+  tr: {
+    name: 'Güzellik salonları',
+    meta: {
+      title: 'Güzellik salonları için QR ile müşteri yorumları',
+      description:
+        'Güzellik salonunuz için QR kod: müşteri işlem sonrası puan verir, eşiğin altında önce size yazabilir. Koltuk etiketli QR, Google ve Yandex bağlantıları.',
     },
-    openGraph: {
-      type: 'website',
-      siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/solutions/beauty-salon`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    eyebrow: 'Güzellik salonları',
+    h1: 'Güzellik salonları için QR ile müşteri geri bildirimi ve Google yorumları',
+    lead:
+      'Müşteri işlemi bittikten sonra ayna kenarındaki ya da kasadaki QR kodu okutur ve hizmeti puanlar. Eşik ve üzerindeki puanlarda Google yorum sayfanız açılır; eşiğin altında müşteri önce size yazabilir, herkese açık yorum bağlantısı aynı ekranda görünür.',
+    flow: {
+      title: 'Salonda QR ile geri bildirim akışı',
+      steps: [
+        {
+          title: 'Koltuklar ve kasa için QR hazırlayın',
+          body:
+            'Her koltuk ya da hizmet alanı için ayrı QR oluşturup etiket verebilirsiniz (ör. Koltuk-1, Koltuk-2, Kasa). Etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür.',
+        },
+        {
+          title: 'Müşteri puan verir',
+          body:
+            'Müşteri QR kodu okutur ve 1–5 yıldız verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) Google yorum sayfanız açılır. Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        },
+        {
+          title: 'Müşteri ayrılmadan ilgilenin',
+          body:
+            '1–3 yıldızlık geri bildirimde anında e-posta alırsınız. Müşteri hâlâ salondaysa konuyu yüz yüze konuşabilir; ayrıldıysa ve e-posta adresini bıraktıysa yanıtınızı yazılı gönderirsiniz.',
+        },
+      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    placements: {
+      title: 'Salonda QR kodu nereye koymalı',
+      lead: 'Müşteri, işlemin sonucunu aynada gördüğü anda en net fikre sahiptir.',
+      items: [
+        {
+          title: 'Ayna kenarı',
+          body:
+            'Aynanın köşesine yapıştırılan küçük bir QR etiketi işlem biter bitmez görünür. Her koltuğa ayrı etiketli QR koyabilirsiniz.',
+        },
+        {
+          title: 'Kasa ve ödeme tezgâhı',
+          body:
+            'Ödeme sırasında tezgâhtaki stant, müşteri kartının onaylanmasını beklerken okutulur. Salonun tamamını değerlendirmek için iyi bir andır.',
+        },
+        {
+          title: 'Randevu kartı',
+          body:
+            'Bir sonraki randevu tarihini yazdığınız karta QR kodu basın. Müşteri, saç boyası ya da cilt bakımı gibi işlemlerin birkaç gün sonraki sonucunu da değerlendirebilir.',
+        },
+        {
+          title: 'Vestiyer veya çıkış kapısı',
+          body:
+            'Müşterinin ceketini alırken ya da çıkarken gördüğü QR kod, kasada aceleyle geçilen anlar için ikinci bir fırsattır.',
+        },
+      ],
+      tip:
+        'Etiket olarak uzman adı yerine koltuk numarası kullanabilirsiniz; ekipte değişiklik olduğunda QR kodları yeniden bastırmanız gerekmez.',
     },
-  };
+    uses: {
+      title: 'Salon panelinde işinize yarayanlar',
+      items: [
+        {
+          icon: UsersRound,
+          title: 'Düzenli müşterilerinizi tanıyın',
+          body:
+            'E-posta bırakan müşteriler müşteri listenize kendiliğinden eklenir; ziyaret sayısı, ortalama puan ve son konu görünür. Liste yeni, risk, VIP, düzenli ve kayıp olmak üzere beş segmente ayrılır.',
+        },
+        {
+          icon: MessageCircle,
+          title: 'WhatsApp’tan size yazabilsinler',
+          body:
+            'Düşük puan veren müşterinin teşekkür ekranında WhatsApp ile iletişime geçme düğmesi gösterebilirsiniz. Düğme, hazır bir mesajla sizin WhatsApp numaranıza sohbet açar; mesajı müşteri gönderir, Buaze göndermez.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Yanıt taslağını Pulse AI hazırlar',
+          body:
+            'Pulse AI 2–4 cümlelik bir yanıt taslağı hazırlar. Sıcak, resmi veya özür dileyen tonu siz seçer, taslağı salonunuzun üslubuna göre düzenlersiniz. Siz onaylamadan hiçbir yanıt gönderilmez.',
+        },
+        {
+          icon: MapPin,
+          title: 'Google profilinizin eksiklerini görün',
+          body:
+            'Google Yorumları sayfasındaki 6 maddelik kontrol listesi telefon, web sitesi, çalışma saatleri, fotoğraflar, işletme durumu ve kategori bilgilerinizden eksik olanları gösterir. Google hesabıyla giriş gerekmez.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Güzellik salonlarında öne çıkan yorum platformları',
+      lead:
+        'Sektör olarak “Güzellik & Spa”yı seçtiğinizde panel Google ve Yandex bağlantılarını gösterir. Müşterileriniz sizi haritada buluyorsa Google yorum sayfanız ana hedeftir.',
+      note:
+        'Instagram ve Facebook yorum platformu değildir: profil bağlantılarınızı panelde saklayabilirsiniz, ancak QR akışı müşteriyi bu hesaplara göndermez. Yandex bağlantınızı eklerseniz, özel geri bildirim bırakan müşterinin teşekkür ekranında “Yandex Haritalarda paylaş” seçeneği görünür.',
+    },
+    questions: {
+      title: 'Müşterilere ne sormalı',
+      lead:
+        'Hazır “Hizmet sonrası” şablonu hizmetin kalitesini, uzmanın ilgisini ve salonu yeniden tercih edip etmeyeceklerini sorar. Kendi sorularınızı ekleyerek bekleme süresini veya fiyat bilgilendirmesini de öğrenebilirsiniz.',
+      items: [
+        { text: 'Hangi hizmeti aldınız?', type: 'multiple_choice' },
+        { text: 'İşleminiz randevu saatinizde başladı mı?', type: 'multiple_choice' },
+        { text: 'İşlemden önce ne yapılacağı size açıkça anlatıldı mı?', type: 'multiple_choice' },
+        { text: 'Salonumuzun temizliğini nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Salonumuzu bir arkadaşınıza önerme olasılığınız nedir?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Güzellik salonu hijyen kontrolü',
+          body: 'Saç, cilt, kuaför ve manikür işlemleri için günlük ve seans arası hijyen ile sterilizasyon kontrolü.',
+        },
+        {
+          title: 'Haftalık randevu doğruluğu denetimi',
+          body: 'Resepsiyonun her hafta randevu kayıtlarını ve gecikmeleri gözden geçirmesi için.',
+        },
+        {
+          title: 'Usta beceri öz-değerlendirme',
+          body: 'Kuaför ve uzmanların kendilerini değerlendirip yöneticiyle birlikte gelişim planı yapması için.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Güzellik salonları için sık sorulan sorular',
+      items: [
+        {
+          q: 'Uzman bazında rapor alabilir miyim?',
+          a: 'Hayır, uzman veya hizmet bazında rapor yoktur. Koltuk etiketleri düşük puan e-postasında ve CSV dosyasında görünür; analitik ekranları salonun tamamını gösterir.',
+        },
+        {
+          q: 'Instagram yorumlarını ve mesajlarını panelde görebilir miyim?',
+          a: 'Hayır. Buaze Instagram, Facebook ya da başka bir platformdan yorum veya mesaj çekmez. Panelde QR akışından gelen geri bildirimleri ve Google profilinizin özetini görürsünüz.',
+        },
+        {
+          q: 'Randevu programımıza bağlanıyor mu?',
+          a: 'Hayır. Buaze randevu yazılımlarına bağlanmaz ve müşterilere kendiliğinden mesaj göndermez. Müşteri QR kodu salondayken ya da randevu kartından okutur.',
+        },
+        {
+          q: 'Yorum yapan müşteriye indirim verebilir miyim?',
+          a: 'Yorum karşılığında indirim, hediye veya ücretsiz bakım vermeyin; Google yorum karşılığı teşviki yasaklar ve Buaze böyle bir özellik sunmaz. Anketlerde isteğe bağlı bir teşekkür kuponu gösterebilirsiniz; bu kupon herkese açık yorum yazmaya bağlanmamalıdır.',
+        },
+        {
+          q: 'Düşük puan veren müşteri Google’da yorum yazabilir mi?',
+          a: 'Evet. Eşiğin altında puan veren müşteri önce size özel geri bildirim yazabilir; Google yorum bağlantısı aynı ekranda görünür ve müşteri isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
+        },
+        {
+          q: 'Ekibimi panele davet edebilir miyim?',
+          a: 'Evet. Ekip üyelerini e-postayla davet edip yönetici, personel veya görüntüleyici rolü verirsiniz; davet 7 gün geçerlidir. Görüntüleyiciler geri bildirimleri görür ama değişiklik yapamaz.',
+        },
+      ],
+    },
+    ctaTitle: 'Salonunuzda müşteri geri bildirimi toplamaya başlayın',
+  },
+  en: {
+    name: 'Beauty salons',
+    meta: {
+      title: 'QR client feedback and reviews for beauty salons',
+      description:
+        'QR codes for beauty salons: clients rate their treatment and can write to you first below your threshold. Chair-labelled codes plus Google and Yandex links.',
+    },
+    eyebrow: 'Beauty salons',
+    h1: 'QR codes for client feedback and Google reviews at beauty salons',
+    lead:
+      'When the treatment is done, clients scan the QR code by the mirror or at the front desk and rate the service. At or above your threshold, your Google review page opens; below it, the client can write to you first, and the public review link is shown on the same screen.',
+    flow: {
+      title: 'How QR feedback works in a salon',
+      steps: [
+        {
+          title: 'Prepare QR codes for chairs and the desk',
+          body:
+            'Create a separate QR code for each chair or service area and give it a label (for example Chair-1, Chair-2 or Desk). The label shows in the low-rating e-mail and the feedback CSV file.',
+        },
+        {
+          title: 'The client gives a rating',
+          body:
+            'The client scans the QR code and gives 1–5 stars. At or above the threshold you set (5 stars by default), your Google review page opens. Below it, the client can first send you private feedback; the public review link is shown on the same screen.',
+        },
+        {
+          title: 'Follow up before the client leaves',
+          body:
+            'Every 1–3★ piece of feedback sends you an instant e-mail. If the client is still in the salon, you can talk it over in person; if they have left and gave an e-mail address, you reply in writing.',
+        },
+      ],
+    },
+    placements: {
+      title: 'Where to put the QR code in a salon',
+      lead: 'Clients have the clearest view the moment they see the result in the mirror.',
+      items: [
+        {
+          title: 'Mirror edge',
+          body:
+            'A small QR sticker in the corner of the mirror is visible as soon as the treatment ends. You can put a separately labelled code at each chair.',
+        },
+        {
+          title: 'Front desk and payment counter',
+          body:
+            'A stand on the counter gets scanned while the client waits for the card payment to go through. It is a good moment to rate the salon as a whole.',
+        },
+        {
+          title: 'Appointment card',
+          body:
+            'Print the QR code on the card where you write the next appointment date. Clients can then rate how a colour or a skin treatment looks a few days later.',
+        },
+        {
+          title: 'Cloakroom or exit',
+          body:
+            'A QR code clients see as they collect their coat or walk out is a second chance when the payment was rushed.',
+        },
+      ],
+      tip:
+        'Use chair numbers rather than staff names as labels; when your team changes, you don’t need to reprint the QR codes.',
+    },
+    uses: {
+      title: 'Panel features that help a salon',
+      items: [
+        {
+          icon: UsersRound,
+          title: 'Get to know your regulars',
+          body:
+            'Clients who leave an e-mail address are added to your customer list automatically, with visit count, average rating and last topic. The list is split into five segments: new, at risk, VIP, loyal and churned.',
+        },
+        {
+          icon: MessageCircle,
+          title: 'Let them message you on WhatsApp',
+          body:
+            'You can show a button for contacting you on WhatsApp on the thank-you screen of clients who give a low rating. It opens a chat with your WhatsApp number and a ready-made message; the client sends the message, not Buaze.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Pulse AI drafts the reply',
+          body:
+            'Pulse AI prepares a 2–4 sentence reply draft; you choose a warm, formal or apologetic tone and edit the draft to sound like you. No reply is sent without your approval.',
+        },
+        {
+          icon: MapPin,
+          title: 'See what your Google profile is missing',
+          body:
+            'The 6-item checklist on the Google Reviews page shows which of your phone, website, opening hours, photos, business status and category details are missing. No Google sign-in needed.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Review platforms that matter for beauty salons',
+      lead:
+        'When you pick “Beauty & Spa” as your industry, the panel shows Google and Yandex links. If clients find you on the map, your Google review page is the main target.',
+      note:
+        'Instagram and Facebook are not review platforms: you can store your profile links in the panel, but the QR flow doesn’t send clients to those accounts. If you add your Yandex link, clients who leave private feedback also see a “Share on Yandex Maps” option on the thank-you screen.',
+    },
+    questions: {
+      title: 'What to ask your clients',
+      lead:
+        'The ready-made “After the service” template asks about the quality of the service, the specialist’s care and whether clients would choose you again. Add your own questions to learn about waiting times or how prices were explained.',
+      items: [
+        { text: 'Which service did you have?', type: 'multiple_choice' },
+        { text: 'Did your treatment start at your appointment time?', type: 'multiple_choice' },
+        { text: 'Was it clearly explained what would be done before the treatment?', type: 'multiple_choice' },
+        { text: 'How would you rate the cleanliness of our salon?', type: 'rating' },
+        { text: 'How likely are you to recommend our salon to a friend?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Beauty salon hygiene check',
+          body: 'A daily and between-session hygiene and sterilisation check for hair, skin and nail services.',
+        },
+        {
+          title: 'Weekly appointment accuracy audit',
+          body: 'For reception to review appointment records and delays every week.',
+        },
+        {
+          title: 'Specialist skills self-assessment',
+          body: 'Lets stylists and specialists assess themselves and plan their development with a manager.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Beauty salon FAQ',
+      items: [
+        {
+          q: 'Can I get reports per specialist?',
+          a: 'No, there are no per-specialist or per-service reports. Chair labels show in the low-rating e-mail and the CSV file; the analytics screens cover the whole salon.',
+        },
+        {
+          q: 'Can I see Instagram comments and messages in the panel?',
+          a: 'No. Buaze doesn’t import comments or messages from Instagram, Facebook or any other platform. In the panel you see the feedback from your QR flow and a summary of your Google profile.',
+        },
+        {
+          q: 'Does it connect to our booking software?',
+          a: 'No. Buaze doesn’t connect to booking software and doesn’t message clients on its own. Clients scan the QR code in the salon or from their appointment card.',
+        },
+        {
+          q: 'Can I give a discount to clients who leave a review?',
+          a: 'Don’t offer discounts, gifts or free treatments in exchange for reviews; Google prohibits incentives for reviews, and Buaze has no such feature. Surveys can show an optional thank-you coupon, but it must not be tied to posting a public review.',
+        },
+        {
+          q: 'Can a client who gives a low rating still post on Google?',
+          a: 'Yes. A client who rates below your threshold can first send you private feedback; the Google review link is shown on the same screen, and they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.',
+        },
+        {
+          q: 'Can I invite my team to the panel?',
+          a: 'Yes. You invite team members by e-mail and give them a manager, staff or viewer role; invitations are valid for 7 days. Viewers can see feedback but can’t make changes.',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting client feedback at your salon',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
+  return buildSolutionMetadata({ locale, slug: SLUG, ...CONTENT[locale].meta });
 }
 
-/**
- * 1:1 with .design/site/site-pages4.jsx:SpaSolutionPage (lines 200-241).
- * Light gray hero + mountain illustration + 4-stat grid + 3-feature grid.
- */
-export default async function BeautySalonSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-  const base = `/${locale}`;
-
-  const stats = isTr
-    ? [
-        { value: '10', label: 'Yorum platformu' },
-        { value: 'QR', label: 'Usta veya koltuk bazlı etiket' },
-        { value: '3 ton', label: 'Pulse AI yanıt taslağı' },
-        { value: '14 gün', label: 'Ücretsiz deneme' },
-      ]
-    : [
-        { value: '10', label: 'Review platforms' },
-        { value: 'QR', label: 'Per-stylist or per-chair tag' },
-        { value: '3 tones', label: 'Pulse AI reply drafts' },
-        { value: '14 days', label: 'Free trial' },
-      ];
-
-  const features = isTr
-    ? [
-        { t: 'Usta bazlı QR', d: 'Her ustanın masa/bölümüne özel QR. Kim hangi yorumu aldı, tek bakışta.' },
-        { t: 'Instagram entegrasyonu', d: "Güzellik sektörünün önde gelen platformu. DM yorumlarını inbox'a çek." },
-        { t: 'Randevu tetikleyici', d: 'Randevu yazılımınızla bağlan — hizmet bitince otomatik yorum daveti.' },
-      ]
-    : [
-        { t: 'Per-stylist QR', d: 'Each stylist has their own station QR. Who received which review — at a glance.' },
-        { t: 'Instagram integration', d: 'The leading platform for beauty. Pull DM reviews into your inbox.' },
-        { t: 'Booking trigger', d: 'Connect to your booking software — auto-send review invites when service ends.' },
-      ];
-
-  const benefits = isTr
-    ? [
-        { Icon: Scissors, h: 'Hizmet bitiminde anlık geri bildirim', d: 'Boya, manikür, makyaj uygulaması biter bitmez müşteri QR\'ı tarar — deneyim tazeyken puan ve yorum, randevu kapısından çıktıktan sonra "unutuldu" yok.' },
-        { Icon: Calendar, h: 'Stilist + hizmet bazlı atama', d: 'Yorum geldiğinde hangi stilist, hangi hizmet (saç, cilt, makyaj), hangi gün etiketlenir. Stilist performansı sektörde en kritik veri — Buaze bunu doğrudan görselleştirir.' },
-        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: 'Kişisel ton: "Boya tonum istediğim gibi olmadı" yorumuna teknik nezaket; "İlgi gerçekten farklıydı" yorumuna içten teşekkür. Sahip onaylar, otomatik gönderim yok.' },
-        { Icon: BarChart3, h: 'Çoklu platform yönlendirme', d: 'Google + Instagram link + Foursquare aynı akışta. Müşteri seçtiği platforma yorum yazar; tercih müşteride kalır, yıldız bazlı kısıtlama yok.' },
-      ]
-    : [
-        { Icon: Scissors, h: 'Live feedback the moment service ends', d: 'The instant a coloring, manicure, or makeup application is done, the customer scans the QR — rating and review while the experience is fresh, before "I\'ll do it later" sets in.' },
-        { Icon: Calendar, h: 'Stylist + service-level tagging', d: 'When a review arrives, the stylist, the service (hair, skincare, makeup), and the day are all tagged. Stylist performance is the single most important metric in this sector — Buaze surfaces it directly.' },
-        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Tone-aware: technical politeness for "the color shade was off"; warm thanks for "the care was something else". Owner approves; nothing auto-sent.' },
-        { Icon: BarChart3, h: 'Multi-platform routing', d: 'Google + Instagram link + Foursquare in one flow. The customer posts on the platform of their choice; the choice stays with the customer, no star-rating gate.' },
-      ];
-
-  const faqs: FaqItem[] = isTr
-    ? [
-        { q: 'Güzellik salonu için Buaze nasıl çalışır?', a: 'Hizmet bittikten sonra (boya, manikür, makyaj, cilt bakımı) müşteriye QR kart sunulur — masada, aynada veya bekleme alanında. Müşteri tarar, deneyimini puanlar ve seçtiğin platformlara (Google, Instagram, Foursquare) yönlendirilir. İlk gün ilk yorumlar genelde aynı seansta gelir.' },
-        { q: 'Stilist bazlı performansı görebiliyor muyum?', a: 'Evet. QR oluştururken stilist etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi stilist + hangi hizmet ile geldiği loglanır. Analytics raporunda stilist bazlı ortalama puan, yorum sayısı ve düşük puan oranları görünür.' },
-        { q: 'Düşük puan veren müşteri kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (renk düzeltme, hizmet tekrarı vb.) çözme şansı kazanırsınız.' },
-        { q: 'Instagram entegrasyonu var mı?', a: 'Müşteriye akış sırasında Instagram profil bağlantısı sunulur (DM\'le yorum yazma daveti). Instagram\'dan gelen DM yorumlarını otomatik çekecek bir API entegrasyonu yok — Instagram bu API\'yi 3rd-party\'lere açık tutmuyor; ama yönlendirme akışı çalışıyor ve müşteri Instagram tag\'i sayesinde organik kazanım sağlar.' },
-        { q: 'Birden fazla şubem var, nasıl yönetirim?', a: 'Her şube için ayrı işletme oluşturabilir veya tek işletme + şube etiketleri kullanabilirsin. Analytics şube bazlı ayrılır; merkez ekibinin "şube X gerileme yaşıyor, kuruluşa müdahale gerek" gibi kararları doğrudan veriden almasını sağlar.' },
-      ]
-    : [
-        { q: 'How does Buaze work for a beauty salon?', a: 'After the service is done (coloring, manicure, makeup, skincare), present a QR card to the customer — at the chair, on the mirror, or in the waiting area. The customer scans, rates the experience, and is routed to the platforms you have selected (Google, Instagram, Foursquare). Same-session reviews are common on day one.' },
-        { q: 'Can I see per-stylist performance?', a: 'Yes. When generating the QR, you can add a stylist tag (Buaze branch field or a custom URL parameter); when the review arrives, which stylist + which service is logged with it. The analytics report shows per-stylist average rating, review volume, and low-rating ratio.' },
-        { q: 'Do customers giving low ratings simply disappear?', a: 'No. Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team. The customer always retains the right to post on a public platform; you gain a chance to resolve the issue privately first (color correction, service redo, etc.).' },
-        { q: 'Is there an Instagram integration?', a: 'The flow surfaces an Instagram profile link to the customer (a DM-review invitation). There is no API integration that auto-pulls DM reviews — Instagram does not expose that API to third parties — but the routing flow works and the Instagram tag drives organic acquisition.' },
-        { q: 'I have multiple branches — how do I manage them?', a: 'Either create a separate business per branch or use a single business + branch tags. Analytics splits per branch, allowing the central team to make decisions like "branch X is regressing, intervention needed at onboarding" directly from data.' },
-      ];
-
-  const relatedSolutions = getRelatedSolutions('beauty-salon', 4);
-
-  const jsonLd = buildSolutionSchema({
-    locale,
-    slug: 'beauty-salon',
-    industryLabel: isTr ? 'Güzellik & Spa' : 'Beauty & Spa',
-    serviceName: isTr ? 'Güzellik & Spa İtibar Yönetimi' : 'Beauty & Spa Reputation Management',
-    description: isTr
-      ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür."
-      : 'The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare.',
-    faqs,
-  });
-
-  const howTo = buildHowToSchema({
-    locale,
-    name: isTr ? 'Güzellik salonu ve spa için Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a beauty salon or spa',
-    description: isTr
-      ? 'Hizmet bitiminde QR ile yorum toplayıp Instagram, Google ve Foursquare\'de organik puan büyütmek için adımlar.'
-      : 'Steps to collect reviews via QR at service end and grow ratings organically on Instagram, Google and Foursquare.',
-    url: `https://www.buaze.com/${locale}/solutions/beauty-salon`,
-    steps: isTr
-      ? [
-          { name: 'Salonu tanımla', text: 'Salon adı, kategori, Instagram/Google bağlantıları ve bildirim e-postasını panelde gir; uzman/seans bazlı raporlama için etiket alanlarını planla.' },
-          { name: 'Hizmet sonu QR’ını yerleştir', text: 'Resepsiyon tezgahında veya hizmet sonrası ayna önüne QR sticker yerleştir; uzman etiketi için URL parametresi kullan.' },
-          { name: 'Uzman ve resepsiyonu davet et', text: 'Uzmanları (kuaför, terapist, estetisyen) ve resepsiyonu Buaze ekibine ekle; her uzman kendi yorumlarını görsün, salon sahibi toplu performansı izlesin.' },
-          { name: 'Pulse AI ile sıcak tonda yanıt yaz', text: 'Pulse AI yanıtları "warm" tonda taslak üretir — salon sahibi onaylar, gönderir; uzman bazlı analitiklerden hangi seansın çevresinde memnuniyet düştüğünü oku.' },
-        ]
-      : [
-          { name: 'Identify the salon', text: 'Enter salon name, category, Instagram/Google links and notification email; plan tag fields for specialist/session-level reporting.' },
-          { name: 'Place the post-service QR', text: 'Place the QR sticker at reception or on the mirror; use a URL parameter for the specialist tag.' },
-          { name: 'Invite specialists and reception', text: 'Add specialists (stylists, therapists, aestheticians) and reception to your Buaze team; each specialist sees their own reviews while the owner tracks aggregate performance.' },
-          { name: 'Reply warmly via Pulse AI', text: 'Pulse AI drafts replies in a warm tone — owner approves and sends; read per-specialist analytics to spot where satisfaction dipped.' },
-        ],
-  });
-  if (howTo) jsonLd.push(howTo);
-
+export default async function BeautySalonSolutionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
   return (
-    <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Hero — light gray bg */}
-      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
-          <div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'SEKTÖR · GÜZELLİK & SPA' : 'SECTOR · BEAUTY & SPA'}
-            </span>
-            <h1
-              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            >
-              {isTr ? (
-                <>
-                  Randevu sonrası
-                  <br />
-                  en güçlü
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">an.</span>
-                </>
-              ) : (
-                <>
-                  The strongest
-                  <br />
-                  moment is right
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">after.</span>
-                </>
-              )}
-            </h1>
-            <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
-              {isTr
-                ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür. Usta bazlı performans raporları."
-                : 'The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare. Per-stylist performance reports.'}
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-              >
-                {isTr ? 'Ücretsiz başla' : 'Start free'}
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href={`${base}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
-              >
-                {isTr ? 'Demo iste' : 'Request demo'}
-              </Link>
-            </div>
-          </div>
-
-          {/* IllusMountain — exact SVG from .design/site/site-shared.jsx:143-165 */}
-          <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 240 220" className="h-auto w-full max-w-[280px]" aria-hidden>
-              {/* Back mountain */}
-              <path d="M0 200 L70 80 L130 150 L180 100 L240 200 Z" fill="#E4E4E4" />
-              {/* Snow caps */}
-              <path
-                d="M60 95 L70 80 L82 98 L75 100 L70 95 L65 100 Z"
-                fill="#FFFFFF"
-                stroke="#0A0A0A"
-                strokeWidth="1.2"
-              />
-              <path
-                d="M170 110 L180 100 L192 115 L185 117 L180 113 L175 117 Z"
-                fill="#FFFFFF"
-                stroke="#0A0A0A"
-                strokeWidth="1.2"
-              />
-              {/* Front mountain */}
-              <path d="M20 200 L90 110 L130 165 L200 200 Z" fill="#0A0A0A" />
-              {/* Flag */}
-              <path
-                d="M90 110 L90 55"
-                stroke="#0A0A0A"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M90 55 L130 62 L122 70 L130 78 L90 72 Z"
-                fill="#C6F24E"
-                stroke="#0A0A0A"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              />
-              {/* Trail with pulse dots */}
-              <path
-                d="M20 200 Q50 180 70 170 Q85 160 90 110"
-                fill="none"
-                stroke="#C6F24E"
-                strokeWidth="2.5"
-                strokeDasharray="3 4"
-              />
-              <circle cx="50" cy="185" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
-              <circle cx="72" cy="165" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
-              <circle cx="88" cy="130" r="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
-              {/* Sun */}
-              <circle cx="195" cy="60" r="18" fill="#C6F24E" />
-              {/* Cloud */}
-              <path
-                d="M30 60 Q25 50 35 48 Q38 38 50 42 Q58 38 62 48 Q72 50 68 58 Q65 65 50 64 Q40 65 30 60 Z"
-                fill="#FFFFFF"
-                stroke="#0A0A0A"
-                strokeWidth="1.5"
-              />
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      {/* 4-stat grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="bz-card p-5 sm:p-6">
-                <div
-                  className="text-[32px] sm:text-[36px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {s.value}
-                </div>
-                <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 3-feature grid */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <div key={f.t} className="rounded-[14px] border border-[#EDEDED] bg-white p-6">
-              <h3
-                className="text-[20px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
-              >
-                {f.t}
-              </h3>
-              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Benefits — 4-tile grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
-            {isTr ? 'Güzellik salonu operasyonuna özel dört kazanç' : 'Four wins built for beauty salon operations'}
-          </h2>
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => (
-              <div key={i} className="bz-card p-6 sm:p-7">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
-                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Güzellik salonu için merak edilenler' : 'Common questions for beauty salons'}
-          </h2>
-          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
-        </div>
-      </section>
-
-      {/* Resources / Related Solutions */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
-          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
-              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
-              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
-              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
-            ].map((r) => (
-              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
-                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-              </Link>
-            ))}
-          </div>
-          {relatedSolutions.length > 0 && (
-            <>
-              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {relatedSolutions.map((sol) => (
-                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
-                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
-                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="mx-auto max-w-[900px] text-center">
-          <h2
-            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-          >
-            {isTr ? 'Her randevu, bir yıldız.' : 'Every appointment, a star.'}
-          </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
-            {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
-              : '14-day free · No credit card'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Ücretsiz başla' : 'Start free'}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <SolutionPageLayout
+      locale={locale}
+      slug={SLUG}
+      sector="spa"
+      content={CONTENT[locale]}
+      illustration={<IllusSalon />}
+    />
   );
 }

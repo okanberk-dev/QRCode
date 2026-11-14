@@ -2,7 +2,7 @@
 # Renew Expires before 2027-05-01 — outdated security.txt is treated as
 # unmaintained by some scanners.
 
-Contact: mailto:info@buaze.com
+Contact: mailto:support@buaze.com
 Expires: 2027-05-01T00:00:00.000Z
 Preferred-Languages: tr, en
 Canonical: https://www.buaze.com/.well-known/security.txt

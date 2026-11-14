@@ -20,108 +20,13 @@ export const translations = {
     // Meta
     siteName: 'Buaze',
     siteUrl: 'https://www.buaze.com',
-    siteDescription: 'QR Geri Bildirim ve Dijital İtibar Yönetim Platformu. QR akışlarıyla şeffaf müşteri geri bildirimi toplayın, yorumları tek panelden yönetin, Pulse AI taslaklarıyla daha hızlı yanıt verin.',
 
-    // Navbar
-    nav_howItWorks: 'Öğrenin',
-    nav_learn_features: 'Nasıl Çalışır?',
-    nav_learn_blog: 'Blog & Rehberler',
-    nav_solutions: 'Çözümler',
-    nav_sol_restaurants: 'Restoran ve Kafeler',
-    nav_sol_hotels: 'Otel ve Konaklama',
-    nav_sol_healthcare: 'Klinik ve Sağlık',
-    nav_blog: 'Blog',
-    nav_about: 'Hakkımızda',
-    nav_pricing: 'Fiyatlandırma',
-    nav_contact: 'İletişim',
-    nav_login: 'Giriş Yap',
-    nav_register: 'Ücretsiz Başla',
-    nav_dashboard: 'Panele Git',
+    // Navbar / footer / CTA copy lives in the chrome components themselves
+    // (MarketingNavbarClient, MarketingFooter), not here. Homepage copy lives
+    // in HeroCinematic and src/components/marketing/home/*.
 
-    // Hero
-    hero_title_1: 'Dijital İtibarınızı',
-    hero_title_2: 'Yükseltin ve Yönetin',
-    hero_subtitle: 'İşletmenizin dijital görünürlüğünü artırın ve müşteri güvenini pekiştirin. Müşteri deneyimini iyileştirin ve geri bildirim operasyonlarınızı tek bir merkezden profesyonelce yönetin.',
-    hero_cta: '14 Gün Ücretsiz Deneyin',
-    hero_rating: 'KVKK uyumlu geri bildirim akışı',
-    hero_platforms_title: 'Global platformlardaki tüm itibarınızı tek bir akıllı merkezde yönetiyoruz:',
-
-    // Features
-    feat1_title: 'Dinamik Widget’lar ile Güven İnşa Edin',
-    feat1_desc: 'En iyi müşteri yorumlarını web sitenizin en stratejik noktalarında sergileyin. Şık ve özelleştirilebilir widget’larımız, yeni geri bildirim aldıkça gerçek zamanlı olarak güncellenerek sosyal kanıt oluşturur.',
-    feat1_li1: 'Markanıza Özel Özelleştirilebilir Temalar',
-    feat1_li2: 'Tam Mobil Uyumluluk ve Ultra Hızlı Yüklenme',
-    feat1_li3: 'Hafif Script ile Web Sitesi Performansı Koruma',
-    feat2_title: 'Müşteri Geri Bildirimlerini Otomatiğe Bağlayın',
-    feat2_desc: 'Yorum toplama sürecini profesyonelleştirin. Özel tasarım QR kodlarımızla müşterilerinizden en doğru zamanda geri bildirim isteyin ve dijital görünürlüğünüzü organik olarak büyütün.',
-    feat2_quote: '"Buaze sistemine geçtiğimizden beri müşteri etkileşimimiz %400 arttı ve operasyonel verimliliğimiz ilk kez bu kadar ölçülebilir hale geldi."',
-    feat2_quote_author: '— Gourmet Kitchen & Grill',
-    feat3_title: 'Geri Bildirim Operasyonları ile Deneyimi İyileştirin',
-    feat3_desc: 'Müşteri geri bildirimlerini anlık olarak takip edin. Gelişmiş analiz sistemimiz her türlü deneyimi yapılandırılmış bir veri akışına dönüştürerek marka itibarınızı profesyonelce yönetmenizi sağlar.',
-    feat3_badge_title: 'Gelişmiş Operasyon Yönetimi',
-    feat3_badge_desc: 'Geri bildirimler anında operasyon panelinize iletilerek çözüm sürecini hızlandırır.',
-
-    // Pricing
-    pricing_title: 'Açık, Şeffaf ve Adil Fiyatlandırma',
-    pricing_subtitle: 'İşletmenizi büyütmek için tasarlanmış planlar. Kredi kartı gerekmeden 14 gün sınırsız erişim.',
-    pricing_monthly_title: 'Profesyonel Aylık',
-    pricing_monthly_desc: 'İtibarını dijitale taşımak isteyen yerel işletmeler için en iyi başlangıç.',
-    pricing_monthly_price: '₺500',
-    pricing_monthly_period: '/ aylık',
-    pricing_monthly_cta: 'Hemen Başla',
-    pricing_yearly_title: 'Kurumsal Yıllık',
-    pricing_yearly_desc: 'Maksimum verimlilik ve maliyet avantajı ile uzun vadeli marka büyümesi.',
-    pricing_yearly_price: '₺5.000',
-    pricing_yearly_period: '/ yıllık',
-    pricing_yearly_badge: '%20 İndirim + 2 Ay Hediye',
-    pricing_yearly_cta: 'Yıllık Seç ve Tasarruf Et',
-    pricing_feature_unlimited_qr: 'Sınırsız Dinamik QR Tarama',
-    pricing_feature_feedback: 'Profesyonel Geri Bildirim Operasyonu',
-    pricing_feature_panel: 'Detaylı Analitik Yönetici Paneli',
-    pricing_feature_mobile: 'Mobil Optimize Edilmiş Deneyim',
-    pricing_feature_all: 'Aylık Plandaki Tüm Profesyonel Özellikler',
-    pricing_feature_free_months: 'Yıllık Ödemede 2 AY ÜCRETSİZ',
-    pricing_feature_priority: '7/24 Öncelikli Teknik Destek',
-    pricing_feature_google: 'Gelişmiş Google Place ID Haritalama',
-    pricing_enterprise_title: 'Franchise & Zincir',
-    pricing_enterprise_desc: 'Çok şubeli büyük işletmeler için merkezi yönetim ve özel API çözümleri.',
-    pricing_enterprise_cta: 'Teklif Alın / Bize Yazın',
-    pricing_feature_unlimited_locations: 'Sınırsız Şube Tanımlama',
-    pricing_feature_api: 'Özel API Entegrasyonu',
-    pricing_feature_account_manager: 'Özel Müşteri Temsilcisi',
-
-    // FAQ
-    faq_title: 'Merak Edilen Sorular',
-    faq_subtitle: 'Buaze platformu ve sunduğu çözümler hakkında detaylı bilgi edinin.',
-    faq_q1: 'Ücretsiz deneme süreci kredi kartı istiyor mu?',
-    faq_a1: 'Hayır. 14 gün boyunca platformun tüm özelliklerini kredi kartı bilgilerinizi paylaşmadan, tamamen risk almadan test edebilirsiniz.',
-    faq_q2: 'Planlar arasında geçiş yapabilir miyim?',
-    faq_a2: 'Evet, dilediğiniz zaman panelinizden planınızı yükseltebilir veya yıllık abonelik avantajlarından yararlanmaya başlayabilirsiniz.',
-    faq_q3: 'Verilerimiz nasıl korunuyor ve KVKK uyumlu mu?',
-    faq_a3: 'Veri güvenliği en büyük önceliğimiz. Tüm verileriniz endüstri standardı şifreleme ile korunur ve süreçlerimiz KVKK düzenlemeleriyle tam uyumludur.',
-    faq_q4: 'Setup sürecinde destek sağlıyor musunuz?',
-    faq_a4: 'Kesinlikle. Ekibimiz QR kodlarınızın tasarımından Google Haritalar entegrasyonuna kadar her adımda size ücretsiz kurulum desteği sunar.',
-    faq_q5: 'İptal edebilir miyim?',
-    faq_a5: 'İstediğiniz anda, tek tıkla iptal edebilirsiniz. İptal sonrası dönem sonuna kadar erişiminiz sürer; yenileme tarihinde abonelik otomatik kapanır. İade koşulları İade ve İptal Politikası\'nda yer alır.',
-    faq_q6: 'Türkçe destek var mı?',
-    faq_a6: 'Evet — Türkçe canlı destek, 7/24 yardım merkezi ve Türkçe eğitim içerikleri. Ortalama yanıt süremiz 2 dakika.',
-
-    // CTA
-    cta_title_1: 'Dijital İtibarınızı Bugün',
-    cta_title_2: 'Yönetmeye Başlayın',
-    cta_button: 'Ücretsiz Denemeyi Başlat',
-    cta_badge1: 'Güvenli Çözüm',
-    cta_badge2: 'Hızlı Entegrasyon',
-
-    // Footer
-    footer_about: 'Hakkımızda',
-    footer_contact: 'İletişim',
-    footer_terms: 'Kullanım Koşulları',
-    footer_privacy: 'Gizlilik Politikası',
-    footer_google_compliance: 'Google Uyumluluk',
-    footer_cookie: 'Çerez Ayarları',
-    footer_kvkk: 'Veri Politikası',
-    footer_copyright: 'Tüm Hakları Saklıdır.',
+    // Pricing page copy lives in src/app/[locale]/pricing/page.tsx and
+    // PricingPlans; plan data comes from the SubscriptionPlan table.
 
     // Google-Style Feedback UI
     feedback_anonymous: 'İsimsiz Kullanıcı',
@@ -188,43 +93,18 @@ export const translations = {
     feedback_add_photo: 'Fotoğraf ekle',
     feedback_photo_hint: 'Fotoğraflar müşterilerin mekanı tanımasına yardımcı olur',
 
-    // About
-    about_hero_title_1: 'Gerçek İncelemeler',
-    about_hero_title_2: 'Gerçek Büyüme',
-    about_hero_subtitle: 'Müşteri sesi, bir işletmenin en değerli varlığıdır. Biz bu sesi ölçülür, yönetilebilir ve büyümeye dönüştürülebilir kılmak için buradayız. Her yapıcı eleştiri bir fırsat, her olumlu yorum ise kalıcı bir güven inşasıdır.',
-    about_mission_title: 'Vizyoner Misyonumuz',
-    about_vision_title: 'Gelecek Vizyonumuz',
-    about_vision_desc: 'Dijital itibar yönetiminde güvenilen bir platform olmak ve küresel pazara açılmak. Restoranlardan otellere, kliniklerden hukuk bürolarına kadar her işletmenin dijital pusulası olan Buaze, itibar yönetimini sektör bağımsız bir standart haline getirmeyi hedefliyor.',
-    about_values_title: 'Sarsılmaz Değerlerimiz',
-    about_values_subtitle: 'Şeffaflık, teknolojik yenilikçilik ve yüzde yüz müşteri odaklılık.',
-    about_val1_title: 'Mutlak Şeffaflık',
-    about_val1_desc: 'Gerçek insanlardan gelen, doğrulanmış geri bildirimler. Hiçbir manipülasyon ya da yapay şişirme — sadece doğru veri, doğru karar.',
-    about_val2_title: 'Sürekli İnovasyon',
-    about_val2_desc: 'QR teknolojisini platform yorum bağlantılarıyla bir arada kullanan platformumuz, her müşteri geri bildirimini saniyeler içinde aksiyon alınabilir veriye dönüştürür.',
-    about_val3_title: 'İşletme Tutkusu',
-    about_val3_desc: 'Büyüme yolculuğunuzda en yakın yol arkadaşınız. 500\'den fazla işletmenin başarısına ortak olduk; her birinin hikayesini öğrenerek platformumuzu geliştirdik.',
-    about_val4_title: 'Kesintisiz Destek',
-    about_val4_desc: 'İhtiyaç duyduğunuz her an uzman ekibimiz yanınızda. Teknik ve stratejik konularda hızlı ve güvenilir destek taahhüdü veriyoruz.',
-
-    // Contact
-    contact_title: 'İletişime Geçin',
-    contact_subtitle: 'Sorularınız mı var? İşletmeniz için özel bir çözüm mü arıyorsunuz? Uzman ekibimiz size yardımcı olmak için burada.',
-    contact_email_label: 'E-posta Kanalımız',
-    contact_email: 'hello@buaze.com',
-    contact_address_label: 'Genel Merkez',
-    contact_address: 'Ataşehir, İstanbul',
-    contact_form_name: 'Adınız Soyadınız',
-    contact_form_email: 'E-posta Adresiniz',
-    contact_form_business: 'İşletmenizin Adı',
-    contact_form_message: 'Mesajınız veya Sorunuz',
-    contact_form_submit: 'Mesajı Gönder',
-    contact_success_title: 'Mesajınız Başarıyla İletildi!',
-    contact_success_desc: 'İşleme aldık. Uzman bir danışmanımız 24 saat içerisinde size dönüş yapacak.',
-    contact_success_again: 'Yeni bir mesaj gönder',
-    contact_name_placeholder: 'Örn: Can Demir',
-    contact_email_placeholder: 'ornekinternet@sirket.com',
-    contact_business_placeholder: 'Örn: Lezzet Dünyası Restoran',
-    contact_message_placeholder: 'Hizmetlerimiz hakkında nasıl yardımcı olabiliriz?',
+    // Contact form (/contact — the page passes only these strings to ContactForm)
+    contact_form_name: 'Adınız ve soyadınız',
+    contact_form_email: 'E-posta adresiniz',
+    contact_form_business: 'İşletmenizin adı',
+    contact_form_phone: 'Telefon',
+    contact_form_message: 'Mesajınız',
+    contact_form_submit: 'Mesajı gönder',
+    contact_success_title: 'Mesajınız bize ulaştı',
+    contact_success_desc: 'Teşekkür ederiz. Yanıtımızı e-posta adresinize göndereceğiz.',
+    contact_success_again: 'Yeni bir mesaj gönderin',
+    contact_email_placeholder: 'ornek@isletmeniz.com',
+    contact_message_placeholder: 'Size nasıl yardımcı olabiliriz?',
 
     // Auth
     auth_login_title: 'Panelinize Giriş Yapın',
@@ -383,12 +263,6 @@ export const translations = {
     survey_nps_detractor: 'Tavsiye etmem',
     survey_nps_promoter: 'Kesinlikle tavsiye ederim',
 
-    // How it works Section
-    how_title: 'Süreç Nasıl İlerler?',
-    how_step1: 'QR Kodunuzu Oluşturun ve Basın',
-    how_step2: 'Müşteriniz QR Kodu Kolayca Tarasın',
-    how_step3: 'Müşteri Deneyimi ve Büyümeyi İzleyin',
-    
     // Admin Generic
     dashboard: 'Panel',
     restaurants: 'İşletmelerim',
@@ -407,167 +281,13 @@ export const translations = {
     feedback_page_not_found: 'Sayfa Bulunamadı',
     feedback_page_inactive: 'Bu işletme aktif değil veya bağlantı hatalı.',
 
-    // Solutions Pages
-    sol_res_title: 'Restoranlar İçin Dijital İtibar Yönetimi',
-    sol_res_desc: 'Google Haritalar\'da görünürlüğünüzü artırın, müşteri sadakatini pekiştirin ve marka değerinizi dijitale taşıyın.',
-    sol_res_h1: 'Restoranınızın Yıldızını Parlatın',
-    sol_res_p: 'Yemek sepeti veya benzeri platformlara komisyon ödemek yerine, kendi direkt müşterilerinizi sadık elçilere dönüştürün. Masalardaki QR menülerle veya hesap sümenlerindeki özel etiketlerimizle anında profesyonel geri bildirim toplayın.',
-    
-    sol_hot_title: 'Oteller İçin Entegre İtibar Optimizasyonu',
-    sol_hot_desc: 'TripAdvisor ve Google entegrasyonuyla otelinizin dijital yüzünü parlatın. Misafir deneyimini anlık olarak yönetin.',
-    sol_hot_h1: 'Mükemmel Misafir Deneyimi',
-    sol_hot_p: 'Resepsiyona yerleştireceğiniz akıllı QR kodlar ile check-out esnasında otomatik geri bildirim alın. Operasyonel geri bildirim akışıyla deneyimi anında mükemmelleştirin ve kurumsal itibarınızı koruyun.',
 
-    sol_hea_title: 'Klinikler İçin Dijital Güven İnşası',
-    sol_hea_desc: 'Sağlık sektöründe kararı belirleyen en önemli faktör güvendir. Doğrulanmış hasta yorumlarıyla marka değerinizi pekiştirin.',
-    sol_hea_h1: 'Hasta Güvenini Otomatiğe Bağlayın',
-    sol_hea_p: 'Tedavi sonrası bekleme salonunda veya çıkış bankosunda hastalarınızdan en taze geri bildirimleri alın. Gizliliği koruyarak etik çerçevede profesyonel bir dijital itibar oluşturun.',
 
-    // New Industries
-    sol_den_title: 'Diş Klinikleri için Dijital İtibar Yönetimi',
-    sol_den_desc: 'Hasta güvenini otomatiğe bağlayın, profesyonel geri bildirimlerle yeni hastalar kazanın.',
-    sol_den_h1: 'Gülüşünüzü Dijitalde Parlatın',
-    sol_den_p: 'Tedavi sonrası hastalarınızdan en taze geri bildirimleri alın. Diş hekimliğinde güveni dijital referanslarla pekiştirin.',
-    sol_den_badge: 'DİŞ KLİNİKLERİ İÇİN',
+    // Blog (post page back link)
+    blog_backToBlog: 'Tüm yazılar',
 
-    sol_aes_title: 'Estetik Klinikleri için İtibar Yönetimi',
-    sol_aes_desc: 'Doğrulanmış hasta sonuçlarıyla rakiplerinizin önüne geçin ve dijital itibarınızı profesyonelce koruyun.',
-    sol_aes_h1: 'Güzelliği Güvenle Birleştirin',
-    sol_aes_p: 'Estetik operasyonlar sonrası hasta memnuniyetini şeffaf geri bildirimlere dönüştürün. Marka değerinizi zirveye taşıyın.',
-    sol_aes_badge: 'ESTETİK KLİNİKLER İÇİN',
-
-    sol_vet_title: 'Veteriner Klinikleri için Dijital İtibar Yönetimi',
-    sol_vet_desc: 'Evcil hayvan sahiplerinden gelen pozitif yorumlarla kliniğinizin görünürlüğünü artırın.',
-    sol_vet_h1: 'Dostlarımızın Güveni Size Emanet',
-    sol_vet_p: 'Pati dostu sahiplerinden anında geri bildirim toplayın. Veterinerlikte uzmanlığınızı dijital skorlarla kanıtlayın.',
-    sol_vet_badge: 'VETERİNERLER İÇİN',
-
-    sol_rea_title: 'Emlak Ofisleri için Dijital İtibar Yönetimi',
-    sol_rea_desc: 'Gayrimenkul sektöründe güven en önemli faktördür. Müşteri yorumlarıyla portföyünüzü güçlendirin.',
-    sol_rea_h1: 'Gayrimenkulde Güvenin Adresi Olun',
-    sol_rea_p: 'Her başarılı işlem sonrası müşterilerinizden referans alın. Google Haritalar\'da bölgenizin lider emlakçısı olun.',
-    sol_rea_badge: 'EMLAK OFİSLERİ İÇİN',
-
-    sol_aut_title: 'Oto Servisler için Dijital İtibar Yönetimi',
-    sol_aut_desc: 'Müşteri memnuniyetini profesyonel bir operasyona dönüştürerek servisinizin trafiğini artırın.',
-    sol_aut_h1: 'Aracınızın Bakımı, Sizin İtibarınız',
-    sol_aut_p: 'Servis sonrası müşterilerinizden kolayca geri bildirim toplayın. Güvenilir oto servis arayanların ilk tercihi olun.',
-    sol_aut_badge: 'OTO SERVİSLER İÇİN',
-
-    sol_be_title: 'Güzellik Salonları için İtibar Yönetimi',
-    sol_be_desc: 'Müşterileriniz salondan çıkmadan görüşlerini alın ve profesyonel itibarınızla randevularınızı doldurun.',
-    sol_be_h1: 'Güzelliğin Yeni Referansı Olun',
-    sol_be_p: 'Sunulan hizmetin kalitesini dijital dünyada belgeleyin. Sosyal kanıt ile yeni müşterileri salonunuza çekin.',
-    sol_be_badge: 'GÜZELLİK SALONLARI İÇİN',
-
-    sol_gym_title: 'Spor Salonları için Dijital İtibar Yönetimi',
-    sol_gym_desc: 'Üyelerinizden gelen geri bildirimlerle dijital görünürlüğünüzü artırın ve topluluğunuzu büyütün.',
-    sol_gym_h1: 'Sınırları Dijitalde Zorlayın',
-    sol_gym_p: 'Antrenman sonrası üyelerinizden gelen motivasyonu profesyonel geri bildirimlere dönüştürün. Fitness dünyasında puanınızla fark yaratın.',
-    sol_gym_badge: 'SPOR SALONLARI İÇİN',
-
-    sol_law_title: 'Hukuk Ofisleri için Dijital Güven İnşası',
-    sol_law_desc: 'Müvekkil güvenini KVKK uyumlu geri bildirimlerle pekiştirin ve marka değerinizi koruyun.',
-    sol_law_h1: 'Hukukta Tecrübe, Dijitalde Referans',
-    sol_law_p: 'Gizlilik prensiplerine uygun şekilde müvekkil memnuniyetini yönetin. Hukuki uzmanlığınızı güvenle dijitale yansıtın.',
-    sol_law_badge: 'HUKUK OFİSLERİ İÇİN',
-
-    sol_sch_title: 'Özel Okullar için Veli Geri Bildirim Yönetimi',
-    sol_sch_desc: 'Veli memnuniyetini okulunuzun marka değerine dönüştürün ve kayıt süreçlerinizi destekleyin.',
-    sol_sch_h1: 'Eğitimin Geleceğine Güvenle Bakın',
-    sol_sch_p: 'Veli görüşlerini yapıcı bir gelişim fırsatına ve güçlü bir tanıtım aracına dönüştürün. Eğitimde farkınızı itibarınızla gösterin.',
-    sol_sch_badge: 'ÖZEL OKULLAR İÇİN',
-
-    sol_bou_title: 'Butik Oteller için Dijital İtibar Yönetimi',
-    sol_bou_desc: 'Kişiselleştirilmiş deneyimi global platformlarda yüksek itibar skorlarına ve daha fazla rezervasyona dönüştürün.',
-    sol_bou_h1: 'Butik Hizmet, Dev Skorlar',
-    sol_bou_p: 'Misafirleriniz henüz otelden ayrılmadan deneyimlerini ölümsüzleştirin. Butik otelcilikte dijital itibarınızı zirveye taşıyın.',
-    sol_bou_badge: 'BUTİK OTELLER İÇİN',
-
-    // Case Studies
-
-    // Blog
-    blog_title: 'Blog',
-    blog_desc: 'İtibar yönetimi, müşteri deneyimi ve dijital büyüme üzerine uzman makaleleri ve rehberler.',
-    // Google Compliance
-    google_compliance_badge: 'Google Uyumlu',
-    google_compliance_home_title: 'Google Politikalarına Uygun Akış',
-    google_compliance_home_desc: 'Buaze, Google\'ın yorum politikalarına tam uyum sağlar; sahte yorum üretmez, yorum karşılığı ödül vermez ve dürüst geri bildirimi teşvik eder.',
-    google_compliance_page_title: 'Google Uyumluluk & Güven',
-    google_compliance_page_subtitle: 'Şeffaf ve dürüst geri bildirim ekosistemini nasıl koruyoruz?',
-    google_compliance_point1_title: 'Sıfır Sahte Yorum Toleransı',
-    google_compliance_point1_desc: 'Buaze asla sahte yorum (fake review) üretmez veya yapay yollarla işletme puanınızı manipüle etmez. Sistemimiz sadece gerçek müşterilerden gelen organik yorumları kolaylaştırır.',
-    google_compliance_point2_title: 'Ödüllendirme Yok',
-    google_compliance_point2_desc: 'Google politikaları uyarınca, yorum karşılığında indirim, hediye veya herhangi bir ödül verilmesini kesinlikle önermez ve desteklemeyiz. Dürüstlük en büyük ödülümüzdür.',
-    google_compliance_point3_title: 'Dürüst Geri Bildirim Akışı',
-    google_compliance_point3_desc: 'Her müşteriye Google\'da yorum bırakma seçeneği sunuyoruz. İsteyen müşteri ek olarak işletmenize özel geri bildirim de gönderebilir; kimsenin Google\'a yazmasına engel değiliz; herkese açık bağlantı hiçbir puanda gizlenmez.',
-    google_compliance_policy_title: 'Google\'ın "Review Gating" Politikası',
-    google_compliance_policy_desc: 'Google, işletmelerin negatif yorumları caydırmasını ve sadece pozitif yorumları seçici olarak istemesini yasaklıyor. Buaze, tüm müşterilere dürüst geri bildirim imkanı sunarak bu politikalara tam uyum sağlar.',
-    google_compliance_link_text: 'Google Maps Katkı Politikası\'nı inceleyin',
-
-    blog_readMore: 'Yazıyı Oku',
-    blog_backToBlog: 'Blog\'a Dön',
-
-    // ROI Calculator
-    roi_title: 'Yorum akışınız güçlendiğinde potansiyel etkiyi görün',
-    roi_desc: 'Mevcut verilerinizi girin, daha düzenli bir geri bildirim ve review request akışının işletmenize nasıl yansıyabileceğini tahmini olarak görün.',
-    roi_label_monthly_customers: 'Aylık müşteri sayısı',
-    roi_placeholder_monthly_customers: 'Örn. 300',
-    roi_label_current_rating: 'Mevcut Google puanınız',
-    roi_placeholder_current_rating: 'Örn. 4.1',
-    roi_label_current_reviews: 'Mevcut yorum sayınız',
-    roi_placeholder_current_reviews: 'Örn. 87',
-    roi_label_target_rating: 'Hedef puanınız',
-    roi_placeholder_target_rating: 'Örn. 4.5',
-    roi_label_business_type: 'İşletme tipi',
-    roi_opt_restaurant: 'Restoran',
-    roi_opt_cafe: 'Kafe',
-    roi_opt_hotel: 'Otel',
-    roi_opt_clinic: 'Klinik',
-    roi_opt_other: 'Diğer',
-    roi_result_reviews_title: 'Tahmini İhtiyaç',
-    roi_result_reviews_msg: 'Hedef puana yaklaşmak için yaklaşık {range} yeni yoruma ihtiyacınız olabilir.',
-    roi_result_reviews_met: 'Tebrikler! Mevcut puanınız hedef puanınızın üzerinde.',
-    roi_result_visibility_title: 'Görünürlük Etkisi',
-    roi_result_visibility_low: 'Düşük',
-    roi_result_visibility_medium: 'Orta',
-    roi_result_visibility_strong: 'Güçlü',
-    roi_result_visibility_msg: 'Daha güncel yorum akışı ve daha güçlü puan sinyalleri görünürlüğünüzü destekleyebilir.',
-    roi_result_lead_title: 'Potansiyel Etki',
-    roi_result_lead_msg: 'Aylık ek {range} profil etkileşimi potansiyeli',
-    roi_disclaimer: 'Bu hesaplama tahmini senaryolar sunar. Sonuçlar sektör, lokasyon, rekabet düzeyi ve müşteri deneyimine göre değişebilir.',
-    roi_cta: 'Planları İncele',
-
-    // New Content Labels
-    nav_compare: 'Karşılaştır',
-
-    
-    // SEO Comparison Strings
-    compare_verdict_title: 'Nihai Karar',
-    compare_pain_title: 'Sıkça Yaşanan Sorunlar',
-    compare_pain_spreadsheet: 'Excel ile yönetilen süreçlerde veriler güncelliğini yitirir ve reaksiyon süresi 72 saati bulur.',
-    compare_pain_static: 'Statik QR kodlar basıldıktan sonra değiştirilemez; her güncelleme yeni bir baskı maliyeti ve operasyonel karmaşa demektir.',
-    compare_verdict_desc: 'İtibarınızı pasif yöntemlerle takip etmek yerine, Buaze ile aktif bir operasyona dönüştürün. Otomasyon, hız ve veri güvenliği modern bir işletmenin vazgeçilmezidir.',
-
-    // Comparison Page
-    compare_title: 'Neden Buaze?',
-    compare_subtitle: 'İtibarınızı manuel yöntemlerle veya kısıtlı araçlarla tesadüfe bırakmayın. Buaze ile profesyonel bir operasyon kurun.',
-    compare_hero_h1: 'QR kodlu yorum yönetimi: Buaze ve diğer yöntemler',
-    compare_hero_p: 'Ücretsiz statik QR kodları veya Excel tabloları işletmenizi bir noktaya kadar taşır. Profesyonel geri bildirim operasyonları ise sizi zirveye taşır.',
-    compare_feat_name: 'Özellik',
-    compare_buaze: 'Buaze',
-    compare_static: 'Bireysel QR',
-    compare_sheet: 'Excel / Kağıt',
-    compare_f1: 'Dinamik QR (Link Değiştirme)',
-    compare_f2: 'Özel Geri Bildirim Kanalı',
-    compare_f3: 'Anlık SMS/Email Bildirimi',
-    compare_f4: 'Müşteri Veri Tabanı (CRM)',
-    compare_f5: 'Tek Tıkla Google Bağlantısı',
-    compare_f6: 'Çoklu Şube Yönetimi',
-    compare_f7: 'Gelişmiş Analitik Panel',
-    compare_yes: 'Evet',
-    compare_no: 'Hayır',
-    compare_limited: 'Kısıtlı',
+    // ROI calculator + comparison page copy lives in the pages themselves
+    // (src/app/[locale]/roi, /compare, /vs/*) and RoiCalculator.
 
     // Audit Center (CLAUDE.md §42 — internal audit/quiz/checklist platform)
     audits: 'Denetim Merkezi',
@@ -678,146 +398,26 @@ export const translations = {
     // Meta
     siteName: 'Buaze',
     siteUrl: 'https://www.buaze.com',
-    siteDescription: 'QR Feedback & Digital Reputation Management Platform. Collect transparent customer feedback through QR flows, manage reviews from one dashboard, and respond faster with Pulse AI drafts.',
 
-    // Navbar
-    nav_howItWorks: 'Learn',
-    nav_learn_features: 'How It Works',
-    nav_learn_blog: 'Blog & Guides',
-    nav_solutions: 'Solutions',
-    nav_sol_restaurants: 'Restaurants & Cafes',
-    nav_sol_hotels: 'Hotels & Hospitality',
-    nav_sol_healthcare: 'Clinics & Healthcare',
-    nav_blog: 'Blog',
-    nav_about: 'About Us',
-    nav_pricing: 'Pricing',
-    nav_contact: 'Contact',
-    nav_login: 'Log In',
-    nav_register: 'Start Free',
-    nav_dashboard: 'Go to Dashboard',
+    // Navbar / footer / CTA copy lives in the chrome components themselves
+    // (MarketingNavbarClient, MarketingFooter), not here. Homepage copy lives
+    // in HeroCinematic and src/components/marketing/home/*.
 
-    // Hero
-    hero_title_1: 'Manage Your Digital',
-    hero_title_2: 'Reputation Professionally',
-    hero_subtitle: 'Increase your business\'s digital visibility and reinforce customer trust. Improve customer experience and manage feedback operations from a single center professionally.',
-    hero_cta: 'Start Your 14-Day Free Trial',
-    hero_rating: 'KVKK-compliant feedback flow',
-    hero_platforms_title: 'We manage all your reputation from global platforms in one intelligent command center:',
+    // Pricing page copy lives in src/app/[locale]/pricing/page.tsx and
+    // PricingPlans; plan data comes from the SubscriptionPlan table.
 
-    // Features
-    feat1_title: 'Build Massive Trust with Dynamic Widgets',
-    feat1_desc: 'Display your best customer reviews on the most strategic spots of your website. Our sleek, customizable widgets update in real-time as you receive new feedback, providing instant social proof.',
-    feat1_li1: 'Brand-specific Customizable Themes',
-    feat1_li2: 'Fully Mobile Responsive & Ultra-Fast Loading',
-    feat1_li3: 'Lightweight Script to Protect Website Performance',
-    feat2_title: 'Put Customer Feedback on Autopilot',
-    feat2_desc: 'Professionalize your feedback collection process. Use our custom-designed QR codes to ask customers for feedback at the perfect moment and grow your digital visibility organically.',
-    feat2_quote: '"Since switching to Buaze, our customer engagement has increased by 400%, and our operational efficiency is finally quantifiable for the first time."',
-    feat2_quote_author: '— Gourmet Kitchen & Grill',
-    feat3_title: 'Enhance Experience with Feedback Operations',
-    feat3_desc: 'Monitor customer feedback in real-time. Our advanced system turns every experience into a structured data flow, allowing you to manage brand reputation professionally.',
-    feat3_badge_title: 'Advanced Operations Management',
-    feat3_badge_desc: 'Feedback is instantly delivered to your operation panel to accelerate the resolution process.',
-
-    // Pricing
-    pricing_title: 'Clear, Transparent, and Fair Pricing',
-    pricing_subtitle: 'Plans designed to scale your business. 14 days of unlimited access without a credit card.',
-    pricing_monthly_title: 'Professional Monthly',
-    pricing_monthly_desc: 'The best starting point for local businesses looking to professionalize their reputation.',
-    pricing_monthly_price: '$10',
-    pricing_monthly_period: '/ month',
-    pricing_monthly_cta: 'Get Started Now',
-    pricing_yearly_title: 'Enterprise Annual',
-    pricing_yearly_desc: 'Focused on maximum efficiency, cost advantage, and long-term brand growth.',
-    pricing_yearly_price: '$96',
-    pricing_yearly_period: '/ year',
-    pricing_yearly_badge: 'Save 20% + 2 Months Free',
-    pricing_yearly_cta: 'Choose Annual & Save',
-    pricing_feature_unlimited_qr: 'Unlimited Dynamic QR Scans',
-    pricing_feature_feedback: 'Professional Feedback Operations',
-    pricing_feature_panel: 'Detailed Analytics Admin Dashboard',
-    pricing_feature_mobile: 'Mobile-Optimized Experience',
-    pricing_feature_all: 'All Professional Features from Monthly',
-    pricing_feature_free_months: '2 MONTHS FREE with Annual Billing',
-    pricing_feature_priority: '24/7 Priority Technical Support',
-    pricing_feature_google: 'Advanced Google Place ID Mapping',
-    pricing_enterprise_title: 'Franchise & Chain',
-    pricing_enterprise_desc: 'Centralized management and custom API solutions for large multi-location businesses.',
-    pricing_enterprise_cta: 'Get a Quote / Contact',
-    pricing_feature_unlimited_locations: 'Unlimited Location Management',
-    pricing_feature_api: 'Custom API Integration',
-    pricing_feature_account_manager: 'Dedicated Account Manager',
-
-    // FAQ
-    faq_title: 'Common Questions',
-    faq_subtitle: 'Learn more about the Buaze platform and the solutions we provide.',
-    faq_q1: 'Does the free trial require a credit card?',
-    faq_a1: 'No. You can test all platform features for 14 days without sharing any credit card information. It is completely risk-free.',
-    faq_q2: 'Can I switch between plans at any time?',
-    faq_a2: 'Yes, you can upgrade your plan through your dashboard at any time or switch to an annual subscription to enjoy the benefits.',
-    faq_q3: 'Is our data secure and GDPR compliant?',
-    faq_a3: 'Data security is our top priority. All your data is protected with industry-standard encryption, and our processes are fully compliant with GDPR/KVKK regulations.',
-    faq_q4: 'Do you provide help with the setup process?',
-    faq_a4: 'Absolutely. Our team provides free setup support at every step, from QR code design to Google Maps integration.',
-    faq_q5: 'Can I cancel anytime?',
-    faq_a5: 'Cancel with a single click, whenever you want. You keep access until the end of the current period; the subscription then closes automatically at renewal. Refund terms are set out in the Refund and Cancellation Policy.',
-    faq_q6: 'Is Turkish support available?',
-    faq_a6: 'Yes — Turkish live chat, 24/7 help center and Turkish training content. Our average reply time is 2 minutes.',
-
-    // CTA
-    cta_title_1: 'Start Managing Your',
-    cta_title_2: 'Reputation Today',
-    cta_button: 'Start Your Free Trial',
-    cta_badge1: 'Secure Solution',
-    cta_badge2: 'Fast Integration',
-
-    // Footer
-    footer_about: 'About Us',
-    footer_contact: 'Contact',
-    footer_terms: 'Terms of Service',
-    footer_privacy: 'Privacy Policy',
-    footer_google_compliance: 'Google Compliance',
-    footer_cookie: 'Cookie Settings',
-    footer_kvkk: 'Data Policy',
-    footer_copyright: 'All Rights Reserved.',
-
-    // About
-    about_hero_title_1: 'Real Reviews',
-    about_hero_title_2: 'Real Growth',
-    about_hero_subtitle: 'The customer\'s voice is a business\'s most valuable asset. We\'re here to make that voice measurable, manageable, and convertible into growth. Every piece of constructive feedback is an opportunity; every positive review is lasting trust.',
-    about_mission_title: 'Our Visionary Mission',
-    about_vision_title: 'Our Future Vision',
-    about_vision_desc: 'To become a trusted digital reputation platform and expand globally. From restaurants to hotels, clinics to law firms, Buaze aims to make reputation management an industry-agnostic standard.',
-    about_values_title: 'Our Core Values',
-    about_values_subtitle: 'Transparency, technological innovation, and 100% customer focus.',
-    about_val1_title: 'Absolute Transparency',
-    about_val1_desc: 'Verified feedback from real people. No manipulation or artificial inflation — just accurate data for accurate decisions.',
-    about_val2_title: 'Continuous Innovation',
-    about_val2_desc: 'Our platform pairs QR technology with platform review links and converts every customer response into actionable insight within seconds.',
-    about_val3_title: 'Passion for Business',
-    about_val3_desc: 'Your closest partner on your growth journey. We\'ve contributed to the success of 500+ businesses, learning from each story to improve our platform.',
-    about_val4_title: 'Uninterrupted Support',
-    about_val4_desc: 'Our expert team is by your side whenever you need them — fast, reliable support on both technical and strategic matters.',
-
-    // Contact
-    contact_title: 'Get in Touch',
-    contact_subtitle: 'Have questions? Looking for a custom solution for your business? Our expert team is ready to help.',
-    contact_email_label: 'Our Email Channel',
-    contact_email: 'hello@buaze.com',
-    contact_address_label: 'Headquarters',
-    contact_address: 'Ataşehir, Istanbul',
-    contact_form_name: 'Your Full Name',
-    contact_form_email: 'Your Email Address',
-    contact_form_business: 'Your Business Name',
-    contact_form_message: 'Your Message or Question',
-    contact_form_submit: 'Send Message',
-    contact_success_title: 'Message Sent Successfully!',
-    contact_success_desc: 'We’ve received it. An expert consultant will get back to you within 24 hours.',
+    // Contact form (/contact — the page passes only these strings to ContactForm)
+    contact_form_name: 'Full name',
+    contact_form_email: 'E-mail address',
+    contact_form_business: 'Business name',
+    contact_form_phone: 'Phone',
+    contact_form_message: 'Your message',
+    contact_form_submit: 'Send message',
+    contact_success_title: 'Your message has reached us',
+    contact_success_desc: 'Thank you. We will reply to your e-mail address.',
     contact_success_again: 'Send another message',
-    contact_name_placeholder: 'Ex: John Smith',
-    contact_email_placeholder: 'john@company.com',
-    contact_business_placeholder: 'Ex: Gourmet World Restaurant',
-    contact_message_placeholder: 'How can we help you regarding our services?',
+    contact_email_placeholder: 'name@yourbusiness.com',
+    contact_message_placeholder: 'How can we help?',
 
     // Auth
     auth_login_title: 'Log In to Your Panel',
@@ -976,12 +576,6 @@ export const translations = {
     survey_nps_detractor: 'Not at all likely',
     survey_nps_promoter: 'Extremely likely',
 
-    // How it works Section
-    how_title: 'How It Works',
-    how_step1: 'Print the QR Code',
-    how_step2: 'Customer Scans',
-    how_step3: 'Monitor CX & Growth',
-
     // Google-Style Feedback UI
     feedback_anonymous: 'Anonymous User',
     feedback_public: 'Reviews are public',
@@ -1064,167 +658,13 @@ export const translations = {
     feedback_page_not_found: 'Page Not Found',
     feedback_page_inactive: 'This business is not active or the link is incorrect.',
 
-    // Solutions Pages
-    sol_res_title: 'Digital Reputation Management for Restaurants',
-    sol_res_desc: 'Increase your visibility on Google Maps, reinforce customer loyalty, and bring your brand value online.',
-    sol_res_h1: 'Make Your Restaurant\'s Stars Shine',
-    sol_res_p: 'Instead of paying high commissions to delivery apps, turn your direct customers into loyal brand ambassadors. Instantly collect professional feedback with our custom labels on tables or check holders.',
-    
-    sol_hot_title: 'Integrated Reputation Optimization for Hotels',
-    sol_hot_desc: 'Shine your hotel\'s digital face with TripAdvisor and Google integration. Manage guest experiences in real-time.',
-    sol_hot_h1: 'Flawless Guest Experience',
-    sol_hot_p: 'Automatically collect feedback during check-out using smart QR codes placed at the reception. Perfect the experience via operational feedback flow and protect your corporate reputation.',
-
-    sol_hea_title: 'Digital Trust Building for Clinics',
-    sol_hea_desc: 'In healthcare, trust is the deciding factor. Reinforce your brand value with verified patient feedback.',
-    sol_hea_h1: 'Automate Patient Trust',
-    sol_hea_p: 'Gather the freshest feedback from your patients in the waiting room or at the discharge desk. Build a professional digital reputation ethically and while maintaining confidentiality.',
-
-    // New Industries
-    sol_den_title: 'Digital Reputation Management for Dentists',
-    sol_den_desc: 'Automate patient trust, gain new patients with professional feedback management.',
-    sol_den_h1: 'Make Your Smile Shine Online',
-    sol_den_p: 'Gather the freshest feedback from patients post-treatment. Build trust in dentistry with digital references.',
-    sol_den_badge: 'FOR DENTAL CLINICS',
-
-    sol_aes_title: 'Reputation Management for Aesthetic Clinics',
-    sol_aes_desc: 'Outperform competitors with verified patient results and protect your digital reputation professionally.',
-    sol_aes_h1: 'Combine Beauty with Trust',
-    sol_aes_p: 'Turn patient satisfaction into transparent feedback post-surgery. Reach the peak of your brand value.',
-    sol_aes_badge: 'FOR AESTHETIC CLINICS',
-
-    sol_vet_title: 'Digital Reputation Management for Veterinary Clinics',
-    sol_vet_desc: 'Increase your clinic\'s visibility with professional feedback from pet owners.',
-    sol_vet_h1: 'Trust for Our Furry Friends',
-    sol_vet_p: 'Gather instant feedback from pet-friendly parents. Prove your veterinary expertise with digital scores.',
-    sol_vet_badge: 'FOR VETERINARIES',
-
-    sol_rea_title: 'Digital Reputation Management for Real Estate',
-    sol_rea_desc: 'Trust is the key factor in real estate. Strengthen your portfolio with customer reviews.',
-    sol_rea_h1: 'Be the Trusted Address in Real Estate',
-    sol_rea_p: 'Get references from clients after every successful transaction. Be the leading agent in your area on Google Maps.',
-    sol_rea_badge: 'FOR REAL ESTATE OFFICES',
-
-    sol_aut_title: 'Digital Reputation Management for Auto Services',
-    sol_aut_desc: 'Increase service traffic by turning customer satisfaction into professional operations.',
-    sol_aut_h1: 'Vehicle Maintenance, Your Reputation',
-    sol_aut_p: 'Easily collect feedback after service. Be the first choice for those seeking reliable auto care.',
-    sol_aut_badge: 'FOR AUTO SERVICES',
-
-    sol_be_title: 'Reputation Management for Beauty Salons',
-    sol_be_desc: 'Get feedback before clients leave and fill up your appointments with your professional reputation.',
-    sol_be_h1: 'Be the New Reference for Beauty',
-    sol_be_p: 'Document service quality in the digital world. Attract new clients with social proof.',
-    sol_be_badge: 'FOR BEAUTY SALONS',
-
-    sol_gym_title: 'Digital Reputation Management for Gyms',
-    sol_gym_desc: 'Increase your digital visibility with member feedback and grow your community.',
-    sol_gym_h1: 'Push the Limits Online',
-    sol_gym_p: 'Turn member motivation post-workout into professional feedback. Stand out in the fitness world with your rating.',
-    sol_gym_badge: 'FOR GYMS',
-
-    sol_law_title: 'Digital Trust Building for Law Firms',
-    sol_law_desc: 'Reinforce client trust with GDPR-compliant feedback and protect your brand value.',
-    sol_law_h1: 'Experience in Law, Reference Online',
-    sol_law_p: 'Manage client satisfaction while respecting privacy principles. Reflect your legal expertise digitally with trust.',
-    sol_law_badge: 'FOR LAW FIRMS',
-
-    sol_sch_title: 'Parent Feedback Management for Private Schools',
-    sol_sch_desc: 'Turn parent satisfaction into brand value and support your enrollment processes.',
-    sol_sch_h1: 'Trust the Future of Education',
-    sol_sch_p: 'Transform parent views into constructive growth opportunities and strong promotion tools. Show your difference with your reputation.',
-    sol_sch_badge: 'FOR PRIVATE SCHOOLS',
-
-    sol_bou_title: 'Digital Reputation Management for Boutique Hotels',
-    sol_bou_desc: 'Turn personalized experiences into high reputation scores on global platforms and more bookings.',
-    sol_bou_h1: 'Boutique Service, Giant Scores',
-    sol_bou_p: 'Immortalize guest experiences before they even leave. Reach the peak of your reputation in boutique hospitality.',
-    sol_bou_badge: 'FOR BOUTIQUE HOTELS',
-
-    // Case Studies
-
-    // Blog
-    blog_title: 'Blog',
-    blog_desc: 'Expert articles and guides on reputation management, customer experience, and digital growth.',
-    // Google Compliance
-    google_compliance_badge: 'Google Compatible',
-    google_compliance_home_title: 'Google Policy-Aligned Flow',
-    google_compliance_home_desc: 'Buaze strictly adheres to Google\'s review policies: no fake reviews, no incentives, and promoting honest feedback collection.',
-    google_compliance_page_title: 'Google Compliance & Trust',
-    google_compliance_page_subtitle: 'How we protect a transparent and honest feedback ecosystem.',
-    google_compliance_point1_title: 'Zero Fake Review Tolerance',
-    google_compliance_point1_desc: 'Buaze never generates fake reviews or artificially manipulates your business rating. Our system only facilitates organic reviews from real customers.',
-    google_compliance_point2_title: 'No Incentives',
-    google_compliance_point2_desc: 'In accordance with Google policies, we strictly refrain from and discourage offering discounts, gifts, or any rewards in exchange for reviews. Integrity is our greatest reward.',
-    google_compliance_point3_title: 'Honest Feedback Flow',
-    google_compliance_point3_desc: 'Every customer is offered the public Google review link. Anyone who also wants to share private feedback with your business can do so in the same flow — we never gate negative reviews, and the public link is never hidden at any rating.',
-    google_compliance_policy_title: 'Google\'s Review Gating Policy',
-    google_compliance_policy_desc: 'Google prohibits businesses from discouraging negative reviews and selectively requesting only positive ones. Buaze ensures full compliance by offering honest feedback opportunities for all customers.',
-    google_compliance_link_text: 'Review Google\'s Maps User Contributed Content Policy',
-
-    blog_readMore: 'Read Article',
-    blog_backToBlog: 'Back to Blog',
-
-    // ROI Calculator
-    roi_title: 'See the potential impact of a stronger review flow',
-    roi_desc: 'Enter your current metrics to see a scenario-based estimate of how a more consistent feedback and review request flow could support your business.',
-    roi_label_monthly_customers: 'Monthly customer volume',
-    roi_placeholder_monthly_customers: 'e.g. 300',
-    roi_label_current_rating: 'Current Google rating',
-    roi_placeholder_current_rating: 'e.g. 4.1',
-    roi_label_current_reviews: 'Current review count',
-    roi_placeholder_current_reviews: 'e.g. 87',
-    roi_label_target_rating: 'Target rating',
-    roi_placeholder_target_rating: 'e.g. 4.5',
-    roi_label_business_type: 'Business type',
-    roi_opt_restaurant: 'Restaurant',
-    roi_opt_cafe: 'Cafe',
-    roi_opt_hotel: 'Hotel',
-    roi_opt_clinic: 'Clinic',
-    roi_opt_other: 'Other',
-    roi_result_reviews_title: 'Estimated Need',
-    roi_result_reviews_msg: 'You may need approximately {range} new reviews to move closer to your target rating.',
-    roi_result_reviews_met: 'Congratulations! Your current rating already meets or exceeds your target.',
-    roi_result_visibility_title: 'Visibility Impact',
-    roi_result_visibility_low: 'Low',
-    roi_result_visibility_medium: 'Medium',
-    roi_result_visibility_strong: 'Strong',
-    roi_result_visibility_msg: 'A stronger review flow and rating signal may help improve your visibility.',
-    roi_result_lead_title: 'Potential Impact',
-    roi_result_lead_msg: 'Potential for {range} additional monthly profile interactions',
-    roi_disclaimer: 'This calculator provides scenario-based estimates. Results may vary depending on your industry, location, competition, and customer experience.',
-    roi_cta: 'View Plans',
-
-    // New Content Labels
-    nav_compare: 'Compare',
 
 
-    // SEO Comparison Strings
-    compare_verdict_title: 'Final Verdict',
-    compare_pain_title: 'Common Pain Points',
-    compare_pain_spreadsheet: 'In processes managed with Excel, data becomes outdated and reaction time can take up to 72 hours.',
-    compare_pain_static: 'Static QR codes cannot be changed after printing; every update means new printing costs and operational chaos.',
-    compare_verdict_desc: 'Instead of tracking your reputation with passive methods, turn it into an active operation with Buaze. Automation, speed, and data security are indispensable for a modern business.',
+    // Blog (post page back link)
+    blog_backToBlog: 'All posts',
 
-    // Comparison Page
-    compare_title: 'Why Buaze?',
-    compare_subtitle: 'Don\'t leave your reputation to chance with manual methods or limited tools. Build a professional operation with Buaze.',
-    compare_hero_h1: 'QR review management: Buaze vs other methods',
-    compare_hero_p: 'Free static QR codes or Excel tables will only take your business so far. Professional feedback operations take you to the top.',
-    compare_feat_name: 'Feature',
-    compare_buaze: 'Buaze',
-    compare_static: 'Static QR',
-    compare_sheet: 'Excel / Paper',
-    compare_f1: 'Dynamic QR (Link Update)',
-    compare_f2: 'Private Feedback Channel',
-    compare_f3: 'Instant SMS/Email Alerts',
-    compare_f4: 'Customer CRM Database',
-    compare_f5: 'One-Click Google Review Link',
-    compare_f6: 'Multi-Branch Management',
-    compare_f7: 'Advanced Analytics Dashboard',
-    compare_yes: 'Yes',
-    compare_no: 'No',
-    compare_limited: 'Limited',
+    // ROI calculator + comparison page copy lives in the pages themselves
+    // (src/app/[locale]/roi, /compare, /vs/*) and RoiCalculator.
 
     // Audit Center (CLAUDE.md §42)
     audits: 'Audit Center',

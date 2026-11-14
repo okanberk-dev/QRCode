@@ -42,11 +42,13 @@ export async function recordConsent(input: {
       },
     });
   } catch (err) {
+    // An e-mail subject id is personal data: log only that one was given
+    // (CLAUDE.md §37.7 — console.error lands in Sentry `extra`).
     console.error('[legal] recordConsent failed', {
       key: input.key,
       locale: input.locale,
       subjectType: input.subjectType,
-      subjectId: input.subjectId,
+      ...(input.subjectType === 'email' ? { hasSubject: Boolean(input.subjectId) } : { subjectId: input.subjectId }),
       err,
     });
   }

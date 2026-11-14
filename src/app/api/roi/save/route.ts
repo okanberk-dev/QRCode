@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -6,7 +6,12 @@ import { sendResendEmail } from '@/lib/email-internal';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { generateRoiPdfBase64 } from '@/lib/roi/generate-roi-pdf';
 import type { RoiPdfData } from '@/lib/roi/RoiPdf';
-import { generateRoiInsight, type RoiInsight } from '@/lib/roi/generate-insight';
+import {
+  buildRoiTemplateInsight,
+  generateRoiInsight,
+  type RoiInsight,
+} from '@/lib/roi/generate-insight';
+import { computeRoi, isRoiSector, normalizeRoiInputs } from '@/lib/roi/roi-model';
 import {
   buildInsightCacheKey,
   getCachedInsight,
@@ -152,15 +157,11 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Pulse mail dispatch akışı:
-  // 1. PDF için tipli RoiPdfData üret
-  // 2. AI insight + PDF base64 paralel — biri diğerini bloklamaz
-  // 3. Customer mail (PDF attachment + AI insight body)
-  // 4. Sales mail (AI insight + KPI + senaryo)
-  //
-  // Email yoksa müşteri mail'i gönderilmez ama sales mail (panel ekibi
-  // operatöre triage etmesi için) yine gönderilir — eğer en az bir
-  // anlamlı projection varsa.
+  // Mail dispatch:
+  // 1. Recompute the estimate on the server from the visitor's inputs
+  //    (roi-model) — the client's own result is never trusted for the mails.
+  // 2. Summary (AI or template), then a single PDF render.
+  // 3. Visitor mail (PDF attached) and sales mail (needs an email address).
   const pdfData = buildRoiPdfData(body, row, email, locale);
 
   if (pdfData) {
@@ -197,35 +198,11 @@ export async function POST(req: NextRequest) {
             return null as RoiInsight | null;
           });
 
-    // insightOrFallback önce build edilir — PDF render bunu tek sefer
-    // kullanacak. Insight null ise deterministic template fallback'a düşer
-    // (kapakta "Buaze analizi" section'ı her zaman görünür).
-    const insightOrFallback: RoiInsight = insight ?? {
-      summary:
-        locale === 'tr'
-          ? `${pdfData.restaurantName} için 12 aylık projeksiyon ${pdfData.currency}${Math.round(pdfData.netGain).toLocaleString('tr-TR')} net kazanç ve ${pdfData.roiMultiple.toFixed(1)}× ROI yansıtıyor.`
-          : `Your 12-month projection for ${pdfData.restaurantName} shows ${pdfData.currency}${Math.round(pdfData.netGain).toLocaleString('en-US')} net gain at ${pdfData.roiMultiple.toFixed(1)}× ROI.`,
-      highlight:
-        locale === 'tr'
-          ? `Aylık ${pdfData.filteredLowReviews} kötü yorumun Google'a sızmadan filtrelenmesi en yüksek kaldıraç.`
-          : `Filtering ${pdfData.filteredLowReviews} low reviews/month from leaking to Google is the strongest leverage.`,
-      nextSteps:
-        locale === 'tr'
-          ? [
-              'QR\'ı masa altlığı + kasa yanına yerleştir; ilk 7 gün tarama oranını ölç.',
-              'Pulse AI taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.',
-              `Aktif platformların URL'lerini admin panelden gir; yüksek puan akışı doğru yere gitsin.`,
-            ]
-          : [
-              'Place QR on table tents + cashier; measure scan rate during first 7 days.',
-              'Approve every Pulse AI draft for the first 2 weeks so the model calibrates to your tone.',
-              'Add URLs for all active platforms in admin so high-rating flow routes correctly.',
-            ],
-      source: 'template',
-    };
+    // Template summary when the AI path is unavailable or rejected — the PDF
+    // and the mails always carry a summary.
+    const insightOrFallback: RoiInsight = insight ?? buildRoiTemplateInsight({ data: pdfData, locale });
 
-    // Tek PDF render — insightOrFallback ile (insight başarılıysa AI,
-    // değilse template). Eski paralel akıştaki 2. rerender path'i kaldırıldı.
+    // Single PDF render with the final summary.
     const pdfBase64 = await generateRoiPdfBase64({
       ...pdfData,
       insight: insightOrFallback,
@@ -250,41 +227,32 @@ export async function POST(req: NextRequest) {
         ]
       : undefined;
 
-    // Customer mail (Pulse roi-customer-report) — email varsa.
+    // Visitor mail (Pulse roi-customer-report) — only with an email address.
     if (email) {
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com').replace(/\/+$/, '');
-      // firstName form'da toplanmıyor → null pas et; template kendi
-      // içinde "İşletme adı + ekibi"/"team" fallback'ini üretir.
-      // (Eski restaurantName.split(/[\s,.]/)[0] türetimi awkward selamlama
-      // üretiyordu: "Cafe Karaköy" → "Hi Cafe,". Kaldırıldı.)
+      // The form does not collect a first name; the template greets the team.
       const customerRendered = await renderRoiCustomerReport(
         {
           restaurantName: pdfData.restaurantName,
           firstName: null,
-          currency: pdfData.currency,
-          netGain: pdfData.netGain,
-          roiMultiple: pdfData.roiMultiple,
-          monthlyUplift: pdfData.monthlyUplift,
-          paybackMonths: pdfData.paybackMonths,
-          reviewers: pdfData.reviewers,
-          filteredLowReviews: pdfData.filteredLowReviews,
-          projectedGoogle: pdfData.projectedGoogle,
-          currentGoogle: pdfData.currentGoogle,
-          newCustomers: pdfData.newCustomers,
-          aiHoursSaved: pdfData.aiHoursSaved,
-          plan: pdfData.plan,
-          planPrice: pdfData.planPrice,
-          platforms: pdfData.platforms,
+          inputs: pdfData.inputs,
+          estimate: pdfData.result,
+          planName: pdfData.planName,
           aiSummary: insightOrFallback.summary,
           aiHighlight: insightOrFallback.highlight,
           aiNextSteps: insightOrFallback.nextSteps,
+          aiSource: insightOrFallback.source,
           hasPdf: !!attachments,
           contactUrl: `${appUrl}/${locale}/contact`,
           pricingUrl: `${appUrl}/${locale}/pricing`,
+          registerUrl: `${appUrl}/${locale}/auth/register`,
         },
         locale,
       );
-      sendResendEmail({
+      // after(): the send finishes after the response instead of being cut
+      // off when the serverless function freezes.
+      after(() =>
+        sendResendEmail({
         template: 'roi-customer-report',
         locale,
         to: email,
@@ -292,15 +260,15 @@ export async function POST(req: NextRequest) {
         html: customerRendered.html,
         text: customerRendered.text,
         attachments,
-        logMetadata: { plan: pdfData.plan, netGain: pdfData.netGain },
-      }).catch((err) => console.error('[roi/save] customer mail failed', err));
+        logMetadata: { plan: pdfData.planName ?? 'none', hoursSaved: pdfData.result.hoursSaved },
+      }).catch((err) => console.error('[roi/save] customer mail failed', err)),
+      );
     }
 
-    // Sales mail (Pulse roi-admin-notification) — yalnız email + sales
-    // inbox varsa. Lead deduplication: aynı senaryo son 24 saat içinde
-    // gelmişse (cache hit) sales mail tekrar GÖNDERİLMEZ — operatör
-    // spam'i önlenir. Customer mail yine gider (kullanıcı PDF'i tekrar
-    // istemiş olabilir; UX değişmez).
+    // Sales mail (Pulse roi-admin-notification) — needs an email and a sales
+    // inbox. De-duplication: when the same estimate arrived in the last 24 h
+    // (insight cache hit) the sales mail is NOT sent again; the visitor mail
+    // still goes out (they may have asked for the PDF again).
     const salesInbox = process.env.NOTIFICATION_EMAIL;
     if (email && salesInbox && !isDuplicate) {
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com').replace(/\/+$/, '');
@@ -310,25 +278,9 @@ export async function POST(req: NextRequest) {
           restaurantName: pdfData.restaurantName,
           phone,
           sector: pdfData.sector,
-          monthlyCustomers: pdfData.monthlyCustomers,
-          avgTicket: pdfData.avgTicket,
-          currentGoogle: pdfData.currentGoogle,
-          lowRatingsPerMonth: pdfData.lowRatingsPerMonth,
-          platforms: pdfData.platforms,
-          plan: pdfData.plan,
-          planPrice: pdfData.planPrice,
-          currency: pdfData.currency,
-          scanned: pdfData.scanned,
-          reviewers: pdfData.reviewers,
-          filteredLowReviews: pdfData.filteredLowReviews,
-          projectedGoogle: pdfData.projectedGoogle,
-          newCustomers: pdfData.newCustomers,
-          monthlyUplift: pdfData.monthlyUplift,
-          yearlyUplift: pdfData.yearlyUplift,
-          netGain: pdfData.netGain,
-          roiMultiple: pdfData.roiMultiple,
-          paybackMonths: pdfData.paybackMonths,
-          aiHoursSaved: pdfData.aiHoursSaved,
+          planName: pdfData.planName,
+          inputs: pdfData.inputs,
+          estimate: pdfData.result,
           aiSummary: insightOrFallback.summary,
           aiHighlight: insightOrFallback.highlight,
           aiNextSteps: insightOrFallback.nextSteps,
@@ -338,7 +290,8 @@ export async function POST(req: NextRequest) {
         },
         locale,
       );
-      sendResendEmail({
+      after(() =>
+        sendResendEmail({
         template: 'roi-admin-notification',
         locale,
         to: salesInbox,
@@ -346,84 +299,41 @@ export async function POST(req: NextRequest) {
         subject: adminRendered.subject,
         html: adminRendered.html,
         text: adminRendered.text,
-        logMetadata: { plan: pdfData.plan, sector: pdfData.sector },
-      }).catch((err) => console.error('[roi/save] admin sales mail failed', err));
+        logMetadata: { plan: pdfData.planName ?? 'none', sector: pdfData.sector },
+      }).catch((err) => console.error('[roi/save] admin sales mail failed', err)),
+      );
     }
   }
 
   return NextResponse.json({ ok: true, id: row.id });
 }
 
-// PDF için projection JSON'ını tipli payload'a dönüştürür. Beklenmeyen
-// shape'te `null` döner; çağıran tarafı PDF + AI insight + mail akışını
-// sessizce atlar.
+// Turns the submitted projection into the typed report payload. Only the
+// visitor's inputs are read; the estimate is recomputed here with the same
+// model the calculator uses, so a tampered client result never reaches the
+// PDF or the mails. Unexpected shape → null (no PDF, no summary, no mails).
 function buildRoiPdfData(
   body: Record<string, unknown>,
-  row: { restaurantName: string | null; avgTicket: Prisma.Decimal | null },
+  row: { restaurantName: string | null },
   email: string | null,
   locale: 'tr' | 'en',
 ): RoiPdfData | null {
   const proj = body.projection;
   if (!proj || typeof proj !== 'object') return null;
   const p = proj as Record<string, unknown>;
-  const calc =
-    typeof p.calc === 'object' && p.calc !== null
-      ? (p.calc as Record<string, unknown>)
-      : null;
-  if (!calc) return null;
+  if (!p.inputs || typeof p.inputs !== 'object') return null;
 
-  const num = (v: unknown, fallback = 0): number =>
-    typeof v === 'number' && Number.isFinite(v) ? v : fallback;
-  const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback);
-  const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-
-  const platforms = arr(p.platforms).filter((x): x is string => typeof x === 'string');
-  const breakdownRaw = arr(calc.platformBreakdown);
-  const platformBreakdown = breakdownRaw
-    .map((item) => {
-      if (!item || typeof item !== 'object') return null;
-      const o = item as Record<string, unknown>;
-      const key = str(o.key);
-      if (!key) return null;
-      return {
-        key,
-        share: num(o.share),
-        reviews: num(o.reviews),
-      };
-    })
-    .filter((x): x is { key: string; share: number; reviews: number } => x !== null);
-
-  const planKey = str(p.plan, 'growth');
-  const planPriceTr: Record<string, number> = { starter: 499, growth: 899, pro: 1499 };
-  const planPrice = planPriceTr[planKey] ?? num(p.planPrice, 899);
-  const avgTicketRow = row.avgTicket ? Number(row.avgTicket) : num(p.avgTicket);
+  const inputs = normalizeRoiInputs(p.inputs as Record<string, unknown>, locale);
+  const planName = toStr(p.planName, 60);
 
   return {
-    restaurantName: row.restaurantName ?? str(p.restaurantName, 'İşletmen'),
+    restaurantName: row.restaurantName ?? (locale === 'en' ? 'Your business' : 'İşletmeniz'),
     email: email ?? '',
     generatedAt: new Date(),
-    currency: locale === 'en' ? '$' : '₺',
     locale,
-    sector: str(p.sector, 'restaurant'),
-    monthlyCustomers: num(p.monthlyCustomers),
-    avgTicket: avgTicketRow,
-    currentGoogle: num(p.currentGoogle, 4.2),
-    lowRatingsPerMonth: num(p.lowRatingsPerMonth),
-    platforms,
-    plan: planKey,
-    planPrice,
-    scanned: num(calc.scanned),
-    reviewers: num(calc.reviewers),
-    filteredLowReviews: num(calc.filteredLowReviews),
-    projectedGoogle: num(calc.projectedGoogle, num(p.currentGoogle, 4.2)),
-    newCustomers: num(calc.newCustomers),
-    monthlyUplift: num(calc.monthlyUplift),
-    yearlyUplift: num(calc.yearlyUplift),
-    yearlyPlan: planPrice * 12,
-    netGain: num(calc.netGain),
-    roiMultiple: num(calc.roiMultiple),
-    paybackMonths: typeof calc.paybackMonths === 'number' ? calc.paybackMonths : null,
-    aiHoursSaved: num(calc.aiHoursSaved),
-    platformBreakdown,
+    sector: isRoiSector(p.sector) ? p.sector : 'other',
+    planName: inputs.planMonthlyUsd === null ? null : planName,
+    inputs,
+    result: computeRoi(inputs),
   };
 }

@@ -56,7 +56,7 @@ export default async function LoginPage({
   const bottomStats = [
     { k: '10', l: isTr ? 'yorum platformu' : 'review platforms' },
     { k: 'TR + EN', l: isTr ? 'ürün dili' : 'product languages' },
-    { k: '<5dk', l: isTr ? 'kurulum' : 'setup' },
+    { k: isTr ? '14 gün' : '14 days', l: isTr ? 'ücretsiz deneme' : 'free trial' },
   ];
 
   return (
@@ -138,33 +138,26 @@ export default async function LoginPage({
         <div className="relative z-10 inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30">
           <span className="w-1.5 h-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat" />
           <span className="pulse-eyebrow text-[#C6F24E]">
-            {isTr ? '340K+ YORUM' : '340K+ REVIEWS'}
+            {isTr ? 'BUAZE PANELİ' : 'BUAZE PANEL'}
           </span>
         </div>
 
+        {/* Product facts only — no invented customer quote or rating lift
+            (CLAUDE.md §35.10). */}
         <div className="relative z-10 max-w-[520px]">
-          <blockquote
-            className="text-[40px] xl:text-[52px] font-medium leading-[0.95] tracking-[-0.03em] text-white"
+          <p
+            className="text-[40px] xl:text-[52px] font-medium leading-[0.98] tracking-[-0.03em] text-white"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {isTr
-              ? '"İlk ay içinde Google ortalamamız 4.2\'den 4.8\'e çıktı."'
-              : '"Within the first month, our Google average climbed from 4.2 to 4.8."'}
-          </blockquote>
-          <div className="mt-6 flex items-center gap-3">
-            <div
-              className="w-11 h-11 rounded-full bg-[#C6F24E] text-[#0A0A0A] flex items-center justify-center text-[14px] font-semibold"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              EK
-            </div>
-            <div>
-              <div className="text-[14px] font-semibold text-white">Emre Kaya</div>
-              <div className="text-[12px] text-white/60 mt-0.5">
-                {isTr ? 'Kadıköy Bistro · Kurucu' : 'Kadıköy Bistro · Founder'}
-              </div>
-            </div>
-          </div>
+              ? 'Yorumlar, uyarılar ve yanıt taslakları tek panelde.'
+              : 'Reviews, alerts and reply drafts in one panel.'}
+          </p>
+          <p className="mt-6 max-w-[440px] text-[15px] leading-[1.6] text-white/70">
+            {isTr
+              ? 'Düşük puanlar e-postayla bildirilir. Pulse AI taslakları sen onaylamadan gönderilmez.'
+              : 'Low ratings arrive by e-mail. Pulse AI drafts are never sent without your approval.'}
+          </p>
         </div>
 
         <div className="relative z-10 flex items-end gap-10">

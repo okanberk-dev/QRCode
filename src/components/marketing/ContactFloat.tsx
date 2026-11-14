@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { useMarketingAuth } from '@/hooks/useMarketingAuth';
+import { SUPPORT_HOURS } from '@/lib/company-constants';
 
 const MIN_FILL_MS = 2500;
 const BUBBLE_TEASER_DELAY_MS = 6000;
@@ -18,13 +19,14 @@ type WidgetState = 'fab' | 'open';
  * ContactFloat — sticky lead-capture widget on the marketing site.
  *
  * Stage 57 §38.138 — HANDOFF premium chat bubble redesign.
- * Visual yapı 1:1 (graphite header + lime halo + avatar + chat-style
- * message bubble + quick reply chips + KVKK footer + powered by buaze)
- * + Buaze backend async form-based — **live chat YOK**.
+ * Visual yapı (graphite header + lime halo + avatar + chat-style
+ * message bubble + quick reply chips + HTTPS note) + Buaze backend async
+ * form-based — **live chat YOK**. Stage 172: no faux italic, no presence
+ * dots, the FAB pulses once instead of forever, small text ≥ 4.5:1.
  *
  * Three render states intact:
- *  - **fab**           Lime FAB (HANDOFF ChatLauncher: lime halo pulse
- *                      + concentric ring + notification "?" badge).
+ *  - **fab**           Lime FAB (HANDOFF ChatLauncher: one lime halo
+ *                      pulse + ring when it appears + "?" help badge).
  *                      After ~6s ilk ziyarette opsiyonel bubble teaser
  *                      slide-in; per-session dismiss.
  *  - **bubble teaser** Avatar + greeting card (mevcut Pulse §11 intact).
@@ -50,9 +52,9 @@ type WidgetState = 'fab' | 'open';
  * dependencies — reCAPTCHA + honeypot + dwell-time bot guards reuse the
  * existing client helpers.
  *
- * Hidden on the homepage, auth, and onboarding routes — the widget exists
- * for marketing surfaces where a visitor may want to ask a quick question
- * without navigating to /contact.
+ * Hidden on auth, onboarding and dashboard routes and for signed-in users
+ * — the widget exists for marketing surfaces where a visitor may want to
+ * ask a quick question without navigating to /contact.
  */
 export function ContactFloat({ locale }: { locale: string }) {
   const pathname = usePathname();
@@ -65,25 +67,19 @@ export function ContactFloat({ locale }: { locale: string }) {
   // visits see the float on first paint without waiting for the probe).
   // Hook lives at the top to comply with rules-of-hooks; the early
   // return below consults `isLoggedIn` after pathname guards.
+  // /contact already shows the full contact form, so the bubble would only
+  // repeat it.
   const hiddenByPath =
     current.startsWith(`${base}/auth`) ||
     current.startsWith(`${base}/onboarding`) ||
-    current.startsWith(`${base}/dashboard`);
+    current.startsWith(`${base}/dashboard`) ||
+    current === `${base}/contact`;
   // No auth probe on routes where the bubble never renders (dashboard pages
   // would otherwise hit /api/auth/me on every load for nothing).
   const { isLoggedIn, pending: authPending } = useMarketingAuth(!hiddenByPath);
 
   const [state, setState] = useState<WidgetState>('fab');
   const [showBubble, setShowBubble] = useState(false);
-
-  // Stage 61 §38.142 — StickyCtaBar visibility listener.
-  // StickyCtaBar fires `buaze:sticky-cta-visibility` CustomEvent on
-  // mount/scroll/dismiss. Burada tüketip ContactFloat'ı dynamic olarak
-  // yukarı kaydırıyoruz; aksi halde md+ desktop'ta sticky CTA açıkken
-  // FAB + open form sticky bandın arkasında kalıp X close button
-  // gözükmüyordu (kullanıcı raporu). Mobile'da sticky CTA `hidden md:block`
-  // — aşağıda md: prefix ile yalnız desktop offset uygulanır.
-  const [stickyCtaVisible, setStickyCtaVisible] = useState(false);
 
   // Form state
   const [loading, setLoading] = useState(false);
@@ -111,6 +107,20 @@ export function ContactFloat({ locale }: { locale: string }) {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // The teaser card stays out of the way while the site footer is on
+  // screen, where it would cover the newsletter consent text and the legal
+  // links. The round button itself stays.
+  const [footerInView, setFooterInView] = useState(false);
+  useEffect(() => {
+    const footer = document.getElementById('site-footer');
+    if (!footer || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver((entries) => {
+      setFooterInView(Boolean(entries[entries.length - 1]?.isIntersecting));
+    });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [pathname]);
+
   // When the form opens, focus the first field for keyboard users.
   useEffect(() => {
     if (state === 'open') {
@@ -128,23 +138,6 @@ export function ContactFloat({ locale }: { locale: string }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [state]);
-
-  // Stage 61 §38.142 — StickyCtaBar visibility listener.
-  // CustomEvent contract: `detail.visible: boolean`. Sticky CTA bandının
-  // ContactFloat'ı kapatmasını önler (kullanıcı raporu: çarpı işareti
-  // gözükmüyordu). md+ desktop'ta sticky CTA visible iken FAB/open form
-  // ~140px yukarı kayar (sticky height ~120px + 20px breathing).
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ visible: boolean }>).detail;
-      if (typeof detail?.visible === 'boolean') {
-        setStickyCtaVisible(detail.visible);
-      }
-    };
-    window.addEventListener('buaze:sticky-cta-visibility', handler);
-    return () => window.removeEventListener('buaze:sticky-cta-visibility', handler);
-  }, []);
 
   // Hide on auth + onboarding + dashboard (owner panel) — bu sayfalarda
   // form gürültü olur (kullanıcı zaten bir akışı tamamlıyor) veya panel
@@ -254,15 +247,11 @@ export function ContactFloat({ locale }: { locale: string }) {
         // kullanıcı raporu "chat baloncuğu gözükmüyor" — FAB env() jitter
         // sırasında viewport altına kayıyordu. Yeni paternde wrapper
         // bottom: 0 constant; sadece padding-bottom reflow olur → fixed
-        // re-position yok. md:+ desktop'ta md:pb-0 override + md:bottom-6
-        // veya md:bottom-[148px] (Stage 58 §38.139 + Stage 61 §38.142
-        // sticky CTA visibility-aware dual offset intact).
+        // re-position yok. md:+ desktop'ta md:pb-0 override + md:bottom-6.
         // Pulse §11 + §38.74 + §38.160 mobile safe-area paterni reuse.
-        className={`fixed right-4 bottom-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))] md:right-6 md:pb-0 z-50 flex flex-col items-end gap-3 transition-[bottom,padding-bottom] duration-300 ease-out ${
-          stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'
-        }`}
+        className="fixed right-4 bottom-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))] md:right-6 md:bottom-6 md:pb-0 z-50 flex flex-col items-end gap-3 transition-[bottom,padding-bottom] duration-300 ease-out"
       >
-        {showBubble && (
+        {showBubble && !footerInView && (
           <div
             role="dialog"
             aria-label={isTr ? 'Sorunuz mu var?' : 'Have a question?'}
@@ -300,10 +289,10 @@ export function ContactFloat({ locale }: { locale: string }) {
               </span>
               <span className="block">
                 <span className="block text-[13px] font-semibold text-[#0A0A0A]">
-                  {isTr ? 'Merhaba! 👋' : 'Hi there! 👋'}
+                  {isTr ? 'Sorunuz mu var?' : 'Have a question?'}
                 </span>
                 <span className="mt-0.5 block text-[12.5px] leading-[1.45] text-[#525252]">
-                  {isTr ? 'Sorunuz mu var? Buradan yazabilirsiniz.' : 'Have a question? Drop us a line.'}
+                  {isTr ? 'Bize buradan yazabilirsiniz.' : 'You can write to us here.'}
                 </span>
               </span>
             </button>
@@ -317,9 +306,11 @@ export function ContactFloat({ locale }: { locale: string }) {
 
         {/* Stage 57 §38.138 — HANDOFF ChatLauncher visual: lime halo
             pulse + concentric ring expansion + notification "?" badge.
-            Mevcut openForm onClick intact. */}
+            Mevcut openForm onClick intact. The pulse runs once when the
+            button appears and then rests (WCAG 2.2.2: no endless motion
+            on every page without a pause control). */}
         <div className="relative inline-block">
-          {/* Lime halo blur — 8px inset, 14px blur, 2.6s pulse infinite */}
+          {/* Lime halo blur — 8px inset, 14px blur, one 2.6s pulse */}
           <span
             aria-hidden
             className="pointer-events-none absolute"
@@ -329,10 +320,11 @@ export function ContactFloat({ locale }: { locale: string }) {
               background: '#C6F24E',
               opacity: 0.18,
               filter: 'blur(14px)',
-              animation: 'scbPulse 2.6s ease-in-out infinite',
+              animation: 'scbPulse 2.6s ease-in-out 1',
             }}
           />
-          {/* Concentric ring — 4px inset, 1.5px lime border, 2.6s expand */}
+          {/* Concentric ring — 4px inset, 1.5px lime border, one 2.6s
+              expansion that fades out and stays hidden */}
           <span
             aria-hidden
             className="pointer-events-none absolute"
@@ -340,8 +332,8 @@ export function ContactFloat({ locale }: { locale: string }) {
               inset: -4,
               borderRadius: '50%',
               border: '1.5px solid #C6F24E',
-              opacity: 0.4,
-              animation: 'scbRing 2.6s ease-out infinite',
+              opacity: 0,
+              animation: 'scbRing 2.6s ease-out 1',
             }}
           />
 
@@ -395,27 +387,19 @@ export function ContactFloat({ locale }: { locale: string }) {
 
   const quickReplies = isTr
     ? [
-        { label: 'Demo nasıl alınır?', autofill: 'Demo almak istiyorum.' },
-        { label: 'Fiyatlar?', autofill: 'Fiyatlar hakkında bilgi alabilir miyim?' },
-        { label: 'Google entegrasyonu?', autofill: 'Google entegrasyonu nasıl çalışıyor?' },
+        { label: 'Demo talebi', autofill: 'Buaze için bir demo görüşmesi rica ediyorum.' },
+        { label: 'Fiyatlandırma', autofill: 'Fiyatlandırma hakkında bilgi alabilir miyim?' },
+        { label: 'Google yorum bağlantısı', autofill: 'Google yorum bağlantısı nasıl çalışıyor?' },
       ]
     : [
-        { label: 'How do I book a demo?', autofill: 'I would like to book a demo.' },
-        { label: 'Pricing?', autofill: 'Could you share pricing info?' },
-        { label: 'Google integration?', autofill: 'How does the Google integration work?' },
+        { label: 'Request a demo', autofill: 'I would like to book a demo of Buaze.' },
+        { label: 'Pricing', autofill: 'Could you share information about pricing?' },
+        { label: 'Google review link', autofill: 'How does the Google review link work?' },
       ];
 
   // Stage 79 §38.157 — Desktop overflow fix: flex column layout
   // (header shrink-0 + body flex-1 min-h-0 overflow-y-auto + footer
-  // shrink-0). Outer dialog max-h dinamik: stickyCtaVisible iken md+
-  // viewport - 280px (header 120 + footer 50 + bottom offset 148 +
-  // breathing 22 ≈ 340; 280 ≈ tighter calc), sakin durumda md+
-  // viewport - 110px (mevcut Stage 58 mobile baseline). Kullanıcı
-  // raporu: "açılır konuşma balonunu masaüstü versiyonda tam sığmıyor
-  // aşağıya kaydırdığım" — sticky CTA + open form üst üste binince
-  // form viewport top'undan taşıyordu, şimdi flex column içinde body
-  // shrinker olarak kalır; ana dialog max-h viewport sınırını respekt
-  // ediyor.
+  // shrink-0); the dialog's max-h keeps it inside the viewport.
   return (
     <div
       role="dialog"
@@ -426,14 +410,9 @@ export function ContactFloat({ locale }: { locale: string }) {
       // raporu "chat baloncuğu gözükmüyor"). margin-bottom kullanılır
       // (padding-bottom outer rounded-3xl border + body shadow ile çakışır).
       // Body padding-bottom intact (form + footer için ayrı concern).
-      // sm:+ desktop sticky CTA dual offset intact (Stage 58 §38.139 +
-      // Stage 61 §38.142). Mobile margin-bottom = 96px nav clearance +
-      // safe-area; sm:+ override `sm:mb-0` ile.
-      className={`bz-fade-in fixed right-4 bottom-0 left-4 z-50 mb-[calc(96px+env(safe-area-inset-bottom,0px))] sm:mb-0 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,margin-bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
-        stickyCtaVisible
-          ? 'md:bottom-[148px] md:max-h-[calc(100dvh-280px)]'
-          : 'md:bottom-6 md:max-h-[calc(100dvh-110px)]'
-      }`}
+      // Mobile margin-bottom = 96px nav clearance + safe-area; sm:+
+      // override `sm:mb-0` ile.
+      className="bz-fade-in fixed right-4 bottom-0 left-4 z-50 mb-[calc(96px+env(safe-area-inset-bottom,0px))] sm:mb-0 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,margin-bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px]"
       style={{
         boxShadow:
           '0 28px 64px -18px rgba(10,10,10,0.32), 0 4px 12px rgba(10,10,10,0.06)',
@@ -461,15 +440,15 @@ export function ContactFloat({ locale }: { locale: string }) {
 
         <div className="relative flex items-center gap-3">
           {/* Avatar — Buaze brand mark (jenerik, "Cem" hardcoded operator
-              SİLİNDİ; live chat illusion YOK). Synthetic italic Space
-              Grotesk + lime gradient + lime corner dot. */}
+              SİLİNDİ; live chat illusion YOK). No corner "online" dot and
+              no pulsing status dot: the form is answered by e-mail during
+              SUPPORT_HOURS, nobody is "online". */}
           <div className="relative shrink-0">
             <div
               className="flex h-11 w-11 items-center justify-center rounded-full"
               style={{
                 background: 'linear-gradient(135deg, #C6F24E, #A8D62E)',
                 fontFamily: 'var(--font-heading)',
-                fontStyle: 'italic',
                 fontWeight: 600,
                 fontSize: 22,
                 color: '#0A0A0A',
@@ -478,15 +457,6 @@ export function ContactFloat({ locale }: { locale: string }) {
             >
               B
             </div>
-            {/* Lime corner dot — Buaze brand accent, NOT live online dot */}
-            <span
-              aria-hidden
-              className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full"
-              style={{
-                background: '#C6F24E',
-                border: '2.5px solid #0A0A0A',
-              }}
-            />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -494,40 +464,18 @@ export function ContactFloat({ locale }: { locale: string }) {
               className="leading-[1.1] text-white"
               style={{
                 fontFamily: 'var(--font-heading)',
-                fontStyle: 'italic',
-                fontWeight: 400,
+                fontWeight: 500,
                 fontSize: 22,
                 letterSpacing: '-0.01em',
               }}
             >
-              {isTr ? 'Merhaba' : 'Hello'}{' '}
-              <span
-                aria-hidden
-                className="inline-block"
-                style={{
-                  animation: 'scbWave 2s ease-in-out infinite',
-                  transformOrigin: '70% 80%',
-                }}
-              >
-                ✦
-              </span>
+              {isTr ? 'Merhaba' : 'Hello'}
             </div>
             <div className="mt-1 flex items-center gap-1.5">
-              <span
-                aria-hidden
-                className="inline-block h-[5px] w-[5px] rounded-full"
-                style={{
-                  background: '#C6F24E',
-                  animation: 'scbDot 1.6s ease-in-out infinite',
-                }}
-              />
               {/* "ŞU AN ÇEVRİMİÇİ" SİLİNDİ → "BUAZE EKİBİ" jenerik
                   (live chat illusion YOK, async semantik). */}
-              <span
-                className="pulse-eyebrow"
-                style={{ color: '#C6F24E', fontSize: 9.5, letterSpacing: '0.14em' }}
-              >
-                {isTr ? 'BUAZE EKİBİ' : 'BUAZE TEAM'}
+              <span className="pulse-eyebrow" style={{ color: '#C6F24E', fontSize: 10.5, letterSpacing: '0.14em' }}>
+                {isTr ? 'Buaze ekibi' : 'Buaze team'}
               </span>
             </div>
           </div>
@@ -551,16 +499,9 @@ export function ContactFloat({ locale }: { locale: string }) {
 
         {/* Async messaging hint — "Genelde 1 iş günü içinde dönüş"
             (Stage 51 §38.132 paterni reuse, Buaze patterned). */}
-        <div
-          className="relative mt-2 pulse-eyebrow"
-          style={{
-            color: 'rgba(255,255,255,0.45)',
-            fontSize: 10,
-            letterSpacing: '0.08em',
-          }}
-        >
-          {isTr ? 'GENELDE 1 İŞ GÜNÜ İÇİNDE DÖNÜŞ' : 'TYPICALLY REPLIES IN 1 BUSINESS DAY'}
-        </div>
+        <p className="relative mt-2 text-[12px] leading-[1.45] text-white/70">
+          {isTr ? SUPPORT_HOURS.tr : SUPPORT_HOURS.en}
+        </p>
       </div>
 
       {/* BODY — chat-style initial message + form. Stage 79 §38.157 —
@@ -590,8 +531,8 @@ export function ContactFloat({ locale }: { locale: string }) {
             </p>
             <p className="mt-1 text-[12.5px] leading-[1.5] text-[#525252]">
               {isTr
-                ? 'Mesajınız bize ulaştı. Ekibimiz en kısa sürede dönüş yapacak.'
-                : 'Your message has reached us. Our team will get back to you shortly.'}
+                ? 'Mesajınızı aldık; e-postayla yanıt vereceğiz.'
+                : "We've received your message and will reply by e-mail."}
             </p>
             <button
               type="button"
@@ -611,8 +552,8 @@ export function ContactFloat({ locale }: { locale: string }) {
                 style={{ borderTopLeftRadius: 4 }}
               >
                 {isTr
-                  ? 'Sorunuz mu var? Mesajınızı yazın, ekibimiz en kısa sürede dönüş yapsın.'
-                  : "Got a question? Drop us a note and we'll get back to you shortly."}
+                  ? 'Sorunuzu yazın, size e-postayla yanıt verelim.'
+                  : "Send us your question and we'll reply by e-mail."}
               </div>
             </div>
 
@@ -620,10 +561,10 @@ export function ContactFloat({ locale }: { locale: string }) {
                 (form-based, send manuel — live chat illusion YOK). */}
             <div className="px-5 py-3">
               <div
-                className="pulse-eyebrow mb-2.5 text-[#A3A3A3]"
-                style={{ fontSize: 9.5, letterSpacing: '0.1em' }}
+                className="pulse-eyebrow mb-2.5 text-[#737373]"
+                style={{ fontSize: 10.5, letterSpacing: '0.1em' }}
               >
-                {isTr ? 'HIZLI YANITLAR' : 'QUICK REPLIES'}
+                {isTr ? 'Hazır sorular' : 'Suggested questions'}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {quickReplies.map((q, i) => (
@@ -687,7 +628,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                   htmlFor="cf-email"
                   className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]"
                 >
-                  {isTr ? 'E-posta' : 'Email'} <span className="text-[#A8D62E]">*</span>
+                  {isTr ? 'E-posta' : 'E-mail'} <span className="text-[#A8D62E]">*</span>
                 </label>
                 <input
                   id="cf-email"
@@ -816,66 +757,17 @@ export function ContactFloat({ locale }: { locale: string }) {
         )}
       </div>
 
-      {/* FOOTER — KVKK encrypted hint + Powered by buaze. Stage 79
-          §38.157 — shrink-0 (flex column root içinde body flex-1 olarak
-          shrinkable kalır). */}
-      <div className="flex shrink-0 items-center justify-between border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-2.5">
-        <div className="inline-flex items-center gap-1.5">
-          <svg
-            width="11"
-            height="11"
-            viewBox="0 0 14 14"
-            aria-hidden
-          >
-            <rect
-              x="3"
-              y="6"
-              width="8"
-              height="6"
-              rx="1"
-              stroke="#A3A3A3"
-              strokeWidth="1.2"
-              fill="none"
-            />
-            <path
-              d="M5 6V4a2 2 0 014 0v2"
-              stroke="#A3A3A3"
-              strokeWidth="1.2"
-              fill="none"
-            />
+      {/* FOOTER — transport note. Stage 79 §38.157 — shrink-0 (flex
+          column root içinde body flex-1 olarak shrinkable kalır). The
+          "Powered by buaze." mark was dropped: this is Buaze's own site. */}
+      <div className="flex shrink-0 items-center border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-2.5">
+        <div className="inline-flex items-center gap-1.5 text-[#737373]">
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden>
+            <rect x="3" y="6" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <path d="M5 6V4a2 2 0 014 0v2" stroke="currentColor" strokeWidth="1.2" fill="none" />
           </svg>
-          <span
-            className="pulse-eyebrow"
-            style={{
-              color: '#A3A3A3',
-              fontSize: 9,
-              letterSpacing: '0.04em',
-            }}
-          >
-            {isTr ? 'KVKK uyumlu, şifreli kanal' : 'Encrypted, GDPR compliant'}
-          </span>
-        </div>
-        <div className="inline-flex items-center gap-1">
-          <span
-            className="pulse-eyebrow"
-            style={{
-              color: '#A3A3A3',
-              fontSize: 8.5,
-              letterSpacing: '0.06em',
-            }}
-          >
-            POWERED BY
-          </span>
-          <span
-            className="text-[#0A0A0A]"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-              fontSize: 12,
-              fontWeight: 500,
-            }}
-          >
-            buaze<span className="text-[#A8D62E]">.</span>
+          <span className="text-[11px] leading-none">
+            {isTr ? 'Şifreli bağlantı (HTTPS)' : 'Encrypted connection (HTTPS)'}
           </span>
         </div>
       </div>

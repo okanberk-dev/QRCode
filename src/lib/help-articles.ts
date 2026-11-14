@@ -1,4 +1,30 @@
 import type { Locale } from '@/lib/translations';
+import { SUPPORT_EMAIL, SUPPORT_HOURS } from '@/lib/company-constants';
+import { HELP_CATEGORIES } from '@/lib/help-categories';
+import { helpQueryWords, normalizeHelpSearchText, scoreHelpMatch } from '@/lib/help-search';
+
+export { normalizeHelpSearchText } from '@/lib/help-search';
+
+/**
+ * Help Center articles (TR + EN) — the static source behind /help.
+ *
+ * Every statement here describes the product as it works today; each claim
+ * was checked against the code (review flow + threshold, QR wizard, inbox,
+ * notifications, team roles, billing, KVKK tools). When a feature changes,
+ * change the article in the same PR.
+ *
+ * Rules (CLAUDE.md §22 + marketing spec 2026-11):
+ * - TR and EN are built by one `pair()` call, so slug, category and order
+ *   can never drift between locales.
+ * - Body text is plain strings with two inline markers only:
+ *   `**bold**` and `[label](/tr/help/slug)` (internal paths or https URLs).
+ *   No raw HTML; `renderBody()` escapes everything else.
+ * - Removed 2026-11 (no longer true for the product; 301 targets are listed
+ *   in the help unit report): the whole API & webhook category,
+ *   campaign-qr-utm, tags-and-assignment, slack-discord-webhook-routing,
+ *   usage-thresholds-alerts, invoice-vat-and-titles,
+ *   multi-account-and-franchise-billing, two-factor-and-session-management.
+ */
 
 export interface StaticHelpArticle {
   id: string;
@@ -7,13 +33,9 @@ export interface StaticHelpArticle {
   category: string;
   title: string;
   excerpt: string;
+  /** Escaped HTML rendering of `bodyStruct` (kept for the JSON API and DB parity). */
   body: string;
-  /**
-   * Structured body source. Surfaced so the slug page can emit HowTo
-   * JSON-LD without parsing the sanitized HTML output (the sanitizer
-   * strips `<script>` blocks, so schema must live alongside the article
-   * payload — see CLAUDE.md §22 + §37.6).
-   */
+  /** Structured body — the article page renders this directly. */
   bodyStruct?: BodyInput;
   searchTags: string[];
   isPublished: true;
@@ -25,1503 +47,4520 @@ export type BodySection = {
   title: string;
   paragraphs?: string[];
   items?: string[];
-  quote?: string;
+  /** Render `items` as a numbered list (step-by-step instructions). */
+  ordered?: boolean;
 };
 
 export type BodyInput = {
   lead: string;
+  /** One-sentence summary shown in a "Kısaca / In short" box. */
   keyInsight?: string;
   sections: BodySection[];
   checklist: string[];
   faq: { q: string; a: string }[];
+  /** Short note about platform rules, shown after the sections. */
   policyNote?: string;
 };
 
-const UPDATED_AT = new Date('2026-04-26T09:00:00.000Z');
+/** Date of the last full content review (shown as "Güncelleme"). */
+export const HELP_CONTENT_UPDATED_AT = new Date('2026-11-14T09:00:00.000Z');
 
-function renderBody(input: BodyInput) {
-  const sections = input.sections
-    .map((section) => {
-      const paragraphs = (section.paragraphs ?? []).map((p) => `<p>${p}</p>`).join('');
-      const items = section.items?.length
-        ? `<ul>${section.items.map((item) => `<li>${item}</li>`).join('')}</ul>`
-        : '';
-      const quote = section.quote ? `<blockquote>${section.quote}</blockquote>` : '';
-      return `<h2>${section.title}</h2>${paragraphs}${items}${quote}`;
-    })
-    .join('');
+/* ------------------------------------------------------------------ */
+/* Inline markup                                                        */
+/* ------------------------------------------------------------------ */
 
-  const lead = `<p>${input.lead}</p>`;
-  const keyInsight = input.keyInsight ? `<blockquote>${input.keyInsight}</blockquote>` : '';
-  const policy = input.policyNote ? `<blockquote>${input.policyNote}</blockquote>` : '';
+export type InlineToken =
+  | { type: 'text'; text: string }
+  | { type: 'strong'; text: string }
+  | { type: 'link'; text: string; href: string };
 
-  return [
-    lead,
-    keyInsight,
-    sections,
-    policy,
-    `<h2>Kontrol listesi / Checklist</h2><ul>${input.checklist.map((item) => `<li>${item}</li>`).join('')}</ul>`,
-    `<h2>SSS / FAQ</h2>${input.faq.map((item) => `<h3>${item.q}</h3><p>${item.a}</p>`).join('')}`,
-  ].join('');
+const INLINE_RE = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
+
+function safeHref(href: string): string | null {
+  const h = href.trim();
+  if (h.startsWith('/') && !h.startsWith('//')) return h;
+  if (/^https:\/\/[^\s]+$/i.test(h)) return h;
+  if (/^mailto:[^\s]+$/i.test(h)) return h;
+  return null;
 }
 
-function article(
-  locale: Locale,
-  category: string,
-  order: number,
-  slug: string,
-  title: string,
-  excerpt: string,
-  tags: string[],
-  body: BodyInput,
-): StaticHelpArticle {
+/** Split a body string into text / bold / link tokens. */
+export function parseInline(input: string): InlineToken[] {
+  const tokens: InlineToken[] = [];
+  let last = 0;
+  for (const match of input.matchAll(INLINE_RE)) {
+    const index = match.index ?? 0;
+    if (index > last) tokens.push({ type: 'text', text: input.slice(last, index) });
+    if (match[1] !== undefined) {
+      tokens.push({ type: 'strong', text: match[1] });
+    } else {
+      const href = safeHref(match[3] ?? '');
+      tokens.push(href ? { type: 'link', text: match[2] ?? '', href } : { type: 'text', text: match[2] ?? '' });
+    }
+    last = index + match[0].length;
+  }
+  if (last < input.length) tokens.push({ type: 'text', text: input.slice(last) });
+  return tokens;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/** Inline markup → escaped HTML. */
+export function inlineToHtml(input: string): string {
+  return parseInline(input)
+    .map((token) => {
+      if (token.type === 'strong') return `<strong>${escapeHtml(token.text)}</strong>`;
+      if (token.type === 'link') return `<a href="${escapeHtml(token.href)}">${escapeHtml(token.text)}</a>`;
+      return escapeHtml(token.text);
+    })
+    .join('');
+}
+
+/** Inline markup → plain text (search index, JSON-LD). */
+export function inlineToPlain(input: string): string {
+  return parseInline(input)
+    .map((token) => token.text)
+    .join('');
+}
+
+const BODY_LABELS = {
+  tr: { summary: 'Kısaca', checklist: 'Kontrol listesi', faq: 'Sık sorulan sorular', note: 'Not' },
+  en: { summary: 'In short', checklist: 'Checklist', faq: 'Frequently asked questions', note: 'Note' },
+} as const;
+
+export function helpBodyLabels(locale: Locale) {
+  return BODY_LABELS[locale === 'en' ? 'en' : 'tr'];
+}
+
+function renderBody(input: BodyInput, locale: Locale): string {
+  const labels = helpBodyLabels(locale);
+  const parts: string[] = [`<p>${inlineToHtml(input.lead)}</p>`];
+  if (input.keyInsight) {
+    parts.push(`<blockquote><p><strong>${labels.summary}:</strong> ${inlineToHtml(input.keyInsight)}</p></blockquote>`);
+  }
+  for (const section of input.sections) {
+    parts.push(`<h2>${escapeHtml(section.title)}</h2>`);
+    for (const p of section.paragraphs ?? []) parts.push(`<p>${inlineToHtml(p)}</p>`);
+    if (section.items?.length) {
+      const tag = section.ordered ? 'ol' : 'ul';
+      parts.push(`<${tag}>${section.items.map((item) => `<li>${inlineToHtml(item)}</li>`).join('')}</${tag}>`);
+    }
+  }
+  if (input.policyNote) {
+    parts.push(`<blockquote><p><strong>${labels.note}:</strong> ${inlineToHtml(input.policyNote)}</p></blockquote>`);
+  }
+  if (input.checklist.length) {
+    parts.push(`<h2>${labels.checklist}</h2><ul>${input.checklist.map((item) => `<li>${inlineToHtml(item)}</li>`).join('')}</ul>`);
+  }
+  if (input.faq.length) {
+    parts.push(
+      `<h2>${labels.faq}</h2>${input.faq
+        .map((item) => `<h3>${escapeHtml(item.q)}</h3><p>${inlineToHtml(item.a)}</p>`)
+        .join('')}`,
+    );
+  }
+  return parts.join('');
+}
+
+interface LocalizedArticle {
+  title: string;
+  excerpt: string;
+  tags: string[];
+  body: BodyInput;
+}
+
+function build(locale: Locale, category: string, order: number, slug: string, a: LocalizedArticle): StaticHelpArticle {
   return {
     id: `static-${locale}-${slug}`,
     slug,
     locale,
     category,
-    title,
-    excerpt,
-    body: renderBody(body),
-    bodyStruct: body,
-    searchTags: tags.map((tag) => tag.toLowerCase()),
+    title: a.title,
+    excerpt: a.excerpt,
+    body: renderBody(a.body, locale),
+    bodyStruct: a.body,
+    searchTags: a.tags.map((tag) => tag.toLocaleLowerCase(locale === 'tr' ? 'tr-TR' : 'en-US')),
     isPublished: true,
     order,
-    updatedAt: UPDATED_AT,
+    updatedAt: HELP_CONTENT_UPDATED_AT,
   };
 }
 
+/** One article in both languages — same slug, category and order. */
+function pair(
+  category: string,
+  order: number,
+  slug: string,
+  content: { tr: LocalizedArticle; en: LocalizedArticle },
+): StaticHelpArticle[] {
+  return [build('tr', category, order, slug, content.tr), build('en', category, order, slug, content.en)];
+}
+
+const GOOGLE_POLICY_URL = 'https://support.google.com/contributionpolicy/answer/7400114';
+
+/* ------------------------------------------------------------------ */
+/* Articles                                                             */
+/* ------------------------------------------------------------------ */
+
 export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
-  article('tr', 'getting-started', 10, 'quick-start', 'Buaze hesabınızı 5 dakikada yayına alma', 'İlk hesabınızı oluşturun, işletmenizi tanımlayın ve QR geri bildirim akışını canlıya alın.', ['kurulum', 'başlangıç', 'hesap', 'qr'], {
-    lead: 'Buaze kurulumu teknik ekip gerektirmeden tamamlanacak şekilde tasarlanmıştır. Amaç, müşterinin QR kodu okuttuğu andan işletme panelinde ölçülebilir geri bildirim görmeye başladığınız ana kadar olan yolu sade tutmaktır.',
-    keyInsight: 'İyi bir kurulum dakikalar sürer; iyi bir <strong>test</strong> ise saatler kazandırır. İlk QR’ı kendi telefonunuzdan okutmadan canlıya almayın.',
-    sections: [
-      { title: '1. Hesap ve işletme bilgileri', paragraphs: ['Kayıt olduktan sonra işletme adı, kategori, adres, telefon ve bildirim e-postasını girin. Bu bilgiler hem panelde raporların doğru ayrışmasını sağlar hem de müşteri ekranında güven veren bir kimlik oluşturur.'] },
-      { title: '2. Platform bağlantıları', paragraphs: ['Google yorum bağlantısı veya Place ID, Yemeksepeti, Getir ve Trendyol GO bağlantıları işletme profilinde tutulur. Herkese açık yorum bağlantısı her müşteriye gösterilir; müşteri dilerse işletmeye özel geri bildirim de bırakabilir.'] },
-      { title: '3. İlk test', items: ['QR sayfasını telefondan açın.', 'Yüksek ve düşük birer puan deneyip herkese açık yorum bağlantısının açıldığını kontrol edin.', 'Özel geri bildirim formunu gönderip kaydın oluştuğunu doğrulayın.', 'Panelde kaydın doğru restoran, masa ve platformla geldiğini kontrol edin.'] },
-    ],
-    checklist: ['İşletme adı ve slug doğru.', 'Bildirim e-postası aktif.', 'Google yorum linki veya Place ID girildi.', 'En az bir QR kod test edildi.', 'Panelde yeni geri bildirim göründü.'],
-    faq: [
-      { q: 'Kurulumdan sonra QR kodu değişir mi?', a: 'Restoran slug değeri değişmediği sürece genel QR bağlantısı sabit kalır. Masa veya platform parametreleri farklı QR varyasyonları üretmek için eklenebilir.' },
-      { q: 'Tek hesapla birden fazla işletme yönetebilir miyim?', a: 'Evet. İşletmeler panelinden her lokasyonu ayrı restoran olarak ekleyebilir, raporları lokasyon bazında takip edebilirsiniz.' },
-    ],
-  }),
-  article('en', 'getting-started', 10, 'quick-start', 'Launch your Buaze account in 5 minutes', 'Create your first account, set up your business and publish a working QR feedback flow.', ['setup', 'getting started', 'account', 'qr'], {
-    lead: 'Buaze is designed so a business can go live without an engineering project. The goal is to move from sign-up to measurable customer feedback with the fewest possible steps.',
-    keyInsight: 'A good setup takes minutes; a good <strong>test</strong> saves hours. Do not go live until you have scanned the first QR on your own phone.',
-    sections: [
-      { title: '1. Account and business profile', paragraphs: ['After signing up, add your business name, category, address, phone number and notification email. These details keep reporting clean and make the customer-facing flow feel trustworthy.'] },
-      { title: '2. Review platform links', paragraphs: ['Store your Google review link or Place ID, plus Yemeksepeti, Getir and Trendyol GO URLs when relevant. The public review link is shown to every customer, and customers can choose to send private feedback to your team as well.'] },
-      { title: '3. First test', items: ['Open the QR page on a phone.', 'Try both a high and a low rating and confirm the public review link opens.', 'Submit the private feedback form and confirm the entry is created.', 'Check that the dashboard records restaurant, table and platform correctly.'] },
-    ],
-    checklist: ['Business name and slug are correct.', 'Notification email is active.', 'Google review link or Place ID is saved.', 'At least one QR code is tested.', 'A new feedback entry appears in the dashboard.'],
-    faq: [
-      { q: 'Will the QR code change after setup?', a: 'The main QR URL stays stable as long as the restaurant slug remains the same. Table and platform parameters can create additional QR variants.' },
-      { q: 'Can one account manage multiple locations?', a: 'Yes. Add each location as a separate restaurant and track reporting by location.' },
-    ],
-  }),
-  article('tr', 'getting-started', 20, 'first-restaurant-setup', 'İlk işletme profilini doğru yapılandırma', 'İşletme profilindeki alanların müşteri deneyimi, bildirimler ve raporlamayı nasıl etkilediğini öğrenin.', ['işletme', 'profil', 'restoran', 'bildirim'], {
-    lead: 'İşletme profili sadece görünen bilgilerden ibaret değildir. Bu alanlar QR yönlendirmesini, düşük puan bildirimlerini, platform ayrıştırmasını ve menü sayfasının güven hissini doğrudan etkiler.',
-    keyInsight: 'Profil <em>kozmetik</em> değil <strong>operasyonel</strong> bir kayıttır; her alan ileride bir karar verirken referans olarak okunur.',
-    sections: [
-      { title: 'Zorunlu alanlar', paragraphs: ['İşletme adı, slug ve aktiflik durumu geri bildirim akışının temelidir. Slug müşteri bağlantısında görünür; bu yüzden kısa, okunabilir ve marka ile uyumlu olmalıdır.'] },
-      { title: 'Bildirim ve takip', paragraphs: ['Düşük puanlar için notification email alanı kritik önemdedir. Operasyon ekibinin kullandığı ortak bir adres seçmek, yanıt sürelerini kısaltır ve müşteri deneyimini toparlama şansını artırır.'] },
-      { title: 'Renk ve marka hissi', paragraphs: ['Birincil renk, müşteri ekranında ve menüde kullanılabilir. Çok koyu veya düşük kontrastlı renklerden kaçının; QR ile gelen müşteri genellikle mobilde ve kısa sürede karar verir.'] },
-    ],
-    checklist: ['Slug kısa ve markaya uygun.', 'Telefon ve adres güncel.', 'Notification email ortak ekibe ait.', 'Google ve teslimat platform linkleri test edildi.', 'İşletme aktif durumda.'],
-    faq: [
-      { q: 'Slug değiştirmek SEO veya QR etkiler mi?', a: 'Evet. Eski QR kodlar eski slug ile çalışır. Slug değişikliği gerekiyorsa basılı materyaller ve paylaşılmış linkler de güncellenmelidir.' },
-      { q: 'Bir işletmeyi geçici kapatabilir miyim?', a: 'Evet. Aktiflik durumunu kapatarak müşteri akışını geçici olarak durdurabilirsiniz.' },
-    ],
-  }),
-  article('en', 'getting-started', 20, 'first-restaurant-setup', 'Configure your first business profile correctly', 'Learn how profile fields affect customer experience, notifications and reporting quality.', ['business', 'profile', 'restaurant', 'notifications'], {
-    lead: 'Your business profile is more than a display card. It affects QR routing, low-rating notifications, platform attribution and the trust level of the customer-facing experience.',
-    keyInsight: 'The profile is not <em>cosmetic</em>; it is an <strong>operational</strong> record that will be referenced every time a decision needs context.',
-    sections: [
-      { title: 'Core fields', paragraphs: ['Business name, slug and active status are the foundation of the feedback flow. The slug appears in customer URLs, so keep it short, readable and aligned with the brand.'] },
-      { title: 'Notifications and follow-up', paragraphs: ['The notification email is especially important for low ratings. Use a shared operational inbox so the right team can respond quickly.'] },
-      { title: 'Color and brand feel', paragraphs: ['The primary color can appear in customer-facing pages and menu screens. Avoid low-contrast colors; QR visitors are usually on mobile and moving quickly.'] },
-    ],
-    checklist: ['Slug is short and brand-safe.', 'Phone and address are current.', 'Notification email goes to the right team.', 'Google and delivery links are tested.', 'The business is active.'],
-    faq: [
-      { q: 'Does changing the slug affect QR codes?', a: 'Yes. Printed QR codes and previously shared links point to the old slug, so update physical materials if you change it.' },
-      { q: 'Can I temporarily disable a business?', a: 'Yes. Turning off active status pauses the public customer flow.' },
-    ],
-  }),
-
-  article('tr', 'qr-codes', 10, 'qr-placement-guide', 'Masa, fiş, kapı ve paket için QR yerleşim rehberi', 'QR kodu doğru yerde göstermek tarama oranını ve kaliteli geri bildirim sayısını artırır.', ['qr', 'masa', 'fiş', 'paket', 'yerleşim'], {
-    lead: 'QR kodun başarısı sadece tasarıma değil, müşterinin hangi anda onu gördüğüne bağlıdır. En iyi sonuç, müşteri deneyimi tazeyken ve aksiyon almak kolayken alınır.',
-    keyInsight: 'En iyi yerleşim, <strong>müşterinin telefonu zaten elinde tuttuğu</strong> ana denk gelendir. Her ek karar yarısı kaybedilen tarama demektir.',
-    sections: [
-      { title: 'Masa QR kullanımı', paragraphs: ['Masa üzerindeki QR, servis devam ederken geri bildirim toplamaya yarar. Masa numarası parametresi kullanırsanız hangi masada sorun yaşandığını panelde ayırabilirsiniz.'] },
-      { title: 'Fiş ve paket QR kullanımı', paragraphs: ['Fişteki QR ödeme sonrası memnuniyet ölçümü için uygundur. Paket QR ise teslimat deneyimini ölçer; platform parametresi eklemek hangi kanalın deneyim yarattığını gösterir.'] },
-      { title: 'Tasarım ve okunabilirlik', items: ['QR çevresinde boş alan bırakın.', 'Minimum baskı boyutunu 2.5 cm altında tutmayın.', 'Kısa bir çağrı metni ekleyin: “Deneyiminizi 20 saniyede paylaşın”.', 'Lamine yüzeylerde parlama testini yapın.'] },
-    ],
-    checklist: ['Masa QR kodlarında table parametresi var.', 'Paket QR kodlarında kaynak veya platform ayrımı var.', 'Baskı testinde telefon QR kodu hızlı okuyor.', 'CTA metni kısa ve net.', 'QR hedefi canlı ortamı gösteriyor.'],
-    faq: [
-      { q: 'Aynı QR kodu her yerde kullanabilir miyim?', a: 'Kullanabilirsiniz, ancak masa, paket ve platform bazlı ölçüm istiyorsanız farklı parametreli QR kodlar daha iyi rapor verir.' },
-      { q: 'QR kodun yanında logo kullanmalı mıyım?', a: 'Kullanabilirsiniz; ama QR alanının okunurluğunu bozmayın ve kontrastı koruyun.' },
-    ],
-  }),
-  article('en', 'qr-codes', 10, 'qr-placement-guide', 'QR placement guide for tables, receipts, doors and packages', 'Place QR codes where customers are most likely to scan and leave useful feedback.', ['qr', 'table', 'receipt', 'package', 'placement'], {
-    lead: 'QR performance depends not only on design, but on the moment customers see it. The strongest feedback usually comes while the experience is still fresh.',
-    keyInsight: 'The best placement coincides with the moment <strong>the customer already has the phone in hand</strong>. Each extra decision halves the scan rate.',
-    sections: [
-      { title: 'Table QR codes', paragraphs: ['Table QRs collect feedback during the visit. Add a table parameter if you want the dashboard to show exactly where an issue happened.'] },
-      { title: 'Receipt and package QR codes', paragraphs: ['Receipt QRs work well after payment. Package QRs measure delivery experience; adding platform parameters helps separate channels.'] },
-      { title: 'Design and readability', items: ['Leave quiet space around the QR.', 'Avoid printing smaller than 2.5 cm.', 'Use a short call to action such as “Share your experience in 20 seconds”.', 'Test laminated surfaces for glare.'] },
-    ],
-    checklist: ['Table QRs include table parameters.', 'Package QRs include source or platform attribution.', 'A phone scans the printed QR quickly.', 'CTA copy is short and clear.', 'The QR points to production.'],
-    faq: [
-      { q: 'Can I use the same QR everywhere?', a: 'Yes, but separate parameters give better reporting for table, package and platform analysis.' },
-      { q: 'Should I add a logo next to the QR?', a: 'Yes, as long as it does not reduce QR readability or contrast.' },
-    ],
-  }),
-  article('tr', 'qr-codes', 20, 'qr-platform-table-links', 'Platform ve masa parametreleri nasıl kullanılır?', 'QR bağlantılarına table, platform ve source parametreleri ekleyerek raporları daha okunabilir hale getirin.', ['platform', 'table', 'source', 'analytics'], {
-    lead: 'Parametreler, tek bir QR sisteminden farklı rapor kırılımları üretmenizi sağlar. Buaze; masa, platform ve kaynak bilgisini geri bildirim kaydına işleyerek operasyonel analiz yapmanızı kolaylaştırır.',
-    keyInsight: 'Parametre <em>opsiyonel</em> görünür ama <strong>raporlama derinliği</strong> tam buradan başlar. Tutarlı parametre = okunabilir rapor.',
-    sections: [
-      { title: 'Temel URL yapısı', paragraphs: ['Genel format /r/restaurant-slug?table=12&platform=google şeklindedir. table fiziksel lokasyonu, platform ise müşteriye gösterilecek herkese açık yorum kanalını temsil eder.'] },
-      { title: 'Platform değerleri', items: ['google: Google yorum bağlantısı', 'yemeksepeti: Yemeksepeti restoran sayfası', 'getir: Getir Yemek sayfası', 'trendyol_go: Trendyol GO sayfası'] },
-      { title: 'Raporlama etkisi', paragraphs: ['Parametreler doğru kullanıldığında hangi masadan, hangi servis tipinden veya hangi teslimat kanalından daha çok olumlu ya da olumsuz sinyal geldiğini görebilirsiniz.'] },
-    ],
-    checklist: ['Parametre isimleri küçük harfle yazıldı.', 'Platform değerleri desteklenen listeyle uyumlu.', 'Masa kodları 20 karakterden kısa.', 'QR geçmişinde doğru platform görünüyor.', 'CSV exportta kaynak ayrımı okunuyor.'],
-    faq: [
-      { q: 'Platform parametresi yoksa ne olur?', a: 'İşletmenin ilk uygun yorum platformu gösterilir; uygun platform yoksa teşekkür ekranı açılır. Raporlarda platform boş olabilir.' },
-      { q: 'Masa yerine şube kullanabilir miyim?', a: 'Şube ayrı restoran olarak tanımlanmalı; table parametresi daha çok masa, alan veya kampanya kırılımı için uygundur.' },
-    ],
-  }),
-  article('en', 'qr-codes', 20, 'qr-platform-table-links', 'How to use platform and table parameters', 'Add table, platform and source parameters to QR URLs for cleaner reporting.', ['platform', 'table', 'source', 'analytics'], {
-    lead: 'Parameters let one QR system produce multiple reporting views. Buaze stores table, platform and source details on feedback records so teams can analyze operations more precisely.',
-    keyInsight: 'Parameters look <em>optional</em> but <strong>reporting depth</strong> starts exactly here. Consistent parameters mean readable reports.',
-    sections: [
-      { title: 'Basic URL structure', paragraphs: ['A typical URL looks like /r/restaurant-slug?table=12&platform=google. The table parameter identifies a physical spot, while platform sets which public review destination is shown to the customer.'] },
-      { title: 'Supported platform values', items: ['google: Google review link', 'yemeksepeti: Yemeksepeti restaurant page', 'getir: Getir Food page', 'trendyol_go: Trendyol GO page'] },
-      { title: 'Reporting impact', paragraphs: ['When parameters are used consistently, you can see which tables, service types or delivery channels generate the strongest positive or negative signals.'] },
-    ],
-    checklist: ['Parameter names are lowercase.', 'Platform values match the supported list.', 'Table identifiers are shorter than 20 characters.', 'QR history shows the correct platform.', 'CSV exports include source separation.'],
-    faq: [
-      { q: 'What if the platform parameter is missing?', a: 'Buaze shows the first available review platform, or a thank-you state if none is set. Platform reporting may stay empty.' },
-      { q: 'Can I use table for branch names?', a: 'Branches should usually be separate restaurants; table is better for table, area or campaign-level attribution.' },
-    ],
-  }),
-
-  article('tr', 'review-management', 10, 'handle-negative-feedback', 'Düşük puanları müşteri kaybetmeden yönetme', '1-3 yıldız geri bildirimlerde doğru yanıt, atama ve takip akışını kurun.', ['negatif yorum', 'düşük puan', 'yanıt', 'müşteri memnuniyeti'], {
-    lead: 'Düşük puan, doğru ele alındığında yalnızca bir risk değil, müşteriyi geri kazanma fırsatıdır. Buaze’nin amacı olumsuz sinyali gizlemek değil, işletme içinde hızlı ve ölçülebilir bir çözüme dönüştürmektir.',
-    keyInsight: 'Olumsuz yorum <em>geri kazanılabilir bir müşteri</em>, sessizlik ise <strong>zaten kaybedilmiş bir müşteri</strong>dir. Hangi sinyalin geldiğini bilmek dakikalar kazandırır.',
-    sections: [
-      { title: 'İlk 15 dakika', paragraphs: ['Yeni düşük puan geldiğinde önce yorumu etiketleyin: servis, yemek, teslimat, atmosfer veya fiyat algısı. Ardından sorumluyu atayın ve müşterinin iletişim izni varsa hızlı dönüş yapın.'] },
-      { title: 'Yanıt dili', items: ['Savunmaya geçmeyin.', 'Deneyimi sahiplenin.', 'Somut bir çözüm adımı önerin.', 'Kişisel veriyi yorum cevabında paylaşmayın.', 'Müşteriyi tek cümleyle tekrar davet edin.'] },
-      { title: 'Takip ölçümü', paragraphs: ['Haftalık raporda düşük puan nedenlerini takip edin. Aynı etiket tekrar ediyorsa tekil müşteri sorunundan çok operasyonel bir iyileştirme alanı olabilir.'] },
-    ],
-    checklist: ['Düşük puan bildirimi açık.', 'Sorumlu kişi atandı.', 'Yanıt taslağı kısa ve empatik.', 'Müşteriye dönüş yapıldı.', 'Benzer etiketler haftalık raporda incelendi.'],
-    faq: [
-      { q: 'Negatif geri bildirim Google’a gider mi?', a: 'Müşteri her zaman Google yorum bağlantısını görür; isteyen ek olarak işletmene özel geri bildirim de bırakır. Düşük puanlı bir müşterinin Google\'a yorum yazmasını engellemek, görsel olarak gizlemek veya caydırmak Google politikalarına aykırıdır — bunu asla yapmayın.' },
-      { q: 'Her düşük puana cevap yazmalı mıyım?', a: 'Evet. Kısa bile olsa sahiplenen bir yanıt, tekrar eden müşteriler ve ekip içi öğrenme için değerlidir.' },
-    ],
-  }),
-  article('en', 'review-management', 10, 'handle-negative-feedback', 'Manage low ratings without losing customers', 'Build a practical response, assignment and follow-up workflow for 1-3 star feedback.', ['negative feedback', 'low rating', 'reply', 'customer satisfaction'], {
-    lead: 'A low rating is not only a risk; handled correctly, it is a recovery opportunity. Buaze is designed to turn negative signals into fast, measurable internal action.',
-    keyInsight: 'A negative review is <em>a customer you can recover</em>; silence is <strong>a customer already lost</strong>. Knowing which signal you received saves minutes downstream.',
-    sections: [
-      { title: 'The first 15 minutes', paragraphs: ['When a low rating arrives, tag the issue first: service, food, delivery, atmosphere or price perception. Assign an owner and contact the customer if consent is available.'] },
-      { title: 'Response tone', items: ['Do not become defensive.', 'Take ownership of the experience.', 'Offer a concrete next step.', 'Never expose personal data in public replies.', 'Invite the customer back in one clear sentence.'] },
-      { title: 'Follow-up metrics', paragraphs: ['Review low-rating tags weekly. If the same tag keeps repeating, it may point to an operational issue rather than a one-off customer complaint.'] },
-    ],
-    checklist: ['Low-rating notifications are enabled.', 'An owner is assigned.', 'The response draft is short and empathetic.', 'The customer has been contacted.', 'Recurring tags are reviewed weekly.'],
-    faq: [
-      { q: 'Do negative submissions go to Google?', a: 'Customers always see the public Google review link first; whether to also share private feedback with your team is their choice. Never block, hide or discourage a customer from posting negative reviews on Google — that violates Google policy.' },
-      { q: 'Should every low rating receive a response?', a: 'Yes. Even a short ownership-based response helps customer recovery and internal learning.' },
-    ],
-  }),
-  article('tr', 'review-management', 20, 'reply-workflow-ai', 'Buaze Pulse AI ile yanıt taslağı oluşturma', 'AI destekli yanıt önerilerini marka dilinize uygun, güvenli ve kısa cevaplara dönüştürün.', ['ai', 'yanıt önerisi', 'yorum cevabı', 'pulse'], {
-    lead: 'Buaze Pulse AI, müşteri yorumuna göre hızlı bir yanıt taslağı üretir. En iyi sonuç için öneriyi doğrudan kopyalamak yerine işletmenizin dili, olayın detayı ve çözüm adımıyla birlikte son kez düzenleyin.',
-    keyInsight: 'AI <strong>taslak</strong> yazar; <em>onaylayan</em> her zaman insan olmalıdır. Yayınlamadan önce 30 saniyelik insan kontrolü, marka tutarlılığının tek garantisidir.',
-    sections: [
-      { title: 'Ne zaman kullanılır?', paragraphs: ['Yoğun saatlerde gelen çok sayıda yorumu ilk taslağa çevirmek için idealdir. Özellikle olumlu yorumlara teşekkür, düşük puanlara sahiplenme ve nötr yorumlara net bilgi verme süreçlerini hızlandırır.'] },
-      { title: 'Düzenleme ilkeleri', items: ['Müşterinin söylediği problemi tekrar edin.', 'Varsayım yapmayın.', 'Çözüm için tek net aksiyon verin.', 'Kişisel veri yazmayın.', 'Cevabı 4-6 cümlede tutun.'] },
-      { title: 'Marka tutarlılığı', paragraphs: ['Aynı restoranın yanıtları birbirinden kopuk görünmemelidir. Kibar, sade ve profesyonel bir ton seçin; aşırı kampanya dili veya savunmacı ifadelerden kaçının.'] },
-    ],
-    checklist: ['AI taslak insan tarafından okundu.', 'Somut çözüm adımı eklendi.', 'Kişisel veri temizlendi.', 'Ton marka diline uygun.', 'Yanıt gönderilmeden önce puan ve platform kontrol edildi.'],
-    faq: [
-      { q: 'AI yanıtı otomatik yayınlar mı?', a: 'Hayır. Taslak üretir; yayın veya gönderim öncesi işletme ekibinin kontrol etmesi önerilir.' },
-      { q: 'Olumsuz yorumda kupon önermek doğru mu?', a: 'Her durumda değil. Önce sorunu anlayın, gerekirse özel kanaldan telafi adımı sunun.' },
-    ],
-  }),
-  article('en', 'review-management', 20, 'reply-workflow-ai', 'Draft replies with Buaze Pulse AI', 'Turn AI-assisted suggestions into safe, concise and brand-appropriate review replies.', ['ai', 'reply suggestion', 'review response', 'pulse'], {
-    lead: 'Buaze Pulse AI creates a first reply draft based on customer feedback. For best results, review the suggestion and add your brand tone, the specific context and the next action.',
-    keyInsight: 'AI writes the <strong>draft</strong>; the <em>approver</em> must always be a human. A 30-second human review before publishing is the only guarantee of brand consistency.',
-    sections: [
-      { title: 'When to use it', paragraphs: ['It is useful when many reviews arrive during busy hours. It speeds up thank-you replies, low-rating recovery messages and neutral informational responses.'] },
-      { title: 'Editing principles', items: ['Repeat the customer’s actual issue.', 'Avoid assumptions.', 'Offer one clear next step.', 'Do not include personal data.', 'Keep the reply within 4-6 sentences.'] },
-      { title: 'Brand consistency', paragraphs: ['Replies from the same business should feel connected. Choose a polite, direct and professional tone; avoid defensive wording or campaign-heavy language.'] },
-    ],
-    checklist: ['The AI draft was reviewed by a person.', 'A concrete next step was added.', 'Personal data was removed.', 'Tone matches the brand.', 'Rating and platform were checked before sending.'],
-    faq: [
-      { q: 'Does AI publish replies automatically?', a: 'No. It creates a draft; the business team should review before sending or publishing.' },
-      { q: 'Should I offer coupons for negative feedback?', a: 'Not always. Understand the issue first, then offer recovery privately when appropriate.' },
-    ],
+  /* ---------------------------- Başlarken ---------------------------- */
+  ...pair('getting-started', 10, 'quick-start', {
+    tr: {
+      title: 'Hızlı kurulum: kayıttan ilk geri bildirime',
+      excerpt:
+        'Hesap açma, ilk işletme, yorum bağlantıları ve ilk QR kodu: kurulumu sırasıyla yapın, QR kodunu basmadan önce müşteri akışını kendi telefonunuzda deneyin.',
+      tags: ['kurulum', 'başlangıç', 'hesap açma', 'ilk qr', 'deneme süresi'],
+      body: {
+        lead: 'Buaze’yi kurmak için teknik bilgi gerekmez. Bu rehber, hesap açtığınız andan ilk geri bildirimi panelde gördüğünüz ana kadar yapılacakları sırasıyla anlatır.',
+        keyInsight:
+          'Hesap açın, işletmenizi ekleyin, yorum bağlantılarınızı girin, QR kodunuzu oluşturun ve basmadan önce akışı kendi telefonunuzda deneyin.',
+        sections: [
+          {
+            title: '1. Hesabınızı açın',
+            paragraphs: [
+              'Kayıt olduğunuzda 14 günlük ücretsiz deneme başlar; kredi kartı istenmez. Ardından açılan kurulum sihirbazı işletmenizin adını, sektörünü, konumunu ve kullandığınız yorum platformlarını sorar; sihirbazı tamamladığınızda ilk işletmeniz oluşturulur. **Sonra tamamla** ile sihirbazı geçip işletmenizi daha sonra **İşletmeler** sayfasından da ekleyebilirsiniz.',
+            ],
+          },
+          {
+            title: '2. Yorum bağlantılarınızı ekleyin',
+            paragraphs: [
+              'Panelde **Platform bağlantıları** sayfasını açın ve Google satırındaki **Bağla** düğmesine basın. İşletmenizi adıyla arayıp listeden seçmeniz yeterlidir; Buaze resmi “yorum yaz” bağlantınızı oluşturur. Yemeksepeti, Getir, Trendyol GO, Tripadvisor ve diğer platformlarda ise ilgili satırı açıp yorum sayfanızın bağlantısını yapıştırın. Ayrıntılar: [Google yorum bağlantısını ekleme](/tr/help/google-review-link).',
+            ],
+          },
+          {
+            title: '3. QR kodunuzu oluşturun',
+            paragraphs: [
+              '**QR** sayfasında **Yeni QR oluştur** düğmesine basın. Sihirbazda işletmeyi seçer, isterseniz masa etiketi eklersiniz; yüksek puanların varsayılan platforma mı yoksa sizin seçtiğiniz bir platforma mı gideceğini belirler, rengi seçip önizlersiniz. Hazır QR kodunu PNG olarak indirebilir ya da PDF olarak yazdırabilirsiniz.',
+            ],
+          },
+          {
+            title: '4. Akışı kendi telefonunuzda deneyin',
+            ordered: true,
+            items: [
+              'QR kodunu okutun; işletmenizin adının yer aldığı puan ekranı açılmalı.',
+              'Eşik ve üzerindeki bir puan verin (varsayılan eşik 5 yıldızdır): seçtiğiniz platformun yorum sayfası açılmalı.',
+              '1 ile 3 arasında bir puan verin: işletmenize özel geri bildirim formu açılmalı, platformun herkese açık yorum bağlantısı da aynı ekranda görünmeli.',
+              'Formu gönderin: geri bildirim **Yorumlar** sayfasına düşmeli, düşük puan uyarısı da bildirim e-postanıza gelmeli.',
+            ],
+          },
+        ],
+        checklist: [
+          'İşletme adı, sektör ve şehir doğru.',
+          'Google yorum bağlantısı eklendi.',
+          'Bildirim e-postası ekibin baktığı bir adrese gidiyor.',
+          'QR kodu en az bir telefonla denendi.',
+          'Yüksek ve düşük puan akışı kontrol edildi.',
+        ],
+        faq: [
+          {
+            q: 'Deneme süresinde kart bilgisi gerekiyor mu?',
+            a: 'Hayır. 14 günlük deneme kart bilgisi olmadan başlar. Ücretli plana geçmek isterseniz **Hesabım → Plan ve faturalama** bölümünden aylık aboneliği başlatırsınız.',
+          },
+          {
+            q: 'Deneme amaçlı gönderdiğim geri bildirimler raporlarımı etkiler mi?',
+            a: 'Evet. Deneme amaçlı gönderilen geri bildirimler de gerçek kayıt olarak saklanır ve istatistiklere eklenir; panelde tek tek geri bildirim silme düğmesi yoktur. Denemeyi birkaç kayıtla sınırlı tutun.',
+          },
+          {
+            q: 'Birden çok şubem var; hepsini ekleyebilir miyim?',
+            a: 'Evet. Her şubeyi ayrı işletme olarak eklersiniz; her birinin kendi QR kodları, bağlantıları ve raporları olur. Ayrıntılar: [Birden çok işletmeyi tek hesaptan yönetme](/tr/help/multi-location-management).',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Quick setup: from sign-up to your first feedback',
+      excerpt:
+        'Sign up, add your business, enter your review links and create your first QR code, then test the customer flow on your own phone before you print it.',
+      tags: ['setup', 'getting started', 'sign up', 'first qr', 'free trial'],
+      body: {
+        lead: 'Setting up Buaze takes no technical knowledge. This guide walks you through everything from creating your account to seeing your first piece of feedback in the panel.',
+        keyInsight:
+          'Create your account, add your business, enter your review links, create your QR code and test the flow on your own phone before you print it.',
+        sections: [
+          {
+            title: '1. Create your account',
+            paragraphs: [
+              'Signing up starts a 14-day free trial; no credit card is required. A setup wizard then asks for your business name, sector, location and the review platforms you use; your first business is created when you complete it. You can also choose **Finish later** and add your business afterwards from the **Locations** page.',
+            ],
+          },
+          {
+            title: '2. Add your review links',
+            paragraphs: [
+              'Open the **Platform links** page in the panel and press **Add link** on the Google row. Search for your business by name and pick it from the list; Buaze builds your official “write a review” link. For Yemeksepeti, Getir, Trendyol GO, Tripadvisor and the other platforms, open that platform’s row and paste the link to your review page. See [Adding your Google review link](/en/help/google-review-link).',
+            ],
+          },
+          {
+            title: '3. Create your QR code',
+            paragraphs: [
+              'On the **QR** page, press **Create QR code**. In the wizard you choose the business, optionally add a table label, decide whether high ratings go to your default platform or to a platform you pick, then choose the colours and preview. Download the finished QR code as a PNG or print it to PDF.',
+            ],
+          },
+          {
+            title: '4. Test the flow on your own phone',
+            ordered: true,
+            items: [
+              'Scan the QR code; a rating screen showing your business name should open.',
+              'Give a rating at or above your threshold (5 stars by default): your chosen platform’s review page should open.',
+              'Give a rating from 1 to 3: your private feedback form should open, with the platform’s public review link on the same screen.',
+              'Submit the form: the feedback should appear on the **Reviews** page and the low-rating alert should reach your notification e-mail.',
+            ],
+          },
+        ],
+        checklist: [
+          'Business name, sector and city are correct.',
+          'Your Google review link is added.',
+          'The notification e-mail goes to an inbox your team reads.',
+          'The QR code has been tested on at least one phone.',
+          'Both the high- and low-rating flows have been checked.',
+        ],
+        faq: [
+          {
+            q: 'Do I need a card during the trial?',
+            a: 'No. The 14-day trial starts without card details. To move to a paid plan, start a monthly subscription from **Account → Plan & billing**.',
+          },
+          {
+            q: 'Does feedback I send while testing affect my reports?',
+            a: 'Yes. Test submissions are stored like any other feedback and count towards your statistics, and the panel has no button for deleting individual feedback. Keep your tests to a few submissions.',
+          },
+          {
+            q: 'I have several branches. Can I add them all?',
+            a: 'Yes. Add each branch as a separate business; each one gets its own QR codes, links and reports. See [Managing several businesses from one account](/en/help/multi-location-management).',
+          },
+        ],
+      },
+    },
   }),
 
-  article('tr', 'integrations', 10, 'google-review-link', 'Google yorum bağlantısını doğru ekleme', 'Google Place ID veya doğrudan yorum linki ile herkese açık yorum bağlantısını güvenilir hale getirin.', ['google', 'place id', 'yorum linki', 'entegrasyon'], {
-    lead: 'Google bağlantısı, yorum yazmak isteyen müşterinin doğru işletme profiline gitmesini sağlar. Yanlış veya eski bağlantılar, iyi niyetli müşteriyi boşa düşürür ve yorum kazanma oranını azaltır.',
-    keyInsight: 'Doğru link <strong>amaç</strong>tır, akış değildir. Müşteriye <em>sahte teşvik</em> veya <em>seçici yönlendirme</em> sunmadan onun Google üzerinde özgürce yorum yazma hakkını korur.',
-    sections: [
-      { title: 'Place ID mi doğrudan URL mi?', paragraphs: ['Place ID kullanırsanız Buaze Google’ın write review formatında bağlantı oluşturur. Doğrudan URL kullanırsanız müşteriyi sizin verdiğiniz adrese yönlendirir. İki yöntem de çalışır; önemli olan test etmektir.'] },
-      { title: 'Test adımları', items: ['QR akışında yüksek ve düşük birer puan deneyin.', 'Google yorum bağlantısının doğru işletme profilini açtığını kontrol edin.', 'Mobil tarayıcı ve Google Maps uygulamasında deneyin.', 'Farklı şube profillerini karıştırmadığınızdan emin olun.'] },
-      { title: 'Politika notu', paragraphs: ['Google yorum akışlarında müşteriyi yanıltan, yorum metni dayatan veya yalnızca olumlu yorumları seçici biçimde teşvik eden uygulamalardan kaçının. Buaze akışında her müşteri istediği yere yorum yazma hakkını korur.'] },
-    ],
-    checklist: ['Google sağlayıcısı etkin.', 'Place ID veya URL test edildi.', 'Şube profili doğru.', 'Google yorum bağlantısı her puanda görünüyor.', 'Özel geri bildirim formu çalışıyor.'],
-    faq: [
-      { q: 'Google Place ID nereden bulunur?', a: 'Google Place ID Finder veya işletme profilinizin yorum bağlantısı kullanılabilir. Emin değilseniz doğrudan çalışan yorum URL’sini ekleyin.' },
-      { q: 'Birden fazla Google profili varsa ne yapmalıyım?', a: 'Her şubeyi ayrı restoran olarak tanımlayın ve ilgili Google linkini o restoran kaydına ekleyin.' },
-    ],
+  ...pair('getting-started', 20, 'first-restaurant-setup', {
+    tr: {
+      title: 'İşletme bilgilerini doğru girme',
+      excerpt:
+        'İşletme adı, sayfa adresi, sektör, adres ve bildirim e-postası; müşterinin gördüğü ekranı, uyarıların nereye gideceğini ve önerilen platformları belirler.',
+      tags: ['işletme', 'ayarlar', 'bildirim e-postası', 'sektör', 'adres'],
+      body: {
+        lead: 'İşletme ayarları yalnızca bir kimlik kartı değildir. Müşterinin puan ekranında gördüğü bilgileri, düşük puan uyarılarının hangi adrese gideceğini ve sektörünüze göre önerilen yorum platformlarını belirler.',
+        keyInsight:
+          'İlk QR kodunu basmadan önce işletme adını, sayfa adresini, sektörü ve bildirim e-postasını kontrol edin.',
+        sections: [
+          {
+            title: 'Ayarlar nerede?',
+            paragraphs: [
+              'Panelde **İşletmeler** sayfasından işletmenizi açın ve **Ayarlar**’a geçin. Kimlik ve iletişim bilgileri **Genel bilgiler** sekmesindedir; platform bağlantıları, marka, çalışma saatleri ve durum ayarlarının her birinin kendi sekmesi vardır.',
+            ],
+          },
+          {
+            title: 'Kimlik bilgileri',
+            items: [
+              '**İşletme adı:** müşterinin puan ekranında ve size gelen e-postalarda görünür.',
+              '**Sayfa adresi:** QR bağlantınızın sonundaki kısa addır (örneğin /r/isletme-adi). Yalnızca küçük harf, rakam ve kısa çizgi kullanılır. Ayrıntılar: [Sayfa adresi ve QR bağlantısı](/tr/help/slug-and-url).',
+              '**Sektör:** panelde önerilen ve QR sihirbazında seçilebilen yorum platformlarını belirler. Örneğin konaklama işletmelerinde Booking.com ve Airbnb, restoranlarda Yemeksepeti ve Getir öne çıkar.',
+            ],
+          },
+          {
+            title: 'Adres ve bildirim e-postası',
+            paragraphs: [
+              'Adresiniz, müşterinin puan ekranında işletme adının altında görünür (masa etiketli QR kodlarında adresin yerine masa etiketi yazar). **Bildirim e-postası** ise 1–3 yıldızlı her yeni geri bildirimde uyarının gittiği adrestir; boş bırakırsanız uyarılar hesabınızın e-posta adresine gider. Müşteriye e-postayla gönderdiğiniz yanıtlarda da yanıt adresi olarak bu adres kullanılır. Geri bildirimleri ekipçe takip ediyorsanız ortak bir adres girin.',
+            ],
+          },
+          {
+            title: 'İşletmeyi geçici olarak durdurma',
+            paragraphs: [
+              '**Durum ve silme** sekmesinden işletmeyi duraklatabilirsiniz. Duraklatılan işletmenin QR sayfası müşteriye açılmaz ve yeni QR kodu oluşturulamaz; işletmeyi yeniden etkinleştirdiğinizde aynı QR kodları çalışmaya devam eder.',
+            ],
+          },
+        ],
+        checklist: [
+          'İşletme adı doğru yazıldı.',
+          'Sayfa adresi kısa ve okunaklı.',
+          'Sektör seçildi.',
+          'Bildirim e-postası ekibin baktığı bir adrese gidiyor.',
+          'Adres güncel.',
+        ],
+        faq: [
+          {
+            q: 'Bildirim e-postasını boş bırakırsam ne olur?',
+            a: 'Düşük puan uyarıları hesabınızın e-posta adresine gider. Ancak müşteriye e-postayla gönderdiğiniz yanıtlara müşterinin cevabı size ulaşmaz; bunun için bildirim e-postasını doldurun. Uyarıları kapatmak isterseniz **Hesabım → Bildirimler** bölümünü kullanın.',
+          },
+          {
+            q: 'Sektörü sonradan değiştirebilir miyim?',
+            a: 'Evet. Sektör, önerilen ve QR sihirbazında seçilebilen platformları değiştirir; daha önce kaydettiğiniz bağlantılar silinmez.',
+          },
+          {
+            q: 'Bir işletmeyi tamamen silebilir miyim?',
+            a: 'Evet, **Durum ve silme** sekmesinden. Silme işlemi o işletmenin geri bildirimlerini, QR kodlarını ve menüsünü de kaldırır; emin değilseniz önce duraklatmayı tercih edin.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Filling in your business details',
+      excerpt:
+        'Business name, page address, sector, address and notification e-mail decide what customers see, where alerts go and which review platforms are suggested.',
+      tags: ['business', 'settings', 'notification e-mail', 'sector', 'address'],
+      body: {
+        lead: 'Your business settings are more than an ID card. They decide what customers see on the rating screen, which address receives low-rating alerts and which review platforms are suggested for your sector.',
+        keyInsight:
+          'Before printing your first QR code, check the business name, page address, sector and notification e-mail.',
+        sections: [
+          {
+            title: 'Where are the settings?',
+            paragraphs: [
+              'In the panel, open your business from the **Locations** page and go to **Settings**. Identity and contact details are on the **General details** tab; platform links, brand, opening hours and status each have their own tab.',
+            ],
+          },
+          {
+            title: 'Identity',
+            items: [
+              '**Business name:** shown on the customer’s rating screen and in the e-mails you receive.',
+              '**Page address:** the short name at the end of your QR link (for example /r/your-business). Only lowercase letters, numbers and hyphens are allowed. See [Your page address and QR link](/en/help/slug-and-url).',
+              '**Sector:** decides which review platforms are suggested in the panel and can be chosen in the QR wizard. Hotels, for example, see Booking.com and Airbnb; restaurants see Yemeksepeti and Getir.',
+            ],
+          },
+          {
+            title: 'Address and notification e-mail',
+            paragraphs: [
+              'Your address appears under the business name on the customer’s rating screen (on QR codes with a table label, the label is shown instead). The **notification e-mail** is where an alert goes for every new 1–3 star feedback; if you leave it empty, alerts go to your account e-mail. It is also the reply-to address on the e-mail replies you send to customers. If your team follows feedback together, use a shared address.',
+            ],
+          },
+          {
+            title: 'Pausing a business',
+            paragraphs: [
+              'You can pause a business from the **Status & deletion** tab. A paused business’s QR page does not open for customers and no new QR codes can be created; once you reactivate it, the same QR codes work again.',
+            ],
+          },
+        ],
+        checklist: [
+          'The business name is spelled correctly.',
+          'The page address is short and readable.',
+          'A sector is selected.',
+          'The notification e-mail goes to an inbox your team reads.',
+          'The address is up to date.',
+        ],
+        faq: [
+          {
+            q: 'What if I leave the notification e-mail empty?',
+            a: 'Low-rating alerts go to your account e-mail. However, when a customer answers an e-mail reply you sent, their answer will not reach you; fill in the notification e-mail for that. To switch alerts off, use **Account → Notifications**.',
+          },
+          {
+            q: 'Can I change the sector later?',
+            a: 'Yes. The sector changes which platforms are suggested and can be chosen in the QR wizard; links you have already saved are not deleted.',
+          },
+          {
+            q: 'Can I delete a business completely?',
+            a: 'Yes, from the **Status & deletion** tab. Deleting a business also removes its feedback, QR codes and menu, so if you are unsure, pause it first.',
+          },
+        ],
+      },
+    },
   }),
-  article('en', 'integrations', 10, 'google-review-link', 'Add your Google review link correctly', 'Use a Google Place ID or direct review URL so your public review link opens the right profile.', ['google', 'place id', 'review link', 'integration'], {
-    lead: 'Your Google link takes customers who want to post a review to the correct business profile. Broken or outdated links waste customer intent and reduce review conversion.',
-    keyInsight: 'The right link is the <strong>goal</strong>, not the flow. It preserves the customer’s freedom to review on Google without <em>incentives</em> or <em>selective steering</em>.',
-    sections: [
-      { title: 'Place ID or direct URL?', paragraphs: ['With a Place ID, Buaze generates the Google write-review URL. With a direct URL, Buaze redirects to the exact address you provide. Both work; testing is the important part.'] },
-      { title: 'Testing steps', items: ['Try both a high and a low rating in the QR flow.', 'Confirm the Google review link opens the correct business.', 'Test both mobile browser and Google Maps app behavior.', 'Make sure branch profiles are not mixed.'] },
-      { title: 'Policy note', paragraphs: ['Avoid misleading review flows, forced review text or selective pressure for positive reviews. In the Buaze flow every customer keeps the right to post wherever they want.'] },
-    ],
-    checklist: ['Google provider is enabled.', 'Place ID or URL has been tested.', 'The branch profile is correct.', 'The Google review link shows at every rating.', 'The private feedback form works.'],
-    faq: [
-      { q: 'Where do I find the Place ID?', a: 'You can use Google’s Place ID Finder or a working review URL from your business profile. If unsure, paste the direct review URL.' },
-      { q: 'What if I have multiple Google profiles?', a: 'Create each branch as a separate restaurant and add the matching Google link to each one.' },
-    ],
+
+  ...pair('getting-started', 30, 'dashboard-tour', {
+    tr: {
+      title: 'Paneli tanıyın: hangi sayfa ne işe yarar?',
+      excerpt:
+        'Panel, Yorumlar, Google Yorumları, Analitik, Müşteriler, QR ve Platform bağlantıları sayfalarının ne gösterdiğini ve günlük işte hangisine bakacağınızı öğrenin.',
+      tags: ['panel', 'tur', 'menü', 'sayfalar', 'başlangıç'],
+      body: {
+        lead: 'Panele ilk girdiğinizde her şeyi aynı anda öğrenmeniz gerekmez. Bu rehber, kenar çubuğundaki sayfaları ve her birinin hangi soruyu yanıtladığını kısaca anlatır.',
+        keyInsight:
+          'Günlük iş için **Yorumlar** sayfası yeterlidir; genel tablo için **Panel**, dönemsel değerlendirme için **Analitik** sayfasına bakın.',
+        sections: [
+          {
+            title: 'Özet ve gelen kutusu',
+            items: [
+              '**Panel:** seçili işletmenin genel puanı, toplam yorum sayısı, yanıt oranı, yeni müşteriler ve platformlara göre günlük yorum grafiği. Yeterli yorum biriktiğinde son 30 günde öne çıkan konular da burada görünür.',
+              '**Yorumlar:** QR akışından gelen tüm geri bildirimler. Düşük puanlara yanıt yazdığınız, geri bildirimleri işaretleyip takip ettiğiniz yer burasıdır.',
+              '**Google Yorumları:** Google puanınız, yorum sayınız, Google’ın gösterdiği en fazla 5 yorum ve 6 maddelik profil kontrol listesi. Google hesabıyla giriş gerekmez.',
+            ],
+          },
+          {
+            title: 'Raporlar ve müşteriler',
+            items: [
+              '**Analitik:** son 7, 30 ve 90 gün, 12 ay ya da seçtiğiniz bir aralık için puan, yanıt süresi, platform dağılımı ve gün-saat dağılımı. Raporu CSV olarak indirebilirsiniz.',
+              '**Müşteriler:** e-posta veya telefon bırakan müşterilerin listesi ve segmentleri.',
+              '**Anketler** ve **Denetim Merkezi:** QR ile açılan kısa anketler ve ekibiniz için kontrol listeleri.',
+            ],
+          },
+          {
+            title: 'Kurulum sayfaları',
+            items: [
+              '**QR:** QR kodlarını oluşturur, PNG olarak indirir ya da PDF olarak yazdırırsınız.',
+              '**Menü:** QR menü özelliği açıksa dijital menünüzü buradan düzenlersiniz.',
+              '**İşletmeler:** işletme ekler, ayarlarını açar ve tüm işletmelerinizin son 30 gününü yan yana görürsünüz.',
+              '**Platform bağlantıları:** yorum bağlantılarınızı, yönlendirme eşiğini ve varsayılan platformu yönetirsiniz.',
+              '**Hesabım:** profil, güvenlik, bildirimler, Pulse AI, plan ve faturalama, ekip ve KVKK ayarları.',
+            ],
+          },
+        ],
+        checklist: [
+          'Kenar çubuğundaki işletme seçicide doğru işletme seçili.',
+          'Yorumlar sayfasında düşük puan sekmesine bakıldı.',
+          'Analitik sayfasında dönem seçildi.',
+          'Hesabım → Bildirimler ayarları gözden geçirildi.',
+        ],
+        faq: [
+          {
+            q: 'Birden çok işletmeyi aynı anda görebilir miyim?',
+            a: 'Sayfalar seçili işletmeyi gösterir; işletme değiştirmek için kenar çubuğundaki seçiciyi kullanın. Tüm işletmelerinizin son 30 gününü yan yana görmek için **İşletmeler** sayfasındaki tabloya bakın.',
+          },
+          {
+            q: 'Yorumlar sayfasında seçtiğim görünüm kaydediliyor mu?',
+            a: 'Seçtiğiniz sekme, tarih, puan ve platform sayfa adresine yazılır. Bağlantıyı yer imlerine ekleyerek ya da bir ekip arkadaşınıza göndererek aynı görünümü yeniden açabilirsiniz.',
+          },
+          {
+            q: 'Panel telefonda çalışıyor mu?',
+            a: 'Evet. Panel tarayıcıda çalışır ve telefon ekranına uyum sağlar; ayrıca indirmeniz gereken bir uygulama yoktur.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'A tour of the panel: what each page is for',
+      excerpt:
+        'Learn what the Dashboard, Reviews, Google Reviews, Analytics, Customers, QR and Platform links pages show, and which one to open for your daily work.',
+      tags: ['panel', 'tour', 'navigation', 'pages', 'getting started'],
+      body: {
+        lead: 'You do not need to learn everything on your first visit. This guide briefly explains the pages in the sidebar and the question each one answers.',
+        keyInsight:
+          'For daily work the **Reviews** page is enough; open the **Dashboard** for the overall picture and **Analytics** for a review of a period.',
+        sections: [
+          {
+            title: 'Overview and inbox',
+            items: [
+              '**Dashboard:** the selected business’s average rating, total reviews, reply rate, new customers and a daily chart of reviews by platform. Once enough reviews come in, the topics mentioned most in the last 30 days appear here too.',
+              '**Reviews:** all feedback from your QR flow. This is where you reply to low ratings and flag and follow up on feedback.',
+              '**Google Reviews:** your Google rating, review count, up to 5 reviews that Google returns and a 6-item profile checklist. No Google sign-in is needed.',
+            ],
+          },
+          {
+            title: 'Reports and customers',
+            items: [
+              '**Analytics:** ratings, reply time, platform split and day/hour distribution for the last 7, 30 or 90 days, 12 months or a range you choose. You can download the report as CSV.',
+              '**Customers:** the list and segments of customers who left an e-mail or phone number.',
+              '**Surveys** and **Audit Center:** short surveys opened by QR, and checklists for your team.',
+            ],
+          },
+          {
+            title: 'Setup pages',
+            items: [
+              '**QR:** create QR codes, download them as PNG or print them to PDF.',
+              '**Menu:** edit your digital menu when the QR menu feature is on.',
+              '**Locations:** add businesses, open their settings and compare the last 30 days of all your businesses side by side.',
+              '**Platform links:** manage your review links, the redirect threshold and the default platform.',
+              '**Account:** profile, security, notifications, Pulse AI, plan and billing, team and privacy settings.',
+            ],
+          },
+        ],
+        checklist: [
+          'The right business is selected in the sidebar switcher.',
+          'You have looked at the low-rating tab on the Reviews page.',
+          'A period is selected on the Analytics page.',
+          'You have reviewed Account → Notifications.',
+        ],
+        faq: [
+          {
+            q: 'Can I see several businesses at once?',
+            a: 'Pages show the selected business; use the switcher in the sidebar to change it. To compare the last 30 days of all your businesses, use the table on the **Locations** page.',
+          },
+          {
+            q: 'Is the view I choose on the Reviews page saved?',
+            a: 'The tab, date, rating and platform you choose are written into the page address. Bookmark the link or send it to a teammate to open the same view again.',
+          },
+          {
+            q: 'Does the panel work on a phone?',
+            a: 'Yes. The panel runs in the browser and adapts to phone screens; there is no separate app to install.',
+          },
+        ],
+      },
+    },
   }),
-  article('tr', 'integrations', 20, 'delivery-platform-links', 'Yemeksepeti, Getir ve Trendyol GO linklerini yönetme', 'Teslimat platformlarından gelen yorum sinyallerini platform bazında ayrıştırın.', ['yemeksepeti', 'getir', 'trendyol', 'teslimat'], {
-    lead: 'Teslimat deneyimi restoran içi deneyimden farklıdır. Platform linklerini ayrı tutmak, hangi kanalda memnuniyetin yükseldiğini veya sorunların arttığını görmenizi sağlar.',
-    keyInsight: 'Teslimat ve dine-in <em>aynı işletme</em> ama <strong>farklı operasyon</strong>dur. Karıştırılan sinyaller karıştırılmış kararlara yol açar.',
-    sections: [
-      { title: 'Hangi link eklenmeli?', paragraphs: ['Müşterinin yorum bırakabileceği veya restoran sayfasını görebileceği halka açık platform URL’sini ekleyin. Kısaltılmış linkler yerine mümkünse kalıcı restoran sayfasını kullanın.'] },
-      { title: 'Platform parametresi', paragraphs: ['QR URL’sinde platform=getir veya platform=trendyol_go gibi değerler kullanıldığında, müşteriye o kanalın yorum bağlantısı gösterilir ve raporda platform alanı dolar.'] },
-      { title: 'Operasyonel okuma', items: ['Getir düşük puanları teslimat süresiyle ilişkilendirilebilir.', 'Yemeksepeti yorumları paketleme veya ürün doğruluğu için izlenebilir.', 'Trendyol GO ayrımı kampanya dönemlerinde performans takibi sağlar.'] },
-    ],
-    checklist: ['Her platform linki mobilde açılıyor.', 'Platform parametreleri doğru yazıldı.', 'QR geçmişinde platform kaydı var.', 'Dashboard dağılım grafiği kontrol edildi.', 'Yanlış veya eski linkler kaldırıldı.'],
-    faq: [
-      { q: 'Platform linki yoksa alanı boş bırakabilir miyim?', a: 'Evet. Boş platforma yönlendirme yapılmaz; diğer aktif platformlar kullanılabilir.' },
-      { q: 'Teslimat QR kodunu pakete basmalı mıyım?', a: 'Evet. Paket içi veya fiş üstü QR, teslimat deneyimini restoran içinden ayırmak için en net yöntemdir.' },
-    ],
+
+  ...pair('getting-started', 40, 'slug-and-url', {
+    tr: {
+      title: 'Sayfa adresi ve QR bağlantısı nasıl çalışır?',
+      excerpt:
+        'QR kodunuz /r/ ile başlayan sayfa adresinizi açar. Adres değişirse eski QR kodları çalışmaz; yönlendirilen platformu değiştirmek ise yeniden baskı gerektirmez.',
+      tags: ['sayfa adresi', 'slug', 'qr bağlantısı', 'url', 'yeniden baskı'],
+      body: {
+        lead: 'Her işletmenin bir sayfa adresi vardır ve QR kodlarınız bu adresi açar. Adresi bir kez doğru seçmek, ileride QR kodlarını yeniden bastırma ihtiyacını ortadan kaldırır.',
+        keyInsight:
+          'Platform bağlantısını, eşiği veya varsayılan platformu panelden değiştirmek yeniden baskı gerektirmez; sayfa adresini değiştirmek ise eski QR kodlarını çalışmaz hâle getirir.',
+        sections: [
+          {
+            title: 'QR kodunun içinde ne var?',
+            paragraphs: [
+              'QR kodu, işletmenizin Buaze sayfasının bağlantısını taşır: www.buaze.com/r/sayfa-adresi. Bağlantıya isteğe bağlı olarak masa etiketi ve sabit bir platform eklenebilir. Müşteri kodu okuttuğunda bu sayfa açılır; hangi yorum sayfasına gideceğine o anda paneldeki ayarlarınıza göre karar verilir.',
+            ],
+          },
+          {
+            title: 'İyi bir sayfa adresi',
+            items: [
+              'Kısa ve okunaklı olsun; çoğu zaman işletme adı yeterlidir.',
+              'Yalnızca küçük harf, rakam ve kısa çizgi kullanılır; Türkçe harflerin yerine karşılıklarını yazın (ş yerine s gibi).',
+              'Birden çok şubeniz varsa ayırt edici bir ek kullanın (ornek-kadikoy, ornek-besiktas).',
+              'Kampanya veya dönem adı eklemeyin; adres uzun süre kullanılacak.',
+            ],
+          },
+          {
+            title: 'Adresi değiştirmeden önce',
+            paragraphs: [
+              'Sayfa adresini işletme ayarlarının **Genel bilgiler** sekmesinden değiştirebilirsiniz. Eski adresle basılmış QR kodları yeni adrese yönlendirilmez; bu kodlar artık işletmenizi açmaz. Değişiklik gerekiyorsa yeni QR kodlarını hazırlayın ve eski materyalleri aynı gün kaldırın.',
+            ],
+          },
+        ],
+        checklist: [
+          'Sayfa adresi kısa ve okunaklı.',
+          'Türkçe harf ve boşluk yok.',
+          'Şubeler tutarlı eklerle ayrılıyor.',
+          'Adres, QR basılmadan önce son hâlini aldı.',
+        ],
+        faq: [
+          {
+            q: 'Yönlendirilen platformu değiştirirsem QR kodunu yeniden basmam gerekir mi?',
+            a: 'Hayır. QR kodu Buaze sayfanızı açtığı için platform bağlantısını, eşiği veya varsayılan platformu panelden değiştirdiğinizde aynı QR yeni ayarla çalışır. Yalnızca bir QR koduna sabitlenmiş platformu değiştirmek isterseniz yeni QR oluşturmanız gerekir.',
+          },
+          {
+            q: 'Sayfa adresinde büyük harf kullanabilir miyim?',
+            a: 'Hayır. Yalnızca küçük harf, rakam ve kısa çizgi kabul edilir.',
+          },
+          {
+            q: 'İstediğim adresi başka bir işletme kullanıyorsa ne olur?',
+            a: 'Her sayfa adresi tektir; kullanımdaki bir adres kaydedilmez. Ayırt edici bir ek deneyin.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Your page address and QR link explained',
+      excerpt:
+        'Your QR code opens your page address, which starts with /r/. If the address changes, old QR codes stop working; switching the target platform needs no reprint.',
+      tags: ['page address', 'slug', 'qr link', 'url', 'reprint'],
+      body: {
+        lead: 'Every business has a page address, and your QR codes open it. Choosing the address carefully once spares you from reprinting QR codes later.',
+        keyInsight:
+          'Changing a platform link, the threshold or the default platform in the panel needs no reprint; changing the page address makes old QR codes stop working.',
+        sections: [
+          {
+            title: 'What is inside the QR code?',
+            paragraphs: [
+              'The QR code carries the link to your Buaze page: www.buaze.com/r/your-page-address. An optional table label and a fixed platform can be added to the link. When a customer scans the code, this page opens, and the review page they are sent to is decided at that moment from your panel settings.',
+            ],
+          },
+          {
+            title: 'A good page address',
+            items: [
+              'Keep it short and readable; your business name is usually enough.',
+              'Only lowercase letters, numbers and hyphens are allowed; replace Turkish letters with plain ones (s instead of ş).',
+              'If you have several branches, add a distinguishing suffix (example-kadikoy, example-besiktas).',
+              'Leave out campaign or season names; the address will be used for a long time.',
+            ],
+          },
+          {
+            title: 'Before you change the address',
+            paragraphs: [
+              'You can change the page address on the **General details** tab of your business settings. QR codes printed with the old address are not redirected, so they will no longer open your business. If you must change it, prepare new QR codes and remove the old materials on the same day.',
+            ],
+          },
+        ],
+        checklist: [
+          'The page address is short and readable.',
+          'It has no Turkish letters or spaces.',
+          'Branches use consistent suffixes.',
+          'The address is final before any QR code is printed.',
+        ],
+        faq: [
+          {
+            q: 'If I change the platform customers are sent to, do I need to reprint?',
+            a: 'No. Because the QR code opens your Buaze page, the same QR follows any change you make in the panel to platform links, the threshold or the default platform. Only if you want to change the platform pinned to a QR code do you need to create a new one.',
+          },
+          {
+            q: 'Can the page address contain capital letters?',
+            a: 'No. Only lowercase letters, numbers and hyphens are accepted.',
+          },
+          {
+            q: 'What if another business already uses the address I want?',
+            a: 'Each page address is unique, so an address already in use cannot be saved. Try a distinguishing suffix.',
+          },
+        ],
+      },
+    },
   }),
-  article('en', 'integrations', 20, 'delivery-platform-links', 'Manage Yemeksepeti, Getir and Trendyol GO links', 'Separate delivery feedback signals by platform and understand channel performance.', ['yemeksepeti', 'getir', 'trendyol', 'delivery'], {
-    lead: 'Delivery experience is different from dine-in experience. Keeping platform links separate helps you see where satisfaction rises or problems repeat.',
-    keyInsight: 'Delivery and dine-in are <em>the same business</em> but <strong>different operations</strong>. Mixed signals lead to mixed decisions.',
-    sections: [
-      { title: 'Which link should I add?', paragraphs: ['Use the public platform URL where customers can view or review your restaurant. Prefer permanent restaurant pages over short links.'] },
-      { title: 'Platform parameter', paragraphs: ['When a QR URL includes values like platform=getir or platform=trendyol_go, customers are shown that platform’s review link and reporting stores the platform field.'] },
-      { title: 'Operational reading', items: ['Getir low ratings may point to delivery time.', 'Yemeksepeti feedback can reveal packaging or order accuracy issues.', 'Trendyol GO separation helps during campaign-heavy periods.'] },
-    ],
-    checklist: ['Each platform link opens on mobile.', 'Platform parameters are spelled correctly.', 'QR history includes platform records.', 'Dashboard distribution was checked.', 'Old or broken links were removed.'],
-    faq: [
-      { q: 'Can I leave a platform empty?', a: 'Yes. Empty platforms are not used for redirects; other active platforms can still work.' },
-      { q: 'Should delivery QR codes go on packaging?', a: 'Yes. Package or receipt QRs are the clearest way to separate delivery experience from dine-in.' },
-    ],
+
+  ...pair('getting-started', 50, 'brand-colors-logo', {
+    tr: {
+      title: 'Marka rengi ve logo nerede kullanılır?',
+      excerpt:
+        'Marka sekmesindeki logo ve renkler QR menüde, anketlerde ve QR renk seçeneğinde kullanılır. Puan ekranı ise standart tasarımdadır ve işletme adınızı gösterir.',
+      tags: ['marka', 'logo', 'renk', 'menü', 'tasarım'],
+      body: {
+        lead: 'Marka ayarları, işletmenizin Buaze üzerindeki sayfalarda tanıdık görünmesini sağlar. Hangi ayarın nerede kullanıldığını bilmek, zamanınızı doğru yere ayırmanıza yardım eder.',
+        keyInsight:
+          'Logo ve renkler en çok QR menüde ve anketlerde görünür; müşterinin puan verdiği ekran ise Buaze’nin standart tasarımını kullanır.',
+        sections: [
+          {
+            title: 'Nereden ayarlanır?',
+            paragraphs: [
+              'İşletme ayarlarında **Marka** sekmesini açın. Burada logo, birincil, ikincil ve vurgu rengi, yazı tipi ve slogan alanları bulunur. Ayarlar işletme başınadır; her şube kendi logosunu ve renklerini kullanabilir.',
+            ],
+          },
+          {
+            title: 'Ayarlar nerede görünür?',
+            items: [
+              '**Logo:** QR menünüzde ve menünün açılış ekranında.',
+              '**Birincil renk:** menüde ayrıca bir vurgu rengi seçmediyseniz menüde; bunun yanında anketlerde, denetim formlarında ve QR oluştururken “marka rengi” seçeneğinde.',
+              '**Vurgu rengi:** QR menünüzün vurgu rengi olarak.',
+              '**Puan ekranı:** müşterinin puan verdiği sayfa Buaze’nin standart tasarımını kullanır; işletmenizin adını ve adresini gösterir.',
+            ],
+          },
+          {
+            title: 'Okunaklılık için',
+            items: [
+              'Logo küçük boyutta da okunaklı olsun; şeffaf arka planlı bir dosya daha temiz görünür.',
+              'Açık renkleri beyaz zemin üzerinde yazı rengi olarak kullanmayın.',
+              'QR rengi seçerken koyu ön plan ve açık arka plan kullanın; kontrast düşükse sihirbaz sizi uyarır.',
+            ],
+          },
+        ],
+        checklist: [
+          'Logo yüklendi ve menüde net görünüyor.',
+          'Birincil renk seçildi.',
+          'Menü vurgu rengi markanızla uyumlu.',
+          'Seçtiğiniz renklerdeki QR kodu telefonla okunuyor.',
+        ],
+        faq: [
+          {
+            q: 'Logomu puan ekranına ekleyebilir miyim?',
+            a: 'Şu an hayır. Puan ekranı işletme adınızı ve adresinizi gösterir; logo ve renkler QR menüde ve anketlerde kullanılır.',
+          },
+          {
+            q: 'Şubelerim farklı renkler kullanabilir mi?',
+            a: 'Evet. Marka ayarları her işletme için ayrı tutulur.',
+          },
+          {
+            q: 'QR kodunu marka rengimle oluşturabilir miyim?',
+            a: 'Evet. QR sihirbazında 6 hazır renk, marka renginiz veya özel renk seçebilirsiniz. Renkler arasındaki kontrast düşükse sihirbaz uyarır; okunması zor bir QR oluşturulmaz.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Where your brand colour and logo appear',
+      excerpt:
+        'The logo and colours on the Brand tab appear in your QR menu, surveys and QR colour options. The rating screen uses a standard design with your business name.',
+      tags: ['brand', 'logo', 'colour', 'menu', 'design'],
+      body: {
+        lead: 'Brand settings make your business look familiar on its Buaze pages. Knowing where each setting is used helps you spend your time in the right place.',
+        keyInsight:
+          'Your logo and colours appear mostly in the QR menu and surveys; the screen where customers give their rating uses Buaze’s standard design.',
+        sections: [
+          {
+            title: 'Where do I set them?',
+            paragraphs: [
+              'Open the **Brand** tab in your business settings. It holds the logo, the primary, secondary and accent colours, the font and the tagline. Settings are per business, so each branch can use its own logo and colours.',
+            ],
+          },
+          {
+            title: 'Where do they appear?',
+            items: [
+              '**Logo:** in your QR menu and on the menu’s opening screen.',
+              '**Primary colour:** in the menu when you have not picked a separate accent colour there; also in surveys, audit forms and as the “brand colour” option when you create a QR code.',
+              '**Accent colour:** as the accent colour of your QR menu.',
+              '**Rating screen:** the page where customers give their rating uses Buaze’s standard design and shows your business name and address.',
+            ],
+          },
+          {
+            title: 'Keep it readable',
+            items: [
+              'Make sure the logo is legible at small sizes; a file with a transparent background looks cleaner.',
+              'Do not use light colours as text colours on a white background.',
+              'For QR colours, use a dark foreground on a light background; the wizard warns you when the contrast is too low.',
+            ],
+          },
+        ],
+        checklist: [
+          'The logo is uploaded and looks sharp in the menu.',
+          'A primary colour is selected.',
+          'The menu accent colour matches your brand.',
+          'A QR code in your chosen colours scans on a phone.',
+        ],
+        faq: [
+          {
+            q: 'Can I add my logo to the rating screen?',
+            a: 'Not at the moment. The rating screen shows your business name and address; your logo and colours are used in the QR menu and surveys.',
+          },
+          {
+            q: 'Can my branches use different colours?',
+            a: 'Yes. Brand settings are kept separately for each business.',
+          },
+          {
+            q: 'Can I create a QR code in my brand colour?',
+            a: 'Yes. In the QR wizard you can choose one of 6 preset colours, your brand colour or a custom colour. If the contrast between the colours is too low, the wizard warns you and does not create a hard-to-scan QR code.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('getting-started', 60, 'common-onboarding-pitfalls', {
+    tr: {
+      title: 'Kurulumda sık yapılan hatalar',
+      excerpt:
+        'Sayfa adresini basımdan sonra değiştirmek, uyarıları kişisel e-postaya bağlamak, bağlantıyı denemeden basmak: kurulumda sık karşılaşılan hatalar ve çözümleri.',
+      tags: ['kurulum', 'hata', 'sorun giderme', 'başlangıç', 'qr'],
+      body: {
+        lead: 'Kurulum kısa sürer, ama birkaç küçük atlama ilk haftalarda geri bildirimlerin gözden kaçmasına yol açabilir. Aşağıdaki hataların her biri birkaç dakikada önlenebilir.',
+        keyInsight:
+          'QR kodunu basmadan önce sayfa adresini kesinleştirin, bildirim e-postasını ortak bir adrese bağlayın ve akışı hem yüksek hem düşük puanla deneyin.',
+        sections: [
+          {
+            title: '1. Sayfa adresini basımdan sonra değiştirmek',
+            paragraphs: [
+              'Eski adresle basılmış QR kodları yeni adrese yönlendirilmez. Adresi QR kodunu basmadan önce kesinleştirin; ayrıntılar [sayfa adresi rehberinde](/tr/help/slug-and-url).',
+            ],
+          },
+          {
+            title: '2. Uyarıları tek bir kişinin e-postasına bağlamak',
+            paragraphs: [
+              'Düşük puan uyarısı yalnızca bir kişinin gelen kutusuna gidiyorsa o kişi izindeyken geri bildirimler bekler. Bildirim e-postası olarak ekibin ortak adresini kullanın.',
+            ],
+          },
+          {
+            title: '3. Yorum bağlantısını denemeden basmak',
+            paragraphs: [
+              'Yanlış işletmeye ya da platformun ana sayfasına giden bir bağlantı, yorum yazmak isteyen müşteriyi boşa çıkarır. **Platform bağlantıları** sayfasında bağlantıyı test edin ve QR kodunu kendi telefonunuzla okutun.',
+            ],
+          },
+          {
+            title: '4. QR kodunu yalnızca masaya koymak',
+            paragraphs: [
+              'Her müşteri masada oturmaz. Paket servisi, kasayı ve çıkış kapısını da düşünün; yerleşim önerileri [QR yerleşim rehberinde](/tr/help/qr-placement-guide).',
+            ],
+          },
+          {
+            title: '5. Ekibi geç davet etmek',
+            paragraphs: [
+              'Geri bildirimleri yalnızca işletme sahibi takip ederse yanıtlar gecikir. Yanıt yazacak ekip arkadaşlarınızı ilk hafta davet edin; adımlar [ekip daveti rehberinde](/tr/help/invite-team-members).',
+            ],
+          },
+        ],
+        checklist: [
+          'Sayfa adresi kesinleşti.',
+          'Bildirim e-postası ortak bir adres.',
+          'Her platform bağlantısı test edildi.',
+          'QR kodu birden fazla noktada kullanılıyor.',
+          'En az bir ekip arkadaşı davet edildi.',
+        ],
+        faq: [
+          {
+            q: 'Sayfa adresini değiştirdim; eski QR kodları ne olacak?',
+            a: 'Eski adresle basılmış QR kodları artık işletmenizi açmaz. Yeni QR kodlarını oluşturup eski materyalleri değiştirmeniz gerekir.',
+          },
+          {
+            q: 'Deneme süresinde kart bilgisi vermem gerekiyor mu?',
+            a: 'Hayır. Deneme kart bilgisi olmadan başlar; ücretli plana geçtiğinizde ödeme adımı açılır.',
+          },
+          {
+            q: 'Kurulumda takıldım; nereden yardım alabilirim?',
+            a: `[${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazabilirsiniz. ${SUPPORT_HOURS.tr}`,
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Common setup mistakes and how to avoid them',
+      excerpt:
+        'Changing the page address after printing, sending alerts to one personal inbox, printing an untested link: the most common setup mistakes and how to fix them.',
+      tags: ['setup', 'mistakes', 'troubleshooting', 'getting started', 'qr'],
+      body: {
+        lead: 'Setup is quick, but a few small slips can mean feedback is missed in the first weeks. Each of the mistakes below can be avoided in a few minutes.',
+        keyInsight:
+          'Before printing your QR code, finalise the page address, send alerts to a shared address and test the flow with both a high and a low rating.',
+        sections: [
+          {
+            title: '1. Changing the page address after printing',
+            paragraphs: [
+              'QR codes printed with the old address are not redirected to the new one. Finalise the address before you print; see the [page address guide](/en/help/slug-and-url).',
+            ],
+          },
+          {
+            title: '2. Sending alerts to one person’s inbox',
+            paragraphs: [
+              'If low-rating alerts reach only one person, feedback waits while they are away. Use a shared team address as the notification e-mail.',
+            ],
+          },
+          {
+            title: '3. Printing a review link you have not tested',
+            paragraphs: [
+              'A link that opens the wrong business or a platform’s home page wastes the effort of a customer who wants to write a review. Test the link on the **Platform links** page and scan the QR code with your own phone.',
+            ],
+          },
+          {
+            title: '4. Putting the QR code only on tables',
+            paragraphs: [
+              'Not every customer sits at a table. Think about delivery bags, the till and the exit door too; see the [QR placement guide](/en/help/qr-placement-guide).',
+            ],
+          },
+          {
+            title: '5. Inviting your team late',
+            paragraphs: [
+              'If only the business owner follows feedback, replies are delayed. Invite the teammates who will write replies in the first week; the steps are in the [team invite guide](/en/help/invite-team-members).',
+            ],
+          },
+        ],
+        checklist: [
+          'The page address is final.',
+          'The notification e-mail is a shared address.',
+          'Every platform link has been tested.',
+          'The QR code is used in more than one place.',
+          'At least one teammate has been invited.',
+        ],
+        faq: [
+          {
+            q: 'I changed the page address. What happens to my old QR codes?',
+            a: 'QR codes printed with the old address no longer open your business. Create new QR codes and replace the old materials.',
+          },
+          {
+            q: 'Do I need to give card details during the trial?',
+            a: 'No. The trial starts without card details; the payment step opens only when you move to a paid plan.',
+          },
+          {
+            q: 'I am stuck during setup. Where can I get help?',
+            a: `Write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}). ${SUPPORT_HOURS.en}`,
+          },
+        ],
+      },
+    },
+  }),
+
+  /* ---------------------------- QR kodları --------------------------- */
+  ...pair('qr-codes', 10, 'qr-placement-guide', {
+    tr: {
+      title: 'QR kodunu nereye koymalı: masa, fiş, kapı ve paket',
+      excerpt:
+        'QR kodu, müşterinin telefonu zaten elindeyken görünür olmalı. Masa, fiş, kapı ve paket servis için yerleşim önerileri ve basmadan önce yapılacak kontroller.',
+      tags: ['qr', 'yerleşim', 'masa', 'fiş', 'paket servis'],
+      body: {
+        lead: 'QR kodunun ne kadar okutulacağı, en çok müşterinin onu hangi anda gördüğüne bağlıdır. En iyi sonuç, deneyim tazeyken ve müşterinin telefonu elindeyken alınır.',
+        keyInsight:
+          'QR kodunu, müşterinin telefonu zaten elinde olduğu bir noktaya koyun ve yanına ne olacağını anlatan kısa bir cümle ekleyin.',
+        sections: [
+          {
+            title: 'Masada',
+            paragraphs: [
+              'Masadaki QR kodu servis sırasında ya da hesap beklenirken okutulur. Her masa için masa etiketli ayrı bir QR oluşturursanız, düşük puan e-postasında ve CSV dışa aktarımında geri bildirimin hangi masadan geldiği görünür.',
+            ],
+          },
+          {
+            title: 'Fişte ve kasada',
+            paragraphs: [
+              'Hesap ödendikten sonra deneyimin tamamı değerlendirilebilir. Fişe ya da kasaya konan QR kodu bu anı yakalar.',
+            ],
+          },
+          {
+            title: 'Kapıda ve paket serviste',
+            paragraphs: [
+              'Çıkış kapısındaki QR kodu, ayrılmadan önce bir şey söylemek isteyen müşteriye ulaşır. Paket servisteki QR kodu teslimat deneyimini ölçer; bu QR’ı ilgili teslimat platformuna sabitlerseniz eşik ve üzerinde puan veren müşteri o platformun yorum sayfasına gider.',
+            ],
+          },
+          {
+            title: 'Basmadan önce',
+            items: [
+              'QR kodunun çevresinde boşluk bırakın ve çok küçük basmayın.',
+              'Koyu ön plan, açık arka plan kullanın.',
+              'Parlak, ışığı yansıtan yüzeylerden kaçının.',
+              'Basılı örneği farklı telefonlarla, masada oturan birinin mesafesinden okutun.',
+              'Yanına kısa bir davet yazın, örneğin “Deneyiminizi bizimle paylaşın”.',
+            ],
+          },
+        ],
+        checklist: [
+          'Her masanın QR kodu doğru etiketle oluşturuldu.',
+          'Paket servis QR kodu doğru platforma sabitlendi.',
+          'Basılı örnek farklı telefonlarla okutuldu.',
+          'QR kodunun yanında kısa bir davet cümlesi var.',
+        ],
+        faq: [
+          {
+            q: 'Aynı QR kodunu her yerde kullanabilir miyim?',
+            a: 'Kullanabilirsiniz. Ancak masa etiketli ayrı QR kodları, geri bildirimin hangi noktadan geldiğini düşük puan e-postasında ve CSV’de görmenizi sağlar.',
+          },
+          {
+            q: 'Buaze baskıya hazır QR kartı veya çerçeve sunuyor mu?',
+            a: 'Hayır. Buaze QR kodunu seçtiğiniz renklerle, sade biçimde üretir; PNG olarak indirebilir veya PDF olarak yazdırabilirsiniz. Kart, çerçeve ya da masa standı tasarımını kendiniz hazırlarsınız.',
+          },
+          {
+            q: 'QR kodunun yanına yorum karşılığı indirim yazabilir miyim?',
+            a: `Hayır. Yorum karşılığında indirim, hediye veya ödül vaat etmek [Google’ın yorum kurallarına](${GOOGLE_POLICY_URL}) aykırıdır. Yanına yalnızca deneyimi paylaşmaya davet eden bir cümle yazın.`,
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Where to put your QR code: table, receipt, door, bag',
+      excerpt:
+        'A QR code works best where customers already hold their phone. Placement tips for tables, receipts, doors and delivery bags, plus checks to run before printing.',
+      tags: ['qr', 'placement', 'table', 'receipt', 'delivery'],
+      body: {
+        lead: 'How often a QR code is scanned depends mostly on when the customer sees it. The best moment is while the experience is fresh and the phone is already in hand.',
+        keyInsight:
+          'Put the QR code where customers already hold their phone, and add a short line next to it that says what happens when they scan.',
+        sections: [
+          {
+            title: 'On the table',
+            paragraphs: [
+              'A table QR code is scanned during the meal or while waiting for the bill. If you create a separate QR code with a table label for each table, the low-rating e-mail and the CSV export show which table the feedback came from.',
+            ],
+          },
+          {
+            title: 'On the receipt and at the till',
+            paragraphs: [
+              'Once the bill is paid, the whole visit can be judged. A QR code on the receipt or at the till catches that moment.',
+            ],
+          },
+          {
+            title: 'At the door and on delivery bags',
+            paragraphs: [
+              'A QR code by the exit reaches customers who want to say something before they leave. A QR code on a delivery bag measures the delivery experience; if you pin it to that delivery platform, customers who rate at or above your threshold are sent to that platform’s review page.',
+            ],
+          },
+          {
+            title: 'Before you print',
+            items: [
+              'Leave clear space around the QR code and do not print it too small.',
+              'Use a dark foreground on a light background.',
+              'Avoid shiny surfaces that reflect light.',
+              'Scan the printed sample with different phones from where a seated guest would hold them.',
+              'Add a short invitation next to it, such as “Tell us about your visit”.',
+            ],
+          },
+        ],
+        checklist: [
+          'Each table’s QR code is created with the right label.',
+          'The delivery QR code is pinned to the right platform.',
+          'The printed sample scans on different phones.',
+          'A short invitation sits next to the QR code.',
+        ],
+        faq: [
+          {
+            q: 'Can I use the same QR code everywhere?',
+            a: 'You can. Separate QR codes with table labels, however, show where feedback came from in the low-rating e-mail and the CSV export.',
+          },
+          {
+            q: 'Does Buaze offer print-ready QR cards or frames?',
+            a: 'No. Buaze generates a plain QR code in the colours you choose, which you can download as a PNG or print to PDF. You design the card, frame or table stand yourself.',
+          },
+          {
+            q: 'Can I offer a discount for reviews next to the QR code?',
+            a: `No. Promising a discount, gift or reward in exchange for a review is against [Google’s review policy](${GOOGLE_POLICY_URL}). Write only a line that invites customers to share their experience.`,
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('qr-codes', 20, 'qr-platform-table-links', {
+    tr: {
+      title: 'QR bağlantısında masa etiketi ve platform seçimi',
+      excerpt:
+        'QR oluştururken masa etiketi ekleyebilir, yüksek puanların gideceği platformu sabitleyebilirsiniz. İki seçimin ne işe yaradığını ve nerede göründüğünü öğrenin.',
+      tags: ['masa etiketi', 'platform', 'qr bağlantısı', 'sabit platform', 'parametre'],
+      body: {
+        lead: 'QR sihirbazındaki iki isteğe bağlı seçim, aynı işletme için farklı noktalara farklı QR kodları hazırlamanızı sağlar: masa etiketi ve sabit platform.',
+        keyInsight:
+          'Masa etiketi geri bildirimin hangi noktadan geldiğini gösterir; sabit platform ise eşik ve üzerinde puan veren müşterinin hangi yorum sayfasına gideceğini belirler.',
+        sections: [
+          {
+            title: 'Masa etiketi',
+            paragraphs: [
+              '**Masa numarası** alanına en fazla 20 karakter yazabilirsiniz; harf, rakam, kısa çizgi ve alt çizgi kullanılır (örneğin A1, BAHCE-3). Etiket, düşük puan e-postasında ve CSV dışa aktarımındaki “QR etiketi” sütununda görünür. Yalnızca masa için değil, bir alan ya da nokta için de kullanabilirsiniz (örneğin PAKET, KASA).',
+            ],
+          },
+          {
+            title: 'Platform seçimi',
+            paragraphs: [
+              '**Varsayılan platforma gönder** seçeneği, işletme ayarlarındaki varsayılan platformu kullanır. **Belirli bir platforma sabitle** seçeneğinde, bu QR kodunu okutan ve eşik ve üzerinde puan veren müşteri yalnızca seçtiğiniz platformun yorum sayfasına gider. Listede, bağlantısını eklediğiniz ve sektörünüze uyan platformlar görünür.',
+            ],
+          },
+          {
+            title: 'Platform belirtilmezse',
+            paragraphs: [
+              'QR koduna platform sabitlenmemişse sırasıyla varsayılan platformunuz, sektörünüze göre öncelikli platform ve bağlantısı olan diğer platformlar denenir. Hiçbir platform bağlantısı yoksa müşteri teşekkür ekranını görür.',
+            ],
+          },
+          {
+            title: 'Bağlantının yapısı',
+            paragraphs: [
+              'Sihirbazın oluşturduğu bağlantı şu biçimdedir: /r/sayfa-adresi?source=qr&table=A1&platform=yemeksepeti. Bağlantıyı elle düzenlemeniz gerekmez; sihirbaz sizin için oluşturur.',
+            ],
+          },
+        ],
+        checklist: [
+          'Masa etiketleri tutarlı bir düzenle yazıldı.',
+          'Paket servis QR kodları ilgili teslimat platformuna sabitlendi.',
+          'Varsayılan platform seçildi.',
+          'Her QR kodu telefonla denendi.',
+        ],
+        faq: [
+          {
+            q: 'Masa etiketi gelen kutusunda görünüyor mu?',
+            a: 'Hayır. Masa etiketi düşük puan e-postasında ve CSV dışa aktarımında görünür; gelen kutusunda ve analitikte ayrı bir kırılım olarak gösterilmez.',
+          },
+          {
+            q: 'Sabitlenmiş platformun bağlantısı bozulursa ne olur?',
+            a: 'Günlük otomatik kontrolde başarısız olan bir bağlantı 24 saat boyunca atlanır ve müşteri sıradaki uygun platforma gider. Ayrıntılar: [Bağlantı kontrolleri ve bozuk bağlantılar](/tr/help/platform-link-checks).',
+          },
+          {
+            q: 'Bir QR kodunun platformunu sonradan değiştirebilir miyim?',
+            a: 'Sabit platform QR kodunun bağlantısının içindedir; değiştirmek için yeni bir QR oluşturun. Platform sabitlenmemiş QR kodları ise varsayılan platformu değiştirdiğinizde yeni ayarı izler.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Table labels and platform choice in QR links',
+      excerpt:
+        'When creating a QR code you can add a table label and pin the platform that high ratings go to. Learn what each choice does and where it shows up.',
+      tags: ['table label', 'platform', 'qr link', 'pinned platform', 'parameter'],
+      body: {
+        lead: 'Two optional choices in the QR wizard let you prepare different QR codes for different spots in the same business: the table label and the pinned platform.',
+        keyInsight:
+          'The table label shows where feedback came from; the pinned platform decides which review page customers who rate at or above your threshold are sent to.',
+        sections: [
+          {
+            title: 'Table label',
+            paragraphs: [
+              'The **Table number** field takes up to 20 characters: letters, numbers, hyphens and underscores (for example A1, PATIO-3). The label appears in the low-rating e-mail and in the “QR etiketi” (QR label) column of the CSV export. You can use it for an area or a spot as well as a table (for example DELIVERY, TILL).',
+            ],
+          },
+          {
+            title: 'Platform choice',
+            paragraphs: [
+              '**Use default platform** uses the default platform from your business settings. With **Pin to specific platform**, a customer who scans this QR code and rates at or above your threshold is sent only to the review page of the platform you choose. The list shows platforms whose link you have added and that suit your sector.',
+            ],
+          },
+          {
+            title: 'When no platform is pinned',
+            paragraphs: [
+              'If no platform is pinned to the QR code, Buaze tries your default platform, then the priority platform for your sector, then any other platform with a link, in that order. If no platform link exists, the customer sees the thank-you screen.',
+            ],
+          },
+          {
+            title: 'What the link looks like',
+            paragraphs: [
+              'The link the wizard builds looks like this: /r/your-page-address?source=qr&table=A1&platform=yemeksepeti. You do not need to edit it by hand; the wizard builds it for you.',
+            ],
+          },
+        ],
+        checklist: [
+          'Table labels follow a consistent pattern.',
+          'Delivery QR codes are pinned to the right delivery platform.',
+          'A default platform is selected.',
+          'Every QR code has been tested on a phone.',
+        ],
+        faq: [
+          {
+            q: 'Does the table label show in the inbox?',
+            a: 'No. The table label appears in the low-rating e-mail and the CSV export; the inbox and analytics do not break results down by it.',
+          },
+          {
+            q: 'What if the pinned platform’s link breaks?',
+            a: 'A link that fails the daily automatic check is skipped for 24 hours and the customer goes to the next suitable platform. See [Link checks and broken links](/en/help/platform-link-checks).',
+          },
+          {
+            q: 'Can I change a QR code’s platform later?',
+            a: 'The pinned platform is part of the QR code’s link, so create a new QR code to change it. QR codes without a pinned platform follow your default platform whenever you change it.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('qr-codes', 30, 'bulk-qr-generation', {
+    tr: {
+      title: 'Çok masalı işletmede QR kodlarını planlama',
+      excerpt:
+        'Panelde QR kodları tek tek oluşturulur; toplu üretim yoktur. Çok sayıda masa veya şube için etiket düzeni, oluşturma sırası ve baskı kontrolü nasıl planlanır?',
+      tags: ['çok masa', 'toplu qr', 'şube', 'baskı', 'masa etiketi'],
+      body: {
+        lead: 'Çok sayıda masası ya da birden çok şubesi olan işletmelerde QR kodlarını hazırlamak, baştan bir düzen kurulduğunda kolaylaşır. Bu rehber, hata payını azaltan bir çalışma sırası önerir.',
+        keyInsight:
+          'Panelde her QR kodu sihirbazla tek tek oluşturulur; önce etiket listesini yazın, sonra QR kodlarını sırayla oluşturup her birini telefonla deneyin.',
+        sections: [
+          {
+            title: 'Önce etiket listesi',
+            paragraphs: [
+              'Masa numaralarını baskıdan önce bir listede netleştirin. Salon, bahçe veya kat gibi alanları bir önekle ayırın (S1, S2, B1). Etiketler en fazla 20 karakterdir ve yalnızca harf, rakam, kısa çizgi ve alt çizgi içerir.',
+            ],
+          },
+          {
+            title: 'QR kodlarını oluşturma',
+            paragraphs: [
+              'Listedeki her masa için **QR** sayfasında **Yeni QR oluştur** ile bir QR kodu hazırlayın ve masa etiketini girin. Oluşturduğunuz QR kodları sayfada listelenir; her birini PNG olarak indirebilir veya PDF olarak yazdırabilirsiniz. Panelde toplu üretim veya toplu indirme yoktur.',
+            ],
+          },
+          {
+            title: 'Şubeler',
+            paragraphs: [
+              'Her şube ayrı bir işletmedir; kendi sayfa adresi ve kendi QR kodları vardır. Bir şubenin QR kodunu başka bir şubede kullanmayın, yoksa geri bildirim yanlış işletmeye düşer.',
+            ],
+          },
+          {
+            title: 'Baskı kontrolü',
+            paragraphs: [
+              'Matbaaya göndermeden önce birkaç QR kodunu rastgele seçip telefonla okutun; doğru işletmenin açıldığını kontrol edin.',
+            ],
+          },
+        ],
+        checklist: [
+          'Etiket listesi yazıldı.',
+          'Her QR kodu doğru işletmede oluşturuldu.',
+          'Her masa için doğru etiket girildi.',
+          'Rastgele seçilen QR kodları telefonla denendi.',
+        ],
+        faq: [
+          {
+            q: 'Toplu QR üretme veya indirme var mı?',
+            a: 'Hayır. QR kodları panelde tek tek oluşturulur, indirilir veya yazdırılır.',
+          },
+          {
+            q: 'Eski bir şubenin QR kodlarını yeni şubede kullanabilir miyim?',
+            a: 'Hayır. QR kodu belirli bir işletmenin sayfasını açar; yeni şube için yeni QR kodları oluşturun.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Planning QR codes for a business with many tables',
+      excerpt:
+        'QR codes are created one by one in the panel; there is no bulk generation. How to plan labels, the order of work and print checks for many tables or branches.',
+      tags: ['many tables', 'bulk qr', 'branches', 'printing', 'table label'],
+      body: {
+        lead: 'For businesses with many tables or several branches, preparing QR codes gets easier when you set up an order first. This guide suggests a way of working that keeps mistakes down.',
+        keyInsight:
+          'In the panel, each QR code is created one at a time in the wizard; write your label list first, then create the QR codes in order and test each one on a phone.',
+        sections: [
+          {
+            title: 'Start with a label list',
+            paragraphs: [
+              'Settle the table numbers in a list before printing. Separate areas such as the dining room, garden or floor with a prefix (D1, D2, G1). Labels are up to 20 characters and contain only letters, numbers, hyphens and underscores.',
+            ],
+          },
+          {
+            title: 'Creating the QR codes',
+            paragraphs: [
+              'For each table on the list, press **Create QR code** on the **QR** page and enter the table label. The QR codes you create are listed on the page; download each one as a PNG or print it to PDF. The panel has no bulk generation or bulk download.',
+            ],
+          },
+          {
+            title: 'Branches',
+            paragraphs: [
+              'Each branch is a separate business with its own page address and its own QR codes. Do not use one branch’s QR code at another branch, or the feedback will land in the wrong business.',
+            ],
+          },
+          {
+            title: 'Print check',
+            paragraphs: [
+              'Before sending files to the printer, pick a few QR codes at random and scan them with a phone to check that the right business opens.',
+            ],
+          },
+        ],
+        checklist: [
+          'The label list is written.',
+          'Each QR code was created in the right business.',
+          'Each table has the right label.',
+          'Randomly chosen QR codes were tested on a phone.',
+        ],
+        faq: [
+          {
+            q: 'Can I generate or download QR codes in bulk?',
+            a: 'No. QR codes are created, downloaded or printed one at a time in the panel.',
+          },
+          {
+            q: 'Can I reuse an old branch’s QR codes at a new branch?',
+            a: 'No. A QR code opens one specific business’s page; create new QR codes for the new branch.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('qr-codes', 40, 'qr-print-materials', {
+    tr: {
+      title: 'Basılı QR materyallerini güncel tutma',
+      excerpt:
+        'Etiketler yıpranır, masa kartları kaybolur, eski baskılar ortada kalır. Basılı QR materyallerini düzenli kontrol etmek ve gerektiğinde yenilemek için öneriler.',
+      tags: ['baskı', 'etiket', 'masa kartı', 'bakım', 'qr'],
+      body: {
+        lead: 'QR kodunun dijital tarafı sabit kalsa da basılı materyal yıpranır, kaybolur ya da yanlışlıkla eskisiyle değiştirilir. Basılı materyalleri düzenli kontrol etmek, okunmayan bir QR kodunun müşteriyi boşa çıkarmasını önler.',
+        keyInsight:
+          'Basılı QR kodlarını ayda bir dolaşıp okutun; yıpranmış ya da yanlış işletmeyi açan materyali hemen değiştirin.',
+        sections: [
+          {
+            title: 'Yıpranma kontrolü',
+            paragraphs: [
+              'Parlak yüzeylerdeki etiketler zamanla silikleşir, dış mekândaki baskılar güneşte solar. Düzenli bir tur, müşterinin okutamadığı bir QR kodunu sizden önce fark etmenizi sağlar.',
+            ],
+          },
+          {
+            title: 'Düzen için öneriler',
+            items: [
+              'Basılı materyalin köşesine küçük bir sürüm notu ekleyin (örneğin “2026-11”).',
+              'Birkaç yedek etiketi işletmede bulundurun.',
+              'Yeni baskı geldiğinde eskilerini toplayın.',
+              'Şube sorumlusuna kısa bir kontrol listesi verin.',
+            ],
+          },
+          {
+            title: 'Ne zaman yeniden basmak gerekir?',
+            items: [
+              'Sayfa adresini değiştirdiğinizde.',
+              'Bir QR koduna sabitlenmiş platformu değiştirmek istediğinizde.',
+              'Baskı yıprandığında ya da okutulamadığında.',
+            ],
+          },
+        ],
+        checklist: [
+          'Basılı QR kodları ayda bir okutuluyor.',
+          'Yedek etiketler hazır.',
+          'Eski baskılar toplandı.',
+          'Dekorasyon değiştiğinde QR kodlarının yeri gözden geçirildi.',
+        ],
+        faq: [
+          {
+            q: 'Varsayılan platformu değiştirdim; QR kodlarını yeniden basmam gerekir mi?',
+            a: 'Hayır. Platform sabitlenmemiş QR kodları, panelde yaptığınız değişikliği hemen izler. Yeniden baskı yalnızca sayfa adresi veya QR koduna sabitlenmiş platform değiştiğinde gerekir.',
+          },
+          {
+            q: 'Eski bir baskı hâlâ çalışıyor mu?',
+            a: 'Sayfa adresiniz değişmediyse ve işletmeniz duraklatılmadıysa eski baskı da işletmenizin sayfasını açar.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Keeping printed QR materials up to date',
+      excerpt:
+        'Stickers wear out, table cards go missing and old prints stay in use. Tips for checking printed QR materials regularly and replacing them when needed.',
+      tags: ['printing', 'sticker', 'table card', 'maintenance', 'qr'],
+      body: {
+        lead: 'Even when the digital side of a QR code stays the same, printed material wears out, gets lost or is swapped for an old version by mistake. Checking it regularly keeps an unreadable code from wasting a customer’s effort.',
+        keyInsight:
+          'Walk around once a month and scan your printed QR codes; replace anything worn or anything that opens the wrong business straight away.',
+        sections: [
+          {
+            title: 'Checking for wear',
+            paragraphs: [
+              'Stickers on shiny surfaces fade over time and outdoor prints bleach in the sun. A regular walk-round lets you spot a code customers cannot scan before they do.',
+            ],
+          },
+          {
+            title: 'Staying organised',
+            items: [
+              'Add a small version note in a corner of the print (for example “2026-11”).',
+              'Keep a few spare stickers on site.',
+              'Collect old prints when the new ones arrive.',
+              'Give each branch lead a short checklist.',
+            ],
+          },
+          {
+            title: 'When do you need to reprint?',
+            items: [
+              'When you change the page address.',
+              'When you want to change the platform pinned to a QR code.',
+              'When the print is worn or will not scan.',
+            ],
+          },
+        ],
+        checklist: [
+          'Printed QR codes are scanned once a month.',
+          'Spare stickers are ready.',
+          'Old prints have been collected.',
+          'QR positions were reviewed after any redecoration.',
+        ],
+        faq: [
+          {
+            q: 'I changed the default platform. Do I need to reprint my QR codes?',
+            a: 'No. QR codes without a pinned platform follow changes you make in the panel straight away. You only need to reprint when the page address or a QR code’s pinned platform changes.',
+          },
+          {
+            q: 'Does an old print still work?',
+            a: 'If your page address has not changed and your business is not paused, an old print still opens your business’s page.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('qr-codes', 50, 'qr-scan-rate-optimization', {
+    tr: {
+      title: 'Müşterilerin QR kodunu daha çok okutması için',
+      excerpt:
+        'Yerleşim, davet cümlesi ve görünürlük QR kodunun ne kadar okutulduğunu belirler. Gelen geri bildirim sayısını izleyerek hangi değişikliğin işe yaradığını görün.',
+      tags: ['okutma', 'yerleşim', 'davet cümlesi', 'görünürlük', 'qr'],
+      body: {
+        lead: 'Basılmış her QR kodu okutulmaz. Müşterinin kodu fark etmesi, ne olacağını anlaması ve bunu kolay bulması gerekir. Bu rehber, okutulma ihtimalini artıran küçük değişiklikleri anlatır.',
+        keyInsight:
+          'QR kodunu görünür bir yere koyun, yanına kısa ve dürüst bir davet yazın ve değişikliğin etkisini sonraki haftalarda gelen geri bildirim sayısından izleyin.',
+        sections: [
+          {
+            title: 'Yerleşim',
+            paragraphs: [
+              'Müşteri telefonunu en çok menüye bakarken, hesabı beklerken ve sırada beklerken eline alır. QR kodu bu anların en az birinde göz hizasında olmalı.',
+            ],
+          },
+          {
+            title: 'Davet cümlesi',
+            paragraphs: [
+              'Yalnızca “QR’ı okutun” yazmak yerine ne olacağını söyleyin: **“Ziyaretinizi puanlayın ve görüşünüzü bizimle paylaşın.”** Cümle kısa, dürüst ve herkese aynı olsun; belirli bir puan istemeyin, karşılığında bir şey vaat etmeyin.',
+            ],
+          },
+          {
+            title: 'Görünürlük',
+            items: [
+              'QR kodunun çevresinde boşluk bırakın.',
+              'Koyu-açık kontrastı güçlü tutun.',
+              'Loş alanlarda iyi aydınlatılmış bir nokta seçin.',
+              'Yansıyan, parlak yüzeylerden kaçının.',
+            ],
+          },
+          {
+            title: 'Etkisini ölçme',
+            paragraphs: [
+              'Panel QR okutma sayısını göstermez; değişikliğin etkisini gelen geri bildirim sayısından izlersiniz. Bir değişiklikten önceki ve sonraki haftalarda **Analitik** sayfasındaki toplam yorum sayısını karşılaştırın. Masa etiketli QR kodları kullanıyorsanız CSV dışa aktarımında masa bazında da bakabilirsiniz.',
+            ],
+          },
+        ],
+        policyNote: `Buaze müşteriye belirli bir puan dayatmaz ve yorum karşılığında indirim, hediye veya ödül sunmaz. Materyallerinizde de yorum karşılığı teklif vermeyin; [Google’ın yorum kuralları](${GOOGLE_POLICY_URL}) bunu yasaklar.`,
+        checklist: [
+          'QR kodu müşterinin telefonu elindeyken göreceği bir yerde.',
+          'Davet cümlesi kısa ve herkese aynı.',
+          'Kontrast ve aydınlatma yeterli.',
+          'Değişiklik öncesi ve sonrası geri bildirim sayısı karşılaştırıldı.',
+        ],
+        faq: [
+          {
+            q: 'QR kodumun kaç kez okutulduğunu görebilir miyim?',
+            a: 'Panelde QR okutma sayısı gösterilmez. Gelen geri bildirim sayısını **Analitik** ve **Yorumlar** sayfalarından izleyebilirsiniz.',
+          },
+          {
+            q: 'Müşteriden belirli bir puan isteyebilir miyim?',
+            a: 'Hayır. Davet cümlesi tarafsız olmalı; “5 yıldız verin” gibi ifadeler platform kurallarına aykırıdır ve müşterinin güvenini zedeler.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Helping more customers scan your QR code',
+      excerpt:
+        'Placement, the invitation line and visibility decide how often a QR code is scanned. Watch how much feedback comes in to see which change actually helps.',
+      tags: ['scanning', 'placement', 'invitation', 'visibility', 'qr'],
+      body: {
+        lead: 'Not every printed QR code gets scanned. Customers need to notice it, understand what will happen and find it easy. This guide covers small changes that make a scan more likely.',
+        keyInsight:
+          'Put the QR code where it is easy to see, add a short and honest invitation next to it, and judge the effect by how much feedback you receive in the following weeks.',
+        sections: [
+          {
+            title: 'Placement',
+            paragraphs: [
+              'Customers pick up their phone most often while reading the menu, waiting for the bill and standing in a queue. The QR code should be at eye level during at least one of these moments.',
+            ],
+          },
+          {
+            title: 'The invitation line',
+            paragraphs: [
+              'Instead of just “Scan the QR”, say what happens: **“Rate your visit and share your thoughts with us.”** Keep it short, honest and the same for everyone; do not ask for a particular rating or promise anything in return.',
+            ],
+          },
+          {
+            title: 'Visibility',
+            items: [
+              'Leave clear space around the QR code.',
+              'Keep a strong dark-on-light contrast.',
+              'In dim rooms, choose a well-lit spot.',
+              'Avoid shiny surfaces that reflect light.',
+            ],
+          },
+          {
+            title: 'Measuring the effect',
+            paragraphs: [
+              'The panel does not show QR scan counts, so you track the effect through how much feedback you receive. Compare total reviews on the **Analytics** page for the weeks before and after a change. If you use QR codes with table labels, you can also look by table in the CSV export.',
+            ],
+          },
+        ],
+        policyNote: `Buaze does not push customers towards a particular rating and does not offer discounts, gifts or rewards for reviews. Do not offer anything in return for a review on your materials either; [Google’s review policy](${GOOGLE_POLICY_URL}) forbids it.`,
+        checklist: [
+          'The QR code is where customers see it with a phone in hand.',
+          'The invitation is short and the same for everyone.',
+          'Contrast and lighting are good enough.',
+          'Feedback numbers before and after the change were compared.',
+        ],
+        faq: [
+          {
+            q: 'Can I see how many times my QR code was scanned?',
+            a: 'The panel does not show QR scan counts. You can follow how much feedback comes in on the **Analytics** and **Reviews** pages.',
+          },
+          {
+            q: 'Can I ask customers for a particular rating?',
+            a: 'No. The invitation should be neutral; lines such as “give us 5 stars” break platform rules and cost you customers’ trust.',
+          },
+        ],
+      },
+    },
+  }),
+
+  /* -------------------------- Yorum yönetimi ------------------------- */
+  ...pair('review-management', 10, 'handle-negative-feedback', {
+    tr: {
+      title: 'Düşük puanlı geri bildirimleri yanıtlama',
+      excerpt:
+        '1–3 yıldızlı geri bildirim geldiğinde e-posta uyarısı alırsınız. Müşteri e-posta bıraktıysa panelden e-postayla yanıt verebilirsiniz. Adımlar ve yanıt ipuçları.',
+      tags: ['düşük puan', 'olumsuz geri bildirim', 'yanıt', 'e-posta', 'müşteri memnuniyeti'],
+      body: {
+        lead: 'Düşük puan, doğru ele alındığında müşteriyle yeniden bağ kurmanın bir fırsatıdır. Buaze bu geri bildirimleri size hızla ulaştırır ve panelden yanıt vermenizi sağlar.',
+        keyInsight:
+          'Uyarı geldiğinde geri bildirimi okuyun, müşteri e-posta bıraktıysa kısa ve sahiplenen bir yanıtı panelden gönderin, gerekiyorsa geri bildirimi işaretleyip takibe alın.',
+        sections: [
+          {
+            title: 'Geri bildirim size nasıl ulaşır?',
+            paragraphs: [
+              'Müşteri QR kodunu okutur ve puan verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) seçtiğiniz platformun yorum sayfası açılır. Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür. 1–3 yıldızlı her yeni geri bildirimde bildirim e-postanıza anında uyarı gider.',
+            ],
+          },
+          {
+            title: 'Yanıt gönderme',
+            ordered: true,
+            items: [
+              '**Yorumlar** sayfasında geri bildirimi açın; düşük puanlıları **Düşük puan** sekmesinde bulabilirsiniz.',
+              'Yanıtınızı yazın ya da Pulse AI taslağını düzenleyin.',
+              'Müşteri e-posta bıraktıysa **Müşteriye e-posta gönder** kutusunu işaretli bırakın; bırakmadıysa yanıt panelde kayıt olarak saklanır.',
+              'Sorumluluk onayını işaretleyip gönderin.',
+            ],
+          },
+          {
+            title: 'Yanıt dili',
+            items: [
+              'Müşterinin söylediği sorunu kendi cümlelerinizle tekrar edin.',
+              'Savunmaya geçmeyin; deneyimi sahiplenin.',
+              'Tek ve somut bir sonraki adım önerin.',
+              'Kişisel veri, dış bağlantı veya hukuki tehdit içeren ifadeler kullanmayın.',
+            ],
+          },
+          {
+            title: 'Gönderim kuralları',
+            paragraphs: [
+              'Yanıt yazma 1–3 yıldızlı geri bildirimler için açıktır ve her geri bildirime bir yanıt gönderilir; e-posta iletilemezse yeniden deneyebilirsiniz. Her yanıt gönderilmeden önce güvenlik kontrolünden geçer: tehdit, hakaret, küfür, kişisel veri, yorum karşılığında teklif ve işletmenize ait olmayan bağlantılar içeren metinler gönderilmez. E-posta, Buaze’nin gönderim adresinden işletmeniz adına gider; işletme ayarlarında bildirim e-postası girdiyseniz müşterinin cevabı bu adrese gelir.',
+            ],
+          },
+        ],
+        policyNote:
+          'Buaze yorum silmez, gizlemez veya değiştirmez. Düşük puan veren müşteri de herkese açık yorum bağlantısını görür; müşteriyi yorum yazmaktan caydıracak bir dil kullanmayın.',
+        checklist: [
+          'Düşük puan uyarısı açık.',
+          'Geri bildirim okundu ve gerekiyorsa işaretlendi.',
+          'Yanıt kısa, sahiplenen ve somut.',
+          'Müşteri e-posta bıraktıysa yanıt e-postayla gönderildi.',
+        ],
+        faq: [
+          {
+            q: 'Düşük puan veren müşteri Google’a yorum yazabilir mi?',
+            a: 'Evet. Eşiğin altındaki puanlarda müşteri önce size yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür ve müşteri dilediği yerde yorum yazabilir.',
+          },
+          {
+            q: 'Yüksek puanlı geri bildirimlere yanıt verebilir miyim?',
+            a: 'Panelden yanıt yazma 1–3 yıldızlı geri bildirimler için açıktır. Yüksek puanlar gelen kutusunda listelenir ve işaretlenebilir.',
+          },
+          {
+            q: 'Yanıtım neden gönderilmedi?',
+            a: 'Metin güvenlik kontrolüne takılmış olabilir; ekranda hangi kuralın tetiklendiği yazar. Metni düzeltip yeniden gönderebilirsiniz.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Responding to low-rated feedback',
+      excerpt:
+        'You get an e-mail alert when 1–3 star feedback arrives. If the customer left an e-mail, you can reply from the panel by e-mail. Steps and tips for replying.',
+      tags: ['low rating', 'negative feedback', 'reply', 'e-mail', 'customer satisfaction'],
+      body: {
+        lead: 'Handled well, a low rating is a chance to reconnect with a customer. Buaze gets this feedback to you quickly and lets you reply from the panel.',
+        keyInsight:
+          'When the alert arrives, read the feedback, send a short reply that takes ownership if the customer left an e-mail, and flag the feedback if it needs follow-up.',
+        sections: [
+          {
+            title: 'How does feedback reach you?',
+            paragraphs: [
+              'The customer scans the QR code and gives a rating. At or above the threshold you set (5 stars by default), your chosen platform’s review page opens. Below it, the customer can first send you private feedback; the public review link is shown on the same screen. Every new 1–3 star feedback triggers an instant alert to your notification e-mail.',
+            ],
+          },
+          {
+            title: 'Sending a reply',
+            ordered: true,
+            items: [
+              'Open the feedback on the **Reviews** page; low ratings are on the **Low rating** tab.',
+              'Write your reply or edit the Pulse AI draft.',
+              'If the customer left an e-mail, keep **Email the customer** ticked; if not, the reply is saved as a record in the panel.',
+              'Tick the responsibility confirmation and send.',
+            ],
+          },
+          {
+            title: 'How to write it',
+            items: [
+              'Repeat the customer’s issue in your own words.',
+              'Do not get defensive; take ownership of the experience.',
+              'Offer one concrete next step.',
+              'Leave out personal data, outside links and legal threats.',
+            ],
+          },
+          {
+            title: 'Sending rules',
+            paragraphs: [
+              'Replies can be written to 1–3 star feedback, one reply per piece of feedback; if the e-mail cannot be delivered, you can try again. Each reply passes a safety check before it is sent: text with threats, insults, profanity, personal data, offers in exchange for reviews or links that are not your business’s own is not sent. The e-mail goes out from Buaze’s sending address on your business’s behalf; if you have set a notification e-mail in your business settings, the customer’s answer goes to that address.',
+            ],
+          },
+        ],
+        policyNote:
+          'Buaze does not delete, hide or edit reviews. Customers who give a low rating also see the public review link, so avoid any wording that discourages them from posting a review.',
+        checklist: [
+          'Low-rating alerts are on.',
+          'The feedback has been read and flagged if needed.',
+          'The reply is short, takes ownership and is concrete.',
+          'If the customer left an e-mail, the reply was sent by e-mail.',
+        ],
+        faq: [
+          {
+            q: 'Can a customer who gave a low rating still post on Google?',
+            a: 'Yes. Below your threshold, the customer can write to you first; the public review link is on the same screen and the customer can post a review wherever they like.',
+          },
+          {
+            q: 'Can I reply to high-rated feedback?',
+            a: 'Replies from the panel are open for 1–3 star feedback. High ratings are listed in the inbox and can be flagged.',
+          },
+          {
+            q: 'Why was my reply not sent?',
+            a: 'The text may have failed the safety check; the screen shows which rule was triggered. Edit the text and send it again.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('review-management', 20, 'reply-workflow-ai', {
+    tr: {
+      title: 'Pulse AI ile yanıt taslakları hazırlama',
+      excerpt:
+        'Pulse AI her geri bildirim için 2–4 cümlelik yanıt taslağı hazırlar; tonu siz seçer, metni siz düzenler ve onaylarsınız. Hiçbir yanıt siz göndermeden çıkmaz.',
+      tags: ['pulse ai', 'yapay zeka', 'yanıt taslağı', 'ton', 'yanıt'],
+      body: {
+        lead: 'Pulse AI, düşük puanlı geri bildirimlere yanıt yazmayı hızlandırmak için kısa bir taslak hazırlar. Taslak bir başlangıç noktasıdır; son metni siz belirlersiniz.',
+        keyInsight:
+          'Pulse AI taslak yazar, gönderme kararı her zaman sizindir: tonu seçin, taslağı müşterinin anlattığına göre düzenleyin ve kendiniz gönderin.',
+        sections: [
+          {
+            title: 'Taslak nasıl hazırlanır?',
+            paragraphs: [
+              'Geri bildirimi açtığınızda **Taslak oluştur** ile bir öneri alırsınız. Tonu samimi, resmi veya özür dileyen olarak değiştirebilirsiniz; ton değişince taslak yeniden hazırlanır. Taslaklar 2–4 cümledir, Türkçe ya da İngilizce yazılır, emoji içermez ve ücretsiz ikram gibi vaatler sunmaz. Yapay zekâ o an kullanılamazsa hazır bir şablon taslak gösterilir.',
+            ],
+          },
+          {
+            title: 'Otomatik taslak',
+            paragraphs: [
+              '**Hesabım → Pulse AI** bölümünde otomatik taslak ayarını açarsanız yeni 1–3 yıldızlı geri bildirimler için taslak kendiliğinden hazırlanır. Ayar varsayılan olarak kapalıdır; kapalıyken taslağı istediğiniz zaman elle oluşturursunuz. Varsayılan tonu da aynı bölümden seçersiniz.',
+            ],
+          },
+          {
+            title: 'Göndermeden önce',
+            items: [
+              'Müşterinin anlattığı sorunu taslakta açıkça görün; eksikse ekleyin.',
+              'Varsayım içeren cümleleri çıkarın.',
+              'Tek ve somut bir sonraki adım bırakın.',
+              'Metnin işletmenizin diliyle uyumlu olduğundan emin olun.',
+            ],
+          },
+        ],
+        checklist: [
+          'Taslak baştan sona okundu.',
+          'Ton geri bildirime uygun.',
+          'Somut bir sonraki adım var.',
+          'Kişisel veri ve dış bağlantı yok.',
+        ],
+        faq: [
+          {
+            q: 'Pulse AI yanıtı kendiliğinden gönderir mi?',
+            a: 'Hayır. Pulse AI yalnızca taslak hazırlar; yanıtı siz düzenleyip gönderirsiniz. **Olduğu gibi gönder** de sizin onayınızla ve sorumluluk onayını işaretledikten sonra çalışır.',
+          },
+          {
+            q: 'Taslak için hangi bilgiler kullanılır?',
+            a: 'İşletmenizin adı ve türü, müşterinin adı, puanı, platform ve yorum metni. Taslağı hazırlamak için bu bilgiler yapay zekâ hizmet sağlayıcımız OpenAI’ye gönderilir; sipariş geçmişi veya konum gibi başka bir bilgi kullanılmaz.',
+          },
+          {
+            q: 'Taslaklar hangi dillerde hazırlanır?',
+            a: 'Türkçe ve İngilizce.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Drafting replies with Pulse AI',
+      excerpt:
+        'Pulse AI drafts a 2–4 sentence reply for each piece of feedback; you choose the tone, edit the text and approve it. No reply goes out unless you send it.',
+      tags: ['pulse ai', 'ai', 'reply draft', 'tone', 'reply'],
+      body: {
+        lead: 'Pulse AI prepares a short draft to make replying to low-rated feedback faster. The draft is a starting point; you decide the final text.',
+        keyInsight:
+          'Pulse AI writes a draft and the decision to send is always yours: choose the tone, edit the draft to match what the customer said and send it yourself.',
+        sections: [
+          {
+            title: 'How is a draft prepared?',
+            paragraphs: [
+              'When you open a piece of feedback, **Generate draft** gives you a suggestion. You can switch the tone between warm, formal and apologetic; changing the tone regenerates the draft. Drafts are 2–4 sentences, written in Turkish or English, contain no emoji and never offer freebies. If AI is unavailable at that moment, a ready template draft is shown instead.',
+            ],
+          },
+          {
+            title: 'Automatic drafts',
+            paragraphs: [
+              'If you switch on automatic drafts under **Account → Pulse AI**, a draft is prepared on its own for new 1–3 star feedback. The setting is off by default; while it is off, you create drafts by hand whenever you like. You also choose the default tone there.',
+            ],
+          },
+          {
+            title: 'Before you send',
+            items: [
+              'Make sure the draft clearly reflects the customer’s issue; add it if it is missing.',
+              'Remove sentences that assume things.',
+              'Leave one concrete next step.',
+              'Check that the text sounds like your business.',
+            ],
+          },
+        ],
+        checklist: [
+          'The draft was read in full.',
+          'The tone suits the feedback.',
+          'There is a concrete next step.',
+          'There is no personal data and no outside link.',
+        ],
+        faq: [
+          {
+            q: 'Does Pulse AI send replies on its own?',
+            a: 'No. Pulse AI only prepares drafts; you edit and send the reply. **Send as is** also works only with your approval, after you tick the responsibility confirmation.',
+          },
+          {
+            q: 'What information is used for a draft?',
+            a: 'Your business name and type, the customer’s name, rating, platform and comment. To prepare the draft, this information is sent to our AI provider, OpenAI; nothing else, such as order history or location, is used.',
+          },
+          {
+            q: 'Which languages are drafts written in?',
+            a: 'Turkish and English.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('review-management', 30, 'notification-emails', {
+    tr: {
+      title: 'Düşük puan uyarısı ve haftalık özet e-postası',
+      excerpt:
+        '1–3 yıldızlı her yeni geri bildirimde anında e-posta uyarısı, her pazartesi haftalık özet. Bu e-postaların kime gittiğini ve nasıl açılıp kapatıldığını öğrenin.',
+      tags: ['bildirim', 'e-posta', 'uyarı', 'haftalık özet', 'düşük puan'],
+      body: {
+        lead: 'Geri bildirimleri takip etmek için paneli sürekli açık tutmanız gerekmez. Buaze önemli olayları e-postayla bildirir; panelde de bildirim zili vardır.',
+        keyInsight:
+          'Düşük puan uyarısı işletmenin bildirim e-postasına anında gider; haftalık özet her pazartesi gelir. İkisini de **Hesabım → Bildirimler** bölümünden açıp kapatırsınız.',
+        sections: [
+          {
+            title: 'Düşük puan uyarısı',
+            paragraphs: [
+              '1–3 yıldızlı her yeni geri bildirimde, işletme ayarlarındaki bildirim e-postasına anında uyarı gider; adres boşsa hesabınızın e-posta adresi kullanılır. Uyarıda puan, müşterinin yorumu ve varsa masa etiketi yer alır. Paneldeki bildirim zili de yeni düşük puanları gösterir.',
+            ],
+          },
+          {
+            title: 'Haftalık özet',
+            paragraphs: [
+              'Her pazartesi öğle saatlerinde (Türkiye saati) haftalık puan eğilimini ve öne çıkan geri bildirimleri içeren bir özet e-postası gelir. Ekiple haftalık değerlendirme yapıyorsanız bu e-posta iyi bir başlangıç noktasıdır. Ayrıntılar: [Geri bildirimleri haftada bir ekiple okumak](/tr/help/weekly-review-ritual).',
+            ],
+          },
+          {
+            title: 'Diğer otomatik e-postalar',
+            items: [
+              'Son 7 günün ortalaması önceki dört haftaya göre en az 0,5 yıldız düştüğünde ve son 7 günde en az 5 yorum varsa pazartesi günü gelen puan düşüşü uyarısı.',
+              'Deneme süresinin bitmesine 3 gün ve 1 gün kala hatırlatma.',
+              'Yeni bir cihazdan girişte ve şifreniz değiştiğinde güvenlik bildirimi.',
+            ],
+          },
+          {
+            title: 'Ayarlar',
+            paragraphs: [
+              '**Hesabım → Bildirimler** bölümünde düşük puan uyarısını, haftalık raporu ve deneme hatırlatmalarını ayrı ayrı açıp kapatabilirsiniz. Uyarının gideceği adresi işletme ayarlarının **Genel bilgiler** sekmesinden değiştirirsiniz.',
+            ],
+          },
+        ],
+        checklist: [
+          'Bildirim e-postası ekibin baktığı bir adres.',
+          'Düşük puan uyarısı açık.',
+          'Haftalık rapor açık.',
+          'Uyarı e-postaları istenmeyen klasörüne düşmüyor.',
+        ],
+        faq: [
+          {
+            q: 'Bildirimleri Slack, SMS veya mobil bildirim olarak alabilir miyim?',
+            a: 'Hayır. Bildirimler e-postayla ve paneldeki bildirim zili üzerinden gelir.',
+          },
+          {
+            q: 'Uyarıyı birden fazla kişiye gönderebilir miyim?',
+            a: 'Uyarı tek bir bildirim adresine gider. Birden fazla kişinin görmesi gerekiyorsa ekibin ortak e-posta adresini bildirim adresi olarak girin.',
+          },
+          {
+            q: 'Uyarıyı kapatırsam geri bildirimler kaybolur mu?',
+            a: 'Hayır. Uyarı kapalıyken de geri bildirimler kaydedilir ve **Yorumlar** sayfasında görünür; yalnızca e-posta gönderilmez.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Low-rating alerts and the weekly summary e-mail',
+      excerpt:
+        'An instant e-mail alert for every new 1–3 star feedback and a weekly summary every Monday. Find out who receives these e-mails and how to switch them on or off.',
+      tags: ['notifications', 'e-mail', 'alert', 'weekly summary', 'low rating'],
+      body: {
+        lead: 'You do not have to keep the panel open to follow feedback. Buaze reports important events by e-mail, and the panel has a notification bell too.',
+        keyInsight:
+          'The low-rating alert goes straight to the business’s notification e-mail and the weekly summary arrives every Monday. Switch either of them on or off under **Account → Notifications**.',
+        sections: [
+          {
+            title: 'Low-rating alert',
+            paragraphs: [
+              'For every new 1–3 star feedback, an alert goes straight to the notification e-mail in your business settings; if that address is empty, your account e-mail is used. The alert includes the rating, the customer’s comment and the table label if there is one. The notification bell in the panel also shows new low ratings.',
+            ],
+          },
+          {
+            title: 'Weekly summary',
+            paragraphs: [
+              'Every Monday around noon (Turkey time), a summary e-mail arrives with your weekly rating trend and standout feedback. If your team reviews feedback weekly, this e-mail is a good starting point. See [A weekly feedback review with your team](/en/help/weekly-review-ritual).',
+            ],
+          },
+          {
+            title: 'Other automatic e-mails',
+            items: [
+              'A rating-drop alert on Mondays when the last 7 days’ average is at least 0.5 stars below the previous four weeks and there were at least 5 reviews in the last 7 days.',
+              'Reminders 3 days and 1 day before your trial ends.',
+              'Security notices when you sign in from a new device and when your password changes.',
+            ],
+          },
+          {
+            title: 'Settings',
+            paragraphs: [
+              'Under **Account → Notifications** you can switch the low-rating alert, the weekly report and trial reminders on or off separately. Change the address the alert goes to on the **General details** tab of your business settings.',
+            ],
+          },
+        ],
+        checklist: [
+          'The notification e-mail is an address your team reads.',
+          'The low-rating alert is on.',
+          'The weekly report is on.',
+          'Alert e-mails are not landing in the spam folder.',
+        ],
+        faq: [
+          {
+            q: 'Can I get notifications in Slack, by SMS or as mobile push?',
+            a: 'No. Notifications arrive by e-mail and through the notification bell in the panel.',
+          },
+          {
+            q: 'Can the alert go to more than one person?',
+            a: 'The alert goes to a single notification address. If several people need to see it, enter your team’s shared e-mail address as the notification address.',
+          },
+          {
+            q: 'If I switch the alert off, is feedback lost?',
+            a: 'No. Feedback is still saved and shown on the **Reviews** page while the alert is off; only the e-mail is not sent.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('review-management', 40, 'review-search-and-filters', {
+    tr: {
+      title: 'Gelen kutusunda arama, sekmeler ve işaretleme',
+      excerpt:
+        'Yorumlar sayfasında sekmeler, tarih, puan ve platform seçimleri, arama kutusu ve işaretleme ile geri bildirimleri düzenli tutun ve takip edilecekleri ayırın.',
+      tags: ['gelen kutusu', 'arama', 'sekme', 'işaretle', 'beklemede'],
+      body: {
+        lead: 'Geri bildirim sayısı arttığında her birini sırayla okumak zorlaşır. Yorumlar sayfasındaki araçlar, önce bakılması gerekenleri ayırmanıza ve hiçbir şeyin gözden kaçmamasına yardım eder.',
+        keyInsight:
+          'Sekmelerle durumu, tarih, puan ve platform seçimleriyle dönemi daraltın; takip edilecekleri işaretleyin, bekleyenleri **Beklemede** sekmesinde toplayın.',
+        sections: [
+          {
+            title: 'Sekmeler',
+            items: [
+              '**Tümü:** seçili işletmenin bütün geri bildirimleri.',
+              '**Okunmamış:** henüz açmadığınız geri bildirimler.',
+              '**Düşük puan:** 1–3 yıldızlı geri bildirimler.',
+              '**Yanıtlandı:** yanıt gönderdiğiniz ya da kaydettiğiniz geri bildirimler.',
+              '**Beklemede:** **Beklemeye al** ile sonraya bıraktıklarınız.',
+            ],
+          },
+          {
+            title: 'Listeyi daraltma',
+            paragraphs: [
+              'Tarih (bugün, son 7 gün, son 30 gün veya tüm zamanlar), puan ve platform seçimleriyle listeyi daraltabilirsiniz. **Yanıtsızlar** ve **Yalnız işaretliler** düğmeleri yalnızca ilgili geri bildirimleri gösterir. Arama kutusu müşteri adında ve yorum metninde arar.',
+            ],
+          },
+          {
+            title: 'İşaretleme ve bekletme',
+            paragraphs: [
+              'Geri bildirimin ayrıntısındaki **İşaretle** düğmesi, takip edilmesi gereken bir kaydı ayırmanızı sağlar; **Beklemeye al** ise yanıtı sonraya bıraktığınız kayıtları **Beklemede** sekmesinde toplar. Vardiya değişiminde ya da haftalık değerlendirmede bu iki listeye bakmanız yeterlidir.',
+            ],
+          },
+          {
+            title: 'Görünümü paylaşma',
+            paragraphs: [
+              'Seçtiğiniz sekme ve seçimler sayfa adresine yazılır. Bağlantıyı bir ekip arkadaşınıza gönderdiğinizde aynı görünümü açar.',
+            ],
+          },
+        ],
+        checklist: [
+          'Düşük puan sekmesi her gün kontrol ediliyor.',
+          'Takip gerektirenler işaretleniyor.',
+          'Sonraya kalanlar Beklemede sekmesinde.',
+          'Seçimler kontrol edilmeden sayılar yorumlanmıyor.',
+        ],
+        faq: [
+          {
+            q: 'Arama hangi alanlarda çalışır?',
+            a: 'Müşteri adında ve yorum metninde, listede yüklü olan geri bildirimler arasında. Daha geniş bir dönemde aramak için CSV dışa aktarımını bir tablo programında açabilirsiniz.',
+          },
+          {
+            q: 'Geri bildirimleri etiketleyebilir veya bir ekip arkadaşıma atayabilir miyim?',
+            a: 'Hayır. Gelen kutusunda etiket ve atama yoktur; takip için **İşaretle** ve **Beklemeye al** kullanılır.',
+          },
+          {
+            q: 'Beklenmedik bir sayı görüyorum; ne yapmalıyım?',
+            a: 'Önce seçili işletmeyi, sekmeyi ve tarih, puan, platform seçimlerini kontrol edin. **Temizle** düğmesi tüm seçimleri sıfırlar.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Search, tabs and flags in the inbox',
+      excerpt:
+        'On the Reviews page, tabs, date, rating and platform choices, the search box and flags keep feedback organised and set aside what needs follow-up.',
+      tags: ['inbox', 'search', 'tabs', 'flag', 'pending'],
+      body: {
+        lead: 'As feedback grows, reading every item in order gets harder. The tools on the Reviews page help you see what needs attention first and make sure nothing slips through.',
+        keyInsight:
+          'Use tabs for status and the date, rating and platform choices to narrow the period; flag what needs follow-up and collect what can wait on the **Pending** tab.',
+        sections: [
+          {
+            title: 'Tabs',
+            items: [
+              '**All:** every piece of feedback for the selected business.',
+              '**Unread:** feedback you have not opened yet.',
+              '**Low rating:** 1–3 star feedback.',
+              '**Replied:** feedback you have replied to or saved a reply for.',
+              '**Pending:** items you set aside with **Mark pending**.',
+            ],
+          },
+          {
+            title: 'Narrowing the list',
+            paragraphs: [
+              'Narrow the list by date (today, the last 7 days, the last 30 days or all time), rating and platform. The **Unreplied** and **Flagged only** buttons show just those items. The search box looks in customer names and comment text.',
+            ],
+          },
+          {
+            title: 'Flagging and pending',
+            paragraphs: [
+              'The **Flag** button in the feedback detail marks an item that needs follow-up, and **Mark pending** collects items you will reply to later on the **Pending** tab. At a shift change or in a weekly review, these two lists are all you need to check.',
+            ],
+          },
+          {
+            title: 'Sharing a view',
+            paragraphs: [
+              'The tab and choices you select are written into the page address. When you send the link to a teammate, it opens the same view.',
+            ],
+          },
+        ],
+        checklist: [
+          'The low-rating tab is checked every day.',
+          'Items needing follow-up are flagged.',
+          'Items for later are on the Pending tab.',
+          'Numbers are only read after checking the current choices.',
+        ],
+        faq: [
+          {
+            q: 'Which fields does search cover?',
+            a: 'Customer names and comment text, among the feedback loaded in the list. To search a longer period, open the CSV export in a spreadsheet.',
+          },
+          {
+            q: 'Can I tag feedback or assign it to a teammate?',
+            a: 'No. The inbox has no tags or assignment; use **Flag** and **Mark pending** to follow up.',
+          },
+          {
+            q: 'I see an unexpected number. What should I do?',
+            a: 'First check the selected business, the tab and the date, rating and platform choices. The **Clear** button resets every choice.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('review-management', 50, 'weekly-review-ritual', {
+    tr: {
+      title: 'Geri bildirimleri haftada bir ekiple okumak',
+      excerpt:
+        'Geri bildirimler her gün gelir, kararlar çoğu zaman haftalık alınır. Pazartesi gelen özet e-postası ve Analitik sayfasıyla yarım saatlik değerlendirme planı.',
+      tags: ['haftalık', 'ekip toplantısı', 'değerlendirme', 'analitik', 'süreç'],
+      body: {
+        lead: 'Tek bir geri bildirim bir anekdottur; bir haftanın geri bildirimleri ise karar vermek için kullanılabilecek bir resimdir. Kısa ve düzenli bir haftalık değerlendirme, geri bildirimleri somut iyileştirmelere dönüştürür.',
+        keyInsight:
+          'Her hafta aynı gün kısa bir toplantı yapın: önce geçen haftanın kararına bakın, sonra özeti ve düşük puanları okuyun, tek bir değişikliğe karar verin.',
+        sections: [
+          {
+            title: 'Yarım saatlik bir düzen',
+            ordered: true,
+            items: [
+              'Geçen hafta alınan kararın uygulanıp uygulanmadığına bakın.',
+              'Pazartesi gelen haftalık özeti ve **Analitik** sayfasında son 7 günü inceleyin.',
+              'Düşük puanlı geri bildirimlerden birkaçını birlikte okuyun.',
+              'Bu hafta yapılacak tek bir somut değişikliğe karar verin ve bir sorumlu belirleyin.',
+            ],
+          },
+          {
+            title: 'Kimler katılmalı?',
+            paragraphs: [
+              'İşletme sahibi ya da müdür, vardiya sorumlusu ve mutfak veya hizmet tarafından bir temsilci yeterlidir. Masada karar verebilecek kişiler olsun.',
+            ],
+          },
+          {
+            title: 'Neye bakılır?',
+            items: [
+              'Puan eğilimi ve geri bildirim sayısı.',
+              'Platforma ve günün saatine göre dağılım.',
+              'Yeterli yorum varsa Analitik’te öne çıkan konular.',
+              'Yanıtlanmamış ve işaretli geri bildirimler.',
+            ],
+          },
+        ],
+        checklist: [
+          'Toplantı her hafta aynı gün takvimde.',
+          'Geçen haftanın kararı kontrol edildi.',
+          'Kararlar yazılı ve her birinin bir sorumlusu var.',
+          'Yanıtsız geri bildirim kalmadı.',
+        ],
+        faq: [
+          {
+            q: 'Sakin haftalarda toplantıyı atlayabilir miyiz?',
+            a: 'Kısaltabilirsiniz ama atlamamanız iyi olur; düzen bozulunca alışkanlık da kaybolur.',
+          },
+          {
+            q: 'Geri bildirimleri ekibin tamamıyla paylaşmalı mıyım?',
+            a: 'Olumlu geri bildirimleri paylaşmak motive eder; olumsuzları kişileri suçlamadan paylaşmak gelişim sağlar. Ayrıntılar: [Geri bildirimleri ekibinizle paylaşma](/tr/help/review-culture-team-sharing).',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'A weekly feedback review with your team',
+      excerpt:
+        'Feedback arrives every day, but decisions are often made weekly. A half-hour review plan built on the Monday summary e-mail and the Analytics page.',
+      tags: ['weekly', 'team meeting', 'review', 'analytics', 'process'],
+      body: {
+        lead: 'One piece of feedback is an anecdote; a week of feedback is a picture you can decide from. A short, regular weekly review turns feedback into concrete improvements.',
+        keyInsight:
+          'Hold a short meeting on the same day each week: first check last week’s decision, then read the summary and the low ratings, and decide on one change.',
+        sections: [
+          {
+            title: 'A half-hour format',
+            ordered: true,
+            items: [
+              'Check whether last week’s decision was carried out.',
+              'Go through the Monday summary e-mail and the last 7 days on the **Analytics** page.',
+              'Read a few low-rated feedback together.',
+              'Decide on one concrete change for this week and name someone responsible.',
+            ],
+          },
+          {
+            title: 'Who should attend?',
+            paragraphs: [
+              'The owner or manager, the shift lead and someone from the kitchen or service side are enough. Make sure the people at the table can make decisions.',
+            ],
+          },
+          {
+            title: 'What to look at',
+            items: [
+              'The rating trend and the amount of feedback.',
+              'The split by platform and by time of day.',
+              'Topics highlighted in Analytics, when there are enough reviews.',
+              'Unreplied and flagged feedback.',
+            ],
+          },
+        ],
+        checklist: [
+          'The meeting is in the calendar on the same day each week.',
+          'Last week’s decision was checked.',
+          'Decisions are written down, each with an owner.',
+          'No feedback is left unreplied.',
+        ],
+        faq: [
+          {
+            q: 'Can we skip the meeting in quiet weeks?',
+            a: 'You can shorten it, but try not to skip it; once the rhythm breaks, the habit goes too.',
+          },
+          {
+            q: 'Should I share feedback with the whole team?',
+            a: 'Sharing positive feedback motivates; sharing negative feedback without blaming people helps everyone improve. See [Sharing feedback with your team](/en/help/review-culture-team-sharing).',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('review-management', 60, 'review-culture-team-sharing', {
+    tr: {
+      title: 'Geri bildirimleri ekibinizle paylaşma',
+      excerpt:
+        'Olumlu ve olumsuz geri bildirimleri ekibinizle nasıl, ne sıklıkla ve hangi dille paylaşırsınız? Moral bozmadan öğrenmeyi destekleyen bir paylaşım düzeni.',
+      tags: ['ekip', 'paylaşım', 'motivasyon', 'iletişim', 'kültür'],
+      body: {
+        lead: 'Geri bildirimleri ekiple paylaşmak basit görünür; yanlış yapıldığında moral bozar, doğru yapıldığında ekibin işini nasıl yaptığını gösteren bir aynaya dönüşür. Anahtar, tutarlılık ve suçlamayan bir dildir.',
+        keyInsight:
+          'Olumlu geri bildirimleri düzenli olarak ekiple okuyun, olumsuzları kişilere değil işleyişe bağlayın ve müşterinin kişisel bilgilerini paylaşmayın.',
+        sections: [
+          {
+            title: 'Olumlu geri bildirimler',
+            paragraphs: [
+              'Haftada bir, en güzel birkaç geri bildirimi ekiple okuyun. “Kahve önerisi çok iyiydi” gibi somut bir not, emeğin görüldüğünü hissettirir.',
+            ],
+          },
+          {
+            title: 'Olumsuz geri bildirimler',
+            paragraphs: [
+              'Olumsuz geri bildirimi bir kişiye değil, işleyişe bağlayın. “Servis yavaştı” notu bir çalışana yöneltilmiş bir suçlama değil, vardiya planı hakkında bir ipucudur.',
+            ],
+          },
+          {
+            title: 'Hangi kanalda?',
+            items: [
+              'Olumlu notlar: ekip toplantısı veya ekibin kullandığı mesajlaşma grubu.',
+              'Tekrarlayan konular: [haftalık değerlendirme](/tr/help/weekly-review-ritual).',
+              'Acil bir olumsuz geri bildirim: doğrudan vardiya sorumlusu.',
+              'Müşteriye dönüş: [düşük puanlı geri bildirimleri yanıtlama](/tr/help/handle-negative-feedback) rehberi.',
+            ],
+          },
+          {
+            title: 'Kişisel veriye dikkat',
+            paragraphs: [
+              'Geri bildirimi paylaşırken müşterinin adını, e-postasını veya telefonunu paylaşmanız gerekmez; konuyu anlatmak yeterlidir. Geri bildirimleri müşterinin izni olmadan sosyal medyada yayımlamayın.',
+            ],
+          },
+        ],
+        checklist: [
+          'Olumlu geri bildirimler düzenli olarak paylaşılıyor.',
+          'Olumsuzlar kişi değil işleyiş üzerinden konuşuluyor.',
+          'Müşterinin kişisel bilgileri paylaşılmıyor.',
+          'Sosyal medyada izinsiz alıntı yapılmıyor.',
+        ],
+        faq: [
+          {
+            q: 'Olumsuz geri bildirimleri ekipten saklamak doğru mu?',
+            a: 'Hayır. Saklamak güveni azaltır. Paylaşımın amacı suçlamak değil, işleyişi birlikte iyileştirmek olmalı.',
+          },
+          {
+            q: 'Müşteri yorumlarını sosyal medyada paylaşabilir miyim?',
+            a: 'Müşterinin açık izni olmadan hayır. Alıntı yapmak istiyorsanız önce izin alın.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Sharing feedback with your team',
+      excerpt:
+        'How, how often and in what tone should you share positive and negative feedback with your team? A way of sharing that supports learning without hurting morale.',
+      tags: ['team', 'sharing', 'motivation', 'communication', 'culture'],
+      body: {
+        lead: 'Sharing feedback with your team looks simple. Done badly, it hurts morale; done well, it becomes a mirror that shows the team how it works. The keys are consistency and language that does not blame.',
+        keyInsight:
+          'Read positive feedback with the team regularly, link negative feedback to how things work rather than to people, and keep customers’ personal details out of it.',
+        sections: [
+          {
+            title: 'Positive feedback',
+            paragraphs: [
+              'Once a week, read a few of the best pieces of feedback with the team. A specific note such as “the coffee recommendation was great” shows that effort is noticed.',
+            ],
+          },
+          {
+            title: 'Negative feedback',
+            paragraphs: [
+              'Link negative feedback to how things work, not to a person. “Service was slow” is not an accusation against one employee; it is a clue about the shift plan.',
+            ],
+          },
+          {
+            title: 'Which channel?',
+            items: [
+              'Positive notes: a team huddle or the messaging group your team already uses.',
+              'Recurring topics: the [weekly review](/en/help/weekly-review-ritual).',
+              'An urgent negative piece of feedback: straight to the shift lead.',
+              'Following up with the customer: the guide to [responding to low-rated feedback](/en/help/handle-negative-feedback).',
+            ],
+          },
+          {
+            title: 'Mind personal data',
+            paragraphs: [
+              'When sharing feedback, you do not need to share the customer’s name, e-mail or phone number; describing the issue is enough. Do not publish feedback on social media without the customer’s permission.',
+            ],
+          },
+        ],
+        checklist: [
+          'Positive feedback is shared regularly.',
+          'Negatives are discussed in terms of process, not people.',
+          'Customers’ personal details are not shared.',
+          'Nothing is quoted on social media without permission.',
+        ],
+        faq: [
+          {
+            q: 'Is it right to keep negative feedback from the team?',
+            a: 'No. Hiding it reduces trust. The aim of sharing should be to improve how things work together, not to blame.',
+          },
+          {
+            q: 'Can I post customer reviews on social media?',
+            a: 'Not without the customer’s explicit permission. Ask first if you want to quote someone.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('review-management', 70, 'csv-export-bi', {
+    tr: {
+      title: 'Verileri CSV olarak dışa aktarma',
+      excerpt:
+        'Geri bildirimleri, analitik raporunu, müşteri listesini ve anket ile denetim yanıtlarını CSV olarak indirip Excel veya Google E-Tablolar’da inceleyebilirsiniz.',
+      tags: ['csv', 'dışa aktarma', 'excel', 'rapor', 'tablo'],
+      body: {
+        lead: 'Paneldeki raporların ötesine geçmek ya da verileri muhasebe ve operasyon tablolarıyla birleştirmek istediğinizde CSV dışa aktarımı en hızlı yoldur.',
+        keyInsight:
+          'Yorumlar, Analitik, Müşteriler, Anketler ve Denetim Merkezi sayfalarından CSV indirebilirsiniz; dosyalar Türkçe karakterler bozulmadan açılacak biçimde hazırlanır.',
+        sections: [
+          {
+            title: 'Neler dışa aktarılabilir?',
+            items: [
+              '**Yorumlar sayfası (Dışa aktar):** tarih, puan, KVKK onayı, platform, kaynak, yorum, işletme ve masa etiketi; seçili işletme, tarih, puan ve platform seçimlerine göre.',
+              '**Analitik sayfası (Rapor indir):** seçili dönemdeki her geri bildirim için puan, yorum, yanıt durumu ve yanıt süresi; KVKK onayı veren müşterilerin e-posta adresi ya da telefonu da yer alır.',
+              '**Müşteriler sayfası (CSV indir):** iletişim bilgisi bırakan müşterilerin listesi.',
+              '**Anket ve denetim yanıtları:** her anketin ve denetimin kendi sayfasından.',
+            ],
+          },
+          {
+            title: 'Tablo programında açarken',
+            items: [
+              'Dosyayı doğrudan Excel veya Google E-Tablolar ile açın; Türkçe karakterler korunur.',
+              'Puan sütununu sayı olarak biçimlendirin.',
+              'Tarih sütunları uluslararası biçimdedir (yıl-ay-gün); saatler UTC’dir, Türkiye saati için 3 saat ekleyin.',
+              'Tablo programının sıralama ve gruplama araçlarıyla sonuçlara platform veya masa bazında bakın.',
+            ],
+          },
+          {
+            title: 'Dosyayı güvenle saklama',
+            paragraphs: [
+              'Dışa aktarılan dosyalarda yorum metinleri ve müşterilerin iletişim bilgileri gibi kişisel veriler bulunabilir. Dosyayı yalnızca gereken kişilerle paylaşın ve işiniz bitince silin; ayrıntılar: [Dışa aktarılan dosyalarda kişisel veri](/tr/help/export-and-pii).',
+            ],
+          },
+        ],
+        checklist: [
+          'Gereken dönem ve işletme seçildi.',
+          'Dosya yalnızca gereken kişilerle paylaşıldı.',
+          'Puan ve tarih sütunları doğru biçimde.',
+          'İş bitince dosya silindi.',
+        ],
+        faq: [
+          {
+            q: 'Buaze’nin bir API’si veya webhook’u var mı?',
+            a: 'Hayır. Müşterilere açık bir API veya webhook şu an yok; verilerinizi CSV olarak indirebilirsiniz.',
+          },
+          {
+            q: 'Dışa aktarılan dosyalarda müşterinin e-postası var mı?',
+            a: 'Yorumlar sayfasının dosyasında yok. **Analitik** sayfasının raporunda ve **Müşteriler** sayfasının dosyasında, KVKK onayı veren müşterilerin e-posta adresi ya da telefonu bulunur; bu dosyaları özenle paylaşın.',
+          },
+          {
+            q: 'Dışa aktarımın bir sınırı var mı?',
+            a: 'Yorumlar ve Analitik dosyaları tek seferde en fazla 10.000 satır içerir. Yorumlar sayfasında tarih seçimi **Tüm zamanlar** iken dışa aktarım son 90 günü kapsar; daha eski kayıtlar için Analitik sayfasında 12 ay ya da özel bir tarih aralığı seçin.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Exporting your data as CSV',
+      excerpt:
+        'Download your feedback, the analytics report, your customer list and survey and audit responses as CSV and work with them in Excel or Google Sheets.',
+      tags: ['csv', 'export', 'excel', 'report', 'spreadsheet'],
+      body: {
+        lead: 'When you want to go beyond the panel’s reports or combine your data with finance and operations sheets, a CSV export is the quickest way.',
+        keyInsight:
+          'You can download CSV files from the Reviews, Analytics, Customers, Surveys and Audit Center pages; the files are prepared so Turkish characters open correctly.',
+        sections: [
+          {
+            title: 'What can be exported?',
+            items: [
+              '**Reviews page (Export):** date, rating, KVKK consent, platform, source, comment, business and table label, following the business, date, rating and platform you have selected.',
+              '**Analytics page (Export report):** rating, comment, reply status and reply time for each piece of feedback in the selected period, plus the e-mail address or phone number of customers who gave KVKK consent.',
+              '**Customers page (Export CSV):** the list of customers who left contact details.',
+              '**Survey and audit responses:** from each survey’s and audit’s own page.',
+            ],
+          },
+          {
+            title: 'Opening the file in a spreadsheet',
+            items: [
+              'Open the file directly in Excel or Google Sheets; Turkish characters are kept intact.',
+              'Format the rating column as a number.',
+              'Date columns use the international format (year-month-day); times are in UTC, so add 3 hours for Turkey time.',
+              'Use your spreadsheet’s sort and group tools to look at results by platform or table.',
+            ],
+          },
+          {
+            title: 'Keeping the file safe',
+            paragraphs: [
+              'Exported files can contain personal data such as comments and customers’ contact details. Share the file only with people who need it and delete it when you are done; see [Personal data in exported files](/en/help/export-and-pii).',
+            ],
+          },
+        ],
+        checklist: [
+          'The right period and business are selected.',
+          'The file was shared only with people who need it.',
+          'The rating and date columns are formatted correctly.',
+          'The file was deleted when the work was done.',
+        ],
+        faq: [
+          {
+            q: 'Does Buaze have an API or webhooks?',
+            a: 'No. There is no customer-facing API or webhook today; you can download your data as CSV.',
+          },
+          {
+            q: 'Do the exported files include customers’ e-mail addresses?',
+            a: 'Not the Reviews page file. The **Analytics** report and the **Customers** file include the e-mail address or phone number of customers who gave KVKK consent, so share those files with care.',
+          },
+          {
+            q: 'Is there a limit to an export?',
+            a: 'The Reviews and Analytics files contain up to 10,000 rows at a time. On the Reviews page, when the date choice is **All time**, the export covers the last 90 days; for older records, choose 12 months or a custom date range on the Analytics page.',
+          },
+        ],
+      },
+    },
+  }),
+
+  /* ----------------------- Platform bağlantıları --------------------- */
+  ...pair('integrations', 10, 'google-review-link', {
+    tr: {
+      title: 'Google yorum bağlantısını ekleme',
+      excerpt:
+        'İşletmenizi adıyla arayıp seçin; Buaze resmi Google “yorum yaz” bağlantınızı oluşturur. Google hesabıyla giriş gerekmez. Bağlantıyı yayına almadan önce deneyin.',
+      tags: ['google', 'yorum bağlantısı', 'place id', 'google haritalar', 'işletme profili'],
+      body: {
+        lead: 'Google bağlantısı, yorum yazmak isteyen müşterinin doğru işletme profiline ulaşmasını sağlar. Yanlış veya eski bir bağlantı, iyi niyetli müşteriyi boşa çıkarır.',
+        keyInsight:
+          'En kolay yol, **Platform bağlantıları** sayfasında işletmenizi adıyla arayıp listeden seçmektir; Buaze doğrudan yorum yazma ekranını açan bağlantıyı oluşturur.',
+        sections: [
+          {
+            title: 'İşletmenizi arayıp seçin',
+            ordered: true,
+            items: [
+              'Panelde **Platform bağlantıları** sayfasını açın ve Google satırındaki **Bağla** düğmesine basın (bağlantı eklediyseniz düğmenin adı **Yönet** olur).',
+              '**İşletme adı ve semt** alanına işletmenizi yazın ve **Ara** düğmesine basın.',
+              'Sonuçlardan kendi işletmenizi bulun ve **Bu işletmeyi seç** düğmesine basın; adres ve kategoriye bakarak doğru şubeyi seçin.',
+              'Buaze, seçtiğiniz işletme için resmi “yorum yaz” bağlantısını oluşturup kaydeder.',
+            ],
+          },
+          {
+            title: 'Elle eklemek isterseniz',
+            paragraphs: [
+              'İşletmenizi listede bulamazsanız bağlantıyı aynı sayfadaki bağlantı alanına elle girebilirsiniz: Google’ın verdiği kısa yorum bağlantısı (g.page/r/…), yorum yazma bağlantısı veya Google Haritalar’daki işletme bağlantısı kabul edilir. Hangi biçimin nasıl çalıştığı [Google bağlantı türleri](/tr/help/google-maps-link-vs-place-id) rehberinde.',
+            ],
+          },
+          {
+            title: 'Google Yorumları sayfası',
+            paragraphs: [
+              'İşletmenizi seçtikten sonra **Google Yorumları** sayfasında Google puanınızı, yorum sayınızı, Google’ın gösterdiği en fazla 5 yorumu ve 6 maddelik profil kontrol listesini görürsünüz. Bu görünüm için Google hesabıyla giriş yapmanız gerekmez. Google yorumlarına panelden yanıt verme, Google’ın erişim onayına bağlıdır ve şu an genel kullanıma açık değildir.',
+            ],
+          },
+        ],
+        policyNote: `Buaze yorum silmez, gizlemez veya değiştirmez ve yorum karşılığında ödül sunmaz. Müşteriyi yanıltan, yorum metni dayatan ya da yorum karşılığında teklif içeren uygulamalar [Google’ın yorum kurallarına](${GOOGLE_POLICY_URL}) aykırıdır.`,
+        checklist: [
+          'Doğru işletme ve şube seçildi.',
+          'Bağlantı telefonda yorum yazma ekranını açıyor.',
+          'Her şubenin kendi Google bağlantısı var.',
+          'Google Yorumları sayfasında puan ve yorum sayısı görünüyor.',
+        ],
+        faq: [
+          {
+            q: 'Google hesabımla giriş yapmam gerekiyor mu?',
+            a: 'Hayır. Bağlantıyı oluşturmak ve Google Yorumları sayfasındaki görünüm için Google hesabıyla giriş gerekmez.',
+          },
+          {
+            q: 'Google yorumlarına panelden yanıt verebilir miyim?',
+            a: 'Şu an hayır. Bu özellik Google’ın erişim onayına bağlıdır ve genel kullanıma açık değildir. Yanıtlarınızı Google İşletme Profili üzerinden yazabilirsiniz.',
+          },
+          {
+            q: 'Birden fazla Google profilim var; ne yapmalıyım?',
+            a: 'Her şubeyi ayrı işletme olarak ekleyin ve her birinde kendi Google profilini seçin.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Adding your Google review link',
+      excerpt:
+        'Search for your business by name and pick it; Buaze builds your official Google “write a review” link. No Google sign-in needed. Test it before you print.',
+      tags: ['google', 'review link', 'place id', 'google maps', 'business profile'],
+      body: {
+        lead: 'Your Google link takes customers who want to write a review to the right business profile. A wrong or outdated link wastes the effort of a willing customer.',
+        keyInsight:
+          'The easiest way is to search for your business by name on the **Platform links** page and pick it from the list; Buaze builds the link that opens the review form directly.',
+        sections: [
+          {
+            title: 'Search for your business and pick it',
+            ordered: true,
+            items: [
+              'Open the **Platform links** page in the panel and press **Add link** on the Google row (once a link is saved, the button reads **Manage**).',
+              'Type your business into the **Business name and area** field and press **Search**.',
+              'Find your business in the results and press **Select this business**; use the address and category to pick the right branch.',
+              'Buaze builds and saves the official “write a review” link for the business you picked.',
+            ],
+          },
+          {
+            title: 'Adding it by hand',
+            paragraphs: [
+              'If your business does not appear in the list, you can enter the link yourself in the link field on the same page: the short review link Google gives you (g.page/r/…), a write-a-review link or your business’s link from Google Maps are accepted. How each format works is explained in [Google link types](/en/help/google-maps-link-vs-place-id).',
+            ],
+          },
+          {
+            title: 'The Google Reviews page',
+            paragraphs: [
+              'Once your business is selected, the **Google Reviews** page shows your Google rating, review count, up to 5 reviews that Google returns and a 6-item profile checklist. You do not need to sign in with Google for this view. Replying to Google reviews from the panel depends on Google’s access approval and is not generally available yet.',
+            ],
+          },
+        ],
+        policyNote: `Buaze does not delete, hide or edit reviews and does not offer rewards for reviews. Practices that mislead customers, dictate review text or offer something in exchange for a review are against [Google’s review policy](${GOOGLE_POLICY_URL}).`,
+        checklist: [
+          'The right business and branch are selected.',
+          'The link opens the review form on a phone.',
+          'Each branch has its own Google link.',
+          'The Google Reviews page shows your rating and review count.',
+        ],
+        faq: [
+          {
+            q: 'Do I need to sign in with my Google account?',
+            a: 'No. Building the link and the view on the Google Reviews page need no Google sign-in.',
+          },
+          {
+            q: 'Can I reply to Google reviews from the panel?',
+            a: 'Not at the moment. This feature depends on Google’s access approval and is not generally available. You can write replies in your Google Business Profile.',
+          },
+          {
+            q: 'I have more than one Google profile. What should I do?',
+            a: 'Add each branch as a separate business and pick its own Google profile in each one.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('integrations', 20, 'google-maps-link-vs-place-id', {
+    tr: {
+      title: 'Google bağlantısı: Place ID, kısa link ve Haritalar',
+      excerpt:
+        'Place ID, g.page kısa bağlantısı ve Google Haritalar bağlantısı farklı davranır. Hangisini kullanırsanız kullanın, Buaze mümkünse yorum yazma ekranını açar.',
+      tags: ['google', 'place id', 'google haritalar', 'kısa link', 'yorum bağlantısı'],
+      body: {
+        lead: 'Google için tek bir bağlantı türü yoktur. Bağlantıyı elle girmeniz gerekirse hangi biçimin nasıl çalıştığını bilmek, müşterinin gerçekten yorum yazma ekranına ulaşmasını sağlar.',
+        keyInsight:
+          'İşletmenizi aratıp seçmek en güvenli yoldur; Buaze, Google’ın işletmenize verdiği Place ID ile yorum yazma bağlantısını kendisi oluşturur. Elle giriyorsanız g.page/r/ ile başlayan kısa yorum bağlantısını tercih edin.',
+        sections: [
+          {
+            title: 'Kabul edilen biçimler',
+            items: [
+              '**Place ID** (genellikle ChIJ ile başlar): Google’ın işletmenize verdiği kimliktir. İşletmenizi aratıp seçtiğinizde Buaze bunu kaydeder ve doğrudan yorum yazma ekranını açan bağlantıyı oluşturur. Bağlantı alanına tek başına yazılamaz; elle eklemek isterseniz aşağıdaki yorum yazma bağlantısının içinde kullanın.',
+              '**Kısa yorum bağlantısı** (g.page/r/…): Google İşletme Profili’nin verdiği bağlantıdır, olduğu gibi kullanılır.',
+              '**Yorum yazma bağlantısı** (search.google.com/local/writereview?placeid=…): olduğu gibi kullanılır.',
+              '**Google Haritalar bağlantısı** (google.com/maps/place/…): içinden Place ID çıkarılabiliyorsa yorum yazma bağlantısına çevrilir; çıkarılamazsa ve kısa Haritalar bağlantılarında (maps.app.goo.gl/…) müşteri işletmenizin Haritalar sayfasına gider ve yorum yazmayı orada seçer.',
+            ],
+          },
+          {
+            title: 'Kaydederken yapılan kontroller',
+            paragraphs: [
+              'Bağlantıyı https:// ile başlayan tam hâliyle yapıştırın; Google’a ait bir adres değilse kaydedilmez. Google’ın ana sayfası gibi, belirli bir işletmeye gitmeyen bir bağlantı girerseniz kaydedilir ama uyarı gösterilir; bu durumda bağlantıyı düzeltin.',
+            ],
+          },
+          {
+            title: 'Telefonda nasıl açılır?',
+            paragraphs: [
+              'Google Haritalar uygulaması yüklü telefonlarda bağlantı uygulamada açılabilir; bu beklenen bir davranıştır. Denemeyi hem uygulaması olan hem olmayan bir telefonda yapın.',
+            ],
+          },
+        ],
+        checklist: [
+          'Bağlantı türü bilinçli seçildi.',
+          'Telefonda yorum yazma ekranı açılıyor.',
+          'Her şubenin kendi bağlantısı var.',
+          'Kaydederken uyarı gösterilmedi.',
+        ],
+        faq: [
+          {
+            q: 'Henüz bir Google işletme profilim yok; ne yapmalıyım?',
+            a: 'Önce Google İşletme Profili’nizi oluşturup doğrulayın. Profil olmadan müşteri yorum yazacağı bir sayfa bulamaz.',
+          },
+          {
+            q: 'Google profilim askıya alındıysa ne olur?',
+            a: 'Bağlantı açılmazsa günlük kontrolde başarısız görünür ve 24 saat boyunca atlanır; müşteri varsa başka bir uygun platforma gider. Profil yeniden açılınca bağlantıyı test edin.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Google link types: Place ID, short link and Maps',
+      excerpt:
+        'A Place ID, a g.page short link and a Google Maps link behave differently. Whichever one you use, Buaze opens the review form directly whenever it can.',
+      tags: ['google', 'place id', 'google maps', 'short link', 'review link'],
+      body: {
+        lead: 'There is no single kind of Google link. If you need to enter the link by hand, knowing how each format works makes sure customers really reach the review form.',
+        keyInsight:
+          'Searching for your business and picking it is the safest way; Buaze then builds the review link itself from the Place ID Google gives your business. If you enter a link by hand, use the short review link that starts with g.page/r/.',
+        sections: [
+          {
+            title: 'Accepted formats',
+            items: [
+              '**Place ID** (usually starts with ChIJ): the ID Google gives your business. When you search for your business and pick it, Buaze saves it and builds a link that opens the review form directly. It cannot be typed into the link field on its own; to add it by hand, use it inside the write-a-review link below.',
+              '**Short review link** (g.page/r/…): the link Google Business Profile gives you, used as is.',
+              '**Write-a-review link** (search.google.com/local/writereview?placeid=…): used as is.',
+              '**Google Maps link** (google.com/maps/place/…): if a Place ID can be extracted, it is turned into a review link; if not, and for short Maps links (maps.app.goo.gl/…), the customer lands on your Maps page and chooses to write a review there.',
+            ],
+          },
+          {
+            title: 'Checks when you save',
+            paragraphs: [
+              'Paste the full link, starting with https://; a link that is not a Google address is not saved. If you enter a link that does not lead to a specific business, such as Google’s home page, it is saved with a warning; correct it in that case.',
+            ],
+          },
+          {
+            title: 'How it opens on a phone',
+            paragraphs: [
+              'On phones with the Google Maps app installed, the link may open in the app; this is expected. Test it on a phone with the app and on one without.',
+            ],
+          },
+        ],
+        checklist: [
+          'The link type was chosen on purpose.',
+          'The review form opens on a phone.',
+          'Each branch has its own link.',
+          'No warning was shown when saving.',
+        ],
+        faq: [
+          {
+            q: 'I do not have a Google Business Profile yet. What should I do?',
+            a: 'Create and verify your Google Business Profile first. Without a profile, customers have no page to write a review on.',
+          },
+          {
+            q: 'What if my Google profile is suspended?',
+            a: 'If the link does not open, it fails the daily check and is skipped for 24 hours; customers go to another suitable platform if there is one. Test the link again once the profile is back.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('integrations', 30, 'redirect-threshold', {
+    tr: {
+      title: 'Yönlendirme eşiği ve varsayılan platform',
+      excerpt:
+        'Eşik, yorum sayfasının hangi puanlarda doğrudan açılacağını belirler: varsayılan yalnızca 5 yıldız, isterseniz 4 ve 5 yıldız. Varsayılan platform nasıl seçilir?',
+      tags: ['eşik', 'yönlendirme', 'varsayılan platform', 'yıldız', 'akış'],
+      body: {
+        lead: 'Müşteri QR kodunu okutup puan verdiğinde ne göreceğini iki ayar belirler: yönlendirme eşiği ve varsayılan platform. İkisi de **Platform bağlantıları** sayfasındadır.',
+        keyInsight:
+          'Eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) seçtiğiniz platformun yorum sayfası açılır. Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        sections: [
+          {
+            title: 'Akış adım adım',
+            ordered: true,
+            items: [
+              'Müşteri QR kodunu okutur ve 1 ile 5 yıldız arasında puan verir.',
+              'Puan eşiğinizde veya üzerindeyse seçtiğiniz platformun yorum sayfası kısa bir geçişle açılır.',
+              'Puan eşiğin altındaysa işletmenize özel geri bildirim formu açılır; aynı ekranda “… üzerinde yorum yaz” bağlantısı da görünür.',
+              'Müşteri formu gönderirse geri bildirim **Yorumlar** sayfanıza düşer; isterse herkese açık bağlantıdan yorum yazar.',
+            ],
+          },
+          {
+            title: 'Eşik seçenekleri',
+            items: [
+              '**Yalnızca 5 yıldız** (varsayılan): 1–4 yıldız önce işletmenize özel forma düşer.',
+              '**4 ve 5 yıldız:** 1–3 yıldız önce işletmenize özel forma düşer.',
+            ],
+          },
+          {
+            title: 'Varsayılan platform',
+            paragraphs: [
+              'Varsayılan platform, QR koduna platform sabitlenmemişse müşterinin gönderileceği yorum sayfasıdır. Bağlantısını eklediğiniz platformlardan birini seçin. Varsayılan platformun bağlantısı silinirse ya da çalışmazsa sektörünüze göre öncelikli platform, o da yoksa bağlantısı olan başka bir platform kullanılır.',
+            ],
+          },
+        ],
+        policyNote:
+          'Buaze yorum silmez, gizlemez veya değiştirmez; yorum karşılığında indirim, hediye veya ödül sunmaz. Herkese açık yorum bağlantısı her puanda gösterilir ve her müşteri dilediği yerde yorum yazabilir.',
+        checklist: [
+          'Eşik bilinçli olarak seçildi.',
+          'Varsayılan platform seçildi ve bağlantısı çalışıyor.',
+          'Akış yüksek ve düşük puanla telefonda denendi.',
+          'Düşük puan formunun altında herkese açık bağlantı görünüyor.',
+        ],
+        faq: [
+          {
+            q: 'Eşiğin altında puan veren müşteri herkese açık yorum yazabilir mi?',
+            a: 'Evet. Herkese açık yorum bağlantısı özel geri bildirim formuyla aynı ekranda görünür; müşteri formu doldurmadan da bağlantıyı kullanabilir.',
+          },
+          {
+            q: 'Eşiği değiştirince QR kodlarını yeniden basmam gerekir mi?',
+            a: 'Hayır. Eşik panelden değişir ve tüm QR kodlarınıza hemen yansır.',
+          },
+          {
+            q: 'Müşteri birden fazla platform görür mü?',
+            a: 'Yüksek puandan sonra tek bir platformun yorum sayfası açılır: QR koduna sabitlenen platform; o yoksa varsayılan platformunuz, o da yoksa sektörünüze göre öncelikli platform.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'The redirect threshold and default platform',
+      excerpt:
+        'The threshold decides at which ratings the platform’s review page opens directly: 5 stars only by default, or 4 and 5 stars. How to choose the default platform.',
+      tags: ['threshold', 'redirect', 'default platform', 'stars', 'flow'],
+      body: {
+        lead: 'Two settings decide what customers see after they scan your QR code and give a rating: the redirect threshold and the default platform. Both are on the **Platform links** page.',
+        keyInsight:
+          'At or above the threshold you set (5 stars by default), your chosen platform’s review page opens. Below it, the customer can first send you private feedback; the public review link is shown on the same screen.',
+        sections: [
+          {
+            title: 'The flow step by step',
+            ordered: true,
+            items: [
+              'The customer scans the QR code and gives a rating from 1 to 5 stars.',
+              'If the rating is at or above your threshold, your chosen platform’s review page opens after a short transition.',
+              'If the rating is below the threshold, your private feedback form opens, with a “Write a review on …” link on the same screen.',
+              'If the customer submits the form, the feedback lands on your **Reviews** page; they can also write a public review through the link.',
+            ],
+          },
+          {
+            title: 'Threshold options',
+            items: [
+              '**5 stars only** (default): 1–4 stars land in your private form first.',
+              '**4 and 5 stars:** 1–3 stars land in your private form first.',
+            ],
+          },
+          {
+            title: 'Default platform',
+            paragraphs: [
+              'The default platform is the review page customers are sent to when no platform is pinned to the QR code. Choose one of the platforms whose link you have added. If the default platform’s link is removed or stops working, the priority platform for your sector is used, or failing that, another platform with a link.',
+            ],
+          },
+        ],
+        policyNote:
+          'Buaze does not delete, hide or edit reviews, and does not offer discounts, gifts or rewards for reviews. The public review link is shown for every rating and every customer can post a review wherever they like.',
+        checklist: [
+          'The threshold was chosen on purpose.',
+          'A default platform is selected and its link works.',
+          'The flow was tested on a phone with a high and a low rating.',
+          'The public link is visible under the low-rating form.',
+        ],
+        faq: [
+          {
+            q: 'Can a customer who rates below the threshold still write a public review?',
+            a: 'Yes. The public review link is on the same screen as the private feedback form, and the customer can use it without filling in the form.',
+          },
+          {
+            q: 'Do I need to reprint my QR codes after changing the threshold?',
+            a: 'No. The threshold changes in the panel and applies to all your QR codes immediately.',
+          },
+          {
+            q: 'Does the customer see more than one platform?',
+            a: 'After a high rating, a single platform’s review page opens: the platform pinned to the QR code; failing that, your default platform, and failing that, the priority platform for your sector.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('integrations', 40, 'delivery-platform-links', {
+    tr: {
+      title: 'Yemeksepeti, Getir ve Trendyol GO bağlantıları',
+      excerpt:
+        'Paket servis yapıyorsanız teslimat platformlarındaki yorum sayfalarınızın bağlantısını ekleyin ve paketteki QR kodunu ilgili platforma sabitleyin.',
+      tags: ['yemeksepeti', 'getir', 'trendyol go', 'paket servis', 'teslimat'],
+      body: {
+        lead: 'Teslimat deneyimi, işletme içindeki deneyimden farklıdır. Teslimat platformlarının bağlantılarını ayrı tutmak, paketle gelen müşteriyi doğru yorum sayfasına göndermenizi sağlar.',
+        keyInsight:
+          'Her teslimat platformu için yorum yapılabilen işletme sayfanızın bağlantısını ekleyin ve paketteki QR kodunu o platforma sabitleyin.',
+        sections: [
+          {
+            title: 'Hangi bağlantı eklenmeli?',
+            paragraphs: [
+              'Platformdaki kendi işletme sayfanızın kalıcı bağlantısını ekleyin; kısaltılmış veya kampanya bağlantıları yerine işletme sayfasını kullanın. Bazı platformlarda ana sayfa bağlantısı kaydedilir ama uyarı gösterilir; uyarı çıkmasa da bağlantıyı telefonda açıp doğru sayfaya gittiğini kontrol edin.',
+            ],
+          },
+          {
+            title: 'Paketteki QR kodu',
+            paragraphs: [
+              'Paket servis için ayrı bir QR oluşturun, masa etiketine örneğin PAKET yazın ve QR’ı ilgili platforma sabitleyin. Eşik ve üzerinde puan veren müşteri o platformun yorum sayfasına gider; daha düşük puan veren müşteri önce size yazabilir ve aynı ekranda o platformun herkese açık yorum bağlantısını görür.',
+            ],
+          },
+          {
+            title: 'Raporlarda',
+            paragraphs: [
+              'Geri bildirimlerin hangi platform üzerinden geldiği gelen kutusunda ve **Analitik** sayfasındaki platform dağılımında görünür. Buaze bu platformlardaki yorumları panele aktarmaz ve onlara yanıt vermez; yalnızca müşteriyi doğru sayfaya gönderir.',
+            ],
+          },
+        ],
+        checklist: [
+          'Her platform için işletme sayfası bağlantısı eklendi.',
+          'Bağlantılar telefonda açılıyor.',
+          'Paket QR kodu doğru platforma sabitlendi.',
+          'Kaydederken uyarı gösterilmedi.',
+        ],
+        faq: [
+          {
+            q: 'Teslimat platformlarındaki yorumlar panelde görünür mü?',
+            a: 'Hayır. Buaze bu platformlardaki yorumları içeri aktarmaz. Panelde QR akışından gelen geri bildirimler görünür.',
+          },
+          {
+            q: 'Bir platformu kullanmıyorsam alanı boş bırakabilir miyim?',
+            a: 'Evet. Bağlantısı olmayan platformlar akışta kullanılmaz.',
+          },
+          {
+            q: 'Siparişle eşleştirme yapılıyor mu?',
+            a: 'Hayır. Buaze teslimat platformlarının sipariş bilgilerine bağlanmaz.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Yemeksepeti, Getir and Trendyol GO links',
+      excerpt:
+        'If you deliver, add the links to your review pages on the delivery platforms and pin the QR code on your delivery bags to the right platform.',
+      tags: ['yemeksepeti', 'getir', 'trendyol go', 'delivery', 'takeaway'],
+      body: {
+        lead: 'The delivery experience is different from the one inside your business. Keeping delivery platform links separate lets you send delivery customers to the right review page.',
+        keyInsight:
+          'For each delivery platform, add the link to your business page where reviews can be written, and pin the QR code on your bags to that platform.',
+        sections: [
+          {
+            title: 'Which link should I add?',
+            paragraphs: [
+              'Add the permanent link to your own business page on the platform; use the business page rather than shortened or campaign links. On some platforms a home page link is saved with a warning; even without a warning, open the link on a phone and check that it reaches the right page.',
+            ],
+          },
+          {
+            title: 'The QR code on the bag',
+            paragraphs: [
+              'Create a separate QR code for delivery, put something like DELIVERY in the table label and pin the QR code to the right platform. Customers who rate at or above your threshold go to that platform’s review page; customers who rate lower can write to you first and see that platform’s public review link on the same screen.',
+            ],
+          },
+          {
+            title: 'In your reports',
+            paragraphs: [
+              'Which platform feedback came through shows in the inbox and in the platform split on the **Analytics** page. Buaze does not import reviews from these platforms or reply to them; it only sends customers to the right page.',
+            ],
+          },
+        ],
+        checklist: [
+          'A business page link is added for each platform.',
+          'The links open on a phone.',
+          'The delivery QR code is pinned to the right platform.',
+          'No warning was shown when saving.',
+        ],
+        faq: [
+          {
+            q: 'Do reviews from the delivery platforms show in the panel?',
+            a: 'No. Buaze does not import reviews from these platforms. The panel shows feedback that comes through your QR flow.',
+          },
+          {
+            q: 'Can I leave a platform empty if I do not use it?',
+            a: 'Yes. Platforms without a link are not used in the flow.',
+          },
+          {
+            q: 'Is feedback matched to orders?',
+            a: 'No. Buaze does not connect to the delivery platforms’ order data.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('integrations', 50, 'tripadvisor-foursquare', {
+    tr: {
+      title: 'Tripadvisor, Booking.com, Airbnb ve diğerleri',
+      excerpt:
+        'Tripadvisor, Booking.com, Airbnb, Yandex, Yelp ve Foursquare bağlantılarını nasıl ekleyeceğinizi ve hangi sektörlerde öne çıktıklarını öğrenin.',
+      tags: ['tripadvisor', 'booking.com', 'airbnb', 'yandex', 'yelp', 'foursquare'],
+      body: {
+        lead: 'Buaze 10 herkese açık yorum platformunu destekler: Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb, Yandex, Yelp ve Foursquare. Bu rehber, Google ve teslimat platformları dışındakileri anlatır.',
+        keyInsight:
+          'İşletmenizin profili olan ve müşterilerinizin gerçekten kullandığı platformları ekleyin; boş ya da az kullanılan bir profile müşteri göndermek yerine ana profilinizi güçlendirin.',
+        sections: [
+          {
+            title: 'Sektöre göre öne çıkanlar',
+            items: [
+              '**Konaklama:** Tripadvisor, Booking.com, Airbnb; ayrıca Yelp, Foursquare ve Yandex.',
+              '**Restoran ve kafe:** Tripadvisor, Yelp, Foursquare ve Yandex, Google ve teslimat platformlarının yanında.',
+              '**Klinik, güzellik ve perakende:** Google’ın yanında Yandex.',
+              '**Hukuk bürosu, spor salonu ve eğitim:** yalnızca Google.',
+            ],
+          },
+          {
+            title: 'Bağlantıyı ekleme',
+            paragraphs: [
+              '**Platform bağlantıları** sayfasında ilgili platformun alanına işletme ya da tesis sayfanızın bağlantısını yapıştırın. Bağlantının alan adı kontrol edilir; yanlış platforma ait bir adres kaydedilmez.',
+            ],
+          },
+          {
+            title: 'Teşekkür ekranındaki ek bağlantılar',
+            paragraphs: [
+              'Özel geri bildirim formunu gönderen müşteriye teşekkür ekranında, eklediyseniz Tripadvisor ve Yandex Haritalar’da da paylaşma seçeneği gösterilir.',
+            ],
+          },
+          {
+            title: 'Sosyal medya ve diğer bağlantılar',
+            paragraphs: [
+              'Instagram, Facebook, WhatsApp, web sitesi ve rezervasyon bağlantıları da kaydedilebilir; bunlar yorum platformu değildir ve yüksek puan akışında kullanılmaz. “Diğer” alanına girilen bağlantı da kaydedilir ama QR akışında kullanılmaz.',
+            ],
+          },
+        ],
+        checklist: [
+          'Yalnızca gerçekten kullanılan platformlar eklendi.',
+          'Bağlantılar işletme sayfasını açıyor.',
+          'Varsayılan platform bilinçli seçildi.',
+          'Bağlantılar test edildi.',
+        ],
+        faq: [
+          {
+            q: 'Expedia, Agoda veya Trustpilot destekleniyor mu?',
+            a: 'Hayır. Desteklenen 10 platform Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb, Yandex, Yelp ve Foursquare’dir.',
+          },
+          {
+            q: 'Bu platformlardaki yorumlar panele aktarılıyor mu?',
+            a: 'Hayır. Buaze bu platformların bağlantılarını yönetir ve müşteriyi doğru sayfaya gönderir; yorumları içeri aktarmaz.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Tripadvisor, Booking.com, Airbnb and other platforms',
+      excerpt:
+        'How to add your Tripadvisor, Booking.com, Airbnb, Yandex, Yelp and Foursquare links, which sectors each one suits and how they appear in the customer flow.',
+      tags: ['tripadvisor', 'booking.com', 'airbnb', 'yandex', 'yelp', 'foursquare'],
+      body: {
+        lead: 'Buaze supports 10 public review platforms: Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb, Yandex, Yelp and Foursquare. This guide covers the ones other than Google and the delivery platforms.',
+        keyInsight:
+          'Add the platforms where your business has a profile and your customers actually go; rather than sending customers to an empty or rarely used profile, strengthen your main one.',
+        sections: [
+          {
+            title: 'What matters by sector',
+            items: [
+              '**Hotels and stays:** Tripadvisor, Booking.com, Airbnb; also Yelp, Foursquare and Yandex.',
+              '**Restaurants and cafés:** Tripadvisor, Yelp, Foursquare and Yandex, alongside Google and the delivery platforms.',
+              '**Clinics, beauty and retail:** Yandex alongside Google.',
+              '**Law firms, gyms and education:** Google only.',
+            ],
+          },
+          {
+            title: 'Adding the link',
+            paragraphs: [
+              'On the **Platform links** page, paste the link to your business or property page into that platform’s field. The link’s domain is checked, so an address that belongs to a different platform is not saved.',
+            ],
+          },
+          {
+            title: 'Extra links on the thank-you screen',
+            paragraphs: [
+              'Customers who submit the private feedback form also see an option to share on Tripadvisor and Yandex Maps on the thank-you screen, if you have added those links.',
+            ],
+          },
+          {
+            title: 'Social media and other links',
+            paragraphs: [
+              'Instagram, Facebook, WhatsApp, website and reservation links can be saved too; they are not review platforms and are not used in the high-rating flow. A link entered in the “Other” field is also saved but is not used in the QR flow.',
+            ],
+          },
+        ],
+        checklist: [
+          'Only platforms you really use are added.',
+          'The links open your business page.',
+          'The default platform was chosen on purpose.',
+          'The links have been tested.',
+        ],
+        faq: [
+          {
+            q: 'Are Expedia, Agoda or Trustpilot supported?',
+            a: 'No. The 10 supported platforms are Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb, Yandex, Yelp and Foursquare.',
+          },
+          {
+            q: 'Are reviews from these platforms imported into the panel?',
+            a: 'No. Buaze manages links to these platforms and sends customers to the right page; it does not import their reviews.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('integrations', 60, 'platform-link-checks', {
+    tr: {
+      title: 'Bağlantı kontrolleri ve bozuk bağlantılar',
+      excerpt:
+        'Bağlantılar kaydedilirken kontrol edilir ve her gün otomatik test edilir. Son 24 saatte testi geçemeyen bağlantı akışta atlanır; neler yapabileceğinizi öğrenin.',
+      tags: ['bağlantı testi', 'bozuk bağlantı', 'kontrol', 'platform', 'akış'],
+      body: {
+        lead: 'Bir yorum bağlantısı zamanla bozulabilir: işletme sayfası taşınır, profil kapanır ya da adres yanlış girilir. Buaze bağlantılarınızı düzenli kontrol eder ve sorunlu bir bağlantıya müşteri göndermez.',
+        keyInsight:
+          'Bağlantılar her gün otomatik test edilir; son 24 saatte başarısız olan bağlantı akışta atlanır ve müşteri sıradaki uygun platforma gider.',
+        sections: [
+          {
+            title: 'Kaydederken',
+            paragraphs: [
+              'Bağlantının ilgili platforma ait bir adres olup olmadığına bakılır; değilse kaydedilmez. Bazı platformlarda bağlantı ana sayfa gibi görünüyor ya da yorum sayfasına benzemiyorsa kaydedilir ama uyarı gösterilir.',
+            ],
+          },
+          {
+            title: 'Her gün',
+            paragraphs: [
+              'Kaydedilmiş bağlantılar her gün otomatik olarak test edilir. Son 24 saat içinde testte başarısız olan bağlantı müşteri akışında kullanılmaz; sırasıyla varsayılan platform, sektörünüze göre öncelikli platform ve bağlantısı olan diğer platformlar denenir.',
+            ],
+          },
+          {
+            title: 'Elle test etme',
+            paragraphs: [
+              '**Platform bağlantıları** sayfasındaki **Tümünü kontrol et** düğmesi seçili işletmenin bütün bağlantılarını yeniden test eder. Tek bir bağlantı için o platformun sayfasını açıp **Kontrol et** düğmesine basın; değişiklik yaptıysanız önce kaydedin. Son kontrolün zamanı ve sonucu her platformda görünür.',
+            ],
+          },
+          {
+            title: 'Test başarısızsa',
+            items: [
+              'Bağlantıyı kendi tarayıcınızda açın ve doğru işletme sayfasını gösterdiğini kontrol edin.',
+              'Sayfa açılmıyorsa platformdaki güncel bağlantıyı alıp kaydedin.',
+              'Sayfa açılıyorsa tekrar test edin; bazı platformlar otomatik kontrolleri engelleyebilir ve başarısız test her zaman bağlantının bozuk olduğu anlamına gelmez.',
+            ],
+          },
+        ],
+        checklist: [
+          'Her bağlantının son test sonucu kontrol edildi.',
+          'Başarısız bağlantılar tarayıcıda açıldı.',
+          'Güncel bağlantılar kaydedildi.',
+          'Varsayılan platformun bağlantısı çalışıyor.',
+        ],
+        faq: [
+          {
+            q: 'Test, bağlantının benim işletmeme ait olduğunu doğrular mı?',
+            a: 'Hayır. Test yalnızca bağlantının açıldığını kontrol eder; doğru işletmeye ait olduğunu siz kontrol etmelisiniz.',
+          },
+          {
+            q: 'Bozuk bir bağlantı ne kadar süre atlanır?',
+            a: 'Son başarısız testten sonraki 24 saat boyunca. Bağlantı yeniden başarılı test edildiğinde tekrar kullanılır.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Link checks and broken links',
+      excerpt:
+        'Links are checked when you save them and tested automatically every day. A link that failed in the last 24 hours is skipped in the flow; here is what to do.',
+      tags: ['link test', 'broken link', 'check', 'platform', 'flow'],
+      body: {
+        lead: 'A review link can break over time: a business page moves, a profile closes or an address is entered wrongly. Buaze checks your links regularly and does not send customers to a link with a problem.',
+        keyInsight:
+          'Links are tested automatically every day; a link that failed in the last 24 hours is skipped and the customer goes to the next suitable platform.',
+        sections: [
+          {
+            title: 'When you save',
+            paragraphs: [
+              'Buaze checks that the link belongs to the right platform; if not, it is not saved. On some platforms, a link that looks like a home page or not like a review page is saved with a warning.',
+            ],
+          },
+          {
+            title: 'Every day',
+            paragraphs: [
+              'Saved links are tested automatically every day. A link that failed a test in the last 24 hours is not used in the customer flow; the default platform, the priority platform for your sector and any other platform with a link are tried in that order.',
+            ],
+          },
+          {
+            title: 'Testing by hand',
+            paragraphs: [
+              'On the **Platform links** page, **Check all** re-tests every link of the selected business. For a single link, open that platform’s page and press **Check link**; save any changes first. The time and result of the last check are shown for each platform.',
+            ],
+          },
+          {
+            title: 'If a test fails',
+            items: [
+              'Open the link in your own browser and check that it shows the right business page.',
+              'If the page does not open, get the current link from the platform and save it.',
+              'If the page opens, test again; some platforms block automated checks, so a failed test does not always mean the link is broken.',
+            ],
+          },
+        ],
+        checklist: [
+          'The last test result of each link was checked.',
+          'Failed links were opened in a browser.',
+          'Current links were saved.',
+          'The default platform’s link works.',
+        ],
+        faq: [
+          {
+            q: 'Does the test confirm the link belongs to my business?',
+            a: 'No. The test only checks that the link opens; you need to check that it belongs to the right business.',
+          },
+          {
+            q: 'How long is a broken link skipped?',
+            a: 'For 24 hours after the last failed test. Once the link passes a test again, it is used again.',
+          },
+        ],
+      },
+    },
+  }),
+
+  /* --------------------------- Ekip ve roller ------------------------ */
+  ...pair('team-roles', 10, 'invite-team-members', {
+    tr: {
+      title: 'Ekip arkadaşlarını davet etme ve işletme erişimi',
+      excerpt:
+        'Ekip arkadaşlarınızı e-postayla davet edin, rollerini seçin ve hangi işletmeleri göreceklerini belirleyin. Davet bağlantısı 7 gün geçerlidir.',
+      tags: ['ekip', 'davet', 'rol', 'işletme erişimi', 'kullanıcı'],
+      body: {
+        lead: 'Ekip erişimi, her kişinin yalnızca ihtiyaç duyduğu işletmeleri görmesini sağlar. Bu hem işi hızlandırır hem de yanlış işletmede işlem yapılmasını önler.',
+        keyInsight:
+          'Davetleri **Hesabım → Ekip ve roller** bölümünden gönderirsiniz; davet 7 gün geçerlidir ve kişiye yalnızca seçtiğiniz işletmelerde, seçtiğiniz rolle erişim verir.',
+        sections: [
+          {
+            title: 'Davet gönderme',
+            ordered: true,
+            items: [
+              '**Hesabım → Ekip ve roller** bölümünü açın.',
+              '**Üye davet et** düğmesine basın ve ekip arkadaşınızın e-posta adresini girin.',
+              'Rolünü seçin: yönetici, personel veya görüntüleyici.',
+              '**Konum erişimi** bölümünde erişeceği işletmeleri seçin; hiçbirini seçmezseniz tüm işletmelerinize erişir.',
+              '**Daveti gönder** düğmesine basın; ekip arkadaşınız e-postadaki bağlantıyla katılır.',
+            ],
+          },
+          {
+            title: 'Davetin geçerliliği',
+            paragraphs: [
+              'Davet bağlantısı 7 gün geçerlidir. Süre dolarsa daveti yeniden gönderebilirsiniz; aynı adrese bir saat içinde ikinci kez davet gönderilmez. Bir e-posta adresi aynı anda yalnızca bir ekipte etkin üye olabilir.',
+            ],
+          },
+          {
+            title: 'Erişimi kaldırma',
+            paragraphs: [
+              'Ayrılan bir çalışanı aynı bölümden ekipten çıkarın. Ekip listesinde her üyenin rolü, durumu ve son görülme zamanı yer alır. Davetleri yalnızca hesap sahibi gönderebilir.',
+            ],
+          },
+        ],
+        checklist: [
+          'E-posta adresi doğru.',
+          'Rol, kişinin işiyle uyumlu.',
+          'İşletme erişimi gerektiği kadar.',
+          'Ayrılan çalışanlar ekipten çıkarıldı.',
+        ],
+        faq: [
+          {
+            q: 'İşletme seçmezsem ne olur?',
+            a: 'Ekip arkadaşınız tüm işletmelerinize erişir; sonradan eklediğiniz işletmeler de buna dahildir.',
+          },
+          {
+            q: 'Ekip arkadaşım başka birini davet edebilir mi?',
+            a: 'Hayır. Davetleri yalnızca hesap sahibi gönderir.',
+          },
+          {
+            q: 'Davet e-postası gelmedi; ne yapmalıyım?',
+            a: 'Adresi kontrol edin ve istenmeyen e-posta klasörüne bakılmasını isteyin. Bir saat geçtikten sonra daveti yeniden gönderebilirsiniz.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Inviting teammates and choosing their businesses',
+      excerpt:
+        'Invite teammates by e-mail, give each one a role and choose which businesses they can see. Invite links stay valid for 7 days; only the owner sends them.',
+      tags: ['team', 'invite', 'role', 'business access', 'user'],
+      body: {
+        lead: 'Team access lets each person see only the businesses they need. It speeds up the work and prevents changes in the wrong business.',
+        keyInsight:
+          'You send invites from **Account → Team & roles**; an invite is valid for 7 days and gives access only to the businesses and role you choose.',
+        sections: [
+          {
+            title: 'Sending an invite',
+            ordered: true,
+            items: [
+              'Open **Account → Team & roles**.',
+              'Press **Invite member** and enter your teammate’s e-mail address.',
+              'Choose their role: manager, staff or viewer.',
+              'Under **Location access**, choose the businesses they can access; if you select none, they can access all of your businesses.',
+              'Press **Send invite**; your teammate joins through the link in the e-mail.',
+            ],
+          },
+          {
+            title: 'How long an invite lasts',
+            paragraphs: [
+              'The invite link is valid for 7 days. If it expires, you can send it again; a second invite to the same address cannot be sent within an hour. An e-mail address can be an active member of only one team at a time.',
+            ],
+          },
+          {
+            title: 'Removing access',
+            paragraphs: [
+              'Remove someone who leaves from the same section. The team list shows each member’s role, status and when they were last seen. Only the account owner can send invites.',
+            ],
+          },
+        ],
+        checklist: [
+          'The e-mail address is correct.',
+          'The role matches the person’s job.',
+          'Business access is no wider than needed.',
+          'People who have left were removed from the team.',
+        ],
+        faq: [
+          {
+            q: 'What if I do not select any business?',
+            a: 'Your teammate can access all of your businesses, including any you add later.',
+          },
+          {
+            q: 'Can my teammate invite someone else?',
+            a: 'No. Only the account owner sends invites.',
+          },
+          {
+            q: 'The invite e-mail has not arrived. What should I do?',
+            a: 'Check the address and ask your teammate to look in their spam folder. After an hour, you can send the invite again.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('team-roles', 20, 'role-permissions', {
+    tr: {
+      title: 'Rol yetkileri: yönetici, personel, görüntüleyici',
+      excerpt:
+        'Hesap sahibi, yönetici, personel ve görüntüleyici neler yapabilir? Faturalandırma, ekip daveti ve işletme silme yalnızca hesap sahibine açıktır.',
+      tags: ['rol', 'yetki', 'yönetici', 'personel', 'görüntüleyici'],
+      body: {
+        lead: 'Ekipte herkesin aynı yetkiye ihtiyacı yoktur. Rolleri doğru seçmek, verileri korur ve günlük işi sadeleştirir.',
+        keyInsight:
+          'Yönetici ve personel, erişebildikleri işletmelerde yanıt yazabilir ve ayarları değiştirebilir; görüntüleyici yalnızca görür. Faturalandırma, ekip daveti ve işletme silme hesap sahibine aittir.',
+        sections: [
+          {
+            title: 'Roller',
+            items: [
+              '**Hesap sahibi:** hesabı açan kişidir. Tüm işletmelere erişir, ekip davet eder, faturalandırmayı yönetir ve işletme silebilir.',
+              '**Yönetici:** erişebildiği işletmelerde geri bildirimlere yanıt yazar, QR kodu oluşturur ve ayarları değiştirir.',
+              '**Personel:** yöneticiyle aynı işlemleri yapabilir; ekibinizde görev ayrımını göstermek için kullanılır.',
+              '**Görüntüleyici:** erişebildiği işletmelerdeki verileri görür, değişiklik yapamaz ve yanıt yazamaz.',
+            ],
+          },
+          {
+            title: 'Yalnızca hesap sahibinin yapabildikleri',
+            items: [
+              'Ekip arkadaşı davet etmek ve ekipten çıkarmak.',
+              'Planı yükseltmek, aboneliği yönetmek ve iptal etmek.',
+              'Bir işletmeyi silmek.',
+            ],
+          },
+          {
+            title: 'Rol seçerken',
+            paragraphs: [
+              'Kişiye işi için gereken en dar yetkiyi verin. Raporları izleyecek ama yanıt yazmayacak biri için görüntüleyici rolü yeterlidir. Rolü kişiye değil göreve göre seçmek, çalışan değiştiğinde düzeni korur.',
+            ],
+          },
+        ],
+        checklist: [
+          'Her üyenin rolü göreviyle uyumlu.',
+          'Raporları yalnızca izleyenler görüntüleyici rolünde.',
+          'İşletme erişimleri gerektiği kadar.',
+          'Rol listesi düzenli gözden geçiriliyor.',
+        ],
+        faq: [
+          {
+            q: 'Yönetici ile personel arasında yetki farkı var mı?',
+            a: 'Şu an iki rol aynı işlemleri yapabilir. Ekip içinde görev ayrımını göstermek için ikisini ayrı kullanabilirsiniz.',
+          },
+          {
+            q: 'Ekip üyelerim faturalandırmayı yönetebilir mi?',
+            a: 'Hayır. Planı yükseltmek, aboneliği yönetmek ve iptal etmek yalnızca hesap sahibine açıktır.',
+          },
+          {
+            q: 'Görüntüleyici yanıt yazabilir mi?',
+            a: 'Hayır. Görüntüleyici yalnızca görür.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Roles and permissions: manager, staff, viewer',
+      excerpt:
+        'Learn what the account owner, manager, staff and viewer roles can do. Billing, team invites and deleting a business are open only to the account owner.',
+      tags: ['role', 'permissions', 'manager', 'staff', 'viewer'],
+      body: {
+        lead: 'Not everyone on the team needs the same permissions. Choosing roles carefully protects your data and keeps daily work simple.',
+        keyInsight:
+          'Managers and staff can reply and change settings in the businesses they can access; viewers can only look. Billing, team invites and deleting a business belong to the account owner.',
+        sections: [
+          {
+            title: 'Roles',
+            items: [
+              '**Account owner:** the person who created the account. Has access to all businesses, invites the team, manages billing and can delete a business.',
+              '**Manager:** replies to feedback, creates QR codes and changes settings in the businesses they can access.',
+              '**Staff:** can do the same as a manager; useful for showing who does what in your team.',
+              '**Viewer:** sees the data in the businesses they can access but cannot change anything or reply.',
+            ],
+          },
+          {
+            title: 'What only the account owner can do',
+            items: [
+              'Invite teammates and remove them from the team.',
+              'Upgrade the plan, manage the subscription and cancel it.',
+              'Delete a business.',
+            ],
+          },
+          {
+            title: 'Choosing a role',
+            paragraphs: [
+              'Give each person the narrowest access their job needs. For someone who follows reports but does not reply, the viewer role is enough. Choosing roles by task rather than by person keeps things in order when staff change.',
+            ],
+          },
+        ],
+        checklist: [
+          'Each member’s role matches their task.',
+          'People who only follow reports have the viewer role.',
+          'Business access is no wider than needed.',
+          'The role list is reviewed regularly.',
+        ],
+        faq: [
+          {
+            q: 'Is there a difference in permissions between manager and staff?',
+            a: 'At the moment both roles can do the same things. You can use them separately to show how work is divided in your team.',
+          },
+          {
+            q: 'Can team members manage billing?',
+            a: 'No. Upgrading the plan, managing the subscription and cancelling are open only to the account owner.',
+          },
+          {
+            q: 'Can a viewer reply to feedback?',
+            a: 'No. A viewer can only look.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('team-roles', 30, 'multi-location-management', {
+    tr: {
+      title: 'Birden çok işletmeyi tek hesaptan yönetme',
+      excerpt:
+        'Tek hesapta birden çok işletme: aranabilir işletme seçici, son 30 günü yan yana gösteren tablo, tüm işletmelerin platform bağlantıları ve ekip erişimi.',
+      tags: ['çok şube', 'işletmeler', 'franchise', 'işletme seçici', 'karşılaştırma'],
+      body: {
+        lead: 'Birden çok şube yönettiğinizde asıl ihtiyaç, her şubeyi ayrı ayrı açmadan genel resmi görmek ve doğru kişiye doğru şubeyi vermektir.',
+        keyInsight:
+          'Her şube ayrı bir işletmedir; işletmeler arasında kenar çubuğundaki seçiciyle geçer, hepsini **İşletmeler** tablosunda yan yana karşılaştırırsınız.',
+        sections: [
+          {
+            title: 'İşletmeler arasında geçiş',
+            paragraphs: [
+              'Kenar çubuğundaki işletme seçici aranabilir; çok sayıda işletmeniz varsa adıyla bulabilir, son kullandıklarınıza hızla dönebilirsiniz. Panel, Yorumlar ve Analitik gibi sayfalar seçili işletmeyi gösterir.',
+            ],
+          },
+          {
+            title: 'İşletmeler tablosu',
+            paragraphs: [
+              '**İşletmeler** sayfası tüm işletmelerinizi yan yana gösterir: son 30 günün yorum sayısı ve puanı, bekleyen düşük puanlar, bağlantı sağlığı ve son yorum. Dikkat gerektiren işletmeler ayrı bir sekmede toplanır.',
+            ],
+          },
+          {
+            title: 'Tüm işletmelerin bağlantıları',
+            paragraphs: [
+              '**Platform bağlantıları** sayfasındaki **Tüm işletmeler** görünümü, hangi işletmede hangi platformun eklendiğini ve sorunlu bağlantıları tek tabloda gösterir. Instagram, Facebook ve WhatsApp bağlantısını bir işletmeye kaydettikten sonra diğer işletmelerinize tek seferde uygulayabilirsiniz; yorum platformlarında her şubenin kendi sayfası olduğu için bu seçenek yoktur.',
+            ],
+          },
+          {
+            title: 'Ekip erişimi',
+            paragraphs: [
+              'Şube sorumlularını davet ederken yalnızca kendi şubelerini seçin; bölge sorumlusuna birkaç şube verebilirsiniz. Ayrıntılar: [Ekip arkadaşlarını davet etme](/tr/help/invite-team-members).',
+            ],
+          },
+        ],
+        checklist: [
+          'Her şube ayrı işletme olarak eklendi.',
+          'Her şubenin kendi Google ve platform bağlantıları var.',
+          'Şube sorumluları yalnızca kendi şubelerine erişiyor.',
+          'İşletmeler tablosu haftada bir kontrol ediliyor.',
+        ],
+        faq: [
+          {
+            q: 'Her işletme için ayrı fatura alabilir miyim?',
+            a: 'Hayır. Abonelik ve faturalar hesap sahibine aittir; işletme başına ayrı fatura veya grup faturası yoktur. Sorularınız için [faturalandırma rehberlerine](/tr/help/category/billing) bakın.',
+          },
+          {
+            q: 'Tüm şubelerin geri bildirimlerini tek listede görebilir miyim?',
+            a: 'Gelen kutusu seçili işletmeyi gösterir. Şubeleri karşılaştırmak için İşletmeler tablosunu, ayrıntı için ilgili işletmeye geçmeyi kullanın.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Managing several businesses from one account',
+      excerpt:
+        'Several businesses in one account: a searchable business switcher, a table comparing the last 30 days, platform links across all businesses and team access.',
+      tags: ['multiple branches', 'locations', 'franchise', 'business switcher', 'comparison'],
+      body: {
+        lead: 'When you run several branches, what you really need is the overall picture without opening each branch, and the right branches for the right people.',
+        keyInsight:
+          'Each branch is a separate business; you move between them with the switcher in the sidebar and compare them all side by side in the **Locations** table.',
+        sections: [
+          {
+            title: 'Switching between businesses',
+            paragraphs: [
+              'The business switcher in the sidebar is searchable; with many businesses you can find one by name and jump back to the ones you used recently. Pages such as the Dashboard, Reviews and Analytics show the selected business.',
+            ],
+          },
+          {
+            title: 'The Locations table',
+            paragraphs: [
+              'The **Locations** page shows all your businesses side by side: reviews and rating for the last 30 days, pending low ratings, link health and the latest review. Businesses that need attention are collected on a separate tab.',
+            ],
+          },
+          {
+            title: 'Links across all businesses',
+            paragraphs: [
+              'The **All businesses** view on the **Platform links** page shows in one table which platforms each business has added and which links have problems. Once you save an Instagram, Facebook or WhatsApp link for one business, you can apply it to your other businesses in one go; this option does not exist for review platforms, because each branch has its own page there.',
+            ],
+          },
+          {
+            title: 'Team access',
+            paragraphs: [
+              'When inviting branch leads, select only their own branches; a regional lead can be given several. See [Inviting teammates](/en/help/invite-team-members).',
+            ],
+          },
+        ],
+        checklist: [
+          'Each branch is added as a separate business.',
+          'Each branch has its own Google and platform links.',
+          'Branch leads can access only their own branches.',
+          'The Locations table is checked once a week.',
+        ],
+        faq: [
+          {
+            q: 'Can I get a separate invoice for each business?',
+            a: 'No. The subscription and invoices belong to the account owner; there are no per-business or group invoices. See the [billing guides](/en/help/category/billing).',
+          },
+          {
+            q: 'Can I see all branches’ feedback in one list?',
+            a: 'The inbox shows the selected business. Use the Locations table to compare branches and switch to a business for the details.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('team-roles', 40, 'access-review-monthly', {
+    tr: {
+      title: 'Ekip erişimini düzenli gözden geçirme',
+      excerpt:
+        'Ayda bir kısa bir kontrolle ekip listesini güncel tutun: ayrılanları çıkarın, rolleri ve işletme erişimlerini gözden geçirin, hesap etkinlik günlüğüne bakın.',
+      tags: ['erişim', 'güvenlik', 'ekip listesi', 'etkinlik günlüğü', 'rutin'],
+      body: {
+        lead: 'Ekip listesi zamanla büyür: yeni gelen davet edilir, ama ayrılan herkes hatırlanmaz. Ayda bir yapılan kısa bir kontrol bu birikimi temizler.',
+        keyInsight:
+          'Ayda bir ekip listesine ve hesap etkinlik günlüğüne bakın; ayrılanları çıkarın, rolleri ve işletme erişimlerini işe göre daraltın.',
+        sections: [
+          {
+            title: 'Neye bakılır?',
+            items: [
+              'Ekip listesinde uzun süredir görülmeyen üyeler.',
+              'Görevi değiştiği hâlde rolü aynı kalan kişiler.',
+              'Kapanan bir şubeye hâlâ erişen üyeler.',
+              'Kabul edilmemiş eski davetler.',
+            ],
+          },
+          {
+            title: 'Hesap etkinlik günlüğü',
+            paragraphs: [
+              '**Hesabım** sayfasındaki **Hesap aktivitesi** bölümü, hesabınızda kimin neyi değiştirdiğini gösterir. Beklenmedik bir değişiklik görürseniz ilgili ekip arkadaşınızla konuşun ve gerekirse erişimini kaldırın.',
+            ],
+          },
+          {
+            title: 'Karar kuralı',
+            paragraphs: [
+              'Ayrılan çalışanı hemen ekipten çıkarın. Görevi değişen kişinin rolünü ve işletmelerini güncelleyin. Uzun süredir giriş yapmayan biri hâlâ ekipteyse erişimin gerçekten gerekip gerekmediğini sorun.',
+            ],
+          },
+        ],
+        checklist: [
+          'Ekip listesi bu ay gözden geçirildi.',
+          'Ayrılanlar çıkarıldı.',
+          'Roller ve işletme erişimleri güncel.',
+          'Hesap aktivitesine bakıldı.',
+        ],
+        faq: [
+          {
+            q: 'Bir üyeyi çıkarmak yerine yetkisini azaltabilir miyim?',
+            a: 'Evet. Rolünü görüntüleyici yapabilir ya da erişebildiği işletmeleri daraltabilirsiniz.',
+          },
+          {
+            q: 'Kendi hesabımdaki açık oturumları nasıl görürüm?',
+            a: 'Hesabım sayfasının **Güvenlik** bölümünde aktif oturumlarınızı görüp sonlandırabilirsiniz. Ayrıntılar: [Hesap güvenliği](/tr/help/security-best-practices).',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Reviewing team access regularly',
+      excerpt:
+        'Keep the team list current with a short monthly check: remove people who have left, review roles and business access, and look at the account activity log.',
+      tags: ['access', 'security', 'team list', 'activity log', 'routine'],
+      body: {
+        lead: 'A team list grows over time: new people are invited, but not everyone who leaves is remembered. A short check once a month clears that build-up.',
+        keyInsight:
+          'Once a month, look at the team list and the account activity log; remove people who have left and narrow roles and business access to what each job needs.',
+        sections: [
+          {
+            title: 'What to look for',
+            items: [
+              'Members who have not been seen in the team list for a long time.',
+              'People whose job changed but whose role did not.',
+              'Members who still have access to a closed branch.',
+              'Old invites that were never accepted.',
+            ],
+          },
+          {
+            title: 'The account activity log',
+            paragraphs: [
+              'The **Account activity** section on the **Account** page shows who changed what in your account. If you see an unexpected change, talk to the teammate concerned and remove their access if needed.',
+            ],
+          },
+          {
+            title: 'A simple rule',
+            paragraphs: [
+              'Remove anyone who leaves straight away. Update the role and businesses of anyone whose job changes. If someone who has not signed in for a long time is still on the team, ask whether they really need access.',
+            ],
+          },
+        ],
+        checklist: [
+          'The team list was reviewed this month.',
+          'People who left were removed.',
+          'Roles and business access are current.',
+          'The account activity log was checked.',
+        ],
+        faq: [
+          {
+            q: 'Can I reduce a member’s permissions instead of removing them?',
+            a: 'Yes. Change their role to viewer or narrow the businesses they can access.',
+          },
+          {
+            q: 'How do I see the open sessions on my own account?',
+            a: 'In the **Security** section of the Account page you can see and end your active sessions. See [Account security](/en/help/security-best-practices).',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('team-roles', 50, 'team-onboarding-checklist', {
+    tr: {
+      title: 'Yeni ekip arkadaşının ilk haftası',
+      excerpt:
+        'Yeni ekip arkadaşının paneli verimli kullanmaya başlaması için beş günlük bir plan: erişim, gelen kutusu, yanıt yazma, Pulse AI ve haftalık değerlendirme.',
+      tags: ['yeni ekip üyesi', 'eğitim', 'ilk hafta', 'alışma', 'ekip'],
+      body: {
+        lead: 'Davet edilen kişi ilk gün verimli olmaz. İlk hafta planlı geçerse geri bildirim okumak, yanıt yazmak ve takip etmek kısa sürede alışkanlığa dönüşür.',
+        keyInsight:
+          'İlk hafta her gün tek bir konuya odaklanın ve bir ekip arkadaşını yeni gelenin sorularını yanıtlamakla görevlendirin.',
+        sections: [
+          {
+            title: 'Beş günlük plan',
+            ordered: true,
+            items: [
+              'Hesaba giriş, rolün ve erişilen işletmelerin kontrolü; paneli telefonda da açma.',
+              '**Yorumlar** sayfası: sekmeler, arama ve geri bildirimleri okuma.',
+              'Düşük puanlara yanıt yazma ve sorumluluk onayı.',
+              'Pulse AI taslağını düzenleme, **İşaretle** ve **Beklemeye al** ile takip.',
+              'Haftalık değerlendirmeye katılma ve sorumluluk alanlarını netleştirme.',
+            ],
+          },
+          {
+            title: 'Bir yol arkadaşı',
+            paragraphs: [
+              'İlk hafta için deneyimli bir ekip arkadaşını yol arkadaşı olarak belirleyin. Her gün kısa bir kontrol bile öğrenmeyi hızlandırır.',
+            ],
+          },
+          {
+            title: 'Hafta sonunda',
+            paragraphs: [
+              'Yeni ekip arkadaşınızın kendi başına bir düşük puanı okuyup yanıtlayabildiğini ve takip gerektirenleri işaretleyebildiğini kontrol edin. Amaç performans ölçmek değil, alışkanlığın oluştuğunu görmek.',
+            ],
+          },
+        ],
+        checklist: [
+          'Rol ve işletme erişimi doğru.',
+          'Panel masaüstünde ve telefonda denendi.',
+          'En az birkaç yanıt birlikte yazıldı.',
+          'İlk haftalık değerlendirmeye katıldı.',
+        ],
+        faq: [
+          {
+            q: 'Yarı zamanlı çalışanlar için plan kısaltılmalı mı?',
+            a: 'Adımları haftalara yayabilirsiniz; önemli olan sırayı korumaktır.',
+          },
+          {
+            q: 'Yeni gelen yalnızca raporları izleyecekse?',
+            a: 'Görüntüleyici rolü yeterlidir; plandaki yanıt yazma adımlarını atlayabilirsiniz.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'A new teammate’s first week',
+      excerpt:
+        'A five-day plan to help a new teammate get comfortable with the panel: access, the inbox, writing replies, Pulse AI drafts and the weekly feedback review.',
+      tags: ['new teammate', 'training', 'first week', 'onboarding', 'team'],
+      body: {
+        lead: 'An invited teammate is not productive on day one. If the first week is planned, reading feedback, writing replies and following up quickly become habits.',
+        keyInsight:
+          'Focus on one topic each day in the first week, and ask a colleague to answer the newcomer’s questions.',
+        sections: [
+          {
+            title: 'A five-day plan',
+            ordered: true,
+            items: [
+              'Signing in, checking the role and the businesses they can access; opening the panel on a phone too.',
+              'The **Reviews** page: tabs, search and reading feedback.',
+              'Replying to low ratings and the responsibility confirmation.',
+              'Editing a Pulse AI draft, and following up with **Flag** and **Mark pending**.',
+              'Joining the weekly review and agreeing on areas of responsibility.',
+            ],
+          },
+          {
+            title: 'A buddy',
+            paragraphs: [
+              'Name an experienced colleague as a buddy for the first week. Even a short daily check-in speeds up learning.',
+            ],
+          },
+          {
+            title: 'At the end of the week',
+            paragraphs: [
+              'Check that your new teammate can read and reply to a low rating on their own and flag what needs follow-up. The aim is not to measure performance but to see that the habit has formed.',
+            ],
+          },
+        ],
+        checklist: [
+          'Role and business access are correct.',
+          'The panel was tried on desktop and on a phone.',
+          'A few replies were written together.',
+          'They joined the first weekly review.',
+        ],
+        faq: [
+          {
+            q: 'Should the plan be shorter for part-time staff?',
+            a: 'You can spread the steps over several weeks; what matters is keeping the order.',
+          },
+          {
+            q: 'What if the newcomer will only follow reports?',
+            a: 'The viewer role is enough; you can skip the reply steps in the plan.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('team-roles', 60, 'shift-handoff-reviews', {
+    tr: {
+      title: 'Vardiya değişiminde geri bildirim devri',
+      excerpt:
+        'Açık kalan geri bildirimlerin vardiyalar arasında kaybolmaması için kısa bir devir düzeni: Yanıtsızlar, İşaretliler ve Beklemede listeleri üzerinden ilerleyin.',
+      tags: ['vardiya', 'devir', 'takip', 'gelen kutusu', 'ekip'],
+      body: {
+        lead: 'Sabah vardiyasında gelen bir düşük puan akşama kadar yanıtsız kalırsa müşteri iki kez kaybedilir: önce deneyimde, sonra takipte. Kısa bir devir düzeni bunu önler.',
+        keyInsight:
+          'Vardiya değişiminde aynı üç listeye birlikte bakın: Yanıtsızlar, İşaretliler ve Beklemede.',
+        sections: [
+          {
+            title: 'Kısa bir devir listesi',
+            items: [
+              '**Yanıtsızlar** düğmesiyle yanıt bekleyen geri bildirimler.',
+              '**Yalnız işaretliler** ile takip gerektirenler.',
+              '**Beklemede** sekmesinde sonraya bırakılanlar.',
+              'Gelecek vardiyanın bilmesi gereken özel bir durum varsa kısa bir not.',
+            ],
+          },
+          {
+            title: 'Ortak görünüm',
+            paragraphs: [
+              'İki vardiya sorumlusu aynı görünüme baksın. Yorumlar sayfasında seçtiğiniz sekme ve seçimler sayfa adresine yazılır; bağlantıyı paylaşarak aynı listeyi açabilirsiniz.',
+            ],
+          },
+          {
+            title: 'Hafta sonu ve tatil',
+            paragraphs: [
+              'Ekip planlanırken hafta sonu sık unutulur. Cuma akşamından pazartesi sabahına kadar düşük puan uyarılarını kimin takip edeceğini önceden belirleyin.',
+            ],
+          },
+        ],
+        checklist: [
+          'Devirde üç listeye bakılıyor.',
+          'Ortak görünüm bağlantısı paylaşıldı.',
+          'Hafta sonu sorumlusu belli.',
+          'Devir notları kaybolmayacak bir yerde.',
+        ],
+        faq: [
+          {
+            q: 'Küçük bir ekipte devir gerekli mi?',
+            a: 'Evet. Tek kişilik bir vardiyada bile sonraki kişiye kısa bir not bırakmak sürprizleri önler.',
+          },
+          {
+            q: 'Geri bildirimi belirli bir kişiye atayabilir miyim?',
+            a: 'Hayır. Gelen kutusunda atama yoktur; takip için **İşaretle** ve **Beklemeye al** kullanılır.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Handing over feedback between shifts',
+      excerpt:
+        'A short handover routine so open feedback is not lost between shifts: go through the Unreplied, Flagged and Pending lists together before the next shift starts.',
+      tags: ['shift', 'handover', 'follow-up', 'inbox', 'team'],
+      body: {
+        lead: 'If a low rating that arrives in the morning shift is still unanswered in the evening, the customer is lost twice: once in the experience and again in the follow-up. A short handover routine prevents that.',
+        keyInsight: 'At each shift change, look at the same three lists together: Unreplied, Flagged and Pending.',
+        sections: [
+          {
+            title: 'A short handover checklist',
+            items: [
+              'Feedback waiting for a reply, via the **Unreplied** button.',
+              'Items needing follow-up, via **Flagged only**.',
+              'Items set aside on the **Pending** tab.',
+              'A short note if the next shift needs to know about anything special.',
+            ],
+          },
+          {
+            title: 'A shared view',
+            paragraphs: [
+              'Both shift leads should look at the same view. The tab and choices on the Reviews page are written into the page address, so sharing the link opens the same list.',
+            ],
+          },
+          {
+            title: 'Weekends and holidays',
+            paragraphs: [
+              'Weekends are often forgotten when planning a team. Decide in advance who follows low-rating alerts from Friday evening to Monday morning.',
+            ],
+          },
+        ],
+        checklist: [
+          'The three lists are checked at handover.',
+          'The shared view link has been shared.',
+          'Someone is responsible at weekends.',
+          'Handover notes are kept where they will not get lost.',
+        ],
+        faq: [
+          {
+            q: 'Is a handover needed in a small team?',
+            a: 'Yes. Even in a one-person shift, a short note for the next person prevents surprises.',
+          },
+          {
+            q: 'Can I assign feedback to a specific person?',
+            a: 'No. The inbox has no assignment; use **Flag** and **Mark pending** to follow up.',
+          },
+        ],
+      },
+    },
+  }),
+
+  /* --------------------------- Faturalandırma ------------------------ */
+  ...pair('billing', 10, 'plans-trial-upgrade', {
+    tr: {
+      title: 'Ücretsiz deneme ve plana geçiş',
+      excerpt:
+        '14 günlük deneme kredi kartı istemeden başlar. Deneme bitmeden aylık plana geçebilirsiniz; süre dolduğunda panele giriş, plan alınana kadar durur.',
+      tags: ['deneme süresi', 'plan', 'abonelik', 'fiyat', 'yükseltme'],
+      body: {
+        lead: 'Buaze’yi 14 gün boyunca ücretsiz deneyebilirsiniz. Bu rehber, deneme süresinde nelere bakmanız gerektiğini ve ücretli plana nasıl geçeceğinizi anlatır.',
+        keyInsight:
+          'Deneme kart bilgisi olmadan başlar; ücretli plana **Hesabım → Plan ve faturalama** bölümündeki **Planı yükselt** düğmesiyle geçersiniz.',
+        sections: [
+          {
+            title: 'Deneme süresince',
+            items: [
+              'İşletmenizi, yorum bağlantılarınızı ve ilk QR kodunuzu kurun.',
+              'QR kodunu gerçek müşterilerle kullanın ve geri bildirimlerin nasıl geldiğini görün.',
+              'Ekibinizi davet edip yanıt akışını deneyin.',
+              'Deneme bitimine 3 gün ve 1 gün kala hatırlatma e-postası gelir.',
+            ],
+          },
+          {
+            title: 'Plana geçme',
+            paragraphs: [
+              '**Hesabım → Plan ve faturalama** bölümünde **Planı yükselt** düğmesine basın ve planınızı seçin. Aylık abonelik USD olarak, kartla, Dodo Payments üzerinden alınır. Planlar ve güncel fiyatlar [fiyatlandırma sayfasında](/tr/pricing) yer alır.',
+            ],
+          },
+          {
+            title: 'Deneme biterse',
+            paragraphs: [
+              `Deneme süresi dolduğunda bir plan alınana kadar panele giriş yapılamaz; verileriniz otomatik olarak silinmez. Bu durumda plan almak için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+            ],
+          },
+        ],
+        checklist: [
+          'Deneme bitiş tarihi biliniyor.',
+          'QR akışı gerçek müşterilerle denendi.',
+          'Ekip davet edildi.',
+          'Plan, deneme bitmeden seçildi.',
+        ],
+        faq: [
+          {
+            q: 'Deneme için kredi kartı gerekiyor mu?',
+            a: 'Hayır. Deneme kart bilgisi olmadan başlar; kart bilgisi yalnızca plana geçerken istenir.',
+          },
+          {
+            q: 'Planlar arasında özellik farkı var mı?',
+            a: `Planların kapsamı ve fiyatları fiyatlandırma sayfasında yer alır. Sorunuz varsa satın almadan önce [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+          },
+          {
+            q: 'Fiyatlar hangi para biriminde?',
+            a: 'Fiyatlar USD olarak gösterilir ve ödeme USD ile alınır.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Your free trial and choosing a plan',
+      excerpt:
+        'The 14-day trial starts without a credit card. You can move to a monthly plan before it ends; when it expires, panel access stops until a plan is bought.',
+      tags: ['free trial', 'plan', 'subscription', 'pricing', 'upgrade'],
+      body: {
+        lead: 'You can try Buaze free for 14 days. This guide explains what to look at during the trial and how to move to a paid plan.',
+        keyInsight:
+          'The trial starts without card details; you move to a paid plan with the **Upgrade plan** button under **Account → Plan & billing**.',
+        sections: [
+          {
+            title: 'During the trial',
+            items: [
+              'Set up your business, your review links and your first QR code.',
+              'Use the QR code with real customers and see how feedback comes in.',
+              'Invite your team and try the reply flow.',
+              'A reminder e-mail arrives 3 days and 1 day before the trial ends.',
+            ],
+          },
+          {
+            title: 'Moving to a plan',
+            paragraphs: [
+              'Under **Account → Plan & billing**, press **Upgrade plan** and choose your plan. Monthly subscriptions are charged in USD, by card, through Dodo Payments. Plans and current prices are on the [pricing page](/en/pricing).',
+            ],
+          },
+          {
+            title: 'If the trial ends',
+            paragraphs: [
+              `When the trial expires, you cannot sign in to the panel until a plan is bought; your data is not deleted automatically. To buy a plan at that point, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+            ],
+          },
+        ],
+        checklist: [
+          'You know when the trial ends.',
+          'The QR flow was tried with real customers.',
+          'The team has been invited.',
+          'A plan was chosen before the trial ended.',
+        ],
+        faq: [
+          {
+            q: 'Do I need a credit card for the trial?',
+            a: 'No. The trial starts without card details; they are asked for only when you move to a plan.',
+          },
+          {
+            q: 'Do the plans differ in features?',
+            a: `What each plan includes and its price are on the pricing page. If you have a question, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) before buying.`,
+          },
+          {
+            q: 'Which currency are prices in?',
+            a: 'Prices are shown and charged in USD.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('billing', 20, 'invoices-cancelation', {
+    tr: {
+      title: 'Faturalar, kart değişikliği ve abonelik iptali',
+      excerpt:
+        'Faturalarınızı panelde görür, aboneliğinizi ve kartınızı müşteri portalından yönetirsiniz. İptal ettiğinizde ödenmiş dönemin sonuna kadar erişiminiz sürer.',
+      tags: ['fatura', 'iptal', 'kart', 'abonelik', 'müşteri portalı'],
+      body: {
+        lead: 'Faturalandırmada en önemli şey sürpriz yaşamamaktır. Faturalarınızın nerede olduğunu, kartınızı nasıl değiştireceğinizi ve iptalin nasıl işlediğini bilmek işinizi kolaylaştırır.',
+        keyInsight:
+          'Faturalar **Hesabım → Plan ve faturalama** bölümünde listelenir; aboneliği ve kartı **Aboneliği yönet** ile açılan müşteri portalından yönetir, oradan iptal edersiniz.',
+        sections: [
+          {
+            title: 'Faturalar',
+            paragraphs: [
+              '**Hesabım → Plan ve faturalama** bölümünde faturalarınız tarih, fatura numarası, tutar ve durumla listelenir; PDF’i olan faturaları buradan indirebilirsiniz.',
+            ],
+          },
+          {
+            title: 'Kartı değiştirme ve iptal',
+            paragraphs: [
+              '**Aboneliği yönet** düğmesi, ödeme sağlayıcımız Dodo Payments’ın müşteri portalını açar. Ödeme kartınızı buradan değiştirir, aboneliğinizi buradan iptal edersiniz. İptal ettiğinizde ödenmiş dönemin sonuna kadar panele erişiminiz sürer. Faturalandırmayı yalnızca hesap sahibi yönetebilir.',
+            ],
+          },
+          {
+            title: 'İptalden önce',
+            items: [
+              'İhtiyacınız olan raporları CSV olarak indirin.',
+              'Basılı QR kodlarının dönem sonunda nasıl kullanılacağına karar verin.',
+              'Ekip erişimlerini gözden geçirin.',
+            ],
+          },
+        ],
+        checklist: [
+          'Faturalar indirildi ve saklandı.',
+          'Kart bilgisi güncel.',
+          'Raporlar dışa aktarıldı.',
+          'İptal tarihi ve dönem sonu biliniyor.',
+        ],
+        faq: [
+          {
+            q: 'Faturadaki şirket bilgilerini nasıl değiştiririm?',
+            a: `Fatura unvanı, adres veya vergi numarasıyla ilgili değişiklikler için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+          },
+          {
+            q: 'İade alabilir miyim?',
+            a: 'İade ve cayma koşulları [İade ve İptal Politikası](/tr/iade-iptal-politikasi) sayfasında açıklanır.',
+          },
+          {
+            q: 'Aboneliği iptal etmek hesabımı siler mi?',
+            a: 'Hayır. İptal yalnızca aboneliği sonlandırır. Hesabınızı silmek ayrı bir işlemdir; ayrıntılar [veri saklama ve hesap silme](/tr/help/data-retention-anonymization) rehberinde.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Invoices, changing your card and cancelling',
+      excerpt:
+        'See your invoices in the panel and manage your subscription and card in the customer portal. If you cancel, your access continues to the end of the paid period.',
+      tags: ['invoice', 'cancel', 'card', 'subscription', 'customer portal'],
+      body: {
+        lead: 'In billing, the main thing is avoiding surprises. Knowing where your invoices are, how to change your card and how cancelling works makes things easier.',
+        keyInsight:
+          'Invoices are listed under **Account → Plan & billing**; you manage your subscription and card, and cancel, in the customer portal that **Manage subscription** opens.',
+        sections: [
+          {
+            title: 'Invoices',
+            paragraphs: [
+              'Under **Account → Plan & billing**, your invoices are listed with date, invoice number, amount and status; invoices that have a PDF can be downloaded there.',
+            ],
+          },
+          {
+            title: 'Changing your card and cancelling',
+            paragraphs: [
+              '**Manage subscription** opens the customer portal of our payment provider, Dodo Payments. You change your payment card and cancel your subscription there. If you cancel, your panel access continues to the end of the paid period. Only the account owner can manage billing.',
+            ],
+          },
+          {
+            title: 'Before you cancel',
+            items: [
+              'Download the reports you need as CSV.',
+              'Decide what happens to printed QR codes at the end of the period.',
+              'Review team access.',
+            ],
+          },
+        ],
+        checklist: [
+          'Invoices were downloaded and stored.',
+          'Card details are up to date.',
+          'Reports were exported.',
+          'You know the cancellation date and the end of the period.',
+        ],
+        faq: [
+          {
+            q: 'How do I change the company details on my invoice?',
+            a: `For changes to the invoice name, address or tax number, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+          },
+          {
+            q: 'Can I get a refund?',
+            a: 'Refund and withdrawal terms are explained in the [Refund and Cancellation Policy](/en/iade-iptal-politikasi).',
+          },
+          {
+            q: 'Does cancelling the subscription delete my account?',
+            a: 'No. Cancelling only ends the subscription. Deleting your account is a separate step; see [data retention and account deletion](/en/help/data-retention-anonymization).',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('billing', 30, 'annual-vs-monthly-plans', {
+    tr: {
+      title: 'Aylık ve yıllık ödeme',
+      excerpt:
+        'Aylık abonelik panelden kartla başlatılır. Yıllık ödeme seçeneği için bizimle iletişime geçersiniz. Hangi durumda hangisinin uygun olduğuna dair notlar.',
+      tags: ['aylık', 'yıllık', 'plan', 'ödeme', 'abonelik'],
+      body: {
+        lead: 'Ödeme döngüsü seçimi yalnızca fiyat değil, esneklik kararıdır. Aylık ödeme, iş modeli henüz oturmamış işletmeye esneklik sağlar; yıllık ödeme ise uzun süreli kullanımı planlayanlar içindir.',
+        keyInsight:
+          `Aylık aboneliği panelden kendiniz başlatırsınız; yıllık ödeme için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+        sections: [
+          {
+            title: 'Aylık abonelik',
+            paragraphs: [
+              'Aylık abonelik **Hesabım → Plan ve faturalama** bölümünden kartla başlatılır ve USD olarak alınır. İstediğiniz zaman müşteri portalından iptal edebilirsiniz; erişiminiz ödenmiş dönemin sonuna kadar sürer.',
+            ],
+          },
+          {
+            title: 'Yıllık ödeme',
+            paragraphs: [
+              'Fiyatlandırma sayfası yıllık fiyatları da gösterir. Yıllık ödeme şu an panelden kendiliğinden başlatılamaz; bu seçenek için bizimle iletişime geçin.',
+            ],
+          },
+          {
+            title: 'Hangisi size uygun?',
+            items: [
+              'Yeni açılan veya kısa süreli kullanım planlayan işletmeler için aylık ödeme daha esnektir.',
+              'Kullanımı oturmuş, uzun süre devam edecek işletmeler yıllık ödemeyi değerlendirebilir.',
+              'Karar vermeden önce deneme süresinde akışı gerçek müşterilerle deneyin.',
+            ],
+          },
+        ],
+        checklist: [
+          'Ödeme döngüsü kullanım planına göre seçildi.',
+          'Yenileme tarihi takvimde.',
+          'İade ve iptal koşulları okundu.',
+        ],
+        faq: [
+          {
+            q: 'Aylıktan yıllığa geçebilir miyim?',
+            a: `Yıllık ödeme için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın; geçişi birlikte planlarız.`,
+          },
+          {
+            q: 'Yıllık planı erken iptal edersem ne olur?',
+            a: 'İade ve cayma koşulları [İade ve İptal Politikası](/tr/iade-iptal-politikasi) sayfasında açıklanır.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Monthly and yearly billing',
+      excerpt:
+        'You start a monthly subscription from the panel by card. For yearly billing, get in touch with us. Notes on when each option makes the most sense.',
+      tags: ['monthly', 'yearly', 'plan', 'payment', 'subscription'],
+      body: {
+        lead: 'Choosing a billing cycle is about flexibility as much as price. Monthly billing gives flexibility while your business is still finding its feet; yearly billing is for those who plan to use Buaze for the long term.',
+        keyInsight:
+          `You start a monthly subscription yourself from the panel; for yearly billing, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+        sections: [
+          {
+            title: 'Monthly subscription',
+            paragraphs: [
+              'A monthly subscription is started by card under **Account → Plan & billing** and charged in USD. You can cancel it in the customer portal at any time; your access continues to the end of the paid period.',
+            ],
+          },
+          {
+            title: 'Yearly billing',
+            paragraphs: [
+              'The pricing page shows yearly prices too. Yearly billing cannot be started from the panel yet; get in touch with us for this option.',
+            ],
+          },
+          {
+            title: 'Which one suits you?',
+            items: [
+              'For a new business or short-term use, monthly billing is more flexible.',
+              'Businesses with settled use that will continue for a long time can consider yearly billing.',
+              'Before deciding, try the flow with real customers during the trial.',
+            ],
+          },
+        ],
+        checklist: [
+          'The billing cycle matches your plans.',
+          'The renewal date is in your calendar.',
+          'You have read the refund and cancellation terms.',
+        ],
+        faq: [
+          {
+            q: 'Can I switch from monthly to yearly?',
+            a: `Write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) about yearly billing and we will plan the switch with you.`,
+          },
+          {
+            q: 'What if I cancel a yearly plan early?',
+            a: 'Refund and withdrawal terms are explained in the [Refund and Cancellation Policy](/en/iade-iptal-politikasi).',
+          },
+        ],
+      },
+    },
+  }),
+
+  /* -------------------------- Güvenlik ve KVKK ----------------------- */
+  ...pair('security-kvkk', 10, 'kvkk-consent-data', {
+    tr: {
+      title: 'Müşteri onayları ve formda toplanan veriler',
+      excerpt:
+        'Geri bildirim formu KVKK aydınlatma onayı ister; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. Form neleri ister, onaylar nasıl kaydedilir?',
+      tags: ['kvkk', 'onay', 'açık rıza', 'pazarlama izni', 'müşteri verisi'],
+      body: {
+        lead: 'Geri bildirim toplarken amaç, deneyimi iyileştirmek için gereken bilgiyi hukuka uygun biçimde almaktır. Buaze’nin müşteri formu buna göre tasarlanmıştır.',
+        keyInsight:
+          'Form, gönderim için KVKK aydınlatma onayını ister; pazarlama izni ayrı bir kutudur ve varsayılan olarak işaretsizdir. Onaylar kayıt altına alınır.',
+        sections: [
+          {
+            title: 'Formda hangi bilgiler istenir?',
+            paragraphs: [
+              'Özel geri bildirim formunda müşteri yorumunu ve isterse konu seçimlerini yazar; adını ve e-posta adresini bırakması isteğe bağlıdır. Herkese açık yorum bağlantısını açmak için kişisel veri gerekmez. Anketlerde ayrıca telefon numarası istenebilir.',
+            ],
+          },
+          {
+            title: 'Onaylar',
+            items: [
+              'KVKK aydınlatma onayı, formun gönderilebilmesi için gereklidir.',
+              'Pazarlama izni ayrı bir kutudur ve varsayılan olarak işaretsizdir; müşteri isterse işaretler.',
+              'Verilen onaylar, hangi metne ve ne zaman verildiğiyle birlikte kaydedilir.',
+            ],
+          },
+          {
+            title: 'Veri sorumlusu kimdir?',
+            paragraphs: [
+              'Müşterilerinizin bıraktığı veriler için veri sorumlusu işletmenizdir; Buaze bu verileri sizin adınıza işler. Bu ilişki [Veri İşleyici Sözleşmesi](/tr/veri-isleyici-sozlesmesi)’nde düzenlenir; Buaze’nin kendi aydınlatma metni [KVKK sayfasında](/tr/kvkk). Pulse AI yanıt taslakları ve öne çıkan konular için yorum metinleri yapay zekâ hizmet sağlayıcımız OpenAI’ye gönderilir; alt işleyicilerin listesi aynı sözleşmededir.',
+            ],
+          },
+        ],
+        checklist: [
+          'Form yalnızca gereken bilgileri istiyor.',
+          'Pazarlama iznine dayanmayan bir iletişim yapılmıyor.',
+          'İşletmenizin aydınlatma metni güncel.',
+          'Müşteri listesine erişim gerektiği kadar.',
+        ],
+        faq: [
+          {
+            q: 'Müşterinin e-posta bırakması zorunlu mu?',
+            a: 'Hayır. E-posta isteğe bağlıdır; bırakılmadığında yanıtınız panelde kayıt olarak saklanır.',
+          },
+          {
+            q: 'Pazarlama izni olmayan müşteriye kampanya e-postası gönderebilir miyim?',
+            a: 'Hayır. Buaze üzerinden toplu kampanya e-postası gönderilmez; kendi kanallarınızda da pazarlama iletisini yalnızca izin veren müşterilere gönderin.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Customer consent and what data is collected',
+      excerpt:
+        'The feedback form asks for KVKK notice consent; marketing consent is separate and unticked by default. Learn what the form asks for and how consent is recorded.',
+      tags: ['kvkk', 'consent', 'privacy', 'marketing consent', 'customer data'],
+      body: {
+        lead: 'The aim when collecting feedback is to take the information needed to improve the experience, lawfully. Buaze’s customer form is designed with that in mind.',
+        keyInsight:
+          'The form requires KVKK notice consent to submit; marketing consent is a separate box that is unticked by default. Consents are recorded.',
+        sections: [
+          {
+            title: 'What does the form ask for?',
+            paragraphs: [
+              'In the private feedback form, the customer writes their comment and can pick topics; leaving a name and e-mail address is optional. Opening the public review link needs no personal data. Surveys can also ask for a phone number.',
+            ],
+          },
+          {
+            title: 'Consent',
+            items: [
+              'KVKK notice consent is required before the form can be submitted.',
+              'Marketing consent is a separate box that is unticked by default; customers tick it only if they want to.',
+              'Consents are recorded together with the text they were given for and when.',
+            ],
+          },
+          {
+            title: 'Who is the data controller?',
+            paragraphs: [
+              'Your business is the data controller for the data your customers leave; Buaze processes it on your behalf. This relationship is set out in the [Data Processing Agreement](/en/veri-isleyici-sozlesmesi); Buaze’s own privacy notice is on the [KVKK page](/en/kvkk). For Pulse AI reply drafts and highlighted topics, comment text is sent to our AI provider, OpenAI; the list of sub-processors is in the same agreement.',
+            ],
+          },
+        ],
+        checklist: [
+          'The form asks only for what is needed.',
+          'No marketing contact is made without marketing consent.',
+          'Your business’s privacy notice is up to date.',
+          'Access to the customer list is no wider than needed.',
+        ],
+        faq: [
+          {
+            q: 'Does the customer have to leave an e-mail?',
+            a: 'No. The e-mail is optional; if none is left, your reply is saved as a record in the panel.',
+          },
+          {
+            q: 'Can I send campaign e-mails to customers without marketing consent?',
+            a: 'No. Buaze does not send bulk campaign e-mails; in your own channels too, send marketing only to customers who have agreed to it.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('security-kvkk', 20, 'security-best-practices', {
+    tr: {
+      title: 'Hesap güvenliği: şifre, oturumlar ve erişim',
+      excerpt:
+        'Aktif oturumlarınızı görüp sonlandırın, şifrenizi değiştirin, yeni cihaz uyarılarını takip edin ve ekip erişimini en dar yetkiyle sınırlayın.',
+      tags: ['güvenlik', 'şifre', 'oturum', 'erişim', 'hesap'],
+      body: {
+        lead: 'Hesap güvenliği tek bir ayardan değil, birkaç alışkanlıktan oluşur: güçlü bir şifre, açık oturumların takibi ve ekip erişiminin düzenli gözden geçirilmesi.',
+        keyInsight:
+          'Tanımadığınız bir oturum görürseniz diğer cihazlardan çıkış yapın ve şifrenizi değiştirin; şifre değişince tüm oturumlar kapanır.',
+        sections: [
+          {
+            title: 'Şifre',
+            paragraphs: [
+              '**Hesabım → Güvenlik** bölümünden şifrenizi değiştirebilirsiniz; yeni şifre en az 8 karakter olmalıdır. Şifreniz değiştiğinde güvenlik için tüm oturumlar kapanır ve size bir bildirim e-postası gelir. Başka hizmetlerde kullandığınız bir şifreyi kullanmayın.',
+            ],
+          },
+          {
+            title: 'Aktif oturumlar',
+            paragraphs: [
+              'Aynı bölümde hesabınızın açık olduğu cihazları ve tarayıcıları görürsünüz. Tek bir oturumu sonlandırabilir ya da **Diğer cihazlardan çıkış** ile bulunduğunuz cihaz dışındaki tüm oturumları kapatabilirsiniz. Hesabınıza yeni bir cihazdan girildiğinde de e-posta uyarısı gelir.',
+            ],
+          },
+          {
+            title: 'Ekip erişimi',
+            items: [
+              'Herkese işi için gereken en dar rolü verin.',
+              'Ayrılan çalışanı hemen ekipten çıkarın.',
+              'Ortak bir hesap paylaşmak yerine herkesi kendi e-postasıyla davet edin.',
+              'Hesap etkinlik günlüğüne düzenli bakın.',
+            ],
+          },
+        ],
+        checklist: [
+          'Şifre benzersiz ve en az 8 karakter.',
+          'Aktif oturumlar bu ay kontrol edildi.',
+          'Ayrılanlar ekipten çıkarıldı.',
+          'Herkes kendi hesabıyla giriş yapıyor.',
+        ],
+        faq: [
+          {
+            q: 'İki adımlı doğrulama (2FA) var mı?',
+            a: 'Şu an panelde iki adımlı doğrulama yok. Hesabınızı güçlü ve benzersiz bir şifre, oturum kontrolü ve yeni cihaz uyarılarıyla koruyun.',
+          },
+          {
+            q: 'Buaze benden şifremi ister mi?',
+            a: `Hayır. Buaze e-postayla veya telefonla şifrenizi sormaz. Böyle bir istek alırsanız bağlantıya tıklamayın ve [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine bildirin.`,
+          },
+          {
+            q: 'Şifremi unuttum; ne yapmalıyım?',
+            a: 'Giriş sayfasındaki şifre sıfırlama bağlantısını kullanın; e-posta adresinize sıfırlama bağlantısı gönderilir.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Account security: password, sessions and access',
+      excerpt:
+        'See and end your active sessions, change your password, watch for new-device alerts and keep team access to the narrowest role each person needs.',
+      tags: ['security', 'password', 'session', 'access', 'account'],
+      body: {
+        lead: 'Account security comes from a few habits rather than a single setting: a strong password, keeping an eye on open sessions and reviewing team access regularly.',
+        keyInsight:
+          'If you see a session you do not recognise, sign out of other devices and change your password; changing the password ends all sessions.',
+        sections: [
+          {
+            title: 'Password',
+            paragraphs: [
+              'You can change your password under **Account → Security**; a new password must be at least 8 characters. When your password changes, all sessions are ended for safety and you receive a notification e-mail. Do not reuse a password from another service.',
+            ],
+          },
+          {
+            title: 'Active sessions',
+            paragraphs: [
+              'The same section lists the devices and browsers where your account is signed in. You can end a single session, or use **Sign out other devices** to end every session except the one you are using. You also get an e-mail alert when someone signs in to your account from a new device.',
+            ],
+          },
+          {
+            title: 'Team access',
+            items: [
+              'Give everyone the narrowest role their job needs.',
+              'Remove people who leave from the team straight away.',
+              'Invite everyone with their own e-mail instead of sharing one account.',
+              'Check the account activity log regularly.',
+            ],
+          },
+        ],
+        checklist: [
+          'The password is unique and at least 8 characters.',
+          'Active sessions were checked this month.',
+          'People who left were removed from the team.',
+          'Everyone signs in with their own account.',
+        ],
+        faq: [
+          {
+            q: 'Is there two-factor authentication (2FA)?',
+            a: 'There is no two-factor authentication in the panel at the moment. Protect your account with a strong, unique password, session checks and new-device alerts.',
+          },
+          {
+            q: 'Will Buaze ever ask for my password?',
+            a: `No. Buaze never asks for your password by e-mail or phone. If you get such a request, do not click any link and report it to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+          },
+          {
+            q: 'I forgot my password. What should I do?',
+            a: 'Use the password reset link on the sign-in page; a reset link is sent to your e-mail address.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('security-kvkk', 30, 'export-and-pii', {
+    tr: {
+      title: 'Dışa aktarılan dosyalarda kişisel veri',
+      excerpt:
+        'Dışa aktarılan CSV’ler ve hesap veri dosyası, yorumlar ve müşteri bilgileri gibi kişisel veriler içerebilir. Bu dosyaları güvenle paylaşmak için öneriler.',
+      tags: ['dışa aktarma', 'kişisel veri', 'kvkk', 'paylaşım', 'csv'],
+      body: {
+        lead: 'Müşteri verileri panelde rol ve işletme bazlı erişimle korunur. Bir dosya indirildiği anda bu koruma dosyayla birlikte gitmez; sorumluluk dosyayı indiren kişiye geçer.',
+        keyInsight:
+          'Yalnızca gerektiğinde dışa aktarın, dosyayı güvenli bir kanaldan yalnızca gereken kişiyle paylaşın ve iş bitince silin.',
+        sections: [
+          {
+            title: 'Hangi dosyalarda kişisel veri olabilir?',
+            items: [
+              '**Müşteriler** dışa aktarımı: iletişim bilgisi bırakan müşterilerin adı, e-posta adresi ve telefonu.',
+              '**Analitik** raporu: yorum metinleri ve KVKK onayı veren müşterilerin e-posta adresi ya da telefonu.',
+              '**Yorumlar** dışa aktarımı: yorum metinleri ve masa etiketleri.',
+              '**Anket ve denetim** dışa aktarımları: verilen yanıtlar.',
+              '**Verilerimi indir:** hesabınızın verilerini içeren dosya (saatte bir kez indirilebilir).',
+            ],
+          },
+          {
+            title: 'Paylaşırken',
+            items: [
+              'Dosyayı herkese açık bir klasöre ya da genel bir mesajlaşma grubuna yüklemeyin.',
+              'Mümkünse süreli ve yalnızca belirli kişilerin açabildiği bir paylaşım bağlantısı kullanın.',
+              'Dosyayı kimin aldığını bir yere not edin.',
+            ],
+          },
+          {
+            title: 'Cihaz düzeni',
+            paragraphs: [
+              'İş bitince dosyayı silin, çöp kutusunu boşaltın ve bulut eşitleme klasörlerinde kopya kalmadığını kontrol edin. Dosyayı telefona indirdiyseniz oradan da silin.',
+            ],
+          },
+        ],
+        checklist: [
+          'Dışa aktarma gerçekten gerekliydi.',
+          'Dosya güvenli bir kanaldan paylaşıldı.',
+          'Kimin aldığı not edildi.',
+          'İş bitince dosya silindi.',
+        ],
+        faq: [
+          {
+            q: 'Bir müşteri kendi verilerini isterse ne yapmalıyım?',
+            a: `Müşterinin talebini veri sorumlusu olarak siz yanıtlarsınız. Panelde bulamadığınız bir bilgi ya da bir kaydın silinmesi gerekiyorsa [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+          },
+          {
+            q: 'Ekip üyelerim dışa aktarma yapabilir mi?',
+            a: 'Evet, erişebildikleri işletmeler için; görüntüleyici rolündeki üyeler de dosya indirebilir. Bu yüzden müşteri verisine erişimi, işletme seçimiyle yalnızca gereken kişilere verin ve dışa aktarmayı kimlerin yapacağını ekibinizle önceden konuşun.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Personal data in exported files',
+      excerpt:
+        'CSV exports and your account data file can contain personal data such as comments and customer details. Tips for sharing and storing these files safely.',
+      tags: ['export', 'personal data', 'privacy', 'sharing', 'csv'],
+      body: {
+        lead: 'In the panel, customer data is protected by role- and business-based access. Once a file is downloaded, that protection does not travel with it; responsibility passes to the person who downloaded it.',
+        keyInsight:
+          'Export only when needed, share the file through a secure channel with only the person who needs it, and delete it when the work is done.',
+        sections: [
+          {
+            title: 'Which files can contain personal data?',
+            items: [
+              'The **Customers** export: the name, e-mail address and phone number of customers who left contact details.',
+              'The **Analytics** report: comments and the e-mail address or phone number of customers who gave KVKK consent.',
+              'The **Reviews** export: comments and table labels.',
+              '**Survey and audit** exports: the answers given.',
+              '**Export my data:** the file with your account’s data (can be downloaded once an hour).',
+            ],
+          },
+          {
+            title: 'When sharing',
+            items: [
+              'Do not upload the file to a public folder or a general group chat.',
+              'Where possible, use a share link that expires and opens only for named people.',
+              'Note down who received the file.',
+            ],
+          },
+          {
+            title: 'Device hygiene',
+            paragraphs: [
+              'When the work is done, delete the file, empty the bin and check that no copy is left in cloud sync folders. If you downloaded it to a phone, delete it there too.',
+            ],
+          },
+        ],
+        checklist: [
+          'The export was really needed.',
+          'The file was shared through a secure channel.',
+          'You noted who received it.',
+          'The file was deleted when the work was done.',
+        ],
+        faq: [
+          {
+            q: 'What should I do if a customer asks for their data?',
+            a: `As the data controller, you answer the customer’s request. If you cannot find something in the panel or a record needs to be deleted, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+          },
+          {
+            q: 'Can my team members export data?',
+            a: 'Yes, for the businesses they can access; members with the viewer role can download files too. So give access to businesses with customer data only to the people who need it, and agree with your team in advance who will export data.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('security-kvkk', 40, 'incident-response-basics', {
+    tr: {
+      title: 'Hesabınızda şüpheli bir durum görürseniz',
+      excerpt:
+        'Tanımadığınız bir oturum, beklenmedik bir değişiklik ya da veri sızıntısı şüphesinde ilk adımlar: oturumları kapatın, şifrenizi değiştirin ve bize yazın.',
+      tags: ['güvenlik olayı', 'şüpheli giriş', 'veri ihlali', 'kvkk', 'oturum'],
+      body: {
+        lead: 'Bir güvenlik olayında ne yapacağınızı önceden bilmek, panik içinde yanlış adım atmanızı önler. Aşağıdaki adımlar hem hesabınızı korumanıza hem de sonraki süreci doğru yürütmenize yardım eder.',
+        keyInsight:
+          `Önce erişimi kesin (diğer cihazlardan çıkış, şifre değişikliği, ekipten çıkarma), sonra ne olduğunu not edin ve [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+        sections: [
+          {
+            title: 'İlk adımlar',
+            ordered: true,
+            items: [
+              '**Hesabım → Güvenlik** bölümünden diğer cihazlardaki oturumları kapatın.',
+              'Şifrenizi değiştirin; şifre değişince tüm oturumlar kapanır.',
+              'Şüphelendiğiniz bir ekip üyesi varsa ekipten çıkarın.',
+              '**Hesap aktivitesi** bölümünde hangi değişikliklerin yapıldığına bakın ve not alın.',
+              `Ne gördüğünüzü, ne zaman fark ettiğinizi ve hangi adımları attığınızı [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+            ],
+          },
+          {
+            title: 'Kişisel veri etkilendiyse',
+            paragraphs: [
+              'Müşterilerinizin verileri için veri sorumlusu işletmenizdir. KVKK, kişisel veri ihlallerinin Kişisel Verileri Koruma Kurulu’na en kısa sürede bildirilmesini öngörür; süre ve içerik Kurul kararlarında belirlenmiştir. Bildirim gerekip gerekmediğine hukuk danışmanınızla birlikte karar verin; Buaze tarafındaki bilgiler için bize yazın. Buaze’nin kendi süreci [Veri İhlali Müdahale Politikası](/tr/veri-ihlali-mudahale) sayfasında.',
+            ],
+          },
+          {
+            title: 'Sonrasında',
+            paragraphs: [
+              'Olayın nedenini ve aldığınız önlemleri kısa bir notla kayda geçirin. Aynı sorunun tekrarlanmaması için ekip erişimlerini ve şifre alışkanlıklarını gözden geçirin.',
+            ],
+          },
+        ],
+        checklist: [
+          'Diğer oturumlar kapatıldı.',
+          'Şifre değiştirildi.',
+          'Şüpheli erişimler kaldırıldı.',
+          'Olay ve atılan adımlar not edildi.',
+          'Buaze’ye bilgi verildi.',
+        ],
+        faq: [
+          {
+            q: 'Yeni cihaz uyarısı aldım ama giriş yapan bendim; ne yapmalıyım?',
+            a: 'Bir şey yapmanız gerekmez. Uyarı, hesabınıza yeni bir cihazdan girildiğinde gönderilir.',
+          },
+          {
+            q: 'Buaze tarafında bir olay olursa bana haber verilir mi?',
+            a: 'Buaze’nin ihlal durumunda izlediği süreç ve işletmelere bildirim yükümlülükleri Veri İhlali Müdahale Politikası ve Veri İşleyici Sözleşmesi’nde açıklanır.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'If something looks wrong in your account',
+      excerpt:
+        'First steps when you see a session you do not recognise, an unexpected change or a suspected data leak: end sessions, change your password and write to us.',
+      tags: ['security incident', 'suspicious sign-in', 'data breach', 'kvkk', 'session'],
+      body: {
+        lead: 'Knowing in advance what to do in a security incident keeps you from taking a wrong step in a panic. The steps below help you protect your account and handle what comes next properly.',
+        keyInsight:
+          `First cut off access (sign out other devices, change your password, remove the team member), then note what happened and write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+        sections: [
+          {
+            title: 'First steps',
+            ordered: true,
+            items: [
+              'End the sessions on other devices under **Account → Security**.',
+              'Change your password; all sessions end when it changes.',
+              'If you suspect a team member, remove them from the team.',
+              'Look at the **Account activity** section to see which changes were made, and note them down.',
+              `Write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) with what you saw, when you noticed it and which steps you took.`,
+            ],
+          },
+          {
+            title: 'If personal data is affected',
+            paragraphs: [
+              'Your business is the data controller for your customers’ data. KVKK requires personal data breaches to be reported to the Turkish Personal Data Protection Authority without delay; the deadline and the content of the report are set by the Authority’s decisions. Decide with your legal adviser whether a report is needed; write to us for information on Buaze’s side. Buaze’s own process is described in the [Data Breach Response Policy](/en/veri-ihlali-mudahale).',
+            ],
+          },
+          {
+            title: 'Afterwards',
+            paragraphs: [
+              'Record the cause of the incident and the measures you took in a short note. Review team access and password habits so the same problem does not happen again.',
+            ],
+          },
+        ],
+        checklist: [
+          'Other sessions were ended.',
+          'The password was changed.',
+          'Suspicious access was removed.',
+          'The incident and your steps were noted.',
+          'Buaze was informed.',
+        ],
+        faq: [
+          {
+            q: 'I got a new-device alert but it was me signing in. What should I do?',
+            a: 'Nothing. The alert is sent whenever your account is signed in from a new device.',
+          },
+          {
+            q: 'Will I be told if something happens on Buaze’s side?',
+            a: 'The process Buaze follows in a breach and its duty to notify businesses are described in the Data Breach Response Policy and the Data Processing Agreement.',
+          },
+        ],
+      },
+    },
+  }),
+
+  ...pair('security-kvkk', 50, 'data-retention-anonymization', {
+    tr: {
+      title: 'Veri saklama, anonimleştirme ve hesap silme',
+      excerpt:
+        'IP adresleri 90 gün sonra anonimleştirilir. Hesap verilerinizi indirebilir, hesabınızı 30 gün içinde geri alabileceğiniz şekilde silebilirsiniz. Ayrıntılar.',
+      tags: ['veri saklama', 'anonimleştirme', 'hesap silme', 'kvkk', 'ip adresi'],
+      body: {
+        lead: 'Hangi verinin ne kadar süre saklandığını bilmek, hem müşterilerinize karşı şeffaf olmanızı hem de kendi saklama politikanızı yazmanızı kolaylaştırır.',
+        keyInsight:
+          'Müşteri IP adresleri 90 gün sonra anonimleştirilir; geri bildirimler siz silene kadar saklanır. Hesabınızı silmeyi planladığınızda 30 gün içinde vazgeçebilirsiniz.',
+        sections: [
+          {
+            title: 'Buaze’de saklama',
+            items: [
+              '**IP adresleri:** geri bildirim kayıtlarındaki IP adresleri 90 gün sonra otomatik olarak anonimleştirilir.',
+              '**Geri bildirimler:** işletmeniz ya da hesabınız silinene kadar saklanır.',
+              '**Veritabanı:** AB’de (Frankfurt) bulunur; e-posta gönderimi ve yapay zekâ gibi hizmetlerde ABD’deki alt işleyiciler kullanılır. Liste [Veri İşleyici Sözleşmesi](/tr/veri-isleyici-sozlesmesi)’ndedir.',
+            ],
+          },
+          {
+            title: 'Verilerinizi indirme',
+            paragraphs: [
+              '**Hesabım** sayfasındaki **Verilerimi indir** düğmesiyle hesabınızın verilerini bir dosya olarak indirebilirsiniz; bu işlem saatte bir kez yapılabilir.',
+            ],
+          },
+          {
+            title: 'Hesabı silme',
+            paragraphs: [
+              'Hesabınızı **Hesabım → Güvenlik** bölümündeki **Hesabı sil** düğmesiyle silebilirsiniz; onay için hesap e-postanızı yazmanız istenir. Silme planlandığında onay e-postası gelir ve 30 gün içinde istediğiniz zaman vazgeçebilirsiniz. Süre dolduğunda hesabınız ve işletmelerinize ait geri bildirimler, QR kodları ve menüler dahil veriler silinir; yasal saklama yükümlülüğü olan fatura kayıtları kimliksizleştirilerek saklanır.',
+            ],
+          },
+        ],
+        checklist: [
+          'Kendi saklama politikanız yazılı.',
+          'Silmeden önce gereken raporlar indirildi.',
+          'Müşteri talepleri için bir süreç belirlendi.',
+        ],
+        faq: [
+          {
+            q: 'Tek bir geri bildirimi silebilir miyim?',
+            a: `Panelde tek tek geri bildirim silme düğmesi yoktur. Bir kaydın silinmesi gerekiyorsa [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+          },
+          {
+            q: 'Verilerim yalnızca AB’de mi saklanıyor?',
+            a: 'Veritabanı AB’dedir (Frankfurt); bazı alt işleyiciler ABD’dedir. Tam liste Veri İşleyici Sözleşmesi’nde yer alır.',
+          },
+          {
+            q: 'Abonelik iptali verilerimi siler mi?',
+            a: 'Hayır. Verileriniz yalnızca hesabınızı ya da işletmenizi sildiğinizde silinir.',
+          },
+        ],
+      },
+    },
+    en: {
+      title: 'Data retention, anonymisation and account deletion',
+      excerpt:
+        'IP addresses are anonymised after 90 days. You can download your account data and delete your account with 30 days to change your mind. The details.',
+      tags: ['data retention', 'anonymisation', 'account deletion', 'privacy', 'ip address'],
+      body: {
+        lead: 'Knowing which data is kept and for how long helps you be open with your customers and write your own retention policy.',
+        keyInsight:
+          'Customer IP addresses are anonymised after 90 days; feedback is kept until you delete it. When you schedule your account for deletion, you can change your mind within 30 days.',
+        sections: [
+          {
+            title: 'Retention at Buaze',
+            items: [
+              '**IP addresses:** IP addresses in feedback records are anonymised automatically after 90 days.',
+              '**Feedback:** kept until your business or your account is deleted.',
+              '**Database:** located in the EU (Frankfurt); some services, such as e-mail delivery and AI, use sub-processors in the US. The list is in the [Data Processing Agreement](/en/veri-isleyici-sozlesmesi).',
+            ],
+          },
+          {
+            title: 'Downloading your data',
+            paragraphs: [
+              'Use **Export my data** on the **Account** page to download your account’s data as a file; this can be done once an hour.',
+            ],
+          },
+          {
+            title: 'Deleting your account',
+            paragraphs: [
+              'You can delete your account with **Delete account** under **Account → Security**; to confirm, you type your account e-mail. When deletion is scheduled, you receive a confirmation e-mail and can cancel at any time within 30 days. After that, your account and your businesses’ data, including feedback, QR codes and menus, are deleted; invoice records that must be kept by law are kept with personal details removed.',
+            ],
+          },
+        ],
+        checklist: [
+          'Your own retention policy is written down.',
+          'Reports you need were downloaded before deleting.',
+          'There is a process for customer requests.',
+        ],
+        faq: [
+          {
+            q: 'Can I delete a single piece of feedback?',
+            a: `The panel has no button for deleting individual feedback. If a record needs to be deleted, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+          },
+          {
+            q: 'Is my data stored only in the EU?',
+            a: 'The database is in the EU (Frankfurt); some sub-processors are in the US. The full list is in the Data Processing Agreement.',
+          },
+          {
+            q: 'Does cancelling my subscription delete my data?',
+            a: 'No. Your data is deleted only when you delete your account or your business.',
+          },
+        ],
+      },
+    },
   }),
 ];
 
-const MORE_ARTICLES: StaticHelpArticle[] = [
-  article('tr', 'team-roles', 10, 'invite-team-members', 'Ekip üyelerini davet etme ve lokasyon erişimi verme', 'Owner panelinden ekip arkadaşlarınızı davet edin ve hangi işletmeleri görebileceklerini sınırlayın.', ['ekip', 'davet', 'rol', 'lokasyon'], {
-    lead: 'Ekip erişimi, her çalışanın sadece ihtiyaç duyduğu işletmeleri görmesini sağlar. Bu hem operasyonu hızlandırır hem de yanlış restoran üzerinde işlem yapılmasını önler.',
-    keyInsight: 'En sağlıklı kural <strong>en az yetki</strong>: kişi <em>ihtiyaç duyduğunu</em> görsün, fazlasını değil. Bu disiplin yıllar içinde sessizce ödeme yapar.',
-    sections: [
-      { title: 'Davet akışı', paragraphs: ['Ekip sayfasından e-posta, isim ve rol seçerek davet oluşturun. Lokasyon alanı belirli restoranlarla sınırlandırılabilir; boş bırakıldığında geniş erişim vermeden önce rol politikanızı kontrol edin.'] },
-      { title: 'Rol seçimi', items: ['Manager: operasyonel yönetim ve yorum takibi.', 'Staff: günlük takip ve sınırlı işlem.', 'Viewer: raporları izleme, değişiklik yapmama.', 'Owner: hesap sahibi, fatura ve ekip yönetimi.'] },
-      { title: 'Güvenli kullanım', paragraphs: ['Ayrılan personelin erişimini hemen revoke edin. Düzenli olarak aktif ekip listesini ve son görülme bilgisini kontrol edin.'] },
-    ],
-    checklist: ['E-posta doğru yazıldı.', 'Rol iş sorumluluğuyla uyumlu.', 'Lokasyonlar sınırlandı.', 'Davet durumu kontrol edildi.', 'Ayrılan kişiler revoke edildi.'],
-    faq: [
-      { q: 'Bir kullanıcı birden fazla lokasyon görebilir mi?', a: 'Evet. locations alanına birden fazla restoran ID’si atanabilir.' },
-      { q: 'Viewer yorum yanıtlayabilir mi?', a: 'Hayır. Viewer rolü rapor okuma ve takip için düşünülür.' },
-    ],
-  }),
-  article('en', 'team-roles', 10, 'invite-team-members', 'Invite teammates and limit location access', 'Invite your team from the owner panel and control which businesses they can access.', ['team', 'invite', 'role', 'location'], {
-    lead: 'Team access ensures each person sees only the locations they need. This speeds up operations and reduces accidental changes in the wrong business.',
-    keyInsight: 'The healthiest rule is <strong>least privilege</strong>: each person sees what they <em>need</em>, no more. The discipline pays off quietly across years.',
-    sections: [
-      { title: 'Invite flow', paragraphs: ['Create an invite with email, name and role from the Team page. Location access can be limited to specific restaurants.'] },
-      { title: 'Choosing a role', items: ['Manager: operational management and review follow-up.', 'Staff: daily monitoring with limited actions.', 'Viewer: reporting access without changes.', 'Owner: account, billing and team ownership.'] },
-      { title: 'Safe usage', paragraphs: ['Revoke access immediately when someone leaves the team. Review active members and last seen data regularly.'] },
-    ],
-    checklist: ['Email address is correct.', 'Role matches responsibility.', 'Locations are limited.', 'Invite status was checked.', 'Former staff were revoked.'],
-    faq: [
-      { q: 'Can one user access multiple locations?', a: 'Yes. Multiple restaurant IDs can be assigned in the locations field.' },
-      { q: 'Can a Viewer reply to reviews?', a: 'No. Viewer is intended for reading reports and monitoring.' },
-    ],
-  }),
-  article('tr', 'team-roles', 20, 'role-permissions', 'Roller ve izinler nasıl planlanır?', 'Superadmin, manager, owner ve ekip rollerini karıştırmadan doğru yetki modelini kurun.', ['izinler', 'admin', 'manager', 'owner'], {
-    lead: 'Buaze’de iki ayrı yetki alanı vardır: platform yöneticileri ve işletme ekibi. Bu ayrımı doğru kurmak, veri erişimi ve günlük operasyon için kritiktir.',
-    keyInsight: 'Yetki <em>kişiye</em> değil <strong>pozisyona</strong> bağlanmalıdır. Çalışan değişir, pozisyon kalır; bu küçük disiplin, ileride büyük temizlik kazandırır.',
-    sections: [
-      { title: 'Platform yöneticileri', paragraphs: ['Superadmin tüm sisteme erişir. Manager ise genellikle belirli bir restorana veya operasyon alanına bağlıdır. Bu roller admin panelinde yönetilir.'] },
-      { title: 'İşletme ekibi', paragraphs: ['Restaurant owner kendi hesabındaki işletmeleri yönetir. Owner panelindeki ekip üyeleri ise işletme içi görev dağılımı için kullanılır.'] },
-      { title: 'En az yetki prensibi', items: ['Sadece ihtiyaç duyulan rolü verin.', 'Fatura erişimini sınırlı tutun.', 'Lokasyon erişimini mümkün olduğunca daraltın.', 'Düzenli erişim denetimi yapın.'] },
-    ],
-    checklist: ['Superadmin sayısı sınırlı.', 'Manager restoran kapsamı doğru.', 'Owner hesapları gerçek işletme sahiplerine ait.', 'Ekip rolleri periyodik gözden geçirildi.', 'Pasif kullanıcılar kaldırıldı.'],
-    faq: [
-      { q: 'Admin users ve team members aynı şey mi?', a: 'Hayır. AdminUser platform/operasyon erişimi, TeamMember ise işletme sahibinin kendi çalışma alanı ekibidir.' },
-      { q: 'Bir personele fatura erişimi vermek zorunda mıyım?', a: 'Hayır. Günlük operasyon rolleri faturalandırma erişimi olmadan planlanabilir.' },
-    ],
-  }),
-  article('en', 'team-roles', 20, 'role-permissions', 'Plan roles and permissions correctly', 'Separate superadmin, manager, owner and team roles without creating unnecessary access.', ['permissions', 'admin', 'manager', 'owner'], {
-    lead: 'Buaze has two access layers: platform administrators and business teams. Keeping them separate is important for data access and daily operations.',
-    keyInsight: 'Tie permissions to <strong>positions</strong>, not <em>people</em>. People change; positions persist. The small discipline saves a big cleanup later.',
-    sections: [
-      { title: 'Platform administrators', paragraphs: ['Superadmins can access the whole system. Managers are typically scoped to a specific restaurant or operational area. These roles live in the admin panel.'] },
-      { title: 'Business team', paragraphs: ['Restaurant owners manage the businesses in their account. Team members in the owner panel are used for internal task distribution.'] },
-      { title: 'Least privilege', items: ['Grant only the needed role.', 'Limit billing access.', 'Keep location access narrow.', 'Review access regularly.'] },
-    ],
-    checklist: ['Superadmin count is limited.', 'Manager restaurant scope is correct.', 'Owner accounts belong to real business owners.', 'Team roles were reviewed.', 'Inactive users were removed.'],
-    faq: [
-      { q: 'Are admin users and team members the same?', a: 'No. AdminUser is platform/operations access; TeamMember belongs to an owner workspace.' },
-      { q: 'Do staff need billing access?', a: 'No. Daily operations can be handled without billing permissions.' },
-    ],
-  }),
-  article('tr', 'billing', 10, 'plans-trial-upgrade', 'Deneme süresi, plan yükseltme ve kullanım limitleri', 'Trial döneminden ücretli plana geçerken restoran, QR ve ekip ihtiyaçlarınızı değerlendirin.', ['faturalandırma', 'trial', 'plan', 'limit'], {
-    lead: 'Plan seçimi sadece fiyat değil, operasyon hacmi meselesidir. Kaç lokasyon yöneteceğiniz, kaç QR kullanacağınız ve kaç kişinin panele erişeceği doğru planı belirler.',
-    keyInsight: 'Plan kararı <em>sezgi</em> değil <strong>veri</strong>dir. İlk hafta gerçek tarama sayıları toplamadan plan yükseltme ya erken ya da geç olur.',
-    sections: [
-      { title: 'Trial döneminde ne kontrol edilmeli?', paragraphs: ['İlk hafta QR tarama oranını, düşük puan dönüş hızını ve platform yönlendirmelerini test edin. Bu veriler plan yükseltme kararını daha sağlıklı yapar.'] },
-      { title: 'Yükseltme zamanı', items: ['Birden fazla restoran ekleyecekseniz.', 'Düzenli rapor ve ekip erişimi gerekiyorsa.', 'QR kampanyalarını aktif kullanacaksanız.', 'Müşteri geri bildirimini operasyon KPI’ı yapacaksanız.'] },
-      { title: 'Limitleri izleme', paragraphs: ['Panelde restoran sayısı, ekip ihtiyacı ve kullanım yoğunluğu arttıkça planı gözden geçirin. Gereksiz paket büyütmek yerine gerçek operasyon sinyaline bakın.'] },
-    ],
-    checklist: ['Trial bitiş tarihi biliniyor.', 'İlk QR testleri yapıldı.', 'Kullanıcı ve lokasyon ihtiyacı belirlendi.', 'Plan özellikleri karşılaştırıldı.', 'Fatura e-postası doğru.'],
-    faq: [
-      { q: 'Trial bitince veriler silinir mi?', a: 'Normal akışta veriler hemen silinmez; ancak panele devam etmek için plan yükseltmeniz gerekebilir.' },
-      { q: 'Planı sonra değiştirebilir miyim?', a: 'Evet. Operasyon büyüdükçe planınızı yükseltebilir veya ihtiyaçlarınıza göre güncelleyebilirsiniz.' },
-    ],
-  }),
-  article('en', 'billing', 10, 'plans-trial-upgrade', 'Trial, plan upgrades and usage limits', 'Evaluate location, QR and team needs before moving from trial to a paid plan.', ['billing', 'trial', 'plan', 'limit'], {
-    lead: 'Choosing a plan is about operational volume, not only price. The right plan depends on locations, QR usage and team access needs.',
-    keyInsight: 'Plan decisions are <strong>data</strong>, not <em>intuition</em>. Without the first week’s actual scan numbers, an upgrade is either too early or too late.',
-    sections: [
-      { title: 'What to test during trial', paragraphs: ['In the first week, test QR scan rate, low-rating response time and platform redirects. These signals make upgrade decisions clearer.'] },
-      { title: 'When to upgrade', items: ['You will add multiple restaurants.', 'You need regular reporting and team access.', 'You will actively run QR campaigns.', 'Customer feedback becomes an operations KPI.'] },
-      { title: 'Monitoring limits', paragraphs: ['As restaurant count, team size and activity grow, review the plan. Prefer operational signals over upgrading too early.'] },
-    ],
-    checklist: ['Trial end date is known.', 'First QR tests are complete.', 'User and location needs are defined.', 'Plan features were compared.', 'Billing email is correct.'],
-    faq: [
-      { q: 'Are trial data deleted when trial ends?', a: 'Data is not immediately deleted in the normal flow, but you may need to upgrade to keep using the panel.' },
-      { q: 'Can I change plans later?', a: 'Yes. You can upgrade or adjust your plan as operations grow.' },
-    ],
-  }),
-  article('tr', 'billing', 20, 'invoices-cancelation', 'Faturalar, iptal ve hesap kapatma notları', 'Fatura geçmişini takip edin, iptal sürecini planlayın ve veri erişimini güvenli yönetin.', ['fatura', 'iptal', 'ödeme', 'hesap'], {
-    lead: 'Faturalandırma süreçlerinde en önemli konu sürpriz yaşamamaktır. Fatura e-postası, plan yenileme tarihi ve iptal zamanı net olduğunda muhasebe ve operasyon aynı sayfada kalır.',
-    keyInsight: 'Fatura sürprizi <em>tek başına</em> bir mali sorun değil, <strong>güven sorunu</strong>dur. Yenileme tarihinin görünür olması, ekibin ürünle ilişkisini sağlam tutar.',
-    sections: [
-      { title: 'Fatura geçmişi', paragraphs: ['Faturalar panelde ödeme geçmişiyle birlikte izlenir. PDF veya ödeme referansı gerekiyorsa fatura detayında saklanan provider bilgisini kontrol edin.'] },
-      { title: 'İptal öncesi', items: ['Aktif QR kampanyalarını durdurun.', 'Gerekli CSV raporlarını dışa aktarın.', 'Ekip erişimlerini gözden geçirin.', 'Müşteri bildirimlerini tamamlayın.'] },
-      { title: 'Hesap kapatma', paragraphs: ['Hesap kapatmadan önce yasal saklama yükümlülükleri, KVKK talepleri ve işletme içi raporlama ihtiyaçları değerlendirilmelidir.'] },
-    ],
-    checklist: ['Fatura e-postası güncel.', 'Yenileme tarihi biliniyor.', 'Rapor exportları alındı.', 'QR materyalleri pasifleştirildi.', 'Ekip erişimi temizlendi.'],
-    faq: [
-      { q: 'İptal ettiğimde QR sayfaları kapanır mı?', a: 'Plan durumuna bağlı olarak panel ve public akışlar sınırlandırılabilir. Kritik QR materyallerini iptal öncesi planlayın.' },
-      { q: 'Eski faturaları sonradan alabilir miyim?', a: 'Fatura geçmişi sistemde tutulduğu sürece geçmiş kayıtlar panelden veya destek üzerinden paylaşılabilir.' },
-    ],
-  }),
-  article('en', 'billing', 20, 'invoices-cancelation', 'Invoices, cancellation and account closure notes', 'Track invoice history, plan cancellation and data access safely.', ['invoice', 'cancel', 'payment', 'account'], {
-    lead: 'The main goal in billing is avoiding surprises. When billing email, renewal date and cancellation timing are clear, finance and operations stay aligned.',
-    keyInsight: 'A billing surprise is not <em>only</em> a financial issue; it is a <strong>trust issue</strong>. A visible renewal date keeps the team’s relationship with the product healthy.',
-    sections: [
-      { title: 'Invoice history', paragraphs: ['Invoices are tracked in the panel with payment history. If you need a PDF or provider reference, check the invoice detail.'] },
-      { title: 'Before cancelling', items: ['Pause active QR campaigns.', 'Export required CSV reports.', 'Review team access.', 'Finish customer follow-ups.'] },
-      { title: 'Account closure', paragraphs: ['Before closing an account, consider legal retention duties, privacy requests and internal reporting needs.'] },
-    ],
-    checklist: ['Billing email is current.', 'Renewal date is known.', 'Reports were exported.', 'QR materials were disabled.', 'Team access was cleaned up.'],
-    faq: [
-      { q: 'Do QR pages stop after cancellation?', a: 'Depending on plan status, panel and public flows may be limited. Plan critical printed QR materials before cancelling.' },
-      { q: 'Can I access old invoices later?', a: 'As long as invoice history is retained, past records can be shared through the panel or support.' },
-    ],
-  }),
-  article('tr', 'api-webhook', 10, 'api-key-basics', 'API anahtarı oluşturma ve güvenli saklama', 'Geliştirici entegrasyonları için API anahtarlarını kapsam, saklama ve iptal prensipleriyle yönetin.', ['api', 'api key', 'geliştirici', 'token'], {
-    lead: 'API anahtarları Buaze verilerine programatik erişim sağlar. Bu nedenle parola gibi düşünülmeli, yalnızca gerekli kapsamlarla oluşturulmalı ve düzenli olarak gözden geçirilmelidir.',
-    keyInsight: 'Anahtar bir <em>özellik</em> değil <strong>sorumluluk</strong>tur. Üretildiği an belgelenmesi, sahibinin atanması ve süresinin planlanması gereken bir varlıktır.',
-    sections: [
-      { title: 'Anahtar kapsamı', paragraphs: ['Her entegrasyon için ayrı anahtar oluşturun. Böylece bir entegrasyonu iptal ederken tüm sistem erişimini kesmek zorunda kalmazsınız.'] },
-      { title: 'Saklama', items: ['Anahtarı frontend koduna koymayın.', 'Sunucu ortam değişkenlerinde saklayın.', 'Loglara token yazmayın.', 'Paylaşım gerekiyorsa güvenli parola yöneticisi kullanın.'] },
-      { title: 'İptal ve rotasyon', paragraphs: ['Kullanılmayan anahtarları revoke edin. Kritik entegrasyonlarda belirli aralıklarla yeni anahtar oluşturup eskisini kapatın.'] },
-    ],
-    checklist: ['Her entegrasyon için ayrı anahtar var.', 'Anahtar server-side env’de saklanıyor.', 'Scope minimumda.', 'Last used bilgisi takip ediliyor.', 'Kullanılmayan token revoke edildi.'],
-    faq: [
-      { q: 'API anahtarını tarayıcıda kullanabilir miyim?', a: 'Hayır. Public frontend kodunda API anahtarı kullanmak güvenli değildir.' },
-      { q: 'Anahtar sızarsa ne yapmalıyım?', a: 'Hemen revoke edin, yeni anahtar üretin ve ilgili entegrasyonu güncelleyin.' },
-    ],
-  }),
-  article('en', 'api-webhook', 10, 'api-key-basics', 'Create and store API keys safely', 'Manage developer API keys with clear scope, storage and revocation principles.', ['api', 'api key', 'developer', 'token'], {
-    lead: 'API keys provide programmatic access to Buaze data. Treat them like passwords: keep scope minimal, store them securely and review them regularly.',
-    keyInsight: 'A key is not a <em>feature</em>; it is a <strong>responsibility</strong>. The moment it is generated, it needs documentation, an owner and a planned lifetime.',
-    sections: [
-      { title: 'Key scope', paragraphs: ['Create a separate key for each integration. This lets you revoke one integration without disrupting everything else.'] },
-      { title: 'Storage', items: ['Never put keys in frontend code.', 'Store keys in server-side environment variables.', 'Do not write tokens to logs.', 'Use a secure password manager for controlled sharing.'] },
-      { title: 'Revocation and rotation', paragraphs: ['Revoke unused keys. For critical integrations, rotate keys periodically and disable the old one after deployment.'] },
-    ],
-    checklist: ['Each integration has its own key.', 'Key is stored in server-side env.', 'Scope is minimal.', 'Last used data is monitored.', 'Unused tokens were revoked.'],
-    faq: [
-      { q: 'Can I use an API key in the browser?', a: 'No. Public frontend code is not a safe place for API keys.' },
-      { q: 'What if a key leaks?', a: 'Revoke it immediately, create a new key and update the integration.' },
-    ],
-  }),
-  article('tr', 'api-webhook', 20, 'webhook-events', 'Webhook olaylarıyla geri bildirimleri dış sistemlere aktarma', 'Yeni yorum, düşük puan ve kampanya olaylarını CRM veya operasyon araçlarına taşımak için webhook yaklaşımı.', ['webhook', 'crm', 'event', 'entegrasyon'], {
-    lead: 'Webhook yaklaşımı, Buaze’de oluşan olayları dış sistemlere otomatik taşımak için kullanılır. Böylece düşük puanlar CRM, destek masası veya ekip bildirim aracına düşebilir.',
-    keyInsight: 'Webhook <em>her olayı</em> dışa aktarmak için değil, <strong>doğru olayları doğru hedefe</strong> aktarmak içindir. Tasarım sezgi değil seçim meselesidir.',
-    sections: [
-      { title: 'Hangi olaylar gönderilmeli?', paragraphs: ['En pratik başlangıç düşük puan olayıdır. Ardından yeni feedback, yanıt oluşturma veya kampanya durumu gibi olaylar eklenebilir.'] },
-      { title: 'Güvenli endpoint', items: ['HTTPS kullanın.', 'İmza doğrulaması planlayın.', 'Tekrarlı gönderime karşı idempotency kullanın.', 'Başarısız istekleri retry kuyruğuna alın.'] },
-      { title: 'Operasyon örnekleri', paragraphs: ['1-3 yıldız geldiğinde Slack kanalına bildirim, CRM’de görev açma veya şube müdürüne e-posta tetikleme sık kullanılan senaryolardır.'] },
-    ],
-    checklist: ['Webhook URL HTTPS.', 'Event tipleri belirlendi.', 'Retry davranışı planlandı.', 'Payload örnekleri test edildi.', 'Düşük puan olayları doğru ekibe gidiyor.'],
-    faq: [
-      { q: 'Webhook endpoint yavaşsa ne olur?', a: 'İdeal mimaride istek hızlı kabul edilir ve işlem arka planda yapılır. Zaman aşımı riskini azaltmak için queue kullanın.' },
-      { q: 'Aynı olay iki kez gelebilir mi?', a: 'Evet, retry mekanizmalarında mümkün olabilir. Event ID ile idempotent işlem tasarlayın.' },
-    ],
-  }),
-  article('en', 'api-webhook', 20, 'webhook-events', 'Send feedback events to external systems with webhooks', 'Use webhook patterns to move new reviews, low ratings and campaign events into CRM or operations tools.', ['webhook', 'crm', 'event', 'integration'], {
-    lead: 'Webhooks move Buaze events into external systems automatically. Low ratings can create CRM tasks, support tickets or team notifications.',
-    keyInsight: 'Webhooks are not for emitting <em>every event</em>; they are for routing <strong>the right events to the right destination</strong>. Design is choice, not instinct.',
-    sections: [
-      { title: 'Which events should be sent?', paragraphs: ['A practical first event is low rating. Later, add new feedback, reply creation or campaign status events.'] },
-      { title: 'Secure endpoint', items: ['Use HTTPS.', 'Plan signature verification.', 'Use idempotency for duplicate deliveries.', 'Retry failed requests through a queue.'] },
-      { title: 'Operational examples', paragraphs: ['Common workflows include Slack notifications for 1-3 star feedback, CRM task creation or branch manager email alerts.'] },
-    ],
-    checklist: ['Webhook URL uses HTTPS.', 'Event types are defined.', 'Retry behavior is planned.', 'Payload examples were tested.', 'Low ratings reach the correct team.'],
-    faq: [
-      { q: 'What if the webhook endpoint is slow?', a: 'Accept the request quickly and process in the background. Use a queue to reduce timeout risk.' },
-      { q: 'Can the same event arrive twice?', a: 'Yes, retries can cause duplicates. Design idempotent processing with event IDs.' },
-    ],
-  }),
-  article('tr', 'security-kvkk', 10, 'kvkk-consent-data', 'KVKK onayı, müşteri verisi ve saklama yaklaşımı', 'QR geri bildirim akışında açık rıza, iletişim izni ve anonim kayıtları doğru yönetin.', ['kvkk', 'gdpr', 'rıza', 'müşteri verisi'], {
-    lead: 'Geri bildirim toplarken amaç, müşteriden gereksiz veri almak değil, deneyimi iyileştirmek için yeterli ve hukuka uygun bilgiyi toplamaktır. Buaze akışı KVKK onayı, iletişim izni ve anonim geri bildirim ayrımını destekler.',
-    keyInsight: 'Veri minimizasyonu <em>kısıtlama</em> değildir; <strong>güven inşası</strong>dır. Daha az toplamak, daha az saklamak ve daha az risk demektir.',
-    sections: [
-      { title: 'Hangi veri ne zaman alınır?', paragraphs: ['Özel geri bildirim formunda müşteriye ulaşmak için ad, telefon veya e-posta istenebilir. Herkese açık yorum bağlantısını açmak için genellikle kişisel veri gerekmez.'] },
-      { title: 'Açık rıza ve iletişim izni', items: ['KVKK onayı geri bildirim süreci için zorunlu olabilir.', 'Pazarlama izni ayrı ve isteğe bağlı tutulmalıdır.', 'İzin metni açık ve anlaşılır olmalıdır.', 'Müşteri dilediğinde iletişim iznini geri çekebilmelidir.'] },
-      { title: 'Anonim kayıtlar', paragraphs: ['E-posta ve telefon bırakmayan müşteri geri bildirimi operasyonel analizde kullanılabilir; ancak müşteri listesinde kişisel kayıt gibi ele alınmamalıdır.'] },
-    ],
-    checklist: ['KVKK metni görünür.', 'Pazarlama izni ayrı checkbox.', 'Anonim kayıtlar müşteri listesine karışmıyor.', 'Düşük puan iletişim bilgisi kontrollü alınıyor.', 'Export yetkisi sınırlı.'],
-    faq: [
-      { q: 'Telefon veya e-posta zorunlu mu?', a: 'Düşük puan telafisi için en az bir iletişim kanalı istenebilir. Gereksiz veri toplamaktan kaçının.' },
-      { q: 'Anonim yorumları silebilir miyim?', a: 'Operasyonel saklama politikanıza göre silebilir veya raporlarda anonim şekilde tutabilirsiniz.' },
-    ],
-  }),
-  article('en', 'security-kvkk', 10, 'kvkk-consent-data', 'GDPR/KVKK consent, customer data and retention', 'Manage consent, marketing permission and anonymous feedback correctly in QR flows.', ['gdpr', 'kvkk', 'consent', 'customer data'], {
-    lead: 'The goal of feedback collection is not to gather unnecessary personal data, but to collect enough lawful information to improve the experience. Buaze supports consent, marketing permission and anonymous feedback separation.',
-    keyInsight: 'Data minimization is not a <em>limitation</em>; it is <strong>trust-building</strong>. Less collected means less stored — and less risk.',
-    sections: [
-      { title: 'Which data is collected when?', paragraphs: ['In the private feedback form, name, phone or email may be requested so the business can follow up. Opening the public review link usually needs no personal data.'] },
-      { title: 'Consent and marketing permission', items: ['Privacy consent may be required for feedback processing.', 'Marketing permission should be separate and optional.', 'Consent text should be clear.', 'Customers should be able to withdraw marketing permission.'] },
-      { title: 'Anonymous records', paragraphs: ['Feedback without email or phone can still be used for operational analysis, but should not be treated as an identified customer record.'] },
-    ],
-    checklist: ['Privacy notice is visible.', 'Marketing permission is a separate checkbox.', 'Anonymous records do not pollute customer lists.', 'Low-rating contact data is collected carefully.', 'Export access is limited.'],
-    faq: [
-      { q: 'Is phone or email mandatory?', a: 'For low-rating recovery, at least one contact channel can be requested. Avoid collecting unnecessary data.' },
-      { q: 'Can anonymous reviews be deleted?', a: 'Depending on your retention policy, you can delete them or keep them anonymously for reporting.' },
-    ],
-  }),
-  article('tr', 'security-kvkk', 20, 'security-best-practices', 'Panel güvenliği için en iyi uygulamalar', 'JWT, rol bazlı erişim, ekip temizliği ve export kontrolleriyle hesabınızı güvenli tutun.', ['güvenlik', 'jwt', 'rol', 'export'], {
-    lead: 'Panel güvenliği yalnızca teknik altyapıdan ibaret değildir. Doğru rol dağılımı, düzenli erişim temizliği ve hassas export işlemlerinin kontrolü günlük güvenliğin temelidir.',
-    keyInsight: 'Güvenlik <em>tek bir önlem</em> değil <strong>çok katmanlı bir disiplin</strong>dir. Tek bir delik tüm zinciri zayıflatır; çok katman tüm zinciri korur.',
-    sections: [
-      { title: 'Rol bazlı erişim', paragraphs: ['Her API ve panel ekranı restoran kapsamına göre kontrol edilmelidir. Owner sadece kendi restoranlarını, manager ise atanmış restoranı görmelidir.'] },
-      { title: 'Operasyon alışkanlıkları', items: ['Ortak parola kullanmayın.', 'Ayrılan çalışanların erişimini kapatın.', 'Export dosyalarını yerel cihazlarda uzun süre tutmayın.', 'Superadmin erişimini sınırlayın.'] },
-      { title: 'Ortam değişkenleri', paragraphs: ['Production ortamında JWT_SECRET güçlü ve benzersiz olmalıdır. API anahtarları ve servis hesapları sadece server-side env olarak tutulmalıdır.'] },
-    ],
-    checklist: ['JWT_SECRET production’da set edildi.', 'Superadmin sayısı minimum.', 'Manager restoran scope’u doğru.', 'Export yetkileri sınırlı.', 'Eski ekip üyeleri kaldırıldı.'],
-    faq: [
-      { q: 'JWT fallback production’da kullanılmalı mı?', a: 'Hayır. Production ortamında mutlaka güçlü bir JWT_SECRET tanımlanmalıdır.' },
-      { q: 'CSV export herkes tarafından alınabilir mi?', a: 'Hayır. Export işlemleri rol ve restoran kapsamına göre sınırlandırılmalıdır.' },
-    ],
-  }),
-  article('en', 'security-kvkk', 20, 'security-best-practices', 'Security best practices for the dashboard', 'Keep the account safe with JWT hygiene, role-based access, team cleanup and export controls.', ['security', 'jwt', 'role', 'export'], {
-    lead: 'Dashboard security is not only infrastructure. Correct role assignment, regular access cleanup and careful export controls are the foundation of daily security.',
-    keyInsight: 'Security is not a <em>single measure</em> but a <strong>multi-layered discipline</strong>. One gap weakens the chain; multiple layers protect it.',
-    sections: [
-      { title: 'Role-based access', paragraphs: ['Every API and panel screen should be scoped by restaurant access. Owners should see only their restaurants; managers should see their assigned restaurant.'] },
-      { title: 'Operational habits', items: ['Do not share passwords.', 'Revoke access for former employees.', 'Do not keep export files on local devices longer than needed.', 'Limit superadmin access.'] },
-      { title: 'Environment variables', paragraphs: ['In production, JWT_SECRET must be strong and unique. API keys and service accounts should stay server-side only.'] },
-    ],
-    checklist: ['JWT_SECRET is set in production.', 'Superadmin count is minimal.', 'Manager restaurant scope is correct.', 'Export permissions are limited.', 'Former team members were removed.'],
-    faq: [
-      { q: 'Should the JWT fallback be used in production?', a: 'No. Always set a strong JWT_SECRET in production.' },
-      { q: 'Can everyone export CSV files?', a: 'No. Exports should be limited by role and restaurant scope.' },
-    ],
-  }),
+/* ------------------------------------------------------------------ */
+/* Lookups                                                              */
+/* ------------------------------------------------------------------ */
 
-  article('tr', 'getting-started', 30, 'dashboard-tour', 'Panele ilk girişte nereye bakmalısınız?', 'Buaze panelinin ana ekranlarını ve günlük operasyon akışını dakikalar içinde tanıyın.', ['panel', 'dashboard', 'tur', 'başlangıç'], {
-    lead: 'Panele ilk girdiğinizde her şeyi aynı anda öğrenmenize gerek yok. Bu rehber günlük operasyon için en sık kullanılan ekranları ve hangi ekranın hangi soruyu cevapladığını gösterir.',
-    keyInsight: 'Panel hızla çalışır; <strong>panele bakan ekibin</strong> hızlı çalışıp çalışmaması ise alışkanlığa bağlıdır. Doğru ekrana doğru saatte bakmak, panel kalitesinin yarısıdır.',
-    sections: [
-      { title: 'Üst düzey görünüm', paragraphs: ['Dashboard ana ekranı son 7 gün ve son 30 günü karşılaştıran özet kartlar, yıldız dağılımı, platform dağılımı ve trend grafiğiyle açılır. Hızlı bir ısınma için günde bir kez bu ekrana bakmak yeterlidir.'] },
-      { title: 'Yorum gelen kutusu', paragraphs: ['Yorumlar sayfası gerçek operasyonun yapıldığı yerdir. Filtre çubuğu yıldız aralığı, platform, tarih ve etiket bazında daraltma yapar. Düşük puanlar üstte tutulduğu sürece ekip yanıt SLA’sını yakalar.'] },
-      { title: 'Sık kullanılan kısayollar', items: ['Hızlı yanıt için Ctrl/Cmd+Enter ile gönderim.', 'Yıldız filtresi için 1-5 tuşları.', 'Filtre temizlemek için “Filtreleri sıfırla” butonu.', 'CSV export için liste başlığındaki indirme ikonu.', 'Yorum detayında yan panel açmak için satıra tıklama.'] },
-    ],
-    checklist: ['Dashboard kartları doğru tarih aralığını gösteriyor.', 'Yorumlar listesinde varsayılan sıralama tarih bazlı.', 'Düşük puan filtresi tek tıkla uygulanıyor.', 'Bildirim e-postası canlı testte düşüyor.', 'CSV export için yetki doğru kişide.'],
-    faq: [
-      { q: 'Panelde tarih aralığı kaydediliyor mu?', a: 'Hayır. Sayfa yenilendiğinde varsayılan aralığa döner. Sık kullandığınız bir aralık varsa link olarak yer imine ekleyin.' },
-      { q: 'Birden fazla restoranı aynı anda görmek mümkün mü?', a: 'Evet. Lokasyon seçicisi “Tümü” seçildiğinde özet kartlar tüm yetkili restoranların toplamını gösterir.' },
-    ],
-  }),
-  article('en', 'getting-started', 30, 'dashboard-tour', 'Where to look first when you open the dashboard', 'Get familiar with the main screens and the daily operations flow in just a few minutes.', ['panel', 'dashboard', 'tour', 'onboarding'], {
-    lead: 'You do not need to learn everything at once. This guide shows the screens you will use daily and what question each screen answers best.',
-    keyInsight: 'The panel works fast; whether <strong>the team using it</strong> works fast is a matter of habit. Looking at the right screen at the right hour is half the value.',
-    sections: [
-      { title: 'High-level view', paragraphs: ['The main dashboard opens with summary cards comparing the last 7 and 30 days, plus a star distribution, platform distribution and trend chart. A daily glance here is enough for a quick warm-up.'] },
-      { title: 'Reviews inbox', paragraphs: ['The Reviews page is where the real work happens. The filter bar narrows by stars, platform, date and tags. Keeping low ratings at the top helps the team meet response SLAs.'] },
-      { title: 'Common shortcuts', items: ['Ctrl/Cmd+Enter to send a reply.', '1-5 keys to filter by star rating.', 'Clear all with the “Reset filters” button.', 'CSV export via the download icon in the list header.', 'Open the side panel by clicking a row.'] },
-    ],
-    checklist: ['Dashboard cards show the right date range.', 'Reviews default to date-based sorting.', 'Low-rating filter is one click away.', 'Notification email lands in a live test.', 'CSV export is granted to the right person.'],
-    faq: [
-      { q: 'Does the panel remember the date range?', a: 'No. It returns to default on refresh. Bookmark a URL with your preferred range if you use it often.' },
-      { q: 'Can I view multiple restaurants at once?', a: 'Yes. Selecting “All” in the location switcher aggregates summary cards across every restaurant you can access.' },
-    ],
-  }),
-  article('tr', 'getting-started', 40, 'slug-and-url', 'Slug ve QR URL’sini doğru seçme', 'Slug, müşterinin tarayıcı çubuğunda gördüğü ad ve QR’ın bağlandığı kalıcı kimliktir. Doğru seçim ileride iş kolaylaştırır.', ['slug', 'url', 'qr', 'seo'], {
-    lead: 'Slug, restoran kaydının URL’deki kısa formudur. Hem tarayıcıda görünür hem de basılan QR’ların hedefini belirler. Yanlış slug ileride yeniden baskı veya yönlendirme zorunluluğu doğurur.',
-    keyInsight: 'Slug bir kez basıldıktan sonra <em>fiziksel</em> bir karara dönüşür. Basım öncesi 24 saatlik düşünme süresi, sonradan onlarca QR’ı yenilemekten her zaman ucuzdur.',
-    sections: [
-      { title: 'İyi bir slug nasıl olur?', items: ['Kısa ve okunaklı (3-24 karakter).', 'Sadece harf, rakam ve tek tire.', 'Marka adıyla uyumlu, şehir veya şube eki gerekmedikçe sade.', 'Türkçe karakter yerine ascii karşılığı (kafe değil cafe).', 'Promosyon veya kampanya kelimeleri içermesin.'] },
-      { title: 'Slug değişikliği maliyeti', paragraphs: ['Slug’u sonradan değiştirmek mümkündür ama eski slug’la basılmış QR’lar geçersiz hale gelir. Eğer marka değişikliği veya şube ayrımı yapılacaksa, eski slug’a 301 yönlendirme planlamak ve materyalleri kademeli yenilemek en az hasarı verir.'] },
-      { title: 'Çoklu lokasyon stratejisi', paragraphs: ['Aynı markanın farklı şubeleri için marka-sehir veya marka-şube formatı yaygındır. Karışıklığı önlemek için tek tek özgün slug’lar tutmak, panel raporlarının okunabilirliğini artırır.'] },
-    ],
-    checklist: ['Slug tek kelimelik veya kısa.', 'Türkçe karakter yok.', 'Şube ayrımı tutarlı pattern’le yazıldı.', 'Slug aktif domainde test edildi.', 'Eski slug’la basılı materyal listesi varsa kayıtlı.'],
-    faq: [
-      { q: 'Slug büyük harf içerebilir mi?', a: 'Sistem genellikle küçük harfe çevirir. Tutarlılık için her zaman küçük harf kullanmak en güvenlisidir.' },
-      { q: 'Slug değiştirirsem Google’a yönlendirme bozulur mu?', a: 'Hayır. Google bağlantısı slug’dan bağımsız ayrı bir alanda tutulur. Sadece müşterinin tarayıcıdan açtığı QR URL’si değişir.' },
-    ],
-  }),
-  article('en', 'getting-started', 40, 'slug-and-url', 'Pick the right slug and QR URL', 'Your slug is the short identifier in the URL and the destination of every printed QR. Picking it well saves rework later.', ['slug', 'url', 'qr', 'seo'], {
-    lead: 'A slug is the short URL identifier for your restaurant record. It appears in the browser bar and defines where every printed QR points. A poor choice forces reprints or redirects later.',
-    keyInsight: 'Once printed, a slug becomes a <em>physical</em> decision. A 24-hour pause before printing is always cheaper than reprinting dozens of QRs later.',
-    sections: [
-      { title: 'What makes a good slug', items: ['Short and readable (3-24 characters).', 'Only letters, numbers and a single dash.', 'Aligned with the brand, no city or branch suffix unless needed.', 'Use ASCII instead of accented characters.', 'Avoid promotion or campaign words.'] },
-      { title: 'Cost of changing a slug', paragraphs: ['You can change the slug later, but every QR printed with the old slug becomes invalid. If a rebrand or branch split is coming, plan a 301 redirect on the old slug and replace materials gradually to limit damage.'] },
-      { title: 'Multi-location strategy', paragraphs: ['For the same brand across cities, a brand-city or brand-branch pattern is common. Keeping each slug unique keeps panel reports easy to read.'] },
-    ],
-    checklist: ['Slug is short or single-word.', 'No accented characters.', 'Branch differentiation follows a consistent pattern.', 'Slug was tested on the live domain.', 'A list of printed materials with the old slug exists.'],
-    faq: [
-      { q: 'Can a slug contain uppercase letters?', a: 'The system usually normalizes to lowercase. Use lowercase consistently to be safe.' },
-      { q: 'Will changing the slug break my Google redirect?', a: 'No. The Google link is stored separately. Only the customer-facing QR URL changes.' },
-    ],
-  }),
-  article('tr', 'getting-started', 50, 'brand-colors-logo', 'Marka rengi ve logoyu doğru ayarlama', 'Müşteri ekranı, menü ve dahili form alanlarında görünen renk ve logo seçimleriyle markanızı tutarlı hissettirin.', ['marka', 'renk', 'logo', 'tasarım'], {
-    lead: 'QR akışındaki müşteri çoğunlukla tek bir telefondan ve birkaç saniye içinde karar verir. Renk ve logo doğru kurulmadığında müşteri akışı yabancı, marka tutarsız hisseder. Doğru ayar bunun tam tersini yapar.',
-    keyInsight: 'Marka tutarlılığı bir <strong>güven sinyali</strong>dir; müşteri farklı yerlerde aynı işletmeyle muhatap olduğunu hemen anlar ve formu doldurma eşiği düşer.',
-    sections: [
-      { title: 'Birincil renk', paragraphs: ['Birincil renk hem yıldız seçim ekranında hem de menü hero alanlarında kullanılır. Çok açık veya çok soluk renkler beyaz arka planla yeterli kontrast vermez. WCAG AA için en az 4.5:1 kontrast oranı hedefleyin.'] },
-      { title: 'Logo formatı', items: ['Tercihen şeffaf arka plan (PNG veya WebP).', 'Kare veya yatay seçenek mevcut, ana ekranda kare daha iyi görünür.', 'Maksimum 1MB boyut, 1024px en uzun kenar yeterli.', 'İnce tire/font detayları küçültüldüğünde okunaklı kalsın.'] },
-      { title: 'Marka tutarlılığı', paragraphs: ['Restoran kayıtlarında, menüde, e-posta bildirimlerinde ve QR sayfasında aynı renk ve logoyu kullanın. Müşteri farklı yerlerde aynı işletmeyle muhatap olduğunu hemen anlar.'] },
-    ],
-    checklist: ['Birincil renk WCAG AA kontrast geçti.', 'Logo şeffaf arka planla yüklendi.', 'Logo mobil görünümde net.', 'Aynı renk e-posta şablonunda da kullanılıyor.', 'Eski logoları yöneticiler hesaptan temizledi.'],
-    faq: [
-      { q: 'İki farklı şube için farklı renk kullanabilir miyim?', a: 'Her restoran kaydı kendi rengini ve logosunu tutar. Sadece dikkat edin, müşteri için marka aynı görünüyorsa renkler de yakın olmalı.' },
-      { q: 'Koyu mod desteği var mı?', a: 'Müşteri menü ekranı sistem temasına göre adapte olabilir. Logonuz hem açık hem koyu zeminde okunaklı kalmalı.' },
-    ],
-  }),
-  article('en', 'getting-started', 50, 'brand-colors-logo', 'Set up brand color and logo correctly', 'Make your brand feel consistent across the customer screen, menu and private feedback form.', ['brand', 'color', 'logo', 'design'], {
-    lead: 'A QR customer usually decides within seconds on a single phone. If color and logo are wrong, the flow feels foreign and the brand inconsistent. Correct setup does the opposite.',
-    keyInsight: 'Brand consistency is a <strong>trust signal</strong>: customers immediately recognize the same business across touchpoints, and the threshold for filling the form drops.',
-    sections: [
-      { title: 'Primary color', paragraphs: ['The primary color appears on the rating screen and in menu hero areas. Very pale colors do not contrast well against white backgrounds. Aim for a 4.5:1 contrast ratio for WCAG AA.'] },
-      { title: 'Logo format', items: ['Prefer transparent background (PNG or WebP).', 'Square or horizontal both supported; square reads better on the rating screen.', 'Up to 1MB and 1024px on the longest edge is enough.', 'Thin strokes or fonts should still be legible when scaled down.'] },
-      { title: 'Brand consistency', paragraphs: ['Use the same color and logo across the restaurant record, the menu, email notifications and the QR page. Customers immediately recognize the brand across touchpoints.'] },
-    ],
-    checklist: ['Primary color passes WCAG AA contrast.', 'Logo uploaded with transparent background.', 'Logo is sharp on mobile.', 'Same color is used in email templates.', 'Old logos were removed from the account.'],
-    faq: [
-      { q: 'Can I use different colors for different branches?', a: 'Yes. Each restaurant record stores its own color and logo. If the brand is shared, keep colors close enough.' },
-      { q: 'Is there dark mode support?', a: 'The customer-facing menu can adapt to system theme. Make sure your logo stays legible on both light and dark surfaces.' },
-    ],
-  }),
+/**
+ * Curated cross-topic list shown on the hub under "Önce bunları okuyun".
+ * Editorial choice, not popularity (there is no view-count data).
+ * quick-start is not here because the hub already features it in the
+ * "Başlarken" card.
+ */
+export const HELP_START_HERE_SLUGS = [
+  'redirect-threshold',
+  'google-review-link',
+  'qr-placement-guide',
+  'handle-negative-feedback',
+] as const;
 
-  article('tr', 'qr-codes', 30, 'bulk-qr-generation', 'Çok şubeli işletmeler için toplu QR üretimi', 'Onlarca masa veya birden fazla şube için QR kodu üretirken hata yapmadan ilerleme yöntemi.', ['toplu', 'qr', 'şube', 'baskı'], {
-    lead: 'Tek bir restoranda 30 masa, üç şubede 90 masa demektir. Toplu üretim hem zaman kazandırır hem de elle kopyalama sırasında oluşan parametre hatalarını ortadan kaldırır.',
-    keyInsight: 'Toplu üretimde <strong>tek bir parametre hatası</strong> tüm partiyi yeniden bastırma riskidir. Üretmeden önce sample test, en yüksek getirili dakikadır.',
-    sections: [
-      { title: 'Üretim öncesi hazırlık', paragraphs: ['Önce masa numaralandırma planı netleşmelidir. Salon-bahçe gibi bölge ayrımları, masa numarasında bir prefix ile ayrılır (S1, S2, B1, B2). Bu yaklaşım panel raporlarında bölge analizini kolaylaştırır.'] },
-      { title: 'QR varyasyon stratejisi', items: ['Her masa için ayrı QR (table=...).', 'Paket için tek QR (source=package).', 'Fiş için ayrı QR (source=receipt).', 'Kampanya QR’ları için utm-style ek parametre.', 'Şube ayrımı slug seviyesinde değil parametre seviyesinde.'] },
-      { title: 'Baskı kalite kontrolü', paragraphs: ['Üretim sonrası 5-10 rastgele QR’ı bizzat tarayıp doğru sayfaya gittiğinden emin olun. Yüksek hacimli baskılarda örnekleme bütün partiyi yeniden basmaktan ucuzdur.'] },
-    ],
-    checklist: ['Masa numaralandırma şeması belgelenmiş.', 'Her QR örnekte taranarak doğrulandı.', 'Baskı boyutu en az 2.5 cm.', 'Şube bazlı klasör yapısı mevcut.', 'Yedek dijital kopyalar saklandı.'],
-    faq: [
-      { q: 'PDF olarak toplu indirme var mı?', a: 'Panel üzerinden QR’ları tek tek veya kategori bazlı indirebilirsiniz. Çok büyük partilerde basımcı ekibinizle ZIP arşivi paylaşmak pratik bir yöntemdir.' },
-      { q: 'Eski şubenin QR kodlarını yeni şubede kullanabilir miyim?', a: 'Hayır. Slug ve table parametreleri farklı olduğu için raporlama karışır. Yeni şube için yeniden üretmek gerekir.' },
-    ],
-  }),
-  article('en', 'qr-codes', 30, 'bulk-qr-generation', 'Bulk QR generation for multi-location operators', 'Generate QRs for dozens of tables or multiple locations without parameter mistakes.', ['bulk', 'qr', 'branch', 'print'], {
-    lead: 'A single restaurant with 30 tables means 90 QRs across three branches. Bulk generation saves time and removes the copy-paste mistakes that creep in during manual work.',
-    keyInsight: 'In bulk runs a <strong>single parameter typo</strong> can mean reprinting the whole batch. The highest-leverage minute is the sample test before mass production.',
-    sections: [
-      { title: 'Plan before you generate', paragraphs: ['First settle the table numbering scheme. Zones like dining room and patio can use a prefix in the table number (D1, D2, P1, P2). This makes zone analysis straightforward in panel reports.'] },
-      { title: 'QR variant strategy', items: ['One QR per table (table=...).', 'A single QR for packages (source=package).', 'A separate QR for receipts (source=receipt).', 'UTM-style extra parameter for campaigns.', 'Differentiate branches at the parameter level, not the slug level.'] },
-      { title: 'Print quality control', paragraphs: ['After production, scan 5-10 random QRs personally and verify each lands on the right page. Sampling is cheaper than reprinting an entire batch.'] },
-    ],
-    checklist: ['Numbering scheme is documented.', 'A sample of each QR was scanned.', 'Print size is at least 2.5 cm.', 'Branch-based folder structure exists.', 'Backup digital copies are stored.'],
-    faq: [
-      { q: 'Is bulk PDF download available?', a: 'You can export QRs individually or by category from the panel. For very large batches, share a ZIP archive with your print partner.' },
-      { q: 'Can I reuse old branch QRs in a new branch?', a: 'No. Different slugs and table parameters break reporting. Regenerate for the new branch.' },
-    ],
-  }),
-  article('tr', 'qr-codes', 40, 'campaign-qr-utm', 'Kampanya ve mevsim QR’ları nasıl planlanır?', 'Yeni menü tanıtımı, sezon kampanyası veya etkinlik için ayrı QR oluşturup ölçümlenebilir hale getirme.', ['kampanya', 'utm', 'sezon', 'ölçüm'], {
-    lead: 'Bir kampanyanın başarısını ölçmek için onu izole etmek gerekir. Kampanya QR’ları, müşterinin hangi tutundurma materyaliyle geldiğini panel raporlarına yazar ve kampanya sonrası kararlarınızı veri tabanlı yapar.',
-    keyInsight: 'Kampanya başarısı sezgi değil, <em>ayrı parametre + temiz rapor</em> denkleminin sonucudur. İzolasyon olmazsa öğrenme de olmaz.',
-    sections: [
-      { title: 'Kampanya QR yapısı', paragraphs: ['Kampanya QR’ları normal QR’lardan farklı olarak source veya campaign parametresi taşır. Örnek: /r/restaurant-slug?source=summer2026&platform=google. Böylece bu QR’dan gelen geri bildirimler raporlarda ayrışır.'] },
-      { title: 'İletişim materyalleri', items: ['Sosyal medya post’unun altında.', 'Bahçe banner’ında.', 'Etkinlik standında.', 'Newsletter’da CTA olarak.', 'Kampanya menüsünün arka kapağında.'] },
-      { title: 'Ölçüm sonrası karar', paragraphs: ['Kampanya bittiğinde QR’dan gelen yorum sayısını, ortalama puanı ve müşteri profilini değerlendirin. Düşük tarama oranı materyalin yer ve metni hakkında, düşük puan ise kampanya teklifinin kendisi hakkında bilgi verir.'] },
-    ],
-    checklist: ['Kampanya parametresi tutarlı.', 'Materyallerin her birinde aynı QR.', 'Kampanya başlangıç-bitiş tarihi belgelenmiş.', 'Rapor için filtre kaydedildi.', 'Kampanya sonrası retro yapıldı.'],
-    faq: [
-      { q: 'Aynı kampanya için iki farklı QR olabilir mi?', a: 'Evet, ama A/B testi yapmıyorsanız önerilmez. Tek parametre ölçümü daha sade tutar.' },
-      { q: 'Kampanya bitince QR’ı silmeli miyim?', a: 'Silmek zorunda değilsiniz. Pasif bırakırsanız geçmiş raporlar hala geçerli kalır; ama aktif materyalden kaldırın.' },
-    ],
-  }),
-  article('en', 'qr-codes', 40, 'campaign-qr-utm', 'Plan campaign and seasonal QR codes', 'Create dedicated QRs for menu launches, seasonal pushes or events so you can measure them.', ['campaign', 'utm', 'season', 'measurement'], {
-    lead: 'To measure a campaign you need to isolate it. Campaign QR codes record which marketing material brought the customer in, so post-campaign decisions are data-driven instead of guess-driven.',
-    keyInsight: 'Campaign success is not intuition; it is the result of <em>distinct parameter + clean report</em>. Without isolation there is no learning.',
-    sections: [
-      { title: 'Campaign QR structure', paragraphs: ['Unlike standard QRs, campaign codes carry a source or campaign parameter. Example: /r/restaurant-slug?source=summer2026&platform=google. Feedback from this QR is then separated in reports.'] },
-      { title: 'Where to place them', items: ['Below social media posts.', 'On a patio banner.', 'At an event booth.', 'As a CTA in a newsletter.', 'On the back cover of the campaign menu.'] },
-      { title: 'Decisions after the campaign', paragraphs: ['When the campaign ends, evaluate scan count, average rating and customer profile from this QR. Low scan rate points to placement and copy; low rating points to the offer itself.'] },
-    ],
-    checklist: ['Campaign parameter is consistent.', 'All materials share the same QR.', 'Start and end dates are documented.', 'A saved report filter exists.', 'A post-campaign retro was held.'],
-    faq: [
-      { q: 'Can one campaign have two different QRs?', a: 'Yes, but unless you are running an A/B test, avoid it. A single parameter keeps measurement clean.' },
-      { q: 'Should I delete the QR after the campaign?', a: 'No. Leaving it inactive preserves historical reports. Just remove it from active materials.' },
-    ],
-  }),
-  article('tr', 'qr-codes', 50, 'qr-print-materials', 'Basılı QR materyallerini güncel tutma', 'Stickerlar, tabela, masa kartı ve menü baskılarınızın yıpranmasını ve yanlış sürüm kullanımını önleme.', ['baskı', 'sticker', 'menü', 'bakım'], {
-    lead: 'QR’ın dijital tarafı sabit kalsa bile fiziksel materyal yıpranır, kayıp olur veya eski versiyon yanlışlıkla kullanılır. Basılı materyal yönetimi günlük operasyonun sessiz ama önemli bir parçasıdır.',
-    keyInsight: 'Müşterinin <strong>okunmayan</strong> bir QR ile karşılaşması kötü tasarım değil <em>operasyonel ihmal</em> olarak hatırlanır. Aylık 10 dakikalık kontrol bunu önler.',
-    sections: [
-      { title: 'Yıpranma kontrolü', paragraphs: ['Sticker’lar parlak yüzeylerde 6-12 ay içinde okunmaz hale gelebilir. Açık alandaki banner’lar güneşte solar. Aylık görsel kontrol turu, müşterinin tarayamadığı QR’ı erken yakalar.'] },
-      { title: 'Sürüm yönetimi', items: ['QR baskısının ön yüzüne sürüm kodu yazın (V1.2 gibi).', 'Yedek 5-10 sticker ofiste bulundurun.', 'Eski sürümleri yeni baskı geldiğinde imha edin.', 'Şube yöneticisine basit bir kontrol listesi verin.', 'Tedarikçi e-postasında baskı tarihi açıkça yazılı olsun.'] },
-      { title: 'Yer değişikliği', paragraphs: ['Restoran taşındığında, dekorasyon yenilendiğinde veya menü baştan tasarlandığında QR materyalleri de yeniden değerlendirilmeli. Müşteri eski yerinde QR arıyorsa tarama oranı düşer.'] },
-    ],
-    checklist: ['Aylık görsel QR turu yapılıyor.', 'Sürüm kodu basılı materyalde okunaklı.', 'Yedek sticker stoğu var.', 'Eski sürüm imhası tamamlandı.', 'Dekorasyon değişikliğinde QR konumu güncellendi.'],
-    faq: [
-      { q: 'QR sticker’ları nereden bastırmalıyım?', a: 'UV korumalı laminasyonlu sticker dış mekan için, normal mat sticker iç mekan için yeterlidir. Tedarikçi seçiminde 6 ay test örneği isteyebilirsiniz.' },
-      { q: 'Eski sürüm QR’ı zarar verir mi?', a: 'Slug değişmediyse hayır. Ama parametreler eskiyse rapor doğruluğu bozulur. Sürüm güncellemesi titizlikle yapılmalı.' },
-    ],
-  }),
-  article('en', 'qr-codes', 50, 'qr-print-materials', 'Keep printed QR materials current', 'Stop wear, loss and outdated versions across stickers, signs, table cards and menu prints.', ['print', 'sticker', 'menu', 'maintenance'], {
-    lead: 'Even if the digital side stays stable, physical materials wear out, get lost or end up showing an old version. Material management is a quiet but important part of daily operations.',
-    keyInsight: 'A customer meeting an <strong>unscannable</strong> QR remembers it as <em>operational neglect</em>, not bad design. A 10-minute monthly check prevents that.',
-    sections: [
-      { title: 'Wear monitoring', paragraphs: ['Stickers on glossy surfaces can fade within 6-12 months. Outdoor banners sun-bleach. A monthly visual check catches QRs customers can no longer scan.'] },
-      { title: 'Version control', items: ['Print a version code on the front of each QR sticker (e.g. V1.2).', 'Keep 5-10 backup stickers on site.', 'Destroy old versions when new ones arrive.', 'Give branch managers a simple checklist.', 'Have suppliers print a clear print date.'] },
-      { title: 'Location changes', paragraphs: ['When a restaurant moves, redecorates or relaunches the menu, QR materials should be re-evaluated. If customers look in the old place, scan rate falls.'] },
-    ],
-    checklist: ['Monthly visual QR walkthrough is in place.', 'Version code is legible on materials.', 'Backup sticker stock exists.', 'Old versions were destroyed.', 'QR positions were updated on remodel.'],
-    faq: [
-      { q: 'Where should I print QR stickers?', a: 'UV-laminated stickers work outdoors; standard matte stickers are fine indoors. Ask suppliers for a 6-month sample test before committing.' },
-      { q: 'Are outdated QRs harmful?', a: 'If the slug is unchanged, no. But outdated parameters break reporting. Treat version updates carefully.' },
-    ],
-  }),
+const CATEGORY_RANK = new Map(HELP_CATEGORIES.map((category, index) => [category.slug, index]));
 
-  article('tr', 'review-management', 30, 'tags-and-assignment', 'Etiketleme ve sorumlu atama disiplini', 'Yorumların etiketlerle ayrıştırılması ve doğru kişiye atanması, raporları okunabilir yapan en küçük adımdır.', ['etiket', 'atama', 'iş akışı', 'sorumlu'], {
-    lead: 'Etiket ve atama tek başına basit görünür ama günlük operasyonun kalitesi büyük ölçüde bu iki adımdan gelir. Etiketsiz yorum aranamaz, atamasız yorum sahipsiz kalır.',
-    keyInsight: 'Etiketsiz yorum <em>kayıp veri</em>, atamasız yorum <em>kayıp müşteri</em>dir. Otuz saniyelik bu iki adım, haftalık raporun kalitesinin temelidir.',
-    sections: [
-      { title: 'Etiket setini sade tutun', paragraphs: ['Çok fazla etiket karar vermeyi yavaşlatır. Servis, yemek, fiyat, atmosfer, teslimat ve sıcaklık gibi 6-8 ana etiket çoğu işletme için yeterlidir. İhtiyaç duyuldukça yeni etiket eklenir, kullanılmayanlar arşivlenir.'] },
-      { title: 'Atama mantığı', items: ['Servis etiketi → vardiya yöneticisi.', 'Yemek etiketi → mutfak şefi veya sous şef.', 'Teslimat etiketi → operasyon sorumlusu.', 'Fiyat etiketi → işletme sahibi.', 'Atanmamış yorum kalmasın.'] },
-      { title: 'Toplu işlem', paragraphs: ['Aynı etiketten birden fazla yorum gelirse panel filtresi sayesinde toplu cevap veya toplu atama yapılabilir. Bu özellikle bayram veya kampanya sonrası gelen yorum yığınlarını yönetilebilir kılar.'] },
-    ],
-    checklist: ['Etiket seti 8 başlık altında.', 'Her etikete varsayılan sorumlu tanımlı.', 'Atanmamış yorum oranı düşük.', 'Haftalık etiket dağılım raporu gözden geçirildi.', 'Kullanılmayan etiketler arşivlendi.'],
-    faq: [
-      { q: 'Bir yoruma birden fazla etiket eklenebilir mi?', a: 'Evet. Yorum hem servis hem teslimat etkisini içeriyorsa iki etiket de işaretlenir. Raporda her ikisinde de sayılır.' },
-      { q: 'Yanlış atamayı geri alabilir miyim?', a: 'Evet. Atama değiştirilebilir; geçmiş kim tarafından atandı bilgisi audit log’ta tutulur.' },
-    ],
-  }),
-  article('en', 'review-management', 30, 'tags-and-assignment', 'Discipline around tagging and ownership', 'Tagging and assigning reviews is the smallest step that makes reports actually readable.', ['tag', 'assignment', 'workflow', 'owner'], {
-    lead: 'Tagging and assignment look simple in isolation, but the quality of daily operations depends on them. Untagged reviews cannot be searched; unassigned reviews end up nobody’s responsibility.',
-    keyInsight: 'An untagged review is <em>lost data</em>; an unassigned review is <em>a lost customer</em>. Those two 30-second steps are the foundation of weekly report quality.',
-    sections: [
-      { title: 'Keep the tag set small', paragraphs: ['Too many tags slow decisions. Service, food, price, atmosphere, delivery and temperature — 6 to 8 core tags cover most operations. Add new ones only when needed and archive unused ones.'] },
-      { title: 'Assignment logic', items: ['Service tag → shift manager.', 'Food tag → executive or sous chef.', 'Delivery tag → operations lead.', 'Price tag → owner.', 'No review should be left unassigned.'] },
-      { title: 'Bulk action', paragraphs: ['When several reviews share a tag, the panel filter enables bulk replies or bulk assignment. This makes post-holiday or post-campaign waves manageable.'] },
-    ],
-    checklist: ['The tag set is at most 8 categories.', 'Each tag has a default owner.', 'Unassigned ratio stays low.', 'Weekly tag distribution review happened.', 'Unused tags were archived.'],
-    faq: [
-      { q: 'Can a review have multiple tags?', a: 'Yes. If a review involves both service and delivery, both tags are applied and counted in each report.' },
-      { q: 'Can I undo a wrong assignment?', a: 'Yes. Assignments can be changed and the audit log records who reassigned it.' },
-    ],
-  }),
-  article('tr', 'review-management', 40, 'review-search-and-filters', 'Yorumları aramak ve filtrelemek', 'Tarih, yıldız, platform, etiket ve metin araması ile geri bildirimleri saniyeler içinde anlamlı kümelere indirgeyin.', ['arama', 'filtre', 'analiz', 'okuma'], {
-    lead: 'Yorum sayısı arttığında her yorumu okumak gerçekçi değildir. Doğru filtre kombinasyonu, tek bir yorumda saatler harcamak yerine yüzlerce yorumun temasını bir bakışta görmenizi sağlar.',
-    keyInsight: 'Filtre <em>sınır koymak</em> değil <strong>doğru soruyu sormak</strong>tır. Yanlış filtre yanlış cevap verir; her sayfa açılışında aktif filtreleri kontrol etmek refleks olmalı.',
-    sections: [
-      { title: 'Sık kullanılan kombinasyonlar', items: ['Son 7 gün + 1-3 yıldız: aciliyet listesi.', 'Son 30 gün + tek platform: kanal performansı.', 'Tüm zaman + tek etiket: kronik problem teşhisi.', 'Tarih + masa: yerel servis sorunu izlemek için.', 'Tarih + “porsiyon” gibi kelime araması: ürün geri bildirimi.'] },
-      { title: 'Yer imi ve link paylaşımı', paragraphs: ['Filtre URL’nizde tutulduğu için linki ekiple paylaşabilirsiniz. Bu, “şu yorumu gör” demekten çok daha hızlıdır ve aynı bağlamı garanti eder.'] },
-      { title: 'Filtre temizlik alışkanlığı', paragraphs: ['Beklenmedik bir rakam gördüğünüzde önce aktif filtreleri kontrol edin. Çoğu “bu rakam yanlış” iddiası unutulmuş bir filtre yüzündendir.'] },
-    ],
-    checklist: ['Aktif filtreler her sayfa açılışında görünür.', 'Filtre temizleme butonu kullanılıyor.', 'Filtreli URL kaydı yapıldı.', 'Metin araması mantıklı kelime köküyle yapıldı.', 'Sonuç sayısı boş ise filtreler gözden geçirildi.'],
-    faq: [
-      { q: 'Aynı anda birden fazla etiketle filtre yapılabilir mi?', a: 'Evet. Birden fazla etiket seçildiğinde sonuç bu etiketlerin en az birini içeren yorumları gösterir.' },
-      { q: 'Metin araması ne kadar akıllı?', a: 'Şu an basit substring eşleşmesi yapar. Türkçe ek ve çekimler için kelime kökünü kullanmak daha geniş sonuç verir.' },
-    ],
-  }),
-  article('en', 'review-management', 40, 'review-search-and-filters', 'Search and filter reviews effectively', 'Use date, star, platform, tag and text filters to turn hundreds of reviews into meaningful clusters.', ['search', 'filter', 'analysis', 'reading'], {
-    lead: 'When review volume grows, reading every single one is unrealistic. The right filter combinations let you see the theme of hundreds of reviews instead of getting lost in one.',
-    keyInsight: 'A filter is not <em>a limit</em>; it is <strong>asking the right question</strong>. The wrong filter returns the wrong answer — checking active filters on every page load should be reflex.',
-    sections: [
-      { title: 'Useful combinations', items: ['Last 7 days + 1-3 stars: urgency list.', 'Last 30 days + single platform: channel performance.', 'All time + single tag: chronic issue diagnosis.', 'Date + table: local service issue tracking.', 'Date + word search like “portion”: product feedback.'] },
-      { title: 'Bookmark and share', paragraphs: ['Filters are stored in the URL, so you can share a link with the team. This is faster than describing a context, and ensures the same view.'] },
-      { title: 'Filter hygiene', paragraphs: ['When a number looks wrong, check active filters first. Most “this is wrong” claims trace back to a forgotten filter.'] },
-    ],
-    checklist: ['Active filters are visible on every page load.', 'Reset filters button is used.', 'Filtered URLs are bookmarked.', 'Text search uses meaningful word stems.', 'Empty results trigger a filter review.'],
-    faq: [
-      { q: 'Can I filter by multiple tags at once?', a: 'Yes. Multiple selected tags return reviews matching at least one tag.' },
-      { q: 'How smart is text search?', a: 'Currently it matches substrings. For Turkish endings, search by the word stem for broader results.' },
-    ],
-  }),
-  article('tr', 'review-management', 50, 'weekly-review-ritual', 'Haftalık yorum okuma ritüeli', 'Yorum gelen kutusunu sadece bir kez bakılan yer olmaktan çıkarıp ekibin haftalık karar mekanizmasına dönüştürme.', ['ritüel', 'haftalık', 'toplantı', 'iş süreci'], {
-    lead: 'Yorumlar günlük olarak gelir ama kararlar haftalık alınır. Doğru bir haftalık ritüel, geri bildirimlerin tek tek değil bir bütün olarak yorumlanmasını sağlar ve operasyonel iyileştirme döngüsü kurar.',
-    keyInsight: 'Tek tek yorum <em>anekdot</em>, haftalık özet ise <strong>karar verisi</strong>dir. Ritüel olmazsa veri vardır ama karar yoktur.',
-    sections: [
-      { title: '30 dakikalık format', items: ['10 dk: Geçen haftanın özet kartları ve trendler.', '10 dk: Etiket dağılımı ve tekrar eden konular.', '5 dk: En düşük puanlı 3 yorumun okuması.', '5 dk: Bu hafta yapılacak somut değişiklik.', 'Toplantı sonrası karar bir Notion veya benzeri belgede.'] },
-      { title: 'Kim katılmalı?', paragraphs: ['İşletme sahibi, vardiya yöneticisi, mutfak temsilcisi ve mümkünse müşteri ilişkileri sorumlusu. Az sayıda kişi ama doğru pozisyonlar; karar verebilecek kadar yetki masada olsun.'] },
-      { title: 'Aksiyon takibi', paragraphs: ['Geçen hafta verilen kararın bu hafta hayata geçirilip geçirilmediği kontrol edilmeden ritüel sürdürülürse zamanla anlamını kaybeder. İlk gündem maddesi her zaman geçen haftanın aksiyonları olmalı.'] },
-    ],
-    checklist: ['Haftalık toplantı takvimde.', 'Format 30 dakikayı geçmiyor.', 'Karar maddeleri yazılı kayıt altında.', 'Her aksiyonun bir sahibi var.', 'Geçen haftanın aksiyonu kapatıldı.'],
-    faq: [
-      { q: 'Trafik az olan haftalarda toplantı atlanır mı?', a: 'Hayır, ama 15 dakikaya inilebilir. Ritmin bozulması alışkanlığın bozulmasına yol açar.' },
-      { q: 'Ekibe yorumları okutmalı mıyım?', a: 'Olumlu yorumların paylaşılması motivasyon, olumsuzların makul ve eğitici şekilde paylaşılması ise gelişim sağlar.' },
-    ],
-  }),
-  article('en', 'review-management', 50, 'weekly-review-ritual', 'A weekly review reading ritual', 'Turn the reviews inbox from a glance-once page into a weekly decision rhythm for the team.', ['ritual', 'weekly', 'meeting', 'process'], {
-    lead: 'Reviews arrive daily, but decisions are weekly. A good weekly ritual ensures feedback is interpreted as a whole, not one comment at a time, and creates a real improvement loop.',
-    keyInsight: 'Single reviews are <em>anecdotes</em>; the weekly summary is <strong>decision data</strong>. Without the ritual you have data but no decisions.',
-    sections: [
-      { title: '30-minute format', items: ['10 min: last week’s summary cards and trends.', '10 min: tag distribution and repeated themes.', '5 min: read the three lowest-rated reviews aloud.', '5 min: one concrete change for the coming week.', 'Decision logged in Notion or similar.'] },
-      { title: 'Who should attend?', paragraphs: ['Owner, shift manager, kitchen representative and if possible a customer-relations lead. Few people but the right ones; enough authority to decide on the spot.'] },
-      { title: 'Action follow-up', paragraphs: ['If last week’s decision is not checked this week, the ritual quickly loses meaning. The first agenda item is always the previous week’s action items.'] },
-    ],
-    checklist: ['Weekly meeting is on the calendar.', 'Format does not exceed 30 minutes.', 'Decisions are written down.', 'Each action has an owner.', 'Last week’s actions are closed.'],
-    faq: [
-      { q: 'Can the meeting be skipped on slow weeks?', a: 'No, but it can shrink to 15 minutes. Breaking the rhythm breaks the habit.' },
-      { q: 'Should the team read reviews?', a: 'Sharing positive reviews motivates the team; sharing negatives respectfully and educationally drives improvement.' },
-    ],
-  }),
-
-  article('tr', 'integrations', 30, 'tripadvisor-foursquare', 'Tripadvisor, Foursquare ve diğer profilleri ele alma', 'Buaze’in doğrudan desteklediği platformlar dışında kalan profilleri nasıl yönlendirme akışına dahil edersiniz?', ['tripadvisor', 'foursquare', 'profil', 'entegrasyon'], {
-    lead: 'Buaze; Google, Yemeksepeti, Getir ve Trendyol GO ile çalışan birinci sınıf platform yönlendirmeleri sunar. Tripadvisor, Foursquare veya niş bir rezervasyon platformu için ise yan kanal yaklaşımı uygundur.',
-    keyInsight: 'Yan kanal güzeldir ama her profil <em>aktif</em> değildir. Hacim yoksa müşteriyi dağıtmak değil, ana profili güçlendirmek daha verimlidir.',
-    sections: [
-      { title: 'Yan kanal nedir?', paragraphs: ['Yan kanal, müşteriye gösterilen ek profil bağlantısıdır. İçeride platform parametresi olarak tanımlı olmadığından, kart üzerindeki link bileşeniyle kurulur. Akış: önce yıldız → ana yorum platformu bağlantısı veya teşekkür ekranı → hemen altında “Tripadvisor’da paylaşmak ister misiniz?” gibi ek davet.'] },
-      { title: 'Yorum hacmi ve kalitesi', items: ['Tripadvisor turist trafiğinin yüksek olduğu lokasyonlarda kritik.', 'Foursquare niş bir alanda hedef kitle yakaladıysa anlamlı.', 'Sosyal medya profilleri yorum yerine takip kazanır.', 'Maps özetleri zaten Google profilinde toplanır.', 'Boş profil yerine eksik kalan ana profili tamamlayın.'] },
-      { title: 'Karar matrisi', paragraphs: ['Eğer ek profilden ayda 5’ten az yorum geliyorsa müşteri akışını dağıtmak yerine ana profilde toplamak daha verimlidir. Hacim 20+ olduğunda yan kanal yatırımı kendini geri öder.'] },
-    ],
-    checklist: ['Hangi profillerin canlı olduğu listelendi.', 'Aylık yorum hacmi ölçüldü.', 'Yan kanal yalnızca anlamlı profile yönlendiriyor.', 'Akış müşteriyi yormayacak şekilde sade.', 'Profil bağlantıları çalışıyor (mobil + masaüstü).'],
-    faq: [
-      { q: 'Tripadvisor entegrasyonu doğrudan eklenecek mi?', a: 'Talep yoğunlaşırsa değerlendirilir. Şu anda yan kanal yaklaşımı çoğu işletme için yeterlidir.' },
-      { q: 'Aynı yorumun iki platforma gitmesi sorun mu?', a: 'Hayır, ama müşteriyi tekrar tekrar yazmaya zorlamayın. Kısa bir teşvik yeterli.' },
-    ],
-  }),
-  article('en', 'integrations', 30, 'tripadvisor-foursquare', 'Handle Tripadvisor, Foursquare and other profiles', 'How to bring profiles outside Buaze’s first-class platform list into your redirect flow.', ['tripadvisor', 'foursquare', 'profile', 'integration'], {
-    lead: 'Buaze ships first-class platform redirects for Google, Yemeksepeti, Getir and Trendyol GO. For Tripadvisor, Foursquare or a niche reservation platform, a side-channel approach works well.',
-    keyInsight: 'Side channels are nice, but not every profile is <em>active</em>. Without volume, strengthening the main profile beats spreading the customer thin.',
-    sections: [
-      { title: 'What is a side channel?', paragraphs: ['A side channel is an extra profile link shown to the customer. Since it is not a built-in platform parameter, you set it up via a link card on the screen. Flow: stars → main review platform link or thank-you → a follow-up like “Would you also share on Tripadvisor?”'] },
-      { title: 'Volume and quality', items: ['Tripadvisor matters most in tourist-heavy locations.', 'Foursquare is meaningful where a niche audience uses it.', 'Social profiles bring follows, not reviews.', 'Maps summaries already aggregate via your Google profile.', 'Improve the main profile before adding empty side channels.'] },
-      { title: 'Decision matrix', paragraphs: ['If a profile receives fewer than 5 reviews per month, it is more efficient to focus the main profile. Beyond 20+, side-channel investment pays back.'] },
-    ],
-    checklist: ['Active profiles are listed.', 'Monthly review volume is measured.', 'Side channels point to meaningful profiles only.', 'The flow stays simple for the customer.', 'Profile links work on mobile and desktop.'],
-    faq: [
-      { q: 'Will Tripadvisor become a first-class integration?', a: 'It is on the table when demand consolidates. The side-channel approach is enough for most operators today.' },
-      { q: 'Is it a problem if a review goes to two platforms?', a: 'No, but do not push the customer to write twice. A short prompt is enough.' },
-    ],
-  }),
-  article('tr', 'integrations', 40, 'csv-export-bi', 'CSV ile dış BI veya tablolarınıza aktarım', 'Yorumları CSV olarak indirip Excel, Google Sheets veya BI aracında ileri analiz yapın.', ['csv', 'export', 'bi', 'analiz'], {
-    lead: 'Çoğu işletme aylık veya haftalık olarak CSV export ihtiyacı duyar. Bu, Buaze panelinde olmayan özel pivotlar veya muhasebe ile birleştirme gerektiren senaryolarda en hızlı yoldur.',
-    keyInsight: 'Export <em>çıkış</em> değil <strong>geçici köprü</strong>dür. Düzenli ihtiyaç başladığı an webhook + sürdürülebilir akış değerlendirmesi başlar.',
-    sections: [
-      { title: 'Export içeriği', paragraphs: ['CSV; tarih, restoran, masa, platform, yıldız, yorum metni, etiket ve müşteri iletişim bilgisi gibi temel alanları içerir. KVKK uyumu için kişisel veriler yalnızca yetkili kullanıcı tarafından alınmalı ve dış cihazlarda gereksiz tutulmamalıdır.'] },
-      { title: 'Excel ve Sheets ipuçları', items: ['UTF-8 BOM ile açın, Türkçe karakter sorunları azalır.', 'Yıldız sütununu sayı olarak biçimlendirin.', 'Tarih sütununu yyyy-mm-dd formatında saklayın.', 'Pivot için platform ve etiket sütunları yeterlidir.', 'Filtre satırı eklemek temizliği kolaylaştırır.'] },
-      { title: 'BI aracına aktarım', paragraphs: ['Looker Studio, Power BI veya Metabase için manuel CSV yerine zamanla webhook üzerinden veriyi akıtmak daha sağlıklıdır. Manuel export başlangıç için doğru, ölçek için kalıcı çözüm değildir.'] },
-    ],
-    checklist: ['CSV indirici yetkisi sınırlı.', 'Dosya yerel cihazda gereksiz kalmıyor.', 'Tarih ve yıldız format hatası yok.', 'Aylık export takvime alındı.', 'BI hedefi netleştirildiyse webhook planı çıkarıldı.'],
-    faq: [
-      { q: 'Export edilen veride sınır var mı?', a: 'Çok büyük partiler için filtre uygulayarak parça parça indirin. Tek seferde milyonlarca satır indirmek pratik değildir.' },
-      { q: 'CSV otomatik yapılabilir mi?', a: 'Şu an manuel veya zamanlanmış scriptlerle yapılır. Daha sürdürülebilir akış için webhook + dış sistem önerilir.' },
-    ],
-  }),
-  article('en', 'integrations', 40, 'csv-export-bi', 'Export CSV for spreadsheets and BI tools', 'Download reviews as CSV and run further analysis in Excel, Google Sheets or a BI tool.', ['csv', 'export', 'bi', 'analysis'], {
-    lead: 'Many teams need monthly or weekly CSV exports. It is the fastest option when you need pivots that the panel does not provide, or when you must merge data with finance.',
-    keyInsight: 'Export is not the <em>endpoint</em>; it is a <strong>temporary bridge</strong>. The moment the need becomes recurring, evaluate webhooks plus a sustainable pipeline.',
-    sections: [
-      { title: 'What the export contains', paragraphs: ['CSV includes date, restaurant, table, platform, stars, review text, tags and customer contact details. For privacy compliance, only authorized users should download personal data, and files should not linger on devices.'] },
-      { title: 'Excel and Sheets tips', items: ['Open with UTF-8 BOM to keep accented characters intact.', 'Format the star column as a number.', 'Keep dates in yyyy-mm-dd format.', 'Platform and tag columns are enough for pivots.', 'Add a filter row to ease cleanup.'] },
-      { title: 'BI ingestion', paragraphs: ['For Looker Studio, Power BI or Metabase, switching from manual CSV to webhook-based ingestion is healthier over time. CSV is a fine starting point but not a long-term answer at scale.'] },
-    ],
-    checklist: ['Export permission is restricted.', 'Files are removed from devices when no longer needed.', 'No date/star format issues.', 'Monthly export is on the calendar.', 'A webhook plan exists if BI is critical.'],
-    faq: [
-      { q: 'Is the export size limited?', a: 'For very large batches, filter and download in parts. Pulling millions of rows at once is impractical.' },
-      { q: 'Can the export be automated?', a: 'Currently via manual or scheduled scripts. For sustainable flow, prefer webhooks plus your warehouse or BI.' },
-    ],
-  }),
-  article('tr', 'integrations', 50, 'google-maps-link-vs-place-id', 'Google Maps linki, Place ID ve doğrudan yorum URL’si arasındaki fark', 'Hangi formatın hangi senaryoya uyduğunu görerek yorum bağlantısını doğru kanala kilitleyin.', ['google', 'maps', 'place id', 'link'], {
-    lead: 'Google bağlantısı tek bir tip değildir. Maps linki, Place ID ve doğrudan write-review URL’si farklı davranır. Doğru olanı seçmek müşterinin yorumunun gerçekten profile düşmesini sağlar.',
-    keyInsight: 'En iyi link <em>en az tıkla</em> yorum yazma ekranına götüren değildir; <strong>müşterinin niyetiyle uyumlu</strong> olandır. Kısa yol her zaman doğru yol değildir.',
-    sections: [
-      { title: 'Üç format', items: ['Place ID: Buaze tarafında write-review URL’sini otomatik üretir.', 'Maps linki: müşteriyi profil sayfasına götürür, yorum yazma adımını müşteri seçer.', 'Doğrudan write-review URL: yorum yazma kutusunu hemen açar.', 'Maps mobile deep link: Google Maps uygulaması açılır, web yerine.', 'Kısa link: zaman içinde bozulabilir, tercih etmeyin.'] },
-      { title: 'Hangisi ne zaman?', paragraphs: ['Müşteriyi olabildiğince az tıkla yorum yazma ekranına götürmek istiyorsanız Place ID veya doğrudan write-review URL’si en uygunudur. Müşteriyi önce profil ve fotoğraflarla buluşturmak istiyorsanız Maps linki uygundur. Çoğu işletme için “en kısa yol” yaklaşımı doğru çalışır.'] },
-      { title: 'Mobil davranış', paragraphs: ['Mobil tarayıcı + Google Maps uygulaması yüklü cihazlarda link Maps app’e yönlendirebilir. Bu beklenen bir davranıştır ve genellikle tarama oranını artırır. Test sırasında hem app yüklü hem app yüklü olmayan cihazda denemek faydalıdır.'] },
-    ],
-    checklist: ['Format bilinçli seçildi.', 'Mobil + masaüstü test edildi.', 'Tek profil, tek link.', 'Eski kısa linkler kaldırıldı.', 'Çoklu lokasyonda her şube ayrı ayarlandı.'],
-    faq: [
-      { q: 'Bir profilim yok, ne yapmalıyım?', a: 'Önce Google İşletme Profilini (Google Business Profile) oluşturun ve doğrulayın. Profil olmadan yorum yönlendirmesi çalışmaz.' },
-      { q: 'Profil askıya alındıysa ne olur?', a: 'Müşteri bir hata sayfası görür. Profil yeniden aktif olana kadar Buaze’deki link’i pasifleştirin.' },
-    ],
-  }),
-  article('en', 'integrations', 50, 'google-maps-link-vs-place-id', 'Google Maps link, Place ID or direct review URL', 'See which format fits which scenario so your review link always reaches the right channel.', ['google', 'maps', 'place id', 'link'], {
-    lead: 'A Google link is not a single thing. Maps link, Place ID and direct write-review URLs behave differently. Picking the right one ensures the customer actually lands on a review form.',
-    keyInsight: 'The best link is not the one with <em>fewest taps</em>; it is the one <strong>aligned with customer intent</strong>. Short does not always mean right.',
-    sections: [
-      { title: 'Three formats', items: ['Place ID: Buaze builds the write-review URL automatically.', 'Maps link: lands the customer on the profile; they choose to review.', 'Direct write-review URL: opens the review composer immediately.', 'Maps mobile deep link: opens the Google Maps app instead of web.', 'Shortened link: can break over time; avoid.'] },
-      { title: 'Which when?', paragraphs: ['To minimize taps before review, prefer Place ID or the direct write-review URL. To show the profile and photos first, the Maps link is appropriate. The “shortest path” works for most operators.'] },
-      { title: 'Mobile behavior', paragraphs: ['On mobile devices with Google Maps installed, the link can deep-link into the app. This is expected and generally increases scan-to-review conversion. Test on a device with and without the app to be safe.'] },
-    ],
-    checklist: ['Format chosen deliberately.', 'Mobile and desktop tested.', 'One profile, one link.', 'Old shortened links removed.', 'Each branch configured separately.'],
-    faq: [
-      { q: 'I do not have a Google profile yet.', a: 'Create and verify a Google Business Profile first. Without a verified profile, the redirect cannot work.' },
-      { q: 'What if the profile is suspended?', a: 'The customer sees an error page. Disable the link in Buaze until the profile is restored.' },
-    ],
-  }),
-
-  article('tr', 'team-roles', 30, 'multi-location-management', 'Çok şubeli işletmelerde ekip yönetimi', 'Birden fazla lokasyonu yönetirken kim hangi restoran verisini görmeli, kim sadece kendi şubesine odaklanmalı?', ['çoklu lokasyon', 'şube', 'ekip', 'erişim'], {
-    lead: 'Tek şube ile üç şube arasındaki fark, üç katı yorum sayısı değil; karar verme sürecinin tamamen değişmesidir. Doğru ekip yapısı bu farkı sahiplenir, yanlış yapı da her şubeyi yavaş hale getirir.',
-    keyInsight: 'Çok şubeli yapıda en kıymetli rapor <strong>karşılaştırmalı</strong> olandır. Sadece toplam değil, şubeler <em>arası</em> performans farkı kararları yönlendirir.',
-    sections: [
-      { title: 'Şube müdürü modeli', paragraphs: ['Her şubenin bir manager rolü vardır ve sadece kendi restoran ID’sini görür. Düşük puan bildirimleri o şubeye düşer, raporlar şube bazında ayrılır. Genel müdür ise tüm restoranları toplu görüntüleyebilir.'] },
-      { title: 'Yetki dağılım örneği', items: ['Genel müdür: owner rolü, tüm restoranlar.', 'Şube müdürü: manager rolü, tek restoran.', 'Bölge müdürü: manager rolü, 3-5 restoran.', 'Vardiya yöneticisi: staff rolü, tek restoran.', 'Müşteri ilişkileri: viewer rolü, tüm restoranlar.'] },
-      { title: 'Karşılaştırmalı raporlar', paragraphs: ['Çok şubeli yapıda en kıymetli rapor şubeler arası karşılaştırmadır. Aynı dönemdeki ortalama yıldız, düşük puan oranı ve etiket dağılımı şube performansını sayısal hale getirir; ekibe net hedef konulmasını sağlar.'] },
-    ],
-    checklist: ['Her şubenin atanmış müdürü var.', 'Bölge müdürü kapsamı yazılı.', 'Karşılaştırmalı haftalık rapor mevcut.', 'Şubeler arası benchmark hedefler set edildi.', 'Şube kapanışında erişim güncel.'],
-    faq: [
-      { q: 'Bir şube açılırken kimi davet etmeliyim?', a: 'Önce şube müdürü manager rolüyle eklenmeli, ardından vardiya yöneticileri staff rolüyle. Erken davet edilen ekip kurulum aşamasında geri bildirimle gelir.' },
-      { q: 'Bölge yapısı değiştiğinde nasıl güncellenir?', a: 'Manager rolünün restoran kapsamı düzenlenebilir; bölge müdürü için locations alanına yeni restoranlar eklenip kaldırılır.' },
-    ],
-  }),
-  article('en', 'team-roles', 30, 'multi-location-management', 'Team management for multi-location operators', 'When you run multiple locations, decide who sees which restaurant and who focuses only on their branch.', ['multi-location', 'branch', 'team', 'access'], {
-    lead: 'Going from one branch to three is not three times the reviews; it changes the decision-making process. The right team structure embraces that, the wrong one slows every branch down.',
-    keyInsight: 'In multi-location operations, the most valuable report is <strong>comparative</strong>. Not just totals — performance gaps <em>between</em> branches drive decisions.',
-    sections: [
-      { title: 'Branch manager model', paragraphs: ['Each branch has a manager role scoped to that single restaurant ID. Low-rating notifications go to the right branch; reports stay separated. The general manager has access to all restaurants for an aggregate view.'] },
-      { title: 'Example permission split', items: ['General manager: owner role, all restaurants.', 'Branch manager: manager role, single restaurant.', 'Regional manager: manager role, 3-5 restaurants.', 'Shift manager: staff role, single restaurant.', 'Customer relations: viewer role, all restaurants.'] },
-      { title: 'Comparative reporting', paragraphs: ['The most valuable report at scale is branch-by-branch comparison. Average stars, low-rating ratio and tag distribution within the same window turn branch performance into numbers, enabling clear team targets.'] },
-    ],
-    checklist: ['Every branch has a named manager.', 'Regional manager scope is written down.', 'A weekly comparative report exists.', 'Branch benchmark targets are set.', 'Access is current at branch closures.'],
-    faq: [
-      { q: 'Who should I invite when launching a branch?', a: 'Add the branch manager first with the manager role, then shift managers as staff. Early invites generate setup-stage feedback.' },
-      { q: 'How do I update when regions change?', a: 'Manager scope can be edited; for regional managers, update the locations field with the new set of restaurants.' },
-    ],
-  }),
-  article('tr', 'team-roles', 40, 'access-review-monthly', 'Aylık erişim gözden geçirme', 'Ekibe kim hala erişiyor, kim erişmemeli? Aylık 15 dakikalık denetim süreci güvenliği canlı tutar.', ['erişim denetim', 'audit', 'güvenlik', 'rutin'], {
-    lead: 'Erişim listesi zamanla şişer. Yeni gelen herkes davet edilir ama ayrılan herkes hatırlanmaz. Aylık 15 dakikalık disiplinli kontrol bu sessiz birikimi temizler.',
-    keyInsight: 'Güvenlik bir <strong>etkinlik</strong> değil <em>alışkanlık</em>tır. 15 dakika her ay, yıllar boyunca büyük olayların önünü keser.',
-    sections: [
-      { title: 'Kontrol noktaları', items: ['Son 30 günde giriş yapmamış kullanıcı.', 'Owner panelinde rolü değişen kullanıcı.', 'Aktif olmayan davet linkleri.', 'Şube kapanışı sonrası kalan erişim.', 'Eski telefon numarası ile bağlanmış kullanıcı.'] },
-      { title: 'Karar matrisi', paragraphs: ['Son 30 günde giriş yok ve görev devam ediyor: kontrol et. Son 90 günde giriş yok: rolü daralt veya kaldır. Çıkış yapmış personel: hemen revoke. Bu basit kural, çoğu küçük ekip için yeterli güvenlik sağlar.'] },
-      { title: 'Belgeleme', paragraphs: ['Aylık denetimin sonucu küçük bir Notion belgesinde tutulduğunda KVKK denetiminde kanıt değeri taşır ve bir sonraki ay başlangıç noktası verir.'] },
-    ],
-    checklist: ['Son giriş tarihi gözden geçirildi.', 'Pasif kullanıcılar revoke edildi.', 'Ayrılan personel listesi karşılaştırıldı.', 'Bekleyen davetler temizlendi.', 'Denetim notu dosyalandı.'],
-    faq: [
-      { q: 'Pasif kullanıcıyı silmek yerine pasifleştirebilir miyim?', a: 'Evet. İşten ayrılma kesin değilse veya geri dönüş ihtimali varsa rolü daraltıp pasif tutmak makul bir orta yoldur.' },
-      { q: 'Audit log nereye düşer?', a: 'Önemli erişim değişiklikleri sistem audit log’unda kaydedilir; bu kayıtlar denetimde paylaşılabilir.' },
-    ],
-  }),
-  article('en', 'team-roles', 40, 'access-review-monthly', 'Monthly access review', 'Who still has access, and who should not? A 15-minute monthly review keeps security alive.', ['access review', 'audit', 'security', 'routine'], {
-    lead: 'Access lists drift up over time. Everyone new gets invited, but not everyone who leaves is remembered. A disciplined 15-minute monthly review clears this silent accumulation.',
-    keyInsight: 'Security is not an <strong>event</strong> but a <em>habit</em>. Fifteen minutes each month prevents major incidents over years.',
-    sections: [
-      { title: 'Checkpoints', items: ['Users without a login in the last 30 days.', 'Users whose role changed in the owner panel.', 'Inactive invite links.', 'Lingering access after a branch closure.', 'Users tied to outdated phone numbers.'] },
-      { title: 'Decision matrix', paragraphs: ['No login for 30 days but the role is still needed: check in. No login for 90 days: tighten or remove. Departed staff: revoke immediately. This simple rule is enough security for most small teams.'] },
-      { title: 'Documentation', paragraphs: ['Logging the result of the monthly review in a short Notion doc gives compliance a paper trail and gives next month a starting point.'] },
-    ],
-    checklist: ['Last login dates were checked.', 'Inactive users were revoked.', 'A list of departed staff was matched.', 'Pending invites were cleaned up.', 'Audit notes were filed.'],
-    faq: [
-      { q: 'Can I disable instead of delete?', a: 'Yes. If departure is uncertain or rejoining is likely, scoping down the role and disabling is a reasonable middle ground.' },
-      { q: 'Where do audit logs live?', a: 'Critical access changes are written to the system audit log and can be shared during a compliance review.' },
-    ],
-  }),
-  article('tr', 'team-roles', 50, 'team-onboarding-checklist', 'Yeni ekip üyesi ilk hafta kontrol listesi', 'Yeni katılan operasyon arkadaşının paneli verimli kullanmaya başlaması için 5 günlük adım planı.', ['onboarding', 'eğitim', 'yeni ekip', 'pratik'], {
-    lead: 'Yeni ekip üyesi davet edildiği an verimli olmaz. İlk hafta planlı yapılırsa yorum okuma, yanıt yazma ve filtre kullanımı doğal alışkanlıklara dönüşür; planlı yapılmazsa panel tek seferlik tıklamaya kalır.',
-    keyInsight: 'İlk haftada kazanılan alışkanlık <strong>aylar boyu</strong> kalıcıdır. Plansız onboarding, paneli ekibin gözünde <em>arka plana</em> iter.',
-    sections: [
-      { title: '5 günlük plan', items: ['Gün 1: Hesap, rol ve mobil tarayıcı testi.', 'Gün 2: Yorum okuma ve filtreler.', 'Gün 3: Yanıt yazma, AI taslak kullanımı.', 'Gün 4: Etiketleme ve atama akışı.', 'Gün 5: Haftalık toplantıya katılım, kendi sorumluluğunu sahiplenme.'] },
-      { title: 'Mentörlük', paragraphs: ['İlk hafta için bir mentor atayın. Mentor günde 5 dakika kontrol etse bile yeni ekip üyesinin sorularına hızlı cevap vermesi öğrenmeyi hızlandırır.'] },
-      { title: 'Ölçüm', paragraphs: ['İlk hafta sonunda yeni üyenin yazdığı yanıt sayısı, kullandığı filtre sayısı ve aldığı atama sayısı küçük göstergelerdir. Hedef bir performans ölçümü değil, alışkanlık oluştuğunu doğrulamaktır.'] },
-    ],
-    checklist: ['Hesap ve rol doğru.', 'Mobil + masaüstü test edildi.', 'En az 3 yanıt deneyimi yapıldı.', 'Mentor günlük check-in yaptı.', 'İlk haftalık toplantıya katıldı.'],
-    faq: [
-      { q: 'Yarı zamanlı çalışan için süre kısaltmalı mıyım?', a: 'Hayır, ama günlük adımları haftalara yayabilirsiniz. Önemli olan sıralı ilerleme.' },
-      { q: 'Onboarding belgesi nereye konmalı?', a: 'İşletme içi şirket wiki’si en uygun yer. Kişiye özel link gönderip ilk hafta açtığını gözlemleyin.' },
-    ],
-  }),
-  article('en', 'team-roles', 50, 'team-onboarding-checklist', 'A first-week onboarding checklist for new teammates', 'A 5-day plan that turns a freshly invited teammate into a productive panel user.', ['onboarding', 'training', 'new hire', 'practice'], {
-    lead: 'A new teammate is not productive on day one. With a planned first week, reading reviews, writing replies and using filters become natural habits. Without a plan, the panel turns into a one-time click.',
-    keyInsight: 'Habits formed in week one persist for <strong>months</strong>. Unplanned onboarding pushes the panel to the <em>background</em> in the team’s mental map.',
-    sections: [
-      { title: '5-day plan', items: ['Day 1: account, role and mobile browser test.', 'Day 2: reading reviews and filters.', 'Day 3: writing replies, using AI drafts.', 'Day 4: tagging and assignment flow.', 'Day 5: weekly meeting attendance and ownership.'] },
-      { title: 'Mentorship', paragraphs: ['Assign a mentor for the first week. Even five minutes a day from a mentor accelerates learning by answering questions on the spot.'] },
-      { title: 'Measurement', paragraphs: ['Replies written, filters used and assignments handled in the first week are small but useful signals. The aim is not performance evaluation but confirming the habit took hold.'] },
-    ],
-    checklist: ['Account and role are correct.', 'Mobile and desktop tested.', 'At least three replies practiced.', 'Mentor checked in daily.', 'First weekly meeting attended.'],
-    faq: [
-      { q: 'Should I shorten this for part-time staff?', a: 'No, but you can spread daily steps across weeks. The order matters more than the speed.' },
-      { q: 'Where should the onboarding doc live?', a: 'In your company wiki. Share a personal link and confirm the new hire opened it during week one.' },
-    ],
-  }),
-
-  article('tr', 'billing', 30, 'usage-thresholds-alerts', 'Kullanım eşikleri ve faturalama uyarıları', 'Plan limitlerine yaklaşırken sürpriz faturayla karşılaşmamak için izlenmesi gereken sinyaller.', ['kullanım', 'eşik', 'limit', 'uyarı'], {
-    lead: 'Faturada sürpriz olmamasının yolu kullanımı sezgiyle değil sayısal olarak izlemektir. Doğru eşikler tanımlandığında ekip, plan yükseltme veya optimizasyon kararını zamanında alır.',
-    keyInsight: 'Eşik <em>panik düğmesi</em> değil <strong>karar tetikleyicisi</strong>dir. %70 fark et, %90 hareket et — basit bir kural sürpriz fatura olasılığını sıfırlar.',
-    sections: [
-      { title: 'İzlenmesi gereken metrikler', items: ['Aylık aktif yorum sayısı.', 'Pulse AI taslak sayısı.', 'API çağrı hacmi.', 'Aktif restoran ve ekip üye sayısı.', 'Webhook teslim adedi.'] },
-      { title: 'Eşik mantığı', paragraphs: ['Plan limitinin yüzde 70’i aşıldığında ekibe haber verecek hafif bir uyarı (renk veya rozet), yüzde 90’da ise eyleme zorlayan bir bildirim mantıklıdır. Bu sayede ay sonuna birkaç gün kala plan yükseltme kararı sakince alınır.'] },
-      { title: 'Kullanımı düşürme', paragraphs: ['Bazı durumlarda yükseltme yerine optimizasyon yeterlidir: pasif restoranları arşivleyin, kullanılmayan webhook’ları kapatın, gereksiz API çağrılarını cache’leyin.'] },
-    ],
-    checklist: ['Eşik politikası yazılı.', 'Yüzde 70 ve 90 hatırlatması aktif.', 'Pasif restoranlar arşivlendi.', 'API çağrı hacmi izleniyor.', 'Yükseltme kararı 5 gün önceden alınıyor.'],
-    faq: [
-      { q: 'Eşik aşıldığında otomatik yükseltme yapılır mı?', a: 'Hayır. Plan değişiklikleri her zaman manuel onayla gerçekleşir. Bu, sürpriz fatura riskini ortadan kaldırır.' },
-      { q: 'Eşik bildirimini sadece yöneticiye yönlendirebilir miyim?', a: 'Evet. Bildirim e-postası ekip üyelerine değil yalnızca yetkili kişiye gidecek şekilde ayarlanmalıdır.' },
-    ],
-  }),
-  article('en', 'billing', 30, 'usage-thresholds-alerts', 'Usage thresholds and billing alerts', 'Track the right signals so you never get surprised by an end-of-month bill.', ['usage', 'threshold', 'limit', 'alert'], {
-    lead: 'Avoiding billing surprises is a numerical exercise, not a gut feel. With clear thresholds, the team makes upgrade or optimization decisions on time.',
-    keyInsight: 'A threshold is not a <em>panic button</em>; it is a <strong>decision trigger</strong>. Notice at 70%, act at 90% — that simple rule removes billing surprises.',
-    sections: [
-      { title: 'Metrics worth tracking', items: ['Monthly active reviews.', 'Pulse AI draft count.', 'API call volume.', 'Active restaurants and team members.', 'Webhook delivery count.'] },
-      { title: 'Threshold logic', paragraphs: ['At 70% of plan limit, a soft signal (color or badge) is enough. At 90%, an action-forcing notification helps. This pattern lets the team make plan changes calmly a few days before month end.'] },
-      { title: 'Reducing usage', paragraphs: ['Sometimes optimization is enough instead of upgrading: archive inactive restaurants, disable unused webhooks, cache unnecessary API calls.'] },
-    ],
-    checklist: ['Threshold policy is written down.', '70% and 90% reminders are active.', 'Inactive restaurants archived.', 'API call volume tracked.', 'Upgrade decisions made 5 days early.'],
-    faq: [
-      { q: 'Does the system upgrade automatically when a threshold is crossed?', a: 'No. Plan changes always require manual confirmation. This eliminates surprise charges.' },
-      { q: 'Can I send threshold notifications to the manager only?', a: 'Yes. Notification emails should go to authorized people, not the whole team.' },
-    ],
-  }),
-  article('tr', 'billing', 40, 'invoice-vat-and-titles', 'Fatura unvanı, KDV ve şirket bilgisi düzenleme', 'Faturada doğru şirket unvanı, vergi numarası ve KDV oranını set ederek muhasebe sürtünmesini ortadan kaldırın.', ['fatura', 'kdv', 'unvan', 'vergi'], {
-    lead: 'Yanlış faturada sürpriz değil, geri çağırma süreci ve muhasebe kapatma gecikmesi yatar. Bu sebeple ilk faturadan önce şirket bilgilerinin doğru olduğundan emin olmak en iyi yatırımdır.',
-    keyInsight: 'İlk fatura kontrolü <em>15 dakika</em>; geriye dönük düzeltme <strong>haftalar</strong>. Bu denklem hangi adımın daha akıllı olduğunu gösterir.',
-    sections: [
-      { title: 'Tutulması gereken alanlar', items: ['Şirket unvanı (ticari sicile göre).', 'Vergi dairesi ve vergi numarası.', 'Adres (vergi dairesi ile uyumlu).', 'Yetkili kişi ve e-posta.', 'Fatura iletişim adresi (genel adresten farklıysa).'] },
-      { title: 'KDV ve oran', paragraphs: ['SaaS faturalandırması Türkiye’de genellikle yüzde 20 KDV oranıyla işlenir. İşletmenizin yurt dışı kaynaklı bir hizmet aldığı senaryolarda muhasebenizle KDV reverse-charge mekanizmasını gözden geçirin.'] },
-      { title: 'Geriye dönük düzeltme', paragraphs: ['Yanlış basılmış faturanın geriye dönük düzeltilmesi mümkündür ama zaman alır. Önce yeni dönem için doğru bilgilerin set edildiğinden emin olup destek ekibine geçmiş kayıtların düzeltilmesini bildirebilirsiniz.'] },
-    ],
-    checklist: ['Şirket unvanı ticari sicille birebir.', 'Vergi dairesi/numarası kontrol edildi.', 'Yetkili kişi ve fatura e-postası set.', 'KDV oranı muhasebeyle uyumlu.', 'İlk fatura sonrası muhasebe kontrolü yapıldı.'],
-    faq: [
-      { q: 'Şahıs şirketi olarak faturalandırılabilir miyim?', a: 'Evet. Sadece vergi numarası yerine TC kimlik bilgisi muhasebe ile koordine edilerek girilmelidir.' },
-      { q: 'Yurt dışı kart ile öderken KDV nasıl uygulanır?', a: 'Ödeme aracının fatura çıkarma akışı KDV’yi otomatik hesaplar; özel durumlar için muhasebenizle çalışmak en güvenli yoldur.' },
-    ],
-  }),
-  article('en', 'billing', 40, 'invoice-vat-and-titles', 'Invoice title, VAT and company details', 'Set the correct company title, tax ID and VAT rate so finance does not have to chase corrections later.', ['invoice', 'vat', 'title', 'tax'], {
-    lead: 'A wrong invoice is not just a surprise; it delays month-end close and triggers reissue requests. Verifying details before the first invoice is the highest-leverage step.',
-    keyInsight: 'A first-invoice check is <em>15 minutes</em>; retroactive corrections are <strong>weeks</strong>. The math shows which step is smarter.',
-    sections: [
-      { title: 'Fields to keep accurate', items: ['Company title (per commercial registry).', 'Tax office and tax ID.', 'Address consistent with the tax office record.', 'Authorized contact and email.', 'Billing address if different from main.'] },
-      { title: 'VAT and rates', paragraphs: ['SaaS billing in Turkey is generally subject to 20% VAT. For cross-border services, review the reverse-charge mechanism with your accountant.'] },
-      { title: 'Retroactive corrections', paragraphs: ['Reissuing past invoices is possible but takes time. First confirm the new period is correct, then ask support to correct historical records.'] },
-    ],
-    checklist: ['Title matches commercial registry exactly.', 'Tax office and ID confirmed.', 'Authorized contact and email set.', 'VAT rate aligned with finance.', 'First invoice was reviewed by finance.'],
-    faq: [
-      { q: 'Can I bill as a sole proprietor?', a: 'Yes. Coordinate with finance whether to provide tax ID or national ID for invoicing.' },
-      { q: 'How is VAT handled with foreign cards?', a: 'The payment provider handles VAT automatically. For edge cases, run it past your accountant.' },
-    ],
-  }),
-  article('tr', 'billing', 50, 'annual-vs-monthly-plans', 'Aylık plan mı yıllık plan mı?', 'Yıllık ödeme indirimi cazip ama her senaryoda doğru değildir. Hangi durumda aylık, hangi durumda yıllık seçmek mantıklı?', ['yıllık', 'aylık', 'plan', 'karar'], {
-    lead: 'Plan döngüsü seçimi yalnızca fiyat değil, esneklik kararıdır. Yıllık ödeme genelde indirim sunar; aylık ödeme ise iş modeli henüz oturmamış işletmelere esneklik sağlar.',
-    keyInsight: 'İndirim peşinen değil, <strong>kesin ihtiyaç peşinen</strong> kazandırır. Yıllık karar verirken yedi aylık taze veriye sahip olmak en güvenli zamandır.',
-    sections: [
-      { title: 'Yıllık plan kimin için?', items: ['Yorum hacmi istikrarlı.', 'Birden fazla şubede aktif kullanım.', 'Ekip rolleri yerleşmiş.', 'Pulse AI taslakları rutine girmiş.', 'Yıl içinde kapanış riski düşük.'] },
-      { title: 'Aylık plan kimin için?', paragraphs: ['Yeni açılan işletme, kampanya bazlı kısa süreli kullanım planı ya da yatırım kararı henüz oturmamış senaryolar için aylık plan daha makuldür. Birkaç ay sonra istikrar görüldüğünde yıllık plana geçilebilir.'] },
-      { title: 'Geçiş ve iade', paragraphs: ['Aylıktan yıllığa geçiş genellikle hızlıdır ve indirim hemen başlar. Yıllık plandan aylığa dönmek mümkün ama orantılı iade kuralları sözleşmede belirlenir; geçişten önce destek ekibiyle teyit etmek doğru olur.'] },
-    ],
-    checklist: ['Karar yorum hacmi ile uyumlu.', 'Esneklik ihtiyacı netleştirildi.', 'Yenileme tarihi takvimde.', 'Geçiş şartları okundu.', 'Muhasebe akış uyumlu.'],
-    faq: [
-      { q: 'Yıllık plana geçince hemen tüm yıl ödeniyor mu?', a: 'Evet, çoğu durumda yıllık ödeme tek seferde yapılır. Bu yüzden indirim oranı anlamlıdır.' },
-      { q: 'Yıllık planı bitmeden iptal edersem ne olur?', a: 'Sözleşme şartları belirleyicidir. Genelde kullanılan dönem hariç orantılı iade veya kredi sunulur.' },
-    ],
-  }),
-  article('en', 'billing', 50, 'annual-vs-monthly-plans', 'Annual or monthly plan?', 'Annual discounts are tempting but not always right. When to choose monthly, when to commit annually.', ['annual', 'monthly', 'plan', 'decision'], {
-    lead: 'Choosing the billing cycle is a flexibility decision, not just a price one. Annual usually gives a discount; monthly gives flexibility while the model is still settling.',
-    keyInsight: 'Discounts pay back when paired with <strong>certain need</strong>, not upfront commitment. The safest moment for an annual decision is after seven months of fresh data.',
-    sections: [
-      { title: 'Annual fits when', items: ['Review volume is steady.', 'Multiple branches are actively using the panel.', 'Team roles are stable.', 'Pulse AI drafts are part of the routine.', 'Closure risk during the year is low.'] },
-      { title: 'Monthly fits when', paragraphs: ['New launches, short campaign usage or scenarios where the investment thesis is still being validated. After a few stable months, you can move to annual.'] },
-      { title: 'Switching and refunds', paragraphs: ['Monthly to annual is usually fast and the discount kicks in immediately. Returning from annual to monthly is possible but pro-rata refund rules are defined in the contract; check with support before changing.'] },
-    ],
-    checklist: ['Decision matches review volume.', 'Flexibility need is clear.', 'Renewal date is on the calendar.', 'Switch terms are read.', 'Finance flow aligned.'],
-    faq: [
-      { q: 'Is annual paid all at once?', a: 'Yes, in most cases. That is why the discount is meaningful.' },
-      { q: 'What if I cancel an annual plan early?', a: 'Contract terms apply. Usually pro-rata refund or credit is offered for the unused period.' },
-    ],
-  }),
-
-  article('tr', 'api-webhook', 30, 'rate-limit-strategy', 'Rate limit ile dostluk', '429 hatası almamak için istek hızını planlama, retry-backoff kurma ve toplu işlemleri parçalama.', ['rate limit', 'backoff', 'retry', 'api'], {
-    lead: 'Rate limit, sistemi koruyan bir mekanizmadır; düşman değildir. Doğru kullanılırsa hem entegrasyonunuz daha güvenilir olur hem de Buaze tarafında genel performans korunur.',
-    keyInsight: 'Yüksek 429 oranı bir <em>performans</em> sorunu değil, bir <strong>tasarım</strong> sorunudur. Limite tepki kodlamak yerine limitle uyumlu yazmak baştan kolaydır.',
-    sections: [
-      { title: 'Tipik limitler', paragraphs: ['Çoğu endpoint dakika başına orta seviye bir istek tavanına sahiptir. Pulse AI gibi maliyetli endpoint’lerde tavan daha düşüktür ve workspace owner seviyesinde keylenir, böylece bir ekip üyesi quota’yı tek başına tüketemez.'] },
-      { title: 'Sağlıklı istek deseni', items: ['Ardışık istekler arasında 100-300 ms boşluk.', 'Toplu görevleri 50’şerli batch’lere bölün.', 'Cache kullanın: aynı veriyi 5 dakikada tekrar istemeyin.', 'Backoff: 429 alındığında 2-4-8 sn beklemeyle retry.', 'Retry sayacı 3’ü geçmesin, sonra alarm yakın.'] },
-      { title: 'Operasyonel izleme', paragraphs: ['Entegrasyon tarafında 429 oranını dashboard’a yazın. Yüksek orana ulaşırsa bu, performans sorunu değil tasarım sorunudur ve istek mimarisi gözden geçirilmelidir.'] },
-    ],
-    checklist: ['429 oranı dashboardda izleniyor.', 'Backoff stratejisi kodlandı.', 'Toplu işlem batch boyutu belirlendi.', 'Cache TTL set edildi.', 'Alarm 3+ retry sonrası tetikleniyor.'],
-    faq: [
-      { q: '429 alırsam veri kaybolur mu?', a: 'Hayır. Doğru kurulmuş retry mekanizması isteği yeniden gönderir. Veri kaybı tasarım hatasıdır, limitin kendisi sebep değildir.' },
-      { q: 'Limit yükseltilebilir mi?', a: 'Belirli iş senaryoları için destek ekibiyle değerlendirilebilir. Önce mevcut deseni optimize etmek önerilir.' },
-    ],
-  }),
-  article('en', 'api-webhook', 30, 'rate-limit-strategy', 'Make peace with rate limits', 'Plan request pacing, retry-backoff and batch sizes so 429 stops being a problem.', ['rate limit', 'backoff', 'retry', 'api'], {
-    lead: 'Rate limits protect the system; they are not the enemy. Used correctly, your integration becomes more reliable and overall Buaze performance stays healthy.',
-    keyInsight: 'A high 429 ratio is not a <em>performance</em> issue; it is a <strong>design</strong> issue. Writing with the limit in mind is easier than reacting to it.',
-    sections: [
-      { title: 'Typical limits', paragraphs: ['Most endpoints have a moderate per-minute ceiling. Costly endpoints like Pulse AI have a lower ceiling, keyed at workspace owner level so a single team member cannot exhaust the quota alone.'] },
-      { title: 'Healthy request pattern', items: ['Add 100-300 ms between sequential requests.', 'Split bulk jobs into batches of 50.', 'Cache: do not re-request the same data within 5 minutes.', 'Backoff: on 429, wait 2-4-8 seconds before retry.', 'Stop after 3 retries and raise an alarm.'] },
-      { title: 'Operational monitoring', paragraphs: ['Track 429 ratio on your integration dashboard. A high ratio is a design issue, not a performance one; revisit your request architecture.'] },
-    ],
-    checklist: ['429 ratio is tracked.', 'Backoff strategy is implemented.', 'Batch size is defined.', 'Cache TTL is set.', 'Alarm fires after 3+ retries.'],
-    faq: [
-      { q: 'Will I lose data on 429?', a: 'No. A correct retry mechanism re-sends the request. Data loss is a design flaw, not a consequence of the limit.' },
-      { q: 'Can the limit be raised?', a: 'For specific business scenarios, talk to support. First optimize the request pattern.' },
-    ],
-  }),
-  article('tr', 'api-webhook', 40, 'webhook-payload-anatomy', 'Webhook payload anatomisi', 'Buaze webhook teslimatlarını okumak, doğrulamak ve dış sistemde işlemek için temel alanlar.', ['payload', 'webhook', 'json', 'event'], {
-    lead: 'Webhook entegrasyonunun başarılı olması ham JSON gönderimine değil, payload’un doğru anlaşılmasına bağlıdır. Standart alanları bilmek sürpriz olasılığını azaltır.',
-    keyInsight: 'Doğru entegrasyon <em>payload’u almak</em> değil <strong>payload’u anlamak</strong>tır. eventId ve occurredAt — bu iki alan, idempotent bir mimarinin omurgasıdır.',
-    sections: [
-      { title: 'Standart alanlar', items: ['eventId: idempotency için benzersiz id.', 'eventType: feedback.created, feedback.lowRating gibi.', 'occurredAt: ISO 8601 UTC zaman damgası.', 'restaurantId: olayın ait olduğu restoran.', 'data: olay özelinde dolan içerik bloğu.'] },
-      { title: 'İdempotency uygulaması', paragraphs: ['Aynı eventId’nin işlemi tekrarlanmamalıdır. Dış sistemde bir tablo veya cache ile son işlenen eventId kümesini tutun. Çok büyük hacimlerde TTL bazlı cache yeterlidir.'] },
-      { title: 'Yanıt kuralları', paragraphs: ['Webhook endpoint’iniz 200 OK ile 5 saniyeden önce yanıt vermelidir. Ağır iş yapıyorsanız önce yanıt verin, ardından arka planda kuyruğa alıp işleyin. Aksi halde sistem retry tetikler ve duplicate işleme riski artar.'] },
-    ],
-    checklist: ['eventId tablosu var.', 'occurredAt UTC olarak işleniyor.', 'Endpoint 5 sn altında 200 OK döner.', 'Bilinmeyen eventType graceful handle ediliyor.', 'Yanıt kodları izleniyor.'],
-    faq: [
-      { q: 'Olmayan bir alanı işlersem hata olur mu?', a: 'Yeni alanlar zamanla eklenebilir. Bilinmeyen alanları yok saymak, ileride uyumlu kalmanın en iyi yoludur.' },
-      { q: 'Sıralama garanti mi?', a: 'Hayır. Genelde sıralı gelir ama ağ koşulları sıraya etki eder. occurredAt alanına dayanarak işleme tarihini tutun.' },
-    ],
-  }),
-  article('en', 'api-webhook', 40, 'webhook-payload-anatomy', 'Anatomy of a webhook payload', 'Read, verify and process Buaze webhook deliveries with the right field expectations.', ['payload', 'webhook', 'json', 'event'], {
-    lead: 'A successful webhook integration depends not on raw JSON delivery but on understanding the payload. Knowing the standard fields removes surprises.',
-    keyInsight: 'A correct integration is not <em>receiving the payload</em>; it is <strong>understanding it</strong>. eventId and occurredAt are the spine of an idempotent design.',
-    sections: [
-      { title: 'Standard fields', items: ['eventId: unique id for idempotency.', 'eventType: e.g. feedback.created, feedback.lowRating.', 'occurredAt: ISO 8601 UTC timestamp.', 'restaurantId: scope of the event.', 'data: event-specific payload block.'] },
-      { title: 'Idempotency in practice', paragraphs: ['Never reprocess the same eventId. Keep a recent eventId set in a table or cache. At very high volume, a TTL-based cache is enough.'] },
-      { title: 'Response rules', paragraphs: ['Your endpoint must return 200 OK in under 5 seconds. For heavy work, accept first and process via a background queue. Otherwise the system retries and duplicate processing risk grows.'] },
-    ],
-    checklist: ['eventId table exists.', 'occurredAt processed as UTC.', 'Endpoint replies 200 within 5 seconds.', 'Unknown eventType handled gracefully.', 'Response codes are monitored.'],
-    faq: [
-      { q: 'What if I process a missing field?', a: 'Fields can be added over time. Ignoring unknown fields is the safest forward-compatibility pattern.' },
-      { q: 'Is order guaranteed?', a: 'No. It is usually sequential, but network conditions affect order. Track processing time using occurredAt.' },
-    ],
-  }),
-  article('tr', 'api-webhook', 50, 'sandbox-and-staging', 'Sandbox ve staging ile entegrasyon test rejimi', 'Üretime çıkmadan önce API ve webhook akışlarını izole bir ortamda doğrulama yöntemi.', ['sandbox', 'staging', 'test', 'qa'], {
-    lead: 'Üretim trafiğine canlı entegrasyon testi yapmak hem riskli hem de sıkıcıdır. Doğru test rejimi, ekibin entegrasyon değişikliklerinde gece yarısı uyandırılmamasını sağlar.',
-    keyInsight: 'Test rejimi <em>opsiyonel</em> değil <strong>uyku saatlerinin</strong> teminatıdır. Staging’i ciddiye alan ekip, prod’u sakince yaşar.',
-    sections: [
-      { title: 'Üç katmanlı yaklaşım', items: ['Local: birim testler ve mock istemci.', 'Staging: gerçek API ile izole test verisi.', 'Production: yalnız iş gözden geçirmesi sonrası.', 'Smoke test: her deploy sonrası 5 senaryo.', 'Regression: sürüm öncesi tam set.'] },
-      { title: 'Veri izolasyonu', paragraphs: ['Staging’de gerçek müşteri verisi olmamalı. Synthetic veri seti veya anonimleştirilmiş örnek kullanın. Aksi halde KVKK uyumu zorlaşır ve operasyon raporları gürültülenir.'] },
-      { title: 'Yayın anahtarı', paragraphs: ['Üretim API anahtarı staging’de kullanılmamalı. Her ortam kendi anahtarına sahip olmalı; sızdırma riski sınırlanır, log’larda hangi ortamın işlem yaptığı hızlı tespit edilir.'] },
-    ],
-    checklist: ['Her ortam kendi API anahtarıyla.', 'Staging’de gerçek müşteri verisi yok.', 'Smoke test scripti deploy hattına bağlandı.', 'Regression seti dokümante.', 'Test başarısız ise deploy bloklanıyor.'],
-    faq: [
-      { q: 'Sandbox tarafında müşteri yoksa webhook nasıl çalışır?', a: 'Synthetic feedback üretip event tetikleyebilirsiniz. Çoğu ekip seed script ile bu akışı otomatik kuruyor.' },
-      { q: 'Staging’den production’a veri taşınabilir mi?', a: 'Tam tersi yön (production → staging) anonimleştirilerek mümkündür ve daha sağlıklıdır. Staging’den production’a veri kopyalamayın.' },
-    ],
-  }),
-  article('en', 'api-webhook', 50, 'sandbox-and-staging', 'Sandbox and staging for safer integrations', 'Verify API and webhook flows in an isolated environment before they reach production.', ['sandbox', 'staging', 'test', 'qa'], {
-    lead: 'Testing integrations against live production traffic is risky and exhausting. A proper test regime keeps the team from being woken up at 3 AM after an integration change.',
-    keyInsight: 'A test regime is not <em>optional</em>; it protects <strong>your sleep</strong>. Teams that take staging seriously experience production calmly.',
-    sections: [
-      { title: 'Three-layer approach', items: ['Local: unit tests and mock client.', 'Staging: real API with isolated data.', 'Production: only after a business review.', 'Smoke test: 5 scenarios after every deploy.', 'Regression: full set before a release.'] },
-      { title: 'Data isolation', paragraphs: ['Staging should not contain real customer data. Use a synthetic dataset or anonymized samples. Otherwise privacy compliance gets harder and operational reports become noisy.'] },
-      { title: 'Environment keys', paragraphs: ['Never use a production API key in staging. Each environment should have its own. Leak risk is bounded, and logs make it easy to identify the source environment.'] },
-    ],
-    checklist: ['Each environment uses its own API key.', 'No real customer data in staging.', 'Smoke test script wired into the deploy pipeline.', 'Regression set is documented.', 'Failing tests block deploy.'],
-    faq: [
-      { q: 'How do I test webhooks if there are no customers in sandbox?', a: 'Generate synthetic feedback and trigger events. Most teams automate this via seed scripts.' },
-      { q: 'Can I copy data from staging to production?', a: 'Reverse direction (production → staging) is possible and healthier when anonymized. Do not copy from staging to production.' },
-    ],
-  }),
-
-  article('tr', 'security-kvkk', 30, 'export-and-pii', 'Export, PII ve dış cihaz hijyeni', 'CSV indirmeleri ve müşteri verisi içeren raporları güvenli paylaşmak için pratik bir hijyen rehberi.', ['export', 'pii', 'kvkk', 'paylaşım'], {
-    lead: 'Müşteri verisi panel içinde sıkı erişim kontrolüyle korunur. Dosya export edildiği an bu koruma kaybolur ve sorumluluk dosyayı indiren kişiye geçer. Bu sebeple export hijyeni günlük güvenliğin görünmez ama kritik bir parçasıdır.',
-    keyInsight: 'Export <em>bir izin</em> değil <strong>bir sorumluluk transferi</strong>dir. İndiren kişi o andan itibaren KVKK hattının bir parçasıdır.',
-    sections: [
-      { title: 'Export kararı', paragraphs: ['Her CSV export ihtiyacının önce panelde mevcut bir filtre ile karşılanıp karşılanmadığı kontrol edilmelidir. İhtiyaç gerçekse, export sebebini ve kimin paylaşacağını yazılı kayda almak ileride denetim için kolaylık sağlar.'] },
-      { title: 'Paylaşım kanalı', items: ['Şifresiz e-posta yerine güvenli depolama linki.', 'Linke süre sınırı koyun (24-48 saat).', 'İndiren kişi listelenebilir bir yerde tutulsun.', 'Asla genel bir Slack kanalına yüklemeyin.', 'Müşteri verisi cihazda 30 günden uzun durmasın.'] },
-      { title: 'Cihaz hijyeni', paragraphs: ['Dosya iş bittikten sonra silinmelidir. Çöp kutusunu boşaltmayı, otomatik bulut sync’ini kontrol etmeyi ve mobil cihazlardan kopyaları temizlemeyi unutmayın.'] },
-    ],
-    checklist: ['Export sebebi yazılı.', 'Paylaşım güvenli kanaldan.', 'Linkin süresi sınırlı.', 'İş bitince dosya silindi.', 'Aylık erişim denetimine eklendi.'],
-    faq: [
-      { q: 'Müşteriye kendi yorumunu nasıl gösteririm?', a: 'Müşteri kendi verisi için talep iletebilir; bu talepler manuel ve KVKK uyumlu süreçle yanıtlanmalıdır.' },
-      { q: 'Export sayısını kısıtlayabilir miyim?', a: 'Rol bazlı erişim ve aylık denetim ile pratikte kısıtlanır. Ek olarak ekiple net bir export politikası belirlemek faydalıdır.' },
-    ],
-  }),
-  article('en', 'security-kvkk', 30, 'export-and-pii', 'Exports, PII and device hygiene', 'A practical hygiene guide for safely sharing CSVs and reports that contain customer data.', ['export', 'pii', 'gdpr', 'sharing'], {
-    lead: 'Customer data is protected by strict access control inside the panel. The moment a file is exported, that protection ends and responsibility shifts to the person who downloaded it. Export hygiene is invisible but critical.',
-    keyInsight: 'An export is not a <em>permission</em>; it is a <strong>transfer of responsibility</strong>. The downloader becomes part of the privacy chain from that moment on.',
-    sections: [
-      { title: 'Deciding to export', paragraphs: ['Before any CSV export, check if a panel filter already meets the need. If a real export is needed, log the reason and the recipient — it pays back during audit.'] },
-      { title: 'Sharing channel', items: ['Use a secure storage link, never plain email.', 'Add a 24-48 hour expiration to the link.', 'Track who downloaded it.', 'Never post in a general Slack channel.', 'Do not keep customer data on the device beyond 30 days.'] },
-      { title: 'Device hygiene', paragraphs: ['Delete the file when the work is done. Empty trash, check automatic cloud sync, and remove copies from mobile devices.'] },
-    ],
-    checklist: ['Export reason is logged.', 'Sharing uses a secure channel.', 'Link has an expiration.', 'File deleted after use.', 'Added to monthly access review.'],
-    faq: [
-      { q: 'How do I show a customer their own data?', a: 'Customers can request their data; respond manually with a privacy-compliant process.' },
-      { q: 'Can I cap the number of exports?', a: 'Effectively yes through role-based access and monthly review. A clear export policy with the team helps.' },
-    ],
-  }),
-  article('tr', 'security-kvkk', 40, 'incident-response-basics', 'Olay yanıtı (incident response) temel akışı', 'Olası bir veri sızıntısı veya yetkisiz erişim şüphesinde ilk 24 saatte yapılması gerekenler.', ['incident', 'sızıntı', 'kvkk', 'yanıt'], {
-    lead: 'Olayın kendisinden çok, olaya nasıl yanıt verildiği itibara şekil verir. Acele edip yanlış adım atmak ile sakince doğru sırayı izlemek arasında, ekiplerin önceden hazırladığı yalın bir plan vardır.',
-    keyInsight: 'Hazırlık <em>olay öncesi</em> iştir; olay başladığında <strong>improvize ederek</strong> yapılan her şey hata olasılığını yükseltir.',
-    sections: [
-      { title: 'İlk 4 saat', items: ['Şüpheyi belgeleyin (ne, ne zaman, kim fark etti).', 'Etkilenen sistem ve hesapları izole edin.', 'Şüpheli anahtarları derhal revoke edin.', 'Yetkili kişilere haber verin.', 'Zaman çizelgesi tutmaya başlayın.'] },
-      { title: 'İlk 24 saat', paragraphs: ['Erişim log’ları, audit kayıtları ve son giriş bilgileri toplanmalıdır. Etki kapsamı belirlenirken aceleci genelleme yerine somut delillerle ilerleyin. KVKK çerçevesinde bildirim yükümlülüğü doğacaksa zaman çizelgesi belirleyici olur.'] },
-      { title: 'İletişim', paragraphs: ['İç iletişim önce kurulur, sonra dış iletişim. Müşteri bildirimleri net, dürüst ve aksiyon odaklı olmalıdır. Spekülasyon yerine doğrulanmış bilgi paylaşın; ileride çelişkili açıklama yapmaktan kaçının.'] },
-    ],
-    checklist: ['Belgelenmiş zaman çizelgesi var.', 'Şüpheli anahtarlar revoke edildi.', 'Etki kapsamı netleşti.', 'Yetkililere bildirim yapıldı.', 'Müşteri iletişim taslağı hazır.'],
-    faq: [
-      { q: 'Bildirim yapmazsam ne olur?', a: 'KVKK çerçevesinde bildirim yükümlülüğü vardır ve yapılmaması idari yaptırımlara yol açabilir. Kararı hukuk danışmanınızla birlikte vermek doğru olur.' },
-      { q: 'Olay sonrası rutinde ne değişmeli?', a: 'Geriye dönük analiz (post-mortem) ile aynı sebebin tekrar olmaması için kontrol noktası eklenir. Bu öğrenme döngüsü güveni geri kazandırır.' },
-    ],
-  }),
-  article('en', 'security-kvkk', 40, 'incident-response-basics', 'Incident response basics', 'What to do in the first 24 hours of a suspected data leak or unauthorized access.', ['incident', 'leak', 'gdpr', 'response'], {
-    lead: 'Reputation is shaped less by incidents and more by how teams respond. The difference between a rushed misstep and a calm correct sequence is a simple plan prepared in advance.',
-    keyInsight: 'Preparation is <em>pre-incident</em> work; once the incident starts, anything done <strong>by improvisation</strong> raises the chance of mistakes.',
-    sections: [
-      { title: 'First 4 hours', items: ['Document the suspicion (what, when, who noticed).', 'Isolate affected systems and accounts.', 'Revoke any suspicious keys immediately.', 'Notify accountable people.', 'Start a timeline log.'] },
-      { title: 'First 24 hours', paragraphs: ['Gather access logs, audit records and last login info. Resist generalization; rely on concrete evidence to define scope. If GDPR/KVKK notification rules apply, the timeline becomes critical.'] },
-      { title: 'Communication', paragraphs: ['Internal communication first, then external. Customer messages should be clear, honest and action-oriented. Share verified information instead of speculation; avoid contradicting yourself later.'] },
-    ],
-    checklist: ['Documented timeline exists.', 'Suspicious keys revoked.', 'Scope is defined.', 'Authorities notified as required.', 'Customer message draft is ready.'],
-    faq: [
-      { q: 'What if I do not notify?', a: 'GDPR/KVKK frameworks impose notification duties; failing to comply can lead to penalties. Decide with legal counsel.' },
-      { q: 'What changes after the incident?', a: 'A post-mortem identifies the root cause and adds checkpoints. This learning loop is what restores trust.' },
-    ],
-  }),
-  article('tr', 'security-kvkk', 50, 'data-retention-anonymization', 'Veri saklama süreleri ve anonimleştirme', 'Hangi veri ne kadar tutulmalı, hangi alan otomatik anonimleştirilmeli? KVKK uyumlu retention politikası örnekleri.', ['retention', 'anonimleştirme', 'kvkk', 'saklama'], {
-    lead: 'Veriyi sonsuza kadar tutmak ne yasal ne de etik açıdan doğrudur. KVKK uyumu için saklama sürelerini önceden tanımlamak ve teknik olarak otomatik temizliği kurmak en sağlıklı yoldur.',
-    keyInsight: 'En iyi politika <em>yazılı</em> ve <strong>otomatik</strong> uygulanan politikadır. İnsan hatırlama gücüne bırakılan retention, KVKK denetiminde en zayıf halka olur.',
-    sections: [
-      { title: 'Buaze’in mevcut yaklaşımı', items: ['Müşteri IP adresi: 90 gün sonra otomatik anonimleştirilir.', 'Yorum verisi: müşteri talebi olmadıkça saklanır (işletme ilişkisi).', 'Audit log: 2 yıl.', 'Mail meta verisi: gönderim takibi için sınırlı tutulur.', 'Anonim yorumlar müşteri listesinde yer almaz.'] },
-      { title: 'Politikanızı yazılı tutun', paragraphs: ['Hangi alanın ne kadar tutulduğu, hangi şartla anonimleştirildiği yazılı bir belge halinde olmalıdır. Bu, hem iç ekibe rehber olur hem de denetimde sorulara hızlı cevap verir.'] },
-      { title: 'Müşteri talebi', paragraphs: ['Müşteri kendi verisinin silinmesini, kopyasının verilmesini veya işlem amacının değiştirilmesini talep edebilir. Bu talepler manuel olarak ele alınır; ancak yanıt zamanlamasının net bir prosedürü olmalıdır.'] },
-    ],
-    checklist: ['Yazılı retention politikası mevcut.', 'IP anonimleştirme cron’u canlı.', 'Audit log saklama süresi belgelenmiş.', 'Müşteri talep süreci tanımlı.', 'Yıllık politika gözden geçirildi.'],
-    faq: [
-      { q: 'Tüm veriyi silmek mümkün mü?', a: 'Evet, ancak finansal kayıtlar gibi yasal saklama süreleri olan kayıtlar için istisnalar olabilir. Hukuk danışmanınızla net çerçeveyi belirleyin.' },
-      { q: 'Anonim yorumlar pazarlamada kullanılabilir mi?', a: 'Anonim olduğu sürece operasyonel analizde kullanılabilir; ancak müşteri kimliği geri çıkarılabilecek kombinasyonlar oluşturulmamalıdır.' },
-    ],
-  }),
-  article('en', 'security-kvkk', 50, 'data-retention-anonymization', 'Data retention and anonymization', 'How long to keep what, and which fields to anonymize automatically. Examples of GDPR/KVKK-compliant retention.', ['retention', 'anonymization', 'gdpr', 'storage'], {
-    lead: 'Keeping data forever is neither legal nor ethical. For compliance, define retention windows in advance and automate cleanup technically.',
-    keyInsight: 'The best policy is one that is <em>written</em> and <strong>automatically enforced</strong>. Retention left to human memory is the weakest link during a privacy audit.',
-    sections: [
-      { title: 'Buaze’s current stance', items: ['Customer IP: anonymized automatically after 90 days.', 'Review data: retained unless the customer requests deletion (business relationship).', 'Audit log: 2 years.', 'Email metadata: kept minimally for delivery tracking.', 'Anonymous reviews never appear in the customer list.'] },
-      { title: 'Write down your policy', paragraphs: ['Document which field is kept how long and under what condition it is anonymized. It guides the internal team and accelerates audit responses.'] },
-      { title: 'Customer requests', paragraphs: ['A customer can request data deletion, a copy or a change in processing purpose. These are handled manually, but the response timeline must follow a clear procedure.'] },
-    ],
-    checklist: ['Written retention policy exists.', 'IP anonymization cron is live.', 'Audit log retention is documented.', 'Customer request process is defined.', 'Annual policy review happened.'],
-    faq: [
-      { q: 'Can everything be deleted?', a: 'Yes, with exceptions like financial records that have legal retention. Confirm scope with legal counsel.' },
-      { q: 'Can anonymous reviews be used in marketing?', a: 'They can support operational analysis as long as the customer cannot be re-identified through combinations.' },
-    ],
-  }),
-
-  article('tr', 'getting-started', 60, 'common-onboarding-pitfalls', 'İlk kurulumda en sık yapılan 5 hata', 'Buaze’i canlıya alırken yeni işletme sahiplerinin tekrar tekrar düştüğü tuzaklar ve bunlardan nasıl kaçınacağınız.', ['kurulum', 'hata', 'tuzak', 'onboarding', 'troubleshooting'], {
-    lead: 'Hızlı kurulum güzel; <strong>düzgün</strong> kurulum daha güzeldir. Aşağıdaki beş tuzak panele yeni geçen işletmelerin %80’inde gözlemlenir ve hepsi başlangıçta dakikalar içinde önlenebilir.',
-    keyInsight: 'En küçük yapılandırma hatası, müşterinin ilk QR taramasında akışı bozarsa, onu geri kazanma şansınız çok azalır. Bu yüzden ilk testleri ekibe değil, kendinize yapın.',
-    sections: [
-      { title: '1. Slug’ı yarı baskıyla kararlaştırmak', paragraphs: ['Çoğu işletme slug’ı pazarlama materyali çıktıktan sonra değiştirmek ister. Bunun maliyeti basılan QR kodlarının geçersizleşmesidir. <strong>Slug’ı bastıramadan önce</strong> en az 24 saat boyunca kararlaştırılmış sayın ve <a href="/tr/help/slug-and-url">slug rehberini</a> okuyun.'] },
-      { title: '2. Bildirim e-postasını kişisel adrese bağlamak', paragraphs: ['Tek kişilik bir restoranda bile düşük puan bildiriminin <em>shared</em> bir mailbox’a gitmesi sürekliliği korur. Çalışan ayrılınca bildirim akışı kesilmez.'] },
-      { title: '3. QR’ı sadece masaya basmak', items: ['Masa, paket, fiş ve kapı çıkışı için ayrı QR.', 'Her birinde farklı parametre.', 'En az 3 farklı yerde test edin.', '<strong>Tek QR</strong> yerine <strong>tek strateji</strong> düşünün.'] },
-      { title: '4. Trial’ı pasif geçirmek', paragraphs: ['Trial sadece beklemek için değil, gerçek sinyal toplamak içindir. <em>İlk 7 gün</em> en az 30 gerçek QR taraması olmalı, yoksa karar veri yerine sezgiyle alınır.'] },
-      { title: '5. Ekibi panele geç davet etmek', paragraphs: ['İşletme sahibi tek başına panele bakmaya başlarsa kültür yerleşmez. <a href="/tr/help/team-onboarding-checklist">İlk hafta onboarding</a> rehberindeki 5 günlük plan, ekibin de paneli sahiplenmesini sağlar.'], quote: 'Yorum gelir gelmez doğru kişiye ulaşmıyorsa, panel “bakılması gereken bir yer” olarak hatırlanmaz. İlk hafta sahiplenme, sonraki ayların temelidir.' },
-    ],
-    checklist: ['Slug 24 saat boyunca üzerine düşünüldü.', 'Bildirim e-postası shared mailbox.', 'En az 3 farklı QR yerleşimi var.', 'Trial içinde 30+ gerçek tarama yapıldı.', 'Ekipten en az 1 kişi panele davet edildi.', 'Düşük puan akışı bizzat test edildi.', 'Birinci hafta sonunda kısa retro yapıldı.'],
-    faq: [
-      { q: 'Slug’ı değiştirdim, eski QR’lar ne olur?', a: 'Eski slug ile basılı materyaller artık çalışmaz. Slug’ı değiştirdiyseniz baskıları yenilemek veya eski slug için bir yönlendirme kurmak gerekir.' },
-      { q: 'Trial’da kart bilgisi vermek zorunda mıyım?', a: 'Hayır. Trial deneme amaçlıdır; ücretli plana geçtiğinizde fatura adımı net biçimde başlar.' },
-      { q: 'Kurulumdan kim sorumlu olmalı?', a: 'İşletme sahibi veya operasyon müdürü ideal. Kişisel hesap kullanmayın; rolü her zaman bir <em>kişiyle</em> değil <em>pozisyonla</em> bağlayın.' },
-      { q: 'Buaze kurulumu için danışmanlık veriyor musunuz?', a: 'İlk kurulum yardımı için destek ekibimiz Türkçe rehberlik sağlar. Daha kapsamlı entegrasyonlar için iletişime geçebilirsiniz.' },
-    ],
-  }),
-  article('en', 'getting-started', 60, 'common-onboarding-pitfalls', 'The 5 most common onboarding mistakes', 'Recurring traps new operators fall into when launching Buaze, and how to avoid them in minutes.', ['setup', 'pitfalls', 'onboarding', 'troubleshooting', 'mistakes'], {
-    lead: 'Fast setup is good; <strong>correct</strong> setup is better. The five traps below appear in 80% of new operators and can be prevented in the first hour.',
-    keyInsight: 'If a tiny config error breaks the customer’s very first scan, the chance to recover them is small. Run the first tests yourself, not on your team.',
-    sections: [
-      { title: '1. Locking the slug too late', paragraphs: ['Most operators want to change the slug after marketing materials are printed. The cost is invalid QR codes. <strong>Lock the slug</strong> for at least 24 hours before printing and read the <a href="/en/help/slug-and-url">slug guide</a>.'] },
-      { title: '2. Notification email tied to a personal inbox', paragraphs: ['Even in a single-person restaurant, sending low-rating alerts to a <em>shared</em> mailbox preserves continuity. When someone leaves, the flow does not break.'] },
-      { title: '3. QR only on the table', items: ['Separate QRs for table, package, receipt and exit.', 'Different parameter on each.', 'Test in at least 3 placements.', 'Think <strong>strategy</strong>, not <strong>single QR</strong>.'] },
-      { title: '4. A passive trial', paragraphs: ['The trial is for collecting real signal, not waiting. The <em>first 7 days</em> should produce at least 30 real scans, otherwise decisions become guesses.'] },
-      { title: '5. Inviting the team late', paragraphs: ['If only the owner watches the panel, the habit never spreads. The 5-day plan in <a href="/en/help/team-onboarding-checklist">first-week onboarding</a> ensures the team owns the panel too.'], quote: 'If a review does not reach the right person quickly, the panel is never remembered as “somewhere to look.” Week-one ownership shapes the months that follow.' },
-    ],
-    checklist: ['Slug was reviewed for 24 hours.', 'Notification email is a shared mailbox.', 'At least 3 different QR placements.', '30+ real scans during trial.', 'At least 1 teammate invited.', 'Low-rating flow tested personally.', 'Short retro held at end of week one.'],
-    faq: [
-      { q: 'I changed the slug, what happens to old QRs?', a: 'Materials printed with the old slug will not work. After a slug change, reprint or set up a redirect for the old one.' },
-      { q: 'Do I need a credit card during trial?', a: 'No. The trial is for evaluation; billing only kicks in when you upgrade.' },
-      { q: 'Who should own setup?', a: 'The owner or operations manager is ideal. Avoid personal accounts; tie the role to a <em>position</em>, not a <em>person</em>.' },
-      { q: 'Do you offer setup consulting?', a: 'Our support team provides guidance during initial setup. For deeper integrations, get in touch directly.' },
-    ],
-  }),
-
-  article('tr', 'qr-codes', 60, 'qr-scan-rate-optimization', 'QR tarama oranını artırmanın net yolları', 'Yerleşim, çağrı metni ve görsel ipuçlarıyla aynı yorum hacmiyle daha çok geri bildirim toplayın.', ['tarama oranı', 'optimizasyon', 'cta', 'görsel', 'a/b'], {
-    lead: 'QR’ın <strong>basılması</strong> ile <strong>taranması</strong> aynı şey değildir. Tarama oranı (impressions üzerinden) çoğu işletmede yüzde 5 ile 15 arasındadır; doğru optimizasyonla bu rahatlıkla yüzde 25’e çıkar.',
-    keyInsight: 'En iyi QR yerleşimi tasarımcının değil müşterinin perspektifinden seçilir. Müşterinin telefonu çıkardığı an QR görünür olmalı, hayır demek için ayrı bir karar gerektirmemeli.',
-    sections: [
-      { title: 'Yerleşim sezgisi', paragraphs: ['Müşteri telefonu en sık şu üç anda eline alır: <em>menüye bakarken</em>, <em>fişi alırken</em>, <em>sırada beklerken</em>. QR bu üç anın en az ikisinde görünür konumda olmalıdır.'] },
-      { title: 'Çağrı metni (CTA)', paragraphs: ['Sadece “QR’ı tara” yazmak yerine bir fayda iletin: <strong>“Deneyiminizi 20 saniyede paylaşın, ekibimize ulaşır.”</strong> Spesifik süre güven yaratır; soyut “görüşlerinizi paylaşın” cümlesi soluk kalır.'] },
-      { title: 'Görsel destek', items: ['QR çevresinde en az 1 cm boşluk.', 'Logoyu QR’ı bozmayacak şekilde küçük tutun.', 'Renk kontrastı koyu/açık net olsun.', 'Ön planda parlak yansıtıcı yüzeylerden kaçının.', 'Karanlık mekânlarda yumuşak bir spot.'] },
-      { title: 'A/B testi', paragraphs: ['Bir hafta CTA A, bir hafta CTA B kullanın. Tarama sayısını panelde karşılaştırın. Çoğu testte fark net görülür ve karar veri ile alınır.'], quote: 'Müşteriden yorum istemenin en kötü yolu rica etmektir; en iyisi onun zaten yapmak istediği bir şeyi kolaylaştırmaktır.' },
-    ],
-    checklist: ['QR yerleşimi müşteri perspektifinden test edildi.', 'CTA metni spesifik bir fayda taşıyor.', 'QR çevresinde en az 1 cm boşluk var.', 'Kontrast yeterince yüksek.', 'A/B testi planı 2 hafta için kurulmuş.', 'Tarama sayısı haftalık raporda izleniyor.', 'Yer değişikliklerinde performans yeniden ölçülüyor.'],
-    faq: [
-      { q: 'Tarama oranı yüzde kaç olmalı?', a: 'Sektör ortalaması yüzde 10-15 civarındadır. Yüzde 5’in altı yerleşim veya CTA sorununa, yüzde 25’in üstü ise çok iyi bir akış uyumuna işaret eder.' },
-      { q: 'Yorum yazmaya zorlamak yasal mı?', a: 'Hayır. <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google katkı politikası</a> dahil çoğu platformun kuralları, müşteriyi yorum yazmaya zorlamayı veya yıldız dayatmayı yasaklar. Buaze akışı bunu desteklemez.' },
-      { q: 'Tek bir CTA tüm dünyada mı çalışır?', a: 'Hayır. Lokasyona, müşteri profiline ve kanala göre değişir. Test etmek yegâne yöntemdir.' },
-      { q: 'QR şablonu yerine özel tasarım yaptırmalı mıyım?', a: 'Marka bilinçli özel tasarım faydalı olabilir, ancak QR’ın okunabilirliği <strong>tasarımdan önce</strong> gelir.' },
-    ],
-    policyNote: 'Bu rehberdeki teknikler tarama oranını artırmaya yöneliktir, müşteriyi belirli bir yıldız vermeye yönlendirmeye değil. Yıldız dayatma, sahte yorum üretimi veya seçici teşvik <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google’ın kullanıcı katkı politikalarına</a> aykırıdır ve Buaze tarafından desteklenmez.',
-  }),
-  article('en', 'qr-codes', 60, 'qr-scan-rate-optimization', 'How to lift QR scan rate intentionally', 'Use placement, CTA copy and visual cues to collect more feedback at the same review volume.', ['scan rate', 'optimization', 'cta', 'visual', 'a/b'], {
-    lead: 'A QR being <strong>printed</strong> is not the same as it being <strong>scanned</strong>. Scan rate (over impressions) sits between 5-15% in most businesses; with the right tweaks it lifts comfortably to 25%.',
-    keyInsight: 'The best QR placement is chosen from the customer’s point of view, not the designer’s. The QR should be visible the moment the phone comes out — saying no should not require an additional decision.',
-    sections: [
-      { title: 'Placement intuition', paragraphs: ['Customers reach for their phone in three moments: <em>looking at the menu</em>, <em>paying the bill</em>, <em>waiting in line</em>. The QR should be visible in at least two of these.'] },
-      { title: 'Call to action', paragraphs: ['Instead of “Scan the QR”, communicate a benefit: <strong>“Share your experience in 20 seconds — it reaches our team.”</strong> Specific timing builds trust; abstract “share your thoughts” feels weak.'] },
-      { title: 'Visual support', items: ['At least 1 cm clear space around the QR.', 'Keep the logo small enough to not disturb the QR.', 'Strong dark/light contrast.', 'Avoid glossy reflective foreground.', 'Add gentle lighting in dim spaces.'] },
-      { title: 'A/B testing', paragraphs: ['Run CTA A for one week and CTA B the next. Compare scan counts in the panel. Most tests show a clear winner and the decision becomes data-driven.'], quote: 'The worst way to ask for a review is to beg; the best is to make easier something the customer already wants to do.' },
-    ],
-    checklist: ['Placement tested from the customer’s seat.', 'CTA carries a specific benefit.', 'At least 1 cm clear space around the QR.', 'Sufficient contrast.', '2-week A/B test planned.', 'Scan count tracked weekly.', 'Performance re-measured after relocation.'],
-    faq: [
-      { q: 'What scan rate should I expect?', a: 'Industry averages sit at 10-15%. Below 5% suggests a placement or CTA problem; above 25% indicates a strong overall flow.' },
-      { q: 'Is forcing a review legal?', a: 'No. <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google’s contribution policy</a> and similar platform rules prohibit forced reviews or star coercion. Buaze does not support such flows.' },
-      { q: 'Will one CTA work everywhere?', a: 'No. It varies by location, customer profile and channel. Testing is the only reliable method.' },
-      { q: 'Should I commission a custom QR design?', a: 'A brand-aware design helps, but readability comes <strong>before</strong> design.' },
-    ],
-    policyNote: 'These techniques aim to lift scan rate, not steer the customer toward a specific star count. Star coercion, fake reviews or selective incentives violate <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">Google’s user contribution policies</a> and are not supported by Buaze.',
-  }),
-
-  article('tr', 'review-management', 60, 'review-culture-team-sharing', 'Yorumları ekiple paylaşmanın doğru yolu', 'Olumlu ve olumsuz yorumları ekibe nasıl, ne sıklıkta ve hangi tonla paylaşacağınız bir kültür meselesidir.', ['kültür', 'ekip', 'paylaşım', 'motivasyon', 'iletişim'], {
-    lead: 'Yorumları ekiple paylaşmak basit görünür ama yanlış yapıldığında <em>moral kıran</em>, doğru yapıldığında <em>kültür inşa eden</em> bir araca dönüşür. Anahtar tutarlılık ve dürüstlüktür.',
-    keyInsight: 'Bir yorum tek bir müşteriden gelir, ama paylaşılma şekliyle tüm ekibe nasıl çalıştıklarını anlatır. Bu yüzden seçimleri rastgele değil sistemli yapın.',
-    sections: [
-      { title: 'Olumlu yorumların paylaşımı', paragraphs: ['Haftada bir kez ekiple en güzel 3 yorumu okumak basit ama güçlüdür. <strong>İsim verme</strong> önemli: müşterinin “Ahmet Bey’in kahve önerisi” gibi spesifik notları ekibin emeğinin görüldüğünü hisettirir.'] },
-      { title: 'Olumsuz yorumların paylaşımı', paragraphs: ['Olumsuz yorumu <em>kişisel</em> hâle getirmek yerine <em>sistemsel</em> bir mesele olarak ele alın. “Servis yavaştı” yorumu kişiye saldırı değil, vardiya planlamasına geri bildirimdir.'], quote: 'Bir yorumu okurken ekibin yüzü düştüyse, paylaşım amacına ulaşmamıştır. Hedef sahiplenme; suçlama değil.' },
-      { title: 'Kanal seçimi', items: ['Olumlu yorum: ekip toplantısı veya WhatsApp grubu.', 'Tekrar eden konu: <strong>haftalık yorum toplantısı</strong>.', 'Acil olumsuz yorum: doğrudan vardiya yöneticisi.', 'Şikayet özeti: aylık yöneticiler raporu.', 'Müşteriye geri dönüş: <a href="/tr/help/handle-negative-feedback">düşük puan yönetimi</a> rehberi.'] },
-      { title: 'Frekans ve yoğunluk', paragraphs: ['Her yorumu paylaşmak gürültü yaratır; hiç paylaşmamak ise paneli görünmez yapar. <strong>Haftada 5-7 yorum</strong> ve aylık <strong>1 panoramik özet</strong> sağlıklı bir denge oluşturur.'] },
-    ],
-    checklist: ['Haftalık olumlu yorum okuması rutinde.', 'Olumsuz yorumlar sistemsel dilde paylaşılıyor.', 'Vardiya yöneticisi acil eşiği biliyor.', 'Aylık özet yöneticilere düzenli gidiyor.', 'Ekip yorumları haftada en az 1 kez tartışıyor.', 'Müşteri ismine duyarlı paylaşım dili korunuyor.', 'Yorumlar sosyal medyada izinsiz alıntılanmıyor.'],
-    faq: [
-      { q: 'Olumsuz bir yorumu hiç ekiple paylaşmamak doğru mu?', a: 'Hayır. Saklamak güveni azaltır. Ancak paylaşımın <em>tonu</em> ve <em>amacı</em> açık olmalı: suçlama değil sistemsel öğrenme.' },
-      { q: 'Müşteri adlarını ekiple paylaşabilir miyim?', a: 'KVKK çerçevesinde dikkat gerekir. Operasyonel sahiplenme için yeterli bilgi paylaşın; gerekmedikçe tam isim açıklamayın.' },
-      { q: 'Yorumları sosyal medyada paylaşmak doğru mu?', a: 'Müşteri açık rıza vermediği sürece <strong>hayır</strong>. Anonimleştirilmiş alıntılar bile çoğu zaman izin gerektirir.' },
-      { q: 'Müşteri kendi yorumunu sosyal medyada paylaşırsa?', a: 'Bu müşterinin kendi tercihidir; siz alıntılarken yine de etiketlemeden veya sahiplikten kaçınmak güvenlidir.' },
-    ],
-  }),
-  article('en', 'review-management', 60, 'review-culture-team-sharing', 'How to share reviews with your team', 'Sharing positive and negative feedback with the team — how, how often and in what tone — is a culture question.', ['culture', 'team', 'sharing', 'motivation', 'communication'], {
-    lead: 'Sharing reviews looks simple but done poorly it <em>kills morale</em>; done well it <em>builds culture</em>. The key is consistency and honesty.',
-    keyInsight: 'A review comes from a single customer, but the way you share it tells the whole team how they are working. Make the choices deliberate, not random.',
-    sections: [
-      { title: 'Sharing positive reviews', paragraphs: ['Reading the three best reviews of the week with the team is simple and powerful. <strong>Naming specifics</strong> matters: a note like “Ahmet’s coffee recommendation” shows the team that effort is visible.'] },
-      { title: 'Sharing negative reviews', paragraphs: ['Treat a negative review as a <em>systemic</em> matter, not a <em>personal</em> attack. “Service was slow” is feedback to shift planning, not an attack on a person.'], quote: 'If the team’s face drops while you read a review, the sharing missed its goal. The aim is ownership, not blame.' },
-      { title: 'Channel choice', items: ['Positive review: team huddle or WhatsApp group.', 'Recurring theme: <strong>weekly review meeting</strong>.', 'Urgent negative: directly to the shift manager.', 'Complaint summary: monthly executive report.', 'Customer follow-up: <a href="/en/help/handle-negative-feedback">low-rating management</a> guide.'] },
-      { title: 'Frequency and volume', paragraphs: ['Sharing every review creates noise; sharing none keeps the panel invisible. <strong>5-7 reviews per week</strong> plus a <strong>monthly panoramic summary</strong> is a healthy balance.'] },
-    ],
-    checklist: ['Weekly positive review reading is routine.', 'Negatives are framed systemically.', 'Shift manager knows the urgent threshold.', 'Monthly summary reaches executives.', 'Team discusses reviews at least once a week.', 'Customer-name sensitivity is preserved.', 'Reviews are not quoted on social media without consent.'],
-    faq: [
-      { q: 'Is it okay to never share a negative review?', a: 'No. Hiding reduces trust. But the <em>tone</em> and <em>purpose</em> of sharing must be clear: systemic learning, not blame.' },
-      { q: 'Can I share customer names with the team?', a: 'Use care under privacy regulations. Share enough for ownership; avoid full names unless necessary.' },
-      { q: 'Can I post reviews on social media?', a: 'Without explicit customer consent, <strong>no</strong>. Even anonymized quotes often require permission.' },
-      { q: 'What if the customer shares the review themselves?', a: 'That is their choice. When quoting them, still avoid tagging or claiming ownership.' },
-    ],
-  }),
-
-  article('tr', 'integrations', 60, 'slack-discord-webhook-routing', 'Slack ve Discord için yorum bildirimi kurmak', 'Webhook ile yeni yorumları doğrudan ekibin kullandığı kanala düşürün, ekran kontrolüne bağımlılığı azaltın.', ['slack', 'discord', 'webhook', 'bildirim', 'rota'], {
-    lead: 'Ekibin paneli her saat açması gerçekçi değildir. <strong>Slack veya Discord</strong> webhook’una düşen düşük puan bildirimi, doğru kişiyi doğru anda bağlar; panel sadece kararı alacağınız yer haline gelir.',
-    keyInsight: 'Bildirim mimarisi, dikkat ekonomisi mimarisidir. Her yorumu Slack’e atmak ekibi yorar; sadece eyleme ihtiyaç duyanları atmak güveni inşa eder.',
-    sections: [
-      { title: 'Hangi olaylar Slack’e gitmeli?', items: ['1-2 yıldızlı yeni yorum (acil eylem).', 'Aynı etiket günde 3+ kez tekrar ediyorsa (operasyon sinyali).', '5 yıldızlı ve uzun metin (paylaşım fırsatı).', 'Yanıt SLA aşıldıysa (eskalasyon).', 'Kampanya QR’ından gelen ilk yorumlar (ölçüm).'] },
-      { title: 'Webhook URL’i nasıl üretilir?', paragraphs: ['Slack’te <em>Incoming Webhooks</em> uygulamasını yükleyin, kanal seçin, üretilen URL’yi Buaze webhook ayarlarına yapıştırın. Discord’da kanalın <em>Edit Channel → Integrations → Webhooks</em> menüsünden URL alınır.'] },
-      { title: 'Mesaj formatı', paragraphs: ['Sade tutun: <strong>yıldız + kısa metin + restoran + yanıtla butonu</strong>. Çok zengin formatlar mobilde okunmaz hale gelir.'], quote: 'Bildirimin görevi paneli replace etmek değil, paneli tetiklemek; mesaj yeterli bağlamı verirse ekip ne zaman tıklayacağını bilir.' },
-      { title: 'Gürültü yönetimi', paragraphs: ['Her olumlu yorumu kanala atarsanız ekip <em>desensitize</em> olur. Pozitif yorumları haftalık dijest halinde özetlemek daha sürdürülebilirdir. <a href="/tr/help/webhook-events">webhook olayları</a> rehberinde dengeli pattern var.'] },
-    ],
-    checklist: ['Webhook URL gizli tutuluyor.', 'Sadece eyleme yönelik olaylar bildiriliyor.', 'Mesaj formatı mobilde okunaklı.', 'Yanıt SLA için escalation kuralı tanımlı.', 'Pozitif yorumlar haftalık dijestte.', 'Webhook hatası alarmı ayrı kanalda.', 'Yıllık webhook URL rotasyonu planlanmış.'],
-    faq: [
-      { q: 'Webhook URL’si sızarsa ne olur?', a: 'Üçüncü taraflar kanala mesaj gönderebilir. Sızıntı şüphesinde URL’yi hemen Slack/Discord tarafından <em>regenerate</em> edin ve Buaze ayarına yenisini yapıştırın.' },
-      { q: 'Slack’in tüm yorumlarını arşivleyebilir miyim?', a: 'Evet, ama kanalın amacı eyleme yönelikse arşivi ayrı bir kanala düşürmek temizliği korur.' },
-      { q: 'Aynı yorum hem Slack hem CRM’e gidebilir mi?', a: 'Evet. Her hedef için ayrı webhook tanımlamak ve hangi olayların hangi hedefe gittiğini belgelemek faydalıdır.' },
-      { q: 'Müşteri verisi kanalda saklı kalır mı?', a: 'Slack/Discord kanal içeriği o platformun retention politikasına tabidir. Kişisel veriyi gerekmedikçe mesaj gövdesine yazmamak tercih edilir.' },
-    ],
-    policyNote: 'Webhook bildirimleri yorumun <em>içeriğini değiştirmek</em> için değil, ekibe ulaştırmak için kullanılır. Yorum filtreleme veya seçici görüntüleme <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">platform politikalarına</a> aykırıdır ve Buaze tarafından desteklenmez.',
-  }),
-  article('en', 'integrations', 60, 'slack-discord-webhook-routing', 'Wire Slack and Discord notifications', 'Use webhooks to send reviews directly into the channel your team already uses, instead of relying on panel checks.', ['slack', 'discord', 'webhook', 'notification', 'routing'], {
-    lead: 'It is unrealistic to expect the team to open the panel every hour. A low-rating notification dropped into <strong>Slack or Discord</strong> connects the right person at the right moment, and the panel becomes the place for decisions.',
-    keyInsight: 'Notification design is attention-economy design. Sending every review to Slack burns the team out; sending only those that need action builds trust.',
-    sections: [
-      { title: 'Which events should hit Slack?', items: ['New 1-2 star review (urgent action).', 'Same tag repeating 3+ times in a day (operational signal).', '5-star with long text (sharing opportunity).', 'Response SLA breach (escalation).', 'First reviews from a campaign QR (measurement).'] },
-      { title: 'Generating the webhook URL', paragraphs: ['In Slack, install the <em>Incoming Webhooks</em> app, pick a channel and paste the generated URL into Buaze webhook settings. In Discord, get the URL from <em>Edit Channel → Integrations → Webhooks</em>.'] },
-      { title: 'Message format', paragraphs: ['Keep it lean: <strong>star + short text + restaurant + reply button</strong>. Rich layouts read poorly on mobile.'], quote: 'A notification’s job is not to replace the panel but to trigger it; if the message gives enough context, the team knows when to click through.' },
-      { title: 'Noise management', paragraphs: ['Pushing every positive review desensitizes the team. A weekly digest of positives is more sustainable. The <a href="/en/help/webhook-events">webhook events</a> guide has balanced patterns.'] },
-    ],
-    checklist: ['Webhook URL kept secret.', 'Only action-driving events posted.', 'Format readable on mobile.', 'Escalation rule for SLA breach.', 'Positives delivered as a weekly digest.', 'Webhook errors alarm a separate channel.', 'Annual webhook URL rotation planned.'],
-    faq: [
-      { q: 'What if the webhook URL leaks?', a: 'Third parties could post messages. Regenerate it on Slack/Discord side immediately and paste the new URL into Buaze settings.' },
-      { q: 'Can I archive every review in Slack?', a: 'Yes, but if the channel is action-oriented, send the archive feed to a separate channel to keep things clean.' },
-      { q: 'Can the same review go to both Slack and CRM?', a: 'Yes. Use separate webhooks per destination and document which events go where.' },
-      { q: 'Is customer data retained in the channel?', a: 'Yes, by the platform’s retention policy. Avoid placing unnecessary personal data in the message body.' },
-    ],
-    policyNote: 'Webhook notifications are for <em>routing</em> reviews to the team, not modifying their content. Filtering or selectively hiding reviews violates <a href="https://support.google.com/contributionpolicy/" target="_blank" rel="noopener noreferrer">platform policies</a> and is not supported by Buaze.',
-  }),
-
-  article('tr', 'team-roles', 60, 'shift-handoff-reviews', 'Vardiya geçişlerinde yorum devri', 'Açık yorumların vardiyalar arası kayıp gitmemesi için yapılması gereken kısa devir ritüeli.', ['vardiya', 'devir', 'handoff', 'iş akışı', 'sla'], {
-    lead: 'Sabah vardiyası tarafından açılmış bir yorumu akşam vardiyası kapatamazsa müşteri <em>iki kez</em> kaybedilir: önce deneyimde, sonra takipte. Devir ritüeli bu kaybı önler.',
-    keyInsight: 'Vardiya geçişi yorumlar için <strong>üçüncü bir vardiya</strong> gibidir; sahipsizlik en çok bu 15 dakikada başlar. Net bir devir protokolü, paneldeki tüm SLA’nin görünmez bel kemiğidir.',
-    sections: [
-      { title: 'Devir formatı (5 dakika)', items: ['Açık atamalar listesi.', 'Yanıt SLA’si yaklaşan yorumlar.', 'Tekrar eden etiketler (servis, yemek vb).', 'Eskalasyon gerektiren özel durumlar.', 'Pozitif öne çıkanlar (motivasyon için).'] },
-      { title: 'Ortak görünüm', paragraphs: ['Vardiya yöneticileri aynı filtreyi kullanmalıdır: <strong>Son 24 saat + tüm açık atamalar</strong>. Filtreyi <a href="/tr/help/review-search-and-filters">URL üzerinden paylaşmak</a>, “farklı şeylere bakıyoruz” karışıklığını ortadan kaldırır.'] },
-      { title: 'Kim alır, kim teslim eder?', paragraphs: ['Devir <em>iki kişilik</em> bir adımdır. Tek başına yapılan devir, devir değil <em>arşivlemedir</em>. Her iki vardiya yöneticisinin de aynı liste üzerinden tek tek geçmesi gerekir.'], quote: 'Devir 5 dakika sürer, devirsizliğin maliyeti ise saatlerce müşteri sabırsızlığıdır. Bu hesabı yapmak için her gün yapılacak iş listesine eklemek yeterli.' },
-      { title: 'Hafta sonu ve tatil', paragraphs: ['Ekip yapılandırılırken çoğu işletme hafta sonunu unutur. <strong>Cuma akşamı → pazartesi sabahı</strong> arasında bir <em>nöbetçi yönetici</em> tanımlamak boşluğu kapatır.'] },
-    ],
-    checklist: ['Devir formatı yazılı belgede.', 'Ortak filtre URL’si paylaşılmış.', 'Devir iki kişilik adım olarak yapılıyor.', 'Eskalasyon eşiği tanımlı.', 'Hafta sonu nöbetçisi atanmış.', 'Devir notu kaybolmayan bir yerde tutuluyor.', 'Aylık devir kalitesi gözden geçirilmiş.'],
-    faq: [
-      { q: 'Çok küçük ekipte devir gereksiz mi?', a: 'Hayır. Tek kişilik bir vardiyada bile <em>geçen vardiyaya</em> kısa not bırakmak ileride sürpriz önler. 5 dakikalık disiplin, saatlerce telafi tasarrufu sağlar.' },
-      { q: 'Devir Slack’te yapılabilir mi?', a: 'Evet, ancak <strong>liste mantığı</strong> korunmalı. Sohbet halinde devir hızla okunmaz hale gelir; checklist veya thread daha iyidir.' },
-      { q: 'Devirde her yorumu konuşmalı mıyız?', a: 'Hayır. Sadece <em>açık eylem</em> gerektirenler. Kapanmış yorumlar arşivde kalır.' },
-      { q: 'Devir notu kaybolursa ne yapmalı?', a: 'Düzenli bir devir günlüğü tutmak alışkanlık haline geldiğinde kayıp yorumlar drastik biçimde azalır. Kaybolan ilk birkaç notu gözlemleyip pattern’i kapatın.' },
-    ],
-  }),
-  article('en', 'team-roles', 60, 'shift-handoff-reviews', 'Hand off reviews between shifts', 'A short handoff ritual that prevents open reviews from getting lost across shifts.', ['shift', 'handoff', 'workflow', 'sla', 'continuity'], {
-    lead: 'If a review opened by the morning shift is not closed by the evening shift, the customer is lost <em>twice</em>: once in the experience, once in follow-up. A handoff ritual prevents that.',
-    keyInsight: 'A shift transition is the <strong>third shift</strong> for reviews — ownership gaps start in those 15 minutes. A clear handoff protocol is the invisible backbone of every SLA on the panel.',
-    sections: [
-      { title: 'Handoff format (5 minutes)', items: ['Open assignments list.', 'Reviews close to SLA breach.', 'Recurring tags (service, food, etc.).', 'Anything needing escalation.', 'Positive highlights (for motivation).'] },
-      { title: 'Shared view', paragraphs: ['Shift managers should use the same filter: <strong>last 24 hours + all open assignments</strong>. Sharing the filter <a href="/en/help/review-search-and-filters">via URL</a> removes the “we’re looking at different things” problem.'] },
-      { title: 'Who hands off, who receives?', paragraphs: ['Handoff is a <em>two-person</em> step. Done alone, it is not handoff but <em>archiving</em>. Both shift managers must walk through the list together.'], quote: 'A handoff costs 5 minutes; the cost of skipping it is hours of customer patience. Adding it to the daily checklist makes the math obvious.' },
-      { title: 'Weekends and holidays', paragraphs: ['Most teams forget weekends. Defining a <em>duty manager</em> from <strong>Friday evening to Monday morning</strong> closes the gap.'] },
-    ],
-    checklist: ['Handoff format documented.', 'Shared filter URL is in use.', 'Handoff is a two-person step.', 'Escalation threshold is defined.', 'Weekend duty manager assigned.', 'Handoff notes stored where they survive.', 'Handoff quality reviewed monthly.'],
-    faq: [
-      { q: 'Is handoff overkill in tiny teams?', a: 'No. Even in a one-person shift, leaving a short note for the <em>previous</em> shift prevents surprises. Five minutes of discipline saves hours of recovery.' },
-      { q: 'Can handoff happen in Slack?', a: 'Yes, but keep <strong>list logic</strong>. A chat thread quickly becomes unreadable; checklists or threads work better.' },
-      { q: 'Should we discuss every review at handoff?', a: 'No. Only those needing <em>open action</em>. Closed reviews stay in the archive.' },
-      { q: 'What if a handoff note disappears?', a: 'Once a handoff log becomes habit, lost reviews drop sharply. Watch the first few losses and close the pattern.' },
-    ],
-  }),
-
-  article('tr', 'billing', 60, 'multi-account-and-franchise-billing', 'Çoklu hesap, franchise ve grup faturalandırması', 'Birden fazla işletmesi olan operatörler ve franchise yapılarında faturalandırmayı sade ve denetlenebilir tutma.', ['franchise', 'çoklu hesap', 'fatura', 'grup', 'muhasebe'], {
-    lead: 'Tek işletmede fatura sadedir; <strong>üç franchise + iki kendi şubesi</strong> olduğunda kim hangi tutarı ödeyecek, hangi hesap kime ait sorusu hızla karmaşıklaşır. Bu rehber temiz yapılar için pratik desenler önerir.',
-    keyInsight: 'Faturalandırma topolojisi, ileride sahibi değişen veya bölünen işletmelerde sürtünmeyi belirler. Karar vermeden önce <em>çıkış senaryosunu</em> da düşünmek olgun bir alışkanlıktır.',
-    sections: [
-      { title: 'Üç desen', items: ['<strong>Tek hesap, çok restoran</strong>: aile şirketi, tek sahip.', '<strong>Hesap başına franchise</strong>: bağımsız mali yapı.', '<strong>Grup hesabı + alt hesaplar</strong>: kurumsal kontrol + lokal esneklik.', 'Her desenin fatura çıktısı farklıdır.', 'Çıkış senaryosu desen seçiminin parçasıdır.'] },
-      { title: 'Tek hesap, çok restoran', paragraphs: ['En sade yapı. Tüm restoranlar tek faturada birleştirilir; muhasebe basit, ancak <em>franchise ortağına</em> ayrı kayıt vermek istiyorsanız bu desen yetersiz kalır.'] },
-      { title: 'Hesap başına franchise', paragraphs: ['Her franchise kendi Buaze hesabını açar, kendi faturasını alır. <a href="/tr/help/role-permissions">Rol ve izinler</a> rehberindeki <em>group manager</em> rolüyle merkez hala raporlama yapabilir. <strong>Çıkışta</strong> ortaklığı bitirmek temizdir: hesap kapatılır, kalan veri ona ait olur.'], quote: 'Bağımsız fatura ekstra yöneticilik yükü gibi görünür ama ortaklık sona erdiğinde — ki çoğu franchise için günün birinde olur — neyi kimin sahiplendiği sorusu kendiliğinden cevaplanır.' },
-      { title: 'Grup hesabı + alt hesaplar', paragraphs: ['Büyük zincirler için ideal. Merkez fatura tek noktada, ancak alt restoranlar kendi metriklerini ve ekiplerini görür. Bu desen daha fazla yapılandırma gerektirir; muhasebenizle birlikte planlamak zorunludur.'] },
-    ],
-    checklist: ['Faturalandırma deseni yazılı kararlaştırıldı.', 'Çıkış senaryosu konuşuldu.', 'Vergi numarası ve unvan her hesap için doğru.', 'Grup yöneticisi rolü tanımlı.', 'Aylık fatura tek alıcıya net gönderilir.', 'KDV reverse-charge senaryosu netleştirilmiş.', 'Yıllık plan dağılımı sözleşmede yazılı.'],
-    faq: [
-      { q: 'Mevcut tek hesabımı franchise yapısına çevirebilir miyim?', a: 'Genellikle evet, ama veri ayrımı manuel adım gerektirir. Destek ekibimizle <em>migration</em> planlayın.' },
-      { q: 'Grup hesabı ek ücret mi?', a: 'Plan yapısına bağlıdır. Genellikle hacme göre fiyatlanır; özel pricing için iletişime geçmek gerekir.' },
-      { q: 'Franchise kapanırsa veriye ne olur?', a: 'Hesap iptal edildiğinde veri saklama politikamıza tabi olur. Kapanış öncesi <a href="/tr/help/csv-export-bi">CSV export</a> almak iyi bir alışkanlıktır.' },
-      { q: 'Tek faturada şubeleri ayırt edebilir miyim?', a: 'Fatura kalemi olarak ayrı satır gösterilebilir; muhasebenizle uyumu için iletişime geçin.' },
-    ],
-  }),
-  article('en', 'billing', 60, 'multi-account-and-franchise-billing', 'Multi-account, franchise and group billing', 'Keep billing clean and auditable when you operate multiple businesses or franchise structures.', ['franchise', 'multi-account', 'invoice', 'group', 'finance'], {
-    lead: 'A single business is simple; <strong>three franchises plus two of your own branches</strong> quickly raises the question of who pays what. This guide proposes practical patterns.',
-    keyInsight: 'Billing topology determines future friction when ownership splits or rotates. Considering the <em>exit scenario</em> before committing is a mature habit.',
-    sections: [
-      { title: 'Three patterns', items: ['<strong>One account, many restaurants</strong>: family business, single owner.', '<strong>Account per franchise</strong>: independent finance.', '<strong>Group account + sub-accounts</strong>: central control with local flexibility.', 'Each pattern produces a different invoice.', 'Exit scenario is part of the pattern choice.'] },
-      { title: 'One account, many restaurants', paragraphs: ['The simplest. All restaurants roll into one invoice. Accounting is easy, but if you need separate records for a <em>franchise partner</em>, this pattern falls short.'] },
-      { title: 'Account per franchise', paragraphs: ['Each franchise has its own Buaze account and invoice. The central HQ can still report via the <em>group manager</em> role from <a href="/en/help/role-permissions">roles & permissions</a>. <strong>On exit</strong>, ending the partnership is clean: the account is closed and the data remains with that party.'], quote: 'Independent billing looks like extra admin overhead, but when the partnership ends — and for most franchises it does eventually — the question of ownership is already answered.' },
-      { title: 'Group account + sub-accounts', paragraphs: ['Best for chains. The central invoice is single-point, but sub-restaurants see their own metrics and teams. This pattern needs more configuration; plan it with your accountant.'] },
-    ],
-    checklist: ['Billing pattern is documented.', 'Exit scenario discussed.', 'Tax ID and title correct per account.', 'Group manager role defined.', 'Monthly invoice goes to a single recipient cleanly.', 'VAT reverse-charge scenarios clarified.', 'Annual plan allocation written in contract.'],
-    faq: [
-      { q: 'Can I convert a single account into a franchise structure?', a: 'Usually yes, but data separation is a manual step. Plan a <em>migration</em> with our support team.' },
-      { q: 'Does a group account cost extra?', a: 'It depends on the plan structure. Pricing is usually volume-based; contact us for custom pricing.' },
-      { q: 'What if a franchise closes?', a: 'Account cancellation triggers retention policies. <a href="/en/help/csv-export-bi">CSV export</a> before closure is a healthy habit.' },
-      { q: 'Can a single invoice break out branches?', a: 'Line-item separation is possible; align with your accountant by contacting us.' },
-    ],
-  }),
-
-  article('tr', 'api-webhook', 60, 'integration-resilience-runbook', 'Entegrasyon dayanıklılığı: outage runbook’u', 'Buaze API’si veya dış sisteminiz geçici olarak yanıt vermediğinde kurtarma ve müşteri etkisini sıfıra indirme adımları.', ['outage', 'kurtarma', 'runbook', 'resilience', 'sla'], {
-    lead: 'Hiçbir entegrasyon <em>%100 uptime</em> ile çalışmaz. Önemli olan kesinti olduğunda <strong>fark edilmesi</strong>, <strong>iletişim kurulması</strong> ve <strong>geri kazanılması</strong>; geri kalan büyük ölçüde otomatik akıştır.',
-    keyInsight: 'Outage anında en pahalı şey panik değildir; “bunu kim çözecek” sorusudur. Runbook bu sorunun cevabını önceden yazılı tutar.',
-    sections: [
-      { title: '4 saatlik runbook', items: ['00:00 — Olay tespit (alarm veya manuel).', '00:05 — On-call kişi onayladı, paneli kontrol etti.', '00:15 — Müşteri etkisi tahmin edildi.', '01:00 — Geçici workaround uygulandı (manuel mod).', '04:00 — Kalıcı çözüm planı çıkarıldı.'] },
-      { title: 'Manuel mod', paragraphs: ['Webhook çalışmıyorsa Buaze paneli çalışmaya devam eder. Kritik bildirimler için <strong>geçici manuel mod</strong>: ekip panelden son 4 saatlik düşük puanları her saat başı manuel kontrol eder. Bu, otomatik akış restore olana kadar yeterlidir.'] },
-      { title: 'İletişim', paragraphs: ['Müşteriye outage iletişimi yapmak çoğu zaman gerekmez; çünkü Buaze müşteri ile doğrudan değil işletme ile temas halindedir. Ancak ekip iç iletişimi için bir <em>status sayfası</em> veya Slack kanalı, “kim ne biliyor” sorusunu siler.'], quote: 'Bir kesintinin ekibe maliyeti dakikada hesaplanmaz; “neyin çalışıp çalışmadığını bilmemekten” doğan endişede hesaplanır.' },
-      { title: 'Postmortem', paragraphs: ['Olay bittiğinde 24 saat içinde kısa bir postmortem yazın. <a href="/tr/help/incident-response-basics">Incident response</a> rehberindeki disiplin burada da geçerlidir: kök neden, etki, alınan aksiyon, gelecek için önlem.'] },
-    ],
-    checklist: ['On-call rotasyonu yazılı.', 'Manuel mod prosedürü mevcut.', 'Status iletişim kanalı kurulu.', '4 saatlik runbook denendi.', 'Postmortem template’i hazır.', 'Alarm eşikleri yıllık gözden geçirildi.', 'Yedek webhook hedefi (failover) tanımlı.'],
-    faq: [
-      { q: 'Outage Buaze tarafında mı yoksa benim sistemimde mi?', a: 'Buaze status sayfası veya destek kanalı ilk kontrol noktasıdır. Buaze çalışıyorsa kontrol kendi sisteminize geçer; webhook payload’ı log’larınıza ulaşmıyorsa endpoint’iniz hatadadır.' },
-      { q: 'Kayıp eventleri sonradan alabilir miyim?', a: 'Webhook retry mekanizması belirli bir süre boyunca tekrar dener. Sürenin dışında kalan eventler için <a href="/tr/help/csv-export-bi">CSV export</a> ile telafi yapabilirsiniz.' },
-      { q: 'Outage’da müşteri yorum yazamaz mı?', a: 'QR akışı ve panel ayrı katmandır. Webhook gibi yan akışlar olmadan bile yorum kabulü çalışmaya devam eder.' },
-      { q: 'Birden fazla webhook hedefim var, hepsi aynı anda etkilenir mi?', a: 'Genellikle hayır. Hedef başına bağımsız teslim akışları çalışır; biri kesilirse diğerleri etkilenmez.' },
-    ],
-  }),
-  article('en', 'api-webhook', 60, 'integration-resilience-runbook', 'Integration resilience: outage runbook', 'Steps to recover and minimize customer impact when Buaze API or your system is temporarily unresponsive.', ['outage', 'recovery', 'runbook', 'resilience', 'sla'], {
-    lead: 'No integration runs at <em>100% uptime</em>. What matters when an outage hits is <strong>detection</strong>, <strong>communication</strong> and <strong>recovery</strong>; the rest is largely automated.',
-    keyInsight: 'The most expensive thing during an outage is not panic; it is the question “who is going to fix this?” A runbook answers it in advance.',
-    sections: [
-      { title: '4-hour runbook', items: ['00:00 — Incident detected (alarm or manual).', '00:05 — On-call acknowledged, checked panel.', '00:15 — Customer impact estimated.', '01:00 — Temporary workaround in place (manual mode).', '04:00 — Permanent fix plan documented.'] },
-      { title: 'Manual mode', paragraphs: ['If webhooks fail, the Buaze panel still works. For critical alerts, switch to a <strong>temporary manual mode</strong>: the team checks the panel hourly for low ratings from the last 4 hours. This bridges the gap until automation returns.'] },
-      { title: 'Communication', paragraphs: ['Customer-facing outage communication is rarely needed since Buaze talks to operators, not end customers. But for internal alignment, a <em>status page</em> or Slack channel removes the “who knows what” problem.'], quote: 'The cost of an outage is not measured in minutes; it is measured in the anxiety that comes from not knowing what is and is not working.' },
-      { title: 'Postmortem', paragraphs: ['Within 24 hours of resolution, write a short postmortem. The discipline in the <a href="/en/help/incident-response-basics">incident response</a> guide applies: root cause, impact, action taken, prevention plan.'] },
-    ],
-    checklist: ['On-call rotation written.', 'Manual mode procedure exists.', 'Status communication channel set.', '4-hour runbook tested.', 'Postmortem template ready.', 'Alarm thresholds reviewed annually.', 'Backup webhook destination (failover) defined.'],
-    faq: [
-      { q: 'Is the outage on Buaze side or mine?', a: 'Buaze status page or support is the first check. If Buaze is up, check your endpoint; if no payload reaches your logs, the issue is on your side.' },
-      { q: 'Can I retrieve missed events later?', a: 'The webhook retry mechanism re-tries for a defined window. Beyond that window, recover via <a href="/en/help/csv-export-bi">CSV export</a>.' },
-      { q: 'Can customers still leave reviews during an outage?', a: 'The QR flow and the panel are separate layers. Side flows like webhooks can fail while review collection continues.' },
-      { q: 'Do multiple webhook destinations all fail together?', a: 'Usually not. Each destination has its own delivery flow; one failing does not affect the others.' },
-    ],
-  }),
-
-  article('tr', 'security-kvkk', 60, 'two-factor-and-session-management', 'İki faktörlü doğrulama ve oturum yönetimi', 'Hesabınıza yetkisiz erişim riskini en aza indirmek için 2FA, cihaz yönetimi ve oturum sona erdirme pratikleri.', ['2fa', 'oturum', 'güvenlik', 'cihaz', 'mfa'], {
-    lead: 'Parola tek başına yetersizdir. <strong>İki faktörlü doğrulama (2FA)</strong> hesabı dış saldırıların büyük çoğunluğundan korur; cihaz ve oturum yönetimi ise iç tarafın hijyenini sağlar.',
-    keyInsight: 'Saldırgan parolanızı bilse bile telefonunuza erişemez. Bu küçük bariyer, hesap güvenliğinin en yüksek getirili tek adımıdır.',
-    sections: [
-      { title: '2FA seçenekleri', items: ['<strong>Authenticator uygulaması</strong> (önerilen): Google Authenticator, Authy, 1Password.', 'SMS kod: telefon numaranız ele geçirilirse risklidir; ikinci tercih.', 'Donanım anahtarı (YubiKey): yüksek güvenlik, kurumsal kullanım.', 'Yedek kodlar: telefon kaybında erişim için.', 'Eşzamanlı 2 yöntem: kayıp riskini azaltır.'] },
-      { title: 'Aktif oturumlar', paragraphs: ['Hesap ayarlarında aktif cihaz listesi tutulur. <em>Tanımadığınız</em> bir cihaz görüyorsanız <strong>tüm oturumları sonlandırın</strong> ve parolayı değiştirin. Bu adım dakikalar sürer ama olası bir izinsiz erişimi anında keser.'] },
-      { title: 'Cihaz hijyeni', paragraphs: ['Ortak veya kafe bilgisayarına asla giriş yapmayın. Mobil cihazlarda biyometrik kilit aktif olmalı, panel sekmesi açık bırakılmamalıdır.'], quote: 'Hesap güvenliği bir tek anda kazanılmaz; her gün yapılan küçük tercihlerden oluşur. 2FA ve oturum disiplini bu tercihlerin omurgasıdır.' },
-      { title: 'Phishing direnci', paragraphs: ['Buaze size <em>asla</em> e-posta veya Slack üzerinden parola sormaz. Şüpheli bir mesaj geldiğinde linke tıklamadan <a href="/tr/help/incident-response-basics">incident response</a> rehberindeki adımları uygulayın.'] },
-    ],
-    checklist: ['Tüm sahip ve admin hesaplarda 2FA aktif.', 'Yedek kodlar güvenli yerde saklı.', 'Aylık aktif oturum kontrolü yapılıyor.', 'Ortak cihazlardan giriş yapılmıyor.', 'Mobil biyometrik kilit aktif.', 'Phishing simülasyonu yıllık.', 'Çıkış yapan personelin oturumları zorla sonlandırılmış.'],
-    faq: [
-      { q: '2FA telefonumu kaybedersem ne olur?', a: 'Yedek kodlarınız varsa onlarla giriş yapabilirsiniz. Yoksa destek ekibimizle KYC adımıyla erişiminizi geri kazanabilirsiniz; bu süreç birkaç saat sürer.' },
-      { q: 'SMS 2FA yeterli mi?', a: 'Authenticator uygulamasına göre daha zayıftır ama parola-sadece’ye göre çok daha iyidir. Mümkünse authenticator’a geçin.' },
-      { q: 'Aynı cihazda iki ayrı hesabım var, sorun mu?', a: 'Hayır. Tarayıcı profili veya gizli sekme ile karışıklık önlenir. <em>İş</em> ve <em>kişisel</em> hesapları açıkça ayırmak iyi pratiktir.' },
-      { q: 'Oturum süresi ne kadar?', a: 'Varsayılan oturum süresi makul bir periyotta sona erer. Hassas işlemler için ayrıca yeniden doğrulama gerekebilir.' },
-    ],
-    policyNote: 'Bu rehberde önerilen 2FA ve oturum yönetimi pratikleri KVKK çerçevesinde <strong>teknik güvenlik tedbiri</strong> kapsamında değerlendirilebilir. Müşteri verisini koruma sorumluluğunun teknik tarafına ait önemli unsurlardır.',
-  }),
-  article('en', 'security-kvkk', 60, 'two-factor-and-session-management', 'Two-factor authentication and session management', 'Reduce unauthorized access risk with 2FA, device management and session termination practices.', ['2fa', 'session', 'security', 'device', 'mfa'], {
-    lead: 'A password alone is not enough. <strong>Two-factor authentication (2FA)</strong> protects accounts from the vast majority of external attacks; device and session hygiene handle the internal side.',
-    keyInsight: 'Even if an attacker has your password, they cannot reach your phone. That small barrier is the single highest-ROI step in account security.',
-    sections: [
-      { title: '2FA options', items: ['<strong>Authenticator app</strong> (recommended): Google Authenticator, Authy, 1Password.', 'SMS codes: risky if your phone number is compromised; second choice.', 'Hardware key (YubiKey): strong security for enterprise use.', 'Backup codes: for phone loss recovery.', 'Two methods at once: reduces lockout risk.'] },
-      { title: 'Active sessions', paragraphs: ['Account settings list active devices. If you see a device you do not recognize, <strong>sign out of all sessions</strong> and change your password. Minutes of effort, immediate cut on potential intrusion.'] },
-      { title: 'Device hygiene', paragraphs: ['Never sign in on shared or café computers. On mobile, biometric lock should be active and panel tabs should not be left open.'], quote: 'Account security is not won in a single moment; it is the result of small daily choices. 2FA and session discipline are the spine of those choices.' },
-      { title: 'Phishing resistance', paragraphs: ['Buaze will <em>never</em> ask for your password by email or Slack. If something looks off, do not click — follow the steps in the <a href="/en/help/incident-response-basics">incident response</a> guide.'] },
-    ],
-    checklist: ['2FA enabled on every owner and admin account.', 'Backup codes stored safely.', 'Monthly active session check.', 'No sign-in on shared devices.', 'Mobile biometric lock active.', 'Annual phishing simulation.', 'Departed staff sessions force-ended.'],
-    faq: [
-      { q: 'What if I lose my 2FA phone?', a: 'Backup codes can sign you in. Without them, our support team can recover access via KYC; the process takes a few hours.' },
-      { q: 'Is SMS 2FA enough?', a: 'Weaker than authenticator apps but far better than password-only. Move to authenticator if possible.' },
-      { q: 'I have two accounts on the same device — a problem?', a: 'No. Browser profiles or private windows prevent confusion. Separating <em>work</em> and <em>personal</em> clearly is a healthy practice.' },
-      { q: 'How long does a session last?', a: 'The default expires after a reasonable window. Sensitive actions may require additional re-authentication.' },
-    ],
-    policyNote: 'The 2FA and session practices in this guide qualify as <strong>technical security measures</strong> under GDPR/KVKK frameworks. They are key elements of the technical side of customer-data protection responsibility.',
-  }),
-];
-
-STATIC_HELP_ARTICLES.push(...MORE_ARTICLES);
+function byCategoryThenOrder(a: { category: string; order: number }, b: { category: string; order: number }) {
+  const rank = (CATEGORY_RANK.get(a.category) ?? 99) - (CATEGORY_RANK.get(b.category) ?? 99);
+  return rank || a.order - b.order;
+}
 
 export function getStaticHelpArticles(locale: Locale, category?: string) {
-  return STATIC_HELP_ARTICLES
-    .filter((article) => article.locale === locale && (!category || article.category === category))
-    .sort((a, b) => a.category.localeCompare(b.category) || a.order - b.order);
+  return STATIC_HELP_ARTICLES.filter(
+    (article) => article.locale === locale && (!category || article.category === category),
+  ).sort(byCategoryThenOrder);
 }
 
 export function getStaticHelpArticle(locale: Locale, slug: string) {
@@ -1537,22 +4576,32 @@ export function getStaticHelpCategoryCounts(locale: Locale) {
   return counts;
 }
 
-export function getStaticPopularHelpArticles(locale: Locale, take = 5) {
-  return getStaticHelpArticles(locale).slice(0, take);
+/** Text a static article is searched by: title, excerpt, tags, headings, summary and FAQ questions. */
+export function helpArticleSearchText(article: StaticHelpArticle): string {
+  const struct = article.bodyStruct;
+  const parts = [article.title, article.excerpt, ...article.searchTags];
+  if (struct) {
+    parts.push(inlineToPlain(struct.keyInsight ?? ''));
+    for (const section of struct.sections) parts.push(section.title);
+    for (const item of struct.faq) parts.push(item.q);
+  }
+  return normalizeHelpSearchText(parts.join(' '));
 }
 
+/**
+ * Every word of the query must appear somewhere in the article text.
+ * Title matches rank first; ties keep the category order.
+ */
 export function searchStaticHelpArticles(locale: Locale, query: string, take = 30) {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
+  const words = helpQueryWords(query);
+  if (words.length === 0) return [];
   return getStaticHelpArticles(locale)
-    .filter((article) => {
-      const haystack = [
-        article.title,
-        article.excerpt,
-        article.category,
-        ...article.searchTags,
-      ].join(' ').toLowerCase();
-      return haystack.includes(q);
+    .map((article) => {
+      const score = scoreHelpMatch(words, helpArticleSearchText(article), normalizeHelpSearchText(article.title));
+      return score === null ? null : { article, score };
     })
-    .slice(0, take);
+    .filter((hit): hit is { article: StaticHelpArticle; score: number } => hit !== null)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, take)
+    .map((hit) => hit.article);
 }

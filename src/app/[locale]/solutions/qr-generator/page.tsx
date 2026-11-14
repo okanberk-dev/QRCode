@@ -1,339 +1,587 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
+import { ArrowRight, Check, ChevronRight, Maximize2, Contrast, Scissors, ScanLine } from 'lucide-react';
+import {
+  FEATURE_CARD,
+  FEATURE_CONTAINER,
+  FEATURE_SECTION_Y,
+  FEATURE_TEXT_LINK,
+  FeatureCtaSection,
+  FeatureFaqSection,
+  FeaturePageShell,
+  FeatureSectionHeading,
+  type FeatureFaq,
+} from '@/components/marketing/FeaturePageLayout';
 import QRGeneratorForm from '@/components/marketing/QRGeneratorForm';
-// Stage 71 §38.151 — site-library.jsx animation component'lerinin
-// sonraki yerleştirmesi: QRScanLoader hero altında küçük dekoratif
-// teaser olarak (Buaze QR generator'ın "ne ürettiğini" visualize eder).
-// Pulse §11 + framer-motion useReducedMotion + reduced-motion blanket
-// (CLAUDE.md §38.61) intact. Production'da gerçek QR canvas
-// QRGeneratorForm'da render edilir; bu sadece görsel teaser.
-import QRScanLoader from '@/components/animations/QRScanLoader';
-import { getTranslations, type Locale } from '@/lib/translations';
+import { SECTOR_COUNT } from '@/lib/related-solutions';
+import { buildSolutionMetadata, solutionUrl } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
+import { SITE_URL } from '@/lib/site';
+import type { Locale } from '@/lib/translations';
+import { getSectorEntries } from '../_components/sector-directory';
 
-const VALID_LOCALES = ['tr', 'en'] as const;
+// /solutions/qr-generator — the free static QR tool (CLAUDE.md §24).
+// The tool runs in the browser (QRGeneratorForm); this server page adds the
+// explanation, print advice, the static-vs-account comparison and the FAQ.
+// Static (ISR from the locale layout): reads only `params`.
+// JSON-LD: BreadcrumbList + HowTo built from the visible steps (each step has
+// id="step-N") + FAQPage built from the visible FAQ. No WebApplication node
+// (Google reports it invalid without ratings, spec D12).
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const isTr = locale === 'tr';
+const SLUG = 'qr-generator';
+const SECTOR_LINKS = ['restaurants', 'delivery', 'hotels', 'healthcare', 'beauty-salon', 'retail'] as const;
 
-  const title = isTr
-    ? 'Ücretsiz QR Kod Oluşturucu — Karekod Oluşturma Aracı'
-    : 'Free QR Code Generator — Create a QR Code Online';
-  const description = isTr
-    ? 'Ücretsiz QR kod oluşturma aracı: bir bağlantı yapıştırın, karekodunuzu saniyeler içinde üretip PNG veya PDF olarak indirin. Üyelik yok, süre sınırı yok.'
-    : 'Free QR code generator: paste a link, create your QR code in seconds and download it as PNG or PDF. No sign-up, no expiry, unlimited use.';
-
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `/${locale}/solutions/qr-generator`,
-      languages: {
-        tr: '/tr/solutions/qr-generator',
-        en: '/en/solutions/qr-generator',
-        'x-default': '/tr/solutions/qr-generator',
-      },
-    },
-    openGraph: {
-      type: 'website',
-      url: `https://www.buaze.com/${locale}/solutions/qr-generator`,
-      locale: isTr ? 'tr_TR' : 'en_US',
-      siteName: 'Buaze',
-      title,
-      description,
-      images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-    },
-    robots: {
-      index: true,
-      follow: true,
-    },
-  };
+interface Step {
+  title: string;
+  body: string;
 }
 
-export default async function QRGeneratorPage({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}) {
-  const { locale } = await params;
-  if (!VALID_LOCALES.includes(locale as (typeof VALID_LOCALES)[number])) {
-    notFound();
-  }
-
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-
-
-  // ── SEO/AEO içerik verisi ────────────────────────────────────────────────
-  // Bu sayfa 'qr kod oluşturma' (33.100/ay) ve 'karekod oluşturma' (8.100/ay)
-  // kelimelerini hedefliyor ama önceden hiç h2/h3 ve gövde metni yoktu.
-  // Tanımsal paragraf + adım listesi + SSS, hem klasik aramada hem de yapay
-  // zekâ yanıtlarında alıntılanabilirlik için eklendi.
-  const steps = isTr
-    ? [
-        { n: '01', t: 'Bağlantını yapıştır', d: 'Google yorum sayfan, menün, rezervasyon formun ya da web siten — QR kodun açacağı adresi gir.' },
-        { n: '02', t: 'İşletme adını yaz', d: 'Karekodun üstünde görünecek işletme adı ve kısa çağrı metnini belirle.' },
-        { n: '03', t: 'Şablonu seç', d: 'Beyaz, lime, koyu veya minimal — masaya, tezgâha ya da vitrine uyan tasarımı seç.' },
-        { n: '04', t: 'İndir ve bas', d: 'PNG olarak indir ya da A5 baskıya hazır PDF çıkar. Boyut sınırı ve son kullanma tarihi yok.' },
-      ]
-    : [
-        { n: '01', t: 'Paste your link', d: 'Your Google review page, menu, booking form or website — enter the address the QR code should open.' },
-        { n: '02', t: 'Add your business name', d: 'Set the business name and the short call-to-action shown above the QR code.' },
-        { n: '03', t: 'Pick a template', d: 'White, lime, dark or minimal — choose the design that fits your table, counter or window.' },
-        { n: '04', t: 'Download and print', d: 'Download as PNG or export a print-ready A5 PDF. No size limit, no expiry date.' },
-      ];
-
-  const useCases = isTr
-    ? [
-        { t: 'Restoran ve kafe', d: 'Masa QR kodu ile misafirden geri bildirim topla, menünü dijitalleştir.', href: `/${locale}/solutions/restaurants` },
-        { t: 'Otel ve konaklama', d: 'Oda içi karekod ile konuk memnuniyetini çıkışta değil, konaklama sırasında ölç.', href: `/${locale}/solutions/hotels` },
-        { t: 'Klinik ve sağlık', d: 'Bekleme alanında hasta deneyimi anketi; KVKK uyumlu onay akışıyla.', href: `/${locale}/solutions/healthcare` },
-        { t: 'Perakende', d: 'Kasa yanı QR ile mağaza deneyimini anında ölç, tekrar ziyareti artır.', href: `/${locale}/solutions/retail` },
-      ]
-    : [
-        { t: 'Restaurants and cafés', d: 'Collect guest feedback with a table QR code and put your menu online.', href: `/${locale}/solutions/restaurants` },
-        { t: 'Hotels and hospitality', d: 'Measure guest satisfaction during the stay with an in-room QR code, not after checkout.', href: `/${locale}/solutions/hotels` },
-        { t: 'Clinics and healthcare', d: 'Run a patient experience survey in the waiting area, with a KVKK-compliant consent flow.', href: `/${locale}/solutions/healthcare` },
-        { t: 'Retail', d: 'Measure the in-store experience instantly with a QR code at the till.', href: `/${locale}/solutions/retail` },
-      ];
-
-  const faqs = isTr
-    ? [
-        { q: 'QR kod oluşturmak ücretsiz mi?', a: 'Evet. Bu araçla ürettiğiniz karekodlar tamamen ücretsizdir, üyelik gerektirmez ve adet sınırı yoktur. Ürettiğiniz kodu ticari olarak da kullanabilirsiniz.' },
-        { q: 'Karekod ile QR kod arasında fark var mı?', a: 'Yok. "Karekod", QR kodun Türkçe karşılığıdır; ikisi de aynı iki boyutlu barkod standardını (ISO/IEC 18004) tanımlar. Bu araçla oluşturduğunuz kod her iki isimle de aynı şeydir.' },
-        { q: 'Oluşturduğum QR kodun süresi doluyor mu?', a: 'Hayır. Bu araç statik QR kod üretir: hedef adres kodun içine gömülür, aradaki bir servise bağlı değildir. Bağlantı yayında kaldığı sürece karekod çalışmaya devam eder.' },
-        { q: 'QR kodu bastıktan sonra hedef adresi değiştirebilir miyim?', a: 'Statik kodda değiştiremezsiniz — yeni adres için yeni kod üretmeniz gerekir. Adresi sonradan değiştirebilmek, taramaları ölçmek ve puana göre yönlendirme yapmak isterseniz Buaze hesabındaki dinamik QR kodları kullanın.' },
-        { q: 'QR kodu hangi boyutta basmalıyım?', a: 'Masa üstü kullanımda kenar uzunluğu en az 2,5 cm; vitrin veya duvar afişinde okuma mesafesinin yaklaşık onda biri kadar olmalıdır. Bu araç yüksek çözünürlüklü çıktı verdiği için büyütmede bozulma olmaz.' },
-        { q: 'QR kodumu kaç kişinin taradığını görebilir miyim?', a: 'Bu ücretsiz araçta göremezsiniz; statik kod tarama verisi tutmaz. Tarama sayısı, saat dağılımı ve geri bildirime dönüşme oranını görmek için Buaze panelindeki QR kodları kullanmanız gerekir.' },
-      ]
-    : [
-        { q: 'Is generating a QR code free?', a: 'Yes. Codes created with this tool are completely free, need no account and have no quantity limit. You can also use the generated code commercially.' },
-        { q: 'What is the difference between a QR code and a "karekod"?', a: 'None. "Karekod" is simply the Turkish word for QR code; both describe the same two-dimensional barcode standard (ISO/IEC 18004).' },
-        { q: 'Does the QR code I create expire?', a: 'No. This tool generates a static QR code: the destination address is encoded into the image itself and does not depend on an intermediary service. It keeps working as long as the link stays live.' },
-        { q: 'Can I change the destination after printing the QR code?', a: 'Not with a static code — you would need to generate a new one. If you need to change the destination later, measure scans and route by rating, use the dynamic QR codes inside a Buaze account.' },
-        { q: 'What size should I print the QR code at?', a: 'For table use, at least 2.5 cm per side; for a window or wall poster, roughly one tenth of the intended scanning distance. This tool exports at high resolution, so enlarging will not degrade quality.' },
-        { q: 'Can I see how many people scanned my QR code?', a: 'Not with this free tool — a static code stores no scan data. To see scan counts, time-of-day distribution and feedback conversion, use the QR codes inside the Buaze dashboard.' },
-      ];
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'WebApplication',
-        name: isTr ? 'Buaze QR Kod Oluşturucu' : 'Buaze QR Code Generator',
-        url: `https://www.buaze.com/${locale}/solutions/qr-generator`,
-        applicationCategory: 'UtilitiesApplication',
-        operatingSystem: 'Web',
-        description: isTr
-          ? "Web sitenizin URL'sinden ücretsiz yüksek çözünürlüklü QR kodu oluşturun."
-          : 'Generate a free, high-resolution QR code from your website URL.',
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-      },
-      {
-        '@type': 'HowTo',
-        name: isTr ? 'QR kod nasıl oluşturulur?' : 'How to create a QR code',
-        description: isTr
-          ? 'Bir bağlantıdan ücretsiz, baskıya hazır QR kod üretmenin dört adımı.'
-          : 'Four steps to generate a free, print-ready QR code from a link.',
-        step: steps.map((st, i) => ({
-          '@type': 'HowToStep',
-          position: i + 1,
-          name: st.t,
-          text: st.d,
-        })),
-      },
-      {
-        '@type': 'FAQPage',
-        mainEntity: faqs.map((f) => ({
-          '@type': 'Question',
-          name: f.q,
-          acceptedAnswer: { '@type': 'Answer', text: f.a },
-        })),
-      },
-      {
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          {
-            '@type': 'ListItem',
-            position: 1,
-            name: isTr ? 'Ana Sayfa' : 'Home',
-            item: `https://www.buaze.com/${locale}`,
-          },
-          {
-            '@type': 'ListItem',
-            position: 2,
-            name: isTr ? 'Çözümler' : 'Solutions',
-            item: `https://www.buaze.com/${locale}/solutions`,
-          },
-          {
-            '@type': 'ListItem',
-            position: 3,
-            name: isTr ? 'QR Kod Oluşturucu' : 'QR Code Generator',
-            item: `https://www.buaze.com/${locale}/solutions/qr-generator`,
-          },
-        ],
-      },
-    ],
+interface Copy {
+  meta: { title: string; description: string };
+  breadcrumb: { label: string; home: string; solutions: string; current: string };
+  eyebrow: string;
+  h1: string;
+  lead: string;
+  facts: readonly string[];
+  toolLabel: string;
+  how: { eyebrow: string; title: string; lead: string; steps: readonly Step[] };
+  tips: { eyebrow: string; title: string; lead: string; items: readonly Step[] };
+  compare: {
+    eyebrow: string;
+    title: string;
+    lead: string;
+    staticTitle: string;
+    staticItems: readonly string[];
+    accountTitle: string;
+    accountItems: readonly string[];
+    primary: string;
+    secondary: string;
   };
+  sectors: { eyebrow: string; title: string; lead: string; all: string };
+  faq: { eyebrow: string; title: string; items: readonly FeatureFaq[] };
+  ctaTitle: string;
+}
+
+const COPY: Record<Locale, Copy> = {
+  tr: {
+    meta: {
+      title: 'Ücretsiz QR kod (karekod) oluşturucu: PNG ve PDF',
+      description:
+        'Hesap açmadan ücretsiz QR kod oluşturun: bağlantınızı yapıştırın, 4 kart temasından birini seçin, PNG olarak indirin ya da A5 PDF olarak yazdırın.',
+    },
+    breadcrumb: { label: 'Sayfa konumu', home: 'Ana sayfa', solutions: 'Çözümler', current: 'Ücretsiz QR kod oluşturucu' },
+    eyebrow: 'Ücretsiz araç',
+    h1: 'Ücretsiz QR kod oluşturucu',
+    lead: 'Bir bağlantıyı QR koda dönüştürün, kartınızı dört temadan biriyle hazırlayın ve hesap açmadan indirin: PNG olarak kaydedin ya da A5 sayfaya PDF olarak yazdırın.',
+    facts: ['Hesap gerekmez', 'Süresi dolmaz', 'Tarama verisi tutulmaz'],
+    toolLabel: 'QR kod oluşturucu',
+    how: {
+      eyebrow: 'Nasıl çalışır',
+      title: 'QR kod nasıl oluşturulur',
+      lead: 'QR kod (Türkçesiyle karekod), bir bağlantıyı telefon kamerasının okuyabildiği kare bir desene çeviren açık bir standarttır (ISO/IEC 18004). Adres kodun içine yazılır; kod okutulduğunda doğrudan o sayfa açılır. Bu araç kodu tarayıcınızda oluşturur; girdiğiniz bağlantı Buaze sunucularına gönderilmez.',
+      steps: [
+        {
+          title: 'Bağlantınızı yapıştırın',
+          body: 'QR kodun açacağı adresi girin: Google yorum bağlantınız, menünüz, rezervasyon sayfanız ya da web siteniz. Başına “https://” yazmazsanız araç kendisi ekler.',
+        },
+        {
+          title: 'Kartı düzenleyin',
+          body: 'İsterseniz işletmenizin adını ve QR kodun üstünde görünecek kısa bir başlık yazın; örneğin “Deneyiminizi paylaşın” ya da “Menümüz burada”.',
+        },
+        {
+          title: 'Temayı seçin',
+          body: 'Beyaz, lime, koyu veya minimal temalardan masanıza, tezgâhınıza ya da vitrininize uyanı seçin. Kodun kendisi her temada beyaz bir kutu içinde siyah basılır.',
+        },
+        {
+          title: 'İndirin ya da yazdırın',
+          body: 'Kartı PNG olarak indirin ya da A5 sayfaya PDF olarak yazdırın. Kodu kendi tasarımınızda kullanmak isterseniz yalnızca QR kodunu PNG olarak alabilirsiniz.',
+        },
+      ],
+    },
+    tips: {
+      eyebrow: 'Baskı',
+      title: 'QR kodu basarken dikkat edilecekler',
+      lead: 'Kodun her telefonda sorunsuz okunması için birkaç basit kural yeterlidir.',
+      items: [
+        {
+          title: 'Boyutu mesafeye göre seçin',
+          body: 'Masa kartı gibi yakından okutulan yerlerde kodun kenarı en az 2–3 cm olsun. Uzaktan okutulacak afişlerde kodu okutma mesafesinin yaklaşık onda biri kadar büyük basın; 2 metreden okutulacak bir afiş için yaklaşık 20 cm.',
+        },
+        {
+          title: 'Kontrastı koruyun',
+          body: 'Koyu desen açık zemin üzerinde en iyi sonucu verir. Bu araç kodu her temada beyaz kutu içinde siyah basar; kodu kendi tasarımınıza eklerken de bu kontrastı koruyun.',
+        },
+        {
+          title: 'Kenar boşluğunu kırpmayın',
+          body: 'Kodun çevresindeki beyaz boşluk okunmasını kolaylaştırır. Kodu tasarımınıza yerleştirirken bu boşluğu silmeyin, kodun üzerine yazı ya da logo koymayın.',
+        },
+        {
+          title: 'Basmadan önce deneyin',
+          body: 'Kodu en az iki farklı telefonla okutup doğru sayfanın açıldığını kontrol edin. Bağlantı uzadıkça desen sıklaşır; mümkünse kısa ve kalıcı bir adres kullanın.',
+        },
+      ],
+    },
+    compare: {
+      eyebrow: 'Statik ve hesaplı QR',
+      title: 'Statik QR kod ile Buaze QR kodu arasındaki fark',
+      lead: 'Bu sayfadaki araç statik kod üretir. Buaze hesabınızdaki QR kodlar ise müşteriyi önce sizin puan sayfanıza götürür.',
+      staticTitle: 'Bu sayfadaki statik QR kod',
+      staticItems: [
+        'Hedef adres kodun içine yazılır; değiştirmek için yeni kod basmanız gerekir.',
+        'Hesap gerektirmez, tarama verisi tutmaz ve süresi dolmaz.',
+        'Menü, web sitesi ya da tek bir yorum bağlantısı için yeterlidir.',
+      ],
+      accountTitle: 'Buaze hesabınızdaki QR kod',
+      accountItems: [
+        'Müşteri QR kodu okutur ve puan verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) seçtiğiniz platformun yorum sayfası açılır.',
+        'Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        'Kod Buaze sayfanızı açtığı için varsayılan platformu ya da eşiği panelden değiştirdiğinizde yeniden basmanız gerekmez.',
+        '1–3 yıldızlık her geri bildirimde anında e-posta alırsınız; her koda masa veya oda etiketi ekleyebilirsiniz.',
+      ],
+      primary: 'Ücretsiz deneyin',
+      secondary: 'Nasıl çalıştığını görün',
+    },
+    sectors: {
+      eyebrow: 'Sektörler',
+      title: 'QR kodu sektörünüze göre kullanın',
+      lead: 'Sektör sayfalarında QR kodun nereye konacağını, hangi yorum platformlarının öne çıktığını ve müşterilere neler sorulabileceğini anlatıyoruz.',
+      all: `${SECTOR_COUNT} sektör sayfasının hepsini görün`,
+    },
+    faq: {
+      eyebrow: 'Sık sorulan sorular',
+      title: 'QR kod oluşturma hakkında sorular',
+      items: [
+        {
+          q: 'QR kod oluşturmak ücretsiz mi?',
+          a: 'Evet. Bu araçla oluşturduğunuz kodlar ücretsizdir; hesap açmanız gerekmez ve oluşturabileceğiniz kod sayısında sınır yoktur.',
+        },
+        {
+          q: 'Karekod ile QR kod aynı şey mi?',
+          a: 'Evet. Karekod, QR kodun Türkçe karşılığıdır; ikisi de ISO/IEC 18004 standardındaki aynı iki boyutlu barkodu anlatır.',
+        },
+        {
+          q: 'Google yorum bağlantımı nereden bulurum?',
+          a: 'Google İşletme Profiliniz, müşterilerden yorum istemek için paylaşabileceğiniz bir bağlantı sunar; o bağlantıyı buraya yapıştırabilirsiniz. Buaze hesabında ise işletmenizi adıyla aratıp seçmeniz yeterlidir; Google yorum bağlantınızı Buaze hazırlar.',
+        },
+        {
+          q: 'Oluşturduğum QR kodun süresi dolar mı?',
+          a: 'Hayır. Statik kodda adres kodun içine yazılıdır ve arada bir hizmet yoktur. Bağlantı yayında kaldığı sürece kod çalışır; sayfa kaldırılırsa kod da o sayfayı açamaz.',
+        },
+        {
+          q: 'QR kodu bastıktan sonra hedef adresi değiştirebilir miyim?',
+          a: 'Statik kodda hayır; yeni adres için yeni kod oluşturmanız gerekir. Buaze hesabınızdaki QR kodlar Buaze sayfanızı açtığından varsayılan yorum platformunuzu panelden değiştirebilir, kodu yeniden basmadan kullanmaya devam edebilirsiniz.',
+        },
+        {
+          // 1.000 px = QR_PX in src/components/marketing/QRGeneratorForm.tsx.
+          q: 'QR kodu hangi boyutta basmalıyım?',
+          a: 'Masa kartlarında kodun kenarı en az 2–3 cm olsun; uzaktan okutulacak afişlerde okutma mesafesinin yaklaşık onda biri kadar büyük basın. Bu araçtaki QR kod PNG dosyası 1.000 piksel genişliğindedir; masa kartı ve A5 baskı için yeterlidir, büyük afişlerde baskıdan önce bir deneme yapın.',
+        },
+        {
+          q: 'QR kodumu kaç kişinin okuttuğunu görebilir miyim?',
+          a: 'Bu araçla hayır; statik kod tarama verisi tutmaz ve bağlantınız Buaze’ye gönderilmez. Buaze hesabınızdaki QR kodlarla müşterilerin verdiği puanları ve geri bildirimleri panelde görürsünüz.',
+        },
+      ],
+    },
+    ctaTitle: 'QR kodla geri bildirim toplamaya başlayın',
+  },
+  en: {
+    meta: {
+      title: 'Free QR code generator with PNG and PDF download',
+      description:
+        'Create a free QR code without an account: paste your link, choose one of 4 card themes, then download it as a PNG file or print it as an A5 PDF.',
+    },
+    breadcrumb: { label: 'Breadcrumb', home: 'Home', solutions: 'Solutions', current: 'Free QR code generator' },
+    eyebrow: 'Free tool',
+    h1: 'Free QR code generator',
+    lead: 'Turn a link into a QR code, style your card with one of four themes and download it without an account: save it as a PNG or print it on an A5 page as a PDF.',
+    facts: ['No account needed', 'Never expires', 'No scan tracking'],
+    toolLabel: 'QR code generator',
+    how: {
+      eyebrow: 'How it works',
+      title: 'How to create a QR code',
+      lead: 'A QR code is an open standard (ISO/IEC 18004) that turns a link into a square pattern a phone camera can read. The address is written into the code itself, so scanning it opens that page directly. This tool creates the code in your browser; the link you enter is not sent to Buaze’s servers.',
+      steps: [
+        {
+          title: 'Paste your link',
+          body: 'Enter the address the QR code should open: your Google review link, menu, booking page or website. If you leave out “https://”, the tool adds it.',
+        },
+        {
+          title: 'Edit the card',
+          body: 'Optionally add your business name and a short headline above the QR code, such as “Share your experience” or “See our menu”.',
+        },
+        {
+          title: 'Pick a theme',
+          body: 'Choose white, lime, dark or minimal to suit your table, counter or window. In every theme the code itself is printed in black inside a white box.',
+        },
+        {
+          title: 'Download or print',
+          body: 'Download the card as a PNG or print it on an A5 page as a PDF. To use the code in your own design, download just the QR code as a PNG.',
+        },
+      ],
+    },
+    tips: {
+      eyebrow: 'Printing',
+      title: 'What to check before you print a QR code',
+      lead: 'A few simple rules make sure the code scans on every phone.',
+      items: [
+        {
+          title: 'Size it for the distance',
+          body: 'Where people scan up close, such as a table card, make each side at least 2–3 cm. For posters scanned from further away, print the code at about a tenth of the scanning distance: about 20 cm for a poster scanned from 2 metres.',
+        },
+        {
+          title: 'Keep the contrast',
+          body: 'A dark pattern on a light background works best. This tool prints the code in black inside a white box in every theme; keep that contrast when you place the code in your own design.',
+        },
+        {
+          title: 'Don’t crop the margin',
+          body: 'The white margin around the code helps phones read it. Keep it when you place the code in your design, and don’t put text or a logo over the code.',
+        },
+        {
+          title: 'Test before printing',
+          body: 'Scan the code with at least two different phones and check that the right page opens. Longer links make a denser pattern, so use a short, permanent address where you can.',
+        },
+      ],
+    },
+    compare: {
+      eyebrow: 'Static and account QR codes',
+      title: 'A static QR code compared with a Buaze QR code',
+      lead: 'The tool on this page makes static codes. The QR codes in your Buaze account first take the customer to your own rating page.',
+      staticTitle: 'The static QR code on this page',
+      staticItems: [
+        'The destination is written into the code; to change it, you print a new code.',
+        'No account, no scan tracking, and it never expires.',
+        'Enough for a menu, a website or a single review link.',
+      ],
+      accountTitle: 'A QR code in your Buaze account',
+      accountItems: [
+        'The customer scans the QR code and gives a rating. At or above the threshold you set (5 stars by default), your chosen platform’s review page opens.',
+        'Below it, the customer can first send you private feedback; the public review link is shown on the same screen.',
+        'The code opens your Buaze page, so you can change the default platform or the threshold in the panel without reprinting.',
+        'Every 1–3★ piece of feedback sends you an instant e-mail, and you can add a table or room label to each code.',
+      ],
+      primary: 'Start free trial',
+      secondary: 'See how it works',
+    },
+    sectors: {
+      eyebrow: 'Industries',
+      title: 'Use QR codes the way your industry does',
+      lead: 'The industry pages cover where the QR code goes, which review platforms matter most and what you can ask your customers.',
+      all: `See all ${SECTOR_COUNT} industry pages`,
+    },
+    faq: {
+      eyebrow: 'FAQ',
+      title: 'Questions about creating QR codes',
+      items: [
+        {
+          q: 'Is it free to create a QR code?',
+          a: 'Yes. The codes you create with this tool are free; you don’t need an account, and there is no limit on how many codes you create.',
+        },
+        {
+          q: 'Are a QR code and a “karekod” the same thing?',
+          a: 'Yes. Karekod is the Turkish word for QR code; both describe the same two-dimensional barcode defined in the ISO/IEC 18004 standard.',
+        },
+        {
+          q: 'Where do I find my Google review link?',
+          a: 'Your Google Business Profile offers a link you can share to ask customers for reviews; paste that link here. In a Buaze account, you just search for your business by name and select it, and Buaze builds your Google review link.',
+        },
+        {
+          q: 'Does the QR code I create expire?',
+          a: 'No. In a static code the address is written into the code and no service sits in between. The code works as long as the link stays online; if the page is removed, the code can no longer open it.',
+        },
+        {
+          q: 'Can I change the destination after printing the QR code?',
+          a: 'Not with a static code; for a new address you need a new code. The QR codes in your Buaze account open your Buaze page, so you can change your default review platform in the panel and keep using the same printed code.',
+        },
+        {
+          // 1,000 px = QR_PX in src/components/marketing/QRGeneratorForm.tsx.
+          q: 'What size should I print the QR code at?',
+          a: 'On table cards, make each side at least 2–3 cm; for posters scanned from further away, print it at about a tenth of the scanning distance. The QR code PNG from this tool is 1,000 pixels wide, which is enough for table cards and A5 prints; test a print before ordering large posters.',
+        },
+        {
+          q: 'Can I see how many people scanned my QR code?',
+          a: 'Not with this tool: a static code keeps no scan data, and your link is not sent to Buaze. With the QR codes in your Buaze account, you see the ratings and feedback customers leave in the panel.',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting feedback with QR codes',
+  },
+};
+
+const TIP_ICONS = [Maximize2, Contrast, Scissors, ScanLine] as const;
+
+const FOCUS =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+const BTN = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors ${FOCUS}`;
+
+function resolveLocale(raw: string): Locale {
+  return raw === 'en' ? 'en' : 'tr';
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const locale = resolveLocale((await params).locale);
+  return buildSolutionMetadata({ locale, slug: SLUG, ...COPY[locale].meta });
+}
+
+export default async function QRGeneratorPage({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = resolveLocale((await params).locale);
+  const copy = COPY[locale];
+  const base = `/${locale}`;
+  const url = solutionUrl(locale, SLUG);
+  const inLanguage = locale === 'tr' ? 'tr-TR' : 'en-US';
+  const sectorEntries = getSectorEntries(SECTOR_LINKS);
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: copy.how.title,
+    description: copy.how.lead,
+    url,
+    steps: copy.how.steps.map((step) => ({ name: step.title, text: step.body })),
+  });
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      '@id': `${url}#breadcrumb`,
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: copy.breadcrumb.home, item: `${SITE_URL}/${locale}` },
+        { '@type': 'ListItem', position: 2, name: copy.breadcrumb.solutions, item: `${SITE_URL}/${locale}/solutions` },
+        { '@type': 'ListItem', position: 3, name: copy.breadcrumb.current, item: url },
+      ],
+    },
+    ...(howTo ? [howTo] : []),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      '@id': `${url}#faq`,
+      inLanguage,
+      mainEntity: copy.faq.items.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    },
+  ];
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
+    <FeaturePageShell locale={locale} jsonLd={jsonLd}>
+      {/* 1 · Hero */}
+      <section aria-labelledby="qr-tool-title" className="bg-white pb-8 pt-10 sm:pb-10 sm:pt-16">
+        <div className={FEATURE_CONTAINER}>
+          <nav aria-label={copy.breadcrumb.label} className="text-[13px] text-[#737373]">
+            <ol className="flex flex-wrap items-center gap-1.5">
+              <li>
+                <Link href={base} className={`-my-3 inline-flex min-h-[44px] items-center rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}>
+                  {copy.breadcrumb.home}
+                </Link>
+              </li>
+              <li aria-hidden="true">
+                <ChevronRight size={12} className="text-[#A3A3A3]" />
+              </li>
+              <li>
+                <Link
+                  href={`${base}/solutions`}
+                  className={`-my-3 inline-flex min-h-[44px] items-center rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}
+                >
+                  {copy.breadcrumb.solutions}
+                </Link>
+              </li>
+              <li aria-hidden="true">
+                <ChevronRight size={12} className="text-[#A3A3A3]" />
+              </li>
+              <li>
+                <span aria-current="page" className="font-medium text-[#0A0A0A]">
+                  {copy.breadcrumb.current}
+                </span>
+              </li>
+            </ol>
+          </nav>
 
-      <MarketingNavbar locale={locale} t={t} />
-
-      <main>
-        {/* ─── Hero (design 1:1: site-more.jsx:13-21) ─── */}
-        <section className="px-5 sm:px-10 lg:px-12 pt-[60px] pb-10 text-center">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
-          </span>
-          <h1
-            className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[1.02] sm:leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
-          >
-            {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
-          </h1>
-          <p className="mx-auto mt-3.5 max-w-[560px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
-            {isTr
-              ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
-              : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
-          </p>
-
-          {/* Stage 71 §38.151 — QRScanLoader animated teaser. Decorative
-              animated QR placeholder ile müşteri ürünü görselleştirir;
-              gerçek output QRGeneratorForm canvas'ta render edilir.
-              Pulse §11 disipline + framer-motion useReducedMotion (static
-              QR fallback). aria-hidden because QRGeneratorForm canvas
-              role="img" intact (a11y duplicate önleme). */}
-          <div className="mt-8 flex justify-center" aria-hidden="true">
-            <QRScanLoader size={120} scanDurationMs={2200} />
-          </div>
-        </section>
-
-        {/* ─── Generator (design 1:1: site-more.jsx:23-87) ─── */}
-        <section
-          aria-label={isTr ? 'QR kod oluşturucu' : 'QR code generator'}
-          className="px-5 sm:px-10 lg:px-12 pt-5 pb-28 sm:pb-20"
-        >
-          <div className="max-w-[1200px] mx-auto">
-            <QRGeneratorForm locale={locale} />
-          </div>
-        </section>
-
-        {/* ─── QR kod nasıl oluşturulur (AEO: tanımsal + adım listesi) ─── */}
-        <section className="border-t border-[#EDEDED] bg-[#FAFAFA] px-5 sm:px-10 lg:px-12 py-[60px] sm:py-24">
-          <div className="mx-auto max-w-[1100px]">
-            <span className="pulse-eyebrow text-[#A8D62E]">
-              {isTr ? 'NASIL ÇALIŞIR' : 'HOW IT WORKS'}
-            </span>
-            <h2 className="mt-3 text-[28px] sm:text-[40px] font-medium leading-[1.06] tracking-[-0.03em] text-[#0A0A0A]">
-              {isTr ? 'QR kod nasıl oluşturulur?' : 'How do you create a QR code?'}
-            </h2>
-            <p className="mt-5 max-w-[720px] text-[16px] sm:text-[17px] leading-[1.6] text-[#525252]">
-              {isTr
-                ? 'QR kod (Türkçesiyle karekod), bir bağlantıyı kamerayla okunabilen iki boyutlu bir desene çeviren açık bir standarttır. Bir QR kod oluşturmak için yönlendirmek istediğiniz adresi girmeniz yeterlidir: adres kodun içine gömülür ve müşteri telefonunun kamerasıyla okuttuğunda doğrudan o sayfa açılır. Aşağıdaki araç bunu dört adımda, ücretsiz ve üyeliksiz yapar.'
-                : 'A QR code is an open standard that turns a link into a two-dimensional pattern a phone camera can read. To create one you only need the address you want people to land on: it is encoded into the image itself, so scanning opens that page directly. The tool above does this in four steps, free and without an account.'}
+          <div className="mt-8 max-w-[900px] lg:mt-10">
+            <p className="pulse-eyebrow text-[#737373]">{copy.eyebrow}</p>
+            <h1
+              id="qr-tool-title"
+              className="mt-5 text-balance text-[38px] leading-[1.06] tracking-[-0.03em] text-[#0A0A0A] sm:text-[56px] md:text-[52px] lg:text-[60px]"
+            >
+              {copy.h1}
+            </h1>
+            <p className="mt-6 max-w-[640px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+              {copy.lead}
             </p>
-
-            <ol className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {steps.map((st) => (
-                <li key={st.n} className="bz-card p-6">
-                  <span className="pulse-eyebrow text-[#A8D62E]">{st.n}</span>
-                  <h3 className="mt-2 text-[18px] sm:text-[20px] font-medium tracking-[-0.02em] text-[#0A0A0A]">
-                    {st.t}
-                  </h3>
-                  <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{st.d}</p>
+            <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[14px] font-medium text-[#1A1A1A]">
+              {copy.facts.map((fact) => (
+                <li key={fact} className="inline-flex items-center gap-2">
+                  <Check size={16} aria-hidden="true" className="text-[#0A0A0A]" strokeWidth={2.5} />
+                  {fact}
                 </li>
               ))}
-            </ol>
+            </ul>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ─── Statik vs dinamik (ürün köprüsü + iç linkleme) ─── */}
-        <section className="px-5 sm:px-10 lg:px-12 py-[60px] sm:py-24">
-          <div className="mx-auto max-w-[1100px]">
-            <h2 className="text-[28px] sm:text-[40px] font-medium leading-[1.06] tracking-[-0.03em] text-[#0A0A0A]">
-              {isTr
-                ? 'Statik karekod mu, dinamik QR mı?'
-                : 'Static or dynamic QR code?'}
-            </h2>
-            <p className="mt-5 max-w-[720px] text-[16px] leading-[1.6] text-[#525252]">
-              {isTr
-                ? 'Buradaki araç statik karekod üretir: hedef adres kodun içine yazılır, kimseye bağlı değildir ve süresi dolmaz. Basıp unutabileceğiniz kullanımlar için doğru seçimdir. Hedefi sonradan değiştirmek, kaç kişinin taradığını görmek veya puana göre farklı platformlara yönlendirmek istiyorsanız dinamik QR gerekir — bunlar Buaze hesabının içinde yönetilir.'
-                : 'The tool here generates a static QR code: the destination is written into the image, depends on nothing else and never expires. That is the right choice for print-and-forget use. If you need to change the destination later, see how many people scanned it, or route people to different platforms by rating, you need a dynamic QR code — those are managed inside a Buaze account.'}
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                href={`/${locale}/features`}
-                className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center px-6 text-[14px]"
-              >
-                {isTr ? 'Dinamik QR özelliklerine bak' : 'See dynamic QR features'}
-              </Link>
-              <Link
-                href={`/${locale}/how-it-works`}
-                className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center px-6 text-[14px]"
-              >
-                {isTr ? 'Akış nasıl işliyor?' : 'How the flow works'}
-              </Link>
-            </div>
+      {/* 2 · The tool */}
+      <section aria-label={copy.toolLabel} className="bg-white pb-[60px] pt-6 sm:pb-24 sm:pt-8">
+        <div className={FEATURE_CONTAINER}>
+          <QRGeneratorForm locale={locale} />
+        </div>
+      </section>
 
-            <h3 className="mt-14 text-[20px] sm:text-[24px] font-medium tracking-[-0.02em] text-[#0A0A0A]">
-              {isTr ? 'Hangi işletmeler kullanıyor?' : 'Who uses it?'}
-            </h3>
-            <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {useCases.map((u) => (
-                <Link
-                  key={u.t}
-                  href={u.href}
-                  className="bz-card pulse-card-hover block p-6 transition-transform"
+      {/* 3 · How to create a QR code (steps feed the HowTo JSON-LD) */}
+      <section aria-labelledby="qr-how-title" className={`bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading id="qr-how-title" eyebrow={copy.how.eyebrow} title={copy.how.title} lead={copy.how.lead} />
+          <ol className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+            {copy.how.steps.map((step, i) => (
+              <li key={step.title} id={`step-${i + 1}`} className={`${FEATURE_CARD} scroll-mt-28`}>
+                <span
+                  aria-hidden="true"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
                 >
-                  <div className="text-[17px] font-medium tracking-[-0.02em] text-[#0A0A0A]">
-                    {u.t}
-                  </div>
-                  <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{u.d}</p>
-                </Link>
-              ))}
+                  {i + 1}
+                </span>
+                <h3 className="mt-5 text-[19px] leading-[1.3] text-[#0A0A0A]">{step.title}</h3>
+                <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* 4 · Print advice */}
+      <section aria-labelledby="qr-tips-title" className={`bg-white ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading id="qr-tips-title" eyebrow={copy.tips.eyebrow} title={copy.tips.title} lead={copy.tips.lead} />
+          <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
+            {copy.tips.items.map((tip, i) => {
+              const Icon = TIP_ICONS[i % TIP_ICONS.length];
+              return (
+                <li key={tip.title} className={FEATURE_CARD}>
+                  <span
+                    aria-hidden="true"
+                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+                  >
+                    <Icon size={20} strokeWidth={2} />
+                  </span>
+                  <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">{tip.title}</h3>
+                  <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{tip.body}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* 5 · Static code vs a Buaze account code */}
+      <section aria-labelledby="qr-compare-title" className={`bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="qr-compare-title"
+            eyebrow={copy.compare.eyebrow}
+            title={copy.compare.title}
+            lead={copy.compare.lead}
+          />
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-2">
+            <div className={FEATURE_CARD}>
+              <h3 className="text-[20px] leading-[1.25] text-[#0A0A0A]">{copy.compare.staticTitle}</h3>
+              <ul className="mt-5 space-y-3">
+                {copy.compare.staticItems.map((item) => (
+                  <li key={item} className="flex gap-3 text-[15px] leading-[1.6] text-[#525252]">
+                    <span aria-hidden="true" className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#A3A3A3]" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-[20px] border border-[#0A0A0A] bg-white p-6 sm:p-8">
+              <h3 className="text-[20px] leading-[1.25] text-[#0A0A0A]">{copy.compare.accountTitle}</h3>
+              <ul className="mt-5 space-y-3">
+                {copy.compare.accountItems.map((item) => (
+                  <li key={item} className="flex gap-3 text-[15px] leading-[1.6] text-[#333333]">
+                    <Check size={16} aria-hidden="true" className="mt-1 shrink-0 text-[#0A0A0A]" strokeWidth={2.5} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-        </section>
-
-        {/* ─── SSS (FAQPage JSON-LD ile eşleşir) ─── */}
-        <section className="border-t border-[#EDEDED] bg-[#FAFAFA] px-5 sm:px-10 lg:px-12 py-[60px] sm:py-24">
-          <div className="mx-auto max-w-[860px]">
-            <h2 className="text-[28px] sm:text-[40px] font-medium leading-[1.06] tracking-[-0.03em] text-[#0A0A0A]">
-              {isTr ? 'Sıkça sorulan sorular' : 'Frequently asked questions'}
-            </h2>
-            <dl className="mt-9 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
-              {faqs.map((f) => (
-                <div key={f.q} className="py-6">
-                  <dt className="text-[16px] sm:text-[17px] font-medium leading-[1.4] tracking-[-0.01em] text-[#0A0A0A]">
-                    {f.q}
-                  </dt>
-                  <dd className="mt-2.5 text-[15px] leading-[1.65] text-[#525252]">{f.a}</dd>
-                </div>
-              ))}
-            </dl>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={`${base}/auth/register`}
+              rel="nofollow"
+              className={`${BTN} bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]`}
+            >
+              {copy.compare.primary}
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+            <Link
+              href={`${base}/how-it-works`}
+              className={`${BTN} border border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]`}
+            >
+              {copy.compare.secondary}
+            </Link>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+      {/* 6 · Industry pages */}
+      <section aria-labelledby="qr-sectors-title" className={`bg-white ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="qr-sectors-title"
+            eyebrow={copy.sectors.eyebrow}
+            title={copy.sectors.title}
+            lead={copy.sectors.lead}
+          />
+          <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            {sectorEntries.map((entry) => {
+              const Icon = entry.Icon;
+              return (
+                <li
+                  key={entry.slug}
+                  className="group relative flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#F2F2F2] text-[#0A0A0A]"
+                    >
+                      <Icon size={18} strokeWidth={2} />
+                    </span>
+                    <h3 className="min-w-0 flex-1 text-[18px] leading-[1.25] text-[#0A0A0A]">
+                      <Link
+                        href={`${base}/solutions/${entry.slug}`}
+                        className="after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none"
+                      >
+                        {entry.name[locale]}
+                      </Link>
+                    </h3>
+                    <ArrowRight
+                      size={16}
+                      aria-hidden="true"
+                      className="shrink-0 text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0A0A0A] motion-reduce:transition-none"
+                    />
+                  </div>
+                  {entry.where ? (
+                    <p className="mt-4 text-[14px] leading-[1.55] text-[#525252]">{entry.where[locale]}</p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-8">
+            <Link href={`${base}/solutions`} className={FEATURE_TEXT_LINK}>
+              {copy.sectors.all}
+              <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      {/* 7 · FAQ (same array as the FAQPage JSON-LD) */}
+      <FeatureFaqSection locale={locale} eyebrow={copy.faq.eyebrow} title={copy.faq.title} items={copy.faq.items} />
+
+      {/* 8 · Closing CTA */}
+      <FeatureCtaSection locale={locale} title={copy.ctaTitle} />
+    </FeaturePageShell>
   );
 }

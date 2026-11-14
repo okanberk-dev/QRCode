@@ -1,7 +1,7 @@
 // AI insight cache — Upstash Redis (production) + in-memory fallback (dev /
-// preview). Aynı senaryo değerleri için tek bir OpenAI çağrısı (24 saat
-// TTL); aynı kullanıcı 2 kez form doldurursa farklı insight gelmez —
-// hem maliyet (OpenAI token) hem tutarlılık kazanımı.
+// preview). One OpenAI call per identical estimate (24 h TTL): the same
+// visitor submitting the same values twice gets the same summary — saves
+// tokens and keeps the report consistent.
 //
 // CLAUDE.md §15 ROI insight + §14.2 Upstash pattern.
 
@@ -18,42 +18,38 @@ const REST_TOKEN =
 const redis: Redis | null =
   REST_URL && REST_TOKEN ? new Redis({ url: REST_URL, token: REST_TOKEN }) : null;
 
-const TTL_SECONDS = 24 * 60 * 60; // 24 saat
+const TTL_SECONDS = 24 * 60 * 60; // 24 h
 
-// In-memory fallback (cold start'ta sıfırlanır; tek-instance lifetime'i
-// yeterli — hot reload'larda yine cache hit alırız).
+// In-memory fallback (reset on cold start; one instance lifetime is enough).
 const memCache = new Map<string, { insight: RoiInsight; expiresAt: number }>();
 
 /**
- * Cache key — kullanıcının kimliği (email > restaurant name) +
- * insight'ı belirleyen 6 girdi + 7 hesap çıktısı + locale. Slider'larda
- * tek bir piksel oynama bile yeni hesap üretir (RoiPdfData zaten
- * round'lanmış değerlerle gelir, dolayısıyla hash stable).
+ * Cache key — who asked (email, else business name), the business name (it
+ * appears in the summary text), sector, plan and every calculator input. The
+ * inputs are already normalised and rounded by roi-model, so the hash is
+ * stable. `v:2` keeps entries from the old projection model out.
  */
 export function buildInsightCacheKey(
   data: RoiPdfData,
   locale: 'tr' | 'en',
 ): string {
+  const { inputs } = data;
   const parts = [
+    'v:2',
     `loc:${locale}`,
     `id:${(data.email || data.restaurantName).toLowerCase().trim()}`,
+    `name:${data.restaurantName.toLowerCase().trim()}`,
     `sec:${data.sector}`,
-    `cust:${data.monthlyCustomers}`,
-    `tick:${data.avgTicket}`,
-    `goo:${data.currentGoogle.toFixed(1)}`,
-    `low:${data.lowRatingsPerMonth}`,
-    `pl:${[...data.platforms].sort().join(',')}`,
-    `plan:${data.plan}`,
-    // Hesap çıktıları cache key'e dahil — projeksiyon farklıysa farklı
-    // insight; aynıysa aynı.
-    `rev:${Math.round(data.reviewers)}`,
-    `flt:${Math.round(data.filteredLowReviews)}`,
-    `pgo:${data.projectedGoogle.toFixed(1)}`,
-    `roi:${data.roiMultiple.toFixed(1)}`,
+    `plan:${data.planName ?? ''}:${inputs.planMonthlyUsd ?? 'none'}`,
+    `c:${inputs.monthlyCustomers}`,
+    `r:${inputs.ratingRatePct}`,
+    `s:${inputs.replySharePct}`,
+    `m:${inputs.minutesManual}`,
+    `d:${inputs.minutesWithDraft}`,
+    `h:${inputs.hourlyCostUsd}`,
   ];
-  const raw = parts.join('|');
-  // SHA-256 → 16-char hex prefix; collision pratikte sıfır.
-  const hash = createHash('sha256').update(raw).digest('hex').slice(0, 16);
+  // SHA-256 → 16-char hex prefix; collisions are practically impossible.
+  const hash = createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16);
   return `roi:insight:${hash}`;
 }
 
@@ -93,15 +89,12 @@ export async function setCachedInsight(
     insight,
     expiresAt: Date.now() + TTL_SECONDS * 1000,
   });
-  // In-memory cache temizlik — Map sınırsız büyümesin (Vercel serverless
-  // tek instance ~50 MB heap; her entry ~500 bytes, 100K entry rahat).
-  // Yine de küçük bir cap koyalım: 5000 entry sonrası en eski silinir.
+  // Keep the in-memory map bounded: drop the oldest entry past 5,000.
   if (memCache.size > 5_000) {
     const firstKey = memCache.keys().next().value;
     if (firstKey) memCache.delete(firstKey);
   }
 }
 
-// Lead deduplication: insight cache hit'i zaten "bu senaryo son 24 saatte
-// gelmişti" anlamına gelir; ayrı API gerek yok — caller `getCachedInsight`
-// dönüşünü `cached !== null` ile kontrol eder.
+// Lead de-duplication: a cache hit already means "this estimate arrived in the
+// last 24 h"; callers check `getCachedInsight(...) !== null`.
