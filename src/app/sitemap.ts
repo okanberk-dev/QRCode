@@ -160,7 +160,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const seenArticleKeys = new Set<string>();
   try {
     const dbArticles = await prisma.helpArticle.findMany({
-      where: { isPublished: true },
+      // Rows whose category was removed (e.g. api-webhook) return 404 on
+      // the help pages, so they must not be listed either.
+      where: { isPublished: true, category: { in: HELP_CATEGORIES.map((c) => c.slug) } },
       select: { slug: true, locale: true, updatedAt: true },
     });
     dbArticles.forEach((a) => {

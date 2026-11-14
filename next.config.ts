@@ -232,6 +232,24 @@ const nextConfig: NextConfig = {
         destination: '/:locale/blog',
         permanent: true,
       },
+      // 2026-11 (Stage 172): help articles that described features Buaze
+      // does not have (API keys, webhooks, Slack routing, tags/assignment,
+      // 2FA, group billing…) were removed. Each old URL goes to the article
+      // that answers the same question truthfully.
+      {
+        source:
+          '/:locale(tr|en)/help/:slug(api-key-basics|webhook-events|webhook-payload-anatomy|rate-limit-strategy|sandbox-and-staging|integration-resilience-runbook)',
+        destination: '/:locale/help/csv-export-bi',
+        permanent: true,
+      },
+      { source: '/:locale(tr|en)/help/campaign-qr-utm', destination: '/:locale/help/qr-platform-table-links', permanent: true },
+      { source: '/:locale(tr|en)/help/tags-and-assignment', destination: '/:locale/help/review-search-and-filters', permanent: true },
+      { source: '/:locale(tr|en)/help/slack-discord-webhook-routing', destination: '/:locale/help/notification-emails', permanent: true },
+      { source: '/:locale(tr|en)/help/usage-thresholds-alerts', destination: '/:locale/help/plans-trial-upgrade', permanent: true },
+      { source: '/:locale(tr|en)/help/invoice-vat-and-titles', destination: '/:locale/help/invoices-cancelation', permanent: true },
+      { source: '/:locale(tr|en)/help/multi-account-and-franchise-billing', destination: '/:locale/help/multi-location-management', permanent: true },
+      { source: '/:locale(tr|en)/help/two-factor-and-session-management', destination: '/:locale/help/security-best-practices', permanent: true },
+      { source: '/:locale(tr|en)/help/category/api-webhook', destination: '/:locale/help', permanent: true },
       {
         source: '/:locale(tr|en)/legal/kvkk-aydinlatma',
         destination: '/:locale/kvkk',

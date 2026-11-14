@@ -1079,7 +1079,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Masa etiketi',
             paragraphs: [
-              '**Masa numarası** alanına en fazla 20 karakter yazabilirsiniz; harf, rakam, kısa çizgi ve alt çizgi kullanılır (örneğin A1, BAHCE-3). Etiket, düşük puan e-postasında ve CSV dışa aktarımındaki “Masa No” sütununda görünür. Yalnızca masa için değil, bir alan ya da nokta için de kullanabilirsiniz (örneğin PAKET, KASA).',
+              '**Masa numarası** alanına en fazla 20 karakter yazabilirsiniz; harf, rakam, kısa çizgi ve alt çizgi kullanılır (örneğin A1, BAHCE-3). Etiket, düşük puan e-postasında ve CSV dışa aktarımındaki “QR etiketi” sütununda görünür. Yalnızca masa için değil, bir alan ya da nokta için de kullanabilirsiniz (örneğin PAKET, KASA).',
             ],
           },
           {
@@ -1136,7 +1136,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Table label',
             paragraphs: [
-              'The **Table number** field takes up to 20 characters: letters, numbers, hyphens and underscores (for example A1, PATIO-3). The label appears in the low-rating e-mail and in the “Masa No” (table) column of the CSV export. You can use it for an area or a spot as well as a table (for example DELIVERY, TILL).',
+              'The **Table number** field takes up to 20 characters: letters, numbers, hyphens and underscores (for example A1, PATIO-3). The label appears in the low-rating e-mail and in the “QR etiketi” (QR label) column of the CSV export. You can use it for an area or a spot as well as a table (for example DELIVERY, TILL).',
             ],
           },
           {

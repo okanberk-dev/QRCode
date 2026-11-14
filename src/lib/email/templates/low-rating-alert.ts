@@ -111,7 +111,7 @@ export async function renderLowRatingAlert(
     resolveDisplayTimeZone(params.timeZone),
   );
   const subTitle = params.branch
-    ? `${escapeHtml(params.restaurantName)} · ${escapeHtml(params.branch)}${params.tableNumber ? ` · ${isTr ? 'Masa' : 'Table'} ${escapeHtml(params.tableNumber)}` : ''}`
+    ? `${escapeHtml(params.restaurantName)} · ${escapeHtml(params.branch)}${params.tableNumber ? ` · QR: ${escapeHtml(params.tableNumber)}` : ''}`
     : escapeHtml(params.restaurantName);
 
   // Star row — nowrap so a narrow card never splits it 3 + 2.

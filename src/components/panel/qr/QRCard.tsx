@@ -280,7 +280,9 @@ export function QRCard({
         reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(blob);
       });
-      const w = window.open("", "_blank", "noopener,noreferrer");
+      // No "noopener" here: with it window.open returns null, so we could
+      // never write the print page. The opener is cut right after opening.
+      const w = window.open("", "_blank");
       if (!w) {
         setDownloadError(
           isTr
@@ -292,6 +294,7 @@ export function QRCard({
       // Minimal printable HTML — A5 portrait, image centred. Print dialog
       // auto-opens 250ms after load to give the browser time to paint.
       const title = `QR · ${item.name}`;
+      w.opener = null;
       w.document.open();
       w.document.write(`<!doctype html>
 <html lang="${isTr ? "tr" : "en"}">

@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Generate CSV with Platform, Kaynak and KVKK columns
-    const header = ['ID', 'Tarih', 'Puan', 'KVKK Onayı', 'Platform', 'Kaynak', 'Yorum', 'Restoran', 'Şube', 'Masa No'];
+    const header = ['ID', 'Tarih', 'Puan', 'KVKK Onayı', 'Platform', 'Kaynak', 'Yorum', 'İşletme', 'Şube', 'QR etiketi'];
     // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
     const esc = (v: string) => csvCell(v);
     const rows = feedbacks.map((f) => [

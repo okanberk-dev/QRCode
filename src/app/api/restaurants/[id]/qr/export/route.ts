@@ -45,7 +45,7 @@ export async function GET(
       }
     });
 
-    const header = ['ID', 'Tarih', 'Restoran', 'Masa No', 'Platform', 'Servis Tipi', 'Hedef URL'];
+    const header = ['ID', 'Tarih', 'İşletme', 'QR etiketi', 'Platform', 'Servis Tipi', 'Hedef URL'];
     // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
     const esc = (v: string) => csvCell(v);
     

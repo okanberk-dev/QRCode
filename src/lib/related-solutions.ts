@@ -55,7 +55,7 @@ export const RELATED_SOLUTIONS_LIST: readonly RelatedSolution[] = [
   { slug: 'real-estate', Icon: HomeIcon, tr: 'Emlak ofisleri', en: 'Real estate agencies' },
   { slug: 'auto-service', Icon: Car, tr: 'Oto servisler', en: 'Auto repair shops' },
   { slug: 'schools', Icon: GraduationCap, tr: 'Okullar ve kurslar', en: 'Schools and courses' },
-  { slug: 'retail', Icon: ShoppingBag, tr: 'Perakende ve yerel hizmetler', en: 'Retail and local services' },
+  { slug: 'retail', Icon: ShoppingBag, tr: 'Perakende mağazalar', en: 'Retail stores' },
 ];
 
 /**

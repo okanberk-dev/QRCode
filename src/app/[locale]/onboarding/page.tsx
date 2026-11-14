@@ -582,8 +582,8 @@ function QrStep({
         </FormRow>
         <p className="mt-4 text-[12px] text-[#525252]">
           {isTr
-            ? 'Tasarımı seç, PDF + PNG + SVG olarak indir. Masaya yapıştır — kurulum biter.'
-            : "Pick a design, download PDF + PNG + SVG, stick it to the table, you're done."}
+            ? 'Tasarımı seç, PNG olarak indir ya da PDF olarak yazdır. Masaya yapıştır, kurulum biter.'
+            : "Pick a design, download a PNG or print to PDF, put it on the table and you're done."}
         </p>
       </div>
       <div
@@ -617,7 +617,7 @@ function QrStep({
             {isTr ? 'Deneyiminizi paylaşın' : 'Share your experience'}
           </p>
           <p className="pulse-eyebrow mt-1 opacity-70">
-            buaze.co/r/{(data.bizName || 'your-biz').toLowerCase().replace(/\s+/g, '-').slice(0, 18)}
+            buaze.com/r/{(data.bizName || 'your-biz').toLowerCase().replace(/\s+/g, '-').slice(0, 18)}
           </p>
         </div>
       </div>

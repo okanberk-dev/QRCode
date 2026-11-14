@@ -954,7 +954,7 @@ function IntroScreen({
             letterSpacing: '0.04em',
           }}
         >
-          KVKK uyumlu · Yanıtların doğrudan işletmeye iletilir
+          Yanıtların yalnızca işletmeye iletilir
         </p>
       </div>
     </div>
