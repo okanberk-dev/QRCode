@@ -67,25 +67,19 @@ export function ContactFloat({ locale }: { locale: string }) {
   // visits see the float on first paint without waiting for the probe).
   // Hook lives at the top to comply with rules-of-hooks; the early
   // return below consults `isLoggedIn` after pathname guards.
+  // /contact already shows the full contact form, so the bubble would only
+  // repeat it.
   const hiddenByPath =
     current.startsWith(`${base}/auth`) ||
     current.startsWith(`${base}/onboarding`) ||
-    current.startsWith(`${base}/dashboard`);
+    current.startsWith(`${base}/dashboard`) ||
+    current === `${base}/contact`;
   // No auth probe on routes where the bubble never renders (dashboard pages
   // would otherwise hit /api/auth/me on every load for nothing).
   const { isLoggedIn, pending: authPending } = useMarketingAuth(!hiddenByPath);
 
   const [state, setState] = useState<WidgetState>('fab');
   const [showBubble, setShowBubble] = useState(false);
-
-  // Stage 61 §38.142 — StickyCtaBar visibility listener.
-  // StickyCtaBar fires `buaze:sticky-cta-visibility` CustomEvent on
-  // mount/scroll/dismiss. Burada tüketip ContactFloat'ı dynamic olarak
-  // yukarı kaydırıyoruz; aksi halde md+ desktop'ta sticky CTA açıkken
-  // FAB + open form sticky bandın arkasında kalıp X close button
-  // gözükmüyordu (kullanıcı raporu). Mobile'da sticky CTA `hidden md:block`
-  // — aşağıda md: prefix ile yalnız desktop offset uygulanır.
-  const [stickyCtaVisible, setStickyCtaVisible] = useState(false);
 
   // Form state
   const [loading, setLoading] = useState(false);
@@ -144,23 +138,6 @@ export function ContactFloat({ locale }: { locale: string }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [state]);
-
-  // Stage 61 §38.142 — StickyCtaBar visibility listener.
-  // CustomEvent contract: `detail.visible: boolean`. Sticky CTA bandının
-  // ContactFloat'ı kapatmasını önler (kullanıcı raporu: çarpı işareti
-  // gözükmüyordu). md+ desktop'ta sticky CTA visible iken FAB/open form
-  // ~140px yukarı kayar (sticky height ~120px + 20px breathing).
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ visible: boolean }>).detail;
-      if (typeof detail?.visible === 'boolean') {
-        setStickyCtaVisible(detail.visible);
-      }
-    };
-    window.addEventListener('buaze:sticky-cta-visibility', handler);
-    return () => window.removeEventListener('buaze:sticky-cta-visibility', handler);
-  }, []);
 
   // Hide on auth + onboarding + dashboard (owner panel) — bu sayfalarda
   // form gürültü olur (kullanıcı zaten bir akışı tamamlıyor) veya panel
@@ -270,13 +247,9 @@ export function ContactFloat({ locale }: { locale: string }) {
         // kullanıcı raporu "chat baloncuğu gözükmüyor" — FAB env() jitter
         // sırasında viewport altına kayıyordu. Yeni paternde wrapper
         // bottom: 0 constant; sadece padding-bottom reflow olur → fixed
-        // re-position yok. md:+ desktop'ta md:pb-0 override + md:bottom-6
-        // veya md:bottom-[148px] (Stage 58 §38.139 + Stage 61 §38.142
-        // sticky CTA visibility-aware dual offset intact).
+        // re-position yok. md:+ desktop'ta md:pb-0 override + md:bottom-6.
         // Pulse §11 + §38.74 + §38.160 mobile safe-area paterni reuse.
-        className={`fixed right-4 bottom-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))] md:right-6 md:pb-0 z-50 flex flex-col items-end gap-3 transition-[bottom,padding-bottom] duration-300 ease-out ${
-          stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'
-        }`}
+        className="fixed right-4 bottom-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))] md:right-6 md:bottom-6 md:pb-0 z-50 flex flex-col items-end gap-3 transition-[bottom,padding-bottom] duration-300 ease-out"
       >
         {showBubble && !footerInView && (
           <div
@@ -426,15 +399,7 @@ export function ContactFloat({ locale }: { locale: string }) {
 
   // Stage 79 §38.157 — Desktop overflow fix: flex column layout
   // (header shrink-0 + body flex-1 min-h-0 overflow-y-auto + footer
-  // shrink-0). Outer dialog max-h dinamik: stickyCtaVisible iken md+
-  // viewport - 280px (header 120 + footer 50 + bottom offset 148 +
-  // breathing 22 ≈ 340; 280 ≈ tighter calc), sakin durumda md+
-  // viewport - 110px (mevcut Stage 58 mobile baseline). Kullanıcı
-  // raporu: "açılır konuşma balonunu masaüstü versiyonda tam sığmıyor
-  // aşağıya kaydırdığım" — sticky CTA + open form üst üste binince
-  // form viewport top'undan taşıyordu, şimdi flex column içinde body
-  // shrinker olarak kalır; ana dialog max-h viewport sınırını respekt
-  // ediyor.
+  // shrink-0); the dialog's max-h keeps it inside the viewport.
   return (
     <div
       role="dialog"
@@ -445,14 +410,9 @@ export function ContactFloat({ locale }: { locale: string }) {
       // raporu "chat baloncuğu gözükmüyor"). margin-bottom kullanılır
       // (padding-bottom outer rounded-3xl border + body shadow ile çakışır).
       // Body padding-bottom intact (form + footer için ayrı concern).
-      // sm:+ desktop sticky CTA dual offset intact (Stage 58 §38.139 +
-      // Stage 61 §38.142). Mobile margin-bottom = 96px nav clearance +
-      // safe-area; sm:+ override `sm:mb-0` ile.
-      className={`bz-fade-in fixed right-4 bottom-0 left-4 z-50 mb-[calc(96px+env(safe-area-inset-bottom,0px))] sm:mb-0 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,margin-bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
-        stickyCtaVisible
-          ? 'md:bottom-[148px] md:max-h-[calc(100dvh-280px)]'
-          : 'md:bottom-6 md:max-h-[calc(100dvh-110px)]'
-      }`}
+      // Mobile margin-bottom = 96px nav clearance + safe-area; sm:+
+      // override `sm:mb-0` ile.
+      className="bz-fade-in fixed right-4 bottom-0 left-4 z-50 mb-[calc(96px+env(safe-area-inset-bottom,0px))] sm:mb-0 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,margin-bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px]"
       style={{
         boxShadow:
           '0 28px 64px -18px rgba(10,10,10,0.32), 0 4px 12px rgba(10,10,10,0.06)',

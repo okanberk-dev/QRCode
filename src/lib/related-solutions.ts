@@ -41,21 +41,21 @@ export interface RelatedSolution {
 }
 
 export const RELATED_SOLUTIONS_LIST: readonly RelatedSolution[] = [
-  { slug: 'restaurants', Icon: Utensils, tr: 'Restoran & Kafeler', en: 'Restaurants & Cafes' },
-  { slug: 'delivery', Icon: Truck, tr: 'Paket Servisi', en: 'Delivery' },
+  { slug: 'restaurants', Icon: Utensils, tr: 'Restoranlar ve kafeler', en: 'Restaurants and cafés' },
+  { slug: 'delivery', Icon: Truck, tr: 'Paket servis', en: 'Delivery' },
   { slug: 'hotels', Icon: Hotel, tr: 'Oteller', en: 'Hotels' },
-  { slug: 'boutique-hotels', Icon: Building2, tr: 'Butik Oteller', en: 'Boutique Hotels' },
-  { slug: 'healthcare', Icon: Stethoscope, tr: 'Sağlık Klinikleri', en: 'Healthcare Clinics' },
-  { slug: 'dentists', Icon: Stethoscope, tr: 'Diş Klinikleri', en: 'Dental Clinics' },
-  { slug: 'beauty-salon', Icon: Scissors, tr: 'Güzellik Salonları', en: 'Beauty Salons' },
-  { slug: 'aesthetic', Icon: Sparkles, tr: 'Estetik & Kozmetik', en: 'Aesthetic & Cosmetics' },
-  { slug: 'gym', Icon: Dumbbell, tr: 'Spor Salonları', en: 'Gyms & Fitness' },
-  { slug: 'veterinary', Icon: PawPrint, tr: 'Veterinerler', en: 'Veterinary Clinics' },
-  { slug: 'law-firms', Icon: Scale, tr: 'Hukuk Firmaları', en: 'Law Firms' },
-  { slug: 'real-estate', Icon: HomeIcon, tr: 'Emlak', en: 'Real Estate' },
-  { slug: 'auto-service', Icon: Car, tr: 'Araç Servisleri', en: 'Auto Services' },
-  { slug: 'schools', Icon: GraduationCap, tr: 'Okullar & Kurslar', en: 'Schools & Courses' },
-  { slug: 'retail', Icon: ShoppingBag, tr: 'Perakende & Yerel Hizmetler', en: 'Retail & Local Services' },
+  { slug: 'boutique-hotels', Icon: Building2, tr: 'Butik oteller', en: 'Boutique hotels' },
+  { slug: 'healthcare', Icon: Stethoscope, tr: 'Sağlık klinikleri', en: 'Healthcare clinics' },
+  { slug: 'dentists', Icon: Stethoscope, tr: 'Diş klinikleri', en: 'Dental clinics' },
+  { slug: 'beauty-salon', Icon: Scissors, tr: 'Güzellik salonları', en: 'Beauty salons' },
+  { slug: 'aesthetic', Icon: Sparkles, tr: 'Estetik klinikler', en: 'Aesthetic clinics' },
+  { slug: 'gym', Icon: Dumbbell, tr: 'Spor salonları', en: 'Gyms and fitness studios' },
+  { slug: 'veterinary', Icon: PawPrint, tr: 'Veteriner klinikleri', en: 'Veterinary clinics' },
+  { slug: 'law-firms', Icon: Scale, tr: 'Hukuk büroları', en: 'Law firms' },
+  { slug: 'real-estate', Icon: HomeIcon, tr: 'Emlak ofisleri', en: 'Real estate agencies' },
+  { slug: 'auto-service', Icon: Car, tr: 'Oto servisler', en: 'Auto repair shops' },
+  { slug: 'schools', Icon: GraduationCap, tr: 'Okullar ve kurslar', en: 'Schools and courses' },
+  { slug: 'retail', Icon: ShoppingBag, tr: 'Perakende ve yerel hizmetler', en: 'Retail and local services' },
 ];
 
 /**

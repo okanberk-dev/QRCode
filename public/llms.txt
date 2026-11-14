@@ -62,9 +62,10 @@ drafts.
 - https://www.buaze.com/tr/pricing — plans and prices
 - https://www.buaze.com/tr/roi — ROI estimate calculator
 - https://www.buaze.com/tr/compare — comparison with static QR codes and spreadsheets
-- https://www.buaze.com/tr/solutions — sector pages (restaurants, delivery, hotels, boutique
-  hotels, clinics, dentists, aesthetic clinics, beauty salons, gyms, veterinary clinics, law
-  firms, real estate, auto services, schools, retail)
+- https://www.buaze.com/tr/solutions — sector pages (restaurants and cafés, delivery, hotels,
+  boutique hotels, healthcare clinics, dental clinics, aesthetic clinics, beauty salons, gyms,
+  veterinary clinics, law firms, real estate agencies, auto repair shops, schools and courses,
+  retail)
 - https://www.buaze.com/tr/solutions/qr-generator — free QR code generator (no account)
 - https://www.buaze.com/tr/faq — frequently asked questions
 - https://www.buaze.com/tr/help — help center
