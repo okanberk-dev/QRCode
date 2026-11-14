@@ -28,7 +28,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'QR kodunuzu oluşturup yerleştirin',
           body:
-            'Panelde kliniğiniz için QR kod oluşturun ve Google yorum bağlantınızı ekleyin. QR kodu PNG olarak indirip etikete bastırabilir ya da PDF olarak yazdırabilirsiniz.',
+            'Panelde kliniğiniz için QR kod oluşturun ve Google yorum bağlantınızı ekleyin. QR kodu PNG olarak indirip etikete ya da karta bastırabilirsiniz.',
         },
         {
           title: 'Hayvan sahibi puan verir',
@@ -68,7 +68,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'Kliniğiniz muayenenin yanında pet kuaför veya pansiyon hizmeti de veriyorsa her bölüm için ayrı QR oluşturun ve “Masa numarası” alanına “Kuaför” gibi bir etiket yazın. Etiket, düşük puan e-postasında ve CSV dosyasında görünür.',
+        'Kliniğiniz muayenenin yanında pet kuaför veya pansiyon hizmeti de veriyorsa her bölüm için ayrı QR oluşturun ve “Masa numarası” alanına “Pansiyon” gibi bir etiket yazın (etikette boşluk ve Türkçe karakter kullanılmaz). Etiket, düşük puan e-postasında ve CSV dosyasında görünür.',
     },
     uses: {
       title: 'Veteriner kliniğine yarayan panel özellikleri',
@@ -136,7 +136,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Hayvan sahibinin verileri ve KVKK',
       paragraphs: [
         'Formda ad ve e-posta isteğe bağlıdır; hayvan sahibi yanıt almak isterse e-posta adresini bırakır. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir.',
-        'Veritabanı AB’de (Frankfurt) tutulur. E-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI ile taslak istediğinizde ya da otomatik taslakları açtığınızda geri bildirim metni, taslak üretmek için OpenAI’a gönderilir.',
+        'Veritabanı AB’de (Frankfurt) tutulur. E-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz.',
       ],
     },
     faq: {
@@ -187,7 +187,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Create and place your QR code',
           body:
-            'Create a QR code for your clinic in the panel and add your Google review link. Download it as PNG to print on a sticker, or print it to PDF.',
+            'Create a QR code for your clinic in the panel and add your Google review link. Download it as a PNG and print it on a sticker or a card.',
         },
         {
           title: 'The pet owner gives a rating',
@@ -227,7 +227,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'If your clinic also offers grooming or boarding, create a QR code for each service and type a label such as “Grooming” in the “Table number” field. The label shows in the low-rating e-mail and the CSV file.',
+        'If your clinic also offers grooming or boarding, create a QR code for each service and type a label such as “Boarding” in the “Table number” field (labels can’t contain spaces or accented letters). The label shows in the low-rating e-mail and the CSV file.',
     },
     uses: {
       title: 'Panel features that help a vet clinic',
@@ -295,7 +295,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: "Pet owners’ data and KVKK",
       paragraphs: [
         'Name and e-mail are optional on the form; owners who want a reply leave an e-mail address. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days.',
-        'The database is kept in the EU (Frankfurt). Some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. When you ask Pulse AI for a draft or turn on automatic drafts, the feedback text is sent to OpenAI to generate it.',
+        'The database is kept in the EU (Frankfurt). Some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business.',
       ],
     },
     faq: {

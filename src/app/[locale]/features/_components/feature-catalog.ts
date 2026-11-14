@@ -55,7 +55,7 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'feedback',
     name: { tr: 'Yorum yönetimi', en: 'Review management' },
     summary: {
-      tr: 'Müşterilerinizin QR kodla bıraktığı puan ve yorumlar tek gelen kutusunda toplanır. 1–3 yıldızlık geri bildirimde anında e-posta alır, müşteri e-posta adresini bıraktıysa yanıtınızı e-postayla gönderirsiniz. Google işletme profilinizin puanını, yorum sayısını ve Google’ın paylaştığı en fazla 5 yorumu da panelde görürsünüz.',
+      tr: 'Müşterilerinizin QR kodla bıraktığı puan ve yorumlar tek gelen kutusunda toplanır. 1–3 yıldızlık geri bildirimde anında e-posta alırsınız; müşteri e-posta adresini bıraktıysa yanıtınız ona e-postayla gider. Google işletme profilinizin puanını, yorum sayısını ve Google’ın paylaştığı en fazla 5 yorumu da panelde görürsünüz.',
       en: 'The ratings and comments your customers leave through your QR codes land in one inbox. You get an instant e-mail for 1–3★ feedback and, when the customer left an address, you reply by e-mail. Your Google Business Profile rating, review count and up to 5 reviews Google shares also appear in the panel.',
     },
     short: {
@@ -71,7 +71,7 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'feedback',
     name: { tr: 'Pulse AI', en: 'Pulse AI' },
     summary: {
-      tr: 'Düşük puanlı geri bildirime sıcak, resmi ya da özür dileyen tonda 2–4 cümlelik bir yanıt taslağı hazırlar. Taslaklar Türkçe ya da İngilizcedir; düzenler, onaylar ve kendiniz gönderirsiniz.',
+      tr: 'Düşük puanlı geri bildirime sıcak, resmi ya da özür dileyen tonda 2–4 cümlelik bir yanıt taslağı hazırlar. Taslaklar Türkçe ya da İngilizcedir; taslağı siz düzenler, onaylar ve gönderirsiniz.',
       en: 'Drafts a 2–4 sentence reply to low-rated feedback in a warm, formal or apologetic tone. Drafts are in Turkish or English; you edit them, approve them and send them yourself.',
     },
     short: {
@@ -151,7 +151,7 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'operations',
     name: { tr: 'Denetim Merkezi', en: 'Audit Center' },
     summary: {
-      tr: 'Hijyen, açılış ve vardiya devri kontrol listeleriyle işe alım testlerini hazır şablonlardan ya da sıfırdan kurun. Ekibiniz giriş yapmadan telefondan doldurur; puanı ve en sık sorun çıkan maddeleri siz görürsünüz.',
+      tr: 'Hijyen, açılış ve vardiya devri kontrol listelerini ya da işe alım testlerini hazır şablonlardan (şu an Türkçe) veya sıfırdan oluşturun. Ekibiniz giriş yapmadan telefondan doldurur; puanı ve en sık sorun çıkan maddeleri siz görürsünüz.',
       en: 'Set up hygiene, opening and shift-handover checklists and hiring tests from scratch or from ready templates (currently in Turkish). Your team fills them in on a phone without logging in, and you see the score and the items that fail most often.',
     },
     short: {
@@ -167,12 +167,12 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'free',
     name: { tr: 'Ücretsiz QR kod oluşturucu', en: 'Free QR code generator' },
     summary: {
-      tr: 'Hesap açmadan statik bir QR kod oluşturun, 4 kart temasından birini seçip PNG olarak indirin. Statik kodun taramaları takip edilmez; geri bildirim toplamak için QR kodunuzu panelde oluşturursunuz.',
-      en: 'Make a static QR code without an account, pick one of 4 card themes and download it as PNG. Scans of a static code are not tracked; to collect feedback, you create your QR code in the panel.',
+      tr: 'Hesap açmadan statik bir QR kod oluşturun, 4 kart temasından birini seçip PNG olarak indirin ya da A5 boyutunda PDF olarak yazdırın. Statik kodun taramaları takip edilmez; geri bildirim toplamak için QR kodunuzu panelde oluşturursunuz.',
+      en: 'Make a static QR code without an account, pick one of 4 card themes and download it as PNG or print it as an A5 PDF. Scans of a static code are not tracked; to collect feedback, you create your QR code in the panel.',
     },
     short: {
-      tr: 'Hesap açmadan statik QR kod; 4 kart teması, PNG indirme.',
-      en: 'A static QR code without an account; 4 card themes, PNG download.',
+      tr: 'Hesap açmadan statik QR kod; 4 kart teması, PNG indirme ve PDF yazdırma.',
+      en: 'A static QR code without an account; 4 card themes, PNG download and PDF printing.',
     },
     linkLabel: { tr: 'QR kod oluşturun', en: 'Create a QR code' },
   },

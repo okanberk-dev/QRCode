@@ -1,393 +1,354 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { ArrowRight, Check, ChevronRight, Scale, ShieldCheck, Sparkles, BarChart3 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import { getTranslations } from '@/lib/translations';
+import { Building2, FileDown, ShieldCheck, Sparkles } from 'lucide-react';
+import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
+import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
-import { buildSolutionSchema } from '@/lib/solution-schema';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { getRelatedSolutions } from '@/lib/related-solutions';
+import { IllusLaw } from '../_components/sector-illustrations';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`. Reads only
+// `params`, so the page stays static. Sector "legal" drives the platform list
+// (Google only); there is no legal-specific survey template, so the layout
+// shows the universal ones.
+//
+// The reply examples in the FAQ were checked against `checkReplyRisk`
+// (src/lib/reply-risk.ts): "Avukatımız sizi arayacak." and "Our lawyer will
+// call you tomorrow." are blocked, "Yarın sizi arayacağız." passes.
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Hukuk Ofisi İtibar Yönetimi'
-      : 'Law Firm Reputation Management';
-  const description =
-    locale === 'tr'
-      ? 'Danışmanlık sonrası müvekkilden geri bildirim toplayın. Google arama sıralamanızı yükseltin. Etik kurallara uyumlu, saygın bir dijital profil.'
-      : 'Collect feedback from clients after every consultation. Rise in Google search rankings. Ethics-compliant, reputable digital presence.';
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/solutions/law-firms`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/solutions/law-firms',
-        en: 'https://www.buaze.com/en/solutions/law-firms',
-        'x-default': 'https://www.buaze.com/tr/solutions/law-firms',
-      },
+const SLUG = 'law-firms';
+
+const CONTENT: Record<Locale, SolutionPageContent> = {
+  tr: {
+    name: 'Hukuk büroları',
+    meta: {
+      title: 'Hukuk büroları için QR ile müvekkil geri bildirimi',
+      description:
+        'Hukuk büronuz için QR kod: müvekkil görüşmeden sonra puan verir, eşiğin altında önce size yazabilir. Google yorum bağlantısı, yanıt kontrolü, gizlilik notları.',
     },
-    openGraph: {
-      type: 'website',
-      siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/solutions/law-firms`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    eyebrow: 'Hukuk büroları',
+    h1: 'Hukuk büroları için QR ile müvekkil geri bildirimi ve Google yorumları',
+    lead:
+      'Müvekkil görüşmeden sonra resepsiyondaki ya da kartvizitinizin arkasındaki QR kodu okutur ve hizmetinizi puanlar. Eşik ve üzerindeki puanlarda Google yorum sayfanız açılır; eşiğin altında müvekkil önce size yazabilir, herkese açık yorum bağlantısı aynı ekranda görünür. Müvekkile gönderdiğiniz yanıtlar ise çıkmadan önce kontrol edilir.',
+    flow: {
+      title: 'Büroda QR ile geri bildirim akışı',
+      steps: [
+        {
+          title: 'Ofisiniz için QR hazırlayın',
+          body:
+            'Her ofis ya da kullanım yeri için ayrı QR oluşturup etiket verebilirsiniz (ör. Resepsiyon, Kartvizit, E-posta). Etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür.',
+        },
+        {
+          title: 'Müvekkil puan verir',
+          body:
+            'Müvekkil QR kodu okutur ve 1–5 yıldız verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) Google yorum sayfanız açılır. Eşiğin altındaki puanlarda müvekkil önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        },
+        {
+          title: 'Düşük puanlardan hemen haberdar olun',
+          body:
+            '1–3 yıldızlık geri bildirimde anında e-posta alırsınız. Müvekkil e-posta adresini bıraktıysa yanıtınızı panelden yazılı gönderirsiniz; dosyayla ilgili konuları telefonda ya da yüz yüze konuşmak daha doğru olur.',
+        },
+      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    placements: {
+      title: 'Büroda QR kodu nereye koymalı',
+      lead: 'Müvekkil hizmeti çoğu zaman görüşmeden çıkarken ya da birkaç gün sonra değerlendirir.',
+      items: [
+        {
+          title: 'Bekleme alanı ve resepsiyon',
+          body:
+            'Resepsiyondaki bir QR standı, görüşmeden çıkan müvekkilin gözüne çarpar. Müvekkil isterse hemen, isterse daha sonra okutur.',
+        },
+        {
+          title: 'Kartvizit arkası',
+          body:
+            'Kartvizitinizin arka yüzündeki QR kod, müvekkile görüşmeyi düşünüp sonra değerlendirme fırsatı verir.',
+        },
+        {
+          title: 'Belge teslim zarfı',
+          body:
+            'Sözleşme veya belge örneklerini teslim ettiğiniz zarfa küçük bir QR etiketi yapıştırabilirsiniz.',
+        },
+        {
+          title: 'Görüşme sonrası e-posta',
+          body:
+            'Paneldeki QR kartından bağlantıyı kopyalayıp görüşme sonrası e-postanıza ekleyebilirsiniz. Ayrı bir etiket verirseniz bu kanaldan gelen geri bildirimleri ayırırsınız.',
+        },
+      ],
+      tip:
+        'Etiketlerde müvekkil adı, dosya numarası veya dava türü kullanmayın; etiket uyarı e-postasında ve dışa aktarılan dosyalarda görünür.',
     },
-  };
+    uses: {
+      title: 'Büro panelinde işinize yarayanlar',
+      items: [
+        {
+          icon: ShieldCheck,
+          title: 'Yanıtlar gönderilmeden kontrol edilir',
+          body:
+            'Müvekkile giden her yanıt; hakaret, tehdit, yasal işlemle korkutma ve T.C. kimlik, IBAN ya da kart numarası gibi kişisel veriler açısından kontrol edilir. Takılan yanıt gönderilmez ve hangi kuralın tetiklendiği gösterilir.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Pulse AI taslakları yalnız istediğinizde',
+          body:
+            'Otomatik taslaklar varsayılan olarak kapalıdır. Taslak istediğinizde 2–4 cümlelik bir metin hazırlanır; metni düzenler, onaylarsanız gönderirsiniz.',
+        },
+        {
+          icon: Building2,
+          title: 'Her ofisi ayrı izleyin',
+          body:
+            'Her ofisi ayrı işletme olarak ekleyip İşletmeler tablosunda son 30 günün geri bildirim sayısını ve ortalama puanını karşılaştırırsınız. Ekip üyelerine yalnız çalıştıkları ofislere erişim verebilirsiniz.',
+        },
+        {
+          icon: FileDown,
+          title: 'Kayıtlarınızı dışa aktarın',
+          body:
+            'Geri bildirimleri CSV dosyası olarak indirebilir, işletmeleriniz ve geri bildirimleriniz dahil hesap verilerinizi JSON dosyası olarak dışa aktarabilirsiniz.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Hukuk büroları için yorum platformu',
+      lead:
+        'Sektör olarak “Hukuk Ofisi”ni seçtiğinizde panel yalnız Google yorum bağlantısını önerir. Büronuzu Google’da arayan biri, yorumlarınızı Google İşletme Profilinizde görür.',
+      note:
+        'Google yorumlarına panelden yanıt vermek Google’ın erişim onayına bağlıdır ve şu an genel kullanıma açık değildir; Google yorumlarına İşletme Profilinizden yanıt verirsiniz. Google puanınızı, yorum sayınızı ve Google’ın gösterdiği en fazla 5 yorumu ise panelde Google hesabıyla giriş yapmadan görebilirsiniz.',
+    },
+    questions: {
+      title: 'Müvekkillere ne sormalı',
+      lead:
+        'Hukuk büroları için ayrı bir hazır anket şablonu yok; genel şablonlardan biriyle başlayıp kendi sorularınızı eklersiniz. Sorularda dosya ayrıntısı istemeyin.',
+      items: [
+        { text: 'Görüşmeniz randevu saatinde başladı mı?', type: 'multiple_choice' },
+        { text: 'Dosyanızdaki sonraki adımlar size açıkça anlatıldı mı?', type: 'multiple_choice' },
+        { text: 'Ücret ve masraflar hakkında yeterince bilgilendirildiniz mi?', type: 'multiple_choice' },
+        { text: 'Bize ulaşmanın kolaylığını nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Büromuzu bir yakınınıza önerme olasılığınız nedir?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'KVKK öz-denetim (işletme)',
+          body: 'Büronun kendi KVKK durumunu gözden geçirmesi için kısa liste: aydınlatma metni, açık rıza, personel eğitimi, VERBİS ve veri ihlali bildirimi.',
+        },
+        {
+          title: 'Yeni personel 1. gün oryantasyon kontrolü',
+          body: 'Yeni başlayan avukat, stajyer ve asistanların ilk gün listesinin tamamlandığını kontrol etmek için.',
+        },
+      ],
+    },
+    privacy: {
+      title: 'Müvekkil gizliliği ve meslek kuralları',
+      paragraphs: [
+        'Geri bildirim formunda dosya bilgisi için bir alan yoktur, ancak müvekkil serbest metin alanına istediğini yazabilir. Bu metin hiçbir yorum platformuna gönderilmez; panelinizde görünür.',
+        'Formda KVKK aydınlatma metninin bağlantısı yer alır ve pazarlama izni varsayılan olarak işaretsizdir. IP adresleri 90 gün sonra anonimleştirilir.',
+        'Veritabanı AB’de (Frankfurt) tutulur. E-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz.',
+        'Avukatlık mesleğinde reklam ve iş sağlama yasakları vardır (Avukatlık Kanunu ve Türkiye Barolar Birliği kuralları). Müvekkillerden yorum istemeden ya da yorumları tanıtımda kullanmadan önce bağlı olduğunuz baronun görüşünü alın; Buaze bu konuda hukuki değerlendirme yapmaz.',
+      ],
+    },
+    faq: {
+      title: 'Hukuk büroları için sık sorulan sorular',
+      items: [
+        {
+          q: 'Avukat bazında rapor alabilir miyim?',
+          a: 'Hayır, avukat bazında rapor yoktur. QR etiketi (ör. Resepsiyon, Kartvizit) düşük puan e-postasında ve CSV dosyasında görünür. Ofisleri ayrı işletme olarak eklerseniz her ofisin analitiğini ayrı görürsünüz.',
+        },
+        {
+          q: 'Yanıtım neden gönderilmedi?',
+          a: 'Yanıt kontrolü, aynı cümlede “dava”, “mahkeme”, “avukat” veya “icra” gibi bir terimle “sizi”, “sizinle”, “hakkınızda” gibi müvekkile yönelen bir ifade geçtiğinde yanıtı durdurur; amaç müşteriyi yasal işlemle korkutan yanıtları engellemektir. Örneğin “Avukatımız sizi arayacak.” cümlesi gönderilmez, “Yarın sizi arayacağız.” cümlesi gönderilir. Kontrol geçersiz kılınamaz; dosyayla ilgili konuları telefonda ya da yüz yüze konuşun.',
+        },
+        {
+          q: 'Google yorumlarına panelden yanıt verebilir miyim?',
+          a: 'Bu özellik Google’ın erişim onayına bağlıdır ve şu an genel kullanıma açık değildir. Google yorumlarına Google İşletme Profiliniz üzerinden yanıt vermeye devam edersiniz.',
+        },
+        {
+          q: 'Müvekkil yorumlarını tanıtımda kullanabilir miyim?',
+          a: 'Bu konu avukatlık mesleğinin reklam kurallarına tabidir; kullanmadan önce baronuzun görüşünü alın. Buaze hukuki uygunluk değerlendirmesi yapmaz.',
+        },
+        {
+          q: 'Düşük puan veren müvekkil Google’da yorum yazabilir mi?',
+          a: 'Evet. Eşiğin altında puan veren müvekkil önce size özel geri bildirim yazabilir; Google yorum bağlantısı aynı ekranda görünür ve müvekkil isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
+        },
+        {
+          q: 'Yabancı müvekkillerimiz formu hangi dilde görür?',
+          a: 'Form, telefonun dili İngilizce ise İngilizce, diğer dillerde Türkçe açılır. Buaze şu an yalnız Türkçe ve İngilizce destekler.',
+        },
+      ],
+    },
+    ctaTitle: 'Büronuzda müvekkil geri bildirimi toplamaya başlayın',
+  },
+  en: {
+    name: 'Law firms',
+    meta: {
+      title: 'QR client feedback and Google reviews for law firms',
+      description:
+        'QR codes for law firms: clients rate you after a meeting and can write to you first below your threshold. Google review link, reply checks and privacy notes.',
+    },
+    eyebrow: 'Law firms',
+    h1: 'QR client feedback and Google reviews for law firms',
+    lead:
+      'After a meeting, clients scan the QR code at reception or on the back of your business card and rate your service. At or above your threshold, your Google review page opens; below it, the client can write to you first, and the public review link is shown on the same screen. Replies you send to clients are checked before they go out.',
+    flow: {
+      title: 'How QR feedback works at a law firm',
+      steps: [
+        {
+          title: 'Prepare QR codes for your office',
+          body:
+            'Create a separate QR code for each office or place you use it and give it a label (for example Reception, Card or E-mail). The label shows in the low-rating e-mail and the feedback CSV file.',
+        },
+        {
+          title: 'The client gives a rating',
+          body:
+            'The client scans the QR code and gives 1–5 stars. At or above the threshold you set (5 stars by default), your Google review page opens. Below it, the client can first send you private feedback; the public review link is shown on the same screen.',
+        },
+        {
+          title: 'Hear about low ratings at once',
+          body:
+            'Every 1–3★ piece of feedback sends you an instant e-mail. If the client left an e-mail address, you reply in writing from the panel; matters about the case itself are better discussed by phone or in person.',
+        },
+      ],
+    },
+    placements: {
+      title: 'Where to put the QR code at a law firm',
+      lead: 'Clients often judge the service as they leave a meeting, or a few days later.',
+      items: [
+        {
+          title: 'Waiting area and reception',
+          body:
+            'A QR stand at reception catches the eye of clients leaving a meeting. They can scan it right away or later.',
+        },
+        {
+          title: 'Back of the business card',
+          body:
+            'A QR code on the back of your business card lets clients think the meeting over and rate it later.',
+        },
+        {
+          title: 'Document envelope',
+          body:
+            'You can put a small QR sticker on the envelope you use to hand over contracts or copies of documents.',
+        },
+        {
+          title: 'Follow-up e-mail',
+          body:
+            'Copy the link from the QR card in the panel and add it to your follow-up e-mail. Give it its own label to tell feedback from this channel apart.',
+        },
+      ],
+      tip:
+        'Don’t use client names, case numbers or case types in labels; the label appears in the alert e-mail and in exported files.',
+    },
+    uses: {
+      title: 'Panel features that help a law firm',
+      items: [
+        {
+          icon: ShieldCheck,
+          title: 'Replies are checked before they are sent',
+          body:
+            'Every reply to a client is checked for insults, threats, intimidation with legal action, and personal data such as Turkish ID, IBAN or card numbers. A reply that is caught is not sent, and you see which rule it triggered.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Pulse AI drafts only when you ask',
+          body:
+            'Automatic drafts are off by default. When you ask for a draft, a 2–4 sentence text is prepared; you edit it and send it once you approve.',
+        },
+        {
+          icon: Building2,
+          title: 'Track each office separately',
+          body:
+            'Add each office as its own business and compare the last 30 days’ feedback count and average rating in the businesses table. You can give team members access only to the offices they work in.',
+        },
+        {
+          icon: FileDown,
+          title: 'Export your records',
+          body:
+            'Download feedback as a CSV file, or export your account data, including your businesses and feedback, as a JSON file.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'The review platform for law firms',
+      lead:
+        'When you pick “Legal” as your industry, the panel only suggests a Google review link. People who search for your firm on Google see your reviews on your Google Business Profile.',
+      note:
+        'Replying to Google reviews from the panel depends on Google granting access and is not generally available yet; you reply to Google reviews from your Business Profile. You can still see your Google rating, review count and up to 5 reviews Google shows in the panel, without a Google sign-in.',
+    },
+    questions: {
+      title: 'What to ask your clients',
+      lead:
+        'There is no ready-made survey template for law firms; you start from one of the general templates and add your own questions. Don’t ask for details about the case.',
+      items: [
+        { text: 'Did your meeting start at the scheduled time?', type: 'multiple_choice' },
+        { text: 'Were the next steps in your matter clearly explained?', type: 'multiple_choice' },
+        { text: 'Were you given enough information about fees and expenses?', type: 'multiple_choice' },
+        { text: 'How would you rate how easy it was to reach us?', type: 'rating' },
+        { text: 'How likely are you to recommend our firm to someone close to you?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'KVKK self-check (business)',
+          body: 'A short list for the firm to review its own data protection position: privacy notice, explicit consent, staff training, VERBİS and breach notification.',
+        },
+        {
+          title: 'New staff day-one orientation check',
+          body: 'To check that the first-day list is complete for new lawyers, trainees and assistants.',
+        },
+      ],
+    },
+    privacy: {
+      title: 'Client confidentiality and professional rules',
+      paragraphs: [
+        'The feedback form has no field for case details, but clients can write anything in the free-text box. That text is not sent to any review platform; you see it in your panel.',
+        'The form links to the KVKK privacy notice, and the marketing consent box is unticked by default. IP addresses are anonymised after 90 days.',
+        'The database is kept in the EU (Frankfurt). Some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business.',
+        'Lawyers in Turkey are bound by bans on advertising and soliciting work (the Attorneys’ Act and the rules of the Union of Turkish Bar Associations). Ask your bar association before you ask clients for reviews or use reviews in promotion; Buaze doesn’t give legal advice on this.',
+      ],
+    },
+    faq: {
+      title: 'Law firm FAQ',
+      items: [
+        {
+          q: 'Can I get reports per lawyer?',
+          a: 'No, there are no per-lawyer reports. The QR label (for example Reception or Card) shows in the low-rating e-mail and the CSV file. If you add each office as its own business, you see analytics for each office separately.',
+        },
+        {
+          q: 'Why wasn’t my reply sent?',
+          a: 'The reply check stops replies that read like a legal threat to the client, such as “we will sue you” or “our lawyers will…”, and it can also catch ordinary sentences: “Our lawyer will call you tomorrow.” is not sent, while “We will call you tomorrow.” is. In Turkish replies, a sentence that combines a term such as “dava”, “mahkeme” or “avukat” with a word aimed at the client, such as “sizi” or “sizinle”, is stopped too. The check can’t be overridden, so discuss the case itself by phone or in person.',
+        },
+        {
+          q: 'Can I reply to Google reviews from the panel?',
+          a: 'This depends on Google granting access and is not generally available yet. You keep replying to Google reviews from your Google Business Profile.',
+        },
+        {
+          q: 'Can I use client reviews in our promotion?',
+          a: 'This falls under the advertising rules for lawyers, so ask your bar association first. Buaze doesn’t assess legal compliance.',
+        },
+        {
+          q: 'Can a client who gives a low rating still post on Google?',
+          a: 'Yes. A client who rates below your threshold can first send you private feedback; the Google review link is shown on the same screen, and they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.',
+        },
+        {
+          q: 'Which language do foreign clients see the form in?',
+          a: 'The form opens in English if the phone is set to English, and in Turkish for every other language. Buaze currently supports only Turkish and English.',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting client feedback at your firm',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
+  return buildSolutionMetadata({ locale, slug: SLUG, ...CONTENT[locale].meta });
 }
 
-/**
- * 1:1 with .design/site/site-pages4.jsx:LegalSolutionPage (lines 131-195).
- * 2-column hero with document+seal SVG, 4-bullet compliance list, 3-stat grid.
- */
-export default async function LawFirmsSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-  const base = `/${locale}`;
-
-  const bullets = isTr
-    ? [
-        'Avukatlık meslek kurallarına uyumlu',
-        'Yanıltıcı reklam yok',
-        'Müvekkil sırrı korunur',
-        'Organik SEO artışı',
-      ]
-    : [
-        'Bar-ethics compliant',
-        'No misleading advertising',
-        'Client confidentiality preserved',
-        'Organic SEO growth',
-      ];
-
-  const stats = isTr
-    ? [
-        { value: 'KVKK', label: 'Uyumlu geri bildirim formu' },
-        { value: '3 ton', label: 'Pulse AI yanıt taslağı, siz onaylarsınız' },
-        { value: '14 gün', label: 'Ücretsiz deneme' },
-      ]
-    : [
-        { value: 'KVKK', label: 'Compliant feedback form' },
-        { value: '3 tones', label: 'Pulse AI reply drafts, you approve' },
-        { value: '14 days', label: 'Free trial' },
-      ];
-
-  const benefits = isTr
-    ? [
-        { Icon: Scale, h: 'Etik kurallarla uyumlu akış', d: 'Hukuki vekalet ilişkisi sonrası müvekkilden geri bildirim toplamak Türkiye Barolar Birliği reklam yasakları ile uyumlu — danışmanlık kalitesi ve hizmet süreci hakkında, hukuki sonuç vaadi yok.' },
-        { Icon: ShieldCheck, h: 'KVKK + müvekkil gizliliği', d: 'Müvekkil verisi EU veri merkezinde, IP 90 gün retention. Form alanları yalnız deneyim puanı + opsiyonel yorum + opsiyonel iletişim — dava bilgisi, taraf ismi, hukuki detay yok.' },
-        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı (mesleki ton)', d: 'Hukuki ton: ölçülü, profesyonel, dava ayrıntısına girmeyen yanıtlar. Avukat onaylar, otomatik gönderim yok — Baro etik kurallarına uygunluk korunur.' },
-        { Icon: BarChart3, h: 'Avukat + uzmanlık alanı analitiği', d: 'Hangi avukat, hangi uzmanlık (ceza, aile, ticaret), hangi dönem etiketlenir. Müvekkil memnuniyeti uzmanlık bazlı ayrılır; ortak yönetim doğrudan veriden görür.' },
-      ]
-    : [
-        { Icon: Scale, h: 'Bar-association-compliant flow', d: 'Collecting client feedback after a consultation complies with Türkiye Barolar Birliği advertising restrictions — it covers consultation quality and service process, never legal-outcome promises.' },
-        { Icon: ShieldCheck, h: 'KVKK + client confidentiality', d: 'Client data stored in an EU data center, IP retained for 90 days. Form fields only collect experience rating + optional comment + optional contact — no case info, party names, or legal detail.' },
-        { Icon: Sparkles, h: 'Pulse AI reply drafts (professional tone)', d: 'Legal tone: measured, professional, no case detail. The lawyer approves; nothing auto-sent — bar association ethics are preserved.' },
-        { Icon: BarChart3, h: 'Lawyer + practice-area analytics', d: 'Which lawyer, which practice area (criminal, family, commercial), which period is tagged. Client satisfaction splits by practice area; managing partners see it directly from data.' },
-      ];
-
-  const faqs: FaqItem[] = isTr
-    ? [
-        { q: 'Hukuk ofisi için Buaze Türkiye Barolar Birliği reklam yasaklarına uygun mu?', a: 'Akış müvekkilden danışmanlık kalitesi + hizmet süreci hakkında geri bildirim toplar — hukuki sonuç vaadi, dava kazanma garantisi, başarı oranı gibi reklam yasakları kapsamındaki ifadeler form\'da yer almaz. Yorum yanıt taslakları da bu kurallara uygun (mesleki ton, dava ayrıntısı yok).' },
-        { q: 'Müvekkil gizliliği nasıl korunuyor?', a: 'Form alanları sadece deneyim puanı + opsiyonel yorum + opsiyonel iletişim bilgisi (e-posta veya telefon) toplar. Dava bilgisi, taraf isimleri, davanın konusu gibi gizli alanlar yer almaz. Müvekkil verileri EU veri merkezinde saklanır, KVKK aydınlatma metni form altında görünür ve onay açık (opt-in) şekilde alınır.' },
-        { q: 'Avukat performansını takip eder miyim?', a: 'Evet. QR oluştururken avukat etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi avukat + hangi uzmanlık alanı + ay loglanır. Yönetim ortağı analytics raporundan müvekkil memnuniyetini avukat bazlı ayrıştırabilir.' },
-        { q: 'Düşük puan veren müvekkil ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müvekkiller ek olarak hukuk ofisinizle özel paylaşım yapma seçeneği görür. Müvekkil her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (ek danışmanlık, faturalama netleştirme, vb.) çözme şansı kazanırsınız.' },
-        { q: 'Birden fazla avukat / şube nasıl yönetilir?', a: 'Her şube için ayrı işletme oluştur veya tek işletme + avukat etiketleri kullan. Analytics avukat ve şube bazlı ayrılır. Yönetim ortağı: hangi şubenin müvekkil memnuniyeti yüksek, hangi avukatın yanıt süresi düşük — doğrudan görür.' },
-      ]
-    : [
-        { q: 'Is Buaze compliant with the Bar Association advertising rules for law firms?', a: 'The flow collects feedback from clients about consultation quality + service process — never about case outcomes, win promises, or success rates that fall under advertising restrictions. The reply drafts also follow these rules (professional tone, no case detail).' },
-        { q: 'How is client confidentiality protected?', a: 'Form fields only collect experience rating + optional comment + optional contact (email or phone). No case info, party names, or case subject — those confidential fields do not exist. Client data is stored in an EU data center, the KVKK notice is visible under the form, and consent is opt-in.' },
-        { q: 'Can I track lawyer performance?', a: 'Yes. When generating the QR you can add a lawyer tag (Buaze branch field or a custom URL parameter); when the review arrives, which lawyer + which practice area + month is logged. Managing partners can split client satisfaction per lawyer in the analytics report.' },
-        { q: 'What happens to clients giving low ratings?', a: 'Buaze never blocks or hides any review. Clients giving low ratings additionally see an option to share privately with your firm. The client always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (additional consultation, billing clarification, etc.).' },
-        { q: 'How do I manage multiple lawyers / branches?', a: 'Either create a separate business per branch or use a single business + lawyer tags. Analytics splits per lawyer and per branch. Managing partners see directly: which branch has higher client satisfaction, which lawyer has the longest reply latency.' },
-      ];
-
-  const relatedSolutions = getRelatedSolutions('law-firms', 4);
-
-  const jsonLd = buildSolutionSchema({
-    locale,
-    slug: 'law-firms',
-    industryLabel: isTr ? 'Hukuk Ofisi' : 'Law Firm',
-    serviceName: isTr ? 'Hukuk Ofisi İtibar Yönetimi' : 'Law Firm Reputation Management',
-    description: isTr
-      ? 'Danışmanlık sonrası müvekkilden geri bildirim toplayın. Google arama sıralamanızı yükseltin. Etik kurallara uyumlu, saygın bir dijital profil.'
-      : 'Collect feedback from clients after every consultation. Rise in Google search rankings. Ethics-compliant, reputable digital presence.',
-    faqs,
-  });
-
-  const howTo = buildHowToSchema({
-    locale,
-    name: isTr ? 'Hukuk ofisinde Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a law firm',
-    description: isTr
-      ? 'Danışmanlık sonrası müvekkilden geri bildirim toplamak ve etik kurallara uyumlu profil oluşturmak için adımlar.'
-      : 'Steps to collect feedback after consultations and maintain an ethics-compliant public profile.',
-    url: `https://www.buaze.com/${locale}/solutions/law-firms`,
-    steps: isTr
-      ? [
-          { name: 'Ofisi tanımla', text: 'Hukuk ofisi adı, alanı, adresi ve bildirim e-postasını panelde gir; Google ve baro tarafından kabul edilen platformların yorum bağlantılarını ekle.' },
-          { name: 'Danışmanlık sonrası QR sun', text: 'Danışmanlık odası çıkışı veya fatura altına QR ekle; müvekkil reklamı değil, hizmet kalitesi geri bildirimi topla.' },
-          { name: 'Ortak ve sekreteryayı davet et', text: 'Ortaklar ve sekreteryayı Buaze ekibine ekle; rol bazlı görünürlük müvekkil mahremiyetini korur.' },
-          { name: 'Pulse AI ile resmi tonda yanıt yaz', text: 'Pulse AI yanıtları "formal" tonda taslak üretir — etik kurallara uyumlu, dava ayrıntısı içermez; ortak onaylar ve gönderir.' },
-        ]
-      : [
-          { name: 'Identify the firm', text: 'Enter firm name, practice area, address and notification email; add review links for Google and any bar-approved platforms.' },
-          { name: 'Offer the QR post-consultation', text: 'Place the QR at the consultation-room exit or on the invoice; collect service-quality feedback, not client advertising.' },
-          { name: 'Invite partners and reception', text: 'Add partners and reception staff to your Buaze team; role-based visibility preserves client confidentiality.' },
-          { name: 'Reply formally via Pulse AI', text: 'Pulse AI drafts replies in a formal tone — ethics-compliant, no case detail; partner approves and sends.' },
-        ],
-  });
-  if (howTo) jsonLd.push(howTo);
-
+export default async function LawFirmsSolutionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
   return (
-    <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Hero — white bg, 2-column with document+seal SVG */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
-          <div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'SEKTÖR · HUKUK OFİSİ' : 'SECTOR · LAW FIRM'}
-            </span>
-            <h1
-              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            >
-              {isTr ? (
-                <>
-                  Müvekkil güveni
-                  <br />
-                  en güçlü
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">referanstır.</span>
-                </>
-              ) : (
-                <>
-                  Client trust is
-                  <br />
-                  the strongest
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">reference.</span>
-                </>
-              )}
-            </h1>
-            <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
-              {isTr
-                ? 'Danışmanlık sonrası müvekkilden geri bildirim toplayın. Google arama sıralamanızı yükseltin. Etik kurallara uyumlu, saygın bir dijital profil oluşturun.'
-                : 'Collect feedback after every consultation. Climb Google search rankings. Build an ethics-compliant, respected digital presence.'}
-            </p>
-
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {bullets.map((b) => (
-                <div key={b} className="flex items-center gap-2 text-[13px] text-[#1A1A1A]">
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
-                    <Check size={10} strokeWidth={3} />
-                  </span>
-                  {b}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-              >
-                {isTr ? 'Ücretsiz başla' : 'Start free'}
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href={`${base}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
-              >
-                {isTr ? 'Demo iste' : 'Request demo'}
-              </Link>
-            </div>
-          </div>
-
-          {/* Document + seal illustration (1:1 with design SVG) */}
-          <div className="flex justify-center lg:justify-end">
-            <svg
-              viewBox="0 0 320 300"
-              className="h-auto w-full max-w-[400px]"
-              aria-hidden
-            >
-              <rect x="60" y="20" width="200" height="260" rx="8" fill="#FAFAFA" stroke="#0A0A0A" strokeWidth="2" />
-              <rect x="60" y="20" width="200" height="32" rx="8" fill="#0A0A0A" />
-              <rect x="60" y="36" width="200" height="16" fill="#0A0A0A" />
-              <rect x="80" y="70" width="100" height="6" rx="3" fill="#0A0A0A" />
-              <rect x="80" y="84" width="140" height="4" rx="2" fill="#D4D4D4" />
-              <rect x="80" y="96" width="120" height="4" rx="2" fill="#D4D4D4" />
-              <rect x="80" y="118" width="120" height="6" rx="3" fill="#0A0A0A" />
-              <rect x="80" y="132" width="150" height="4" rx="2" fill="#D4D4D4" />
-              <rect x="80" y="144" width="100" height="4" rx="2" fill="#D4D4D4" />
-              <path
-                d="M80 195 Q100 185 120 195 Q140 205 160 195"
-                fill="none"
-                stroke="#0A0A0A"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <line x1="80" y1="210" x2="200" y2="210" stroke="#0A0A0A" strokeWidth="1" />
-              <circle cx="240" cy="240" r="32" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2.5" />
-              <path
-                d="M228 240 L236 248 L252 232"
-                fill="none"
-                stroke="#0A0A0A"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {[0, 1, 2, 3, 4].map((i) => {
-                const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
-                return (
-                  <circle
-                    key={i}
-                    cx={240 + Math.cos(a) * 26}
-                    cy={240 + Math.sin(a) * 26}
-                    r="2"
-                    fill="#0A0A0A"
-                  />
-                );
-              })}
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      {/* 3-stat grid */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {stats.map((s) => (
-              <div key={s.label} className="bz-card p-6">
-                <div
-                  className="text-[40px] sm:text-[48px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {s.value}
-                </div>
-                <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits — 4-tile grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
-            {isTr ? 'Hukuk ofisi operasyonuna özel dört kazanç' : 'Four wins built for law firms'}
-          </h2>
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => (
-              <div key={i} className="bz-card p-6 sm:p-7">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
-                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Hukuk ofisi için merak edilenler' : 'Common questions for law firms'}
-          </h2>
-          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
-        </div>
-      </section>
-
-      {/* Resources / Related Solutions */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
-          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
-              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
-              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
-              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
-            ].map((r) => (
-              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
-                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-              </Link>
-            ))}
-          </div>
-          {relatedSolutions.length > 0 && (
-            <>
-              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {relatedSolutions.map((sol) => (
-                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
-                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
-                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="mx-auto max-w-[900px] text-center">
-          <h2
-            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-          >
-            {isTr ? 'Hukuk büronuzun nabzını dinleyin.' : "Listen to your firm's pulse."}
-          </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
-            {isTr
-              ? 'KVKK & GDPR uyumlu · 14 gün ücretsiz · Kredi kartı istemiyoruz'
-              : 'KVKK & GDPR compliant · 14-day free · No credit card'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Ücretsiz başla' : 'Start free'}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <SolutionPageLayout
+      locale={locale}
+      slug={SLUG}
+      sector="legal"
+      content={CONTENT[locale]}
+      illustration={<IllusLaw />}
+    />
   );
 }

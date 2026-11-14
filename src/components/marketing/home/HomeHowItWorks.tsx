@@ -56,7 +56,7 @@ const COPY = {
       },
       {
         title: 'Reply to the feedback',
-        body: 'Private feedback collects in your panel. If the customer left an e-mail address, you reply by e-mail; if not, your reply stays on record in the panel.',
+        body: 'Private feedback arrives in your panel. If the customer left an e-mail address, you reply by e-mail; if not, your reply stays on record in the panel.',
       },
     ],
     mock: {
@@ -181,18 +181,22 @@ export default function HomeHowItWorks({ locale }: { locale: 'tr' | 'en' }) {
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
         <SectionHeader id="how-it-works-title" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
 
-        <ol className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-3">
+        {/* Tablets and small laptops: mockup beside the text inside each card;
+            wide screens: three columns with the mockup on top. */}
+        <ol className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 xl:grid-cols-3">
           {copy.steps.map((step, i) => (
             <li
               key={step.title}
-              className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8"
+              className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8 md:grid md:grid-cols-[minmax(0,260px)_minmax(0,1fr)] md:items-center md:gap-x-8 xl:flex xl:flex-col xl:items-stretch"
             >
               <MockFrame label={copy.sample}>{mocks[i]}</MockFrame>
-              <span className="mt-7 font-mono text-[12px] font-semibold tracking-[0.12em] text-[#737373]">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <h3 className="mt-2 text-[20px] leading-[1.2] text-[#0A0A0A] sm:text-[22px]">{step.title}</h3>
-              <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{step.body}</p>
+              <div className="mt-7 md:mt-0 xl:mt-7">
+                <span className="block font-mono text-[12px] font-semibold tracking-[0.12em] text-[#737373]">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <h3 className="mt-2 text-[20px] leading-[1.2] text-[#0A0A0A] sm:text-[22px]">{step.title}</h3>
+                <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{step.body}</p>
+              </div>
             </li>
           ))}
         </ol>

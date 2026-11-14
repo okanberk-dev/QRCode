@@ -7,11 +7,12 @@ import SectionHeader from './SectionHeader';
 /**
  * Sectors — plain links to eight sector pages plus the full list (replaces
  * the old client-side tab switcher, whose stats and integration claims were
- * not true). Icons and page existence come from RELATED_SOLUTIONS_LIST, the
- * suggested platforms from SECTOR_PLATFORMS (the same whitelist the owner
- * panel uses) and the count from SECTOR_COUNT. "Where the QR goes" lines are
- * placement suggestions, not product features. Each card's title is an H3
- * holding a stretched link, so the link name stays short.
+ * not true). Names, icons and page existence come from RELATED_SOLUTIONS_LIST
+ * (the same labels as the navbar, footer and /solutions), the suggested
+ * platforms from SECTOR_PLATFORMS (the same whitelist the owner panel uses)
+ * and the count from SECTOR_COUNT. "Where the QR goes" lines are placement
+ * suggestions, not product features. Each card's title is an H3 holding a
+ * stretched link, so the link name stays short.
  */
 
 const PLATFORM_NAMES: Record<string, string> = {
@@ -31,7 +32,6 @@ const PLATFORM_NAMES: Record<string, string> = {
 interface FeaturedSector {
   slug: string;
   sector: SectorKey;
-  name: { tr: string; en: string };
   where: { tr: string; en: string };
 }
 
@@ -39,49 +39,41 @@ const FEATURED: readonly FeaturedSector[] = [
   {
     slug: 'restaurants',
     sector: 'food',
-    name: { tr: 'Restoranlar ve kafeler', en: 'Restaurants and cafés' },
     where: { tr: 'masa, adisyon ve paket', en: 'tables, bills and takeaway bags' },
   },
   {
     slug: 'delivery',
     sector: 'delivery',
-    name: { tr: 'Paket servis', en: 'Delivery' },
     where: { tr: 'paket ve sipariş kartı', en: 'packages and order cards' },
   },
   {
     slug: 'hotels',
     sector: 'hospitality',
-    name: { tr: 'Oteller', en: 'Hotels' },
-    where: { tr: 'oda, resepsiyon ve check-out', en: 'rooms, reception and checkout' },
+    where: { tr: 'oda, resepsiyon ve oda kartı kılıfı', en: 'rooms, front desk and key card holders' },
   },
   {
     slug: 'healthcare',
     sector: 'clinic',
-    name: { tr: 'Sağlık klinikleri', en: 'Healthcare clinics' },
     where: { tr: 'resepsiyon ve bekleme salonu', en: 'reception and waiting room' },
   },
   {
     slug: 'beauty-salon',
     sector: 'spa',
-    name: { tr: 'Güzellik salonları', en: 'Beauty salons' },
     where: { tr: 'kasa ve ayna önü', en: 'front desk and mirror stations' },
   },
   {
     slug: 'retail',
     sector: 'retail',
-    name: { tr: 'Perakende', en: 'Retail' },
     where: { tr: 'kasa, fiş ve poşet', en: 'checkout, receipts and bags' },
   },
   {
     slug: 'gym',
     sector: 'fitness',
-    name: { tr: 'Spor salonları', en: 'Gyms and fitness' },
     where: { tr: 'giriş ve soyunma odası', en: 'entrance and locker rooms' },
   },
   {
     slug: 'law-firms',
     sector: 'legal',
-    name: { tr: 'Hukuk büroları', en: 'Law firms' },
     where: { tr: 'bekleme alanı ve kartvizit', en: 'waiting area and business cards' },
   },
 ];
@@ -107,10 +99,13 @@ const COPY = {
   },
 } as const;
 
-function platformSummary(sector: SectorKey): string {
+/** Up to four names in full; longer lists show three, then "ve N platform daha". */
+function platformSummary(sector: SectorKey, locale: 'tr' | 'en'): string {
   const names = SECTOR_PLATFORMS[sector].map((id) => PLATFORM_NAMES[id] ?? id);
+  if (names.length <= 4) return names.join(', ');
   const shown = names.slice(0, 3).join(', ');
-  return names.length > 3 ? `${shown} +${names.length - 3}` : shown;
+  const rest = names.length - 3;
+  return locale === 'tr' ? `${shown} ve ${rest} platform daha` : `${shown} and ${rest} more`;
 }
 
 const CARD =
@@ -142,7 +137,7 @@ export default function HomeSectors({ locale }: { locale: 'tr' | 'en' }) {
                   </span>
                   <h3 className="min-w-0 flex-1 text-[18px] leading-[1.25] text-[#0A0A0A]">
                     <Link href={`/${locale}/solutions/${item.slug}`} className={STRETCHED_LINK}>
-                      {item.name[locale]}
+                      {entry[locale]}
                     </Link>
                   </h3>
                   <ArrowRight
@@ -151,11 +146,12 @@ export default function HomeSectors({ locale }: { locale: 'tr' | 'en' }) {
                     className="shrink-0 text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0A0A0A] motion-reduce:transition-none"
                   />
                 </div>
-                <p className="mt-4 text-[14px] leading-[1.55] text-[#525252]">
+                <p className="mt-4 text-pretty text-[14px] leading-[1.55] text-[#525252]">
                   <span className="font-medium text-[#0A0A0A]">{copy.where}:</span> {item.where[locale]}
                 </p>
-                <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">
-                  <span className="font-medium text-[#0A0A0A]">{copy.platforms}:</span> {platformSummary(item.sector)}
+                <p className="mt-1 text-pretty text-[14px] leading-[1.55] text-[#525252]">
+                  <span className="font-medium text-[#0A0A0A]">{copy.platforms}:</span>{' '}
+                  {platformSummary(item.sector, locale)}
                 </p>
               </li>
             );

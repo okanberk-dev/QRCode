@@ -56,17 +56,22 @@ export default function HomePlatforms({ locale }: { locale: 'tr' | 'en' }) {
       aria-labelledby="platforms-title"
       className="overflow-hidden bg-[#0A0A0A] py-[60px] text-white sm:py-24"
     >
-      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 items-center gap-10 px-5 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-x-16 lg:gap-y-10">
+      {/* Phones: header, orbit, list. Tablets: header on top, list and orbit
+          side by side. Desktop: header and list on the left, orbit on the
+          right across both rows. */}
+      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 items-center gap-10 px-5 sm:px-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-x-10 lg:gap-x-16 lg:gap-y-10">
         <SectionHeader
           id="platforms-title"
           tone="dark"
           eyebrow={copy.eyebrow}
           title={copy.title}
           lead={copy.lead}
-          className="lg:col-start-1 lg:row-start-1 lg:self-end"
+          className="md:col-span-2 lg:col-span-1 lg:col-start-1 lg:row-start-1 lg:self-end"
         />
 
-        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+        {/* The scene's rings sit in the middle of the square box; on phones
+            a small negative margin trims the empty band above and below. */}
+        <div className="-my-4 sm:my-0 md:col-start-2 md:row-start-2 lg:row-span-2 lg:row-start-1">
           <PlatformOrbitStage
             locale={locale}
             theme="dark"
@@ -75,7 +80,7 @@ export default function HomePlatforms({ locale }: { locale: 'tr' | 'en' }) {
           />
         </div>
 
-        <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
+        <div className="md:col-start-1 md:row-start-2 md:self-center lg:self-start">
           <p className="pulse-eyebrow text-white/70">{copy.listLabel}</p>
           <ul className="mt-4 grid max-w-[420px] grid-cols-2 gap-x-6 gap-y-3">
             {PLATFORMS.map((platform) => (

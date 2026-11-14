@@ -69,7 +69,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'Stüdyo, soyunma odası ve resepsiyon için ayrı QR kodlar oluşturun ve “Masa numarası” alanına alanın adını yazın. Etiket, düşük puan e-postasında ve CSV dosyasında görünür; böylece bir şikâyetin nereden geldiğini hemen anlarsınız.',
+        'Stüdyo, soyunma odası ve resepsiyon için ayrı QR kodlar oluşturun ve “Masa numarası” alanına alanın kısa adını yazın (ör. Pilates, Soyunma, Resepsiyon; etikette boşluk ve Türkçe karakter kullanılmaz). Etiket, düşük puan e-postasında ve CSV dosyasında görünür; böylece bir şikâyetin nereden geldiğini hemen anlarsınız.',
     },
     uses: {
       title: 'Salon yönetimini kolaylaştıran panel özellikleri',
@@ -90,7 +90,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Mail,
           title: 'Haftalık özet e-postası',
           body:
-            'Her pazartesi geçen haftanın geri bildirimlerini özetleyen bir e-posta gelir. 1–3 yıldızlık geri bildirimler için ayrıca anında uyarı alırsınız.',
+            'Geri bildirim gelen haftalarda her pazartesi geçen haftayı özetleyen bir e-posta gelir. 1–3 yıldızlık geri bildirimler için ayrıca anında uyarı alırsınız.',
         },
         {
           icon: Users,
@@ -137,7 +137,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Üye verileri ve sağlık bilgisi',
       paragraphs: [
         'Geri bildirim formunda sağlık sorusu yoktur, ancak üyeler yorumlarında sakatlık gibi sağlık bilgilerinden söz edebilir. Sağlık verisi özel nitelikli kişisel veridir; anketlerinizde sağlık durumu sormayın.',
-        'Formda ad ve e-posta isteğe bağlıdır. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB’de (Frankfurt) tutulur; bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir.',
+        'Formda ad ve e-posta isteğe bağlıdır. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB’de (Frankfurt) tutulur; bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz.',
       ],
     },
     faq: {
@@ -229,7 +229,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'Create separate QR codes for the studio, the locker rooms and reception, and type the area name in the “Table number” field. The label shows in the low-rating e-mail and the CSV file, so you know at once where a complaint came from.',
+        'Create separate QR codes for the studio, the locker rooms and reception, and type a short area name in the “Table number” field (for example Studio, Lockers or Reception; labels can’t contain spaces or accented letters). The label shows in the low-rating e-mail and the CSV file, so you know at once where a complaint came from.',
     },
     uses: {
       title: 'Panel features that make running a gym easier',
@@ -250,7 +250,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Mail,
           title: 'Weekly summary e-mail',
           body:
-            'Every Monday you get an e-mail summarising the previous week’s feedback. 1–3★ feedback also triggers an instant alert.',
+            'In weeks with feedback, you get an e-mail every Monday summarising the previous week. 1–3★ feedback also triggers an instant alert.',
         },
         {
           icon: Users,
@@ -297,7 +297,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Member data and health information',
       paragraphs: [
         "The feedback form has no health questions, but members may mention injuries or other health details in their comments. Health data is a special category of personal data, so don’t ask about health in your surveys.",
-        'Name and e-mail are optional on the form. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database is kept in the EU (Frankfurt); some service providers are in the US and are listed in the data processing agreement.',
+        'Name and e-mail are optional on the form. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database is kept in the EU (Frankfurt); some service providers are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business.',
       ],
     },
     faq: {

@@ -15,9 +15,11 @@ import HeroStage from './HeroStage';
 
 const COPY = {
   tr: {
-    title: 'Google yorumlarınızı\nQR kodla toplayın',
+    // \n breaks the line from 640 px up; the no-break space keeps "QR kodla"
+    // together when narrow phones wrap the title onto three lines.
+    title: 'Google yorumlarınızı\nQR kodla toplayın',
     subtitle:
-      'Müşteriniz QR kodu okutup puan verir. Her müşteri Google yorum bağlantınızı görür; belirlediğiniz eşiğin altındaki puanlarda önce size özel geri bildirim yazabilir.',
+      'Müşteriniz QR kodu okutup puan verir. Her müşteri herkese açık yorum bağlantınızı görür; belirlediğiniz eşiğin altındaki puanlarda önce size özel geri bildirim yazabilir.',
     primaryCta: '14 gün ücretsiz deneyin',
     secondaryCta: 'Nasıl çalışır',
     facts: ['Kredi kartı gerekmez', '10 yorum platformu', 'Türkçe ve İngilizce'],
@@ -25,7 +27,7 @@ const COPY = {
   en: {
     title: 'Collect Google reviews\nwith QR codes',
     subtitle:
-      'Your customer scans the QR code and gives a rating. Every customer sees your Google review link; below the threshold you set, they can send you private feedback first.',
+      'Your customers scan the QR code and give a rating. Every customer sees your public review link; below the threshold you set, they can send you private feedback first.',
     primaryCta: 'Start your 14-day free trial',
     secondaryCta: 'See how it works',
     facts: ['No credit card', '10 review platforms', 'Turkish and English'],

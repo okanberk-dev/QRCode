@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import { FeatureCtaSection, FeatureFaqSection } from '@/components/marketing/FeaturePageLayout';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import { buildSolutionSchema } from '@/lib/solution-schema';
 import { getRelatedSolutions, SECTOR_COUNT } from '@/lib/related-solutions';
@@ -35,6 +36,11 @@ import type { Locale } from '@/lib/translations';
  * Section order: hero → how it works → where the QR goes → what the panel
  * does → platforms (the one dark section) → questions and templates →
  * personal data (optional) → FAQ → related pages → closing CTA.
+ *
+ * The FAQ and the closing CTA are the shared marketing blocks from
+ * FeaturePageLayout (the same two-column FAQ as the homepage, feature pages
+ * and the /solutions hub), so every marketing page answers questions and
+ * closes the same way.
  *
  * Server component with no request-time APIs (marketing pages stay ISR).
  * Headings take Space Grotesk from the global h1–h6 rule (no inline fonts).
@@ -110,8 +116,6 @@ const FOCUS =
 const BTN_CORE =
   'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors';
 const BTN = `${BTN_CORE} ${FOCUS}`;
-/** Buttons on the lime band: graphite focus ring, offset matches the lime surface. */
-const BTN_ON_LIME = `${BTN_CORE} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]`;
 const TEXT_LINK = `inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FOCUS}`;
 
 /** Display names and official brand colours of the review platforms. */
@@ -180,7 +184,7 @@ const SHARED = {
     platformsEyebrow: 'Yorum platformları',
     platformsListLabel: 'Bu sektörde panelin gösterdiği yorum platformları',
     platformsFootnote:
-      'Buaze bu platformlardaki yorumları panele çekmez; müşteriyi seçtiğiniz platformun yorum sayfasına gönderir. Bağlantılarınız her gün otomatik olarak kontrol edilir.',
+      'Buaze bu platformlardaki yorumları gelen kutunuza aktarmaz; müşteriyi seçtiğiniz platformun yorum sayfasına gönderir. Bağlantılarınız her gün otomatik olarak kontrol edilir.',
     platformsLink: 'Platform bağlantılarını inceleyin',
     questionsEyebrow: 'Anketler ve denetimler',
     questionsHeading: 'Örnek anket soruları',
@@ -215,8 +219,6 @@ const SHARED = {
       { label: 'Google yorum kuralları', path: '/google-compliance' },
       { label: 'Ücretsiz QR kod oluşturucu', path: '/solutions/qr-generator' },
     ],
-    ctaFacts: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal edebilirsiniz'],
-    ctaSecondary: 'Fiyatları inceleyin',
   },
   en: {
     home: 'Home',
@@ -232,7 +234,7 @@ const SHARED = {
     platformsEyebrow: 'Review platforms',
     platformsListLabel: 'Review platforms the panel shows for this industry',
     platformsFootnote:
-      "Buaze doesn’t import reviews from these platforms; it sends the customer to your chosen platform’s review page. Your links are checked automatically every day.",
+      'Buaze doesn’t bring reviews from these platforms into your inbox; it sends the customer to your chosen platform’s review page. Your links are checked automatically every day.',
     platformsLink: 'See platform links',
     questionsEyebrow: 'Surveys and audits',
     questionsHeading: 'Sample survey questions',
@@ -268,8 +270,6 @@ const SHARED = {
       { label: 'Google review guidelines', path: '/google-compliance' },
       { label: 'Free QR code generator', path: '/solutions/qr-generator' },
     ],
-    ctaFacts: ['14-day free trial', 'No credit card required', 'Cancel anytime'],
-    ctaSecondary: 'See pricing',
   },
 } as const;
 
@@ -707,38 +707,16 @@ export default function SolutionPageLayout({
           </section>
         ) : null}
 
-        {/* 8 · FAQ — the FAQPage JSON-LD is built from the same array */}
-        <section aria-labelledby="solution-faq-title" className={`${bgAfterDark('faq')} ${SECTION_Y}`}>
-          <div className="mx-auto w-full max-w-[920px] px-5 sm:px-10">
-            <SectionHeading id="solution-faq-title" eyebrow={shared.faqEyebrow} title={content.faq.title} />
-            <div className="mt-10 divide-y divide-[#E5E5E5] border-y border-[#E5E5E5]">
-              {content.faq.items.map((item, i) => (
-                <details key={item.q} open={i === 0 ? true : undefined} className="group">
-                  <summary
-                    className={`flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-5 text-left [&::-webkit-details-marker]:hidden ${FOCUS}`}
-                  >
-                    <span className="text-[17px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[18px]">{item.q}</span>
-                    <span
-                      aria-hidden="true"
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D4D4D4] bg-white text-[18px] leading-none text-[#0A0A0A] transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <p className="max-w-[720px] pb-6 pr-2 text-[15px] leading-[1.7] text-[#525252] sm:pr-12 sm:text-[16px]">
-                    {item.a}
-                  </p>
-                </details>
-              ))}
-            </div>
-            <p className="mt-8">
-              <Link href={`${base}/faq`} className={TEXT_LINK}>
-                {shared.faqMore}
-                <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </p>
-          </div>
-        </section>
+        {/* 8 · FAQ — the shared two-column FAQ; the FAQPage JSON-LD is built
+            from the same array */}
+        <FeatureFaqSection
+          locale={locale}
+          eyebrow={shared.faqEyebrow}
+          title={content.faq.title}
+          items={content.faq.items}
+          more={{ href: `${base}/faq`, label: shared.faqMore }}
+          className={bgAfterDark('faq')}
+        />
 
         {/* 9 · Related sectors and resources */}
         <section aria-labelledby="solution-related-title" className={`${bgAfterDark('related')} ${SECTION_Y}`}>
@@ -811,43 +789,8 @@ export default function SolutionPageLayout({
           </div>
         </section>
 
-        {/* 10 · Closing CTA */}
-        <section aria-labelledby="solution-cta-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
-          <div className="mx-auto w-full max-w-[880px] px-5 text-center sm:px-10">
-            <h2
-              id="solution-cta-title"
-              className="text-balance text-[30px] leading-[1.06] tracking-[-0.02em] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]"
-            >
-              {content.ctaTitle}
-            </h2>
-            <ul className="mx-auto mt-5 flex max-w-[680px] flex-col items-center justify-center gap-x-3 gap-y-1 text-[16px] leading-[1.6] text-[#1A1A1A] sm:flex-row sm:flex-wrap sm:text-[17px]">
-              {shared.ctaFacts.map((fact, i) => (
-                <li key={fact} className="inline-flex items-center gap-3">
-                  {i > 0 ? (
-                    <span aria-hidden="true" className="hidden h-1 w-1 rounded-full bg-[#0A0A0A]/50 sm:inline-block" />
-                  ) : null}
-                  {fact}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-              <Link
-                href={registerHref}
-                rel="nofollow"
-                className={`${BTN_ON_LIME} bg-[#0A0A0A] px-7 text-white hover:bg-[#1A1A1A]`}
-              >
-                {shared.primary}
-                <ArrowRight size={16} aria-hidden="true" />
-              </Link>
-              <Link
-                href={`${base}/pricing`}
-                className={`${BTN_ON_LIME} border-2 border-[#0A0A0A] px-7 text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white`}
-              >
-                {shared.ctaSecondary}
-              </Link>
-            </div>
-          </div>
-        </section>
+        {/* 10 · Closing CTA (shared lime band: trial facts, sign-up, pricing) */}
+        <FeatureCtaSection locale={locale} title={content.ctaTitle} />
       </main>
 
       <MarketingFooter locale={locale} />

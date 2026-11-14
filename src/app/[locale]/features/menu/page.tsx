@@ -121,7 +121,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       },
       facts: {
         eyebrow: 'Kısaca',
-        title: 'QR Menü rakamlarla',
+        title: 'QR Menü bir bakışta',
         items: [
           { value: '7', label: 'Hazır menü teması' },
           { value: '12', label: 'Ürün rozeti' },
@@ -155,7 +155,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             q: 'Menüde alerjen bilgisi gösterebilir miyim?',
-            a: 'Evet. Her ürüne gluten, süt, yumurta, yer fıstığı veya susam gibi 12 alerjen etiketinden ilgili olanları ekleyebilirsiniz. Etiketler ürün kartında ve ürün ayrıntısında açıkça yazılır.',
+            a: 'Evet. Her ürüne gluten, süt, yumurta, yer fıstığı veya susam gibi 12 alerjen etiketinden ilgili olanları ekleyebilirsiniz. Alerjenler ürün kartında kelimeyle yazılır, tam liste ürün ayrıntısında görünür.',
           },
           {
             q: 'Müşteriler menüden sipariş verebilir mi?',
@@ -257,8 +257,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       ],
     },
     facts: {
-      eyebrow: 'At a glance',
-      title: 'QR Menu in numbers',
+      eyebrow: 'In short',
+      title: 'QR Menu at a glance',
       items: [
         { value: '7', label: 'Ready menu themes' },
         { value: '12', label: 'Item badges' },
@@ -292,7 +292,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           q: 'Can I show allergen information on the menu?',
-          a: 'Yes. You can add the relevant labels from 12 allergens, such as gluten, milk, egg, peanut or sesame, to each item. The labels are written out on the item card and in the item details.',
+          a: 'Yes. You can add the relevant labels from 12 allergens, such as gluten, milk, egg, peanut or sesame, to each item. Allergens are written out in words on the item card, and the full list appears in the item details.',
         },
         {
           q: 'Can customers order from the menu?',

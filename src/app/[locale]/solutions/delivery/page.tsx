@@ -1,542 +1,339 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { ChevronRight, Package, Truck, Sparkles, BarChart3 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import PlatformLogo, { TR_DELIVERY, TR_REVIEW } from '@/components/marketing/PlatformLogo';
-import { getTranslations } from '@/lib/translations';
+import { Filter, Link2, Mail, Sparkles } from 'lucide-react';
+import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
+import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
-import { notFound } from 'next/navigation';
-import { buildSolutionSchema } from '@/lib/solution-schema';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { getRelatedSolutions } from '@/lib/related-solutions';
+import { IllusDelivery } from '../_components/sector-illustrations';
 
-const VALID_LOCALES = ['tr', 'en'] as const;
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`. Reads only
+// `params`, so the page stays static. Sector "delivery" drives the platform
+// list (Google, Yemeksepeti, Getir, Trendyol GO) and the survey templates.
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+const SLUG = 'delivery';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Paket Servis QR · Yemeksepeti + Getir + Trendyol GO'
-      : 'Delivery QR · Yemeksepeti + Getir + Trendyol GO';
-  const description =
-    locale === 'tr'
-      ? 'Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin. Google, Yemeksepeti, Getir Yemek ve Trendyol GO uyumlu.'
-      : 'One QR inside every package routes the customer to the platform where they will actually leave a review. Works with Google, Yemeksepeti, Getir Yemek and Trendyol GO.';
-  return {
-    metadataBase: new URL('https://www.buaze.com'),
-    title,
-    description,
-    alternates: {
-      canonical: `/${locale}/solutions/delivery`,
-      languages: {
-        tr: '/tr/solutions/delivery',
-        en: '/en/solutions/delivery',
-        'x-default': '/tr/solutions/delivery',
-      },
+const CONTENT: Record<Locale, SolutionPageContent> = {
+  tr: {
+    name: 'Paket servis',
+    meta: {
+      title: 'Paket servis için QR ile müşteri geri bildirimi',
+      description:
+        'Paket servis için poşet QR kodu: müşteri evde puan verir, eşiğin altında önce size yazabilir. Yemeksepeti, Getir, Trendyol GO ve Google bağlantıları tek yerde.',
     },
-    openGraph: {
-      type: 'website',
-      siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/solutions/delivery`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    eyebrow: 'Paket servis',
+    h1: 'Paket servis için QR ile müşteri geri bildirimi ve yorum bağlantıları',
+    lead:
+      'Müşteri paketini açtığında poşetteki karttan QR kodu okutur ve siparişini puanlar. Eşik ve üzerindeki puanlarda seçtiğiniz platformun yorum sayfası açılır; eşiğin altında müşteri önce size yazabilir, herkese açık yorum bağlantısı aynı ekranda görünür.',
+    flow: {
+      title: 'Paket siparişte QR ile geri bildirim üç adımda',
+      steps: [
+        {
+          title: 'Her platform için ayrı kart hazırlayın',
+          body:
+            'Panelde Yemeksepeti, Getir ve Trendyol GO için birer QR kod oluşturup her birini o platforma sabitleyin. Kodlara “YS”, “Getir”, “TGO” gibi etiketler verirseniz geri bildirimin hangi kanaldan geldiğini e-postada görürsünüz.',
+        },
+        {
+          title: 'Müşteri evde puan verir',
+          body:
+            'Müşteri yemeğini yedikten sonra QR kodu okutur ve 1–5 yıldız verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) kartın sabitlendiği platformun yorum sayfası açılır. Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        },
+        {
+          title: 'Sorunu aynı gün konuşun',
+          body:
+            '1–3 yıldızlık geri bildirimde kart etiketiyle birlikte anında e-posta alırsınız. Soğuk gelen yemek, eksik ürün ya da gecikme gibi şikâyetleri aynı gün mutfak ve kurye ekibinizle konuşabilirsiniz.',
+        },
+      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    placements: {
+      title: 'Paket siparişte QR kodu nereye koymalı',
+      lead: 'Müşteri QR kodu, yemeğini yedikten sonra da görebileceği bir yerde bulmalı.',
+      items: [
+        {
+          title: 'Poşetin içindeki kart',
+          body:
+            'Küçük bir teşekkür kartı en sık kullanılan yöntemdir. Kartı fişle birlikte poşete koyun; müşteri paketi açtığında görür ve yemekten sonra okutabilir.',
+        },
+        {
+          title: 'Kap veya kutu etiketi',
+          body:
+            'Kapağa ya da kutuya yapıştırılan QR etiketi, kart poşette kaybolsa bile ambalajın üzerinde kalır. Ürünle birlikte masaya gelen tek şey çoğu zaman ambalajdır.',
+        },
+        {
+          title: 'Sipariş fişi',
+          body:
+            'Fişe zımbalanan küçük bir QR etiketi, müşteri siparişini kontrol ederken gözüne çarpar. Eksik ürün şikâyetleri de çoğunlukla bu anda ortaya çıkar.',
+        },
+        {
+          title: 'Gel-al tezgâhı',
+          body:
+            'Siparişini kendisi alan müşteriler için tezgâhta da bir QR kod bulunsun. Bu koda “Gel-al” gibi ayrı bir etiket verirseniz paket ve gel-al geri bildirimlerini birbirinden ayırırsınız.',
+        },
+      ],
+      tip:
+        'Siparişin hangi platformdan geldiğini mutfakta zaten biliyorsunuz. Platforma sabitlenmiş kartları paketleme alanında ayrı kutularda tutarsanız her poşete doğru kartı koymak kolaylaşır.',
     },
-  };
+    uses: {
+      title: 'Paket servis için panelde işinize yarayanlar',
+      items: [
+        {
+          icon: Mail,
+          title: 'Şikâyet anında e-postanızda',
+          body:
+            '1–3 yıldızlık geri bildirimde kart etiketi, puan ve müşterinin yorumu e-postanıza gelir. Akşam yoğunluğunda bile şikâyeti fark eder, müşteri e-posta bıraktıysa aynı gün yazılı yanıt verirsiniz.',
+        },
+        {
+          icon: Filter,
+          title: 'Platform kartlarını ayrı izleyin',
+          body:
+            'Geri bildirimler, QR kodun sabitlendiği platformla birlikte kaydedilir. Gelen kutusunda ve analitikte bir platform seçtiğinizde Getir kartından gelenleri Yemeksepeti kartından gelenlerden ayrı görürsünüz.',
+        },
+        {
+          icon: Link2,
+          title: 'Bozuk bağlantıya müşteri gitmez',
+          body:
+            'Yemeksepeti, Getir ve Trendyol GO bağlantılarınız her gün otomatik olarak test edilir. Son 24 saatte bozuk çıkan bağlantı QR akışında atlanır; çalışan başka bir platform bağlantınız varsa müşteri oraya yönlendirilir.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Gecikme şikâyetine yanıt taslağı',
+          body:
+            'Pulse AI şikâyete 2–4 cümlelik bir yanıt taslağı yazar; özür dileyen tonu seçip taslağı kendi sözlerinizle düzenlersiniz. Siz onaylamadan hiçbir yanıt gönderilmez.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Paket serviste öne çıkan yorum platformları',
+      lead:
+        'Sektör olarak “Paket Servis”i seçtiğinizde panel Google, Yemeksepeti, Getir ve Trendyol GO bağlantılarını gösterir. Bağlantıları bir kez eklersiniz; hangi QR kodun hangi platforma gideceğini siz seçersiniz.',
+      note:
+        'Buaze teslimat platformlarına bağlanmaz: siparişleri, kurye bilgisini ya da platformdaki puanınızı göremez. Bu platformlarda yorumu genellikle yalnızca o platformdan sipariş veren müşteri yazabildiği için kartı siparişin geldiği platforma sabitlemek en anlamlısıdır. Google’a sabitlenmiş bir kart ise siparişi nereden verirse versin her müşteri için çalışır.',
+    },
+    questions: {
+      title: 'Paket müşterisine ne sormalı',
+      lead:
+        'Yıldız puanı genel memnuniyeti gösterir. Teslimat sorunlarını ayrıntılı öğrenmek istediğiniz dönemlerde poşete geri bildirim kartı yerine kısa bir anketin QR kodunu koyabilirsiniz.',
+      items: [
+        { text: 'Siparişiniz söz verilen sürede geldi mi?', type: 'multiple_choice' },
+        { text: 'Yemeğiniz size sıcak ulaştı mı?', type: 'multiple_choice' },
+        { text: 'Siparişinizde eksik veya yanlış ürün var mıydı?', type: 'multiple_choice' },
+        { text: 'Ambalajı nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Bir sonraki siparişinizi daha iyi hale getirmek için ne önerirsiniz?', type: 'long_text' },
+      ],
+      audits: [
+        {
+          title: 'Günlük mutfak açılış kontrol listesi',
+          body: 'Siparişler gelmeye başlamadan önce mutfakta temizlik, ekipman ve hazırlık maddelerini işaretlemek için.',
+        },
+        {
+          title: 'Haftalık derin temizlik denetimi',
+          body: 'Mutfak ve paketleme alanının haftalık temizlik kontrolü; sonuç yüzde puan olarak görünür.',
+        },
+        {
+          title: 'F&B yeni eleman temel quiz',
+          body: 'Yeni başlayan mutfak ve paketleme personeline hijyen ve müşteri ilişkisinin temellerini sormak için.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Paket servis için sık sorulan sorular',
+      items: [
+        {
+          q: 'Yemeksepeti, Getir veya Trendyol GO puanımı panelde görebilir miyim?',
+          a: 'Hayır. Buaze teslimat platformlarına bağlanmaz; puanınızı, yorumlarınızı ya da siparişlerinizi çekmez. Panelde QR akışından gelen geri bildirimleri ve Google profilinizin özetini görürsünüz.',
+        },
+        {
+          q: 'Tek bir kartla bütün platformlara yönlendirebilir miyim?',
+          a: 'Bir QR kod müşteriyi tek bir platforma gönderir: koda sabitlediğiniz platforma ya da varsayılan platformunuza. Siparişleri birden çok uygulamadan alıyorsanız her platform için ayrı kart basın. Varsayılan platformu kullanan kartlarda hedefi panelden değiştirebilirsiniz; belirli bir platforma sabitlenmiş kartın hedefi ise kodun içindedir ve değiştirmek için yeni kart gerekir.',
+        },
+        {
+          q: 'Kurye veya sipariş bazında rapor alabilir miyim?',
+          a: 'Hayır. Form sipariş numarası ya da kurye bilgisi toplamaz. Kartlara verdiğiniz etiket, örneğin platform adı ya da şube, düşük puan e-postasında ve geri bildirim CSV dosyasında görünür.',
+        },
+        {
+          q: 'Yorum yapan müşteriye indirim kodu verebilir miyim?',
+          a: 'Hayır. Yorum karşılığında indirim, hediye veya ödül vermeyin; Google yorum karşılığı teşviki yasaklar ve Buaze böyle bir özellik sunmaz. Bir şikâyeti telafi etmek için yaptığınız teklif ise yorumdan bağımsız olmalıdır.',
+        },
+        {
+          q: 'Düşük puan veren müşteri platformda yorum yazabilir mi?',
+          a: 'Evet. Eşiğin altında puan veren müşteri önce size özel geri bildirim yazabilir; aynı ekranda kartın sabitlendiği platformun yorum bağlantısı görünür ve müşteri isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
+        },
+        {
+          q: 'Müşterinin adresi veya telefonu Buaze’ye gelir mi?',
+          a: 'Hayır. Buaze sipariş sisteminize bağlanmaz. Müşteri formda isterse adını ve e-posta adresini bırakır; e-posta bıraktıysa yanıtınızı e-postayla gönderebilirsiniz.',
+        },
+      ],
+    },
+    ctaTitle: 'Paket siparişlerinizde geri bildirim toplamaya başlayın',
+  },
+  en: {
+    name: 'Delivery',
+    meta: {
+      title: 'QR customer feedback for food delivery',
+      description:
+        'Delivery bag QR cards: customers rate their order at home and can write to you first below your threshold. Yemeksepeti, Getir, Trendyol GO and Google links.',
+    },
+    eyebrow: 'Delivery',
+    h1: 'QR codes for customer feedback and review links in food delivery',
+    lead:
+      'When customers open their order, they scan the QR code on the card in the bag and rate it. At or above your threshold, your chosen platform’s review page opens; below it, the customer can write to you first, and the public review link is shown on the same screen.',
+    flow: {
+      title: 'QR feedback for delivery orders in three steps',
+      steps: [
+        {
+          title: 'Make a separate card for each platform',
+          body:
+            'In the panel, create one QR code each for Yemeksepeti, Getir and Trendyol GO and pin each code to that platform. If you label the codes “YS”, “Getir” and “TGO”, the e-mail tells you which channel the feedback came from.',
+        },
+        {
+          title: 'The customer rates at home',
+          body:
+            'After eating, the customer scans the QR code and gives 1–5 stars. At or above the threshold you set (5 stars by default), the review page of the platform pinned to that card opens. Below it, the customer can first send you private feedback; the public review link is shown on the same screen.',
+        },
+        {
+          title: 'Talk it through the same day',
+          body:
+            'Every 1–3★ piece of feedback sends you an instant e-mail with the card label. You can raise complaints such as cold food, missing items or late delivery with your kitchen and courier team the same day.',
+        },
+      ],
+    },
+    placements: {
+      title: 'Where to put the QR code on delivery orders',
+      lead: 'Customers should be able to find the QR code after they have eaten, too.',
+      items: [
+        {
+          title: 'Card inside the bag',
+          body:
+            'A small thank-you card is the most common choice. Put it in the bag with the receipt; customers see it when they open the order and can scan it after the meal.',
+        },
+        {
+          title: 'Lid or box label',
+          body:
+            'A QR sticker on the lid or box stays on the packaging even if the card gets lost in the bag. The packaging is often the only thing that reaches the table with the food.',
+        },
+        {
+          title: 'Order receipt',
+          body:
+            'A small QR sticker stapled to the receipt catches the eye while customers check their order. Complaints about missing items usually come up at exactly that moment.',
+        },
+        {
+          title: 'Collection counter',
+          body:
+            'Keep a QR code at the counter for customers who collect their own orders. Give it its own label, such as “Pickup”, to tell delivery and collection feedback apart.',
+        },
+      ],
+      tip:
+        'Your kitchen already knows which platform each order came from. If you keep the cards pinned to each platform in separate boxes in the packing area, putting the right card in every bag is easy.',
+    },
+    uses: {
+      title: 'Panel features that help a delivery business',
+      items: [
+        {
+          icon: Mail,
+          title: 'Complaints reach your inbox at once',
+          body:
+            'For every 1–3★ piece of feedback, the card label, rating and the customer’s comment arrive by e-mail. Even during the evening rush you notice the complaint, and if the customer left an e-mail address you can reply in writing the same day.',
+        },
+        {
+          icon: Filter,
+          title: 'Track each platform’s cards separately',
+          body:
+            'Feedback is saved with the platform the QR code was pinned to. Pick a platform in the inbox or in analytics to see feedback from the Getir card separately from the Yemeksepeti card.',
+        },
+        {
+          icon: Link2,
+          title: 'No customer is sent to a broken link',
+          body:
+            'Your Yemeksepeti, Getir and Trendyol GO links are tested automatically every day. A link that failed in the last 24 hours is skipped in the QR flow; if you have another working platform link, the customer is sent there instead.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Reply drafts for late-delivery complaints',
+          body:
+            'Pulse AI writes a 2–4 sentence reply draft for the complaint; you choose the apologetic tone and edit the draft in your own words. No reply is sent without your approval.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Review platforms that matter for delivery',
+      lead:
+        'When you pick “Delivery” as your industry, the panel shows Google, Yemeksepeti, Getir and Trendyol GO links. You add the links once and decide which QR code goes to which platform.',
+      note:
+        'Buaze doesn’t connect to delivery platforms: it can’t see your orders, courier details or your rating there. On these platforms, usually only customers who ordered through them can write a review, so pinning the card to the platform the order came from makes the most sense. A card pinned to Google works for every customer, wherever they ordered.',
+    },
+    questions: {
+      title: 'What to ask delivery customers',
+      lead:
+        'A star rating shows overall satisfaction. When you want detail on delivery problems for a while, put a short survey’s QR code in the bag instead of the feedback card.',
+      items: [
+        { text: 'Did your order arrive in the promised time?', type: 'multiple_choice' },
+        { text: 'Was your food still hot when it arrived?', type: 'multiple_choice' },
+        { text: 'Was anything missing or wrong in your order?', type: 'multiple_choice' },
+        { text: 'How would you rate the packaging?', type: 'rating' },
+        { text: 'What would make your next order better?', type: 'long_text' },
+      ],
+      audits: [
+        {
+          title: 'Daily kitchen opening checklist',
+          body: 'For ticking off cleaning, equipment and preparation items in the kitchen before orders start coming in.',
+        },
+        {
+          title: 'Weekly deep-clean inspection',
+          body: 'A weekly cleaning check of the kitchen and packing area; the result shows as a percentage score.',
+        },
+        {
+          title: 'F&B new starter basics quiz',
+          body: 'Asks new kitchen and packing staff about the basics of hygiene and customer relations.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Delivery FAQ',
+      items: [
+        {
+          q: 'Can I see my Yemeksepeti, Getir or Trendyol GO rating in the panel?',
+          a: 'No. Buaze doesn’t connect to delivery platforms and doesn’t import your rating, reviews or orders. In the panel you see the feedback from your QR flow and a summary of your Google profile.',
+        },
+        {
+          q: 'Can one card send customers to every platform?',
+          a: 'A QR code sends the customer to one platform: the one pinned to the code, or your default platform. If you take orders from several apps, print a separate card for each platform. For cards that use the default platform, you can change the destination in the panel; a card pinned to a specific platform has its destination written into the code, so changing it needs a new card.',
+        },
+        {
+          q: 'Can I get reports per courier or per order?',
+          a: 'No. The form doesn’t collect order numbers or courier details. The label you give a card, such as the platform name or the branch, shows in the low-rating e-mail and the feedback CSV file.',
+        },
+        {
+          q: 'Can I give a discount code to customers who leave a review?',
+          a: 'No. Don’t offer discounts, gifts or rewards in exchange for reviews; Google prohibits incentives for reviews, and Buaze has no such feature. Anything you offer to make up for a complaint must not depend on a review.',
+        },
+        {
+          q: 'Can a customer who gives a low rating still post on the platform?',
+          a: 'Yes. A customer who rates below your threshold can first send you private feedback; the review link of the platform pinned to the card is shown on the same screen, and they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.',
+        },
+        {
+          q: 'Does Buaze receive the customer’s address or phone number?',
+          a: 'No. Buaze doesn’t connect to your ordering system. Customers can leave their name and e-mail address on the form if they want; if they leave an e-mail address, you can reply by e-mail.',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting feedback on your delivery orders',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
+  return buildSolutionMetadata({ locale, slug: SLUG, ...CONTENT[locale].meta });
 }
 
-export default async function DeliveryPage({
-  params,
-}: {
-  params: Promise<{ locale: Locale }>;
-}) {
-  const { locale } = await params;
-  if (!VALID_LOCALES.includes(locale as typeof VALID_LOCALES[number])) {
-    notFound();
-  }
-  const t = getTranslations(locale);
-  const base = `/${locale}`;
-  const isTr = locale === 'tr';
-
-  const platformCopy: Record<string, { tr: string; en: string }> = {
-    yemeksepeti: {
-      tr: 'Sipariş ID eşleştirme, otomatik yorum isteği, düşük puan alerti.',
-      en: 'Order ID matching, automated review request, low-score alerts.',
-    },
-    'getir-yemek': {
-      tr: 'Yorum API bağlantısı, ortalama puan canlı takibi.',
-      en: 'Review API link, live tracking of average score.',
-    },
-    'trendyol-go': {
-      tr: 'Kurye geri bildirimi ayrıştırma, restoran skoru üzerinde odak.',
-      en: 'Courier feedback separation, focus on restaurant score.',
-    },
-    'migros-hemen': {
-      tr: 'Market ürün yorumları ve teslimat deneyimi ayrı raporlarda.',
-      en: 'Grocery product reviews and delivery experience in separate reports.',
-    },
-    google: {
-      tr: 'Sipariş sonrası müşteriyi Google işletme profiline yönlendir.',
-      en: 'Route the customer to your Google Business Profile after the order.',
-    },
-    foursquare: {
-      tr: 'Konum bazlı yorumlar, çevredeki aramalarda çıkma.',
-      en: 'Location-based reviews — show up in nearby searches.',
-    },
-    facebook: {
-      tr: 'Meta Business Review API ile otomatik senkron.',
-      en: 'Automatic sync via the Meta Business Review API.',
-    },
-    instagram: {
-      tr: 'DM üzerinden gelen yorumları panele çek.',
-      en: 'Pull DM-based comments into your dashboard.',
-    },
-  };
-
-  const allPlatforms = [...TR_DELIVERY, ...TR_REVIEW];
-
-  const flow = isTr
-    ? [
-        {
-          s: '01',
-          t: 'Kamuya açık yorum',
-          d: 'Her müşteriye Google işletme profili ve sipariş verdiği paket platformunun yorum bağlantısı tek QR\'da sunulur. Hangisinde yazacağına müşteri karar verir.',
-          bg: 'bg-[#C6F24E]',
-        },
-        {
-          s: '02',
-          t: 'Opsiyonel özel kanal',
-          d: 'İsteyen müşteri aynı akışta işletmene özel geri bildirim de bırakır. Bu adım opsiyoneldir; kamuya açık yorum hakkını engellemez.',
-          bg: 'bg-[#EAF9B8]',
-        },
-        {
-          s: '03',
-          t: 'Sadakat kuponu',
-          d: 'Yorumu tamamlayan müşteriye tekrar sipariş için kupon önerebilirsin — yıldıza göre değil, tüm tamamlananlara aynı şekilde.',
-          bg: 'bg-[#FAFAFA]',
-        },
-      ]
-    : [
-        {
-          s: '01',
-          t: 'Public review',
-          d: 'Every customer sees the Google Business Profile link and the delivery platform review link they ordered from — all from one QR. They choose where to post.',
-          bg: 'bg-[#C6F24E]',
-        },
-        {
-          s: '02',
-          t: 'Optional private channel',
-          d: 'Anyone who also wants to share private feedback with your business can do so in the same flow. This step is optional and never blocks the public review path.',
-          bg: 'bg-[#EAF9B8]',
-        },
-        {
-          s: '03',
-          t: 'Loyalty coupon',
-          d: 'Offer a coupon for the next order to anyone who completes the flow — applied uniformly, not based on rating.',
-          bg: 'bg-[#FAFAFA]',
-        },
-      ];
-
-  const stats = isTr
-    ? [
-        { k: '10', l: 'Yorum platformu · Yemeksepeti, Getir, Trendyol GO dahil' },
-        { k: 'PNG · PDF', l: 'Paket içi QR kartı çıktısı' },
-        { k: '3 ton', l: 'Pulse AI yanıt taslağı' },
-        { k: '14 gün', l: 'Ücretsiz deneme · kredi kartı gerekmez' },
-      ]
-    : [
-        { k: '10', l: 'Review platforms · incl. Yemeksepeti, Getir, Trendyol GO' },
-        { k: 'PNG · PDF', l: 'In-bag QR card output' },
-        { k: '3 tones', l: 'Pulse AI reply drafts' },
-        { k: '14 days', l: 'Free trial · no credit card' },
-      ];
-
-  // Sector benefits — 4 tiles. Pulse design (lime icon tile + graphite headline).
-  const benefits = isTr
-    ? [
-        { Icon: Package, h: 'Pakete sticker, eve teslim', d: 'Müşteri evde paketi açtığında QR\'ı tarar. Sıcak deneyim, anlık yorum — kapı önünde dakikalar yerine sofradayken aksiyon.' },
-        { Icon: Truck, h: 'Çoklu platform yönlendirme', d: 'Yemeksepeti + Getir Yemek + Trendyol GO + Google bir akışta. Müşteri seçtiğin platforma yönlenir; tercih müşteride kalır, yıldız bazlı erişim kısıtlaması yok.' },
-        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: '"Gec geldi" yorumu için kişisel ton, "soğuk" yorumu için farklı ton. Her düşük puana saniyeler içinde yanıt taslağı; otomatik gönderim yok, sahip onaylar.' },
-        { Icon: BarChart3, h: 'Sürücü + bölge analitiği', d: 'Hangi sürücü, hangi bölge, hangi saat aralığı en çok düşük puan çekiyor? Operasyonel kararı veriyle al — kuryeyi ya da menü saatini ona göre düzenle.' },
-      ]
-    : [
-        { Icon: Package, h: 'Sticker on the box, review at home', d: 'When the customer opens the package at home, they scan the QR. Hot experience, instant feedback — action at the dining table instead of minutes lost on the doorstep.' },
-        { Icon: Truck, h: 'Multi-platform routing', d: 'Yemeksepeti + Getir Yemek + Trendyol GO + Google in one flow. The customer is shown the platforms you select; the choice stays with the customer, no star-rating gate.' },
-        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Personal tone for "arrived late" reviews, a different tone for "cold". A reply draft for every low rating in seconds; nothing auto-sent, the owner approves.' },
-        { Icon: BarChart3, h: 'Driver + zone analytics', d: 'Which driver, which zone, which time slot attracts the most low ratings? Make operational calls from data — adjust the courier or the menu hours accordingly.' },
-      ];
-
-  const faqs: FaqItem[] = isTr
-    ? [
-        { q: 'Paket servis için Buaze nasıl çalışır?', a: 'Pakete bir Buaze QR sticker yapıştırırsın. Müşteri evde paketi açtığında QR\'ı tarar; deneyimini puanlar ve seçtiğin herkese açık platformlara (Yemeksepeti, Getir Yemek, Trendyol GO, Google) yönlendirilir. Her müşteri istediği yere yorum yazma hakkını korur.' },
-        { q: 'Yemeksepeti, Getir ve Trendyol GO yorumlarını da topluyor mu?', a: 'Evet. Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; akış müşteriye seçtiğin platformları sunar. Müşteri tercih ettiği platforma yorum yazar; ek olarak ekibinle özel paylaşım yapma seçeneği de görür.' },
-        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden çözme şansı kazanırsınız.' },
-        { q: 'Kurye performansını da takip eder miyim?', a: 'Evet. Yorum geldiğinde sipariş ID + kurye etiketi + bölge + saat birlikte loglanır. Analytics raporunda hangi kurye en çok düşük puan çekiyor, hangi bölgede teslimat süresi yorumu negatif etkiliyor — sürücü bazlı görürsün.' },
-        { q: 'Sticker tasarımını siz mi gönderiyorsunuz?', a: 'QR PDF\'i indirebileceğin bir sayfa veriyoruz; Buaze logosu + işletme adı + QR kodu kompakt yerleşim. Yerel matbaada bastırabilir veya kendi paketleme tasarımına ekleyebilirsin. Her şube için ayrı QR oluşturma mümkün.' },
-      ]
-    : [
-        { q: 'How does Buaze work for delivery?', a: 'You stick a Buaze QR on every package. When the customer opens it at home, they scan the QR; they rate their experience and are routed to the public platforms you have selected (Yemeksepeti, Getir Yemek, Trendyol GO, Google). Every customer keeps the right to post anywhere they choose.' },
-        { q: 'Does it also collect Yemeksepeti, Getir and Trendyol GO reviews?', a: 'Yes. You add the public review links of these platforms in the owner panel; the flow surfaces the platforms you select to the customer. The customer posts on their preferred platform; they additionally see an option to share privately with your team.' },
-        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team. The customer always keeps the right to post on any public platform; you gain a chance to resolve the issue privately first.' },
-        { q: 'Can I track courier performance?', a: 'Yes. When a review arrives, the order ID + courier tag + zone + time are logged together. The analytics report shows which courier attracts the most low ratings, which zone\'s delivery time hurts review sentiment — you see it driver-by-driver.' },
-        { q: 'Do you provide the sticker design?', a: 'We provide a page where you can download the QR as PDF; Buaze logo + business name + QR code in a compact layout. You can print it at a local print shop or include it in your packaging design. Per-branch QR generation is supported.' },
-      ];
-
-  const relatedSolutions = getRelatedSolutions('delivery', 4);
-
-  const jsonLd = buildSolutionSchema({
-    locale,
-    slug: 'delivery',
-    industryLabel: isTr ? 'Paket Servis' : 'Delivery',
-    serviceName: isTr ? 'Paket Servis İtibar Yönetimi' : 'Delivery Reputation Management',
-    description: isTr
-      ? 'Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin. Google, Yemeksepeti, Getir Yemek ve Trendyol GO uyumlu.'
-      : 'One QR inside every package routes the customer to the platform where they will actually leave a review. Works with Google, Yemeksepeti, Getir Yemek and Trendyol GO.',
-    faqs,
-  });
-
-  const howTo = buildHowToSchema({
-    locale,
-    name: isTr ? 'Paket serviste Buaze yorum akışını kurma' : 'Set up the Buaze review flow for delivery operations',
-    description: isTr
-      ? 'Paket içi QR ile Yemeksepeti, Getir, Trendyol GO ve Google yorumlarını tek panelde yönetmek için adımlar.'
-      : 'Steps to manage Yemeksepeti, Getir, Trendyol GO and Google reviews from one panel using an in-package QR.',
-    url: `https://www.buaze.com/${locale}/solutions/delivery`,
-    steps: isTr
-      ? [
-          { name: 'Mutfak/işletmeyi tanımla', text: 'Mutfak adı, kategori, Yemeksepeti/Getir/Trendyol GO restoran bağlantıları ve Google Place ID’yi panelde gir.' },
-          { name: 'Paket içi QR sticker hazırla', text: 'Her pakete sticker’lı kart ekle; URL parametresi ile platform seçimi ve isteğe bağlı sipariş ID etiketi taşı.' },
-          { name: 'Operasyon ekibini davet et', text: 'Şef, paketleyici ve müdür gibi sorumluları Buaze ekibine ekle; düşük puanlı yorumlarda otomatik flag çalışır.' },
-          { name: 'Pulse AI ile yorumlar arasından önceliklendir', text: 'Pulse AI gelen yorumları puana göre sıralar, taslak üretir; operatör onaylar, gönderir; platform bazlı analitiklerden hangi kanalın dönüşümü yüksek oku.' },
-        ]
-      : [
-          { name: 'Identify the kitchen / business', text: 'Enter kitchen name, category, Yemeksepeti/Getir/Trendyol GO restaurant links and Google Place ID in the panel.' },
-          { name: 'Prepare the in-package QR sticker', text: 'Add a stickered card to every package; pass platform choice and an optional order-ID tag via URL parameters.' },
-          { name: 'Invite the operations team', text: 'Add the chef, packer and shift manager to your Buaze team; low-rating reviews flag automatically.' },
-          { name: 'Prioritise replies via Pulse AI', text: 'Pulse AI sorts incoming reviews by rating and drafts replies; operator approves and sends; read per-platform analytics to see which channel converts.' },
-        ],
-  });
-  if (howTo) jsonLd.push(howTo);
-
+export default async function DeliverySolutionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* HERO */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
-          <div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Sektör · Paket servis & Dark kitchen' : 'Sector · Delivery & Dark kitchen'}
-            </span>
-            <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
-              {isTr ? (
-                <>
-                  Her pakette bir
-                  <br />
-                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">yorum</span>{' '}
-                  fırsatı.
-                </>
-              ) : (
-                <>
-                  Every package is a
-                  <br />
-                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">review</span>{' '}
-                  opportunity.
-                </>
-              )}
-            </h1>
-            <p className="mt-5 text-[15px] sm:text-[18px] text-[#525252] leading-[1.6] max-w-[540px]">
-              {isTr
-                ? 'Yemeksepeti, Getir Yemek ve Trendyol GO\'daki puanınız Google\'dan bile daha önemli. Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin.'
-                : 'Your score on Yemeksepeti, Getir Yemek and Trendyol GO can matter more than Google. One QR inside the package routes the customer to the exact platform they\'ll leave a review on.'}
-            </p>
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <Link
-                href={`${base}/solutions/qr-generator`}
-                className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-              >
-                {isTr ? 'Paket QR\'ı ücretsiz oluştur' : 'Create a delivery QR free'}
-                <span aria-hidden>→</span>
-              </Link>
-              <Link
-                href={`${base}/contact`}
-                className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-              >
-                {isTr ? 'Demo iste' : 'Request demo'}
-              </Link>
-            </div>
-          </div>
-
-          {/* QR + platform card */}
-          <div className="flex justify-center lg:justify-end">
-            <div className="w-full max-w-[340px] bg-[#0A0A0A] text-white rounded-3xl p-7">
-              <div className="flex items-center justify-between">
-                <span className="pulse-eyebrow text-[#C6F24E]">
-                  {isTr ? 'PAKET İÇİ QR' : 'IN-PACKAGE QR'}
-                </span>
-                <span className="text-[11px] text-white/60">v2.4</span>
-              </div>
-              <h3 className="mt-3 text-[22px] sm:text-[26px] font-medium leading-[1.15] tracking-[-0.015em]">
-                {isTr ? (
-                  <>
-                    Memnun kaldın mı?
-                    <br />
-                    Hemen paylaş.
-                  </>
-                ) : (
-                  <>
-                    Happy with your order?
-                    <br />
-                    Share it now.
-                  </>
-                )}
-              </h3>
-              <div className="mt-4 bg-[#C6F24E] rounded-xl p-4 flex justify-center">
-                <svg viewBox="0 0 64 64" width="180" height="180" aria-hidden>
-                  <rect width="64" height="64" fill="#C6F24E" />
-                  {[
-                    [6, 6],
-                    [42, 6],
-                    [6, 42],
-                  ].map(([x, y], i) => (
-                    <g key={i}>
-                      <rect x={x} y={y} width="16" height="16" fill="#C6F24E" />
-                      <rect x={x} y={y} width="16" height="16" fill="none" stroke="#0A0A0A" strokeWidth="3" />
-                      <rect x={x + 5} y={y + 5} width="6" height="6" fill="#0A0A0A" />
-                    </g>
-                  ))}
-                  {[
-                    [26, 10],
-                    [30, 10],
-                    [36, 10],
-                    [26, 14],
-                    [34, 14],
-                    [10, 26],
-                    [18, 26],
-                    [26, 26],
-                    [34, 26],
-                    [42, 26],
-                    [50, 26],
-                    [14, 32],
-                    [22, 30],
-                    [30, 32],
-                    [38, 30],
-                    [46, 32],
-                    [26, 42],
-                    [34, 46],
-                    [42, 44],
-                    [50, 46],
-                    [28, 50],
-                    [36, 52],
-                    [44, 50],
-                    [30, 58],
-                    [42, 58],
-                  ].map(([x, y], i) => (
-                    <rect key={`d-${i}`} x={x} y={y} width="4" height="4" fill="#0A0A0A" />
-                  ))}
-                </svg>
-              </div>
-              <div className="mt-4">
-                <span className="pulse-eyebrow text-white/60">
-                  {isTr ? 'AKTİF PLATFORMLAR' : 'ACTIVE PLATFORMS'}
-                </span>
-                <div className="flex gap-2 mt-2">
-                  {(['yemeksepeti', 'getir-yemek', 'trendyol-go', 'google'] as const).map((id) => (
-                    <PlatformLogo key={id} id={id} size={32} rounded={8} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PLATFORMS GRID */}
-      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="max-w-[720px]">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Platform entegrasyonları' : 'Platform integrations'}
-            </span>
-            <h2 className="mt-4 text-[26px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.02] tracking-[-0.03em]">
-              {isTr
-                ? 'Tek QR. Dört platform. Dört kat geri bildirim.'
-                : 'One QR. Four platforms. Four times the feedback.'}
-            </h2>
-            <p className="mt-4 text-[15px] text-[#525252] leading-[1.6]">
-              {isTr
-                ? 'Her misafire kendi platformunun (Yemeksepeti, Getir, Trendyol GO, Google) yorum bağlantısı tek QR\'da sunulur. İsteyen aynı akışta işletmene özel geri bildirim de bırakır — yıldıza göre dallandırma yok.'
-                : 'Every guest gets a one-tap link to their platform of choice (Yemeksepeti, Getir, Trendyol GO, Google) from a single QR. Anyone who also wants to send private feedback can do so in the same flow — no rating-based gating.'}
-            </p>
-          </div>
-
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {allPlatforms.map((p) => (
-              <div
-                key={p.id}
-                className="bz-card p-5 flex flex-col gap-3"
-              >
-                <div className="flex justify-between items-start">
-                  <PlatformLogo id={p.id} size={44} rounded={10} />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#C6F24E]" aria-hidden />
-                </div>
-                <div>
-                  <div className="text-[16px] font-semibold tracking-[-0.015em]">{p.name}</div>
-                  <div className="pulse-eyebrow text-[#737373] mt-1">{p.tag}</div>
-                </div>
-                <p className="text-[13px] text-[#525252] leading-[1.55]">
-                  {platformCopy[p.id]?.[locale] ?? ''}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* SMART ROUTING FLOW */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[26px] sm:text-[44px] lg:text-[48px] font-medium tracking-[-0.03em] leading-[1]">
-            {isTr ? 'Akıllı yönlendirme.' : 'Smart routing.'}
-          </h2>
-          <p className="mt-3 text-[15px] text-[#525252] max-w-[600px]">
-            {isTr
-              ? 'Müşteri QR\'ı tarıyor. Önce 1-5 puan veriyor. Ne olduğuna göre farklı bir yere gidiyor.'
-              : 'Customer scans the QR, rates 1–5, and gets routed differently based on the score.'}
-          </p>
-
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {flow.map((x) => (
-              <div
-                key={x.s}
-                className="bz-card-soft p-6 flex flex-col gap-3"
-              >
-                <div
-                  className={`${x.bg} w-16 h-16 rounded-full flex items-center justify-center text-[20px] font-semibold`}
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {x.s}
-                </div>
-                <h3 className="text-[22px] font-medium tracking-[-0.02em]">{x.t}</h3>
-                <p className="text-[14px] text-[#525252] leading-[1.55]">{x.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits — 4-tile grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
-            {isTr ? 'Paket servis operasyonuna özel dört kazanç' : 'Four wins built for delivery operations'}
-          </h2>
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => (
-              <div key={i} className="bz-card p-6 sm:p-7">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]">
-                  <b.Icon size={16} />
-                </div>
-                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Paket servis için merak edilenler' : 'Common questions for delivery'}
-          </h2>
-          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
-        </div>
-      </section>
-
-      {/* Resources / Related Solutions */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
-          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
-              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
-              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
-              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
-            ].map((r) => (
-              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
-                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-              </Link>
-            ))}
-          </div>
-          {relatedSolutions.length > 0 && (
-            <>
-              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {relatedSolutions.map((sol) => (
-                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
-                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
-                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* STATS DARK BANNER */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="max-w-[1200px] mx-auto bg-[#0A0A0A] text-white rounded-3xl p-6 sm:p-12">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((x) => (
-              <div key={x.l}>
-                <div
-                  className="text-[36px] sm:text-[48px] lg:text-[56px] font-medium leading-none text-[#C6F24E] tracking-[-0.03em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {x.k}
-                </div>
-                <div className="text-[13px] text-white/60 mt-3">{x.l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <SolutionPageLayout
+      locale={locale}
+      slug={SLUG}
+      sector="delivery"
+      content={CONTENT[locale]}
+      illustration={<IllusDelivery />}
+    />
   );
 }

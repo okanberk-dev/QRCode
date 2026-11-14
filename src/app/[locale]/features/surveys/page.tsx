@@ -7,8 +7,9 @@ import { relatedFeatureLinks } from '../_components/feature-catalog';
 import { SurveyMock } from '../_components/mocks';
 
 // /features/surveys — QR surveys. Facts from src/lib/surveys.ts (5 question
-// types, up to 30 questions, single page or step by step, 2–6 options for
-// multiple choice), src/lib/survey-templates.ts (8 TR/EN templates),
+// types, up to 30 questions, 2–6 options for multiple choice; the layout is
+// derived, never chosen: one question per screen, step by step —
+// deriveSurveyType), src/lib/survey-templates.ts (8 TR/EN templates),
 // /api/surveys/[id]/{qr,export,analytics} (PNG/SVG, CSV, per-question
 // results with NPS) and PublicSurveyView (KVKK consent required, marketing
 // consent unticked, contact fields optional, form chrome Turkish today).
@@ -58,12 +59,12 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         paragraphs: [
           'QR anketi, müşterinin telefonuyla bir karekodu okutarak açtığı kısa bir soru formudur. Uygulama indirmek ya da hesap açmak gerekmez; anket tarayıcıda açılır.',
           'Anket yorum akışından farklıdır: yanıtlar herkese açık bir platformda yayımlanmaz, yalnızca size ulaşır. Bu yüzden ziyaretin ayrıntılarını, örneğin servisin hızını ya da işletmenizi tavsiye edip etmeyeceğini sormak için uygundur.',
-          'Tavsiye sorusu 0–10 ölçeğindedir ve yanıtlardan NPS hesaplanır. Soruları tek sayfada ya da her biri ayrı bir adımda gösterebilirsiniz.',
+          'Tavsiye sorusu 0–10 ölçeğindedir ve yanıtlardan NPS hesaplanır. Müşteri soruları telefonunda tek tek, adım adım yanıtlar.',
         ],
       },
       capabilities: {
         eyebrow: 'Neler var',
-        title: 'Anket düzenleyicide neler var',
+        title: 'Anketlerde neler var',
         items: [
           {
             icon: ListChecks,
@@ -87,8 +88,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             icon: Smartphone,
-            title: 'Tek sayfa ya da adım adım',
-            body: 'Soruları tek sayfada ya da her biri ayrı bir adımda gösterin. Anket formu telefon ekranına göre tasarlanmıştır.',
+            title: 'Telefona uygun, adım adım',
+            body: 'Her soru telefonda kendi ekranında açılır ve ilerleme çubuğu kaç soru kaldığını gösterir. Yıldız, tavsiye ve çoktan seçmeli sorularda müşteri seçimini yapınca sonraki soruya geçilir.',
           },
           {
             icon: BarChart3,
@@ -121,7 +122,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       },
       facts: {
         eyebrow: 'Kısaca',
-        title: 'Anketler rakamlarla',
+        title: 'Anketler bir bakışta',
         items: [
           { value: '5', label: 'Soru tipi' },
           { value: '30', label: 'Anket başına en fazla soru' },
@@ -194,12 +195,12 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       paragraphs: [
         'A QR survey is a short form of questions that the customer opens by scanning a code with their phone. No app or account is needed; the survey opens in the browser.',
         'A survey is different from the review flow: answers are not published on any public platform and reach only you. That makes it the right place to ask about the details of a visit, such as how fast the service was or whether they would recommend you.',
-        'The recommend question uses a 0–10 scale, and NPS is calculated from the answers. You can show all questions on one page or each one as a separate step.',
+        'The recommend question uses a 0–10 scale, and NPS is calculated from the answers. The customer answers the questions one at a time, step by step, on their phone.',
       ],
     },
     capabilities: {
       eyebrow: 'What you get',
-      title: 'What is in the survey editor',
+      title: 'What surveys include',
       items: [
         {
           icon: ListChecks,
@@ -223,8 +224,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           icon: Smartphone,
-          title: 'One page or step by step',
-          body: 'Show the questions on one page or each one as its own step. The survey form is designed for phone screens.',
+          title: 'Made for phones, step by step',
+          body: 'Each question opens on its own screen on the phone, and a progress bar shows how many are left. For star, recommend and multiple-choice questions, the survey moves on once the customer picks an answer.',
         },
         {
           icon: BarChart3,
@@ -256,8 +257,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       ],
     },
     facts: {
-      eyebrow: 'At a glance',
-      title: 'Surveys in numbers',
+      eyebrow: 'In short',
+      title: 'Surveys at a glance',
       items: [
         { value: '5', label: 'Question types' },
         { value: '30', label: 'Questions per survey, at most' },

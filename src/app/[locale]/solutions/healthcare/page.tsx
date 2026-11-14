@@ -1,399 +1,359 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { ArrowRight, ChevronRight, ShieldCheck, Stethoscope, Sparkles, BarChart3 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import { getTranslations } from '@/lib/translations';
+import { Building2, Mail, ShieldCheck, Stethoscope } from 'lucide-react';
+import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
+import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
-import { buildSolutionSchema } from '@/lib/solution-schema';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { getRelatedSolutions } from '@/lib/related-solutions';
+import { IllusClinic } from '../_components/sector-illustrations';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`. Reads only
+// `params`, so the page stays static. Sector "clinic" drives the platform
+// list (Google, Yandex) and the "After the appointment" survey template.
+// Written for general and multi-department clinics; dentists, aesthetic and
+// veterinary clinics have their own pages.
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Klinik & Sağlık İtibar Yönetimi'
-      : 'Clinic & Healthcare Reputation Management';
-  const description =
-    locale === 'tr'
-      ? 'KVKK uyumlu hasta geri bildirimi. Tedavi sonrası QR ile deneyim toplayın, Google profilinizi güçlendirin.'
-      : 'KVKK-compliant patient feedback. Collect experience after treatment via QR and strengthen your Google profile.';
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/solutions/healthcare`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/solutions/healthcare',
-        en: 'https://www.buaze.com/en/solutions/healthcare',
-        'x-default': 'https://www.buaze.com/tr/solutions/healthcare',
-      },
+const SLUG = 'healthcare';
+
+const CONTENT: Record<Locale, SolutionPageContent> = {
+  tr: {
+    name: 'Sağlık klinikleri',
+    meta: {
+      title: 'Sağlık klinikleri için QR ile hasta geri bildirimi',
+      description:
+        'Klinik bölümleri için QR kod: hasta puan verir, eşiğin altında önce size yazabilir. Formda sağlık bilgisi sorulmaz, IP adresleri 90 gün sonra anonimleştirilir.',
     },
-    openGraph: {
-      type: 'website',
-      siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/solutions/healthcare`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    eyebrow: 'Sağlık klinikleri',
+    h1: 'Sağlık klinikleri için QR ile hasta geri bildirimi',
+    lead:
+      'Klinikte hastanın deneyimini randevu, bekleme süresi ve ekibin iletişimi belirler. Bölümlere koyduğunuz QR kodlarla hasta bunları ayrılmadan puanlar; eşik ve üzerindeki puanlarda Google yorum sayfanız açılır, eşiğin altında hasta önce size yazabilir ve herkese açık yorum bağlantısını aynı ekranda görür.',
+    flow: {
+      title: 'Klinikte QR ile geri bildirim akışı',
+      steps: [
+        {
+          title: 'Bölümler için QR oluşturun',
+          body:
+            'Her bölümün bekleme alanı için ayrı QR kod oluşturup etiket verin (ör. Kardiyoloji, Lab, Kat2). Etiket düşük puan e-postasında ve CSV dosyasında görünür; şikâyetin hangi bölümden geldiğini bilirsiniz.',
+        },
+        {
+          title: 'Hasta puan verir',
+          body:
+            'Hasta QR kodu okutur ve 1–5 yıldız verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) Google yorum sayfanız açılır. Eşiğin altındaki puanlarda hasta önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        },
+        {
+          title: 'Aynı gün geri dönün',
+          body:
+            '1–3 yıldızlık her geri bildirimde bölüm etiketiyle birlikte anında e-posta alırsınız. Hasta e-posta adresini bıraktıysa yanıtınızı e-postayla gönderirsiniz; ayrıntıları telefonda ya da yüz yüze konuşmak çoğu zaman daha uygundur.',
+        },
+      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    placements: {
+      title: 'Klinikte QR kodu nereye koymalı',
+      lead: 'QR kod, hastanın işlemi bittikten sonra kısa bir süre beklediği yerlerde en iyi sonucu verir.',
+      items: [
+        {
+          title: 'Çıkış ve sekreterlik bankosu',
+          body:
+            'Hasta muayeneden çıkıp sekreterlikte işlemlerini tamamlarken QR kodu görür. Ziyaretin tamamını değerlendirmek için en doğal andır.',
+        },
+        {
+          title: 'Bölüm bekleme alanları',
+          body:
+            'Her bölümün bekleme alanına etiketli bir QR koyarak geri bildirimleri bölüme göre ayırırsınız. Bekleme süresiyle ilgili görüşler de çoğunlukla burada yazılır.',
+        },
+        {
+          title: 'Bilgilendirme broşürü ve sonuç zarfı',
+          body:
+            'Hastaya verdiğiniz bilgilendirme broşürünün ya da sonuç zarfının arka yüzüne basılan QR kod, hastanın evde de değerlendirme yapmasını sağlar.',
+        },
+        {
+          title: 'Fizik tedavi ve seans salonları',
+          body:
+            'Birden çok seansa gelen hastalar için seans salonundaki QR kod, tedavi süreci boyunca deneyimlerini paylaşmalarını kolaylaştırır.',
+        },
+      ],
+      tip:
+        '“Masa numarası” alanını bölüm etiketi olarak kullanabilirsiniz; harf, rakam ve kısa çizgi yazılır, boşluk ve Türkçe karakter kullanılmaz. Etikete hasta adı, protokol numarası veya başka bir kişisel bilgi yazmayın.',
     },
-  };
+    uses: {
+      title: 'Klinik panelinde işinize yarayanlar',
+      items: [
+        {
+          icon: Stethoscope,
+          title: 'Kliniğe uygun panel dili',
+          body:
+            'Sektör olarak “Klinik & Sağlık”ı seçtiğinizde paneldeki adlar kliniğe göre değişir: “Yorumlar” yerine “Hasta geri bildirimleri”, “Müşteriler” yerine “Hastalar” yazar ve QR Menü bölümü gizlenir.',
+        },
+        {
+          icon: ShieldCheck,
+          title: 'Yanıtlar gönderilmeden kontrol edilir',
+          body:
+            'Hastaya e-postayla yanıt göndermeden önce Buaze metni kontrol eder: T.C. kimlik numarası, IBAN veya kart numarası, hakaret ya da tehdit içeren yanıtlar gönderilmez. Her yanıtta içerikten sorumlu olduğunuzu ayrıca onaylarsınız.',
+        },
+        {
+          icon: Mail,
+          title: 'Uyarılar hasta ilişkilerine gitsin',
+          body:
+            'Uyarıların gideceği adresi işletme ayarlarından seçersiniz; hasta ilişkileri biriminin adresini yazarsanız 1–3 yıldızlık her geri bildirim doğrudan o ekibe gider. Boş bırakırsanız hesabınızın e-posta adresi kullanılır.',
+        },
+        {
+          icon: Building2,
+          title: 'Birden çok klinik tek hesapta',
+          body:
+            'Her kliniği ayrı işletme olarak eklersiniz. İşletmeler tablosunda son 30 günün yorum sayısını, ortalama puanı ve bekleyen düşük puanları yan yana görür, ekip üyelerine yalnızca ilgili kliniğe erişim verirsiniz.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Sağlık kliniklerinde yorum platformları',
+      lead:
+        'Sektör olarak “Klinik & Sağlık”ı seçtiğinizde panel Google ve Yandex bağlantılarını gösterir. Eşik ve üzerindeki puanlarda hasta varsayılan platformunuza gider; çoğu klinik için bu, Google yorum sayfasıdır.',
+      note:
+        'Google İşletme Profilinizi adıyla aratıp seçtiğinizde Buaze resmi “yorum yaz” bağlantısını oluşturur. Google Yorumları sayfasında puanınızı, yorum sayınızı, Google’ın gösterdiği en fazla 5 yorumu ve 6 maddelik profil kontrol listesini Google hesabıyla giriş yapmadan görürsünüz.',
+    },
+    questions: {
+      title: 'Hastalara ne sormalı',
+      lead:
+        'Hazır “Randevu sonrası” şablonu randevu sürecini, ekibin iletişimini ve tavsiye isteğini sorar; açık uçlu sorusunda hastadan sağlık bilgisi yazmamasını ister. Kendi sorularınızı eklerken de tanı, tedavi veya ilaç sormayın.',
+      items: [
+        { text: 'Randevu alma sürecini nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Muayeneye girmeden önce ne kadar beklediniz?', type: 'multiple_choice' },
+        { text: 'Hekiminizin size ayırdığı zamanı nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Kliniğimizin temizliğini nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Kliniğimizi bir yakınınıza önerme olasılığınız nedir?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Hemşire / asistan davranış quiz',
+          body: 'Yeni hemşire ve asistan adaylarına iletişim, hasta mahremiyeti ve acil durum soruları.',
+        },
+        {
+          title: 'Klinik karşılama deneyimi değerlendirme',
+          body: 'Ön büronun hastayı karşılama, bilgilendirme ve yönlendirme biçimini değerlendirmek için.',
+        },
+        {
+          title: 'KVKK hasta verisi öz-denetim',
+          body: 'Hasta verilerine erişim ve saklama düzenini her ay gözden geçirmek için; hukuki danışmanlığın yerini tutmaz.',
+        },
+      ],
+    },
+    privacy: {
+      title: 'Sağlık verisi, KVKK ve tanıtım kuralları',
+      paragraphs: [
+        'Geri bildirim formu sağlık bilgisi sormaz; ad ve e-posta isteğe bağlıdır. Yorum alanı ise serbest metindir ve hasta tanısından ya da tedavisinden söz edebilir. Sağlık verisi özel nitelikli kişisel veridir; geri bildirimlere erişimi yalnızca gerekli ekip üyeleriyle sınırlayın.',
+        'Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrı bir kutudur ve varsayılan olarak işaretsizdir. Onaylar kayıt altına alınır, IP adresleri 90 gün sonra anonimleştirilir.',
+        'Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir. Bu özelliklerin kliniğiniz için kapatılmasını destek ekibimizden isteyebilirsiniz; sağlık bilgisi içeren yorumlara yanıtı kendiniz yazmayı da tercih edebilirsiniz.',
+        'Sağlık hizmetlerinin tanıtımı ayrıca düzenlenmiştir. Hasta yorumlarını web sitenizde veya reklamlarınızda kullanmadan önce ve kurumunuzun kendi aydınlatma yükümlülükleri için hukuk danışmanınıza başvurun.',
+      ],
+    },
+    faq: {
+      title: 'Sağlık klinikleri için sık sorulan sorular',
+      items: [
+        {
+          q: 'Hekim veya bölüm bazında rapor alabilir miyim?',
+          a: 'Hekim ya da bölüm bazında rapor yoktur. Bölümler için ayrı etiketli QR kodlar oluşturursanız etiket düşük puan e-postasında ve CSV dosyasında görünür; analitik ekranları kliniğin tamamını gösterir.',
+        },
+        {
+          q: 'Randevu veya hastane bilgi sistemimize bağlanıyor mu?',
+          a: 'Hayır. Buaze randevu ya da hastane bilgi sistemlerine bağlanmaz ve hastalara SMS veya e-postayla anket göndermez. Hasta QR kodu klinikteyken ya da kendisine verdiğiniz belgeden okutur.',
+        },
+        {
+          q: 'Formu doldurmak için hastanın hesap açması gerekir mi?',
+          a: 'Hayır. Hasta QR kodu okutup puan verir; ad ve e-posta isteğe bağlıdır. Yanıt almak isteyen hasta e-posta adresini bırakır, bırakmazsa yanıtınız panelde kayıt olarak kalır.',
+        },
+        {
+          q: 'Hasta formu hangi dillerde?',
+          a: 'Form Türkçe ve İngilizce olarak hazırdır ve hastanın telefon diline göre açılır; diğer dillerde form yoktur. Yurt dışından gelen hastalarınız için İngilizce form ve İngilizce Pulse AI taslakları kullanılabilir.',
+        },
+        {
+          q: 'Hasta yorumuna yanıt verirken nelere dikkat etmeliyim?',
+          a: 'Yanıtta hastanın tanısından, tedavisinden ya da kimlik bilgilerinden söz etmeyin. Kısa bir teşekkür ve iletişim daveti çoğu durumda yeterlidir; ayrıntıları telefonda ya da yüz yüze konuşun.',
+        },
+        {
+          q: 'Düşük puan veren hasta Google’da yorum yazabilir mi?',
+          a: 'Evet. Eşiğin altında puan veren hasta önce size özel geri bildirim yazabilir; Google yorum bağlantısı aynı ekranda görünür ve hasta isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
+        },
+      ],
+    },
+    ctaTitle: 'Hasta geri bildirimini kliniğinizin her bölümünde toplayın',
+  },
+  en: {
+    name: 'Healthcare clinics',
+    meta: {
+      title: 'QR patient feedback for healthcare clinics',
+      description:
+        'QR codes for clinic departments: patients rate their visit and can write to you first below your threshold. No health questions; IPs anonymised after 90 days.',
+    },
+    eyebrow: 'Healthcare clinics',
+    h1: 'QR patient feedback for healthcare clinics',
+    lead:
+      'In a clinic, the patient’s experience is shaped by booking, waiting time and how the team communicates. With QR codes in each department, patients rate these before they leave; at or above your threshold your Google review page opens, and below it the patient can write to you first and sees the public review link on the same screen.',
+    flow: {
+      title: 'How QR feedback works in a clinic',
+      steps: [
+        {
+          title: 'Create QR codes for each department',
+          body:
+            'Create a separate QR code for each department’s waiting area and give it a label (for example Cardiology, Lab or Floor2). The label shows in the low-rating e-mail and the CSV file, so you know which department a complaint came from.',
+        },
+        {
+          title: 'The patient gives a rating',
+          body:
+            'The patient scans the QR code and gives 1–5 stars. At or above the threshold you set (5 stars by default), your Google review page opens. Below it, the patient can first send you private feedback; the public review link is shown on the same screen.',
+        },
+        {
+          title: 'Follow up the same day',
+          body:
+            'Every 1–3★ piece of feedback sends you an instant e-mail with the department label. If the patient left an e-mail address, you reply by e-mail; details are often better discussed by phone or in person.',
+        },
+      ],
+    },
+    placements: {
+      title: 'Where to put the QR code in a clinic',
+      lead: 'A QR code works best where patients wait for a short while after their visit is done.',
+      items: [
+        {
+          title: 'Checkout and front desk',
+          body:
+            'Patients see the QR code as they leave the consultation and finish their paperwork at the front desk. It is the most natural moment to rate the whole visit.',
+        },
+        {
+          title: 'Department waiting areas',
+          body:
+            'A labelled QR code in each department’s waiting area keeps feedback separate by department. Comments about waiting times are usually written here, too.',
+        },
+        {
+          title: 'Information leaflets and result envelopes',
+          body:
+            'A QR code printed on the back of an information leaflet or a results envelope lets patients rate their visit at home as well.',
+        },
+        {
+          title: 'Physiotherapy and session rooms',
+          body:
+            'For patients who come for several sessions, a QR code in the treatment room makes it easy to share their experience during the course of treatment.',
+        },
+      ],
+      tip:
+        'You can use the “Table number” field as a department label; it takes letters, numbers and hyphens, without spaces or accented letters. Never put a patient’s name, file number or other personal details in the label.',
+    },
+    uses: {
+      title: 'Panel features that help a clinic',
+      items: [
+        {
+          icon: Stethoscope,
+          title: 'Panel wording that fits a clinic',
+          body:
+            'When you pick “Clinic & Health” as your industry, the panel’s labels change to suit a clinic: “Reviews” becomes “Patient feedback”, “Customers” becomes “Patients”, and the QR Menu section is hidden.',
+        },
+        {
+          icon: ShieldCheck,
+          title: 'Replies are checked before they go out',
+          body:
+            'Before an e-mail reply goes to a patient, Buaze checks the text: replies containing a Turkish ID number, an IBAN or card number, insults or threats are not sent. With every reply you also confirm that you are responsible for its content.',
+        },
+        {
+          icon: Mail,
+          title: 'Alerts go to patient relations',
+          body:
+            'You choose the alert address in your business settings; enter your patient relations team’s address and every 1–3★ piece of feedback goes straight to them. If you leave it empty, your account e-mail is used.',
+        },
+        {
+          icon: Building2,
+          title: 'Several clinics in one account',
+          body:
+            'You add each clinic as a separate business. The businesses table shows last-30-day review counts, average rating and pending low ratings side by side, and you can give team members access to their own clinic only.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Review platforms for healthcare clinics',
+      lead:
+        'When you pick “Clinic & Health” as your industry, the panel shows Google and Yandex links. At or above your threshold, the patient goes to your default platform; for most clinics that is the Google review page.',
+      note:
+        'Search for your Google Business Profile by name and select it, and Buaze builds the official “write a review” link. The Google Reviews page shows your rating, review count, up to 5 reviews Google returns and a 6-item profile checklist, with no Google sign-in.',
+    },
+    questions: {
+      title: 'What to ask patients',
+      lead:
+        'The ready-made “After the appointment” template asks about the booking process, the team’s communication and willingness to recommend, and its open question asks patients not to include health details. When you add your own questions, don’t ask about diagnoses, treatment or medication either.',
+      items: [
+        { text: 'How would you rate the booking process?', type: 'rating' },
+        { text: 'How long did you wait before your consultation?', type: 'multiple_choice' },
+        { text: 'How would you rate the time your doctor spent with you?', type: 'rating' },
+        { text: 'How would you rate the cleanliness of our clinic?', type: 'rating' },
+        { text: 'How likely are you to recommend our clinic to someone close to you?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Nurse / assistant conduct quiz',
+          body: 'Questions on communication, patient privacy and emergencies for new nurse and assistant candidates.',
+        },
+        {
+          title: 'Clinic welcome experience review',
+          body: 'Reviews how the front office greets, informs and directs patients.',
+        },
+        {
+          title: 'KVKK patient data self-check',
+          body: 'A monthly review of how patient data is accessed and stored; it does not replace legal advice.',
+        },
+      ],
+    },
+    privacy: {
+      title: 'Health data, KVKK and advertising rules',
+      paragraphs: [
+        'The feedback form asks no health questions; name and e-mail are optional. The comment box is free text, though, and patients may mention their diagnosis or treatment. Health data is a special category of personal data, so limit access to feedback to the team members who need it.',
+        'The form records the KVKK privacy notice acknowledgement; marketing consent is a separate box and is unticked by default. Consents are logged, and IP addresses are anonymised after 90 days.',
+        'The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI. You can ask our support team to switch these features off for your clinic, and you may prefer to write replies to comments with health details yourself.',
+        'Advertising by healthcare providers is separately regulated. Check with your legal adviser before using patient reviews on your website or in ads, and for your organisation’s own privacy-notice obligations.',
+      ],
+    },
+    faq: {
+      title: 'Healthcare clinic FAQ',
+      items: [
+        {
+          q: 'Can I get reports per doctor or department?',
+          a: 'There are no per-doctor or per-department reports. If you create separately labelled QR codes for departments, the label shows in the low-rating e-mail and the CSV file; the analytics screens cover the whole clinic.',
+        },
+        {
+          q: 'Does it connect to our booking or hospital information system?',
+          a: 'No. Buaze doesn’t connect to booking or hospital information systems and doesn’t send patients surveys by SMS or e-mail. Patients scan the QR code at the clinic or from a document you give them.',
+        },
+        {
+          q: 'Does a patient need an account to fill in the form?',
+          a: 'No. The patient scans the QR code and gives a rating; name and e-mail are optional. Patients who want a reply leave their e-mail address; otherwise your reply stays on record in the panel.',
+        },
+        {
+          q: 'Which languages is the patient form in?',
+          a: 'The form is available in Turkish and English and opens based on the language of the patient’s phone; there is no form in other languages. For patients from abroad, the English form and English Pulse AI drafts are available.',
+        },
+        {
+          q: 'What should I keep in mind when replying to a patient?',
+          a: 'Don’t mention the patient’s diagnosis, treatment or identity in your reply. A short thank-you and an invitation to get in touch is usually enough; discuss the details by phone or in person.',
+        },
+        {
+          q: 'Can a patient who gives a low rating still post on Google?',
+          a: 'Yes. A patient who rates below your threshold can first send you private feedback; the Google review link is shown on the same screen, and they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.',
+        },
+      ],
+    },
+    ctaTitle: 'Collect patient feedback in every department of your clinic',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
+  return buildSolutionMetadata({ locale, slug: SLUG, ...CONTENT[locale].meta });
 }
 
-/**
- * 1:1 with .design/site/site-pages4.jsx:ClinicSolutionPage (lines 80-128).
- * Light gray hero + shield illustration + KVKK callout + 3-stat grid +
- * 4-feature 2-col grid.
- */
-export default async function ClinicSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-  const base = `/${locale}`;
-
-  const stats = isTr
-    ? [
-        { value: 'KVKK', label: 'Aydınlatma metni ve açık rıza' },
-        { value: '90 gün', label: 'Sonra IP adresleri anonimleşir' },
-        { value: '14 gün', label: 'Ücretsiz deneme' },
-      ]
-    : [
-        { value: 'KVKK', label: 'Privacy notice and explicit consent' },
-        { value: '90 days', label: 'Then IP addresses are anonymised' },
-        { value: '14 days', label: 'Free trial' },
-      ];
-
-  const features = isTr
-    ? [
-        { t: 'Tedavi sonrası anket', d: 'Randevu sisteminden otomatik tetiklenebilir. Hastaya SMS/QR ile gönderilir.' },
-        { t: 'Doktor bazlı raporlama', d: 'Her hekimin bireysel memnuniyet skoru ve yorum dağılımı ayrı görünür.' },
-        { t: "Google bağlantısı + opsiyonel iç kanal", d: "Her hastaya Google yorum bağlantısı sunulur; isteyen aynı akışta kliniğe özel geri bildirim de bırakır — KVKK ve Google politikalarıyla uyumlu." },
-        { t: 'Çok dilli destek', d: 'Medikal turizm için otomatik dil tespiti, Arapça dahil 12 dil.' },
-      ]
-    : [
-        { t: 'Post-treatment survey', d: 'Auto-triggered from your scheduling system; delivered to the patient via SMS/QR.' },
-        { t: 'Per-doctor reporting', d: 'Each clinician sees their own satisfaction score and review distribution.' },
-        { t: 'Google link + optional private channel', d: 'Every patient sees the public Google review link; private feedback to the clinic is an optional extra step in the same flow — KVKK and Google policy compliant.' },
-        { t: 'Multilingual support', d: 'Auto language detection for medical tourism — 12 languages including Arabic.' },
-      ];
-
-  const benefits = isTr
-    ? [
-        { Icon: ShieldCheck, h: 'KVKK uyumlu hasta deneyimi', d: 'Hasta verisi EU veri merkezinde, IP 90 gün retention, açık rıza opt-in. Aydınlatma metni form altında görünür; hasta onayı zorunlu.' },
-        { Icon: Stethoscope, h: 'Hekim + branş bazlı atama', d: 'Yorum geldiğinde hangi hekim, hangi branş, hangi muayene tipi etiketlenir. Branş bazlı ortalama puan + memnuniyet skoru — klinik yönetimi için doğrudan operasyonel veri.' },
-        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: 'Sağlık-spesifik ton: profesyonel, empatik, tıbbi ayrıntıya girmeyen yanıtlar. Sahip onaylar, otomatik gönderim yok — KVKK ve hasta gizliliği ihlalini önler.' },
-        { Icon: BarChart3, h: 'Çoklu lokasyon + şube analitiği', d: 'Aynı klinik zincirinin birden fazla şubesi varsa şube bazlı puan, randevu hacmi ve bekleme süresi memnuniyet korelasyonu görselleştirilir.' },
-      ]
-    : [
-        { Icon: ShieldCheck, h: 'KVKK / GDPR-compliant patient experience', d: 'Patient data stored in an EU data center, IP retained for 90 days, opt-in consent. Privacy notice visible under the form; patient consent is required.' },
-        { Icon: Stethoscope, h: 'Physician + specialty tagging', d: 'When a review arrives, the physician, specialty, and visit type are tagged. Specialty-level average rating + satisfaction score — direct operational data for clinic management.' },
-        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Healthcare-specific tone: professional, empathetic, without medical detail. Owner approves; nothing auto-sent — prevents privacy violations.' },
-        { Icon: BarChart3, h: 'Multi-location + branch analytics', d: 'For clinic chains with multiple branches, per-branch rating, appointment volume, and wait-time-vs-satisfaction correlation are visualized.' },
-      ];
-
-  const faqs: FaqItem[] = isTr
-    ? [
-        { q: 'Klinik için Buaze KVKK ile uyumlu mu?', a: 'Evet. Hasta verileri EU veri merkezinde (Frankfurt) saklanır; KVKK aydınlatma metni feedback form altında görünür ve onay açık (opt-in) şekilde alınır. IP adresleri 90 gün sonra otomatik anonimleştirilir. Pazarlama izni hizmet onayından ayrı toplanır. Hasta talep ederse veriler silinir veya export edilir.' },
-        { q: 'Hekim performansını takip eder miyim?', a: 'Evet. QR oluştururken hekim etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi hekim + hangi branş + muayene saati loglanır. Analytics raporunda hekim bazlı ortalama puan, yorum sayısı ve memnuniyet trendleri görünür.' },
-        { q: 'Düşük puan veren hasta kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren hastalar ek olarak kliniğinizle özel paylaşım yapma seçeneği görür. Hasta her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (randevu yeniden planlama, ek konsültasyon, vb.) çözme şansı kazanırsınız.' },
-        { q: 'Hassas tıbbi veri toplar mı?', a: 'Hayır. Form sadece deneyim puanı + opsiyonel yorum + opsiyonel iletişim bilgisi (e-posta veya telefon, KVKK onaylı) toplar. Tedavi detayları, tanı, ilaç bilgisi gibi tıbbi veriler form alanlarında yer almaz. Pulse AI yanıtları da tıbbi ayrıntıya girmez — sadece hizmet kalitesi tonunda yanıt verir.' },
-        { q: 'Birden fazla şubem / muayenehanem var, nasıl yönetilir?', a: 'Her şube için ayrı işletme oluştur veya tek işletme + şube etiketleri kullan. Analytics şube bazlı ayrılır: hangi şubenin ortalama puanı yüksek, hangi şubede bekleme süresi memnuniyeti olumsuz etkiliyor — merkezi yönetim doğrudan veriden görür.' },
-      ]
-    : [
-        { q: 'Is Buaze KVKK / GDPR-compliant for clinics?', a: 'Yes. Patient data is stored in an EU data center (Frankfurt); the KVKK / GDPR notice is visible under the feedback form and consent is opt-in. IP addresses are automatically anonymized after 90 days. Marketing consent is collected separately from service consent. On patient request, data is deleted or exported.' },
-        { q: 'Can I track physician performance?', a: 'Yes. When generating the QR you can add a physician tag (Buaze branch field or a custom URL parameter); when the review arrives, which physician + which specialty + visit time is logged with it. The analytics report shows per-physician average rating, review volume, and satisfaction trends.' },
-        { q: 'Will low-rating patients simply disappear?', a: 'No. Buaze never blocks or hides any review. Patients giving low ratings additionally see an option to share privately with your clinic. The patient always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (rescheduling, extra consultation, etc.).' },
-        { q: 'Does Buaze collect sensitive medical data?', a: 'No. The form only collects an experience rating + optional comment + optional contact (email or phone, KVKK-consented). Treatment details, diagnoses, medication information — no medical fields exist. Pulse AI replies also avoid medical detail — they respond in a service-quality tone only.' },
-        { q: 'I have multiple branches / offices — how do I manage them?', a: 'Either create a separate business per branch or use a single business + branch tags. Analytics splits per branch: which branch has the highest average rating, where wait time hurts satisfaction — central management sees it directly from data.' },
-      ];
-
-  const relatedSolutions = getRelatedSolutions('healthcare', 4);
-
-  const jsonLd = buildSolutionSchema({
-    locale,
-    slug: 'healthcare',
-    industryLabel: isTr ? 'Klinik & Sağlık' : 'Clinic & Healthcare',
-    serviceName: isTr ? 'Klinik & Sağlık İtibar Yönetimi' : 'Clinic & Healthcare Reputation Management',
-    description: isTr
-      ? 'KVKK uyumlu hasta geri bildirimi. Tedavi sonrası QR ile deneyim toplayın, Google profilinizi güçlendirin.'
-      : 'KVKK-compliant patient feedback. Collect experience after treatment via QR and strengthen your Google profile.',
-    faqs,
-  });
-
-  const howTo = buildHowToSchema({
-    locale,
-    name: isTr ? 'Klinik ve sağlıkta Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a clinic',
-    description: isTr
-      ? 'KVKK uyumlu hasta geri bildirimi için QR akışını kurmak ve yorumları yanıtlamak için adımlar.'
-      : 'Steps to set up a KVKK-compliant patient feedback QR flow and reply to reviews.',
-    url: `https://www.buaze.com/${locale}/solutions/healthcare`,
-    steps: isTr
-      ? [
-          { name: 'Kliniği KVKK uyumlu tanımla', text: 'İşletme adı, kategori ve KVKK aydınlatma metnini panelde onayla; bildirim e-postası ve Google yorum bağlantısını ekle.' },
-          { name: 'QR’ı resepsiyon veya muayene sonrası yerleştir', text: 'Resepsiyon tezgahı, muayene odası çıkışı veya tedavi sonrası bilgilendirme broşürüne QR koy; hekim etiketi için URL parametresi kullan.' },
-          { name: 'Hekim ve resepsiyonu ekibe ekle', text: 'Hekim, resepsiyon ve klinik müdürünü Buaze ekibine davet et; rol bazlı görünürlük tıbbi olmayan veriyi merkezde tutar.' },
-          { name: 'Pulse AI ile hassas yanıt yaz', text: 'Pulse AI yanıtları tıbbi ayrıntıya girmez, sadece hizmet kalitesi tonunda yanıt verir — operatör onaylar ve gönderir; hekim/şube bazlı analitiklerden örüntüleri oku.' },
-        ]
-      : [
-          { name: 'Set up the clinic KVKK-compliant', text: 'Confirm clinic name, category and the KVKK notice in the panel; add the notification email and Google review link.' },
-          { name: 'Place the QR at reception or post-visit', text: 'Place the QR at the reception desk, exit of the exam room, or in a post-treatment information leaflet; use a URL parameter for the physician tag.' },
-          { name: 'Invite physicians and reception', text: 'Invite physicians, reception and the clinic manager to your Buaze team; role-based visibility keeps non-medical data centralized.' },
-          { name: 'Reply gently via Pulse AI', text: 'Pulse AI replies stay in a service-quality tone with no medical detail — operator approves and sends; read physician/branch analytics to spot patterns.' },
-        ],
-  });
-  if (howTo) jsonLd.push(howTo);
-
+export default async function HealthcareSolutionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
   return (
-    <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Hero — light gray bg */}
-      <section className="bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
-          <div>
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'SEKTÖR · KLİNİK & SAĞLIK' : 'SECTOR · CLINIC & HEALTHCARE'}
-            </span>
-            <h1
-              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
-            >
-              {isTr ? (
-                <>
-                  Hasta güveni,
-                  <br />
-                  dijitale
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">taşınır.</span>
-                </>
-              ) : (
-                <>
-                  Patient trust,
-                  <br />
-                  carried into the
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5">digital.</span>
-                </>
-              )}
-            </h1>
-            <p className="mt-5 max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#525252]">
-              {isTr
-                ? 'KVKK uyumlu hasta geri bildirimi. Tedavi sonrası QR ile deneyim toplayın, Google profilinizi güçlendirin. Sağlık sektörüne özel hassas akış.'
-                : 'KVKK-compliant patient feedback. Capture experience after treatment via QR and strengthen your Google profile. A flow tailored to healthcare.'}
-            </p>
-
-            {/* KVKK callout */}
-            <div className="mt-5 max-w-[480px] rounded-[10px] bg-[#EAF9B8] p-4 text-[13px] leading-[1.5] text-[#0A0A0A]">
-              <strong>{isTr ? 'KVKK Notu:' : 'KVKK Note:'}</strong>{' '}
-              {isTr
-                ? 'Hasta verileri hiçbir zaman üçüncü tarafla paylaşılmaz. Anket ve yorum akışları anonimleştirilebilir.'
-                : 'Patient data is never shared with third parties. Survey and review flows can be anonymised.'}
-            </div>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-              >
-                {isTr ? 'Ücretsiz başla' : 'Start free'}
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-
-          {/* IllusShield — exact SVG from .design/site/site-shared.jsx:270-285 */}
-          <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 200 240" className="h-auto w-full max-w-[260px]" aria-hidden>
-              <path
-                d="M100 15 L175 40 L175 120 Q175 180 100 225 Q25 180 25 120 L25 40 Z"
-                fill="#FFFFFF"
-                stroke="#0A0A0A"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M100 25 L165 47 L165 120 Q165 172 100 212 Q35 172 35 120 L35 47 Z"
-                fill="#C6F24E"
-                opacity="0.15"
-              />
-              {/* Check */}
-              <circle cx="100" cy="110" r="34" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2.5" />
-              <path
-                d="M82 110 L95 123 L118 98"
-                fill="none"
-                stroke="#0A0A0A"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* Dots */}
-              <circle cx="65" cy="165" r="3" fill="#0A0A0A" />
-              <circle cx="100" cy="175" r="3" fill="#0A0A0A" />
-              <circle cx="135" cy="165" r="3" fill="#0A0A0A" />
-              {/* Ribbon */}
-              <rect x="70" y="45" width="60" height="14" rx="3" fill="#0A0A0A" />
-              <text
-                x="100"
-                y="56"
-                textAnchor="middle"
-                fontFamily="JetBrains Mono"
-                fontSize="9"
-                fill="#C6F24E"
-                fontWeight="600"
-                letterSpacing="0.1em"
-              >
-                GOOGLE SAFE
-              </text>
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      {/* 3-stat grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {stats.map((s) => (
-              <div key={s.label} className="bz-card p-6">
-                <div
-                  className="text-[40px] sm:text-[48px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {s.value}
-                </div>
-                <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4-feature 2-col grid */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-6 md:grid-cols-2">
-          {features.map((f) => (
-            <div key={f.t} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-6">
-              <h3
-                className="text-[22px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
-              >
-                {f.t}
-              </h3>
-              <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">{f.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Benefits — 4-tile grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
-            {isTr ? 'Klinik operasyonuna özel dört kazanç' : 'Four wins built for clinic operations'}
-          </h2>
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => (
-              <div key={i} className="bz-card p-6 sm:p-7">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
-                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Klinik kurulumu için merak edilenler' : 'Common questions for clinic setup'}
-          </h2>
-          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
-        </div>
-      </section>
-
-      {/* Resources / Related Solutions */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
-          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
-              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
-              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
-              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
-            ].map((r) => (
-              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
-                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-              </Link>
-            ))}
-          </div>
-          {relatedSolutions.length > 0 && (
-            <>
-              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {relatedSolutions.map((sol) => (
-                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
-                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
-                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Dark CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="mx-auto max-w-[900px] text-center">
-          <h2
-            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-          >
-            {isTr ? 'Her hasta, saygı ile.' : 'Every patient, with respect.'}
-          </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
-            {isTr
-              ? 'KVKK uyumlu · 14 gün ücretsiz · Kredi kartı istemiyoruz'
-              : 'KVKK-compliant · 14-day free · No credit card'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Ücretsiz başla' : 'Start free'}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <SolutionPageLayout
+      locale={locale}
+      slug={SLUG}
+      sector="clinic"
+      content={CONTENT[locale]}
+      illustration={<IllusClinic />}
+    />
   );
 }

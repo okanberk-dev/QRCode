@@ -42,6 +42,8 @@ export default function HelpSearchBar({ locale, initial = '', size = 'hero' }: P
   return (
     <form
       role="search"
+      action={`/${locale}/help/search`}
+      method="get"
       onSubmit={submit}
       className={`${wrapper} transition-colors focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2`}
     >

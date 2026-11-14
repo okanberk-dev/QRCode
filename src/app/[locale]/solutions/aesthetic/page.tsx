@@ -141,7 +141,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         'Estetik uygulamalar kişisel bir konudur ve bazı hastalar bunu paylaşmak istemez. Geri bildirim formunda ad ve e-posta isteğe bağlıdır. Google’da yorum yazmak ise tamamen hastanın kararıdır ve hastanın kendi Google hesabıyla yapılır; Buaze hasta adına hiçbir yerde yorum yayınlamaz.',
         'Formda sağlık bilgisi soran bir alan yoktur, ancak yorum alanına hasta istediğini yazabilir. Uygulama ayrıntısı içeren bir geri bildirimi yanıtlarken bu ayrıntıları tekrarlamayın. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir.',
-        'Veritabanı AB’de (Frankfurt) bulunur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI ile taslak istediğinizde ya da otomatik taslakları açtığınızda geri bildirim metni OpenAI’a gönderilir. Hasta yorumlarını tanıtımda kullanmadan önce sağlık tanıtım kurallarını hukuk danışmanınızla değerlendirin.',
+        'Veritabanı AB’de (Frankfurt) bulunur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz. Hasta yorumlarını tanıtımda kullanmadan önce sağlık tanıtım kurallarını hukuk danışmanınızla değerlendirin.',
       ],
     },
     faq: {
@@ -149,7 +149,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       items: [
         {
           q: 'Uygulama türüne veya uzmana göre ayrı rapor alabilir miyim?',
-          a: 'Hayır, Buaze’de uygulama türü veya uzman bazında rapor yoktur. Farklı noktalar için etiketli QR kodlar oluşturabilirsiniz; etiket düşük puan e-postasında ve CSV dosyasında görünür. Daha ayrıntılı soru sormak isterseniz her uygulama türü için ayrı bir anket hazırlayabilirsiniz; her anketin sonuçları ayrı görünür.',
+          a: 'Hayır, Buaze’de uygulama türü veya uzman bazında rapor yoktur. Farklı noktalar için etiketli QR kodlar oluşturabilirsiniz; etiket düşük puan e-postasında ve CSV dosyasında görünür. Daha ayrıntılı geri bildirim için kısa bir anket hazırlayabilirsiniz; anketin sonuçları ayrı görünür. Ankette hangi uygulamanın yapıldığını değil, hizmet deneyimini sorun.',
         },
         {
           q: 'Uygulamadan birkaç hafta sonra hastaya otomatik mesaj gönderilebilir mi?',
@@ -305,7 +305,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         "Aesthetic treatments are personal, and some patients prefer not to talk about them. Name and e-mail are optional on the feedback form. Writing a Google review is entirely the patient’s choice and is done with their own Google account; Buaze never publishes a review on a patient’s behalf.",
         "No field on the form asks about health, but patients can write anything in the comment box. When you reply to feedback that mentions a treatment, don’t repeat those details. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days.",
-        'The database is in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. When you ask Pulse AI for a draft or turn on automatic drafts, the feedback text is sent to OpenAI. Before using patient reviews in promotion, review the healthcare advertising rules with your legal adviser.',
+        'The database is in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business. Before using patient reviews in promotion, review the healthcare advertising rules with your legal adviser.',
       ],
     },
     faq: {
@@ -313,7 +313,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       items: [
         {
           q: 'Can I get separate reports per treatment or specialist?',
-          a: 'No, Buaze has no per-treatment or per-specialist reports. You can create labelled QR codes for different spots; the label shows in the low-rating e-mail and the CSV file. For more detailed questions, build a separate survey for each treatment type; each survey has its own results.',
+          a: 'No, Buaze has no per-treatment or per-specialist reports. You can create labelled QR codes for different spots; the label shows in the low-rating e-mail and the CSV file. For more detailed feedback, build a short survey; its results are shown separately. Ask about the service experience, not about which treatment was done.',
         },
         {
           q: 'Can patients get an automatic message a few weeks after their treatment?',

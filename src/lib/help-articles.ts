@@ -225,13 +225,13 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: '1. Hesabınızı açın',
             paragraphs: [
-              'Kayıt olduğunuzda 14 günlük ücretsiz deneme başlar; kredi kartı istenmez. Ardından açılan kurulum sihirbazı işletmenizin adını, sektörünü ve şehrini sorar ve ilk işletmenizi oluşturur. Sihirbazı **Sonra tamamla** ile geçip işletmenizi daha sonra **İşletmeler** sayfasından da ekleyebilirsiniz.',
+              'Kayıt olduğunuzda 14 günlük ücretsiz deneme başlar; kredi kartı istenmez. Ardından açılan kurulum sihirbazı işletmenizin adını, sektörünü, konumunu ve kullandığınız yorum platformlarını sorar; sihirbazı tamamladığınızda ilk işletmeniz oluşturulur. **Sonra tamamla** ile sihirbazı geçip işletmenizi daha sonra **İşletmeler** sayfasından da ekleyebilirsiniz.',
             ],
           },
           {
             title: '2. Yorum bağlantılarınızı ekleyin',
             paragraphs: [
-              'Panelde **Platform bağlantıları** sayfasını açın. Google için işletmenizi adıyla arayıp listeden seçmeniz yeterlidir; Buaze resmi “yorum yaz” bağlantınızı oluşturur. Yemeksepeti, Getir, Trendyol GO, Tripadvisor ve diğer platformlar için yorum sayfanızın bağlantısını yapıştırın. Ayrıntılar: [Google yorum bağlantısını ekleme](/tr/help/google-review-link).',
+              'Panelde **Platform bağlantıları** sayfasını açın ve Google satırındaki **Bağla** düğmesine basın. İşletmenizi adıyla arayıp listeden seçmeniz yeterlidir; Buaze resmi “yorum yaz” bağlantınızı oluşturur. Yemeksepeti, Getir, Trendyol GO, Tripadvisor ve diğer platformlarda ise ilgili satırı açıp yorum sayfanızın bağlantısını yapıştırın. Ayrıntılar: [Google yorum bağlantısını ekleme](/tr/help/google-review-link).',
             ],
           },
           {
@@ -287,13 +287,13 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: '1. Create your account',
             paragraphs: [
-              'Signing up starts a 14-day free trial; no credit card is required. A short setup wizard then asks for your business name, sector and city and creates your first business. You can also choose **Finish later** and add your business afterwards from the **Locations** page.',
+              'Signing up starts a 14-day free trial; no credit card is required. A setup wizard then asks for your business name, sector, location and the review platforms you use; your first business is created when you complete it. You can also choose **Finish later** and add your business afterwards from the **Locations** page.',
             ],
           },
           {
             title: '2. Add your review links',
             paragraphs: [
-              'Open the **Platform links** page in the panel. For Google, search for your business by name and pick it from the list; Buaze builds your official “write a review” link. For Yemeksepeti, Getir, Trendyol GO, Tripadvisor and the other platforms, paste the link to your review page. See [Adding your Google review link](/en/help/google-review-link).',
+              'Open the **Platform links** page in the panel and press **Add link** on the Google row. Search for your business by name and pick it from the list; Buaze builds your official “write a review” link. For Yemeksepeti, Getir, Trendyol GO, Tripadvisor and the other platforms, open that platform’s row and paste the link to your review page. See [Adding your Google review link](/en/help/google-review-link).',
             ],
           },
           {
@@ -366,7 +366,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Adres ve bildirim e-postası',
             paragraphs: [
-              'Adresiniz, müşterinin puan ekranında işletme adının altında görünür. **Bildirim e-postası** ise 1–3 yıldızlı her yeni geri bildirimde uyarının gittiği adrestir; boş bırakırsanız uyarılar hesabınızın e-posta adresine gider. Geri bildirimleri ekipçe takip ediyorsanız ortak bir adres girin.',
+              'Adresiniz, müşterinin puan ekranında işletme adının altında görünür (masa etiketli QR kodlarında adresin yerine masa etiketi yazar). **Bildirim e-postası** ise 1–3 yıldızlı her yeni geri bildirimde uyarının gittiği adrestir; boş bırakırsanız uyarılar hesabınızın e-posta adresine gider. Müşteriye e-postayla gönderdiğiniz yanıtlarda da yanıt adresi olarak bu adres kullanılır. Geri bildirimleri ekipçe takip ediyorsanız ortak bir adres girin.',
             ],
           },
           {
@@ -386,7 +386,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Bildirim e-postasını boş bırakırsam ne olur?',
-            a: 'Düşük puan uyarıları hesabınızın e-posta adresine gider. Uyarıları kapatmak isterseniz **Hesabım → Bildirimler** bölümünü kullanın.',
+            a: 'Düşük puan uyarıları hesabınızın e-posta adresine gider. Ancak müşteriye e-postayla gönderdiğiniz yanıtlara müşterinin cevabı size ulaşmaz; bunun için bildirim e-postasını doldurun. Uyarıları kapatmak isterseniz **Hesabım → Bildirimler** bölümünü kullanın.',
           },
           {
             q: 'Sektörü sonradan değiştirebilir miyim?',
@@ -426,7 +426,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Address and notification e-mail',
             paragraphs: [
-              'Your address appears under the business name on the customer’s rating screen. The **notification e-mail** is where an alert goes for every new 1–3 star feedback; if you leave it empty, alerts go to your account e-mail. If your team follows feedback together, use a shared address.',
+              'Your address appears under the business name on the customer’s rating screen (on QR codes with a table label, the label is shown instead). The **notification e-mail** is where an alert goes for every new 1–3 star feedback; if you leave it empty, alerts go to your account e-mail. It is also the reply-to address on the e-mail replies you send to customers. If your team follows feedback together, use a shared address.',
             ],
           },
           {
@@ -446,7 +446,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'What if I leave the notification e-mail empty?',
-            a: 'Low-rating alerts go to your account e-mail. To switch alerts off, use **Account → Notifications**.',
+            a: 'Low-rating alerts go to your account e-mail. However, when a customer answers an e-mail reply you sent, their answer will not reach you; fill in the notification e-mail for that. To switch alerts off, use **Account → Notifications**.',
           },
           {
             q: 'Can I change the sector later?',
@@ -966,7 +966,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Kapıda ve paket serviste',
             paragraphs: [
-              'Çıkış kapısındaki QR kodu, ayrılmadan önce bir şey söylemek isteyen müşteriye ulaşır. Paket servisteki QR kodu teslimat deneyimini ölçer; bu QR’ı ilgili teslimat platformuna sabitlerseniz eşiğinizdeki puanı veren müşteri o platformun yorum sayfasına gider.',
+              'Çıkış kapısındaki QR kodu, ayrılmadan önce bir şey söylemek isteyen müşteriye ulaşır. Paket servisteki QR kodu teslimat deneyimini ölçer; bu QR’ı ilgili teslimat platformuna sabitlerseniz eşik ve üzerinde puan veren müşteri o platformun yorum sayfasına gider.',
             ],
           },
           {
@@ -1074,7 +1074,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
       body: {
         lead: 'QR sihirbazındaki iki isteğe bağlı seçim, aynı işletme için farklı noktalara farklı QR kodları hazırlamanızı sağlar: masa etiketi ve sabit platform.',
         keyInsight:
-          'Masa etiketi geri bildirimin hangi noktadan geldiğini gösterir; sabit platform ise eşiğinizdeki puanı veren müşterinin hangi yorum sayfasına gideceğini belirler.',
+          'Masa etiketi geri bildirimin hangi noktadan geldiğini gösterir; sabit platform ise eşik ve üzerinde puan veren müşterinin hangi yorum sayfasına gideceğini belirler.',
         sections: [
           {
             title: 'Masa etiketi',
@@ -1085,7 +1085,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Platform seçimi',
             paragraphs: [
-              '**Varsayılan platforma gönder** seçeneği, işletme ayarlarındaki varsayılan platformu kullanır. **Belirli bir platforma sabitle** seçeneğinde, bu QR kodunu okutan ve eşiğinizdeki puanı veren müşteri yalnızca seçtiğiniz platformun yorum sayfasına gider. Listede, bağlantısını eklediğiniz ve sektörünüze uyan platformlar görünür.',
+              '**Varsayılan platforma gönder** seçeneği, işletme ayarlarındaki varsayılan platformu kullanır. **Belirli bir platforma sabitle** seçeneğinde, bu QR kodunu okutan ve eşik ve üzerinde puan veren müşteri yalnızca seçtiğiniz platformun yorum sayfasına gider. Listede, bağlantısını eklediğiniz ve sektörünüze uyan platformlar görünür.',
             ],
           },
           {
@@ -1418,7 +1418,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Davet cümlesi',
             paragraphs: [
-              'Yalnızca “QR’ı okutun” yazmak yerine ne olacağını söyleyin: **“Deneyiminizi bizimle paylaşın; görüşünüz doğrudan ekibimize ulaşır.”** Cümle kısa, dürüst ve herkese aynı olsun; belirli bir puan istemeyin, karşılığında bir şey vaat etmeyin.',
+              'Yalnızca “QR’ı okutun” yazmak yerine ne olacağını söyleyin: **“Ziyaretinizi puanlayın ve görüşünüzü bizimle paylaşın.”** Cümle kısa, dürüst ve herkese aynı olsun; belirli bir puan istemeyin, karşılığında bir şey vaat etmeyin.',
             ],
           },
           {
@@ -1459,12 +1459,12 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     en: {
       title: 'Helping more customers scan your QR code',
       excerpt:
-        'Placement, the invitation line and visibility decide how often a QR code is scanned. Watch the number of incoming feedback to see which change actually helps.',
+        'Placement, the invitation line and visibility decide how often a QR code is scanned. Watch how much feedback comes in to see which change actually helps.',
       tags: ['scanning', 'placement', 'invitation', 'visibility', 'qr'],
       body: {
         lead: 'Not every printed QR code gets scanned. Customers need to notice it, understand what will happen and find it easy. This guide covers small changes that make a scan more likely.',
         keyInsight:
-          'Put the QR code where it is easy to see, add a short and honest invitation next to it, and judge the effect by the number of feedback you receive in the following weeks.',
+          'Put the QR code where it is easy to see, add a short and honest invitation next to it, and judge the effect by how much feedback you receive in the following weeks.',
         sections: [
           {
             title: 'Placement',
@@ -1475,7 +1475,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'The invitation line',
             paragraphs: [
-              'Instead of just “Scan the QR”, say what happens: **“Tell us about your visit; your feedback goes straight to our team.”** Keep it short, honest and the same for everyone; do not ask for a particular rating or promise anything in return.',
+              'Instead of just “Scan the QR”, say what happens: **“Rate your visit and share your thoughts with us.”** Keep it short, honest and the same for everyone; do not ask for a particular rating or promise anything in return.',
             ],
           },
           {
@@ -1490,7 +1490,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Measuring the effect',
             paragraphs: [
-              'The panel does not show QR scan counts, so you track the effect through the number of feedback you receive. Compare total reviews on the **Analytics** page for the weeks before and after a change. If you use QR codes with table labels, you can also look by table in the CSV export.',
+              'The panel does not show QR scan counts, so you track the effect through how much feedback you receive. Compare total reviews on the **Analytics** page for the weeks before and after a change. If you use QR codes with table labels, you can also look by table in the CSV export.',
             ],
           },
         ],
@@ -1504,7 +1504,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Can I see how many times my QR code was scanned?',
-            a: 'The panel does not show QR scan counts. You can follow the number of incoming feedback on the **Analytics** and **Reviews** pages.',
+            a: 'The panel does not show QR scan counts. You can follow how much feedback comes in on the **Analytics** and **Reviews** pages.',
           },
           {
             q: 'Can I ask customers for a particular rating?',
@@ -1555,7 +1555,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Gönderim kuralları',
             paragraphs: [
-              'Yanıt yazma 1–3 yıldızlı geri bildirimler için açıktır. Her yanıt gönderilmeden önce güvenlik kontrolünden geçer: tehdit, hakaret, küfür, kişisel veri, yorum karşılığında teklif ve işletmenize ait olmayan bağlantılar içeren metinler gönderilmez. E-posta Buaze adına gönderilir; müşteri yanıtladığında cevabı bildirim e-postanıza gelir.',
+              'Yanıt yazma 1–3 yıldızlı geri bildirimler için açıktır ve her geri bildirime bir yanıt gönderilir; e-posta iletilemezse yeniden deneyebilirsiniz. Her yanıt gönderilmeden önce güvenlik kontrolünden geçer: tehdit, hakaret, küfür, kişisel veri, yorum karşılığında teklif ve işletmenize ait olmayan bağlantılar içeren metinler gönderilmez. E-posta, Buaze’nin gönderim adresinden işletmeniz adına gider; işletme ayarlarında bildirim e-postası girdiyseniz müşterinin cevabı bu adrese gelir.',
             ],
           },
         ],
@@ -1621,7 +1621,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Sending rules',
             paragraphs: [
-              'Replies can be written to 1–3 star feedback. Each reply passes a safety check before it is sent: text with threats, insults, profanity, personal data, offers in exchange for reviews or links that are not your business’s own is not sent. The e-mail is sent on Buaze’s behalf, and when the customer answers, the reply reaches your notification e-mail.',
+              'Replies can be written to 1–3 star feedback, one reply per piece of feedback; if the e-mail cannot be delivered, you can try again. Each reply passes a safety check before it is sent: text with threats, insults, profanity, personal data, offers in exchange for reviews or links that are not your business’s own is not sent. The e-mail goes out from Buaze’s sending address on your business’s behalf; if you have set a notification e-mail in your business settings, the customer’s answer goes to that address.',
             ],
           },
         ],
@@ -2248,9 +2248,9 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Neler dışa aktarılabilir?',
             items: [
-              '**Geri bildirimler:** tarih, puan, KVKK onayı, platform, kaynak, yorum, işletme ve masa etiketi.',
-              '**Analitik raporu:** seçili dönem için özet veriler.',
-              '**Müşteriler:** iletişim bilgisi bırakan müşterilerin listesi.',
+              '**Yorumlar sayfası (Dışa aktar):** tarih, puan, KVKK onayı, platform, kaynak, yorum, işletme ve masa etiketi; seçili işletme, tarih, puan ve platform seçimlerine göre.',
+              '**Analitik sayfası (Rapor indir):** seçili dönemdeki her geri bildirim için puan, yorum, yanıt durumu ve yanıt süresi; KVKK onayı veren müşterilerin e-posta adresi ya da telefonu da yer alır.',
+              '**Müşteriler sayfası (CSV indir):** iletişim bilgisi bırakan müşterilerin listesi.',
               '**Anket ve denetim yanıtları:** her anketin ve denetimin kendi sayfasından.',
             ],
           },
@@ -2266,7 +2266,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Dosyayı güvenle saklama',
             paragraphs: [
-              'Dışa aktarılan dosyalarda yorum metinleri ve müşteri listesi gibi kişisel veriler bulunabilir. Dosyayı yalnızca gereken kişilerle paylaşın ve işiniz bitince silin; ayrıntılar: [Dışa aktarılan dosyalarda kişisel veri](/tr/help/export-and-pii).',
+              'Dışa aktarılan dosyalarda yorum metinleri ve müşterilerin iletişim bilgileri gibi kişisel veriler bulunabilir. Dosyayı yalnızca gereken kişilerle paylaşın ve işiniz bitince silin; ayrıntılar: [Dışa aktarılan dosyalarda kişisel veri](/tr/help/export-and-pii).',
             ],
           },
         ],
@@ -2282,12 +2282,12 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
             a: 'Hayır. Müşterilere açık bir API veya webhook şu an yok; verilerinizi CSV olarak indirebilirsiniz.',
           },
           {
-            q: 'Geri bildirim CSV’sinde müşterinin e-postası var mı?',
-            a: 'Hayır. Geri bildirim dosyası yorum ve bağlam bilgilerini içerir; iletişim bilgisi bırakan müşteriler **Müşteriler** sayfasının dışa aktarımında yer alır.',
+            q: 'Dışa aktarılan dosyalarda müşterinin e-postası var mı?',
+            a: 'Yorumlar sayfasının dosyasında yok. **Analitik** sayfasının raporunda ve **Müşteriler** sayfasının dosyasında, KVKK onayı veren müşterilerin e-posta adresi ya da telefonu bulunur; bu dosyaları özenle paylaşın.',
           },
           {
             q: 'Dışa aktarımın bir sınırı var mı?',
-            a: 'Geri bildirim dışa aktarımı tek seferde en fazla 10.000 satır içerir. Daha fazla kayıt varsa dönemi bölerek indirin.',
+            a: 'Yorumlar ve Analitik dosyaları tek seferde en fazla 10.000 satır içerir. Yorumlar sayfasında tarih seçimi **Tüm zamanlar** iken dışa aktarım son 90 günü kapsar; daha eski kayıtlar için Analitik sayfasında 12 ay ya da özel bir tarih aralığı seçin.',
           },
         ],
       },
@@ -2305,9 +2305,9 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'What can be exported?',
             items: [
-              '**Feedback:** date, rating, KVKK consent, platform, source, comment, business and table label.',
-              '**Analytics report:** summary data for the selected period.',
-              '**Customers:** the list of customers who left contact details.',
+              '**Reviews page (Export):** date, rating, KVKK consent, platform, source, comment, business and table label, following the business, date, rating and platform you have selected.',
+              '**Analytics page (Export report):** rating, comment, reply status and reply time for each piece of feedback in the selected period, plus the e-mail address or phone number of customers who gave KVKK consent.',
+              '**Customers page (Export CSV):** the list of customers who left contact details.',
               '**Survey and audit responses:** from each survey’s and audit’s own page.',
             ],
           },
@@ -2323,7 +2323,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Keeping the file safe',
             paragraphs: [
-              'Exported files can contain personal data such as comments and the customer list. Share the file only with people who need it and delete it when you are done; see [Personal data in exported files](/en/help/export-and-pii).',
+              'Exported files can contain personal data such as comments and customers’ contact details. Share the file only with people who need it and delete it when you are done; see [Personal data in exported files](/en/help/export-and-pii).',
             ],
           },
         ],
@@ -2339,12 +2339,12 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
             a: 'No. There is no customer-facing API or webhook today; you can download your data as CSV.',
           },
           {
-            q: 'Does the feedback CSV include customers’ e-mail addresses?',
-            a: 'No. The feedback file contains comments and their context; customers who left contact details are in the export on the **Customers** page.',
+            q: 'Do the exported files include customers’ e-mail addresses?',
+            a: 'Not the Reviews page file. The **Analytics** report and the **Customers** file include the e-mail address or phone number of customers who gave KVKK consent, so share those files with care.',
           },
           {
             q: 'Is there a limit to an export?',
-            a: 'A feedback export contains up to 10,000 rows at a time. If you have more, split the period and download it in parts.',
+            a: 'The Reviews and Analytics files contain up to 10,000 rows at a time. On the Reviews page, when the date choice is **All time**, the export covers the last 90 days; for older records, choose 12 months or a custom date range on the Analytics page.',
           },
         ],
       },
@@ -2367,16 +2367,16 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
             title: 'İşletmenizi arayıp seçin',
             ordered: true,
             items: [
-              'Panelde **Platform bağlantıları** sayfasını açın.',
-              'Google bölümünde işletmenizin adını yazın ve aratın.',
-              'Sonuçlardan kendi işletmenizi seçin; adres ve kategoriye bakarak doğru şubeyi bulun.',
+              'Panelde **Platform bağlantıları** sayfasını açın ve Google satırındaki **Bağla** düğmesine basın (bağlantı eklediyseniz düğmenin adı **Yönet** olur).',
+              '**İşletme adı ve semt** alanına işletmenizi yazın ve **Ara** düğmesine basın.',
+              'Sonuçlardan kendi işletmenizi bulun ve **Bu işletmeyi seç** düğmesine basın; adres ve kategoriye bakarak doğru şubeyi seçin.',
               'Buaze, seçtiğiniz işletme için resmi “yorum yaz” bağlantısını oluşturup kaydeder.',
             ],
           },
           {
             title: 'Elle eklemek isterseniz',
             paragraphs: [
-              'İşletmenizi listede bulamazsanız bağlantıyı elle girebilirsiniz: Place ID, Google’ın verdiği kısa yorum bağlantısı (g.page/r/…) veya Google Haritalar’daki işletme bağlantısı kabul edilir. Hangi biçimin nasıl çalıştığı [Google bağlantı türleri](/tr/help/google-maps-link-vs-place-id) rehberinde.',
+              'İşletmenizi listede bulamazsanız bağlantıyı aynı sayfadaki bağlantı alanına elle girebilirsiniz: Google’ın verdiği kısa yorum bağlantısı (g.page/r/…), yorum yazma bağlantısı veya Google Haritalar’daki işletme bağlantısı kabul edilir. Hangi biçimin nasıl çalıştığı [Google bağlantı türleri](/tr/help/google-maps-link-vs-place-id) rehberinde.',
             ],
           },
           {
@@ -2423,16 +2423,16 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
             title: 'Search for your business and pick it',
             ordered: true,
             items: [
-              'Open the **Platform links** page in the panel.',
-              'In the Google section, type your business name and search.',
-              'Pick your business from the results; use the address and category to find the right branch.',
+              'Open the **Platform links** page in the panel and press **Add link** on the Google row (once a link is saved, the button reads **Manage**).',
+              'Type your business into the **Business name and area** field and press **Search**.',
+              'Find your business in the results and press **Select this business**; use the address and category to pick the right branch.',
               'Buaze builds and saves the official “write a review” link for the business you picked.',
             ],
           },
           {
             title: 'Adding it by hand',
             paragraphs: [
-              'If your business does not appear in the list, you can enter the link yourself: a Place ID, the short review link Google gives you (g.page/r/…) or your business’s link from Google Maps are accepted. How each format works is explained in [Google link types](/en/help/google-maps-link-vs-place-id).',
+              'If your business does not appear in the list, you can enter the link yourself in the link field on the same page: the short review link Google gives you (g.page/r/…), a write-a-review link or your business’s link from Google Maps are accepted. How each format works is explained in [Google link types](/en/help/google-maps-link-vs-place-id).',
             ],
           },
           {
@@ -2471,26 +2471,26 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     tr: {
       title: 'Google bağlantısı: Place ID, kısa link ve Haritalar',
       excerpt:
-        'Place ID, g.page kısa bağlantısı ve Google Haritalar bağlantısı farklı davranır. Hangisini girerseniz girin, Buaze mümkünse doğrudan yorum yazma ekranını açar.',
+        'Place ID, g.page kısa bağlantısı ve Google Haritalar bağlantısı farklı davranır. Hangisini kullanırsanız kullanın, Buaze mümkünse yorum yazma ekranını açar.',
       tags: ['google', 'place id', 'google haritalar', 'kısa link', 'yorum bağlantısı'],
       body: {
         lead: 'Google için tek bir bağlantı türü yoktur. Bağlantıyı elle girmeniz gerekirse hangi biçimin nasıl çalıştığını bilmek, müşterinin gerçekten yorum yazma ekranına ulaşmasını sağlar.',
         keyInsight:
-          'İşletmenizi aratıp seçmek en güvenli yoldur. Elle giriyorsanız Place ID veya g.page/r/ ile başlayan kısa yorum bağlantısını tercih edin.',
+          'İşletmenizi aratıp seçmek en güvenli yoldur; Buaze, Google’ın işletmenize verdiği Place ID ile yorum yazma bağlantısını kendisi oluşturur. Elle giriyorsanız g.page/r/ ile başlayan kısa yorum bağlantısını tercih edin.',
         sections: [
           {
             title: 'Kabul edilen biçimler',
             items: [
-              '**Place ID** (genellikle ChIJ ile başlar): Buaze bunu doğrudan yorum yazma ekranını açan bağlantıya çevirir.',
+              '**Place ID** (genellikle ChIJ ile başlar): Google’ın işletmenize verdiği kimliktir. İşletmenizi aratıp seçtiğinizde Buaze bunu kaydeder ve doğrudan yorum yazma ekranını açan bağlantıyı oluşturur. Bağlantı alanına tek başına yazılamaz; elle eklemek isterseniz aşağıdaki yorum yazma bağlantısının içinde kullanın.',
               '**Kısa yorum bağlantısı** (g.page/r/…): Google İşletme Profili’nin verdiği bağlantıdır, olduğu gibi kullanılır.',
-              '**Yorum yazma bağlantısı** (search.google.com/local/writereview…): olduğu gibi kullanılır.',
+              '**Yorum yazma bağlantısı** (search.google.com/local/writereview?placeid=…): olduğu gibi kullanılır.',
               '**Google Haritalar bağlantısı** (google.com/maps/place/…): içinden Place ID çıkarılabiliyorsa yorum yazma bağlantısına çevrilir; çıkarılamazsa ve kısa Haritalar bağlantılarında (maps.app.goo.gl/…) müşteri işletmenizin Haritalar sayfasına gider ve yorum yazmayı orada seçer.',
             ],
           },
           {
             title: 'Kaydederken yapılan kontroller',
             paragraphs: [
-              'Bağlantı Google’a ait bir adres değilse kaydedilmez. Google’ın ana sayfası gibi, belirli bir işletmeye gitmeyen bir bağlantı girerseniz kaydedilir ama uyarı gösterilir; bu durumda bağlantıyı düzeltin.',
+              'Bağlantıyı https:// ile başlayan tam hâliyle yapıştırın; Google’a ait bir adres değilse kaydedilmez. Google’ın ana sayfası gibi, belirli bir işletmeye gitmeyen bir bağlantı girerseniz kaydedilir ama uyarı gösterilir; bu durumda bağlantıyı düzeltin.',
             ],
           },
           {
@@ -2521,26 +2521,26 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     en: {
       title: 'Google link types: Place ID, short link and Maps',
       excerpt:
-        'A Place ID, a g.page short link and a Google Maps link behave differently. Whichever one you enter, Buaze opens the review form directly whenever it can.',
+        'A Place ID, a g.page short link and a Google Maps link behave differently. Whichever one you use, Buaze opens the review form directly whenever it can.',
       tags: ['google', 'place id', 'google maps', 'short link', 'review link'],
       body: {
         lead: 'There is no single kind of Google link. If you need to enter the link by hand, knowing how each format works makes sure customers really reach the review form.',
         keyInsight:
-          'Searching for your business and picking it is the safest way. If you enter a link by hand, use a Place ID or the short review link that starts with g.page/r/.',
+          'Searching for your business and picking it is the safest way; Buaze then builds the review link itself from the Place ID Google gives your business. If you enter a link by hand, use the short review link that starts with g.page/r/.',
         sections: [
           {
             title: 'Accepted formats',
             items: [
-              '**Place ID** (usually starts with ChIJ): Buaze turns it into a link that opens the review form directly.',
+              '**Place ID** (usually starts with ChIJ): the ID Google gives your business. When you search for your business and pick it, Buaze saves it and builds a link that opens the review form directly. It cannot be typed into the link field on its own; to add it by hand, use it inside the write-a-review link below.',
               '**Short review link** (g.page/r/…): the link Google Business Profile gives you, used as is.',
-              '**Write-a-review link** (search.google.com/local/writereview…): used as is.',
+              '**Write-a-review link** (search.google.com/local/writereview?placeid=…): used as is.',
               '**Google Maps link** (google.com/maps/place/…): if a Place ID can be extracted, it is turned into a review link; if not, and for short Maps links (maps.app.goo.gl/…), the customer lands on your Maps page and chooses to write a review there.',
             ],
           },
           {
             title: 'Checks when you save',
             paragraphs: [
-              'A link that is not a Google address is not saved. If you enter a link that does not lead to a specific business, such as Google’s home page, it is saved with a warning; correct it in that case.',
+              'Paste the full link, starting with https://; a link that is not a Google address is not saved. If you enter a link that does not lead to a specific business, such as Google’s home page, it is saved with a warning; correct it in that case.',
             ],
           },
           {
@@ -2624,7 +2624,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Müşteri birden fazla platform görür mü?',
-            a: 'Yüksek puandan sonra tek bir platformun yorum sayfası açılır. Bu platform QR’a sabitlenen platform, yoksa varsayılan platformunuzdur.',
+            a: 'Yüksek puandan sonra tek bir platformun yorum sayfası açılır: QR koduna sabitlenen platform; o yoksa varsayılan platformunuz, o da yoksa sektörünüze göre öncelikli platform.',
           },
         ],
       },
@@ -2682,7 +2682,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Does the customer see more than one platform?',
-            a: 'After a high rating, a single platform’s review page opens: the platform pinned to the QR code, or otherwise your default platform.',
+            a: 'After a high rating, a single platform’s review page opens: the platform pinned to the QR code; failing that, your default platform, and failing that, the priority platform for your sector.',
           },
         ],
       },
@@ -2709,7 +2709,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Paketteki QR kodu',
             paragraphs: [
-              'Paket servis için ayrı bir QR oluşturun, masa etiketine örneğin PAKET yazın ve QR’ı ilgili platforma sabitleyin. Eşiğinizdeki puanı veren müşteri o platformun yorum sayfasına gider; daha düşük puan veren müşteri önce size yazabilir ve aynı ekranda o platformun herkese açık yorum bağlantısını görür.',
+              'Paket servis için ayrı bir QR oluşturun, masa etiketine örneğin PAKET yazın ve QR’ı ilgili platforma sabitleyin. Eşik ve üzerinde puan veren müşteri o platformun yorum sayfasına gider; daha düşük puan veren müşteri önce size yazabilir ve aynı ekranda o platformun herkese açık yorum bağlantısını görür.',
             ],
           },
           {
@@ -2811,6 +2811,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
               '**Konaklama:** Tripadvisor, Booking.com, Airbnb; ayrıca Yelp, Foursquare ve Yandex.',
               '**Restoran ve kafe:** Tripadvisor, Yelp, Foursquare ve Yandex, Google ve teslimat platformlarının yanında.',
               '**Klinik, güzellik ve perakende:** Google’ın yanında Yandex.',
+              '**Hukuk bürosu, spor salonu ve eğitim:** yalnızca Google.',
             ],
           },
           {
@@ -2866,6 +2867,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
               '**Hotels and stays:** Tripadvisor, Booking.com, Airbnb; also Yelp, Foursquare and Yandex.',
               '**Restaurants and cafés:** Tripadvisor, Yelp, Foursquare and Yandex, alongside Google and the delivery platforms.',
               '**Clinics, beauty and retail:** Yandex alongside Google.',
+              '**Law firms, gyms and education:** Google only.',
             ],
           },
           {
@@ -2933,7 +2935,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Elle test etme',
             paragraphs: [
-              '**Platform bağlantıları** sayfasında her bağlantının yanındaki test düğmesiyle tek bir bağlantıyı ya da tümünü yeniden test edebilirsiniz. Değişiklik yaptıysanız önce kaydedin; her bağlantının yanında son testin zamanı ve sonucu görünür.',
+              '**Platform bağlantıları** sayfasındaki **Tümünü kontrol et** düğmesi seçili işletmenin bütün bağlantılarını yeniden test eder. Tek bir bağlantı için o platformun sayfasını açıp **Kontrol et** düğmesine basın; değişiklik yaptıysanız önce kaydedin. Son kontrolün zamanı ve sonucu her platformda görünür.',
             ],
           },
           {
@@ -2988,7 +2990,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Testing by hand',
             paragraphs: [
-              'On the **Platform links** page, use the test button next to each link to re-test one link, or re-test them all. Save any changes first; the time and result of the last test are shown next to each link.',
+              'On the **Platform links** page, **Check all** re-tests every link of the selected business. For a single link, open that platform’s page and press **Check link**; save any changes first. The time and result of the last check are shown for each platform.',
             ],
           },
           {
@@ -3037,10 +3039,10 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
             ordered: true,
             items: [
               '**Hesabım → Ekip ve roller** bölümünü açın.',
-              'Ekip arkadaşınızın e-posta adresini ve isterseniz adını girin.',
+              '**Üye davet et** düğmesine basın ve ekip arkadaşınızın e-posta adresini girin.',
               'Rolünü seçin: yönetici, personel veya görüntüleyici.',
-              'Erişeceği işletmeleri seçin; hiçbirini seçmezseniz tüm işletmelerinize erişir.',
-              'Daveti gönderin; ekip arkadaşınız e-postadaki bağlantıyla katılır.',
+              '**Konum erişimi** bölümünde erişeceği işletmeleri seçin; hiçbirini seçmezseniz tüm işletmelerinize erişir.',
+              '**Daveti gönder** düğmesine basın; ekip arkadaşınız e-postadaki bağlantıyla katılır.',
             ],
           },
           {
@@ -3093,10 +3095,10 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
             ordered: true,
             items: [
               'Open **Account → Team & roles**.',
-              'Enter your teammate’s e-mail address and, if you like, their name.',
+              'Press **Invite member** and enter your teammate’s e-mail address.',
               'Choose their role: manager, staff or viewer.',
-              'Choose the businesses they can access; if you select none, they can access all of your businesses.',
-              'Send the invite; your teammate joins through the link in the e-mail.',
+              'Under **Location access**, choose the businesses they can access; if you select none, they can access all of your businesses.',
+              'Press **Send invite**; your teammate joins through the link in the e-mail.',
             ],
           },
           {
@@ -3702,7 +3704,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Deneme biterse',
             paragraphs: [
-              'Deneme süresi dolduğunda bir plan alınana kadar panele giriş yapılamaz; verileriniz otomatik olarak silinmez. Bu durumda plan almak için [support@buaze.com](mailto:support@buaze.com) adresine yazın.',
+              `Deneme süresi dolduğunda bir plan alınana kadar panele giriş yapılamaz; verileriniz otomatik olarak silinmez. Bu durumda plan almak için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
             ],
           },
         ],
@@ -3719,7 +3721,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Planlar arasında özellik farkı var mı?',
-            a: 'Planların kapsamı ve fiyatları fiyatlandırma sayfasında yer alır. Sorunuz varsa satın almadan önce support@buaze.com adresine yazın.',
+            a: `Planların kapsamı ve fiyatları fiyatlandırma sayfasında yer alır. Sorunuz varsa satın almadan önce [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
           },
           {
             q: 'Fiyatlar hangi para biriminde?',
@@ -3756,7 +3758,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'If the trial ends',
             paragraphs: [
-              'When the trial expires, you cannot sign in to the panel until a plan is bought; your data is not deleted automatically. To buy a plan at that point, write to [support@buaze.com](mailto:support@buaze.com).',
+              `When the trial expires, you cannot sign in to the panel until a plan is bought; your data is not deleted automatically. To buy a plan at that point, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
             ],
           },
         ],
@@ -3773,7 +3775,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Do the plans differ in features?',
-            a: 'What each plan includes and its price are on the pricing page. If you have a question, write to support@buaze.com before buying.',
+            a: `What each plan includes and its price are on the pricing page. If you have a question, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) before buying.`,
           },
           {
             q: 'Which currency are prices in?',
@@ -3825,7 +3827,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Faturadaki şirket bilgilerini nasıl değiştiririm?',
-            a: 'Fatura unvanı, adres veya vergi numarasıyla ilgili değişiklikler için [support@buaze.com](mailto:support@buaze.com) adresine yazın.',
+            a: `Fatura unvanı, adres veya vergi numarasıyla ilgili değişiklikler için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
           },
           {
             q: 'İade alabilir miyim?',
@@ -3878,7 +3880,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'How do I change the company details on my invoice?',
-            a: 'For changes to the invoice name, address or tax number, write to [support@buaze.com](mailto:support@buaze.com).',
+            a: `For changes to the invoice name, address or tax number, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
           },
           {
             q: 'Can I get a refund?',
@@ -3902,7 +3904,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
       body: {
         lead: 'Ödeme döngüsü seçimi yalnızca fiyat değil, esneklik kararıdır. Aylık ödeme, iş modeli henüz oturmamış işletmeye esneklik sağlar; yıllık ödeme ise uzun süreli kullanımı planlayanlar içindir.',
         keyInsight:
-          'Aylık aboneliği panelden kendiniz başlatırsınız; yıllık ödeme için [support@buaze.com](mailto:support@buaze.com) adresine yazın.',
+          `Aylık aboneliği panelden kendiniz başlatırsınız; yıllık ödeme için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
         sections: [
           {
             title: 'Aylık abonelik',
@@ -3933,7 +3935,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Aylıktan yıllığa geçebilir miyim?',
-            a: 'Yıllık ödeme için support@buaze.com adresine yazın; geçişi birlikte planlarız.',
+            a: `Yıllık ödeme için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın; geçişi birlikte planlarız.`,
           },
           {
             q: 'Yıllık planı erken iptal edersem ne olur?',
@@ -3950,7 +3952,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
       body: {
         lead: 'Choosing a billing cycle is about flexibility as much as price. Monthly billing gives flexibility while your business is still finding its feet; yearly billing is for those who plan to use Buaze for the long term.',
         keyInsight:
-          'You start a monthly subscription yourself from the panel; for yearly billing, write to [support@buaze.com](mailto:support@buaze.com).',
+          `You start a monthly subscription yourself from the panel; for yearly billing, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
         sections: [
           {
             title: 'Monthly subscription',
@@ -3981,7 +3983,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Can I switch from monthly to yearly?',
-            a: 'Write to support@buaze.com about yearly billing and we will plan the switch with you.',
+            a: `Write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) about yearly billing and we will plan the switch with you.`,
           },
           {
             q: 'What if I cancel a yearly plan early?',
@@ -4021,7 +4023,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Veri sorumlusu kimdir?',
             paragraphs: [
-              'Müşterilerinizin bıraktığı veriler için veri sorumlusu işletmenizdir; Buaze bu verileri sizin adınıza işler. Bu ilişki [Veri İşleyici Sözleşmesi](/tr/veri-isleyici-sozlesmesi)’nde düzenlenir; Buaze’nin kendi aydınlatma metni [KVKK sayfasında](/tr/kvkk).',
+              'Müşterilerinizin bıraktığı veriler için veri sorumlusu işletmenizdir; Buaze bu verileri sizin adınıza işler. Bu ilişki [Veri İşleyici Sözleşmesi](/tr/veri-isleyici-sozlesmesi)’nde düzenlenir; Buaze’nin kendi aydınlatma metni [KVKK sayfasında](/tr/kvkk). Pulse AI yanıt taslakları ve öne çıkan konular için yorum metinleri yapay zekâ hizmet sağlayıcımız OpenAI’ye gönderilir; alt işleyicilerin listesi aynı sözleşmededir.',
             ],
           },
         ],
@@ -4070,7 +4072,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Who is the data controller?',
             paragraphs: [
-              'Your business is the data controller for the data your customers leave; Buaze processes it on your behalf. This relationship is set out in the [Data Processing Agreement](/en/veri-isleyici-sozlesmesi); Buaze’s own privacy notice is on the [KVKK page](/en/kvkk).',
+              'Your business is the data controller for the data your customers leave; Buaze processes it on your behalf. This relationship is set out in the [Data Processing Agreement](/en/veri-isleyici-sozlesmesi); Buaze’s own privacy notice is on the [KVKK page](/en/kvkk). For Pulse AI reply drafts and highlighted topics, comment text is sent to our AI provider, OpenAI; the list of sub-processors is in the same agreement.',
             ],
           },
         ],
@@ -4140,7 +4142,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Buaze benden şifremi ister mi?',
-            a: 'Hayır. Buaze e-postayla veya telefonla şifrenizi sormaz. Böyle bir istek alırsanız bağlantıya tıklamayın ve [support@buaze.com](mailto:support@buaze.com) adresine bildirin.',
+            a: `Hayır. Buaze e-postayla veya telefonla şifrenizi sormaz. Böyle bir istek alırsanız bağlantıya tıklamayın ve [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine bildirin.`,
           },
           {
             q: 'Şifremi unuttum; ne yapmalıyım?',
@@ -4194,7 +4196,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Will Buaze ever ask for my password?',
-            a: 'No. Buaze never asks for your password by e-mail or phone. If you get such a request, do not click any link and report it to [support@buaze.com](mailto:support@buaze.com).',
+            a: `No. Buaze never asks for your password by e-mail or phone. If you get such a request, do not click any link and report it to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
           },
           {
             q: 'I forgot my password. What should I do?',
@@ -4219,8 +4221,9 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Hangi dosyalarda kişisel veri olabilir?',
             items: [
-              '**Müşteriler** dışa aktarımı: iletişim bilgisi bırakan müşterilerin listesi.',
-              '**Geri bildirim** dışa aktarımı: yorum metinleri ve masa etiketleri.',
+              '**Müşteriler** dışa aktarımı: iletişim bilgisi bırakan müşterilerin adı, e-posta adresi ve telefonu.',
+              '**Analitik** raporu: yorum metinleri ve KVKK onayı veren müşterilerin e-posta adresi ya da telefonu.',
+              '**Yorumlar** dışa aktarımı: yorum metinleri ve masa etiketleri.',
               '**Anket ve denetim** dışa aktarımları: verilen yanıtlar.',
               '**Verilerimi indir:** hesabınızın verilerini içeren dosya (saatte bir kez indirilebilir).',
             ],
@@ -4249,11 +4252,11 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Bir müşteri kendi verilerini isterse ne yapmalıyım?',
-            a: 'Müşterinin talebini veri sorumlusu olarak siz yanıtlarsınız. Panelde bulamadığınız bir bilgi ya da bir kaydın silinmesi gerekiyorsa [support@buaze.com](mailto:support@buaze.com) adresine yazın.',
+            a: `Müşterinin talebini veri sorumlusu olarak siz yanıtlarsınız. Panelde bulamadığınız bir bilgi ya da bir kaydın silinmesi gerekiyorsa [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
           },
           {
             q: 'Ekip üyelerim dışa aktarma yapabilir mi?',
-            a: 'Erişebildikleri işletmeler için evet. Dışa aktarmayı kimlerin yapacağını ekibinizle önceden konuşun ve rolleri buna göre seçin.',
+            a: 'Evet, erişebildikleri işletmeler için; görüntüleyici rolündeki üyeler de dosya indirebilir. Bu yüzden müşteri verisine erişimi, işletme seçimiyle yalnızca gereken kişilere verin ve dışa aktarmayı kimlerin yapacağını ekibinizle önceden konuşun.',
           },
         ],
       },
@@ -4271,8 +4274,9 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Which files can contain personal data?',
             items: [
-              'The **Customers** export: the list of customers who left contact details.',
-              'The **feedback** export: comments and table labels.',
+              'The **Customers** export: the name, e-mail address and phone number of customers who left contact details.',
+              'The **Analytics** report: comments and the e-mail address or phone number of customers who gave KVKK consent.',
+              'The **Reviews** export: comments and table labels.',
               '**Survey and audit** exports: the answers given.',
               '**Export my data:** the file with your account’s data (can be downloaded once an hour).',
             ],
@@ -4301,11 +4305,11 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'What should I do if a customer asks for their data?',
-            a: 'As the data controller, you answer the customer’s request. If you cannot find something in the panel or a record needs to be deleted, write to [support@buaze.com](mailto:support@buaze.com).',
+            a: `As the data controller, you answer the customer’s request. If you cannot find something in the panel or a record needs to be deleted, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
           },
           {
             q: 'Can my team members export data?',
-            a: 'Yes, for the businesses they can access. Agree with your team in advance who will export data and choose roles accordingly.',
+            a: 'Yes, for the businesses they can access; members with the viewer role can download files too. So give access to businesses with customer data only to the people who need it, and agree with your team in advance who will export data.',
           },
         ],
       },
@@ -4321,7 +4325,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
       body: {
         lead: 'Bir güvenlik olayında ne yapacağınızı önceden bilmek, panik içinde yanlış adım atmanızı önler. Aşağıdaki adımlar hem hesabınızı korumanıza hem de sonraki süreci doğru yürütmenize yardım eder.',
         keyInsight:
-          'Önce erişimi kesin (diğer cihazlardan çıkış, şifre değişikliği, ekipten çıkarma), sonra ne olduğunu not edin ve [support@buaze.com](mailto:support@buaze.com) adresine yazın.',
+          `Önce erişimi kesin (diğer cihazlardan çıkış, şifre değişikliği, ekipten çıkarma), sonra ne olduğunu not edin ve [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
         sections: [
           {
             title: 'İlk adımlar',
@@ -4331,7 +4335,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
               'Şifrenizi değiştirin; şifre değişince tüm oturumlar kapanır.',
               'Şüphelendiğiniz bir ekip üyesi varsa ekipten çıkarın.',
               '**Hesap aktivitesi** bölümünde hangi değişikliklerin yapıldığına bakın ve not alın.',
-              'Ne gördüğünüzü, ne zaman fark ettiğinizi ve hangi adımları attığınızı support@buaze.com adresine yazın.',
+              `Ne gördüğünüzü, ne zaman fark ettiğinizi ve hangi adımları attığınızı [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
             ],
           },
           {
@@ -4374,7 +4378,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
       body: {
         lead: 'Knowing in advance what to do in a security incident keeps you from taking a wrong step in a panic. The steps below help you protect your account and handle what comes next properly.',
         keyInsight:
-          'First cut off access (sign out other devices, change your password, remove the team member), then note what happened and write to [support@buaze.com](mailto:support@buaze.com).',
+          `First cut off access (sign out other devices, change your password, remove the team member), then note what happened and write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
         sections: [
           {
             title: 'First steps',
@@ -4384,7 +4388,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
               'Change your password; all sessions end when it changes.',
               'If you suspect a team member, remove them from the team.',
               'Look at the **Account activity** section to see which changes were made, and note them down.',
-              'Write to support@buaze.com with what you saw, when you noticed it and which steps you took.',
+              `Write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) with what you saw, when you noticed it and which steps you took.`,
             ],
           },
           {
@@ -4449,7 +4453,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Hesabı silme',
             paragraphs: [
-              'Hesabınızı **Hesabım** sayfasından silebilirsiniz. Silme planlandığında onay e-postası gelir ve 30 gün içinde istediğiniz zaman vazgeçebilirsiniz. Süre dolduğunda hesabınız ve işletmelerinize ait geri bildirimler, QR kodları ve menüler dahil veriler silinir; yasal saklama yükümlülüğü olan fatura kayıtları kimliksizleştirilerek saklanır.',
+              'Hesabınızı **Hesabım → Güvenlik** bölümündeki **Hesabı sil** düğmesiyle silebilirsiniz; onay için hesap e-postanızı yazmanız istenir. Silme planlandığında onay e-postası gelir ve 30 gün içinde istediğiniz zaman vazgeçebilirsiniz. Süre dolduğunda hesabınız ve işletmelerinize ait geri bildirimler, QR kodları ve menüler dahil veriler silinir; yasal saklama yükümlülüğü olan fatura kayıtları kimliksizleştirilerek saklanır.',
             ],
           },
         ],
@@ -4461,7 +4465,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Tek bir geri bildirimi silebilir miyim?',
-            a: 'Panelde tek tek geri bildirim silme düğmesi yoktur. Bir kaydın silinmesi gerekiyorsa [support@buaze.com](mailto:support@buaze.com) adresine yazın.',
+            a: `Panelde tek tek geri bildirim silme düğmesi yoktur. Bir kaydın silinmesi gerekiyorsa [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
           },
           {
             q: 'Verilerim yalnızca AB’de mi saklanıyor?',
@@ -4501,7 +4505,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Deleting your account',
             paragraphs: [
-              'You can delete your account from the **Account** page. When deletion is scheduled, you receive a confirmation e-mail and can cancel at any time within 30 days. After that, your account and your businesses’ data, including feedback, QR codes and menus, are deleted; invoice records that must be kept by law are kept with personal details removed.',
+              'You can delete your account with **Delete account** under **Account → Security**; to confirm, you type your account e-mail. When deletion is scheduled, you receive a confirmation e-mail and can cancel at any time within 30 days. After that, your account and your businesses’ data, including feedback, QR codes and menus, are deleted; invoice records that must be kept by law are kept with personal details removed.',
             ],
           },
         ],
@@ -4513,7 +4517,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         faq: [
           {
             q: 'Can I delete a single piece of feedback?',
-            a: 'The panel has no button for deleting individual feedback. If a record needs to be deleted, write to [support@buaze.com](mailto:support@buaze.com).',
+            a: `The panel has no button for deleting individual feedback. If a record needs to be deleted, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
           },
           {
             q: 'Is my data stored only in the EU?',

@@ -589,7 +589,13 @@ export default function FeaturePageLayout({
               title={copy.sectors.title}
               lead={copy.sectors.lead}
             />
-            <ul className="mt-10 grid grid-cols-1 gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            {/* Four cards read as a 2 × 2 block instead of a row of three and
+                a lone fourth; other counts use three columns. */}
+            <ul
+              className={`mt-10 grid grid-cols-1 gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 ${
+                sectors.length === 4 ? '' : 'lg:grid-cols-3'
+              }`}
+            >
               {sectors.map(({ slug: sectorSlug, use, entry }) => {
                 const Icon = entry.Icon;
                 return (

@@ -1,427 +1,347 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { ArrowRight, ChevronRight, Receipt, ShoppingBag, Sparkles, BarChart3 } from 'lucide-react';
-import MarketingNavbar from '@/components/marketing/MarketingNavbar';
-import MarketingFooter from '@/components/marketing/MarketingFooter';
-import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
-import { getTranslations } from '@/lib/translations';
+import { BellRing, Building2, Link2, Mail } from 'lucide-react';
+import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
+import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
-import { buildSolutionSchema } from '@/lib/solution-schema';
-import { buildHowToSchema } from '@/lib/seo/howto-schema';
-import { getRelatedSolutions } from '@/lib/related-solutions';
+import { IllusRetail } from '../_components/sector-illustrations';
 
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`. Reads only
+// `params`, so the page stays static. Sector "retail" drives the platform
+// list (Google, Yandex) and the "Store experience" survey template.
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
-  const { locale } = await params;
-  const title =
-    locale === 'tr'
-      ? 'Perakende & Mağaza İtibar Yönetimi'
-      : 'Retail & Store Reputation Management';
-  const description =
-    locale === 'tr'
-      ? 'Müşteri kasadan çıkarken fişinin altındaki QR\'ı tarar. Google ve Yandex\'e yönlendirilir. Çok mağaza, tek panel.'
-      : 'Customers scan the QR under the receipt on the way out. Routed to Google and Yandex. Multi-store, one panel.';
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/solutions/retail`,
-      languages: {
-        tr: 'https://www.buaze.com/tr/solutions/retail',
-        en: 'https://www.buaze.com/en/solutions/retail',
-        'x-default': 'https://www.buaze.com/tr/solutions/retail',
-      },
+const SLUG = 'retail';
+
+const CONTENT: Record<Locale, SolutionPageContent> = {
+  tr: {
+    name: 'Perakende mağazalar',
+    meta: {
+      title: 'Perakende mağazalar için QR ile müşteri yorumları',
+      description:
+        'Mağazanız için QR kod: müşteri alışverişten sonra puan verir, eşiğin altında önce size yazabilir. Kasa etiketli QR, mağaza karşılaştırması, Google bağlantıları.',
     },
-    openGraph: {
-      type: 'website',
-      siteName: 'Buaze',
-      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      title,
-      description,
-      url: `https://www.buaze.com/${locale}/solutions/retail`,
-      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    eyebrow: 'Perakende mağazalar',
+    h1: 'Perakende mağazalar için QR ile müşteri geri bildirimi ve Google yorumları',
+    lead:
+      'Müşteri alışverişini bitirdiğinde kasadaki ya da deneme kabinindeki QR kodu okutur ve mağazayı puanlar. Eşik ve üzerindeki puanlarda Google yorum sayfanız açılır; eşiğin altında müşteri önce size yazabilir, herkese açık yorum bağlantısı aynı ekranda görünür.',
+    flow: {
+      title: 'Mağazada QR ile geri bildirim akışı',
+      steps: [
+        {
+          title: 'Kasalar ve alanlar için QR hazırlayın',
+          body:
+            'Her kasa ya da alan için ayrı QR oluşturup etiket verebilirsiniz (ör. Kasa-1, Kabin, Kat2). Etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür.',
+        },
+        {
+          title: 'Müşteri puan verir',
+          body:
+            'Müşteri QR kodu okutur ve 1–5 yıldız verir. Belirlediğiniz eşik ve üzerindeki puanlarda (varsayılan 5 yıldız) Google yorum sayfanız açılır. Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
+        },
+        {
+          title: 'Mağaza müdürü haberdar olur',
+          body:
+            '1–3 yıldızlık geri bildirimde anında e-posta gelir; her mağazanın uyarı adresini o mağazanın müdürüne yönlendirebilirsiniz. Müşteri e-posta adresini bıraktıysa yanıtınızı panelden yazılı gönderirsiniz.',
+        },
+      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    placements: {
+      title: 'Mağazada QR kodu nereye koymalı',
+      lead: 'Müşteri deneyimi en net, ödeme yaparken ve ürünü denerken değerlendirir.',
+      items: [
+        {
+          title: 'Kasa ve ödeme noktası',
+          body:
+            'Kasadaki küçük bir stant, ödeme beklenirken okutulur. Birden çok kasanız varsa her kasaya ayrı etiketli QR koyabilirsiniz.',
+        },
+        {
+          title: 'Poşet ve fiş',
+          body:
+            'Poşete ya da paketin içine koyacağınız küçük bir kart, müşterinin evde de değerlendirme yapmasını sağlar. Fişe QR basmak kasa sisteminizin desteğine bağlıdır; Buaze kasa sistemlerine bağlanmaz.',
+        },
+        {
+          title: 'Deneme kabini',
+          body:
+            'Kabin aynasının yanındaki QR kod; beden, kabin temizliği ve personel ilgisi gibi konularda geri bildirim almanın doğal yeridir.',
+        },
+        {
+          title: 'İade ve değişim noktası',
+          body:
+            'İade masasındaki QR kod, sorun yaşayan müşterinin size doğrudan yazmasını kolaylaştırır. Müşteri isterse yine herkese açık yorum bağlantısını kullanır.',
+        },
+      ],
+      tip:
+        'Etiketleri kasa veya alan adına göre verin; kasiyer adı kullanmayın. Ekip değiştiğinde QR kodları yeniden bastırmanız gerekmez.',
     },
-  };
+    uses: {
+      title: 'Mağaza panelinde işinize yarayanlar',
+      items: [
+        {
+          icon: Building2,
+          title: 'Mağazaları tek tabloda karşılaştırın',
+          body:
+            'Her mağazayı ayrı işletme olarak ekleyip İşletmeler tablosunda son 30 günün geri bildirim sayısını, ortalama puanını, bekleyen düşük puanları ve bağlantı sorunlarını görürsünüz.',
+        },
+        {
+          icon: Mail,
+          title: 'Her mağaza kendi uyarısını alsın',
+          body:
+            'Düşük puan uyarılarının gideceği adresi her mağaza için ayrı ayarlayabilirsiniz. Ekip üyelerine yalnız çalıştıkları mağazalara erişim verirsiniz.',
+        },
+        {
+          icon: BellRing,
+          title: 'Haftalık özet ve düşüş uyarısı',
+          body:
+            'Geri bildirim gelen haftalarda her pazartesi geçen haftanın özetini e-postayla alırsınız. Son 7 günün ortalama puanı, ondan önceki üç haftanın ortalamasından en az 0,5 yıldız düşükse (her iki dönemde en az 5 geri bildirimle) ayrıca uyarı e-postası gelir.',
+        },
+        {
+          icon: Link2,
+          title: 'Bağlantıları tüm mağazalarda yönetin',
+          body:
+            'Instagram, Facebook ve WhatsApp bağlantınızı bir kez girip diğer mağazalara uygularsınız. Platform bağlantıları sayfasındaki “Tüm işletmeler” görünümü, hangi mağazada yorum bağlantısının eksik ya da sorunlu olduğunu gösterir.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Mağazalar için öne çıkan yorum platformları',
+      lead:
+        'Sektör olarak “Perakende”yi seçtiğinizde panel Google ve Yandex yorum bağlantılarını gösterir. Mağazanızı haritada arayan müşteri, yorumlarınızı Google İşletme Profilinizde görür.',
+      note:
+        'Her mağazanın kendi Google İşletme Profili varsa her mağaza için kendi yorum bağlantısını girin; bir mağazanın bağlantısını diğerlerinde kullanmayın. Yandex bağlantınızı eklerseniz, özel geri bildirim bırakan müşterinin teşekkür ekranında “Yandex Haritalarda paylaş” seçeneği görünür.',
+    },
+    questions: {
+      title: 'Müşterilere ne sormalı',
+      lead:
+        'Hazır “Mağaza deneyimi” şablonu genel memnuniyeti, aranan ürünün kolayca bulunup bulunmadığını ve personelin ilgisini sorar; bulunamayan ürün için bir not alanı da vardır. Kendi sorularınızı ekleyerek kasa bekleme süresini de öğrenebilirsiniz.',
+      items: [
+        { text: 'Aradığınız ürünü bulmanız ne kadar sürdü?', type: 'multiple_choice' },
+        { text: 'Kasada ne kadar beklediniz?', type: 'multiple_choice' },
+        { text: 'Mağazanın düzenini ve temizliğini nasıl değerlendirirsiniz?', type: 'rating' },
+        { text: 'Bulamadığınız bir ürün oldu mu? Hangisi?', type: 'short_text' },
+        { text: 'Mağazamızı bir arkadaşınıza önerme olasılığınız nedir?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Mağaza açılış öncesi tur kontrolü',
+          body: 'Açılıştan önce vitrin, kasa hazırlığı, raf düzeni ve acil çıkışları kontrol etmek için.',
+        },
+        {
+          title: 'Haftalık stok sayım kontrol listesi',
+          body: 'Yüksek değerli ürünlerin sayımı ve sistem stoğuyla çıkan farkların takibi için.',
+        },
+        {
+          title: 'Perakende kasiyer adayı quiz',
+          body: 'Kasiyer adaylarına iade kuralları, nakit güvenliği ve vardiya kapanışı üzerine sorular.',
+        },
+        {
+          title: 'Müşteri itirazı senaryo değerlendirme',
+          body: 'Saha personeli için iade, ürün kusuru ve fiyat itirazı senaryoları.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Perakende mağazalar için sık sorulan sorular',
+      items: [
+        {
+          q: 'Kasa sistemimize veya stok yazılımımıza bağlanıyor mu?',
+          a: 'Hayır. Buaze kasa (POS), ERP veya stok yazılımlarına bağlanmaz ve müşterilere SMS göndermez. Müşteri QR kodu mağazada, poşetteki karttan ya da kasa sisteminiz destekliyorsa fişten okutur.',
+        },
+        {
+          q: 'Kasiyer veya vardiya bazında rapor alabilir miyim?',
+          a: 'Hayır, kasiyer veya vardiya bazında rapor yoktur. Kasa etiketi düşük puan e-postasında ve CSV dosyasında görünür. Mağazaları ayrı işletme olarak eklerseniz her mağazanın analitiğini ayrı görürsünüz.',
+        },
+        {
+          q: 'Yorum yapan müşteriye indirim kuponu verebilir miyim?',
+          a: 'Yorum karşılığında indirim, kupon veya hediye vermeyin; Google yorum karşılığı teşviki yasaklar ve Buaze böyle bir özellik sunmaz. Anketlerde isteğe bağlı bir teşekkür kuponu gösterebilirsiniz; bu kupon herkese açık yorum yazmaya bağlanmamalıdır.',
+        },
+        {
+          q: 'Düşük puan veren müşteri Google’da yorum yazabilir mi?',
+          a: 'Evet. Eşiğin altında puan veren müşteri önce size özel geri bildirim yazabilir; Google yorum bağlantısı aynı ekranda görünür ve müşteri isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
+        },
+        {
+          q: 'Müşterinin telefon numarasını toplayabilir miyim?',
+          a: 'QR geri bildirim formu telefon numarası sormaz; e-posta adresi isteğe bağlıdır. Anketlerde iletişim bilgisi toplamayı açarsanız müşteri isterse e-posta adresini ve telefonunu bırakır.',
+        },
+        {
+          q: 'Online mağazamız için de kullanabilir miyim?',
+          a: 'Evet. Bağlantıyı kopyalayıp sipariş onay e-postanıza ya da paketin içine koyacağınız karta ekleyebilirsiniz. Buaze e-ticaret altyapınıza bağlanmaz ve siparişleri görmez.',
+        },
+      ],
+    },
+    ctaTitle: 'Mağazanızda müşteri geri bildirimi toplamaya başlayın',
+  },
+  en: {
+    name: 'Retail stores',
+    meta: {
+      title: 'QR customer feedback and reviews for retail stores',
+      description:
+        'QR codes for retail stores: shoppers rate their visit and can write to you first below your threshold. Till-labelled codes, store comparison and Google links.',
+    },
+    eyebrow: 'Retail stores',
+    h1: 'QR customer feedback and Google reviews for retail stores',
+    lead:
+      'When they finish shopping, customers scan the QR code at the checkout or in the fitting room and rate the store. At or above your threshold, your Google review page opens; below it, the customer can write to you first, and the public review link is shown on the same screen.',
+    flow: {
+      title: 'How QR feedback works in a store',
+      steps: [
+        {
+          title: 'Prepare QR codes for checkouts and areas',
+          body:
+            'Create a separate QR code for each checkout or area and give it a label (for example Till-1, FittingRoom or Floor2). The label shows in the low-rating e-mail and the feedback CSV file.',
+        },
+        {
+          title: 'The customer gives a rating',
+          body:
+            'The customer scans the QR code and gives 1–5 stars. At or above the threshold you set (5 stars by default), your Google review page opens. Below it, the customer can first send you private feedback; the public review link is shown on the same screen.',
+        },
+        {
+          title: 'The store manager hears about it',
+          body:
+            'Every 1–3★ piece of feedback sends an instant e-mail, and you can route each store’s alerts to that store’s manager. If the customer left an e-mail address, you reply in writing from the panel.',
+        },
+      ],
+    },
+    placements: {
+      title: 'Where to put the QR code in a store',
+      lead: 'Customers judge the experience most clearly while paying and while trying things on.',
+      items: [
+        {
+          title: 'Checkout and payment point',
+          body:
+            'A small stand at the till gets scanned while the payment goes through. If you have several tills, give each its own labelled code.',
+        },
+        {
+          title: 'Bag and receipt',
+          body:
+            'A small card in the bag or the parcel lets customers rate the visit at home. Printing a QR code on the receipt depends on your till system; Buaze doesn’t connect to till systems.',
+        },
+        {
+          title: 'Fitting room',
+          body:
+            'A QR code next to the fitting-room mirror is the natural place for feedback on sizes, cleanliness and staff care.',
+        },
+        {
+          title: 'Returns and exchanges desk',
+          body:
+            'A QR code at the returns desk makes it easy for customers who had a problem to write to you directly. They can still use the public review link if they want.',
+        },
+      ],
+      tip:
+        'Label codes by till or area, not by cashier name. When your team changes, you don’t need to reprint the QR codes.',
+    },
+    uses: {
+      title: 'Panel features that help a store',
+      items: [
+        {
+          icon: Building2,
+          title: 'Compare stores in one table',
+          body:
+            'Add each store as its own business and see the last 30 days’ feedback count, average rating, pending low ratings and link problems in the businesses table.',
+        },
+        {
+          icon: Mail,
+          title: 'Each store gets its own alerts',
+          body:
+            'Set a separate address for low-rating alerts for each store. You can give team members access only to the stores they work in.',
+        },
+        {
+          icon: BellRing,
+          title: 'Weekly summary and drop alert',
+          body:
+            'In weeks with feedback, you receive a summary of the past week by e-mail every Monday. If the last 7 days’ average rating is at least 0.5 stars below the average of the three weeks before (with at least 5 pieces of feedback in each period), you also get an alert e-mail.',
+        },
+        {
+          icon: Link2,
+          title: 'Manage links across all stores',
+          body:
+            'Enter your Instagram, Facebook and WhatsApp links once and apply them to your other stores. The “All businesses” view on the Platform links page shows which store has a missing or broken review link.',
+        },
+      ],
+    },
+    platforms: {
+      title: 'Review platforms that matter for stores',
+      lead:
+        'When you pick “Retail” as your industry, the panel shows Google and Yandex review links. Customers who look for your store on the map see your reviews on your Google Business Profile.',
+      note:
+        'If each store has its own Google Business Profile, enter each store’s own review link; don’t reuse one store’s link for the others. If you add your Yandex link, customers who leave private feedback also see a “Share on Yandex Maps” option on the thank-you screen.',
+    },
+    questions: {
+      title: 'What to ask your customers',
+      lead:
+        'The ready-made “Store experience” template asks about overall satisfaction, whether customers easily found what they were looking for and how attentive the staff were, with a note field for products they couldn’t find. Add your own questions to learn about checkout waiting times too.',
+      items: [
+        { text: 'How long did it take to find the product you wanted?', type: 'multiple_choice' },
+        { text: 'How long did you wait at the checkout?', type: 'multiple_choice' },
+        { text: 'How would you rate the layout and cleanliness of the store?', type: 'rating' },
+        { text: 'Was there a product you couldn’t find? Which one?', type: 'short_text' },
+        { text: 'How likely are you to recommend our store to a friend?', type: 'nps' },
+      ],
+      audits: [
+        {
+          title: 'Pre-opening store walkthrough',
+          body: 'To check the window display, till readiness, shelf order and emergency exits before opening.',
+        },
+        {
+          title: 'Weekly stock count checklist',
+          body: 'To count high-value products and follow up on differences from system stock.',
+        },
+        {
+          title: 'Retail cashier candidate quiz',
+          body: 'Questions for cashier candidates on return rules, cash security and closing a shift.',
+        },
+        {
+          title: 'Customer objection scenario review',
+          body: 'Return, faulty product and price objection scenarios for shop-floor staff.',
+        },
+      ],
+    },
+    faq: {
+      title: 'Retail store FAQ',
+      items: [
+        {
+          q: 'Does it connect to our till or stock software?',
+          a: 'No. Buaze doesn’t connect to till (POS), ERP or stock software and doesn’t send customers text messages. Customers scan the QR code in the store, from a card in their bag, or from the receipt if your till system can print it.',
+        },
+        {
+          q: 'Can I get reports per cashier or shift?',
+          a: 'No, there are no per-cashier or per-shift reports. The till label shows in the low-rating e-mail and the CSV file. If you add each store as its own business, you see analytics for each store separately.',
+        },
+        {
+          q: 'Can I give a discount coupon to customers who leave a review?',
+          a: 'Don’t offer discounts, coupons or gifts in exchange for reviews; Google prohibits incentives for reviews, and Buaze has no such feature. Surveys can show an optional thank-you coupon, but it must not be tied to posting a public review.',
+        },
+        {
+          q: 'Can a customer who gives a low rating still post on Google?',
+          a: 'Yes. A customer who rates below your threshold can first send you private feedback; the Google review link is shown on the same screen, and they can post a public review from there if they want. Buaze doesn’t delete, hide or edit reviews.',
+        },
+        {
+          q: 'Can I collect customers’ phone numbers?',
+          a: 'The QR feedback form doesn’t ask for a phone number, and the e-mail address is optional. If you turn on contact details in a survey, customers can leave their e-mail address and phone number if they want.',
+        },
+        {
+          q: 'Can I use it for our online shop too?',
+          a: 'Yes. Copy the link and add it to your order confirmation e-mail or to a card you put in the parcel. Buaze doesn’t connect to your e-commerce platform and doesn’t see orders.',
+        },
+      ],
+    },
+    ctaTitle: 'Start collecting customer feedback in your store',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
+  return buildSolutionMetadata({ locale, slug: SLUG, ...CONTENT[locale].meta });
 }
 
-/**
- * 1:1 with .design/site/site-pages4.jsx:RetailSolutionPage (lines 246-292).
- * Dark hero + IllusChart + 4-stat grid + 3-feature grid.
- */
-export default async function RetailSolutionPage({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
-  const base = `/${locale}`;
-
-  const stats = isTr
-    ? [
-        { value: '10', label: 'Yorum platformu' },
-        { value: 'Şube', label: 'Mağaza bazlı QR ve karşılaştırma' },
-        { value: 'Anlık', label: 'Düşük puan e-posta uyarısı' },
-        { value: '14 gün', label: 'Ücretsiz deneme' },
-      ]
-    : [
-        { value: '10', label: 'Review platforms' },
-        { value: 'Store', label: 'Per-store QR and comparison' },
-        { value: 'Instant', label: 'Low-rating e-mail alert' },
-        { value: '14 days', label: 'Free trial' },
-      ];
-
-  const features = isTr
-    ? [
-        {
-          title: 'Fiş QR entegrasyonu',
-          desc: 'POS sistemine plug-in veya ERP\'den API ile fiş altına otomatik QR basılır.',
-        },
-        {
-          title: 'Mağaza bazlı analiz',
-          desc: 'Zincir genelinde en iyi/en kötü mağazayı karşılaştır. Bölge yöneticisine haftalık özet.',
-        },
-        {
-          title: 'Sezonsal kampanya',
-          desc: '"Yılbaşı indirimi" gibi dönemsel kampanyalarda anlık yorum takibi.',
-        },
-      ]
-    : [
-        {
-          title: 'Receipt QR integration',
-          desc: 'POS plug-in or ERP API auto-prints the QR at the bottom of every receipt.',
-        },
-        {
-          title: 'Per-store analytics',
-          desc: 'Compare best- and worst-performing stores across the chain. Weekly digest to regional managers.',
-        },
-        {
-          title: 'Seasonal campaigns',
-          desc: 'Real-time review tracking during seasonal pushes like year-end sales.',
-        },
-      ];
-
-  const benefits = isTr
-    ? [
-        { Icon: Receipt, h: 'Fiş altı + kasa QR\'ları', d: 'Her fişin altına QR + kasada genel QR. Müşteri ödeme sonrası deneyimini taze yorumlar — kapı çıkışı yerine işlem-an-anı.' },
-        { Icon: ShoppingBag, h: 'Çoklu platform yönlendirme', d: 'Google + Yandex + Foursquare aynı akışta. Müşteri seçtiği platforma yorum yazar; tercih müşteride kalır, yıldız bazlı kısıtlama yok.' },
-        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: 'Stokta yok / kasiyer ilgisi / mağaza temizliği gibi farklı şikayet türlerine ayrı ton. Yönetici onaylar, otomatik gönderim yok.' },
-        { Icon: BarChart3, h: 'Mağaza + vardiya analitiği', d: 'Hangi mağaza, hangi vardiya, hangi kategori (gıda / giyim / elektronik) en çok düşük puan çekiyor? Operasyonel kararı veriyle al.' },
-      ]
-    : [
-        { Icon: Receipt, h: 'Receipt + register QRs', d: 'A QR under every receipt + a general QR at the register. The customer reviews the experience while it\'s fresh — at the moment of transaction, not at the door.' },
-        { Icon: ShoppingBag, h: 'Multi-platform routing', d: 'Google + Yandex + Foursquare in one flow. The customer posts on the platform of their choice; no star-rating gate.' },
-        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Different tone for "out of stock" vs "cashier attentiveness" vs "store cleanliness" complaints. Manager approves; nothing auto-sent.' },
-        { Icon: BarChart3, h: 'Store + shift analytics', d: 'Which store, which shift, which category (grocery / apparel / electronics) attracts the most low ratings? Make operational calls from data.' },
-      ];
-
-  const faqs: FaqItem[] = isTr
-    ? [
-        { q: 'Perakende mağaza için Buaze nasıl çalışır?', a: 'Her fişin altına QR sticker basarsın (POS yazılımı entegrasyonu varsa otomatik) + kasada genel bir QR yerleştirirsin. Müşteri kasadan çıkarken QR\'ı tarar, deneyimini puanlar ve seçtiğin platformlara (Google, Yandex, Foursquare) yönlendirilir.' },
-        { q: 'Birden fazla mağaza nasıl yönetirim?', a: 'Her mağaza için ayrı işletme oluştur veya tek işletme + mağaza etiketleri (Buaze branch field) kullan. Analitik mağaza bazlı ayrılır: bölge müdürü mağazaların ortalama puanını ve yorumlarını yan yana görür. Pricing planı mağaza sayısına göre ölçeklenir.' },
-        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak mağaza yönetimiyle özel paylaşım yapma seçeneği görür. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden (iade, değişim, ek hizmet) çözme şansı kazanırsınız.' },
-        { q: 'Vardiya / kasiyer bazlı performans takip eder miyim?', a: 'Evet. QR\'a vardiya ID veya kasiyer etiketi URL parametresi olarak eklenebilir; yorum geldiğinde hangi vardiya + hangi kasiyer + saat loglanır. Analytics raporunda mağaza yönetimi vardiya bazlı memnuniyet farklarını görür.' },
-        { q: 'Yandex entegrasyonu var mı?', a: 'Evet. Yandex Maps yorum bağlantısını owner panelden eklersin; akış müşteriye Yandex bağlantısı sunar. Türkiye\'de Yandex arama hacmi büyüyor; özellikle Anadolu mağazaları için Google\'la birlikte ikinci kanal olarak değerli.' },
-      ]
-    : [
-        { q: 'How does Buaze work for a retail store?', a: 'You print a QR sticker under every receipt (auto if your POS supports it) + place a general QR at the register. As the customer leaves, they scan the QR, rate the experience, and are routed to the platforms you have selected (Google, Yandex, Foursquare).' },
-        { q: 'How do I manage multiple stores?', a: 'Either create a separate business per store or use a single business + store tags (Buaze branch field). Analytics splits per store: area managers see each store\'s average rating and comments side by side. Pricing scales with store count.' },
-        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with store management. The customer always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (refund, exchange, extra service).' },
-        { q: 'Can I track shift / cashier performance?', a: 'Yes. The QR can carry a shift ID or cashier tag as a URL parameter; when the review arrives, which shift + which cashier + time is logged. Store management sees per-shift satisfaction differences in the analytics report.' },
-        { q: 'Is there Yandex integration?', a: 'Yes. You add the Yandex Maps review link in the owner panel; the flow surfaces the Yandex link to the customer. Yandex search volume is growing in Turkey; especially for Anatolian stores, Yandex is a valuable second channel alongside Google.' },
-      ];
-
-  const relatedSolutions = getRelatedSolutions('retail', 4);
-
-  const jsonLd = buildSolutionSchema({
-    locale,
-    slug: 'retail',
-    industryLabel: isTr ? 'Perakende & Mağaza' : 'Retail & Store',
-    serviceName: isTr ? 'Perakende & Mağaza İtibar Yönetimi' : 'Retail & Store Reputation Management',
-    description: isTr
-      ? "Müşteri kasadan çıkarken fişinin altındaki QR'ı tarar. Google ve Yandex'e yönlendirilir. Çok mağaza, tek panel."
-      : 'Customers scan the QR under the receipt on the way out. Routed to Google and Yandex. Multi-store, one panel.',
-    faqs,
-  });
-
-  const howTo = buildHowToSchema({
-    locale,
-    name: isTr ? 'Perakende mağazada Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a retail store',
-    description: isTr
-      ? 'Fiş altında veya kasa yanında QR ile müşteri yorumu toplayıp çok mağazalı operasyonu tek panelden yönetme adımları.'
-      : 'Steps to collect customer reviews via QR on the receipt or near the till and run multi-store operations from one panel.',
-    url: `https://www.buaze.com/${locale}/solutions/retail`,
-    steps: isTr
-      ? [
-          { name: 'Mağazaları tanımla', text: 'Her mağazayı ayrı işletme veya tek işletme + mağaza etiketi olarak panelde tanımla; Google ve Yandex bağlantılarını ekle.' },
-          { name: 'Fiş altına veya kasa yanına QR yerleştir', text: 'Fiş alt boşluğuna QR baskı + kasa yanındaki stand — müşteri kasadan çıkarken son temas noktası kazanılır.' },
-          { name: 'Mağaza müdürlerini ekibe ekle', text: 'Her mağaza müdürünü Buaze ekibine ekle; düşük puanları kendi mağazasında görsün, merkez yönetimi toplu raporu izlesin.' },
-          { name: 'Pulse AI ile yanıtla ve karşılaştır', text: 'Pulse AI taslak üretir, mağaza müdürü onaylar; mağaza bazlı analitikte şubeler yan yana karşılaştırılır ve operasyonel karar tek panelde alınır.' },
-        ]
-      : [
-          { name: 'Identify each store', text: 'Set up each store as a separate business or single business + store tag; add Google and Yandex review links.' },
-          { name: 'Place the QR on the receipt or near the till', text: 'Print the QR at the bottom of the receipt + a stand near the till — the last-touch moment as customers leave.' },
-          { name: 'Invite store managers', text: 'Add each store manager to your Buaze team; let them see their own store\'s low ratings while head office tracks the aggregate.' },
-          { name: 'Reply and benchmark via Pulse AI', text: 'Pulse AI drafts the reply, store manager approves; per-store analytics compare branches side by side, so operational decisions happen in one panel.' },
-        ],
-  });
-  if (howTo) jsonLd.push(howTo);
-
+export default async function RetailSolutionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params;
+  const locale: Locale = raw === 'en' ? 'en' : 'tr';
   return (
-    <div className="min-h-screen bg-white lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
-      <main id="main-content">
-
-      {/* Hero — dark (1:1 .design/site/site-pages4.jsx:246-267) */}
-      <section className="bg-[#0A0A0A] px-5 sm:px-10 pt-[60px] pb-10 sm:pt-20 text-white">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 lg:grid-cols-[1.2fr_1fr]">
-          <div>
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'SEKTÖR · PERAKENDE & MAĞAZA' : 'SECTOR · RETAIL & STORE'}
-            </span>
-            <h1
-              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-white"
-            >
-              {isTr ? (
-                <>
-                  Fiş altına koy,
-                  <br />
-                  yorum
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5 text-[#0A0A0A]">
-                    patlasın.
-                  </span>
-                </>
-              ) : (
-                <>
-                  Put it under the
-                  <br />
-                  receipt —
-                  <br />
-                  <span className="inline-block rounded-md bg-[#C6F24E] px-2.5 text-[#0A0A0A]">
-                    reviews boom.
-                  </span>
-                </>
-              )}
-            </h1>
-            <p className="mt-[18px] max-w-[500px] text-[15px] sm:text-[16px] leading-[1.6] text-[#A3A3A3]">
-              {isTr
-                ? "Müşteri kasadan çıkarken fişinin altındaki QR'ı tarar. Google ve Yandex'e yönlendirilir. Çok mağaza, tek panel."
-                : 'Customers scan the QR under their receipt on the way out — routed to Google and Yandex. Multi-store, one panel.'}
-            </p>
-            <div className="mt-6 flex flex-col gap-[10px] sm:flex-row">
-              <Link
-                href={`${base}/auth/register`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-[22px] py-[14px] text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#A8D62E]"
-              >
-                {isTr ? '14 gün ücretsiz başla' : 'Start 14-day free trial'}
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href={`${base}/contact`}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#333] px-[22px] py-[14px] text-[15px] font-medium text-white transition-colors hover:border-white/60 hover:bg-white/5"
-              >
-                {isTr ? 'Demo iste' : 'Request demo'}
-              </Link>
-            </div>
-          </div>
-
-          {/* IllusChart — exact SVG from .design/site/site-shared.jsx:242-267 */}
-          <div className="flex justify-center lg:justify-end">
-            <svg viewBox="0 0 260 220" className="h-auto w-full max-w-[260px]" aria-hidden>
-              <rect x="20" y="20" width="220" height="170" rx="10" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" />
-              {[60, 100, 140, 180].map((y) => (
-                <line key={y} x1="20" y1={y} x2="240" y2={y} stroke="#EDEDED" strokeWidth="1" />
-              ))}
-              {([
-                [45, 90],
-                [80, 70],
-                [115, 100],
-                [150, 55],
-                [185, 80],
-              ] as const).map(([x, h], i) => (
-                <rect
-                  key={i}
-                  x={x - 10}
-                  y={180 - h}
-                  width="20"
-                  height={h}
-                  fill={i === 3 ? '#C6F24E' : '#0A0A0A'}
-                  rx="3"
-                />
-              ))}
-              <path
-                d="M45 110 L80 130 L115 90 L150 60 L185 80"
-                fill="none"
-                stroke="#0A0A0A"
-                strokeWidth="2"
-                strokeDasharray="3 3"
-              />
-              <circle cx="150" cy="60" r="10" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
-              <path d="M150 60 L220 30 L255 30" fill="none" stroke="#0A0A0A" strokeWidth="1.5" />
-              <rect x="200" y="5" width="60" height="24" rx="12" fill="#0A0A0A" />
-              <text x="230" y="21" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="10" fill="#C6F24E" fontWeight="600">
-                ★ 5
-              </text>
-              <rect x="30" y="30" width="90" height="10" rx="5" fill="#0A0A0A" />
-              <rect x="30" y="44" width="60" height="6" rx="3" fill="#EDEDED" />
-              <circle cx="230" cy="170" r="12" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
-              <path
-                d="M215 200 Q230 185 245 200"
-                fill="none"
-                stroke="#0A0A0A"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
-            {stats.map((s) => (
-              <div
-                key={s.label}
-                className="bz-card p-5 sm:p-6"
-              >
-                <div
-                  className="text-[32px] sm:text-[36px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {s.value}
-                </div>
-                <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 3-feature grid */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-[14px] border border-[#EDEDED] bg-white p-6"
-            >
-              <h3
-                className="text-[20px] font-semibold tracking-[-0.015em] text-[#0A0A0A]"
-              >
-                {f.title}
-              </h3>
-              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Benefits — 4-tile grid */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
-            {isTr ? 'Perakende operasyonuna özel dört kazanç' : 'Four wins built for retail operations'}
-          </h2>
-          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => (
-              <div key={i} className="bz-card p-6 sm:p-7">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
-                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[820px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
-            {isTr ? 'Perakende için merak edilenler' : 'Common questions for retail'}
-          </h2>
-          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
-        </div>
-      </section>
-
-      {/* Resources / Related Solutions */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
-          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
-              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
-              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
-              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
-            ].map((r) => (
-              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
-                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
-              </Link>
-            ))}
-          </div>
-          {relatedSolutions.length > 0 && (
-            <>
-              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {relatedSolutions.map((sol) => (
-                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
-                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
-                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
-                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* CTA band */}
-      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="mx-auto max-w-[900px] text-center">
-          <h2
-            className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]"
-          >
-            {isTr ? 'Mağaza ağınızı itibara çevirin.' : 'Turn your store network into reputation.'}
-          </h2>
-          <p className="mt-4 text-[16px] text-white/70 max-w-[560px] mx-auto">
-            {isTr
-              ? '14 gün ücretsiz · Kredi kartı istemiyoruz'
-              : '14-day free · No credit card'}
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Ücretsiz başla' : 'Start free'}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      </main>
-      <MarketingFooter locale={locale} t={t} />
-    </div>
+    <SolutionPageLayout
+      locale={locale}
+      slug={SLUG}
+      sector="retail"
+      content={CONTENT[locale]}
+      illustration={<IllusRetail />}
+    />
   );
 }

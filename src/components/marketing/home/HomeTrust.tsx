@@ -13,12 +13,12 @@ const COPY = {
   tr: {
     eyebrow: 'Güven ve veri',
     title: 'Google kuralları ve KVKK: Buaze neyi yapar, neyi yapmaz',
-    lead: 'Yorum akışının nasıl işlediğini ve müşteri verilerinin nasıl işlendiğini açıkça yazıyoruz.',
+    lead: 'Yorum akışının nasıl çalıştığını ve müşteri verilerini nasıl işlediğimizi açıkça yazıyoruz.',
     reviews: {
       title: 'Yorum akışı',
       items: [
         'Herkese açık yorum bağlantısı her puanda gösterilir.',
-        'Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir. Eşiği 4 ya da 5 yıldız olarak siz seçersiniz.',
+        'Eşiğin altındaki puanlarda müşteri önce size özel geri bildirim yazabilir. Eşiği 4 ya da 5 yıldız olarak siz seçersiniz; varsayılan 5 yıldızdır.',
         'Buaze yorum silmez, gizlemez veya değiştirmez.',
         'Sahte yorum yazmaz, yazdırmaz.',
         'Yorum karşılığında indirim, hediye veya ödül sunmaz.',
@@ -43,12 +43,12 @@ const COPY = {
   en: {
     eyebrow: 'Trust and data',
     title: "Google's rules and data protection: what Buaze does and doesn't do",
-    lead: 'Here is exactly how the review flow works and how customer data is handled.',
+    lead: 'We explain plainly how the review flow works and how we handle customer data.',
     reviews: {
       title: 'The review flow',
       items: [
         'The public review link is shown at every rating.',
-        'Below your threshold, the customer can send you private feedback first. You set the threshold at 4 or 5 stars.',
+        'Below your threshold, the customer can send you private feedback first. You set the threshold at 4 or 5 stars; the default is 5.',
         'Buaze does not delete, hide or edit reviews.',
         'It does not write fake reviews or have them written.',
         'It offers no discount, gift or reward in exchange for a review.',

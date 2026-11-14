@@ -128,7 +128,7 @@ export function InboxMock({ locale }: { locale: Locale }) {
                 <span className="ml-auto shrink-0 text-[12px] text-[#737373]">{row.time}</span>
               </div>
               <p className="mt-1 text-[13px] leading-[1.5] text-[#525252]">
-                {row.comment ?? <span className="italic text-[#A3A3A3]">{tr ? 'Yorum yazılmadı' : 'No comment'}</span>}
+                {row.comment ?? <span className="italic text-[#737373]">{tr ? 'Yorum yazılmadı' : 'No comment'}</span>}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] text-[#737373]">
                 {row.source === 'qr' ? (
@@ -376,7 +376,9 @@ export function MenuMock({ locale }: { locale: Locale }) {
                   {tr ? 'Tükendi' : 'Out of stock'}
                 </span>
               ) : null}
-              <span className="text-[12px] text-[#737373]">{item.allergens}</span>
+              <span className="text-[12px] text-[#737373]">
+                <span className="font-semibold text-[#525252]">{tr ? 'Alerjen:' : 'Allergens:'}</span> {item.allergens}
+              </span>
             </div>
           </li>
         ))}
@@ -513,7 +515,7 @@ export function SurveyMock({ locale }: { locale: Locale }) {
             {tr ? 'Bugünkü ziyaretiniz nasıldı?' : 'How was your visit today?'}
           </p>
           <p className="mt-1 text-[12px] text-[#737373]">
-            {tr ? 'Şablon: Masa servisi sonrası · adım adım' : 'Template: After table service · step by step'}
+            {tr ? '4 soru · adım adım' : '4 questions · step by step'}
           </p>
         </div>
         <span className="shrink-0 whitespace-nowrap rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[11px] font-semibold text-[#3F5408]">

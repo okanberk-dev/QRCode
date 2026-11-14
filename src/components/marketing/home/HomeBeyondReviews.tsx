@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Camera, Check, ClipboardCheck, ClipboardList } from 'lucide-react';
+import { ArrowRight, Camera, Check, ClipboardCheck, MessageCircleQuestionMark } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 
 /**
@@ -13,7 +13,7 @@ const COPY = {
   tr: {
     eyebrow: 'Yorumların ötesinde',
     title: 'Ekibiniz için denetimler, müşterileriniz için anketler',
-    lead: 'Geri bildirim bir sorunu gösterdiğinde Denetim Merkezi ile düzeltmeyi takip edin; daha ayrıntılı sorular için kısa bir anket hazırlayın.',
+    lead: "Ekibinizin kontrol listelerini ve testlerini Denetim Merkezi'nde yürütün; müşterilerinize puandan fazlasını sormak istediğinizde kısa bir anket hazırlayın.",
     sample: 'Örnek ekran',
     audit: {
       name: 'Denetim Merkezi',
@@ -35,7 +35,7 @@ const COPY = {
   en: {
     eyebrow: 'Beyond reviews',
     title: 'Audits for your team, surveys for your customers',
-    lead: 'When feedback points to a problem, follow the fix with the Audit Center; for more detailed questions, build a short survey.',
+    lead: "Run your team's checklists and tests in the Audit Center, and build a short survey when you want to ask customers more than a rating.",
     sample: 'Sample screen',
     audit: {
       name: 'Audit Center',
@@ -128,7 +128,7 @@ export default function HomeBeyondReviews({ locale }: { locale: 'tr' | 'en' }) {
     },
     {
       key: 'survey',
-      icon: ClipboardList,
+      icon: MessageCircleQuestionMark,
       name: copy.survey.name,
       body: copy.survey.body,
       href: `${base}/features/surveys`,
@@ -150,7 +150,7 @@ export default function HomeBeyondReviews({ locale }: { locale: 'tr' | 'en' }) {
                 key={card.key}
                 className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8"
               >
-                <div className="flex min-h-[252px] flex-col rounded-[16px] border border-[#EDEDED] bg-[#FAFAFA] p-4">
+                <div className="flex min-h-[220px] flex-col rounded-[16px] border border-[#EDEDED] bg-[#FAFAFA] p-4 lg:min-h-[268px]">
                   <p className="pulse-eyebrow text-[#737373]">{copy.sample}</p>
                   <div className="flex flex-1 flex-col justify-center pt-3">{card.mock}</div>
                 </div>

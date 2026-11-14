@@ -91,7 +91,7 @@ export default async function HelpCenterPage({
         lead: `Kurulumdan günlük kullanıma kadar adım adım rehberler: ${topics.length} konuda ${list.length} makale. Aradığınızı yazın ya da bir konu seçin.`,
         topicsTitle: 'Konular',
         startTitle: 'Önce bunları okuyun',
-        startLead: 'Müşteri akışını ve günlük işi anlamak için en önemli dört rehber.',
+        startLead: 'Müşteri akışını ve günlük işi anlamaya bu rehberlerle başlayın.',
       }
     : {
         eyebrow: 'Support',
@@ -99,7 +99,7 @@ export default async function HelpCenterPage({
         lead: `Step-by-step guides from setup to daily use: ${list.length} articles across ${topics.length} topics. Search for what you need or pick a topic.`,
         topicsTitle: 'Topics',
         startTitle: 'Start with these',
-        startLead: 'The four most important guides for understanding the customer flow and the daily work.',
+        startLead: 'Begin with these guides to understand the customer flow and the daily work.',
       };
 
   const pageUrl = `${SITE_URL}/${lang}/help`;
@@ -171,54 +171,56 @@ export default async function HelpCenterPage({
             >
               {copy.topicsTitle}
             </h2>
-            <ul role="list" className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 sm:grid-cols-2 lg:grid-cols-4">
+            <ul role="list" className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
               {featured && (
-                <li className="flex flex-col rounded-[20px] bg-[#0A0A0A] p-6 text-white sm:col-span-2 sm:p-8">
-                  <div className="flex items-start gap-4">
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#C6F24E] text-[#0A0A0A]"
-                    >
-                      <HelpCategoryIcon icon={featured.icon} size={20} />
-                    </span>
-                    <div className="min-w-0">
-                      <h3 className="text-[22px] leading-[1.2] tracking-[-0.02em] text-white sm:text-[26px]">
-                        <Link
-                          href={`${base}/help/category/${featured.slug}`}
-                          className="rounded-sm hover:underline hover:decoration-[#C6F24E] hover:decoration-2 hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-                        >
-                          {featured[lang].title}
-                        </Link>
-                      </h3>
-                      <p className="mt-2 text-pretty text-[15px] leading-[1.6] text-white/70">{featured[lang].desc}</p>
+                <li className="rounded-[20px] bg-[#0A0A0A] p-6 text-white sm:col-span-2 sm:p-8 lg:col-span-3 lg:p-10">
+                  <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-x-14">
+                    <div className="flex items-start gap-4 lg:col-start-1 lg:row-start-1">
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#C6F24E] text-[#0A0A0A]"
+                      >
+                        <HelpCategoryIcon icon={featured.icon} size={20} />
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="text-[22px] leading-[1.2] tracking-[-0.02em] text-white sm:text-[26px]">
+                          <Link
+                            href={`${base}/help/category/${featured.slug}`}
+                            className="rounded-sm hover:underline hover:decoration-[#C6F24E] hover:decoration-2 hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                          >
+                            {featured[lang].title}
+                          </Link>
+                        </h3>
+                        <p className="mt-2 max-w-[440px] text-pretty text-[15px] leading-[1.6] text-white/70">{featured[lang].desc}</p>
+                      </div>
                     </div>
+                    <ul role="list" className="mt-6 border-t border-white/10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+                      {featuredArticles.map((item) => (
+                        <li key={item.slug} className="border-b border-white/10">
+                          <Link
+                            href={`${base}/help/${item.slug}`}
+                            className="group flex min-h-[52px] items-center justify-between gap-4 py-3 text-[15px] font-medium text-white transition-colors hover:text-[#C6F24E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                          >
+                            <span className="text-pretty">{item.title}</span>
+                            <ArrowRight size={16} aria-hidden="true" className="shrink-0 transition-transform group-hover:translate-x-0.5" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href={`${base}/help/category/${featured.slug}`}
+                      className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 self-start text-[14px] font-semibold text-[#C6F24E] hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] lg:col-start-1 lg:row-start-2 lg:mt-6 lg:self-end lg:pl-[60px]"
+                    >
+                      {labels.seeAll(counts[featured.slug] ?? 0)}
+                      <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
                   </div>
-                  <ul role="list" className="mt-6 border-t border-white/10">
-                    {featuredArticles.map((item) => (
-                      <li key={item.slug} className="border-b border-white/10">
-                        <Link
-                          href={`${base}/help/${item.slug}`}
-                          className="group flex min-h-[48px] items-center justify-between gap-4 py-3 text-[15px] font-medium text-white transition-colors hover:text-[#C6F24E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-                        >
-                          <span className="text-pretty">{item.title}</span>
-                          <ArrowRight size={16} aria-hidden="true" className="shrink-0 transition-transform group-hover:translate-x-0.5" />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href={`${base}/help/category/${featured.slug}`}
-                    className="mt-5 inline-flex min-h-[44px] items-center gap-1.5 self-start text-[14px] font-semibold text-[#C6F24E] hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-                  >
-                    {labels.seeAll(counts[featured.slug] ?? 0)}
-                    <ArrowRight size={14} aria-hidden="true" />
-                  </Link>
                 </li>
               )}
               {otherTopics.map((category) => (
                 <li
                   key={category.slug}
-                  className="group relative flex gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:flex-col sm:gap-0 sm:p-6"
+                  className="group relative flex gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#D4D4D4] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2 sm:flex-col sm:gap-0 sm:p-8"
                 >
                   <span
                     aria-hidden="true"
@@ -227,7 +229,7 @@ export default async function HelpCenterPage({
                     <HelpCategoryIcon icon={category.icon} size={20} />
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col sm:mt-5">
-                    <h3 className="text-[18px] font-medium leading-[1.25] tracking-[-0.015em] text-[#0A0A0A] sm:text-[19px]">
+                    <h3 className="text-[18px] font-medium leading-[1.25] tracking-[-0.015em] text-[#0A0A0A] sm:text-[20px]">
                       <Link
                         href={`${base}/help/category/${category.slug}`}
                         className="after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none"
@@ -235,7 +237,7 @@ export default async function HelpCenterPage({
                         {category[lang].title}
                       </Link>
                     </h3>
-                    <p className="mt-1.5 text-pretty text-[14px] leading-[1.6] text-[#525252] sm:mt-2">{category[lang].desc}</p>
+                    <p className="mt-1.5 text-pretty text-[15px] leading-[1.6] text-[#525252] sm:mt-2">{category[lang].desc}</p>
                     <p className="mt-3 text-[13px] text-[#737373] sm:mt-auto sm:pt-5">{labels.articles(counts[category.slug] ?? 0)}</p>
                   </div>
                 </li>
@@ -257,7 +259,7 @@ export default async function HelpCenterPage({
               <p className="mt-4 max-w-[640px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
                 {copy.startLead}
               </p>
-              <ul role="list" className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 md:grid-cols-2">
+              <ul role="list" className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 sm:gap-6 md:grid-cols-2">
                 {startHere.map((item) => {
                   const category = CATEGORY_BY_SLUG[item.category];
                   return (

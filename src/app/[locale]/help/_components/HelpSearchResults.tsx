@@ -8,6 +8,7 @@ import HelpSearchBar from '@/components/marketing/HelpSearchBar';
 import type { HelpCategoryIcon as HelpCategoryIconKey } from '@/lib/help-categories';
 import { helpQueryWords, scoreHelpMatch } from '@/lib/help-search';
 import HelpCategoryIcon from './HelpCategoryIcon';
+import HelpTopicGrid, { type HelpTopicLink } from './HelpTopicGrid';
 
 /**
  * Client side of /help/search. The page is static, so the query is read
@@ -27,12 +28,7 @@ export interface HelpSearchEntry {
   titleText: string;
 }
 
-export interface HelpSearchTopic {
-  slug: string;
-  title: string;
-  icon: HelpCategoryIconKey;
-  count: number;
-}
+export type HelpSearchTopic = HelpTopicLink;
 
 const COPY = {
   tr: {
@@ -40,16 +36,12 @@ const COPY = {
     none: (q: string) => `“${q}” için sonuç bulunamadı`,
     noneHint: 'Daha kısa ya da farklı bir kelime deneyin veya aşağıdaki konulara göz atın.',
     empty: 'Aramak için yukarıya bir konu yazın ya da aşağıdan bir konu seçin.',
-    topics: 'Konular',
-    articles: (n: number) => `${n} makale`,
   },
   en: {
     results: (n: number, q: string) => `${n} result${n === 1 ? '' : 's'} for “${q}”`,
     none: (q: string) => `No results for “${q}”`,
     noneHint: 'Try a shorter or different word, or browse the topics below.',
     empty: 'Type a topic above to search, or pick a topic below.',
-    topics: 'Topics',
-    articles: (n: number) => `${n} article${n === 1 ? '' : 's'}`,
   },
 } as const;
 
@@ -87,32 +79,7 @@ export default function HelpSearchResults({
       .map((hit) => hit.entry);
   }, [q, entries]);
 
-  const topicList = (
-    <div className="mt-10">
-      <h2 className="text-[22px] leading-[1.2] tracking-[-0.02em] text-[#0A0A0A] sm:text-[26px]">{copy.topics}</h2>
-      <ul role="list" className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {topics.map((topic) => (
-          <li key={topic.slug}>
-            <Link
-              href={`${base}/help/category/${topic.slug}`}
-              className="group flex min-h-[56px] items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
-            >
-              <span
-                aria-hidden="true"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#F5F5F5] text-[#0A0A0A] transition-colors group-hover:bg-[#C6F24E]"
-              >
-                <HelpCategoryIcon icon={topic.icon} size={18} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-medium text-[#0A0A0A]">{topic.title}</span>
-                <span className="block text-[13px] text-[#737373]">{copy.articles(topic.count)}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  const topicList = <HelpTopicGrid locale={locale} topics={topics} />;
 
   if (!q) {
     return (

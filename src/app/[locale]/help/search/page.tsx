@@ -8,6 +8,7 @@ import { CATEGORY_BY_SLUG, HELP_CATEGORIES } from '@/lib/help-categories';
 import { normalizeHelpSearchText } from '@/lib/help-search';
 import HelpBreadcrumb from '../_components/HelpBreadcrumb';
 import HelpSupportCta from '../_components/HelpSupportCta';
+import HelpTopicGrid from '../_components/HelpTopicGrid';
 import HelpSearchResults, {
   HelpSearchQueryBar,
   type HelpSearchEntry,
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const isTr = locale !== 'en';
   return {
-    title: isTr ? 'Yardım merkezinde arama sonuçları' : 'Help center search results',
+    title: isTr ? 'Yardım merkezinde arama: rehber ve yanıt bulun' : 'Help center search: find guides and answers',
     description: isTr
       ? 'Buaze yardım merkezindeki rehberlerde arama yapın: kurulum, QR kodları, yorum yönetimi, platform bağlantıları, ekip, faturalandırma ve KVKK konuları.'
       : 'Search the Buaze help center guides: setup, QR codes, review management, platform links, your team, billing, privacy and data protection topics.',
@@ -92,7 +93,9 @@ export default async function HelpSearchPage({ params }: { params: Promise<{ loc
 
         <section className="mx-auto w-full max-w-[1200px] px-5 py-[48px] sm:px-10 sm:py-16">
           <div className="min-h-[240px] max-w-[880px]">
-            <Suspense fallback={null}>
+            {/* Static HTML (and no-JS visitors) get the topic list; the client
+                swaps in results once it has read ?q=. */}
+            <Suspense fallback={<HelpTopicGrid locale={lang} topics={topics} className="" />}>
               <HelpSearchResults locale={lang} entries={entries} topics={topics} />
             </Suspense>
           </div>

@@ -16,7 +16,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
     meta: {
       title: 'Okullar ve kurslar için QR ile veli geri bildirimi',
       description:
-        'Okul ve kurslar için QR kod: veliler ve yetişkin katılımcılar puan verir, eşiğin altında önce size yazabilir. Öğretmen ya da sınıf başına anket hazırlayın.',
+        'Okul ve kurslar için QR kod: veliler ve yetişkin katılımcılar puan verir, eşiğin altında önce size yazabilir. Sınıf ya da kurs başına ayrı anket hazırlayın.',
     },
     eyebrow: 'Okullar ve kurslar',
     h1: 'Okullar ve kurslar için QR ile veli geri bildirimi ve Google yorumları',
@@ -38,7 +38,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Yanıtlayın ve gidişatı izleyin',
           body:
-            '1–3 yıldızlık geri bildirimde anında e-posta alırsınız ve veli e-posta bıraktıysa yanıtınızı e-postayla gönderirsiniz. Her pazartesi gelen haftalık özet, dönem boyunca gidişatı izlemenizi kolaylaştırır.',
+            '1–3 yıldızlık geri bildirimde anında e-posta alırsınız ve veli e-posta bıraktıysa yanıtınızı e-postayla gönderirsiniz. Geri bildirim gelen haftalarda pazartesi günleri gelen özet, dönem boyunca gidişatı izlemenizi kolaylaştırır.',
         },
       ],
     },
@@ -68,22 +68,22 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'Anaokulu, ilkokul veya kurs merkezi gibi farklı birimleriniz varsa her biri için ayrı QR oluşturup “Masa numarası” alanına birimin adını yazın. Etiket düşük puan e-postasında ve CSV dosyasında görünür.',
+        'Anaokulu, ilkokul veya kurs merkezi gibi farklı birimleriniz varsa her biri için ayrı QR oluşturup “Masa numarası” alanına birimin kısa adını yazın (ör. Anaokulu, Kurs-1; etikette boşluk ve Türkçe karakter kullanılmaz). Etiket düşük puan e-postasında ve CSV dosyasında görünür.',
     },
     uses: {
       title: 'Okul yönetimine yarayan panel özellikleri',
       items: [
         {
           icon: ClipboardList,
-          title: 'Öğretmen ya da sınıf başına anket',
+          title: 'Sınıf ya da kurs başına anket',
           body:
-            'Öğretmen bazında rapor yoktur; ayrıntılı görüş almak için her öğretmen veya sınıf için ayrı bir anket hazırlayabilirsiniz. Her anketin sonuçları ve CSV dosyası ayrıdır.',
+            'Öğretmen bazında rapor yoktur; ayrıntılı görüş almak için her sınıf ya da kurs için ayrı bir anket hazırlayabilirsiniz. Her anketin sonuçları ve CSV dosyası ayrıdır.',
         },
         {
           icon: Mail,
           title: 'Haftalık özet',
           body:
-            'Her pazartesi geçen haftanın geri bildirimlerini özetleyen bir e-posta gelir; dönem boyunca değişimi düzenli olarak izlersiniz.',
+            'Geri bildirim gelen haftalarda her pazartesi geçen haftayı özetleyen bir e-posta gelir; dönem boyunca değişimi düzenli olarak izlersiniz.',
         },
         {
           icon: Building2,
@@ -137,7 +137,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         'Okullarda geri bildirimi velilerden isteyin. Çocukların kişisel verileri ek özen gerektirir: QR kodları öğrencilerin değil velilerin göreceği yerlere koyun ve anketlerde öğrencinin adını, sınıfını veya sağlık durumunu sormayın.',
         'Formda ad ve e-posta isteğe bağlıdır. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir.',
-        'Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI ile taslak istediğinizde ya da otomatik taslakları açtığınızda geri bildirim metni OpenAI’a gönderilir. Okulunuzun kendi aydınlatma yükümlülükleri için hukuk danışmanınıza başvurun.',
+        'Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz. Okulunuzun kendi aydınlatma yükümlülükleri için hukuk danışmanınıza başvurun.',
       ],
     },
     faq: {
@@ -149,7 +149,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           q: 'Öğretmen bazında rapor alabilir miyim?',
-          a: 'Hayır, öğretmen veya personel bazında rapor yoktur. Ayrıntılı görüş için öğretmen ya da sınıf başına ayrı bir anket hazırlayabilirsiniz; her anketin sonuçları ayrı görünür.',
+          a: 'Hayır, öğretmen veya personel bazında rapor yoktur. Ayrıntılı görüş için sınıf ya da kurs başına ayrı bir anket hazırlayabilirsiniz; her anketin sonuçları ayrı görünür.',
         },
         {
           q: 'Dönem bazında rapor alabilir miyiz?',
@@ -176,7 +176,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
     meta: {
       title: 'QR parent feedback and reviews for schools',
       description:
-        'QR codes for schools and courses: parents and adult learners give a rating and, below your threshold, can write to you first. Run a survey per teacher or class.',
+        'QR codes for schools and courses: parents and adult learners give a rating and, below your threshold, can write to you first. Run a survey per class or course.',
     },
     eyebrow: 'Schools and courses',
     h1: 'QR codes for parent feedback and Google reviews at schools and courses',
@@ -198,7 +198,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Reply and follow the trend',
           body:
-            'A 1–3★ rating sends you an instant e-mail, and if the parent left an e-mail address, you reply by e-mail. The weekly summary that arrives every Monday helps you follow how the term is going.',
+            'A 1–3★ rating sends you an instant e-mail, and if the parent left an e-mail address, you reply by e-mail. In weeks with feedback, the summary that arrives on Monday helps you follow how the term is going.',
         },
       ],
     },
@@ -228,22 +228,22 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'If you run separate units, such as a kindergarten, a primary school or a course centre, create a QR code for each and type the unit name in the “Table number” field. The label shows in the low-rating e-mail and the CSV file.',
+        'If you run separate units, such as a kindergarten, a primary school or a course centre, create a QR code for each and type a short unit name in the “Table number” field (for example Kindergarten or Course-1; labels can’t contain spaces or accented letters). The label shows in the low-rating e-mail and the CSV file.',
     },
     uses: {
       title: 'Panel features that help school management',
       items: [
         {
           icon: ClipboardList,
-          title: 'A survey per teacher or class',
+          title: 'A survey per class or course',
           body:
-            'There are no per-teacher reports; for detailed feedback, build a separate survey for each teacher or class. Each survey has its own results and CSV file.',
+            'There are no per-teacher reports; for detailed feedback, build a separate survey for each class or course. Each survey has its own results and CSV file.',
         },
         {
           icon: Mail,
           title: 'Weekly summary',
           body:
-            'Every Monday an e-mail sums up the previous week’s feedback, so you can follow changes regularly through the term.',
+            'In weeks with feedback, an e-mail every Monday sums up the previous week, so you can follow changes through the term.',
         },
         {
           icon: Building2,
@@ -297,7 +297,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         "At schools, ask parents for feedback. Children’s personal data needs extra care: put QR codes where parents, not students, will see them, and don’t ask for a student’s name, class or health in surveys.",
         'Name and e-mail are optional on the form. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days.',
-        "The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. When you ask Pulse AI for a draft or turn on automatic drafts, the feedback text is sent to OpenAI. For your school’s own privacy-notice obligations, consult your legal adviser.",
+        "The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business. For your school’s own privacy-notice obligations, consult your legal adviser.",
       ],
     },
     faq: {
@@ -309,7 +309,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           q: 'Can I get reports per teacher?',
-          a: 'No, there are no per-teacher or per-staff reports. For detailed feedback, build a separate survey for each teacher or class; each survey shows its own results.',
+          a: 'No, there are no per-teacher or per-staff reports. For detailed feedback, build a separate survey for each class or course; each survey shows its own results.',
         },
         {
           q: 'Can we get a report for a whole term?',

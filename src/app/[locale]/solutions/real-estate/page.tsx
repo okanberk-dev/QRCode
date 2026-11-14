@@ -28,7 +28,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Danışman başına QR oluşturun',
           body:
-            'Panelde ofisiniz için QR kod oluşturun ve Google yorum bağlantınızı ekleyin. Her danışman için ayrı bir QR hazırlayıp “Masa numarası” alanına danışmanın adını ya da kısa kodunu yazabilirsiniz.',
+            'Panelde ofisiniz için QR kod oluşturun ve Google yorum bağlantınızı ekleyin. Her danışman için ayrı bir QR hazırlayıp “Masa numarası” alanına danışmanın kısa kodunu yazabilirsiniz (ör. D01; etikette boşluk ve Türkçe karakter kullanılmaz).',
         },
         {
           title: 'Müşteri puan verir',
@@ -96,7 +96,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Mail,
           title: 'Pazartesi özeti',
           body:
-            'Her pazartesi geçen haftanın geri bildirimlerini özetleyen bir e-posta gelir; haftalık ofis toplantısından önce durumu görürsünüz.',
+            'Geri bildirim gelen haftalarda her pazartesi geçen haftayı özetleyen bir e-posta gelir; haftalık ofis toplantısından önce durumu görürsünüz.',
         },
       ],
     },
@@ -137,7 +137,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Müşteri verileri ve KVKK',
       paragraphs: [
         'Formda ad ve e-posta isteğe bağlıdır. Müşteriler yorumlarında adres veya fiyat gibi ayrıntılar yazabilir; yanıt verirken bu bilgileri tekrarlamayın.',
-        'Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir.',
+        'Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz.',
       ],
     },
     faq: {
@@ -188,7 +188,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Create a QR code per agent',
           body:
-            "Create a QR code for your agency in the panel and add your Google review link. Make a separate QR code for each agent and type the agent’s name or a short code in the “Table number” field.",
+            "Create a QR code for your agency in the panel and add your Google review link. Make a separate QR code for each agent and type a short code for the agent in the “Table number” field (for example A01; labels can’t contain spaces or accented letters).",
         },
         {
           title: 'The client gives a rating',
@@ -255,7 +255,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Mail,
           title: 'Monday summary',
           body:
-            'Every Monday an e-mail sums up the previous week’s feedback, so you see where things stand before the weekly team meeting.',
+            'In weeks with feedback, an e-mail every Monday sums up the previous week, so you see where things stand before the weekly team meeting.',
         },
       ],
     },
@@ -296,7 +296,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Client data and KVKK',
       paragraphs: [
         "Name and e-mail are optional on the form. Clients may mention details such as an address or a price in their comments; don’t repeat them in your reply.",
-        'The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement.',
+        'The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business.',
       ],
     },
     faq: {

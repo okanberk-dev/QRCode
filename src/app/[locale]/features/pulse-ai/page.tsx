@@ -55,8 +55,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         eyebrow: 'Tanım',
         title: 'Pulse AI nedir?',
         paragraphs: [
-          'Pulse AI, Buaze gelen kutusundaki yanıt yardımcısıdır. 1–3 yıldızlık bir geri bildirimi açtığınızda işletmenizin adını, müşterinin puanını ve yorumunu okur, size bir yanıt taslağı önerir.',
-          'Taslaklar 2–4 cümle ve en fazla 80 kelimedir; emoji içermez, olumsuz yorumlarda ikram, indirim ya da hediye vaat etmez. Tonu sıcak, resmi veya özür dileyen olarak siz seçersiniz; taslak, paneli kullandığınız dile göre Türkçe ya da İngilizce hazırlanır.',
+          'Pulse AI, Buaze gelen kutusundaki yanıt yardımcısıdır. 1–3 yıldızlık bir geri bildirim için işletmenizin adını, müşterinin puanını ve yorumunu okur ve size bir yanıt taslağı önerir.',
+          'Taslaklar 2–4 cümle ve en fazla 80 kelimedir; emoji içermez, olumsuz yorumlarda ikram, indirim ya da hediye vaat etmez. Tonu sıcak, resmi veya özür dileyen olarak siz seçersiniz; taslaklar Türkçe ya da İngilizce hazırlanır.',
           'Pulse AI yanıtı sizin yerinize göndermez. Taslağı olduğu gibi kullanabilir, düzenleyebilir ya da silip kendi yanıtınızı yazabilirsiniz; gönder düğmesine basan her zaman sizsiniz.',
         ],
         note: 'Taslak ve özet hazırlamak için geri bildirim metni yapay zekâ sağlayıcımız OpenAI’a gönderilir.',
@@ -74,7 +74,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: Languages,
             title: 'Türkçe ve İngilizce',
-            body: 'Taslaklar, paneli kullandığınız dile göre Türkçe ya da İngilizce hazırlanır. Pulse AI başka dillerde yazmaz ve yorumun dilini tespit etmez.',
+            body: 'Taslaklar Türkçe ya da İngilizce hazırlanır; elle istediğiniz taslak, paneli kullandığınız dildedir. Pulse AI başka dillerde yazmaz ve yorumun dilini tespit etmez.',
           },
           {
             icon: PenLine,
@@ -93,7 +93,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             icon: LifeBuoy,
-            title: 'Yapay zekâ yoksa şablon',
+            title: 'Yapay zekâ kullanılamazsa şablon',
             body: 'Yapay zekâ o an kullanılamazsa yerine genel bir şablon taslak gösterilir. Taslağı düzenleyip yanıtınızı yine gönderebilirsiniz.',
           },
         ],
@@ -122,7 +122,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       },
       facts: {
         eyebrow: 'Kısaca',
-        title: 'Pulse AI rakamlarla',
+        title: 'Pulse AI bir bakışta',
         items: [
           { value: '3', label: 'Ton seçeneği: sıcak, resmi, özür dileyen' },
           { value: '2–4', label: 'Cümlelik taslak, en fazla 80 kelime' },
@@ -151,7 +151,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             q: 'Pulse AI hangi dillerde taslak hazırlar?',
-            a: 'Türkçe ve İngilizce. Taslak, paneli kullandığınız dile göre hazırlanır. Pulse AI yorumun dilini tespit etmez ve başka dillerde taslak yazmaz.',
+            a: 'Türkçe ve İngilizce. Elle istediğiniz taslak, paneli kullandığınız dilde hazırlanır. Pulse AI yorumun dilini tespit etmez ve başka dillerde taslak yazmaz.',
           },
           {
             q: 'Pulse AI işletmemin üslubunu öğrenir mi?',
@@ -159,11 +159,11 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             q: 'Taslak indirim veya ikram önerir mi?',
-            a: 'Hayır. Olumsuz yorumlara yanıt verirken ikram, indirim veya hediye vaat etmemek Pulse AI’ın yazım kurallarındandır. Yorum karşılığında ödül sözü içeren yanıtlar da gönderim öncesi kontrolde durdurulur.',
+            a: 'Hayır. Olumsuz yorumlara yanıt verirken ikram, indirim veya hediye vaat etmemek Pulse AI’ın yazım kurallarındandır; taslağı göndermeden önce siz de okursunuz. Yorum karşılığında ödül sözü içeren yanıtlar ayrıca gönderim öncesi kontrolde durdurulur.',
           },
           {
             q: 'Hangi yapay zekâ sağlayıcısı kullanılıyor?',
-            a: 'Taslak ve özet hazırlamak için yorum metni, puan ve varsa müşterinin adı yapay zekâ sağlayıcımız OpenAI’a gönderilir; müşterinin e-posta adresi gönderilmez. Kullandığımız alt işleyiciler Veri İşleyici Sözleşmesi’nde listelenir.',
+            a: 'Yapay zekâ sağlayıcımız OpenAI’dır. Taslak için işletmenizin adı ve türü ile müşterinin puanı, yorumu, geldiği platform ve varsa adı; özet için yalnızca puan ve yorum OpenAI’a gönderilir. Müşterinin e-posta adresi ve telefonu gönderilmez. Kullandığımız alt işleyiciler Veri İşleyici Sözleşmesi’nde listelenir.',
           },
           {
             q: 'Yapay zekâ kullanılamazsa ne olur?',
@@ -191,8 +191,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       eyebrow: 'Definition',
       title: 'What is Pulse AI?',
       paragraphs: [
-        'Pulse AI is the reply assistant in the Buaze inbox. When you open a piece of 1–3★ feedback, it reads your business name, the customer’s rating and their comment and suggests a reply draft.',
-        'Drafts are 2–4 sentences and at most 80 words; they contain no emoji and never promise free items, discounts or gifts in reply to a negative review. You choose a warm, formal or apologetic tone, and the draft is written in Turkish or English, matching the language of your panel.',
+        'Pulse AI is the reply assistant in the Buaze inbox. For a piece of 1–3★ feedback, it reads your business name, the customer’s rating and their comment and suggests a reply draft.',
+        'Drafts are 2–4 sentences and at most 80 words; they contain no emoji and never promise free items, discounts or gifts in reply to a negative review. You choose a warm, formal or apologetic tone, and drafts are written in Turkish or English.',
         'Pulse AI never sends a reply for you. You can use the draft as it is, edit it, or delete it and write your own; you are always the one who presses send.',
       ],
       note: 'To prepare drafts and summaries, the feedback text is sent to our AI provider, OpenAI.',
@@ -210,7 +210,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: Languages,
           title: 'Turkish and English',
-          body: 'Drafts are written in Turkish or English, matching the language you use the panel in. Pulse AI does not write in other languages or detect the language of the comment.',
+          body: 'Drafts are written in Turkish or English; a draft you ask for yourself follows the language you use the panel in. Pulse AI does not write in other languages or detect the language of the comment.',
         },
         {
           icon: PenLine,
@@ -257,8 +257,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       ],
     },
     facts: {
-      eyebrow: 'At a glance',
-      title: 'Pulse AI in numbers',
+      eyebrow: 'In short',
+      title: 'Pulse AI at a glance',
       items: [
         { value: '3', label: 'Tone options: warm, formal, apologetic' },
         { value: '2–4', label: 'Sentences per draft, 80 words at most' },
@@ -287,7 +287,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           q: 'Which languages does Pulse AI write in?',
-          a: 'Turkish and English. The draft follows the language you use the panel in. Pulse AI does not detect the language of the comment and does not write drafts in other languages.',
+          a: 'Turkish and English. A draft you ask for yourself follows the language you use the panel in. Pulse AI does not detect the language of the comment and does not write drafts in other languages.',
         },
         {
           q: 'Does Pulse AI learn my business’s voice?',
@@ -295,11 +295,11 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           q: 'Will a draft offer a discount or a free item?',
-          a: 'No. Not promising free items, discounts or gifts in reply to a negative review is one of Pulse AI’s writing rules. Replies that offer a reward in exchange for a review are also stopped by the check before sending.',
+          a: 'No. Not promising free items, discounts or gifts in reply to a negative review is one of Pulse AI’s writing rules, and you read every draft before it goes out. Replies that offer a reward in exchange for a review are also stopped by the check before sending.',
         },
         {
           q: 'Which AI provider is used?',
-          a: 'To prepare drafts and summaries, the comment, the rating and, if given, the customer’s name are sent to our AI provider, OpenAI; the customer’s e-mail address is not sent. The sub-processors we use are listed in the Data Processing Agreement.',
+          a: 'Our AI provider is OpenAI. For a draft, your business name and type and the customer’s rating, comment, platform and, if given, name are sent to OpenAI; for a summary, only the rating and the comment. The customer’s e-mail address and phone number are not sent. The sub-processors we use are listed in the Data Processing Agreement.',
         },
         {
           q: 'What happens if AI is unavailable?',

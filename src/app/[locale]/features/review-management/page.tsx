@@ -46,7 +46,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
     return {
       eyebrow: 'Yorum yönetimi',
       title: 'QR geri bildirimleriniz tek panelde',
-      lead: 'Müşterilerinizin QR kodla bıraktığı puan ve yorumlar tek gelen kutusuna düşer; 1–3 yıldızlık geri bildirimde anında e-posta alır, yanıtınızı panelden yazarsınız.',
+      lead: 'Müşterilerinizin QR kodla bıraktığı puan ve yorumlar tek gelen kutusuna düşer; 1–3 yıldızlık geri bildirimde anında e-posta alırsınız, yanıtınızı da panelden yazarsınız.',
       secondary: { href: `${base}/how-it-works`, label: 'Nasıl çalıştığını görün' },
       mockCaption:
         'Örnek ekran: gelen kutusunda üç QR geri bildirimi; puanlar, yorumlar ve yanıt durumları görünüyor.',
@@ -68,7 +68,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: Inbox,
             title: 'Tek gelen kutusu',
-            body: 'QR akışından gelen her geri bildirim tek listede. Tarihe, puana ve platforma göre daraltın; okunmamış, düşük puanlı, yanıtlanmış ve beklemedeki kayıtları sekmelerle ayırın. Tüm listeyi CSV olarak indirebilirsiniz.',
+            body: 'QR akışından gelen her geri bildirim tek listede. Tarihe, puana ve platforma göre daraltın; okunmamış, düşük puanlı, yanıtlanmış ve beklemedeki kayıtları sekmelerle ayırın. Listeyi son 90 güne kadar CSV olarak indirebilirsiniz.',
           },
           {
             icon: Mail,
@@ -93,7 +93,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: Users,
             title: 'Müşteri listesi',
-            body: 'İletişim bilgisi bırakan müşteriler müşteri listenize eklenir. Ziyaret sayısını ve ortalama puanı görür, müşterileri yeni, düzenli, VIP, risk ve kayıp segmentlerine göre ayırırsınız.',
+            body: 'İletişim bilgisi bırakan müşteriler müşteri listenize eklenir; her birinin ziyaret sayısını ve ortalama puanını görürsünüz. Liste yeni, düzenli, VIP, risk ve kayıp olarak beş segmente ayrılır; segmenti elle de değiştirebilirsiniz.',
           },
         ],
       },
@@ -121,10 +121,10 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       },
       facts: {
         eyebrow: 'Kısaca',
-        title: 'Yorum yönetimi rakamlarla',
+        title: 'Yorum yönetimi bir bakışta',
         items: [
           { value: '10', label: 'Bağlantısını yönetebileceğiniz yorum platformu' },
-          { value: '4★ / 5★', label: 'Yönlendirme eşiği; varsayılan 5 yıldız' },
+          { value: 'Her gün', label: 'Platform bağlantılarının otomatik kontrolü' },
           { value: '1–3★', label: 'Anında e-posta uyarısı gönderen puanlar' },
           { value: 'TR + EN', label: 'Müşteri formu, panel ve e-postalar' },
         ],
@@ -206,7 +206,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: Inbox,
           title: 'One inbox',
-          body: 'Every piece of feedback from your QR flow in one list. Narrow it down by date, rating and platform and use tabs to separate unread, low-rated, replied and pending items. You can export the whole list as CSV.',
+          body: 'Every piece of feedback from your QR flow in one list. Narrow it down by date, rating and platform and use tabs to separate unread, low-rated, replied and pending items. You can export up to the last 90 days of the list as CSV.',
         },
         {
           icon: Mail,
@@ -231,7 +231,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: Users,
           title: 'Customer list',
-          body: 'Customers who leave contact details are added to your customer list. You see their visit count and average rating and group them into new, loyal, VIP, at-risk and churned segments.',
+          body: 'Customers who leave contact details are added to your customer list, where you see each one’s visit count and average rating. The list is split into five segments (new, loyal, VIP, at-risk and churned), and you can change a segment by hand.',
         },
       ],
     },
@@ -258,11 +258,11 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       ],
     },
     facts: {
-      eyebrow: 'At a glance',
-      title: 'Review management in numbers',
+      eyebrow: 'In short',
+      title: 'Review management at a glance',
       items: [
         { value: '10', label: 'Review platforms you can link to' },
-        { value: '4★ / 5★', label: 'Redirect threshold; 5 stars by default' },
+        { value: 'Daily', label: 'Automatic check of your platform links' },
         { value: '1–3★', label: 'Ratings that trigger an instant e-mail' },
         { value: 'TR + EN', label: 'Customer form, panel and e-mails' },
       ],

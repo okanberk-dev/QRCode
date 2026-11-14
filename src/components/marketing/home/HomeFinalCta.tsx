@@ -9,13 +9,13 @@ import { ArrowRight } from 'lucide-react';
 
 const COPY = {
   tr: {
-    title: 'QR kodla geri bildirim toplamaya ücretsiz başlayın',
+    title: 'QR kodla geri bildirim toplamaya bugün başlayın',
     facts: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal edebilirsiniz'],
     primary: 'Ücretsiz deneyin',
     secondary: 'Fiyatları inceleyin',
   },
   en: {
-    title: 'Start collecting feedback with QR codes for free',
+    title: 'Start collecting feedback with QR codes today',
     facts: ['14-day free trial', 'No credit card', 'Cancel anytime'],
     primary: 'Start free trial',
     secondary: 'See pricing',

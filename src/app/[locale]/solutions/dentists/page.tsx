@@ -68,7 +68,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'Birden çok muayene odanız varsa her oda için ayrı QR oluşturabilirsiniz. QR oluştururken “Masa numarası” alanına “Oda 2” gibi bir etiket yazın; bu etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür.',
+        'Birden çok muayene odanız varsa her oda için ayrı QR oluşturabilirsiniz. QR oluştururken “Masa numarası” alanına “Oda-2” gibi bir etiket yazın (etikette boşluk ve Türkçe karakter kullanılmaz); bu etiket düşük puan e-postasında ve geri bildirim CSV dosyasında görünür.',
     },
     uses: {
       title: 'Diş kliniği panelinde işinize yarayanlar',
@@ -89,7 +89,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Stethoscope,
           title: 'Kliniğe uygun panel dili',
           body:
-            'Sektör olarak “Klinik & Sağlık”ı seçtiğinizde panel geri bildirimleri “Hasta geri bildirimleri”, müşteri listesini “Hastalar” olarak adlandırır ve QR menü bölümünü gizler.',
+            'Sektör olarak “Klinik & Sağlık”ı seçtiğinizde panel geri bildirimleri “Hasta geri bildirimleri”, müşteri listesini “Hastalar” olarak adlandırır ve QR Menü bölümünü gizler.',
         },
         {
           icon: MapPin,
@@ -140,7 +140,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         'Geri bildirim formunda ad ve e-posta isteğe bağlıdır ve sağlık bilgisi soran bir alan yoktur. Yorum alanı ise serbest metindir; hasta tedavisiyle ilgili ayrıntı yazabilir. Sağlık verisi özel nitelikli kişisel veridir, bu yüzden hastalarınıza tedavi ayrıntısı yazmamalarını hatırlatın. Hazır “Randevu sonrası” anket şablonu, açık uçlu sorusunda bunu hastadan açıkça ister.',
         'Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrı bir kutudur ve varsayılan olarak işaretsizdir. Onaylar kayıt altına alınır, IP adresleri 90 gün sonra anonimleştirilir.',
-        'Veritabanı AB’de (Frankfurt) tutulur. E-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI ile taslak istediğinizde ya da otomatik taslakları açtığınızda geri bildirim metni, taslak üretmek için OpenAI’a gönderilir.',
+        'Veritabanı AB’de (Frankfurt) tutulur. E-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz.',
         'Sağlık kuruluşlarının tanıtım faaliyetleri ayrıca düzenlenmiştir. Hasta yorumlarını web sitenizde veya reklamlarınızda kullanmadan önce ve kliniğinizin kendi aydınlatma yükümlülükleri için hukuk danışmanınıza başvurun.',
       ],
     },
@@ -236,7 +236,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'If you have several treatment rooms, create a separate QR code for each. When you create one, type a label such as “Room 2” in the “Table number” field; the label appears in the low-rating e-mail and in the feedback CSV file.',
+        'If you have several treatment rooms, create a separate QR code for each. When you create one, type a label such as “Room-2” in the “Table number” field (labels can’t contain spaces or accented letters); the label appears in the low-rating e-mail and in the feedback CSV file.',
     },
     uses: {
       title: 'Panel features that help a dental clinic',
@@ -257,7 +257,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Stethoscope,
           title: 'Panel wording that fits a clinic',
           body:
-            'When you pick “Clinic & Health” as your industry, the panel calls feedback “Patient feedback” and the customer list “Patients”, and hides the QR menu section.',
+            'When you pick “Clinic & Health” as your industry, the panel calls feedback “Patient feedback” and the customer list “Patients”, and hides the QR Menu section.',
         },
         {
           icon: MapPin,
@@ -308,7 +308,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       paragraphs: [
         "Name and e-mail are optional on the feedback form, and no field asks about health. The comment box is free text, though, and patients may write about their treatment. Health data is a special category of personal data, so remind patients not to include treatment details. The ready-made “After the appointment” survey template asks for exactly that in its open question.",
         'The form records the KVKK privacy notice acknowledgement; marketing consent is a separate box and is unticked by default. Consents are logged, and IP addresses are anonymised after 90 days.',
-        'The database is kept in the EU (Frankfurt). Some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. When you ask Pulse AI for a draft or turn on automatic drafts, the feedback text is sent to OpenAI to generate it.',
+        'The database is kept in the EU (Frankfurt). Some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business.',
         "Advertising by healthcare providers is separately regulated. Check with your legal adviser before using patient reviews on your website or in ads, and for your clinic’s own privacy-notice obligations.",
       ],
     },

@@ -23,10 +23,8 @@ export const translations = {
     siteDescription: 'QR Geri Bildirim ve Dijital İtibar Yönetim Platformu. QR akışlarıyla şeffaf müşteri geri bildirimi toplayın, yorumları tek panelden yönetin, Pulse AI taslaklarıyla daha hızlı yanıt verin.',
 
     // Navbar / footer / CTA copy lives in the chrome components themselves
-    // (MarketingNavbarClient, MarketingFooter, StickyCtaBar), not here.
-
-    // Hero (the homepage hero copy lives in HeroCinematic; this CTA is shared)
-    hero_cta: '14 gün ücretsiz deneyin',
+    // (MarketingNavbarClient, MarketingFooter), not here. Homepage copy lives
+    // in HeroCinematic and src/components/marketing/home/*.
 
     // Pricing page copy lives in src/app/[locale]/pricing/page.tsx and
     // PricingPlans; plan data comes from the SubscriptionPlan table.
@@ -284,35 +282,6 @@ export const translations = {
     feedback_page_not_found: 'Sayfa Bulunamadı',
     feedback_page_inactive: 'Bu işletme aktif değil veya bağlantı hatalı.',
 
-    // Solutions Pages
-    sol_res_title: 'Restoranlar İçin Dijital İtibar Yönetimi',
-    sol_res_desc: 'Google Haritalar\'da görünürlüğünüzü artırın, müşteri sadakatini pekiştirin ve marka değerinizi dijitale taşıyın.',
-    sol_res_h1: 'Restoranınızın Yıldızını Parlatın',
-    sol_res_p: 'Yemek sepeti veya benzeri platformlara komisyon ödemek yerine, kendi direkt müşterilerinizi sadık elçilere dönüştürün. Masalardaki QR menülerle veya hesap sümenlerindeki özel etiketlerimizle anında profesyonel geri bildirim toplayın.',
-    
-    sol_hot_title: 'Oteller İçin Entegre İtibar Optimizasyonu',
-    sol_hot_desc: 'TripAdvisor ve Google entegrasyonuyla otelinizin dijital yüzünü parlatın. Misafir deneyimini anlık olarak yönetin.',
-    sol_hot_h1: 'Mükemmel Misafir Deneyimi',
-    sol_hot_p: 'Resepsiyona yerleştireceğiniz akıllı QR kodlar ile check-out esnasında otomatik geri bildirim alın. Operasyonel geri bildirim akışıyla deneyimi anında mükemmelleştirin ve kurumsal itibarınızı koruyun.',
-
-    sol_hea_title: 'Klinikler İçin Dijital Güven İnşası',
-    sol_hea_desc: 'Sağlık sektöründe kararı belirleyen en önemli faktör güvendir. Doğrulanmış hasta yorumlarıyla marka değerinizi pekiştirin.',
-    sol_hea_h1: 'Hasta Güvenini Otomatiğe Bağlayın',
-    sol_hea_p: 'Tedavi sonrası bekleme salonunda veya çıkış bankosunda hastalarınızdan en taze geri bildirimleri alın. Gizliliği koruyarak etik çerçevede profesyonel bir dijital itibar oluşturun.',
-
-    // New Industries
-    sol_be_title: 'Güzellik Salonları için İtibar Yönetimi',
-    sol_be_desc: 'Müşterileriniz salondan çıkmadan görüşlerini alın ve profesyonel itibarınızla randevularınızı doldurun.',
-    sol_be_h1: 'Güzelliğin Yeni Referansı Olun',
-    sol_be_p: 'Sunulan hizmetin kalitesini dijital dünyada belgeleyin. Sosyal kanıt ile yeni müşterileri salonunuza çekin.',
-    sol_be_badge: 'GÜZELLİK SALONLARI İÇİN',
-
-    sol_law_title: 'Hukuk Ofisleri için Dijital Güven İnşası',
-    sol_law_desc: 'Müvekkil güvenini KVKK uyumlu geri bildirimlerle pekiştirin ve marka değerinizi koruyun.',
-    sol_law_h1: 'Hukukta Tecrübe, Dijitalde Referans',
-    sol_law_p: 'Gizlilik prensiplerine uygun şekilde müvekkil memnuniyetini yönetin. Hukuki uzmanlığınızı güvenle dijitale yansıtın.',
-    sol_law_badge: 'HUKUK OFİSLERİ İÇİN',
-
     // Case Studies
 
     // Google Compliance
@@ -449,10 +418,8 @@ export const translations = {
     siteDescription: 'QR Feedback & Digital Reputation Management Platform. Collect transparent customer feedback through QR flows, manage reviews from one dashboard, and respond faster with Pulse AI drafts.',
 
     // Navbar / footer / CTA copy lives in the chrome components themselves
-    // (MarketingNavbarClient, MarketingFooter, StickyCtaBar), not here.
-
-    // Hero (the homepage hero copy lives in HeroCinematic; this CTA is shared)
-    hero_cta: 'Start your 14-day free trial',
+    // (MarketingNavbarClient, MarketingFooter), not here. Homepage copy lives
+    // in HeroCinematic and src/components/marketing/home/*.
 
     // Pricing page copy lives in src/app/[locale]/pricing/page.tsx and
     // PricingPlans; plan data comes from the SubscriptionPlan table.
@@ -708,35 +675,6 @@ export const translations = {
     feedback_google_direct_sub: 'Support the business via maps',
     feedback_page_not_found: 'Page Not Found',
     feedback_page_inactive: 'This business is not active or the link is incorrect.',
-
-    // Solutions Pages
-    sol_res_title: 'Digital Reputation Management for Restaurants',
-    sol_res_desc: 'Increase your visibility on Google Maps, reinforce customer loyalty, and bring your brand value online.',
-    sol_res_h1: 'Make Your Restaurant\'s Stars Shine',
-    sol_res_p: 'Instead of paying high commissions to delivery apps, turn your direct customers into loyal brand ambassadors. Instantly collect professional feedback with our custom labels on tables or check holders.',
-    
-    sol_hot_title: 'Integrated Reputation Optimization for Hotels',
-    sol_hot_desc: 'Shine your hotel\'s digital face with TripAdvisor and Google integration. Manage guest experiences in real-time.',
-    sol_hot_h1: 'Flawless Guest Experience',
-    sol_hot_p: 'Automatically collect feedback during check-out using smart QR codes placed at the reception. Perfect the experience via operational feedback flow and protect your corporate reputation.',
-
-    sol_hea_title: 'Digital Trust Building for Clinics',
-    sol_hea_desc: 'In healthcare, trust is the deciding factor. Reinforce your brand value with verified patient feedback.',
-    sol_hea_h1: 'Automate Patient Trust',
-    sol_hea_p: 'Gather the freshest feedback from your patients in the waiting room or at the discharge desk. Build a professional digital reputation ethically and while maintaining confidentiality.',
-
-    // New Industries
-    sol_be_title: 'Reputation Management for Beauty Salons',
-    sol_be_desc: 'Get feedback before clients leave and fill up your appointments with your professional reputation.',
-    sol_be_h1: 'Be the New Reference for Beauty',
-    sol_be_p: 'Document service quality in the digital world. Attract new clients with social proof.',
-    sol_be_badge: 'FOR BEAUTY SALONS',
-
-    sol_law_title: 'Digital Trust Building for Law Firms',
-    sol_law_desc: 'Reinforce client trust with GDPR-compliant feedback and protect your brand value.',
-    sol_law_h1: 'Experience in Law, Reference Online',
-    sol_law_p: 'Manage client satisfaction while respecting privacy principles. Reflect your legal expertise digitally with trust.',
-    sol_law_badge: 'FOR LAW FIRMS',
 
     // Case Studies
 

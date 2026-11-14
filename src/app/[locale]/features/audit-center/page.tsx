@@ -20,7 +20,7 @@ const META = {
   tr: {
     title: 'Denetim Merkezi: kontrol listeleri ve ekip testleri',
     description:
-      'Hijyen, açılış ve vardiya devri kontrol listeleriyle işe alım testlerini hazırlayın. Ekibiniz giriş yapmadan doldurur, puan 3 yöntemden biriyle hesaplanır.',
+      'Hijyen, açılış ve vardiya devri kontrol listelerini ve işe alım testlerini hazırlayın. Ekibiniz giriş yapmadan doldurur, puan 3 yöntemden biriyle hesaplanır.',
   },
   en: {
     title: 'Audit Center: operational checklists and team tests',
@@ -79,7 +79,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: Calculator,
             title: 'Üç puanlama yöntemi',
-            body: 'Yüzde (her madde eşit sayılır), ağırlıklı (maddelere verdiğiniz ağırlık hesaba katılır) ya da geçti/kaldı (belirlediğiniz geçme puanına göre).',
+            body: 'Yüzde (puanlanan her madde eşit sayılır), ağırlıklı (maddelere verdiğiniz ağırlık hesaba katılır) ya da geçti/kaldı (belirlediğiniz geçme puanına göre).',
           },
           {
             icon: Link2,
@@ -122,7 +122,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       },
       facts: {
         eyebrow: 'Kısaca',
-        title: 'Denetim Merkezi rakamlarla',
+        title: 'Denetim Merkezi bir bakışta',
         items: [
           { value: '6', label: 'Soru tipi' },
           { value: '3', label: 'Puanlama yöntemi' },
@@ -156,7 +156,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             q: 'Puan nasıl hesaplanıyor?',
-            a: 'Üç yöntemden birini seçersiniz: yüzde yönteminde her madde eşit sayılır, ağırlıklı yöntemde maddelere verdiğiniz ağırlık hesaba katılır, geçti/kaldı yönteminde sonuç belirlediğiniz geçme puanıyla karşılaştırılır. Fotoğraf maddeleri puana katılmaz; metin yanıtlarını gerekirse elle puanlarsınız.',
+            a: 'Üç yöntemden birini seçersiniz: yüzde yönteminde puanlanan her madde eşit sayılır, ağırlıklı yöntemde maddelere verdiğiniz ağırlık hesaba katılır, geçti/kaldı yönteminde sonuç belirlediğiniz geçme puanıyla karşılaştırılır. Fotoğraf maddeleri puana katılmaz; metin yanıtlarını gerekirse elle puanlarsınız.',
           },
           {
             q: 'Hazır şablonlar hangi dilde?',
@@ -216,7 +216,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: Calculator,
           title: 'Three scoring methods',
-          body: 'Percentage (every item counts equally), weighted (the weight you give each item counts) or pass/fail (against a pass mark you set).',
+          body: 'Percentage (every scored item counts equally), weighted (the weight you give each item counts) or pass/fail (against a pass mark you set).',
         },
         {
           icon: Link2,
@@ -258,8 +258,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       ],
     },
     facts: {
-      eyebrow: 'At a glance',
-      title: 'Audit Center in numbers',
+      eyebrow: 'In short',
+      title: 'Audit Center at a glance',
       items: [
         { value: '6', label: 'Question types' },
         { value: '3', label: 'Scoring methods' },
@@ -293,7 +293,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           q: 'How is the score calculated?',
-          a: 'You choose one of three methods: with percentage every item counts equally, with weighted the weight you give each item counts, and with pass/fail the result is compared with the pass mark you set. Photo items are not scored; you can score text answers by hand when needed.',
+          a: 'You choose one of three methods: with percentage every scored item counts equally, with weighted the weight you give each item counts, and with pass/fail the result is compared with the pass mark you set. Photo items are not scored; you can score text answers by hand when needed.',
         },
         {
           q: 'Which language are the ready templates in?',

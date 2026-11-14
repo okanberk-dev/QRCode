@@ -54,7 +54,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Kahvaltı salonu',
           body:
-            'Kahvaltı masalarındaki küçük bir stant, kahvaltı ve servisle ilgili görüşleri toplar. Oda numarası yerine “Kahvaltı” etiketini kullanabilirsiniz.',
+            'Kahvaltı masalarındaki küçük bir stant, kahvaltı ve servisle ilgili görüşleri toplar. Oda numarası yerine “Kahvalti” gibi bir etiket kullanabilirsiniz; etikette Türkçe karakter kullanılmaz.',
         },
         {
           title: 'Resepsiyon ve çıkış işlemi',
@@ -140,7 +140,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Misafir verileri ve KVKK',
       paragraphs: [
         'Formda ad ve e-posta isteğe bağlıdır; misafir yalnızca yanıt almak isterse e-posta bırakır. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak işaretsizdir. IP adresleri 90 gün sonra anonimleştirilir.',
-        'Buaze rezervasyon sisteminize bağlanmaz ve misafir listenizi almaz. Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI ile taslak istediğinizde ya da otomatik taslakları açtığınızda geri bildirim metni OpenAI’a gönderilir.',
+        'Buaze rezervasyon sisteminize bağlanmaz ve misafir listenizi almaz. Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz.',
       ],
     },
     faq: {
@@ -148,7 +148,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       items: [
         {
           q: 'Booking.com ve Airbnb yorumlarını Buaze’ye aktarabilir miyim?',
-          a: 'Hayır. Buaze hiçbir platformdan yorum çekmez; yalnızca yorum bağlantılarınızı yönetir ve misafiri seçtiğiniz platformun yorum sayfasına gönderir. Booking.com ve Airbnb’de yorum yazabilmek için misafirin o platform üzerinden konaklamış olması gerekir.',
+          a: 'Hayır. Buaze hiçbir platformun yorumlarını gelen kutunuza aktarmaz; yalnızca yorum bağlantılarınızı yönetir ve misafiri seçtiğiniz platformun yorum sayfasına gönderir. Booking.com ve Airbnb’de yorum yazabilmek için misafirin o platform üzerinden konaklamış olması gerekir.',
         },
         {
           q: 'Oda bazında rapor alabilir miyim?',
@@ -303,7 +303,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Guest data and KVKK',
       paragraphs: [
         'Name and e-mail are optional on the form; guests leave an e-mail address only if they want a reply. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and unticked by default. IP addresses are anonymised after 90 days.',
-        "Buaze doesn’t connect to your booking system or take your guest list. The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. When you ask Pulse AI for a draft or turn on automatic drafts, the feedback text is sent to OpenAI.",
+        "Buaze doesn’t connect to your booking system or take your guest list. The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business.",
       ],
     },
     faq: {
@@ -311,7 +311,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       items: [
         {
           q: 'Can I import my Booking.com and Airbnb reviews into Buaze?',
-          a: "No. Buaze doesn’t import reviews from any platform; it manages your review links and sends the guest to the review page of the platform you choose. To review on Booking.com or Airbnb, a guest must have stayed through that platform.",
+          a: "No. Buaze doesn’t bring reviews from any platform into your inbox; it manages your review links and sends the guest to the review page of the platform you choose. To review on Booking.com or Airbnb, a guest must have stayed through that platform.",
         },
         {
           q: 'Can I get reports per room?',

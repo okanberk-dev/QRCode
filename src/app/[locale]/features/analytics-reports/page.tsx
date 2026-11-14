@@ -109,7 +109,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             title: 'Göstergelere bakın',
-            body: 'Yorum sayısını, ortalama puanı, yanıt süresini, tahmini NPS’i ve tekrar gelme oranını tek satırda okuyun.',
+            body: 'Yorum sayısını, ortalama puanı, yanıt süresini, tahmini NPS’i ve tekrar gelme oranını bir arada görün.',
           },
           {
             title: 'Yoğun saatleri bulun',
@@ -123,7 +123,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       },
       facts: {
         eyebrow: 'Kısaca',
-        title: 'Analitik rakamlarla',
+        title: 'Analitik bir bakışta',
         items: [
           { value: '5', label: 'Temel gösterge' },
           { value: '12 ay', label: 'En uzun hazır dönem; 7, 30, 90 gün ve özel aralık da var' },
@@ -246,7 +246,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           title: 'Check the metrics',
-          body: 'Read review count, average rating, reply time, estimated NPS and return rate in a single row.',
+          body: 'See review count, average rating, reply time, estimated NPS and return rate together.',
         },
         {
           title: 'Find the busy hours',
@@ -259,8 +259,8 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       ],
     },
     facts: {
-      eyebrow: 'At a glance',
-      title: 'Analytics in numbers',
+      eyebrow: 'In short',
+      title: 'Analytics at a glance',
       items: [
         { value: '5', label: 'Core metrics' },
         { value: '12 months', label: 'Longest preset; 7, 30 and 90 days and a custom range too' },

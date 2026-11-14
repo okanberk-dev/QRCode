@@ -24,13 +24,13 @@ function features(locale: 'tr' | 'en'): Feature[] {
       {
         icon: QrCode,
         title: 'QR geri bildirim',
-        body: 'İşletme başına istediğiniz kadar QR kod oluşturun; masa veya oda etiketi ekleyin, 6 hazır renkten birini ya da marka renginizi seçin. Müşteri formu tarayıcı diline göre Türkçe veya İngilizce açılır.',
+        body: 'İşletme başına istediğiniz kadar QR kod oluşturun; 6 hazır renkten birini ya da marka renginizi seçin. QR kod sizin Buaze sayfanızı açtığı için müşterinin yönlendirileceği platformu panelden değiştirdiğinizde yeniden basmanız gerekmez.',
         link: { href: `${base}/features/review-management`, label: 'Yorum yönetimini inceleyin' },
       },
       {
         icon: Mail,
         title: 'E-posta uyarıları',
-        body: '1–3 yıldızlık her yeni geri bildirimde anında e-posta alırsınız; panelde bildirim zili de yanar. Her pazartesi haftalık özet gelir ve iki e-postayı da ayarlardan kapatabilirsiniz.',
+        body: '1–3 yıldızlık her yeni geri bildirimde anında e-posta alırsınız; panelde bildirim zili de yanar. Her pazartesi bir haftalık özet e-postası gelir; iki e-postayı da ayarlardan kapatabilirsiniz.',
       },
       {
         icon: Sparkles,
@@ -61,13 +61,13 @@ function features(locale: 'tr' | 'en'): Feature[] {
     {
       icon: QrCode,
       title: 'QR feedback',
-      body: 'Create as many QR codes per business as you need, add a table or room label and pick one of 6 preset colors or your brand color. The customer form opens in Turkish or English, following the browser language.',
+      body: 'Create as many QR codes per business as you need, in one of 6 preset colors or your brand color. Because the QR code opens your Buaze page, you can change the platform customers are sent to in the panel without reprinting.',
       link: { href: `${base}/features/review-management`, label: 'Explore review management' },
     },
     {
       icon: Mail,
       title: 'E-mail alerts',
-      body: 'Every new 1–3★ piece of feedback sends you an instant e-mail and lights up the bell in the panel. A weekly summary arrives every Monday, and you can switch both e-mails off in settings.',
+      body: 'Whenever new 1–3★ feedback comes in, you get an instant e-mail and the bell lights up in the panel. A weekly summary e-mail arrives every Monday; you can switch off both e-mails in settings.',
     },
     {
       icon: Sparkles,
@@ -118,7 +118,7 @@ export default function HomeFeatures({ locale }: { locale: 'tr' | 'en' }) {
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
         <SectionHeader id="features-title" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
 
-        <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+        <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3">
           {features(locale).map((feature) => {
             const Icon = feature.icon;
             return (

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SITE_URL } from '@/lib/site';
-import { ORGANIZATION_ID } from '@/lib/company-facts';
+import { ORGANIZATION_ID } from '@/lib/company-constants';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import { getTranslations, type Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
@@ -113,7 +113,6 @@ export default async function LandingPage({
           : 'Software that lets businesses collect customer feedback with QR codes, manage their links on 10 review platforms and reply with Pulse AI drafts they approve first.',
         provider: { '@id': ORGANIZATION_ID },
         url: `${SITE_URL}/${locale}`,
-        inLanguage: isTr ? 'tr-TR' : 'en-US',
       },
       {
         '@type': 'FAQPage',

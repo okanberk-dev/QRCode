@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, Plus } from 'lucide-react';
-import { SUPPORT_EMAIL, SUPPORT_HOURS } from '@/lib/company-facts';
+import { SUPPORT_EMAIL, SUPPORT_HOURS } from '@/lib/company-constants';
 import { HOME_FAQ } from './home-faq';
 import SectionHeader from './SectionHeader';
 
@@ -8,6 +8,10 @@ import SectionHeader from './SectionHeader';
  * Homepage FAQ — five questions from HOME_FAQ (the same array feeds the
  * FAQPage JSON-LD). Native <details>/<summary>: keyboard-operable, no JS,
  * every answer is in the server HTML. The first item starts open.
+ *
+ * Grid order: on phones the questions come right after the header and the
+ * "another question?" card closes the section; on large screens the card
+ * sits under the header in the left column.
  */
 
 const COPY = {
@@ -33,8 +37,8 @@ export default function HomeFaq({ locale }: { locale: 'tr' | 'en' }) {
 
   return (
     <section id="faq" aria-labelledby="faq-title" className="bg-white py-[60px] sm:py-24">
-      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-10 px-5 sm:px-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-        <div className="lg:sticky lg:top-28 lg:self-start">
+      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-10 px-5 sm:px-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:grid-rows-[auto_1fr] lg:gap-x-16 lg:gap-y-8">
+        <div className="lg:col-start-1 lg:row-start-1">
           <SectionHeader id="faq-title" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
           <Link
             href={`/${locale}/faq`}
@@ -43,19 +47,9 @@ export default function HomeFaq({ locale }: { locale: 'tr' | 'en' }) {
             {copy.all}
             <ArrowRight size={14} aria-hidden="true" />
           </Link>
-          <div className="mt-8 rounded-[20px] border border-[#EDEDED] bg-[#FAFAFA] p-6">
-            <p className="text-[16px] font-medium text-[#0A0A0A]">{copy.contactTitle}</p>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}`}
-              className="mt-1 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
-            >
-              {SUPPORT_EMAIL}
-            </a>
-            <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">{SUPPORT_HOURS[locale]}</p>
-          </div>
         </div>
 
-        <div className="divide-y divide-[#EDEDED] rounded-[20px] border border-[#EDEDED] bg-white px-5 sm:px-8">
+        <div className="divide-y divide-[#EDEDED] rounded-[20px] border border-[#EDEDED] bg-white px-5 sm:px-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
           {faqs.map((faq, index) => (
             <details key={faq.q} open={index === 0} className="group py-5 sm:py-6">
               <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-4 [&::-webkit-details-marker]:hidden">
@@ -78,6 +72,17 @@ export default function HomeFaq({ locale }: { locale: 'tr' | 'en' }) {
               </p>
             </details>
           ))}
+        </div>
+
+        <div className="rounded-[20px] border border-[#EDEDED] bg-[#FAFAFA] p-6 lg:col-start-1 lg:row-start-2 lg:self-start">
+          <p className="text-[16px] font-medium text-[#0A0A0A]">{copy.contactTitle}</p>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="mt-1 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+          >
+            {SUPPORT_EMAIL}
+          </a>
+          <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">{SUPPORT_HOURS[locale]}</p>
         </div>
       </div>
     </section>

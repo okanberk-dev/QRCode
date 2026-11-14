@@ -68,7 +68,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'Kaporta, mekanik ve lastik gibi bölümler için ayrı QR kodlar oluşturup “Masa numarası” alanına bölümün adını yazabilirsiniz. Etiket düşük puan e-postasında ve CSV dosyasında görünür.',
+        'Kaporta, mekanik ve lastik gibi bölümler için ayrı QR kodlar oluşturup “Masa numarası” alanına bölümün adını yazabilirsiniz (ör. Kaporta, Mekanik, Lastik; etikette boşluk ve Türkçe karakter kullanılmaz). Etiket düşük puan e-postasında ve CSV dosyasında görünür.',
     },
     uses: {
       title: 'Oto servise yarayan panel özellikleri',
@@ -136,7 +136,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Müşteri ve araç bilgileri',
       paragraphs: [
         'Plaka, bir kişiyle ilişkilendirildiğinde kişisel veri sayılabilir. Anketlerde plaka sormak isterseniz soruyu isteğe bağlı bırakın ve neden sorduğunuzu açıklayın.',
-        'Geri bildirim formunda ad ve e-posta isteğe bağlıdır. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB’de (Frankfurt) tutulur; bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir.',
+        'Geri bildirim formunda ad ve e-posta isteğe bağlıdır. Form gönderilirken KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB’de (Frankfurt) tutulur; bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz.',
       ],
     },
     faq: {
@@ -227,7 +227,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
       ],
       tip:
-        'Create separate QR codes for departments such as bodywork, mechanical and tyres, and type the department name in the “Table number” field. The label shows in the low-rating e-mail and the CSV file.',
+        'Create separate QR codes for departments such as bodywork, mechanical and tyres, and type the department name in the “Table number” field (for example Bodywork, Mechanical or Tyres; labels can’t contain spaces or accented letters). The label shows in the low-rating e-mail and the CSV file.',
     },
     uses: {
       title: 'Panel features that help a repair shop',
@@ -295,7 +295,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       title: 'Customer and vehicle details',
       paragraphs: [
         'A licence plate can count as personal data when it is linked to a person. If you want to ask for the plate in a survey, make the question optional and explain why you ask.',
-        'Name and e-mail are optional on the feedback form. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database is kept in the EU (Frankfurt); some service providers are in the US and are listed in the data processing agreement.',
+        'Name and e-mail are optional on the feedback form. The form records the KVKK privacy notice acknowledgement; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database is kept in the EU (Frankfurt); some service providers are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business.',
       ],
     },
     faq: {
