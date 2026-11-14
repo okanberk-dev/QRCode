@@ -4,23 +4,22 @@ import { getSiteSettings } from '@/lib/site-settings';
 
 interface MarketingNavbarProps {
   locale: Locale;
-  t: Translations;
+  /**
+   * Unused. Kept optional so the existing callers that pass `t` still
+   * compile; it is deliberately NOT forwarded to the client component,
+   * where it would serialize the whole translations object (~38 KB) into
+   * every page's HTML.
+   */
+  t?: Translations;
 }
 
-// Stage 83 §38.163 — server cookies() read removed (was: jwt-verify of
-// `user_token` to flip the login chip server-side). The login chip swap
-// moved to the client via `useMarketingAuth` inside MarketingNavbarClient,
-// which unblocks ISR for the entire marketing tree.
-//
-// `getSiteSettings()` is process-cached (CLAUDE.md §38.101 Stage 25 cache,
-// 60s TTL) and contains no per-request data — safe under ISR.
-//
-// The `isLoggedIn` prop is no longer passed; the client component now
-// owns the probe and renders the correct CTA after hydration. Anonymous
-// visitors (≥90% of cold marketing traffic) see the right state on first
-// paint without waiting for a fetch.
-export default async function MarketingNavbar({ locale, t }: MarketingNavbarProps) {
+/**
+ * Server wrapper for the marketing navbar. Reads only process-cached site
+ * settings (no cookies/headers), so marketing pages stay statically
+ * generated; the signed-in CTA swap happens on the client
+ * (useMarketingAuth).
+ */
+export default async function MarketingNavbar({ locale }: MarketingNavbarProps) {
   const { logoUrl } = await getSiteSettings();
-
-  return <MarketingNavbarClient locale={locale} t={t} logoUrl={logoUrl} />;
+  return <MarketingNavbarClient locale={locale} logoUrl={logoUrl} />;
 }

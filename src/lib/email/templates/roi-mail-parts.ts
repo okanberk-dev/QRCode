@@ -20,24 +20,10 @@ export const ROI_ON_DARK_55 = '#929292';
 export const ROI_ON_DARK_DIVIDER = '#2B2B2B';
 
 /**
- * Display labels shared by both ROI mails. Platform brand names are the same in
- * TR and EN. Unknown slugs never leak raw: they fall back to a title-cased key
- * ("my_platform" → "My Platform"). Output is PLAIN text — callers escape it at
- * the HTML sink.
+ * Sector labels for the ROI sales mail. Unknown slugs never print raw: they
+ * fall back to a title-cased key ("my_sector" → "My Sector"). Output is PLAIN
+ * text — callers escape it at the HTML sink.
  */
-export const ROI_PLATFORM_LABEL: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-  trendyol: 'Trendyol GO',
-  tripadvisor: 'Tripadvisor',
-  airbnb: 'Airbnb',
-  booking: 'Booking',
-  yandex: 'Yandex',
-  yelp: 'Yelp',
-  foursquare: 'Foursquare',
-};
 export const ROI_SECTOR_LABEL_TR: Record<string, string> = {
   restaurant: 'Restoran',
   cafe: 'Kafe',
@@ -62,14 +48,6 @@ function titleCaseSlug(slug: string): string {
 }
 
 const hasOwn = (o: object, k: string): boolean => Object.prototype.hasOwnProperty.call(o, k);
-
-export function roiPlatformLabel(slug: string): string {
-  return hasOwn(ROI_PLATFORM_LABEL, slug) ? ROI_PLATFORM_LABEL[slug] : titleCaseSlug(slug) || slug;
-}
-
-export function roiPlatformList(slugs: string[]): string {
-  return slugs.map(roiPlatformLabel).join(', ');
-}
 
 export function roiSectorLabel(slug: string, isTr: boolean): string {
   const map = isTr ? ROI_SECTOR_LABEL_TR : ROI_SECTOR_LABEL_EN;

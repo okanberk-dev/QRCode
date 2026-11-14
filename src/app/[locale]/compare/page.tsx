@@ -1,14 +1,34 @@
 import type { Metadata } from 'next';
-import { Check, X, Minus } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
-import { getTranslations } from '@/lib/translations';
+import PageHero from '@/components/marketing/commercial/PageHero';
+import SectionHeader from '@/components/marketing/commercial/SectionHeader';
+import CtaBand from '@/components/marketing/commercial/CtaBand';
+import ComparisonTable, {
+  type ComparisonColumn,
+  type ComparisonRow,
+} from '@/components/marketing/commercial/ComparisonTable';
+import { BTN_DARK, BTN_OUTLINE, CONTAINER, SECTION_Y, TEXT_LINK } from '@/components/marketing/commercial/styles';
 import type { Locale } from '@/lib/translations';
-import Link from 'next/link';
+
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`.
+
+const META = {
+  tr: {
+    title: 'Yorum toplama yöntemleri: statik QR, Excel, kâğıt',
+    description:
+      'Statik QR kod, Excel tablosu, kâğıt form ve Buaze’yi karşılaştırın: puan kaydı, herkese açık yorum bağlantısı, düşük puanda e-posta ve maliyet tek tabloda.',
+  },
+  en: {
+    title: 'Ways to collect reviews: static QR, Excel, paper',
+    description:
+      'Compare a static QR code, a spreadsheet, a paper form and Buaze: rating capture, public review links, low-rating e-mail alerts and cost, side by side.',
+  },
+} as const;
 
 export async function generateMetadata({
   params,
@@ -16,336 +36,392 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = getTranslations(locale);
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const { title, description } = META[lang];
   return {
-    title: t.compare_title,
-    description: t.compare_subtitle,
+    title,
+    description,
     alternates: {
-      canonical: `https://www.buaze.com/${locale}/compare`,
-      languages: { tr: 'https://www.buaze.com/tr/compare', en: 'https://www.buaze.com/en/compare', 'x-default': 'https://www.buaze.com/tr/compare' },
+      canonical: `/${lang}/compare`,
+      languages: { tr: '/tr/compare', en: '/en/compare', 'x-default': '/tr/compare' },
     },
     openGraph: {
-      title: t.compare_title,
-      description: t.compare_subtitle,
-      url: `https://www.buaze.com/${locale}/compare`,
-      images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630 }],
+      type: 'website',
+      siteName: 'Buaze',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/compare`,
+      title,
+      description,
+      images: [{ url: `/images/open-graph-${lang}.png`, width: 1200, height: 630, alt: title }],
     },
   };
 }
 
-export default async function ComparisonPage({
+function buildCopy(locale: 'tr' | 'en') {
+  const tr = locale === 'tr';
+  const columns: ComparisonColumn[] = [
+    { key: 'buaze', label: 'Buaze', highlight: true },
+    { key: 'qr', label: tr ? 'Statik QR kod' : 'Static QR code' },
+    { key: 'sheet', label: tr ? 'Excel veya E-Tablolar' : 'Excel or Sheets' },
+    { key: 'paper', label: tr ? 'Kâğıt form' : 'Paper form' },
+  ];
+  const rows: ComparisonRow[] = tr
+    ? [
+        {
+          label: 'Müşterinin puanını kaydetme',
+          cells: {
+            buaze: { kind: 'yes', text: 'Otomatik' },
+            qr: { kind: 'no', text: 'Yok, yalnızca bağlantıyı açar' },
+            sheet: { kind: 'partial', text: 'Siz elle girersiniz' },
+            paper: { kind: 'partial', text: 'Formları siz toplarsınız' },
+          },
+        },
+        {
+          label: 'Herkese açık yorum bağlantısı',
+          cells: {
+            buaze: { kind: 'yes', text: '10 platformdan seçtiğiniz' },
+            qr: { kind: 'yes', text: 'Koda yazdığınız tek bağlantı' },
+            sheet: { kind: 'no', text: 'Yok' },
+            paper: { kind: 'no', text: 'Yok' },
+          },
+        },
+        {
+          label: 'Size özel geri bildirim formu',
+          cells: {
+            buaze: { kind: 'yes', text: 'Eşiğin altındaki puanlarda' },
+            qr: { kind: 'no', text: 'Yok' },
+            sheet: { kind: 'no', text: 'Yok' },
+            paper: { kind: 'yes', text: 'Kâğıt üzerinde' },
+          },
+        },
+        {
+          label: 'Düşük puanda anında haber',
+          cells: {
+            buaze: { kind: 'yes', text: '1–3 yıldızda e-posta' },
+            qr: { kind: 'no', text: 'Yok' },
+            sheet: { kind: 'no', text: 'Yok' },
+            paper: { kind: 'no', text: 'Yok' },
+          },
+        },
+        {
+          label: 'Hedefi yeniden basmadan değiştirme',
+          cells: {
+            buaze: { kind: 'yes', text: 'Panelden' },
+            qr: { kind: 'no', text: 'Yeniden baskı gerekir' },
+            sheet: { kind: 'na', text: 'Uygulanmaz' },
+            paper: { kind: 'na', text: 'Uygulanmaz' },
+          },
+        },
+        {
+          label: 'Müşteriye yanıt',
+          cells: {
+            buaze: { kind: 'yes', text: 'E-postayla; Pulse AI taslağıyla' },
+            qr: { kind: 'no', text: 'Yok' },
+            sheet: { kind: 'partial', text: 'Ayrı bir e-postayla' },
+            paper: { kind: 'no', text: 'Yok' },
+          },
+        },
+        {
+          label: 'Raporlar',
+          cells: {
+            buaze: { kind: 'yes', text: 'Hazır grafikler ve CSV' },
+            qr: { kind: 'no', text: 'Yok' },
+            sheet: { kind: 'partial', text: 'Grafikleri siz kurarsınız' },
+            paper: { kind: 'no', text: 'Yok' },
+          },
+        },
+        {
+          label: 'Maliyet',
+          cells: {
+            buaze: { kind: 'text', text: 'Aylık plan, 14 gün ücretsiz' },
+            qr: { kind: 'text', text: 'Ücretsiz' },
+            sheet: { kind: 'text', text: 'Mevcut lisansınız' },
+            paper: { kind: 'text', text: 'Baskı maliyeti' },
+          },
+        },
+      ]
+    : [
+        {
+          label: 'Recording the customer’s rating',
+          cells: {
+            buaze: { kind: 'yes', text: 'Automatic' },
+            qr: { kind: 'no', text: 'No, it only opens a link' },
+            sheet: { kind: 'partial', text: 'You type it in' },
+            paper: { kind: 'partial', text: 'You collect the forms' },
+          },
+        },
+        {
+          label: 'Public review link',
+          cells: {
+            buaze: { kind: 'yes', text: 'The one you pick from 10 platforms' },
+            qr: { kind: 'yes', text: 'The single link in the code' },
+            sheet: { kind: 'no', text: 'None' },
+            paper: { kind: 'no', text: 'None' },
+          },
+        },
+        {
+          label: 'Private feedback form',
+          cells: {
+            buaze: { kind: 'yes', text: 'For ratings below your threshold' },
+            qr: { kind: 'no', text: 'None' },
+            sheet: { kind: 'no', text: 'None' },
+            paper: { kind: 'yes', text: 'On paper' },
+          },
+        },
+        {
+          label: 'Instant notice of low ratings',
+          cells: {
+            buaze: { kind: 'yes', text: 'E-mail for 1–3 stars' },
+            qr: { kind: 'no', text: 'None' },
+            sheet: { kind: 'no', text: 'None' },
+            paper: { kind: 'no', text: 'None' },
+          },
+        },
+        {
+          label: 'Changing the target without reprinting',
+          cells: {
+            buaze: { kind: 'yes', text: 'From the panel' },
+            qr: { kind: 'no', text: 'Needs a reprint' },
+            sheet: { kind: 'na', text: 'Not applicable' },
+            paper: { kind: 'na', text: 'Not applicable' },
+          },
+        },
+        {
+          label: 'Replying to the customer',
+          cells: {
+            buaze: { kind: 'yes', text: 'By e-mail, with Pulse AI drafts' },
+            qr: { kind: 'no', text: 'None' },
+            sheet: { kind: 'partial', text: 'In a separate e-mail' },
+            paper: { kind: 'no', text: 'None' },
+          },
+        },
+        {
+          label: 'Reports',
+          cells: {
+            buaze: { kind: 'yes', text: 'Ready-made charts and CSV' },
+            qr: { kind: 'no', text: 'None' },
+            sheet: { kind: 'partial', text: 'You build the charts' },
+            paper: { kind: 'no', text: 'None' },
+          },
+        },
+        {
+          label: 'Cost',
+          cells: {
+            buaze: { kind: 'text', text: 'Monthly plan, 14 days free' },
+            qr: { kind: 'text', text: 'Free' },
+            sheet: { kind: 'text', text: 'Your existing licence' },
+            paper: { kind: 'text', text: 'Printing costs' },
+          },
+        },
+      ];
+
+  return tr
+    ? {
+        eyebrow: 'Karşılaştırma',
+        title: 'Yorum toplama yöntemlerini karşılaştırın',
+        lead:
+          'Statik QR kod, Excel tablosu ve kâğıt form bazı işletmeler için yeterlidir. Hangisinin ne zaman yettiğini ve Buaze’nin neyi farklı yaptığını tek tabloda görün.',
+        heroPrimary: 'Ücretsiz deneyin',
+        heroSecondary: 'Planları görün',
+        tableEyebrow: 'Yan yana',
+        tableTitle: 'Dört yöntem, aynı sorular',
+        tableLead:
+          'Tablo, her yöntemin bugün neyi yapıp neyi yapmadığını gösterir. Buaze sütunundaki her madde üründe çalışan bir özelliktir.',
+        tableCaption: 'Buaze, statik QR kod, Excel ve kâğıt formun karşılaştırması',
+        featureLabel: 'Ne lazım?',
+        scrollHint: 'Tüm sütunları görmek için tabloyu yana kaydırın.',
+        whenEyebrow: 'Ne zaman yeterli?',
+        whenTitle: 'Her yöntemin yeri var',
+        whenLead: 'İşletmenizin ihtiyacı küçükse ücretsiz yöntemlerle başlamak mantıklıdır. Şu durumlar sınırı gösterir.',
+        cards: [
+          {
+            title: 'Statik QR kod',
+            body:
+              'Tek bir işletmeniz ve tek bir yorum bağlantınız varsa, geri bildirimi takip etmeniz de gerekmiyorsa ücretsiz bir statik QR yeterlidir. Bağlantınız değiştiğinde kodu yeniden basmanız gerekir.',
+            links: [
+              { href: '/solutions/qr-generator', label: 'Ücretsiz QR kod oluşturun' },
+              { href: '/vs/individual-qr', label: 'Statik QR ile Buaze karşılaştırması' },
+            ],
+          },
+          {
+            title: 'Excel veya Google E-Tablolar',
+            body:
+              'Ayda birkaç geri bildirim alıyorsanız ve kayıtları tek kişi tutuyorsa bir tablo iş görür. Geri bildirimi müşteriden alıp tabloya sizin girmeniz gerekir; düşük bir puanı da ancak tabloyu açtığınızda görürsünüz.',
+            links: [{ href: '/vs/spreadsheet', label: 'Excel ile Buaze karşılaştırması' }],
+          },
+          {
+            title: 'Kâğıt form',
+            body:
+              'Müşteri masada yazmayı tercih ediyorsa kâğıt form işe yarar. Formları toplamak, okumak ve sonuçları bir yere aktarmak ise size kalır.',
+            links: [],
+          },
+        ],
+        cta: {
+          title: 'Buaze’yi kendi işletmenizde deneyin',
+          facts: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal'],
+          primary: 'Ücretsiz deneyin',
+          secondary: 'Nasıl çalıştığını görün',
+        },
+        breadcrumbHome: 'Ana sayfa',
+        breadcrumbSelf: 'Karşılaştırma',
+        columns,
+        rows,
+      }
+    : {
+        eyebrow: 'Comparison',
+        title: 'Compare ways to collect reviews',
+        lead:
+          'A static QR code, a spreadsheet or a paper form is enough for some businesses. See when each one is enough and what Buaze does differently, in one table.',
+        heroPrimary: 'Start free trial',
+        heroSecondary: 'See plans',
+        tableEyebrow: 'Side by side',
+        tableTitle: 'Four methods, the same questions',
+        tableLead:
+          'The table shows what each method does and does not do today. Every item in the Buaze column is a feature that works in the product.',
+        tableCaption: 'Comparison of Buaze, a static QR code, a spreadsheet and a paper form',
+        featureLabel: 'What you need',
+        scrollHint: 'Scroll the table sideways to see every column.',
+        whenEyebrow: 'When is it enough?',
+        whenTitle: 'Each method has its place',
+        whenLead: 'If your needs are small, starting with a free method makes sense. These are the signs you have outgrown it.',
+        cards: [
+          {
+            title: 'Static QR code',
+            body:
+              'If you run one business with one review link and do not need to track feedback, a free static QR code is enough. When your link changes, you have to reprint the code.',
+            links: [
+              { href: '/solutions/qr-generator', label: 'Create a free QR code' },
+              { href: '/vs/individual-qr', label: 'Static QR compared with Buaze' },
+            ],
+          },
+          {
+            title: 'Excel or Google Sheets',
+            body:
+              'If you get a few pieces of feedback a month and one person keeps the records, a spreadsheet does the job. You have to collect the feedback and type it in yourself, and you only see a low rating when you open the sheet.',
+            links: [{ href: '/vs/spreadsheet', label: 'Spreadsheets compared with Buaze' }],
+          },
+          {
+            title: 'Paper form',
+            body:
+              'If customers prefer to write at the table, a paper form works. Collecting the forms, reading them and moving the results somewhere is up to you.',
+            links: [],
+          },
+        ],
+        cta: {
+          title: 'Try Buaze in your own business',
+          facts: ['14 days free', 'No credit card required', 'Cancel anytime'],
+          primary: 'Start free trial',
+          secondary: 'See how it works',
+        },
+        breadcrumbHome: 'Home',
+        breadcrumbSelf: 'Comparison',
+        columns,
+        rows,
+      };
+}
+
+export default async function ComparePage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
+  const { locale: rawLocale } = await params;
+  const locale: 'tr' | 'en' = rawLocale === 'en' ? 'en' : 'tr';
   const base = `/${locale}`;
-  const isTr = locale === 'tr';
+  const copy = buildCopy(locale);
 
-  type FeatureStatus = boolean | 'limited';
-  type Row = { label: string; buaze: FeatureStatus; static: FeatureStatus; sheet: FeatureStatus };
-
-  const rows: Row[] = [
-    { label: t.compare_f1, buaze: true, static: false, sheet: false },
-    { label: t.compare_f2, buaze: true, static: false, sheet: false },
-    { label: t.compare_f3, buaze: true, static: false, sheet: false },
-    { label: t.compare_f4, buaze: true, static: false, sheet: 'limited' },
-    { label: t.compare_f5, buaze: true, static: false, sheet: false },
-    { label: t.compare_f6, buaze: true, static: false, sheet: 'limited' },
-    { label: t.compare_f7, buaze: true, static: 'limited', sheet: 'limited' },
-  ];
-
-  const FeatureIcon = ({ status, highlight }: { status: FeatureStatus; highlight?: boolean }) => {
-    if (status === true)
-      return (
-        <span
-          className={`inline-flex w-7 h-7 rounded-full items-center justify-center ${
-            highlight ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
-          }`}
-        >
-          <Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} />
-        </span>
-      );
-    if (status === 'limited')
-      return (
-        <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF3C7] items-center justify-center">
-          <Minus size={14} className="text-[#92400E]" strokeWidth={2.5} />
-        </span>
-      );
-    return (
-      <span className="inline-flex w-7 h-7 rounded-full bg-[#FEF2F2] items-center justify-center">
-        <X size={14} className="text-[#B91C1C]" strokeWidth={2.5} />
-      </span>
-    );
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: copy.breadcrumbHome, item: `${SITE_URL}/${locale}` },
+      { '@type': 'ListItem', position: 2, name: copy.breadcrumbSelf, item: `${SITE_URL}/${locale}/compare` },
+    ],
   };
 
-  const heroWords = t.compare_hero_h1.split(' ');
-  const heroHead = heroWords.slice(0, -3).join(' ');
-  const heroTail = heroWords.slice(-3).join(' ');
-
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
-      <MarketingNavbar locale={locale} t={t} />
+    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 lg:pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumb) }} />
+      <MarketingNavbar locale={locale} />
       <main id="main-content">
+        <PageHero
+          align="center"
+          eyebrow={copy.eyebrow}
+          title={copy.title}
+          lead={copy.lead}
+          actions={
+            <>
+              <Link href={`${base}/auth/register`} rel="nofollow" className={BTN_DARK}>
+                {copy.heroPrimary}
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+              <Link href={`${base}/pricing`} className={BTN_OUTLINE}>
+                {copy.heroSecondary}
+              </Link>
+            </>
+          }
+        />
 
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-12 sm:pb-16">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="cmpHeroGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#cmpHeroGrid)" />
-        </svg>
-        <div className="relative max-w-[900px] mx-auto text-center">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Karşılaştırma' : 'Comparison'}
-          </span>
-          <h1 className="mt-5 text-[38px] sm:text-[60px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
-            {heroHead}{' '}
-            <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{heroTail}</span>
-          </h1>
-          <p className="mt-6 text-[15px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px] mx-auto">
-            {t.compare_hero_p}
-          </p>
-        </div>
-      </section>
-
-      {/* ─── Comparison Table ─── */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
-        <div className="max-w-[1000px] mx-auto">
-          <div className="rounded-3xl border border-[#EDEDED] bg-white overflow-hidden">
-            <div className="overflow-x-auto no-scrollbar">
-              <table className="w-full border-collapse min-w-[640px]">
-                <thead>
-                  <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">
-                    <th className="p-5 pulse-eyebrow text-[#737373] text-left">{t.compare_feat_name}</th>
-                    <th className="p-5 pulse-eyebrow text-[#0A0A0A] text-center bg-[#EAF9B8]">
-                      {t.compare_buaze}
-                    </th>
-                    <th className="p-5 pulse-eyebrow text-[#737373] text-center">{t.compare_static}</th>
-                    <th className="p-5 pulse-eyebrow text-[#737373] text-center">{t.compare_sheet}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EDEDED]">
-                  {rows.map((row, i) => (
-                    <tr key={i}>
-                      <td className="p-5 text-[14px] font-medium text-[#0A0A0A]">{row.label}</td>
-                      <td className="p-5 text-center bg-[#EAF9B8]/30">
-                        <FeatureIcon status={row.buaze} highlight />
-                      </td>
-                      <td className="p-5 text-center">
-                        <FeatureIcon status={row.static} />
-                      </td>
-                      <td className="p-5 text-center">
-                        <FeatureIcon status={row.sheet} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <section aria-labelledby="compare-table-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeader
+              id="compare-table-title"
+              eyebrow={copy.tableEyebrow}
+              title={copy.tableTitle}
+              lead={copy.tableLead}
+            />
+            <p className="mt-8 text-[13px] text-[#737373] md:hidden">{copy.scrollHint}</p>
+            <div className="mt-4 md:mt-10">
+              <ComparisonTable
+                caption={copy.tableCaption}
+                featureLabel={copy.featureLabel}
+                columns={copy.columns}
+                rows={copy.rows}
+                minWidth={720}
+              />
             </div>
           </div>
+        </section>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-6 text-[12px] text-[#525252]">
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 rounded-full bg-[#EAF9B8] flex items-center justify-center">
-                <Check size={10} className="text-[#0A0A0A]" strokeWidth={3} />
-              </span>
-              {t.compare_yes}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 rounded-full bg-[#FEF3C7] flex items-center justify-center">
-                <Minus size={10} className="text-[#92400E]" strokeWidth={3} />
-              </span>
-              {t.compare_limited}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 rounded-full bg-[#FEF2F2] flex items-center justify-center">
-                <X size={10} className="text-[#B91C1C]" strokeWidth={3} />
-              </span>
-              {t.compare_no}
-            </div>
+        <section aria-labelledby="compare-when-title" className={SECTION_Y}>
+          <div className={CONTAINER}>
+            <SectionHeader
+              id="compare-when-title"
+              eyebrow={copy.whenEyebrow}
+              title={copy.whenTitle}
+              lead={copy.whenLead}
+            />
+            <ul className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:gap-6 lg:grid-cols-3">
+              {copy.cards.map((card) => (
+                <li key={card.title} className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                  <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A]">{card.title}</h3>
+                  <p className="mt-3 flex-1 text-[15px] leading-[1.65] text-[#525252]">{card.body}</p>
+                  {card.links.length > 0 ? (
+                    <ul className="mt-5 space-y-2 text-[15px]">
+                      {card.links.map((link) => (
+                        <li key={link.href}>
+                          <Link href={`${base}${link.href}`} className={TEXT_LINK}>
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           </div>
+        </section>
 
-          {/* Specific comparison links */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Link
-              href={`${base}/vs/spreadsheet`}
-              className="group p-7 bz-card hover:border-[#C6F24E] transition-colors"
-            >
-              <div className="flex justify-between items-start mb-5">
-                <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center">
-                  <span className="pulse-eyebrow text-[#0A0A0A]">XLS</span>
-                </div>
-                <span
-                  aria-hidden
-                  className="text-[#737373] group-hover:text-[#0A0A0A] group-hover:translate-x-0.5 transition-all"
-                >
-                  →
-                </span>
-              </div>
-              <h3 className="text-[18px] font-medium text-[#0A0A0A] leading-tight mb-2">
-                {isTr ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet'}
-              </h3>
-              <p className="text-[13px] text-[#525252] leading-relaxed">
-                {isTr
-                  ? 'Excel tablolarının operasyonel kör noktalarından kurtulun; otomasyonun gücünü keşfedin.'
-                  : "Get rid of Excel's operational blind spots; discover the power of automation."}
-              </p>
-            </Link>
-
-            <Link
-              href={`${base}/vs/individual-qr`}
-              className="group p-7 bz-card hover:border-[#C6F24E] transition-colors"
-            >
-              <div className="flex justify-between items-start mb-5">
-                <div className="w-11 h-11 bg-[#EAF9B8] rounded-lg flex items-center justify-center">
-                  <span className="pulse-eyebrow text-[#0A0A0A]">QR</span>
-                </div>
-                <span
-                  aria-hidden
-                  className="text-[#737373] group-hover:text-[#0A0A0A] group-hover:translate-x-0.5 transition-all"
-                >
-                  →
-                </span>
-              </div>
-              <h3 className="text-[18px] font-medium text-[#0A0A0A] leading-tight mb-2">
-                {isTr ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR'}
-              </h3>
-              <p className="text-[13px] text-[#525252] leading-relaxed">
-                {isTr
-                  ? 'Statik QR kodların link kısıtlamalarını ve itibar risklerini profesyonel dinamik altyapı ile aşın.'
-                  : 'Overcome the link limitations and reputation risks of static QR codes with a professional dynamic infrastructure.'}
-              </p>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Deeper Dive ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[1200px] mx-auto space-y-20 sm:space-y-24">
-          {/* Section 1: Static QR */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div>
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Statik QR riski' : 'Static QR risk'}
-              </span>
-              <h2 className="mt-4 text-[26px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
-                {isTr ? 'Neden statik QR kullanmamalısınız?' : "Why you shouldn't use static QR."}
-              </h2>
-              <div className="mt-5 space-y-4 text-[16px] text-[#525252] leading-[1.65]">
-                <p>
-                  {isTr
-                    ? 'Ücretsiz oluşturulan statik QR kodların linkini bir kez bastığınızda bir daha değiştiremezsiniz. Menünüz değişirse, Google linkiniz güncellenirse tüm baskı maliyetleriniz çöpe gider.'
-                    : 'Once you print a free static QR code, you can never change its link. If your menu changes or your Google link is updated, all your printing costs go to waste.'}
-                </p>
-                <p>
-                  {isTr
-                    ? "Buaze'de ise kodunuz değişmez, yönlendirdiğiniz sayfa panelinizden bir saniyede güncellenir."
-                    : 'With Buaze, your code stays the same, while the target page is updated from your panel in a second.'}
-                </p>
-              </div>
-            </div>
-            <div className="bg-white rounded-3xl p-8 border border-[#EDEDED] space-y-4">
-              <div className="bg-[#FEF2F2] p-5 rounded-2xl border border-[#FECACA]">
-                <span className="pulse-eyebrow text-[#B91C1C]">
-                  {isTr ? 'RİSK · STATİK QR' : 'RISK · STATIC QR'}
-                </span>
-                <p className="mt-2 text-[15px] font-medium text-[#0A0A0A]">
-                  {isTr ? 'Geri dönülemez baskı hataları, veri kaybı.' : 'Irreversible print errors, data loss.'}
-                </p>
-              </div>
-              <div className="bg-[#EAF9B8] p-5 rounded-2xl border border-[#C6F24E]">
-                <span className="pulse-eyebrow text-[#0A0A0A]">
-                  {isTr ? 'ÇÖZÜM · BUAZE DİNAMİK' : 'SOLUTION · BUAZE DYNAMIC'}
-                </span>
-                <p className="mt-2 text-[15px] font-medium text-[#0A0A0A]">
-                  {isTr ? 'Esneklik, takip edilebilirlik, güven.' : 'Flexibility, traceability, trust.'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Excel */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="lg:order-2">
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Excel gizli maliyeti' : "Excel's hidden cost"}
-              </span>
-              <h2 className="mt-4 text-[26px] sm:text-[42px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
-                {isTr ? 'Excel tablolarının gizli maliyeti.' : 'The hidden cost of Excel.'}
-              </h2>
-              <div className="mt-5 space-y-4 text-[16px] text-[#525252] leading-[1.65]">
-                <p>
-                  {isTr
-                    ? 'Manuel veri girişi zamanınızı çalar. Olumsuz deneyimi Excel\'de üç gün sonra görmek, o müşteriyi çoktan kaybettiğiniz anlamına gelir.'
-                    : 'Manual data entry steals your time. Seeing a negative experience in Excel three days later means you\'ve already lost that customer.'}
-                </p>
-                <p>
-                  {isTr
-                    ? 'Buaze ile her olumsuz deneyim saniyeler içinde telefonunuza bildirim olarak düşer. Kriz anında müdahale şansı tanır.'
-                    : 'With Buaze, every negative experience hits your phone as a notification within seconds. It offers a chance to intervene during a crisis.'}
-                </p>
-              </div>
-            </div>
-            <div className="lg:order-1 bg-[#0A0A0A] rounded-3xl p-8 sm:p-10 text-white">
-              <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'Operasyonel fark' : 'Operational difference'}
-              </span>
-              <div className="mt-6 space-y-5">
-                <div className="flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-[#B91C1C]" />
-                  <span className="text-white/70 text-[15px]">
-                    {isTr ? 'Excel · Ortalama reaksiyon 72 saat' : 'Excel · Avg reaction 72 hours'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-[#C6F24E] pulse-heartbeat" />
-                  <span className="text-white text-[15px] font-medium">
-                    {isTr ? 'Buaze · Ortalama reaksiyon 4 dakika' : 'Buaze · Avg reaction 4 minutes'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Final CTA ─── */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[800px] mx-auto text-center">
-          <h2 className="text-[28px] sm:text-[48px] font-medium tracking-[-0.035em] leading-[1.05] text-[#0A0A0A]">
-            {isTr ? 'Profesyonel itibar yönetimine geçin.' : 'Switch to professional reputation management.'}
-          </h2>
-          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-            >
-              {t.hero_cta}
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              href={`${base}/pricing`}
-              className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-            >
-              {isTr ? 'Planları incele' : 'Browse plans'}
-            </Link>
-          </div>
-        </div>
-      </section>
-
+        <CtaBand
+          id="compare-cta-title"
+          title={copy.cta.title}
+          facts={copy.cta.facts}
+          primary={{ href: `${base}/auth/register`, label: copy.cta.primary, nofollow: true }}
+          secondary={{ href: `${base}/how-it-works`, label: copy.cta.secondary }}
+        />
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

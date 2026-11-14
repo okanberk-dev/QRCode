@@ -9,263 +9,148 @@ import { useMarketingAuth } from '@/hooks/useMarketingAuth';
 
 interface MobileBottomNavProps {
   locale: Locale;
-  /**
-   * Stage 83 §38.163 — `isLoggedIn` prop deprecated. Auth state is now
-   * resolved client-side via `useMarketingAuth` so the parent footer can
-   * be rendered as ISR. The prop is still accepted for backward-compat
-   * (callers passing it will be ignored — the hook is authoritative). To
-   * be removed in a follow-up cleanup PR once the marketing surface is
-   * fully migrated.
-   */
+  /** Deprecated and ignored — the auth state comes from useMarketingAuth. */
   isLoggedIn?: boolean;
 }
 
-/**
- * Fire a tiny haptic tick on tap when the device supports it. iOS Safari
- * ignores the API but Android Chrome / most PWAs honour it. Wrapped in a
- * try/catch so a stray browser quirk never blocks navigation.
- */
+/** Tiny haptic tick where supported (Android); iOS ignores it. */
 function tapHaptic() {
   if (typeof navigator === 'undefined') return;
   try {
     navigator.vibrate?.(8);
   } catch {
-    /* swallow */
+    /* ignore */
   }
 }
 
 /**
- * Mobile-only sticky bottom navigation.
- * Always fixed at the bottom of the viewport on screens < md.
- * Does not move on scroll (up OR down) — pure fixed positioning.
- * Respects iOS safe-area insets, design parity with `buaze-mobil/layout.jsx`.
+ * Floating bottom navigation for phones and tablets (below `lg`), mounted
+ * by MarketingFooter so every marketing page has it.
  *
- * UX hardening:
- *  - Scale-on-tap (active:scale-95 on items, scale-90 on FAB) for haptic feel
- *  - navigator.vibrate(8) tick where supported
- *  - focus-visible lime ring for keyboard navigation
- *  - prefers-reduced-motion auto-disables transitions via globals.css blanket
- *  - Active indicator uses CSS transition so route changes ease in
+ * - The footer reserves the space under the pill (its bottom padding), so
+ *   pages end cleanly above it; this component adds no spacer of its own.
+ * - Server HTML shows the visitor state (free-trial button); after the
+ *   `/api/auth/me` probe a signed-in user sees "Panel" instead.
+ * - Solid white surface and #525252 labels keep text at ≥ 4.5:1 over any
+ *   page content; every item has a visible focus ring.
+ * - Hidden while the mobile menu drawer is open (`buaze:mobile-drawer`).
  */
 export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
   const pathname = usePathname();
   const base = `/${locale}`;
-
-  // Stage 91 §38.171 — admin/user differentiation:
-  // - source === 'admin' → "Admin Panel" + /admin/dashboard
-  // - source === 'user' → "Panel" + /[locale]/dashboard
-  // - source === null → anon CTA (Ücretsiz / Try Free + /auth/register)
-  //
-  // Güvenlik: `source` /api/auth/me'den gelir (CLAUDE.md §38.163),
-  // admin label UI only — route protection server-side intact.
-  const { isLoggedIn, source, pending: authPending } = useMarketingAuth();
+  const isTr = locale === 'tr';
+  const { isLoggedIn, source } = useMarketingAuth();
   const isAdmin = source === 'admin';
 
-  // Drawer state via custom event broadcast from MarketingNavbarClient
-  // (CLAUDE.md §40.D Custom Event paterni). Drawer açıkken bottom nav
-  // gizlenir — aksi halde drawer'ın altını örter ve son içerik (KVKK
-  // badge / dil toggle) bottom nav arkasında kalır. `aria-hidden` +
-  // `pointer-events-none` ile a11y intact; transition reduced-motion
-  // blanket altında kapanır (globals.css §40.3).
   const [drawerOpen, setDrawerOpen] = useState(false);
   useEffect(() => {
     const onDrawer = (e: Event) => {
-      const detail = (e as CustomEvent<{ open: boolean }>).detail;
-      setDrawerOpen(Boolean(detail?.open));
+      setDrawerOpen(Boolean((e as CustomEvent<{ open: boolean }>).detail?.open));
     };
     window.addEventListener('buaze:mobile-drawer', onDrawer);
     return () => window.removeEventListener('buaze:mobile-drawer', onDrawer);
   }, []);
 
-  // Normalize the current path so that trailing slashes don't break matching.
-  const current = pathname.replace(/\/+$/, '') || '/';
-
+  const current = (pathname || '').replace(/\/+$/, '') || '/';
   const isActive = (href: string) => {
     const target = href.replace(/\/+$/, '') || '/';
     if (target === base) return current === base;
     return current === target || current.startsWith(`${target}/`);
   };
 
+  const center = isLoggedIn
+    ? {
+        href: isAdmin ? '/admin/dashboard' : `${base}/dashboard`,
+        label: isAdmin ? (isTr ? 'Admin paneli' : 'Admin panel') : 'Panel',
+        Icon: LayoutDashboard,
+        rel: undefined,
+      }
+    : {
+        href: `${base}/auth/register`,
+        label: isTr ? 'Ücretsiz deneme' : 'Free trial',
+        Icon: Sparkles,
+        rel: 'nofollow',
+      };
+
   const items = [
-    {
-      href: base,
-      label: locale === 'tr' ? 'Ana Sayfa' : 'Home',
-      Icon: Home,
-    },
-    {
-      href: `${base}/pricing`,
-      label: locale === 'tr' ? 'Fiyatlar' : 'Pricing',
-      Icon: Tag,
-    },
-    // Center prominent CTA — Stage 91 §38.171 admin/user/anon:
-    // - admin → "Admin Panel" + /admin/dashboard
-    // - user → "Panel" + /[locale]/dashboard
-    // - anon → "Ücretsiz" / "Try Free" + /auth/register
-    {
-      center: true as const,
-      href: isLoggedIn
-        ? isAdmin
-          ? '/admin/dashboard'
-          : `${base}/dashboard`
-        : `${base}/auth/register`,
-      label: isLoggedIn
-        ? isAdmin
-          ? locale === 'tr'
-            ? 'Admin Panel'
-            : 'Admin Panel'
-          : locale === 'tr'
-          ? 'Panel'
-          : 'Panel'
-        : locale === 'tr'
-        ? 'Ücretsiz'
-        : 'Try Free',
-      Icon: isLoggedIn ? LayoutDashboard : Sparkles,
-    },
-    {
-      href: `${base}/solutions/qr-generator`,
-      label: locale === 'tr' ? 'QR Kod' : 'QR Code',
-      Icon: QrCode,
-    },
-    {
-      href: `${base}/contact`,
-      label: locale === 'tr' ? 'İletişim' : 'Contact',
-      Icon: Mail,
-    },
+    { href: base, label: isTr ? 'Ana sayfa' : 'Home', Icon: Home },
+    { href: `${base}/pricing`, label: isTr ? 'Fiyatlandırma' : 'Pricing', Icon: Tag },
+    null, // centre action
+    { href: `${base}/solutions/qr-generator`, label: isTr ? 'QR oluştur' : 'QR generator', Icon: QrCode },
+    { href: `${base}/contact`, label: isTr ? 'İletişim' : 'Contact', Icon: Mail },
   ];
 
   return (
-    <>
-      {/* Spacer so page content never hides behind the fixed nav.
-          Stage 60 §38.141 — HANDOFF floating pill paterni: 72px height +
-          12px lateral margin + 12px bottom-margin → spacer ~96px + safe-area
-          (eski 72px + safe-area). Content kayma önleme. */}
-      <div
-        aria-hidden="true"
-        className="lg:hidden w-full"
-        style={{ height: 'calc(72px + 24px + env(safe-area-inset-bottom, 0px))' }}
-      />
-
-      <nav
-        aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
-        aria-hidden={drawerOpen ? 'true' : undefined}
-        // Stage 89 §38.169 — fixed wrapper anchored at `bottom: 0` (constant)
-        // + padding-bottom respekts iOS safe-area. Eski `bottom: calc(12px +
-        // env(safe-area-inset-bottom))` paterni iOS Safari URL bar /
-        // bottom-toolbar transition'ında env() değeri 0 ↔ 34px arası jitter
-        // ediyordu → fixed nav viewport scroll'una göre yukarı/aşağı kayıyor
-        // gibi görünüyordu (kullanıcı raporu "bottom nav aşağı inerken yukarı
-        // kayıyor"). Yeni paternde wrapper sabit, sadece inner padding
-        // değişir → no reflow, no fixed re-position. Inner pill aynı visual
-        // konumda görünür (12px + safe-area gap from viewport bottom).
-        //
-        // `drawerOpen` (CLAUDE.md §40.D Custom Event paterni) — mobile drawer
-        // açıkken opacity-0 + translate-y-full ile gizlenir, pointer-events
-        // kapanır, a11y için `aria-hidden`. Drawer kapanınca fade-in döner.
-        className={`lg:hidden fixed bottom-0 left-3 right-3 z-40 mx-auto max-w-[520px] transition-[opacity,transform] duration-200 ease-out ${
-          drawerOpen
-            ? 'pointer-events-none translate-y-full opacity-0'
-            : 'translate-y-0 opacity-100'
-        }`}
-        style={{
-          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-          // GPU compositing layer — backdrop-blur içeren pill için her
-          // ihtimale karşı (iOS Safari composited layer separation).
-          willChange: 'transform, opacity',
-          backfaceVisibility: 'hidden',
-        }}
-      >
-        {/* Floating pill container — Stage 60 §38.141 HANDOFF birebir.
-            Glassmorphism: backdrop-blur(20px) saturate(180%) + translucent
-            white surface (rgba 0.85). Border subtle + shadow drop floating
-            depth. 28px borderRadius + 72px height. */}
-        <div
-          className="rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)]"
-          style={{
-            background: 'rgba(255,255,255,0.85)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          }}
-        >
-          <ul className="flex h-[72px] items-center justify-around px-2">
-            {items.map((item) => {
-              const active = isActive(item.href);
-
-              if ('center' in item && item.center) {
-                // Stage 60 §38.141 — HANDOFF center FAB: 56×56 (eski 52×52)
-                // + `-mt-7` (eski -mt-5) agresif elevation + 4px solid white
-                // border (pill bg ile harmanı kesen lime hot spot) + lime
-                // drop shadow `0 12px 24px -6px lime`. Active state scale 1.06
-                // sticky press feedback.
-                return (
-                  <li key={item.href} className="relative flex flex-1 items-center justify-center">
-                    {authPending ? (
-                      <span
-                        className="-mt-7 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#F5F5F5] ring-4 ring-[#FAFAFA]"
-                        aria-hidden="true"
-                      >
-                        <span className="h-5 w-5 rounded-full bg-[#EAEAEA]" />
-                      </span>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        onClick={tapHaptic}
-                        className={`-mt-7 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_12px_24px_-6px_rgba(198,242,78,0.7)] transition-transform duration-200 hover:bg-[#A8D62E] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
-                          active ? 'scale-[1.06]' : ''
-                        }`}
-                        style={{ border: '4px solid #FAFAFA' }}
-                        aria-label={item.label}
-                      >
-                        <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
-                      </Link>
-                    )}
-                  </li>
-                );
-              }
-
+    <nav
+      aria-label={isTr ? 'Mobil alt menü' : 'Mobile bottom navigation'}
+      aria-hidden={drawerOpen ? 'true' : undefined}
+      inert={drawerOpen}
+      className={`fixed bottom-0 left-3 right-3 z-40 mx-auto max-w-[520px] transition-[opacity,transform] duration-200 ease-out lg:hidden ${
+        drawerOpen ? 'pointer-events-none translate-y-full opacity-0' : 'translate-y-0 opacity-100'
+      }`}
+      // Wrapper anchored at bottom: 0; only the padding follows the iOS
+      // safe area, so the pill never jumps when the toolbar shows/hides.
+      style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className="rounded-[28px] border border-[#E5E5E5] bg-white shadow-[0_12px_30px_-12px_rgba(10,10,10,0.28)]">
+        <ul className="flex h-[72px] items-stretch justify-around px-1.5">
+          {items.map((item) => {
+            if (!item) {
+              const active = isActive(center.href);
               return (
-                <li key={item.href} className="relative flex-1">
+                <li key="center" className="relative flex flex-1 items-end justify-center pb-2">
                   <Link
-                    href={item.href}
+                    href={center.href}
+                    rel={center.rel}
                     onClick={tapHaptic}
-                    className={`relative flex h-full flex-col items-center justify-center gap-1 rounded-md px-1 py-2 transition-all duration-150 active:scale-95 focus-visible:outline-none ${
-                      active ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
-                    }`}
                     aria-current={active ? 'page' : undefined}
+                    className="group flex flex-col items-center gap-1 rounded-2xl px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
                   >
-                    <item.Icon
-                      size={20}
-                      strokeWidth={active ? 2 : 1.6}
-                      className={`transition-colors duration-150 ${
-                        active ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
-                      }`}
-                    />
-                    <span
-                      className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
-                        active ? 'font-bold text-[#0A0A0A]' : 'font-medium text-[rgba(10,10,10,0.42)]'
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    {/* Stage 60 §38.141 — HANDOFF active dot indicator (4×4
-                        lime, top-aligned with translateY -100%). Opacity fade
-                        on route change. Eski 32×2 graphite bar yerine subtle
-                        lime dot pulse — modern minimal accent. */}
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none absolute top-1 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-full rounded-full bg-[#C6F24E] transition-opacity duration-200 ${
-                        active ? 'opacity-100' : 'opacity-0'
-                      }`}
-                      style={{
-                        boxShadow: active ? '0 0 8px rgba(198,242,78,0.8)' : 'none',
-                      }}
-                    />
+                      className="-mt-7 flex h-[52px] w-[52px] items-center justify-center rounded-full border-4 border-white bg-[#C6F24E] shadow-[0_10px_22px_-8px_rgba(120,160,20,0.7)] transition-transform duration-200 group-hover:bg-[#A8D62E] group-active:scale-90"
+                    >
+                      <center.Icon size={22} strokeWidth={2} className="text-[#0A0A0A]" />
+                    </span>
+                    <span className="text-center text-[10px] font-semibold leading-[1.15] text-[#0A0A0A]">
+                      {center.label}
+                    </span>
                   </Link>
                 </li>
               );
-            })}
-          </ul>
-        </div>
-      </nav>
-    </>
+            }
+
+            const active = isActive(item.href);
+            return (
+              <li key={item.href} className="relative flex flex-1">
+                <Link
+                  href={item.href}
+                  onClick={tapHaptic}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative flex w-full flex-col items-center justify-center gap-1 rounded-2xl px-0.5 transition-colors duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0A0A0A] ${
+                    active ? 'text-[#0A0A0A]' : 'text-[#525252] hover:text-[#0A0A0A]'
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`absolute top-1.5 h-1 w-1 rounded-full bg-[#A8D62E] transition-opacity duration-200 ${
+                      active ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                  <item.Icon size={20} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+                  <span
+                    className={`whitespace-nowrap text-[10px] leading-none tracking-[-0.01em] ${
+                      active ? 'font-semibold' : 'font-medium'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </nav>
   );
 }

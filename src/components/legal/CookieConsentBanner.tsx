@@ -1,93 +1,74 @@
 'use client';
 
 /**
- * Stage 31b §38.108 — KVKK Çerez Kurulu kararı + GDPR Art.7 + ePrivacy
- * Direktifi uyumlu çerez onay banner'ı.
+ * Cookie consent banner + settings dialog (KVKK Kurul kararı, GDPR Art. 7,
+ * ePrivacy Directive).
  *
- * Stage 32 §38.112 — Premium editorial redesign (Claude Design JSX prototip
- * paterni). Bottom-right floating graphite card + lime corner glow + italic
- * Space Grotesk hero + JetBrains Mono uppercase action labels. Modal
- * preferences view ivory paper + 4 kategori toggle row (essential always-on,
- * analytics + marketing + personalization opt-out).
+ * Four categories:
+ *  - essential: always on (session, security, language)
+ *  - analytics: Google Analytics + Yandex Metrica (ConditionalAnalytics reads it)
+ *  - marketing: ad measurement (no consumer today)
+ *  - personalization: panel preferences (no consumer today)
  *
- * 4 kategori (Stage 32):
- *  - essential: always-on, opt-out yok (oturum, güvenlik, dil)
- *  - analytics: GA + Yandex Metrica (ConditionalAnalytics consume eder)
- *  - marketing: reklam ölçümü (şu an consumer yok, gelecek scope)
- *  - personalization: panel preference store (şu an consumer yok, forward-looking)
+ * Behaviour:
+ *  - First visit (no `bz_cookie_consent` in localStorage): the card shows.
+ *    "Tümünü kabul et" / "Yalnızca zorunlu" decide in one click; "Tercihleri
+ *    yönet" opens the settings dialog with per-category switches. Everything
+ *    except essential starts off.
+ *  - Withdrawal / change at any time (GDPR Art. 7(3)): the footer's "Çerez
+ *    tercihleri" button fires OPEN_COOKIE_PREFERENCES_EVENT and the settings
+ *    dialog opens with the stored choices — without the card when a decision
+ *    already exists. The cookie policy promises this link.
+ *  - The settings dialog moves focus inside, keeps Tab inside, closes on
+ *    Escape or backdrop, and returns focus to the control that opened it.
  *
- * UX (CLAUDE.md §19.1 paterni — "default opt-out + bilinçli onay"):
- *  - İlk ziyarette banner görünür (localStorage `bz_cookie_consent` boş)
- *  - "Tümünü kabul" → analytics + marketing + personalization true
- *  - "Sadece zorunlu" → 3'ü de false
- *  - "Kişiselleştir" → modal'da kategori-bazlı toggle
- *  - Default: essential always-on, kalan 3 opt-out
- *  - Karar verildikten sonra banner gizli (direct close — §38.112 §38.79
- *    paterni intact, success view yok)
- *
- * SSR-safe: useState mount sonrası localStorage check (CLAUDE.md §11.11
- * TrialBanner paterni reuse).
- *
- * Pulse design: graphite (#0A0A0A) + lime (#C6F24E) accent (CLAUDE.md §11).
- * Bottom-right floating card pattern (mobile responsive: full-width
- * bottom-sheet stack altında).
- *
- * v2 migration (Stage 32 §38.112): eski v1 row'lar (essential/analytics/
- * marketing) `personalization: false` default ile v2'ye upgrade edilir.
- * `readCookieConsent` migration logic backward compat.
+ * SSR-safe: nothing renders until mount (localStorage). Loaded client-only by
+ * LazyCookieConsentBanner in the root layout.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Cookie, X, Lock } from 'lucide-react';
+import { BarChart3, Cookie, Lock, Megaphone, SlidersHorizontal, X, type LucideIcon } from 'lucide-react';
 
 import {
   readCookieConsent,
   writeCookieConsent,
   type CookieConsentState,
 } from './cookie-consent-storage';
+import {
+  COOKIE_PREFERENCES_PENDING_FLAG,
+  OPEN_COOKIE_PREFERENCES_EVENT,
+} from '@/components/marketing/footer/events';
 
 export { readCookieConsent, type CookieConsentState };
 
 export interface CookieConsentBannerProps {
-  /**
-   * Server-side fallback locale (NEXT_LOCALE cookie). Çoğu zaman 'tr'
-   * — Buaze cookie set etmiyor; gerçek locale Stage 31d §38.110 fix'inde
-   * client-side `window.location` pathname'inden detect ediliyor (`/en/...`
-   * veya `?hl=en` → 'en'; aksi 'tr'). Prop sadece pre-mount fallback.
-   */
+  /** Fallback before mount; the real locale is read from the URL. */
   locale?: 'tr' | 'en';
 }
 
 /**
- * Stage 31d §38.110 — client-side locale auto-detection.
- *
- * Buaze URL-segment based i18n (`/[locale]/...`); `NEXT_LOCALE` cookie
- * genelde set edilmiyor → server prop her zaman 'tr' fallback'e düşüyordu.
- * Banner her zaman TR görünüyordu (kullanıcı raporu).
- *
- * Fix: mount sonrası `window.location.pathname` parse + `?hl=en` query
- * fallback. Public surface'lerde (`/r/[slug]`, `/menu/[slug]`) locale
- * segment yok; query string `?hl=` kullanılır (CLAUDE.md public review
- * surface paterni). Default 'tr'.
+ * The site's i18n lives in the path (`/en/...`); surfaces without a locale
+ * segment use `?hl=`. Default Turkish.
  */
 function detectLocaleFromBrowser(): 'tr' | 'en' {
   if (typeof window === 'undefined') return 'tr';
   try {
-    // 1) Pathname check — `/en/...` veya `/en` exact
     const path = window.location.pathname;
     if (/^\/en(\/|$)/.test(path)) return 'en';
     if (/^\/tr(\/|$)/.test(path)) return 'tr';
-    // 2) Query param fallback (public surface'ler için)
     const search = new URLSearchParams(window.location.search);
     const hl = (search.get('hl') || search.get('lang') || '').toLowerCase();
     if (hl === 'en') return 'en';
     if (hl === 'tr') return 'tr';
   } catch {
-    /* swallow — exotic environment */
+    /* exotic environment */
   }
   return 'tr';
 }
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: CookieConsentBannerProps) {
   const [mounted, setMounted] = useState(false);
@@ -96,44 +77,26 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
   const [personalization, setPersonalization] = useState(false);
-  // Server-side prop ilk render'da fallback; client mount sonrası
-  // `detectLocaleFromBrowser` ile pathname/query'den doğrulanır.
   const [locale, setLocale] = useState<'tr' | 'en'>(serverLocale);
   const isTr = locale === 'tr';
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     setMounted(true);
-    // Stage 31b §38.108 — iframe (embed) context'te banner gösterme.
-    // Parent site'in kendi consent flow'u var; iframe içinde duplicate
-    // banner UX kötü olur (`/embed/[slug]` widget her ziyarette banner
-    // göstermek).
+    // Inside an iframe (embed widget) the parent site runs its own consent.
     try {
       if (window.self !== window.top) return;
     } catch {
-      // Cross-origin iframe → window.top throws → kesinlikle iframe'iz, skip
-      return;
+      return; // cross-origin iframe
     }
-    // Stage XX — public QR review surface (`/r/[slug]`, `/r/[slug]/menu`)
-    // skips the banner entirely. Scanning a table QR opens a 30-second,
-    // no-account rating flow (CLAUDE.md §23.7 Phase 10.1); interrupting it
-    // with a consent card is a bad first impression and the flow has no
-    // locale segment to key off (bare `/r/<slug>`), unlike `/[locale]/...`.
-    // Safe: `ConditionalAnalytics` already treats a missing consent record
-    // as `analytics: false` (no GA/Yandex load) — skipping the banner here
-    // does not grant or imply any consent, it stays at the same
-    // essential-only default the page would have before a decision anyway.
-    if (/^\/r\//.test(window.location.pathname)) return;
-    // `/s/<slug>` (public survey) is the same kind of short customer flow; on a
-    // phone the consent card covered the "Başlayalım" button. Same safety
-    // argument: no consent record keeps analytics off.
-    if (/^\/s\//.test(window.location.pathname)) return;
-    // `/admin` (login + console) is an internal staff surface: on a phone the
-    // consent card covered the entire login form. Same safety argument as
-    // above — no consent record means `ConditionalAnalytics` stays off, so
-    // skipping the card grants nothing.
-    if (/^\/admin(\/|$)/.test(window.location.pathname)) return;
+    // Short customer flows (QR review `/r/...`, public survey `/s/...`) and
+    // the staff console `/admin` skip the card: without a stored decision
+    // ConditionalAnalytics keeps analytics off, so nothing is granted.
+    const path = window.location.pathname;
+    if (/^\/r\//.test(path) || /^\/s\//.test(path) || /^\/admin(\/|$)/.test(path)) return;
 
-    // Stage 31d §38.110 — client-side locale detection.
     setLocale(detectLocaleFromBrowser());
     const existing = readCookieConsent();
     if (!existing) {
@@ -145,23 +108,69 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     }
   }, []);
 
-  // ESC handler for "customize" modal (WCAG 2.1 dialog disipline). Banner
-  // başlangıç card'ı tarayıcı görünümünden çıkamaz (consent zorunlu) ama
-  // customize modal `role="dialog"` non-blocking secondary screen — ESC
-  // ile kapatılabilmeli. Backdrop click out zaten var; bu klavye eşi.
+  const openSettings = useCallback(() => {
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setShowCustomize(true);
+  }, []);
+
+  // Footer "Çerez tercihleri" — reopen the settings with the stored choices.
+  useEffect(() => {
+    const flags = window as unknown as Record<string, unknown>;
+    const onOpen = () => {
+      flags[COOKIE_PREFERENCES_PENDING_FLAG] = false;
+      setLocale(detectLocaleFromBrowser());
+      const existing = readCookieConsent();
+      setAnalytics(existing?.analytics ?? false);
+      setMarketing(existing?.marketing ?? false);
+      setPersonalization(existing?.personalization ?? false);
+      openSettings();
+    };
+    window.addEventListener(OPEN_COOKIE_PREFERENCES_EVENT, onOpen);
+    // Pressed before this lazy chunk mounted.
+    if (flags[COOKIE_PREFERENCES_PENDING_FLAG]) onOpen();
+    return () => window.removeEventListener(OPEN_COOKIE_PREFERENCES_EVENT, onOpen);
+  }, [openSettings]);
+
+  const closeSettings = useCallback(() => {
+    setShowCustomize(false);
+  }, []);
+
+  // Dialog: initial focus, Escape, Tab kept inside, focus returned on close.
   useEffect(() => {
     if (!showCustomize) return;
+    const dialog = dialogRef.current;
+    const focusTimer = window.setTimeout(() => dialog?.focus(), 0);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        setShowCustomize(false);
+        closeSettings();
+        return;
+      }
+      if (e.key !== 'Tab' || !dialog) return;
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE));
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === dialog)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [showCustomize]);
+    const returnTo = returnFocusRef.current;
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKey);
+      if (returnTo && returnTo.isConnected) returnTo.focus();
+    };
+  }, [showCustomize, closeSettings]);
 
-  if (!mounted || !visible) return null;
+  if (!mounted || (!visible && !showCustomize)) return null;
 
   const acceptAll = () => {
     writeCookieConsent({ analytics: true, marketing: true, personalization: true });
@@ -185,225 +194,206 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     setVisible(false);
   };
 
-  // Public legal routes use short slugs — there is no `/[locale]/legal/`
-  // segment (CLAUDE.md §38.131). This banner renders in the root layout,
-  // so the old `/legal/...` href 404'd on every page of the site.
+  // Short legal slugs — there is no `/[locale]/legal/` segment.
   const cookiePolicyHref = `/${locale}/cookie`;
 
   return (
     <>
-      {/* Bottom-right floating card (mobile: full-width bottom-sheet) */}
-      <div
-        role="region"
-        aria-label={isTr ? 'Çerez tercih bannerı' : 'Cookie preference banner'}
-        className="fixed bottom-4 left-4 right-4 z-[100] sm:left-auto sm:bottom-6 sm:right-6 sm:max-w-[420px]"
-        style={{
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          animation: 'bz-cookie-card-in 480ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-        }}
-      >
-        <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#0A0A0A] p-[22px] text-[#F6F4EF] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6),0_0_0_1px_rgba(198,242,78,0.06)]">
-          {/* Lime corner glow — pointer-events: none, sadece görsel */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-[60px] -top-[60px] h-[180px] w-[180px] rounded-full"
-            style={{
-              background: 'radial-gradient(circle, rgba(198, 242, 78, 0.22), transparent 70%)',
-            }}
-          />
-
-          {/* Eyebrow row: cookie icon chip + mono uppercase label */}
-          <div className="mb-3.5 flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#C6F24E]/25 bg-[#C6F24E]/10">
-              <Cookie size={18} strokeWidth={2} className="text-[#C6F24E]" />
-            </span>
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'GİZLİLİK · ÇEREZLER' : 'PRIVACY · COOKIES'}
-            </span>
-          </div>
-
-          {/* Italic editorial hero — pasif copy (legal accurate, "izlemiyoruz" claim'i yok) */}
-          <h4
-            className="mb-2 text-[24px] leading-[1.2] tracking-[-0.01em] text-[#F6F4EF]"
-            style={{ fontFamily: 'var(--font-space-grotesk)', fontStyle: 'italic', fontWeight: 400 }}
-          >
-            {isTr ? 'Çerezleri siz yönetirsiniz.' : 'You’re in control of cookies.'}
-          </h4>
-
-          {/* Body — KVKK uyumlu, accurate (mevcut Buaze copy korunur, JSX'in
-              "izlemiyoruz" claim'i kullanılmaz; analytics consent verilmişse
-              GA/Yandex aktif olur) */}
-          <p className="mb-[18px] text-[12.5px] leading-[1.55] text-[#F6F4EF]/60">
-            {isTr ? (
-              <>
-                Sitenin çalışması için zorunlu çerezleri kullanırız. Analitik,
-                pazarlama ve kişiselleştirme çerezleri yalnızca sizin onayınızla
-                aktif olur. Detaylar için{' '}
-                <Link
-                  href={cookiePolicyHref}
-                  className="font-semibold text-[#F6F4EF] underline-offset-2 hover:underline"
-                >
-                  Çerez Politikası
-                </Link>
-                &apos;na bakabilirsiniz.
-              </>
-            ) : (
-              <>
-                We use essential cookies to make our site work. Analytics,
-                marketing and personalization cookies are only active with your
-                consent. See our{' '}
-                <Link
-                  href={cookiePolicyHref}
-                  className="font-semibold text-[#F6F4EF] underline-offset-2 hover:underline"
-                >
-                  Cookie Policy
-                </Link>{' '}
-                for details.
-              </>
-            )}
-          </p>
-
-          {/* Quick category chip strip — 4 kategori summary (essential on,
-              analytics + marketing + personalization off-default) */}
-          <div className="mb-[18px] flex flex-wrap gap-1.5">
-            <CCChip on label={isTr ? 'Zorunlu' : 'Essential'} />
-            <CCChip label="Analytics" />
-            <CCChip label="Marketing" />
-            <CCChip label={isTr ? 'Kişiselleştirme' : 'Personalize'} />
-          </div>
-
-          {/* Primary actions — accept all (lime CTA) + only essential (ghost) */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={acceptAll}
-              className="pulse-eyebrow flex h-[42px] min-w-[140px] flex-[2] items-center justify-center rounded-xl border-none bg-[#C6F24E] text-[11px] font-bold uppercase tracking-[0.12em] text-[#0A0A0A] shadow-[0_8px_20px_-8px_rgba(198,242,78,0.6)] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-            >
-              {isTr ? 'TÜMÜNÜ KABUL' : 'ACCEPT ALL'}
-            </button>
-            <button
-              type="button"
-              onClick={onlyEssential}
-              className="pulse-eyebrow flex h-[42px] min-w-[100px] flex-1 items-center justify-center rounded-xl border border-white/[0.18] bg-transparent text-[11px] font-bold uppercase tracking-[0.12em] text-[#F6F4EF] transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-            >
-              {isTr ? 'GEREKENLER' : 'ESSENTIAL ONLY'}
-            </button>
-          </div>
-
-          {/* Secondary action — customize preferences */}
-          <button
-            type="button"
-            onClick={() => setShowCustomize(true)}
-            className="pulse-eyebrow mt-3 h-8 w-full bg-transparent text-[10px] font-bold uppercase tracking-[0.16em] text-[#F6F4EF]/55 underline decoration-[#F6F4EF]/20 underline-offset-4 transition-colors hover:text-[#F6F4EF]/80"
-          >
-            {isTr ? 'TERCİHLERİ ÖZELLEŞTİR →' : 'CUSTOMIZE PREFERENCES →'}
-          </button>
-        </div>
-      </div>
-
-      {/* Customize modal — 4 kategori toggle (essential locked + 3 opt-out) */}
-      {showCustomize ? (
+      {visible ? (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="cookie-customize-title"
-          className="fixed inset-0 z-[101] flex items-end justify-center bg-black/45 backdrop-blur-[6px] sm:items-center"
-          onClick={() => setShowCustomize(false)}
+          role="region"
+          aria-labelledby="cookie-banner-title"
+          className="fixed bottom-4 left-4 right-4 z-[100] sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-[420px]"
+          style={{
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            animation: 'bz-cookie-card-in 480ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+          }}
         >
-          <div
-            className="w-full max-w-[580px] overflow-hidden rounded-t-[22px] border border-[#0A0A0A]/[0.06] bg-white text-[#0A0A0A] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] sm:rounded-[22px]"
-            onClick={(e) => e.stopPropagation()}
-            style={{ animation: 'bz-cookie-card-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between gap-3 border-b border-[#0A0A0A]/[0.06] px-6 py-5">
-              <div>
-                <span className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'GİZLİLİK MERKEZİ' : 'PRIVACY CENTER'}
-                </span>
-                <h3
-                  id="cookie-customize-title"
-                  className="mt-1 text-[26px] leading-[1.15] tracking-[-0.012em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-space-grotesk)', fontStyle: 'italic', fontWeight: 400 }}
-                >
-                  {isTr ? 'Çerez tercihleriniz' : 'Your cookie preferences'}
-                </h3>
-              </div>
+          <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#0A0A0A] p-[22px] text-[#F6F4EF] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)]">
+            <div className="mb-3 flex items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#C6F24E]/25 bg-[#C6F24E]/10"
+              >
+                <Cookie size={18} strokeWidth={2} className="text-[#C6F24E]" />
+              </span>
+              <p
+                id="cookie-banner-title"
+                className="text-[18px] font-semibold leading-[1.25] tracking-[-0.01em] text-[#F6F4EF]"
+              >
+                {isTr ? 'Çerez tercihleriniz' : 'Your cookie choices'}
+              </p>
+            </div>
+
+            <p className="mb-4 text-[13px] leading-[1.6] text-[#F6F4EF]/75">
+              {isTr ? (
+                <>
+                  Sitenin çalışması için zorunlu çerezleri kullanırız. Analitik, pazarlama ve
+                  kişiselleştirme çerezleri yalnızca onay verirseniz çalışır. Ayrıntılar{' '}
+                  <Link
+                    href={cookiePolicyHref}
+                    className="font-semibold text-[#F6F4EF] underline underline-offset-2 hover:text-white"
+                  >
+                    Çerez Politikası
+                  </Link>
+                  &apos;nda.
+                </>
+              ) : (
+                <>
+                  We use essential cookies to run the site. Analytics, marketing and
+                  personalization cookies only run if you allow them. Details are in our{' '}
+                  <Link
+                    href={cookiePolicyHref}
+                    className="font-semibold text-[#F6F4EF] underline underline-offset-2 hover:text-white"
+                  >
+                    Cookie Policy
+                  </Link>
+                  .
+                </>
+              )}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => setShowCustomize(false)}
-                aria-label={isTr ? 'Kapat' : 'Close'}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A]/[0.04] text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A]/[0.08]"
+                onClick={acceptAll}
+                className="flex min-h-[44px] flex-1 basis-[140px] items-center justify-center whitespace-nowrap rounded-xl bg-[#C6F24E] px-3 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
               >
-                <X size={14} strokeWidth={2} />
+                {isTr ? 'Tümünü kabul et' : 'Accept all'}
+              </button>
+              <button
+                type="button"
+                onClick={onlyEssential}
+                className="flex min-h-[44px] flex-1 basis-[140px] items-center justify-center whitespace-nowrap rounded-xl border border-white/20 bg-transparent px-3 text-[14px] font-semibold text-[#F6F4EF] transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+              >
+                {isTr ? 'Yalnızca zorunlu' : 'Essential only'}
               </button>
             </div>
 
-            {/* Categories */}
-            <div className="max-h-[360px] overflow-y-auto px-3 py-2">
+            <button
+              type="button"
+              onClick={openSettings}
+              aria-haspopup="dialog"
+              className="mt-2 flex min-h-[40px] w-full items-center justify-center rounded-xl text-[13px] font-medium text-[#F6F4EF]/75 underline decoration-[#F6F4EF]/30 underline-offset-4 transition-colors hover:text-[#F6F4EF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            >
+              {isTr ? 'Tercihleri yönet' : 'Manage preferences'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {showCustomize ? (
+        <div
+          className="fixed inset-0 z-[101] flex items-end justify-center bg-black/45 backdrop-blur-[6px] sm:items-center"
+          onClick={closeSettings}
+        >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cookie-customize-title"
+            tabIndex={-1}
+            className="w-full max-w-[580px] overflow-hidden rounded-t-[22px] border border-[#0A0A0A]/[0.06] bg-white text-[#0A0A0A] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] outline-none sm:rounded-[22px]"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              animation: 'bz-cookie-card-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-[#0A0A0A]/[0.06] px-6 py-5">
+              <div>
+                <h2
+                  id="cookie-customize-title"
+                  className="text-[22px] font-semibold leading-[1.2] tracking-[-0.015em] text-[#0A0A0A]"
+                >
+                  {isTr ? 'Çerez tercihleriniz' : 'Your cookie preferences'}
+                </h2>
+                <p className="mt-1 text-[13px] leading-[1.5] text-[#525252]">
+                  {isTr
+                    ? 'Kararınızı dilediğiniz zaman sitenin alt bilgisindeki “Çerez tercihleri” bağlantısından değiştirebilirsiniz.'
+                    : 'You can change this at any time from the “Cookie preferences” link in the site footer.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeSettings}
+                aria-label={isTr ? 'Kapat' : 'Close'}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A]/[0.04] text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A]"
+              >
+                <X size={16} strokeWidth={2} aria-hidden />
+              </button>
+            </div>
+
+            <div className="max-h-[50vh] overflow-y-auto px-3 py-2 sm:max-h-[360px]">
               <CategoryRow
+                icon={Lock}
                 label={isTr ? 'Zorunlu' : 'Essential'}
                 description={
                   isTr
-                    ? 'Oturum, güvenlik, dil seçimi. Olmadan site çalışmaz.'
-                    : 'Session, security, language. Required for the site to work.'
+                    ? 'Oturum, güvenlik ve dil seçimi. Bunlar olmadan site çalışmaz.'
+                    : 'Session, security and language. The site cannot work without them.'
                 }
-                requiredLabel={isTr ? 'GEREKLİ' : 'REQUIRED'}
-                checked={true}
+                requiredLabel={isTr ? 'Her zaman açık' : 'Always on'}
+                checked
                 disabled
                 onChange={() => {}}
               />
               <CategoryRow
+                icon={BarChart3}
                 label={isTr ? 'Analitik' : 'Analytics'}
                 description={
                   isTr
-                    ? 'Anonim ziyaret istatistikleri (Google Analytics, Yandex Metrica). Hangi sayfaların kullanıldığını anlamamızı sağlar.'
-                    : 'Anonymous visit statistics (Google Analytics, Yandex Metrica). Helps us understand which pages get used.'
+                    ? 'Ziyaret istatistikleri (Google Analytics, Yandex Metrica). Hangi sayfaların kullanıldığını anlamamıza yardımcı olur.'
+                    : 'Visit statistics (Google Analytics, Yandex Metrica). They help us see which pages are used.'
                 }
                 checked={analytics}
-                onChange={(v) => setAnalytics(v)}
+                onChange={setAnalytics}
               />
               <CategoryRow
+                icon={Megaphone}
                 label={isTr ? 'Pazarlama' : 'Marketing'}
                 description={
                   isTr
-                    ? 'Reklam ölçümü ve kişiselleştirme. Şu anda kullanılmıyor; ileride aktive edilebilir.'
-                    : 'Advertising measurement and personalization. Not currently used; may be enabled later.'
+                    ? 'Reklam ölçümü. Şu anda kullanılmıyor; kullanılmaya başlanırsa yalnızca onayınızla çalışır.'
+                    : 'Advertising measurement. Not used today; if that changes, it will only run with your consent.'
                 }
                 checked={marketing}
-                onChange={(v) => setMarketing(v)}
+                onChange={setMarketing}
               />
               <CategoryRow
+                icon={SlidersHorizontal}
                 label={isTr ? 'Kişiselleştirme' : 'Personalization'}
                 description={
                   isTr
-                    ? 'Önceki tercihlerinize göre paneli özelleştirir. Şu anda kullanılmıyor; ileride aktive edilebilir.'
-                    : 'Tailors the panel to your previous preferences. Not currently used; may be enabled later.'
+                    ? 'Paneli önceki tercihlerinize göre düzenler. Şu anda kullanılmıyor; kullanılmaya başlanırsa yalnızca onayınızla çalışır.'
+                    : 'Adapts the panel to your earlier choices. Not used today; if that changes, it will only run with your consent.'
                 }
                 checked={personalization}
-                onChange={(v) => setPersonalization(v)}
+                onChange={setPersonalization}
               />
             </div>
 
-            {/* Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#0A0A0A]/[0.06] px-5 py-4">
-              <span className="pulse-eyebrow text-[#A3A3A3]">
-                {isTr ? 'KVKK · GDPR UYUMLU · BUAZE BİLİŞİM A.Ş.' : 'GDPR COMPLIANT · BUAZE A.Ş.'}
-              </span>
+            <div className="flex flex-col-reverse gap-3 border-t border-[#0A0A0A]/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                href={cookiePolicyHref}
+                className="text-center text-[13px] font-medium text-[#525252] underline decoration-[#D4D4D4] underline-offset-4 hover:text-[#0A0A0A] sm:text-left"
+              >
+                {isTr ? 'Çerez Politikası' : 'Cookie Policy'}
+              </Link>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={saveCustom}
-                  className="pulse-eyebrow flex h-[38px] items-center justify-center rounded-[10px] border border-[#0A0A0A]/[0.18] bg-transparent px-4 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0A0A0A] transition-colors hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-[#0A0A0A]/[0.18] bg-transparent px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:flex-none"
                 >
-                  {isTr ? 'SEÇİMİ KAYDET' : 'SAVE CHOICES'}
+                  {isTr ? 'Seçimi kaydet' : 'Save choices'}
                 </button>
                 <button
                   type="button"
                   onClick={acceptAllFromModal}
-                  className="pulse-eyebrow flex h-[38px] items-center justify-center rounded-[10px] border-none bg-[#C6F24E] px-4 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0A0A0A] shadow-[0_8px_20px_-8px_rgba(198,242,78,0.6)] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-[#C6F24E] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:flex-none"
                 >
-                  {isTr ? 'TÜMÜNÜ KABUL' : 'ACCEPT ALL'}
+                  {isTr ? 'Tümünü kabul et' : 'Accept all'}
                 </button>
               </div>
             </div>
@@ -414,28 +404,9 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
   );
 }
 
-/** Compact card chip — 4-kategori mini summary (essential on lime, others off muted) */
-function CCChip({ label, on = false }: { label: string; on?: boolean }) {
-  return (
-    <span
-      className={`pulse-eyebrow inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] ${
-        on
-          ? 'border-[#C6F24E]/30 bg-[#C6F24E]/[0.14] text-[#C6F24E]'
-          : 'border-white/[0.08] bg-white/[0.05] text-[#F6F4EF]/60'
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className="h-[5px] w-[5px] rounded-full"
-        style={{ background: on ? '#C6F24E' : 'rgba(246, 244, 239, 0.3)' }}
-      />
-      {label}
-    </span>
-  );
-}
-
-/** Modal toggle row — Pulse switch (lime on / muted off) + label + description */
+/** Settings row — label, description, switch. */
 function CategoryRow({
+  icon: Icon,
   label,
   description,
   requiredLabel,
@@ -443,6 +414,7 @@ function CategoryRow({
   disabled = false,
   onChange,
 }: {
+  icon: LucideIcon;
   label: string;
   description: string;
   requiredLabel?: string;
@@ -456,26 +428,29 @@ function CategoryRow({
         disabled ? '' : 'transition-colors hover:bg-[#FAFAFA]'
       }`}
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8]">
-        <Lock size={16} strokeWidth={1.8} className={disabled ? 'text-[#0A0A0A]' : 'text-transparent'} />
+      <div
+        aria-hidden="true"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8]"
+      >
+        <Icon size={16} strokeWidth={1.8} className="text-[#0A0A0A]" />
       </div>
       <div>
-        <div className="mb-1 flex items-center gap-2">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
           <span className="text-[14px] font-semibold text-[#0A0A0A]">{label}</span>
           {disabled && requiredLabel ? (
-            <span className="pulse-eyebrow rounded bg-[#0A0A0A]/[0.06] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#737373]">
+            <span className="rounded bg-[#0A0A0A]/[0.06] px-1.5 py-0.5 text-[11px] font-medium text-[#525252]">
               {requiredLabel}
             </span>
           ) : null}
         </div>
-        <p className="m-0 text-[12px] leading-[1.5] text-[#737373]">{description}</p>
+        <p className="m-0 text-[13px] leading-[1.5] text-[#525252]">{description}</p>
       </div>
       <CCToggle on={checked} disabled={disabled} onChange={onChange} label={label} />
     </div>
   );
 }
 
-/** Pulse switch — 44×26 rounded pill, lime on / muted off, 220ms ease */
+/** Switch — 44×26 pill, lime on / muted off. */
 function CCToggle({
   on,
   disabled = false,
@@ -495,8 +470,8 @@ function CCToggle({
       aria-label={label}
       onClick={() => !disabled && onChange(!on)}
       disabled={disabled}
-      className={`relative h-[26px] w-11 rounded-[13px] border-none p-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-        on ? 'bg-[#C6F24E]' : 'bg-[#0A0A0A]/[0.12]'
+      className={`relative mt-1 h-[26px] w-11 rounded-[13px] border-none p-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 ${
+        on ? 'bg-[#C6F24E]' : 'bg-[#0A0A0A]/[0.18]'
       } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
     >
       <span

@@ -1,17 +1,42 @@
 import type { Metadata } from 'next';
-import { Check } from 'lucide-react';
+import Link from 'next/link';
+import { BarChart3, Bell, Check, Link2, QrCode, Sparkles, Users } from 'lucide-react';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { SITE_URL } from '@/lib/site';
+import { SUPPORT_EMAIL, SUPPORT_HOURS } from '@/lib/company-constants';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import PricingFaq from '@/components/marketing/PricingFaq';
 import PricingPlans from '@/components/marketing/PricingPlans';
+import PageHero from '@/components/marketing/commercial/PageHero';
+import SectionHeader from '@/components/marketing/commercial/SectionHeader';
+import FaqList, { type FaqEntry } from '@/components/marketing/commercial/FaqList';
+import PlatformChips from '@/components/marketing/commercial/PlatformChips';
+import CtaBand from '@/components/marketing/commercial/CtaBand';
+import { REVIEW_PLATFORM_COUNT } from '@/components/marketing/commercial/review-platforms';
+import {
+  CONTAINER,
+  CONTAINER_NARROW,
+  SECTION_Y,
+  TEXT_LINK,
+} from '@/components/marketing/commercial/styles';
 import { getActivePlans } from '@/lib/subscription-plans';
-
-// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
-// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
-// from the Vercel CDN edge for anonymous visitors.
-import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+
+// ISR: inherits `revalidate = 3600` from `[locale]/layout.tsx`; admin plan
+// saves call revalidatePricing() so price edits show up immediately.
+
+const META = {
+  tr: {
+    title: 'Fiyatlandırma: planlar ve 14 gün ücretsiz deneme',
+    description:
+      'Buaze planlarını ve aylık USD fiyatlarını karşılaştırın. 14 gün ücretsiz deneyin; kredi kartı gerekmez, aboneliğinizi istediğiniz zaman iptal edebilirsiniz.',
+  },
+  en: {
+    title: 'Pricing: plans and a 14-day free trial',
+    description:
+      'Compare Buaze plans and their monthly prices in USD. Try it free for 14 days with no credit card, and cancel your subscription whenever you like.',
+  },
+} as const;
 
 export async function generateMetadata({
   params,
@@ -19,28 +44,258 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isTr = locale === 'tr';
-  const title = isTr ? 'Fiyatlandırma | Buaze — İtibar Yönetimi Planları' : 'Pricing | Buaze — Reputation Management Plans';
-  const description = isTr
-    ? 'Aylık ve yıllık planları karşılaştırın, işletmeniz için en uygun QR tabanlı itibar yönetimi çözümünü seçin. 14 gün ücretsiz deneme, kredi kartı gerekmez.'
-    : 'Compare monthly and annual plans and choose the best QR-based reputation management solution. 14-day free trial, no credit card required.';
+  const lang = locale === 'en' ? 'en' : 'tr';
+  const { title, description } = META[lang];
   return {
-    title: { absolute: title },
+    title,
     description,
-    keywords: isTr
-      ? ['buaze fiyatlandırma', 'itibar yönetimi plan fiyatı', 'QR yorum sistemi ücret', 'google yorum artırma platform fiyatı', 'restoran itibar yazılım']
-      : ['buaze pricing', 'reputation management plan cost', 'QR review system pricing', 'restaurant reputation software price'],
+    alternates: {
+      canonical: `/${lang}/pricing`,
+      languages: { tr: '/tr/pricing', en: '/en/pricing', 'x-default': '/tr/pricing' },
+    },
     openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: lang === 'tr' ? 'tr_TR' : 'en_US',
+      url: `${SITE_URL}/${lang}/pricing`,
       title,
       description,
-      url: `https://www.buaze.com/${locale}/pricing`,
-      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
-    },
-    alternates: {
-      canonical: `https://www.buaze.com/${locale}/pricing`,
-      languages: { tr: 'https://www.buaze.com/tr/pricing', en: 'https://www.buaze.com/en/pricing', 'x-default': 'https://www.buaze.com/tr/pricing' },
+      images: [
+        { url: `/images/open-graph-${lang}.png`, width: 1200, height: 630, alt: title },
+      ],
     },
   };
+}
+
+function buildCopy(locale: 'tr' | 'en') {
+  if (locale === 'tr') {
+    return {
+      eyebrow: 'Fiyatlandırma',
+      title: 'Planlar ve fiyatlar',
+      lead:
+        'Fiyatlar USD cinsindendir ve abonelik aylık ödenir. Yıllık ödemek isterseniz bize yazabilirsiniz.',
+      ticks: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal'],
+      empty: {
+        title: 'Planlar şu anda güncelleniyor',
+        body: 'Güncel fiyatları kısa süre içinde burada göreceksiniz. Bu arada 14 günlük ücretsiz denemeyi başlatabilir ya da fiyatlar için bize yazabilirsiniz.',
+        trial: '14 gün ücretsiz deneyin',
+        contact: 'Bize yazın',
+      },
+      paymentNote:
+        'Kartla ödeme, Dodo Payments’ın güvenli ödeme sayfasında alınır; ödeme sayfasında Buaze hesabınızın e-posta adresini kullanın. Aboneliğinizi istediğiniz zaman iptal edebilirsiniz; iptalden sonra ödediğiniz dönemin sonuna kadar erişiminiz sürer.',
+      included: {
+        eyebrow: 'Her planda',
+        title: 'Her planda bulunanlar',
+        lead: 'Hangi planı seçerseniz seçin, aşağıdaki özellikler hesabınızda açıktır.',
+        items: [
+          {
+            icon: QrCode,
+            title: 'QR geri bildirim akışı',
+            body: 'İstediğiniz kadar QR kod oluşturun, masa veya oda etiketi ekleyin. Yorum sayfasının hangi puanda açılacağını siz seçersiniz: 4 ya da 5 yıldız.',
+            href: '/how-it-works',
+          },
+          {
+            icon: Link2,
+            title: `${REVIEW_PLATFORM_COUNT} yorum platformu bağlantısı`,
+            body: 'Google’dan Booking.com’a kadar yorum sayfalarınızın bağlantılarını tek panelde tutun; bağlantılar her gün otomatik kontrol edilir.',
+            href: '/integrations',
+          },
+          {
+            icon: Sparkles,
+            title: 'Pulse AI yanıt taslakları',
+            body: 'Sıcak, resmi ya da özür dileyen tonda 2–4 cümlelik taslaklar. Taslağı siz düzenler ve onaylarsınız; onayınız olmadan hiçbir yanıt gönderilmez.',
+            href: '/features/pulse-ai',
+          },
+          {
+            icon: Bell,
+            title: 'E-posta uyarısı ve haftalık özet',
+            body: '1–3 yıldızlık her geri bildirimde size anında e-posta gelir. Her pazartesi haftalık özet e-postası gönderilir.',
+            href: '/features/review-management',
+          },
+          {
+            icon: BarChart3,
+            title: 'Analitik ve CSV',
+            body: '7, 30, 90 günlük ve 12 aylık raporlar; puanlardan tahmini NPS ve gün-saat dağılımı. Tüm verileri CSV olarak indirebilirsiniz.',
+            href: '/features/analytics-reports',
+          },
+          {
+            icon: Users,
+            title: 'Ekip ve birden çok işletme',
+            body: 'Ekibinizi yönetici, personel ya da görüntüleyici rolüyle davet edin. Birden çok işletmeniz varsa aralarında tek tıkla geçin.',
+            href: '/features',
+          },
+        ],
+      },
+      platforms: {
+        eyebrow: 'Platform bağlantıları',
+        title: `${REVIEW_PLATFORM_COUNT} yorum platformu`,
+        lead: 'Müşterinizi bu platformlardaki yorum sayfanıza yönlendirebilirsiniz. Buaze yalnızca bağlantıyı yönetir; yorumlar platformun kendisinde yazılır.',
+        more: 'Platform bağlantılarını inceleyin',
+      },
+      faq: {
+        eyebrow: 'Sık sorulan sorular',
+        title: 'Fiyatlandırma hakkında sorular',
+        related: 'İlgili belgeler',
+        refund: 'İade ve İptal Politikası',
+        dpa: 'Veri İşleyici Sözleşmesi',
+        privacy: 'Gizlilik Politikası',
+        privacyHref: '/gizlilik',
+      },
+      cta: {
+        title: 'Önce 14 gün ücretsiz deneyin',
+        lead: 'Kredi kartı gerekmez. Sorunuz varsa bize yazın; genellikle bir iş günü içinde yanıt veriyoruz.',
+        primary: 'Ücretsiz deneyin',
+        secondary: 'Bize yazın',
+      },
+      breadcrumbHome: 'Ana sayfa',
+      breadcrumbSelf: 'Fiyatlandırma',
+    };
+  }
+  return {
+    eyebrow: 'Pricing',
+    title: 'Plans and pricing',
+    lead: 'Prices are in USD and subscriptions are paid monthly. If you would like to pay yearly, write to us.',
+    ticks: ['14 days free', 'No credit card required', 'Cancel anytime'],
+    empty: {
+      title: 'Plans are being updated',
+      body: 'Current prices will be back here shortly. In the meantime you can start the 14-day free trial or ask us about pricing.',
+      trial: 'Start 14-day free trial',
+      contact: 'Contact us',
+    },
+    paymentNote:
+      'Card payments are taken on the secure Dodo Payments checkout page; use the e-mail address of your Buaze account there. You can cancel at any time and keep access until the end of the period you paid for.',
+    included: {
+      eyebrow: 'In every plan',
+      title: 'Included in every plan',
+      lead: 'Whichever plan you choose, the following features are switched on in your account.',
+      items: [
+        {
+          icon: QrCode,
+          title: 'QR feedback flow',
+          body: 'Create as many QR codes as you need and add a table or room label. You choose the rating at which the review page opens: 4 or 5 stars.',
+          href: '/how-it-works',
+        },
+        {
+          icon: Link2,
+          title: `Links to ${REVIEW_PLATFORM_COUNT} review platforms`,
+          body: 'Keep the links to your review pages, from Google to Booking.com, in one panel; every link is checked automatically each day.',
+          href: '/integrations',
+        },
+        {
+          icon: Sparkles,
+          title: 'Pulse AI reply drafts',
+          body: 'Drafts of 2–4 sentences in a warm, formal or apologetic tone. You edit and approve them; nothing is sent without your approval.',
+          href: '/features/pulse-ai',
+        },
+        {
+          icon: Bell,
+          title: 'E-mail alerts and a weekly summary',
+          body: 'Every 1–3 star piece of feedback triggers an instant e-mail. A weekly summary e-mail arrives every Monday.',
+          href: '/features/review-management',
+        },
+        {
+          icon: BarChart3,
+          title: 'Analytics and CSV',
+          body: 'Reports for 7, 30 and 90 days and 12 months, an NPS estimate based on ratings and day-and-hour patterns. Export everything as CSV.',
+          href: '/features/analytics-reports',
+        },
+        {
+          icon: Users,
+          title: 'Teams and several businesses',
+          body: 'Invite your team as managers, staff or viewers. If you run several businesses, switch between them in one click.',
+          href: '/features',
+        },
+      ],
+    },
+    platforms: {
+      eyebrow: 'Platform links',
+      title: `${REVIEW_PLATFORM_COUNT} review platforms`,
+      lead: 'You can send customers to your review page on any of these platforms. Buaze only manages the link; reviews are written on the platform itself.',
+      more: 'See platform links',
+    },
+    faq: {
+      eyebrow: 'Frequently asked questions',
+      title: 'Questions about pricing',
+      related: 'Related documents',
+      refund: 'Refund and Cancellation Policy',
+      dpa: 'Data Processing Agreement',
+      privacy: 'Privacy Policy',
+      privacyHref: '/privacy',
+    },
+    cta: {
+      title: 'Try it free for 14 days first',
+      lead: 'No credit card required. If you have a question, write to us; we usually reply within one business day.',
+      primary: 'Start free trial',
+      secondary: 'Contact us',
+    },
+    breadcrumbHome: 'Home',
+    breadcrumbSelf: 'Pricing',
+  };
+}
+
+function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
+  if (locale === 'tr') {
+    return [
+      {
+        q: 'Ücretsiz deneme için kredi kartı gerekiyor mu?',
+        a: 'Hayır. Hesabınızı açtığınızda 14 günlük ücretsiz deneme başlar ve kart bilgisi istenmez. Deneme bittiğinde paneli kullanmaya devam etmek için aylık bir plan başlatırsınız.',
+      },
+      {
+        q: 'Ödemeyi nasıl yapıyorum?',
+        a: 'Aylık abonelik USD olarak, kartla alınır. Ödeme Dodo Payments’ın güvenli ödeme sayfasında yapılır; faturalarınızı panelde görür, kart bilginizi ve aboneliğinizi müşteri portalından yönetirsiniz.',
+      },
+      {
+        q: 'Yıllık ödeme yapabilir miyim?',
+        a: 'Yıllık fiyatları plan kartlarında görebilirsiniz, ancak yıllık ödemeyi şu an panelden başlatamazsınız. Yıllık ödemek isterseniz bize yazın; birlikte ayarlayalım.',
+      },
+      {
+        q: 'Aboneliğimi istediğim zaman iptal edebilir miyim?',
+        a: 'Evet. Aboneliğinizi müşteri portalından iptal edersiniz; ödediğiniz dönemin sonuna kadar erişiminiz sürer. İade koşulları İade ve İptal Politikası’nda yer alır.',
+      },
+      {
+        q: 'Verileri nasıl koruyorsunuz?',
+        a: 'Müşteri formlarında KVKK aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanımız AB’de (Frankfurt) çalışır; bazı alt işleyicilerimiz ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI taslakları için geri bildirim metni yapay zekâ sağlayıcımız OpenAI’ye gönderilir.',
+      },
+      {
+        q: 'Destek nasıl alırım?',
+        a: `${SUPPORT_EMAIL} adresine ya da iletişim formuna yazabilirsiniz. ${SUPPORT_HOURS.tr} Yardım merkezinde Türkçe ve İngilizce rehberler bulunur.`,
+      },
+      {
+        q: 'Fiyatlar hangi para biriminde?',
+        a: 'Tüm fiyatlar ABD doları (USD) cinsindendir ve Türkçe ile İngilizce sayfalarda aynıdır.',
+      },
+    ];
+  }
+  return [
+    {
+      q: 'Do I need a credit card for the free trial?',
+      a: 'No. Your 14-day free trial starts when you create your account, and no card details are needed. When the trial ends, you start a monthly plan to keep using the panel.',
+    },
+    {
+      q: 'How do I pay?',
+      a: 'Monthly subscriptions are charged in USD by card. Payment happens on the secure Dodo Payments checkout page; you see your invoices in the panel and manage your card and subscription in the customer portal.',
+    },
+    {
+      q: 'Can I pay yearly?',
+      a: 'The plan cards show yearly prices, but you cannot start yearly billing from the panel yet. If you would like to pay yearly, write to us and we will set it up together.',
+    },
+    {
+      q: 'Can I cancel whenever I want?',
+      a: 'Yes. You cancel in the customer portal and keep access until the end of the period you paid for. Refund terms are set out in the Refund and Cancellation Policy.',
+    },
+    {
+      q: 'How do you protect data?',
+      a: 'Customer forms show a KVKK notice and an explicit consent box; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. Our database runs in the EU (Frankfurt); some of our sub-processors are in the US and are listed in the Data Processing Agreement. For Pulse AI drafts, the feedback text is sent to our AI provider, OpenAI.',
+    },
+    {
+      q: 'How do I get support?',
+      a: `Write to ${SUPPORT_EMAIL} or use the contact form. ${SUPPORT_HOURS.en} The help center has guides in Turkish and English.`,
+    },
+    {
+      q: 'Which currency are prices in?',
+      a: 'All prices are in US dollars (USD) and are the same on the Turkish and English pages.',
+    },
+  ];
 }
 
 export default async function PricingPage({
@@ -48,262 +303,185 @@ export default async function PricingPage({
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
-  const { locale } = await params;
-  const t = getTranslations(locale);
-  const isTr = locale === 'tr';
+  const { locale: rawLocale } = await params;
+  const locale: 'tr' | 'en' = rawLocale === 'en' ? 'en' : 'tr';
+  const base = `/${locale}`;
+  const copy = buildCopy(locale);
+  const faqs = buildFaqs(locale);
 
-  // DB-driven plans — admin/plans manages content. Empty list falls back
-  // to a friendly empty-state inside PricingPlans.
-  const plans = await getActivePlans(locale).catch(() => []);
+  // Plans come from the SubscriptionPlan table (admin /admin/plans). A DB
+  // error is NOT swallowed: during ISR regeneration Next keeps serving the
+  // last good page instead of caching an empty one for an hour.
+  const plans = await getActivePlans(locale);
+  const hasCheckout = plans.some((p) => p.paymentProvider === 'dodo_payments' && !!p.dodoProductId);
 
-  const faqs = [
-    { q: t.faq_q1, a: t.faq_a1 },
-    { q: t.faq_q2, a: t.faq_a2 },
-    { q: t.faq_q3, a: t.faq_a3 },
-    { q: t.faq_q4, a: t.faq_a4 },
-    { q: t.faq_q5, a: t.faq_a5 },
-    { q: t.faq_q6, a: t.faq_a6 },
-  ];
-
-  // Prices are USD in every locale (CLAUDE.md §15.2 USD-only billing); the
-  // TR page used to declare these USD amounts as TRY in structured data.
-  const priceCurrency = 'USD';
-  // DB-driven JSON-LD offers — prices reflect the same priceMonthly used in the
-  // visible cards (post-discount when applicable, pre-yearly toggle).
-  const planOffers = plans.map((p) => {
-    const monthly = p.discount.active ? p.discount.discountedMonthly : p.priceMonthly;
-    return {
-      '@type': 'Offer',
-      name: p.name,
-      price: String(monthly),
-      priceCurrency,
-      priceSpecification: {
-        '@type': 'UnitPriceSpecification',
-        price: String(monthly),
-        priceCurrency,
-        billingDuration: 'P1M',
-        unitCode: 'MON',
-      },
-      availability: 'https://schema.org/InStock',
-      url: `https://www.buaze.com/${locale}/pricing`,
-    };
-  });
-
+  const pageUrl = `${SITE_URL}/${locale}/pricing`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'FAQPage',
-        mainEntity: faqs.map(faq => ({
+        '@id': `${pageUrl}#faq`,
+        inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
+        mainEntity: faqs.map((faq) => ({
           '@type': 'Question',
           name: faq.q,
           acceptedAnswer: { '@type': 'Answer', text: faq.a },
         })),
       },
       {
-        '@type': 'SoftwareApplication',
-        name: 'Buaze',
-        applicationCategory: 'BusinessApplication',
-        operatingSystem: 'Web, iOS, Android',
-        description: t.pricing_subtitle,
-        url: `https://www.buaze.com/${locale}/pricing`,
-        // No aggregateRating — must be backed by verifiable on-page reviews.
-        offers: planOffers,
-      },
-      {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          {
-            '@type': 'ListItem',
-            position: 1,
-            name: isTr ? 'Anasayfa' : 'Home',
-            item: `https://www.buaze.com/${locale}`,
-          },
-          {
-            '@type': 'ListItem',
-            position: 2,
-            name: isTr ? 'Fiyatlandırma' : 'Pricing',
-            item: `https://www.buaze.com/${locale}/pricing`,
-          },
+          { '@type': 'ListItem', position: 1, name: copy.breadcrumbHome, item: `${SITE_URL}/${locale}` },
+          { '@type': 'ListItem', position: 2, name: copy.breadcrumbSelf, item: pageUrl },
         ],
       },
     ],
   };
 
-
-  const trustTicks = isTr
-    ? ['14 gün ücretsiz', 'İstediğinde iptal', 'Kredi kartı gerekmez']
-    : ['14 days free', 'Cancel anytime', 'No card required'];
-
-  const comparisonRows: { name: string; m: boolean; y: boolean }[] = [
-    { name: isTr ? 'Dinamik QR kod teknolojisi' : 'Dynamic QR technology', m: true, y: true },
-    { name: isTr ? 'Geri bildirim yönetimi' : 'Feedback management', m: true, y: true },
-    { name: isTr ? 'Panel üzerinden yanıtlama' : 'Dashboard responses', m: true, y: true },
-    { name: isTr ? 'İtibar yayınlama' : 'Reputation distribution', m: true, y: true },
-    { name: isTr ? '7/24 öncelikli destek' : '24/7 priority support', m: false, y: true },
-    { name: isTr ? 'Kişiselleştirilmiş tasarım' : 'White-label design', m: false, y: true },
-    { name: isTr ? 'Çoklu şube yönetimi' : 'Multi-location management', m: false, y: true },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
+    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 lg:pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
       <main id="main-content">
+        <PageHero
+          align="center"
+          eyebrow={copy.eyebrow}
+          title={copy.title}
+          lead={copy.lead}
+          note={
+            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+              {copy.ticks.map((tick) => (
+                <li key={tick} className="flex items-center gap-2 text-[15px] text-[#525252]">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]"
+                  >
+                    <Check size={12} strokeWidth={2.75} />
+                  </span>
+                  {tick}
+                </li>
+              ))}
+            </ul>
+          }
+        />
 
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-5 sm:px-10 pt-[60px] sm:pt-24 pb-14 sm:pb-20">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="pricingGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#pricingGrid)" />
-        </svg>
-        <div className="relative max-w-[900px] mx-auto text-center">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Fiyatlar' : 'Pricing'}
-          </span>
-          <h1 className="mt-5 text-[38px] sm:text-[64px] md:text-[52px] lg:text-[72px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
-            {isTr ? (
+        <section className="pb-[60px] sm:pb-24">
+          <div className={CONTAINER}>
+            {plans.length > 0 ? (
               <>
-                Basit. Şeffaf.
-                <br />
-                Gizli ücret yok.
+                <PricingPlans locale={locale} plans={plans} />
+                {hasCheckout ? (
+                  <p className="mx-auto mt-8 max-w-[720px] text-center text-[14px] leading-[1.6] text-[#737373]">
+                    {copy.paymentNote}
+                  </p>
+                ) : null}
               </>
             ) : (
-              <>
-                Simple. Transparent.
-                <br />
-                No hidden fees.
-              </>
+              <div className="mx-auto max-w-[640px] rounded-[20px] border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
+                <h2 className="text-[24px] leading-[1.2] text-[#0A0A0A]">{copy.empty.title}</h2>
+                <p className="mt-3 text-[15px] leading-[1.6] text-[#525252]">{copy.empty.body}</p>
+                <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                  <Link
+                    href={`${base}/auth/register`}
+                    rel="nofollow"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#0A0A0A] px-6 text-[15px] font-medium text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  >
+                    {copy.empty.trial}
+                  </Link>
+                  <Link
+                    href={`${base}/contact`}
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#0A0A0A] bg-white px-6 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  >
+                    {copy.empty.contact}
+                  </Link>
+                </div>
+              </div>
             )}
-          </h1>
-          <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px] mx-auto">
-            {isTr
-              ? 'Her plan 14 gün ücretsiz. Kredi kartı istenmez. İstediğin zaman yükselt, düşür ya da iptal et.'
-              : 'Every plan is free for 14 days. No credit card required. Upgrade, downgrade or cancel anytime.'}
-          </p>
-          <ul className="mt-9 flex flex-wrap justify-center gap-x-6 gap-y-2">
-            {trustTicks.map((tick) => (
-              <li key={tick} className="flex items-center gap-2 text-[14px] text-[#525252]">
-                <span className="w-4 h-4 rounded-full bg-[#C6F24E] flex items-center justify-center text-[#0A0A0A] text-[10px] font-bold">
-                  ✓
-                </span>
-                {tick}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ─── Pricing Cards (client component with monthly/yearly toggle) ─── */}
-      <section className="px-5 sm:px-10 pb-[60px] sm:pb-28">
-        <div className="max-w-[1200px] mx-auto">
-          <PricingPlans
-            locale={locale}
-            monthlyCta={t.pricing_monthly_cta}
-            yearlyCta={t.pricing_yearly_cta}
-            monthlyPeriod={t.pricing_monthly_period}
-            plans={plans}
-          />
-        </div>
-      </section>
-
-      {/* ─── Platform Integrations ─── */}
-      <section className="px-5 sm:px-10 py-12 sm:py-16 border-b border-[#EDEDED]">
-        <div className="max-w-[1200px] mx-auto text-center">
-          <span className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'Global platformlarla entegre' : 'Integrated with global platforms'}
-          </span>
-          <div className="mt-8 flex flex-wrap justify-center items-center gap-x-10 sm:gap-x-16 gap-y-5">
-            {['Google', 'TripAdvisor', 'Yelp', 'Trustpilot', 'Zomato'].map((site) => (
-              <span
-                key={site}
-                className="text-[18px] sm:text-[22px] font-semibold tracking-[0.06em] text-[#A3A3A3]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {site}
-              </span>
-            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── Comparison Table ─── */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[960px] mx-auto">
-          <div className="text-center mb-12">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Detaylı karşılaştırma' : 'Deep comparison'}
-            </span>
-            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Plan özelliklerini yan yana görün.' : 'See plan features side by side.'}
-            </h2>
+        <section aria-labelledby="pricing-included-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeader
+              id="pricing-included-title"
+              eyebrow={copy.included.eyebrow}
+              title={copy.included.title}
+              lead={copy.included.lead}
+            />
+            <ul className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+              {copy.included.items.map((item) => (
+                <li key={item.title} className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
+                  >
+                    <item.icon size={20} strokeWidth={1.8} />
+                  </span>
+                  <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">
+                    <Link
+                      href={`${base}${item.href}`}
+                      className="rounded-sm decoration-[#C6F24E] decoration-2 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                    >
+                      {item.title}
+                    </Link>
+                  </h3>
+                  <p className="mt-2 flex-1 text-[15px] leading-[1.6] text-[#525252]">{item.body}</p>
+                </li>
+              ))}
+            </ul>
           </div>
+        </section>
 
-          <div className="rounded-3xl border border-[#EDEDED] bg-white overflow-hidden">
-            <div className="overflow-x-auto no-scrollbar">
-              <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">
-                    <th className="p-5 pulse-eyebrow text-[#737373]">{isTr ? 'Özellik' : 'Feature'}</th>
-                    <th className="p-5 pulse-eyebrow text-[#737373] text-center">{isTr ? 'Aylık' : 'Monthly'}</th>
-                    <th className="p-5 pulse-eyebrow text-[#0A0A0A] text-center">{isTr ? 'Yıllık' : 'Yearly'}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EDEDED]">
-                  {comparisonRows.map((row, i) => (
-                    <tr key={i}>
-                      <td className="p-5 text-[14px] font-medium text-[#0A0A0A]">{row.name}</td>
-                      <td className="p-5 text-center">
-                        {row.m ? (
-                          <span className="inline-flex w-7 h-7 rounded-full bg-[#EAF9B8] items-center justify-center">
-                            <Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} />
-                          </span>
-                        ) : (
-                          <span className="text-[#A3A3A3]">—</span>
-                        )}
-                      </td>
-                      <td className="p-5 text-center">
-                        {row.y ? (
-                          <span className="inline-flex w-7 h-7 rounded-full bg-[#C6F24E] items-center justify-center">
-                            <Check size={14} className="text-[#0A0A0A]" strokeWidth={2.5} />
-                          </span>
-                        ) : (
-                          <span className="text-[#A3A3A3]">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <section aria-labelledby="pricing-platforms-title" className={SECTION_Y}>
+          <div className={`${CONTAINER} lg:grid lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16`}>
+            <SectionHeader
+              id="pricing-platforms-title"
+              eyebrow={copy.platforms.eyebrow}
+              title={copy.platforms.title}
+              lead={copy.platforms.lead}
+            />
+            <div className="mt-8 lg:mt-0">
+              <PlatformChips />
+              <p className="mt-6 text-[15px]">
+                <Link href={`${base}/integrations`} className={TEXT_LINK}>
+                  {copy.platforms.more}
+                </Link>
+              </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Testimonials section removed — the two quotes were attributed to invented
-          people ("Mert A. · İstanbul", "Selin B. · Ankara" / "James K. · London",
-          "Emma W. · New York") and paired with an ROI claim ("paid for itself in the
-          first month"). Named, unverifiable testimonials are FTC + Reklam Kurulu
-          deceptive-advertising risk (CLAUDE.md §35.8 / §35.10). Restore only with
-          real, consented customers. */}
+        <section aria-labelledby="pricing-faq-title" className={`border-t border-[#EDEDED] ${SECTION_Y}`}>
+          <div className={CONTAINER_NARROW}>
+            <SectionHeader id="pricing-faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} />
+            <div className="mt-10">
+              <FaqList items={faqs} idPrefix="pricing-faq" />
+            </div>
+            <p className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[14px] text-[#525252]">
+              <span>{copy.faq.related}:</span>
+              <Link href={`${base}/iade-iptal-politikasi`} className={TEXT_LINK}>
+                {copy.faq.refund}
+              </Link>
+              <Link href={`${base}/veri-isleyici-sozlesmesi`} className={TEXT_LINK}>
+                {copy.faq.dpa}
+              </Link>
+              <Link href={`${base}${copy.faq.privacyHref}`} className={TEXT_LINK}>
+                {copy.faq.privacy}
+              </Link>
+            </p>
+          </div>
+        </section>
 
-      {/* ─── FAQ ─── */}
-      <PricingFaq faqs={faqs} title={t.faq_title} subtitle={t.faq_subtitle} />
-
+        <CtaBand
+          id="pricing-cta-title"
+          title={copy.cta.title}
+          lead={copy.cta.lead}
+          primary={{ href: `${base}/auth/register`, label: copy.cta.primary, nofollow: true }}
+          secondary={{ href: `${base}/contact`, label: copy.cta.secondary }}
+        />
       </main>
-      <MarketingFooter locale={locale} t={t} />
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

@@ -6,253 +6,127 @@ import { X } from 'lucide-react';
 
 interface Props {
   locale: 'tr' | 'en';
-  /** Scroll threshold before the bar appears. Matches site-premium.jsx: 600px. */
+  /** Scroll distance (px) before the bar appears. */
   threshold?: number;
 }
 
+const DESKTOP_QUERY = '(min-width: 1024px)';
+const DISMISS_KEY = 'buaze.sticky.dismissed';
+
 /**
- * Conversion layer — sticky CTA bar at the bottom of the viewport.
+ * Desktop-only trial reminder pinned to the bottom of the viewport.
  *
- * Stage 57 §38.138 — HANDOFF premium editorial redesign.
- * Stage 79 §38.157 — kullanıcı talebi: meta row tamamen silindi
- * ("İstediğin zaman iptal" + "Kart gerekmez" UX clutter); headline lime
- * highlight tüm "ilk yorumunu yarın al." cümlesini kapsayacak şekilde
- * solid lime marker'a çevrildi (eski yarı-band gradient'ten); padding
- * + CTA height + headline scale daraltıldı (UX kompakt deneyim).
- *
- * - HUGE italic Space Grotesk headline + solid lime highlight marker
- *   (Stage 79: full-coverage; eski transparent 60-92% gradient yarı-band).
- * - Lime CTA button + shine animation + arrow icon.
- * - Lime aura sweep (radial gradient 320×160 blur) + hairline pulse
- *   (linear-gradient sweep), 8 yeni keyframe globals.css'te (scbDot/
- *   scbPulse/scbRing/scbHair/scbSweep/scbShine/scbWave/scbBlink).
- *
- * Compliance disipline (CLAUDE.md §35.8 + §35.10 + §19.1.1):
- * - Avatar stack (M/A/K initials) + "312 ŞUBE BU AY" social proof
- *   block KALDIRILDI (fake testimonial avatars + verifiable false
- *   cohort claim — Buaze gerçek müşteri 10-50 §19.4.4).
- * - Eyebrow + meta row Stage 79 tamamen kaldırıldı (kullanıcı talebi
- *   "yeni 14 gün ücretsiz yazısı olmasın altta ve üstte" Stage 61
- *   §38.142 + Stage 79 §38.157 finalize).
- *
- * Backend kontrat intact:
- * - sessionStorage dismiss (`buaze.sticky.dismissed`)
- * - Scroll threshold 600px (HANDOFF default + mevcut Buaze paterni)
- * - `buaze:sticky-cta-visibility` CustomEvent dispatcher (ContactFloat
- *   positioning için)
- *
- * Mobile: `hidden md:block` intact (mobile'da MobileBottomNav §38.43
- * zaten bottom CTA sağlıyor; sticky CTA bar md+ desktop only).
+ * - Shows from `lg` up only: below that the floating MobileBottomNav already
+ *   carries the trial CTA, and both would overlap at 768–1023 px.
+ * - Appears after `threshold` px of scrolling, hides while the site footer is
+ *   on screen (so it never covers the legal links or cookie preferences),
+ *   and stays dismissed for the session.
+ * - Broadcasts `buaze:sticky-cta-visibility` so ContactFloat can move above
+ *   it; the event reports what is really on screen.
+ * - A plain sentence and one button — no heading element, no looping
+ *   animation.
  */
 export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
-  const [visible, setVisible] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [desktop, setDesktop] = useState(false);
+  const [footerInView, setFooterInView] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const isTr = locale === 'tr';
-  const stickyVisible = !dismissed && visible;
+  const visible = desktop && scrolled && !footerInView && !dismissed;
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (sessionStorage.getItem('buaze.sticky.dismissed') === '1') {
-      setDismissed(true);
-      return;
+    try {
+      if (window.sessionStorage.getItem(DISMISS_KEY) === '1') setDismissed(true);
+    } catch {
+      /* storage blocked: the bar can be dismissed for this page only */
     }
-    const onScroll = () => setVisible(window.scrollY > threshold);
-    onScroll();
+  }, []);
+
+  useEffect(() => {
+    const query = window.matchMedia(DESKTOP_QUERY);
+    const update = () => setDesktop(query.matches);
+    update();
+    query.addEventListener?.('change', update);
+    return () => query.removeEventListener?.('change', update);
+  }, []);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      setScrolled(window.scrollY > threshold);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, [threshold]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(
-      new CustomEvent('buaze:sticky-cta-visibility', {
-        detail: { visible: stickyVisible },
-      }),
-    );
+    const footer = document.getElementById('site-footer') ?? document.querySelector('footer');
+    if (!footer || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver((entries) => {
+      setFooterInView(Boolean(entries[entries.length - 1]?.isIntersecting));
+    });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
 
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('buaze:sticky-cta-visibility', { detail: { visible } }));
     return () => {
       window.dispatchEvent(
-        new CustomEvent('buaze:sticky-cta-visibility', {
-          detail: { visible: false },
-        }),
+        new CustomEvent('buaze:sticky-cta-visibility', { detail: { visible: false } }),
       );
     };
-  }, [stickyVisible]);
+  }, [visible]);
 
   const onDismiss = () => {
-    sessionStorage.setItem('buaze.sticky.dismissed', '1');
-    setDismissed(true);
-    // Stage 86 §38.166 — defensive synchronous dispatch (kullanıcı raporu:
-    // "Masaüstünde sticky barı kapatınca konuşma balonu aşağı inmiyor").
-    // useEffect [stickyVisible] cleanup + new effect ikilisi normalde
-    // `false` event'ini dispatch eder, ama React batching / strict mode /
-    // production build edge case'lerinde event timing kayar. Direct
-    // synchronous dispatch ContactFloat listener'ının click anında
-    // reposition ettiğini garanti eder (transition-[bottom] 300ms
-    // smooth animation tetiklenir).
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('buaze:sticky-cta-visibility', {
-          detail: { visible: false },
-        }),
-      );
+    try {
+      window.sessionStorage.setItem(DISMISS_KEY, '1');
+    } catch {
+      /* storage blocked */
     }
+    setDismissed(true);
+    // Synchronous notice so ContactFloat moves down in the same frame.
+    window.dispatchEvent(new CustomEvent('buaze:sticky-cta-visibility', { detail: { visible: false } }));
   };
 
-  if (!stickyVisible) return null;
-
-  // Stage 79 §38.157 — Lime highlight tüm cümleyi kapsasın (kullanıcı
-  // talebi: "ilk yorumunu yarın al. cümlesinin yarısı lime arka plan
-  // rengi onun tamamını gösterir yap"). Eski transparent 60-92% gradient
-  // yarı-band marker idi (sadece bottom 32% lime); şimdi solid lime
-  // background tüm text yüksekliğini kaplıyor + minimal border-radius +
-  // generous horizontal padding (sticker visual). Pulse §11 hex intact.
-  const limeHighlight: React.CSSProperties = {
-    background: '#C6F24E',
-    color: '#0A0A0A',
-    padding: '0.05em 0.35em',
-    borderRadius: 4,
-    boxDecorationBreak: 'clone',
-    WebkitBoxDecorationBreak: 'clone',
-  };
+  if (!visible) return null;
 
   return (
     <div
-      className="hidden md:block fixed inset-x-0 bottom-0 z-40 animate-slide-in overflow-hidden border-t bg-[#0A0A0A] text-white"
+      className="fixed inset-x-0 bottom-0 z-40 hidden animate-slide-in border-t border-white/10 bg-[#0A0A0A] text-white shadow-[0_-18px_48px_-30px_rgba(0,0,0,0.55)] lg:block"
       style={{
-        borderTopColor: 'rgba(198,242,78,0.18)',
-        boxShadow: '0 -18px 48px -30px rgba(0,0,0,0.55)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
       }}
     >
-      {/* Lime aura sweep — radial gradient, blur(20px), 9s ease-in-out
-          infinite slide. Decorative-only, pointer-events:none. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={{
-          top: -50,
-          left: '38%',
-          width: 320,
-          height: 160,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(ellipse, rgba(198,242,78,0.18) 0%, rgba(198,242,78,0) 70%)',
-          filter: 'blur(20px)',
-          animation: 'scbSweep 9s ease-in-out infinite',
-        }}
-      />
-
-      {/* Hairline pulse — top edge'de ince lime sweep gradient
-          (transparent → lime → transparent), 5s linear infinite. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          background:
-            'linear-gradient(90deg, transparent 0%, #C6F24E 50%, transparent 100%)',
-          opacity: 0.5,
-          animation: 'scbHair 5s linear infinite',
-        }}
-      />
-
-      <div
-        className="relative z-[1] mx-auto flex max-w-[1280px] items-center gap-6 px-6 py-3.5 md:gap-8"
-        style={{
-          paddingLeft: 'max(1.5rem, env(safe-area-inset-left))',
-          paddingRight: 'max(1.5rem, env(safe-area-inset-right))',
-        }}
-      >
-        {/* LEFT: headline only (Stage 79 §38.157 — meta row + eyebrow
-            tamamen silindi: "İstediğin zaman iptal" + "Kart gerekmez" UX
-            clutter, kullanıcı talebi). Lime highlight solid marker tüm
-            cümleyi kapsar (eski yarı-band gradient yerine). */}
-        <h3
-          className="m-0 flex-1 text-white"
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontStyle: 'italic',
-            fontSize: 'clamp(17px, 2vw, 26px)',
-            lineHeight: 1.15,
-            letterSpacing: '-0.02em',
-            fontWeight: 400,
-          }}
-        >
-          {isTr ? (
-            <>
-              Bugün başla, <span style={limeHighlight}>ilk yorumunu yarın al.</span>
-            </>
-          ) : (
-            <>
-              Start today, get your first <span style={limeHighlight}>review tomorrow.</span>
-            </>
-          )}
-        </h3>
-
-        {/* CENTER: lime CTA — shine animation + arrow icon. Stage 79
-            §38.157 — h-14 → h-12 daralt + px-7 → px-6 (kompakt UX).
-            HANDOFF avatar stack + 312 ŞUBE BU AY social proof block
-            KASITLI silindi (fake testimonial + verifiable false cohort
-            claim — CLAUDE.md §35.8 + §35.10 + §19.1.1 disipline). */}
+      <div className="mx-auto flex max-w-[1200px] items-center gap-6 px-10 py-3.5">
+        <p className="m-0 flex-1 text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-white">
+          {isTr
+            ? 'QR geri bildirim akışınızı 14 gün ücretsiz deneyin'
+            : 'Try the QR feedback flow free for 14 days'}
+        </p>
         <Link
           href={`/${locale}/auth/register`}
-          className="relative inline-flex h-12 shrink-0 items-center gap-2.5 overflow-hidden rounded-full px-6"
-          style={{
-            background: '#C6F24E',
-            color: '#0A0A0A',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            boxShadow:
-              '0 14px 40px -12px rgba(198,242,78,0.7), inset 0 -2px 0 rgba(0,0,0,0.08)',
-          }}
+          rel="nofollow"
+          className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-full bg-[#C6F24E] px-6 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
         >
-          {/* Shine sweep — linear-gradient 110deg, 3.6s ease-in-out
-              infinite. Pointer-events:none, decorative. */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%)',
-              animation: 'scbShine 3.6s ease-in-out infinite',
-            }}
-          />
-          <span className="relative z-[1]">
-            {isTr ? 'ÜCRETSİZ BAŞLA' : 'START FREE'}
-          </span>
-          <svg
-            width="14"
-            height="11"
-            viewBox="0 0 14 11"
-            className="relative z-[1]"
-            aria-hidden
-          >
-            <path
-              d="M1 5.5h12m-4-4l4 4-4 4"
-              stroke="#0A0A0A"
-              strokeWidth="1.7"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          {isTr ? 'Ücretsiz deneyin' : 'Start free trial'}
         </Link>
-
-        {/* RIGHT: dismiss button — minimal outline (Stage 79 §38.157
-            kompakt: h-9 w-9 → h-8 w-8). */}
         <button
           type="button"
           onClick={onDismiss}
-          aria-label={isTr ? 'Kapat' : 'Dismiss'}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-transparent transition-colors hover:bg-white/5"
-          style={{
-            borderColor: 'rgba(255,255,255,0.12)',
-            color: 'rgba(255,255,255,0.5)',
-          }}
+          aria-label={isTr ? 'Bu çubuğu kapat' : 'Dismiss this bar'}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/75 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
         >
-          <X size={11} />
+          <X size={14} aria-hidden />
         </button>
       </div>
     </div>

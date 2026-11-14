@@ -1,11 +1,10 @@
-// Admin sales notification — yeni ROI lead'i geldiğinde NOTIFICATION_EMAIL
-// adresine fırlar. Pulse mail design (CLAUDE.md §21) — graphite hero +
-// lead avatar/işletme + 4-stat KPI + AI insight kart + senaryo tablosu +
-// 3 quick-action grid (Reply / Call / Panel).
+// Sales notification — fires to NOTIFICATION_EMAIL when someone submits the
+// ROI calculator form. Pulse mail (CLAUDE.md §21): dark alert bar + lead
+// header + estimated time saved + KPI tiles + summary card + the values the
+// visitor entered + 3 quick actions (Reply / Call / Panel).
 //
-// Eski düz HTML "Yeni ROI lead'i" mail (sendMail ile direkt gönderiliyordu)
-// yerini alır. Operatör inbox'unda diğer Pulse alert'leriyle (low-rating,
-// new-review, contact-admin) aynı görsel dili konuşur.
+// The figures are recomputed on the server from the visitor's inputs
+// (src/lib/roi/roi-model.ts) — the same numbers the visitor received.
 
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
@@ -27,45 +26,32 @@ import {
   renderRoiBigNumber,
   renderRoiKpiGrid,
   renderRoiSteps,
-  roiPlatformList,
   roiSectorLabel,
 } from './roi-mail-parts';
 import { deepSubstitute } from '../placeholders';
-
-const PLAN_LABEL: Record<string, string> = {
-  starter: 'Starter',
-  growth: 'Growth',
-  pro: 'Pro',
-};
+import {
+  computeRoi,
+  formatHours,
+  formatUsd,
+  normalizeRoiInputs,
+  type RoiInputs,
+  type RoiResult,
+} from '@/lib/roi/roi-model';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 export interface RoiAdminNotificationParams {
   // Lead
   email: string;
   restaurantName: string;
   phone?: string | null;
-  // Inputs (raw projection)
   sector: string;
-  monthlyCustomers: number;
-  avgTicket: number;
-  currentGoogle: number;
-  lowRatingsPerMonth: number;
-  platforms: string[];
-  plan: string;
-  planPrice: number;
-  currency: string;
-  // Outputs
-  scanned: number;
-  reviewers: number;
-  filteredLowReviews: number;
-  projectedGoogle: number;
-  newCustomers: number;
-  monthlyUplift: number;
-  yearlyUplift: number;
-  netGain: number;
-  roiMultiple: number;
-  paybackMonths: number | null;
-  aiHoursSaved: number;
-  // AI insight
+  /** Plan name chosen in the calculator; null = no plan. */
+  planName?: string | null;
+  /** Calculator inputs (normalised). Missing → calculator defaults. */
+  inputs?: RoiInputs;
+  /** Estimate computed from `inputs`. Missing → computed here. */
+  estimate?: RoiResult;
+  // Summary (AI or template)
   aiSummary: string;
   aiHighlight: string;
   aiNextSteps: string[];
@@ -73,6 +59,28 @@ export interface RoiAdminNotificationParams {
   // Optional admin panel deep link
   panelUrl?: string;
   ip?: string | null;
+
+  // ── Legacy projection model (pre-2026-11). Accepted so older callers
+  // still type-check; NONE of these values is rendered.
+  monthlyCustomers?: number;
+  avgTicket?: number;
+  currentGoogle?: number;
+  lowRatingsPerMonth?: number;
+  platforms?: string[];
+  plan?: string;
+  planPrice?: number;
+  currency?: string;
+  scanned?: number;
+  reviewers?: number;
+  filteredLowReviews?: number;
+  projectedGoogle?: number;
+  newCustomers?: number;
+  monthlyUplift?: number;
+  yearlyUplift?: number;
+  netGain?: number;
+  roiMultiple?: number;
+  paybackMonths?: number | null;
+  aiHoursSaved?: number;
 }
 
 export async function renderRoiAdminNotification(
@@ -80,69 +88,84 @@ export async function renderRoiAdminNotification(
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
+  const lang: 'tr' | 'en' = isTr ? 'tr' : 'en';
   const fmt = (n: number) => n.toLocaleString(isTr ? 'tr-TR' : 'en-US');
-  const c = params.currency;
+  const pct = (n: number) => (isTr ? `%${Math.round(n)}` : `${Math.round(n)}%`);
+  const hours = (n: number) => formatHours(n, lang);
+
+  const inputs = params.inputs ?? normalizeRoiInputs({}, lang);
+  const est = params.estimate ?? computeRoi(inputs);
+  const hasPlan = est.planMonthlyUsd !== null && est.monthlyDifferenceUsd !== null;
+  const planName = (params.planName || '').trim();
+  const planLabel = planName || (isTr ? 'Plan seçilmedi' : 'No plan selected');
 
   const businessSafe = escapeHtml(params.restaurantName);
   const emailSafe = escapeHtml(params.email);
   const phoneSafe = params.phone ? escapeHtml(params.phone) : null;
   const sectorLabel = roiSectorLabel(params.sector, isTr);
-  const planLabel = PLAN_LABEL[params.plan] ?? params.plan;
   const initial = (params.restaurantName || params.email || '?').charAt(0).toUpperCase();
+  // Business-local time, not the serverless process TZ (CLAUDE.md §46).
   const timestamp = new Date().toLocaleString(isTr ? 'tr-TR' : 'en-US', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: resolveDisplayTimeZone(),
   });
 
-  const platformLabels = roiPlatformList(params.platforms);
-
-  // DB-driven copy override (CLAUDE.md §21.26 Phase 2 pattern). Kritik
-  // alarm chrome admin panelden edit edilebilir; geri kalan inline.
+  // DB-driven copy override (CLAUDE.md §21.26). Keys are unchanged so the
+  // admin editor keeps working; `netGainEyebrow` now labels the time-saved
+  // card and `scenarioH2` the values table.
   const inlineDefault = isTr
     ? {
-        subjectTemplate: '[Lead] ${restaurantName} · ${netGain}/yıl',
-        preheaderPrefix: '${restaurantName} ROI hesabı yaptı: ${netGain}/yıl.',
-        alertEyebrow: 'YENİ ROI LEAD\'İ',
-        statusPill: '24 saat içinde dön',
-        netGainEyebrow: 'YILLIK NET KAZANÇ',
-        scenarioH2: 'Senaryosu',
+        subjectTemplate: '[Lead] ${restaurantName} · ROI hesabı',
+        preheaderPrefix: '${restaurantName} ROI hesaplayıcıyı kullandı.',
+        alertEyebrow: 'YENİ ROI TALEBİ',
+        statusPill: '1 iş günü içinde yanıtla',
+        netGainEyebrow: 'TAHMİNİ ZAMAN TASARRUFU',
+        scenarioH2: 'Girdiği değerler',
         quickEyebrow: 'HIZLI AKSİYON',
         replyLabel: 'Yanıt yaz',
         replySub: 'E-posta gönder',
         callLabel: 'Telefonla ara',
         callSubYes: 'Numarayı çevir',
         callSubNo: 'Numara yok',
-        panelLabel: 'Lead panel',
-        panelSub: 'Tüm lead\'ler',
-        footerDisclosure: 'Bu mail, kullanıcı ROI hesaplayıcı formunu doldurduğunda otomatik gönderilir. AI insight kullanıcı raporu mailinde + PDF kapağında da yer alır.',
+        panelLabel: 'Müşteri paneli',
+        panelSub: 'Tüm talepler',
+        footerDisclosure:
+          'ROI hesaplayıcı formu gönderildiğinde otomatik gelir. Rakamlar, ziyaretçinin girdiği değerlerden sunucuda hesaplanan tahminlerdir; aynı özet ziyaretçinin raporunda da yer alır.',
       }
     : {
-        subjectTemplate: '[Lead] ${restaurantName} · ${netGain}/yr',
-        preheaderPrefix: '${restaurantName} ran an ROI estimate: ${netGain}/yr.',
-        alertEyebrow: 'NEW ROI LEAD',
-        statusPill: 'Reply within 24h',
-        netGainEyebrow: 'ANNUAL NET GAIN',
-        scenarioH2: 'Scenario',
+        subjectTemplate: '[Lead] ${restaurantName} · ROI estimate',
+        preheaderPrefix: '${restaurantName} used the ROI calculator.',
+        alertEyebrow: 'NEW ROI REQUEST',
+        statusPill: 'Reply within 1 business day',
+        netGainEyebrow: 'ESTIMATED TIME SAVED',
+        scenarioH2: 'Values entered',
         quickEyebrow: 'QUICK ACTION',
         replyLabel: 'Reply',
         replySub: 'Send email',
         callLabel: 'Call',
         callSubYes: 'Dial number',
         callSubNo: 'No number',
-        panelLabel: 'Lead panel',
-        panelSub: 'All leads',
-        footerDisclosure: 'This message is sent automatically when a user submits the ROI calculator form. The same AI insight appears in the customer report mail + PDF cover.',
+        panelLabel: 'Customer panel',
+        panelSub: 'All requests',
+        footerDisclosure:
+          'Sent automatically when someone submits the ROI calculator form. The figures are estimates computed on the server from the visitor’s values; the same summary is in their report.',
       };
 
   const merged = await loadMailCopy('roi-admin-notification', locale, inlineDefault);
-  const netGainStr = c + fmt(Math.round(params.netGain));
+  // `netGain` / `roiMultiple` stay available for admin-edited copy written for
+  // the old model (see roi-customer-report.ts).
   const vars = {
     restaurantName: params.restaurantName,
-    netGain: netGainStr,
-    roiMultiple: params.roiMultiple.toFixed(1),
+    netGain:
+      est.yearlyDifferenceUsd !== null
+        ? formatUsd(est.yearlyDifferenceUsd, { signed: true })
+        : formatUsd(est.timeValueUsd * 12),
+    roiMultiple:
+      est.planMonthlyUsd && est.planMonthlyUsd > 0 ? (est.timeValueUsd / est.planMonthlyUsd).toFixed(1) : '—',
     sectorLabel,
     planLabel,
   };
@@ -151,26 +174,31 @@ export async function renderRoiAdminNotification(
 
   const subject = copyText.subjectTemplate;
 
-  const summarySafe = escapeHtml(params.aiSummary);
-  const highlightSafe = escapeHtml(params.aiHighlight);
-
   const insightSourceLabel = isTr
     ? params.aiSource === 'ai'
-      ? 'AI ANALİZİ'
-      : 'OTOMATIK ÖZET'
+      ? 'YAPAY ZEKÂ ÖZETİ'
+      : 'OTOMATİK ÖZET'
     : params.aiSource === 'ai'
-      ? 'AI ANALYSIS'
+      ? 'AI SUMMARY'
       : 'AUTO SUMMARY';
 
-  const previewSummary = params.aiSummary
-    .slice(0, 110)
-    .replace(/\s+/g, ' ')
-    .trim();
+  const previewSummary = params.aiSummary.slice(0, 110).replace(/\s+/g, ' ').trim();
   const preheader = `${copyText.preheaderPrefix} ${previewSummary}…`;
 
+  const hoursLine = isTr ? `${hours(est.hoursSaved)} saat / ay` : `${hours(est.hoursSaved)} h / month`;
+  const valueParts = [
+    isTr
+      ? `Tahmini değeri ${formatUsd(est.timeValueUsd)} / ay`
+      : `Estimated value ${formatUsd(est.timeValueUsd)} / month`,
+    hasPlan ? `${isTr ? 'Plan' : 'Plan'} ${formatUsd(est.planMonthlyUsd!)} / ${isTr ? 'ay' : 'month'}` : null,
+    hasPlan
+      ? `${isTr ? 'Fark' : 'Difference'} ${formatUsd(est.monthlyDifferenceUsd!, { signed: true })} / ${isTr ? 'ay' : 'month'}`
+      : null,
+  ].filter((part): part is string => part !== null);
+  const valueLine = valueParts.join(' · ');
+
   // ─── HEAD: dark alert bar (timestamp + status pill) ────────────────────
-  // Inner row stacks on phones (pill under the timestamp) — side by side the
-  // eyebrow wrapped to two lines at 320px.
+  // Inner row stacks on phones (pill under the timestamp).
   const alertBar = `
     <div style="background:${PULSE.graphite};border-radius:14px;padding:16px 18px;">
       <table role="presentation" class="stack-row" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -192,9 +220,7 @@ export async function renderRoiAdminNotification(
     </div>
   `;
 
-  // ─── HERO: business + email + ROI big number ───────────────────────────
-  // Email / phone sit on their own lines (the old inline "· phone" dangled on
-  // a third line on phones).
+  // ─── HERO: business + email + time saved ───────────────────────────────
   const hero = `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr>
@@ -212,95 +238,104 @@ export async function renderRoiAdminNotification(
     ${spacer(20)}
     <div class="bz-roi-card" style="background:${PULSE.limeSoft};border:1px solid ${ROI_LIME_LINE_ON_SOFT};border-radius:14px;padding:20px 22px;">
       ${renderEyebrow(copy.netGainEyebrow, PULSE.graphite)}
-      ${renderRoiBigNumber(`${c}${fmt(Math.max(0, Math.round(params.netGain)))}`, { color: PULSE.graphite, size: 36, mt: 8 })}
+      ${renderRoiBigNumber(hoursLine, { color: PULSE.graphite, size: 36, mt: 8 })}
       <div style="margin-top:10px;font-family:${FONTS.body};font-size:13px;line-height:1.6;color:${PULSE.n800};">
-        12 ${isTr ? 'ayda' : 'mo'} ${params.roiMultiple.toFixed(1)}× ROI${params.paybackMonths ? ` · ${isTr ? 'amorti' : 'payback'} ~${params.paybackMonths} ${isTr ? 'ay' : 'mo'}` : ''} · ${c}${fmt(Math.round(params.monthlyUplift))}/${isTr ? 'ay' : 'mo'} ${isTr ? 'ek gelir' : 'uplift'}
+        ${escapeHtml(valueLine)}
       </div>
     </div>
   `;
 
   // ─── KPI tiles (2×2, equal heights) ────────────────────────────────────
   const kpiRow = renderRoiKpiGrid([
-    { value: `+${fmt(params.reviewers)}`, label: isTr ? 'Yorum / ay' : 'Reviews / mo' },
-    { value: fmt(params.filteredLowReviews), label: isTr ? 'Filtrelenen' : 'Filtered', accent: true },
-    { value: params.projectedGoogle.toFixed(1), label: isTr ? 'Yeni\u00A0★' : 'New\u00A0★' },
-    { value: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, label: isTr ? 'AI tasarruf' : 'AI saved' },
+    { value: fmt(est.ratingsPerMonth), label: isTr ? 'Tahmini puan / ay' : 'Est. ratings / mo' },
+    { value: fmt(est.repliesPerMonth), label: isTr ? 'Yanıt / ay' : 'Replies / mo' },
+    { value: `${hours(est.hoursManual)} ${isTr ? 'sa' : 'h'}`, label: isTr ? 'Elle yanıt / ay' : 'By hand / mo' },
+    {
+      value: `${hours(est.hoursWithDrafts)} ${isTr ? 'sa' : 'h'}`,
+      label: isTr ? 'Taslakla / ay' : 'With drafts / mo',
+      accent: true,
+    },
   ]);
 
-  // ─── AI INSIGHT card (graphite bg + lime accent) ───────────────────────
-  // Priority actions section yalnız aiNextSteps doluyken render edilir;
-  // boş array'de orphan başlık görünmez.
+  // ─── Summary card (graphite bg + lime accent) ──────────────────────────
+  // The suggestions section renders only when there are suggestions.
   const prioritySection =
     params.aiNextSteps.length > 0
       ? `
       <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${ROI_ON_DARK_DIVIDER};">
-        <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:${ROI_ON_DARK_55};margin-bottom:14px;">${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:${ROI_ON_DARK_55};margin-bottom:14px;">${isTr ? 'ÖNERİLER' : 'SUGGESTIONS'}</div>
         ${renderRoiSteps(params.aiNextSteps, { dark: true })}
       </div>`
       : '';
-  const aiInsightCard = `
+  const insightCard = `
     <div class="bz-roi-card" style="background:${PULSE.graphite};border-radius:16px;padding:24px;color:${PULSE.pure};">
       ${renderEyebrow(insightSourceLabel, PULSE.lime)}
-      <div style="margin-top:10px;font-family:${FONTS.body};font-size:14px;line-height:1.7;color:${ROI_ON_DARK_90};">${summarySafe}</div>
+      <div style="margin-top:10px;font-family:${FONTS.body};font-size:14px;line-height:1.7;color:${ROI_ON_DARK_90};">${escapeHtml(params.aiSummary)}</div>
       <div style="margin-top:16px;padding:14px 16px;background:#212612;border-left:3px solid ${PULSE.lime};border-radius:8px;">
-        <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:${PULSE.lime};margin-bottom:6px;">${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}</div>
-        <div style="font-family:${FONTS.body};font-size:13.5px;line-height:1.6;color:${PULSE.pure};">${highlightSafe}</div>
+        <div style="font-family:${FONTS.label};font-size:10px;line-height:1.4;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:${PULSE.lime};margin-bottom:6px;">${isTr ? 'ÖNE ÇIKAN NOKTA' : 'KEY POINT'}</div>
+        <div style="font-family:${FONTS.body};font-size:13.5px;line-height:1.6;color:${PULSE.pure};">${escapeHtml(params.aiHighlight)}</div>
       </div>
       ${prioritySection}
     </div>
   `;
 
-  // ─── Scenario list ─────────────────────────────────────────────────────
-  // Label left (sentence case — uppercase labels wrapped to two lines and left
-  // orphan "★" at 375px), value right-aligned. The rounded border lives on a
-  // wrapper div: border-radius + overflow on a collapsed-border table never
-  // clipped the label column.
-  // table-layout:fixed + explicit 54/46 split: the label column gets enough room
-  // for "Mevcut Google ★" / "Monthly customers" on a 320px phone and the value
-  // column cannot be squeezed to nothing by a long unbreakable value. Labels are
-  // trusted constants (HTML); the "★" is glued to its word with U+00A0 / a
-  // nowrap span so it never dangles alone on a second line.
-  const nb = (t: string) => `<span style="white-space:nowrap;">${t}</span>`;
-  const scenarioRow = (labelHtml: string, valueHtml: string, opts: { accent?: boolean; last?: boolean } = {}) => `
+  // ─── Values the visitor entered ────────────────────────────────────────
+  // Label left (sentence case), value right. table-layout:fixed + 54/46 split
+  // so a long value can never squeeze the label column to nothing at 320px.
+  const scenarioRow = (label: string, value: string, opts: { accent?: boolean; last?: boolean } = {}) => `
     <tr>
-      <td valign="top" width="54%" style="width:54%;padding:12px 4px 12px 12px;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:12.5px;line-height:1.5;color:${opts.accent ? PULSE.graphite : PULSE.n500};">${labelHtml}</td>
-      <td valign="top" align="right" width="46%" style="width:46%;padding:12px 12px 12px 4px;text-align:right;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:13.5px;line-height:1.5;color:${PULSE.graphite};font-weight:${opts.accent ? 600 : 500};">${valueHtml}</td>
+      <td valign="top" width="54%" style="width:54%;padding:12px 4px 12px 12px;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:12.5px;line-height:1.5;color:${opts.accent ? PULSE.graphite : PULSE.n500};">${escapeHtml(label)}</td>
+      <td valign="top" align="right" width="46%" style="width:46%;padding:12px 12px 12px 4px;text-align:right;${opts.last ? '' : `border-bottom:1px solid ${PULSE.n200};`}${opts.accent ? `background:${PULSE.limeSoft};` : ''}font-family:${FONTS.body};font-size:13.5px;line-height:1.5;color:${PULSE.graphite};font-weight:${opts.accent ? 600 : 500};">${escapeHtml(value)}</td>
     </tr>
   `;
-  // Plan value: plan name over its (unbreakable) price. Two deliberate lines on
-  // every width — a single "Growth · $899/mo" line wrapped to a dangling "·" on
-  // phones.
-  const planValue = `${escapeHtml(planLabel)}<br><span style="font-weight:400;font-size:12.5px;color:${PULSE.n500};white-space:nowrap;">${escapeHtml(`${c}${fmt(params.planPrice)}/${isTr ? 'ay' : 'mo'}`)}</span>`;
+  const minutes = (n: number) => (isTr ? `${n} dk` : `${n} min`);
+  const planValue = hasPlan
+    ? `${planName ? `${planName} · ` : ''}${formatUsd(est.planMonthlyUsd!)} / ${isTr ? 'ay' : 'mo'}`
+    : isTr
+      ? 'Seçilmedi'
+      : 'Not selected';
+  const rows: { label: string; value: string }[] = [
+    { label: isTr ? 'İşletme türü' : 'Type of business', value: sectorLabel },
+    { label: isTr ? 'Aylık müşteri' : 'Customers / month', value: fmt(inputs.monthlyCustomers) },
+    { label: isTr ? 'Puan veren müşteri oranı' : 'Share who rate', value: pct(inputs.ratingRatePct) },
+    { label: isTr ? 'Yanıt yazılan oran' : 'Share replied to', value: pct(inputs.replySharePct) },
+    { label: isTr ? 'Elle yanıt süresi' : 'Reply time by hand', value: minutes(inputs.minutesManual) },
+    { label: isTr ? 'Taslakla yanıt süresi' : 'Reply time with draft', value: minutes(inputs.minutesWithDraft) },
+    { label: isTr ? 'Saatlik maliyet' : 'Hourly cost', value: formatUsd(inputs.hourlyCostUsd) },
+    { label: isTr ? 'Plan' : 'Plan', value: planValue },
+  ];
+  const lastRow = hasPlan
+    ? {
+        label: isTr ? 'Tahmini aylık fark' : 'Est. monthly difference',
+        value: formatUsd(est.monthlyDifferenceUsd!, { signed: true }),
+      }
+    : {
+        label: isTr ? 'Tasarrufun tahmini değeri' : 'Est. value of time saved',
+        value: `${formatUsd(est.timeValueUsd)} / ${isTr ? 'ay' : 'mo'}`,
+      };
   const scenarioTable = `
     <h2 style="margin:0 0 12px;font-family:${FONTS.heading};font-size:18px;line-height:1.3;letter-spacing:-0.01em;color:${PULSE.graphite};font-weight:600;">${copy.scenarioH2}</h2>
     <div style="border:1px solid ${PULSE.n200};border-radius:12px;overflow:hidden;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;table-layout:fixed;">
-        ${scenarioRow(isTr ? 'Sektör' : 'Sector', escapeHtml(sectorLabel))}
-        ${scenarioRow(isTr ? 'Aylık müşteri' : 'Monthly customers', escapeHtml(fmt(params.monthlyCustomers)))}
-        ${scenarioRow(isTr ? 'Ortalama hesap' : 'Avg ticket', escapeHtml(`${c}${fmt(params.avgTicket)}`))}
-        ${scenarioRow(isTr ? 'Mevcut Google\u00A0★' : 'Current Google\u00A0★', escapeHtml(params.currentGoogle.toFixed(1)))}
-        ${scenarioRow(isTr ? `Aylık ${nb('1-3★')} yorum` : `${nb('1-3★')} reviews/mo`, escapeHtml(fmt(params.lowRatingsPerMonth)))}
-        ${scenarioRow(isTr ? 'Aktif platformlar' : 'Active platforms', escapeHtml(platformLabels || '—'))}
-        ${scenarioRow(isTr ? 'Buaze planı' : 'Buaze plan', planValue)}
-        ${scenarioRow(isTr ? 'Yıllık ek gelir' : 'Yearly uplift', escapeHtml(`${c}${fmt(Math.round(params.yearlyUplift))}`), { accent: true, last: true })}
+        ${rows.map((row) => scenarioRow(row.label, row.value)).join('')}
+        ${scenarioRow(lastRow.label, lastRow.value, { accent: true, last: true })}
       </table>
     </div>
   `;
 
   // ─── Quick action 3-grid (Reply / Call / Panel) ────────────────────────
-  // tel: ve mailto: URL attribute'larında HTML-escape'li değer KULLANILMAZ —
-  // & -> &amp; dönüşümü URL'i bozar. Raw email + raw phone (ASCII filter).
+  // tel: / mailto: attributes take the RAW values (HTML-escaping would turn
+  // & into &amp; and break the URL); the phone is ASCII-filtered.
   const rawPhone = params.phone ? params.phone.replace(/[^+0-9]/g, '') : '';
   const callHref = rawPhone ? `tel:${rawPhone}` : '';
-  // §38.197 — env-aware admin panel fallback. Hardcoded canonical
-  // staging/preview deploy'larında yanlış host'a yönlendirir.
+  // §38.197 — env-aware admin panel fallback.
   const adminAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const panelHref = params.panelUrl || `${adminAppUrl}/admin/customers`;
   const replyHref = `mailto:${encodeURI(params.email)}?subject=${encodeURIComponent(
     isTr ? `Buaze ROI hesabınız hakkında — ${params.restaurantName}` : `About your Buaze ROI estimate — ${params.restaurantName}`,
   )}`;
 
-  // No phone → a muted, non-clickable tile (the old tile linked to "#").
+  // No phone → a muted, non-clickable tile.
   const quickAction = (label: string, sub: string, href: string, tone: 'dark' | 'light' | 'muted') => {
     const bg = tone === 'dark' ? PULSE.graphite : tone === 'muted' ? PULSE.n100 : PULSE.n50;
     const border = tone === 'dark' ? PULSE.graphite : PULSE.n200;
@@ -321,17 +356,13 @@ export async function renderRoiAdminNotification(
     ${spacer(8)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="stack-row">
       <tr>
-        ${quickAction(copy.replyLabel, copy.replySub, replyHref, 'dark')}
-        ${quickAction(copy.callLabel, phoneSafe ? copy.callSubYes : copy.callSubNo, callHref, phoneSafe ? 'light' : 'muted')}
-        ${quickAction(copy.panelLabel, copy.panelSub, panelHref, 'light')}
+        ${quickAction(copyText.replyLabel, copyText.replySub, replyHref, 'dark')}
+        ${quickAction(copyText.callLabel, phoneSafe ? copyText.callSubYes : copyText.callSubNo, callHref, phoneSafe ? 'light' : 'muted')}
+        ${quickAction(copyText.panelLabel, copyText.panelSub, panelHref, 'light')}
       </tr>
     </table>
   `;
 
-  // Outer chrome — `bz-pad` wrapper aligns the lead alert with the rest of
-  // the Pulse template family (low-rating-alert / contact-admin / …):
-  // 36px/40px desktop padding, 28px/22px mobile via the @media rule in
-  // layout.ts.
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
@@ -342,7 +373,7 @@ export async function renderRoiAdminNotification(
           ${spacer(20)}
           ${kpiRow}
           ${spacer(22)}
-          ${aiInsightCard}
+          ${insightCard}
           ${spacer(28)}
           ${scenarioTable}
           ${spacer(24)}
@@ -354,43 +385,44 @@ export async function renderRoiAdminNotification(
     </table>
   `;
 
-  // ─── Plain text fallback ───────────────────────────────────────────────
+  // ─── Plain text ────────────────────────────────────────────────────────
   const text = [
-    isTr ? 'YENİ ROI LEAD\'İ' : 'NEW ROI LEAD',
-    `${timestamp}`,
+    copyText.alertEyebrow,
+    timestamp,
     '',
     `${params.restaurantName} (${sectorLabel} · ${planLabel})`,
-    `${params.email}${phoneSafe ? ` · ${phoneSafe}` : ''}`,
+    `${params.email}${params.phone ? ` · ${params.phone}` : ''}`,
     '',
-    `${isTr ? 'YILLIK NET KAZANÇ' : 'ANNUAL NET GAIN'}: ${c}${fmt(Math.max(0, Math.round(params.netGain)))} (${params.roiMultiple.toFixed(1)}× ROI)${params.paybackMonths ? ` · ${isTr ? 'amorti' : 'payback'} ~${params.paybackMonths} ${isTr ? 'ay' : 'mo'}` : ''}`,
-    `${isTr ? 'AYLIK EK GELİR' : 'MONTHLY UPLIFT'}: ${c}${fmt(Math.round(params.monthlyUplift))}`,
+    `${copyText.netGainEyebrow}: ${hoursLine}`,
+    valueLine,
     '',
     `— ${insightSourceLabel} —`,
     params.aiSummary,
     '',
-    `${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}: ${params.aiHighlight}`,
+    `${isTr ? 'ÖNE ÇIKAN NOKTA' : 'KEY POINT'}: ${params.aiHighlight}`,
     '',
-    `${isTr ? 'ÖNCELİK AKSİYONLAR' : 'PRIORITY ACTIONS'}:`,
-    ...params.aiNextSteps.map((s, i) => `${i + 1}. ${s}`),
+    ...(params.aiNextSteps.length > 0
+      ? [`${isTr ? 'ÖNERİLER' : 'SUGGESTIONS'}:`, ...params.aiNextSteps.map((s, i) => `${i + 1}. ${s}`), '']
+      : []),
+    `— ${copyText.scenarioH2} —`,
+    ...rows.map((row) => `${row.label}: ${row.value}`),
+    `${lastRow.label}: ${lastRow.value}`,
     '',
-    `— ${isTr ? 'SENARYO' : 'SCENARIO'} —`,
-    `${isTr ? 'Aylık müşteri' : 'Monthly customers'}: ${fmt(params.monthlyCustomers)}`,
-    `${isTr ? 'Ortalama hesap' : 'Avg ticket'}: ${c}${fmt(params.avgTicket)}`,
-    `${isTr ? 'Mevcut Google ★' : 'Current Google ★'}: ${params.currentGoogle.toFixed(1)} → ${params.projectedGoogle.toFixed(1)}`,
-    `${isTr ? '1-3★ yorum' : 'Low reviews'}: ${fmt(params.lowRatingsPerMonth)} → ${fmt(params.filteredLowReviews)} ${isTr ? 'filtrelendi' : 'filtered'}`,
-    `${isTr ? 'Platform' : 'Platforms'}: ${platformLabels || '—'}`,
-    `${isTr ? 'Plan' : 'Plan'}: ${planLabel} (${c}${fmt(params.planPrice)}/${isTr ? 'ay' : 'mo'})`,
+    `${copyText.replyLabel}: ${replyHref}`,
+    `${copyText.panelLabel}: ${panelHref}`,
     '',
-    isTr ? `Yanıt yaz: ${replyHref}` : `Reply: ${replyHref}`,
-    isTr ? `Lead panel: ${panelHref}` : `Lead panel: ${panelHref}`,
-  ].join('\n');
+    copyText.footerDisclosure,
+  ]
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
   const html = pulseLayout({
     subject,
     preheader,
     content,
-    eyebrow: isTr ? 'BUAZE LEAD INBOX' : 'BUAZE LEAD INBOX',
-    footer: { locale: isTr ? 'tr' : 'en' },
+    eyebrow: 'BUAZE LEAD INBOX',
+    footer: { locale: lang },
   });
 
   return { subject, html, text };

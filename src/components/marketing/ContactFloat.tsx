@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { useMarketingAuth } from '@/hooks/useMarketingAuth';
+import { SUPPORT_HOURS } from '@/lib/company-constants';
 
 const MIN_FILL_MS = 2500;
 const BUBBLE_TEASER_DELAY_MS = 6000;
@@ -300,10 +301,10 @@ export function ContactFloat({ locale }: { locale: string }) {
               </span>
               <span className="block">
                 <span className="block text-[13px] font-semibold text-[#0A0A0A]">
-                  {isTr ? 'Merhaba! 👋' : 'Hi there! 👋'}
+                  {isTr ? 'Sorunuz mu var?' : 'Have a question?'}
                 </span>
                 <span className="mt-0.5 block text-[12.5px] leading-[1.45] text-[#525252]">
-                  {isTr ? 'Sorunuz mu var? Buradan yazabilirsiniz.' : 'Have a question? Drop us a line.'}
+                  {isTr ? 'Bize buradan yazabilirsiniz.' : 'You can write to us here.'}
                 </span>
               </span>
             </button>
@@ -395,14 +396,14 @@ export function ContactFloat({ locale }: { locale: string }) {
 
   const quickReplies = isTr
     ? [
-        { label: 'Demo nasıl alınır?', autofill: 'Demo almak istiyorum.' },
-        { label: 'Fiyatlar?', autofill: 'Fiyatlar hakkında bilgi alabilir miyim?' },
-        { label: 'Google entegrasyonu?', autofill: 'Google entegrasyonu nasıl çalışıyor?' },
+        { label: 'Demo talebi', autofill: 'Buaze için bir demo görüşmesi rica ediyorum.' },
+        { label: 'Fiyatlandırma', autofill: 'Fiyatlandırma hakkında bilgi alabilir miyim?' },
+        { label: 'Google yorum bağlantısı', autofill: 'Google yorum bağlantısı nasıl çalışıyor?' },
       ]
     : [
-        { label: 'How do I book a demo?', autofill: 'I would like to book a demo.' },
-        { label: 'Pricing?', autofill: 'Could you share pricing info?' },
-        { label: 'Google integration?', autofill: 'How does the Google integration work?' },
+        { label: 'Request a demo', autofill: 'I would like to book a demo of Buaze.' },
+        { label: 'Pricing', autofill: 'Could you share information about pricing?' },
+        { label: 'Google review link', autofill: 'How does the Google review link work?' },
       ];
 
   // Stage 79 §38.157 — Desktop overflow fix: flex column layout
@@ -551,16 +552,9 @@ export function ContactFloat({ locale }: { locale: string }) {
 
         {/* Async messaging hint — "Genelde 1 iş günü içinde dönüş"
             (Stage 51 §38.132 paterni reuse, Buaze patterned). */}
-        <div
-          className="relative mt-2 pulse-eyebrow"
-          style={{
-            color: 'rgba(255,255,255,0.45)',
-            fontSize: 10,
-            letterSpacing: '0.08em',
-          }}
-        >
-          {isTr ? 'GENELDE 1 İŞ GÜNÜ İÇİNDE DÖNÜŞ' : 'TYPICALLY REPLIES IN 1 BUSINESS DAY'}
-        </div>
+        <p className="relative mt-2 text-[12px] leading-[1.45] text-white/70">
+          {isTr ? SUPPORT_HOURS.tr : SUPPORT_HOURS.en}
+        </p>
       </div>
 
       {/* BODY — chat-style initial message + form. Stage 79 §38.157 —
@@ -590,8 +584,8 @@ export function ContactFloat({ locale }: { locale: string }) {
             </p>
             <p className="mt-1 text-[12.5px] leading-[1.5] text-[#525252]">
               {isTr
-                ? 'Mesajınız bize ulaştı. Ekibimiz en kısa sürede dönüş yapacak.'
-                : 'Your message has reached us. Our team will get back to you shortly.'}
+                ? 'Mesajınızı aldık; e-postayla yanıt vereceğiz.'
+                : "We've received your message and will reply by e-mail."}
             </p>
             <button
               type="button"
@@ -611,8 +605,8 @@ export function ContactFloat({ locale }: { locale: string }) {
                 style={{ borderTopLeftRadius: 4 }}
               >
                 {isTr
-                  ? 'Sorunuz mu var? Mesajınızı yazın, ekibimiz en kısa sürede dönüş yapsın.'
-                  : "Got a question? Drop us a note and we'll get back to you shortly."}
+                  ? 'Sorunuzu yazın, size e-postayla yanıt verelim.'
+                  : "Send us your question and we'll reply by e-mail."}
               </div>
             </div>
 
@@ -623,7 +617,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                 className="pulse-eyebrow mb-2.5 text-[#A3A3A3]"
                 style={{ fontSize: 9.5, letterSpacing: '0.1em' }}
               >
-                {isTr ? 'HIZLI YANITLAR' : 'QUICK REPLIES'}
+                {isTr ? 'Hazır sorular' : 'Suggested questions'}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {quickReplies.map((q, i) => (
@@ -852,7 +846,7 @@ export function ContactFloat({ locale }: { locale: string }) {
               letterSpacing: '0.04em',
             }}
           >
-            {isTr ? 'KVKK uyumlu, şifreli kanal' : 'Encrypted, GDPR compliant'}
+            {isTr ? 'Şifreli bağlantı (HTTPS)' : 'Encrypted connection (HTTPS)'}
           </span>
         </div>
         <div className="inline-flex items-center gap-1">

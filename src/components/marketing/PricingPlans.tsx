@@ -7,267 +7,291 @@ import type { PublicPlan } from '@/lib/subscription-plans';
 
 interface Props {
   locale: 'tr' | 'en';
-  monthlyCta: string;
-  yearlyCta: string;
-  monthlyPeriod: string;
   plans: PublicPlan[];
 }
 
 type Billing = 'monthly' | 'yearly';
 
+const COPY = {
+  tr: {
+    heading: 'Plan seçenekleri',
+    billingLabel: 'Ödeme dönemi',
+    monthly: 'Aylık',
+    yearly: 'Yıllık',
+    perMonth: '/ay',
+    free: 'Ücretsiz',
+    recommended: 'ÖNERİLEN',
+    trial: '14 gün ücretsiz deneyin',
+    subscribe: 'Kartla abone olun',
+    yearlyContact: 'Yıllık ödeme için bize yazın',
+    contactFallback: 'Bize yazın',
+    flatBadge: (n: number) => `%${n} indirim`,
+    upToBadge: (n: number) => `En fazla %${n} indirim`,
+    listPrice: 'Liste fiyatı',
+    yearlyTotal: (v: string) => `Yıllık toplam ${v}`,
+    yearlySaving: (n: number) => `aylık ödemeye göre %${n} daha az`,
+  },
+  en: {
+    heading: 'Plan options',
+    billingLabel: 'Billing period',
+    monthly: 'Monthly',
+    yearly: 'Yearly',
+    perMonth: '/mo',
+    free: 'Free',
+    recommended: 'RECOMMENDED',
+    trial: 'Start 14-day free trial',
+    subscribe: 'Subscribe by card',
+    yearlyContact: 'Contact us for yearly billing',
+    contactFallback: 'Contact us',
+    flatBadge: (n: number) => `${n}% off`,
+    upToBadge: (n: number) => `Up to ${n}% off`,
+    listPrice: 'List price',
+    yearlyTotal: (v: string) => `${v} billed per year`,
+    yearlySaving: (n: number) => `${n}% less than paying monthly`,
+  },
+} as const;
+
+/** Monthly price the customer pays today (admin discount applied). */
+function effectiveMonthly(p: PublicPlan): number {
+  return p.discount.active && p.discount.discountedMonthly < p.priceMonthly
+    ? p.discount.discountedMonthly
+    : p.priceMonthly;
+}
+
 /**
- * Pricing card grid — DB-driven plans (admin/plans). Monthly/yearly pill
- * toggle keeps a built-in 20% annual off; admin-defined per-plan discount
- * applies on top of monthly (yearly already includes the toggle's 20%).
+ * Yearly saving in percent versus paying the effective monthly price for 12
+ * months, computed from the plan data (the admin may set a custom yearly
+ * price, so a hard-coded "20%" could be wrong). 0 = no saving.
  */
-export default function PricingPlans({
-  locale,
-  monthlyCta,
-  yearlyCta,
-  monthlyPeriod,
-  plans,
-}: Props) {
-  const isTr = locale === 'tr';
+function yearlySavingPct(p: PublicPlan): number {
+  const monthly = effectiveMonthly(p);
+  if (monthly <= 0 || p.priceYearlyTotal <= 0) return 0;
+  const pct = Math.round((1 - p.priceYearlyTotal / (monthly * 12)) * 100);
+  return pct > 0 && pct < 100 ? pct : 0;
+}
+
+/** True when the admin-configured button points at sign-up (the free trial). */
+function isTrialHref(href: string): boolean {
+  return !href || /(^|\/)auth\/register(?:[/?#]|$)/.test(href);
+}
+
+function formatUsd(value: number): string {
+  return `$${value.toLocaleString('en-US')}`;
+}
+
+/**
+ * Pricing cards — plans, prices, descriptions and bullets come from the
+ * SubscriptionPlan table (admin /admin/plans). Prices are USD in both
+ * languages (CLAUDE.md §15.2). Each card keeps the two paths apart:
+ *   • primary  → free trial (sign-up, no card)
+ *   • secondary → monthly card checkout via Dodo Payments, or — on the yearly
+ *     tab, where there is no self-serve checkout — a contact link.
+ */
+export default function PricingPlans({ locale, plans }: Props) {
+  const copy = COPY[locale];
   const base = `/${locale}`;
   const [billing, setBilling] = useState<Billing>('monthly');
 
-  // §38.225 Stage 145 — USD-only fiyatlandırma. Buaze tüm pazarlarda USD.
-  // Locale (tr/en) sadece label/CTA dilini değiştirir, fiyat format'ı sabit.
-  const formatPrice = (value: number) => {
-    if (value === 0) return isTr ? 'Ücretsiz' : 'Free';
-    return `$${value.toLocaleString('en-US')}`;
-  };
+  const savings = plans.map(yearlySavingPct).filter((n) => n > 0);
+  const maxSaving = savings.length > 0 ? Math.max(...savings) : 0;
+  const uniformSaving = savings.length > 0 && savings.every((n) => n === savings[0]);
+  const toggleBadge =
+    maxSaving > 0 ? (uniformSaving ? copy.flatBadge(maxSaving) : copy.upToBadge(maxSaving)) : null;
 
-  if (plans.length === 0) {
-    return (
-      <div className="rounded-3xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
-        <p className="text-[15px] font-medium text-[#525252]">
-          {isTr
-            ? 'Henüz aktif paket bulunmuyor. Yöneticinizle iletişime geçin.'
-            : 'No active plans yet. Please contact your administrator.'}
-        </p>
-      </div>
-    );
-  }
+  const gridCols =
+    plans.length >= 4
+      ? 'sm:grid-cols-2 xl:grid-cols-4'
+      : plans.length === 3
+        ? 'md:grid-cols-2 lg:grid-cols-3'
+        : plans.length === 2
+          ? 'mx-auto max-w-[880px] md:grid-cols-2'
+          : 'mx-auto max-w-[460px]';
+
+  const segment = (active: boolean) =>
+    `inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+      active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:text-[#0A0A0A]'
+    }`;
 
   return (
     <div>
+      <h2 className="sr-only">{copy.heading}</h2>
+
       <div className="mb-10 flex justify-center">
         <div
-          role="tablist"
-          aria-label={isTr ? 'Faturalandırma dönemi' : 'Billing period'}
+          role="group"
+          aria-label={copy.billingLabel}
           className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-[#FAFAFA] p-1"
         >
           <button
             type="button"
-            role="tab"
-            aria-selected={billing === 'monthly'}
+            aria-pressed={billing === 'monthly'}
             onClick={() => setBilling('monthly')}
-            className={`min-h-[40px] rounded-full px-5 py-2 text-[13px] font-semibold transition-all ${
-              billing === 'monthly'
-                ? 'bg-[#0A0A0A] text-white shadow-sm'
-                : 'text-[#525252] hover:text-[#0A0A0A]'
-            }`}
+            className={segment(billing === 'monthly')}
           >
-            {isTr ? 'Aylık' : 'Monthly'}
+            {copy.monthly}
           </button>
           <button
             type="button"
-            role="tab"
-            aria-selected={billing === 'yearly'}
+            aria-pressed={billing === 'yearly'}
             onClick={() => setBilling('yearly')}
-            className={`min-h-[40px] inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-semibold transition-all ${
-              billing === 'yearly'
-                ? 'bg-[#0A0A0A] text-white shadow-sm'
-                : 'text-[#525252] hover:text-[#0A0A0A]'
-            }`}
+            className={segment(billing === 'yearly')}
           >
-            {isTr ? 'Yıllık' : 'Yearly'}
-            <span
-              className={`pulse-eyebrow rounded-full px-2 py-0.5 ${
-                billing === 'yearly' ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
-              }`}
-            >
-              {isTr ? '%20 İNDİRİM' : '20% OFF'}
-            </span>
+            {copy.yearly}
+            {toggleBadge ? (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${
+                  billing === 'yearly' ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
+                }`}
+              >
+                {toggleBadge}
+              </span>
+            ) : null}
           </button>
         </div>
       </div>
 
-      <div
-        className={`grid grid-cols-1 gap-6 lg:gap-8 ${
-          plans.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'
-        }`}
-      >
+      <div className={`grid grid-cols-1 gap-5 lg:gap-6 ${gridCols}`}>
         {plans.map((p) => {
-          const hasDiscount = p.discount.active && p.discount.discountedMonthly < p.priceMonthly;
-          const monthlyShown = hasDiscount ? p.discount.discountedMonthly : p.priceMonthly;
-          const price = billing === 'monthly' ? monthlyShown : p.priceYearly;
-          const isDark = p.isFeatured;
+          const monthly = effectiveMonthly(p);
+          const hasMonthlyDiscount = monthly < p.priceMonthly;
+          const saving = yearlySavingPct(p);
+          const price = billing === 'monthly' ? monthly : p.priceYearly;
+          const dark = p.isFeatured;
+
+          const trialPrimary = isTrialHref(p.buttonHref);
+          const primaryHref = trialPrimary
+            ? `${base}/auth/register`
+            : p.buttonHref.startsWith('http')
+              ? p.buttonHref
+              : `${base}${p.buttonHref.startsWith('/') ? '' : '/'}${p.buttonHref}`;
+          const primaryLabel = trialPrimary ? copy.trial : p.buttonText || copy.contactFallback;
+          const checkoutReady =
+            billing === 'monthly' && p.paymentProvider === 'dodo_payments' && !!p.dodoProductId && monthly > 0;
+
+          const muted = dark ? 'text-white/70' : 'text-[#525252]';
 
           return (
             <article
               key={p.id}
-              className={`flex flex-col rounded-3xl p-8 lg:p-10 ${
-                isDark
-                  ? 'relative z-10 bg-[#0A0A0A] text-white shadow-[0_20px_60px_rgba(10,10,10,0.15)] md:scale-[1.03]'
-                  : 'border border-[#EDEDED] bg-white'
+              aria-labelledby={`plan-${p.id}`}
+              className={`relative flex flex-col rounded-[20px] p-6 sm:p-8 ${
+                dark ? 'bg-[#0A0A0A] text-white' : 'border border-[#EDEDED] bg-white text-[#0A0A0A]'
               }`}
             >
-              {isDark && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="pulse-eyebrow whitespace-nowrap rounded-full bg-[#C6F24E] px-4 py-1.5 text-[#0A0A0A]">
-                    {isTr ? 'EN POPÜLER' : 'MOST POPULAR'}
-                  </span>
-                </div>
-              )}
+              {dark ? (
+                <span className="pulse-eyebrow absolute -top-3 left-6 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[#0A0A0A] sm:left-8">
+                  {copy.recommended}
+                </span>
+              ) : null}
 
-              <div className={`${isDark ? 'pt-2' : ''} mb-6`}>
-                <div className="flex items-start justify-between gap-3">
-                  <h2
-                    className={`text-[22px] font-medium tracking-[-0.02em] ${
-                      isDark ? 'text-white' : 'text-[#0A0A0A]'
-                    }`}
-                  >
-                    {p.name}
-                  </h2>
-                  {hasDiscount && p.discount.label && (
-                    <span
-                      className={`pulse-eyebrow shrink-0 rounded-full px-2.5 py-1 ${
-                        isDark
-                          ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                          : 'bg-[#EAF9B8] text-[#0A0A0A]'
-                      }`}
-                    >
-                      {p.discount.label}
-                    </span>
-                  )}
-                </div>
-                <p className={`mt-2 text-[13px] leading-snug ${isDark ? 'text-white/70' : 'text-[#525252]'}`}>
-                  {p.description}
-                </p>
-              </div>
-
-              <div className={`mb-8 border-b pb-8 ${isDark ? 'border-white/10' : 'border-[#EDEDED]'}`}>
-                <div className="flex items-baseline gap-2">
+              <div className="flex items-start justify-between gap-3">
+                <h3 id={`plan-${p.id}`} className={`text-[24px] leading-[1.15] ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>
+                  {p.name}
+                </h3>
+                {billing === 'monthly' && hasMonthlyDiscount && p.discount.label ? (
                   <span
-                    className={`text-[40px] sm:text-[52px] font-medium leading-none tracking-[-0.03em] ${
-                      isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
-                    }`}
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
-                    {formatPrice(price)}
-                  </span>
-                  <span className={`pulse-eyebrow ${isDark ? 'text-white/60' : 'text-[#737373]'}`}>
-                    {price === 0 ? (isTr ? 'ÜCRETSİZ' : 'FREE') : monthlyPeriod}
-                  </span>
-                </div>
-                {((billing === 'monthly' && hasDiscount) ||
-                  (billing === 'yearly' && p.priceMonthly > 0)) && (
-                  <div
-                    className={`mt-2 flex flex-wrap items-center gap-2 text-[12px] ${
-                      isDark ? 'text-white/60' : 'text-[#525252]'
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-semibold ${
+                      dark ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
                     }`}
                   >
-                    <span className={isDark ? 'text-white/40 line-through' : 'text-[#A3A3A3] line-through'}>
-                      {formatPrice(p.priceMonthly)}
-                      {monthlyPeriod}
+                    {p.discount.label}
+                  </span>
+                ) : null}
+              </div>
+              {p.description ? (
+                <p className={`mt-2 text-[15px] leading-[1.55] ${muted}`}>{p.description}</p>
+              ) : null}
+
+              <div className={`mt-6 border-b pb-6 ${dark ? 'border-white/10' : 'border-[#EDEDED]'}`}>
+                <p className="flex items-baseline gap-1.5">
+                  <span
+                    className={`bz-h-tight text-[44px] leading-none tabular-nums sm:text-[52px] ${
+                      dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+                    }`}
+                  >
+                    {price === 0 ? copy.free : formatUsd(price)}
+                  </span>
+                  {price > 0 ? <span className={`text-[15px] ${muted}`}>{copy.perMonth}</span> : null}
+                </p>
+                {billing === 'monthly' && hasMonthlyDiscount ? (
+                  <p className={`mt-2 text-[13px] ${muted}`}>
+                    {copy.listPrice}:{' '}
+                    <span className="line-through">
+                      {formatUsd(p.priceMonthly)}
+                      {copy.perMonth}
                     </span>
-                    <span>·</span>
-                    {/* CLAUDE.md §15.2 rounding disiplini: yıllık toplam tutar her
-                        zaman `priceYearlyTotal` (kanonik DB değeri veya formula
-                        sonucu), `priceYearly × 12` DEĞİL — rounding error'ı
-                        marketing × 12 ≠ admin'in yazdığı tutar bug'ına yol açar.
-                        §38.225: USD-only. */}
-                    <span>
-                      {billing === 'yearly'
-                        ? isTr
-                          ? `$${p.priceYearlyTotal.toLocaleString('en-US')}/yıl`
-                          : `$${p.priceYearlyTotal.toLocaleString('en-US')}/year`
-                        : isTr
-                          ? `${formatPrice(p.priceMonthly - p.discount.discountedMonthly)} tasarruf`
-                          : `Save ${formatPrice(p.priceMonthly - p.discount.discountedMonthly)}`}
-                    </span>
-                  </div>
-                )}
+                  </p>
+                ) : null}
+                {billing === 'yearly' && p.priceYearlyTotal > 0 ? (
+                  <p className={`mt-2 text-[13px] leading-[1.5] ${muted}`}>
+                    {copy.yearlyTotal(formatUsd(p.priceYearlyTotal))}
+                    {saving > 0 ? ` · ${copy.yearlySaving(saving)}` : ''}
+                  </p>
+                ) : null}
               </div>
 
-              <ul className="mb-8 flex-1 space-y-3">
-                {p.features.map((feat) => (
-                  <li
-                    key={feat}
-                    className={`flex items-start gap-3 text-[14px] font-medium ${
-                      isDark ? 'text-white' : 'text-[#0A0A0A]'
+              {p.features.length > 0 ? (
+                <ul className="mt-6 flex-1 space-y-3">
+                  {p.features.map((feat, i) => (
+                    <li key={`${p.id}-${i}`} className="flex items-start gap-3 text-[15px] leading-[1.5]">
+                      <span
+                        aria-hidden="true"
+                        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                          dark ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
+                        }`}
+                      >
+                        <Check size={12} className="text-[#0A0A0A]" strokeWidth={2.5} />
+                      </span>
+                      <span className={dark ? 'text-white' : 'text-[#0A0A0A]'}>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex-1" />
+              )}
+
+              <div className="mt-8 space-y-3">
+                <Link
+                  href={primaryHref}
+                  rel={trialPrimary ? 'nofollow' : undefined}
+                  className={`flex min-h-[48px] w-full items-center justify-center rounded-full px-6 text-[15px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                    dark
+                      ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E] focus-visible:ring-offset-[#0A0A0A]'
+                      : 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]'
+                  }`}
+                >
+                  {primaryLabel}
+                </Link>
+                {checkoutReady ? (
+                  <a
+                    href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId as string)}`}
+                    rel="nofollow"
+                    className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
+                      dark
+                        ? 'text-white decoration-[#C6F24E] hover:text-[#C6F24E]'
+                        : 'text-[#0A0A0A] decoration-[#C6F24E] hover:decoration-[#0A0A0A]'
                     }`}
                   >
-                    <span
-                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                        isDark ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
-                      }`}
-                    >
-                      <Check size={12} className="text-[#0A0A0A]" strokeWidth={2.5} />
-                    </span>
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-
-              {/* §44 Stage 148 (§38.228) — Dodo checkout wiring.
-                  Eğer plan'in admin tarafından `paymentProvider='dodo_payments'`
-                  + `dodoProductId` set ise CTA Dodo static checkout link'ine
-                  gider (/api/checkout?productId=X — SDK Dodo hosted checkout
-                  sayfasına 302 redirect yapar). Aksi halde mevcut fallback
-                  (`buttonHref`, genelde register/contact). Dodo product ID
-                  yoksa checkout butonu görünmez (plan listede kalır ama "Yakında"
-                  hissi vermez — buttonHref hep dolu, register/contact fallback).
-
-                  CYCLE GUARD: `dodoProductId` tek bir kolon ve MONTHLY ürünü
-                  işaret ediyor — şemada, admin editöründe veya webhook'ta
-                  yıllık varyant YOK. Bu koşul `billing`'i okumadığı sürece
-                  "Yıllık · %20 indirim" sekmesindeki CTA byte-byte aynı URL'i
-                  üretiyordu: ziyaretçi indirimli yıllık fiyatı görüp tıklıyor
-                  ve AYLIK ürüne düşüyordu (yıllık aldığını sanarak aylık
-                  ücretlendiriliyordu). Yıllık modda mevcut `buttonHref`
-                  fallback'ine (register/contact) düşüyoruz; kimse yıllık bir
-                  tekliften aylık ürüne yönlendirilmiyor. Kalıcı çözüm ayrı bir
-                  `dodoProductIdYearly` kolonu + Dodo tarafında yıllık ürün
-                  gerektirir (PR'da açık soru olarak not edildi). */}
-              {p.paymentProvider === 'dodo_payments' &&
-              p.dodoProductId &&
-              billing === 'monthly' ? (
-                <a
-                  href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId)}`}
-                  rel="nofollow"
-                  className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${
-                    isDark
-                      ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                      : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
-                  }`}
-                >
-                  {p.buttonText || (billing === 'monthly' ? monthlyCta : yearlyCta)}
-                </a>
-              ) : (
-                <Link
-                  href={p.buttonHref.startsWith('http') ? p.buttonHref : `${base}${p.buttonHref}`}
-                  className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${
-                    isDark
-                      ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                      : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
-                  }`}
-                >
-                  {p.buttonText || (billing === 'monthly' ? monthlyCta : yearlyCta)}
-                </Link>
-              )}
+                    {copy.subscribe}
+                  </a>
+                ) : null}
+                {billing === 'yearly' && price > 0 ? (
+                  <Link
+                    href={`${base}/contact`}
+                    className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
+                      dark
+                        ? 'text-white decoration-[#C6F24E] hover:text-[#C6F24E]'
+                        : 'text-[#0A0A0A] decoration-[#C6F24E] hover:decoration-[#0A0A0A]'
+                    }`}
+                  >
+                    {copy.yearlyContact}
+                  </Link>
+                ) : null}
+              </div>
             </article>
           );
         })}
       </div>
-
-      <p className="pulse-eyebrow mt-10 text-center text-[#737373]">
-        {isTr
-          ? 'GÜVENLİ ÖDEME · İSTEDİĞİNDE İPTAL · TAAHHÜTSÜZ'
-          : 'SECURE PAYMENT · CANCEL ANYTIME · NO COMMITMENT'}
-      </p>
     </div>
   );
 }

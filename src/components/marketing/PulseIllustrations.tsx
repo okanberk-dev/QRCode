@@ -1,5 +1,6 @@
-// Pulse metaphor illustrations — reviewtrackers-style SVGs ported from the
-// Claude Design "Pulse" handoff bundle. Used on the marketing homepage.
+// Pulse metaphor illustrations — decorative SVGs (aria-hidden, no claims in
+// their text) ported from the Claude Design "Pulse" handoff bundle. Used on
+// the about, features, how-it-works and solutions pages.
 
 interface IllusProps {
   size?: number;
@@ -130,11 +131,13 @@ export function IllusInbox({ size = 220, className }: IllusProps) {
       {/* Floating bubbles */}
       <g>
         <path d="M170 6 Q170 0 176 0 L220 0 Q226 0 226 6 L226 22 Q226 28 220 28 L195 28 L189 36 L189 28 L176 28 Q170 28 170 22 Z" fill="#0A0A0A" />
-        <text x="198" y="19" textAnchor="middle" fontFamily="Inter" fontSize="11" fill="#C6F24E" fontWeight="600">★★★★★</text>
+        {[182, 190, 198, 206, 214].map((cx) => (
+          <circle key={cx} cx={cx} cy="14" r="2.4" fill="#C6F24E" />
+        ))}
       </g>
       <g>
         <path d="M6 180 Q6 174 12 174 L56 174 Q62 174 62 180 L62 196 Q62 202 56 202 L31 202 L25 210 L25 202 L12 202 Q6 202 6 196 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
-        <text x="34" y="193" textAnchor="middle" fontFamily="Inter" fontSize="11" fill="#0A0A0A" fontWeight="700">★ 5</text>
+        <rect x="18" y="185" width="32" height="5" rx="2.5" fill="#0A0A0A" />
       </g>
       {/* Stand */}
       <rect x="110" y="180" width="40" height="10" fill="#0A0A0A" />
@@ -158,7 +161,7 @@ export function IllusChart({ size = 220, className }: IllusProps) {
       <circle cx="150" cy="60" r="10" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
       <path d="M150 60 L220 30 L255 30" fill="none" stroke="#0A0A0A" strokeWidth="1.5" />
       <rect x="200" y="5" width="60" height="24" rx="12" fill="#0A0A0A" />
-      <text x="230" y="21" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="10" fill="#C6F24E" fontWeight="600">★ 5</text>
+      <rect x="214" y="15" width="32" height="5" rx="2.5" fill="#C6F24E" />
       <rect x="30" y="30" width="90" height="10" rx="5" fill="#0A0A0A" />
       <rect x="30" y="44" width="60" height="6" rx="3" fill="#EDEDED" />
       <circle cx="230" cy="170" r="12" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
@@ -177,8 +180,12 @@ export function IllusShield({ size = 220, className }: IllusProps) {
       <circle cx="65" cy="165" r="3" fill="#0A0A0A" />
       <circle cx="100" cy="175" r="3" fill="#0A0A0A" />
       <circle cx="135" cy="165" r="3" fill="#0A0A0A" />
-      <rect x="55" y="45" width="90" height="14" rx="3" fill="#0A0A0A" />
-      <text x="100" y="56" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="9" fill="#C6F24E" fontWeight="600" letterSpacing="0.08em">GOOGLE SAFE</text>
+      {/* Plain decorative band — no wording: a "Google" seal would read as an
+          endorsement that does not exist (spec D2). */}
+      <rect x="70" y="45" width="60" height="10" rx="5" fill="#0A0A0A" />
+      <circle cx="88" cy="50" r="2" fill="#C6F24E" />
+      <circle cx="100" cy="50" r="2" fill="#C6F24E" />
+      <circle cx="112" cy="50" r="2" fill="#C6F24E" />
     </svg>
   );
 }

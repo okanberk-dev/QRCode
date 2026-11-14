@@ -47,6 +47,9 @@ export default function LegalDocumentPage({
         <MarketingNavbar locale={locale} t={t} />
       </div>
 
+      {/* The title is inside <main id="main-content"> so the skip link lands
+          on it and no content sits outside a landmark. */}
+      <main id="main-content" className="flex-1">
       {/* Hero — sade, breadcrumb + eyebrow + title + meta. Eski grid pattern
           kaldırıldı; yerine ince alt-border + N50 yumuşak alt-band kontrast. */}
       <section className="relative px-5 sm:px-10 pt-10 sm:pt-14 pb-10 border-b border-[#EDEDED] bg-[#FAFAFA]">
@@ -71,7 +74,7 @@ export default function LegalDocumentPage({
         </div>
       </section>
 
-      <main className="flex-1 px-5 sm:px-10 py-10 sm:py-14">
+      <div className="px-5 sm:px-10 py-10 sm:py-14">
         <div className="mx-auto max-w-[1100px] grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-10 lg:gap-14">
           {/* Content column */}
           <div className="min-w-0 max-w-[760px]">
@@ -138,6 +141,7 @@ export default function LegalDocumentPage({
             </aside>
           )}
         </div>
+      </div>
       </main>
 
       <div className="legal-print-hide">

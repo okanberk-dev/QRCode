@@ -5,11 +5,18 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { sendFormConfirmationEmail } from '@/lib/email';
 import { isValidEmail } from '@/lib/validations';
+import { recordConsentBatch } from '@/lib/legal/consent';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  let body: { email?: string; locale?: string; source?: string; recaptchaToken?: string } = {};
+  let body: {
+    email?: string;
+    locale?: string;
+    source?: string;
+    recaptchaToken?: string;
+    consent?: unknown;
+  } = {};
   try {
     body = await req.json();
   } catch {
@@ -23,6 +30,13 @@ export async function POST(req: NextRequest) {
   // this is defense-in-depth on the stored data.
   if (!email || !isValidEmail(email) || email.length > 200) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
+  }
+
+  // The newsletter is a commercial electronic message (6563 sayılı Kanun):
+  // subscribing needs an explicit, unticked-by-default consent box. The
+  // sign-up form sends `consent: true` only when the visitor ticked it.
+  if (body.consent !== true) {
+    return NextResponse.json({ error: 'consent_required' }, { status: 400 });
   }
 
   const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'newsletter_signup');
@@ -63,6 +77,22 @@ export async function POST(req: NextRequest) {
       unsubscribeToken: newToken,
     },
   });
+
+  // Audit trail for the consent given above (who, which document version,
+  // when, from where) — the proof of opt-in for commercial e-mail. Awaited so
+  // the serverless function cannot freeze before it is written; it never
+  // throws (recordConsent logs and swallows its own errors).
+  await recordConsentBatch(
+    {
+      locale,
+      subjectType: 'email',
+      subjectId: email,
+      source: 'newsletter',
+      ipAddress: ip,
+      userAgent: req.headers.get('user-agent'),
+    },
+    [{ key: 'ticari-ileti', granted: true }, { key: 'kvkk-aydinlatma', granted: true }],
+  );
 
   // Instant welcome mail. Fire-and-forget — Resend hiccup must not block the
   // signup response. Resubscribers get the same confirmation (intentional:
