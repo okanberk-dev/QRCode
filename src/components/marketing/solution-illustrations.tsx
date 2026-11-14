@@ -8,7 +8,9 @@
  *   - Flat vector, 2–2.5px #0A0A0A stroke, stroke-linejoin round
  *   - Lime (#C6F24E) as primary accent; lime-soft (#EAF9B8) for surfaces
  *   - White + graphite + neutral #E4E4E4 / #EDEDED for depth
- *   - viewBox ~240×220 so the layout grid cell (~1fr) renders ~280-300px
+ *   - viewBox ~240×220; the layout scales the SVG to its container width
+ *   - Decoration only (aria-hidden) and no SVG text elements: inline SVG
+ *     text is indexable, so no ratings, scores or labels are drawn as text.
  */
 
 type IllusProps = { size?: number };
@@ -45,11 +47,11 @@ export const IllusAesthetic = ({ size = 280 }: IllusProps) => (
       <path d="M200 95 L203 101 L209 104 L203 107 L200 113 L197 107 L191 104 L197 101 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M185 135 L187 139 L191 141 L187 143 L185 147 L183 143 L179 141 L183 139 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.3" strokeLinejoin="round" />
     </g>
-    {/* Rating pill */}
+    {/* Feedback pill (three dots, no text) */}
     <rect x="45" y="180" width="90" height="26" rx="13" fill="#0A0A0A" />
-    <text x="90" y="197" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="10" fill="#C6F24E" fontWeight="600" letterSpacing="0.1em">
-      ★ 4.9 · GLOW
-    </text>
+    <circle cx="75" cy="193" r="3" fill="#C6F24E" />
+    <circle cx="90" cy="193" r="3" fill="#C6F24E" />
+    <circle cx="105" cy="193" r="3" fill="#C6F24E" />
   </svg>
 );
 
@@ -93,7 +95,7 @@ export const IllusAuto = ({ size = 280 }: IllusProps) => (
 );
 
 // ─── Boutique Hotels ─────────────────────────────────────────────────
-// Small townhouse hotel facade with lime awning + pulse bubble.
+// Small townhouse hotel facade with lime awning + feedback bubble.
 export const IllusBoutique = ({ size = 280 }: IllusProps) => (
   <svg {...svgBase(240, 220, size)} aria-hidden>
     {/* Soft sky */}
@@ -127,10 +129,12 @@ export const IllusBoutique = ({ size = 280 }: IllusProps) => (
     {/* Flag on top */}
     <path d="M120 40 L120 22" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
     <path d="M120 22 L135 26 L128 31 L135 36 L120 32 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" strokeLinejoin="round" />
-    {/* 5-star pulse bubble floating */}
+    {/* Feedback bubble floating (message lines, no text) */}
     <path d="M185 30 Q185 22 193 22 L222 22 Q230 22 230 30 L230 50 Q230 58 222 58 L205 58 L198 65 L198 58 L193 58 Q185 58 185 50 Z"
       fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2" strokeLinejoin="round" />
-    <text x="207" y="44" textAnchor="middle" fontFamily="Inter" fontSize="11" fontWeight="700" fill="#0A0A0A">★★★★★</text>
+    <line x1="194" y1="34" x2="221" y2="34" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
+    <line x1="194" y1="41" x2="215" y2="41" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" />
+    <line x1="194" y1="48" x2="208" y2="48" stroke="#A8D62E" strokeWidth="3" strokeLinecap="round" />
   </svg>
 );
 
@@ -210,7 +214,7 @@ export const IllusGym = ({ size = 280 }: IllusProps) => (
 );
 
 // ─── Real Estate ─────────────────────────────────────────────────────
-// House with a lime "SOLD" sign out front + little window light.
+// House with a lime yard sign out front + little window light.
 export const IllusRealEstate = ({ size = 280 }: IllusProps) => (
   <svg {...svgBase(240, 220, size)} aria-hidden>
     {/* Ground */}
@@ -236,13 +240,11 @@ export const IllusRealEstate = ({ size = 280 }: IllusProps) => (
       <rect x="30" y="6" width="3" height="7" fill="#0A0A0A" />
       <rect x="24" y="6" width="3" height="7" fill="#0A0A0A" />
     </g>
-    {/* SOLD sign */}
+    {/* Yard sign with a check mark (no text) */}
     <g transform="translate(22 140)">
       <rect x="6" y="0" width="4" height="40" fill="#0A0A0A" />
       <rect x="0" y="6" width="56" height="22" rx="3" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2" />
-      <text x="28" y="22" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="11" fontWeight="700" fill="#0A0A0A" letterSpacing="0.1em">
-        SOLD
-      </text>
+      <path d="M20 17 L26 22 L37 11" fill="none" stroke="#0A0A0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </g>
   </svg>
 );

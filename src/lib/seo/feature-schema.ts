@@ -193,3 +193,8 @@ export function buildFeatureHubJsonLd({
     ],
   };
 }
+
+/** Route guard for /[locale]/features/*: only tr and en render. */
+export function isFeatureLocale(value: string): value is FeatureLocale {
+  return value === 'tr' || value === 'en';
+}

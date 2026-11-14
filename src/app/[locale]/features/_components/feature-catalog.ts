@@ -55,8 +55,8 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'feedback',
     name: { tr: 'Yorum yönetimi', en: 'Review management' },
     summary: {
-      tr: 'Müşterilerinizin QR kodla bıraktığı puan ve yorumlar tek gelen kutusunda toplanır. 1–3 yıldızlık geri bildirimde anında e-posta alır, müşteri e-posta adresini bıraktıysa yanıtınızı e-postayla gönderirsiniz. Google işletme profilinizin puanını ve Google’ın paylaştığı yorumları da aynı panelde görürsünüz.',
-      en: 'The ratings and comments your customers leave through your QR codes land in one inbox. You get an instant e-mail for 1–3★ feedback and, when the customer left an address, you reply by e-mail. Your Google Business Profile rating and the reviews Google shares appear in the same panel.',
+      tr: 'Müşterilerinizin QR kodla bıraktığı puan ve yorumlar tek gelen kutusunda toplanır. 1–3 yıldızlık geri bildirimde anında e-posta alır, müşteri e-posta adresini bıraktıysa yanıtınızı e-postayla gönderirsiniz. Google işletme profilinizin puanını, yorum sayısını ve Google’ın paylaştığı en fazla 5 yorumu da panelde görürsünüz.',
+      en: 'The ratings and comments your customers leave through your QR codes land in one inbox. You get an instant e-mail for 1–3★ feedback and, when the customer left an address, you reply by e-mail. Your Google Business Profile rating, review count and up to 5 reviews Google shares also appear in the panel.',
     },
     short: {
       tr: 'QR kodla gelen puan ve yorumlar tek gelen kutusunda; düşük puanda anında e-posta.',
@@ -87,8 +87,8 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'feedback',
     name: { tr: 'Analitik ve raporlar', en: 'Analytics and reports' },
     summary: {
-      tr: 'Son 7, 30 ya da 90 gün, 12 ay veya seçtiğiniz bir aralık için yorum sayısı, ortalama puan, yanıt süresi ve puanlardan tahmini NPS. Yorumların hangi gün ve saatlerde yoğunlaştığını görür, raporu CSV olarak indirirsiniz; her pazartesi haftalık özet e-postası gelir.',
-      en: 'Review count, average rating, reply time and NPS estimated from ratings for the last 7, 30 or 90 days, 12 months or a range you pick. See the days and hours when feedback peaks, export the report as CSV and get a weekly summary e-mail every Monday.',
+      tr: 'Son 7, 30 ya da 90 gün, son 12 ay veya seçtiğiniz bir aralık için yorum sayısını, ortalama puanı, yanıt süresini ve puanlardan tahmini NPS’i izleyin. Geri bildirimlerin hangi gün ve saatlerde yoğunlaştığını görün, raporu CSV olarak indirin; her pazartesi haftalık özet e-postası gelir.',
+      en: 'Track review count, average rating, reply time and NPS estimated from ratings for the last 7, 30 or 90 days, the last 12 months or a range you pick. See the days and hours when feedback peaks, export the report as CSV and get a weekly summary e-mail every Monday.',
     },
     short: {
       tr: 'Yorum sayısı, ortalama puan, yanıt süresi ve tahmini NPS; CSV rapor ve haftalık özet.',
@@ -151,8 +151,8 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'operations',
     name: { tr: 'Denetim Merkezi', en: 'Audit Center' },
     summary: {
-      tr: 'Hijyen, açılış ve vardiya devri kontrol listeleriyle işe alım testlerini hazır şablonlardan kurun. Ekibiniz giriş yapmadan telefondan doldurur; puanı ve en çok aksayan maddeleri siz görürsünüz.',
-      en: 'Set up hygiene, opening and shift-handover checklists and hiring tests from ready templates. Your team fills them in on a phone without logging in, and you see the score and the items missed most often.',
+      tr: 'Hijyen, açılış ve vardiya devri kontrol listeleriyle işe alım testlerini hazır şablonlardan ya da sıfırdan kurun. Ekibiniz giriş yapmadan telefondan doldurur; puanı ve en sık sorun çıkan maddeleri siz görürsünüz.',
+      en: 'Set up hygiene, opening and shift-handover checklists and hiring tests from scratch or from ready templates (currently in Turkish). Your team fills them in on a phone without logging in, and you see the score and the items that fail most often.',
     },
     short: {
       tr: 'Kontrol listeleri ve testler; ekibiniz telefondan doldurur, puanı siz görürsünüz.',

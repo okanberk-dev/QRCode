@@ -1924,6 +1924,10 @@ select.bz-input option:checked {
   font-size: 0.85em;
   transition: opacity 0.15s ease;
 }
+/* Drawn here, not in the DOM, so it stays out of the heading text. */
+.prose-legal .legal-anchor::before {
+  content: '#';
+}
 .prose-legal h2:hover .legal-anchor,
 .prose-legal h3:hover .legal-anchor,
 .prose-legal .legal-anchor:focus-visible {

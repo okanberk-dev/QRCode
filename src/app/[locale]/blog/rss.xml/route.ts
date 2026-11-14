@@ -1,11 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { escapeHtml } from '@/lib/email/escape';
 import type { Locale } from '@/lib/translations';
+import { SITE_URL } from '@/lib/site';
+import { blogDateToIso } from '@/lib/blog-date';
+import { displayBlogAuthor } from '../_lib/author';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
-const SITE_URL = 'https://www.buaze.com';
 const FEED_LIMIT = 50;
 
 const FEED_META: Record<Locale, { title: string; description: string }> = {
@@ -28,6 +30,16 @@ function toRfc822(date: Date | string): string {
   return d.toUTCString();
 }
 
+/**
+ * Publication date of a post. `date` is a display string ("3 Haziran 2026"),
+ * which `new Date()` cannot parse, so it goes through the blog date parser;
+ * the row's creation time is the fallback.
+ */
+function publishedAt(post: { date: string; createdAt: Date }): Date {
+  const iso = post.date ? blogDateToIso(post.date) : null;
+  return iso ? new Date(iso) : post.createdAt;
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ locale: string }> }
@@ -43,6 +55,7 @@ export async function GET(
     title: string;
     description: string;
     date: string;
+    createdAt: Date;
     updatedAt: Date;
     author: string;
   }> = [];
@@ -50,13 +63,16 @@ export async function GET(
   try {
     posts = await prisma.blogPost.findMany({
       where: { isActive: true, locale },
-      orderBy: { date: 'desc' },
+      // `date` is a display string and sorts alphabetically; creation time
+      // gives the real publishing order.
+      orderBy: { createdAt: 'desc' },
       take: FEED_LIMIT,
       select: {
         slug: true,
         title: true,
         description: true,
         date: true,
+        createdAt: true,
         updatedAt: true,
         author: true,
       },
@@ -68,14 +84,15 @@ export async function GET(
   const items = posts
     .map((post) => {
       const link = `${SITE_URL}/${locale}/blog/${post.slug}`;
-      const pubDate = toRfc822(post.date || post.updatedAt);
+      const pubDate = toRfc822(publishedAt(post));
       return [
         '    <item>',
         `      <title>${escapeHtml(post.title)}</title>`,
         `      <link>${link}</link>`,
         `      <guid isPermaLink="true">${link}</guid>`,
         `      <pubDate>${pubDate}</pubDate>`,
-        `      <author>${escapeHtml(post.author)}</author>`,
+        // RSS 2.0 <author> must be an e-mail address; a name goes in dc:creator.
+        `      <dc:creator>${escapeHtml(displayBlogAuthor(post.author, locale))}</dc:creator>`,
         `      <description>${escapeHtml(post.description)}</description>`,
         '    </item>',
       ].join('\n');
@@ -86,7 +103,7 @@ export async function GET(
 
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">',
     '  <channel>',
     `    <title>${escapeHtml(meta.title)}</title>`,
     `    <link>${channelLink}</link>`,

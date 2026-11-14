@@ -8,26 +8,33 @@ import { buildFeaturePageJsonLd } from '@/lib/seo/feature-schema';
 import { RELATED_SOLUTIONS_LIST, SECTOR_COUNT } from '@/lib/related-solutions';
 
 /**
- * Shared layout for the six /features/* pages (spec §4 rhythm, D11/D12).
- * One fixed, calm section order so every feature page reads the same way:
+ * Shared layout for the /features pages (marketing spec §4, D11, D12).
+ *
+ * The six feature pages render `FeaturePageLayout`, which fixes one calm
+ * section order so every page reads the same way:
  *
  *   1. Hero — eyebrow, keyword H1 (no trailing period), one-sentence lead,
  *      "Ücretsiz deneyin" + one secondary link, and an HTML sample screen
- *      labelled "Örnek ekran" (crawlable text, generic data).
- *   2. "… nedir?" — one definitional H2 (answer-engine friendly).
- *   3. Capabilities — verified claims only.
- *   4. How it works — visible steps with id="step-N" (the HowTo JSON-LD
- *      is built from the same array).
- *   5. Facts — only numbers the product itself guarantees (§38.248).
- *   6. Sector links — real /solutions pages from RELATED_SOLUTIONS_LIST.
+ *      labelled "Örnek ekran" (generic data, crawlable text).
+ *   2. "… nedir?" — one definitional H2.
+ *   3. Capabilities — claims checked against the product.
+ *   4. How it works — visible steps with id="step-N"; the HowTo JSON-LD is
+ *      built from the same array.
+ *   5. Facts — only values the product itself guarantees (§38.248).
+ *   6. Industry links — real /solutions pages from RELATED_SOLUTIONS_LIST.
  *   7. FAQ — <details>; the FAQPage JSON-LD is built from the same array.
- *   8. Related features — three sibling pages.
+ *   8. Related features.
  *   9. One closing CTA.
  *
- * Server component with no request-time APIs (marketing pages stay ISR).
+ * The /features hub composes the exported building blocks (shell, hero,
+ * section heading, FAQ, CTA) around its own catalog sections.
+ *
+ * Server components only, no request-time APIs (marketing pages stay ISR).
  * Headings take Space Grotesk from the global h1–h6 rule; no inline fonts.
- * Register links carry rel="nofollow" (/auth/* is noindex).
+ * Sign-up links carry rel="nofollow" (/auth/* is noindex).
  */
+
+export type FeatureLocale = 'tr' | 'en';
 
 export interface FeatureCapability {
   icon: LucideIcon;
@@ -43,19 +50,20 @@ export interface FeatureStep {
 export interface FeatureFact {
   /** Short value shown large, e.g. "3", "TR + EN". */
   value: string;
-  /** What the value means, one line. */
+  /** What the value means, one line. Must be unique within the list. */
   label: string;
 }
 
 export interface FeatureSectorLink {
   /** A slug from RELATED_SOLUTIONS_LIST (unknown slugs are skipped). */
   slug: string;
-  /** One short line: what this feature does in that sector. */
+  /** One short line: what this feature does in that industry. */
   use: string;
 }
 
 export interface FeatureFaq {
   q: string;
+  /** Plain text: the same string goes into the FAQPage JSON-LD. */
   a: string;
 }
 
@@ -97,17 +105,24 @@ export interface FeatureSchemaInfo {
   /** Product name for the Service node and the breadcrumb, e.g. "Pulse AI". */
   name: string;
   serviceType: string;
-  /** HowTo name, e.g. "QR menü nasıl oluşturulur". */
+  /** HowTo name — the same idea as the visible steps heading. */
   howToName: string;
 }
 
-const CONTAINER = 'mx-auto w-full max-w-[1200px] px-5 sm:px-10';
-const SECTION_Y = 'py-[60px] sm:py-24';
-const FOCUS =
+/* ─── Shared class strings ─────────────────────────────────────────────── */
+
+export const FEATURE_CONTAINER = 'mx-auto w-full max-w-[1200px] px-5 sm:px-10';
+export const FEATURE_SECTION_Y = 'py-[60px] sm:py-24';
+export const FEATURE_FOCUS =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+/** Card used across the feature family (spec §4 cards). */
+export const FEATURE_CARD = 'rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8';
+/** Inline text link with the lime underline used across the marketing site. */
+export const FEATURE_TEXT_LINK = `inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FEATURE_FOCUS}`;
+
 const BTN_CORE =
   'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors';
-const BTN_BASE = `${BTN_CORE} ${FOCUS}`;
+const BTN_BASE = `${BTN_CORE} ${FEATURE_FOCUS}`;
 /** Buttons on the lime band: graphite focus ring, offset matches the lime surface. */
 const BTN_ON_LIME = `${BTN_CORE} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]`;
 
@@ -132,7 +147,30 @@ const SHARED = {
   },
 } as const;
 
-function SectionHeading({
+/* ─── Building blocks ──────────────────────────────────────────────────── */
+
+/** Page frame: JSON-LD, navbar, <main id="main-content">, footer. */
+export function FeaturePageShell({
+  locale,
+  jsonLd,
+  children,
+}: {
+  locale: FeatureLocale;
+  jsonLd: object;
+  children: ReactNode;
+}) {
+  return (
+    <div className="min-h-[100dvh] overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] lg:pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
+      <main id="main-content">{children}</main>
+      <MarketingFooter locale={locale} />
+    </div>
+  );
+}
+
+/** Eyebrow → H2 → optional lead sentence (spec §4 section header). */
+export function FeatureSectionHeading({
   id,
   eyebrow,
   title,
@@ -170,6 +208,169 @@ function SectionHeading({
   );
 }
 
+/** Hero: copy column first in the HTML, sample screen second. */
+export function FeatureHero({
+  locale,
+  eyebrow,
+  title,
+  lead,
+  secondary,
+  mock,
+  mockCaption,
+}: {
+  locale: FeatureLocale;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  secondary: { href: string; label: string };
+  /** Server-rendered sample UI with generic data; hidden from screen readers. */
+  mock: ReactNode;
+  /** What the sample screen shows, for screen readers. */
+  mockCaption: string;
+}) {
+  const shared = SHARED[locale];
+  return (
+    <section aria-labelledby="feature-title" className="bg-white pb-[60px] pt-[60px] sm:pb-24 sm:pt-24">
+      <div className={`${FEATURE_CONTAINER} lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-14`}>
+        <div className="max-w-[640px]">
+          <p className="pulse-eyebrow text-[#737373]">{eyebrow}</p>
+          <h1
+            id="feature-title"
+            className="mt-5 text-balance text-[38px] leading-[1.06] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
+          >
+            {title}
+          </h1>
+          <p className="mt-6 max-w-[600px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+            {lead}
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link
+              href={`/${locale}/auth/register`}
+              rel="nofollow"
+              className={`${BTN_BASE} bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]`}
+            >
+              {shared.primary}
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+            <Link
+              href={secondary.href}
+              className={`${BTN_BASE} border border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]`}
+            >
+              {secondary.label}
+            </Link>
+          </div>
+          <p className="mt-5 text-[14px] leading-[1.5] text-[#737373]">{shared.note}</p>
+        </div>
+
+        <figure className="mx-auto mt-12 w-full max-w-[520px] lg:mt-0">
+          <figcaption className="sr-only">{mockCaption}</figcaption>
+          <div
+            aria-hidden="true"
+            className="rounded-[24px] border border-[#EDEDED] bg-[#FAFAFA] p-3 shadow-[0_24px_60px_-32px_rgba(10,10,10,0.28)] sm:p-4"
+          >
+            <p className="pulse-eyebrow px-2 pb-3 pt-1 text-[#737373]">{shared.sample}</p>
+            <div className="overflow-hidden rounded-[16px] border border-[#EDEDED] bg-white">{mock}</div>
+          </div>
+        </figure>
+      </div>
+    </section>
+  );
+}
+
+/** FAQ in <details>; pass the same `items` to the FAQPage JSON-LD. */
+export function FeatureFaqSection({
+  eyebrow,
+  title,
+  items,
+  more,
+  className = 'bg-[#FAFAFA]',
+}: {
+  eyebrow: string;
+  title: string;
+  items: readonly FeatureFaq[];
+  more?: { href: string; label: string };
+  className?: string;
+}) {
+  return (
+    <section aria-labelledby="feature-faq-title" className={`${className} ${FEATURE_SECTION_Y}`}>
+      <div className="mx-auto w-full max-w-[920px] px-5 sm:px-10">
+        <FeatureSectionHeading id="feature-faq-title" eyebrow={eyebrow} title={title} />
+        <div className="mt-10 divide-y divide-[#E5E5E5] border-y border-[#E5E5E5]">
+          {items.map((item, i) => (
+            <details key={item.q} id={`faq-${i + 1}`} open={i === 0 ? true : undefined} className="group scroll-mt-28">
+              <summary
+                className={`flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-5 text-left [&::-webkit-details-marker]:hidden ${FEATURE_FOCUS}`}
+              >
+                <span className="bz-h-tight text-[17px] leading-[1.35] text-[#0A0A0A] sm:text-[18px]">{item.q}</span>
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D4D4D4] bg-white text-[18px] leading-none text-[#0A0A0A] transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="max-w-[700px] pb-6 pr-2 text-[15px] leading-[1.65] text-[#525252] sm:pr-12">{item.a}</p>
+            </details>
+          ))}
+        </div>
+        {more ? (
+          <p className="mt-8">
+            <Link href={more.href} className={FEATURE_TEXT_LINK}>
+              {more.label}
+              <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/** Closing lime band: one H2, the trial facts and at most two links. */
+export function FeatureCtaSection({ locale, title }: { locale: FeatureLocale; title: string }) {
+  const shared = SHARED[locale];
+  return (
+    <section aria-labelledby="feature-cta-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
+      <div className="mx-auto w-full max-w-[880px] px-5 text-center sm:px-10">
+        <h2
+          id="feature-cta-title"
+          className="text-balance text-[30px] leading-[1.06] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]"
+        >
+          {title}
+        </h2>
+        <ul className="mx-auto mt-5 flex max-w-[680px] flex-col items-center justify-center gap-x-3 gap-y-1 text-[16px] leading-[1.6] text-[#1A1A1A] sm:flex-row sm:flex-wrap sm:text-[17px]">
+          {shared.ctaFacts.map((fact, i) => (
+            <li key={fact} className="inline-flex items-center gap-3">
+              {i > 0 ? (
+                <span aria-hidden="true" className="hidden h-1 w-1 rounded-full bg-[#0A0A0A]/50 sm:inline-block" />
+              ) : null}
+              {fact}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+          <Link
+            href={`/${locale}/auth/register`}
+            rel="nofollow"
+            className={`${BTN_ON_LIME} bg-[#0A0A0A] px-7 text-white hover:bg-[#1A1A1A]`}
+          >
+            {shared.primary}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+          <Link
+            href={`/${locale}/pricing`}
+            className={`${BTN_ON_LIME} border-2 border-[#0A0A0A] px-7 text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white`}
+          >
+            {shared.ctaSecondary}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Feature page ─────────────────────────────────────────────────────── */
+
 export default function FeaturePageLayout({
   locale,
   slug,
@@ -177,7 +378,7 @@ export default function FeaturePageLayout({
   mock,
   schema,
 }: {
-  locale: 'tr' | 'en';
+  locale: FeatureLocale;
   slug: string;
   copy: FeaturePageCopy;
   /** Server-rendered sample UI (generic data). Hidden from screen readers; `copy.mockCaption` describes it. */
@@ -186,7 +387,6 @@ export default function FeaturePageLayout({
 }) {
   const shared = SHARED[locale];
   const base = `/${locale}`;
-  const registerHref = `${base}/auth/register`;
 
   const jsonLd = buildFeaturePageJsonLd({
     locale,
@@ -209,326 +409,217 @@ export default function FeaturePageLayout({
   });
 
   return (
-    <div className="min-h-[100dvh] overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] lg:pt-[64px]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
-      <MarketingNavbar locale={locale} />
+    <FeaturePageShell locale={locale} jsonLd={jsonLd}>
+      {/* 1 · Hero */}
+      <FeatureHero
+        locale={locale}
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        lead={copy.lead}
+        secondary={copy.secondary}
+        mock={mock}
+        mockCaption={copy.mockCaption}
+      />
 
-      <main id="main-content">
-        {/* 1 · Hero */}
-        <section aria-labelledby="feature-title" className="bg-white pb-[60px] pt-12 sm:pb-24 sm:pt-20">
-          <div className={`${CONTAINER} lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-14`}>
-            <div className="max-w-[640px]">
-              <p className="pulse-eyebrow text-[#737373]">{copy.eyebrow}</p>
-              <h1
-                id="feature-title"
-                className="mt-5 text-balance text-[38px] leading-[1.06] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
-              >
-                {copy.title}
-              </h1>
-              <p className="mt-6 max-w-[600px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
-                {copy.lead}
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href={registerHref}
-                  rel="nofollow"
-                  className={`${BTN_BASE} bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]`}
-                >
-                  {shared.primary}
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-                <Link
-                  href={copy.secondary.href}
-                  className={`${BTN_BASE} border border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]`}
-                >
-                  {copy.secondary.label}
-                </Link>
-              </div>
-              <p className="mt-5 text-[14px] leading-[1.5] text-[#737373]">{shared.note}</p>
-            </div>
-
-            <figure className="mx-auto mt-12 w-full max-w-[520px] lg:mt-0">
-              <figcaption className="sr-only">{copy.mockCaption}</figcaption>
-              <div
-                aria-hidden="true"
-                className="rounded-[24px] border border-[#EDEDED] bg-[#FAFAFA] p-3 shadow-[0_24px_60px_-32px_rgba(10,10,10,0.28)] sm:p-4"
-              >
-                <p className="pulse-eyebrow px-2 pb-3 pt-1 text-[#737373]">{shared.sample}</p>
-                <div className="overflow-hidden rounded-[16px] border border-[#EDEDED] bg-white">{mock}</div>
-              </div>
-            </figure>
-          </div>
-        </section>
-
-        {/* 2 · Definition */}
-        <section aria-labelledby="feature-definition-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
-          <div className={`${CONTAINER} lg:grid lg:grid-cols-[1fr_1.25fr] lg:gap-16`}>
-            <SectionHeading id="feature-definition-title" eyebrow={copy.definition.eyebrow} title={copy.definition.title} />
-            <div className="mt-6 max-w-[680px] space-y-5 text-pretty text-[16px] leading-[1.7] text-[#525252] sm:text-[17px] lg:mt-10">
-              {copy.definition.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-              {copy.definition.note ? (
-                <p className="flex gap-3 rounded-[16px] border border-[#EDEDED] bg-white p-5 text-[15px] leading-[1.6] text-[#333333]">
-                  <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[#0A0A0A]" />
-                  <span>{copy.definition.note}</span>
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        {/* 3 · Capabilities */}
-        <section aria-labelledby="feature-capabilities-title" className={`bg-white ${SECTION_Y}`}>
-          <div className={CONTAINER}>
-            <SectionHeading
-              id="feature-capabilities-title"
-              eyebrow={copy.capabilities.eyebrow}
-              title={copy.capabilities.title}
-              lead={copy.capabilities.lead}
-            />
-            <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-              {copy.capabilities.items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <li key={item.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
-                    <span
-                      aria-hidden="true"
-                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
-                    >
-                      <Icon size={20} strokeWidth={2} />
-                    </span>
-                    <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">{item.title}</h3>
-                    <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{item.body}</p>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </section>
-
-        {/* 4 · How it works */}
-        <section aria-labelledby="feature-steps-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
-          <div className={CONTAINER}>
-            <SectionHeading
-              id="feature-steps-title"
-              eyebrow={copy.steps.eyebrow}
-              title={copy.steps.title}
-              lead={copy.steps.lead}
-            />
-            <ol
-              className={`mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 ${
-                copy.steps.items.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
-              }`}
-            >
-              {copy.steps.items.map((step, i) => (
-                <li
-                  key={step.title}
-                  id={`step-${i + 1}`}
-                  className="scroll-mt-28 rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-7"
-                >
-                  <p className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="pulse-eyebrow text-[#737373]">
-                      {shared.stepLabel} {i + 1}
-                    </span>
-                  </p>
-                  <h3 className="mt-5 text-[19px] leading-[1.25] text-[#0A0A0A]">{step.title}</h3>
-                  <p className="mt-3 text-[15px] leading-[1.6] text-[#525252]">{step.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        {/* 5 · Facts */}
-        <section aria-labelledby="feature-facts-title" className="bg-[#0A0A0A] py-[60px] text-white sm:py-20">
-          <div className={CONTAINER}>
-            <SectionHeading id="feature-facts-title" eyebrow={copy.facts.eyebrow} title={copy.facts.title} tone="dark" />
-            <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-12 lg:grid-cols-4">
-              {copy.facts.items.map((fact) => (
-                <div key={fact.label} className="flex flex-col-reverse gap-2 border-t border-white/15 pt-5">
-                  <dt className="text-[14px] leading-[1.5] text-white/75 sm:text-[15px]">{fact.label}</dt>
-                  <dd className="bz-h-tight text-[30px] leading-none text-[#C6F24E] sm:text-[40px]">{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
-
-        {/* 6 · Sectors */}
-        {sectors.length > 0 ? (
-          <section aria-labelledby="feature-sectors-title" className={`bg-white ${SECTION_Y}`}>
-            <div className={CONTAINER}>
-              <SectionHeading
-                id="feature-sectors-title"
-                eyebrow={copy.sectors.eyebrow}
-                title={copy.sectors.title}
-                lead={copy.sectors.lead}
-              />
-              <ul className="mt-10 grid grid-cols-1 gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-                {sectors.map(({ slug: sectorSlug, use, entry }) => {
-                  const Icon = entry.Icon;
-                  return (
-                    <li key={sectorSlug}>
-                      <Link
-                        href={`${base}/solutions/${sectorSlug}`}
-                        className={`group flex h-full items-start gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#0A0A0A] sm:p-6 ${FOCUS}`}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#F2F2F2] text-[#0A0A0A]"
-                        >
-                          <Icon size={18} strokeWidth={2} />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-[16px] font-semibold leading-[1.3] text-[#0A0A0A]">
-                            {locale === 'tr' ? entry.tr : entry.en}
-                          </span>
-                          <span className="mt-1.5 block text-[14px] leading-[1.55] text-[#525252]">{use}</span>
-                        </span>
-                        <ArrowRight
-                          size={16}
-                          aria-hidden="true"
-                          className="mt-1 shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
-                        />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="mt-8">
-                <Link
-                  href={`${base}/solutions`}
-                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FOCUS}`}
-                >
-                  {shared.allSectors}
-                  <ArrowRight size={14} aria-hidden="true" />
-                </Link>
-              </p>
-            </div>
-          </section>
-        ) : null}
-
-        {/* 7 · FAQ */}
-        <section aria-labelledby="feature-faq-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
-          <div className="mx-auto w-full max-w-[920px] px-5 sm:px-10">
-            <SectionHeading id="feature-faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} />
-            <div className="mt-10 divide-y divide-[#E5E5E5] border-y border-[#E5E5E5]">
-              {copy.faq.items.map((item, i) => (
-                <details
-                  key={item.q}
-                  id={`faq-${i + 1}`}
-                  open={i === 0 ? true : undefined}
-                  className="group scroll-mt-28"
-                >
-                  <summary
-                    className={`flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-5 text-left [&::-webkit-details-marker]:hidden ${FOCUS}`}
-                  >
-                    <span className="bz-h-tight text-[17px] leading-[1.35] text-[#0A0A0A] sm:text-[18px]">{item.q}</span>
-                    <span
-                      aria-hidden="true"
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D4D4D4] bg-white text-[18px] leading-none text-[#0A0A0A] transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <p className="max-w-[700px] pb-6 pr-2 text-[15px] leading-[1.65] text-[#525252] sm:pr-12">{item.a}</p>
-                </details>
-              ))}
-            </div>
-            {copy.faq.more ? (
-              <p className="mt-8">
-                <Link
-                  href={copy.faq.more.href}
-                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FOCUS}`}
-                >
-                  {copy.faq.more.label}
-                  <ArrowRight size={14} aria-hidden="true" />
-                </Link>
+      {/* 2 · Definition */}
+      <section aria-labelledby="feature-definition-title" className={`bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}>
+        <div className={`${FEATURE_CONTAINER} lg:grid lg:grid-cols-[1fr_1.25fr] lg:gap-16`}>
+          <FeatureSectionHeading
+            id="feature-definition-title"
+            eyebrow={copy.definition.eyebrow}
+            title={copy.definition.title}
+          />
+          <div className="mt-6 max-w-[680px] space-y-5 text-pretty text-[16px] leading-[1.7] text-[#525252] sm:text-[17px] lg:mt-10">
+            {copy.definition.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+            {copy.definition.note ? (
+              <p className="flex gap-3 rounded-[16px] border border-[#EDEDED] bg-white p-5 text-[15px] leading-[1.6] text-[#333333]">
+                <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[#0A0A0A]" />
+                <span>{copy.definition.note}</span>
               </p>
             ) : null}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* 8 · Related features */}
-        <section aria-labelledby="feature-related-title" className={`bg-white ${SECTION_Y}`}>
-          <div className={CONTAINER}>
-            <SectionHeading id="feature-related-title" eyebrow={copy.related.eyebrow} title={copy.related.title} />
-            <ul className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-              {copy.related.items.map((item) => {
-                const Icon = item.icon;
+      {/* 3 · Capabilities */}
+      <section aria-labelledby="feature-capabilities-title" className={`bg-white ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="feature-capabilities-title"
+            eyebrow={copy.capabilities.eyebrow}
+            title={copy.capabilities.title}
+            lead={copy.capabilities.lead}
+          />
+          <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            {copy.capabilities.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.title} className={FEATURE_CARD}>
+                  <span
+                    aria-hidden="true"
+                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+                  >
+                    <Icon size={20} strokeWidth={2} />
+                  </span>
+                  <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">{item.title}</h3>
+                  <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{item.body}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* 4 · How it works */}
+      <section aria-labelledby="feature-steps-title" className={`bg-[#FAFAFA] ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading
+            id="feature-steps-title"
+            eyebrow={copy.steps.eyebrow}
+            title={copy.steps.title}
+            lead={copy.steps.lead}
+          />
+          <ol
+            className={`mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 ${
+              copy.steps.items.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+            }`}
+          >
+            {copy.steps.items.map((step, i) => (
+              <li
+                key={step.title}
+                id={`step-${i + 1}`}
+                className="scroll-mt-28 rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-7"
+              >
+                <p className="flex items-center gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="pulse-eyebrow text-[#737373]">
+                    {shared.stepLabel} {i + 1}
+                  </span>
+                </p>
+                <h3 className="mt-5 text-[19px] leading-[1.25] text-[#0A0A0A]">{step.title}</h3>
+                <p className="mt-3 text-[15px] leading-[1.6] text-[#525252]">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* 5 · Facts */}
+      <section aria-labelledby="feature-facts-title" className="bg-[#0A0A0A] py-[60px] text-white sm:py-20">
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading id="feature-facts-title" eyebrow={copy.facts.eyebrow} title={copy.facts.title} tone="dark" />
+          <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-12 lg:grid-cols-4">
+            {copy.facts.items.map((fact) => (
+              <div key={fact.label} className="flex flex-col-reverse gap-2 border-t border-white/15 pt-5">
+                <dt className="text-[14px] leading-[1.5] text-white/75 sm:text-[15px]">{fact.label}</dt>
+                <dd className="bz-h-tight text-[30px] leading-none text-[#C6F24E] sm:text-[40px]">{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* 6 · Industries */}
+      {sectors.length > 0 ? (
+        <section aria-labelledby="feature-sectors-title" className={`bg-white ${FEATURE_SECTION_Y}`}>
+          <div className={FEATURE_CONTAINER}>
+            <FeatureSectionHeading
+              id="feature-sectors-title"
+              eyebrow={copy.sectors.eyebrow}
+              title={copy.sectors.title}
+              lead={copy.sectors.lead}
+            />
+            <ul className="mt-10 grid grid-cols-1 gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+              {sectors.map(({ slug: sectorSlug, use, entry }) => {
+                const Icon = entry.Icon;
                 return (
-                  <li key={item.href}>
+                  <li key={sectorSlug}>
                     <Link
-                      href={item.href}
-                      className={`group flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#0A0A0A] sm:p-8 ${FOCUS}`}
+                      href={`${base}/solutions/${sectorSlug}`}
+                      className={`group flex h-full items-start gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#0A0A0A] sm:p-6 ${FEATURE_FOCUS}`}
                     >
                       <span
                         aria-hidden="true"
-                        className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#0A0A0A] text-[#C6F24E]"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#F2F2F2] text-[#0A0A0A]"
                       >
-                        <Icon size={20} strokeWidth={2} />
+                        <Icon size={18} strokeWidth={2} />
                       </span>
-                      <span className="bz-h-tight mt-5 block text-[21px] leading-[1.25] text-[#0A0A0A]">{item.title}</span>
-                      <span className="mt-3 block text-[15px] leading-[1.6] text-[#525252]">{item.body}</span>
-                      <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 group-hover:decoration-[#0A0A0A]">
-                        {item.label}
-                        <ArrowRight size={14} aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[16px] font-semibold leading-[1.3] text-[#0A0A0A]">
+                          {locale === 'tr' ? entry.tr : entry.en}
+                        </span>
+                        <span className="mt-1.5 block text-[14px] leading-[1.55] text-[#525252]">{use}</span>
                       </span>
+                      <ArrowRight
+                        size={16}
+                        aria-hidden="true"
+                        className="mt-1 shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
+                      />
                     </Link>
                   </li>
                 );
               })}
             </ul>
+            <p className="mt-8">
+              <Link href={`${base}/solutions`} className={FEATURE_TEXT_LINK}>
+                {shared.allSectors}
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </p>
           </div>
         </section>
+      ) : null}
 
-        {/* 9 · Closing CTA */}
-        <section aria-labelledby="feature-cta-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
-          <div className="mx-auto w-full max-w-[880px] px-5 text-center sm:px-10">
-            <h2
-              id="feature-cta-title"
-              className="text-balance text-[30px] leading-[1.06] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]"
-            >
-              {copy.ctaTitle}
-            </h2>
-            <ul className="mx-auto mt-5 flex max-w-[680px] flex-col items-center justify-center gap-x-3 gap-y-1 text-[16px] leading-[1.6] text-[#1A1A1A] sm:flex-row sm:flex-wrap sm:text-[17px]">
-              {shared.ctaFacts.map((fact, i) => (
-                <li key={fact} className="inline-flex items-center gap-3">
-                  {i > 0 ? (
-                    <span aria-hidden="true" className="hidden h-1 w-1 rounded-full bg-[#0A0A0A]/50 sm:inline-block" />
-                  ) : null}
-                  {fact}
+      {/* 7 · FAQ */}
+      <FeatureFaqSection
+        eyebrow={copy.faq.eyebrow}
+        title={copy.faq.title}
+        items={copy.faq.items}
+        more={copy.faq.more}
+      />
+
+      {/* 8 · Related features */}
+      <section aria-labelledby="feature-related-title" className={`bg-white ${FEATURE_SECTION_Y}`}>
+        <div className={FEATURE_CONTAINER}>
+          <FeatureSectionHeading id="feature-related-title" eyebrow={copy.related.eyebrow} title={copy.related.title} />
+          <ul className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            {copy.related.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`group flex h-full flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#0A0A0A] sm:p-8 ${FEATURE_FOCUS}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#0A0A0A] text-[#C6F24E]"
+                    >
+                      <Icon size={20} strokeWidth={2} />
+                    </span>
+                    <span className="bz-h-tight mt-5 block text-[21px] leading-[1.25] text-[#0A0A0A]">{item.title}</span>
+                    <span className="mt-3 block text-[15px] leading-[1.6] text-[#525252]">{item.body}</span>
+                    <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 group-hover:decoration-[#0A0A0A]">
+                      {item.label}
+                      <ArrowRight size={14} aria-hidden="true" />
+                    </span>
+                  </Link>
                 </li>
-              ))}
-            </ul>
-            <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-              <Link
-                href={registerHref}
-                rel="nofollow"
-                className={`${BTN_ON_LIME} bg-[#0A0A0A] px-7 text-white hover:bg-[#1A1A1A]`}
-              >
-                {shared.primary}
-                <ArrowRight size={16} aria-hidden="true" />
-              </Link>
-              <Link
-                href={`${base}/pricing`}
-                className={`${BTN_ON_LIME} border-2 border-[#0A0A0A] px-7 text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white`}
-              >
-                {shared.ctaSecondary}
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
 
-      <MarketingFooter locale={locale} />
-    </div>
+      {/* 9 · Closing CTA */}
+      <FeatureCtaSection locale={locale} title={copy.ctaTitle} />
+    </FeaturePageShell>
   );
 }
