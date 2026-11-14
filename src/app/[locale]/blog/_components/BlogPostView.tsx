@@ -103,38 +103,42 @@ export default function BlogPostView({
           <circle cx="280" cy="40" r="8" fill="#0A0A0A" />
         </svg>
 
-        <div className="relative max-w-[1200px] mx-auto">
-          <Link
-            href={`${base}/blog`}
-            className="pulse-eyebrow inline-flex min-h-[44px] items-center gap-2 text-[#0A0A0A]/80 hover:text-[#0A0A0A] mb-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] rounded-sm"
-          >
-            <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
-            {backLabel}
-          </Link>
+        {/* Same grid as the content below, so the title lines up with the
+            article column on desktop. */}
+        <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:gap-x-14">
+          <div className="lg:col-span-2 lg:col-start-2">
+            <Link
+              href={`${base}/blog`}
+              className="pulse-eyebrow inline-flex min-h-[44px] items-center gap-2 text-[#0A0A0A]/80 hover:text-[#0A0A0A] mb-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] rounded-sm"
+            >
+              <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
+              {backLabel}
+            </Link>
 
-          <div className="max-w-[820px]">
-            <p className="pulse-eyebrow text-[#0A0A0A]">
-              Blog · {post.readTime}
-            </p>
-            <h1 className="mt-3 sm:mt-4 text-balance text-[32px] sm:text-[44px] lg:text-[52px] leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
-              {post.title}
-            </h1>
+            <div className="max-w-[820px]">
+              <p className="pulse-eyebrow text-[#0A0A0A]">
+                Blog · {post.readTime}
+              </p>
+              <h1 className="mt-3 sm:mt-4 text-balance text-[32px] sm:text-[44px] lg:text-[52px] leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+                {post.title}
+              </h1>
 
-            <div className="mt-6 sm:mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
-              <div className="flex items-center gap-2.5">
-                <div
-                  aria-hidden="true"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
-                >
-                  {authorInitials(author)}
+              <div className="mt-6 sm:mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    aria-hidden="true"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
+                  >
+                    {authorInitials(author)}
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-semibold text-[#0A0A0A]">{author}</div>
+                    {authorRole ? <div className="text-[12px] text-[#0A0A0A]/75">{authorRole}</div> : null}
+                  </div>
                 </div>
-                <div>
-                  <div className="text-[14px] font-semibold text-[#0A0A0A]">{author}</div>
-                  {authorRole ? <div className="text-[12px] text-[#0A0A0A]/75">{authorRole}</div> : null}
+                <div className="text-[13px] text-[#0A0A0A]/80">
+                  {publishedIso ? <time dateTime={publishedIso}>{post.date}</time> : post.date}
                 </div>
-              </div>
-              <div className="text-[13px] text-[#0A0A0A]/80">
-                {publishedIso ? <time dateTime={publishedIso}>{post.date}</time> : post.date}
               </div>
             </div>
           </div>

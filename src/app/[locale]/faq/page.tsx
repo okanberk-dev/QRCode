@@ -34,7 +34,7 @@ const META = {
       'Buaze hakkında sık sorulan sorular: QR yorum akışı, kurulum, platform bağlantıları, fiyat ve 14 günlük ücretsiz deneme, ekip rolleri, KVKK ve destek.',
   },
   en: {
-    title: 'Questions about setup, the review flow and pricing',
+    title: 'FAQ: setup, the review flow, pricing and data',
     description:
       'Common questions about Buaze: the QR review flow, setup, platform links, pricing and the 14-day free trial, team roles, data protection and support.',
   },
@@ -79,7 +79,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
         items: [
           {
             q: 'Kurulum nasıl yapılır?',
-            a: "Kayıttan sonra 5 adımlı kurulum sihirbazı işletme bilgilerinizi, sektörünüzü, konumunuzu, platformlarınızı ve ilk QR kodunuzu hazırlar. Google'daki işletmenizi panelde adıyla arayıp seçtiğinizde Buaze resmi Google yorum bağlantınızı oluşturur. Teknik bilgi gerekmez.",
+            a: "Kayıttan sonra 5 adımlı kurulum sihirbazında işletme bilgilerinizi, sektörünüzü, konumunuzu ve platformlarınızı girer, ilk QR kodunuzu oluşturursunuz. Google'daki işletmenizi panelde adıyla arayıp seçtiğinizde Buaze resmi Google yorum bağlantınızı oluşturur. Teknik bilgi gerekmez.",
           },
           {
             q: 'Hangi cihazlarda çalışır?',
@@ -87,7 +87,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
           },
           {
             q: 'QR kodlarını nasıl oluştururum?',
-            a: 'Panelden istediğiniz kadar QR kodu oluşturabilirsiniz. İsterseniz masa veya oda etiketi ekler, açılacak platformu sabitler, 6 hazır renkten birini ya da marka renginizi seçersiniz. QR kodunu PNG olarak indirebilir veya PDF olarak yazdırabilirsiniz. QR kodu sizin Buaze sayfanızı açtığı için yönlendirdiğiniz platformu sonradan değiştirdiğinizde yeniden basmanız gerekmez.',
+            a: 'Panelden istediğiniz kadar QR kodu oluşturabilirsiniz. İsterseniz masa veya oda etiketi ekler, açılacak platformu sabitler, 6 hazır renkten birini ya da marka renginizi seçersiniz. QR kodunu PNG olarak indirebilir veya PDF olarak yazdırabilirsiniz. QR kodu sizin Buaze sayfanızı açtığı için yorum bağlantılarınızı sonradan değiştirdiğinizde yeniden basmanız gerekmez.',
           },
           {
             q: 'Buaze hangi dillerde kullanılabilir?',
@@ -212,7 +212,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
       items: [
         {
           q: 'How does setup work?',
-          a: 'After you sign up, a 5-step setup wizard prepares your business details, sector, location, platforms and first QR code. When you search for your business on Google by name in the panel and select it, Buaze creates your official Google review link. No technical skills are needed.',
+          a: 'After you sign up, a 5-step setup wizard takes you through your business details, sector, location and platforms, and you create your first QR code. When you search for your business on Google by name in the panel and select it, Buaze creates your official Google review link. No technical skills are needed.',
         },
         {
           q: 'Which devices does it work on?',
@@ -220,7 +220,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
         },
         {
           q: 'How do I create QR codes?',
-          a: "You can create as many QR codes as you need in the panel. Optionally add a table or room label, pin the platform that opens, and pick one of 6 preset colours or your brand colour. Download the QR code as a PNG or print it to PDF. Because the QR code opens your Buaze page, you don't need to reprint it when you change the target platform later.",
+          a: "You can create as many QR codes as you need in the panel. Optionally add a table or room label, pin the platform that opens, and pick one of 6 preset colours or your brand colour. Download the QR code as a PNG or print it to PDF. Because the QR code opens your Buaze page, you don't need to reprint it when you change your review links later.",
         },
         {
           q: 'Which languages does Buaze support?',

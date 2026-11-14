@@ -29,7 +29,7 @@ const META = {
       "Buaze'de şu anda yayımlanmış bir açık pozisyon yok. Genel başvurunuzu kısa bir tanıtım ve özgeçmişinizle birlikte support@buaze.com adresine gönderebilirsiniz.",
   },
   en: {
-    title: 'Careers: general applications and job openings',
+    title: 'Careers: general applications and future openings',
     description:
       'There are no published openings at Buaze right now. You can send a general application with a short introduction and your CV to support@buaze.com.',
   },
@@ -49,7 +49,7 @@ const COPY = {
     mailSubject: 'Genel başvuru',
     workTitle: 'Ne üzerinde çalışıyoruz',
     workBody:
-      'Buaze, işletmelerin müşteri geri bildirimini QR kodla toplamasına, müşterilerini yorum sayfalarına yönlendirmesine ve gelen geri bildirimleri tek panelde yanıtlamasına yardımcı olan bir yazılım. Ürünü Türkçe ve İngilizce geliştiriyoruz.',
+      "Buaze, işletmelerin müşteri geri bildirimini QR kodla toplamasına, müşterilerini yorum sayfalarına yönlendirmesine ve gelen geri bildirimleri tek panelde yanıtlamasına yardımcı olan bir yazılım. Ürünü İstanbul'da, Türkçe ve İngilizce kullanan işletmeler için geliştiriyoruz.",
     links: [
       { path: '/about', label: 'Buaze hakkında' },
       { path: '/how-it-works', label: 'Nasıl çalışır' },
@@ -69,7 +69,7 @@ const COPY = {
     mailSubject: 'General application',
     workTitle: 'What we work on',
     workBody:
-      'Buaze is software that helps businesses collect customer feedback with QR codes, send customers on to their review pages and reply to feedback from one panel. We build the product in Turkish and English.',
+      'Buaze is software that helps businesses collect customer feedback with QR codes, send customers on to their review pages and reply to feedback from one panel. We build it in Istanbul for businesses that work in Turkish and English.',
     links: [
       { path: '/about', label: 'About Buaze' },
       { path: '/how-it-works', label: 'How it works' },

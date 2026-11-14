@@ -46,10 +46,11 @@ const META = {
 
 const COPY = {
   tr: {
-    eyebrow: 'Hakkımızda',
+    eyebrow: 'Şirket',
+    crumb: 'Hakkımızda',
     h1: 'Buaze hakkında',
     lead: 'Buaze, işletmelerin müşteri geri bildirimini QR kodla topladığı ve müşterilerini Google gibi platformlardaki yorum sayfalarına yönlendirdiği bir yazılımdır. Restoranlar, oteller, klinikler, mağazalar ve hizmet işletmeleri için geliştirildi.',
-    lead2: "2023'te İstanbul'da kurulduk. Ürünü Türkçe ve İngilizce geliştiriyoruz; panel, müşteri formu ve e-postalar iki dilde de kullanılabilir.",
+    lead2: "2023'te İstanbul'da kurulduk. Ürün Türkçe ve İngilizce kullanılabilir: panel, müşteri formu ve e-postalar iki dilde de hazır.",
     factsTitle: 'Kısaca Buaze',
     facts: {
       founded: 'Kuruluş',
@@ -89,7 +90,7 @@ const COPY = {
         {
           icon: 'message',
           title: 'Geri bildirim ve yanıt',
-          body: 'Geri bildirimler tek gelen kutusunda toplanır; 1–3 yıldızlık her yenisinde e-posta uyarısı alırsınız. Pulse AI yanıt taslağı hazırlar, siz düzenleyip onaylarsınız.',
+          body: 'QR koddan gelen geri bildirimler tek gelen kutusunda toplanır; 1–3 yıldızlık her yeni geri bildirimde e-posta uyarısı alırsınız. Pulse AI yanıt taslağı hazırlar, siz düzenleyip onaylarsınız.',
           link: { path: '/features/review-management', label: 'Yorum yönetimi' },
         },
         {
@@ -117,7 +118,7 @@ const COPY = {
         },
         {
           title: 'Yorum için ödül yok',
-          body: 'Yorum karşılığında indirim, hediye veya ödül sunmayız. Panelden gönderilen yanıtlarda yorum karşılığı ödül teklif eden ya da yorumun değiştirilmesini isteyen ifadeler engellenir.',
+          body: 'Buaze yorum karşılığında indirim, hediye veya ödül sunmaz. Panelden gönderilen yanıtlarda yorum karşılığı ödül teklif eden ya da yorumun değiştirilmesini isteyen ifadeler engellenir.',
         },
         {
           title: 'Son söz sizde',
@@ -136,7 +137,8 @@ const COPY = {
     },
     cta: {
       title: 'Bize ulaşın',
-      body: 'Ürün, iş birliği ve basın talepleriniz için support@buaze.com adresine yazabilirsiniz.',
+      bodyStart: 'Ürün, iş birliği ve basın talepleriniz için',
+      bodyEnd: 'adresine yazabilirsiniz.',
       primary: 'Ücretsiz deneyin',
       secondary: 'İletişim sayfası',
     },
@@ -145,10 +147,11 @@ const COPY = {
       "Bu sayfa Buaze adlı yazılım şirketini anlatır; Çiçewa dilinde 'buaze' olarak bilinen Securidaca longipedunculata bitkisiyle ilgili değildir.",
   },
   en: {
-    eyebrow: 'About us',
+    eyebrow: 'Company',
+    crumb: 'About us',
     h1: 'About Buaze',
     lead: 'Buaze is software that helps businesses collect customer feedback with QR codes and send customers on to their review pages on platforms such as Google. It is built for restaurants, hotels, clinics, shops and service businesses.',
-    lead2: 'We started in Istanbul in 2023. We build the product in Turkish and English: the panel, the customer form and the e-mails work in both languages.',
+    lead2: 'We started in Istanbul in 2023. The product works in Turkish and English: the panel, the customer form and the e-mails are available in both languages.',
     factsTitle: 'Buaze at a glance',
     facts: {
       founded: 'Founded',
@@ -188,7 +191,7 @@ const COPY = {
         {
           icon: 'message',
           title: 'Feedback and replies',
-          body: 'Feedback arrives in one inbox, and every new 1–3 star entry triggers an e-mail alert. Pulse AI drafts a reply; you edit and approve it.',
+          body: 'Feedback from your QR codes arrives in one inbox, and every new piece of 1–3 star feedback triggers an e-mail alert. Pulse AI drafts a reply; you edit and approve it.',
           link: { path: '/features/review-management', label: 'Review management' },
         },
         {
@@ -216,7 +219,7 @@ const COPY = {
         },
         {
           title: 'No rewards for reviews',
-          body: 'We offer no discount, gift or reward in exchange for a review. Replies sent from the panel are blocked if they offer a reward for a review or ask the customer to change one.',
+          body: 'Buaze offers no discount, gift or reward in exchange for a review. Replies sent from the panel are blocked if they offer a reward for a review or ask the customer to change one.',
         },
         {
           title: 'You have the final say',
@@ -235,7 +238,8 @@ const COPY = {
     },
     cta: {
       title: 'Get in touch',
-      body: 'For product, partnership or press requests, write to support@buaze.com.',
+      bodyStart: 'For product, partnership or press requests, write to',
+      bodyEnd: '.',
       primary: 'Start free trial',
       secondary: 'Contact page',
     },
@@ -317,7 +321,7 @@ export default async function AboutPage({
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: copy.home, item: `${SITE_URL}/${lang}` },
-          { '@type': 'ListItem', position: 2, name: copy.eyebrow, item: pageUrl },
+          { '@type': 'ListItem', position: 2, name: copy.crumb, item: pageUrl },
         ],
       },
     ],
@@ -525,7 +529,15 @@ export default async function AboutPage({
               {copy.cta.title}
             </h2>
             <p className="mx-auto mt-5 max-w-[620px] text-pretty text-[16px] leading-[1.6] text-[#1A1A1A] sm:text-[18px]">
-              {copy.cta.body} {SUPPORT_HOURS[lang]}
+              {copy.cta.bodyStart}{' '}
+              <a
+                href={`mailto:${company.supportEmail}`}
+                className="font-semibold text-[#0A0A0A] underline decoration-[#0A0A0A]/40 decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] rounded-sm"
+              >
+                {company.supportEmail}
+              </a>
+              {lang === 'tr' ? ' ' : ''}
+              {copy.cta.bodyEnd} {SUPPORT_HOURS[lang]}
             </p>
             <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               <Link

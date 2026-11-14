@@ -127,7 +127,7 @@ const COPY = {
     model: [
       {
         title: 'Kaydederken kontrol',
-        body: 'Bağlantıyı kaydettiğinizde adresin doğru platforma ait olduğu ve bir yorum sayfasına benzediği kontrol edilir. Ana sayfa gibi bir adres girerseniz uyarı görürsünüz.',
+        body: 'Bağlantıyı kaydettiğinizde adresin doğru platforma ait olduğu kontrol edilir. Çoğu platformda ana sayfa gibi, yorum sayfası olmayan bir adres girerseniz uyarı da görürsünüz.',
       },
       {
         title: 'Her QR koda bir platform',
@@ -208,7 +208,7 @@ const COPY = {
     model: [
       {
         title: 'Checked when you save',
-        body: 'When you save a link, Buaze checks that the address belongs to the right platform and looks like a review page. If you enter something like a home page, you see a warning.',
+        body: 'When you save a link, Buaze checks that the address belongs to the right platform. On most platforms you also see a warning if you enter something that is not a review page, such as a home page.',
       },
       {
         title: 'One platform per QR code',

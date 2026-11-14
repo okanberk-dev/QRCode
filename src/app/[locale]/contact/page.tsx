@@ -155,7 +155,7 @@ export default async function ContactPage({
   };
 
   const iconBox =
-    'flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]';
+    'flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]';
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
@@ -202,51 +202,53 @@ export default async function ContactPage({
                 <h2 id="contact-direct-title" className="text-[24px] leading-[1.15] text-[#0A0A0A] sm:text-[28px]">
                   {copy.directTitle}
                 </h2>
+                {/* dl > div > (dt, dd) only: the icon sits inside the dt so
+                    the list stays valid HTML. */}
                 <dl className="mt-6 space-y-6">
-                  <div className="flex gap-4">
-                    <span aria-hidden="true" className={iconBox}>
-                      <Mail size={18} strokeWidth={2} />
-                    </span>
-                    <div className="min-w-0">
-                      <dt className="text-[13px] font-medium text-[#737373]">{copy.emailLabel}</dt>
-                      <dd className="mt-1">
-                        <a
-                          href={`mailto:${company.supportEmail}`}
-                          className="inline-flex min-h-[44px] items-center text-[17px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
-                        >
-                          {company.supportEmail}
-                        </a>
-                        <p className="text-[14px] leading-[1.55] text-[#525252]">{copy.emailNote}</p>
-                      </dd>
-                    </div>
+                  <div className="relative min-h-10 pl-14">
+                    <dt className="text-[13px] font-medium text-[#737373]">
+                      <span aria-hidden="true" className={`absolute left-0 top-0 ${iconBox}`}>
+                        <Mail size={18} strokeWidth={2} />
+                      </span>
+                      {copy.emailLabel}
+                    </dt>
+                    <dd className="mt-1">
+                      <a
+                        href={`mailto:${company.supportEmail}`}
+                        className="inline-flex min-h-[44px] items-center break-words text-[17px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      >
+                        {company.supportEmail}
+                      </a>
+                      <p className="text-[14px] leading-[1.55] text-[#525252]">{copy.emailNote}</p>
+                    </dd>
                   </div>
-                  <div className="flex gap-4">
-                    <span aria-hidden="true" className={iconBox}>
-                      <Clock size={18} strokeWidth={2} />
-                    </span>
-                    <div className="min-w-0">
-                      <dt className="text-[13px] font-medium text-[#737373]">{copy.hoursLabel}</dt>
-                      <dd className="mt-1 text-[15px] leading-[1.6] text-[#0A0A0A]">{SUPPORT_HOURS[lang]}</dd>
-                    </div>
+                  <div className="relative min-h-10 pl-14">
+                    <dt className="text-[13px] font-medium text-[#737373]">
+                      <span aria-hidden="true" className={`absolute left-0 top-0 ${iconBox}`}>
+                        <Clock size={18} strokeWidth={2} />
+                      </span>
+                      {copy.hoursLabel}
+                    </dt>
+                    <dd className="mt-1 text-[15px] leading-[1.6] text-[#0A0A0A]">{SUPPORT_HOURS[lang]}</dd>
                   </div>
-                  <div className="flex gap-4">
-                    <span aria-hidden="true" className={iconBox}>
-                      <MapPin size={18} strokeWidth={2} />
-                    </span>
-                    <div className="min-w-0">
-                      <dt className="text-[13px] font-medium text-[#737373]">{copy.addressLabel}</dt>
-                      <dd className="mt-1 text-[15px] leading-[1.6] text-[#0A0A0A]">
-                        <address className="not-italic">
-                          {company.legalName ? (
-                            <>
-                              {company.legalName}
-                              <br />
-                            </>
-                          ) : null}
-                          {company.addressDisplay[lang]}
-                        </address>
-                      </dd>
-                    </div>
+                  <div className="relative min-h-10 pl-14">
+                    <dt className="text-[13px] font-medium text-[#737373]">
+                      <span aria-hidden="true" className={`absolute left-0 top-0 ${iconBox}`}>
+                        <MapPin size={18} strokeWidth={2} />
+                      </span>
+                      {copy.addressLabel}
+                    </dt>
+                    <dd className="mt-1 text-[15px] leading-[1.6] text-[#0A0A0A]">
+                      <address className="not-italic">
+                        {company.legalName ? (
+                          <>
+                            {company.legalName}
+                            <br />
+                          </>
+                        ) : null}
+                        {company.addressDisplay[lang]}
+                      </address>
+                    </dd>
                   </div>
                 </dl>
               </section>

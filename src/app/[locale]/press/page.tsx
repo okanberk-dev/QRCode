@@ -42,7 +42,7 @@ const PLATFORMS_TR =
 const PLATFORMS_EN =
   'Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb, Yandex, Yelp and Foursquare';
 
-const MEDIUM_TR = `Buaze, restoran, otel, klinik ve mağaza gibi işletmeler için geliştirilen bir geri bildirim ve yorum bağlantısı yazılımıdır. Müşteri QR kodu okutup puan verir; işletmenin belirlediği eşik ve üzerindeki puanlarda seçilen platformun yorum sayfası açılır, eşiğin altındaki puanlarda müşteri önce işletmeye özel geri bildirim yazabilir ve herkese açık yorum bağlantısı aynı ekranda görünür. Buaze; ${PLATFORMS_TR} olmak üzere 10 platformun yorum bağlantısını yönetir.`;
+const MEDIUM_TR = `Buaze, restoran, otel, klinik ve mağaza gibi işletmeler için geliştirilen bir geri bildirim ve yorum bağlantısı yazılımıdır. Müşteri QR kodu okutup puan verir; işletmenin belirlediği eşik ve üzerindeki puanlarda seçilen platformun yorum sayfası açılır, eşiğin altındaki puanlarda müşteri önce işletmeye özel geri bildirim yazabilir ve herkese açık yorum bağlantısı aynı ekranda görünür. Buaze 10 platformun yorum bağlantısını yönetir: ${PLATFORMS_TR}.`;
 const MEDIUM_EN = `Buaze is feedback and review-link software for businesses such as restaurants, hotels, clinics and shops. The customer scans a QR code and gives a rating; at or above the threshold the business sets, the chosen platform's review page opens, and below it the customer can first send the business private feedback, with the public review link shown on the same screen. Buaze manages review links for 10 platforms: ${PLATFORMS_EN}.`;
 
 const COPY = {
@@ -86,10 +86,8 @@ const COPY = {
     brandLead: 'Logoyu orantısını değiştirmeden ve çevresinde yeterli boşluk bırakarak kullanın; renkleri aşağıdaki değerlerle eşleştirin.',
     logo: 'Logo',
     logoDownload: 'Logoyu indir (SVG)',
-    logoAria: 'Buaze logosunu SVG olarak indir',
     icon: 'Uygulama simgesi',
     iconDownload: 'Simgeyi indir (SVG)',
-    iconAria: 'Buaze uygulama simgesini SVG olarak indir',
     iconAlt: 'Buaze uygulama simgesi',
     palette: 'Renk paleti',
     colors: [
@@ -152,10 +150,8 @@ const COPY = {
     brandLead: 'Use the logo without changing its proportions and with clear space around it; match colours to the values below.',
     logo: 'Logo',
     logoDownload: 'Download logo (SVG)',
-    logoAria: 'Download the Buaze logo as SVG',
     icon: 'App icon',
     iconDownload: 'Download icon (SVG)',
-    iconAria: 'Download the Buaze app icon as SVG',
     iconAlt: 'Buaze app icon',
     palette: 'Colour palette',
     colors: [
@@ -370,7 +366,6 @@ export default async function PressPage({
                 <a
                   href="/buaze-logo.svg"
                   download="buaze-logo.svg"
-                  aria-label={copy.logoAria}
                   className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#D4D4D4] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                 >
                   <Download size={15} aria-hidden="true" />
@@ -385,7 +380,6 @@ export default async function PressPage({
                 <a
                   href="/favicon.svg"
                   download="buaze-icon.svg"
-                  aria-label={copy.iconAria}
                   className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#D4D4D4] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                 >
                   <Download size={15} aria-hidden="true" />

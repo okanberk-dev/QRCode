@@ -81,8 +81,8 @@ export default function FaqAccordion({ faqs, defaultOpen = [0, 1], headingLevel 
         return (
           <div key={i} className="py-[22px]">
             {Heading ? <Heading className="m-0">{button}</Heading> : button}
-            <div id={panelId} hidden={!isOpen} className="mt-2.5 max-w-[560px]">
-              <p className="text-[14px] leading-[1.6] text-[#525252]">{f.a}</p>
+            <div id={panelId} hidden={!isOpen} className="mt-3 max-w-[680px] pr-12">
+              <p className="text-[15px] leading-[1.65] text-[#525252] sm:text-[16px]">{f.a}</p>
               {f.links && f.links.length > 0 ? (
                 <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
                   {f.links.map((link) => (

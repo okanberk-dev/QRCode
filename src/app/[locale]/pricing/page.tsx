@@ -82,7 +82,7 @@ function buildCopy(locale: 'tr' | 'en') {
         contact: 'Bize yazın',
       },
       paymentNote:
-        'Kartla ödeme, Dodo Payments’ın güvenli ödeme sayfasında alınır; ödeme sayfasında Buaze hesabınızın e-posta adresini kullanın. Aboneliğinizi istediğiniz zaman iptal edebilirsiniz; iptalden sonra ödediğiniz dönemin sonuna kadar erişiminiz sürer.',
+        'Kartla abone olmadan önce ücretsiz hesabınızı açın ve ödeme sayfasında hesabınızın e-posta adresini kullanın; ödeme Dodo Payments’ın güvenli sayfasında alınır. Aboneliğinizi istediğiniz zaman iptal edebilirsiniz; iptalden sonra ödediğiniz dönemin sonuna kadar erişiminiz sürer.',
       included: {
         eyebrow: 'Her planda',
         title: 'Her planda bulunanlar',
@@ -163,7 +163,7 @@ function buildCopy(locale: 'tr' | 'en') {
       contact: 'Contact us',
     },
     paymentNote:
-      'Card payments are taken on the secure Dodo Payments checkout page; use the e-mail address of your Buaze account there. You can cancel at any time and keep access until the end of the period you paid for.',
+      'Before you subscribe by card, create your free account and use its e-mail address on the checkout page; payment is taken on the secure Dodo Payments page. You can cancel at any time and keep access until the end of the period you paid for.',
     included: {
       eyebrow: 'In every plan',
       title: 'Included in every plan',
@@ -246,7 +246,7 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
       },
       {
         q: 'Yıllık ödeme yapabilir miyim?',
-        a: 'Yıllık fiyatları plan kartlarında görebilirsiniz, ancak yıllık ödemeyi şu an panelden başlatamazsınız. Yıllık ödemek isterseniz bize yazın; birlikte ayarlayalım.',
+        a: 'Yıllık fiyatları plan kartlarında görebilirsiniz, ancak yıllık ödemeyi şu an kendiniz başlatamazsınız. Yıllık ödemek isterseniz bize yazın; birlikte ayarlayalım.',
       },
       {
         q: 'Aboneliğimi istediğim zaman iptal edebilir miyim?',
@@ -277,7 +277,7 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
     },
     {
       q: 'Can I pay yearly?',
-      a: 'The plan cards show yearly prices, but you cannot start yearly billing from the panel yet. If you would like to pay yearly, write to us and we will set it up together.',
+      a: 'The plan cards show yearly prices, but you cannot start yearly billing yourself yet. If you would like to pay yearly, write to us and we will set it up together.',
     },
     {
       q: 'Can I cancel whenever I want?',

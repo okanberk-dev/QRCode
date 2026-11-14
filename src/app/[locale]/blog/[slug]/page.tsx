@@ -222,9 +222,18 @@ export default async function BlogPostPage({
     });
 
   const author = displayBlogAuthor(post.author, lang);
-  const authorRole = post.authorRole?.trim() || null;
-  const authorBio = post.authorBio?.trim() || null;
-  const pullQuoteAuthor = post.pullQuoteAuthor?.trim() || author;
+  // A role or bio written for a placeholder name (spec D3) would describe an
+  // invented person under the "Buaze team" byline, so it is dropped with it.
+  const authorReplaced = author !== (post.author ?? '').trim();
+  const authorRole = authorReplaced ? null : post.authorRole?.trim() || null;
+  const authorBio = authorReplaced ? null : post.authorBio?.trim() || null;
+  const pullQuoteAuthor = post.pullQuoteAuthor?.trim()
+    ? displayBlogAuthor(post.pullQuoteAuthor, lang)
+    : author;
+  const coverUrl = post.coverImage?.trim() || '';
+  const imageUrl = coverUrl
+    ? coverUrl.startsWith('/') ? `${SITE_URL}${coverUrl}` : coverUrl
+    : `${SITE_URL}/images/open-graph-${lang}.png`;
   const postUrl = `${SITE_URL}/${lang}/blog/${slug}`;
   const publishedIso = blogDateToIso(post.date) ?? post.createdAt?.toISOString?.() ?? null;
   const content = addHeadingAnchors(sanitizeBlogContent(post.content));
@@ -236,7 +245,7 @@ export default async function BlogPostPage({
     : getBlogKeywords(post.title, post.description, lang).slice(0, 6);
   const ctaTitle = post.ctaTitle?.trim() || (isTr ? "Buaze'yi 14 gün ücretsiz deneyin" : 'Try Buaze free for 14 days');
   const ctaSubtitle = post.ctaSubtitle?.trim() || (isTr
-    ? 'Kredi kartı gerekmez. Kurulum sihirbazı QR kodunuzu ve platform bağlantılarınızı adım adım hazırlar.'
+    ? 'Kredi kartı gerekmez. Kurulum sihirbazıyla QR kodunuzu ve platform bağlantılarınızı adım adım hazırlarsınız.'
     : 'No credit card needed. The setup wizard walks you through your QR code and platform links.');
   const ctaButtonLabel = post.ctaButtonLabel?.trim() || (isTr ? 'Ücretsiz deneyin' : 'Start free trial');
 
@@ -250,7 +259,7 @@ export default async function BlogPostPage({
         isPartOf: { '@id': `${SITE_URL}/${lang}/blog#blog` },
         headline: post.title,
         description: post.description,
-        image: [post.coverImage?.trim() || `${SITE_URL}/images/open-graph-${lang}.png`],
+        image: [imageUrl],
         author: [
           isTeamAuthor(author)
             ? { '@type': 'Organization', name: author, url: `${SITE_URL}/${lang}/about` }
