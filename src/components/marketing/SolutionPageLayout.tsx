@@ -176,7 +176,7 @@ const SHARED = {
     flowEyebrow: 'Nasıl çalışır',
     stepLabel: 'Adım',
     placementEyebrow: 'QR yerleşimi',
-    usesEyebrow: 'Panelde',
+    usesEyebrow: 'Panel özellikleri',
     platformsEyebrow: 'Yorum platformları',
     platformsListLabel: 'Bu sektörde panelin gösterdiği yorum platformları',
     platformsFootnote:
@@ -185,9 +185,9 @@ const SHARED = {
     questionsEyebrow: 'Anketler ve denetimler',
     questionsHeading: 'Örnek anket soruları',
     questionsHint: 'Soruları Anketler bölümünde kendiniz yazarsınız; anket başına en fazla 30 soru eklenebilir.',
-    templatesHeading: 'Hazır şablonlar',
-    surveyTag: 'Anket şablonu',
-    auditTag: 'Denetim şablonu',
+    surveyTemplatesHeading: 'Hazır anket şablonları',
+    auditTemplatesHeading: 'Hazır denetim şablonları',
+    auditTemplatesLead: 'Denetim Merkezi ekibinizin iç kontrolleri içindir; bu formlar müşteriye gösterilmez.',
     auditsNote: '',
     surveysLink: 'Anketleri inceleyin',
     auditsLink: 'Denetim Merkezi’ni inceleyin',
@@ -228,7 +228,7 @@ const SHARED = {
     flowEyebrow: 'How it works',
     stepLabel: 'Step',
     placementEyebrow: 'QR placement',
-    usesEyebrow: 'In the panel',
+    usesEyebrow: 'Panel features',
     platformsEyebrow: 'Review platforms',
     platformsListLabel: 'Review platforms the panel shows for this industry',
     platformsFootnote:
@@ -237,9 +237,9 @@ const SHARED = {
     questionsEyebrow: 'Surveys and audits',
     questionsHeading: 'Sample survey questions',
     questionsHint: 'You write the questions yourself in Surveys; a survey can have up to 30 questions.',
-    templatesHeading: 'Ready-made templates',
-    surveyTag: 'Survey template',
-    auditTag: 'Audit template',
+    surveyTemplatesHeading: 'Ready-made survey templates',
+    auditTemplatesHeading: 'Ready-made audit templates',
+    auditTemplatesLead: "The Audit Center is for your team's internal checks; these forms are not shown to customers.",
     auditsNote:
       'The ready-made audit templates are currently written in Turkish; you can also build your own checklist in English.',
     surveysLink: 'See Surveys',
@@ -279,20 +279,24 @@ function SectionHeading({
   title,
   lead,
   tone = 'light',
+  size = 'md',
 }: {
   id: string;
   eyebrow: string;
   title: string;
   lead?: string;
   tone?: 'light' | 'dark';
+  /** 'sm' for utility sections (related pages). */
+  size?: 'md' | 'sm';
 }) {
   const dark = tone === 'dark';
+  const scale = size === 'sm' ? 'text-[24px] sm:text-[30px]' : 'text-[28px] sm:text-[40px] lg:text-[48px]';
   return (
     <div className="max-w-[720px]">
       <p className={`pulse-eyebrow ${dark ? 'text-[#C6F24E]' : 'text-[#737373]'}`}>{eyebrow}</p>
       <h2
         id={id}
-        className={`mt-4 text-balance text-[28px] leading-[1.08] tracking-[-0.02em] sm:text-[40px] lg:text-[48px] ${
+        className={`mt-4 text-balance leading-[1.08] tracking-[-0.02em] ${scale} ${
           dark ? 'text-white' : 'text-[#0A0A0A]'
         }`}
       >
@@ -416,7 +420,7 @@ export default function SolutionPageLayout({
               {illustration ? (
                 <div
                   aria-hidden="true"
-                  className="relative mx-auto mt-12 flex aspect-square w-full max-w-[280px] items-center justify-center rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] sm:max-w-[360px] lg:mt-0 lg:max-w-[440px]"
+                  className="relative mx-auto mt-12 flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] sm:max-w-[360px] lg:mt-0 lg:max-w-[440px]"
                 >
                   <div className="absolute inset-[12%] rounded-full bg-[#EAF9B8]/60 blur-2xl" />
                   <div className="relative w-[78%] [&>svg]:h-auto [&>svg]:w-full">{illustration}</div>
@@ -577,12 +581,12 @@ export default function SolutionPageLayout({
               title={content.questions.title}
               lead={content.questions.lead}
             />
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 lg:grid-cols-[1fr_1fr] lg:gap-8">
+            <div className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 lg:grid-cols-[1.1fr_1fr] lg:items-start lg:gap-8">
               <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
                 <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
                   >
                     <FileText size={18} strokeWidth={2} />
                   </span>
@@ -604,45 +608,64 @@ export default function SolutionPageLayout({
                 <p className="mt-6 text-[14px] leading-[1.6] text-[#737373]">{shared.questionsHint}</p>
               </div>
 
-              <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
-                <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#0A0A0A] text-[#C6F24E]"
-                  >
-                    <ClipboardCheck size={18} strokeWidth={2} />
-                  </span>
-                  {shared.templatesHeading}
-                </h3>
-                <ul className="mt-6 space-y-3">
-                  {surveyTemplates.map((template) => (
-                    <li key={template.id} className="rounded-[14px] border border-[#EDEDED] p-4">
-                      <p className="pulse-eyebrow text-[#737373]">{shared.surveyTag}</p>
-                      <p className="mt-2 text-[16px] font-semibold leading-[1.35] text-[#0A0A0A]">{template.title}</p>
-                      <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">{template.body}</p>
-                    </li>
-                  ))}
-                  {content.questions.audits.map((audit) => (
-                    <li key={audit.title} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-4">
-                      <p className="pulse-eyebrow text-[#737373]">{shared.auditTag}</p>
-                      <p className="mt-2 text-[16px] font-semibold leading-[1.35] text-[#0A0A0A]">{audit.title}</p>
-                      <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">{audit.body}</p>
-                    </li>
-                  ))}
-                </ul>
-                {shared.auditsNote && content.questions.audits.length > 0 ? (
-                  <p className="mt-5 text-[14px] leading-[1.6] text-[#737373]">{shared.auditsNote}</p>
+              <div className="space-y-6">
+                <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                  <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
+                    >
+                      <FileText size={18} strokeWidth={2} />
+                    </span>
+                    {shared.surveyTemplatesHeading}
+                  </h3>
+                  <ul className="mt-5 divide-y divide-[#EDEDED]">
+                    {surveyTemplates.map((template) => (
+                      <li key={template.id} className="py-3.5 first:pt-0">
+                        <p className="text-[16px] font-semibold leading-[1.35] text-[#0A0A0A]">{template.title}</p>
+                        <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">{template.body}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3">
+                    <Link href={`${base}/features/surveys`} className={TEXT_LINK}>
+                      {shared.surveysLink}
+                      <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                  </p>
+                </div>
+
+                {content.questions.audits.length > 0 ? (
+                  <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                    <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
+                      <span
+                        aria-hidden="true"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#0A0A0A] text-[#C6F24E]"
+                      >
+                        <ClipboardCheck size={18} strokeWidth={2} />
+                      </span>
+                      {shared.auditTemplatesHeading}
+                    </h3>
+                    <p className="mt-3 text-[14px] leading-[1.6] text-[#737373]">{shared.auditTemplatesLead}</p>
+                    <ul className="mt-4 divide-y divide-[#EDEDED]">
+                      {content.questions.audits.map((audit) => (
+                        <li key={audit.title} className="py-3.5 first:pt-0">
+                          <p className="text-[16px] font-semibold leading-[1.35] text-[#0A0A0A]">{audit.title}</p>
+                          <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">{audit.body}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    {shared.auditsNote ? (
+                      <p className="mt-2 text-[14px] leading-[1.6] text-[#737373]">{shared.auditsNote}</p>
+                    ) : null}
+                    <p className="mt-3">
+                      <Link href={`${base}/features/audit-center`} className={TEXT_LINK}>
+                        {shared.auditsLink}
+                        <ArrowRight size={14} aria-hidden="true" />
+                      </Link>
+                    </p>
+                  </div>
                 ) : null}
-                <p className="mt-2 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
-                  <Link href={`${base}/features/surveys`} className={TEXT_LINK}>
-                    {shared.surveysLink}
-                    <ArrowRight size={14} aria-hidden="true" />
-                  </Link>
-                  <Link href={`${base}/features/audit-center`} className={TEXT_LINK}>
-                    {shared.auditsLink}
-                    <ArrowRight size={14} aria-hidden="true" />
-                  </Link>
-                </p>
               </div>
             </div>
           </div>
@@ -717,7 +740,12 @@ export default function SolutionPageLayout({
         {/* 9 · Related sectors and resources */}
         <section aria-labelledby="solution-related-title" className={`${bgAfterDark('related')} ${SECTION_Y}`}>
           <div className={CONTAINER}>
-            <SectionHeading id="solution-related-title" eyebrow={shared.relatedEyebrow} title={shared.relatedTitle} />
+            <SectionHeading
+              id="solution-related-title"
+              eyebrow={shared.relatedEyebrow}
+              title={shared.relatedTitle}
+              size="sm"
+            />
             <div className="mt-10 grid grid-cols-1 gap-8 sm:mt-12 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
               <div>
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
