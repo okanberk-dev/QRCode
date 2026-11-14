@@ -198,7 +198,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Act on problems quickly',
           body:
-            'You get an e-mail for every 1–3★ piece of feedback, and the QR label shows which area it is about. If the member left an e-mail address, you can tell them how you replied and what you fixed.',
+            'You get an e-mail for every 1–3★ piece of feedback, and the QR label shows which area it is about. If the member left an e-mail address, you can reply and tell them what you fixed.',
         },
       ],
     },

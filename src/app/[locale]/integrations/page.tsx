@@ -114,7 +114,7 @@ const COPY = {
     eyebrow: 'Platform bağlantıları',
     title: 'Yorum platformu bağlantıları',
     lead:
-      'Google, Yemeksepeti, Booking.com ve diğer platformlardaki yorum sayfalarınızın bağlantılarını tek panelde tutun. QR akışı müşteriyi seçtiğiniz platformun yorum sayfasına ulaştırır; bağlantılar her gün otomatik kontrol edilir.',
+      'Google, Yemeksepeti, Booking.com ve diğer platformlardaki yorum sayfalarınızın bağlantılarını tek panelde tutun. Müşteri QR kodu okuttuğunda seçtiğiniz platformun yorum bağlantısını görür; bağlantılar her gün otomatik kontrol edilir.',
     heroPrimary: 'Ücretsiz deneyin',
     heroSecondary: 'Nasıl çalışır',
     platformsEyebrow: 'Desteklenen platformlar',
@@ -123,7 +123,7 @@ const COPY = {
       'Buaze bu platformlardaki yorum sayfanızın bağlantısını tutar. Yorumlar platformun kendisinde yazılır ve orada kalır.',
     modelEyebrow: 'Bağlantı modeli',
     modelTitle: 'Bağlantılar nasıl çalışır',
-    modelLead: 'Buaze platformlara bağlanıp veri çekmez; doğru yorum sayfasının adresini tutar ve sağlığını izler.',
+    modelLead: 'Buaze bu platformlardan yorum çekmez; doğru yorum sayfasının adresini tutar ve bağlantının çalışıp çalışmadığını izler.',
     model: [
       {
         title: 'Kaydederken kontrol',
@@ -131,7 +131,7 @@ const COPY = {
       },
       {
         title: 'Her QR koda bir platform',
-        body: 'Varsayılan platformunuzu seçersiniz; isterseniz her QR kodu ayrı bir platforma bağlarsınız. Eşiğinizin üzerinde puan veren müşteri için bu platformun yorum sayfası açılır.',
+        body: 'Varsayılan platformunuzu seçersiniz; isterseniz her QR kodu ayrı bir platforma bağlarsınız. Belirlediğiniz eşik ve üzerinde puan veren müşteri için bu platformun yorum sayfası açılır; eşiğin altında puan veren müşteri aynı bağlantıyı geri bildirim formunun altında görür.',
       },
       {
         title: 'Her gün otomatik kontrol',
@@ -144,7 +144,7 @@ const COPY = {
     ],
     socialEyebrow: 'Sosyal ve iletişim',
     socialTitle: 'Sosyal medya ve iletişim bağlantıları',
-    socialLead: 'Yorum platformlarının yanında sosyal medya, web sitesi ve rezervasyon bağlantılarınızı da işletme ayarlarınızda tutarsınız.',
+    socialLead: 'Yorum platformlarının yanında Instagram, Facebook, WhatsApp, web sitesi ve rezervasyon bağlantılarınızı da işletme ayarlarınızda tutabilirsiniz. Bunlardan yalnızca WhatsApp, siz açarsanız müşteri akışında görünür.',
     social: [
       { key: 'instagram', title: 'Instagram', body: 'Profil bağlantınız.' },
       { key: 'facebook', title: 'Facebook', body: 'Sayfa bağlantınız.' },
@@ -170,7 +170,7 @@ const COPY = {
       },
       {
         q: 'Hangi platformları eklemeliyim?',
-        a: 'Müşterilerinizin gerçekten kullandığı platformları ekleyin. Panel sektörünüze uygun platformları listeler; örneğin restoranlarda Google, Yemeksepeti ve Getir, otellerde Google, Booking.com ve Tripadvisor öne çıkar.',
+        a: 'Müşterilerinizin gerçekten kullandığı platformları ekleyin. Panel sektörünüze uygun platformları listeler; örneğin restoranlarda Google, Yemeksepeti ve Getir, otellerde Google, Tripadvisor ve Booking.com öne çıkar.',
       },
       {
         q: 'Bir bağlantı bozulursa ne olur?',
@@ -195,7 +195,7 @@ const COPY = {
     eyebrow: 'Platform links',
     title: 'Review platform links',
     lead:
-      'Keep the links to your review pages on Google, Yemeksepeti, Booking.com and other platforms in one panel. The QR flow takes customers to your chosen platform’s review page, and every link is checked automatically each day.',
+      'Keep the links to your review pages on Google, Yemeksepeti, Booking.com and other platforms in one panel. When customers scan your QR code, they see the review link for the platform you chose, and every link is checked automatically each day.',
     heroPrimary: 'Start free trial',
     heroSecondary: 'How it works',
     platformsEyebrow: 'Supported platforms',
@@ -204,7 +204,7 @@ const COPY = {
       'Buaze keeps the link to your review page on these platforms. Reviews are written on the platform itself and stay there.',
     modelEyebrow: 'How links work',
     modelTitle: 'How platform links work',
-    modelLead: 'Buaze does not connect to these platforms or pull data from them; it keeps the address of the right review page and watches its health.',
+    modelLead: 'Buaze does not pull reviews from these platforms; it keeps the address of the right review page and checks that the link still works.',
     model: [
       {
         title: 'Checked when you save',
@@ -212,7 +212,7 @@ const COPY = {
       },
       {
         title: 'One platform per QR code',
-        body: 'You choose a default platform and, if you like, tie each QR code to a different one. For a customer who rates at or above your threshold, that platform’s review page opens.',
+        body: 'You choose a default platform and, if you like, tie each QR code to a different one. For a customer who rates at or above your threshold, that platform’s review page opens; a customer who rates below it sees the same link under the feedback form.',
       },
       {
         title: 'Checked every day',
@@ -225,7 +225,7 @@ const COPY = {
     ],
     socialEyebrow: 'Social and contact',
     socialTitle: 'Social media and contact links',
-    socialLead: 'Next to your review platforms, you keep your social media, website and booking links in your business settings.',
+    socialLead: 'Next to your review platforms, you can keep your Instagram, Facebook, WhatsApp, website and booking links in your business settings. Of these, only WhatsApp appears in the customer flow, and only if you switch it on.',
     social: [
       { key: 'instagram', title: 'Instagram', body: 'Your profile link.' },
       { key: 'facebook', title: 'Facebook', body: 'Your page link.' },
@@ -251,7 +251,7 @@ const COPY = {
       },
       {
         q: 'Which platforms should I add?',
-        a: 'Add the platforms your customers actually use. The panel lists the platforms that suit your sector; for example, Google, Yemeksepeti and Getir come first for restaurants, and Google, Booking.com and Tripadvisor for hotels.',
+        a: 'Add the platforms your customers actually use. The panel lists the platforms that suit your sector; for example, Google, Yemeksepeti and Getir come first for restaurants, and Google, Tripadvisor and Booking.com for hotels.',
       },
       {
         q: 'What happens if a link breaks?',

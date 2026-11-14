@@ -83,7 +83,7 @@ const COPY = {
         details: [
           '10 yorum platformundan istediklerinizi eklersiniz',
           'Bağlantılar her gün otomatik kontrol edilir',
-          'Teknik bilgi gerekmez',
+          'Google profilinizi seçmek için Google hesabıyla giriş gerekmez',
         ],
       },
       {
@@ -103,7 +103,7 @@ const COPY = {
         details: [
           'Eşik 4 ya da 5 yıldız olabilir',
           'Form, müşterinin tarayıcı diline göre Türkçe ya da İngilizce açılır',
-          'KVKK aydınlatma ve açık rıza onayı; pazarlama izni ayrı ve kapalı',
+          'KVKK aydınlatma ve açık rıza onayı; pazarlama izni ayrı ve varsayılan olarak kapalı',
         ],
       },
       {
@@ -192,7 +192,7 @@ const COPY = {
         details: [
           'Add any of the 10 review platforms you use',
           'Links are checked automatically every day',
-          'No technical skills needed',
+          'No Google sign-in needed to pick your profile',
         ],
       },
       {
@@ -212,7 +212,7 @@ const COPY = {
         details: [
           'The threshold can be 4 or 5 stars',
           'The form opens in Turkish or English, following the browser language',
-          'KVKK notice and explicit consent; marketing consent is separate and off',
+          'KVKK notice and explicit consent; marketing consent is separate and off by default',
         ],
       },
       {

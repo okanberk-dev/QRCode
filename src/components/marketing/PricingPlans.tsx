@@ -175,7 +175,7 @@ export default function PricingPlans({ locale, plans }: Props) {
               key={p.id}
               aria-labelledby={`plan-${p.id}`}
               className={`relative flex flex-col rounded-[20px] p-6 sm:p-8 ${
-                dark ? 'bg-[#0A0A0A] text-white' : 'border border-[#EDEDED] bg-white text-[#0A0A0A]'
+                dark ? 'mt-2 bg-[#0A0A0A] pt-9 text-white sm:pt-10 md:mt-0' : 'border border-[#EDEDED] bg-white text-[#0A0A0A]'
               }`}
             >
               {dark ? (
@@ -198,8 +198,9 @@ export default function PricingPlans({ locale, plans }: Props) {
                   </span>
                 ) : null}
               </div>
+              {/* Two-line slot from md up so prices line up across cards. */}
               {p.description ? (
-                <p className={`mt-2 text-[15px] leading-[1.55] ${muted}`}>{p.description}</p>
+                <p className={`mt-2 text-[15px] leading-[1.55] md:min-h-[3.1em] ${muted}`}>{p.description}</p>
               ) : null}
 
               <div className={`mt-6 border-b pb-6 ${dark ? 'border-white/10' : 'border-[#EDEDED]'}`}>

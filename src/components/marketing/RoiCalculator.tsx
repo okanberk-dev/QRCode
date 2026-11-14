@@ -6,6 +6,7 @@ import { ArrowRight, Check, Loader2, MailCheck } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, Field } from '@/components/ui';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import RecaptchaNotice from '@/components/RecaptchaNotice';
 import {
   ROI_DEFAULTS,
   ROI_LIMITS,
@@ -86,14 +87,13 @@ const COPY = {
     email: 'E-posta',
     emailPlaceholder: 'ad@isletmeniz.com',
     phone: 'Telefon (isteğe bağlı)',
-    phoneHint: 'Sizi aramamızı isterseniz.',
     consentA: 'Raporun e-postayla gönderilmesini ve Buaze ekibinin benimle iletişime geçmesini onaylıyorum. Ayrıntılar için ',
     consentLink: 'gizlilik politikasına',
     consentB: ' bakın.',
     privacyHref: '/tr/gizlilik',
     facts: ['14 gün ücretsiz deneme', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal'],
     privacyNote:
-      'Bilgilerinizi satmayız. Raporu hazırlarken e-posta gönderimi ve yapay zekâ özeti için hizmet sağlayıcılarımızı kullanırız.',
+      'Bilgilerinizi satmayız. Raporu e-posta sağlayıcımız Resend ile gönderiyoruz; özeti hazırlamak için işletme adı, türü ve girdiğiniz değerler OpenAI’ye gönderilir, e-posta adresiniz gönderilmez.',
     submit: 'Raporu gönder',
     sentTitle: 'Raporunuz yolda',
     sentBody: 'Tahmini raporunuz ve PDF’i birkaç dakika içinde e-postanıza gelir. Görmezseniz spam ve promosyonlar klasörüne bakın.',
@@ -160,14 +160,13 @@ const COPY = {
     email: 'E-mail',
     emailPlaceholder: 'you@yourbusiness.com',
     phone: 'Phone (optional)',
-    phoneHint: 'If you would like a call.',
     consentA: 'I agree to receive the report by e-mail and to be contacted by the Buaze team. See the ',
     consentLink: 'privacy policy',
     consentB: ' for details.',
     privacyHref: '/en/privacy',
     facts: ['14-day free trial', 'No credit card required', 'Cancel anytime'],
     privacyNote:
-      'We do not sell your details. To prepare the report we use service providers for e-mail delivery and the AI summary.',
+      'We do not sell your details. The report is sent through our e-mail provider, Resend. To write the summary, your business name, type and the values you entered are sent to OpenAI; your e-mail address is not.',
     submit: 'Send the report',
     sentTitle: 'Your report is on its way',
     sentBody: 'Your estimate and its PDF reach your inbox within a few minutes. If you cannot see it, check your spam and promotions folders.',
@@ -713,7 +712,7 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
                   maxLength={200}
                 />
               </Field>
-              <Field label={copy.phone} hint={copy.phoneHint}>
+              <Field label={copy.phone}>
                 <input
                   type="tel"
                   value={leadPhone}
@@ -769,7 +768,10 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
             </ul>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[13px] leading-[1.55] text-[#737373] sm:max-w-[460px]">{copy.privacyNote}</p>
+              <div className="space-y-2 sm:max-w-[460px]">
+                <p className="text-[13px] leading-[1.55] text-[#737373]">{copy.privacyNote}</p>
+                <RecaptchaNotice locale={lang} />
+              </div>
               <button
                 type="submit"
                 disabled={leadStatus === 'sending'}

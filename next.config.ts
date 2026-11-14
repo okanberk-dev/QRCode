@@ -83,13 +83,11 @@ const nextConfig: NextConfig = {
   // tree-shake bu volume'da fail edebilir. `optimizePackageImports` Next 14+
   // feature: yalnız import edilen icon'lar bundle'a girer. CLAUDE.md §34.13.
   //
-  // Stage 83 §38.163 — extended:
-  //   - framer-motion (~12 marketing/animation imports) is barrel-exported
-  //     and prone to dragging unused motion features into the chunk.
-  //   - date-fns is used by blog/case-study date formatting; the package
-  //     ships every locale + every fn unless tree-shake is hinted.
+  // Stage 83 §38.163 — extended: date-fns is used by blog date formatting;
+  // the package ships every locale + every fn unless tree-shake is hinted.
+  // (framer-motion was removed in 2026-11: nothing imported it any more.)
   experimental: {
-    optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
+    optimizePackageImports: ['lucide-react', 'date-fns'],
   },
 
   async rewrites() {

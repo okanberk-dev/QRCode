@@ -115,7 +115,7 @@ function buildCopy(locale: 'tr' | 'en') {
         {
           label: 'Müşteriye yanıt',
           cells: {
-            buaze: { kind: 'yes', text: 'E-postayla; Pulse AI taslağıyla' },
+            buaze: { kind: 'yes', text: 'E-posta bırakan müşteriye, Pulse AI taslağıyla' },
             qr: { kind: 'no', text: 'Yok' },
             sheet: { kind: 'partial', text: 'Ayrı bir e-postayla' },
             paper: { kind: 'no', text: 'Yok' },
@@ -189,7 +189,7 @@ function buildCopy(locale: 'tr' | 'en') {
         {
           label: 'Replying to the customer',
           cells: {
-            buaze: { kind: 'yes', text: 'By e-mail, with Pulse AI drafts' },
+            buaze: { kind: 'yes', text: 'By e-mail if they left an address, with Pulse AI drafts' },
             qr: { kind: 'no', text: 'None' },
             sheet: { kind: 'partial', text: 'In a separate e-mail' },
             paper: { kind: 'no', text: 'None' },

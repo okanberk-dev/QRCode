@@ -105,8 +105,7 @@ const COPY = {
       title: 'Buaze bunları yapar',
       items: [
         'QR koduyla her müşteriye puan verme imkânı sunar.',
-        'Belirlediğiniz eşik ve üzerindeki puanlarda seçtiğiniz platformun resmi yorum sayfasını açar.',
-        'Eşiğin altındaki puanlarda size özel geri bildirim formunu açar ve herkese açık yorum bağlantısını aynı ekranda gösterir.',
+        'Herkese açık yorum bağlantısını her puanda gösterir; belirlediğiniz eşik ve üzerindeki puanlarda yorum sayfasını kendiliğinden açar.',
         'Özel geri bildirimleri panelinizde toplar; 1–3 yıldızlık her geri bildirimde size e-posta gönderir.',
         'Pulse AI ile yanıt taslağı hazırlar; siz onaylamadan hiçbir yanıt gönderilmez.',
       ],
@@ -162,7 +161,7 @@ const COPY = {
     faqs: [
       {
         q: 'Buaze yorumları siliyor veya gizliyor mu?',
-        a: 'Hayır. Buaze herkese açık platformlardaki yorumlara erişmez ve onları değiştiremez. Müşteri yorumunu doğrudan Google’da ya da seçtiğiniz platformda, kendi hesabıyla yazar.',
+        a: 'Hayır. Buaze herkese açık platformlardaki yorumları silemez, gizleyemez ya da değiştiremez. Müşteri yorumunu doğrudan Google’da ya da seçtiğiniz platformda, kendi hesabıyla yazar.',
       },
       {
         q: 'Eşiğin altında puan veren müşteri Google’a yorum yazabilir mi?',
@@ -235,8 +234,7 @@ const COPY = {
       title: 'What Buaze does',
       items: [
         'Gives every customer a way to leave a rating through a QR code.',
-        'At or above the threshold you set, opens the official review page of the platform you chose.',
-        'Below the threshold, opens your private feedback form and shows the public review link on the same screen.',
+        'Shows the public review link at every rating, and opens the review page on its own at or above the threshold you set.',
         'Collects private feedback in your panel and e-mails you about every 1–3 star piece of feedback.',
         'Drafts replies with Pulse AI; nothing is sent until you approve it.',
       ],
@@ -292,7 +290,7 @@ const COPY = {
     faqs: [
       {
         q: 'Does Buaze delete or hide reviews?',
-        a: 'No. Buaze has no access to reviews on public platforms and cannot change them. Customers write their reviews directly on Google or the platform you chose, with their own account.',
+        a: 'No. Buaze cannot delete, hide or change reviews on public platforms. Customers write their reviews directly on Google or the platform you chose, with their own account.',
       },
       {
         q: 'Can a customer who rates below the threshold post on Google?',

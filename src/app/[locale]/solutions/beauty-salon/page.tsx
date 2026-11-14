@@ -88,9 +88,9 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           icon: Sparkles,
-          title: 'Salonunuzun üslubunda yanıt',
+          title: 'Yanıt taslağını Pulse AI hazırlar',
           body:
-            'Pulse AI 2–4 cümlelik bir yanıt taslağı hazırlar; sıcak, resmi veya özür dileyen tonu seçer, taslağı kendi üslubunuza göre düzenlersiniz. Siz onaylamadan hiçbir yanıt gönderilmez.',
+            'Pulse AI 2–4 cümlelik bir yanıt taslağı hazırlar. Sıcak, resmi veya özür dileyen tonu siz seçer, taslağı salonunuzun üslubuna göre düzenlersiniz. Siz onaylamadan hiçbir yanıt gönderilmez.',
         },
         {
           icon: MapPin,
@@ -240,7 +240,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           icon: Sparkles,
-          title: 'Replies in your salon’s voice',
+          title: 'Pulse AI drafts the reply',
           body:
             'Pulse AI prepares a 2–4 sentence reply draft; you choose a warm, formal or apologetic tone and edit the draft to sound like you. No reply is sent without your approval.',
         },

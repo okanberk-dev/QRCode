@@ -278,7 +278,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       ],
       audits: [
         {
-          title: 'Customer complaint scenario review',
+          title: 'Customer objection scenario review',
           body: 'Scenarios that check whether service advisers know the right answer to warranty, return and price complaints.',
         },
         {

@@ -21,7 +21,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
     eyebrow: 'Estetik klinikler',
     h1: 'Estetik klinikler için QR ile hasta geri bildirimi ve Google yorumları',
     lead:
-      'Estetik uygulamalarda sonuç zamanla netleşir; geri bildirimi istemek için en doğru an çoğu zaman kontrol randevusudur. Hasta QR kodu okutup puan verir ve isterse adını ya da e-postasını paylaşmadan size yazabilir.',
+      'Estetik uygulamalarda sonuç zamanla netleşir; geri bildirimi istemek için en doğru an çoğu zaman kontrol randevusudur. Hasta QR kodu okutup puan verir. Eşiğin altındaki puanlarda adını ya da e-postasını paylaşmadan önce size yazabilir; herkese açık yorum bağlantısı aynı ekranda görünür.',
     flow: {
       title: 'Estetik kliniğinizde QR ile geri bildirim nasıl işler',
       steps: [
@@ -38,7 +38,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Özenle yanıtlayın',
           body:
-            'Düşük puanlarda anında e-posta alırsınız; hasta e-posta bıraktıysa yanıtınızı e-postayla gönderirsiniz. Buaze yanıtı göndermeden önce kontrol eder: tehdit, hakaret ya da T.C. kimlik numarası gibi kişisel veri içeren yanıtlar gönderilmez.',
+            '1–3 yıldızlık geri bildirimlerde anında e-posta alırsınız; hasta e-posta bıraktıysa yanıtınızı e-postayla gönderirsiniz. Buaze yanıtı göndermeden önce kontrol eder: tehdit, hakaret ya da T.C. kimlik numarası gibi kişisel veri içeren yanıtlar gönderilmez.',
         },
       ],
     },
@@ -185,7 +185,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
     eyebrow: 'Aesthetic clinics',
     h1: 'QR codes for patient feedback and Google reviews at aesthetic clinics',
     lead:
-      'Results of aesthetic treatments take time to show, so the follow-up visit is often the right moment to ask for feedback. The patient scans the QR code, gives a rating and can write to you without sharing a name or e-mail address.',
+      'Results of aesthetic treatments take time to show, so the follow-up visit is often the right moment to ask for feedback. The patient scans the QR code and gives a rating. Below your threshold, they can write to you first without sharing a name or e-mail address; the public review link is shown on the same screen.',
     flow: {
       title: 'How QR feedback works at an aesthetic clinic',
       steps: [
@@ -202,7 +202,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         {
           title: 'Reply with care',
           body:
-            'Low ratings trigger an instant e-mail; if the patient left an e-mail address, you reply by e-mail. Buaze checks every reply before sending: replies with threats, insults or personal data such as Turkish ID numbers are not sent.',
+            'Every 1–3★ piece of feedback sends you an instant e-mail; if the patient left an e-mail address, you reply by e-mail. Buaze checks every reply before sending: replies with threats, insults or personal data such as Turkish ID numbers are not sent.',
         },
       ],
     },

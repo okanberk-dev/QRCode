@@ -101,7 +101,7 @@ function buildContent(locale: 'tr' | 'en'): Omit<ComparisonLayoutProps, 'locale'
           {
             label: 'Müşteriye yanıt',
             cells: {
-              buaze: { kind: 'yes', text: 'Panelden e-postayla' },
+              buaze: { kind: 'yes', text: 'E-posta bırakan müşteriye, panelden' },
               other: { kind: 'partial', text: 'Ayrı bir e-postayla' },
             },
           },
@@ -250,7 +250,7 @@ function buildContent(locale: 'tr' | 'en'): Omit<ComparisonLayoutProps, 'locale'
         {
           label: 'Replying to the customer',
           cells: {
-            buaze: { kind: 'yes', text: 'By e-mail from the panel' },
+            buaze: { kind: 'yes', text: 'From the panel, by e-mail if they left an address' },
             other: { kind: 'partial', text: 'In a separate e-mail' },
           },
         },

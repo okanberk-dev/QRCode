@@ -115,7 +115,7 @@ function buildCopy(locale: 'tr' | 'en') {
           {
             icon: BarChart3,
             title: 'Analitik ve CSV',
-            body: '7, 30, 90 günlük ve 12 aylık raporlar; puanlardan tahmini NPS ve gün-saat dağılımı. Tüm verileri CSV olarak indirebilirsiniz.',
+            body: '7, 30, 90 günlük ve 12 aylık raporlar; puanlardan tahmini NPS ve gün-saat dağılımı. Geri bildirimleri ve raporları CSV olarak indirebilirsiniz.',
             href: '/features/analytics-reports',
           },
           {
@@ -196,7 +196,7 @@ function buildCopy(locale: 'tr' | 'en') {
         {
           icon: BarChart3,
           title: 'Analytics and CSV',
-          body: 'Reports for 7, 30 and 90 days and 12 months, an NPS estimate based on ratings and day-and-hour patterns. Export everything as CSV.',
+          body: 'Reports for 7, 30 and 90 days and 12 months, an NPS estimate based on ratings and day-and-hour patterns. Export feedback and reports as CSV.',
           href: '/features/analytics-reports',
         },
         {

@@ -286,7 +286,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           body: 'A short list for the firm to review its own data protection position: privacy notice, explicit consent, staff training, VERBİS and breach notification.',
         },
         {
-          title: 'New staff day-one orientation check',
+          title: 'New staff first-day onboarding check',
           body: 'To check that the first-day list is complete for new lawyers, trainees and assistants.',
         },
       ],

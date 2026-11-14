@@ -44,7 +44,7 @@ interface Copy {
   lead: string;
   facts: readonly string[];
   toolLabel: string;
-  how: { eyebrow: string; title: string; lead: string; stepLabel: string; steps: readonly Step[] };
+  how: { eyebrow: string; title: string; lead: string; steps: readonly Step[] };
   tips: { eyebrow: string; title: string; lead: string; items: readonly Step[] };
   compare: {
     eyebrow: string;
@@ -79,7 +79,6 @@ const COPY: Record<Locale, Copy> = {
       eyebrow: 'Nasıl çalışır',
       title: 'QR kod nasıl oluşturulur',
       lead: 'QR kod (Türkçesiyle karekod), bir bağlantıyı telefon kamerasının okuyabildiği kare bir desene çeviren açık bir standarttır (ISO/IEC 18004). Adres kodun içine yazılır; kod okutulduğunda doğrudan o sayfa açılır. Bu araç kodu tarayıcınızda oluşturur; girdiğiniz bağlantı Buaze sunucularına gönderilmez.',
-      stepLabel: 'Adım',
       steps: [
         {
           title: 'Bağlantınızı yapıştırın',
@@ -201,7 +200,6 @@ const COPY: Record<Locale, Copy> = {
       eyebrow: 'How it works',
       title: 'How to create a QR code',
       lead: 'A QR code is an open standard (ISO/IEC 18004) that turns a link into a square pattern a phone camera can read. The address is written into the code itself, so scanning it opens that page directly. This tool creates the code in your browser; the link you enter is not sent to Buaze’s servers.',
-      stepLabel: 'Step',
       steps: [
         {
           title: 'Paste your link',
@@ -435,17 +433,12 @@ export default async function QRGeneratorPage({ params }: { params: Promise<{ lo
           <ol className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             {copy.how.steps.map((step, i) => (
               <li key={step.title} id={`step-${i + 1}`} className={`${FEATURE_CARD} scroll-mt-28`}>
-                <p className="flex items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {copy.how.stepLabel} {i + 1}
-                  </span>
-                </p>
+                <span
+                  aria-hidden="true"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                >
+                  {i + 1}
+                </span>
                 <h3 className="mt-5 text-[19px] leading-[1.3] text-[#0A0A0A]">{step.title}</h3>
                 <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{step.body}</p>
               </li>

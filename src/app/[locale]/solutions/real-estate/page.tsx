@@ -78,7 +78,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Tag,
           title: 'Danışman etiketli QR kodlar',
           body:
-            'İşletme başına istediğiniz kadar QR oluşturabilir, her birini bir danışmana ayırabilirsiniz. Geri bildirimin hangi danışmanın QR kodundan geldiği e-postada ve CSV dosyasında görünür.',
+            'İşletme başına istediğiniz kadar QR oluşturabilir, her birini bir danışmana ayırabilirsiniz. Geri bildirimin hangi danışmanın QR kodundan geldiği düşük puan e-postasında ve CSV dosyasında görünür.',
         },
         {
           icon: MapPin,
@@ -145,7 +145,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       items: [
         {
           q: 'Her danışmanın puanını ayrı ayrı görebilir miyim?',
-          a: 'Hayır, danışman bazında puan veya karşılaştırma raporu yoktur. Danışman başına etiketli QR kodlar oluşturabilirsiniz; etiket her geri bildirimin düşük puan e-postasında ve CSV dosyasında görünür. CSV dosyasını kendi tablonuzda danışmana göre sıralayabilirsiniz.',
+          a: 'Hayır, danışman bazında puan veya karşılaştırma raporu yoktur. Danışman başına etiketli QR kodlar oluşturabilirsiniz; etiket düşük puan e-postasında ve tüm geri bildirimleri içeren CSV dosyasında görünür. CSV dosyasını kendi tablonuzda danışmana göre sıralayabilirsiniz.',
         },
         {
           q: 'Tapu veya kira işleminden sonra müşteriye otomatik istek gider mi?',
@@ -237,7 +237,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           icon: Tag,
           title: 'QR codes labelled by agent',
           body:
-            "Create as many QR codes as you need per business and assign each to an agent. The e-mail and the CSV file show which agent’s QR code the feedback came from.",
+            "Create as many QR codes as you need per business and assign each to an agent. The low-rating e-mail and the CSV file show which agent’s QR code the feedback came from.",
         },
         {
           icon: MapPin,
@@ -304,7 +304,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
       items: [
         {
           q: "Can I see each agent’s rating separately?",
-          a: 'No, there are no per-agent ratings or comparison reports. You can create a labelled QR code for each agent; the label shows in the low-rating e-mail and the CSV file for every piece of feedback, and you can sort the CSV by agent in your own spreadsheet.',
+          a: 'No, there are no per-agent ratings or comparison reports. You can create a labelled QR code for each agent; the label shows in the low-rating e-mail and, for every piece of feedback, in the CSV file, and you can sort the CSV by agent in your own spreadsheet.',
         },
         {
           q: 'Do clients get an automatic request after a sale or let completes?',

@@ -73,7 +73,7 @@ export interface SolutionPageContent {
   name: string;
   /** `<title>` (≤ 52 characters; the template adds " | Buaze") and meta description (140–160). */
   meta: { title: string; description: string };
-  /** Hero eyebrow (sentence case; the class uppercases it). */
+  /** Hero eyebrow (sentence case; the class uppercases it). Not shown when it equals `name`, which the breadcrumb already shows. */
   eyebrow: string;
   /** H1: keyword first, sentence case, no trailing period. Also the Service name. */
   h1: string;
@@ -178,7 +178,6 @@ const SHARED = {
     secondary: 'Nasıl çalıştığını görün',
     note: '14 gün ücretsiz deneme · Kredi kartı gerekmez',
     flowEyebrow: 'Nasıl çalışır',
-    stepLabel: 'Adım',
     placementEyebrow: 'QR yerleşimi',
     usesEyebrow: 'Panel özellikleri',
     platformsEyebrow: 'Yorum platformları',
@@ -228,7 +227,6 @@ const SHARED = {
     secondary: 'See how it works',
     note: '14-day free trial · No credit card required',
     flowEyebrow: 'How it works',
-    stepLabel: 'Step',
     placementEyebrow: 'QR placement',
     usesEyebrow: 'Panel features',
     platformsEyebrow: 'Review platforms',
@@ -346,6 +344,10 @@ export default function SolutionPageLayout({
     body: SURVEY_TEMPLATE_BLURB[template.id]?.[locale] ?? template.description[locale],
   }));
   const related = getRelatedSolutions(slug, 4);
+  // The breadcrumb right above already names the page; an eyebrow with the
+  // same words would say it a second time.
+  const showEyebrow =
+    content.eyebrow.trim().toLocaleLowerCase(locale) !== content.name.trim().toLocaleLowerCase(locale);
 
   // Light sections after the dark platforms band alternate white / #FAFAFA.
   const afterDark = ['questions', ...(content.privacy ? ['privacy'] : []), 'faq', 'related'];
@@ -391,10 +393,10 @@ export default function SolutionPageLayout({
 
             <div className="mt-8 lg:mt-10 lg:grid lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-14">
               <div className="max-w-[680px]">
-                <p className="pulse-eyebrow text-[#737373]">{content.eyebrow}</p>
+                {showEyebrow ? <p className="pulse-eyebrow mb-5 text-[#737373]">{content.eyebrow}</p> : null}
                 <h1
                   id="solution-title"
-                  className="mt-5 text-balance text-[38px] leading-[1.06] tracking-[-0.03em] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
+                  className="text-balance text-[38px] leading-[1.06] tracking-[-0.03em] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
                 >
                   {content.h1}
                 </h1>
@@ -445,17 +447,12 @@ export default function SolutionPageLayout({
             <ol className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-3">
               {content.flow.steps.map((step, i) => (
                 <li key={step.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
-                  <p className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="pulse-eyebrow text-[#737373]">
-                      {shared.stepLabel} {i + 1}
-                    </span>
-                  </p>
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                  >
+                    {i + 1}
+                  </span>
                   <h3 className="mt-5 text-[19px] leading-[1.3] text-[#0A0A0A] sm:text-[20px]">{step.title}</h3>
                   <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{step.body}</p>
                 </li>
