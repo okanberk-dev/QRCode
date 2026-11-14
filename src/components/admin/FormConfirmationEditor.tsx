@@ -25,7 +25,7 @@ const VARIANT_FIELDS: MailFieldDef[] = [
   { key: 'preheader', label: 'Inbox preview', hint: 'Mail listesinde subject altında görünür', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
   { key: 'eyebrow', label: 'Eyebrow', hint: 'Üst köşedeki etiket — örn. "İletişim · Onay"' },
   { key: 'titleA', label: 'Başlık 1. parça', hint: '"Aldık"', placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
-  { key: 'titleB', label: 'Başlık 2. parça', hint: '"Sıradayız."' },
+  { key: 'titleB', label: 'Başlık 2. parça', hint: '"Size yazacağız."' },
   { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['form-confirmation'] },
   { key: 'formEyebrow', label: 'Form özet kart etiketi' },
   { key: 'timelineEyebrow', label: 'Timeline bölüm etiketi' },

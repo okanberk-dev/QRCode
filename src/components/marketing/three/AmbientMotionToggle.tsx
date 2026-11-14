@@ -76,7 +76,9 @@ export default function AmbientMotionToggle({
     <button
       type="button"
       onClick={toggle}
-      aria-pressed={paused}
+      // The label itself says what the button will do next, so it carries no
+      // aria-pressed (a changing label plus a pressed state contradict each
+      // other for screen readers).
       aria-label={label}
       title={label}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${

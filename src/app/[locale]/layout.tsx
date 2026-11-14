@@ -63,16 +63,13 @@ export async function generateMetadata({
     generator: 'Next.js',
     classification: 'B2B SaaS',
     category: 'Business',
-    // GEO Tags
+    // Region only. No street or coordinates here: the published address
+    // comes from admin → Hukuki metinler (getCompanyFacts, NAP parity
+    // §19.1.2), and hard-coded coordinates would claim an office the admin
+    // never confirmed.
     other: {
-      // NAP consistency (SEO §19.1.2 + §35) — geo coords must match the
-      // LocalBusiness/Organization address (Workinton Maslak). Previously
-      // these pointed to Ataşehir while the postal address said Maslak,
-      // a Name-Address-Position mismatch that weakens local E-E-A-T.
       'geo.region': 'TR-34',
-      'geo.placename': 'Maslak, İstanbul',
-      'geo.position': '41.1106;29.0203',
-      'ICBM': '41.1106, 29.0203',
+      'geo.placename': 'İstanbul',
     },
     robots: {
       index: true,
@@ -152,6 +149,12 @@ export default async function LocaleLayout({
       name: 'Buaze',
       ...(company.legalName ? { legalName: company.legalName } : {}),
       alternateName: ['Buaze (the company)', 'Buaze SaaS'],
+      // "buaze" is also the Chichewa name of the Securidaca longipedunculata
+      // plant; this tells search engines the two are different entities.
+      disambiguatingDescription:
+        locale === 'tr'
+          ? "Buaze, işletmeler için QR geri bildirim ve online itibar yazılımı geliştiren bir yazılım şirketidir; Çiçewa dilinde 'buaze' adıyla bilinen Securidaca longipedunculata bitkisiyle ilgisi yoktur."
+          : "Buaze is a software company that makes QR feedback and online reputation software for businesses; it is not related to the Securidaca longipedunculata plant, known as 'buaze' in Chichewa.",
       url: siteUrl,
       logo: s.logoUrl || `${siteUrl}/favicon.svg`,
       description: locale === 'tr' ? s.descriptionTr : s.descriptionEn,

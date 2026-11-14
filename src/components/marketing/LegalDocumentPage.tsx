@@ -5,6 +5,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { renderLegalContentWithToc } from '@/lib/legal/render';
 import type { LegalDocumentSnapshot } from '@/lib/legal/loader';
+import { SUPPORT_EMAIL } from '@/lib/company-constants';
 
 /**
  * DB-driven hukuki metin sayfa shell'i (CLAUDE.md §32). Eski `LegalPageLayout`
@@ -98,10 +99,10 @@ export default function LegalDocumentPage({
               <span>
                 {isTr ? 'Sorularınız için ' : 'Questions? '}
                 <a
-                  href="mailto:legal@buaze.com"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                   className="font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-[3px] transition-colors hover:decoration-[#A8D62E]"
                 >
-                  legal@buaze.com
+                  {SUPPORT_EMAIL}
                 </a>
               </span>
               {lastUpdatedLabel && (

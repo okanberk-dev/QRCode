@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
 import { LEGAL_DOCUMENT_KEYS, LEGAL_DOCUMENT_LABELS } from "@/lib/legal/keys";
 import { resolveDisplayTimeZone } from "@/lib/timezone";
+import { SUPPORT_EMAIL } from "@/lib/company-constants";
 import { SettingsCard } from "../SettingsCard";
 
 interface BusinessLegalSettingsProps {
@@ -180,10 +181,10 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
           ? "Metinler Buaze ekibi tarafından sürdürülür ve hukuk danışmanı onayıyla yayına alınır. Yasal güncelleme talepleri için "
           : "Documents are maintained by the Buaze team and published after legal review. For legal update requests, contact us at "}
         <a
-          href="mailto:legal@buaze.com"
+          href={`mailto:${SUPPORT_EMAIL}`}
           className="inline-flex items-center gap-1 text-[#0A0A0A] underline"
         >
-          legal@buaze.com
+          {SUPPORT_EMAIL}
           <ExternalLink size={11} strokeWidth={2} />
         </a>
         {isTr ? " adresine yazabilirsin." : "."}

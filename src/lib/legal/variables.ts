@@ -77,7 +77,7 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'KVKK_CONTACT_EMAIL',
     label: { tr: 'KVKK iletişim e-postası', en: 'KVKK contact e-mail' },
-    defaultValue: 'kvkk@buaze.com',
+    defaultValue: 'support@buaze.com',
     description: {
       tr: 'KVKK m.11 başvuruları + veri ihlali bildirimleri için.',
       en: 'For KVKK Art.11 applications + data breach notifications.',
@@ -87,7 +87,7 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'LEGAL_CONTACT_EMAIL',
     label: { tr: 'Hukuk iletişim e-postası', en: 'Legal contact e-mail' },
-    defaultValue: 'legal@buaze.com',
+    defaultValue: 'support@buaze.com',
     description: {
       tr: 'Genel hukuki yazışma — sözleşme, fesih, cayma talepleri.',
       en: 'General legal correspondence — contracts, termination, withdrawal.',
@@ -97,7 +97,7 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'SUPPORT_EMAIL',
     label: { tr: 'Destek e-postası', en: 'Support e-mail' },
-    defaultValue: 'destek@buaze.com',
+    defaultValue: 'support@buaze.com',
     description: {
       tr: 'Teknik destek talepleri için.',
       en: 'For technical support requests.',

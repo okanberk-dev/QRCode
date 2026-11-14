@@ -1,25 +1,96 @@
+import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
+import { SITE_URL } from '@/lib/site';
+import { ORGANIZATION_ID } from '@/lib/company-constants';
+
+/**
+ * Metadata + JSON-LD for the /solutions/<sector> pages (spec D11 / D12).
+ *
+ * Structured data describes only what the page shows:
+ * - BreadcrumbList with plain names ("Diş klinikleri", not the uppercase
+ *   eyebrow);
+ * - one Service node whose provider is the site organization by `@id` (the
+ *   locale layout declares that Organization; it is never re-declared here);
+ * - FAQPage built from the same array the page renders.
+ * No HowTo (Google retired the rich result, and the old steps were never
+ * rendered), no hasOfferCatalog capability lists, no rating markup, no
+ * areaServed (the product is used outside Türkiye too).
+ *
+ * Every block goes out through `jsonLdString()` at the call site.
+ */
+
+/** Path under /{locale}, e.g. "/solutions/dentists". */
+export function solutionPath(slug: string): string {
+  return `/solutions/${slug}`;
+}
+
+/** Absolute URL of a sector page. */
+export function solutionUrl(locale: Locale, slug: string): string {
+  return `${SITE_URL}/${locale}${solutionPath(slug)}`;
+}
+
+/**
+ * Page metadata: SITE_URL-relative canonical + tr/en/x-default hreflang, and
+ * a full page-level openGraph (a page-level openGraph replaces the layout's
+ * wholesale, so type/siteName/locale/url/title/description/images all stay).
+ * No page-level `twitter`: the layout keeps card/site/creator and Next fills
+ * the rest from openGraph.
+ */
+export function buildSolutionMetadata({
+  locale,
+  slug,
+  title,
+  description,
+}: {
+  locale: Locale;
+  slug: string;
+  /** ≤ 52 characters: the layout template appends " | Buaze". */
+  title: string;
+  /** 140–160 characters. */
+  description: string;
+}): Metadata {
+  const path = solutionPath(slug);
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/${locale}${path}`,
+      languages: {
+        tr: `/tr${path}`,
+        en: `/en${path}`,
+        'x-default': `/tr${path}`,
+      },
+    },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      url: solutionUrl(locale, slug),
+      title,
+      description,
+      images: [{ url: `/images/open-graph-${locale}.png`, width: 1200, height: 630, alt: title }],
+    },
+  };
+}
 
 interface SolutionSchemaArgs {
   locale: Locale;
   /** Full sector slug, e.g. "restaurants", "hotels". */
   slug: string;
-  /** Localized industry display label, e.g. "Restoranlar", "Hotels". */
+  /** Plain sector name for the breadcrumb and the audience, e.g. "Diş klinikleri". */
   industryLabel: string;
-  /** Page H1 / service title — full sentence used as service name. */
+  /** Descriptive service name (not a slogan), e.g. the page H1. */
   serviceName: string;
-  /** Service description (= meta description usually). */
+  /** Service description (usually the hero lead or the meta description). */
   description: string;
-  /** Optional FAQ pairs to emit a FAQPage block. */
-  faqs?: Array<{ q: string; a: string }>;
+  /** The visible FAQ; emits a FAQPage block when non-empty. */
+  faqs?: ReadonlyArray<{ q: string; a: string }>;
 }
 
 /**
- * Returns BreadcrumbList + Service (+ optional FAQPage) JSON-LD nodes for a
- * sector solution page. Mirrors the shape already used by
- * `SolutionPageLayout.tsx` so layout-using and custom-layout pages emit the
- * same SEO surface. Keep additions backwards-compatible — Google tolerates
- * extra fields but rejects breaking ones.
+ * Returns BreadcrumbList + Service (+ FAQPage) JSON-LD nodes for a sector
+ * page. The signature is unchanged since the first version, so every sector
+ * page (layout-based and custom) gets the same, smaller output.
  */
 export function buildSolutionSchema({
   locale,
@@ -30,29 +101,33 @@ export function buildSolutionSchema({
   faqs,
 }: SolutionSchemaArgs): object[] {
   const isTr = locale === 'tr';
-  const canonicalUrl = `https://www.buaze.com/${locale}/solutions/${slug}`;
+  const url = solutionUrl(locale, slug);
+  const inLanguage = isTr ? 'tr-TR' : 'en-US';
 
   const schemas: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
+      '@id': `${url}#breadcrumb`,
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `https://www.buaze.com/${locale}/solutions` },
-        { '@type': 'ListItem', position: 3, name: industryLabel, item: canonicalUrl },
+        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `${SITE_URL}/${locale}` },
+        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `${SITE_URL}/${locale}/solutions` },
+        { '@type': 'ListItem', position: 3, name: industryLabel, item: url },
       ],
     },
     {
       '@context': 'https://schema.org',
       '@type': 'Service',
+      '@id': `${url}#service`,
       name: serviceName,
       description,
-      provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
-      areaServed: { '@type': 'Country', name: 'Turkey' },
-      serviceType: isTr ? 'İtibar yönetimi yazılımı' : 'Reputation management software',
+      serviceType: isTr
+        ? 'QR ile müşteri geri bildirimi ve yorum toplama yazılımı'
+        : 'QR customer feedback and review collection software',
+      provider: { '@id': ORGANIZATION_ID },
       audience: { '@type': 'BusinessAudience', audienceType: industryLabel },
-      url: canonicalUrl,
-      inLanguage: isTr ? 'tr-TR' : 'en-US',
+      url,
+      inLanguage,
     },
   ];
 
@@ -60,6 +135,8 @@ export function buildSolutionSchema({
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
+      '@id': `${url}#faq`,
+      inLanguage,
       mainEntity: faqs.map((f) => ({
         '@type': 'Question',
         name: f.q,

@@ -5,6 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { isValidEmail } from '@/lib/validations';
 import { recordConsent } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
+import { SUPPORT_EMAIL } from '@/lib/company-constants';
 
 // Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
 const MIN_FILL_MS = 2500;
@@ -27,7 +28,7 @@ function resolveContactInbox(): string[] {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  return list.length ? list : ['hello@buaze.com'];
+  return list.length ? list : [SUPPORT_EMAIL];
 }
 
 export async function POST(req: NextRequest) {
@@ -99,10 +100,12 @@ export async function POST(req: NextRequest) {
     // çağırmıyordu (audit gap). Şimdi kvkk=true zorunlu (yukarıda 400
     // gate); marketing=true ise opsiyonel ETK izni log'lanır. Fire-and-
     // forget — log fail mail send'i kırmamalı.
+    // The visitor's page language: legal consent snapshot + confirmation mail.
+    const localeRaw = typeof body.locale === 'string' ? body.locale.toLowerCase() : 'tr';
+    const consentLocale: LegalLocale = isSupportedLegalLocale(localeRaw) ? localeRaw : 'tr';
+    const mailLocale: 'tr' | 'en' = localeRaw === 'en' ? 'en' : 'tr';
     {
       const ua = req.headers.get('user-agent');
-      const localeRaw = typeof body.locale === 'string' ? body.locale.toLowerCase() : 'tr';
-      const consentLocale: LegalLocale = isSupportedLegalLocale(localeRaw) ? localeRaw : 'tr';
       void recordConsent({
         key: 'kvkk-aydinlatma',
         locale: consentLocale,
@@ -134,7 +137,10 @@ export async function POST(req: NextRequest) {
       to: email,
       formType: 'contact',
       name,
-      details: business ? [{ label: 'İşletme', value: business }] : undefined,
+      locale: mailLocale,
+      details: business
+        ? [{ label: mailLocale === 'en' ? 'Business' : 'İşletme', value: business }]
+        : undefined,
     }).catch((err) => console.error('[contact] confirmation mail failed', err));
 
     return NextResponse.json({ success: true });

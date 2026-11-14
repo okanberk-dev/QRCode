@@ -1,500 +1,825 @@
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 import {
-  QrCode,
-  TrendingUp,
-  Users,
+  ArrowRight,
   ChevronRight,
-  Star,
+  ClipboardCheck,
+  FileText,
   ShieldCheck,
-  Zap,
+  Tag,
+  type LucideIcon,
 } from 'lucide-react';
-import { jsonLdString } from '@/lib/seo/json-ld';
-import { buildHowToSchema, type HowToStep } from '@/lib/seo/howto-schema';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import type { Locale, Translations } from '@/lib/translations';
-import { getRelatedSolutions } from '@/lib/related-solutions';
-import Link from 'next/link';
-import { ReactNode } from 'react';
+import { jsonLdString } from '@/lib/seo/json-ld';
+import { buildSolutionSchema } from '@/lib/solution-schema';
+import { getRelatedSolutions, SECTOR_COUNT } from '@/lib/related-solutions';
+import { SECTOR_PLATFORMS, type SectorKey } from '@/lib/sector-platforms';
+import { templatesForSector, type SurveyTemplateId } from '@/lib/survey-templates';
+import type { SurveyQuestionType } from '@/lib/surveys';
+import type { Locale } from '@/lib/translations';
 
-interface SolutionPageLayoutProps {
+/**
+ * Shared layout for sector pages under /solutions (spec D4, §4 rhythm).
+ *
+ * Every page passes its own copy for each section, so headings, steps,
+ * placements, questions and FAQs are specific to the sector; only short
+ * labels (eyebrows, buttons) are shared. Facts that already live in product
+ * code are read from there instead of being retyped:
+ *   - the review platforms the owner panel shows for the sector
+ *     (SECTOR_PLATFORMS, the same whitelist the panel uses);
+ *   - the ready survey templates for the sector (templatesForSector);
+ *   - the related sector pages and their count (getRelatedSolutions,
+ *     SECTOR_COUNT).
+ *
+ * Section order: hero → how it works → where the QR goes → what the panel
+ * does → platforms (the one dark section) → questions and templates →
+ * personal data (optional) → FAQ → related pages → closing CTA.
+ *
+ * Server component with no request-time APIs (marketing pages stay ISR).
+ * Headings take Space Grotesk from the global h1–h6 rule (no inline fonts).
+ * Register links carry rel="nofollow" (/auth/* is noindex). JSON-LD comes
+ * from buildSolutionSchema: BreadcrumbList + Service + FAQPage built from the
+ * visible FAQ; no HowTo, no offer catalog, no rating markup.
+ */
+
+export interface SolutionItem {
+  title: string;
+  body: string;
+}
+
+export interface SolutionUse extends SolutionItem {
+  icon: LucideIcon;
+}
+
+export interface SolutionQuestion {
+  text: string;
+  type: SurveyQuestionType;
+}
+
+export interface SolutionFaq {
+  q: string;
+  a: string;
+}
+
+export interface SolutionPageContent {
+  /** Plain sector name for the breadcrumb and the JSON-LD audience, e.g. "Diş klinikleri". */
+  name: string;
+  /** `<title>` (≤ 52 characters; the template adds " | Buaze") and meta description (140–160). */
+  meta: { title: string; description: string };
+  /** Hero eyebrow (sentence case; the class uppercases it). */
+  eyebrow: string;
+  /** H1: keyword first, sentence case, no trailing period. Also the Service name. */
+  h1: string;
+  /** One or two sentences under the H1. Also the Service description. */
+  lead: string;
+  flow: { title: string; lead?: string; steps: readonly SolutionItem[] };
+  placements: { title: string; lead?: string; items: readonly SolutionItem[]; tip?: string };
+  uses: { title: string; lead?: string; items: readonly SolutionUse[] };
+  platforms: { title: string; lead: string; note?: string };
+  questions: {
+    title: string;
+    lead: string;
+    /** Example survey questions for this sector. */
+    items: readonly SolutionQuestion[];
+    /** Ready Audit Center templates that fit the sector (titles as in the product). */
+    audits: readonly SolutionItem[];
+  };
+  /** Sector note on personal, health or children's data. */
+  privacy?: { title: string; paragraphs: readonly string[] };
+  faq: { title: string; items: readonly SolutionFaq[] };
+  /** Closing CTA heading (no trailing period). */
+  ctaTitle: string;
+}
+
+export interface SolutionPageLayoutProps {
   locale: Locale;
-  t: Translations;
-  industryKey: string;
-  icon: ReactNode;
-  industryBadge: string;
-  h1Prefix: string;
-  h1Suffix: string;
-  description: string;
-  /** Deprecated — kept for prop-compat; layout now always uses Pulse lime. */
-  accentColor?: string;
-  stats?: { num: string; label: string; context?: string }[];
-  steps?: { title: string; desc: string; icon: ReactNode }[];
-  benefits?: { title: string; desc: string; icon: ReactNode }[];
-  faqs?: { q: string; a: string }[];
-  /** Optional HowTo step list. When supplied (>= 2 steps), a HowTo JSON-LD
-   *  block is emitted alongside Breadcrumb + Service + (optional) FAQPage.
-   *  See `src/lib/seo/howto-schema.ts`. */
-  howToSteps?: HowToStep[];
-  isLoggedIn?: boolean;
-  slug?: string;
-  overview?: string;
-  /** Optional inline SVG illustration rendered on the right of the hero
-   *  on lg breakpoints. Sits inside a 2-column grid; if omitted, the
-   *  hero stays single-column (legacy layout). */
+  /** Route slug under /solutions, e.g. "dentists". */
+  slug: string;
+  /** Product sector of a business of this kind (drives platforms and survey templates). */
+  sector: SectorKey;
+  content: SolutionPageContent;
+  /** Decorative inline SVG for the hero (aria-hidden, no text). */
   illustration?: ReactNode;
 }
 
-const INDUSTRY_SLUG_MAP: Record<string, string> = {
-  res: 'restaurants',
-  hot: 'hotels',
-  hea: 'healthcare',
-  den: 'dentists',
-  bsa: 'beauty-salon',
-  gym: 'gym',
-  vet: 'veterinary',
-  law: 'law-firms',
-  re: 'real-estate',
-  auto: 'auto-service',
-  aes: 'aesthetic',
-  sch: 'schools',
-  bho: 'boutique-hotels',
-  ret: 'retail',
+const CONTAINER = 'mx-auto w-full max-w-[1200px] px-5 sm:px-10';
+const SECTION_Y = 'py-[60px] sm:py-24';
+const FOCUS =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+const BTN_CORE =
+  'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors';
+const BTN = `${BTN_CORE} ${FOCUS}`;
+/** Buttons on the lime band: graphite focus ring, offset matches the lime surface. */
+const BTN_ON_LIME = `${BTN_CORE} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]`;
+const TEXT_LINK = `inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FOCUS}`;
+
+/** Display names and official brand colours of the review platforms. */
+const PLATFORM_INFO: Record<string, { name: string; color: string }> = {
+  google: { name: 'Google', color: '#4285F4' },
+  yemeksepeti: { name: 'Yemeksepeti', color: '#FA0050' },
+  getir: { name: 'Getir', color: '#5D3EBC' },
+  trendyol: { name: 'Trendyol GO', color: '#F27A1A' },
+  trendyol_go: { name: 'Trendyol GO', color: '#F27A1A' },
+  tripadvisor: { name: 'Tripadvisor', color: '#34E0A1' },
+  booking: { name: 'Booking.com', color: '#003580' },
+  airbnb: { name: 'Airbnb', color: '#FF5A5F' },
+  yandex: { name: 'Yandex', color: '#FC3F1D' },
+  yelp: { name: 'Yelp', color: '#FF1A1A' },
+  foursquare: { name: 'Foursquare', color: '#F94877' },
 };
 
-// Related-solutions list moved to `src/lib/related-solutions.ts` —
-// shared between the layout-using sector pages and the seven custom
-// sector pages (restaurants, delivery, beauty-salon, healthcare,
-// hotels, law-firms, retail) so all surfaces emit the same cross-link
-// strip and stay in sync when a sector is added.
+/** Marketing-voice summaries of the survey templates (titles come from survey-templates.ts). */
+const SURVEY_TEMPLATE_BLURB: Record<SurveyTemplateId, { tr: string; en: string }> = {
+  'satisfaction-plus': {
+    tr: 'Genel puan, en çok önem verilen konu ve serbest yorum.',
+    en: 'Overall rating, what mattered most and a free comment.',
+  },
+  'nps-one': {
+    tr: 'Sizi tavsiye etme isteğini 0–10 arası tek soruyla ölçer.',
+    en: 'One 0–10 question on how likely people are to recommend you.',
+  },
+  'quick-stars': {
+    tr: 'Tek bir yıldız sorusundan oluşan en kısa anket.',
+    en: 'The shortest survey: a single star question.',
+  },
+  'table-service': {
+    tr: 'Yemek, servis, bekleme süresi ve serbest not.',
+    en: 'Food, service, waiting time and a free note.',
+  },
+  'post-stay': {
+    tr: 'Oda temizliği, personelin ilgisi ve tavsiye isteği.',
+    en: 'Room cleanliness, staff care and willingness to recommend.',
+  },
+  'post-visit': {
+    tr: 'Randevu ve ekip deneyimi; sağlık bilgisi sormaz.',
+    en: 'Appointment and team experience; asks for no health details.',
+  },
+  'post-service': {
+    tr: 'Hizmet kalitesi, uzmanın ilgisi ve yeniden tercih.',
+    en: 'Service quality, specialist care and whether they would return.',
+  },
+  'in-store': {
+    tr: 'Mağaza deneyimi, ürün bulma kolaylığı ve personelin ilgisi.',
+    en: 'Store experience, finding products and staff care.',
+  },
+};
+
+const SHARED = {
+  tr: {
+    home: 'Ana sayfa',
+    solutions: 'Çözümler',
+    breadcrumb: 'Sayfa konumu',
+    primary: 'Ücretsiz deneyin',
+    secondary: 'Nasıl çalıştığını görün',
+    note: '14 gün ücretsiz deneme · Kredi kartı gerekmez',
+    flowEyebrow: 'Nasıl çalışır',
+    stepLabel: 'Adım',
+    placementEyebrow: 'QR yerleşimi',
+    usesEyebrow: 'Panelde',
+    platformsEyebrow: 'Yorum platformları',
+    platformsListLabel: 'Bu sektörde panelin gösterdiği yorum platformları',
+    platformsFootnote:
+      'Buaze bu platformlardaki yorumları panele çekmez; müşteriyi seçtiğiniz platformun yorum sayfasına gönderir. Bağlantılarınız her gün otomatik olarak kontrol edilir.',
+    platformsLink: 'Platform bağlantılarını inceleyin',
+    questionsEyebrow: 'Anketler ve denetimler',
+    questionsHeading: 'Örnek anket soruları',
+    questionsHint: 'Soruları Anketler bölümünde kendiniz yazarsınız; anket başına en fazla 30 soru eklenebilir.',
+    templatesHeading: 'Hazır şablonlar',
+    surveyTag: 'Anket şablonu',
+    auditTag: 'Denetim şablonu',
+    auditsNote: '',
+    surveysLink: 'Anketleri inceleyin',
+    auditsLink: 'Denetim Merkezi’ni inceleyin',
+    questionTypes: {
+      rating: 'Yıldız 1–5',
+      nps: 'Tavsiye 0–10',
+      short_text: 'Kısa metin',
+      long_text: 'Uzun metin',
+      multiple_choice: 'Çoktan seçmeli',
+    } satisfies Record<SurveyQuestionType, string>,
+    privacyEyebrow: 'Kişisel veriler',
+    privacyLinks: [
+      { label: 'KVKK aydınlatma metni', path: '/kvkk' },
+      { label: 'Veri İşleyici Sözleşmesi', path: '/veri-isleyici-sozlesmesi' },
+    ],
+    faqEyebrow: 'Sık sorulan sorular',
+    faqMore: 'Tüm soruları görün',
+    relatedEyebrow: 'Diğer sektörler',
+    relatedTitle: 'Benzer işletmeler için hazırladığımız sayfalar',
+    allSectors: `${SECTOR_COUNT} sektör sayfasının hepsini görün`,
+    resourcesTitle: 'Kaynaklar',
+    resources: [
+      { label: 'Nasıl çalışır', path: '/how-it-works' },
+      { label: 'Fiyatlandırma', path: '/pricing' },
+      { label: 'Google yorum kuralları', path: '/google-compliance' },
+      { label: 'Ücretsiz QR kod oluşturucu', path: '/solutions/qr-generator' },
+    ],
+    ctaFacts: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal edebilirsiniz'],
+    ctaSecondary: 'Fiyatları inceleyin',
+  },
+  en: {
+    home: 'Home',
+    solutions: 'Solutions',
+    breadcrumb: 'Breadcrumb',
+    primary: 'Start free trial',
+    secondary: 'See how it works',
+    note: '14-day free trial · No credit card required',
+    flowEyebrow: 'How it works',
+    stepLabel: 'Step',
+    placementEyebrow: 'QR placement',
+    usesEyebrow: 'In the panel',
+    platformsEyebrow: 'Review platforms',
+    platformsListLabel: 'Review platforms the panel shows for this industry',
+    platformsFootnote:
+      "Buaze doesn't import reviews from these platforms; it sends the customer to your chosen platform's review page. Your links are checked automatically every day.",
+    platformsLink: 'See platform links',
+    questionsEyebrow: 'Surveys and audits',
+    questionsHeading: 'Sample survey questions',
+    questionsHint: 'You write the questions yourself in Surveys; a survey can have up to 30 questions.',
+    templatesHeading: 'Ready-made templates',
+    surveyTag: 'Survey template',
+    auditTag: 'Audit template',
+    auditsNote:
+      'The ready-made audit templates are currently written in Turkish; you can also build your own checklist in English.',
+    surveysLink: 'See Surveys',
+    auditsLink: 'See the Audit Center',
+    questionTypes: {
+      rating: 'Stars 1–5',
+      nps: 'Recommend 0–10',
+      short_text: 'Short text',
+      long_text: 'Long text',
+      multiple_choice: 'Multiple choice',
+    } satisfies Record<SurveyQuestionType, string>,
+    privacyEyebrow: 'Personal data',
+    privacyLinks: [
+      { label: 'KVKK notice', path: '/kvkk' },
+      { label: 'Data processing agreement', path: '/veri-isleyici-sozlesmesi' },
+    ],
+    faqEyebrow: 'FAQ',
+    faqMore: 'See all questions',
+    relatedEyebrow: 'Other industries',
+    relatedTitle: 'Pages for similar businesses',
+    allSectors: `See all ${SECTOR_COUNT} industry pages`,
+    resourcesTitle: 'Resources',
+    resources: [
+      { label: 'How it works', path: '/how-it-works' },
+      { label: 'Pricing', path: '/pricing' },
+      { label: 'Google review guidelines', path: '/google-compliance' },
+      { label: 'Free QR code generator', path: '/solutions/qr-generator' },
+    ],
+    ctaFacts: ['14-day free trial', 'No credit card required', 'Cancel anytime'],
+    ctaSecondary: 'See pricing',
+  },
+} as const;
+
+function SectionHeading({
+  id,
+  eyebrow,
+  title,
+  lead,
+  tone = 'light',
+}: {
+  id: string;
+  eyebrow: string;
+  title: string;
+  lead?: string;
+  tone?: 'light' | 'dark';
+}) {
+  const dark = tone === 'dark';
+  return (
+    <div className="max-w-[720px]">
+      <p className={`pulse-eyebrow ${dark ? 'text-[#C6F24E]' : 'text-[#737373]'}`}>{eyebrow}</p>
+      <h2
+        id={id}
+        className={`mt-4 text-balance text-[28px] leading-[1.08] tracking-[-0.02em] sm:text-[40px] lg:text-[48px] ${
+          dark ? 'text-white' : 'text-[#0A0A0A]'
+        }`}
+      >
+        {title}
+      </h2>
+      {lead ? (
+        <p
+          className={`mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] sm:text-[18px] ${
+            dark ? 'text-white/75' : 'text-[#525252]'
+          }`}
+        >
+          {lead}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export default function SolutionPageLayout({
   locale,
-  t,
-  icon,
-  industryKey,
-  industryBadge,
-  h1Prefix,
-  h1Suffix,
-  description,
-  stats,
-  steps,
-  benefits,
-  faqs,
-  howToSteps,
-  slug: slugProp,
-  overview,
+  slug,
+  sector,
+  content,
   illustration,
 }: SolutionPageLayoutProps) {
+  const shared = SHARED[locale];
   const base = `/${locale}`;
-  const isTr = locale === 'tr';
-  const currentSlug = slugProp ?? INDUSTRY_SLUG_MAP[industryKey] ?? '';
-  const canonicalUrl = `https://www.buaze.com/${locale}/solutions/${currentSlug}`;
-  const relatedSolutions = getRelatedSolutions(currentSlug, 4);
+  const registerHref = `${base}/auth/register`;
+  const flowId = 'how-it-works';
 
-  const displaySteps = steps || [
-    {
-      icon: <QrCode size={22} />,
-      title: isTr ? 'QR kodunuzu yerleştirin' : 'Place your QR code',
-      desc: isTr
-        ? 'Stratejik noktalara markanıza özel QR kodlarını yerleştirin.'
-        : 'Place custom-branded QR codes at strategic spots.',
-    },
-    {
-      icon: <Users size={22} />,
-      title: isTr ? 'Müşteri kolayca tarar' : 'Customers scan easily',
-      desc: isTr
-        ? 'Saniyeler içinde tarar, uygulama indirmesine gerek kalmaz.'
-        : 'Scans in seconds — no app download needed.',
-    },
-    {
-      icon: <TrendingUp size={22} />,
-      title: isTr ? 'Görünürlüğünüz artar' : 'Your visibility increases',
-      desc: isTr ? 'Geri bildirim akışını profesyonelce yönetin.' : 'Manage your feedback flow professionally.',
-    },
-  ];
+  const jsonLd = buildSolutionSchema({
+    locale,
+    slug,
+    industryLabel: content.name,
+    serviceName: content.h1,
+    description: content.lead,
+    faqs: content.faq.items,
+  });
 
-  const displayBenefits = benefits || [
-    {
-      title: isTr ? 'Dijital itibar artışı' : 'Digital reputation growth',
-      desc: isTr ? 'Organik ve güvenli itibar büyümesi.' : 'Organic and secure reputation growth.',
-      icon: <Star size={18} />,
-    },
-    {
-      title: isTr ? 'Profesyonel geri bildirim' : 'Professional feedback ops',
-      desc: isTr ? 'Krizleri büyümeden operasyonel çözün.' : 'Resolve crises operationally before they grow.',
-      icon: <ShieldCheck size={18} />,
-    },
-    {
-      title: isTr ? 'Müşteri sadakati' : 'Customer loyalty',
-      desc: isTr ? 'Geri bildirim hizmet kalitesini artırır.' : 'Feedback lifts service quality.',
-      icon: <TrendingUp size={18} />,
-    },
-    {
-      title: isTr ? 'Dijital görünürlük' : 'Digital visibility',
-      desc: isTr ? 'Sıralamada rakiplerin önüne geçin.' : 'Stand out from competitors in rankings.',
-      icon: <Zap size={18} />,
-    },
-  ];
+  const platforms = SECTOR_PLATFORMS[sector].flatMap((id) => {
+    const info = PLATFORM_INFO[id];
+    return info ? [{ id, ...info }] : [];
+  });
+  const surveyTemplates = templatesForSector(sector).map((template) => ({
+    id: template.id,
+    title: template.title[locale],
+    body: SURVEY_TEMPLATE_BLURB[template.id]?.[locale] ?? template.description[locale],
+  }));
+  const related = getRelatedSolutions(slug, 4);
 
-  const displayStats = stats || [
-    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS', context: isTr ? 'Google dahil' : 'Google included' },
-    { num: isTr ? '3 ton' : '3 tones', label: isTr ? 'PULSE AI TASLAĞI' : 'PULSE AI DRAFTS', context: isTr ? 'Siz onaylar, gönderirsiniz' : 'You approve and send' },
-    { num: 'KVKK', label: isTr ? 'UYUMLU AKIŞ' : 'COMPLIANT FLOW', context: isTr ? 'Açık rıza ile' : 'With explicit consent' },
-    { num: isTr ? '14 gün' : '14 days', label: isTr ? 'ÜCRETSİZ DENEME' : 'FREE TRIAL', context: isTr ? 'Kredi kartı gerekmez' : 'No card required' },
-  ];
-
-  const jsonLdSchemas: object[] = [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
-        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `https://www.buaze.com/${locale}/solutions` },
-        { '@type': 'ListItem', position: 3, name: industryBadge, item: canonicalUrl },
-      ],
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'Service',
-      name: `${h1Prefix} ${h1Suffix}`,
-      description,
-      provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
-      areaServed: { '@type': 'Country', name: 'Turkey' },
-      url: canonicalUrl,
-    },
-  ];
-  if (faqs && faqs.length > 0) {
-    jsonLdSchemas.push({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faqs.map((f) => ({
-        '@type': 'Question',
-        name: f.q,
-        acceptedAnswer: { '@type': 'Answer', text: f.a },
-      })),
-    });
-  }
-
-  if (howToSteps && howToSteps.length >= 2) {
-    const howTo = buildHowToSchema({
-      locale,
-      name: `${h1Prefix} ${h1Suffix}`,
-      description,
-      url: canonicalUrl,
-      steps: howToSteps,
-    });
-    if (howTo) jsonLdSchemas.push(howTo);
-  }
+  // Light sections after the dark platforms band alternate white / #FAFAFA.
+  const afterDark = ['questions', ...(content.privacy ? ['privacy'] : []), 'faq', 'related'];
+  const bgAfterDark = (key: string) => (afterDark.indexOf(key) % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]');
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLdSchemas) }}
-      />
-      <MarketingNavbar locale={locale} t={t} />
+    <div className="min-h-[100dvh] overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] lg:pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+      <MarketingNavbar locale={locale} />
 
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden px-6 sm:px-10 pt-14 sm:pt-20 pb-14 sm:pb-20">
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.5]"
-          width="100%"
-          height="100%"
-        >
-          <defs>
-            <pattern id="solGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EDEDED" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#solGrid)" />
-        </svg>
-
-        <div className="relative max-w-[1200px] mx-auto">
-          {/* Breadcrumb */}
-          <nav
-            aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
-            className="mb-6 text-[12px] text-[#737373] flex items-center flex-wrap gap-1.5"
-          >
-            <Link href={base} className="hover:text-[#0A0A0A] transition-colors">
-              {isTr ? 'Ana sayfa' : 'Home'}
-            </Link>
-            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-            <span>{isTr ? 'Çözümler' : 'Solutions'}</span>
-            <ChevronRight size={12} className="text-[#A3A3A3]" aria-hidden />
-            <span className="text-[#0A0A0A] font-medium">{industryBadge}</span>
-          </nav>
-
-          <div
-            className={
-              illustration
-                ? 'grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-12'
-                : ''
-            }
-          >
-            <div className={illustration ? 'space-y-6' : 'max-w-[780px] space-y-6'}>
-              <div className="inline-flex items-center gap-2 bg-[#EAF9B8] border border-[#C6F24E] rounded-full pl-2 pr-4 py-1.5">
-                <span className="w-6 h-6 bg-[#C6F24E] rounded-full flex items-center justify-center text-[#0A0A0A]">
-                  {icon}
-                </span>
-                <span className="pulse-eyebrow text-[#0A0A0A]">{industryBadge}</span>
-              </div>
-              <h1 className="text-[40px] sm:text-[60px] md:text-[48px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
-                {h1Prefix}{' '}
-                <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{h1Suffix}</span>
-              </h1>
-              <p className="text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[620px]">
-                {description}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Link
-                  href={`${base}/auth/register`}
-                  className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#1A1A1A] transition-colors"
-                >
-                  {isTr ? '14 gün ücretsiz dene' : 'Start 14-day free trial'}
-                  <span aria-hidden>→</span>
-                </Link>
-                <Link
-                  href={`${base}/pricing`}
-                  className="inline-flex items-center justify-center gap-2 border border-[#0A0A0A] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[15px] font-medium hover:bg-[#0A0A0A] hover:text-white transition-colors"
-                >
-                  {isTr ? 'Planları incele' : 'View plans'}
-                </Link>
-              </div>
-            </div>
-
-            {illustration && (
-              <div className="flex justify-center lg:justify-end">{illustration}</div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Overview (optional) ─── */}
-      {overview && (
-        <section className="border-y border-[#EDEDED] px-6 sm:px-10 py-10 sm:py-14 bg-[#FAFAFA]">
-          <div className="max-w-[820px] mx-auto">
-            <p className="text-[16px] sm:text-[17px] text-[#525252] leading-[1.7]">{overview}</p>
-          </div>
-        </section>
-      )}
-
-      {/* ─── Steps ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="mb-12 sm:mb-14 max-w-[720px]">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Süreç' : 'Process'}
-            </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? 'Üç adım, üç saniye.' : 'Three steps, three seconds.'}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {displaySteps.map((step, i) => (
-              <div
-                key={i}
-                className="bg-[#FAFAFA] border border-[#EDEDED] rounded-3xl p-7 sm:p-8 flex flex-col"
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {isTr ? 'ADIM' : 'STEP'} {String(i + 1).padStart(2, '0')}
+      <main id="main-content">
+        {/* 1 · Hero */}
+        <section aria-labelledby="solution-title" className="bg-white pb-[60px] pt-10 sm:pb-24 sm:pt-16">
+          <div className={CONTAINER}>
+            <nav aria-label={shared.breadcrumb} className="text-[13px] text-[#737373]">
+              <ol className="flex flex-wrap items-center gap-1.5">
+                <li>
+                  <Link href={base} className={`rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}>
+                    {shared.home}
+                  </Link>
+                </li>
+                <li aria-hidden="true">
+                  <ChevronRight size={12} className="text-[#A3A3A3]" />
+                </li>
+                <li>
+                  <Link href={`${base}/solutions`} className={`rounded-sm hover:text-[#0A0A0A] ${FOCUS}`}>
+                    {shared.solutions}
+                  </Link>
+                </li>
+                <li aria-hidden="true">
+                  <ChevronRight size={12} className="text-[#A3A3A3]" />
+                </li>
+                <li>
+                  <span aria-current="page" className="font-medium text-[#0A0A0A]">
+                    {content.name}
                   </span>
-                  <div className="w-10 h-10 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    {step.icon}
-                  </div>
-                </div>
-                <h3 className="text-[20px] sm:text-[22px] font-medium text-[#0A0A0A] tracking-[-0.02em] leading-tight mb-3">
-                  {step.title}
-                </h3>
-                <p className="text-[14px] text-[#525252] leading-[1.6]">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+                </li>
+              </ol>
+            </nav>
 
-      {/* ─── Benefits ─── */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="mb-12 sm:mb-14 max-w-[720px]">
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'Avantajlar' : 'Benefits'}
-            </span>
-            <h2 className="mt-4 text-[32px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
-              {isTr ? 'Neden Buaze?' : 'Why Buaze?'}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {displayBenefits.map((b, i) => (
-              <div
-                key={i}
-                className="flex gap-5 bg-white/5 border border-white/10 p-7 rounded-2xl"
-              >
-                <div className="shrink-0 w-11 h-11 bg-[#C6F24E] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                  {b.icon}
+            <div className="mt-8 lg:mt-10 lg:grid lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-14">
+              <div className="max-w-[680px]">
+                <p className="pulse-eyebrow text-[#737373]">{content.eyebrow}</p>
+                <h1
+                  id="solution-title"
+                  className="mt-5 text-balance text-[38px] leading-[1.06] tracking-[-0.03em] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
+                >
+                  {content.h1}
+                </h1>
+                <p className="mt-6 max-w-[620px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+                  {content.lead}
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link
+                    href={registerHref}
+                    rel="nofollow"
+                    className={`${BTN} bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]`}
+                  >
+                    {shared.primary}
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                  <a
+                    href={`#${flowId}`}
+                    className={`${BTN} border border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]`}
+                  >
+                    {shared.secondary}
+                  </a>
                 </div>
-                <div>
-                  <h3 className="text-[18px] font-medium text-white tracking-[-0.01em] leading-tight">
-                    {b.title}
-                  </h3>
-                  <p className="mt-2 text-[14px] text-white/70 leading-[1.6]">{b.desc}</p>
-                </div>
+                <p className="mt-5 text-[14px] leading-[1.5] text-[#737373]">{shared.note}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ─── Stats Bar ─── */}
-      <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-6 sm:px-10 py-14">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-            {displayStats.map((stat, i) => (
-              <div key={i}>
+              {illustration ? (
                 <div
-                  className="text-[36px] sm:text-[52px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
+                  aria-hidden="true"
+                  className="relative mx-auto mt-12 flex aspect-square w-full max-w-[280px] items-center justify-center rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] sm:max-w-[360px] lg:mt-0 lg:max-w-[440px]"
                 >
-                  {stat.num}
+                  <div className="absolute inset-[12%] rounded-full bg-[#EAF9B8]/60 blur-2xl" />
+                  <div className="relative w-[78%] [&>svg]:h-auto [&>svg]:w-full">{illustration}</div>
                 </div>
-                <div className="pulse-eyebrow text-[#0A0A0A]/70 mt-3">{stat.label}</div>
-                {stat.context && (
-                  <div className="text-[11px] text-[#0A0A0A]/60 mt-1">{stat.context}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── FAQ ─── */}
-      {faqs && faqs.length > 0 && (
-        <section className="px-6 sm:px-10 py-20 sm:py-28">
-          <div className="max-w-[840px] mx-auto">
-            <div className="text-center mb-12">
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Sıkça sorulan sorular' : 'Frequently asked'}
-              </span>
-              <h2 className="mt-4 text-[32px] sm:text-[44px] font-medium tracking-[-0.035em] text-[#0A0A0A] leading-[1.05]">
-                {isTr ? 'Merak ettikleriniz.' : 'Common questions.'}
-              </h2>
-            </div>
-            <div className="divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-[17px] font-medium text-[#0A0A0A] leading-snug">{faq.q}</h3>
-                  <p className="mt-3 text-[15px] text-[#525252] leading-[1.65]">{faq.a}</p>
-                </div>
-              ))}
+              ) : null}
             </div>
           </div>
         </section>
-      )}
 
-      {/* ─── Resources / Internal links ─── */}
-      {/* Mirrors the same Pricing / ROI / Free QR / Google compliance
-          strip the seven custom sector pages render so all 15 sector
-          pages emit the same authoritative cross-link set. */}
-      <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="mb-8 max-w-[640px]">
-            <span className="pulse-eyebrow text-[#A8D62E]">
-              {isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}
-            </span>
-            <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.02em] leading-[1.1] text-[#0A0A0A]">
-              {isTr ? 'Daha fazlasını keşfet' : 'Explore more'}
-            </h2>
+        {/* 2 · How it works */}
+        <section id={flowId} aria-labelledby="solution-flow-title" className={`scroll-mt-24 bg-[#FAFAFA] ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeading
+              id="solution-flow-title"
+              eyebrow={shared.flowEyebrow}
+              title={content.flow.title}
+              lead={content.flow.lead}
+            />
+            <ol className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-3">
+              {content.flow.steps.map((step, i) => (
+                <li key={step.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                  <p className="flex items-center gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="pulse-eyebrow text-[#737373]">
+                      {shared.stepLabel} {i + 1}
+                    </span>
+                  </p>
+                  <h3 className="mt-5 text-[19px] leading-[1.3] text-[#0A0A0A] sm:text-[20px]">{step.title}</h3>
+                  <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{step.body}</p>
+                </li>
+              ))}
+            </ol>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
-              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
-              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
-              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
-            ].map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
-              >
-                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
-                  {isTr ? r.tr : r.en}
-                </span>
-                <ChevronRight
-                  size={14}
-                  className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors"
-                />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── Related Solutions ─── */}
-      {relatedSolutions.length > 0 && (
-        <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
-          <div className="max-w-[1200px] mx-auto">
-            <div className="mb-10 text-center max-w-[640px] mx-auto">
-              <span className="pulse-eyebrow text-[#737373]">
-                {isTr ? 'Diğer sektörler' : 'Other industries'}
-              </span>
-              <h2 className="mt-4 text-[26px] sm:text-[32px] font-medium tracking-[-0.02em] leading-[1.1] text-[#0A0A0A]">
-                {isTr ? 'Farklı sektörler için de hazırız.' : 'We have solutions for other industries too.'}
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {relatedSolutions.map((sol) => (
+        {/* 3 · Where the QR goes */}
+        <section aria-labelledby="solution-placement-title" className={`bg-white ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeading
+              id="solution-placement-title"
+              eyebrow={shared.placementEyebrow}
+              title={content.placements.title}
+              lead={content.placements.lead}
+            />
+            <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
+              {content.placements.items.map((item, i) => (
+                <li
+                  key={item.title}
+                  className="flex gap-5 rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="font-mono text-[13px] font-semibold leading-[1.9] text-[#A3A3A3]"
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-[19px] leading-[1.3] text-[#0A0A0A]">{item.title}</h3>
+                    <p className="mt-2.5 text-[15px] leading-[1.65] text-[#525252]">{item.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {content.placements.tip ? (
+              <p className="mt-6 flex max-w-[860px] gap-3 rounded-[16px] border border-[#EDEDED] bg-[#FAFAFA] p-5 text-[15px] leading-[1.6] text-[#333333] sm:mt-8">
+                <Tag size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[#0A0A0A]" />
+                <span>{content.placements.tip}</span>
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        {/* 4 · What the panel does for this sector */}
+        <section aria-labelledby="solution-uses-title" className={`bg-[#FAFAFA] ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeading
+              id="solution-uses-title"
+              eyebrow={shared.usesEyebrow}
+              title={content.uses.title}
+              lead={content.uses.lead}
+            />
+            <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6">
+              {content.uses.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.title} className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
+                    >
+                      <Icon size={20} strokeWidth={2} />
+                    </span>
+                    <h3 className="mt-5 text-[20px] leading-[1.25] text-[#0A0A0A]">{item.title}</h3>
+                    <p className="mt-3 text-[15px] leading-[1.65] text-[#525252]">{item.body}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+
+        {/* 5 · Review platforms for the sector (the page's one dark section) */}
+        <section aria-labelledby="solution-platforms-title" className={`bg-[#0A0A0A] text-white ${SECTION_Y}`}>
+          <div className={`${CONTAINER} lg:grid lg:grid-cols-[1fr_1fr] lg:items-start lg:gap-16`}>
+            <SectionHeading
+              id="solution-platforms-title"
+              eyebrow={shared.platformsEyebrow}
+              title={content.platforms.title}
+              lead={content.platforms.lead}
+              tone="dark"
+            />
+            <div className="mt-10 lg:mt-12">
+              <ul aria-label={shared.platformsListLabel} className="flex flex-wrap gap-3">
+                {platforms.map((platform) => (
+                  <li
+                    key={platform.id}
+                    className="inline-flex min-h-[44px] items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-4 text-[15px] font-medium text-white"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white/25"
+                      style={{ backgroundColor: platform.color }}
+                    />
+                    {platform.name}
+                  </li>
+                ))}
+              </ul>
+              {content.platforms.note ? (
+                <p className="mt-8 rounded-[16px] border border-white/15 bg-white/[0.04] p-5 text-[15px] leading-[1.65] text-white/80">
+                  {content.platforms.note}
+                </p>
+              ) : null}
+              <p className="mt-6 text-[14px] leading-[1.6] text-white/70">{shared.platformsFootnote}</p>
+              <p className="mt-4">
                 <Link
-                  key={sol.slug}
-                  href={`${base}/solutions/${sol.slug}`}
-                  className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
+                  href={`${base}/integrations`}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-white underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
                 >
-                  <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    <sol.Icon size={16} />
-                  </span>
-                  <span className="text-[13px] sm:text-[14px] font-medium text-[#0A0A0A] leading-tight">
-                    {isTr ? sol.tr : sol.en}
-                  </span>
-                  <ChevronRight
-                    size={14}
-                    className="ml-auto text-[#A3A3A3] shrink-0 group-hover:text-[#0A0A0A] transition-colors"
-                  />
+                  {shared.platformsLink}
+                  <ArrowRight size={14} aria-hidden="true" />
                 </Link>
-              ))}
+              </p>
             </div>
           </div>
         </section>
-      )}
 
-      {/* ─── CTA ─── */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
-        <div className="max-w-[900px] mx-auto text-center">
-          <h2 className="text-[32px] sm:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-white">
-            {isTr ? 'İşletmenizi bugün büyütün.' : 'Grow your business today.'}
-          </h2>
-          <p className="mt-5 text-[16px] sm:text-[17px] text-white/70 max-w-[520px] mx-auto">
-            {isTr ? '14 gün ücretsiz. Kredi kartı gerekmez.' : '14-day free trial. No card required.'}
-          </p>
-          <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-            <Link
-              href={`${base}/auth/register`}
-              className="inline-flex items-center justify-center gap-2 bg-[#C6F24E] text-[#0A0A0A] px-7 py-4 rounded-full text-[15px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {isTr ? 'Hemen başla' : 'Get started'}
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              href={`${base}/pricing`}
-              className="inline-flex items-center justify-center gap-2 border border-white/20 text-white px-7 py-4 rounded-full text-[15px] font-medium hover:bg-white/10 transition-colors"
-            >
-              {isTr ? 'Planları incele' : 'View plans'}
-            </Link>
+        {/* 6 · What to ask: sample survey questions and ready templates */}
+        <section aria-labelledby="solution-questions-title" className={`${bgAfterDark('questions')} ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeading
+              id="solution-questions-title"
+              eyebrow={shared.questionsEyebrow}
+              title={content.questions.title}
+              lead={content.questions.lead}
+            />
+            <div className="mt-12 grid grid-cols-1 gap-6 sm:mt-14 lg:grid-cols-[1fr_1fr] lg:gap-8">
+              <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]"
+                  >
+                    <FileText size={18} strokeWidth={2} />
+                  </span>
+                  {shared.questionsHeading}
+                </h3>
+                <ol className="mt-6 divide-y divide-[#EDEDED]">
+                  {content.questions.items.map((question) => (
+                    <li
+                      key={question.text}
+                      className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+                    >
+                      <span className="text-[15px] leading-[1.55] text-[#1A1A1A]">{question.text}</span>
+                      <span className="w-fit shrink-0 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-2.5 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-[#525252]">
+                        {shared.questionTypes[question.type]}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-6 text-[14px] leading-[1.6] text-[#737373]">{shared.questionsHint}</p>
+              </div>
+
+              <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                <h3 className="flex items-center gap-3 text-[20px] leading-[1.25] text-[#0A0A0A]">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#0A0A0A] text-[#C6F24E]"
+                  >
+                    <ClipboardCheck size={18} strokeWidth={2} />
+                  </span>
+                  {shared.templatesHeading}
+                </h3>
+                <ul className="mt-6 space-y-3">
+                  {surveyTemplates.map((template) => (
+                    <li key={template.id} className="rounded-[14px] border border-[#EDEDED] p-4">
+                      <p className="pulse-eyebrow text-[#737373]">{shared.surveyTag}</p>
+                      <p className="mt-2 text-[16px] font-semibold leading-[1.35] text-[#0A0A0A]">{template.title}</p>
+                      <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">{template.body}</p>
+                    </li>
+                  ))}
+                  {content.questions.audits.map((audit) => (
+                    <li key={audit.title} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-4">
+                      <p className="pulse-eyebrow text-[#737373]">{shared.auditTag}</p>
+                      <p className="mt-2 text-[16px] font-semibold leading-[1.35] text-[#0A0A0A]">{audit.title}</p>
+                      <p className="mt-1 text-[14px] leading-[1.55] text-[#525252]">{audit.body}</p>
+                    </li>
+                  ))}
+                </ul>
+                {shared.auditsNote && content.questions.audits.length > 0 ? (
+                  <p className="mt-5 text-[14px] leading-[1.6] text-[#737373]">{shared.auditsNote}</p>
+                ) : null}
+                <p className="mt-2 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
+                  <Link href={`${base}/features/surveys`} className={TEXT_LINK}>
+                    {shared.surveysLink}
+                    <ArrowRight size={14} aria-hidden="true" />
+                  </Link>
+                  <Link href={`${base}/features/audit-center`} className={TEXT_LINK}>
+                    {shared.auditsLink}
+                    <ArrowRight size={14} aria-hidden="true" />
+                  </Link>
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <MarketingFooter locale={locale} t={t} />
+        {/* 7 · Personal data note (sectors with health, children's or other sensitive data) */}
+        {content.privacy ? (
+          <section aria-labelledby="solution-privacy-title" className={`${bgAfterDark('privacy')} ${SECTION_Y}`}>
+            <div className="mx-auto w-full max-w-[920px] px-5 sm:px-10">
+              <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-10">
+                <p className="pulse-eyebrow flex items-center gap-2 text-[#737373]">
+                  <ShieldCheck size={16} aria-hidden="true" className="text-[#0A0A0A]" />
+                  {shared.privacyEyebrow}
+                </p>
+                <h2
+                  id="solution-privacy-title"
+                  className="mt-4 text-balance text-[26px] leading-[1.12] tracking-[-0.02em] text-[#0A0A0A] sm:text-[34px]"
+                >
+                  {content.privacy.title}
+                </h2>
+                <div className="mt-6 space-y-4 text-pretty text-[15px] leading-[1.7] text-[#525252] sm:text-[16px]">
+                  {content.privacy.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+                <p className="mt-6 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
+                  {shared.privacyLinks.map((link) => (
+                    <Link key={link.path} href={`${base}${link.path}`} className={TEXT_LINK}>
+                      {link.label}
+                      <ArrowRight size={14} aria-hidden="true" />
+                    </Link>
+                  ))}
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* 8 · FAQ — the FAQPage JSON-LD is built from the same array */}
+        <section aria-labelledby="solution-faq-title" className={`${bgAfterDark('faq')} ${SECTION_Y}`}>
+          <div className="mx-auto w-full max-w-[920px] px-5 sm:px-10">
+            <SectionHeading id="solution-faq-title" eyebrow={shared.faqEyebrow} title={content.faq.title} />
+            <div className="mt-10 divide-y divide-[#E5E5E5] border-y border-[#E5E5E5]">
+              {content.faq.items.map((item, i) => (
+                <details key={item.q} open={i === 0 ? true : undefined} className="group">
+                  <summary
+                    className={`flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-6 rounded-sm py-5 text-left [&::-webkit-details-marker]:hidden ${FOCUS}`}
+                  >
+                    <span className="text-[17px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[18px]">{item.q}</span>
+                    <span
+                      aria-hidden="true"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D4D4D4] bg-white text-[18px] leading-none text-[#0A0A0A] transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <p className="max-w-[720px] pb-6 pr-2 text-[15px] leading-[1.7] text-[#525252] sm:pr-12 sm:text-[16px]">
+                    {item.a}
+                  </p>
+                </details>
+              ))}
+            </div>
+            <p className="mt-8">
+              <Link href={`${base}/faq`} className={TEXT_LINK}>
+                {shared.faqMore}
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </p>
+          </div>
+        </section>
+
+        {/* 9 · Related sectors and resources */}
+        <section aria-labelledby="solution-related-title" className={`${bgAfterDark('related')} ${SECTION_Y}`}>
+          <div className={CONTAINER}>
+            <SectionHeading id="solution-related-title" eyebrow={shared.relatedEyebrow} title={shared.relatedTitle} />
+            <div className="mt-10 grid grid-cols-1 gap-8 sm:mt-12 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
+              <div>
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                  {related.map((entry) => {
+                    const Icon = entry.Icon;
+                    return (
+                      <li key={entry.slug}>
+                        <Link
+                          href={`${base}/solutions/${entry.slug}`}
+                          className={`group flex h-full min-h-[64px] items-center gap-4 rounded-[20px] border border-[#EDEDED] bg-white p-5 transition-colors hover:border-[#0A0A0A] ${FOCUS}`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#F2F2F2] text-[#0A0A0A]"
+                          >
+                            <Icon size={18} strokeWidth={2} />
+                          </span>
+                          <span className="min-w-0 flex-1 text-[16px] font-semibold leading-[1.3] text-[#0A0A0A]">
+                            {locale === 'tr' ? entry.tr : entry.en}
+                          </span>
+                          <ArrowRight
+                            size={16}
+                            aria-hidden="true"
+                            className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
+                          />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-6">
+                  <Link href={`${base}/solutions`} className={TEXT_LINK}>
+                    {shared.allSectors}
+                    <ArrowRight size={14} aria-hidden="true" />
+                  </Link>
+                </p>
+              </div>
+
+              <div className="rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8">
+                <h3 className="text-[18px] leading-[1.3] text-[#0A0A0A]">{shared.resourcesTitle}</h3>
+                <ul className="mt-3 divide-y divide-[#EDEDED]">
+                  {shared.resources.map((resource) => (
+                    <li key={resource.path}>
+                      <Link
+                        href={`${base}${resource.path}`}
+                        className={`group flex min-h-[48px] items-center justify-between gap-4 rounded-sm text-[15px] font-medium text-[#1A1A1A] hover:text-[#0A0A0A] ${FOCUS}`}
+                      >
+                        {resource.label}
+                        <ChevronRight
+                          size={16}
+                          aria-hidden="true"
+                          className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
+                        />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 10 · Closing CTA */}
+        <section aria-labelledby="solution-cta-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
+          <div className="mx-auto w-full max-w-[880px] px-5 text-center sm:px-10">
+            <h2
+              id="solution-cta-title"
+              className="text-balance text-[30px] leading-[1.06] tracking-[-0.02em] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]"
+            >
+              {content.ctaTitle}
+            </h2>
+            <ul className="mx-auto mt-5 flex max-w-[680px] flex-col items-center justify-center gap-x-3 gap-y-1 text-[16px] leading-[1.6] text-[#1A1A1A] sm:flex-row sm:flex-wrap sm:text-[17px]">
+              {shared.ctaFacts.map((fact, i) => (
+                <li key={fact} className="inline-flex items-center gap-3">
+                  {i > 0 ? (
+                    <span aria-hidden="true" className="hidden h-1 w-1 rounded-full bg-[#0A0A0A]/50 sm:inline-block" />
+                  ) : null}
+                  {fact}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+              <Link
+                href={registerHref}
+                rel="nofollow"
+                className={`${BTN_ON_LIME} bg-[#0A0A0A] px-7 text-white hover:bg-[#1A1A1A]`}
+              >
+                {shared.primary}
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+              <Link
+                href={`${base}/pricing`}
+                className={`${BTN_ON_LIME} border-2 border-[#0A0A0A] px-7 text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white`}
+              >
+                {shared.ctaSecondary}
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <MarketingFooter locale={locale} />
     </div>
   );
 }

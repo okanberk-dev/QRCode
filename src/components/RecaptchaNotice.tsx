@@ -10,13 +10,15 @@ type RecaptchaNoticeProps = {
 
 export default function RecaptchaNotice({ locale = 'tr', className = '', dark = false }: RecaptchaNoticeProps) {
   const isTr = locale !== 'en';
-  const textClass = dark ? 'text-white/45' : 'text-[#A3A3A3]';
+  // Colours meet WCAG AA at this small size: #737373 on white ≈ 4.7:1,
+  // white/70 on #0A0A0A ≈ 9:1.
+  const textClass = dark ? 'text-white/70' : 'text-[#737373]';
   const linkClass = dark
-    ? 'underline decoration-white/15 decoration-1 underline-offset-2 hover:text-white/75 hover:decoration-white/35'
-    : 'underline decoration-[#A3A3A3]/40 decoration-1 underline-offset-2 hover:text-[#525252] hover:decoration-[#A3A3A3]/70';
+    ? 'underline decoration-white/30 decoration-1 underline-offset-2 hover:text-white hover:decoration-white/60'
+    : 'underline decoration-[#737373]/40 decoration-1 underline-offset-2 hover:text-[#0A0A0A] hover:decoration-[#737373]/70';
 
   return (
-    <p className={`text-[10px] leading-snug ${textClass} ${className}`}>
+    <p className={`text-[11px] leading-snug ${textClass} ${className}`}>
       {isTr ? 'Bu site reCAPTCHA ile korunur. Google ' : 'This site is protected by reCAPTCHA and the Google '}
       <Link href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={linkClass}>
         {isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}
