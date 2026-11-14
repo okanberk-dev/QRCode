@@ -175,7 +175,9 @@ export default function PricingPlans({ locale, plans }: Props) {
               key={p.id}
               aria-labelledby={`plan-${p.id}`}
               className={`relative flex flex-col rounded-[20px] p-6 sm:p-8 ${
-                dark ? 'mt-2 bg-[#0A0A0A] pt-9 text-white sm:pt-10 md:mt-0' : 'border border-[#EDEDED] bg-white text-[#0A0A0A]'
+                dark
+                  ? 'mt-2 bg-[#0A0A0A] pt-9 text-white sm:pt-10 md:mt-0 md:pt-8'
+                  : 'border border-[#EDEDED] bg-white text-[#0A0A0A]'
               }`}
             >
               {dark ? (
