@@ -154,13 +154,11 @@ export default function HeroStage({ locale }: { locale: 'tr' | 'en' }) {
         className="relative aspect-square w-full overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-[0_24px_60px_-34px_rgba(10,10,10,0.28)]"
         aria-hidden="true"
       >
-        {/* Stage has no external pause API: a paused stage is remounted with
-            autoplay off, which holds its first frame. */}
+        {/* `paused` holds the current frame; resuming continues from it. */}
         <Stage
-          key={paused ? 'paused' : 'playing'}
           duration={CINEMATIC_DURATION}
           loop
-          autoplay={!paused}
+          paused={paused}
           className="absolute inset-0"
         >
           <StageHeader copy={copy} />

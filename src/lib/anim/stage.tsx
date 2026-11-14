@@ -53,6 +53,11 @@ export interface StageProps {
   loop?: boolean;
   /** Auto-start (default true). */
   autoplay?: boolean;
+  /**
+   * External pause (e.g. a visitor's pause button, WCAG 2.2.2). Holds the
+   * current frame; turning it off resumes from the same time.
+   */
+  paused?: boolean;
   /** Custom className for the host element. */
   className?: string;
   children: React.ReactNode;
@@ -74,6 +79,7 @@ export function Stage({
   duration = 10,
   loop = true,
   autoplay = true,
+  paused = false,
   className,
   children,
 }: StageProps): React.ReactElement {
@@ -96,7 +102,9 @@ export function Stage({
 
   const initialTime = reduced ? duration : 0;
   const [time, setTime] = React.useState(initialTime);
-  const [playing, setPlaying] = React.useState(autoplay && !reduced);
+  const [playing, setPlaying] = React.useState(autoplay && !reduced && !paused);
+  const pausedRef = React.useRef(paused);
+  pausedRef.current = paused;
   const lastTsRef = React.useRef<number | null>(null);
   const rafRef = React.useRef<number | null>(null);
   const hostRef = React.useRef<HTMLDivElement | null>(null);
@@ -126,10 +134,20 @@ export function Stage({
     if (reduced) {
       setTime(duration);
       setPlaying(false);
-    } else if (autoplay) {
+    } else if (autoplay && !pausedRef.current) {
       setPlaying(true);
     }
   }, [reduced, duration, autoplay]);
+
+  // External pause: stop advancing time but keep the current frame.
+  React.useEffect(() => {
+    if (paused) {
+      setPlaying(false);
+      lastTsRef.current = null;
+    } else if (autoplay && !reduced && !(typeof document !== 'undefined' && document.hidden)) {
+      setPlaying(true);
+    }
+  }, [paused, autoplay, reduced]);
 
   // Tab pause (HANDOFF §5.1 CRITICAL)
   React.useEffect(() => {
@@ -138,7 +156,7 @@ export function Stage({
       if (document.hidden) {
         setPlaying(false);
         lastTsRef.current = null;
-      } else if (autoplay && !reduced) {
+      } else if (autoplay && !reduced && !pausedRef.current) {
         setPlaying(true);
       }
     };
