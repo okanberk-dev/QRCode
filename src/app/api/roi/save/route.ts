@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -249,7 +249,10 @@ export async function POST(req: NextRequest) {
         },
         locale,
       );
-      sendResendEmail({
+      // after(): the send finishes after the response instead of being cut
+      // off when the serverless function freezes.
+      after(() =>
+        sendResendEmail({
         template: 'roi-customer-report',
         locale,
         to: email,
@@ -258,7 +261,8 @@ export async function POST(req: NextRequest) {
         text: customerRendered.text,
         attachments,
         logMetadata: { plan: pdfData.planName ?? 'none', hoursSaved: pdfData.result.hoursSaved },
-      }).catch((err) => console.error('[roi/save] customer mail failed', err));
+      }).catch((err) => console.error('[roi/save] customer mail failed', err)),
+      );
     }
 
     // Sales mail (Pulse roi-admin-notification) — needs an email and a sales
@@ -286,7 +290,8 @@ export async function POST(req: NextRequest) {
         },
         locale,
       );
-      sendResendEmail({
+      after(() =>
+        sendResendEmail({
         template: 'roi-admin-notification',
         locale,
         to: salesInbox,
@@ -295,7 +300,8 @@ export async function POST(req: NextRequest) {
         html: adminRendered.html,
         text: adminRendered.text,
         logMetadata: { plan: pdfData.planName ?? 'none', sector: pdfData.sector },
-      }).catch((err) => console.error('[roi/save] admin sales mail failed', err));
+      }).catch((err) => console.error('[roi/save] admin sales mail failed', err)),
+      );
     }
   }
 

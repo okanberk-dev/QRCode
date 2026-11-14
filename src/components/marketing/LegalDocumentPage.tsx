@@ -64,12 +64,12 @@ export default function LegalDocumentPage({
           </Link>
 
           <div className="mt-6 max-w-[760px]">
-            <span className="pulse-eyebrow text-[#A8D62E]">{eyebrow}</span>
+            <span className="pulse-eyebrow text-[#525252]">{eyebrow}</span>
             <h1 className="bz-h-tight mt-3 text-[28px] sm:text-[44px] leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
               {doc.title || fallbackTitle}
             </h1>
             {lastUpdatedLabel && (
-              <div className="mt-4 pulse-eyebrow text-[#A3A3A3]">{lastUpdatedLabel}</div>
+              <div className="mt-4 pulse-eyebrow text-[#737373]">{lastUpdatedLabel}</div>
             )}
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function LegalDocumentPage({
                 </a>
               </span>
               {lastUpdatedLabel && (
-                <span className="pulse-eyebrow text-[#A3A3A3] text-[10px]">
+                <span className="pulse-eyebrow text-[#737373] text-[10px]">
                   {lastUpdatedLabel}
                 </span>
               )}
@@ -126,7 +126,7 @@ export default function LegalDocumentPage({
                 <ol className="mt-3 space-y-2 text-[13px] leading-[1.5]">
                   {tocItems.map((h, idx) => (
                     <li key={h.id} className="flex gap-2">
-                      <span className="bz-mono text-[11px] text-[#A3A3A3] tabular-nums shrink-0 mt-0.5">
+                      <span className="bz-mono text-[11px] text-[#737373] tabular-nums shrink-0 mt-0.5">
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                       <a

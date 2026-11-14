@@ -128,6 +128,10 @@ export function revalidatePricing(): void {
     // Dynamic segment fallback for the [locale] pattern. Next.js 14+
     // requires the 'page' type marker when the path contains brackets.
     revalidatePath('/[locale]/pricing', 'page');
+    // /roi reads the same plan prices (getActivePlans).
+    revalidatePath('/tr/roi');
+    revalidatePath('/en/roi');
+    revalidatePath('/[locale]/roi', 'page');
   } catch (error) {
     console.error('[revalidatePricing]', error);
   }

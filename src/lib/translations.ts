@@ -20,7 +20,6 @@ export const translations = {
     // Meta
     siteName: 'Buaze',
     siteUrl: 'https://www.buaze.com',
-    siteDescription: 'QR Geri Bildirim ve Dijital İtibar Yönetim Platformu. QR akışlarıyla şeffaf müşteri geri bildirimi toplayın, yorumları tek panelden yönetin, Pulse AI taslaklarıyla daha hızlı yanıt verin.',
 
     // Navbar / footer / CTA copy lives in the chrome components themselves
     // (MarketingNavbarClient, MarketingFooter), not here. Homepage copy lives
@@ -282,23 +281,7 @@ export const translations = {
     feedback_page_not_found: 'Sayfa Bulunamadı',
     feedback_page_inactive: 'Bu işletme aktif değil veya bağlantı hatalı.',
 
-    // Case Studies
 
-    // Google Compliance
-    google_compliance_badge: 'Google Uyumlu',
-    google_compliance_home_title: 'Google Politikalarına Uygun Akış',
-    google_compliance_home_desc: 'Buaze, Google\'ın yorum politikalarına tam uyum sağlar; sahte yorum üretmez, yorum karşılığı ödül vermez ve dürüst geri bildirimi teşvik eder.',
-    google_compliance_page_title: 'Google Uyumluluk & Güven',
-    google_compliance_page_subtitle: 'Şeffaf ve dürüst geri bildirim ekosistemini nasıl koruyoruz?',
-    google_compliance_point1_title: 'Sıfır Sahte Yorum Toleransı',
-    google_compliance_point1_desc: 'Buaze asla sahte yorum (fake review) üretmez veya yapay yollarla işletme puanınızı manipüle etmez. Sistemimiz sadece gerçek müşterilerden gelen organik yorumları kolaylaştırır.',
-    google_compliance_point2_title: 'Ödüllendirme Yok',
-    google_compliance_point2_desc: 'Google politikaları uyarınca, yorum karşılığında indirim, hediye veya herhangi bir ödül verilmesini kesinlikle önermez ve desteklemeyiz. Dürüstlük en büyük ödülümüzdür.',
-    google_compliance_point3_title: 'Dürüst Geri Bildirim Akışı',
-    google_compliance_point3_desc: 'Her müşteriye Google\'da yorum bırakma seçeneği sunuyoruz. İsteyen müşteri ek olarak işletmenize özel geri bildirim de gönderebilir; kimsenin Google\'a yazmasına engel değiliz; herkese açık bağlantı hiçbir puanda gizlenmez.',
-    google_compliance_policy_title: 'Google\'ın "Review Gating" Politikası',
-    google_compliance_policy_desc: 'Google, işletmelerin negatif yorumları caydırmasını ve sadece pozitif yorumları seçici olarak istemesini yasaklıyor. Buaze, tüm müşterilere dürüst geri bildirim imkanı sunarak bu politikalara tam uyum sağlar.',
-    google_compliance_link_text: 'Google Maps Katkı Politikası\'nı inceleyin',
 
     // Blog (post page back link)
     blog_backToBlog: 'Tüm yazılar',
@@ -415,7 +398,6 @@ export const translations = {
     // Meta
     siteName: 'Buaze',
     siteUrl: 'https://www.buaze.com',
-    siteDescription: 'QR Feedback & Digital Reputation Management Platform. Collect transparent customer feedback through QR flows, manage reviews from one dashboard, and respond faster with Pulse AI drafts.',
 
     // Navbar / footer / CTA copy lives in the chrome components themselves
     // (MarketingNavbarClient, MarketingFooter), not here. Homepage copy lives
@@ -676,23 +658,7 @@ export const translations = {
     feedback_page_not_found: 'Page Not Found',
     feedback_page_inactive: 'This business is not active or the link is incorrect.',
 
-    // Case Studies
 
-    // Google Compliance
-    google_compliance_badge: 'Google Compatible',
-    google_compliance_home_title: 'Google Policy-Aligned Flow',
-    google_compliance_home_desc: 'Buaze strictly adheres to Google\'s review policies: no fake reviews, no incentives, and promoting honest feedback collection.',
-    google_compliance_page_title: 'Google Compliance & Trust',
-    google_compliance_page_subtitle: 'How we protect a transparent and honest feedback ecosystem.',
-    google_compliance_point1_title: 'Zero Fake Review Tolerance',
-    google_compliance_point1_desc: 'Buaze never generates fake reviews or artificially manipulates your business rating. Our system only facilitates organic reviews from real customers.',
-    google_compliance_point2_title: 'No Incentives',
-    google_compliance_point2_desc: 'In accordance with Google policies, we strictly refrain from and discourage offering discounts, gifts, or any rewards in exchange for reviews. Integrity is our greatest reward.',
-    google_compliance_point3_title: 'Honest Feedback Flow',
-    google_compliance_point3_desc: 'Every customer is offered the public Google review link. Anyone who also wants to share private feedback with your business can do so in the same flow — we never gate negative reviews, and the public link is never hidden at any rating.',
-    google_compliance_policy_title: 'Google\'s Review Gating Policy',
-    google_compliance_policy_desc: 'Google prohibits businesses from discouraging negative reviews and selectively requesting only positive ones. Buaze ensures full compliance by offering honest feedback opportunities for all customers.',
-    google_compliance_link_text: 'Review Google\'s Maps User Contributed Content Policy',
 
     // Blog (post page back link)
     blog_backToBlog: 'All posts',

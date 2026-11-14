@@ -110,9 +110,16 @@ export async function renderLowRatingAlert(
     locale,
     resolveDisplayTimeZone(params.timeZone),
   );
-  const subTitle = params.branch
-    ? `${escapeHtml(params.restaurantName)} · ${escapeHtml(params.branch)}${params.tableNumber ? ` · QR: ${escapeHtml(params.tableNumber)}` : ''}`
-    : escapeHtml(params.restaurantName);
+  // Branch only when it differs from the business name (the QR form sends the
+  // name as the branch); the QR label shows with or without a branch.
+  const branch = params.branch && params.branch.trim() !== params.restaurantName.trim() ? params.branch : '';
+  const subTitle = [
+    escapeHtml(params.restaurantName),
+    branch ? escapeHtml(branch) : '',
+    params.tableNumber ? `QR: ${escapeHtml(params.tableNumber)}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   // Star row — nowrap so a narrow card never splits it 3 + 2.
   const starsHtml = `<span style="font-family:${FONTS.body};font-size:18px;line-height:1;letter-spacing:2px;white-space:nowrap;color:${PULSE.warning};">${'★'.repeat(rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - rating)}</span></span>`;

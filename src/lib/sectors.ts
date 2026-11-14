@@ -69,7 +69,7 @@ export const SECTORS: readonly SectorOption[] = [
     label: 'Klinik',
     sectorKey: 'clinic',
     display: { tr: 'Klinik & Sağlık', en: 'Clinic & Health' },
-    sub: { tr: 'KVKK uyumlu anket akışı', en: 'KVKK-compliant survey flow' },
+    sub: { tr: 'Sağlık bilgisi sormayan anket akışı', en: 'Survey flow that asks no health questions' },
   },
   {
     id: 'hukuk',
