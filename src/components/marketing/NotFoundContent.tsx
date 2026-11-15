@@ -1,22 +1,36 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+const isEnPath = (path: string) => /^\/en(\/|$)/.test(path);
+
 /**
- * Locale-aware text + links for the root 404 page.
+ * Locale-aware text + links for the branded 404 (BrandedNotFound).
  *
- * The root `not-found.tsx` is rendered into the React tree of EVERY route
- * under the root layout (Next.js pre-renders the not-found boundary of each
- * segment). It used to read `headers()` for Accept-Language, which is a
- * dynamic API: every marketing page silently stopped being statically
- * generated and was rendered per request (no ISR, metadata streamed into
- * <body>). The locale now comes from the URL on the client — `/en/...`
- * 404s get English copy, everything else Turkish (primary locale).
+ * Not-found boundaries are rendered into the React tree of every route, so
+ * this must not read headers() (a dynamic API there once made every
+ * marketing page render per request, §35.12.3). The locale comes from the
+ * URL instead: `/en/...` 404s get English copy, everything else Turkish.
  */
-export default function NotFoundContent() {
-  const pathname = usePathname() ?? '';
-  const isEn = /^\/en(\/|$)/.test(pathname);
+export default function NotFoundContent({
+  detectOnClient = false,
+}: {
+  /**
+   * For app/global-not-found.tsx. That page is prerendered once, without the
+   * requested URL, so the server always renders Turkish; reading the path
+   * during the first render would make the client disagree with the server
+   * HTML (React #418) for /en URLs. Start in Turkish and switch after mount.
+   */
+  detectOnClient?: boolean;
+}) {
+  const routerPath = usePathname() ?? '';
+  const [clientIsEn, setClientIsEn] = useState(false);
+  useEffect(() => {
+    if (detectOnClient) setClientIsEn(isEnPath(window.location.pathname));
+  }, [detectOnClient]);
+  const isEn = detectOnClient ? clientIsEn : isEnPath(routerPath);
   const locale = isEn ? 'en' : 'tr';
 
   return (

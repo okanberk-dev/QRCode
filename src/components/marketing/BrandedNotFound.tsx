@@ -3,14 +3,21 @@ import BuazeLogo from '@/components/marketing/BuazeLogo';
 import NotFoundContent from '@/components/marketing/NotFoundContent';
 
 /**
- * 1:1 with .design/site/site-pages4.jsx:NotFoundPage — dark #0A0A0A bg,
- * horizontal ECG waveform at 6% opacity, lime #C6F24E giant "404",
- * Space Grotesk headline, dual CTA (home + help).
+ * Branded 404 (dark #0A0A0A, ECG line, lime "404"). Used by
+ * app/global-not-found.tsx (unmatched URLs) and the not-found.tsx files of
+ * the root segments whose pages call notFound() ([locale], r, embed).
+ *
+ * Must stay free of dynamic APIs (headers/cookies/searchParams): not-found
+ * boundaries are rendered into every route's tree, so one `headers()` call
+ * here turns the whole site into per-request rendering (§35.12.3). The
+ * locale comes from the URL on the client (NotFoundContent).
  */
-// Must stay free of dynamic APIs (headers/cookies/searchParams): this
-// component is rendered into every route's tree, so one `headers()` call here
-// turns the whole site into per-request rendering (see NotFoundContent).
-export default function NotFound() {
+export default function BrandedNotFound({
+  detectLocaleOnClient = false,
+}: {
+  /** Set by app/global-not-found.tsx (see NotFoundContent). */
+  detectLocaleOnClient?: boolean;
+}) {
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#0A0A0A] px-6 py-12 text-center text-white font-sans">
       {/* ECG waveform background (design: horizontal pulse line, 6% opacity) */}
@@ -48,7 +55,7 @@ export default function NotFound() {
           404
         </div>
 
-        <NotFoundContent />
+        <NotFoundContent detectOnClient={detectLocaleOnClient} />
       </div>
     </div>
   );

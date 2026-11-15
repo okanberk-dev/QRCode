@@ -29,7 +29,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | Auth | Custom JWT (`jose`) + httpOnly cookie | `src/lib/auth.ts` — edge compatible |
 | Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil |
 | UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | Elle yazılmış bileşenler + Radix UI primitive'leri (`@radix-ui/react-dialog`, `dropdown-menu`, `tabs`, `tooltip`, `popover`, `select`) headless infrastructure |
-| Server-state | `@tanstack/react-query` | Admin/dashboard fetch dağınıklığı için cache + dedup + retry. `<QueryProvider>` `src/app/layout.tsx`'te root'ta (CLAUDE.md §27) |
+| Server-state | `@tanstack/react-query` | Admin/dashboard fetch dağınıklığı için cache + dedup + retry. `<QueryProvider>` panel layout'unda (`src/app/[locale]/dashboard/layout.tsx`, CLAUDE.md §27) |
 | Charts | recharts | |
 | Görsel işleme | sharp (WebP dönüşüm + resize) | |
 | QR | qrcode | `/api/restaurants/[id]/qr` |
@@ -283,6 +283,7 @@ src/
 │   ├── r/[slug]/              # Public QR landing + feedback form
 │   ├── menu/[slug]/           # Public restoran menüsü (SSR)
 │   ├── global-error.tsx       # Branded safe-mode + Sentry error boundary
+│   ├── global-not-found.tsx   # Unmatched URLs (no app/layout.tsx; one root layout per segment, §52)
 │   ├── opengraph-image.tsx    # Dynamic 1200x630 OG image
 │   ├── robots.ts + sitemap.ts # SEO
 │   └── globals.css            # Pulse @theme + bz-* + pulse-* utility'leri
@@ -426,7 +427,7 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 - `public/favicon.svg` — graphite kart içinde beyaz ECG + lime nokta.
 
 ### Font
-- **Space Grotesk** (display/heading) + **Inter** (body) + **JetBrains Mono** (eyebrow / sayı / kod) — `next/font/google` ile yüklü (`src/app/layout.tsx`).
+- **Space Grotesk** (display/heading) + **Inter** (body) + **JetBrains Mono** (eyebrow / sayı / kod) — `next/font/google` ile yüklü (`src/components/root/fonts.ts`, tüm kök düzenler `RootHtml` üzerinden kullanır, §52).
 - **Panel istisnası (§49)**: owner + admin panelleri **Geist / Geist Mono** kullanır (shadcn dashboard tipografisi, 2026-11 kullanıcı kararı). Yalnız panel layout'ları yükler; pazarlama, auth ve `/r` `/menu` `/s` yüzeyleri bu listedeki fontlarla kalır.
 - `globals.css` içinde `h1..h6` için CSS seçiciyle Space Grotesk + `font-weight: 500` + sıkı `letter-spacing: -0.025em` otomatik uygulanır, body default Inter'dir.
 - Space Grotesk weights: 400, 500, 600, 700. Inter weights: 400, 500, 600, 700, 800, 900. JetBrains Mono weights: 400, 500, 600.
@@ -829,7 +830,7 @@ if (!quota.allowed) {
 
 `.design/` klasörü Claude Design'dan gelen JSX prototipleri + canvas HTML + chat log içerir (22 dosya, git-tracked: root 3 + `pulse/` 6 + `site/` 13). Pulse marka kimliği (graphite/lime/pure white) + ~38 sayfalık site tasarımı kaynağıdır.
 
-**Kritik kural:** `.design/*.jsx` **doğrudan `src/`'ye kopyalanmaz** — yalnız referans olarak okunur. Pulse token'lar zaten `globals.css` `@theme {}` bloğunda, font'lar `src/app/layout.tsx`'te yüklü, logo `src/components/marketing/BuazeLogo.tsx`. Uygulanan kararlar §11 (renk + typography) + §12 (menü temaları) + §15 (Pulse AI) + §17 (utility class'ları).
+**Kritik kural:** `.design/*.jsx` **doğrudan `src/`'ye kopyalanmaz** — yalnız referans olarak okunur. Pulse token'lar zaten `globals.css` `@theme {}` bloğunda, font'lar `src/components/root/fonts.ts`'te yüklü, logo `src/components/marketing/BuazeLogo.tsx`. Uygulanan kararlar §11 (renk + typography) + §12 (menü temaları) + §15 (Pulse AI) + §17 (utility class'ları).
 
 **Font drift notu:** `.design-pulse-2026/project/tokens.css` `--font-heading: "Inter Tight"` önerir; uygulama kodu (CLAUDE.md §11 + `globals.css`) bilinçli olarak **Space Grotesk** kullanır. Tasarım bundle'ındaki font değeri reference, **uygulanmaz**.
 
@@ -1770,7 +1771,7 @@ Pulse temalı favicon her bağlamda doğru servis edilsin diye **3 statik dosya*
 - `apple-touch-icon.svg` — iOS Safari "Add to Home Screen" + pinned tab. 180x180 viewBox.
 - `site.webmanifest` — PWA manifest (Android Chrome "Install App"). Background `#FFFFFF`, theme `#0A0A0A`.
 
-**Layout metadata** (`src/app/layout.tsx` + `src/app/[locale]/layout.tsx`):
+**Layout metadata** (`src/lib/root-metadata.ts` `siteIcons()` + `src/app/[locale]/layout.tsx`):
 ```ts
 icons: {
   icon: [{ url: s.faviconUrl || '/favicon.svg', type: 'image/svg+xml' }],
@@ -3192,7 +3193,7 @@ Free tier: 5K error event + 10K transaction + 50 replay / ay. Mevcut Buaze trafi
   - `gcTime: 5 * 60_000` (5 dk cache GC)
   - `retry: 1` (transient hatalar için tek retry; 4xx loop'unu önler)
   - `refetchOnWindowFocus: false` (panel chart'ları ağır, focus'ta refetch istemiyoruz)
-- `src/app/layout.tsx` root'ta `<QueryProvider>` ile children sarılı — tüm `[locale]` + `admin` + `r/[slug]` + `menu/[slug]` route'ları kapsar.
+- `src/app/[locale]/dashboard/layout.tsx` owner panelinin children'ını `<QueryProvider>` ile sarar (pazarlama ve public sayfalar React Query kullanmaz).
 - Devtools: sadece `NODE_ENV !== 'production'`'da render (sağ-altta floating button).
 
 **Migration pattern (PR PR ile):**
@@ -3480,12 +3481,12 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 |---|---|---|
 | `@sentry/nextjs ^10.51` | ✅ Kurulu | Production observability — caught error'lar, cron failure'lar, integration failure'ları, error boundary'leri için **tutarlı kullan** (§26) |
 | `zod ^4.4` | ✅ Kurulu | Sadece yeni veya yüksek-risk backend route'larında. Mevcut elle validation'ı **toplu migrate etme** (§28) |
-| `@tanstack/react-query ^5.100` | ✅ Kurulu | `<QueryProvider>` root layout'ta. Yeni client component'lerde `useQuery` ile başla; mevcut fetch+useState pattern'leri opportunistic refactor (§27.1) |
+| `@tanstack/react-query ^5.100` | ✅ Kurulu | `<QueryProvider>` owner panel layout'unda. Yeni client component'lerde `useQuery` ile başla; mevcut fetch+useState pattern'leri opportunistic refactor (§27.1) |
 | `@radix-ui/react-{dialog,dropdown-menu,tabs,tooltip,popover,select}` | ✅ Kurulu | Sadece a11y-heavy yeni primitive ihtiyacında. Mevcut `src/components/ui/*` toplu migrate edilmez (§27.2) |
 | `firebase ^12.12` | ✅ Kurulu | Sadece Google Sign-in için. Primary auth değil — `jose` JWT + httpOnly cookie (§4) |
 | `jose ^6.2` | ✅ Kurulu | Custom JWT auth — edge compatible, Vercel middleware ile uyumlu (§4) |
-| `@vercel/speed-insights ^2.0` | ✅ Kurulu | Real-user Core Web Vitals (LCP/CLS/INP/FCP/TTFB). `<SpeedInsights />` root layout'ta mount'lı; alt layout'lar inherit eder (§31). Lokal dev'de no-op, sadece Vercel deployment'ta data toplar. Sentry'yi (§26) **replace etmez** — paralel rol |
-| `@vercel/analytics ^2.0` | ✅ Kurulu (2026-05) | Page views + custom events. `<Analytics />` root layout'ta `<SpeedInsights />` ile birlikte mount'lı; ikisi paralel beacon emit eder. RES (Real Experience Score) hesaplaması her iki sample stream'i tüketir — Analytics olmadan RES sample context yetersiz kalıyordu (Vercel dashboard "No data available" uyarısı). Lokal dev'de no-op. Custom event tracking şu an wired değil (passive page views) — gerekirse `track('event_name', { ... })` API'si var. |
+| `@vercel/speed-insights ^2.0` | ✅ Kurulu | Real-user Core Web Vitals (LCP/CLS/INP/FCP/TTFB). `<SpeedInsights />` `RootHtml` içinde mount'lı (her kök düzen, §52); alt layout'lar inherit eder (§31). Lokal dev'de no-op, sadece Vercel deployment'ta data toplar. Sentry'yi (§26) **replace etmez** — paralel rol |
+| `@vercel/analytics ^2.0` | ✅ Kurulu (2026-05) | Page views + custom events. `<Analytics />` `RootHtml` içinde `<SpeedInsights />` ile birlikte mount'lı; ikisi paralel beacon emit eder. RES (Real Experience Score) hesaplaması her iki sample stream'i tüketir — Analytics olmadan RES sample context yetersiz kalıyordu (Vercel dashboard "No data available" uyarısı). Lokal dev'de no-op. Custom event tracking wired değil: 2026-11 itibarıyla projede Web Analytics **kapalı** (Vercel API `web_analytics_not_enabled`) ve özel olaylar Pro plan ister; kurulum hunisi bu yüzden veritabanından hesaplanır (§31.6). |
 | `three 0.186.1` (+ `@types/three` dev) | ✅ Kurulu (2026-11, Stage 172) | Yalnız pazarlama sitesinde dekoratif iki sahne (alt bilgi nabız bandı, platform yörüngesi). Kullanıcı açık talebiyle eklendi ("bazı yerlerde three js kullan"); §30.2 gerekçesi: başka bağımlılıkla yapılamayan WebGL sahnesi, sayfa ilk JS'ine girmez (~110 KB brotli ayrı chunk, yalnız yeteneği olan cihazda ve görünüme yaklaşınca). Kurallar §50. `@react-three/fiber`/`drei` EKLENMEZ. |
 
 ### 30.4 Önerilen ama kurulmaya gerek olmayan lib'ler (revised)
@@ -3523,7 +3524,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 
 ## 31. Vercel Speed Insights + Analytics — Real-User Web Vitals
 
-`@vercel/speed-insights/next` (Web Vitals) ve `@vercel/analytics/next` (page views) ile gerçek-kullanıcı telemetrisi. Her iki paket `package.json`'da kayıtlı (`@vercel/speed-insights ^2.0.0` + `@vercel/analytics ^2.0.1`); `<SpeedInsights />` ve `<Analytics />` `src/app/layout.tsx` body sonunda **birlikte mount'lı** → `[locale]/layout.tsx` + `admin/layout.tsx` dahil tüm panel + marketing + public surface'leri kapsar. Yeni layout/route eklerken **ekstra mount koyma** (duplicate beacon).
+`@vercel/speed-insights/next` (Web Vitals) ve `@vercel/analytics/next` (page views) ile gerçek-kullanıcı telemetrisi. Her iki paket `package.json`'da kayıtlı (`@vercel/speed-insights ^2.0.0` + `@vercel/analytics ^2.0.1`); `<SpeedInsights />` ve `<Analytics />` `src/components/root/RootHtml.tsx` body sonunda **birlikte mount'lı** → her kök düzen (`[locale]`, `admin`, `r`, `menu`, `s`, `embed`, `audits`, `dashboard`, `(root)`, §52) bunu kullandığı için tüm panel + marketing + public yüzeyleri kapsar. Yeni layout/route eklerken **ekstra mount koyma** (duplicate beacon).
 
 **Neden ikisi birlikte:** Vercel "Real Experience Score" (RES) hesaplaması Web Vitals + page-view stream'lerinin **birleşik** sample'ından çıkar. Tek başına Speed Insights ile RES "0" görünüp dashboard'da "No data available — make sure you are using the latest @vercel/speed-insights package" uyarısı çıkıyordu (paket zaten v2 latest'tı, gerçek sebep page-view context eksikliğiydi). Analytics eklenince RES hesaplaması için yeterli sample kalitesi sağlanır.
 
@@ -3545,6 +3546,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 
 - **Lokal dev**: SDK no-op çalışır; data göndermez. `npm run dev`'de console temizdir.
 - **Vercel Preview + Production**: Vercel platform tarafından otomatik provision edilir; ek env var gerekmez. Preview deployment'lar da metric basar (sayfa hızı regresyonu kullanıcıya çıkmadan yakalanır).
+- **Web Analytics proje ayarı (2026-11)**: `qr-code` projesinde Web Analytics **kapalı** — Vercel API sorgusu `web_analytics_not_enabled` döndü. `<Analytics />` bu durumda veri toplamaz; operatör Vercel → proje → Analytics sekmesinden açmalı. Özel olaylar (`track()`) ayrıca Pro plan ister (cron'ların hepsi günlük, proje Hobby planda görünüyor).
 - **Bundle**: ~1.5 KB gzip, beacon API kullanır — main thread'i bloklamaz.
 - **Privacy**: KVKK/GDPR-friendly. Pseudonim, çerez yok, IP truncate'lenir.
 
@@ -3564,7 +3566,11 @@ Manuel `track()` çağrısı yok; sadece otomatik Web Vitals + page view beacon'
 
 ### 31.5 Yeni layout / SSG sayfa eklerken
 
-Yeni route `app/` ağacında otomatik kapsanır (root layout'ta tek `<SpeedInsights />` + `<Analytics />` mount, alt layout'lar inherit eder). Ayrı `<SpeedInsights />` veya `<Analytics />` mount **etme** — duplicate beacon gönderir, quota tüketir + sample drift yapar.
+Yeni route `app/` ağacında otomatik kapsanır (kök düzenler `RootHtml` ile tek `<SpeedInsights />` + `<Analytics />` mount eder, alt layout'lar inherit eder; yeni bir kök düzen de `RootHtml` kullanmalı). Ayrı `<SpeedInsights />` veya `<Analytics />` mount **etme** — duplicate beacon gönderir, quota tüketir + sample drift yapar.
+
+### 31.6 Kurulum hunisi (2026-11, veritabanından)
+
+Kayıt → ilk işletme → ilk QR → ilk müşteri puanı hunisi Vercel olayı yerine veritabanından hesaplanır: `src/lib/activation-funnel.ts` (saf, `tests/activation-funnel.test.ts`) + `getActivationFunnel(days)` (`src/lib/admin-bi.ts`). Seçili aralıkta (30/90/365 gün, NPS ile aynı) kaydolan `restaurant_owner`'lar sayılır; QR ve puan adımları owner kurulum listesiyle (§19.5) aynı tanımı kullanır (işletmelerinden birinde en az bir `QrGeneration` / `Feedback`). Adımlar bağımsız sayılır (QR'sız link ile puan gelebilir). Gösterim `/admin/analytics` → İş zekası → "Kurulum hunisi" kartı ve BI CSV'sinin 5. bölümü. Çerez onayı ve reklam engelleyiciden etkilenmez.
 
 ---
 
@@ -3935,7 +3941,7 @@ gibi slug birleşimleri için de geçerli.
 
 2026-11 denetiminde "site Google'da çıkmıyor" şikâyetinin üç teknik kök nedeni bulundu:
 
-1. **Kök `src/app/not-found.tsx` `headers()` okuyordu** (2026-05-25'ten beri). Next.js kök 404 bileşenini HER sayfanın ağacında render eder; tek bir dinamik API çağrısı tüm `[locale]/*` pazarlama sayfalarını istek başı render'a çevirdi (prerender manifest'inde yalnız robots + sitemap vardı; canlıda `cache-control: private, no-store`). **Kural**: `not-found.tsx`, `layout.tsx` ve her sayfada render edilen bileşenler `headers()/cookies()/searchParams` OKUMAZ; dil gerekiyorsa istemcide `usePathname()` (`NotFoundContent` paterni). Doğrulama: `next build` sonrası `.next/prerender-manifest.json` `routes` içinde `/tr`, `/tr/pricing` olmalı.
+1. **Kök `src/app/not-found.tsx` `headers()` okuyordu** (2026-05-25'ten beri; 2026-11'den beri kök not-found yerine `global-not-found.tsx` + bölüm `not-found.tsx` dosyaları var, kural aynı, §52). Next.js kök 404 bileşenini HER sayfanın ağacında render eder; tek bir dinamik API çağrısı tüm `[locale]/*` pazarlama sayfalarını istek başı render'a çevirdi (prerender manifest'inde yalnız robots + sitemap vardı; canlıda `cache-control: private, no-store`). **Kural**: `not-found.tsx`, `layout.tsx` ve her sayfada render edilen bileşenler `headers()/cookies()/searchParams` OKUMAZ; dil gerekiyorsa istemcide `usePathname()` (`NotFoundContent` paterni). Doğrulama: `next build` sonrası `.next/prerender-manifest.json` `routes` içinde `/tr`, `/tr/pricing` olmalı.
 2. **Streaming metadata**: Next 15.2+ dinamik sayfalarda `<title>`, description, canonical, hreflang ve robots'u `<body>` SONUNA basar; Googlebot ve GPTBot/ClaudeBot/PerplexityBot bu listeye dahil. `next.config.ts` `htmlLimitedBots: /.*/` ile metadata her istekte `<head>` içinde. Kaldırma.
 3. **Sitemap çalışma zamanında dosya sistemi tarıyordu**; Vercel fonksiyonunda `src/` olmadığı için anasayfa, fiyatlandırma, özellik ve çözüm sayfaları sitemap'te yoktu. Liste artık `scripts/generate-public-routes.mjs` ile derleme başında `src/lib/seo/public-routes.generated.json`'a yazılır (build script'inde, `next build`'den önce). Yeni sayfa eklerken `node scripts/generate-public-routes.mjs` çalıştır; `tests/public-routes.test.ts` sapmayı yakalar.
 
@@ -4584,6 +4590,8 @@ GitHub PR referansı.
 - **Chat prompt history (Stage 171)**: 2026-11-13 kullanıcı: *"menü sayfasındaki işletme kartlarını da kaldır ve maine gönder ve sitenin pazarlama sayfalarındaki yazıları vs. footer tasarımını daha düzenli invoatif güzel yap bazı yerlerde three js kullan ve ayrıca google'da indeks alsın kötü düşünülmsisn. sonra maine at."* Bu kayıt yalnız ilk kısmı (menü kartları) kapsar; pazarlama/footer/three.js kısmı ayrı aşamada. Hukuki/disipline override yok.
 - §38.254 — Stage 172 (PR TBD) Pazarlama sitesi yeniden yazımı + three.js + Google'da güvenilirlik. Alt bilgi, menü, ana sayfa, 7 özellik, 15 sektör + sektörler + QR oluşturucu, 8 ticari, şirket/blog ve yardım merkezi sayfaları iş akışıyla birim birim yeniden yazıldı, her birim bağımsız gözden geçirildi (§51). Uydurma içerik kaldırıldı (isimli ekip/yazar/alıntı, canlı akış, "+%184", "340K", "5 dakikada kurulum", 7/24, hello@/legal@/kvkk@), yorum akışı tek doğru anlatımla (D1), uyum davranışla (D2). three.js iki sahne (§50). SEO: kök Organization `disambiguatingDescription`, sabit koordinatlar kaldırıldı, paylaşım görselleri doğrulanabilir bilgilerle yeniden üretildi, RSS (sıralama, tarih, dc:creator), hukuk başlıklarında `#` CSS'e taşındı, 28 yardım yönlendirmesi, sitemap kaldırılan kategorileri dışlar. Yan düzeltmeler: tek iletişim adresi (support@), onay e-postaları gerçek destek saatleriyle, giriş/kayıt uydurma alıntı, deneme sonu sayfasındaki eski TL fiyatları, panel "PDF yazdır" (noopener) hatası, müşteri formundaki "AKŞAM ZİYARETİ", anket "KVKK uyumlu" rozeti, "Masa No" → "QR etiketi" (e-posta + CSV), Pulse AI taslak sıklığı "günde bir kez", hero duraklatma o anki karede (`Stage paused`), ROI e-postaları `after()`, onay günlüğünde e-posta gizleme. Doğrulama: tsc 0, eslint 0, 1868 test, üretim derlemesi (pazarlama sayfaları statik), üretim sunucusunda 194 sayfalık tarama (canonical www, hreflang, tek H1, JSON-LD, kırık bağlantı yok; tek uyarı panelden gelen bir hukuk başlığı), three.js sayfa paketlerinde yok. **Disipline**: §51 içerik kuralları; yeni pazarlama metni için sonuç vaadi ve doğrulanamayan rakam yok; iş akışı devam ettirirken önbellek çağrı sırasına bağlıdır — sırayı değiştirecek betik için önceki raporları dosyaya yazıp yeni çalıştırma başlat.
 - **Chat prompt history (Stage 172)**: 2026-11-13 kullanıcı: *"menü sayfasındaki işletme kartlarını da kaldır ve maine gönder ve sitenin pazarlama sayfalarındaki yazıları vs. footer tasarımını daha düzenli invoatif güzel yap bazı yerlerde three js kullan ve ayrıca google'da indeks alsın kötü düşünülmsisn. sonra maine at."* (bu kayıt pazarlama/footer/three.js kısmı); ara mesajlar *"Devam"*, *"Continue"*; 2026-11-14 *"Kaldırabilirsin"* (framer-motion paketinin kaldırılmasına onay, CLAUDE.md §10 bağımlılık kuralı). Hukuki/disipline override yok; yorum akışındaki eşik yönlendirmesi ürün kararı olarak kullanıcıya bildirildi.
+- §38.255 — Stage 173 (PR TBD) Küçük teknik borçlar. (i) **Sunucudan doğru `<html lang>`**: `src/app/layout.tsx` kaldırıldı; `[locale]/layout.tsx` kök düzen oldu (`<RootHtml lang={locale}>`), diğer üst düzey bölümlere (`admin` = ADMIN_LOCALE, `r`, `menu`, `s`, `embed`, `audits`, `dashboard`, `(root)`) kendi kök düzenleri eklendi; `app/not-found.tsx` → `global-not-found.tsx` (`experimental.globalNotFound`) + `[locale]`/`r`/`embed` `not-found.tsx` (`BrandedNotFound`); DocumentLang ve kök inline lang betiği kaldırıldı; `/r/[slug]` istemcide seçtiği dili `<html lang>`'a yazar (§52). Pazarlama sayfaları statik kaldı (prerender manifest'inde /tr, /en, /tr/pricing). Gözlem: sayfa içinden `notFound()` 404'leri Next'in `__next_error__` kabuğuyla dönüyor (durum 404 + noindex, içerik istemcide çiziliyor); önceki kodda da aynı, bu aşamada değişmedi. (ii) **CSV**: yorumlar sayfasında "Tüm zamanlar" 90 gün gönderiyordu, artık `days=all` (uç nokta tavanı 10.000 satır); CSV platform etiketleri 10 platforma tamamlandı. (iii) **Kurulum hunisi**: Vercel Web Analytics projede kapalı (`web_analytics_not_enabled`) ve özel olaylar Pro ister, bu yüzden huni veritabanından hesaplanır (§31.6): `activation-funnel.ts` + `getActivationFunnel`, `/admin/analytics` kartı + BI CSV 5. bölüm. **Disipline**: yeni üst düzey bölüm = yeni kök düzen (`RootHtml`); sunucu tarafı ölçümü üçüncü taraf araca bağlamadan önce aracın projede açık olduğunu doğrula.
+- **Chat prompt history (Stage 173)**: 2026-11-15 kullanıcı: *"Önerilerin neler"* → öneri listesi; ardından *"5. Küçük teknik borçları yap maine göndee"*. Madde 5'teki "Vercel Analytics olaylarıyla ölçmek" Web Analytics kapalı olduğu için veritabanı hunisine çevrildi (kullanıcıya bildirildi). Hukuki/disipline override yok.
 - §38.245 — Stage 163 (PR TBD) Google girişi penceresi kapanmıyor + yavaş giriş, site hızı, SEO ve Google uyumu. **Disipline**: (i) proxy'lenen üçüncü taraf sayfalara (`/__/*`) site güvenlik başlıklarını körlemesine uygulama — özellikle COOP opener'ı koparır; (ii) layout metadata'sına sayfaya özgü alan (canonical, hreflang, og:url, twitter başlığı) koyma, miras kalır; (iii) `'use client'` dosyası `@/lib/prisma` içeren modülü dolaylı da olsa import etmemeli (sabitleri ayrı modüle al); (iv) IntersectionObserver hedefi gerçek kutu olmalı (`display: contents` asla). **Not**: Firebase `authDomain` ve OAuth ayarlarına dokunulmadı; düzeltme… (Ayrıntı: git log.)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
@@ -5311,6 +5319,7 @@ Yeni session bir kural belirlediyse, hangi §'ye gider:
 | Panel teması (Geist + shadcn yoğunluğu), işletme/franchise geçişi ve yönetimi | §49 |
 | three.js dekoratif sahneler | §50 |
 | Pazarlama sitesi içerik doğruluğu ve sayfa düzenleri | §51 |
+| Kök düzenler, `<html lang>`, global 404 | §52 |
 
 Yeni konu ortaya çıkarsa yeni `## §X` ekle; ama önce `grep -n "^## " CLAUDE.md` ile mevcut §-lere baktıktan sonra (overlap riski).
 
@@ -6113,3 +6122,13 @@ Pazarlama sitesi (alt bilgi, menü, ana sayfa, özellik, sektör, ticari, şirke
 **Paylaşım görseli:** `public/images/open-graph-{tr,en}.png` (1200×630) yalnız doğrulanabilir bilgi taşır. Yeniden üretmek için HTML + yerel woff2 fontlarıyla Playwright ekran görüntüsü alınır, sharp ile palet PNG'ye sıkıştırılır (~60 KB). Sosyal ağ önbelleği için Facebook Sharing Debugger / LinkedIn Post Inspector'da yeniden çek.
 
 **Yapma:** sayfaya sahte "canlı" sayaç, isimli alıntı, müşteri logosu, mühür ekleme; yeni posta kutusu adı yazma; HowTo'yu görünür adım olmadan ekleme; SoftwareApplication / AggregateRating ekleme; pazarlama sayfasında `headers()/cookies()/searchParams` okuma (§35.12.3).
+
+## §52 — Kök düzenler ve `<html lang>` (kanonik, 2026-11, Stage 173)
+
+`src/app/layout.tsx` yok; her üst düzey bölümün kendi kök düzeni var, hepsi aynı kabuğu kullanır: `src/components/root/RootHtml.tsx` (`<html>/<body>`, `globals.css`, `fonts.ts`, ConditionalAnalytics, çerez bandı, Speed Insights + Analytics). Metadata varsayılanları ve viewport `src/lib/root-metadata.ts` (`buildBaseMetadata`, `APP_METADATA`, `siteIcons`, `ROOT_VIEWPORT`).
+
+- **Neden**: tek kök düzen `[locale]`'in üstünde kaldığı için dili bilemiyordu (`headers()` okumak ISR'ı bozar, §35.12.3); /en sayfaları sunucudan `lang="tr"` geliyordu ve yalnız JS ile düzeltiliyordu. Artık `src/app/[locale]/layout.tsx` kök düzendir ve `<RootHtml lang={locale}>` basar.
+- **Kök düzenler**: `[locale]` (lang = locale), `admin` (lang = `ADMIN_LOCALE` çerezi; düzen zaten çerez okuyor), `r`, `menu`, `s`, `embed`, `audits`, `dashboard` (locale'siz yönlendirme), `(root)` (`/` yönlendirmesi) — bunlarda lang `tr`. `/r/[slug]` dili istemcide seçtiği için `<html lang>`'ı kendisi günceller.
+- **404**: `app/not-found.tsx` yerine `app/global-not-found.tsx` (`experimental.globalNotFound`, kendi `<html>`'i; /en için `langFromPath` küçük betiği). `notFound()` çağıran bölümlerin kendi `not-found.tsx`'i var (`[locale]`, `r`, `embed` → `BrandedNotFound`; `admin`, `menu/[slug]`, `s/[slug]`, `audits/[token]` kendi tasarımları). Hiçbiri `headers()/cookies()/searchParams` okumaz. Global 404 bir kez statik üretildiği için istenen adresi bilmez: `BrandedNotFound detectLocaleOnClient` Türkçe başlar, dili mount sonrası adresten seçer (ilk render'da adres okumak React #418 hidrasyon hatası verir).
+- **Gezinme**: iki farklı kök düzen arasında geçiş tam sayfa yüklemesidir (Next.js); /tr ↔ /en aynı kök düzende kalır.
+- **Yapma**: `src/app/layout.tsx` geri ekleme (tüm kök düzenler iç içe `<html>` olur); yeni üst düzey bölümü kök düzensiz bırakma (derleme "missing root layout" ile durur) — `RootHtml` + `buildBaseMetadata` + `ROOT_VIEWPORT` ile 15 satırlık düzen ekle; `RootHtml`'e `<head>` yazma (kaynak ipuçları `react-dom` `prefetchDNS` ile).

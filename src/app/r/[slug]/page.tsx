@@ -196,6 +196,15 @@ function ReviewContent() {
     if (locales.includes(browserLang)) setLocale(browserLang);
   }, [searchParams]);
 
+  // The /r root layout serves lang="tr"; this page picks its language on the
+  // client, so keep <html lang> in step (screen readers, CSS uppercase).
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    return () => {
+      document.documentElement.lang = 'tr';
+    };
+  }, [locale]);
+
   const t = useCallback(
     (key: string): string => {
       const trans = getTranslations(locale) as Record<string, string>;

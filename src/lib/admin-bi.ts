@@ -19,6 +19,7 @@ import { prisma } from '@/lib/prisma';
 import { calculateNPSFromCounts } from '@/lib/analytics-nps';
 import { csvCell } from '@/lib/csv-safe';
 import { resolveBillingAmount, toAdminRow, type AdminPlanRow } from '@/lib/subscription-plans';
+import { buildActivationFunnel, type ActivationFunnel } from '@/lib/activation-funnel';
 
 // ─── Canonical revenue + plan classification (§15.2) ──────────────────
 
@@ -457,6 +458,48 @@ export async function getCohortRetention(months: number, now: Date = new Date())
   return points;
 }
 
+/**
+ * Setup funnel for owners who signed up in the last `days` days
+ * (src/lib/activation-funnel.ts). Four reads, each bounded by the window's
+ * signups; sequential because each depends on the previous one.
+ */
+export async function getActivationFunnel(days: number, now: Date = new Date()): Promise<ActivationFunnel> {
+  const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const owners = await prisma.user.findMany({
+    where: { role: 'restaurant_owner', createdAt: { gte: since } },
+    select: { id: true },
+  });
+  const ownerIds = owners.map((o) => o.id);
+  const restaurants = ownerIds.length
+    ? await prisma.restaurant.findMany({
+        where: { userId: { in: ownerIds } },
+        select: { id: true, userId: true },
+      })
+    : [];
+  const restaurantIds = restaurants.map((r) => r.id);
+  const [qrRows, feedbackRows] = restaurantIds.length
+    ? await prisma.$transaction([
+        prisma.qrGeneration.findMany({
+          where: { restaurantId: { in: restaurantIds } },
+          select: { restaurantId: true },
+          distinct: ['restaurantId'],
+        }),
+        prisma.feedback.findMany({
+          where: { restaurantId: { in: restaurantIds } },
+          select: { restaurantId: true },
+          distinct: ['restaurantId'],
+        }),
+      ])
+    : [[], []];
+  return buildActivationFunnel({
+    windowDays: days,
+    ownerIds,
+    restaurants,
+    qrRestaurantIds: qrRows.map((r) => r.restaurantId),
+    feedbackRestaurantIds: feedbackRows.flatMap((r) => (r.restaurantId ? [r.restaurantId] : [])),
+  });
+}
+
 export interface BiSnapshot {
   range: '30d' | '90d' | '1y';
   /** Range in months for monthly buckets. */
@@ -465,22 +508,25 @@ export interface BiSnapshot {
   churn: ChurnPoint[];
   nps: NpsBucket;
   cohort: CohortPoint[];
+  /** Setup funnel for the range's signups (same day window as NPS). */
+  funnel: ActivationFunnel;
   generatedAt: string;
 }
 
 /**
- * Convenience aggregator — calls 4 helpers in parallel. Used by the BI
+ * Convenience aggregator — calls 5 helpers in parallel. Used by the BI
  * endpoint + CSV export. Returns a single snapshot.
  */
 export async function getBiSnapshot(range: '30d' | '90d' | '1y'): Promise<BiSnapshot> {
   const months = range === '30d' ? 6 : range === '90d' ? 12 : 12; // 1y = 12 months chart
   const npsDays = range === '30d' ? 30 : range === '90d' ? 90 : 365;
   const now = new Date();
-  const [mrr, churn, nps, cohort] = await Promise.all([
+  const [mrr, churn, nps, cohort, funnel] = await Promise.all([
     getMrrTrend(months, now),
     getChurnTrend(months, now),
     getNpsDistribution(npsDays, now),
     getCohortRetention(months, now),
+    getActivationFunnel(npsDays, now),
   ]);
   return {
     range,
@@ -489,6 +535,7 @@ export async function getBiSnapshot(range: '30d' | '90d' | '1y'): Promise<BiSnap
     churn,
     nps,
     cohort,
+    funnel,
     generatedAt: now.toISOString(),
   };
 }
@@ -567,6 +614,14 @@ export function buildBiCsv(snapshot: BiSnapshot): string {
   lines.push(['Kohort ayı', 'Kayıt', 'Aktif (ücretli)', 'Deneme', 'Elde tutma %'].map(csvCell).join(','));
   for (const p of snapshot.cohort) {
     lines.push([p.cohortMonth, p.signups, p.retainedActive, p.retainedTrial, p.retentionPct].map(csvCell).join(','));
+  }
+  lines.push('');
+
+  // Section 5: Setup funnel
+  lines.push(`# KURULUM HUNİSİ (son ${snapshot.funnel.windowDays} günde kaydolan işletme sahipleri)`);
+  lines.push(['Adım', 'İşletme sahibi', 'Kaydolanların %'].map(csvCell).join(','));
+  for (const step of snapshot.funnel.steps) {
+    lines.push([step.label, step.count, step.pctOfSignups].map(csvCell).join(','));
   }
   lines.push('');
 

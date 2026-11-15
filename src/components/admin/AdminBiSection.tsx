@@ -3,12 +3,13 @@
 // Stage A5 §38.97 — cross-workspace BI section.
 //
 // Mount: /admin/analytics page sonu (sm:hidden olmadan, sadece desktop +
-// tablet'ta görünür — mobile owner-relevant değil). 4 chart:
+// tablet'ta görünür — mobile owner-relevant değil). 4 chart + kurulum hunisi:
 //   1. MRR trend AreaChart (last N month, plan-stacked)
 //   2. Churn rate BarChart (last N month, ratePct line + churned count bar)
 //   3. NPS distribution PieChart (promoters / passives / detractors)
 //   4. Cohort retention BarChart (last N month signup, retainedActive +
 //      retainedTrial stacked)
+//   5. Setup funnel (signup → business → QR → first rating, from DB rows)
 //
 // Filter: dateRange chip (30d/90d/1y) + Export CSV button.
 // Server fetch: /api/admin/analytics/bi.
@@ -62,6 +63,13 @@ interface CohortPoint {
   retentionPct: number;
 }
 
+interface FunnelStep {
+  key: 'signup' | 'business' | 'qr' | 'feedback';
+  label: string;
+  count: number;
+  pctOfSignups: number;
+}
+
 interface BiSnapshot {
   range: Range;
   months: number;
@@ -69,6 +77,8 @@ interface BiSnapshot {
   churn: ChurnPoint[];
   nps: NpsBucket;
   cohort: CohortPoint[];
+  /** Setup funnel (src/lib/activation-funnel.ts). */
+  funnel: { windowDays: number; steps: FunnelStep[] };
   generatedAt: string;
 }
 
@@ -172,8 +182,8 @@ export function AdminBiSection() {
           <Eyebrow color="#525252">TÜM İŞLETMELER</Eyebrow>
           <h2 className="bz-h-tight mt-1 text-[18px]">İş zekası göstergeleri</h2>
           <p className="mt-1 text-[12px] text-[#737373]">
-            Aylık gelir, kayıp oranı, NPS ve kayıt kohortları — tüm işletmelerin toplamı.
-            Bu bölüm kendi tarih aralığını kullanır.
+            Aylık gelir, kayıp oranı, NPS, kayıt kohortları ve kurulum hunisi — tüm
+            işletmelerin toplamı. Bu bölüm kendi tarih aralığını kullanır.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -398,6 +408,61 @@ export function AdminBiSection() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          {/* 5. SETUP FUNNEL — signup → business → QR → first rating, from
+              database rows (no tracking script, so no consent or ad-blocker
+              gaps). Same step definitions as the owner setup checklist. */}
+          <div className="bz-card p-5 lg:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <Eyebrow>KURULUM HUNİSİ</Eyebrow>
+              <span className="bz-mono inline-flex items-center gap-1 text-[10px] text-[#737373]">
+                <Users size={11} />
+                {snapshot.funnel.steps[0]?.count ?? 0}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-[#737373]">
+              Son {snapshot.funnel.windowDays} günde kaydolan işletme sahipleri, bugüne kadar
+              hangi adıma ulaştı. Yeni kaydolanların bir kısmı henüz başındadır.
+            </p>
+            {(snapshot.funnel.steps[0]?.count ?? 0) === 0 ? (
+              <p className="mt-6 text-center text-[12px] text-[#737373]">
+                Bu dönemde yeni kayıt yok
+              </p>
+            ) : (
+              <ol className="mt-4 space-y-3">
+                {snapshot.funnel.steps.map((step, i) => {
+                  const prev = i > 0 ? snapshot.funnel.steps[i - 1].count : null;
+                  const stepRate =
+                    prev && prev > 0 ? Math.round((step.count / prev) * 1000) / 10 : null;
+                  return (
+                    <li key={step.key} className="grid grid-cols-[180px_1fr_auto] items-center gap-3">
+                      <span className="text-[12px] text-[#1A1A1A]">
+                        {step.label}
+                        {stepRate !== null && (
+                          <span className="block text-[10px] text-[#737373]">
+                            önceki adımdan geçiş: %{stepRate}
+                          </span>
+                        )}
+                      </span>
+                      <div
+                        className="h-2.5 overflow-hidden rounded-full bg-[#F5F5F5]"
+                        role="img"
+                        aria-label={`${step.label}: kaydolanların %${step.pctOfSignups}'i`}
+                      >
+                        <div
+                          className="h-full rounded-full bg-[#0A0A0A]"
+                          style={{ width: `${Math.min(100, step.pctOfSignups)}%` }}
+                        />
+                      </div>
+                      <span className="bz-mono w-[88px] text-right text-[11px] text-[#525252]">
+                        {step.count} · %{step.pctOfSignups}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
           </div>
         </div>
       )}

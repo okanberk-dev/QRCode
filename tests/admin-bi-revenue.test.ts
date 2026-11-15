@@ -18,6 +18,7 @@ import {
 } from '../src/lib/admin-bi';
 import type { AdminPlanRow } from '../src/lib/subscription-plans';
 import { calculateNPS, calculateNPSFromCounts } from '../src/lib/analytics-nps';
+import { buildActivationFunnel } from '../src/lib/activation-funnel';
 
 function tier(id: string, name: string, priceUsd: number, extra: Partial<AdminPlanRow> = {}): AdminPlanRow {
   return {
@@ -187,6 +188,13 @@ test('buildBiCsv: USD header, per-tier columns from snapshot keys (untiered last
     churn: [{ month: '2026-10', churned: 1, active: 10, ratePct: 10 }],
     nps: { promoters: 3, passives: 2, detractors: 5, total: 10, score: -20, windowDays: 90 },
     cohort: [{ cohortMonth: '2026-10', signups: 4, retainedActive: 1, retainedTrial: 2, retentionPct: 75 }],
+    funnel: buildActivationFunnel({
+      windowDays: 90,
+      ownerIds: ['u1', 'u2'],
+      restaurants: [{ id: 'r1', userId: 'u1' }],
+      qrRestaurantIds: ['r1'],
+      feedbackRestaurantIds: [],
+    }),
     generatedAt: '2026-10-11T00:00:00.000Z',
   });
   assert.ok(csv.startsWith('\ufeff'), 'UTF-8 BOM for Excel');
@@ -197,6 +205,10 @@ test('buildBiCsv: USD header, per-tier columns from snapshot keys (untiered last
   assert.ok(!csv.includes('TRY'), 'no TRY header over USD values');
   assert.ok(lines.includes('"Destekçi (5★)","Nötr (4★)","Eleştiren (1-3★)","Toplam","Skor","Pencere (gün)"'));
   assert.ok(lines.includes('"3","2","5","10","-20","90"'));
+  assert.ok(lines.includes('# KURULUM HUNİSİ (son 90 günde kaydolan işletme sahipleri)'));
+  assert.ok(lines.includes('"Kayıt oldu","2","100"'));
+  assert.ok(lines.includes('"QR oluşturdu","1","50"'));
+  assert.ok(lines.includes('"İlk müşteri puanını aldı","0","0"'));
 });
 
 test('buildBiCsv: no paid subscriptions → only month + total columns', () => {
@@ -207,6 +219,13 @@ test('buildBiCsv: no paid subscriptions → only month + total columns', () => {
     churn: [],
     nps: { promoters: 0, passives: 0, detractors: 0, total: 0, score: 0, windowDays: 30 },
     cohort: [],
+    funnel: buildActivationFunnel({
+      windowDays: 30,
+      ownerIds: [],
+      restaurants: [],
+      qrRestaurantIds: [],
+      feedbackRestaurantIds: [],
+    }),
     generatedAt: '2026-10-11T00:00:00.000Z',
   });
   const lines = csv.slice(1).split('\n');
