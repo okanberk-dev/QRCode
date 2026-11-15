@@ -88,6 +88,10 @@ const nextConfig: NextConfig = {
   // (framer-motion was removed in 2026-11: nothing imported it any more.)
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns'],
+    // The app has one root layout per top-level segment (so /en pages are
+    // served with lang="en", see src/components/root/RootHtml.tsx). With no
+    // app/layout.tsx, unmatched URLs need app/global-not-found.tsx.
+    globalNotFound: true,
   },
 
   async rewrites() {

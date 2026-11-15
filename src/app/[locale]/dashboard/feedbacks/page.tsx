@@ -1051,9 +1051,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   // §0.5 — CSV export follows the selected business + toolbar filters.
   // `buaze_qr` is not understood by the export endpoint (it would match
-  // nothing), so that one filter falls back to all platforms.
+  // nothing), so that one filter falls back to all platforms. "All time"
+  // exports all time (the endpoint caps a file at 10,000 rows); it used to
+  // send 90 days while the toolbar said "Tüm zamanlar".
   const exportHref = useMemo(() => {
-    const q = new URLSearchParams({ days: days === 'all' ? '90' : String(days) });
+    const q = new URLSearchParams({ days: String(days) });
     if (scopedRestaurantId) q.set('restaurantId', scopedRestaurantId);
     if (platform !== 'all' && platform !== 'buaze_qr') q.set('platform', String(platform));
     if (rating !== 'all') q.set('rating', String(rating));

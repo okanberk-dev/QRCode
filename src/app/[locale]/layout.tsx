@@ -1,15 +1,21 @@
-import '../globals.css';
 import { SITE_URL, SOCIAL_PROFILES } from '@/lib/site';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import ContactFloat from '@/components/marketing/LazyContactFloat';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { getSiteSettings } from '@/lib/site-settings';
 import { getCompanyFacts, ORGANIZATION_ID, WEBSITE_ID } from '@/lib/company-facts';
-import DocumentLang from '@/components/providers/DocumentLang';
+import RootHtml from '@/components/root/RootHtml';
+import { APP_METADATA, ROOT_VIEWPORT, siteIcons } from '@/lib/root-metadata';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
+
+// This is a root layout: it renders <html lang={locale}> so /en pages are
+// served as English from the server (RootHtml explains the root layout
+// split). Language switches between /tr and /en stay client-side
+// navigations; React updates the `lang` attribute.
+export const viewport: Viewport = ROOT_VIEWPORT;
 
 // Stage 83 §38.163 — `force-dynamic` removed so marketing pages under
 // `[locale]/*` can opt into ISR (`revalidate=N`) per route. Auth-aware
@@ -98,16 +104,9 @@ export async function generateMetadata({
       site: '@buaze',
       creator: '@buaze',
     },
-    icons: {
-      icon: [
-        // §38.106 — `?v=4` cache bust for circular favicon; CLAUDE.md
-        // §34.14 disipline (immutable header + query string version bump).
-        { url: s.faviconUrl || '/favicon.svg?v=4', type: 'image/svg+xml' },
-      ],
-      shortcut: s.faviconUrl || '/favicon.svg?v=4',
-      apple: '/apple-touch-icon.svg?v=4',
-    },
+    icons: siteIcons(s.faviconUrl),
     manifest: '/site.webmanifest',
+    ...APP_METADATA,
   };
 }
 
@@ -198,19 +197,20 @@ export default async function LocaleLayout({
   ];
 
   return (
-    <div className="antialiased bg-white text-[#0A0A0A] min-h-dvh flex flex-col">
-      <DocumentLang lang={locale} />
-      <script
-        type="application/ld+json"
-        // JSON-LD is safe to inject — it's a static, server-generated object.
-        dangerouslySetInnerHTML={{ __html: jsonLdString(structuredData) }}
-      />
-      {children}
-      {/* ContactFloat is only shown to visitors (unauthenticated users).
-          Stage 83 §38.163 — gating moved client-side via useMarketingAuth so
-          the entire marketing tree can ship as ISR. The component self-hides
-          when an authenticated session is detected post-mount. */}
-      <ContactFloat locale={locale} />
-    </div>
+    <RootHtml lang={locale}>
+      <div className="antialiased bg-white text-[#0A0A0A] min-h-dvh flex flex-col">
+        <script
+          type="application/ld+json"
+          // JSON-LD is safe to inject — it's a static, server-generated object.
+          dangerouslySetInnerHTML={{ __html: jsonLdString(structuredData) }}
+        />
+        {children}
+        {/* ContactFloat is only shown to visitors (unauthenticated users).
+            Stage 83 §38.163 — gating moved client-side via useMarketingAuth so
+            the entire marketing tree can ship as ISR. The component self-hides
+            when an authenticated session is detected post-mount. */}
+        <ContactFloat locale={locale} />
+      </div>
+    </RootHtml>
   );
 }

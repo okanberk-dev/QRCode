@@ -6,11 +6,18 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { csvCell } from '@/lib/csv-safe';
 
+// All 10 review platforms (§5); an unknown value is written as stored.
 const PLATFORM_LABELS: Record<string, string> = {
   google: 'Google',
   yemeksepeti: 'Yemeksepeti',
   getir: 'Getir',
   trendyol_go: 'Trendyol GO',
+  tripadvisor: 'Tripadvisor',
+  airbnb: 'Airbnb',
+  booking: 'Booking.com',
+  yandex: 'Yandex',
+  yelp: 'Yelp',
+  foursquare: 'Foursquare',
 };
 
 export async function GET(req: NextRequest) {
