@@ -12,26 +12,24 @@ import { AlertBanner, Badge, Eyebrow, PageHeader, StatCard } from '@/components/
 type LifecycleType =
   | 'qr_not_downloaded'
   | 'first_feedback_tips'
-  | 'upgrade_suggestion'
-  | 'inactive_reactivation';
+  | 'upgrade_suggestion';
 
 const TYPE_LABEL: Record<LifecycleType, string> = {
   qr_not_downloaded: 'QR İndirilmedi',
   first_feedback_tips: 'İlk Yorum Tipleri',
   upgrade_suggestion: 'Plan Yükseltme',
-  inactive_reactivation: 'Tekrar Canlandırma',
 };
 
-// The log table and the run summary also carry the newer lifecycle mail
-// types (sent by their own crons / sync triggers). Without labels the run
-// summary rendered blank tiles and the log showed raw keys.
+// The log table also carries the types written by other crons, plus types
+// retired in 2026-11 (CLAUDE.md §21.39) that still sit in older log rows.
 const ALL_TYPE_LABEL: Record<string, string> = {
   ...TYPE_LABEL,
   monthly_health_report: 'Aylık Sağlık Raporu',
-  first_feedback_celebration: 'İlk Yorum Kutlaması',
-  qr_no_scans_reminder: 'QR Taranmıyor',
   rating_drop_alert: 'Puan Düşüşü Uyarısı',
-  first_reply_celebration: 'İlk Yanıt Kutlaması',
+  inactive_reactivation: 'Tekrar Canlandırma (kaldırıldı)',
+  first_feedback_celebration: 'İlk Yorum Kutlaması (kaldırıldı)',
+  qr_no_scans_reminder: 'QR Taranmıyor (kaldırıldı)',
+  first_reply_celebration: 'İlk Yanıt Kutlaması (kaldırıldı)',
 };
 
 function typeLabel(type: string): string {

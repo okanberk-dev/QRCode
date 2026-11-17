@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
@@ -85,14 +85,18 @@ export async function POST(req: NextRequest) {
     const mailLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : localeStr;
     const verifyUrl = `${appUrl}/${mailLocale}/auth/verify-email?token=${token}`;
 
-    void sendVerifyEmail({
-      to: user.email,
-      firstName: user.name,
-      verifyUrl,
-      locale: mailLocale,
-    }).catch((err) => {
-      console.error('[resend-verify] mail send failed:', (err as Error).message);
-    });
+    after(() =>
+
+      sendVerifyEmail({
+        to: user.email,
+        firstName: user.name,
+        verifyUrl,
+        locale: mailLocale,
+      }).catch((err) => {
+        console.error('[resend-verify] mail send failed:', (err as Error).message);
+      }),
+
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

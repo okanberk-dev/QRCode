@@ -65,15 +65,6 @@ export const LOCKED_MAIL_FIELDS: Partial<Record<MailTemplateKey, Set<string>>> =
     'notYouTitle',
     'notYouBody',
   ]),
-  // Wave D (CLAUDE.md §38.195) — new-device login security disclosure.
-  // notYouTitle/notYouBody/notYouLink are the account-recovery prompt
-  // path. Phishing-defence: reworded copy → owner ignores legit alert.
-  'new-device-login': new Set([
-    'statusText',
-    'notYouTitle',
-    'notYouBody',
-    'notYouLink',
-  ]),
 };
 
 export function isFieldLocked(templateKey: string, fieldKey: string): boolean {

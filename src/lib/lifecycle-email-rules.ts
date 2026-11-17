@@ -1,10 +1,13 @@
 // Lifecycle email rules (CLAUDE.md §21.34 + §23.7 Phase 11.30).
 //
-// Per user × restaurant 4 lifecycle email kuralı:
+// Per user × active restaurant 3 lifecycle email kuralı:
 //   1. qr_not_downloaded      — account ≥ 1 gün, qrGenerationCount=0, lifetime
 //   2. first_feedback_tips    — qrGenerationCount>0, feedbackCount=0, ≥ 2 gün QR sonrası, lifetime
 //   3. upgrade_suggestion     — feedbackCount ≥ 50, plan ∈ {trial, starter}, 30g cooldown
-//   4. inactive_reactivation  — daysSinceLastActivity ≥ 14, 30g cooldown
+//
+// 2026-11 (CLAUDE.md §21.39): inactive_reactivation kaldırıldı — "aktivite"
+// user.updatedAt'ten okunuyordu (giriş bunu güncellemez), panele her gün
+// giren sahiplere "uzun süredir görüşemedik" gidiyordu.
 //
 // Her kural fail-soft: bir kural fırlatırsa diğerleri devam eder.
 
@@ -19,7 +22,6 @@ import {
   sendQrNotDownloadedEmail,
   sendFirstFeedbackTipsEmail,
   sendUpgradeSuggestionEmail,
-  sendInactiveReactivationEmail,
 } from './email';
 
 export interface LifecycleUserContext {
@@ -29,8 +31,6 @@ export interface LifecycleUserContext {
   plan: string;
   locale: 'tr' | 'en';
   createdAt: Date;
-  /** Last activity timestamp — user.updatedAt veya last feedback'in createdAt'i. */
-  lastActivityAt: Date;
 }
 
 export interface LifecycleRestaurantContext {
@@ -74,7 +74,6 @@ export async function applyLifecycleRules(
   const daysSinceQr = restaurant.qrFirstDownloadAt
     ? daysBetween(now, restaurant.qrFirstDownloadAt)
     : null;
-  const daysSinceLastActivity = daysBetween(now, user.lastActivityAt);
 
   const results: LifecycleResult[] = [];
 
@@ -156,31 +155,6 @@ export async function applyLifecycleRules(
       }),
     results,
     log_recordParams: { userId: user.id, restaurantId: restaurant.id, type: 'upgrade_suggestion' },
-    recipient: user.email,
-    userLocale: user.locale,
-  });
-
-  // Rule 4: inactive_reactivation
-  // 14 gün+ activity yok + 30 gün cooldown.
-  // user-level (restaurantId tracking yok — user'ın tümü inaktif olabilir).
-  await runRule({
-    type: 'inactive_reactivation',
-    condition: () => daysSinceLastActivity >= 14,
-    log: {
-      userId: user.id,
-      type: 'inactive_reactivation',
-      cooldownDays: 30,
-    },
-    send: () =>
-      sendInactiveReactivationEmail({
-        to: user.email,
-        firstName: user.name,
-        daysInactive: daysSinceLastActivity,
-        dashboardUrl: `${localeRoot}/dashboard`,
-        locale: user.locale,
-      }),
-    results,
-    log_recordParams: { userId: user.id, type: 'inactive_reactivation' },
     recipient: user.email,
     userLocale: user.locale,
   });
@@ -280,8 +254,11 @@ async function runRule(p: RunRuleParams): Promise<void> {
 }
 
 /**
- * Build aggregate context for a user. Caller (cron) batch'le çeker; bu helper
- * her user × restaurant için derived context inşa eder.
+ * Build the per user × active restaurant context for the rules above.
+ *
+ * Two grouped queries cover every restaurant in the batch (QR count + first
+ * QR date, feedback count) instead of four queries per restaurant — the
+ * daily cron used to issue ~4 × restaurants round trips.
  */
 export async function buildLifecycleContexts(
   userIds: string[],
@@ -292,9 +269,8 @@ export async function buildLifecycleContexts(
       id: { in: userIds },
       isActive: true,
       // §38.197 — Hesabı silinmek üzere planlanmış kullanıcıya lifecycle
-      // mail gönderme. 30 günlük grace boyunca "Upgrade!" veya "Come back!"
-      // mail'i ayrılmaya karar vermiş kullanıcıya UX-toxic. Owner cancel
-      // ederse scheduledDeletionAt → null, akış kaldığı yerden devam eder.
+      // mail gönderme. Owner cancel ederse scheduledDeletionAt → null, akış
+      // kaldığı yerden devam eder.
       scheduledDeletionAt: null,
     },
     select: {
@@ -304,88 +280,131 @@ export async function buildLifecycleContexts(
       plan: true,
       locale: true,
       createdAt: true,
-      updatedAt: true,
-      restaurants: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      // Durdurulmuş işletme için "QR'ını indir" hatırlatması anlamsız.
+      restaurants: { where: { isActive: true }, select: { id: true, name: true } },
     },
   });
 
-  // Per-restaurant aggregate (qr count, qr first download, feedback count + last)
+  const restaurantIds = users.flatMap((u) => u.restaurants.map((r) => r.id));
+  if (restaurantIds.length === 0) return [];
+
+  const qrGroups = await prisma.qrGeneration.groupBy({
+    by: ['restaurantId'],
+    where: { restaurantId: { in: restaurantIds } },
+    _count: { _all: true },
+    _min: { createdAt: true },
+  });
+  const feedbackGroups = await prisma.feedback.groupBy({
+    by: ['restaurantId'],
+    where: { restaurantId: { in: restaurantIds } },
+    _count: { _all: true },
+  });
+  const qrByRestaurant = new Map(
+    qrGroups.map((g) => [g.restaurantId, { count: g._count._all, first: g._min.createdAt }]),
+  );
+  const feedbackByRestaurant = new Map(
+    feedbackGroups.map((g) => [g.restaurantId, g._count._all]),
+  );
+
   const contexts: LifecycleApplyParams[] = [];
   for (const u of users) {
     const userLocale: 'tr' | 'en' = u.locale === 'en' ? 'en' : 'tr';
     for (const r of u.restaurants) {
-      // Wave A2 (CLAUDE.md §38.A): per-restaurant try/catch isolation.
-      // Previously Promise.all rejecting on a single bad query (Prisma P2022
-      // drift, connection drop) would propagate up and zero-out the entire
-      // batch (`contexts = []` in the cron handler), silently killing
-      // lifecycle emails for every user that day. Now a single bad restaurant
-      // just gets skipped.
-      //
-      // Promise.all → $transaction (CLAUDE.md §40.1 connection_limit=1
-      // pattern): Supabase pooler keeps these 4 reads on a single connection
-      // instead of contending for the pool.
-      try {
-        const [qrFirst, qrCount, feedbackCount, lastFeedback] = await prisma.$transaction([
-          prisma.qrGeneration.findFirst({
-            where: { restaurantId: r.id },
-            orderBy: { createdAt: 'asc' },
-            select: { createdAt: true },
-          }),
-          prisma.qrGeneration.count({ where: { restaurantId: r.id } }),
-          prisma.feedback.count({ where: { restaurantId: r.id } }),
-          prisma.feedback.findFirst({
-            where: { restaurantId: r.id },
-            orderBy: { createdAt: 'desc' },
-            select: { createdAt: true },
-          }),
-        ]);
-
-        // Last activity = max(user.updatedAt, last feedback) — user kendi
-        // panel'e girdi mi yoksa müşteriler hâlâ aktif mi.
-        const lastActivityAt =
-          lastFeedback && lastFeedback.createdAt > u.updatedAt
-            ? lastFeedback.createdAt
-            : u.updatedAt;
-
-        contexts.push({
-          user: {
-            id: u.id,
-            email: u.email,
-            name: u.name,
-            plan: u.plan,
-            locale: userLocale,
-            createdAt: u.createdAt,
-            lastActivityAt,
-          },
-          restaurant: {
-            id: r.id,
-            name: r.name,
-            qrGenerationCount: qrCount,
-            qrFirstDownloadAt: qrFirst?.createdAt ?? null,
-            feedbackCount,
-          },
-          appUrl,
-        });
-      } catch (err) {
-        // CLAUDE.md §37.7 PII redaction — log userId/restaurantId, never user payload.
-        const errMessage = err instanceof Error ? err.message.slice(0, 200) : 'unknown';
-        console.error('[lifecycle-emails] context build failed for restaurant', {
-          userId: u.id,
-          restaurantId: r.id,
-          errMessage,
-        });
-        // Skip this restaurant — next iteration continues for other restaurants
-        // (and other users). No ops alert here: context-build errors are
-        // surfaced via Sentry through console.error capture; this is a
-        // database-level signal, not a mail-delivery issue.
-      }
+      const qr = qrByRestaurant.get(r.id);
+      contexts.push({
+        user: {
+          id: u.id,
+          email: u.email,
+          name: u.name,
+          plan: u.plan,
+          locale: userLocale,
+          createdAt: u.createdAt,
+        },
+        restaurant: {
+          id: r.id,
+          name: r.name,
+          qrGenerationCount: qr?.count ?? 0,
+          qrFirstDownloadAt: qr?.first ?? null,
+          feedbackCount: feedbackByRestaurant.get(r.id) ?? 0,
+        },
+        appUrl,
+      });
     }
   }
 
   return contexts;
+}
+
+/** Newest users first, so recent signups (the ones these rules target) are always covered. */
+const LIFECYCLE_USER_BATCH = 1000;
+
+export interface LifecycleSummary {
+  usersChecked: number;
+  contextsProcessed: number;
+  sent: Record<ActiveLifecycleRule, number>;
+  skipped: number;
+  failures: number;
+  durationMs: number;
+}
+
+type ActiveLifecycleRule = 'qr_not_downloaded' | 'first_feedback_tips' | 'upgrade_suggestion';
+
+/**
+ * Daily lifecycle rules for every active user (CLAUDE.md §21.34). Shared by
+ * the cron and the admin "run now" button (§21.13 — no self-fetch).
+ */
+export async function runLifecycleEmails(): Promise<LifecycleSummary> {
+  const start = Date.now();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
+
+  const users = await prisma.user.findMany({
+    where: { isActive: true },
+    take: LIFECYCLE_USER_BATCH,
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  });
+  const userIds = users.map((u) => u.id);
+
+  let contexts: LifecycleApplyParams[] = [];
+  try {
+    contexts = await buildLifecycleContexts(userIds, appUrl);
+  } catch (err) {
+    console.error('[lifecycle-emails] buildLifecycleContexts failed', {
+      errName: err instanceof Error ? err.name : 'unknown',
+    });
+  }
+
+  const sent: Record<ActiveLifecycleRule, number> = {
+    qr_not_downloaded: 0,
+    first_feedback_tips: 0,
+    upgrade_suggestion: 0,
+  };
+  let skipped = 0;
+  let failures = 0;
+
+  for (const ctx of contexts) {
+    try {
+      const results = await applyLifecycleRules(ctx);
+      for (const r of results) {
+        if (r.sent) sent[r.type as ActiveLifecycleRule] = (sent[r.type as ActiveLifecycleRule] ?? 0) + 1;
+        else if (r.error) failures++;
+        else skipped++;
+      }
+    } catch (err) {
+      console.error('[lifecycle-emails] applyLifecycleRules failed', {
+        restaurantId: ctx.restaurant.id,
+        errName: err instanceof Error ? err.name : 'unknown',
+      });
+      failures++;
+    }
+  }
+
+  return {
+    usersChecked: userIds.length,
+    contextsProcessed: contexts.length,
+    sent,
+    skipped,
+    failures,
+    durationMs: Date.now() - start,
+  };
 }

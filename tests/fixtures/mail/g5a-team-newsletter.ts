@@ -1,8 +1,7 @@
 // g5a — team & newsletter mails (team-invite, team-member-joined,
-// team-member-removed, newsletter, owner-segment-mail).
+// newsletter, owner-segment-mail).
 import { renderTeamInvite } from '../../../src/lib/email/templates/team-invite';
 import { renderTeamMemberJoined } from '../../../src/lib/email/templates/team-member-joined';
-import { renderTeamMemberRemoved } from '../../../src/lib/email/templates/team-member-removed';
 import { renderNewsletter, type NewsletterPost } from '../../../src/lib/email/templates/newsletter';
 import { renderOwnerSegmentMail } from '../../../src/lib/email/templates/owner-segment-mail';
 import {
@@ -217,70 +216,6 @@ export const FIXTURES_G5A: MailFixture[] = [
           memberName: INJECT_TITLE,
           roleLabel: INJECT_TITLE,
           locationNames: [INJECT_TAG],
-          teamUrl: `${TEAM_URL}"><script>1</script>`,
-        },
-        locale,
-      ),
-  },
-
-  // ── team-member-removed ──────────────────────────────────────────────
-  {
-    id: 'team-member-removed',
-    template: 'team-member-removed',
-    render: (locale) =>
-      renderTeamMemberRemoved(
-        {
-          ownerName: 'Mert',
-          memberName: 'Ayşe Kaya',
-          memberEmail: 'ayse.kaya@kadikoybistro.co',
-          roleLabel: role(locale),
-          teamUrl: TEAM_URL,
-        },
-        locale,
-      ),
-  },
-  {
-    id: 'team-member-removed:stress',
-    template: 'team-member-removed',
-    stress: true,
-    render: (locale) =>
-      renderTeamMemberRemoved(
-        {
-          ownerName: LONG_NAME,
-          memberName: LONG_WORD,
-          memberEmail: LONG_EMAIL,
-          roleLabel: LONG_ROLE,
-          teamUrl: LONG_URL,
-        },
-        locale,
-      ),
-  },
-  {
-    id: 'team-member-removed:no-owner',
-    template: 'team-member-removed',
-    render: (locale) =>
-      renderTeamMemberRemoved(
-        {
-          ownerName: null,
-          memberName: 'Can Öztürk',
-          memberEmail: 'can@kadikoybistro.co',
-          roleLabel: role(locale, 'viewer'),
-          teamUrl: TEAM_URL,
-        },
-        locale,
-      ),
-  },
-
-  {
-    id: 'team-member-removed:inject',
-    template: 'team-member-removed',
-    render: (locale) =>
-      renderTeamMemberRemoved(
-        {
-          ownerName: INJECT_TAG,
-          memberName: INJECT_TITLE,
-          memberEmail: INJECT_TITLE,
-          roleLabel: INJECT_TITLE,
           teamUrl: `${TEAM_URL}"><script>1</script>`,
         },
         locale,

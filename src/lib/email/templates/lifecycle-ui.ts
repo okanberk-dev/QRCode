@@ -1,6 +1,6 @@
 // Layout building blocks shared by the g4 lifecycle & onboarding mails
-// (welcome, trial-ending, upgrade-suggestion, inactive-reactivation,
-// qr-not-downloaded, qr-no-scans-reminder, first-feedback-tips).
+// (welcome, trial-ending, upgrade-suggestion, qr-not-downloaded,
+// first-feedback-tips).
 //
 // Everything is table + inline-style so it survives Gmail / Outlook / iOS Mail:
 // no flex, no inline SVG, no negative margins. Content rows use `bz-pad`

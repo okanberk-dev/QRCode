@@ -20,7 +20,7 @@
 // 20260518000000_user_hard_delete_anonymize). KVKK m.7 mali kayıt 10y
 // retention korunur.
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/auth';
@@ -126,17 +126,21 @@ export async function POST(req: NextRequest) {
   const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';
   const cancelUrl = `${appUrl}/api/account/delete/cancel?token=${encodeURIComponent(cancelToken)}`;
 
-  sendAccountDeletionScheduledEmail({
-    to: user.email,
-    firstName: user.name,
-    accountEmail: user.email,
-    scheduledFor,
-    daysRemaining: GRACE_DAYS,
-    cancelUrl,
-    locale: userLocale,
-  }).catch(() => {
-    // sender already logs + ops-alerts; defence-in-depth catch
-  });
+  after(() =>
+
+    sendAccountDeletionScheduledEmail({
+      to: user.email,
+      firstName: user.name,
+      accountEmail: user.email,
+      scheduledFor,
+      daysRemaining: GRACE_DAYS,
+      cancelUrl,
+      locale: userLocale,
+    }).catch(() => {
+      // sender already logs + ops-alerts; defence-in-depth catch
+    }),
+
+  );
 
   // 200 not 204 so the UI can show the resolved scheduledFor timestamp
   // (matches what's in the mail) without a second round-trip.

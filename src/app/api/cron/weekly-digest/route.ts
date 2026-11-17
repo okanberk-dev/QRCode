@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCronGuard } from '@/lib/cron-guard';
-import { runWeeklyDigest } from '@/lib/weekly-digest-runner';
+import { runWeeklyDigest, sendWeeklyDigestOpsSummary } from '@/lib/weekly-digest-runner';
 
 export const dynamic = 'force-dynamic';
 // Explicit Node.js runtime — Vercel infers it from imports today (Prisma
@@ -32,6 +32,10 @@ async function handleCron(req: NextRequest) {
 
   try {
     const result = await runWeeklyDigest();
+    // Ops summary from the same run (real per-restaurant delivery status).
+    // It used to be a second Monday cron that re-ran the whole digest in
+    // dry-run mode — every query and Pulse AI call twice a week.
+    const summaryMailSent = await sendWeeklyDigestOpsSummary(result);
     // recipient detaylarını cron response'unda göstermeyelim (Vercel logs
     // KVKK riski + log payload size). Sadece counts.
     return NextResponse.json({
@@ -42,6 +46,7 @@ async function handleCron(req: NextRequest) {
       failed: result.failed,
       total: result.totalRestaurants,
       recipientCount: result.recipients.length,
+      summaryMailSent,
       durationMs: result.durationMs,
     });
   } catch (error) {

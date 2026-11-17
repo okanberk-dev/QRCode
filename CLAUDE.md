@@ -1487,33 +1487,36 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 
 `NewsletterSubscriber.source` artık her abonede dolu. `<NewsletterSignup>` component opsiyonel `source?: string` prop alır; default `'footer'`. Footer'da explicit `<NewsletterSignup source="footer" />`. Yeni kayıt yolları (popup, blog inline, onboarding) eklenirken farklı source string geç → admin paneldeki `Kaynak` filter dropdown otomatik kategorileri gösterir.
 
-### 21.11 Trial reminder cron
+### 21.11 Trial reminder mails
 
-**Yeni**: `/api/cron/trial-reminders` (`vercel.json`'da `0 9 * * *` günlük 09:00 UTC)
-- `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold — cron 24-saat aralık güvenliği)
-- **Sadece 1 ve 3 gün kalan trial user'lara mail gönderir** (`TRIAL_REMINDER_DAYS = [1, 3]` constant'ı). Spam algısını önlemek için kullanıcı başına trial sürecinde max 2 mail. SQL window 4 güne kadar geniş (yanlışlıkla skip etmeyi önlemek için), ama precise filter cron handler'ında.
-- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, **Pulse AI ile gönderilen yanıt sayısı** (`prisma.feedbackReply.count({ where: { source: 'ai_copilot', ... } })`).
-- Auth: `Bearer ${CRON_SECRET}` (mevcut pattern)
-- Sender: `sendTrialEndingEmail` (Pulse `trial-ending` template)
-- **Eşikleri değiştirmek**: `TRIAL_REMINDER_DAYS` array'i tek değişiklik noktası. Yeni eşik (örn. 7 gün) eklendiğinde SQL window otomatik genişler.
+`src/lib/trial-reminders.ts` `runTrialReminders()` — günlük `/api/cron/lifecycle-emails` çalışmasının ikinci adımı (2026-11'e kadar ayrı `trial-reminders` cron'uydu, §21.39).
+- `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold)
+- **Sadece 1 ve 3 gün kalan trial user'lara mail gönderir** (`TRIAL_REMINDER_DAYS = [1, 3]`). Kullanıcı başına trial sürecinde max 2 mail. SQL window 4 güne kadar geniş, precise filter helper içinde.
+- Usage hesabı (tek `$transaction`): son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, **Pulse AI ile gönderilen yanıt sayısı** (`feedbackReply.count({ source: 'ai_copilot' })`).
+- Sender: `sendTrialEndingEmail` (Pulse `trial-ending` template); gönderimler arası `MAIL_SEND_GAP_MS` (550 ms, Resend 2 istek/sn).
+- **Eşikleri değiştirmek**: `TRIAL_REMINDER_DAYS` tek değişiklik noktası.
 
 ### 21.12 Cron path listesi (mevcut)
 
-`vercel.json` `crons` array'inde **16 entry**. Tek source-of-truth: `vercel.json` — aşağıdaki tablo eksik/eski olabilir, schedule için her zaman `vercel.json`'a bak.
+`vercel.json` `crons` array'inde **13 entry** (2026-11'de 16'dan indi, §21.39). Tek source-of-truth: `vercel.json` — schedule için her zaman ona bak.
 
 **Cron hata maili (§38.241, kanonik)**: Vercel, cron uç noktası 2xx dışı yanıt dönünce "cron run failed" maili atar. Tüm cron route'ları `export const GET = withCronGuard('/api/cron/<ad>', handleCron)` ile sarılır (`src/lib/cron-guard.ts`): gerçek Vercel çağrısında (`user-agent: vercel-cron`) handler'ın 5xx yanıtı veya fırlattığı hata **200 + `{ ok:false }`** olarak döner ve Sentry'ye (`tag cron`, cron başına tek issue fingerprint) yazılır. 401 korunur (CRON_SECRET bozuksa görünür kalmalı). Manuel/admin tetiklemede gerçek status döner. `tests/cron-guard.test.ts` her `vercel.json` cron'unun sarıldığını doğrular — yeni cron eklerken sarmayı unutursan test kırılır. Not: Hobby planda günlük cron saat içinde rastgele dakikada tetiklenir (04:00 → 04:59 gözlendi); Sentry `automaticVercelMonitors` yalnız Pages Router `pages/api` route'larını sardığı için bu projede hiç çalışmıyordu ve kaldırıldı.
 
-| Path | Schedule | Amaç |
+| Path | Schedule (UTC) | Amaç |
 |---|---|---|
-| `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet (Pulse AI çıkarımı dahil — §21.38) |
-| `/api/cron/weekly-digest-summary` | `0 10 * * 1` | Her pazartesi 10:00 UTC — hello@buaze.com'a "kim mail aldı" özeti (ops, §21.38) |
-| `/api/cron/anonymize-ips` | `0 3 * * 0` | Her pazar 03:00 UTC — KVKK IP retention |
-| `/api/cron/monthly-newsletter` | `0 9 1 * *` | Her ayın 1'i 09:00 UTC — Pulse aylık bülten |
-| `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1 ve 3 gün kalanlara hatırlatma |
-| `/api/cron/lifecycle-emails` | `0 8 * * *` | Her gün 08:00 UTC — owner lifecycle email akışı (§21.34) |
-| `/api/cron/platform-link-retest` | `0 4 * * *` | Her gün 04:00 UTC — aktif platform link'lerinin sağlık kontrolü (§19.4.4) |
-| `/api/cron/google-reviews-alert` | `0 * * * *` | Her saat — Google rating impact tracking + threshold uyarı (§37.3) |
-| `/api/cron/expire-impersonation-sessions` | `*/5 * * * *` | Her 5 dk — superadmin impersonation oturumlarını otomatik expire et (§37 deferred follow-up) |
+| `/api/cron/expire-impersonation-sessions` | `0 1 * * *` | Süresi dolan destek oturumlarını kapat |
+| `/api/cron/monthly-health-snapshot` | `0 2 1 * *` | Aylık sağlık snapshot'ı (§43) |
+| `/api/cron/anonymize-ips` | `0 3 * * 0` | KVKK IP retention |
+| `/api/cron/process-scheduled-deletions` | `0 3 * * *` | 30 gün dolan hesap silmeleri |
+| `/api/cron/platform-link-retest` | `0 4 * * *` | Platform link sağlık kontrolü (§19.4.4) |
+| `/api/cron/feedback-autodraft` | `0 5 * * *` | Pulse AI taslak güvenlik ağı (§43) |
+| `/api/cron/google-reviews-autodraft` | `0 6 * * *` | Google yorum taslakları (§43) |
+| `/api/cron/google-reviews-alert` | `0 7 * * *` | Düşük puanlı Google yorumu uyarısı |
+| `/api/cron/lifecycle-emails` | `0 8 * * *` | Owner günlük mailleri: lifecycle kuralları (§21.34) + deneme hatırlatması (§21.11) |
+| `/api/cron/weekly-digest` | `0 9 * * 1` | Haftalık rapor (§21.38) + aynı çalışmadan ops özeti |
+| `/api/cron/rating-drop-alert` | `0 11 * * 1` | Haftalık puan düşüşü uyarısı |
+| `/api/cron/monthly-newsletter` | `0 12 1 * *` | Aylık bülten |
+| `/api/cron/monthly-health-report` | `0 13 1 * *` | Aylık sağlık raporu maili (§43) |
 
 ### 21.13 Cron logic'i admin panelden tetikleme (anti-pattern: self-fetch)
 
@@ -1827,9 +1830,11 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 
 **Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
 
-### 21.26 DB-driven mail content (34 template dosyası, 28 DB-driven — Pulse + lifecycle + ROI + verify-email + audit + Wave B-C-D + render-only ops surfaces)
+### 21.26 DB-driven mail content (29 template dosyası, 22 DB-driven — Pulse + lifecycle + ROI + verify-email + audit + Wave B-C + render-only ops surfaces)
 
-> **Güncel sayım (2026-10, §38.241)**: müşteri kampanya maili özelliği kaldırıldı — `customer-campaign`, `owner-campaign-approved`, `owner-campaign-rejected` template'leri silindi. `src/lib/email/templates/` = **34 template dosyası**, `SUPPORTED_MAIL_KEYS` = **28** (seed 56 row). Aşağıdaki tarihsel sayım bu kaldırmadan öncedir.
+> **Güncel sayım (2026-11, §21.39)**: 6 gürültü maili + `onboarding-complete` kaldırıldı → `src/lib/email/templates/` = **29 template dosyası**, `SUPPORTED_MAIL_KEYS` = **22** (seed 44 row). Aşağıdaki sayımlar bu kaldırmadan öncedir.
+>
+> **Önceki sayım (2026-10, §38.241)**: müşteri kampanya maili özelliği kaldırıldı — `customer-campaign`, `owner-campaign-approved`, `owner-campaign-rejected` template'leri silindi. `src/lib/email/templates/` = **34 template dosyası**, `SUPPORTED_MAIL_KEYS` = **28** (seed 56 row). Aşağıdaki tarihsel sayım bu kaldırmadan öncedir.
 >
 > **Sayım** (2026-05-15 Wave D, §38.195): `src/lib/email/templates/` toplam **35 aktif template**. DB-driven olan 31'i `SUPPORTED_MAIL_KEYS`'te listelenir ve `scripts/seed-mail-templates.ts` 62 row upsert ile (31 × 2 locale) seedlenir. Wave D yeni template: `new-device-login` (fuzzy UA major + IP /16 fingerprint, login flow sync trigger). Tarihsel: Wave A 24 → Wave B 28 → Wave B4 30 → Wave C 34 → Wave D 35. Geri kalan 4 template **render-only** — public `send*Email` wrapper'ları yok, caller `render*()` + `sendResendEmail` inline kullanır: `contact-admin`, `owner-segment-mail`, `roi-admin-notification`, `roi-customer-report`. Tarihsel evrim: Phase 21.26 9 Pulse template, 21.27-21.34 lifecycle (4) + ROI (2) + verify-email (1) → 16; §38.105 campaign moderation (customer-campaign, owner-campaign-approved, owner-campaign-rejected) + §38.180 audit-completed → 20 DB-driven; Wave A audit 4 render-only render dosyasını da kataloga ekledi → 24; Wave B (§38.192) 4 yeni DB-driven template ekledi — `password-changed` (B1, security alert), `team-member-joined` (B2, owner notification), `team-member-removed` (B3, owner audit), `first-feedback-celebration` (B5, activation moment) → 28. Yeni template eklerken DB-driven ise `SUPPORTED_MAIL_KEYS` + seed + bu sayıyı senkronize tut; render-only ise sadece bu sayıyı + §38.A audit notunu güncelle.
 
@@ -2178,7 +2183,7 @@ Bazı mail akışları zaman-kritik: düşük puan uyarısı restoran sahibine u
 
 ### 21.34 Lifecycle email infrastructure (Phase 11.30, 2026-05)
 
-Cron-driven, idempotent owner lifecycle email'leri. 4 yeni email type — welcome (Phase 21.6) + trial-ending (Phase 21.11) zaten mevcut, bu Wave B onların etrafına context-aware reminder + reactivation katmanı ekler.
+Cron-driven, idempotent owner lifecycle email'leri (2026-11 itibarıyla 3 kural, aktif işletme başına; bağlam işletme başına 4 sorgu yerine toplam 2 `groupBy` ile kurulur, kullanıcılar en yeniden eskiye taranır — §21.39). Orijinal 4 email type — welcome (Phase 21.6) + trial-ending (Phase 21.11) zaten mevcut, bu Wave B onların etrafına context-aware reminder + reactivation katmanı ekler.
 
 **4 yeni email:**
 
@@ -2187,7 +2192,7 @@ Cron-driven, idempotent owner lifecycle email'leri. 4 yeni email type — welcom
 | `qr_not_downloaded` | account ≥ 1 gün, `QrGeneration.count = 0` | lifetime once | onboarding sonrası QR'a hiç dokunmayan owner |
 | `first_feedback_tips` | `QrGeneration.count > 0`, ≥ 2 gün önce indirildi, `Feedback.count = 0` | lifetime once | QR var ama yorum yok — yerleştirme/çağrı tipleri |
 | `upgrade_suggestion` | `Feedback.count ≥ 50`, `plan ∈ {trial, starter}` | 30 gün | yüksek hacim + düşük plan = upgrade fırsatı |
-| `inactive_reactivation` | `daysSinceLastActivity ≥ 14` (user.updatedAt + last feedback max) | 30 gün | uzun süre login/aktivite yok |
+| ~~`inactive_reactivation`~~ | **2026-11'de kaldırıldı (§21.39)** — aktivite `user.updatedAt`'ten okunuyordu, giriş bunu güncellemiyor; her gün panele giren sahiplere "uzun süredir görüşemedik" gidiyordu | — | — |
 
 **Dosyalar:**
 - `prisma/schema.prisma` `LifecycleEmailLog` model — `userId?` + `restaurantId?` + `type` + `sentAt` + `metadata: Json?`. 2 composite index (`[userId, type, sentAt]` + `[restaurantId, type, sentAt]`).
@@ -2298,16 +2303,16 @@ type NavGroup = {
 
 ### 21.38 Weekly digest with Pulse AI inference + ops summary (Phase 11.35, 2026-05)
 
-Pazartesi günleri çalışan iki cron birlikte: 09:00 UTC işletmelere AI-zenginleştirilmiş haftalık rapor + 10:00 UTC `hello@buaze.com`'a kim mail aldı özeti.
+Pazartesi 09:00 UTC tek cron: işletmelere AI-zenginleştirilmiş haftalık rapor, ardından aynı çalışmanın sonucundan `hello@buaze.com`'a kim mail aldı özeti.
 
 **Akış:**
-1. `0 9 * * 1` — `/api/cron/weekly-digest` çalışır → her aktif restoran için son 7 günlük stats + 30 yorum metni → `extractWeeklyInsight()` (gpt-4o-mini, ~$0.0002/restoran) → Pulse `weekly-report` template'i içine "PULSE AI ÇIKARIMI" section'ı gömülerek gönderilir.
-2. `0 10 * * 1` — `/api/cron/weekly-digest-summary` çalışır → `runWeeklyDigest({ dryRun: true })` ile aynı recipient list'i tekrar derive eder (mail göndermez) → Pulse `weekly-digest-summary` template'i ile `hello@buaze.com`'a (env override `OPS_DIGEST_SUMMARY_EMAIL`) "kim aldı" özeti gönderir.
+1. `0 9 * * 1` — `/api/cron/weekly-digest` çalışır → her aktif restoran için son 7 günlük stats + 30 yorum metni (tek `$transaction`) → `extractWeeklyInsight()` (gpt-4o-mini, ~$0.0002/restoran) → Pulse `weekly-report` template'i içine "PULSE AI ÇIKARIMI" section'ı gömülerek gönderilir.
+2. Aynı çağrıda `sendWeeklyDigestOpsSummary(result)` → Pulse `weekly-digest-summary` template'i ile `hello@buaze.com`'a (env override `OPS_DIGEST_SUMMARY_EMAIL`) her satırda gerçek gönderim durumuyla özet. **2026-11 (§21.39)**: eskiden ayrı bir 10:00 cron'u `runWeeklyDigest({ dryRun: true })` ile tüm sorguları ve Pulse AI çağrılarını ikinci kez çalıştırıyor, her satırı "gönderildi" diye işaretliyordu.
 
 **Yeni dosyalar:**
 - `src/lib/weekly-insight.ts` — `extractWeeklyInsight()` saf helper (gpt-4o-mini + 24h cache + fail-safe fallback). Output: `{ summary, recommendation, source }`. CLAUDE.md §15 `chatCompletion` reuse, `MIN_TOTAL_FOR_AI = 1`, `MAX_COMMENTS_TO_SEND = 30`.
 - `src/lib/email/templates/weekly-digest-summary.ts` — ops-internal template (DB-driven copy yok, hardcoded inline; admin override edilemez). Hero counts (sent/skipped/optedOut/failed) + recipient table (restaurant + total + avg + AI badge + status).
-- `src/app/api/cron/weekly-digest-summary/route.ts` — cron endpoint, `runWeeklyDigest({ dryRun: true })` çağırır, `OPS_DIGEST_SUMMARY_EMAIL` env yoksa `hello@buaze.com` fallback.
+- `sendWeeklyDigestOpsSummary()` (`weekly-digest-runner.ts`) — weekly-digest cron'u içinden çağrılır, `OPS_DIGEST_SUMMARY_EMAIL` env yoksa `hello@buaze.com` (ayrı summary cron'u 2026-11'de silindi).
 
 **Genişletilen dosyalar:**
 - `src/lib/email/templates/weekly-report.ts` — `WeeklyReportParams.aiInsight?` field eklendi. Render template'i graphite + lime accent dot ile "PULSE AI ÇIKARIMI" section'ı; copy field'ları `aiEyebrow / aiTitle / aiRecommendationLabel` (DB-driven, admin override edilebilir).
@@ -2320,7 +2325,7 @@ Pazartesi günleri çalışan iki cron birlikte: 09:00 UTC işletmelere AI-zengi
 - AI key yok / hata → `summary` ve `recommendation` boş string + `source: 'fallback'`. Mail rendering AI section'ı **gizler** (graceful degrade).
 
 **Recipient flow:**
-- 10:00 cron `dryRun: true` çalıştığı için `recipient.emailSent` her zaman false döner. Ops summary template'inde anlamlı görünmesi için cron handler bunu `true` override eder ("haftalık raporu hak etti" semantiği).
+- Ops özeti gerçek `emailSent` değerini gösterir (aynı çalışmadan gelir).
 - Skipped (yorum yok) ve optedOut (bildirim kapalı) restoranları recipient listesine girmez — sadece counts görünür.
 - `recipientEmail` ops mail'inde maskelenir (`a***@domain`) — KVKK görselleştirme.
 
@@ -2337,6 +2342,16 @@ Pazartesi günleri çalışan iki cron birlikte: 09:00 UTC işletmelere AI-zengi
 - Yeni cron eklenirken `runX()` shared helper export et + `Authorization: Bearer ${CRON_SECRET}` guard + `maxDuration: 300` explicit set.
 - Yeni AI-driven template eklenirken: per-week cache key (`${id}:${week}`), MIN_THRESHOLD (yetersiz veride API çağrısı yok), JSON parse fail-safe, render template'inde section conditional gizleme (boş AI → section yok).
 
+
+### 21.39 Mail temizliği + Gmail-güvenli stil + düşük Vercel yükü (2026-11, kanonik)
+
+**Kaldırılan mailler (geri ekleme, kullanıcı talebi gerekir):** `new-device-login` (Chrome her 4 haftada ana sürüm değiştiriyor, mobil IP dönüyor → sahibin kendi cihazına "başka cihazdan giriş" uyarısı; girişteki 2 ek sorgu da gitti), `first-feedback-celebration` (aynı yorum için düşük puan uyarısıyla birlikte gidiyordu, her public yorumda ek count sorgusu), `first-reply-celebration` (sahip az önce kendisi yanıt verdi), `team-member-removed` (sahip üyeyi kendisi çıkardı; audit log yeter), `qr-no-scans-reminder` (14 günde bir sonsuz tekrar + `first-feedback-tips` ile çakışma; cron silindi), `inactive_reactivation` (yanlış aktivite sinyali), `onboarding-complete` (kayıttaki hoş geldin mailinin ikizi; Google ile kaydolanlar artık `welcome` alıyor). Eski `LifecycleEmailLog`/`MailTemplate` satırları DB'de kalır, okunmaz; `LifecycleEmailType` eski literal'leri yalnız log filtresi için tutar. Korunanlar: password-changed, data-export-confirmation, impersonation-start (gerçek olayda gider).
+
+**Gmail-güvenli `<style>` (`layout.ts`):** Gmail çözemediği CSS'te veya 8192 karakter üstünde bloğun tamamını atar. `CORE_CSS` (ilk blok) yalnız element/sınıf/soy seçici + tek `max-width:600px` media query; `CLIENT_FIX_CSS` (ikinci blok) attribute/id/child seçicili istemci düzeltmeleri. `@import` yok (font yalnız `<link>`), CSS yorumu yok. `tests/mail-render.test.ts` bunu zorlar. Stil tamamen silinirse (Gmail uygulaması + Gmail dışı hesap) bazı mailler 375px'te 20–50px taşar; o istemci varsayılan "sığdır" ile küçültür — bilinen sınır, şablonların hybrid düzene geçişi ayrı iş.
+
+**Güvenilir gönderim:** yanıt sonrası gönderilen her mail `after()` içinde (eskiden `void send…()` — Vercel fonksiyonu dondurursa kayboluyordu); `sendResendEmail` 429'da `retry-after` (500 ms–2 s) bekleyip bir kez dener ve teslim kaydını await eder; cron döngüleri `MAIL_SEND_GAP_MS` (550 ms, Resend 2 istek/sn) bekler.
+
+**Vercel yükü:** cron 16 → 13 (`trial-reminders` → `lifecycle-emails` içine, `weekly-digest-summary` → `weekly-digest` içine, `qr-no-scans-reminder` silindi; özet artık sorguları/AI çağrılarını ikinci kez çalıştırmıyor). Lifecycle bağlamı işletme başına 4 sorgu yerine toplam 2 `groupBy`. Public yorum POST'u mail modülünü yalnız 1–3★'da yükler.
 
 ---
 
@@ -3621,7 +3636,7 @@ Repo kökündeki `scripts/` (+ `prisma/` altındaki seed) — bir kerelik veya p
 | Dosya | Komut | Amaç |
 |---|---|---|
 | `scripts/validate-env.js` | `node scripts/validate-env.js` | Build-time zorunlu env doğrulaması — eksik env varsa exit 1. `npm run build` ilk adımı (§14.1). |
-| `scripts/seed-mail-templates.ts` | `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` | 40 row mail template upsert (20 template × 2 locale, §21.26). Idempotent. Operator "kod default'larına dön" istediğinde de çalıştırılır. |
+| `scripts/seed-mail-templates.ts` | `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` | 44 row mail template upsert (22 template × 2 locale, §21.26). Idempotent. Operator "kod default'larına dön" istediğinde de çalıştırılır. |
 | `scripts/seed-legal-documents.ts` | `DATABASE_URL=... npx tsx scripts/seed-legal-documents.ts` | KVKK / Terms / Cookie metinlerini DB'ye seed eder. Idempotent. |
 | `scripts/backfill-feedback-reply-source.ts` | `DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts` | `FeedbackReply.source` NULL satırlarını `'manual'` ile doldurur. Tek seferlik, idempotent (§21.20). |
 | `prisma/seed-case-studies.ts` | `DATABASE_URL=... npx tsx prisma/seed-case-studies.ts` | Marketing case-study içeriği seed eder. Idempotent. |
@@ -4592,6 +4607,8 @@ GitHub PR referansı.
 - **Chat prompt history (Stage 172)**: 2026-11-13 kullanıcı: *"menü sayfasındaki işletme kartlarını da kaldır ve maine gönder ve sitenin pazarlama sayfalarındaki yazıları vs. footer tasarımını daha düzenli invoatif güzel yap bazı yerlerde three js kullan ve ayrıca google'da indeks alsın kötü düşünülmsisn. sonra maine at."* (bu kayıt pazarlama/footer/three.js kısmı); ara mesajlar *"Devam"*, *"Continue"*; 2026-11-14 *"Kaldırabilirsin"* (framer-motion paketinin kaldırılmasına onay, CLAUDE.md §10 bağımlılık kuralı). Hukuki/disipline override yok; yorum akışındaki eşik yönlendirmesi ürün kararı olarak kullanıcıya bildirildi.
 - §38.255 — Stage 173 (PR TBD) Küçük teknik borçlar. (i) **Sunucudan doğru `<html lang>`**: `src/app/layout.tsx` kaldırıldı; `[locale]/layout.tsx` kök düzen oldu (`<RootHtml lang={locale}>`), diğer üst düzey bölümlere (`admin` = ADMIN_LOCALE, `r`, `menu`, `s`, `embed`, `audits`, `dashboard`, `(root)`) kendi kök düzenleri eklendi; `app/not-found.tsx` → `global-not-found.tsx` (`experimental.globalNotFound`) + `[locale]`/`r`/`embed` `not-found.tsx` (`BrandedNotFound`); DocumentLang ve kök inline lang betiği kaldırıldı; `/r/[slug]` istemcide seçtiği dili `<html lang>`'a yazar (§52). Pazarlama sayfaları statik kaldı (prerender manifest'inde /tr, /en, /tr/pricing). Gözlem: sayfa içinden `notFound()` 404'leri Next'in `__next_error__` kabuğuyla dönüyor (durum 404 + noindex, içerik istemcide çiziliyor); önceki kodda da aynı, bu aşamada değişmedi. (ii) **CSV**: yorumlar sayfasında "Tüm zamanlar" 90 gün gönderiyordu, artık `days=all` (uç nokta tavanı 10.000 satır); CSV platform etiketleri 10 platforma tamamlandı. (iii) **Kurulum hunisi**: Vercel Web Analytics projede kapalı (`web_analytics_not_enabled`) ve özel olaylar Pro ister, bu yüzden huni veritabanından hesaplanır (§31.6): `activation-funnel.ts` + `getActivationFunnel`, `/admin/analytics` kartı + BI CSV 5. bölüm. **Disipline**: yeni üst düzey bölüm = yeni kök düzen (`RootHtml`); sunucu tarafı ölçümü üçüncü taraf araca bağlamadan önce aracın projede açık olduğunu doğrula.
 - **Chat prompt history (Stage 173)**: 2026-11-15 kullanıcı: *"Önerilerin neler"* → öneri listesi; ardından *"5. Küçük teknik borçları yap maine göndee"*. Madde 5'teki "Vercel Analytics olaylarıyla ölçmek" Web Analytics kapalı olduğu için veritabanı hunisine çevrildi (kullanıcıya bildirildi). Hukuki/disipline override yok.
+- §38.256 — Stage 174 (PR yok, main'e doğrudan) Mail sistemi temizliği: 6 gürültü maili + kurulum-tamamlandı ikizi kaldırıldı, Gmail-güvenli iki `<style>` bloğu, `after()` ile güvenilir gönderim, Resend 429 tekrar denemesi, cron 16 → 13, lifecycle 2 `groupBy` (§21.39). Görsel denetim: stil açıkken 1110 render'da 0 taşma. **Disipline**: yeni mail ancak sahibin bilmesi gereken, kendisinin tetiklemediği bir olay için eklenir; yanıt sonrası gönderim `after()`; ilk `<style>` bloğuna attribute/id/pseudo seçici yazılmaz.
+- **Chat prompt history (Stage 174)**: 2026-11-17 kullanıcı: *"sistemde gönderilen mailleri kontrol et düzen kayma vs. olmasın ve başka cihazdan giriş yapıldı gibi saçma sapan mailleri de iptal et mail sistemini düzgünleştirip maine gönder ve vercel'de çok fazla enerji harcamasın"*; ara mesaj *"devam et medium mod ile token harcama fazla"*. Hangi maillerin "saçma" sayılacağı keşifle belirlendi (CLAUDE.md §10). Disipline override yok.
 - §38.245 — Stage 163 (PR TBD) Google girişi penceresi kapanmıyor + yavaş giriş, site hızı, SEO ve Google uyumu. **Disipline**: (i) proxy'lenen üçüncü taraf sayfalara (`/__/*`) site güvenlik başlıklarını körlemesine uygulama — özellikle COOP opener'ı koparır; (ii) layout metadata'sına sayfaya özgü alan (canonical, hreflang, og:url, twitter başlığı) koyma, miras kalır; (iii) `'use client'` dosyası `@/lib/prisma` içeren modülü dolaylı da olsa import etmemeli (sabitleri ayrı modüle al); (iv) IntersectionObserver hedefi gerçek kutu olmalı (`display: contents` asla). **Not**: Firebase `authDomain` ve OAuth ayarlarına dokunulmadı; düzeltme… (Ayrıntı: git log.)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)

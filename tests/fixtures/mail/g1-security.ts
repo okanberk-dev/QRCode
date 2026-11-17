@@ -1,9 +1,8 @@
 // g1 — security & account mails (forgot-password, password-changed,
-// new-device-login, verify-email, data-export-confirmation,
+// verify-email, data-export-confirmation,
 // account-deletion-scheduled, account-deletion-canceled).
 import { renderForgotPassword } from '../../../src/lib/email/templates/forgot-password';
 import { renderPasswordChanged } from '../../../src/lib/email/templates/password-changed';
-import { renderNewDeviceLogin } from '../../../src/lib/email/templates/new-device-login';
 import { renderVerifyEmail } from '../../../src/lib/email/templates/verify-email';
 import { renderDataExportConfirmation } from '../../../src/lib/email/templates/data-export-confirmation';
 import { renderAccountDeletionScheduled } from '../../../src/lib/email/templates/account-deletion-scheduled';
@@ -81,56 +80,6 @@ export const FIXTURES_G1: MailFixture[] = [
           device: LONG_DEVICE,
           account: LONG_EMAIL,
           changedAt: WHEN,
-        },
-        l,
-      ),
-  },
-
-  // ── new-device-login ─────────────────────────────────────────────────
-  {
-    id: 'new-device-login',
-    template: 'new-device-login',
-    render: (l) =>
-      renderNewDeviceLogin(
-        {
-          firstName: 'Deniz',
-          accountEmail: ACCOUNT,
-          device: 'Chrome 120',
-          location: '88.241.x.x',
-          loggedInAt: WHEN,
-          resetUrl: RESET_URL,
-        },
-        l,
-      ),
-  },
-  {
-    id: 'new-device-login:unknown',
-    template: 'new-device-login',
-    render: (l) =>
-      renderNewDeviceLogin(
-        {
-          accountEmail: ACCOUNT,
-          device: l === 'en' ? 'Unknown browser' : 'Bilinmeyen tarayıcı',
-          location: '—',
-          loggedInAt: WHEN,
-          resetUrl: RESET_URL,
-        },
-        l,
-      ),
-  },
-  {
-    id: 'new-device-login:stress',
-    template: 'new-device-login',
-    stress: true,
-    render: (l) =>
-      renderNewDeviceLogin(
-        {
-          firstName: LONG_NAME,
-          accountEmail: LONG_EMAIL,
-          device: LONG_DEVICE,
-          location: LONG_IP,
-          loggedInAt: WHEN,
-          resetUrl: LONG_URL,
         },
         l,
       ),

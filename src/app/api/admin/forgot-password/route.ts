@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createHash, randomInt } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
@@ -138,15 +138,19 @@ export async function POST(req: NextRequest) {
     // kod doğrulama akışında AdminUser.username zorunludur.
     const resetUrl = `${appUrl}/admin/reset-password?username=${encodeURIComponent(admin.username)}`;
 
-    // Fire-and-forget — UI doesn't reveal whether send succeeded (anti-enum)
-    sendPasswordResetEmail({
-      to: admin.email,
-      code,
-      resetUrl,
-      locale: 'tr',
-      ip,
-      device: req.headers.get('user-agent') || null,
-    }).catch((err) => console.error('[admin/forgot-password] mail', err));
+    // Sent after the response — UI doesn't reveal whether send succeeded (anti-enum)
+    const to = admin.email;
+    const device = req.headers.get('user-agent') || null;
+    after(() =>
+      sendPasswordResetEmail({
+        to,
+        code,
+        resetUrl,
+        locale: 'tr',
+        ip,
+        device,
+      }).catch((err) => console.error('[admin/forgot-password] mail', err)),
+    );
 
     return genericOk;
   } catch (error) {

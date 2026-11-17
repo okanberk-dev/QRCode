@@ -26,8 +26,8 @@ describe('g5a mails escape hostile input', () => {
   before(() => prepareMailRender());
 
   const injectFixtures = FIXTURES_G5A.filter((f) => f.id.endsWith(':inject'));
-  it('has an :inject fixture for each of the five templates', () => {
-    assert.equal(new Set(injectFixtures.map((f) => f.template)).size, 5);
+  it('has an :inject fixture for each of the four templates', () => {
+    assert.equal(new Set(injectFixtures.map((f) => f.template)).size, 4);
   });
 
   for (const fixture of injectFixtures) {
@@ -58,7 +58,7 @@ describe('g5a mails escape hostile input', () => {
   }
 
   it('keeps the Subject header raw (only <title> is escaped)', async () => {
-    for (const id of ['team-member-joined:inject', 'team-member-removed:inject', 'newsletter:inject', 'owner-segment-mail:inject']) {
+    for (const id of ['team-member-joined:inject', 'newsletter:inject', 'owner-segment-mail:inject']) {
       const { subject } = await byId(id).render('tr');
       assert.ok(subject.includes('</title>'), `${id}: subject header should stay plain text`);
     }
@@ -98,10 +98,5 @@ describe('team mails wrap names at spaces, not mid-word', () => {
         assert.ok(!/class="[^"]*\bbz-break\b/.test(html), `${id} [${locale}] carries bz-break`);
       }
     }
-  });
-
-  it('the removed mail keeps bz-break only on the email row', async () => {
-    const { html } = await byId('team-member-removed:stress').render('tr');
-    assert.equal((html.match(/class="bz-break"/g) ?? []).length, 1);
   });
 });

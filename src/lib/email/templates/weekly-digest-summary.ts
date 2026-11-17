@@ -23,9 +23,7 @@ export interface WeeklyDigestSummaryParams {
     optedOut: number;
     failed: number;
   };
-  /** Bir önceki cron çalışmasının (Pazartesi 09:00) durumu — `weekly-digest`
-   *  endpoint'inden 1 saat sonra tetiklenir, bu yüzden recipients zaten
-   *  mail almış olmalı. */
+  /** Optional free-text footnote under the table. */
   precedingDigestNote?: string;
 }
 

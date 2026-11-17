@@ -9,6 +9,25 @@
 import { safeParseJson } from '@/lib/safe-json';
 import { recordMailDelivery } from '@/lib/email/delivery-log';
 
+/**
+ * Minimum gap between consecutive sends in a cron loop. Resend's default
+ * account limit is 2 requests/second; 550 ms keeps a loop just under it.
+ */
+export const MAIL_SEND_GAP_MS = 550;
+
+const RETRY_AFTER_CAP_MS = 2000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** `retry-after` is in seconds; clamp to [500 ms, 2 s] so a mail send never parks a function. */
+export function retryAfterMs(header: string | null): number {
+  const seconds = header ? Number(header) : NaN;
+  if (!Number.isFinite(seconds) || seconds <= 0) return 1000;
+  return Math.min(RETRY_AFTER_CAP_MS, Math.max(500, Math.round(seconds * 1000)));
+}
+
 function defaultReplyTo(): string | undefined {
   const env = process.env.RESEND_REPLY_TO?.trim()
     || process.env.NOTIFICATION_EMAIL?.trim();
@@ -69,7 +88,10 @@ export async function sendResendEmail({
   // sends use the joined form for forensic clarity).
   const recipientForLog = Array.isArray(to) ? to.join(',') : to;
   const logTemplate = template ?? 'unknown';
-  const logDelivery = (status: 'sent' | 'failed', extra?: Record<string, string | number | null | undefined>) => {
+  // Awaited (the helper never throws): a send that runs inside `after()`
+  // would otherwise return before the log row is written and the function
+  // could be frozen with the write still pending.
+  const logDelivery = (status: 'sent' | 'failed', extra?: Record<string, string | number | null | undefined>) =>
     recordMailDelivery({
       template: logTemplate,
       recipient: recipientForLog,
@@ -79,11 +101,10 @@ export async function sendResendEmail({
     }).catch(() => {
       // helper already swallows; defence-in-depth
     });
-  };
 
   if (!resendKey) {
     console.error('[Buaze Email] RESEND_API_KEY missing — cannot send email.');
-    logDelivery('failed', { reason: 'resend_api_key_missing' });
+    await logDelivery('failed', { reason: 'resend_api_key_missing' });
     return false;
   }
 
@@ -111,20 +132,33 @@ export async function sendResendEmail({
       }));
     }
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${resendKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    const body = JSON.stringify(payload);
+    const post = () =>
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${resendKey}`,
+        },
+        body,
+      });
+
+    let response = await post();
+    // Resend answers 429 when a burst passes the account rate limit (default
+    // 2 requests/second). One short, bounded wait + retry instead of
+    // dropping the mail and paging ops; a 429 means nothing was sent, so the
+    // retry cannot duplicate it.
+    if (response.status === 429) {
+      await response.text().catch(() => '');
+      await sleep(retryAfterMs(response.headers.get('retry-after')));
+      response = await post();
+    }
 
     const responseText = await response.text();
 
     if (!response.ok) {
       console.error(`[Buaze Email] Resend HTTP ${response.status}:`, responseText);
-      logDelivery('failed', { reason: 'resend_http_error', httpStatus: response.status });
+      await logDelivery('failed', { reason: 'resend_http_error', httpStatus: response.status });
       return false;
     }
 
@@ -136,19 +170,19 @@ export async function sendResendEmail({
     });
     if (!parsed) {
       console.error('[Buaze Email] Resend non-JSON 2xx body:', responseText);
-      logDelivery('failed', { reason: 'resend_non_json_body' });
+      await logDelivery('failed', { reason: 'resend_non_json_body' });
       return false;
     }
     if (typeof parsed.id !== 'string' || !parsed.id) {
       console.error('[Buaze Email] Resend 2xx without id:', responseText);
-      logDelivery('failed', { reason: 'resend_missing_id' });
+      await logDelivery('failed', { reason: 'resend_missing_id' });
       return false;
     }
-    logDelivery('sent', { resendId: parsed.id });
+    await logDelivery('sent', { resendId: parsed.id });
     return true;
   } catch (error) {
     console.error('[Buaze Email] Network exception:', error);
-    logDelivery('failed', {
+    await logDelivery('failed', {
       reason: 'network_exception',
       errName: error instanceof Error ? error.name : 'unknown',
     });

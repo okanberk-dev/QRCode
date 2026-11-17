@@ -9,7 +9,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { sendWeeklyDigest } from '@/lib/email';
+import { sendWeeklyDigest, sendWeeklyDigestSummary } from '@/lib/email';
 import { notifyOpsOfMailFailure } from '@/lib/email/ops-alert';
 import { getNotificationPrefsForUser } from '@/lib/notification-preferences';
 import { extractWeeklyInsight, type WeeklyInsight } from '@/lib/weekly-insight';
@@ -48,7 +48,7 @@ export interface WeeklyDigestRunResult {
 
 /**
  * @param dryRun true → mail GÖNDERMEZ, sadece "kim alacaktı" listesini
- *   döndürür. Ops summary cron'u 10:00 UTC'de bunu kullanır.
+ *   döndürür (manuel kontrol için).
  */
 export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<WeeklyDigestRunResult> {
   const startedAt = Date.now();
@@ -133,7 +133,8 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       createdAt: { gte: sevenDaysAgo },
     };
 
-    const [total, avgAgg, distribution, highRatings, googleRedirects, aspectAggs, commentRows, segmentRows] = await Promise.all([
+    // One pool slot for the whole fan-out (§40.1, connection_limit=1).
+    const [total, avgAgg, distribution, highRatings, googleRedirects, aspectAggs, commentRows, segmentRows] = await prisma.$transaction([
       prisma.feedback.count({ where }),
       prisma.feedback.aggregate({ _avg: { rating: true }, where }),
       prisma.feedback.groupBy({
@@ -348,4 +349,39 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
     recipients,
     durationMs: Date.now() - startedAt,
   };
+}
+
+const DEFAULT_OPS_SUMMARY_RECIPIENT = 'hello@buaze.com';
+
+/**
+ * Weekly ops summary to `OPS_DIGEST_SUMMARY_EMAIL` (default hello@buaze.com),
+ * built from the run that just happened, so each row shows whether that
+ * restaurant's digest really went out. Never throws — a summary failure must
+ * not fail the digest cron.
+ */
+export async function sendWeeklyDigestOpsSummary(result: WeeklyDigestRunResult): Promise<boolean> {
+  const recipient = (process.env.OPS_DIGEST_SUMMARY_EMAIL || DEFAULT_OPS_SUMMARY_RECIPIENT).trim();
+  if (!recipient.includes('@')) return false;
+  try {
+    return await sendWeeklyDigestSummary({
+      to: recipient,
+      locale: 'tr',
+      data: {
+        triggeredAt: new Date(),
+        recipients: result.recipients,
+        totals: {
+          totalRestaurants: result.totalRestaurants,
+          sent: result.sent,
+          skipped: result.skipped,
+          optedOut: result.optedOut,
+          failed: result.failed,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('[WEEKLY_DIGEST] ops summary failed', {
+      errName: err instanceof Error ? err.name : 'unknown',
+    });
+    return false;
+  }
 }

@@ -8,7 +8,7 @@
 // scenes we send the `account-deletion-canceled` mail too so the owner
 // has an audit trail.
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -100,15 +100,17 @@ export async function GET(req: NextRequest) {
   });
 
   // Confirmation mail — fire-and-forget.
-  sendAccountDeletionCanceledEmail({
-    to: user.email,
-    firstName: user.name,
-    accountEmail: user.email,
-    dashboardUrl: `${appUrl}/${userLocale}/dashboard`,
-    locale: userLocale,
-  }).catch(() => {
-    // sender already logs + ops-alerts
-  });
+  after(() =>
+    sendAccountDeletionCanceledEmail({
+      to: user.email,
+      firstName: user.name,
+      accountEmail: user.email,
+      dashboardUrl: `${appUrl}/${userLocale}/dashboard`,
+      locale: userLocale,
+    }).catch(() => {
+      // sender already logs + ops-alerts
+    }),
+  );
 
   return new NextResponse(landingHtml(userLocale, 'success', `${appUrl}/${userLocale}/dashboard`), {
     status: 200,
@@ -160,15 +162,17 @@ export async function POST(req: NextRequest) {
   });
 
   const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';
-  sendAccountDeletionCanceledEmail({
-    to: user.email,
-    firstName: user.name,
-    accountEmail: user.email,
-    dashboardUrl: `${appUrl}/${userLocale}/dashboard`,
-    locale: userLocale,
-  }).catch(() => {
-    // sender already logs + ops-alerts
-  });
+  after(() =>
+    sendAccountDeletionCanceledEmail({
+      to: user.email,
+      firstName: user.name,
+      accountEmail: user.email,
+      dashboardUrl: `${appUrl}/${userLocale}/dashboard`,
+      locale: userLocale,
+    }).catch(() => {
+      // sender already logs + ops-alerts
+    }),
+  );
 
   return NextResponse.json({ ok: true });
 }

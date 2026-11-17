@@ -1,5 +1,4 @@
-// Shared building blocks for the team mails (team-invite, team-member-joined,
-// team-member-removed).
+// Shared building blocks for the team mails (team-invite, team-member-joined).
 //
 // Table-based + inline-styled (no flex/grid/svg) so Gmail and Outlook render it
 // like Apple Mail. Mobile behaviour comes from the shared layout.ts classes

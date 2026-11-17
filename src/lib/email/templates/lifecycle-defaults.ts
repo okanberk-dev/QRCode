@@ -101,33 +101,9 @@ export const UPGRADE_SUGGESTION_DEFAULTS: Record<MailLocale, Record<string, stri
   },
 };
 
-export const INACTIVE_REACTIVATION_DEFAULTS: Record<MailLocale, Record<string, string>> = {
-  tr: {
-    eyebrow: 'TEKRAR HOŞ GELDİNİZ',
-    title: 'Merhaba ${firstName}, panele bir göz atalım',
-    intro:
-      'Bir süredir sizden haber alamıyoruz. Bu süre içinde QR kodunuz çalışmaya devam etti — gelen yorumları, platform yönlendirmelerini ve son test sonuçlarını panelde görebilirsiniz.',
-    suggestion:
-      'Eğer yorum akışı yavaşladıysa, hızlı 3 kontrol noktası: QR kartınızın yerinde olması, Platform Bağlantılarının aktif kalması ve Google linkinizin doğru bir liste sayfasına işaret etmesi.',
-    cta: 'Panele göz at',
-    footnote: 'Bu mesaj ayda en fazla bir kez gönderilir. Aktif kullanıma döndüğünüzde otomatik olarak duracak.',
-  },
-  en: {
-    eyebrow: 'WELCOME BACK',
-    title: "Hi ${firstName}, let's check the panel together",
-    intro:
-      "We haven't heard from you in a while. In the meantime your QR has been quietly working — sign in to see incoming reviews, platform redirects, and recent test results.",
-    suggestion:
-      'If the review flow has slowed, three quick checks: the QR card is in place, your Platform Links are active, and your Google link points to a real listing page.',
-    cta: 'Open dashboard',
-    footnote:
-      'This message is sent at most once a month. It stops automatically once you become active again.',
-  },
-};
-
 // Lookup map — admin API GET endpoint'i bunu kullanarak DB content boş veya
 // row yoksa inline default'ı fallback olarak döner. SUPPORTED_MAIL_KEYS'teki
-// 4 lifecycle key ile birebir eşleşmeli.
+// 3 lifecycle key ile birebir eşleşmeli.
 export const LIFECYCLE_INLINE_DEFAULTS: Record<
   string,
   Record<MailLocale, Record<string, string>>
@@ -135,5 +111,4 @@ export const LIFECYCLE_INLINE_DEFAULTS: Record<
   'qr-not-downloaded': QR_NOT_DOWNLOADED_DEFAULTS,
   'first-feedback-tips': FIRST_FEEDBACK_TIPS_DEFAULTS,
   'upgrade-suggestion': UPGRADE_SUGGESTION_DEFAULTS,
-  'inactive-reactivation': INACTIVE_REACTIVATION_DEFAULTS,
 };

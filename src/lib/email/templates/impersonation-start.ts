@@ -4,7 +4,7 @@
 // session on an owner's account. Render-only (like contact-admin /
 // owner-segment-mail): no DB-driven copy, not part of SUPPORTED_MAIL_KEYS.
 // Visual language follows the other security notices (password-changed,
-// new-device-login): status pill, key-facts card, "didn't expect this?" card.
+// data-export-confirmation): status pill, key-facts card, "didn't expect this?" card.
 //
 // All admin-supplied strings (username, reason, recipient name) are escaped
 // here; callers pass the raw, CRLF-stripped values.

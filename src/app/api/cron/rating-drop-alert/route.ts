@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { sendRatingDropAlertEmail } from '@/lib/email';
 import { alreadySent, recordSent } from '@/lib/email/lifecycle';
+import { MAIL_SEND_GAP_MS } from '@/lib/email-internal';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -144,7 +145,7 @@ export async function runRatingDropAlert(): Promise<Summary> {
       } else {
         failures += 1;
       }
-      await new Promise((res) => setTimeout(res, 120));
+      await new Promise((res) => setTimeout(res, MAIL_SEND_GAP_MS));
     } catch (err) {
       failures += 1;
       console.error('[RATING_DROP_ALERT] per-restaurant failed', {

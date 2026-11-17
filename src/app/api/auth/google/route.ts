@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { UNUSABLE_PASSWORD_BCRYPT_COST } from '@/lib/bcrypt-config';
 import { prisma } from '@/lib/prisma';
@@ -8,7 +8,6 @@ import { verifyFirebaseIdToken, getFirebaseProjectId } from '@/lib/firebase-admi
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { handleOAuthSignIn, type OAuthDeps } from '@/lib/oauth';
 import { createUserSessionForToken } from '@/lib/user-session';
-import { describeDevice } from '@/lib/device-fingerprint';
 
 const OAUTH_USER_SELECT = {
   id: true,
@@ -139,36 +138,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: session.error }, { status: 500 });
     }
 
-    // Wave D (CLAUDE.md §38.195) — new-device alert for Google sign-in.
-    // Skip when isNewUser is true (just created account, first session);
-    // session.isNewDevice already returns false in that case (no prior
-    // sessions) so this is defence-in-depth.
-    if (session.isNewDevice && !isNewUser) {
-      const userAgent = req.headers.get('user-agent');
-      const desc = describeDevice(userAgent, ip);
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
-      const userLocale: 'tr' | 'en' = (
-        (user as { locale?: string }).locale === 'en' ? 'en' : 'tr'
-      );
-      // Lazy import: `@/lib/email` pulls in the whole template catalogue;
-      // keeping it off the module graph shrinks the cold-start of this
-      // route for the 99% of sign-ins that are not from a new device.
-      import('@/lib/email')
-        .then(({ sendNewDeviceLoginEmail }) =>
-          sendNewDeviceLoginEmail({
-            to: user.email,
-            firstName: user.name,
-            accountEmail: user.email,
-            device: desc.device,
-            location: desc.location,
-            loggedInAt: new Date(),
-            resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
-            locale: userLocale,
-          }),
-        )
-        .catch(() => {
-          // sender wires ops-alert internally
-        });
+    // Same welcome mail an email sign-up gets at /api/auth/register. Google
+    // sign-ups used to get none (only the "setup complete" mail, which is
+    // gone). `after()` keeps the function alive until Resend answers.
+    if (isNewUser && user.email) {
+      const welcomeLocale: 'tr' | 'en' =
+        (user as { locale?: string | null }).locale === 'en' || captchaLocale === 'en' ? 'en' : 'tr';
+      after(async () => {
+        const { sendWelcomeEmail } = await import('@/lib/email');
+        await sendWelcomeEmail({ to: user.email, firstName: user.name, locale: welcomeLocale }).catch(() => false);
+      });
     }
 
     const response = NextResponse.json({

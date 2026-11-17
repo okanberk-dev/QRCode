@@ -14,9 +14,9 @@
 //   2. `/api/admin/mail-templates/[key]/[locale]` GET — fallback merge when
 //      DB content is empty/missing, so editor inputs render pre-filled
 //   3. Lifecycle render fns (`qr-not-downloaded`, `first-feedback-tips`,
-//      `upgrade-suggestion`, `inactive-reactivation`) — re-exports from
-//      `lifecycle-defaults.ts` ensure drift-free import for the 4 lifecycle
-//      templates (their render fns already pull from `lifecycle-defaults`).
+//      `upgrade-suggestion`) — re-exports from `lifecycle-defaults.ts`
+//      ensure drift-free import for the 3 lifecycle templates (their render
+//      fns already pull from `lifecycle-defaults`).
 //
 // **Drift discipline** — the 12 NON-lifecycle templates (welcome, newsletter,
 // trial-ending, forgot-password, low-rating-alert, new-review, weekly-report,
@@ -603,68 +603,6 @@ const TEAM_MEMBER_JOINED_EN: FlatCopy = {
   note: "You can update this member's permissions anytime under Account → Team.",
 };
 
-const TEAM_MEMBER_REMOVED_TR: FlatCopy = {
-  eyebrow: 'Ekip · Üye çıkarıldı',
-  title: 'Bir üye',
-  titleAccent: 'ayrıldı',
-  intro:
-    '${memberName} ekipten çıkarıldı. Paneline erişimi anında kapatıldı.',
-  cardEyebrow: 'Audit kaydı',
-  nameLabel: 'İsim',
-  emailLabel: 'E-posta',
-  roleLabelKey: 'Rol',
-  actionLabel: 'Aksiyon',
-  actionValue: 'Erişim kapatıldı · Oturumlar sonlandırıldı',
-  cta: 'Ekibi gör →',
-  note: "Bu işlemi sen yapmadıysan Hesabım → Audit log'undan kaydı inceleyebilirsin.",
-};
-
-const TEAM_MEMBER_REMOVED_EN: FlatCopy = {
-  eyebrow: 'Team · Member removed',
-  title: 'A teammate',
-  titleAccent: 'has left',
-  intro:
-    '${memberName} has been removed from your workspace. Their access was revoked instantly.',
-  cardEyebrow: 'Audit record',
-  nameLabel: 'Name',
-  emailLabel: 'Email',
-  roleLabelKey: 'Role',
-  actionLabel: 'Action',
-  actionValue: 'Access revoked · Sessions ended',
-  cta: 'Open team →',
-  note: "If you didn't make this change, review the entry under Account → Audit log.",
-};
-
-const FIRST_FEEDBACK_CELEBRATION_TR: FlatCopy = {
-  eyebrow: 'Aktivasyon · İlk yorum',
-  title: 'İlk yorumun',
-  titleAccent: 'geldi',
-  intro:
-    '${restaurantName} için ilk müşteri yorumu panele düştü. Hemen yanıt verirsen müşterinin kalıcı bir hatırasını oluşturmuş olursun.',
-  quoteEyebrow: 'Müşterinin sözleri',
-  noComment: 'Müşteri yorum yazmadı — sadece yıldız bıraktı.',
-  cta: 'Yorumu gör →',
-  tipPositive:
-    'Yüksek puanlı yorumlara 24 saat içinde teşekkür et — küçük bir teşekkür müşterinin geri dönmesine yardımcı olur.',
-  tipLow:
-    'Düşük puanlarda önce dinle, sonra çöz: müşteri hatasını kabul edilen restoranı tekrar dener.',
-};
-
-const FIRST_FEEDBACK_CELEBRATION_EN: FlatCopy = {
-  eyebrow: 'Activation · First review',
-  title: 'Your first review',
-  titleAccent: 'is in',
-  intro:
-    '${restaurantName} just got its first customer review. A reply within the first hours builds lasting customer memory.',
-  quoteEyebrow: 'What the customer said',
-  noComment: 'No written comment — only the star rating.',
-  cta: 'Open the review →',
-  tipPositive:
-    'Thank high-rated reviews within 24 hours — a quick thank-you helps bring customers back.',
-  tipLow:
-    'For low ratings, listen first then fix: customers retry a restaurant that admits mistakes.',
-};
-
 // ───────────────────────────────────────────────────────────────────────
 // Wave B4 (CLAUDE.md §38.193) — account deletion lifecycle defaults.
 // Two mails: schedule confirmation (carries cancel link) + cancel
@@ -741,34 +679,6 @@ const ACCOUNT_DELETION_CANCELED_EN: FlatCopy = {
 // Wave C (CLAUDE.md §38.194) — 4 lifecycle expansion templates.
 // ───────────────────────────────────────────────────────────────────────
 
-const QR_NO_SCANS_REMINDER_TR: FlatCopy = {
-  eyebrow: 'Aktivasyon · Tarama yok',
-  title: 'QR\'ın',
-  titleAccent: 'sessiz',
-  intro:
-    'QR\'ı oluşturduğundan beri ${daysSinceQr} gün geçti. Henüz tek tarama yok — yerleştirme veya tasarımda hızlıca düzeltebileceğin bir şey olabilir.',
-  tipsEyebrow: 'Hızlı 4 fikir',
-  tip1: 'Masa kartını her masaya tek tek yerleştir, menü tutucusunun arkasında kalmasın.',
-  tip2: 'Paket siparişlerin üstüne yapıştır — taşınırken müşterinin gözünden kaçmaz.',
-  tip3: 'Karşılama tahtasına yapıştır + yan tarafına "Buradan bir saniyede paylaş" yaz.',
-  tip4: 'Tasarımdan kontrast düşükse QR\'ı koyu tasarımla yeniden indir; %20 daha okunur.',
-  cta: 'QR\'ı yeniden indir →',
-};
-
-const QR_NO_SCANS_REMINDER_EN: FlatCopy = {
-  eyebrow: 'Activation · No scans',
-  title: 'Your QR is',
-  titleAccent: 'silent',
-  intro:
-    'It\'s been ${daysSinceQr} days since you created the QR and not a single scan. Likely a quick fix in placement or design.',
-  tipsEyebrow: '4 quick ideas',
-  tip1: 'Place a table card on each table, not hidden behind the menu stand.',
-  tip2: 'Stick it on every takeaway package — visible during transport.',
-  tip3: 'Mount it on your welcome board with "Share your stay in one second" beside it.',
-  tip4: 'Low contrast? Re-download in the dark variant — typically +20% scanability.',
-  cta: 'Re-download QR →',
-};
-
 const RATING_DROP_ALERT_TR: FlatCopy = {
   eyebrow: 'Erken uyarı · Puan düşüşü',
   title: 'Puanın',
@@ -803,31 +713,6 @@ const RATING_DROP_ALERT_EN: FlatCopy = {
   action1: 'Reply to every 1-3 star review from the last 7 days — late replies leave permanent Google damage.',
   action2: 'Extract recurring complaint themes (service, hygiene, speed) and share with operations.',
   action3: 'Keep making your review link available to every customer.',
-};
-
-const FIRST_REPLY_CELEBRATION_TR: FlatCopy = {
-  eyebrow: 'Reputation OS · İlk yanıt',
-  title: 'İlk Google',
-  titleAccent: 'yanıtın gitti',
-  intro:
-    'Bravo, ${restaurantName} için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar, yeni müşterilere işletmenin onları dinlediğini gösterir.',
-  habitTitle: 'Sıradaki refleks',
-  habitBody:
-    'Her sabah 5 dakika ayır: yeni gelen yorumları tara, 5 puanlara teşekkür et, 1-3 puanlara önce dinle sonra çöz yaklaşımıyla yaz.',
-  cta: 'Yorum panelini aç →',
-  note: 'Pulse AI tonu uyacak şekilde taslakları otomatik hazırlar. Onayla + minik dokunuş + gönder; 60 saniyede biten bir refleks.',
-};
-
-const FIRST_REPLY_CELEBRATION_EN: FlatCopy = {
-  eyebrow: 'Reputation OS · First reply',
-  title: 'Your first Google',
-  titleAccent: 'reply is live',
-  intro:
-    'You just sent the first Google review reply for ${restaurantName}. Replying to reviews shows future customers that you listen.',
-  habitTitle: 'The habit that follows',
-  habitBody: 'Block 5 minutes every morning: scan new reviews, thank 5-stars, listen-then-fix the 1-3s.',
-  cta: 'Open reviews panel →',
-  note: 'Pulse AI drafts replies in your tone. Approve + tweak + send — a 60-second daily habit.',
 };
 
 const DATA_EXPORT_CONFIRMATION_TR: FlatCopy = {
@@ -866,40 +751,6 @@ const DATA_EXPORT_CONFIRMATION_EN: FlatCopy = {
 // Wave D (CLAUDE.md §38.195) — new-device login security alert.
 // ───────────────────────────────────────────────────────────────────────
 
-const NEW_DEVICE_LOGIN_TR: FlatCopy = {
-  eyebrow: 'Güvenlik · Yeni cihaz',
-  title: 'Yeni cihazdan',
-  titleAccent: 'giriş yapıldı',
-  intro:
-    'Hesabına daha önce görmediğimiz bir cihaz veya konumdan giriş yapıldı. Bu sen değilsen aşağıdaki adımları hemen uygula.',
-  cardEyebrow: 'Giriş detayı',
-  statusText: 'Aktif oturum · Yeni cihaz',
-  metaTime: 'Giriş saati',
-  metaDevice: 'Cihaz',
-  metaLocation: 'Konum (IP /16)',
-  metaAccount: 'Hesap',
-  notYouTitle: 'Sen değil misin?',
-  notYouBody: 'Şifreni hemen sıfırla ve diğer oturumlardan çıkış yap. Şüpheli bir durum varsa support@buaze.com\'a yaz.',
-  notYouLink: 'Şifreyi sıfırla →',
-};
-
-const NEW_DEVICE_LOGIN_EN: FlatCopy = {
-  eyebrow: 'Security · New device',
-  title: 'New device',
-  titleAccent: 'sign-in',
-  intro:
-    "Your account was just accessed from a device or location we haven't seen before. If this wasn't you, follow the steps below immediately.",
-  cardEyebrow: 'Sign-in detail',
-  statusText: 'Active session · New device',
-  metaTime: 'Signed in at',
-  metaDevice: 'Device',
-  metaLocation: 'Location (IP /16)',
-  metaAccount: 'Account',
-  notYouTitle: "Wasn't you?",
-  notYouBody: 'Reset your password immediately and sign out of other sessions. Email support@buaze.com if anything looks suspicious.',
-  notYouLink: 'Reset password →',
-};
-
 // ───────────────────────────────────────────────────────────────────────
 // Combined registry — admin GET endpoint + seed script consume this.
 // Lifecycle defaults are re-exported from lifecycle-defaults.ts (no copy)
@@ -925,7 +776,6 @@ export const MAIL_INLINE_DEFAULTS: Record<
   'qr-not-downloaded': LIFECYCLE_INLINE_DEFAULTS['qr-not-downloaded'],
   'first-feedback-tips': LIFECYCLE_INLINE_DEFAULTS['first-feedback-tips'],
   'upgrade-suggestion': LIFECYCLE_INLINE_DEFAULTS['upgrade-suggestion'],
-  'inactive-reactivation': LIFECYCLE_INLINE_DEFAULTS['inactive-reactivation'],
   // CLAUDE.md §42 Phase 3 — audit-completed bildirim.
   'audit-completed': {
     tr: {
@@ -955,14 +805,9 @@ export const MAIL_INLINE_DEFAULTS: Record<
         'Open the detail page to see answers question-by-question and re-score manually if needed.',
     },
   },
-  // Wave B (CLAUDE.md §38.B) — 4 new template defaults registered.
+  // Wave B (CLAUDE.md §38.B) — security + team defaults.
   'password-changed': { tr: PASSWORD_CHANGED_TR, en: PASSWORD_CHANGED_EN },
   'team-member-joined': { tr: TEAM_MEMBER_JOINED_TR, en: TEAM_MEMBER_JOINED_EN },
-  'team-member-removed': { tr: TEAM_MEMBER_REMOVED_TR, en: TEAM_MEMBER_REMOVED_EN },
-  'first-feedback-celebration': {
-    tr: FIRST_FEEDBACK_CELEBRATION_TR,
-    en: FIRST_FEEDBACK_CELEBRATION_EN,
-  },
   // Wave B4 (CLAUDE.md §38.193) — account deletion lifecycle defaults.
   'account-deletion-scheduled': {
     tr: ACCOUNT_DELETION_SCHEDULED_TR,
@@ -972,13 +817,9 @@ export const MAIL_INLINE_DEFAULTS: Record<
     tr: ACCOUNT_DELETION_CANCELED_TR,
     en: ACCOUNT_DELETION_CANCELED_EN,
   },
-  // Wave C (CLAUDE.md §38.194) — lifecycle expansion defaults.
-  'qr-no-scans-reminder': { tr: QR_NO_SCANS_REMINDER_TR, en: QR_NO_SCANS_REMINDER_EN },
+  // Wave C (CLAUDE.md §38.194) — rating drop + data export defaults.
   'rating-drop-alert': { tr: RATING_DROP_ALERT_TR, en: RATING_DROP_ALERT_EN },
-  'first-reply-celebration': { tr: FIRST_REPLY_CELEBRATION_TR, en: FIRST_REPLY_CELEBRATION_EN },
   'data-export-confirmation': { tr: DATA_EXPORT_CONFIRMATION_TR, en: DATA_EXPORT_CONFIRMATION_EN },
-  // Wave D (CLAUDE.md §38.195) — new-device login security alert.
-  'new-device-login': { tr: NEW_DEVICE_LOGIN_TR, en: NEW_DEVICE_LOGIN_EN },
 };
 
 /**

@@ -1,12 +1,9 @@
 // g4 — lifecycle & onboarding mails (welcome, trial-ending, upgrade-suggestion,
-// inactive-reactivation, qr-not-downloaded, qr-no-scans-reminder,
-// first-feedback-tips).
+// qr-not-downloaded, first-feedback-tips).
 import { renderWelcome } from '../../../src/lib/email/templates/welcome';
 import { renderTrialEnding } from '../../../src/lib/email/templates/trial-ending';
 import { renderUpgradeSuggestion } from '../../../src/lib/email/templates/upgrade-suggestion';
-import { renderInactiveReactivation } from '../../../src/lib/email/templates/inactive-reactivation';
 import { renderQrNotDownloaded } from '../../../src/lib/email/templates/qr-not-downloaded';
-import { renderQrNoScansReminder } from '../../../src/lib/email/templates/qr-no-scans-reminder';
 import { renderFirstFeedbackTips } from '../../../src/lib/email/templates/first-feedback-tips';
 import { APP_URL, LONG_NAME, LONG_URL, LONG_WORD, type MailFixture } from './_env';
 
@@ -147,27 +144,6 @@ export const FIXTURES_G4: MailFixture[] = [
       ),
   },
 
-  // ── inactive-reactivation ────────────────────────────────────────────
-  {
-    id: 'inactive-reactivation',
-    template: 'inactive-reactivation',
-    render: (locale) =>
-      renderInactiveReactivation({ firstName: 'Mert', daysInactive: 21, dashboardUrl: DASHBOARD_URL }, locale),
-  },
-  {
-    id: 'inactive-reactivation:no-name',
-    template: 'inactive-reactivation',
-    render: (locale) =>
-      renderInactiveReactivation({ firstName: null, daysInactive: 14, dashboardUrl: DASHBOARD_URL }, locale),
-  },
-  {
-    id: 'inactive-reactivation:stress',
-    template: 'inactive-reactivation',
-    stress: true,
-    render: (locale) =>
-      renderInactiveReactivation({ firstName: LONG_WORD, daysInactive: 365, dashboardUrl: LONG_URL }, locale),
-  },
-
   // ── qr-not-downloaded ────────────────────────────────────────────────
   {
     id: 'qr-not-downloaded',
@@ -187,33 +163,6 @@ export const FIXTURES_G4: MailFixture[] = [
     stress: true,
     render: (locale) =>
       renderQrNotDownloaded({ firstName: LONG_WORD, restaurantName: LONG_NAME, qrUrl: LONG_URL }, locale),
-  },
-
-  // ── qr-no-scans-reminder ─────────────────────────────────────────────
-  {
-    id: 'qr-no-scans-reminder',
-    template: 'qr-no-scans-reminder',
-    render: (locale) =>
-      renderQrNoScansReminder(
-        { firstName: 'Mert', restaurantName: RESTAURANT, daysSinceQr: 9, qrUrl: QR_URL },
-        locale,
-      ),
-  },
-  {
-    id: 'qr-no-scans-reminder:no-name',
-    template: 'qr-no-scans-reminder',
-    render: (locale) =>
-      renderQrNoScansReminder({ firstName: null, restaurantName: RESTAURANT, daysSinceQr: 30, qrUrl: QR_URL }, locale),
-  },
-  {
-    id: 'qr-no-scans-reminder:stress',
-    template: 'qr-no-scans-reminder',
-    stress: true,
-    render: (locale) =>
-      renderQrNoScansReminder(
-        { firstName: LONG_WORD, restaurantName: LONG_NAME, daysSinceQr: 1234, qrUrl: LONG_URL },
-        locale,
-      ),
   },
 
   // ── first-feedback-tips ──────────────────────────────────────────────

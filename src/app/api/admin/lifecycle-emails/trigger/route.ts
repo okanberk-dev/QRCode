@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { ApiErrors } from '@/lib/api-errors';
-import { runLifecycleEmails } from '@/app/api/cron/lifecycle-emails/route';
+import { runLifecycleEmails } from '@/lib/lifecycle-email-rules';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

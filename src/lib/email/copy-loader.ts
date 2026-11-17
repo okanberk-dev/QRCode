@@ -59,27 +59,24 @@ export const SUPPORTED_MAIL_KEYS = [
   'qr-not-downloaded',
   'first-feedback-tips',
   'upgrade-suggestion',
-  'inactive-reactivation',
   // CLAUDE.md §42 Phase 3 — Denetim Merkezi yanıt tamamlandı bildirimi.
   // Owner'a (Restaurant.notificationEmail) gönderilir. Skor + geçti/kaldı +
   // panel detay link.
   'audit-completed',
-  // Wave B (CLAUDE.md §38.B) — 4 new security + onboarding mails. Each
-  // ships with TR + EN inline defaults; admin CMS edits override per-locale.
+  // Wave B (CLAUDE.md §38.B) — security + team mails. Each ships with TR +
+  // EN inline defaults; admin CMS edits override per-locale.
   'password-changed',         // B1 — security alert after /api/user/profile PUT.
   'team-member-joined',       // B2 — owner notification after /api/team/accept-invite.
-  'team-member-removed',      // B3 — owner notification after /api/team/[id] DELETE.
-  'first-feedback-celebration', // B5 — activation moment on /api/feedback POST count=1.
   // Wave B4 (CLAUDE.md §38.193) — owner-initiated account deletion lifecycle.
   'account-deletion-scheduled', // 30-day grace start; carries cancel link.
   'account-deletion-canceled',  // confirmation that the schedule was revoked.
-  // Wave C (CLAUDE.md §38.194) — lifecycle expansion (2 cron + 2 sync).
-  'qr-no-scans-reminder',       // C1 cron
-  'rating-drop-alert',          // C2 cron
-  'first-reply-celebration',    // C3 sync from Google reply
+  // Wave C (CLAUDE.md §38.194).
+  'rating-drop-alert',          // C2 weekly cron
   'data-export-confirmation',   // C4 sync from /api/account/export-data
-  // Wave D (CLAUDE.md §38.195) — new-device login security alert.
-  'new-device-login',
+  // Retired 2026-11 (CLAUDE.md §21.39): new-device-login,
+  // first-feedback-celebration, first-reply-celebration, team-member-removed,
+  // qr-no-scans-reminder, inactive-reactivation. Their MailTemplate rows may
+  // still exist in the DB; nothing reads them.
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

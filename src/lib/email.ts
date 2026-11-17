@@ -15,21 +15,15 @@ import {
   renderQrNotDownloaded,
   renderFirstFeedbackTips,
   renderUpgradeSuggestion,
-  renderInactiveReactivation,
   renderWeeklyDigestSummary,
   renderAuditCompleted,
   renderMonthlyHealthReport,
   renderPasswordChanged,
   renderTeamMemberJoined,
-  renderTeamMemberRemoved,
-  renderFirstFeedbackCelebration,
   renderAccountDeletionScheduled,
   renderAccountDeletionCanceled,
-  renderQrNoScansReminder,
   renderRatingDropAlert,
-  renderFirstReplyCelebration,
   renderDataExportConfirmation,
-  renderNewDeviceLogin,
   renderImpersonationStart,
   type FormType,
   type NewsletterPost,
@@ -42,7 +36,6 @@ import {
   type QrNotDownloadedParams,
   type FirstFeedbackTipsParams,
   type UpgradeSuggestionParams,
-  type InactiveReactivationParams,
   type WeeklyDigestSummaryParams,
   type MonthlyHealthReportParams,
   // Wave B (CLAUDE.md §38.B) — type imports omitted; public senders below
@@ -460,11 +453,10 @@ export async function sendPasswordChangedEmail(params: {
   return ok;
 }
 
-// ─── Team membership changes (Wave B2/B3, CLAUDE.md §38.B) ──────────────
-// Both senders fire-and-forget from the team management endpoints; they
-// mail the OWNER (not the member). Ops alert wired because team changes
-// surface security context — silent fail leaves the owner unaware of
-// access changes.
+// ─── Team member joined (Wave B2, CLAUDE.md §38.B) ──────────────────────
+// Mails the OWNER when an invitee accepts. Ops alert wired because team
+// changes surface security context. (The "member removed" mail was retired
+// in 2026-11: the owner had just removed the member themselves.)
 
 export async function sendTeamMemberJoinedEmail(params: {
   to: string;
@@ -502,93 +494,6 @@ export async function sendTeamMemberJoinedEmail(params: {
       reason: 'send_failed',
       userLocale: locale,
       metadata: { memberName: params.memberName, role: params.roleLabel },
-    });
-  }
-  return ok;
-}
-
-export async function sendTeamMemberRemovedEmail(params: {
-  to: string;
-  ownerName?: string | null;
-  memberName: string;
-  memberEmail: string;
-  roleLabel: string;
-  teamUrl: string;
-  locale?: 'tr' | 'en';
-}): Promise<boolean> {
-  const locale = params.locale ?? 'tr';
-  const rendered = await renderTeamMemberRemoved(
-    {
-      ownerName: params.ownerName,
-      memberName: params.memberName,
-      memberEmail: params.memberEmail,
-      roleLabel: params.roleLabel,
-      teamUrl: params.teamUrl,
-    },
-    locale,
-  );
-  const ok = await sendResendEmail({
-    template: 'team-member-removed',
-    locale,
-    to: params.to,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    logMetadata: { memberName: params.memberName, role: params.roleLabel },
-  });
-  if (!ok) {
-    await notifyOpsOfMailFailure({
-      template: 'team-member-removed',
-      recipient: params.to,
-      reason: 'send_failed',
-      userLocale: locale,
-      metadata: { memberName: params.memberName, role: params.roleLabel },
-    });
-  }
-  return ok;
-}
-
-// ─── First feedback celebration (Wave B5, CLAUDE.md §38.B) ──────────────
-// Fires fire-and-forget from /api/feedback POST when count === 1 for the
-// restaurant. Idempotency is enforced upstream via LifecycleEmailLog
-// (lifetime cooldown on type='first_feedback_celebration').
-
-export async function sendFirstFeedbackCelebrationEmail(params: {
-  to: string;
-  ownerName?: string | null;
-  restaurantName: string;
-  rating: number;
-  comment?: string | null;
-  feedbackUrl: string;
-  locale?: 'tr' | 'en';
-}): Promise<boolean> {
-  const locale = params.locale ?? 'tr';
-  const rendered = await renderFirstFeedbackCelebration(
-    {
-      ownerName: params.ownerName,
-      restaurantName: params.restaurantName,
-      rating: params.rating,
-      comment: params.comment,
-      feedbackUrl: params.feedbackUrl,
-    },
-    locale,
-  );
-  const ok = await sendResendEmail({
-    template: 'first-feedback-celebration',
-    locale,
-    to: params.to,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    logMetadata: { restaurantName: params.restaurantName, rating: params.rating },
-  });
-  if (!ok) {
-    await notifyOpsOfMailFailure({
-      template: 'first-feedback-celebration',
-      recipient: params.to,
-      reason: 'send_failed',
-      userLocale: locale,
-      metadata: { restaurantName: params.restaurantName, rating: params.rating },
     });
   }
   return ok;
@@ -679,41 +584,9 @@ export async function sendAccountDeletionCanceledEmail(params: {
   return ok;
 }
 
-// ─── Wave C lifecycle senders (CLAUDE.md §38.194) ───────────────────────
-// Four new senders, all ops-alert wired. Crons (C1, C2) hit them with
-// LifecycleEmailLog cooldown gates upstream; sync callers (C3, C4) wire
-// their own idempotency.
-
-export async function sendQrNoScansReminderEmail(params: {
-  to: string;
-  firstName?: string | null;
-  restaurantName: string;
-  daysSinceQr: number;
-  qrUrl: string;
-  locale?: 'tr' | 'en';
-}): Promise<boolean> {
-  const locale = params.locale ?? 'tr';
-  const rendered = await renderQrNoScansReminder(
-    { firstName: params.firstName, restaurantName: params.restaurantName, daysSinceQr: params.daysSinceQr, qrUrl: params.qrUrl },
-    locale,
-  );
-  const ok = await sendResendEmail({
-    template: 'qr-no-scans-reminder',
-    locale,
-    to: params.to,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    logMetadata: { restaurantName: params.restaurantName, daysSinceQr: params.daysSinceQr },
-  });
-  if (!ok) {
-    await notifyOpsOfMailFailure({
-      template: 'qr-no-scans-reminder', recipient: params.to, reason: 'send_failed', userLocale: locale,
-      metadata: { restaurantName: params.restaurantName, daysSinceQr: params.daysSinceQr },
-    });
-  }
-  return ok;
-}
+// ─── Rating drop alert + data export confirmation ───────────────────────
+// Both ops-alert wired. The weekly rating-drop cron gates its sender with a
+// LifecycleEmailLog cooldown; the export confirmation fires once per export.
 
 export async function sendRatingDropAlertEmail(params: {
   to: string;
@@ -758,36 +631,6 @@ export async function sendRatingDropAlertEmail(params: {
   return ok;
 }
 
-export async function sendFirstReplyCelebrationEmail(params: {
-  to: string;
-  ownerName?: string | null;
-  restaurantName: string;
-  reviewsUrl: string;
-  locale?: 'tr' | 'en';
-}): Promise<boolean> {
-  const locale = params.locale ?? 'tr';
-  const rendered = await renderFirstReplyCelebration(
-    { ownerName: params.ownerName, restaurantName: params.restaurantName, reviewsUrl: params.reviewsUrl },
-    locale,
-  );
-  const ok = await sendResendEmail({
-    template: 'first-reply-celebration',
-    locale,
-    to: params.to,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    logMetadata: { restaurantName: params.restaurantName },
-  });
-  if (!ok) {
-    await notifyOpsOfMailFailure({
-      template: 'first-reply-celebration', recipient: params.to, reason: 'send_failed', userLocale: locale,
-      metadata: { restaurantName: params.restaurantName },
-    });
-  }
-  return ok;
-}
-
 export async function sendDataExportConfirmationEmail(params: {
   to: string;
   firstName?: string | null;
@@ -815,48 +658,6 @@ export async function sendDataExportConfirmationEmail(params: {
     await notifyOpsOfMailFailure({
       template: 'data-export-confirmation', recipient: params.to, reason: 'send_failed', userLocale: locale,
       metadata: { account: params.accountEmail },
-    });
-  }
-  return ok;
-}
-
-// ─── Wave D — new-device login security alert (CLAUDE.md §38.195) ───────
-
-export async function sendNewDeviceLoginEmail(params: {
-  to: string;
-  firstName?: string | null;
-  accountEmail: string;
-  device: string;
-  location: string;
-  loggedInAt?: Date;
-  resetUrl: string;
-  locale?: 'tr' | 'en';
-}): Promise<boolean> {
-  const locale = params.locale ?? 'tr';
-  const rendered = await renderNewDeviceLogin(
-    {
-      firstName: params.firstName,
-      accountEmail: params.accountEmail,
-      device: params.device,
-      location: params.location,
-      loggedInAt: params.loggedInAt,
-      resetUrl: params.resetUrl,
-    },
-    locale,
-  );
-  const ok = await sendResendEmail({
-    template: 'new-device-login',
-    locale,
-    to: params.to,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-    logMetadata: { account: params.accountEmail, device: params.device, location: params.location },
-  });
-  if (!ok) {
-    await notifyOpsOfMailFailure({
-      template: 'new-device-login', recipient: params.to, reason: 'send_failed', userLocale: locale,
-      metadata: { account: params.accountEmail, device: params.device, location: params.location },
     });
   }
   return ok;
@@ -999,22 +800,6 @@ export async function sendUpgradeSuggestionEmail(
   const rendered = await renderUpgradeSuggestion(rest, loc);
   return sendResendEmail({
     template: 'upgrade-suggestion',
-    locale: loc,
-    to,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-  });
-}
-
-export async function sendInactiveReactivationEmail(
-  params: InactiveReactivationParams & { to: string; locale?: 'tr' | 'en' },
-): Promise<boolean> {
-  const { to, locale, ...rest } = params;
-  const loc = locale ?? 'tr';
-  const rendered = await renderInactiveReactivation(rest, loc);
-  return sendResendEmail({
-    template: 'inactive-reactivation',
     locale: loc,
     to,
     subject: rendered.subject,

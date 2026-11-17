@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
@@ -287,17 +287,19 @@ export async function PUT(req: NextRequest) {
       const userLocale: 'tr' | 'en' = updatedUser.locale === 'en' ? 'en' : 'tr';
       const userAgent = req.headers.get('user-agent') ?? null;
       const ip = getClientIp(req.headers);
-      sendPasswordChangedEmail({
-        to: updatedUser.email,
-        firstName: updatedUser.name,
-        resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
-        ip,
-        device: userAgent ? userAgent.slice(0, 80) : null,
-        account: updatedUser.email,
-        locale: userLocale,
-      }).catch(() => {
-        // sender already logs + ops-alerts on failure
-      });
+      after(() =>
+        sendPasswordChangedEmail({
+          to: updatedUser.email,
+          firstName: updatedUser.name,
+          resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
+          ip,
+          device: userAgent ? userAgent.slice(0, 80) : null,
+          account: updatedUser.email,
+          locale: userLocale,
+        }).catch(() => {
+          // sender already logs + ops-alerts on failure
+        }),
+      );
     }
 
     // Yeni adrese doğrulama maili — fire-and-forget. Kullanıcı linke basana
@@ -306,14 +308,16 @@ export async function PUT(req: NextRequest) {
     if (pendingVerifyEmail && pendingVerifyToken) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
       const mailLocale: 'tr' | 'en' = updatedUser.locale === 'en' ? 'en' : 'tr';
-      sendVerifyEmail({
-        to: pendingVerifyEmail,
-        firstName: updatedUser.name,
-        verifyUrl: `${appUrl}/${mailLocale}/auth/verify-email?token=${pendingVerifyToken}`,
-        locale: mailLocale,
-      }).catch((err) => {
-        console.error('[PROFILE_PUT] verify mail send failed:', (err as Error).message);
-      });
+      after(() =>
+        sendVerifyEmail({
+          to: pendingVerifyEmail,
+          firstName: updatedUser.name,
+          verifyUrl: `${appUrl}/${mailLocale}/auth/verify-email?token=${pendingVerifyToken}`,
+          locale: mailLocale,
+        }).catch((err) => {
+          console.error('[PROFILE_PUT] verify mail send failed:', (err as Error).message);
+        }),
+      );
     }
 
     // Security-relevant account changes are audit-logged (owner's own

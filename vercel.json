@@ -10,20 +10,12 @@
       "schedule": "0 9 * * 1"
     },
     {
-      "path": "/api/cron/weekly-digest-summary",
-      "schedule": "0 10 * * 1"
-    },
-    {
       "path": "/api/cron/anonymize-ips",
       "schedule": "0 3 * * 0"
     },
     {
       "path": "/api/cron/monthly-newsletter",
       "schedule": "0 12 1 * *"
-    },
-    {
-      "path": "/api/cron/trial-reminders",
-      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/platform-link-retest",
@@ -60,10 +52,6 @@
     {
       "path": "/api/cron/process-scheduled-deletions",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/qr-no-scans-reminder",
-      "schedule": "30 9 * * *"
     },
     {
       "path": "/api/cron/rating-drop-alert",

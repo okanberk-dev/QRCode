@@ -235,14 +235,6 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'cta', label: 'Birincil CTA buton metni' },
     { key: 'footnote', label: 'Footer dipnot', multiline: true, hint: 'Ayda bir gönderim disclaimer' },
   ],
-  'inactive-reactivation': [
-    { key: 'eyebrow', label: 'Eyebrow', hint: '"TEKRAR HOŞ GELDİNİZ"' },
-    { key: 'title', label: 'Başlık', placeholders: MAIL_PLACEHOLDERS['inactive-reactivation'] },
-    { key: 'intro', label: 'Giriş paragrafı', multiline: true },
-    { key: 'suggestion', label: 'Öneri paragrafı', multiline: true, hint: '3 hızlı kontrol noktası listesi' },
-    { key: 'cta', label: 'Birincil CTA buton metni' },
-    { key: 'footnote', label: 'Footer dipnot', multiline: true },
-  ],
   // Wave B1 (CLAUDE.md §38.B) — password-changed security alert. KVKK
   // lock'lu 4 alan (statusText/notYouTitle/notYouBody/notYouLink) admin
   // editor'da disabled görünür (locked-fields.ts).
@@ -284,43 +276,6 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'locationsLabel', label: 'Erişim etiketi' },
     { key: 'cta', label: 'CTA buton metni' },
     { key: 'note', label: 'Footer not metni', multiline: true },
-  ],
-  // Wave B3 (CLAUDE.md §38.B) — team-member-removed audit notification.
-  'team-member-removed': [
-    { key: 'eyebrow', label: 'Eyebrow', hint: '"Ekip · Üye çıkarıldı"' },
-    { key: 'title', label: 'Başlık 1. parça' },
-    { key: 'titleAccent', label: 'Başlık vurgu' },
-    {
-      key: 'intro',
-      label: 'Giriş paragrafı',
-      multiline: true,
-      placeholders: MAIL_PLACEHOLDERS['team-member-removed'],
-    },
-    { key: 'cardEyebrow', label: 'Audit kayıt etiketi' },
-    { key: 'nameLabel', label: 'İsim etiketi' },
-    { key: 'emailLabel', label: 'E-posta etiketi' },
-    { key: 'roleLabelKey', label: 'Rol etiketi' },
-    { key: 'actionLabel', label: 'Aksiyon etiketi' },
-    { key: 'actionValue', label: 'Aksiyon değer metni' },
-    { key: 'cta', label: 'CTA buton metni' },
-    { key: 'note', label: 'Footer not metni', multiline: true },
-  ],
-  // Wave B5 (CLAUDE.md §38.B) — first feedback celebration.
-  'first-feedback-celebration': [
-    { key: 'eyebrow', label: 'Eyebrow', hint: '"Aktivasyon · İlk yorum"' },
-    { key: 'title', label: 'Başlık 1. parça', hint: '"İlk yorumun"' },
-    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"geldi"' },
-    {
-      key: 'intro',
-      label: 'Giriş paragrafı',
-      multiline: true,
-      placeholders: MAIL_PLACEHOLDERS['first-feedback-celebration'],
-    },
-    { key: 'quoteEyebrow', label: 'Yorum kart etiketi' },
-    { key: 'noComment', label: 'Yorum yoksa metin' },
-    { key: 'cta', label: 'CTA buton metni' },
-    { key: 'tipPositive', label: 'Pozitif puan ipucu (4-5)', multiline: true },
-    { key: 'tipLow', label: 'Düşük puan ipucu (1-3)', multiline: true },
   ],
   // Wave B4 (CLAUDE.md §38.193) — account deletion scheduled (30g grace).
   // Locked field 4 alan (statusText/note/notYouTitle/notYouBody) phishing
@@ -369,24 +324,6 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'cta', label: 'CTA buton metni' },
     { key: 'footer', label: 'Footer not metni', multiline: true },
   ],
-  // Wave C1 (CLAUDE.md §38.194) — QR taranmıyor hatırlatma.
-  'qr-no-scans-reminder': [
-    { key: 'eyebrow', label: 'Eyebrow' },
-    { key: 'title', label: 'Başlık 1. parça' },
-    { key: 'titleAccent', label: 'Başlık vurgu' },
-    {
-      key: 'intro',
-      label: 'Giriş paragrafı',
-      multiline: true,
-      placeholders: MAIL_PLACEHOLDERS['qr-no-scans-reminder'],
-    },
-    { key: 'tipsEyebrow', label: 'İpuçları başlığı' },
-    { key: 'tip1', label: 'İpucu 1', multiline: true },
-    { key: 'tip2', label: 'İpucu 2', multiline: true },
-    { key: 'tip3', label: 'İpucu 3', multiline: true },
-    { key: 'tip4', label: 'İpucu 4', multiline: true },
-    { key: 'cta', label: 'CTA buton metni' },
-  ],
   // Wave C2 — puan düşüşü uyarısı.
   'rating-drop-alert': [
     { key: 'eyebrow', label: 'Eyebrow' },
@@ -409,22 +346,6 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'action2', label: 'Aksiyon 2', multiline: true },
     { key: 'action3', label: 'Aksiyon 3', multiline: true },
   ],
-  // Wave C3 — ilk Google yanıtı kutlaması.
-  'first-reply-celebration': [
-    { key: 'eyebrow', label: 'Eyebrow' },
-    { key: 'title', label: 'Başlık 1. parça' },
-    { key: 'titleAccent', label: 'Başlık vurgu' },
-    {
-      key: 'intro',
-      label: 'Giriş paragrafı',
-      multiline: true,
-      placeholders: MAIL_PLACEHOLDERS['first-reply-celebration'],
-    },
-    { key: 'habitTitle', label: 'Alışkanlık başlığı' },
-    { key: 'habitBody', label: 'Alışkanlık metni', multiline: true },
-    { key: 'cta', label: 'CTA buton metni' },
-    { key: 'note', label: 'Footer not', multiline: true },
-  ],
   // Wave C4 — KVKK veri export onayı. Locked field 2 alan (notYouTitle, notYouBody).
   'data-export-confirmation': [
     { key: 'eyebrow', label: 'Eyebrow' },
@@ -444,27 +365,6 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'metaAccount', label: 'Meta — hesap etiketi' },
     { key: 'notYouTitle', label: '"Sen bunu yapmadıysan?" başlık (kilitli)' },
     { key: 'notYouBody', label: '"Sen bunu yapmadıysan?" açıklama (kilitli)', multiline: true },
-  ],
-  // Wave D (CLAUDE.md §38.195) — new-device login. 4 alan locked (statusText/notYou*).
-  'new-device-login': [
-    { key: 'eyebrow', label: 'Eyebrow' },
-    { key: 'title', label: 'Başlık 1. parça' },
-    { key: 'titleAccent', label: 'Başlık vurgu' },
-    {
-      key: 'intro',
-      label: 'Giriş paragrafı',
-      multiline: true,
-      placeholders: MAIL_PLACEHOLDERS['new-device-login'],
-    },
-    { key: 'cardEyebrow', label: 'Kart etiketi' },
-    { key: 'statusText', label: 'Status metni (kilitli)' },
-    { key: 'metaTime', label: 'Meta — saat etiketi' },
-    { key: 'metaDevice', label: 'Meta — cihaz etiketi' },
-    { key: 'metaLocation', label: 'Meta — konum etiketi' },
-    { key: 'metaAccount', label: 'Meta — hesap etiketi' },
-    { key: 'notYouTitle', label: '"Sen değil misin?" başlık (kilitli)' },
-    { key: 'notYouBody', label: '"Sen değil misin?" açıklama (kilitli)', multiline: true },
-    { key: 'notYouLink', label: 'Şifre sıfırlama link metni (kilitli)' },
   ],
 };
 

@@ -1,5 +1,5 @@
 // Shared building blocks for the security & account mails (forgot-password,
-// password-changed, new-device-login, verify-email, data-export-confirmation,
+// password-changed, verify-email, data-export-confirmation,
 // account-deletion-scheduled, account-deletion-canceled).
 //
 // Table-based, inline-styled, no flex/grid/svg so Gmail + Outlook render it the

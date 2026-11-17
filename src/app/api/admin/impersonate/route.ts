@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
@@ -196,16 +196,18 @@ export async function POST(req: NextRequest) {
     // User'a transparency mail (CLAUDE.md §21 paterni). Fire-and-forget —
     // mail send fail impersonation flow'u kırmaz. Email body PII guard'lı
     // (CLAUDE.md §37.2 H + §37.7).
-    sendImpersonationStartEmail({
-      recipient: target.email,
-      recipientName: target.name,
-      adminUsername: typeof admin.username === 'string' ? admin.username : 'Yönetici',
-      reason: data.reason,
-      endsAt,
-      locale: target.locale === 'en' ? 'en' : 'tr',
-    }).catch((err) => {
-      console.error('[impersonate] mail send failed', (err as Error).message);
-    });
+    after(() =>
+      sendImpersonationStartEmail({
+        recipient: target.email,
+        recipientName: target.name,
+        adminUsername: typeof admin.username === 'string' ? admin.username : 'Yönetici',
+        reason: data.reason,
+        endsAt,
+        locale: target.locale === 'en' ? 'en' : 'tr',
+      }).catch((err) => {
+        console.error('[impersonate] mail send failed', (err as Error).message);
+      }),
+    );
 
     return response;
   } catch (err) {

@@ -3,7 +3,7 @@
 // Fires from /api/team/accept-invite POST after an invitee successfully
 // activates their TeamMember row. The mail goes to the OWNER (not the
 // joining member), so the owner has a visibility trail of who joined and
-// when. Companion to Wave B3 (team-member-removed).
+// when.
 
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';

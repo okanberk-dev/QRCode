@@ -3,9 +3,8 @@
  *
  * pulseLayout interpolates subject / preheader into <title> and the hidden
  * preheader div, and several fields end up in href attributes. The g2 templates
- * (low-rating-alert, new-review, customer-reply, rating-drop-alert,
- * first-feedback-celebration, first-reply-celebration) take free text from the
- * public feedback form, so every `:inject` fixture must render fully escaped,
+ * (low-rating-alert, new-review, customer-reply, rating-drop-alert) take free
+ * text from the public feedback form, so every `:inject` fixture must render fully escaped,
  * exactly once (no double-escaping), while the plain Subject header and the
  * plain-text part stay free of HTML entities.
  *
@@ -27,8 +26,8 @@ describe('g2 mails escape hostile input', () => {
   before(() => prepareMailRender());
 
   const injectFixtures = FIXTURES_G2.filter((f) => f.id.endsWith(':inject'));
-  it('has an :inject fixture for each of the six templates', () => {
-    assert.equal(new Set(injectFixtures.map((f) => f.template)).size, 6);
+  it('has an :inject fixture for each of the four templates', () => {
+    assert.equal(new Set(injectFixtures.map((f) => f.template)).size, 4);
   });
 
   for (const fixture of injectFixtures) {

@@ -1,18 +1,14 @@
 // g7a — mails that used to bypass pulseLayout: impersonation-start (admin
-// support session notice), ops-alert (mail failure + OpenAI billing) and
-// onboarding-complete.
+// support session notice) and ops-alert (mail failure + OpenAI billing).
 import { renderImpersonationStart } from '../../../src/lib/email/templates/impersonation-start';
 import {
   renderOpsMailFailureAlert,
   renderOpsOpenAiBillingAlert,
 } from '../../../src/lib/email/templates/ops-alert';
-import { renderOnboardingComplete } from '../../../src/lib/email/templates/onboarding-complete';
-import { APP_URL, LONG_NAME, LONG_URL, LONG_WORD, LONG_EMAIL, type MailFixture } from './_env';
+import { LONG_NAME, LONG_URL, LONG_WORD, LONG_EMAIL, type MailFixture } from './_env';
 
 const ENDS_AT = new Date('2026-10-25T14:30:00+03:00');
 const FAILED_AT = new Date('2026-10-25T11:32:07.412Z');
-const DASHBOARD = `${APP_URL}/tr/dashboard`;
-const DASHBOARD_EN = `${APP_URL}/en/dashboard`;
 
 const IMPERSONATION_REASON =
   'Müşteri destek talebi #4821: QR kodlarının platform bağlantıları yanlış görünüyor, ekran paylaşımı yerine hesabı birlikte inceleyeceğiz.';
@@ -143,27 +139,4 @@ export const FIXTURES_G7: MailFixture[] = [
       ),
   },
 
-  // ── onboarding-complete ──────────────────────────────────────────────
-  {
-    id: 'onboarding-complete',
-    template: 'onboarding-complete',
-    render: async (l) =>
-      renderOnboardingComplete({ bizName: 'Kahve Dükkanı Moda', dashboardUrl: l === 'en' ? DASHBOARD_EN : DASHBOARD }, l),
-  },
-  {
-    id: 'onboarding-complete:no-name',
-    template: 'onboarding-complete',
-    render: async (l) =>
-      renderOnboardingComplete({ bizName: null, dashboardUrl: l === 'en' ? DASHBOARD_EN : DASHBOARD }, l),
-  },
-  {
-    id: 'onboarding-complete:stress',
-    template: 'onboarding-complete',
-    stress: true,
-    render: async (l) =>
-      renderOnboardingComplete(
-        { bizName: `${LONG_NAME} ${LONG_WORD}`, dashboardUrl: `${DASHBOARD}?next=${LONG_WORD}` },
-        l,
-      ),
-  },
 ];

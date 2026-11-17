@@ -85,6 +85,25 @@ describe('mail render invariants', () => {
           assert.ok(before.includes('badge-absolute'), 'position:absolute outside the badge-absolute helper');
         }
 
+        // Gmail drops a whole <style> block on CSS it can't parse or past 8192
+        // characters. The first (layout) block must stay inside the safe
+        // subset; client fixes with attribute / id / child selectors live in
+        // a second block so losing it never breaks the phone layout.
+        if (isMail) {
+          const blocks = [...html.replace(/<!--\[if mso\]>[\s\S]*?<!\[endif\]-->/gi, '').matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]);
+          assert.ok(blocks.length >= 1, 'layout <style> block present');
+          for (const css of blocks) {
+            assert.ok(css.length < 8192, `<style> block ${css.length} chars ≥ Gmail's 8192 limit`);
+            assert.ok(!/@import/i.test(css), '@import in a <style> block (Gmail strips it)');
+            assert.ok(!/\/\*/.test(css), 'CSS comment in a <style> block');
+          }
+          const core = blocks[0];
+          assert.match(core, /@media only screen and \(max-width:600px\)/, 'phone media query in the first block');
+          // Selectors only: drop the declaration bodies and the @media prelude.
+          const selectors = core.replace(/\{[^{}]*\}/g, ' ').replace(/@media[^{]*\{/g, ' ');
+          assert.ok(!/[[#>~+:]/.test(selectors), `first <style> block uses only element/class/descendant selectors: ${selectors.match(/[^\s,]*[[#>~+:][^\s,]*/)?.[0]}`);
+        }
+
         // Typography: only the Poppins stack (+ monospace for code).
         for (const stack of fontFamilies(html)) {
           assert.ok(ALLOWED_FONT_STACKS.has(stack), `unexpected font-family: ${stack}`);

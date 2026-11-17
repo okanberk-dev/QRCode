@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { validateBody } from '@/lib/api/validate';
-import { sendMail } from '@/lib/email';
-import { renderOnboardingComplete } from '@/lib/email/templates/onboarding-complete';
 import { sectorIdToLabel } from '@/lib/sectors';
 import { ensureOnboardingConsents } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
@@ -116,21 +114,6 @@ export async function POST(req: NextRequest) {
       });
       createdRestaurantId = created.id;
     }
-  }
-
-  if (actor.email) {
-    const bizName = bizNameRaw || null;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
-    const dashboardUrl = `${appUrl}/tr/dashboard`;
-    const rendered = renderOnboardingComplete({ bizName, dashboardUrl }, 'tr');
-    sendMail({
-      to: actor.email,
-      subject: rendered.subject,
-      text: rendered.text,
-      html: rendered.html,
-    }).catch((err) => {
-      console.error('[onboarding/complete] welcome mail failed', err);
-    });
   }
 
   // Stage 31b §38.108 — Onboarding consent backfill (skip-if-already-recorded).

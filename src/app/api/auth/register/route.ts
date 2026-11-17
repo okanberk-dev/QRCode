@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
@@ -166,17 +166,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Welcome email — fire and forget. We don\'t want a Resend hiccup to
-    // block account creation; the cookie + redirect still succeeds.
+    // Welcome email after the response — a Resend hiccup must not block
+    // account creation; `after()` keeps the function alive until it's sent.
     const userLocale: 'tr' | 'en' = locale === 'en' ? 'en' : 'tr';
-    void (async () => {
+    after(async () => {
       try {
         const { sendWelcomeEmail } = await import('@/lib/email');
         await sendWelcomeEmail({ to: user.email, firstName: user.name, locale: userLocale });
       } catch (err) {
         console.error('[register] welcome mail failed', err);
       }
-    })();
+    });
 
     // Sign tokens — no restaurantId yet; it's populated after onboarding completes.
     const token = await signJwt({

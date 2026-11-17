@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import {
@@ -104,18 +104,22 @@ export async function POST(
   const localeStr: 'tr' | 'en' = owner?.locale === 'en' ? 'en' : 'tr';
   const acceptUrl = `${appUrl}/${localeStr}/accept-invite?token=${inviteToken}`;
 
-  void sendTeamInviteEmail({
-    to: member.email,
-    name: member.name,
-    ownerName: owner?.name || owner?.email || 'Buaze',
-    restaurantNames,
-    roleLabel: roleLabel({ role: member.role, locale: localeStr }),
-    acceptUrl,
-    expiresInDays: INVITE_TOKEN_TTL_DAYS,
-    locale: localeStr,
-  }).catch((err) => {
-    console.error('[team:resend] mail send failed:', (err as Error).message);
-  });
+  after(() =>
+
+    sendTeamInviteEmail({
+      to: member.email,
+      name: member.name,
+      ownerName: owner?.name || owner?.email || 'Buaze',
+      restaurantNames,
+      roleLabel: roleLabel({ role: member.role, locale: localeStr }),
+      acceptUrl,
+      expiresInDays: INVITE_TOKEN_TTL_DAYS,
+      locale: localeStr,
+    }).catch((err) => {
+      console.error('[team:resend] mail send failed:', (err as Error).message);
+    }),
+
+  );
 
   return NextResponse.json({
     ok: true,

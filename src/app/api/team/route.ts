@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
@@ -261,18 +261,20 @@ export async function POST(req: NextRequest) {
 
   // Fire-and-forget — mail başarısız olursa DB row yine yazılı kalır,
   // owner panelinden "Daveti yenile" ile retry edilebilir.
-  void sendTeamInviteEmail({
-    to: email,
-    name: name,
-    ownerName: owner?.name || owner?.email || 'Buaze',
-    restaurantNames,
-    roleLabel: roleLabel({ role, locale: localeStr }),
-    acceptUrl,
-    expiresInDays: INVITE_TOKEN_TTL_DAYS,
-    locale: localeStr,
-  }).catch((err) => {
-    console.error('[team:invite] mail send failed:', (err as Error).message);
-  });
+  after(() =>
+    sendTeamInviteEmail({
+      to: email,
+      name: name,
+      ownerName: owner?.name || owner?.email || 'Buaze',
+      restaurantNames,
+      roleLabel: roleLabel({ role, locale: localeStr }),
+      acceptUrl,
+      expiresInDays: INVITE_TOKEN_TTL_DAYS,
+      locale: localeStr,
+    }).catch((err) => {
+      console.error('[team:invite] mail send failed:', (err as Error).message);
+    }),
+  );
 
   return NextResponse.json(
     {

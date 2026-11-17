@@ -1,23 +1,9 @@
-// Wave D (CLAUDE.md §38.195) — fuzzy device fingerprint for the
-// new-device-login security alert.
-//
-// AskUserQuestion: "Fuzzy: UA major version + IP /16 (Recommended)" —
-// chosen over strict UA-exact + IP-exact (mobile IP rotation + iOS minor
-// upgrades fire false-positives) AND over browser-fingerprint-only (loses
-// IP signal which is the strongest "different geography" indicator).
-//
-// Algorithm:
-//   1. Extract UA major version (e.g. "Chrome 120" from
-//      "Mozilla/5.0 ... Chrome/120.0.6099.130 Safari/537.36").
-//   2. Truncate IP to /16 (first 2 octets for IPv4, first 4 hex groups
-//      for IPv6).
-//   3. SHA-256 the concatenated string + take first 32 hex chars.
-//
-// Output: 32-char hex string stored in UserSession.fingerprint. Same
-// owner logging in from Chrome 120 + 88.123.x.y matches the same row;
-// Chrome 121 minor upgrade keeps the major match; IP rotation within /16
-// (typical ISP/mobile range) keeps the IP match; jumping ISPs OR moving
-// to Firefox produces a new fingerprint and fires the alert.
+// Coarse device fingerprint stored on UserSession.fingerprint (UA major
+// version + IP /16, SHA-256, first 32 hex chars). It groups an account's
+// sessions by device; nothing is mailed from it. The "new device login"
+// alert that used to fire on a fingerprint change was retired in 2026-11
+// (CLAUDE.md §21.39): browser majors change every few weeks and mobile IPs
+// rotate, so the owner kept getting alerts for their own devices.
 
 import { createHash } from 'crypto';
 
@@ -82,22 +68,4 @@ export function computeDeviceFingerprint(
   const ipPrefix = ipToSlash16(ip);
   const raw = `${uaMajor}|${ipPrefix}`;
   return createHash('sha256').update(raw).digest('hex').slice(0, 32);
-}
-
-/**
- * Human-readable label for the mail body — owner sees "Chrome 120 ·
- * 88.123.x.x" not the raw hash. Privacy-mindful: never the full IP, never
- * the full UA string.
- */
-export function describeDevice(
-  userAgent: string | null | undefined,
-  ip: string | null | undefined,
-): { device: string; location: string } {
-  const uaMajor = extractUaMajor(userAgent);
-  const ipPrefix = ipToSlash16(ip);
-  const location = ipPrefix === 'unknown' ? '—' : `${ipPrefix}.x.x`;
-  return {
-    device: uaMajor.startsWith('ua:') ? 'Bilinmeyen tarayıcı' : uaMajor,
-    location,
-  };
 }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -97,11 +97,13 @@ export async function POST(req: NextRequest) {
   // Instant welcome mail. Fire-and-forget — Resend hiccup must not block the
   // signup response. Resubscribers get the same confirmation (intentional:
   // they re-opted in, treat them as fresh).
-  void sendFormConfirmationEmail({
-    to: email,
-    formType: 'newsletter',
-    locale,
-  }).catch((err) => console.error('[newsletter] welcome mail failed', err));
+  after(() =>
+    sendFormConfirmationEmail({
+      to: email,
+      formType: 'newsletter',
+      locale,
+    }).catch((err) => console.error('[newsletter] welcome mail failed', err)),
+  );
 
   return NextResponse.json({ ok: true, isNew: !existing });
 }

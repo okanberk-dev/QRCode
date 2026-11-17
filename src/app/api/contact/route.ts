@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { sendContactAdminEmail, sendFormConfirmationEmail } from '@/lib/email';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -133,15 +133,17 @@ export async function POST(req: NextRequest) {
     // User-facing confirmation — fire and forget; the contact submission
     // already succeeded internally, no reason to fail the request if this
     // hiccups.
-    void sendFormConfirmationEmail({
-      to: email,
-      formType: 'contact',
-      name,
-      locale: mailLocale,
-      details: business
-        ? [{ label: mailLocale === 'en' ? 'Business' : 'İşletme', value: business }]
-        : undefined,
-    }).catch((err) => console.error('[contact] confirmation mail failed', err));
+    after(() =>
+      sendFormConfirmationEmail({
+        to: email,
+        formType: 'contact',
+        name,
+        locale: mailLocale,
+        details: business
+          ? [{ label: mailLocale === 'en' ? 'Business' : 'İşletme', value: business }]
+          : undefined,
+      }).catch((err) => console.error('[contact] confirmation mail failed', err)),
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

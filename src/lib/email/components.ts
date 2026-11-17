@@ -287,29 +287,6 @@ export function renderTwoColCards(params: TwoColCardsParams): string {
   </table>`;
 }
 
-export interface BarChartOpts {
-  values: number[];
-  labels: string[];
-  peakIndex?: number;
-  height?: number;
-}
-
-export function renderBarChart(opts: BarChartOpts): string {
-  const height = opts.height ?? 140;
-  const max = Math.max(...opts.values, 1);
-  const peak = opts.peakIndex ?? opts.values.indexOf(max);
-  const cells = opts.values.map((v, i) => {
-    const pct = Math.max(8, Math.round((v / max) * 100));
-    const isPeak = i === peak;
-    return `<td valign="bottom" align="center" style="padding:0 4px;width:${Math.floor(100 / opts.values.length)}%;">
-      <div style="font-family:${FONTS.label};font-size:11px;color:${isPeak ? PULSE.graphite : PULSE.n400};font-weight:${isPeak ? 600 : 400};margin-bottom:8px;">${v >= 10000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K` : v}</div>
-      <div style="background:${isPeak ? PULSE.lime : PULSE.n200};height:${Math.round((pct / 100) * height)}px;border-radius:4px;width:100%;min-height:8px;line-height:1px;font-size:1px;">&nbsp;</div>
-      <div style="font-family:${FONTS.label};font-size:10px;color:${PULSE.n400};letter-spacing:0.1em;margin-top:8px;">${opts.labels[i] ?? ''}</div>
-    </td>`;
-  }).join('');
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="bar-chart" style="height:${height + 40}px;"><tr>${cells}</tr></table>`;
-}
-
 export interface AvatarCircleOpts {
   initials: string;
   bg?: string;

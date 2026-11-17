@@ -31,7 +31,6 @@ export const MAIL_PLACEHOLDERS = {
   'qr-not-downloaded': ['firstName', 'restaurantName'],
   'first-feedback-tips': ['firstName', 'restaurantName'],
   'upgrade-suggestion': ['firstName', 'restaurantName', 'feedbackCount'],
-  'inactive-reactivation': ['firstName', 'daysInactive'],
   // CLAUDE.md §42 Phase 3 — audit-completed mail.
   'audit-completed': [
     'restaurantName',
@@ -42,18 +41,13 @@ export const MAIL_PLACEHOLDERS = {
   // Wave B (CLAUDE.md §38.B) — 4 new templates placeholder whitelist.
   'password-changed': ['firstName'],
   'team-member-joined': ['ownerName', 'memberName'],
-  'team-member-removed': ['ownerName', 'memberName'],
-  'first-feedback-celebration': ['ownerName', 'restaurantName'],
   // Wave B4 (CLAUDE.md §38.193) — account deletion lifecycle placeholders.
   'account-deletion-scheduled': ['firstName', 'daysRemaining', 'scheduledFor'],
   'account-deletion-canceled': ['firstName'],
   // Wave C (CLAUDE.md §38.194) — lifecycle expansion placeholders.
-  'qr-no-scans-reminder': ['firstName', 'restaurantName', 'daysSinceQr'],
   'rating-drop-alert': ['firstName', 'restaurantName', 'currentAvg', 'baselineAvg', 'delta', 'reviewCount'],
-  'first-reply-celebration': ['ownerName', 'restaurantName'],
   'data-export-confirmation': ['firstName'],
   // Wave D (CLAUDE.md §38.195) — new-device login.
-  'new-device-login': ['firstName', 'device', 'location'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;
