@@ -1688,6 +1688,11 @@ model SubscriptionPlan {
   moduleKeys     String[] @default([]) @map("module_keys")
   modulesManaged Boolean  @default(false) @map("modules_managed")
 
+  // How many businesses an owner on this plan may have (src/lib/plan-limits.ts).
+  // Null = no limit. Checked when the owner adds a business and before a card
+  // payment for a smaller plan; admins can still add businesses.
+  maxBusinesses Int? @map("max_businesses")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

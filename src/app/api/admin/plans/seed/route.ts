@@ -3,86 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { revalidatePricing } from '@/lib/marketing-revalidate';
+import { PLAN_CATALOG, catalogPlanData } from '@/lib/plan-catalog';
+import { applyPlanModulesForPlan } from '@/lib/plan-modules';
 
-// Seed tiers start as manual billing (USD display prices). Switch a tier to
-// PayNKolay in /admin/plans after entering its TRY price (CLAUDE.md §44).
-//
-// Default copy must stay true for today's product (marketing spec D8): no
-// plan limits or feature gates are enforced in code, so every plan lists the
-// same capabilities and the descriptions only say who the plan is meant for.
-// Add tier-specific bullets only together with the code that enforces them.
-const SHARED_FEATURES_TR = [
-  'Sınırsız QR kod, işletme ve ekip üyesi',
-  '10 yorum platformu bağlantısı',
-  'Pulse AI yanıt taslakları',
-  'Düşük puanda anında e-posta uyarısı',
-  'Analitik ve CSV dışa aktarma',
-];
-const SHARED_FEATURES_EN = [
-  'Unlimited QR codes, businesses and team members',
-  'Links to 10 review platforms',
-  'Pulse AI reply drafts',
-  'Instant e-mail alert for low ratings',
-  'Analytics and CSV export',
-];
-
-const DEFAULTS = [
-  {
-    nameTr: 'Starter',
-    nameEn: 'Starter',
-    descriptionTr: 'Tek işletmesi olanlar için.',
-    descriptionEn: 'For a single business.',
-    priceTry: 0,
-    priceUsd: 1,
-    period: 'month',
-    featuresTr: SHARED_FEATURES_TR,
-    featuresEn: SHARED_FEATURES_EN,
-    buttonTextTr: 'Hemen başlayın',
-    buttonTextEn: 'Get started',
-    buttonHref: '/auth/register',
-    isActive: true,
-    isFeatured: false,
-    sortOrder: 10,
-    paymentProvider: 'manual',
-  },
-  {
-    nameTr: 'Growth',
-    nameEn: 'Growth',
-    descriptionTr: 'Birden çok şubesi olan işletmeler için.',
-    descriptionEn: 'For businesses with several locations.',
-    priceTry: 0,
-    priceUsd: 40,
-    period: 'month',
-    featuresTr: SHARED_FEATURES_TR,
-    featuresEn: SHARED_FEATURES_EN,
-    buttonTextTr: 'Hemen başlayın',
-    buttonTextEn: 'Get started',
-    buttonHref: '/auth/register',
-    isActive: true,
-    isFeatured: true,
-    sortOrder: 20,
-    paymentProvider: 'manual',
-  },
-  {
-    nameTr: 'Scale',
-    nameEn: 'Scale',
-    descriptionTr: 'Zincirler ve çok sayıda işletmesi olan gruplar için.',
-    descriptionEn: 'For chains and groups with many businesses.',
-    priceTry: 0,
-    priceUsd: 100,
-    period: 'month',
-    featuresTr: SHARED_FEATURES_TR,
-    featuresEn: SHARED_FEATURES_EN,
-    buttonTextTr: 'Hemen başlayın',
-    buttonTextEn: 'Get started',
-    buttonHref: '/auth/register',
-    isActive: true,
-    isFeatured: false,
-    sortOrder: 30,
-    paymentProvider: 'manual',
-  },
-];
-
+// Recommended lineup from src/lib/plan-catalog.ts (CLAUDE.md §15.2).
+// Without `force` an existing table is left alone. With `force`, the three
+// tiers are updated in place (matched by English name, so subscription links
+// keep their plan id) and missing tiers are created; nothing is deleted.
 export async function POST(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
@@ -99,17 +26,37 @@ export async function POST(req: NextRequest) {
         skipped: true,
         existing,
         message:
-          'Tablo zaten dolu (admin değişikliklerini korumak için no-op). Üzerine yazmak için { force: true } gönderin.',
+          'Tablo zaten dolu (admin değişikliklerini korumak için no-op). Önerilen yapıyı uygulamak için { force: true } gönderin.',
       });
     }
-    if (force) await prisma.subscriptionPlan.deleteMany({});
-    let seeded = 0;
-    for (const plan of DEFAULTS) {
-      await prisma.subscriptionPlan.create({ data: plan });
-      seeded++;
+
+    const rows = await prisma.subscriptionPlan.findMany({ select: { id: true, nameEn: true } });
+    let created = 0;
+    let updated = 0;
+    const touched: string[] = [];
+    for (const plan of PLAN_CATALOG) {
+      const data = catalogPlanData(plan);
+      const matches = rows.filter((r) => plan.matchNames.includes(r.nameEn.trim().toLowerCase()));
+      if (matches.length === 0) {
+        const row = await prisma.subscriptionPlan.create({ data, select: { id: true } });
+        touched.push(row.id);
+        created++;
+        continue;
+      }
+      for (const match of matches) {
+        await prisma.subscriptionPlan.update({ where: { id: match.id }, data, select: { id: true } });
+        touched.push(match.id);
+        updated++;
+      }
+    }
+    // Owners already on these plans get the plan's modules.
+    for (const id of touched) {
+      await applyPlanModulesForPlan(id).catch((err: Error) =>
+        console.error('[plans seed] modules not applied', { planId: id, error: err.message }),
+      );
     }
     revalidatePricing();
-    return NextResponse.json({ success: true, seeded, force });
+    return NextResponse.json({ success: true, created, updated, force });
   } catch (error) {
     console.error('[plans seed] failed', error);
     return ApiErrors.internalError('Planlar örneklenemedi');

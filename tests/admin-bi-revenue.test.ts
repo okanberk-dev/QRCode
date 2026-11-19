@@ -48,6 +48,7 @@ function tier(id: string, name: string, priceUsd: number, extra: Partial<AdminPl
     paymentProvider: 'paynkolay',
     moduleKeys: [],
     modulesManaged: false,
+    maxBusinesses: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...extra,

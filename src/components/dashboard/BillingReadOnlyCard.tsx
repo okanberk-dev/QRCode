@@ -5,6 +5,7 @@ import { Check, Download, FileText, Loader2, Receipt } from 'lucide-react';
 import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { PublicPlan } from '@/lib/subscription-plans';
+import { businessCountLabel } from '@/lib/plan-catalog';
 import { PLAN_LABELS } from '@/lib/constants';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 
@@ -138,6 +139,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
       },
       unavailable: { kind: 'danger', tr: 'Bu paket için kartla ödeme şu an açık değil.', en: 'Card payment is not available for this plan right now.' },
       owner_only: { kind: 'danger', tr: 'Ödemeyi yalnızca hesap sahibi yapabilir.', en: 'Only the account owner can pay.' },
+      plan_too_small: { kind: 'danger', tr: 'Bu plan, sahip olduğunuz işletme sayısından az işletmeyi kapsıyor. Daha büyük bir plan seçin.', en: 'This plan covers fewer businesses than you already have. Choose a larger plan.' },
       rate_limited: { kind: 'danger', tr: 'Çok fazla deneme yapıldı. Biraz sonra tekrar deneyin.', en: 'Too many attempts. Please try again shortly.' },
     };
     const m = messages[status];
@@ -705,9 +707,11 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                         isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
                       }`}
                     >
-                      {monthlyShown === 0
-                        ? isTr ? 'Ücretsiz' : 'Free'
-                        : `$${monthlyShown.toLocaleString('en-US')}`}
+                      {checkoutTry != null && checkoutTry > 0
+                        ? new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(checkoutTry)
+                        : monthlyShown === 0
+                          ? isTr ? 'Ücretsiz' : 'Free'
+                          : `$${monthlyShown.toLocaleString('en-US')}`}
                     </span>
                     {monthlyShown > 0 && (
                       <span
@@ -717,6 +721,11 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       </span>
                     )}
                   </div>
+                  {p.maxBusinesses != null && (
+                    <p className={`mt-2 text-[12px] font-medium ${isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'}`}>
+                      {businessCountLabel(p.maxBusinesses, isTr ? 'tr' : 'en')}
+                    </p>
+                  )}
                   <ul className="mt-3 mb-4 flex-1 space-y-1.5">
                     {p.features.slice(0, 4).map((feat) => (
                       <li

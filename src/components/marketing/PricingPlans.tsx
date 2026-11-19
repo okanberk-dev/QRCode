@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import type { PublicPlan } from '@/lib/subscription-plans';
+import { businessCountLabel } from '@/lib/plan-catalog';
 
 interface Props {
   locale: 'tr' | 'en';
@@ -30,6 +31,7 @@ const COPY = {
     listPrice: 'Liste fiyatı',
     yearlyTotal: (v: string) => `Yıllık toplam ${v}`,
     yearlySaving: (n: number) => `aylık ödemeye göre %${n} daha az`,
+    enterprise: '10’dan fazla işletmeniz mi var? Size özel fiyat için bize yazın.',
   },
   en: {
     heading: 'Plan options',
@@ -48,14 +50,28 @@ const COPY = {
     listPrice: 'List price',
     yearlyTotal: (v: string) => `${v} billed per year`,
     yearlySaving: (n: number) => `${n}% less than paying monthly`,
+    enterprise: 'More than 10 businesses? Write to us for a custom price.',
   },
 } as const;
 
 /** Monthly price the customer pays today (admin discount applied). */
 function effectiveMonthly(p: PublicPlan): number {
+  if (p.tryPrices) return p.tryPrices.monthly;
   return p.discount.active && p.discount.discountedMonthly < p.priceMonthly
     ? p.discount.discountedMonthly
     : p.priceMonthly;
+}
+
+function listMonthly(p: PublicPlan): number {
+  return p.tryPrices ? p.tryPrices.listMonthly : p.priceMonthly;
+}
+
+function yearlyTotalOf(p: PublicPlan): number {
+  return p.tryPrices ? p.tryPrices.yearlyTotal : p.priceYearlyTotal;
+}
+
+function yearlyMonthlyOf(p: PublicPlan): number {
+  return p.tryPrices ? p.tryPrices.yearlyMonthly : p.priceYearly;
 }
 
 /**
@@ -65,8 +81,9 @@ function effectiveMonthly(p: PublicPlan): number {
  */
 function yearlySavingPct(p: PublicPlan): number {
   const monthly = effectiveMonthly(p);
-  if (monthly <= 0 || p.priceYearlyTotal <= 0) return 0;
-  const pct = Math.round((1 - p.priceYearlyTotal / (monthly * 12)) * 100);
+  const total = yearlyTotalOf(p);
+  if (monthly <= 0 || total <= 0) return 0;
+  const pct = Math.round((1 - total / (monthly * 12)) * 100);
   return pct > 0 && pct < 100 ? pct : 0;
 }
 
@@ -81,8 +98,8 @@ function formatUsd(value: number): string {
 
 /**
  * Pricing cards — plans, prices, descriptions and bullets come from the
- * SubscriptionPlan table (admin /admin/plans). Prices are USD in both
- * languages (CLAUDE.md §15.2). Each card keeps the two paths apart:
+ * SubscriptionPlan table (admin /admin/plans). The Turkish page shows TRY
+ * (what PayNKolay charges), the English page USD (CLAUDE.md §15.2). Each card keeps the two paths apart:
  *   • primary  → free trial (sign-up, no card)
  *   • secondary → card checkout via PayNKolay (TRY) for the selected period, or — on the yearly
  *     tab, where there is no self-serve checkout — a contact link.
@@ -161,9 +178,11 @@ export default function PricingPlans({ locale, plans }: Props) {
       <div className={`grid grid-cols-1 gap-5 lg:gap-6 ${gridCols}`}>
         {plans.map((p) => {
           const monthly = effectiveMonthly(p);
-          const hasMonthlyDiscount = monthly < p.priceMonthly;
+          const hasMonthlyDiscount = monthly < listMonthly(p);
           const saving = yearlySavingPct(p);
-          const price = billing === 'monthly' ? monthly : p.priceYearly;
+          const price = billing === 'monthly' ? monthly : yearlyMonthlyOf(p);
+          // Turkish page: TRY, the currency PayNKolay charges. English: USD.
+          const fmt = (v: number) => (p.tryPrices ? formatTry(v, locale) : formatUsd(v));
           const dark = p.isFeatured;
 
           const trialPrimary = isTrialHref(p.buttonHref);
@@ -226,7 +245,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                       dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
                     }`}
                   >
-                    {price === 0 ? copy.free : formatUsd(price)}
+                    {price === 0 ? copy.free : fmt(price)}
                   </span>
                   {price > 0 ? <span className={`text-[15px] ${muted}`}>{copy.perMonth}</span> : null}
                 </p>
@@ -234,21 +253,26 @@ export default function PricingPlans({ locale, plans }: Props) {
                   <p className={`mt-2 text-[13px] ${muted}`}>
                     {copy.listPrice}:{' '}
                     <span className="line-through">
-                      {formatUsd(p.priceMonthly)}
+                      {fmt(listMonthly(p))}
                       {copy.perMonth}
                     </span>
                   </p>
                 ) : null}
-                {billing === 'yearly' && p.priceYearlyTotal > 0 ? (
+                {billing === 'yearly' && yearlyTotalOf(p) > 0 ? (
                   <p className={`mt-2 text-[13px] leading-[1.5] ${muted}`}>
-                    {copy.yearlyTotal(formatUsd(p.priceYearlyTotal))}
+                    {copy.yearlyTotal(fmt(yearlyTotalOf(p)))}
                     {saving > 0 ? ` · ${copy.yearlySaving(saving)}` : ''}
                   </p>
                 ) : null}
               </div>
 
+              {p.maxBusinesses != null ? (
+                <p className={`mt-6 text-[15px] font-semibold ${dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'}`}>
+                  {businessCountLabel(p.maxBusinesses, locale)}
+                </p>
+              ) : null}
               {p.features.length > 0 ? (
-                <ul className="mt-6 flex-1 space-y-3">
+                <ul className={`${p.maxBusinesses != null ? 'mt-4' : 'mt-6'} flex-1 space-y-3`}>
                   {p.features.map((feat, i) => (
                     <li key={`${p.id}-${i}`} className="flex items-start gap-3 text-[15px] leading-[1.5]">
                       <span
@@ -292,7 +316,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                     {copy.subscribe} · {formatTry(checkoutTry as number, locale)}
                   </a>
                 ) : null}
-                {billing === 'yearly' && price > 0 ? (
+                {billing === 'yearly' && price > 0 && !checkoutReady ? (
                   <Link
                     href={`${base}/contact`}
                     className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
@@ -309,6 +333,11 @@ export default function PricingPlans({ locale, plans }: Props) {
           );
         })}
       </div>
+      <p className="mt-8 text-center text-[14px] text-[#525252]">
+        <Link href={`${base}/contact`} className="underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:text-[#0A0A0A]">
+          {copy.enterprise}
+        </Link>
+      </p>
     </div>
   );
 }

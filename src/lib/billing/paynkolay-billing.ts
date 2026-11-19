@@ -144,7 +144,8 @@ export async function settlePaynkolayPayment(
 }
 
 /**
- * Lapsed card periods move to the free plan (no recurring charge exists).
+ * Lapsed card periods become 'expired' (no recurring charge exists); the
+ * dashboard layout then sends the owner to /pricing until they pay again.
  * Called by the daily lifecycle cron. Returns how many accounts lapsed.
  */
 export async function expireLapsedPaynkolayPeriods(now: Date = new Date()): Promise<number> {
@@ -157,9 +158,9 @@ export async function expireLapsedPaynkolayPeriods(now: Date = new Date()): Prom
     await prisma.$transaction([
       prisma.billingSubscription.update({
         where: { userId: row.userId },
-        data: { status: 'canceled', plan: 'free' },
+        data: { status: 'canceled', plan: 'expired' },
       }),
-      prisma.user.update({ where: { id: row.userId }, data: { plan: 'free' } }),
+      prisma.user.update({ where: { id: row.userId }, data: { plan: 'expired' } }),
     ]);
   }
   return lapsed.length;

@@ -13,6 +13,12 @@ import { isExternalReviewProvider } from '@/lib/restaurant-features';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
 import { normalizeGoogleReviewInput } from '@/lib/restaurant-google-input';
 import { normalizeRestaurantParam } from '@/lib/active-business';
+import {
+  businessLimitMessage,
+  getOwnerBusinessLimit,
+  isBusinessLimitReached,
+  ownerBusinessCount,
+} from '@/lib/plan-limits';
 
 // Stage 28 §38.104 Fix A2 — admin restaurants list cross-tab refresh edge cache.
 // Restaurant mutation rare (admin POST/PATCH/DELETE always-fresh, no cache
@@ -518,6 +524,19 @@ export async function POST(req: NextRequest) {
     let ownerUserId: string | null = null;
     if (actor.role === 'restaurant_owner') {
       ownerUserId = actor.id;
+      // Plan business limit (CLAUDE.md §15.2). Admins are not capped.
+      const limit = await getOwnerBusinessLimit(actor.id);
+      if (limit && isBusinessLimitReached(await ownerBusinessCount(actor.id), limit.maxBusinesses)) {
+        return NextResponse.json(
+          {
+            error: businessLimitMessage(limit, 'tr'),
+            errorEn: businessLimitMessage(limit, 'en'),
+            code: 'PLAN_BUSINESS_LIMIT',
+            maxBusinesses: limit.maxBusinesses,
+          },
+          { status: 403 },
+        );
+      }
     } else if (actor.role === 'superadmin') {
       if (bodyUserId === null || bodyUserId === undefined || bodyUserId === '') {
         ownerUserId = null;

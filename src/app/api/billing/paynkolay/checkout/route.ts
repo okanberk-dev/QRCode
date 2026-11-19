@@ -51,6 +51,12 @@ export async function GET(req: NextRequest) {
 
   const row = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
   if (!row || !row.isActive) return NextResponse.redirect(accountUrl('unavailable'));
+  // A plan smaller than the businesses the owner already has would leave
+  // them over the limit right after paying (CLAUDE.md §15.2).
+  if (row.maxBusinesses != null && row.maxBusinesses > 0) {
+    const owned = await prisma.restaurant.count({ where: { userId: actor.id } });
+    if (owned > row.maxBusinesses) return NextResponse.redirect(accountUrl('plan_too_small'));
+  }
   const amounts = paynkolayCheckoutAmounts(toAdminRow(row));
   const amountTry = cycle === 'yearly' ? amounts?.yearlyTry : amounts?.monthlyTry;
   if (!amountTry) return NextResponse.redirect(accountUrl('unavailable'));

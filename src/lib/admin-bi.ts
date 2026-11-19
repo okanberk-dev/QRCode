@@ -64,7 +64,7 @@ function normalizeCycle(cycle: string | null | undefined): 'monthly' | 'yearly' 
 /** Does this subscription row represent a paying (paid-tier) customer? */
 export function isPaidSubscription(sub: Pick<RevenueSubscription, 'plan' | 'status'>): boolean {
   const plan = (sub.plan || '').toLowerCase();
-  if (plan === 'trial' || plan === 'free') return false;
+  if (plan === 'trial' || plan === 'free' || plan === 'expired') return false;
   return PAID_SUBSCRIPTION_STATUSES.has((sub.status || 'active').toLowerCase());
 }
 
@@ -157,6 +157,8 @@ export function classifyOwnerPlan(
   if (plan === 'trial') {
     return owner.trialEndsAt && owner.trialEndsAt <= now ? 'trial_expired' : 'trial';
   }
+  // A lapsed card period (src/lib/billing/paynkolay-billing.ts).
+  if (plan === 'expired') return 'trial_expired';
   return 'free';
 }
 

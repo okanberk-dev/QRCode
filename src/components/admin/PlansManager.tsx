@@ -47,6 +47,7 @@ interface FormState {
   /** Package modules (§5.2) applied to the owner's businesses. */
   moduleKeys: string[];
   modulesManaged: boolean;
+  maxBusinesses: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -77,6 +78,7 @@ const EMPTY_FORM: FormState = {
   paymentProvider: 'manual',
   moduleKeys: [],
   modulesManaged: false,
+  maxBusinesses: '',
 };
 
 function rowToForm(p: AdminPlanRow): FormState {
@@ -108,6 +110,7 @@ function rowToForm(p: AdminPlanRow): FormState {
     paymentProvider: (p.paymentProvider === 'paynkolay' ? 'paynkolay' : 'manual') as FormState['paymentProvider'],
     moduleKeys: p.moduleKeys ?? [],
     modulesManaged: p.modulesManaged === true,
+    maxBusinesses: p.maxBusinesses != null ? String(p.maxBusinesses) : '',
   };
 }
 
@@ -139,6 +142,7 @@ function formToBody(f: FormState) {
     paymentProvider: f.paymentProvider,
     moduleKeys: f.moduleKeys,
     modulesManaged: f.modulesManaged,
+    maxBusinesses: f.maxBusinesses.trim() ? Math.max(1, Math.floor(Number(f.maxBusinesses))) : null,
   };
 }
 
@@ -205,13 +209,21 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
     }
   };
 
-  const handleSeedDefaults = async () => {
+  const handleSeedDefaults = async (force = false) => {
+    if (
+      force &&
+      !window.confirm(
+        'Başlangıç, Büyüme ve Zincir paketleri önerilen fiyat, işletme sınırı ve modüllerle güncellenecek. Bu paketlerdeki sahiplerin modülleri de yeniden ayarlanır. Devam edilsin mi?',
+      )
+    ) {
+      return;
+    }
     setSeeding(true);
     try {
       const res = await fetch('/api/admin/plans/seed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: false }),
+        body: JSON.stringify({ force }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -223,7 +235,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
         kind: 'success',
         message: data?.skipped
           ? 'Tablo zaten dolu — atlandı.'
-          : `${data?.seeded ?? 3} varsayılan paket yüklendi.`,
+          : `Önerilen yapı uygulandı: ${data?.updated ?? 0} paket güncellendi, ${data?.created ?? 0} paket eklendi.`,
       });
     } catch {
       setNotice({ kind: 'danger', message: 'Bağlantı hatası.' });
@@ -416,10 +428,21 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {plans.length > 0 && (
+            <button
+              type="button"
+              onClick={() => handleSeedDefaults(true)}
+              disabled={seeding}
+              className="bz-btn-ghost inline-flex items-center gap-2"
+            >
+              {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              Önerilen yapıyı uygula
+            </button>
+          )}
           {plans.length === 0 && (
             <button
               type="button"
-              onClick={handleSeedDefaults}
+              onClick={() => handleSeedDefaults(false)}
               disabled={seeding}
               className="bz-btn-ghost inline-flex items-center gap-2"
             >
@@ -1113,6 +1136,17 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   </Field>
                 </div>
               )}
+              <div className="mt-4 border-t border-[#EDEDED] pt-3">
+                <Field label="İşletme sınırı" hint="Boş: sınırsız. Sahip bu sayıdan fazla işletme ekleyemez.">
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.maxBusinesses}
+                    onChange={(e) => setForm((f) => ({ ...f, maxBusinesses: e.target.value }))}
+                    className="bz-input"
+                  />
+                </Field>
+              </div>
               <div className="mt-4 border-t border-[#EDEDED] pt-3">
                 <label className="flex items-start gap-2 text-[12px] text-[#0A0A0A]">
                   <input

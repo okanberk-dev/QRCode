@@ -109,6 +109,12 @@ export async function POST(req: NextRequest) {
   else data.paymentProvider = provider;
   data.moduleKeys = normalizeModuleKeys(body.moduleKeys);
   data.modulesManaged = body.modulesManaged === true;
+  if (body.maxBusinesses !== undefined) {
+    const n = Number(body.maxBusinesses);
+    data.maxBusinesses = body.maxBusinesses === null || body.maxBusinesses === '' || !Number.isFinite(n) || n < 1
+      ? null
+      : Math.min(1000, Math.floor(n));
+  }
   if (data.paymentProvider === 'paynkolay' && !(Number(data.priceTry) > 0)) {
     errors.push('PayNKolay için aylık TL fiyatı zorunlu.');
   }

@@ -44,6 +44,7 @@ export const PLAN_LABELS: Record<string, { tr: string; en: string }> = {
   monthly: { tr: 'Aylık', en: 'Monthly' },
   yearly: { tr: 'Yıllık', en: 'Yearly' },
   enterprise: { tr: 'Kurumsal', en: 'Enterprise' },
+  expired: { tr: 'Süresi doldu', en: 'Expired' },
 };
 
 /**

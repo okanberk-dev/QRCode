@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getPaynkolayConfig } from '@/lib/payment/paynkolay';
 
 /** Public-shaped subscription plan — locale projection applied. */
 export interface PublicPlan {
@@ -40,6 +41,15 @@ export interface PublicPlan {
    * charged (after discount); null = no card checkout for this plan.
    */
   paymentProvider: 'manual' | 'paynkolay';
+  /** Business cap shown on the card ("3 işletmeye kadar"); null = no cap. */
+  maxBusinesses: number | null;
+  /** Plan modules (comparison table on /pricing). Empty when not managed. */
+  moduleKeys: string[];
+  /**
+   * TRY prices for the Turkish page (what PayNKolay charges, discount
+   * applied). Null on the English page or when the plan has no TRY price.
+   */
+  tryPrices: { monthly: number; listMonthly: number; yearlyTotal: number; yearlyMonthly: number } | null;
   checkout: { monthlyTry: number | null; yearlyTry: number | null } | null;
 }
 
@@ -74,6 +84,8 @@ export interface AdminPlanRow {
   /** Package modules applied to the owner's businesses (§5.2). */
   moduleKeys: string[];
   modulesManaged: boolean;
+  /** Business cap for the plan (src/lib/plan-limits.ts); null = no cap. */
+  maxBusinesses: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -130,6 +142,7 @@ export function toAdminRow(row: {
   paymentProvider?: string;
   moduleKeys?: string[] | null;
   modulesManaged?: boolean | null;
+  maxBusinesses?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }): AdminPlanRow {
@@ -160,12 +173,17 @@ export function toAdminRow(row: {
     paymentProvider: row.paymentProvider === 'paynkolay' ? 'paynkolay' : 'manual',
     moduleKeys: Array.isArray(row.moduleKeys) ? row.moduleKeys : [],
     modulesManaged: row.modulesManaged === true,
+    maxBusinesses: typeof row.maxBusinesses === 'number' && row.maxBusinesses > 0 ? row.maxBusinesses : null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
-export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan {
+export function toPublicPlan(
+  row: AdminPlanRow,
+  locale: 'tr' | 'en',
+  opts: { checkoutEnabled?: boolean } = {},
+): PublicPlan {
   const isTr = locale === 'tr';
   // §38.225 Stage 145 — USD-only fiyatlandırma. Locale (tr/en) sadece tier
   // name + description + features dilini belirler; fiyat her iki locale'de de
@@ -214,7 +232,11 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
       discountedMonthly,
     },
     paymentProvider: row.paymentProvider === 'paynkolay' ? 'paynkolay' : 'manual',
-    checkout: paynkolayCheckoutAmounts(row),
+    maxBusinesses: row.maxBusinesses,
+    moduleKeys: row.modulesManaged ? row.moduleKeys : [],
+    tryPrices: isTr ? tryPricesFor(row) : null,
+    // Buttons only appear once PayNKolay credentials are configured.
+    checkout: opts.checkoutEnabled === false ? null : paynkolayCheckoutAmounts(row),
   };
 }
 
@@ -241,6 +263,19 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
  * settles in TRY only, so a plan needs `priceTry` (monthly) and optionally
  * `priceYearlyTry`. Null when the plan is not a card-checkout plan.
  */
+function tryPricesFor(row: AdminPlanRow): PublicPlan['tryPrices'] {
+  if (!(row.priceTry > 0)) return null;
+  const monthly = resolveBillingAmount(row, 'monthly', 'TRY');
+  const yearly = resolveBillingAmount(row, 'yearly', 'TRY');
+  if (monthly.amount == null || yearly.amountYearlyTotal == null) return null;
+  return {
+    monthly: monthly.amount,
+    listMonthly: row.priceTry,
+    yearlyTotal: yearly.amountYearlyTotal,
+    yearlyMonthly: Math.round(yearly.amountYearlyTotal / 12),
+  };
+}
+
 export function paynkolayCheckoutAmounts(
   plan: AdminPlanRow,
 ): { monthlyTry: number | null; yearlyTry: number | null } | null {
@@ -331,7 +366,8 @@ export async function getActivePlans(locale: 'tr' | 'en'): Promise<PublicPlan[]>
     where: { isActive: true },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
   });
-  return rows.map((r) => toPublicPlan(toAdminRow(r), locale));
+  const checkoutEnabled = getPaynkolayConfig() !== null;
+  return rows.map((r) => toPublicPlan(toAdminRow(r), locale, { checkoutEnabled }));
 }
 
 export async function getAllPlansForAdmin(): Promise<AdminPlanRow[]> {

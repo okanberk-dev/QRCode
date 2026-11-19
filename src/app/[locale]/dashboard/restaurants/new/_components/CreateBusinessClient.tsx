@@ -288,6 +288,17 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
       setCreateError(isTr ? 'Bildirim e-postası geçersiz.' : 'The notification email is invalid.');
       return;
     }
+    if (code === 'PLAN_BUSINESS_LIMIT') {
+      const message = isTr ? data?.error : data?.errorEn;
+      setCreateError(
+        typeof message === 'string' && message
+          ? message
+          : isTr
+            ? 'Planınızın işletme sınırına ulaştınız. Yeni işletme eklemek için planınızı yükseltin.'
+            : 'You have reached your plan’s business limit. Upgrade your plan to add another.',
+      );
+      return;
+    }
     if (status === 409) {
       setCreateStep(0);
       setCreateError(

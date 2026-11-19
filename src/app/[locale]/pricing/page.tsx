@@ -29,12 +29,12 @@ const META = {
   tr: {
     title: 'Fiyatlandırma: planlar ve 14 gün ücretsiz deneme',
     description:
-      'Buaze planlarını ve aylık USD fiyatlarını karşılaştırın. 14 gün ücretsiz deneyin; kredi kartı gerekmez, aboneliğinizi istediğiniz zaman iptal edebilirsiniz.',
+      'Buaze planlarını ve Türk lirası fiyatlarını karşılaştırın. 14 gün ücretsiz deneyin; kredi kartı gerekmez, otomatik çekim yoktur.',
   },
   en: {
     title: 'Pricing: plans and a 14-day free trial',
     description:
-      'Compare Buaze plans and their monthly prices in USD. Try it free for 14 days with no credit card, and cancel your subscription whenever you like.',
+      'Compare Buaze plans and their monthly prices. Try it free for 14 days with no credit card; there is no automatic charge.',
   },
 } as const;
 
@@ -73,8 +73,8 @@ function buildCopy(locale: 'tr' | 'en') {
       eyebrow: 'Fiyatlandırma',
       title: 'Planlar ve fiyatlar',
       lead:
-        'Fiyatlar USD cinsindendir ve abonelik aylık ödenir. Yıllık ödemek isterseniz bize yazabilirsiniz.',
-      ticks: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal'],
+        'Planlar kapsadıkları işletme sayısı ve açtıkları modüllerle ayrılır. Fiyatlar Türk lirasıdır; yıllık ödemede iki ay ücretsizdir.',
+      ticks: ['14 gün ücretsiz', 'Kredi kartı gerekmez', 'Otomatik çekim yok'],
       empty: {
         title: 'Planlar şu anda güncelleniyor',
         body: 'Güncel fiyatları kısa süre içinde burada göreceksiniz. Bu arada 14 günlük ücretsiz denemeyi başlatabilir ya da fiyatlar için bize yazabilirsiniz.',
@@ -102,9 +102,9 @@ function buildCopy(locale: 'tr' | 'en') {
           },
           {
             icon: Sparkles,
-            title: 'Pulse AI yanıt taslakları',
-            body: 'Sıcak, resmi ya da özür dileyen tonda 2–4 cümlelik taslaklar. Taslağı siz düzenler ve onaylarsınız; onayınız olmadan hiçbir yanıt gönderilmez.',
-            href: '/features/pulse-ai',
+            title: 'Geri bildirim kutusu ve yanıt şablonları',
+            body: 'Düşük puanlı geri bildirimleri tek kutuda görür, müşteriye e-postayla yanıt verirsiniz. Sık kullandığınız yanıtları şablon olarak kaydedersiniz.',
+            href: '/features/review-management',
           },
           {
             icon: Bell,
@@ -120,8 +120,8 @@ function buildCopy(locale: 'tr' | 'en') {
           },
           {
             icon: Users,
-            title: 'Ekip ve birden çok işletme',
-            body: 'Ekibinizi yönetici, personel ya da görüntüleyici rolüyle davet edin. Birden çok işletmeniz varsa aralarında tek tıkla geçin.',
+            title: 'Ekip ve işletmeler arası geçiş',
+            body: 'Ekibinizi yönetici, personel ya da görüntüleyici rolüyle davet edin. Planınız birden çok işletmeyi kapsıyorsa aralarında tek tıkla geçin.',
             href: '/features',
           },
         ],
@@ -154,8 +154,8 @@ function buildCopy(locale: 'tr' | 'en') {
   return {
     eyebrow: 'Pricing',
     title: 'Plans and pricing',
-    lead: 'Prices are in USD and subscriptions are paid monthly. If you would like to pay yearly, write to us.',
-    ticks: ['14 days free', 'No credit card required', 'Cancel anytime'],
+    lead: 'Plans differ by how many businesses they cover and which modules they switch on. Paying yearly gives you two months free.',
+    ticks: ['14 days free', 'No credit card required', 'No automatic charge'],
     empty: {
       title: 'Plans are being updated',
       body: 'Current prices will be back here shortly. In the meantime you can start the 14-day free trial or ask us about pricing.',
@@ -183,9 +183,9 @@ function buildCopy(locale: 'tr' | 'en') {
         },
         {
           icon: Sparkles,
-          title: 'Pulse AI reply drafts',
-          body: 'Drafts of 2–4 sentences in a warm, formal or apologetic tone. You edit and approve them; nothing is sent without your approval.',
-          href: '/features/pulse-ai',
+          title: 'Feedback inbox and reply templates',
+          body: 'See low-rated feedback in one inbox and reply to the customer by e-mail. Save the replies you use often as templates.',
+          href: '/features/review-management',
         },
         {
           icon: Bell,
@@ -201,8 +201,8 @@ function buildCopy(locale: 'tr' | 'en') {
         },
         {
           icon: Users,
-          title: 'Teams and several businesses',
-          body: 'Invite your team as managers, staff or viewers. If you run several businesses, switch between them in one click.',
+          title: 'Teams and switching businesses',
+          body: 'Invite your team as managers, staff or viewers. If your plan covers several businesses, switch between them in one click.',
           href: '/features',
         },
       ],
@@ -246,11 +246,11 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
       },
       {
         q: 'Yıllık ödeme yapabilir miyim?',
-        a: 'Yıllık fiyatları plan kartlarında görebilirsiniz, ancak yıllık ödemeyi şu an kendiniz başlatamazsınız. Yıllık ödemek isterseniz bize yazın; birlikte ayarlayalım.',
+        a: 'Evet. Plan kartlarında “Yıllık”ı seçip kartla ödeyebilirsiniz; yıllık ödeme 12 ay yerine 10 ayın fiyatıdır.',
       },
       {
-        q: 'Aboneliğimi istediğim zaman iptal edebilir miyim?',
-        a: 'Evet. Aboneliğinizi müşteri portalından iptal edersiniz; ödediğiniz dönemin sonuna kadar erişiminiz sürer. İade koşulları İade ve İptal Politikası’nda yer alır.',
+        q: 'Aboneliğimi nasıl bitiririm?',
+        a: 'Otomatik çekim olmadığı için iptal etmeniz gerekmez: dönemi uzatmazsanız, ödediğiniz dönemin sonunda panel erişiminiz durur. İade koşulları İade ve İptal Politikası’nda yer alır.',
       },
       {
         q: 'Verileri nasıl koruyorsunuz?',
@@ -261,8 +261,12 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
         a: `${SUPPORT_EMAIL} adresine ya da iletişim formuna yazabilirsiniz. ${SUPPORT_HOURS.tr} Yardım merkezinde Türkçe ve İngilizce rehberler bulunur.`,
       },
       {
+        q: 'Planlar arasındaki fark ne?',
+        a: 'Başlangıç tek işletme içindir ve QR, yorum yönlendirme, uyarılar, yanıtlar ve analitiği içerir. Büyüme 3 işletmeye kadar çıkar ve Pulse AI taslaklarını, yapay zekâ içgörülerini, dijital menüyü ve anketleri açar. Zincir 10 işletmeye kadar çıkar ve Google yorumlarına panelden yanıtı ekler. 14 günlük denemede tüm özellikler açıktır.',
+      },
+      {
         q: 'Fiyatlar hangi para biriminde?',
-        a: 'Tüm fiyatlar ABD doları (USD) cinsindendir ve Türkçe ile İngilizce sayfalarda aynıdır.',
+        a: 'Fiyatlar ve ödeme Türk lirasıdır. İngilizce sayfada fiyatlar bilgi için ABD doları olarak gösterilir; kart sayfasında tam tutar Türk lirası olarak görünür.',
       },
     ];
   }
@@ -277,11 +281,11 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
     },
     {
       q: 'Can I pay yearly?',
-      a: 'The plan cards show yearly prices, but you cannot start yearly billing yourself yet. If you would like to pay yearly, write to us and we will set it up together.',
+      a: 'Yes. Choose “Yearly” on the plan cards and pay by card; a year costs the price of 10 months.',
     },
     {
-      q: 'Can I cancel whenever I want?',
-      a: 'Yes. You cancel in the customer portal and keep access until the end of the period you paid for. Refund terms are set out in the Refund and Cancellation Policy.',
+      q: 'How do I end my subscription?',
+      a: 'There is no automatic charge, so there is nothing to cancel: if you do not extend, panel access stops at the end of the period you paid for. Refund terms are set out in the Refund and Cancellation Policy.',
     },
     {
       q: 'How do you protect data?',
@@ -292,8 +296,12 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
       a: `Write to ${SUPPORT_EMAIL} or use the contact form. ${SUPPORT_HOURS.en} The help center has guides in Turkish and English.`,
     },
     {
+      q: 'How do the plans differ?',
+      a: 'Starter covers one business with QR codes, review links, alerts, replies and analytics. Growth covers up to 3 businesses and adds Pulse AI drafts, AI insights, the digital menu and surveys. Scale covers up to 10 businesses and adds replying to Google reviews from the panel. Every feature is on during the 14-day trial.',
+    },
+    {
       q: 'Which currency are prices in?',
-      a: 'All prices are in US dollars (USD) and are the same on the Turkish and English pages.',
+      a: 'This page shows prices in US dollars for reference. Card payments are taken in Turkish lira, and the card page shows the exact amount.',
     },
   ];
 }

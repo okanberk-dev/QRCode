@@ -169,6 +169,10 @@ export default async function DashboardLayout({
   if (isTrialExpired) {
     redirect(`/${locale}/pricing?trial=expired`);
   }
+  // A paid card period that ran out (CLAUDE.md §44): same gate as an expired trial.
+  if (user.plan === 'expired') {
+    redirect(`/${locale}/pricing?plan=expired`);
+  }
 
   // §22 franchise destekli scope — sidebar workspace switcher + downstream
   // page'ler doğru subset görür. Owner kendi sahip olduğu tüm restoranları,

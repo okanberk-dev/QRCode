@@ -128,6 +128,12 @@ export async function PATCH(
   }
   if (body.moduleKeys !== undefined) data.moduleKeys = normalizeModuleKeys(body.moduleKeys);
   if (body.modulesManaged !== undefined) data.modulesManaged = body.modulesManaged === true;
+  if (body.maxBusinesses !== undefined) {
+    const n = Number(body.maxBusinesses);
+    data.maxBusinesses = body.maxBusinesses === null || body.maxBusinesses === '' || !Number.isFinite(n) || n < 1
+      ? null
+      : Math.min(1000, Math.floor(n));
+  }
 
   if (errors.length) return NextResponse.json({ error: errors.join(' ') }, { status: 400 });
 
