@@ -47,6 +47,7 @@ const ICON_MAP: Record<string, typeof Trash2> = {
   'admin.users.delete': Trash2,
   'admin.members.deactivate': Trash2,
   'admin.restaurants.delete': Trash2,
+  'restaurant.delete': Trash2,
   'admin.impersonate.start': Eye,
   'admin.impersonate.end': Eye,
   'admin.permission.grant': ShieldAlert,

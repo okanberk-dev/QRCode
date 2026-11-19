@@ -27,10 +27,15 @@ import {
   PulseMenuItem,
   PulseSelect,
   Tabs,
-  type PlatformId,
 } from '@/components/ui';
 import { CreateQRWizard, type QRGenerationResult } from '@/components/panel/qr/CreateQRWizard';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
+import {
+  QR_PLATFORM_LABELS as PLATFORM_LABELS,
+  QR_PLATFORM_TO_CHIP as PLATFORM_TO_CHIP,
+  downloadQrPng,
+  qrDownloadErrorMessage,
+} from '@/components/panel/qr/qr-shared';
 import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 import { copyToClipboard } from '@/lib/clipboard';
 import { dedupeQrRows } from '@/lib/qr-signature';
@@ -87,28 +92,6 @@ type Scope = 'business' | 'all';
  *  instead of leaving the page on skeleton cards. */
 const HISTORY_TIMEOUT_MS = 15_000;
 
-const PLATFORM_TO_CHIP: Record<string, PlatformId> = {
-  google: 'google',
-  yemeksepeti: 'yemeksepeti',
-  getir: 'getir',
-  trendyol_go: 'trendyol_go',
-  tripadvisor: 'tripadvisor',
-  airbnb: 'airbnb',
-  booking: 'booking',
-  yandex: 'yandex',
-};
-
-const PLATFORM_LABELS: Record<string, string> = {
-  google: 'Google Maps',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir Yemek',
-  trendyol_go: 'Trendyol GO',
-  tripadvisor: 'Tripadvisor',
-  airbnb: 'Airbnb',
-  booking: 'Booking',
-  yandex: 'Yandex',
-};
-
 /** `/qr/history` returns a bare array; tolerate `{ data: [] }` too. */
 function parseHistoryRows(data: unknown, restaurantId: string): QrHistoryItem[] | null {
   const list = Array.isArray(data)
@@ -125,21 +108,6 @@ function parseHistoryRows(data: unknown, restaurantId: string): QrHistoryItem[] 
     .map((row) => ({ ...row, restaurantId }));
 }
 
-/** Same file-name rule as QRCard's "PNG indir", so the list and the card
- *  download the same QR under the same name. */
-function safeFileName(name: string): string {
-  return (
-    name
-      .replace(/ı/g, 'i')
-      .replace(/İ/g, 'I')
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9_-]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 60) || 'qr'
-  );
-}
 
 interface QrClientProps {
   initialRestaurants?: Restaurant[];
@@ -511,34 +479,9 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
     setDownloadingId(item.id);
     setPageError(null);
     try {
-      const query = new URLSearchParams({ format: 'png', width: '1080', style: 'plain' });
-      if (item.tableNumber) query.set('table', item.tableNumber);
-      if (item.platform) query.set('platform', item.platform);
-      // Stage 96 — keep the saved colour pair.
-      if (item.darkColor && item.lightColor) {
-        query.set('dark', item.darkColor);
-        query.set('light', item.lightColor);
-      }
-      const res = await fetch(`/api/restaurants/${item.restaurantId}/qr?${query.toString()}`);
-      if (!res.ok || !(res.headers.get('content-type') || '').includes('image/png')) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const blob = await res.blob();
-      if (blob.size < 100) throw new Error('Empty file');
-      const objUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objUrl;
-      a.download = `qr-${safeFileName(displayName(item))}.png`;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      // Deferred cleanup — revoking at once cancels the download on iOS Safari.
-      window.setTimeout(() => {
-        a.remove();
-        URL.revokeObjectURL(objUrl);
-      }, 1000);
-    } catch {
-      setPageError(isTr ? 'QR indirilemedi. Tekrar dene.' : 'Could not download the QR. Please try again.');
+      await downloadQrPng(item, displayName(item));
+    } catch (err) {
+      setPageError(qrDownloadErrorMessage(err, isTr));
     } finally {
       setDownloadingId(null);
     }

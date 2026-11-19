@@ -126,7 +126,7 @@ export async function runRatingDropAlert(): Promise<Summary> {
         baselineAvg: Math.round(baselineAvg * 10) / 10,
         delta: Math.round(delta * 10) / 10,
         reviewCount: currentCount,
-        inboxUrl: `${appUrl}/${userLocale}/dashboard/feedbacks?filter=low`,
+        inboxUrl: `${appUrl}/${userLocale}/dashboard/feedbacks?tab=low`,
         locale: userLocale,
       });
       if (ok) {

@@ -31,7 +31,9 @@ function parseCustomRange(
   if (endMs <= startMs) return null;
   const days = Math.round((endMs - startMs) / (24 * 60 * 60 * 1000));
   if (days < 1 || days > 365) return null;
-  return { start: new Date(startMs), end: new Date(endMs) };
+  // End date is inclusive, same window as the analytics page: reviews left
+  // on the last day belong in the export too.
+  return { start: new Date(startMs), end: new Date(endMs + 24 * 60 * 60 * 1000 - 1) };
 }
 
 function csvEscape(value: string | number | null | undefined): string {

@@ -1,15 +1,17 @@
 'use client';
 
-import { ArrowLeft, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, Star, UserPlus } from 'lucide-react';
+import { ArrowLeft, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, UserPlus } from 'lucide-react';
 import { AlertBanner, PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
 import { FeedbackStatusChips } from '@/components/dashboard/feedbacks/FeedbackStatusChips';
-import FeedbackTimeline from '@/components/dashboard/feedbacks/FeedbackTimeline';
-import { buildFeedbackTimeline } from '@/lib/feedback-timeline';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone, SentReply } from './types';
 import { formatDateTime, formatStamp, platformIconId, platformLabel, timeAgoLabel } from './utils';
-import { AdminPulseAiCard, AdminReplyComposerCard } from './AdminFeedbackReplyComposer';
+import {
+  ADMIN_REPLY_TEXTAREA_ID,
+  AdminPulseAiCard,
+  AdminReplyComposerCard,
+} from './AdminFeedbackReplyComposer';
 
 interface AdminFeedbackDetailProps {
   feedback: FeedbackRow;
@@ -87,8 +89,13 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
   const isFlagged = active.isFlagged === true;
   const isAssigned = active.isAssigned === true;
   const isHigh = active.rating >= 4;
-  // Admin reply condition (unchanged): low/mid rating and not replied yet.
-  const canReply = !isHigh && !active.isReplied;
+  // A failed e-mail still stores the reply (the review counts as replied),
+  // so the composer stays open after a failed last send for a retry
+  // (owner inbox parity).
+  const lastReplyFailed =
+    sentReplies.length > 0 && sentReplies[sentReplies.length - 1]?.status === 'failed';
+  const canReply = !isHigh && (!active.isReplied || lastReplyFailed);
+  const showAiCard = !isHigh && !active.isReplied;
 
   const flagLabel = isTr
     ? isFlagged
@@ -216,20 +223,6 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                   <time dateTime={active.createdAt}>{formatDateTime(active.createdAt, isTr)}</time>
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className="inline-flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star
-                        key={i}
-                        size={16}
-                        strokeWidth={1.8}
-                        aria-hidden="true"
-                        className={i <= active.rating ? 'fill-[#0A0A0A] text-[#0A0A0A]' : 'text-[#D4D4D4]'}
-                      />
-                    ))}
-                    <span className="ml-1.5 text-[13px] font-semibold text-[#0A0A0A]">
-                      {active.rating} / 5
-                    </span>
-                  </span>
                   <FeedbackStatusChips feedback={active} isTr={isTr} showAssigned />
                 </div>
               </div>
@@ -302,6 +295,27 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                       <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-[#0A0A0A]">
                         {rep.body}
                       </p>
+                      {failed && (
+                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
+                          <span>
+                            {isTr
+                              ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
+                              : 'This reply could not be sent. Edit and re-send?'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              props.setDraft(rep.body);
+                              requestAnimationFrame(() =>
+                                document.getElementById(ADMIN_REPLY_TEXTAREA_ID)?.focus(),
+                              );
+                            }}
+                            className="bz-btn-primary bz-btn-sm shrink-0"
+                          >
+                            {isTr ? 'Yeniden dene' : 'Retry'}
+                          </button>
+                        </div>
+                      )}
                     </li>
                   );
                 })}
@@ -309,7 +323,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             </div>
           )}
 
-          {sentLoading && sentReplies.length === 0 && (
+          {sentLoading && sentReplies.length === 0 && active.isReplied && (
             <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
               <Loader2 size={12} className="animate-spin" aria-hidden="true" />
               {isTr ? 'Gönderilen yanıtlar yükleniyor…' : 'Loading sent replies…'}
@@ -317,7 +331,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
           )}
 
           {/* Pulse AI (low rating, not replied) or a gate. */}
-          {canReply ? (
+          {showAiCard ? (
             <AdminPulseAiCard
               isTr={isTr}
               suggesting={props.suggesting}
@@ -346,7 +360,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                 </span>
               </AlertBanner>
             </div>
-          ) : (
+          ) : lastReplyFailed ? null : (
             // Right after a successful send the composer unmounts (the review
             // is now replied), so its status line would vanish with it — the
             // gate carries the confirmation instead.
@@ -371,26 +385,6 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             </div>
           )}
 
-          {/* §38.33 — timeline (received + replies), owner parity. */}
-          <div className="mt-6">
-            <FeedbackTimeline
-              events={buildFeedbackTimeline({
-                feedback: {
-                  id: active.id,
-                  createdAt: new Date(active.createdAt),
-                  platform: active.platform,
-                },
-                replies: sentReplies.map((r) => ({
-                  id: r.id,
-                  createdAt: new Date(r.createdAt),
-                  source: null,
-                  channel: r.channel,
-                })),
-                isTr,
-              })}
-              isTr={isTr}
-            />
-          </div>
         </div>
       </div>
 

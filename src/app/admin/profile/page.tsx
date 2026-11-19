@@ -4,14 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Loader2, User, Key, Check, Mail, ShieldCheck, AlertCircle, Globe } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { adminRoleLabel } from '@/components/admin/admin-nav';
 import ProfileSkeleton from './loading';
-
-const ROLE_LABEL: Record<string, string> = {
-  superadmin: 'Süper yönetici',
-  manager: 'Yönetici',
-  restaurant_owner: 'İşletme sahibi',
-  staff: 'Personel',
-};
 
 interface ProfileData {
   id: string;
@@ -200,7 +194,7 @@ export default function AdminProfilePage() {
               {profile?.username}
             </div>
             <div className="mt-1 text-[12px] text-[#737373]">
-              {ROLE_LABEL[profile?.role ?? ''] ?? profile?.role ?? '—'}
+              {profile?.role ? adminRoleLabel(profile.role, isTr ? 'tr' : 'en') : '—'}
               {isEnvAdmin && ' · Varsayılan hesap'}
             </div>
           </div>

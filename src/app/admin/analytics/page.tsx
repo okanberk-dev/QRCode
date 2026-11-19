@@ -14,6 +14,8 @@ import { HeatmapDayHour } from '@/components/dashboard/analytics/HeatmapDayHour'
 import { AiInsightsCard } from '@/components/dashboard/analytics/AiInsightsCard';
 import AdminAnalyticsExtras from '@/components/admin/AdminAnalyticsExtras';
 import { buildPanelAnalyticsData } from '@/lib/panel-analytics-data';
+import { hasPermission } from '@/lib/rbac';
+import { adminLandingPath } from '@/lib/admin-landing';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +68,11 @@ export default async function AdminAnalyticsPage({
   const currentParams = { range: sp.range, platform: sp.platform };
 
   const adminId = getStringClaim(payload, 'id') || 'env-admin';
+  // Staff has no business scope: without `analytics:read` it must not see
+  // every tenant's numbers (the sidebar hid the link, the page did not check).
+  if (role === 'staff' && !(await hasPermission(adminId, 'analytics', 'read'))) {
+    redirect(await adminLandingPath(adminId, role, '/admin/analytics'));
+  }
   const tokenRestaurantId = getStringClaim(payload, 'restaurantId');
   const adminUser = adminId !== 'env-admin'
     ? await prisma.adminUser.findUnique({

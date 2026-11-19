@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import {
   deriveCustomerFields,
@@ -76,6 +77,12 @@ export async function GET(req: NextRequest) {
   if (!actor) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
 
   // Owner-only endpoint — superadmin null scope (admin'in kendi /export'u var).
+  // Admin accounts need the same `customers:read` grant as
+  // /api/admin/customers — without it a restaurant-scoped manager could
+  // read the customer list through this owner endpoint instead.
+  if (actor.source === 'admin' && !(await hasPermission(actor.id, 'customers', 'read'))) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
   const scopedIds = await getScopedRestaurantIds(actor);
   if (scopedIds === null) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 });

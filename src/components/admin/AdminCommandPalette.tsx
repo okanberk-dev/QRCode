@@ -1,24 +1,23 @@
 'use client';
 
 /**
- * Admin Cmd+K command palette (§38.219 Stage 139).
- *
- * Owner CommandPalette paterninin admin variant'ı (CLAUDE.md §38.B Stage
- * 110 + §38.D Custom Event broadcast paterni).
+ * Admin Cmd+K command palette.
  *
  * Trigger paths:
  *   • Cmd+K (Mac) / Ctrl+K (Win) — global keyboard listener
- *   • `buaze:admin-search-open` CustomEvent — dispatched by topbar/sidebar
- *     buttons. Single palette instance handles both desktop + mobile entry.
+ *   • `buaze:admin-search-open` CustomEvent — dispatched by the topbar and
+ *     the mobile top bar. One palette instance serves both.
  *
- * Search sources:
- *   1. Static nav (Dashboard, İşletmeler, Aboneliklier, vb.) — instant filter
- *   2. Recent restaurants (top 8 by createdAt desc) — lazy fetch on open
- *   3. Recent customers (top 8) — lazy fetch on open
+ * Sources:
+ *   1. Pages — the shared admin navigation (admin-nav.ts), already filtered
+ *      by role and staff grants. Matched instantly on the client.
+ *   2. Businesses and customers — the latest few when the query is empty,
+ *      a server-side search once two characters are typed (same behaviour as
+ *      the owner palette). Only offered when the admin can open the
+ *      matching list page.
  *
- * Modal a11y baseline: focus trap (input auto-focus), ESC + outside click
- * close, ↑↓ navigate, Enter select. Reduced-motion respects globals.css
- * blanket.
+ * a11y: input auto-focus, focus restored on close, ESC + backdrop close,
+ * ↑↓ move, Enter opens.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -33,18 +32,13 @@ import {
   Users,
   X,
 } from 'lucide-react';
-
-type AdminRole = 'superadmin' | 'manager' | 'restaurant_owner' | 'staff';
-
-interface NavItem {
-  href: string;
-  label: string;
-  keywords: string[];
-  /** Roles that see this page in AdminSidebar (same gates, kept in sync). */
-  roles: AdminRole[];
-  /** Staff-only RBAC grant (`resource:action`), mirroring the sidebar. */
-  permission?: string;
-}
+import { useAdminTranslation } from './AdminTranslationProvider';
+import {
+  getAdminNavLeaves,
+  toAdminNavRole,
+  type AdminNavLeaf,
+  type AdminNavLocale,
+} from './admin-nav';
 
 interface RestaurantHit {
   kind: 'restaurant';
@@ -66,56 +60,47 @@ type Hit =
   | RestaurantHit
   | CustomerHit;
 
-// Static admin route catalog — synced with AdminSidebar entries, including
-// its role / staff-permission gates. Without the gates the palette offered
-// superadmins workspace-only pages (Kampanyalar, Faturalandırma) that land on
-// the "Yönetici için değil" card.
-const ALL_ROLES: AdminRole[] = ['superadmin', 'manager', 'restaurant_owner', 'staff'];
-const SUPER_AND_STAFF: AdminRole[] = ['superadmin', 'staff'];
-const SUPER_ONLY: AdminRole[] = ['superadmin'];
-const OWNER_ONLY: AdminRole[] = ['restaurant_owner'];
+const RESULT_LIMIT = 8;
+const SEARCH_DEBOUNCE_MS = 250;
+const MIN_SEARCH_LENGTH = 2;
 
-const ADMIN_NAV: NavItem[] = [
-  { href: '/admin/dashboard', label: 'Dashboard', keywords: ['ana sayfa', 'home', 'genel görünüm'], roles: ALL_ROLES },
-  { href: '/admin/restaurants', label: 'İşletmeler', keywords: ['restoran', 'restaurant', 'business', 'list'], roles: SUPER_ONLY },
-  { href: '/admin/reviews', label: 'Yorumlar', keywords: ['feedback', 'review', 'puan'], roles: ALL_ROLES, permission: 'reviews:read' },
-  { href: '/admin/customers', label: 'Müşteriler', keywords: ['customer', 'son müşteriler'], roles: SUPER_AND_STAFF, permission: 'customers:read' },
-  { href: '/admin/qr', label: 'QR Yönetimi', keywords: ['qr', 'code', 'kod'], roles: ['superadmin', 'manager', 'restaurant_owner'] },
-  { href: '/admin/analytics', label: 'Analitik & Raporlar', keywords: ['analytics', 'reports', 'rapor', 'istatistik'], roles: ALL_ROLES, permission: 'analytics:read' },
-  { href: '/admin/members', label: 'İşletme Sahipleri', keywords: ['owner', 'members', 'sahip'], roles: SUPER_AND_STAFF, permission: 'members:read' },
-  { href: '/admin/users', label: 'Yöneticiler', keywords: ['admin users', 'staff', 'yönetici'], roles: SUPER_AND_STAFF, permission: 'users:read' },
-  { href: '/admin/billing', label: 'Faturalandırma', keywords: ['billing', 'fatura', 'ödeme'], roles: OWNER_ONLY },
-  { href: '/admin/plans', label: 'Abonelikler / Paketler', keywords: ['plans', 'subscription', 'fiyat', 'tier'], roles: SUPER_AND_STAFF, permission: 'plans:read' },
-  { href: '/admin/campaigns', label: 'Kampanyalar', keywords: ['campaigns', 'qr'], roles: OWNER_ONLY },
-  { href: '/admin/newsletters', label: 'Bülten Aboneleri', keywords: ['newsletter', 'subscribers'], roles: SUPER_AND_STAFF, permission: 'mail_templates:read' },
-  { href: '/admin/newsletters/campaigns', label: 'Bülten Kampanyaları', keywords: ['newsletter campaigns'], roles: SUPER_AND_STAFF, permission: 'mail_templates:read' },
-  { href: '/admin/mail-templates', label: 'Mail İçerikleri', keywords: ['mail templates', 'email content'], roles: SUPER_AND_STAFF, permission: 'mail_templates:read' },
-  { href: '/admin/audits/templates', label: 'Denetim Şablonları', keywords: ['audit templates', 'checklist'], roles: SUPER_ONLY },
-  { href: '/admin/audits/categories', label: 'Denetim Kategorileri', keywords: ['audit categories'], roles: SUPER_ONLY },
-  { href: '/admin/audits/stats', label: 'Denetim İstatistikleri', keywords: ['audit stats', 'analytics'], roles: SUPER_ONLY },
-  { href: '/admin/blog', label: 'Blog', keywords: ['blog', 'content', 'yazı'], roles: SUPER_AND_STAFF, permission: 'blog:read' },
-  { href: '/admin/announcements', label: 'Duyurular', keywords: ['announcements', 'banner'], roles: SUPER_AND_STAFF, permission: 'announcements:read' },
-  { href: '/admin/legal-documents', label: 'Hukuki Metinler', keywords: ['legal', 'kvkk', 'gizlilik'], roles: SUPER_ONLY },
-  { href: '/admin/site-settings', label: 'Site Ayarları', keywords: ['settings', 'site config'], roles: SUPER_AND_STAFF, permission: 'site_settings:read' },
-  { href: '/admin/api', label: 'API & Webhook', keywords: ['api', 'webhooks', 'integration', 'anahtar'], roles: SUPER_ONLY },
-  { href: '/admin/audit-logs', label: 'Denetim Kaydı', keywords: ['audit log', 'history', 'activity', 'kayıt'], roles: SUPER_ONLY },
-  { href: '/admin/google', label: 'Google Entegrasyonları', keywords: ['google', 'business profile', 'entegrasyon', 'integration'], roles: SUPER_ONLY },
-  { href: '/admin/profile', label: 'Profil', keywords: ['profile', 'hesap'], roles: ALL_ROLES },
-];
-
-/** Same visibility rule as AdminSidebar: role gate, then staff grant. */
-function navAllowed(item: NavItem, role: AdminRole, permissions: Set<string>): boolean {
-  if (!item.roles.includes(role)) return false;
-  if (role !== 'staff') return true;
-  // Staff sees only what an explicit grant opens (dashboard/profile have no gate).
-  return item.permission ? permissions.has(item.permission) : true;
-}
-
-function toAdminRole(value: unknown): AdminRole {
-  return value === 'superadmin' || value === 'restaurant_owner' || value === 'staff'
-    ? value
-    : 'manager';
-}
+const COPY: Record<
+  AdminNavLocale,
+  {
+    title: string;
+    placeholder: string;
+    close: string;
+    loading: string;
+    empty: string;
+    move: string;
+    open: string;
+    business: string;
+    customer: string;
+  }
+> = {
+  tr: {
+    title: 'Yönetim araması',
+    placeholder: 'Sayfa, işletme veya müşteri ara…',
+    close: 'Kapat',
+    loading: 'Yükleniyor…',
+    empty: 'Eşleşen sonuç yok.',
+    move: 'Gez',
+    open: 'Aç',
+    business: 'İşletme',
+    customer: 'Müşteri',
+  },
+  en: {
+    title: 'Admin search',
+    placeholder: 'Search pages, businesses or customers…',
+    close: 'Close',
+    loading: 'Loading…',
+    empty: 'No matching results.',
+    move: 'Move',
+    open: 'Open',
+    business: 'Business',
+    customer: 'Customer',
+  },
+};
 
 function normalize(s: string): string {
   return s
@@ -124,29 +109,95 @@ function normalize(s: string): string {
     .replace(/[̀-ͯ]/g, '');
 }
 
-function navMatches(item: NavItem, q: string): boolean {
+function navMatches(item: AdminNavLeaf, q: string): boolean {
   if (!q) return true;
   const nq = normalize(q);
-  if (normalize(item.label).includes(nq)) return true;
-  return item.keywords.some((k) => normalize(k).includes(nq));
+  if (normalize(item.label.tr).includes(nq) || normalize(item.label.en).includes(nq)) return true;
+  return (item.keywords ?? []).some((k) => normalize(k).includes(nq));
 }
 
-export default function AdminCommandPalette() {
+function parseRestaurants(data: unknown): RestaurantHit[] {
+  const body = data as { data?: unknown; items?: unknown } | null;
+  const items = Array.isArray(body?.data) ? body.data : Array.isArray(body?.items) ? body.items : [];
+  const out: RestaurantHit[] = [];
+  for (const r of items.slice(0, RESULT_LIMIT) as Array<Record<string, unknown>>) {
+    if (r && typeof r.id === 'string' && typeof r.name === 'string') {
+      out.push({
+        kind: 'restaurant',
+        id: r.id,
+        name: r.name,
+        category: typeof r.category === 'string' ? r.category : null,
+      });
+    }
+  }
+  return out;
+}
+
+function parseCustomers(data: unknown): CustomerHit[] {
+  const body = data as { data?: unknown } | null;
+  const items = Array.isArray(body?.data) ? body.data : [];
+  const out: CustomerHit[] = [];
+  for (const c of items.slice(0, RESULT_LIMIT) as Array<Record<string, unknown>>) {
+    // Rows are keyed by `key` (restaurant + contact); older payloads used `id`.
+    const id = typeof c?.key === 'string' ? c.key : typeof c?.id === 'string' ? c.id : null;
+    if (!id) continue;
+    out.push({
+      kind: 'customer',
+      id,
+      name: typeof c.name === 'string' ? c.name : null,
+      email: typeof c.email === 'string' ? c.email : null,
+      restaurantName: typeof c.restaurantName === 'string' ? c.restaurantName : null,
+    });
+  }
+  return out;
+}
+
+async function fetchJson(url: string, signal?: AbortSignal): Promise<unknown> {
+  try {
+    const res = await fetch(url, { cache: 'no-store', signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+const NO_PERMISSIONS: string[] = [];
+
+interface AdminCommandPaletteProps {
+  /** Admin role resolved by the layout (no extra /api/admin/me round-trip). */
+  role: string;
+  /** Staff grants in `resource:action` form. */
+  permissions?: string[];
+}
+
+export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS }: AdminCommandPaletteProps) {
   const router = useRouter();
+  const { locale } = useAdminTranslation();
+  const navLocale: AdminNavLocale = locale === 'en' ? 'en' : 'tr';
+  const copy = COPY[navLocale];
+
+  const navLeaves = useMemo(
+    () => getAdminNavLeaves(toAdminNavRole(role), new Set(permissions)),
+    [role, permissions],
+  );
+  const canSeeRestaurants = navLeaves.some((leaf) => leaf.href === '/admin/restaurants');
+  const canSeeCustomers = navLeaves.some((leaf) => leaf.href === '/admin/customers');
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [recent, setRecent] = useState<{
-    restaurants: RestaurantHit[];
-    customers: CustomerHit[];
-  }>({ restaurants: [], customers: [] });
-  const [recentLoading, setRecentLoading] = useState(false);
-  const [recentLoaded, setRecentLoaded] = useState(false);
-  // Actor role + staff grants (from /api/admin/me) — nav entries are hidden
-  // until known so a superadmin never sees workspace-only pages.
-  const [access, setAccess] = useState<{ role: AdminRole; permissions: Set<string> } | null>(null);
+  const [debounced, setDebounced] = useState('');
+  const [recent, setRecent] = useState<{ restaurants: RestaurantHit[]; customers: CustomerHit[] }>({
+    restaurants: [],
+    customers: [],
+  });
+  const [found, setFound] = useState<{ restaurants: RestaurantHit[]; customers: CustomerHit[] }>({
+    restaurants: [],
+    customers: [],
+  });
+  const [loading, setLoading] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
   // Keyboard shortcut + custom event listener.
@@ -167,98 +218,75 @@ export default function AdminCommandPalette() {
     };
   }, []);
 
-  // Focus management — restore focus on close (a11y baseline).
+  // Focus management — restore focus on close.
   useEffect(() => {
     if (open) {
       previouslyFocused.current = document.activeElement as HTMLElement;
-      // Focus the input after the modal mounts in DOM.
       const t = window.setTimeout(() => inputRef.current?.focus(), 30);
       return () => window.clearTimeout(t);
-    } else {
-      const prev = previouslyFocused.current;
-      if (prev && typeof prev.focus === 'function') prev.focus();
-      // Reset state on close.
-      setQuery('');
-      setActiveIdx(0);
     }
+    const prev = previouslyFocused.current;
+    if (prev && typeof prev.focus === 'function') prev.focus();
+    setQuery('');
+    setDebounced('');
+    setActiveIdx(0);
   }, [open]);
 
-  // Lazy load actor access + recent restaurants/customers on first open.
-  //
-  // Guarded by a ref instead of `recentLoading` in the deps: the previous
-  // version re-ran the effect when it flipped `recentLoading` to true, whose
-  // cleanup cancelled the in-flight load — so the list (and now the role
-  // gate) never resolved and the palette sat on "Yükleniyor…". `mountedRef`
-  // only guards against setting state after unmount.
-  const loadStartedRef = useRef(false);
-  const mountedRef = useRef(true);
+  // Latest businesses / customers, loaded once on first open.
+  const recentStartedRef = useRef(false);
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-  useEffect(() => {
-    if (!open || loadStartedRef.current) return;
-    loadStartedRef.current = true;
-    setRecentLoading(true);
-    // Role gate resolves on its own so nav entries appear as soon as
-    // /api/admin/me answers, without waiting for the recent-list fetches.
-    fetch('/api/admin/me')
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null)
-      .then((me) => {
-        if (!mountedRef.current) return;
-        setAccess({
-          role: toAdminRole(me?.role),
-          permissions: new Set(Array.isArray(me?.permissions) ? (me.permissions as string[]) : []),
-        });
-      });
+    if (!open || recentStartedRef.current) return;
+    if (!canSeeRestaurants && !canSeeCustomers) return;
+    recentStartedRef.current = true;
+    let cancelled = false;
+    setLoading(true);
     (async () => {
-      try {
-        const [restRes, custRes] = await Promise.all([
-          // /api/restaurants admin actor için admin liste shape döner
-          // (Stage 138 §38.218 paralel — admin page'i de aynı endpoint'i
-          // kullanır). limit=8 son eklenen 8 işletme.
-          fetch('/api/restaurants?limit=8', { cache: 'no-store' }).catch(() => null),
-          fetch('/api/admin/customers?limit=8', { cache: 'no-store' }).catch(() => null),
-        ]);
-        if (!mountedRef.current) return;
-        const restaurants: RestaurantHit[] = [];
-        if (restRes && restRes.ok) {
-          const data = await restRes.json().catch(() => null);
-          const items = Array.isArray(data?.data) ? data.data : Array.isArray(data?.items) ? data.items : [];
-          for (const r of items.slice(0, 8)) {
-            if (r && typeof r.id === 'string' && typeof r.name === 'string') {
-              restaurants.push({ kind: 'restaurant', id: r.id, name: r.name, category: r.category ?? null });
-            }
-          }
-        }
-        const customers: CustomerHit[] = [];
-        if (custRes && custRes.ok) {
-          const data = await custRes.json().catch(() => null);
-          const items = Array.isArray(data?.data) ? data.data : [];
-          for (const c of items.slice(0, 8)) {
-            if (c && typeof c.id === 'string') {
-              customers.push({
-                kind: 'customer',
-                id: c.id,
-                name: typeof c.name === 'string' ? c.name : null,
-                email: typeof c.email === 'string' ? c.email : null,
-                restaurantName: c.restaurantName ?? null,
-              });
-            }
-          }
-        }
-        if (mountedRef.current) {
-          setRecent({ restaurants, customers });
-          setRecentLoaded(true);
-        }
-      } finally {
-        if (mountedRef.current) setRecentLoading(false);
-      }
+      const [restData, custData] = await Promise.all([
+        canSeeRestaurants ? fetchJson(`/api/restaurants?status=all&limit=${RESULT_LIMIT}`) : null,
+        canSeeCustomers ? fetchJson(`/api/admin/customers?limit=${RESULT_LIMIT}`) : null,
+      ]);
+      if (cancelled) return;
+      setRecent({ restaurants: parseRestaurants(restData), customers: parseCustomers(custData) });
+      setLoading(false);
     })();
-  }, [open]);
+    return () => {
+      cancelled = true;
+    };
+  }, [open, canSeeRestaurants, canSeeCustomers]);
+
+  // Debounce the query so typing does not fire a request per keystroke.
+  useEffect(() => {
+    if (!open) return;
+    const id = window.setTimeout(() => setDebounced(query.trim()), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [query, open]);
+
+  // Server-side search — the recent lists only hold a handful of rows, so
+  // filtering them locally could never find an older business or customer.
+  useEffect(() => {
+    if (!open) return;
+    if (debounced.length < MIN_SEARCH_LENGTH || (!canSeeRestaurants && !canSeeCustomers)) {
+      setFound({ restaurants: [], customers: [] });
+      return;
+    }
+    const controller = new AbortController();
+    const q = encodeURIComponent(debounced);
+    setLoading(true);
+    (async () => {
+      const [restData, custData] = await Promise.all([
+        canSeeRestaurants
+          ? fetchJson(`/api/restaurants?status=all&limit=${RESULT_LIMIT}&search=${q}`, controller.signal)
+          : null,
+        canSeeCustomers
+          ? fetchJson(`/api/admin/customers?range=all&limit=${RESULT_LIMIT}&search=${q}`, controller.signal)
+          : null,
+      ]);
+      if (controller.signal.aborted) return;
+      setFound({ restaurants: parseRestaurants(restData), customers: parseCustomers(custData) });
+      setLoading(false);
+    })();
+    return () => controller.abort();
+  }, [debounced, open, canSeeRestaurants, canSeeCustomers]);
 
   // Body scroll lock.
   useEffect(() => {
@@ -270,50 +298,34 @@ export default function AdminCommandPalette() {
     };
   }, [open]);
 
-  const filteredHits = useMemo<Hit[]>(() => {
+  const hits = useMemo<Hit[]>(() => {
     const q = query.trim();
-    const allowedNav = access
-      ? ADMIN_NAV.filter((it) => navAllowed(it, access.role, access.permissions))
-      : [];
-    const navHits: Hit[] = allowedNav.filter((it) => navMatches(it, q)).map((it) => ({
-      kind: 'nav' as const,
-      href: it.href,
-      label: it.label,
-    }));
-    if (!q) {
-      // No query → just static nav items + recent (no filter on recent).
-      return [
-        ...navHits.slice(0, 12),
-        ...recent.restaurants,
-        ...recent.customers,
-      ];
+    const navHits: Hit[] = navLeaves
+      .filter((leaf) => navMatches(leaf, q))
+      .map((leaf) => ({ kind: 'nav' as const, href: leaf.href, label: leaf.label[navLocale] }));
+    if (q.length < MIN_SEARCH_LENGTH) {
+      return [...navHits.slice(0, 12), ...recent.restaurants, ...recent.customers];
     }
-    const nq = normalize(q);
-    const restHits: Hit[] = recent.restaurants.filter((r) => normalize(r.name).includes(nq));
-    const custHits: Hit[] = recent.customers.filter((c) => {
-      if (c.name && normalize(c.name).includes(nq)) return true;
-      if (c.email && normalize(c.email).includes(nq)) return true;
-      return false;
-    });
-    return [...navHits, ...restHits, ...custHits];
-  }, [query, recent, access]);
+    return [...navHits, ...found.restaurants, ...found.customers];
+  }, [query, navLeaves, navLocale, recent, found]);
 
   const navigate = useCallback(
     (hit: Hit) => {
       let href: string;
       if (hit.kind === 'nav') href = hit.href;
       else if (hit.kind === 'restaurant') href = `/admin/restaurants/${hit.id}`;
-      else href = `/admin/customers?focus=${hit.id}`;
+      // The customers page opens its detail drawer from `?detail=<row key>`.
+      else href = `/admin/customers?detail=${encodeURIComponent(hit.id)}`;
       setOpen(false);
       router.push(href);
     },
     [router],
   );
 
-  // Keep activeIdx clamped.
+  // Keep the selection inside the list as results change.
   useEffect(() => {
-    if (activeIdx >= filteredHits.length) setActiveIdx(Math.max(0, filteredHits.length - 1));
-  }, [filteredHits, activeIdx]);
+    if (activeIdx >= hits.length) setActiveIdx(Math.max(0, hits.length - 1));
+  }, [hits, activeIdx]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') {
@@ -323,7 +335,7 @@ export default function AdminCommandPalette() {
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIdx((i) => Math.min(filteredHits.length - 1, i + 1));
+      setActiveIdx((i) => Math.min(hits.length - 1, i + 1));
       return;
     }
     if (e.key === 'ArrowUp') {
@@ -333,7 +345,7 @@ export default function AdminCommandPalette() {
     }
     if (e.key === 'Enter') {
       e.preventDefault();
-      const hit = filteredHits[activeIdx];
+      const hit = hits[activeIdx];
       if (hit) navigate(hit);
     }
   };
@@ -344,7 +356,7 @@ export default function AdminCommandPalette() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Admin arama"
+      aria-label={copy.title}
       onKeyDown={onKeyDown}
       className="fixed inset-0 z-[60] flex items-start justify-center bg-[#0A0A0A]/40 backdrop-blur-sm p-4 pt-[12vh] sm:pt-[18vh]"
       onClick={() => setOpen(false)}
@@ -354,7 +366,11 @@ export default function AdminCommandPalette() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-[#EDEDED] px-4 py-3">
-          <SearchIcon size={16} className="text-[#737373]" aria-hidden />
+          {loading ? (
+            <Loader2 size={16} className="animate-spin text-[#737373]" aria-hidden />
+          ) : (
+            <SearchIcon size={16} className="text-[#737373]" aria-hidden />
+          )}
           <input
             ref={inputRef}
             type="search"
@@ -363,36 +379,35 @@ export default function AdminCommandPalette() {
               setQuery(e.target.value);
               setActiveIdx(0);
             }}
-            placeholder="Sayfa, işletme veya müşteri ara…"
-            className="flex-1 border-0 bg-transparent text-[15px] text-[#0A0A0A] placeholder:text-[#A3A3A3] focus:outline-none"
-            aria-label="Admin arama"
+            placeholder={copy.placeholder}
+            className="flex-1 border-0 bg-transparent text-[16px] text-[#0A0A0A] placeholder:text-[#A3A3A3] focus:outline-none sm:text-[15px]"
+            aria-label={copy.title}
             autoComplete="off"
           />
           <button
             type="button"
             onClick={() => setOpen(false)}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#737373] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
-            aria-label="Kapat"
+            aria-label={copy.close}
           >
             <X size={14} aria-hidden />
           </button>
         </div>
 
-        <div ref={listRef} className="max-h-[60vh] overflow-y-auto p-2">
-          {recentLoading && !recentLoaded && (
-            <div className="flex items-center gap-2 px-3 py-3 text-[12px] text-[#737373]">
-              <Loader2 size={12} className="animate-spin" aria-hidden />
-              Yükleniyor…
-            </div>
-          )}
-          {filteredHits.length === 0 ? (
-            recentLoading && !recentLoaded ? null : (
-              <p className="px-3 py-6 text-center text-[13px] text-[#737373]">
-                Eşleşen sonuç yok.
-              </p>
-            )
+        <div className="max-h-[60vh] overflow-y-auto p-2">
+          {hits.length === 0 ? (
+            <p className="px-3 py-6 text-center text-[13px] text-[#737373]" aria-live="polite">
+              {loading ? copy.loading : copy.empty}
+            </p>
           ) : (
-            <PaletteList hits={filteredHits} activeIdx={activeIdx} onClick={navigate} onHover={setActiveIdx} />
+            <PaletteList
+              hits={hits}
+              activeIdx={activeIdx}
+              onClick={navigate}
+              onHover={setActiveIdx}
+              businessLabel={copy.business}
+              customerLabel={copy.customer}
+            />
           )}
         </div>
 
@@ -400,17 +415,17 @@ export default function AdminCommandPalette() {
           <span className="inline-flex items-center gap-1">
             <KeyHint icon={<ArrowUp size={9} aria-hidden />} />
             <KeyHint icon={<ArrowDown size={9} aria-hidden />} />
-            <span>Gez</span>
+            <span>{copy.move}</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <KeyHint icon={<CornerDownLeft size={9} aria-hidden />} />
-            <span>Aç</span>
+            <span>{copy.open}</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <kbd className="rounded border border-[#EDEDED] bg-white px-1.5 py-0.5 font-mono text-[9px] uppercase">
               Esc
             </kbd>
-            <span>Kapat</span>
+            <span>{copy.close}</span>
           </span>
         </div>
       </div>
@@ -423,11 +438,15 @@ function PaletteList({
   activeIdx,
   onClick,
   onHover,
+  businessLabel,
+  customerLabel,
 }: {
   hits: Hit[];
   activeIdx: number;
   onClick: (hit: Hit) => void;
   onHover: (idx: number) => void;
+  businessLabel: string;
+  customerLabel: string;
 }) {
   return (
     <div role="listbox" className="space-y-0.5">
@@ -448,11 +467,7 @@ function PaletteList({
           >
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
-                hit.kind === 'restaurant'
-                  ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                  : hit.kind === 'customer'
-                    ? 'bg-[#FAFAFA] text-[#525252]'
-                    : 'bg-[#FAFAFA] text-[#525252]'
+                hit.kind === 'restaurant' ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#FAFAFA] text-[#525252]'
               }`}
               aria-hidden
             >
@@ -470,14 +485,14 @@ function PaletteList({
                   ? hit.label
                   : hit.kind === 'restaurant'
                     ? hit.name
-                    : hit.name || hit.email || `Müşteri ${hit.id.slice(0, 6)}`}
+                    : hit.name || hit.email || customerLabel}
               </span>
               <span className="block truncate text-[11px] text-[#737373]">
                 {hit.kind === 'nav'
                   ? hit.href
                   : hit.kind === 'restaurant'
-                    ? hit.category || 'İşletme'
-                    : hit.restaurantName || hit.email || 'Müşteri'}
+                    ? hit.category || businessLabel
+                    : hit.restaurantName || hit.email || customerLabel}
               </span>
             </span>
           </button>

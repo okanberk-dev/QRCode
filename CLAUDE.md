@@ -81,7 +81,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 ### IDOR koruması
 `getPanelActorFromRequest()` `src/lib/auth.ts`'te (auth + JWT verify); `getScopedRestaurantIds()` + `canAccessRestaurant()` `src/lib/panel-access.ts`'te (route'a bağımsız scope helper'ları). Bu üçünü **her yeni API route'unda** kullan. `/api/feedback/*` ve `/api/restaurants/*` için zorunlu.
 
-Örnek pattern (`src/app/api/feedback/stats/route.ts`'e bak):
+Örnek pattern (`src/app/api/feedback/counts/route.ts`'e bak):
 ```ts
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -107,7 +107,7 @@ Stripe/Linear/Vercel disiplini — her entity için tek terim. **"Üyeler" süpe
 | **Yöneticiler** | `/admin/users` | `AdminUser` (`role='manager'\|'superadmin'`) | Buaze iç ekibi + restoran operatör hesapları |
 | **Müşteriler** | `/admin/customers` | `Feedback` (KVKK-onaylı, dedupe) | İşletmelerin son-müşterileri — QR'dan form dolduranlar |
 
-> **Owner panelindeki `/admin/team`** ayrı scope: işletme sahibinin kendi ekibi (`TeamMember`). Sidebar label **Ekip**, "Üye davet et" butonu burada doğru.
+> **Owner panelindeki ekip ayarları** (`/dashboard/account`, Ekip bölümü) ayrı scope: işletme sahibinin kendi ekibi (`TeamMember`). Sidebar label **Ekip**, "Üye davet et" butonu burada doğru.
 
 **API URL'leri değişmedi** (backward compat):
 - `/api/admin/members` → User CRUD
@@ -129,10 +129,10 @@ Müşteri QR'dan gelirken URL'de `platform` parametresi taşıyor: **10 yorum pl
 
 Renkler & label haritası şu dosyalarda tekrarlanıyor (ortak modüle çıkarma kararı: **hayır** — abstraction kaçınma ilkesi):
 - `src/components/admin/FeedbackTable.tsx` → `PLATFORM_CONFIG`
-- `src/components/admin/PlatformDistribution.tsx` → `PLATFORM_COLORS` (tek platform dağılım bileşeni — hem admin hem owner panelinde kullanılıyor)
+- `src/components/panel/qr/qr-shared.ts` → `QR_PLATFORM_TO_CHIP` + `QR_PLATFORM_LABELS` (QR kartı + owner/admin QR listesi, 10 platform)
 - `src/app/admin/qr/page.tsx` → `PLATFORM_BADGE`
 
-Yeni bir platform eklemek gerekirse (CLAUDE.md §19.4.3 paterni): `PROVIDER_DOMAINS` + `PROVIDER_LABELS` + `PROVIDER_MAP` + `PLATFORM_ID_TO_PROVIDER` + `PROVIDER_FIELDS` + (varsa) `PATH_RULES` + `VALID_PROVIDERS` + `FeedbackTable PLATFORM_CONFIG` + `PlatformDistribution PLATFORM_COLORS` + `admin/qr PLATFORM_BADGE` + `SECTOR_PLATFORMS` + `prisma/schema.prisma` `Restaurant.{provider}Url`/`{provider}Enabled` field + QR public akışına (`/r/[slug]`).
+Yeni bir platform eklemek gerekirse (CLAUDE.md §19.4.3 paterni): `PROVIDER_DOMAINS` + `PROVIDER_LABELS` + `PROVIDER_MAP` + `PLATFORM_ID_TO_PROVIDER` + `PROVIDER_FIELDS` + (varsa) `PATH_RULES` + `VALID_PROVIDERS` + `qr-shared.ts QR_PLATFORM_LABELS/TO_CHIP` + `SECTOR_PLATFORMS` + `prisma/schema.prisma` `Restaurant.{provider}Url`/`{provider}Enabled` field + QR public akışına (`/r/[slug]`).
 
 ### 5.1 Google Maps / Business Profile entegrasyonu (2026-05)
 
@@ -267,8 +267,7 @@ Kalan production düzeltmeleri ayrı PR'larla, bu sırada ilerlemeli:
 6. **Task 8 — Prisma 7 upgrade**: En son ve ayrı major-version branch. Prisma 7 breaking-change rehberi okunmadan yapılmaz.
 
 ### Platform dağılımı nerede gösteriliyor?
-- **Admin paneli** (`src/app/admin/dashboard/page.tsx`) → `<PlatformDistribution>` (detaylı bar chart + pills). Eskiden üstte ayrı bir "Platform Mini Cards" grid'i vardı — duplikasyon olduğu için kaldırıldı (2026-04).
-- **Owner paneli** (`src/components/dashboard/RestaurantAnalyticsPanel.tsx`) → `<PlatformDistribution>`. Aynı bileşen. Mobile'da da tam görünür (bar chart flex-wrap + `w-24 sm:w-28` label).
+- Owner + admin analitik sayfalarında `ChannelDistributionMini` (`src/components/dashboard/analytics/`). Eski `PlatformDistribution` / `TrendsChart` 2026-11'de kullanılmadığı için silindi (§38.257).
 
 ---
 
@@ -442,7 +441,7 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 - **Signature buton**: `bg-[#C6F24E] text-[#0A0A0A]` (lime CTA) veya `bg-[#0A0A0A] text-white` (koyu CTA); hover'da `bg-[#A8D62E]` / `bg-[#1A1A1A]`.
 
 ### Dokunulmayan platform brand hex'leri
-`#4285F4` (Google), `#FA0050` (Yemeksepeti), `#5D3EBC` (Getir), `#F27A1A` (Trendyol GO) — `FeedbackTable.tsx`, `PlatformDistribution.tsx`, `admin/qr/page.tsx` içinde resmi marka renkleri olarak korunur.
+`#4285F4` (Google), `#FA0050` (Yemeksepeti), `#5D3EBC` (Getir), `#F27A1A` (Trendyol GO) — `PlatformChip` (`src/components/ui/PlatformChip.tsx`) içinde resmi marka renkleri olarak korunur.
 
 ### Ses & Ton (Pulse Voice)
 **Yap:** Net · Ölçülü · Güvenli · Doğrudan · Profesyonel Türkçe
@@ -1101,7 +1100,7 @@ Diğer 7 provider (yandex, getir, instagram, facebook, whatsapp, website, reserv
 
 **Hard block kuralı:** UI save action sadece `severity === 'error'` durumlarında engellenir. Warning'ler **save'i geçirir** ama amber AlertTriangle satırı kalıcı görünür → owner "ben bilerek koydum, legacy import" dese de yine de hatasını fark eder. Soft warning her zaman dismissible değil — alanı düzeltene kadar görünür.
 
-**Kullanım pattern'i (`BusinessIntegrationSettings.tsx`):**
+**Kullanım pattern'i (platform sayfası / sihirbazı):**
 ```ts
 const result = checkProviderUrl(provider, url);
 if (!result.ok) {
@@ -1149,10 +1148,12 @@ Owner panel `BusinessIntegrationSettings.tsx` "Test et" butonu artık sonucu DB'
 - `PROVIDER_MAP` import'unu `integration-domains.ts`'ten yapma — orada sadece `PROVIDER_DOMAINS` + `PROVIDER_LABELS` (URL validation concern); `platform-link-test.ts`'te `PROVIDER_MAP` (Restaurant model field mapping concern). İki concern, iki dosya.
 
 **Yap:**
-- Yeni provider eklerken: `PROVIDER_DOMAINS` + `PROVIDER_LABELS` (validation) + `PROVIDER_MAP` (field mapping) + `PATH_RULES` (path heuristic, opsiyonel) + `BusinessIntegrationSettings.PLATFORM_DEFS` (UI listing) güncelle.
+- Yeni provider eklerken: `PROVIDER_DOMAINS` + `PROVIDER_LABELS` (validation) + `PROVIDER_MAP` (field mapping) + `PATH_RULES` (path heuristic, opsiyonel) + platform sayfası listesi güncelle.
 - Test endpoint kullanan yeni caller eklerken `runPlatformLinkTest` import et, `source` field'ını yeni bir literal ile geçir (`'manual' | 'cron' | 'retest_all' | <yeni>`). Helper string kabul ediyor — schema değişikliği yok.
 
 #### 19.4.2 Platform Redirect Analytics (Dalga 3a, 2026-05)
+
+> **2026-11 (§38.257)**: `PlatformRedirectsPanel` hiçbir sayfaya bağlı değildi; panel ve tek tüketicisi `GET /api/restaurants/[id]/redirect-stats` silindi. Olay kaydı (`POST /api/platform-redirect`, `PlatformRedirectEvent`) çalışmaya devam ediyor; bir rapor yüzeyi gerekirse yeniden yazılır.
 
 Müşteri `/r/[slug]`'da yıldız verip yüksek puanla dış platforma yönlendirildiğinde fire-and-forget olarak `POST /api/platform-redirect` çağrılır → `PlatformRedirectEvent` satırı yazılır. Owner panel "Platform Bağlantıları" sekmesinde **"Platform Yönlendirmeleri"** SettingsCard altında 7d/30d/all toplam + lider platform + provider breakdown progress bar görünür.
 
@@ -1180,7 +1181,7 @@ Müşteri `/r/[slug]`'da yıldız verip yüksek puanla dış platforma yönlendi
 - `recordPlatformRedirect` içinde provider validation atla — whitelist dışı string DB'ye yazılırsa owner panel groupBy'da "garbage" satırı görür. Silent reject zorunlu.
 
 **Yap:**
-- Yeni provider eklerken `VALID_PROVIDERS` set'ini güncelle (`platform-redirect.ts`). Aynı zamanda `integration-domains.ts` `PROVIDER_DOMAINS/LABELS` + `platform-link-test.ts` `PROVIDER_MAP` + `BusinessIntegrationSettings.PLATFORM_DEFS` + `platform-redirect-resolver.ts` `PROVIDER_FIELDS` + `PLATFORM_ID_TO_PROVIDER` (5 nokta — CLAUDE.md §19.4 / §19.4.3 yapma listesinde).
+- Yeni provider eklerken `VALID_PROVIDERS` set'ini güncelle (`platform-redirect.ts`). Aynı zamanda `integration-domains.ts` `PROVIDER_DOMAINS/LABELS` + `platform-link-test.ts` `PROVIDER_MAP` + platform sayfası listesi + `platform-redirect-resolver.ts` `PROVIDER_FIELDS` + `PLATFORM_ID_TO_PROVIDER` (5 nokta — CLAUDE.md §19.4 / §19.4.3 yapma listesinde).
 - Yeni source taxonomy değeri eklerken `VALID_SOURCES` (qr-scan ile paylaşılmıyor şu an — CLAUDE.md §7 abstraction yok, 2 yer). 3+ yer olunca ortak modüle çıkarılabilir.
 
 #### 19.4.3 Public review platform resolver (Dalga 3b, 2026-05)
@@ -1557,7 +1558,7 @@ export async function POST(req) {
 </div>
 ```
 
-Mevcut örnekler: `src/components/admin/TrendsChart.tsx`, `src/components/admin/DayDistributionChart.tsx`.
+Yeni grafiklerde `src/components/charts/MeasuredChart.tsx` paterni tercih edilir (§5.3).
 
 ### 21.15 Mail visual smoke test workflow
 
@@ -2725,7 +2726,6 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 | `/admin/api` | (tasarımda yok) | Mevcut |
 | `/admin/profile` | (tasarımda yok) | Mevcut |
 | `/admin/leads` | (tasarımda yok) | Mevcut |
-| `/admin/trial-expired` | (tasarımda yok) | Mevcut |
 | `/admin/dev/mail-preview` | (tasarımda yok) | Mevcut |
 
 **Public Surface** (panel'den ayrı, ama design'da var):
@@ -4609,6 +4609,8 @@ GitHub PR referansı.
 - **Chat prompt history (Stage 173)**: 2026-11-15 kullanıcı: *"Önerilerin neler"* → öneri listesi; ardından *"5. Küçük teknik borçları yap maine göndee"*. Madde 5'teki "Vercel Analytics olaylarıyla ölçmek" Web Analytics kapalı olduğu için veritabanı hunisine çevrildi (kullanıcıya bildirildi). Hukuki/disipline override yok.
 - §38.256 — Stage 174 (PR yok, main'e doğrudan) Mail sistemi temizliği: 6 gürültü maili + kurulum-tamamlandı ikizi kaldırıldı, Gmail-güvenli iki `<style>` bloğu, `after()` ile güvenilir gönderim, Resend 429 tekrar denemesi, cron 16 → 13, lifecycle 2 `groupBy` (§21.39). Görsel denetim: stil açıkken 1110 render'da 0 taşma. **Disipline**: yeni mail ancak sahibin bilmesi gereken, kendisinin tetiklemediği bir olay için eklenir; yanıt sonrası gönderim `after()`; ilk `<style>` bloğuna attribute/id/pseudo seçici yazılmaz.
 - **Chat prompt history (Stage 174)**: 2026-11-17 kullanıcı: *"sistemde gönderilen mailleri kontrol et düzen kayma vs. olmasın ve başka cihazdan giriş yapıldı gibi saçma sapan mailleri de iptal et mail sistemini düzgünleştirip maine gönder ve vercel'de çok fazla enerji harcamasın"*; ara mesaj *"devam et medium mod ile token harcama fazla"*. Hangi maillerin "saçma" sayılacağı keşifle belirlendi (CLAUDE.md §10). Disipline override yok.
+- §38.257 — Stage 175 (PR yok, `claude/adoring-bell-kka7ez`) Owner ↔ admin panel paralellik denetimi ve temizlik. Üç ayrı ajanla yorum gelen kutusu, müşteriler + QR, işletmeler + analitik karşılaştırıldı; bulgular kodla doğrulanıp düzeltildi. (i) **Admin menüsü tek katalog** (`src/components/admin/admin-nav.ts`): kenar çubuğu, mobil alt menü ve Cmd+K paleti aynı listeyi okur (rol + `staff` izinleri + boş grup ayıklama, TR/EN etiket); eskiden üç ayrı kopyaydı, `staff` için mobil menü boştu, palet müşteri bulamıyordu (`key` yerine `id`, `?focus=` yerine `?detail=`) ve yalnız son 8 kaydı süzüyordu (artık sunucuda arar). Rol adları `adminRoleLabel` (Superadmin / Yönetici / Görevli). (ii) **Güvenlik**: `/admin/dashboard` (MRR, tüm işletmeler) yalnız superadmin + `analytics:read`'li staff; manager ilk izinli sayfasına yönlenir (`src/lib/admin-landing.ts`). `/admin/analytics` staff için `analytics:read` ister. Owner müşteri API'leri (`/api/customers/[key]`, `export`, `bulk`) admin hesabı için `customers:read/write` ister (manager izin olmadan PII okuyabiliyordu). (iii) **Gelen kutusu**: owner ton değişince eski tonla yeniden üretiyordu; iki tarafta da cevap gelmeden yorum değişince taslak/yanıt yanlış yoruma düşüyordu (`activeIdRef`); admin "Düşük puan" 1–2★ → 1–3★ (counts API dahil), "Yanıt bekliyor" → "Yanıtsız"; admin başarısız e-posta yanıtında "Yeniden dene"; toplu AI taslağı yalnız ≤3★ ve yalnız kaydedilen taslaklara rozet; ortak `src/components/reply/reply-errors.ts`; admin detaydaki yinelenen yıldız şeridi + zaman çizelgesi kaldırıldı. (iv) **QR**: ortak `src/components/panel/qr/qr-shared.ts` (10 platform etiketi, dosya adı, düz PNG indirme) — admin QR artık tüm işletmeleri yükler (20'de kalıyordu), kullanılmayan SVG ön yüklemesi (QR hız sınırını yakıyordu) kaldırıldı, platform filtresi veriden, geçmiş hatası görünür, TR/EN. (v) **Diğer**: analitik CSV özel aralıkta son günü dahil eder; owner panelde 5 kullanılmayan sorgu silindi; `restaurant.delete` denetim olayı admin özetinde görünür; admin işletme silme `res.ok` kontrol eder, silmede public menü yenilenir; iki kırık gelen kutusu bağlantısı (`?filter=low`, `?tab=unreplied`). (vi) **Silinenler** (hiçbir yerden kullanılmıyordu): admin `team`/`settings`/`billing`/`campaigns`/`trial-expired` sayfaları (yalnız admin paneline giremeyen `restaurant_owner` rolüne açıktı) + `SuperadminBlock` + `/api/campaigns` (Prisma `Campaign` modeli veri kaybı olmasın diye duruyor); bileşenler `PlatformDistribution`, `TrendsChart`, `PulseTrendChart`, `PlatformLowFeedbackPanel`, `PlatformProviderManager`, `BusinessIntegrationSettings`, `PlatformRedirectsPanel`, `FeedbackTimeline`, `ui/icons`; lib `feedback-timeline`, `admin-notification-read-state`, `qr-premium-template`, `audits/access`, `i18n`, `anim/index`, `buaze/`; API `feedback/stats`, `feedback/branches`, `feedback/[id]/tags`, `analytics/export`, `admin/analytics/export`, `admin/me/permissions`, `admin/customers/[id]`, `admin/restaurants/[id]/menu-settings`, `restaurants/[id]/redirect-stats`, `restaurants/[id]/qr/batch`, `restaurants/[id]/qr/export`, `dashboard/platforms/[provider]/low-feedback`, `admin/legal-documents/…/revisions/[id]` (GET; `revert` duruyor). **Bilinçli korunan**: 2FA API (§34.2), `/api/health`, `embed-stats`, `integrations/health`, denetim API'leri. **Disipline**: admin menüsüne sayfa eklemek = `admin-nav.ts`'e tek kayıt; birden çok tenant gösteren admin sayfası sunucuda rol/izin kontrolü yapar (menüde gizlemek yetmez); owner uç noktası admin hesabına açıksa admin rotasıyla aynı `hasPermission` kapısı.
+- **Chat prompt history (Stage 175)**: 2026-11-19 kullanıcı: *"projeyi detaylıca analiz et owner ve admin paneli burda paralellik olmayanları düzelt gereksiz olanları kaldır geliştirilebilir kodları geliştir ve eklenmesi gereken önnerdiğin özellikleri de bana söyleyebilir misin?"*; ara mesajlar *"kullanılmayanları silebilirsin sana tam yetki"*, *"opus ile devam et"*. Silme yetkisi verildi; yine de CLAUDE.md'de bilinçli korunduğu yazan parçalar (2FA, embed izleme, entegrasyon sağlık API'si) silinmedi. Disipline override yok.
 - §38.245 — Stage 163 (PR TBD) Google girişi penceresi kapanmıyor + yavaş giriş, site hızı, SEO ve Google uyumu. **Disipline**: (i) proxy'lenen üçüncü taraf sayfalara (`/__/*`) site güvenlik başlıklarını körlemesine uygulama — özellikle COOP opener'ı koparır; (ii) layout metadata'sına sayfaya özgü alan (canonical, hreflang, og:url, twitter başlığı) koyma, miras kalır; (iii) `'use client'` dosyası `@/lib/prisma` içeren modülü dolaylı da olsa import etmemeli (sabitleri ayrı modüle al); (iv) IntersectionObserver hedefi gerçek kutu olmalı (`display: contents` asla). **Not**: Firebase `authDomain` ve OAuth ayarlarına dokunulmadı; düzeltme… (Ayrıntı: git log.)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
@@ -5431,7 +5433,7 @@ parent içinde — `position: fixed` veya `position: absolute` KULLANMA.
 
 | Token | Kullanım | Örnek |
 |---|---|---|
-| `max-w-[1280px]` | Settings / forms / profile / billing — narrow content | `/admin/settings`, `/dashboard/profile`, `/admin/billing` |
+| `max-w-[1280px]` | Settings / forms / profile / billing — narrow content | `/admin/profile`, `/admin/site-settings`, `/dashboard/account` |
 | `max-w-[1440px]` | **DEFAULT** — most pages (dashboard, list, detail) | `/admin/dashboard`, `/admin/restaurants`, `/admin/qr` |
 | `max-w-[1600px]` | Data-dense tables (8+ kolon) + DnD builders | `/admin/audits/stats`, `/dashboard/restaurants/[id]/menu` (DnD) |
 | full-bleed (max-w yok) | İki panelli yorum gelen kutusu (liste + detay paneli tam yükseklik, panel genişliğini doldurur) | `/dashboard/feedbacks`, `/admin/reviews` only (§38.242) |
@@ -6089,6 +6091,8 @@ Kategoriler (`ReplyRiskKind`): `threat`, `hate`, `profanity` (§47 sözlüğü +
 **Admin franchise yönetimi (Stage 169)**: `/admin/restaurants` tek araç çubuğu (görünüm sekmesi `İşletmeler | Franchise'lar` + arama + Durum / Plan / Menü `PulseSelect`; filtre seçili değilken seçici yalnız adını gösterir). Franchise = birden çok işletmesi olan sahip hesabı; gruplama `src/lib/admin-franchise.ts` (`groupByOwner`, `countChains`; zincirler önce, sahipsizler sonda, puan yorum sayısıyla ağırlıklı; `tests/admin-franchise.test.ts`). Sahip filtresi URL'de `?owner=<userId>` → API `GET /api/restaurants?ownerId=` (admin dalı, `getScopedRestaurantIds` kapsamı korunur). Gruplama ve arama yalnız yüklenen sayfada (100'lük) çalışır; sayfada bunu söyleyen not var. İşletme Sahipleri → işletme sayısı ve satır menüsü bu filtreye gider; işletme detayında aynı sahibin şubeleri arasında "Şube" seçici.
 
 **Mobil alt menü (owner + admin)**: düz beyaz hap (`background: #FFFFFF`, backdrop-filter yok) + `fixed inset-x-0 bottom-0` sayfa renginde gradyan bant (`pointer-events-none`, hap `pointer-events-auto`). Yarı saydam yüzey geri getirilmez — arkadaki metin etiketlerin içinden görünüyordu. `PanelSelectionBar` görünürken akışta boşluk bırakır (`reserveSpace`, varsayılan açık).
+
+**Admin menüsü (Stage 175)**: kenar çubuğu, mobil alt menü ve Cmd+K paleti tek kaynaktan beslenir: `src/components/admin/admin-nav.ts` (`ADMIN_NAV`, `getAdminNav`, `getAdminMobileNav`, `getActiveAdminHref`, `adminRoleLabel`). Admin oturumu yalnız `superadmin | manager | staff` olabilir; `restaurant_owner` admin menüsünde yer almaz. Yeni admin sayfası = bu dosyaya tek kayıt (rol + gerekiyorsa `resource:action` izni + TR/EN etiket + palet anahtar kelimeleri). Menüden gizlemek yetki değildir: birden çok işletmenin verisini gösteren sayfa sunucuda rol/izin kontrolü yapar ve izinsiz hesabı `adminLandingPath` ile ilk izinli sayfasına yollar.
 
 **Owner sayfa düzeni (Stage 170)**: admin ile aynı sade kurallar, her owner sayfasında:
 - **İşletme seçimi tek yerde**: sayfa kendi "İşletme" seçicisini ya da işletme kartı ızgarasını taşımaz (menü merkezi dahil, Stage 171); kenar çubuğu / mobil üst çubuk `BusinessSwitcher`'ını izler (`?restaurantId` + değişim olayı). Birden çok işletmeli sahipte gerekiyorsa yalnız "Bu işletme / Tüm işletmeler" sekmesi (QR, anketler, platformlar). Durdurulmuş işletmeler shell'de seçilemediği için sayfa listelerinde de gösterilmez (hepsi durdurulmuşsa gösterilir).

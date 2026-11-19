@@ -49,7 +49,7 @@ interface FeedbackDetailProps {
   setAiTone: (v: AiTone) => void;
   /** Admin master flag `pulseAiEnabled=false` (API 403 `pulse_ai_disabled_by_admin`). */
   aiDisabledByAdmin?: boolean;
-  onRegenerateAi: () => void;
+  onRegenerateAi: (tone?: AiTone) => void;
   onUseAiAndSend: () => void;
   onCopyAiToDraft: () => void;
 

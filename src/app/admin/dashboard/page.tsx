@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { CreditCard, Crown, MessageSquare, Store } from 'lucide-react';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { hasPermission } from '@/lib/rbac';
+import { adminLandingPath } from '@/lib/admin-landing';
 import {
   BarChart,
   Eyebrow,
@@ -54,10 +56,20 @@ function bucketByWeek(dates: Date[], weeks: number, now: Date): { label: string;
 
 export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
-  const token = cookieStore.get('admin_token')?.value || cookieStore.get('user_token')?.value;
+  const token = cookieStore.get('admin_token')?.value;
   if (!token) redirect('/admin');
   const payload = await verifyJwt(token);
   if (!payload || !isAdminRole(payload.role as string | undefined)) redirect('/admin');
+
+  // Platform-wide overview (MRR, plan mix, every tenant's name). Superadmin,
+  // or staff holding `analytics:read` (same rule as the BI API). A manager is
+  // scoped to one business and lands on its first page instead.
+  const role = String(payload.role);
+  if (role !== 'superadmin') {
+    const adminId = typeof payload.id === 'string' ? payload.id : '';
+    const canSeeOverview = role === 'staff' && (await hasPermission(adminId, 'analytics', 'read'));
+    if (!canSeeOverview) redirect(await adminLandingPath(adminId, role, '/admin/dashboard'));
+  }
 
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -227,6 +239,8 @@ export default async function AdminDashboardPage() {
     'admin.users.delete',
     'admin.members.deactivate',
     'admin.restaurants.delete',
+    // What DELETE /api/restaurants/[id] actually writes.
+    'restaurant.delete',
     'admin.impersonate.start',
     'admin.permission.revoke',
   ];

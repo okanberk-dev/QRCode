@@ -43,7 +43,8 @@ export async function GET(req: NextRequest) {
     // (PATCH endpoint) + §38.159 Stage 79 (backend filter wiring) zinciri.
     const [all, attention, lowUnread] = await prisma.$transaction([
       prisma.feedback.count({ where: baseWhere }),
-      prisma.feedback.count({ where: { ...baseWhere, rating: { lte: 2 } } }),
+      // Low rating = 1–3★, same as the owner inbox and the toolbar filter.
+      prisma.feedback.count({ where: { ...baseWhere, rating: { lte: 3 } } }),
       prisma.feedback.count({
         where: { ...baseWhere, rating: { lte: 3 }, isRead: false },
       }),

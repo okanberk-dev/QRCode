@@ -2,13 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, QrCode, Inbox, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
+import { getActiveAdminHref, getAdminMobileNav, toAdminNavRole } from './admin-nav';
 
-export default function AdminMobileNav({ role = 'manager' }: { role?: string }) {
+export default function AdminMobileNav({
+  role = 'manager',
+  permissions = [],
+}: {
+  role?: string;
+  /** Staff grants (`resource:action`) from the admin profile. */
+  permissions?: string[];
+}) {
   const pathname = usePathname();
-  const { t } = useAdminTranslation();
+  const { locale } = useAdminTranslation();
+  const navLocale = locale === 'en' ? 'en' : 'tr';
   // Stage 60 §38.141 — Mobile bottom nav Yorumlar (reviews) badge.
   // NotificationBell `buaze:notification-count` custom event listener;
   // base='/admin' filter — owner tab clobber etmez. Tek source-of-truth
@@ -44,19 +52,20 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
     };
   }, []);
 
-  const navItems = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin', 'restaurant_owner'] },
-    { href: '/admin/reviews', icon: Inbox, label: 'Yorumlar', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/qr', icon: QrCode, label: t('qr_codes'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
-    { href: '/admin/analytics', icon: BarChart3, label: 'Analitik', roles: ['superadmin', 'manager', 'restaurant_owner'] },
-  ];
+  // Same catalogue as the sidebar (admin-nav.ts): role gate + staff grants,
+  // labels in the admin's language. The bar used to keep its own list, which
+  // had no entry for `staff` (empty bar) and Turkish-only labels.
+  const filteredItems = getAdminMobileNav(toAdminNavRole(role), new Set(permissions));
+  const activeHref = getActiveAdminHref(
+    pathname,
+    filteredItems.map((item) => item.href),
+  );
 
-  const filteredItems = navItems.filter(item => item.roles.includes(role));
+  if (filteredItems.length === 0) return null;
 
   return (
     <nav
-      aria-label="Mobil navigasyon"
+      aria-label={navLocale === 'en' ? 'Mobile navigation' : 'Mobil menü'}
       aria-hidden={drawerOpen ? 'true' : undefined}
       // z-40 (eski z-50) — CLAUDE.md §40.3 hierarchy: z-30 desktop
       // sticky topbar < z-40 mobile sticky/bottom nav < z-50 modals/
@@ -102,15 +111,16 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
           style={{ gridTemplateColumns: `repeat(${filteredItems.length}, minmax(0, 1fr))` }}
         >
           {filteredItems.map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+            const isActive = item.href === activeHref;
             const Icon = item.icon;
+            const label = item.label[navLocale];
             const isReviews = item.href === '/admin/reviews';
 
             return (
               <li key={item.href} className="min-w-0">
                 <Link
                   href={item.href}
-                  aria-label={item.label}
+                  aria-label={label}
                   aria-current={isActive ? 'page' : undefined}
                   className={`relative flex h-full flex-col items-center justify-center gap-1 rounded-md px-1 transition-all duration-150 active:scale-95 ${
                     isActive
@@ -141,7 +151,7 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
                       isActive ? 'font-bold text-[#0A0A0A]' : 'font-medium text-[rgba(10,10,10,0.42)]'
                     }`}
                   >
-                    {item.label}
+                    {label}
                   </span>
                   {/* Stage 60 §38.141 — Active dot indicator (4×4 lime,
                       top translateY -100%). */}

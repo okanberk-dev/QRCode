@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { blockedReplyMessage, issuesFromBody } from '@/components/reply/ReplyRiskNotice';
+import { replyErrorMessage } from '@/components/reply/reply-errors';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Inbox, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
@@ -59,34 +59,6 @@ const LG_QUERY = '(min-width: 1024px)';
 /** Desktop split view (list + detail side by side). */
 const isLgUp = () => typeof window !== 'undefined' && window.matchMedia(LG_QUERY).matches;
 
-/** Reply API error → user copy. The raw `data.error` key is never shown (§0.7). */
-function replyErrorMessage(data: unknown, isTr: boolean): string {
-  const code = typeof data === 'object' && data !== null ? (data as { error?: unknown }).error : null;
-  switch (code) {
-    case 'content_blocked':
-      // §48 — say exactly which rule blocked it (copy is ours, from the issue keys).
-      return blockedReplyMessage(issuesFromBody(data), isTr ? 'tr' : 'en');
-    case 'consent_required':
-      return isTr
-        ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
-        : 'Confirm the responsibility checkbox before sending.';
-    case 'body_too_long':
-      return isTr
-        ? 'Yanıt en fazla 2000 karakter olabilir.'
-        : 'Replies can be at most 2,000 characters.';
-    case 'empty_body':
-      return isTr ? 'Boş yanıt gönderilemez.' : "A reply can't be empty.";
-    case 'rate_limited':
-      return isTr
-        ? 'Çok fazla yanıt gönderildi. Lütfen biraz sonra tekrar deneyin.'
-        : 'Too many replies sent. Please try again in a moment.';
-    default:
-      return isTr
-        ? 'Yanıt gönderilemedi. Lütfen tekrar deneyin.'
-        : 'The reply could not be sent. Please try again.';
-  }
-}
-
 /** Client-side tab + search filter over the loaded rows. */
 function applyClientFilters(
   rows: FeedbackRow[],
@@ -97,7 +69,7 @@ function applyClientFilters(
 ): FeedbackRow[] {
   let out = rows;
   if (tab === 'new') out = out.filter((r) => !r.isReplied || keptInNewTab.has(r.id));
-  else if (tab === 'attention') out = out.filter((r) => r.rating <= 2);
+  else if (tab === 'attention') out = out.filter((r) => r.rating <= 3);
   else if (tab === 'replied') out = out.filter((r) => r.isReplied);
   const q = search.trim().toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US');
   if (q) {
@@ -427,6 +399,10 @@ function AdminReviewsContent() {
 
   const activeFeedbackId = active?.id ?? null;
   const activeCustomerEmail = active?.customerEmail ?? null;
+  // Results of a request started for review A must not land in review B's
+  // composer when the admin switched in the meantime.
+  const activeIdRef = useRef<string | null>(activeFeedbackId);
+  activeIdRef.current = activeFeedbackId;
 
   // Composer state follows the selected review: switching reviews drops the
   // draft, the AI source, the notice and — §45 — the responsibility consent.
@@ -538,6 +514,12 @@ function AdminReviewsContent() {
   const onSuggest = async (toneOverride?: AiTone) => {
     if (!active) return;
     const targetId = active.id;
+    const { customerName, rating } = active;
+    const stillShown = () => activeIdRef.current === targetId;
+    const applyTemplate = () => {
+      setDraft(buildReplyTemplate({ name: customerName, rating, locale }));
+      setAiSource('template-fallback');
+    };
     setSuggesting(true);
     try {
       const res = await fetch(`/api/feedback/${targetId}/suggest-reply`, {
@@ -545,8 +527,10 @@ function AdminReviewsContent() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ locale, tone: toneOverride }),
       });
+      if (!stillShown()) return;
       if (res.ok) {
         const data = await res.json();
+        if (!stillShown()) return;
         if (typeof data?.suggestion === 'string' && data.suggestion.length > 0) {
           setDraft(data.suggestion.slice(0, 2000));
           setAiSource((data.source as AiSource) ?? 'template');
@@ -554,18 +538,32 @@ function AdminReviewsContent() {
       } else if (res.status === 429) {
         flash(isTr ? 'Çok sık istek — biraz bekleyin.' : 'Too many requests — slow down.', 'error');
       } else {
-        setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
-        setAiSource('template-fallback');
+        const data = await res.json().catch(() => null);
+        if (!stillShown()) return;
+        if (res.status === 403 && data?.error === 'pulse_ai_disabled_by_admin') {
+          // Not an outage: Pulse AI is switched off for this business in
+          // Paket Özellikleri. Say so instead of "AI is down, retry".
+          flash(
+            isTr
+              ? 'Pulse AI bu işletme için kapalı (Paket Özellikleri).'
+              : 'Pulse AI is turned off for this business (package features).',
+            'error',
+          );
+          return;
+        }
+        applyTemplate();
       }
     } catch {
-      setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
-      setAiSource('template-fallback');
+      if (stillShown()) applyTemplate();
+    } finally {
+      setSuggesting(false);
     }
-    setSuggesting(false);
   };
 
   const onSend = async () => {
     if (!active || sending || !draft.trim() || !confirmResponsibility) return;
+    const targetId = active.id;
+    const stillShown = () => activeIdRef.current === targetId;
     setSending(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
     const replySource =
@@ -608,6 +606,9 @@ function AdminReviewsContent() {
           ...(sentLocallyRef.current.get(active.id) ?? []),
           entry,
         ]);
+        // The admin opened another review while this one was sending: the
+        // row is updated above, the composer on screen is left alone.
+        if (!stillShown()) return;
         setSentReplies((list) => [...list.filter((r) => r.id !== entry.id), entry]);
         setDraft('');
         setAiSource(null);
@@ -628,31 +629,22 @@ function AdminReviewsContent() {
         } else {
           flash(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
         }
-      } else if (res.status === 401) {
-        flash(
-          isTr ? 'Oturum süresi doldu. Lütfen yeniden giriş yapın.' : 'Session expired. Please sign in again.',
-          'error',
-        );
-      } else {
+      } else if (stillShown()) {
         const data = await res.json().catch(() => ({}));
+        flash(replyErrorMessage(data, isTr, res.status), 'error');
+      }
+    } catch {
+      if (stillShown()) {
         flash(
-          res.status === 403 && data?.error !== 'consent_required'
-            ? isTr
-              ? 'Bu yoruma yanıt verme yetkiniz yok.'
-              : 'You are not allowed to reply to this review.'
-            : replyErrorMessage(data, isTr),
+          isTr
+            ? 'Bağlantı hatası. Yanıt gönderilemedi, lütfen tekrar deneyin.'
+            : 'Network error. The reply was not sent, please try again.',
           'error',
         );
       }
-    } catch {
-      flash(
-        isTr
-          ? 'Bağlantı hatası. Yanıt gönderilemedi, lütfen tekrar deneyin.'
-          : 'Network error. The reply was not sent, please try again.',
-        'error',
-      );
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   // Flag toggle — POST adds, DELETE removes (§38.238).
@@ -775,6 +767,14 @@ function AdminReviewsContent() {
           const next: FeedbackRow[] = d.data ?? [];
           setRows(next);
           setPage(Math.max(1, Math.ceil(next.length / PAGE_SIZE)));
+          // The bumped request ticket cancelled any in-flight "load more";
+          // its spinner and the paging state are reset from this response.
+          setLoadingMore(false);
+          const totalNum = Number(d?.meta?.total);
+          if (Number.isFinite(totalNum)) {
+            setTotal(totalNum);
+            setHasMore(next.length < totalNum);
+          }
           setLoading(false);
         }
       }
@@ -908,7 +908,7 @@ function AdminReviewsContent() {
   const localCounts = useMemo(
     () => ({
       new: rows.filter((r) => !r.isReplied).length,
-      attention: rows.filter((r) => r.rating <= 2).length,
+      attention: rows.filter((r) => r.rating <= 3).length,
       replied: rows.filter((r) => r.isReplied).length,
     }),
     [rows],
@@ -921,12 +921,12 @@ function AdminReviewsContent() {
   };
   const statusTabs: InboxTab[] = [
     { id: 'all', label: isTr ? 'Tümü' : 'All', count: tabCount('all') },
-    { id: 'new', label: isTr ? 'Yanıt bekliyor' : 'Awaiting reply', count: tabCount('new') },
+    { id: 'new', label: isTr ? 'Yanıtsız' : 'Unreplied', count: tabCount('new') },
     {
       id: 'attention',
       label: isTr ? 'Düşük puan' : 'Low rating',
       count: tabCount('attention'),
-      title: isTr ? '1–2 yıldız' : '1–2 stars',
+      title: isTr ? '1–3 yıldız' : '1–3 stars',
       tone: 'danger',
     },
     { id: 'replied', label: isTr ? 'Yanıtlandı' : 'Replied', count: tabCount('replied') },
@@ -974,7 +974,13 @@ function AdminReviewsContent() {
         className={isMobileDetailView ? 'hidden lg:block' : ''}
         tabs={statusTabs}
         activeTab={tab}
-        onTabChange={(id) => writeFilters({ tab: id as AdminTab })}
+        onTabChange={(id) =>
+          writeFilters(
+            id === 'replied' && hasReply === 'pending'
+              ? { tab: 'replied', hasReply: 'all' }
+              : { tab: id as AdminTab },
+          )
+        }
         listId="feedback-list"
         search={search}
         onSearchChange={setSearch}
@@ -1100,7 +1106,11 @@ function AdminReviewsContent() {
         platformFilter={platform}
         setPlatformFilter={(v) => writeFilters({ platform: v })}
         hasReplyFilter={hasReply}
-        setHasReplyFilter={(v) => writeFilters({ hasReply: v })}
+        setHasReplyFilter={(v) =>
+          writeFilters(
+            v === 'pending' && tab === 'replied' ? { hasReply: v, tab: 'all' } : { hasReply: v },
+          )
+        }
         flaggedOnly={flagged}
         setFlaggedOnly={(v) => writeFilters({ flagged: v })}
         assignedToMe={assigned}

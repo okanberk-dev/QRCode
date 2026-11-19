@@ -25,6 +25,9 @@ interface AdminTopbarProps {
   announcements?: DashboardAnnouncement[];
   /** Optional admin display name / username for the avatar tooltip. */
   displayName?: string | null;
+  /** Admin role + staff grants, resolved by the layout for the palette. */
+  role?: string;
+  permissions?: string[];
 }
 
 /**
@@ -37,8 +40,14 @@ interface AdminTopbarProps {
  * Lives inside the content column so it scrolls with the page on
  * mobile but stays sticky-top on desktop.
  */
-export default function AdminTopbar({ announcements = [], displayName }: AdminTopbarProps) {
+export default function AdminTopbar({
+  announcements = [],
+  displayName,
+  role = 'manager',
+  permissions,
+}: AdminTopbarProps) {
   const { locale } = useAdminTranslation();
+  const isEn = locale === 'en';
   const initial = (displayName?.trim()?.charAt(0) || 'A').toUpperCase();
   const [isMac, setIsMac] = useState(false);
 
@@ -57,7 +66,7 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
       {/* §38.219 Stage 139 — Palette mount OUTSIDE the hidden lg:flex div so
           it's available on mobile too (mobile sidebar drawer dispatches
           'buaze:admin-search-open' CustomEvent which the palette listens for). */}
-      <AdminCommandPalette />
+      <AdminCommandPalette role={role} permissions={permissions} />
     <div className="hidden lg:flex sticky top-0 z-30 h-14 shrink-0 items-center gap-2 border-b border-[#EDEDED] bg-white/95 px-4 backdrop-blur sm:px-6">
       {/* §38.219 Stage 139 — Search trigger (Cmd+K). Visual cue + click also
           opens the palette for mouse users. AdminCommandPalette listens for
@@ -66,10 +75,12 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
         type="button"
         onClick={openPalette}
         className="flex h-9 flex-1 max-w-[420px] items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-3 text-left text-[13px] text-[#737373] shadow-[0_1px_2px_rgba(10,10,10,0.05)] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-        aria-label="Admin arama (Cmd+K)"
+        aria-label={isEn ? 'Admin search (Cmd+K)' : 'Yönetim araması (Cmd+K)'}
       >
         <SearchIcon size={14} className="text-[#737373]" aria-hidden />
-        <span className="flex-1">Sayfa, işletme veya müşteri ara…</span>
+        <span className="flex-1">
+          {isEn ? 'Search pages, businesses or customers…' : 'Sayfa, işletme veya müşteri ara…'}
+        </span>
         <kbd className="hidden xl:inline-flex items-center gap-0.5 rounded border border-[#E5E5E5] bg-[#FAFAFA] px-1.5 py-0.5 bz-mono text-[10px] uppercase text-[#525252]">
           {isMac ? '⌘' : 'Ctrl'} K
         </kbd>
@@ -93,8 +104,8 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
       <Link
         href="/admin/profile"
         className="bz-h-tight flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] transition-colors hover:bg-[#1A1A1A]"
-        aria-label={displayName || 'Profile'}
-        title={displayName || 'Profile'}
+        aria-label={displayName || (isEn ? 'Profile' : 'Profilim')}
+        title={displayName || (isEn ? 'Profile' : 'Profilim')}
       >
         {initial}
       </Link>

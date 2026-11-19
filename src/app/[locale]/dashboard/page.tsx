@@ -52,13 +52,6 @@ export async function generateMetadata({
 
 export const dynamic = 'force-dynamic';
 
-// Tek source-of-truth filter — "ratings>=4 + platform set" 6+ yerden tekrar
-// ediyordu. Const olarak dosya-üstünde tut, abstraction değil (CLAUDE.md §7).
-const REDIRECT_WHERE = {
-  rating: { gte: 4 },
-  platform: { not: null },
-} as const;
-
 const PLATFORM_LABELS_TR: Record<string, string> = {
   google: 'Google',
   yemeksepeti: 'Yemeksepeti',
@@ -68,6 +61,8 @@ const PLATFORM_LABELS_TR: Record<string, string> = {
   airbnb: 'Airbnb',
   booking: 'Booking',
   yandex: 'Yandex',
+  yelp: 'Yelp',
+  foursquare: 'Foursquare',
 };
 
 function isExpectedNavigationError(error: unknown) {
@@ -219,9 +214,6 @@ async function renderDashboardPage({
   // Boş restIds için Prisma `in: []` zaten 0 satır döner; fallback path
   // gereksiz. (Postgres `WHERE id = ANY(ARRAY[]::text[])` syntactically OK.)
   const [
-    // _redirectCountAllTime: §38.27'de KPI'dan kaldırıldı; transaction sırasını
-    // korumak için destructure'da kalır, prefix ile lint silence.
-    _redirectCountAllTime,
     latestFeedbacks,
     trendFeedbacks,
     restaurantRatings,
@@ -230,12 +222,8 @@ async function renderDashboardPage({
     qrPerfRows,
     qrScanGroups,
     last7Avg,
-    _last7Redirected,
     prev7Count,
     prev7Avg,
-    _prev7Redirected,
-    _last7Scans,
-    _prev7Scans,
     lowRated30dCount,
     lowRated30dRepliedCount,
     newCustomers30dRows,
@@ -249,8 +237,6 @@ async function renderDashboardPage({
     googleSyncCheck,
     churnedCustomerRows,
   ] = await prisma.$transaction([
-    // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
-    prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
     // Son yorumlar listesi (4 görünür "Son yorumlar" kartı için + 4 ek
     // CANLI AKIŞ timeline için — aynı veri reuse).
     prisma.feedback.findMany({
@@ -310,11 +296,6 @@ async function renderDashboardPage({
       _avg: { rating: true },
       _count: { _all: true },
     }),
-    // §38.31 — placeholder (eski last7Redirected; KPI Yönlendirme §38.27'de
-    // KPI'dan kaldırıldı, transaction sırasını korumak için count tutuldu).
-    prisma.feedback.count({
-      where: { restaurantId: restIdIn, createdAt: { gte: scopeStart }, ...REDIRECT_WHERE },
-    }),
     // §38.31 — Önceki scope window count (delta baseline). YTD durumda
     // prev_year YTD karşılaştırması.
     prisma.feedback.count({
@@ -330,26 +311,6 @@ async function renderDashboardPage({
         createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
       },
       _avg: { rating: true },
-    }),
-    // §38.31 — Önceki scope window yönlendirme (placeholder).
-    prisma.feedback.count({
-      where: {
-        restaurantId: restIdIn,
-        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
-        ...REDIRECT_WHERE,
-      },
-    }),
-    // §38.31 — Scope window QR scans (placeholder; KPI'dan §38.27'de
-    // kaldırıldı, transaction sırası korunur).
-    prisma.qrScan.count({
-      where: { restaurantId: restIdIn, createdAt: { gte: scopeStart } },
-    }),
-    // §38.31 — Prev scope window QR scans (placeholder).
-    prisma.qrScan.count({
-      where: {
-        restaurantId: restIdIn,
-        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
-      },
     }),
     // §38.31 — Yanıt oranı KPI: scope window içinde rating ≤3 toplam +
     // hangileri yanıtlanmış (some replies). Ratio = replied / total × 100.

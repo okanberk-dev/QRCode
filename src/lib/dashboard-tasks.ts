@@ -140,7 +140,9 @@ export function buildPendingTasks({
       severity: 'high',
       title: c.replyTitle(unrepliedFeedbacks.count),
       meta: oldestRel ? c.replyMeta(oldestRel) : c.replyMetaNoTime,
-      href: `${lp}/dashboard/feedbacks?tab=unreplied`,
+      // Low ratings, unreplied only — the inbox's real URL filters (the old
+      // `tab=unreplied` was a legacy client tab that matched no toolbar tab).
+      href: `${lp}/dashboard/feedbacks?tab=low&hasReply=pending`,
     });
   }
 

@@ -39,13 +39,10 @@ function isAllowedAdminPanelRole(role: unknown): boolean {
 
 // Admin sub-routes that DO NOT require auth.
 // - `/admin` itself is the login page.
-// - `/admin/trial-expired` is an informational page shown to users whose
-//   trial ended, no live session needed.
 // - `/admin/forgot-password` and `/admin/reset-password` must be reachable
 //   while logged out — that's the entire point of password recovery.
 const PUBLIC_ADMIN_PATHS = new Set<string>([
   '/admin',
-  '/admin/trial-expired',
   '/admin/forgot-password',
   '/admin/reset-password',
 ]);
@@ -105,7 +102,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Only guard admin sub-routes. `/admin/trial-expired` stays public.
+  // Only guard admin sub-routes; the public ones above stay open.
   if (!pathname.startsWith('/admin') || PUBLIC_ADMIN_PATHS.has(pathname)) {
     return NextResponse.next();
   }

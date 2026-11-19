@@ -396,10 +396,22 @@ export default function RestaurantDetailPage() {
   const doDelete = async () => {
     setDeleting(true);
     try {
-      await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/restaurants/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        // A refused delete (403, 409…) used to navigate away as if the
+        // business was gone.
+        const body = await res.json().catch(() => null);
+        setError(
+          typeof body?.error === 'string' && body.error.length < 160
+            ? `Silinemedi: ${body.error}`
+            : 'İşletme silinemedi. Lütfen tekrar deneyin.',
+        );
+        setDeleting(false);
+        return;
+      }
       router.push('/admin/restaurants');
     } catch {
-      setError('Silme başarısız');
+      setError('Bağlantı hatası. İşletme silinemedi.');
       setDeleting(false);
     }
   };

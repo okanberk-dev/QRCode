@@ -119,19 +119,9 @@ export default async function AdminLayout({
     isAuthenticated = false;
   }
 
-  // Not authenticated — send to login (but not if already on /admin login or trial page)
-  // Layout wraps all /admin/* so we only redirect if needed
-  if (!isAuthenticated) {
-    // Children will be the login page; don't redirect to avoid loop
-  }
-
-  // If authenticated as restaurant_owner with trial expired, redirect to trial-expired page
-  if (isAuthenticated && payload?.role === 'restaurant_owner' && payload?.plan === 'trial') {
-    // Logic for trial expiration check could go here if needed.
-  }
-
-  // Determine if we should show the sidebar.
-  // We hide it if not authenticated.
+  // Unauthenticated requests only ever reach the login / password-recovery
+  // pages (middleware redirects everything else), so the layout renders the
+  // children without the panel chrome instead of redirecting.
   const showSidebar = isAuthenticated;
 
   // "Owner gibi gör" keeps admin_token next to an impersonating user_token.
@@ -189,6 +179,8 @@ export default async function AdminLayout({
               <AdminTopbar
                 announcements={announcements}
                 displayName={adminProfile?.name || adminProfile?.username || null}
+                role={adminProfile?.role || actor?.role || 'manager'}
+                permissions={adminProfile?.permissions ?? []}
               />
             )}
             {/* §42 canonical panel layout — admin shell only renders chrome
@@ -200,7 +192,12 @@ export default async function AdminLayout({
             )}
             {children}
           </main>
-          {showSidebar && <AdminMobileNav role={adminProfile?.role || actor?.role || 'manager'} />}
+          {showSidebar && (
+            <AdminMobileNav
+              role={adminProfile?.role || actor?.role || 'manager'}
+              permissions={adminProfile?.permissions ?? []}
+            />
+          )}
         </div>
       </AdminTranslationProvider>
     </RootHtml>

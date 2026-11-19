@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, Check, ExternalLink, Key, Mail, Pencil, Plus, Trash2, Loader2, Store, User, ShieldCheck, UserCog, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import { adminRoleLabel } from '@/components/admin/admin-nav';
 import { AlertBanner, Badge, Modal, PageHeader, useConfirmDialog } from '@/components/ui';
 import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
 
@@ -25,11 +26,6 @@ interface Restaurant {
 // §37.2 RBAC infrastructure). Sidebar already filters by per-resource
 // `AdminPermission` grants for staff; here we just surface the label/badge.
 type RoleBadgeKind = 'info' | 'ok' | 'lime';
-function roleLabelFor(role: string): string {
-  if (role === 'superadmin') return 'Superadmin';
-  if (role === 'staff') return 'Görevli';
-  return 'Yönetici';
-}
 function roleBadgeKind(role: string): RoleBadgeKind {
   if (role === 'superadmin') return 'info';
   if (role === 'staff') return 'lime';
@@ -388,7 +384,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                         {/* Mobile-only badges */}
                         <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
                           <Badge kind={roleBadgeKind(user.role)}>
-                            {roleLabelFor(user.role)}
+                            {adminRoleLabel(user.role, locale === 'en' ? 'en' : 'tr')}
                           </Badge>
                           {user.restaurant && (
                             <Badge kind="ghost">{user.restaurant.name}</Badge>
@@ -400,7 +396,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                   <td className="hidden md:table-cell px-3 py-4 sm:px-6">
                     <Badge kind={roleBadgeKind(user.role)}>
                       {roleBadgeIcon(user.role)}
-                      {roleLabelFor(user.role)}
+                      {adminRoleLabel(user.role, locale === 'en' ? 'en' : 'tr')}
                     </Badge>
                   </td>
                   <td className="hidden md:table-cell px-4 py-4 sm:px-8 sm:py-6">

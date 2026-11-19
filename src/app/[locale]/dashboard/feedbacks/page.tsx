@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode } from 'react';
-import { blockedReplyMessage, issuesFromBody } from '@/components/reply/ReplyRiskNotice';
+import { replyErrorMessage } from '@/components/reply/reply-errors';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
@@ -55,34 +55,6 @@ type FilterKey = keyof typeof FILTER_DEFAULTS;
 const LG_QUERY = '(min-width: 1024px)';
 /** Desktop split view (list + detail side by side). */
 const isLgUp = () => typeof window !== 'undefined' && window.matchMedia(LG_QUERY).matches;
-
-/** Reply API error → user copy. The raw `data.error` key is never shown (§0.7). */
-function replyErrorMessage(data: unknown, isTr: boolean): string {
-  const code = typeof data === 'object' && data !== null ? (data as { error?: unknown }).error : null;
-  switch (code) {
-    case 'content_blocked':
-      // §48 — say exactly which rule blocked it (copy is ours, from the issue keys).
-      return blockedReplyMessage(issuesFromBody(data), isTr ? 'tr' : 'en');
-    case 'consent_required':
-      return isTr
-        ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
-        : 'Confirm the responsibility checkbox before sending.';
-    case 'body_too_long':
-      return isTr
-        ? 'Yanıt en fazla 2000 karakter olabilir.'
-        : 'Replies can be at most 2,000 characters.';
-    case 'empty_body':
-      return isTr ? 'Boş yanıt gönderilemez.' : "A reply can't be empty.";
-    case 'rate_limited':
-      return isTr
-        ? 'Çok fazla yanıt gönderildi. Lütfen biraz sonra tekrar deneyin.'
-        : 'Too many replies sent. Please try again in a moment.';
-    default:
-      return isTr
-        ? 'Yanıt gönderilemedi. Lütfen tekrar deneyin.'
-        : 'The reply could not be sent. Please try again.';
-  }
-}
 
 function FeedbacksContent({ locale }: { locale: Locale }) {
   const isTr = locale === 'tr';
@@ -176,10 +148,6 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [replyNotice, setReplyNotice] = useState<{ msg: string; tone: ReplyTone } | null>(null);
   const replyNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    setConfirmResponsibility(false);
-  }, [activeId]);
-
   // Pulse AI
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [aiRegenerating, setAiRegenerating] = useState(false);
@@ -193,6 +161,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // Sent reply thread
   const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
   const [sentLoading, setSentLoading] = useState(false);
+  // Replies sent from this page, per review. A thread fetch already in flight
+  // when Send is pressed can land after the POST response; it must neither
+  // drop the new reply nor list it twice (admin inbox parity).
+  const sentLocallyRef = useRef<Map<string, SentReply[]>>(new Map());
 
   // Notification deep-link pulse (one-shot per focus id)
   const focusAppliedRef = useRef<string | null>(null);
@@ -464,10 +436,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   // Composer state follows the selected review (Gmail-like): switching
   // reviews drops the draft and the notice.
+  // §45 — the responsibility consent resets with it (it used to follow the
+  // URL id, which can differ from the review actually shown).
+  const activeIdRef = useRef<string | null>(activeFeedbackId);
   useEffect(() => {
+    activeIdRef.current = activeFeedbackId;
     setReplyDraft('');
     setReplyNotice(null);
     setSendEmail(true);
+    setConfirmResponsibility(false);
   }, [activeFeedbackId]);
 
   const markFeedbackRead = useCallback(
@@ -546,15 +523,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     (async () => {
       try {
         const res = await fetch(`/api/feedback/${activeFeedbackId}/reply`);
-        if (!cancelled && res.ok) {
-          const data = await res.json();
-          const list: SentReply[] = Array.isArray(data?.replies) ? data.replies : [];
-          setSentReplies(list);
-        } else if (!cancelled) {
-          setSentReplies([]);
+        if (cancelled) return;
+        const local = sentLocallyRef.current.get(activeFeedbackId) ?? [];
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (cancelled) return;
+          const server: SentReply[] = Array.isArray(data?.replies) ? data.replies : [];
+          const known = new Set(server.map((r) => r.id));
+          setSentReplies([...server, ...local.filter((r) => !known.has(r.id))]);
+        } else {
+          setSentReplies(local);
         }
       } catch {
-        if (!cancelled) setSentReplies([]);
+        if (!cancelled) setSentReplies(sentLocallyRef.current.get(activeFeedbackId) ?? []);
       } finally {
         if (!cancelled) setSentLoading(false);
       }
@@ -694,27 +675,48 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   const onRegenerateAi = async (toneOverride?: AiTone) => {
     if (!active) return;
+    const targetId = active.id;
     const targetTone = toneOverride ?? aiTone;
+    // A draft that arrives after the owner moved to another review must not
+    // land in that review's composer.
+    const stillShown = () => activeIdRef.current === targetId;
     setAiRegenerating(true);
     setAiFromBackground(false);
     try {
-      const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
+      const res = await fetch(`/api/feedback/${targetId}/suggest-reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locale, tone: targetTone }),
       });
+      if (!stillShown()) return;
       if (res.ok) {
         const data = await res.json();
+        if (!stillShown()) return;
         if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
         if (typeof data?.source === 'string') setAiSource(data.source);
         if (data?.tone === 'warm' || data?.tone === 'formal' || data?.tone === 'apologetic') {
           setAiTone(data.tone);
         }
+      } else if (res.status === 429) {
+        flashReply(
+          isTr ? 'Çok sık istek. Biraz bekleyip tekrar deneyin.' : 'Too many requests. Please wait a moment.',
+          'error',
+        );
       } else if (await isPulseAiDisabledResponse(res)) {
-        setAiDisabledByAdmin(true);
+        if (stillShown()) setAiDisabledByAdmin(true);
+      } else {
+        flashReply(
+          isTr ? 'Taslak yenilenemedi. Lütfen tekrar deneyin.' : 'The draft could not be refreshed. Please try again.',
+          'error',
+        );
       }
     } catch {
-      /* ignore */
+      if (stillShown()) {
+        flashReply(
+          isTr ? 'Bağlantı hatası. Taslak yenilenemedi.' : 'Network error. The draft was not refreshed.',
+          'error',
+        );
+      }
     } finally {
       setAiRegenerating(false);
     }
@@ -724,6 +726,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (!active || sendingReply || !confirmResponsibility) return;
     const body = (overrideBody ?? replyDraft).trim();
     if (!body) return;
+    const targetId = active.id;
+    const stillShown = () => activeIdRef.current === targetId;
     setSendingReply(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
     const replySource =
@@ -733,7 +737,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           ? 'template_fallback'
           : 'manual';
     try {
-      const res = await fetch(`/api/feedback/${active.id}/reply`, {
+      const res = await fetch(`/api/feedback/${targetId}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -749,19 +753,26 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         const data = await res.json().catch(() => ({}));
         setFeedbacks((list) =>
           list.map((r) =>
-            r.id === active.id ? { ...r, isReplied: true, hasPendingAiDraft: false } : r,
+            r.id === targetId ? { ...r, isReplied: true, hasPendingAiDraft: false } : r,
           ),
         );
         const newReply: SentReply = {
           // The API returns { reply: { id, ... } }; using its id keeps the
           // optimistic row and the refetched thread from showing twice.
-          id: data?.reply?.id ?? `tmp-${Date.now()}`,
+          id: data?.reply?.id ?? `tmp-${Date.now()}-${targetId}`,
           body: data?.reply?.body ?? body,
           channel: data?.reply?.channel ?? (wantsEmail ? 'email' : 'internal'),
           status: data?.reply?.status ?? (data?.email?.status === 'failed' ? 'failed' : 'sent'),
           createdAt: data?.reply?.createdAt ?? new Date().toISOString(),
         };
-        setSentReplies((list) => [...list, newReply]);
+        sentLocallyRef.current.set(targetId, [
+          ...(sentLocallyRef.current.get(targetId) ?? []),
+          newReply,
+        ]);
+        // The owner opened another review while this one was sending: the
+        // list row is updated above, the composer on screen is left alone.
+        if (!stillShown()) return;
+        setSentReplies((list) => [...list.filter((r) => r.id !== newReply.id), newReply]);
         setReplyDraft('');
         setAiSource(null);
         setAiFromBackground(false);
@@ -784,19 +795,22 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         } else {
           flashReply(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
         }
-      } else {
+      } else if (stillShown()) {
         const data = await res.json().catch(() => ({}));
-        flashReply(replyErrorMessage(data, isTr), 'error');
+        flashReply(replyErrorMessage(data, isTr, res.status), 'error');
       }
     } catch {
-      flashReply(
-        isTr
-          ? 'Bağlantı hatası. Yanıt gönderilemedi, lütfen tekrar deneyin.'
-          : 'Network error. The reply was not sent, please try again.',
-        'error',
-      );
+      if (stillShown()) {
+        flashReply(
+          isTr
+            ? 'Bağlantı hatası. Yanıt gönderilemedi, lütfen tekrar deneyin.'
+            : 'Network error. The reply was not sent, please try again.',
+          'error',
+        );
+      }
+    } finally {
+      setSendingReply(false);
     }
-    setSendingReply(false);
   };
 
   const onUseAiAndSend = async () => {
@@ -974,13 +988,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // list get a Pulse AI draft. Nothing is sent automatically.
   const onBulkAiReply = async () => {
     if (bulkBusy) return;
+    // Low ratings only — the inbox never offers a draft for 4–5★, and every
+    // draft spends the same daily quota as "Taslak oluştur".
     const targetIds = filteredList
-      .filter((f) => !f.isReplied)
+      .filter((f) => !f.isReplied && f.rating <= 3)
       .slice(0, 50)
       .map((f) => f.id);
     if (targetIds.length === 0) {
       setBulkNotice({
-        msg: isTr ? 'Yanıt bekleyen yorum yok.' : 'No reviews awaiting reply.',
+        msg: isTr ? 'Yanıt bekleyen düşük puanlı yorum yok.' : 'No low-rated reviews awaiting a reply.',
         tone: 'error',
       });
       return;
@@ -1007,9 +1023,17 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       const data = await res.json().catch(() => ({}));
       const processed = typeof data?.processed === 'number' ? data.processed : 0;
       const skipped = typeof data?.skipped === 'number' ? data.skipped : 0;
+      // Only rows the server really stored a draft for get the badge.
+      const savedIds = new Set<string>(
+        Array.isArray(data?.drafts)
+          ? (data.drafts as Array<{ feedbackId?: unknown; saved?: unknown }>)
+              .filter((d) => d?.saved === true && typeof d.feedbackId === 'string')
+              .map((d) => d.feedbackId as string)
+          : [],
+      );
       setFeedbacks((list) =>
         list.map((r) =>
-          targetIds.includes(r.id) && !r.isReplied ? { ...r, hasPendingAiDraft: true } : r,
+          savedIds.has(r.id) && !r.isReplied ? { ...r, hasPendingAiDraft: true } : r,
         ),
       );
       setBulkNotice({
@@ -1037,7 +1061,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   }, [bulkNotice]);
 
   const bulkEligibleCount = useMemo(
-    () => filteredList.filter((f) => !f.isReplied).slice(0, 50).length,
+    () => filteredList.filter((f) => !f.isReplied && f.rating <= 3).slice(0, 50).length,
     [filteredList],
   );
 
@@ -1325,7 +1349,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               aiTone={aiTone}
               setAiTone={setAiTone}
               aiDisabledByAdmin={aiDisabledByAdmin}
-              onRegenerateAi={() => onRegenerateAi()}
+              onRegenerateAi={(tone) => onRegenerateAi(tone)}
               onUseAiAndSend={onUseAiAndSend}
               onCopyAiToDraft={onCopyAiToDraft}
               replyDraft={replyDraft}

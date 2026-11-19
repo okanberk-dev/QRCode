@@ -42,7 +42,8 @@ interface PulseAiSuggestionCardProps {
   setAiTone: (v: AiTone) => void;
   /** Yönetici Pulse AI'yı bu işletme için kapattı — AI aksiyonları gizlenir. */
   aiDisabledByAdmin?: boolean;
-  onRegenerateAi: () => void;
+  /** Pass the tone when it was just changed — the page's state is not updated yet. */
+  onRegenerateAi: (tone?: AiTone) => void;
   onUseAiAndSend: () => void;
   onCopyAiToDraft: () => void;
   /** §45 — the one-click send needs the same per-message consent as Send. */
@@ -82,7 +83,7 @@ export function PulseAiSuggestionCard({
         setAiTone(next);
         // Tone change auto-regenerates an existing draft (no extra click).
         if (aiSuggestion && !aiRegenerating && !aiLoading) {
-          onRegenerateAi();
+          onRegenerateAi(next);
         }
       }}
       disabled={aiLoading || aiRegenerating}
@@ -224,7 +225,7 @@ export function PulseAiSuggestionCard({
               </button>
               <button
                 type="button"
-                onClick={onRegenerateAi}
+                onClick={() => onRegenerateAi()}
                 disabled={aiRegenerating}
                 className="bz-btn-on-dark bz-btn-sm w-full sm:w-auto"
               >
@@ -242,7 +243,7 @@ export function PulseAiSuggestionCard({
             <>
               <button
                 type="button"
-                onClick={onRegenerateAi}
+                onClick={() => onRegenerateAi()}
                 disabled={aiLoading || aiRegenerating}
                 className="bz-btn-lime w-full sm:w-auto"
               >

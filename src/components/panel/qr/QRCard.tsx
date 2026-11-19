@@ -11,7 +11,14 @@ import {
   MoreHorizontal,
   Trash2,
 } from "lucide-react";
-import { PlatformChip, type PlatformId } from "@/components/ui";
+import { PlatformChip } from "@/components/ui";
+import {
+  QR_PLATFORM_LABELS,
+  QR_PLATFORM_TO_CHIP,
+  buildQrImageUrl,
+  downloadQrPng,
+  qrDownloadErrorMessage,
+} from "./qr-shared";
 import { PulseMenu, PulseMenuDivider, PulseMenuItem } from "@/components/ui/PulseMenu";
 import { copyToClipboard } from "@/lib/clipboard";
 import { resolveDisplayTimeZone } from "@/lib/timezone";
@@ -48,92 +55,14 @@ export interface QRCardItem {
 
 interface QRCardProps {
   item: QRCardItem;
-  /** @deprecated Lazy server-fetched SVG was used by an earlier preview
-   *  variant; the root-cause fix renders the QR preview inside the card
-   *  via a tiny inline `<img src="?format=png&width=240">`, so the value
-   *  is ignored. Kept as optional prop to avoid touching call sites. */
-  svg?: string;
-  defaultPlatformLabel?: string;
   locale?: "tr" | "en";
   /** Optional delete handler. When omitted (e.g. read-only contexts), the
    *  "…" menu has no delete item. */
   onDelete?: () => void;
 }
 
-const PLATFORM_TO_CHIP: Record<string, PlatformId> = {
-  google: "google",
-  yemeksepeti: "yemeksepeti",
-  getir: "getir",
-  trendyol_go: "trendyol_go",
-  tripadvisor: "tripadvisor",
-  airbnb: "airbnb",
-  booking: "booking",
-  yandex: "yandex",
-};
-
-const PLATFORM_LABEL: Record<string, string> = {
-  google: "Google Maps",
-  yemeksepeti: "Yemeksepeti",
-  getir: "Getir Yemek",
-  trendyol_go: "Trendyol GO",
-  tripadvisor: "Tripadvisor",
-  airbnb: "Airbnb",
-  booking: "Booking",
-  yandex: "Yandex",
-};
-
-/**
- * Build the server-side QR download URL. Tüm callsite'lar `style: 'plain'`
- * kullanır — kullanıcı talebi: "arka plan tasarım vs. olmasın, sadece QR
- * kod gözüksün". Plain mode `QRCode.toBuffer` mono çıktı (yalnız QR module
- * matrix, kullanıcının dark/light renkleri). Pulse Lime hero frame +
- * headline + footer YOK; composePremiumQrPng SVG text rendering'i Vercel
- * serverless'ta sistem fontu eksikliği nedeniyle kare yazı (tofu) üretiyordu
- * → plain mode hiç text içermez = font sorunu yapısal olarak elimine.
- *
- * Callsite'lar:
- *   - PNG download button (width=1080 print quality)
- *   - PDF print flow (width=1080, browser print → Save as PDF)
- *   - Inline thumbnail (width=240 preview slot)
- *
- * Tümü `style: 'plain'` ile wizard preview'la birebir tutarlı — owner'ın
- * sihirbazda gördüğü QR aynı görsel kimlikle iner.
- */
-function buildQrUrl(
-  item: Pick<QRCardItem, "restaurantId" | "tableNumber" | "platform" | "darkColor" | "lightColor">,
-  options: { format: "png" | "svg"; width?: number; style?: "premium" | "plain" },
-): string {
-  const params = new URLSearchParams({ format: options.format });
-  if (item.tableNumber) params.set("table", item.tableNumber);
-  if (item.platform) params.set("platform", item.platform);
-  if (item.darkColor && item.lightColor) {
-    params.set("dark", item.darkColor);
-    params.set("light", item.lightColor);
-  }
-  if (options.width) params.set("width", String(options.width));
-  // `style=plain` server-side `usePlain` branch'ini tetikler →
-  // composePremiumQrPng yerine `QRCode.toBuffer` (font-bağımsız). Default
-  // (`premium`) eski davranış, query'e eklenmez.
-  if (options.style === "plain") params.set("style", "plain");
-  return `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`;
-}
-
-function safeFileName(name: string): string {
-  return name
-    .replace(/ı/g, "i")
-    .replace(/İ/g, "I")
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-zA-Z0-9_-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60) || "qr";
-}
-
 export function QRCard({
   item,
-  svg: _svg,
-  defaultPlatformLabel = "Google",
   locale = "tr",
   onDelete,
 }: QRCardProps) {
@@ -143,9 +72,8 @@ export function QRCard({
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const isTr = locale === "tr";
-  const platformChip = item.platform ? PLATFORM_TO_CHIP[item.platform] : null;
-  const platformLabel = item.platform ? PLATFORM_LABEL[item.platform] : null;
-  const fileName = safeFileName(item.name);
+  const platformChip = item.platform ? QR_PLATFORM_TO_CHIP[item.platform] : null;
+  const platformLabel = item.platform ? QR_PLATFORM_LABELS[item.platform] : null;
 
   /**
    * PNG download — **plain QR** (yalnız QR matrix, kullanıcının seçtiği
@@ -169,59 +97,10 @@ export function QRCard({
     setDownloadError(null);
     setDownloadingPng(true);
     try {
-      const res = await fetch(
-        buildQrUrl(item, { format: "png", width: 1080, style: "plain" }),
-      );
-      if (!res.ok) {
-        setDownloadError(
-          isTr
-            ? `İndirilemedi (HTTP ${res.status}). Lütfen tekrar deneyin.`
-            : `Download failed (HTTP ${res.status}). Please retry.`,
-        );
-        return;
-      }
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("image/png")) {
-        setDownloadError(
-          isTr
-            ? "Sunucu beklenmedik içerik döndürdü. Sayfayı yenileyip tekrar deneyin."
-            : "Server returned unexpected content. Refresh and retry.",
-        );
-        return;
-      }
-      const blob = await res.blob();
-      // 100 byte threshold: bir PNG header bile en az ~70 byte (8 byte
-      // signature + 25 byte IHDR + 12 byte IEND); 100 byte altı kesin
-      // bozuk/empty render. Owner empty file değil actionable error
-      // görsün.
-      if (blob.size < 100) {
-        setDownloadError(
-          isTr
-            ? `Boş dosya alındı (${blob.size} B). Tekrar deneyin; sorun sürerse destek ile iletişime geçin.`
-            : `Empty file (${blob.size} B). Please retry; contact support if the issue persists.`,
-        );
-        return;
-      }
-      const objUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objUrl;
-      a.download = `qr-${fileName}.png`;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      // Defer cleanup — iOS Safari + Chrome download race condition fix.
-      // Eğer `a.remove()` + `URL.revokeObjectURL` immediate çağrılırsa
-      // bazı browser sürümlerinde transfer iptal olur → kullanıcıya boş
-      // dosya iner. 1000ms yeterli (download stream başlamış olur).
-      setTimeout(() => {
-        a.remove();
-        URL.revokeObjectURL(objUrl);
-      }, 1000);
+      await downloadQrPng(item, item.name);
     } catch (err) {
       console.error("[QRCard] PNG download failed:", err);
-      setDownloadError(
-        isTr ? "Bağlantı hatası. İnternet bağlantınızı kontrol edin." : "Network error.",
-      );
+      setDownloadError(qrDownloadErrorMessage(err, isTr));
     } finally {
       setDownloadingPng(false);
     }
@@ -246,7 +125,7 @@ export function QRCard({
     try {
       // PDF için plain QR — Pulse Lime hero frame yok, sadece QR.
       const res = await fetch(
-        buildQrUrl(item, { format: "png", width: 1080, style: "plain" }),
+        buildQrImageUrl(item, { format: "png", width: 1080, style: "plain" }),
       );
       if (!res.ok) {
         setDownloadError(
@@ -349,7 +228,7 @@ export function QRCard({
   // Inline preview — plain QR (sadece module matrix, kullanıcı renkleri).
   // Kullanıcı talebi: arka plan Pulse Lime tasarımı yok, "sadece QR kod
   // gözüksün". `style=plain` server `QRCode.toBuffer` mono mode'a yönelir.
-  const previewSrc = buildQrUrl(item, { format: "png", width: 240, style: "plain" });
+  const previewSrc = buildQrImageUrl(item, { format: "png", width: 240, style: "plain" });
   // Admin passes the business as `branch`; skip it when the name already
   // starts with it ("Kadıköy Şube · Masa 3").
   const showBranch = Boolean(item.branch) && !item.name.startsWith(item.branch ?? "");
@@ -431,7 +310,7 @@ export function QRCard({
           </>
         ) : (
           <span className="min-w-0 truncate text-[12px] text-[#737373]">
-            {isTr ? "Varsayılan platform" : "Default platform"} · {defaultPlatformLabel}
+            {isTr ? "Varsayılan platform" : "Default platform"}
           </span>
         )}
         <span

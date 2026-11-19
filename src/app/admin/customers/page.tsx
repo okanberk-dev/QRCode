@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
 import { AlertBanner, PageHeader, PulseSelect, StatCard } from '@/components/ui';
-import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
@@ -103,40 +103,28 @@ export default function AdminCustomersPage() {
     hasComment: false as boolean,
     page: 1,
   });
+  // Every filter change writes `page: 1` in the same URL update. The old
+  // "reset page on filter change" effect plus a debounce timer holding a stale
+  // `filters.set` closure re-applied old filters 300 ms after "Filtreleri
+  // temizle" and bounced `?page=N` deep links N → 1 → N (members page parity).
   const range = filters.values.range;
-  const setRange = (v: Range) => filters.set('range', v);
+  const setRange = (v: Range) => filters.setMany({ range: v, page: 1 });
   const restaurantId = filters.values.restaurantId;
-  const setRestaurantId = (v: string) => filters.set('restaurantId', v);
+  const setRestaurantId = (v: string) => filters.setMany({ restaurantId: v, page: 1 });
   const searchDebounced = filters.values.search;
-  const [search, setSearch] = useState(searchDebounced);
-  const setSearchDebounced = (v: string) => filters.set('search', v);
+  const searchBox = useDebouncedUrlInput(searchDebounced, (v) => filters.setMany({ search: v, page: 1 }));
+  const search = searchBox.input;
+  const setSearch = searchBox.setInput;
   const segmentFilter = filters.values.segment;
-  const setSegmentFilter = (v: SegmentFilter) => filters.set('segment', v);
+  const setSegmentFilter = (v: SegmentFilter) => filters.setMany({ segment: v, page: 1 });
   const hasEmail = filters.values.hasEmail;
-  const setHasEmail = (v: boolean) => filters.set('hasEmail', v);
+  const setHasEmail = (v: boolean) => filters.setMany({ hasEmail: v, page: 1 });
   const hasPhone = filters.values.hasPhone;
-  const setHasPhone = (v: boolean) => filters.set('hasPhone', v);
+  const setHasPhone = (v: boolean) => filters.setMany({ hasPhone: v, page: 1 });
   const hasComment = filters.values.hasComment;
-  const setHasComment = (v: boolean) => filters.set('hasComment', v);
+  const setHasComment = (v: boolean) => filters.setMany({ hasComment: v, page: 1 });
   const page = filters.values.page;
   const setPage = (v: number) => filters.set('page', v);
-
-  useEffect(() => {
-    const t = setTimeout(() => setSearchDebounced(search.trim()), 300);
-    return () => clearTimeout(t);
-    // setSearchDebounced is a useUrlFilter wrapper proxy — new reference each
-    // render (CLAUDE.md §36). Adding to deps would loop. Search input string
-    // is the only intentional trigger.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
-
-  // Reset to first page whenever a non-page filter changes.
-  useEffect(() => {
-    setPage(1);
-    // setPage is also a useUrlFilter wrapper proxy (see CLAUDE.md §36).
-    // Filter values are the only intentional triggers.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, restaurantId, searchDebounced, segmentFilter, hasEmail, hasPhone, hasComment]);
 
   // Load restaurant options once (for the dropdown).
   useEffect(() => {
@@ -230,7 +218,7 @@ export default function AdminCustomersPage() {
     // started from the same baseline and only the last one survived: the
     // button cleared `hasComment` and left every other filter applied.
     // `setMany` applies them in a single write.
-    setSearch('');
+    searchBox.replaceInput('');
     filters.setMany({
       range: '30d',
       restaurantId: '',

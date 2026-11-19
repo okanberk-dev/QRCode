@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, use } from 'react';
 import Link from 'next/link';
+import { adminRoleLabel } from '@/components/admin/admin-nav';
 import {
   ArrowLeft,
   CalendarClock,
@@ -41,12 +42,13 @@ interface UserDetail {
   restaurant: { id: string; name: string; slug: string; isActive: boolean } | null;
 }
 
-const ROLE_LABEL: Record<string, { label: string; kind: BadgeKind }> = {
-  superadmin: { label: 'Superadmin', kind: 'info' },
-  manager: { label: 'Yönetici', kind: 'ok' },
-  // `staff` is the granular sub-tier; per-resource grants live in
-  // /admin/users/[id]/permissions (CLAUDE.md §37.2 RBAC).
-  staff: { label: 'Görevli', kind: 'lime' },
+// `staff` is the granular sub-tier; per-resource grants live in
+// /admin/users/[id]/permissions (CLAUDE.md §37.2 RBAC). Wording comes from
+// the shared admin role labels.
+const ROLE_KIND: Record<string, BadgeKind> = {
+  superadmin: 'info',
+  manager: 'ok',
+  staff: 'lime',
 };
 
 function dateLabel(iso: string | null): string {
@@ -140,7 +142,9 @@ export default function UserDetailPage({
   if (!data) return null;
 
   const { user, restaurant } = data;
-  const roleMeta = ROLE_LABEL[user.role] || { label: user.role, kind: 'ghost' as BadgeKind };
+  const roleMeta = ROLE_KIND[user.role]
+    ? { label: adminRoleLabel(user.role, 'tr'), kind: ROLE_KIND[user.role] }
+    : { label: user.role, kind: 'ghost' as BadgeKind };
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">

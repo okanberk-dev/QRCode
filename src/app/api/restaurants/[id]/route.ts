@@ -837,6 +837,10 @@ export async function DELETE(
       prisma.restaurant.delete({ where: { id } })
     ]);
 
+    // The public menu page is ISR-cached for an hour; drop it now so a
+    // deleted business stops being served.
+    revalidatePublicMenu(currentRest.slug);
+
     // Append-only audit log (CLAUDE.md §37.2 C — destructive action audit
     // zorunluluğu). Try/catch ile sarılı: AdminAuditLog tablosu drift /
     // table missing durumunda DELETE mantığı çökmesin. `actorSource` JWT

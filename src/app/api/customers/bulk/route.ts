@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
 import { rateLimit } from '@/lib/rate-limit';
@@ -70,6 +71,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
   }
   // Owner-only — superadmin (null scope) admin endpoint kullanır.
+  // Admin accounts need the same `customers:write` grant as
+  // /api/admin/customers — without it a restaurant-scoped manager could
+  // read the customer list through this owner endpoint instead.
+  if (actor.source === 'admin' && !(await hasPermission(actor.id, 'customers', 'write'))) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
   const scopedIds = await getScopedRestaurantIds(actor);
   if (scopedIds === null) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 });

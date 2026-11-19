@@ -4,30 +4,10 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import {
-  BarChart3,
-  BookOpen,
   ChevronLeft,
   ChevronRight,
-  ClipboardCheck,
-  CreditCard,
-  Crown,
-  FileEdit,
-  Globe,
-  Inbox,
-  KeyRound,
-  LayoutDashboard,
   LogOut,
-  Mail,
-  Megaphone,
-  QrCode,
   Search as SearchIcon,
-  ScrollText,
-  Settings,
-  Sparkles,
-  Store,
-  User,
-  Users,
-  UsersRound,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
@@ -35,7 +15,12 @@ import BuazeLogo from '@/components/marketing/BuazeLogo';
 import ViewportMount from '@/components/ui/ViewportMount';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { AdminPanelProfile } from '@/lib/admin-profile';
-import type { AdminAction, AdminResource } from '@/lib/rbac';
+import {
+  adminRoleLabel,
+  getActiveAdminHref,
+  getAdminNav,
+  toAdminNavRole,
+} from './admin-nav';
 
 const NotificationBell = nextDynamic(() => import('@/components/notifications/NotificationBell'), {
   ssr: false,
@@ -103,7 +88,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
   // cramped bottom row was a UX papercut (chevron clipped, touch target
   // too small on mobile drawer).
   const { t, locale } = useAdminTranslation();
-  const role = initialProfile?.role || 'manager';
+  const role = toAdminNavRole(initialProfile?.role);
   const profile = initialProfile;
   const [mobileOpen, setMobileOpen] = useState(false);
   // Expanded-group state: { groupId: bool }. Persisted to localStorage so
@@ -126,10 +111,6 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
       return next;
     });
   };
-
-  useEffect(() => {
-    setExpandedGroups(loadGroupState());
-  }, []);
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) => {
@@ -194,206 +175,20 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
     return () => document.removeEventListener('keydown', onKey);
   }, [mobileOpen]);
 
-  // Sidebar nav supports two entry kinds. Keep only the main landing page
-  // flat; related admin surfaces live under compact collapsible groups.
-  //
-  // `permission` (optional): granular RBAC gate for the `staff` role only.
-  // Superadmin always bypasses; manager + restaurant_owner go through the
-  // role array. Staff role is "blank canvas" — `roles` array does NOT
-  // include 'staff' for sensitive items; instead the link/group becomes
-  // visible only if the staff admin holds the matching `AdminPermission`
-  // grant ({resource}:{action}, see src/lib/rbac.ts).  Empty groups are
-  // hidden after child filtering so the sidebar stays tight.
-  type Permission = { resource: AdminResource; action?: AdminAction };
-  type NavItem = {
-    type: 'item';
-    href: string;
-    icon: typeof LayoutDashboard;
-    label: string;
-    roles: string[];
-    permission?: Permission;
-  };
-  type NavChild = {
-    href: string;
-    icon: typeof LayoutDashboard;
-    label: string;
-    permission?: Permission;
-    roles?: string[];
-  };
-  type NavGroup = {
-    type: 'group';
-    id: string;
-    icon: typeof LayoutDashboard;
-    label: string;
-    roles: string[];
-    children: NavChild[];
-  };
-  type Nav = NavItem | NavGroup;
+  // Navigation comes from the shared catalogue (admin-nav.ts): role gate,
+  // staff grants and empty-group pruning are applied there, so the sidebar,
+  // the mobile bottom bar and the command palette can never disagree.
+  const navLocale = locale === 'en' ? 'en' : 'tr';
+  const menuItems = getAdminNav(role, new Set(initialProfile?.permissions ?? []));
+  const activeHref = getActiveAdminHref(
+    pathname,
+    menuItems.flatMap((entry) =>
+      entry.type === 'item' ? [entry.href] : entry.children.map((child) => child.href),
+    ),
+  );
 
-  // Build a O(1) lookup set from the admin's effective grants. Superadmin
-  // bypasses, so this stays empty + irrelevant in their session.
-  const permSet = new Set(initialProfile?.permissions ?? []);
-  const permKey = (p: Permission) => `${p.resource}:${p.action ?? 'read'}`;
-  const staffSees = (perm?: Permission) => !!perm && permSet.has(permKey(perm));
-
-  const menuItems: Nav[] = [
-    { type: 'item', href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner', 'staff'] },
-    {
-      type: 'group',
-      id: 'operations',
-      icon: Inbox,
-      label: locale === 'en' ? 'Operations' : 'Operasyon',
-      roles: ['superadmin', 'manager', 'restaurant_owner', 'staff'],
-      children: [
-        { href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar', permission: { resource: 'reviews', action: 'read' } },
-        { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', permission: { resource: 'analytics', action: 'read' } },
-        { href: '/admin/qr', icon: QrCode, label: t('qr_codes') },
-        ...(role === 'manager' ? [] : [{ href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin'] }]),
-        // CLAUDE.md §42 — Denetim Merkezi (superadmin). 3 alt-yüzey:
-        //   1. Şablonlar (catalog + edit + question builder)
-        //   2. Kategoriler (sektör taksonomisi)
-        //   3. İstatistikler (sistem KPI + sektör breakdown + top templates +
-        //      per-restoran kullanım)
-        // Owner panel girişi `/dashboard/audits` ayrı route'tan açılır.
-        { href: '/admin/audits/templates', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Templates' : 'Denetim Şablonları', roles: ['superadmin'] },
-        { href: '/admin/audits/categories', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Categories' : 'Denetim Kategorileri', roles: ['superadmin'] },
-        { href: '/admin/audits/stats', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Stats' : 'Denetim İstatistikleri', roles: ['superadmin'] },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'workspace',
-      icon: Store,
-      label: locale === 'en' ? 'Workspace' : 'İşletme',
-      roles: ['restaurant_owner'],
-      children: [
-        { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar' },
-        { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip' },
-        { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma' },
-        { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar' },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'accounts',
-      icon: Crown,
-      label: locale === 'en' ? 'Accounts' : 'Hesaplar',
-      roles: ['superadmin', 'staff'],
-      children: [
-        { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', permission: { resource: 'members', action: 'read' } },
-        { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', permission: { resource: 'users', action: 'read' } },
-        { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', permission: { resource: 'customers', action: 'read' } },
-        { href: '/admin/plans', icon: CreditCard, label: locale === 'en' ? 'Subscriptions' : 'Abonelikler', permission: { resource: 'plans', action: 'read' } },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'content',
-      icon: BookOpen,
-      label: locale === 'en' ? 'Content' : 'İçerik',
-      roles: ['superadmin', 'staff'],
-      children: [
-        { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog', permission: { resource: 'blog', action: 'read' } },
-        { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', permission: { resource: 'announcements', action: 'read' } },
-        // Legal documents + site-settings have no `staff` granting path —
-        // hardcoded superadmin-only (no AdminResource mapping defined for legal-documents).
-        { href: '/admin/legal-documents', icon: ScrollText, label: locale === 'en' ? 'Legal Documents' : 'Hukuki Metinler', roles: ['superadmin'] },
-        { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları', permission: { resource: 'site_settings', action: 'read' } },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'mail',
-      icon: Mail,
-      label: locale === 'en' ? 'Mail' : 'Mail',
-      roles: ['superadmin', 'staff'],
-      children: [
-        { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri', permission: { resource: 'mail_templates', action: 'read' } },
-        { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları', permission: { resource: 'mail_templates', action: 'read' } },
-        { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri', permission: { resource: 'mail_templates', action: 'read' } },
-        { href: '/admin/dev/lifecycle-emails', icon: Mail, label: locale === 'en' ? 'Lifecycle' : 'Yaşam Döngüsü', roles: ['superadmin'] },
-      ],
-    },
-    // "Bağımsız şeyler" kurgusu — çalışan ama sidebar'da olmayan superadmin
-    // oversight/dev sayfaları tek grupta toplandı (eskiden sadece command
-    // palette / direkt URL ile erişiliyordu). Bu üç sayfanın AdminResource
-    // RBAC mapping'i yok → grup superadmin-only (legal-documents paterni).
-    {
-      type: 'group',
-      id: 'system',
-      icon: KeyRound,
-      label: locale === 'en' ? 'System' : 'Sistem',
-      roles: ['superadmin'],
-      children: [
-        { href: '/admin/api', icon: KeyRound, label: locale === 'en' ? 'API & Webhooks' : 'API & Webhook', roles: ['superadmin'] },
-        { href: '/admin/audit-logs', icon: ScrollText, label: locale === 'en' ? 'Audit Log' : 'Denetim Kaydı', roles: ['superadmin'] },
-        { href: '/admin/google', icon: Globe, label: locale === 'en' ? 'Google Integrations' : 'Google Entegrasyonları', roles: ['superadmin'] },
-      ],
-    },
-  ];
-
-  if (role === 'superadmin' && process.env.NODE_ENV !== 'production') {
-    const mailGroup = menuItems.find((item): item is NavGroup => item.type === 'group' && item.id === 'mail');
-    mailGroup?.children.push({
-      href: '/admin/dev/mail-preview',
-      icon: Mail,
-      label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
-      roles: ['superadmin'],
-    });
-  }
-
-  menuItems.push({
-    type: 'item',
-    href: '/admin/profile',
-    icon: User,
-    label: locale === 'en' ? 'Profile' : 'Profilim',
-    roles: ['superadmin', 'manager', 'restaurant_owner', 'staff'],
-  });
-
-  // Per-child visibility: staff role hides any child without an explicit
-  // permission grant OR whose `roles` array excludes them. Other roles
-  // see all children of the groups they can access (legacy behaviour).
-  function isChildAllowed(child: NavChild): boolean {
-    if (child.roles && !child.roles.includes(role)) return false;
-    if (role !== 'staff') return true;
-    return staffSees(child.permission);
-  }
-  // After filtering children, a group with zero allowed children should
-  // disappear from the sidebar entirely — empty accordions are noise.
-  function isGroupVisible(group: NavGroup): boolean {
-    if (!group.roles.includes(role)) return false;
-    return group.children.some(isChildAllowed);
-  }
-
-  // Exactly one active entry per page: the longest visible href that matches
-  // the path. A plain prefix test lit up both "Bülten Aboneleri"
-  // (/admin/newsletters) and "Bülten Kampanyaları" (/admin/newsletters/campaigns).
-  const matchesPath = (href: string) => pathname === href || !!pathname?.startsWith(href + '/');
-  const visibleHrefs: string[] = [];
-  for (const entry of menuItems) {
-    if (entry.type === 'group') {
-      if (!isGroupVisible(entry)) continue;
-      for (const child of entry.children) if (isChildAllowed(child)) visibleHrefs.push(child.href);
-    } else {
-      visibleHrefs.push(entry.href);
-    }
-  }
-  const activeHref =
-    visibleHrefs.filter(matchesPath).sort((a, b) => b.length - a.length)[0] ?? null;
-
-  const roleLabel =
-    role === 'superadmin'
-      ? locale === 'en'
-        ? 'Superadmin'
-        : 'Superadmin'
-      : role === 'restaurant_owner'
-        ? locale === 'en'
-          ? 'Owner'
-          : 'İşletme Sahibi'
-        : locale === 'en'
-          ? 'Manager'
-          : 'İşletme Yetkilisi';
-  const displayName = profile?.name || profile?.username || profile?.email?.split('@')[0] || 'Kullanıcı';
+  const roleLabel = adminRoleLabel(role, navLocale);
+  const displayName = profile?.name || profile?.username || profile?.email?.split('@')[0] || (locale === 'en' ? 'User' : 'Kullanıcı');
   // Strip leading whitespace + non-printable chars before slicing — defends
   // against sentinel-only display names (single space, etc.) that would
   // otherwise render an empty avatar.
@@ -454,15 +249,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
         ref={forwardedNavRef as React.RefObject<HTMLElement>}
         className="flex-1 space-y-0.5 overflow-y-auto px-3"
       >
-        {menuItems
-          .filter((i) => {
-            if (i.type === 'group') return isGroupVisible(i);
-            // Flat items: role check + permission gate for staff
-            if (!i.roles.includes(role)) return false;
-            if (role !== 'staff' || !i.permission) return true;
-            return staffSees(i.permission);
-          })
-          .map((item, idx, visibleItems) => {
+        {menuItems.map((item, idx, visibleItems) => {
             // Subtle separator before each top-level group (visual clarity
             // when categories sit next to flat items).
             const showDividerBefore =
@@ -483,7 +270,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                     }`}
                 >
                   <Icon size={16} strokeWidth={2} className="shrink-0" />
-                  {!isCollapsed && <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
+                  {!isCollapsed && <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label[navLocale]}</span>}
                 </Link>
               );
             }
@@ -492,7 +279,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
             // when the active route lives inside one of the children
             // — operator never has to click to find where they are.
             const Icon = item.icon;
-            const allowedChildren = item.children.filter(isChildAllowed);
+            const allowedChildren = item.children;
             const childActive = allowedChildren.some((c) => c.href === activeHref);
             const isExpanded = childActive || expandedGroups[item.id] === true;
             return (
@@ -512,7 +299,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                   <Icon size={16} strokeWidth={2} className="shrink-0" />
                   {!isCollapsed && (
                     <>
-                      <span className="flex-1 truncate text-left animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>
+                      <span className="flex-1 truncate text-left animate-in fade-in slide-in-from-left-2 duration-300">{item.label[navLocale]}</span>
                       <ChevronRight
                         size={14}
                         strokeWidth={2}
@@ -540,7 +327,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                             }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
-                          <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{child.label}</span>
+                          <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{child.label[navLocale]}</span>
                         </Link>
                       );
                     })}
@@ -655,7 +442,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="bz-btn-icon bg-[#F2F2F2] text-[#0A0A0A]"
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-label={mobileOpen ? (locale === 'en' ? 'Close menu' : 'Menüyü kapat') : (locale === 'en' ? 'Open menu' : 'Menüyü aç')}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               {mobileOpen ? (
@@ -674,7 +461,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           className="lg:hidden fixed inset-0 z-50 flex"
           role="dialog"
           aria-modal="true"
-          aria-label="Admin navigation"
+          aria-label={locale === 'en' ? 'Admin navigation' : 'Yönetim menüsü'}
         >
           <div
             className="w-[280px] max-w-[85vw] h-full bg-white border-r border-[#EDEDED] shadow-2xl flex flex-col text-[#0A0A0A]"
@@ -686,7 +473,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
             type="button"
             className="flex-1 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
-            aria-label="Close menu"
+            aria-label={locale === 'en' ? 'Close menu' : 'Menüyü kapat'}
           />
         </div>
       )}
