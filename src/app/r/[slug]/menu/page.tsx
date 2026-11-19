@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, type CSSProperties } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
 import {
   X,
@@ -177,7 +177,11 @@ export default function PublicMenuPage() {
   const themeColor = data.menuAccentColor || data.primaryColor || '#0A0A0A';
 
   return (
-    <div className="flex min-h-screen flex-col bg-white selection:bg-[#EAF9B8]">
+    <div
+      className="flex min-h-screen flex-col bg-white selection:bg-[#EAF9B8]"
+      // Restaurant menu = owner's content: keep Space Grotesk (Clash Display license, §11).
+      style={{ '--font-heading': 'var(--font-menu-heading)' } as CSSProperties}
+    >
       <a href="#menu-main-content" className="bz-skip-link">
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
@@ -199,7 +203,7 @@ export default function PublicMenuPage() {
             className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-base font-medium text-white shadow-sm"
             style={{
               backgroundColor: themeColor,
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--font-menu-heading)',
               letterSpacing: '-0.03em',
             }}
             aria-hidden="true"

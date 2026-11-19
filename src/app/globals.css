@@ -40,9 +40,12 @@
    * temizliği için sadeleştirildi. Geri eklemek için: önce 3+ callsite
    * doğrula, sonra Pulse paletinden hex değer ata (CLAUDE.md §7). */
 
-  /* Font stack — Pulse: Space Grotesk (display), Inter (body), JetBrains Mono (mono) */
+  /* Font stack — Clash Display (display), Inter (body), JetBrains Mono (mono).
+   * --font-menu-heading: public restaurant menus keep Space Grotesk — the
+   * Clash Display license forbids offering it for customers' content (§11). */
   --font-body: var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-heading: var(--font-space-grotesk), var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: var(--font-clash-display), var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-menu-heading: var(--font-space-grotesk), var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
@@ -1490,15 +1493,13 @@ select.bz-input option:checked {
  * so portaled menus, selects and modals rendered into <body> get it too.
  * Marketing, auth and the public /r /menu /s pages keep the §11 look even
  * though they reuse a few bz-* classes.
- * Font names come from PanelTheme (next/font, panel layouts only).
+ * Fonts: the panels use the site pair (Clash Display + Inter, §11) — the
+ * root --font-* stacks apply unchanged, so this block sets no font vars.
  * ───────────────────────────────────────────────────────────── */
 :root:has(.bz-panel) {
-  --font-body: var(--font-panel-sans, var(--font-inter)), system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-heading: var(--font-panel-sans, var(--font-space-grotesk)), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: var(--font-panel-mono, var(--font-jetbrains-mono)), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   --bz-shadow-xs: 0 1px 2px rgba(10, 10, 10, 0.05);
 }
-/* Geist reads best a step heavier than Space Grotesk for titles/numbers. */
+/* Panel titles / numbers read best in Clash Display Semibold (§49). */
 :root:has(.bz-panel) :is(.bz-h-tight, .bz-h-tight-2, .bz-wordmark) {
   font-weight: 600;
   letter-spacing: -0.02em;

@@ -24,7 +24,7 @@ export default function MenuError({
         </div>
         <h1
           className="text-[24px] font-medium leading-[1.15] tracking-[-0.025em] text-[#0A0A0A]"
-          style={{ fontFamily: 'var(--font-heading)' }}
+          style={{ fontFamily: 'var(--font-menu-heading)' }}
         >
           Menü yüklenemedi.
         </h1>
