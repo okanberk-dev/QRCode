@@ -366,6 +366,7 @@ async function renderAnalyticsPage({
     if (typeof value === 'string' && value) exportQuery.set(key, value);
   }
   if (selectedRestaurantId) exportQuery.set('restaurantId', selectedRestaurantId);
+  if (!isTr) exportQuery.set('locale', 'en');
   const exportQs = exportQuery.toString();
   const exportHref = `/api/dashboard/analytics/export${exportQs ? `?${exportQs}` : ''}`;
 

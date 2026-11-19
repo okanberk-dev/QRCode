@@ -4,15 +4,8 @@ import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { revalidatePricing } from '@/lib/marketing-revalidate';
 
-// §38.225 — USD-only fiyatlandırma (Stage 145). Buaze 2026-05 itibariyle TR
-// pazarındaki TRY fiyatları kaldırdı, tek currency USD. Dodo Payments live
-// product ID'leriyle birebir bind. priceTry: 0 (backwards-compat field, UI'da
-// gösterilmez); priceUsd Dodo product fiyatlarıyla eşleşir.
-//
-// Dodo product mapping (test mode + production aynı ID'ler):
-//   Starter: pdt_0NfZCuJmSmGXX3FoIkdIu ($1.00 test, sonra prod fiyatı)
-//   Growth:  pdt_0NfZD3pbkJVz1Zx0972sy ($39.99)
-//   Scale:   pdt_0NfZDHioCEcSDhghMHLae ($99.99)
+// Seed tiers start as manual billing (USD display prices). Switch a tier to
+// PayNKolay in /admin/plans after entering its TRY price (CLAUDE.md §44).
 //
 // Default copy must stay true for today's product (marketing spec D8): no
 // plan limits or feature gates are enforced in code, so every plan lists the
@@ -50,8 +43,7 @@ const DEFAULTS = [
     isActive: true,
     isFeatured: false,
     sortOrder: 10,
-    paymentProvider: 'dodo_payments',
-    dodoProductId: 'pdt_0NfZCuJmSmGXX3FoIkdIu',
+    paymentProvider: 'manual',
   },
   {
     nameTr: 'Growth',
@@ -69,8 +61,7 @@ const DEFAULTS = [
     isActive: true,
     isFeatured: true,
     sortOrder: 20,
-    paymentProvider: 'dodo_payments',
-    dodoProductId: 'pdt_0NfZD3pbkJVz1Zx0972sy',
+    paymentProvider: 'manual',
   },
   {
     nameTr: 'Scale',
@@ -88,8 +79,7 @@ const DEFAULTS = [
     isActive: true,
     isFeatured: false,
     sortOrder: 30,
-    paymentProvider: 'dodo_payments',
-    dodoProductId: 'pdt_0NfZDHioCEcSDhghMHLae',
+    paymentProvider: 'manual',
   },
 ];
 

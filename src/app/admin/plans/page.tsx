@@ -121,7 +121,7 @@ export default async function AdminPlansPage() {
       <PageHeader
         eyebrow="ABONELİKLER"
         title="Plan yönetimi"
-        description="Müşterilerinin plan dağılımını izle, paket fiyatlarını yönet. İşletme sahipleri Dodo Payments ile kendi aboneliklerini başlatabilir; özel anlaşmalar için planı elle düzenleyebilirsin."
+        description="Müşterilerinin plan dağılımını izle, paket fiyatlarını yönet. İşletme sahipleri PayNKolay ile kartla (TL) ödeyebilir; özel anlaşmalar için planı elle düzenleyebilirsin."
       />
 
       <div className="grid gap-3.5 grid-cols-2 lg:grid-cols-4 mb-4">
@@ -261,8 +261,9 @@ export default async function AdminPlansPage() {
         />
         <div style={{ fontSize: 12.5, color: '#0A0A0A', lineHeight: 1.55 }}>
           <strong>Ödeme entegrasyonu:</strong> Bir pakette ödeme sağlayıcısı olarak
-          Dodo Payments seçilip ürün kimliği girildiğinde, işletme sahibi
-          panelinde &quot;Aboneliği yönet&quot; butonu açılır. Manuel plan
+          PayNKolay seçilip TL fiyatı girildiğinde, işletme sahibi
+          fiyatlandırma sayfasında ve panelinde &quot;Kartla öde&quot; düğmesini görür.
+          Her ödeme bir dönem açar, otomatik çekim yoktur. Manuel plan
           değişiklikleri{' '}
           <Link href="/admin/members" className="underline text-[#0A0A0A] font-medium">
             İşletme Sahipleri

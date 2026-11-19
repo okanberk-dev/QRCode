@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { applyPlanModulesForOwner } from '@/lib/plan-modules';
+import { writePanelAuditLog } from '@/lib/audit-log';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
@@ -90,6 +92,9 @@ export async function GET(req: NextRequest) {
           id: true,
           slug: true,
           name: true,
+          // Owner's "Geçici olarak kapalıyız" switch — shown on /r/[slug].
+          temporarilyClosed: true,
+          closedReason: true,
           category: true,
           address: true,
           phone: true,
@@ -560,6 +565,23 @@ export async function POST(req: NextRequest) {
         userId: ownerUserId,
       },
     });
+
+    // A new branch gets the modules of the owner's plan (§5.2), and the
+    // create is audited like the other business writes (§37.2 C).
+    if (ownerUserId) {
+      await applyPlanModulesForOwner(ownerUserId).catch((err) =>
+        console.error('[restaurants:create] plan modules not applied', {
+          restaurantId: restaurant.id,
+          error: (err as Error).message,
+        }),
+      );
+    }
+    await writePanelAuditLog(
+      actor,
+      actor.source === 'admin' ? 'admin.restaurants.create' : 'restaurant.create',
+      ownerUserId ?? restaurant.id,
+      { restaurantId: restaurant.id, name: restaurant.name, slug: restaurant.slug },
+    ).catch(() => undefined);
 
     return NextResponse.json(restaurant, { status: 201 });
   } catch (error) {

@@ -302,8 +302,7 @@ export async function canDeleteRestaurant(
  * `resolveOwnerUserId` bir workspace'in owner id'sini AKTİF HER team
  * member için döndürür — `TeamMember.role` hiç bakılmaz. Billing route'ları
  * yalnız onu kullanınca, `viewer` etiketiyle davet edilmiş bir üye bile
- * `GET /api/customer-portal` çağırıp owner'ın imzalı Dodo müşteri portalına
- * yönlendiriliyordu: tüm fatura geçmişi, fatura adresi, kayıtlı kart bilgisi
+ * (eski Dodo) müşteri portalına yönlendirilebiliyordu: tüm fatura geçmişi, fatura adresi, kayıtlı kart bilgisi
  * görünür; ödeme yöntemi değiştirilebilir; abonelik iptal edilebilir.
  *
  * Billing, `canWriteRestaurant`'ın kapsadığı operasyonel yazma değil,

@@ -3698,7 +3698,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Plana geçme',
             paragraphs: [
-              '**Hesabım → Plan ve faturalama** bölümünde **Planı yükselt** düğmesine basın ve planınızı seçin. Aylık abonelik USD olarak, kartla, Dodo Payments üzerinden alınır. Planlar ve güncel fiyatlar [fiyatlandırma sayfasında](/tr/pricing) yer alır.',
+              '**Hesabım → Plan ve faturalama** bölümünde **Planı yükselt** düğmesine basın ve planınızı seçin. Ödeme Türk lirası olarak, kartla, PayNKolay’in güvenli sayfasında alınır; her ödeme bir ay ya da bir yıl açar. Planlar ve güncel fiyatlar [fiyatlandırma sayfasında](/tr/pricing) yer alır.',
             ],
           },
           {
@@ -3752,7 +3752,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Moving to a plan',
             paragraphs: [
-              'Under **Account → Plan & billing**, press **Upgrade plan** and choose your plan. Monthly subscriptions are charged in USD, by card, through Dodo Payments. Plans and current prices are on the [pricing page](/en/pricing).',
+              'Under **Account → Plan & billing**, press **Upgrade plan** and choose your plan. Payment is taken in Turkish lira, by card, on PayNKolay’s secure page; each payment opens one month or one year. Plans and current prices are on the [pricing page](/en/pricing).',
             ],
           },
           {
@@ -3806,7 +3806,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Kartı değiştirme ve iptal',
             paragraphs: [
-              '**Aboneliği yönet** düğmesi, ödeme sağlayıcımız Dodo Payments’ın müşteri portalını açar. Ödeme kartınızı buradan değiştirir, aboneliğinizi buradan iptal edersiniz. İptal ettiğinizde ödenmiş dönemin sonuna kadar panele erişiminiz sürer. Faturalandırmayı yalnızca hesap sahibi yönetebilir.',
+              'Kartla ödenen paketlerde otomatik çekim yoktur: ödediğiniz dönem bitince hesabınız ücretsiz plana geçer. Süreyi **Hesabım → Plan ve faturalama → Süreyi uzat** ile, dönem bitmeden uzatabilirsiniz. Kart bilgileriniz PayNKolay’de girilir ve Buaze’de saklanmaz. Faturalandırmayı yalnızca hesap sahibi yönetebilir.',
             ],
           },
           {
@@ -3859,7 +3859,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Changing your card and cancelling',
             paragraphs: [
-              '**Manage subscription** opens the customer portal of our payment provider, Dodo Payments. You change your payment card and cancel your subscription there. If you cancel, your panel access continues to the end of the paid period. Only the account owner can manage billing.',
+              'Plans paid by card are never charged automatically: when the paid period ends, the account moves to the free plan. Extend it before it ends under **Account → Plan & billing → Extend period**. Card details are entered on PayNKolay and never stored by Buaze. Only the account owner can manage billing.',
             ],
           },
           {

@@ -41,12 +41,10 @@ interface BillingSummary {
   subscriptionPlanId?: string | null;
   tier?: { id: string; name: string | null; isFeatured: boolean } | null;
   /** §44 self-service provider signals — null/'manual' = manual admin flow.
-   *  'dodo_payments' = self-service (Dodo customer portal + cancel via portal).
+   *  'paynkolay' = owner paid a period by card (no auto-renewal).
    *  Stage 149 §38.229 — eski 'iyzico' enum slot kaldırıldı (provider iptal). */
-  source?: 'manual' | 'dodo_payments' | null;
+  source?: string | null;
   cancelAtPeriodEnd?: boolean;
-  /** Dodo customer_id — needed for /customer-portal redirect. */
-  providerCustomerId?: string | null;
   billingAddress: {
     companyName: string | null;
     taxNumber: string | null;
@@ -107,9 +105,8 @@ function formatCurrency(amount: number, currency: string | null, locale: 'tr' | 
  * screenshot: dark "Mevcut Plan" hero + payment method + billing address +
  * invoice table.
  *
- * Self-service via Dodo Payments customer portal (Stage 142 §38.222) when
- * `summary.source === 'dodo_payments'`; otherwise admin-managed (manual
- * override hybrid §44.5). Owner sees "Aboneliği yönet" → Dodo portal redirect.
+ * Card payments go through PayNKolay (§44): one payment buys one period and
+ * the owner extends from this card; admin-managed plans stay manual (§44.5).
  */
 export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCardProps) {
   const [summary, setSummary] = useState<BillingSummary | null>(null);
@@ -121,17 +118,39 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
   const planName = summary
     ? (summary.tier?.name ?? PLAN_LABELS[summary.plan]?.[isTr ? 'tr' : 'en'] ?? summary.planLabel)
     : isTr ? 'Deneme' : 'Trial';
-  // §44 Dodo Payments self-service — portal redirect is the only inline
-  // action; cancel + reactivate are handled inside Dodo's customer portal
-  // (subscription management UI is full-featured there). This keeps Buaze
-  // tarafını basit + Dodo'nun kendi UX'ine güvenir.
-  const [busyAction, setBusyAction] = useState<'portal' | null>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; message: string } | null>(null);
+  const paidByCard = summary?.source === 'paynkolay';
+
+  // Result of a PayNKolay payment: the return route sends the owner back
+  // with `?payment=<status>` (CLAUDE.md §44). Shown once, then dropped from
+  // the URL so a reload does not repeat it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('payment');
+    if (!status) return;
+    const messages: Record<string, { kind: 'success' | 'danger'; tr: string; en: string }> = {
+      success: { kind: 'success', tr: 'Ödeme alındı, paketiniz etkin.', en: 'Payment received, your plan is active.' },
+      failed: { kind: 'danger', tr: 'Ödeme tamamlanmadı. Kartınızdan tutar çekilmedi.', en: 'The payment was not completed. Your card was not charged.' },
+      pending: {
+        kind: 'danger',
+        tr: 'Ödemenin sonucu henüz doğrulanamadı. Birkaç dakika içinde bu sayfayı yenileyin; sorun sürerse destek ekibine yazın.',
+        en: 'The payment could not be confirmed yet. Refresh this page in a few minutes; contact support if it persists.',
+      },
+      unavailable: { kind: 'danger', tr: 'Bu paket için kartla ödeme şu an açık değil.', en: 'Card payment is not available for this plan right now.' },
+      owner_only: { kind: 'danger', tr: 'Ödemeyi yalnızca hesap sahibi yapabilir.', en: 'Only the account owner can pay.' },
+      rate_limited: { kind: 'danger', tr: 'Çok fazla deneme yapıldı. Biraz sonra tekrar deneyin.', en: 'Too many attempts. Please try again shortly.' },
+    };
+    const m = messages[status];
+    if (m) setNotice({ kind: m.kind, message: isTr ? m.tr : m.en });
+    params.delete('payment');
+    const qs = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+  }, [isTr]);
 
   // §44 Stage 148 (§38.228) — Owner-side plan picker modal for self-service
   // upgrade. Triggered by "Planı yükselt" CTA in the dark hero. Fetches the
   // public plan catalog (/api/plans) lazily on open so the card mount stays
-  // cheap. Each tier card opens Dodo static checkout via /api/checkout?productId=X.
+  // cheap. Each card-payable tier opens the PayNKolay checkout.
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerPlans, setPickerPlans] = useState<PublicPlan[] | null>(null);
   const [pickerLoading, setPickerLoading] = useState(false);
@@ -175,28 +194,6 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
     return () => clearTimeout(t);
   }, [notice]);
 
-  // §44 Stage 142 — Dodo customer portal redirect.
-  // /api/customer-portal SDK route handler signed portal URL döndürür ve
-  // 302 redirect yapar. customer_id query param zorunlu (Dodo customer ID,
-  // BillingSubscription.providerCustomerId'den geliyor — webhook'ta set
-  // edilir). Stage 142'de route /api/ altına taşındı (Stage 141 stub
-  // sonrası, top-level /customer-portal Vercel adapter finalize çakışması
-  // olası kök neden).
-  const handlePortal = () => {
-    if (!summary?.providerCustomerId) {
-      setNotice({
-        kind: 'danger',
-        message: isTr
-          ? 'Müşteri ID bulunamadı. Abonelik henüz aktif değil olabilir.'
-          : 'Customer ID not found. The subscription may not be active yet.',
-      });
-      return;
-    }
-    setBusyAction('portal');
-    // Dodo SDK GET handler signed URL üretir + 302 dön. window.location
-    // redirect chain'i otomatik takip eder.
-    window.location.href = `/api/customer-portal?customer_id=${encodeURIComponent(summary.providerCustomerId)}`;
-  };
 
   // §44 Stage 148 — open plan picker modal + lazy-load /api/plans.
   // Cache plans across re-opens (DB değişikliği nadir, owner aynı modal'ı
@@ -361,56 +358,31 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   : 'No renewal scheduled'}
           </p>
 
-          {/* §44 Stage 140 — Dodo Payments self-service CTAs. Two states:
-              (a) no Dodo sub → "Planı yükselt" link to /pricing
-              (b) active Dodo sub → "Aboneliği yönet" → customer portal
-              Cancel + reactivate Dodo'nun customer portal'unda yapılır
-              (full-featured UI orada; Buaze tarafı basit tek-CTA). */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            {summary?.source === 'dodo_payments' ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handlePortal}
-                  disabled={busyAction !== null}
-                  className="bz-btn-lime disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {busyAction === 'portal' && (
-                    <Loader2 size={14} className="animate-spin" aria-hidden />
-                  )}
-                  {isTr ? 'Aboneliği yönet' : 'Manage subscription'}
-                </button>
-                <span className="text-[11px] text-[#A3A3A3]">
-                  {summary?.cancelAtPeriodEnd
-                    ? isTr
-                      ? 'İptal planlandı — dönem sonuna kadar aktif. Portaldan yeniden başlatabilirsiniz.'
-                      : 'Cancellation scheduled — active until period end. Reactivate from the portal.'
-                    : isTr
-                      ? 'Fatura, ödeme yöntemi, iptal ve yeniden başlatma için müşteri portalı.'
-                      : 'Invoices, payment method, cancel & reactivate via customer portal.'}
-                </span>
-              </>
-            ) : (
-              <>
-                {/* §44 Stage 148 (§38.228) — Inline plan picker modal yerine
-                    /pricing'e link atılıyordu (kullanıcı raporu: "yükselt
-                    deyince checkout ekranına gitmiyor"). Modal Dodo product ID
-                    wired tier'ları gösterir, owner tek tıkla static checkout'a
-                    gider — marketing pricing turunu tamamen atlar. */}
-                <button
-                  type="button"
-                  onClick={handleOpenPicker}
-                  className="bz-btn-lime inline-flex items-center"
-                >
-                  {isTr ? 'Planı yükselt' : 'Upgrade plan'}
-                </button>
-                <span className="text-[11px] text-[#A3A3A3]">
-                  {isTr
-                    ? 'Paketini seç, güvenli ödeme sayfasına geç.'
-                    : 'Pick a plan and continue to secure checkout.'}
-                </span>
-              </>
-            )}
+            {/* §44 PayNKolay: each payment buys one period; there is no
+                automatic charge, so a card subscriber extends from here. */}
+            <button
+              type="button"
+              onClick={handleOpenPicker}
+              className="bz-btn-lime inline-flex items-center"
+            >
+              {paidByCard
+                ? isTr
+                  ? 'Süreyi uzat'
+                  : 'Extend period'
+                : isTr
+                  ? 'Planı yükselt'
+                  : 'Upgrade plan'}
+            </button>
+            <span className="text-[11px] text-[#A3A3A3]">
+              {paidByCard
+                ? isTr
+                  ? 'Kartınızdan otomatik çekim yapılmaz; dönem bitmeden uzatabilirsiniz.'
+                  : 'Your card is never charged automatically; extend before the period ends.'
+                : isTr
+                  ? 'Paketinizi seçin, PayNKolay güvenli ödeme sayfasına geçin.'
+                  : 'Pick a plan and continue to the secure PayNKolay page.'}
+            </span>
           </div>
         </div>
 
@@ -646,14 +618,14 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         )}
       </div>
 
-      {/* §44 Stage 140 — Cancel modal kaldırıldı. Dodo'da cancel/reactivate
+      {/* §44 — Cancel modal kaldırıldı (PayNKolay'da otomatik yenileme yok).
           customer portal içinde tam UI ile yapılır (renewsAt countdown,
           grace period info, payment method update — hepsi tek surface).
           "Aboneliği yönet" buton portal'a yönlendirir. */}
 
       {/* §44 Stage 148 (§38.228) — Plan picker modal. Owner panel'da inline
-          tier seçimi yaparak marketing /pricing turunu atlatır. Dodo product
-          ID wired tier'lar "Yükselt" CTA'sıyla Dodo static checkout'a gider;
+          tier seçimi yaparak marketing /pricing turunu atlatır. PayNKolay ile
+          ödenebilen tier'lar "Kartla öde" CTA'sıyla checkout'a gider;
           wired olmayan tier'lar "Yakında" badge + disabled state gösterir
           (admin paneli üzerinden product ID set edilince otomatik aktif).
 
@@ -692,7 +664,9 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         {!pickerLoading && !pickerError && pickerPlans && pickerPlans.length > 0 && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pickerPlans.map((p) => {
-              const wired = p.paymentProvider === 'dodo_payments' && Boolean(p.dodoProductId);
+              // Card payment (PayNKolay, TRY): one month here; yearly is on /pricing.
+              const checkoutTry = p.paymentProvider === 'paynkolay' ? p.checkout?.monthlyTry ?? null : null;
+              const wired = checkoutTry != null && checkoutTry > 0;
               const isDark = p.isFeatured;
               const monthlyShown = p.discount.active ? p.discount.discountedMonthly : p.priceMonthly;
               return (
@@ -775,7 +749,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   </ul>
                   {wired ? (
                     <a
-                      href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId!)}`}
+                      href={`/api/billing/paynkolay/checkout?planId=${encodeURIComponent(p.id)}&cycle=monthly&locale=${isTr ? 'tr' : 'en'}`}
                       rel="nofollow"
                       className={`block min-h-[40px] w-full rounded-full py-2.5 text-center text-[13px] font-medium transition-colors ${
                         isDark
@@ -783,7 +757,8 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                           : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
                       }`}
                     >
-                      {isTr ? 'Bu paketle devam et' : 'Continue with this plan'}
+                      {isTr ? 'Kartla öde' : 'Pay by card'} ·{' '}
+                      {new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'TRY', maximumFractionDigits: 2 }).format(checkoutTry as number)}
                     </a>
                   ) : (
                     <button
@@ -792,8 +767,8 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       className="block min-h-[40px] w-full rounded-full bg-[#FAFAFA] py-2.5 text-center text-[13px] font-medium text-[#A3A3A3] cursor-not-allowed"
                       title={
                         isTr
-                          ? 'Bu paketin Dodo ürün ID\'si henüz set edilmedi.'
-                          : 'Dodo product ID is not yet set for this plan.'
+                          ? 'Bu paket için kartla ödeme henüz açılmadı.'
+                          : 'Card payment is not set up for this plan yet.'
                       }
                     >
                       {isTr ? 'Yakında' : 'Coming soon'}

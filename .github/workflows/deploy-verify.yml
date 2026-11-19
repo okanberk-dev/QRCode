@@ -1,0 +1,87 @@
+# Deploy check — confirms that every push to main actually goes live on
+# Coolify (docs/SELF_HOST.md). Coolify deploys main through its GitHub App
+# ("Auto Deploy"); this job watches /api/health until it reports the pushed
+# commit. If the commit is not live after ~20 minutes it calls the Coolify
+# deploy webhook once (when configured) and waits again; still not live →
+# the job fails, so a missed deploy shows up red in Actions and GitHub mails
+# the pusher.
+#
+# Setup (repository Settings → Secrets and variables → Actions):
+#   secret   COOLIFY_DEPLOY_WEBHOOK — Coolify → application → Webhooks →
+#                                     "Deploy Webhook" URL (optional)
+#   secret   COOLIFY_TOKEN          — Coolify API token with deploy permission
+#                                     (needed when the webhook URL is used)
+#   variable DEPLOY_CHECK_URL       — optional; defaults to https://www.buaze.com
+#
+# /api/health returns the running commit from Coolify's SOURCE_COMMIT; if that
+# build variable is off, `commit` is null and this job can only fail — turn on
+# "Include Source Commit in Build" in the Coolify application settings.
+name: Deploy check (Coolify)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-verify
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      BASE_URL: ${{ vars.DEPLOY_CHECK_URL || 'https://www.buaze.com' }}
+      SHA: ${{ github.sha }}
+      COOLIFY_DEPLOY_WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+    steps:
+      - name: Wait for the pushed commit to go live
+        id: first
+        run: |
+          want="${SHA:0:7}"
+          for i in $(seq 1 40); do
+            live=$(curl -fsS -m 10 "$BASE_URL/api/health?ts=$(date +%s)" | jq -r '.commit // empty' || true)
+            if [ "$live" = "$want" ]; then
+              echo "Live on $BASE_URL: $live"
+              echo "live=1" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "[$i/40] live=${live:-none} want=$want"
+            sleep 30
+          done
+          echo "live=0" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger the Coolify deploy webhook
+        if: steps.first.outputs.live != '1'
+        run: |
+          if [ -z "$COOLIFY_DEPLOY_WEBHOOK" ]; then
+            echo "::error::Commit ${SHA:0:7} is not live after 20 minutes and COOLIFY_DEPLOY_WEBHOOK is not set. Check Coolify → Deployments and that Auto Deploy is on."
+            exit 1
+          fi
+          if [ -n "$COOLIFY_TOKEN" ]; then
+            curl -fsS -m 30 -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_DEPLOY_WEBHOOK"
+          else
+            curl -fsS -m 30 "$COOLIFY_DEPLOY_WEBHOOK"
+          fi
+          echo "Coolify deploy requested."
+
+      - name: Wait again after the manual trigger
+        if: steps.first.outputs.live != '1'
+        run: |
+          want="${SHA:0:7}"
+          for i in $(seq 1 40); do
+            live=$(curl -fsS -m 10 "$BASE_URL/api/health?ts=$(date +%s)" | jq -r '.commit // empty' || true)
+            if [ "$live" = "$want" ]; then
+              echo "Live after manual trigger: $live"
+              exit 0
+            fi
+            echo "[$i/40] live=${live:-none} want=$want"
+            sleep 30
+          done
+          echo "::error::Commit $want is still not live. Check the Coolify build log."
+          exit 1

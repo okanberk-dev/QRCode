@@ -35,15 +35,12 @@ export interface PublicPlan {
     discountedMonthly: number;
   };
   /**
-   * §44 Dodo Payments checkout wiring (Stage 148 §38.228, Stage 149 §38.229
-   * Iyzico drop).
-   * Marketing /pricing kartı + owner panel "Planı yükselt" modal'ı bu iki
-   * field'ı kontrol eder: `paymentProvider === 'dodo_payments'` + `dodoProductId`
-   * non-null ise CTA `/api/checkout?productId=<id>` (Dodo static checkout)
-   * link verir. Aksi halde fallback `buttonHref` (legacy register/contact akışı).
+   * Card payment (CLAUDE.md §44): 'paynkolay' plans can be paid by the owner
+   * on the PayNKolay page. `checkout` holds the TRY amounts that will be
+   * charged (after discount); null = no card checkout for this plan.
    */
-  paymentProvider: 'manual' | 'dodo_payments';
-  dodoProductId: string | null;
+  paymentProvider: 'manual' | 'paynkolay';
+  checkout: { monthlyTry: number | null; yearlyTry: number | null } | null;
 }
 
 export interface AdminPlanRow {
@@ -72,11 +69,11 @@ export interface AdminPlanRow {
   discountValue: number | null;
   discountLabelTr: string | null;
   discountLabelEn: string | null;
-  /** Payment provider — 'manual' | 'dodo_payments' (CLAUDE.md §44). */
+  /** Payment provider — 'manual' | 'paynkolay' (CLAUDE.md §44). */
   paymentProvider: string;
-  /** Dodo Payments product ID — admin /admin/plans editöründen set edilir.
-   *  Null = tier henüz Dodo product'a bağlı değil (checkout button gizli). */
-  dodoProductId: string | null;
+  /** Package modules applied to the owner's businesses (§5.2). */
+  moduleKeys: string[];
+  modulesManaged: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -131,7 +128,8 @@ export function toAdminRow(row: {
   discountLabelTr: string | null;
   discountLabelEn: string | null;
   paymentProvider?: string;
-  dodoProductId?: string | null;
+  moduleKeys?: string[] | null;
+  modulesManaged?: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 }): AdminPlanRow {
@@ -159,8 +157,9 @@ export function toAdminRow(row: {
     discountValue: row.discountValue,
     discountLabelTr: row.discountLabelTr,
     discountLabelEn: row.discountLabelEn,
-    paymentProvider: row.paymentProvider ?? 'manual',
-    dodoProductId: row.dodoProductId ?? null,
+    paymentProvider: row.paymentProvider === 'paynkolay' ? 'paynkolay' : 'manual',
+    moduleKeys: Array.isArray(row.moduleKeys) ? row.moduleKeys : [],
+    modulesManaged: row.modulesManaged === true,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -214,13 +213,8 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
       label: (isTr ? row.discountLabelTr : row.discountLabelEn) || '',
       discountedMonthly,
     },
-    // §44 Stage 148 — Dodo checkout wiring (Stage 149 §38.229 Iyzico drop).
-    // Field'lar AdminPlanRow'da zaten var (admin /admin/plans editöründen
-    // set edilir); UI consumer'ları (PricingPlans + BillingReadOnlyCard plan
-    // picker) bu projeksiyonu okur. Tip narrow 'manual' | 'dodo_payments'
-    // — eski 'iyzico' enum slot kaldırıldı (Iyzico iptal edildi).
-    paymentProvider: (row.paymentProvider === 'dodo_payments' ? 'dodo_payments' : 'manual'),
-    dodoProductId: row.dodoProductId ?? null,
+    paymentProvider: row.paymentProvider === 'paynkolay' ? 'paynkolay' : 'manual',
+    checkout: paynkolayCheckoutAmounts(row),
   };
 }
 
@@ -242,6 +236,23 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
  *   tüm yeni billing USD; TRY parametre legacy admin override için kalır
  * @returns canonical amount + meta (label, formula vs override flag)
  */
+/**
+ * TRY amounts the owner pays on the PayNKolay page (CLAUDE.md §44). PayNKolay
+ * settles in TRY only, so a plan needs `priceTry` (monthly) and optionally
+ * `priceYearlyTry`. Null when the plan is not a card-checkout plan.
+ */
+export function paynkolayCheckoutAmounts(
+  plan: AdminPlanRow,
+): { monthlyTry: number | null; yearlyTry: number | null } | null {
+  if (plan.paymentProvider !== 'paynkolay' || !(plan.priceTry > 0)) return null;
+  const monthly = resolveBillingAmount(plan, 'monthly', 'TRY').amount;
+  const yearly = resolveBillingAmount(plan, 'yearly', 'TRY').amount;
+  return {
+    monthlyTry: monthly != null && monthly > 0 ? monthly : null,
+    yearlyTry: yearly != null && yearly > 0 ? yearly : null,
+  };
+}
+
 export function resolveBillingAmount(
   plan: AdminPlanRow | null,
   billingCycle: 'monthly' | 'yearly' | null | undefined,

@@ -492,12 +492,19 @@ export default function RestaurantsClient({
         title={copy.title}
         description={copy.subtitle}
         actions={
-          !isTeamMember ? (
-            <Link href={newBusinessHref} className="bz-btn-primary">
-              <Plus size={14} strokeWidth={2} />
-              {copy.add}
-            </Link>
-          ) : undefined
+          <div className="flex flex-wrap items-center gap-2">
+            {rows.length > 1 && (
+              <Link href={`/${locale}/dashboard/restaurants/report`} className="bz-btn-ghost">
+                {isTr ? 'Şube raporu' : 'Branch report'}
+              </Link>
+            )}
+            {!isTeamMember && (
+              <Link href={newBusinessHref} className="bz-btn-primary">
+                <Plus size={14} strokeWidth={2} />
+                {copy.add}
+              </Link>
+            )}
+          </div>
         }
       />
 

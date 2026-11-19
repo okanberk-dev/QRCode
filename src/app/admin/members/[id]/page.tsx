@@ -31,6 +31,7 @@ import MemberTeamPanel from '@/components/admin/MemberTeamPanel';
 import MemberAuditTimeline from '@/components/admin/MemberAuditTimeline';
 import MemberBillingModal from '@/components/admin/MemberBillingModal';
 import MemberActivationPanel from '@/components/admin/MemberActivationPanel';
+import MemberSupportPanel from '@/components/admin/MemberSupportPanel';
 import MemberRecentFeedbacksPanel from '@/components/admin/MemberRecentFeedbacksPanel';
 import ImpersonateButton from '@/components/admin/ImpersonateButton';
 
@@ -391,6 +392,13 @@ export default function MemberDetailPage({
       {/* Tab content */}
       {activeTab === 'overview' && (
         <>
+        <section className="bz-card mb-4 p-5 sm:p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Destek özeti</h3>
+            <p className="text-[11px] text-[#737373]">Girişler, e-posta, platform linkleri, Google ve ödemeler</p>
+          </div>
+          <MemberSupportPanel userId={id} />
+        </section>
         {/* CLAUDE.md §38.93 (Stage A1) — admin tier owner pulse:
             Activation snapshot + Recent feedbacks aggregate. Drill-down per
             restaurant → /admin/restaurants/[id] (existing §38.76). */}

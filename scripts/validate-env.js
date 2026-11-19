@@ -81,15 +81,12 @@ const optional = [
   ['NEXT_PUBLIC_SUPABASE_URL', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
   ['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
   ['SUPABASE_JWT_SECRET', '/api/realtime/token endpoint returns 503, ActivityFeed falls back to page-reload mode'],
-  // CLAUDE.md §44 — Dodo Payments payment provider (Stage 140 §38.220
-  // replaces Lemon Squeezy). Eksik env'ler self-service checkout flow'unu
-  // disable eder; mevcut manuel admin billing akışı (MemberBillingModal)
-  // intact kalır. SDK signature verify'i kendi yapar — webhook key eksik
-  // ise 401 retry storm.
-  ['DODO_PAYMENTS_API_KEY', 'Dodo Payments checkout + customer portal endpoints disabled. /checkout route returns runtime error. Existing manual admin billing flow intact.'],
-  ['DODO_PAYMENTS_WEBHOOK_SECRET', 'Webhook signature verification disabled — /api/webhook/dodo-payments returns 401 on every POST. Dodo retry storm if this happens in production.'],
-  ['DODO_PAYMENTS_RETURN_URL', "Checkout success redirect target. Falls back to '/' relative URL if unset; production should set to https://www.buaze.com/dashboard/account."],
-  ['DODO_PAYMENTS_ENVIRONMENT', "'test_mode' (default) or 'live_mode'. Production deploy MUST set to 'live_mode' explicitly + use a live_ API key."],
+  // CLAUDE.md §44 — PayNKolay virtual POS. Missing values only turn off
+  // card checkout; admin-managed (manual) billing keeps working.
+  ['PAYNKOLAY_SX', 'Card checkout disabled (PayNKolay "sx (Token)").'],
+  ['PAYNKOLAY_SX_LIST', 'Card checkout disabled: payments cannot be verified (PayNKolay "sx List").'],
+  ['PAYNKOLAY_MERCHANT_SECRET_KEY', 'Card checkout disabled (PayNKolay merchant secret key).'],
+  ['PAYNKOLAY_BASE_URL', 'Defaults to the PayNKolay TEST host; production must set https://paynkolay.nkolayislem.com.tr.'],
 ];
 
 const missing = [];

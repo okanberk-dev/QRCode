@@ -40,6 +40,19 @@ const SENTIMENT_LABEL = {
   neg: 'Olumsuz',
 } as const;
 
+const SEGMENT_LABEL_EN: Record<CustomerSegment, string> = {
+  vip: 'VIP',
+  loyal: 'Regular',
+  new: 'New',
+  risk: 'At risk',
+  churned: 'Lost',
+};
+const SENTIMENT_LABEL_EN = { pos: 'Positive', neu: 'Neutral', neg: 'Negative' } as const;
+const HEADER_EN = [
+  'Name', 'E-mail', 'Phone', 'Business', 'Branch', 'Channel', 'Last rating', 'Avg rating',
+  'Reviews', 'Segment', 'LTV', 'Sentiment', 'Last topic', 'Last visit (days ago)', 'Last review',
+];
+
 interface AggregateRow {
   restaurant_name: string | null;
   name: string | null;
@@ -155,7 +168,9 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
 
-    const header = [
+    // Column names + labels follow the panel language (`?locale=en`).
+    const isEn = searchParams.get('locale') === 'en';
+    const header = isEn ? HEADER_EN : [
       'İsim',
       'E-posta',
       'Telefon',
@@ -185,7 +200,7 @@ export async function GET(req: NextRequest) {
       if (segmentParam && derived.segment !== segmentParam) continue;
 
       // §38.47 — TR-fixed labels (CSV operatör/internal ops use; locale=tr).
-      const lastChannel = computeLastChannel(r.platform, 'tr');
+      const lastChannel = computeLastChannel(r.platform, isEn ? 'en' : 'tr');
       const lastTopic = computeLastTopic(
         {
           rating: r.last_rating,
@@ -193,7 +208,7 @@ export async function GET(req: NextRequest) {
           serviceRating: r.last_service_rating,
           atmosphereRating: r.last_atmosphere_rating,
         },
-        'tr',
+        isEn ? 'en' : 'tr',
       );
 
       lines.push([
@@ -206,9 +221,9 @@ export async function GET(req: NextRequest) {
         esc(r.last_rating),
         esc(r.avg_rating != null ? r.avg_rating.toFixed(2) : ''),
         esc(visits),
-        esc(SEGMENT_LABEL[derived.segment]),
+        esc((isEn ? SEGMENT_LABEL_EN : SEGMENT_LABEL)[derived.segment]),
         esc(derived.ltv),
-        esc(SENTIMENT_LABEL[derived.sentiment]),
+        esc((isEn ? SENTIMENT_LABEL_EN : SENTIMENT_LABEL)[derived.sentiment]),
         esc(lastTopic),
         esc(derived.daysSinceLastVisit ?? ''),
         esc(new Date(r.last_at).toISOString().slice(0, 10)),

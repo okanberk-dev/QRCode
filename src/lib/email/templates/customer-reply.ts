@@ -200,8 +200,8 @@ export async function renderCustomerReply(
   // with the per-send responsibility checkbox and the profanity/threat gate
   // in src/lib/content-safety.ts (CLAUDE.md §45).
   const senderDisclaimer = isTr
-    ? `Bu e-posta, verdiğiniz geri bildirime ${restaurantRaw} işletmesinin yanıtıdır ve Buaze platformu aracılığıyla iletilmiştir. Mesajın içeriğinden yalnızca gönderen işletme sorumludur; Buaze içeriği yazmaz ve onaylamaz. Uygunsuz bir içerik aldıysanız support@buaze.com adresine bildirebilirsiniz.`
-    : `This e-mail is ${restaurantRaw}'s reply to your feedback, delivered through the Buaze platform. The sending business is solely responsible for its content; Buaze does not write or endorse it. To report inappropriate content, write to support@buaze.com.`;
+    ? `Bu e-posta, verdiğiniz geri bildirime ${restaurantRaw} işletmesinin yanıtıdır; metni işletme yazmış ve Buaze platformu üzerinden göndermiştir. Buaze, 5651 sayılı Kanun kapsamında yer sağlayıcıdır: içeriği oluşturmaz, değiştirmez, onaylamaz ve önceden denetlemekle yükümlü değildir. İçerikten doğan hukuki ve cezai sorumluluk yalnızca gönderen işletmeye aittir. Hukuka aykırı veya uygunsuz bir içerik aldıysanız support@buaze.com adresine bildirin; bildirim incelenir ve gerekirse içerik ve gönderen hesap hakkında işlem yapılır.`
+    : `This e-mail is ${restaurantRaw}'s reply to your feedback; the business wrote it and sent it through the Buaze platform. Buaze acts only as a hosting and transmission service (Turkish Law No. 5651; EU Digital Services Act, Art. 4–6): it does not create, edit, endorse or pre-screen the content. The sending business alone is legally responsible for it. To report unlawful or inappropriate content, write to support@buaze.com; reports are reviewed and action is taken on the content and the sending account where needed.`;
 
   const content = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">

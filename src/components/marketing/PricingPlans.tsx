@@ -22,7 +22,7 @@ const COPY = {
     free: 'Ücretsiz',
     recommended: 'ÖNERİLEN',
     trial: '14 gün ücretsiz deneyin',
-    subscribe: 'Kartla abone olun',
+    subscribe: 'Kartla öde',
     yearlyContact: 'Yıllık ödeme için bize yazın',
     contactFallback: 'Bize yazın',
     flatBadge: (n: number) => `%${n} indirim`,
@@ -40,7 +40,7 @@ const COPY = {
     free: 'Free',
     recommended: 'RECOMMENDED',
     trial: 'Start 14-day free trial',
-    subscribe: 'Subscribe by card',
+    subscribe: 'Pay by card',
     yearlyContact: 'Contact us for yearly billing',
     contactFallback: 'Contact us',
     flatBadge: (n: number) => `${n}% off`,
@@ -84,9 +84,17 @@ function formatUsd(value: number): string {
  * SubscriptionPlan table (admin /admin/plans). Prices are USD in both
  * languages (CLAUDE.md §15.2). Each card keeps the two paths apart:
  *   • primary  → free trial (sign-up, no card)
- *   • secondary → monthly card checkout via Dodo Payments, or — on the yearly
+ *   • secondary → card checkout via PayNKolay (TRY) for the selected period, or — on the yearly
  *     tab, where there is no self-serve checkout — a contact link.
  */
+function formatTry(value: number, locale: 'tr' | 'en'): string {
+  return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
+    style: 'currency',
+    currency: 'TRY',
+    maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+  }).format(value);
+}
+
 export default function PricingPlans({ locale, plans }: Props) {
   const copy = COPY[locale];
   const base = `/${locale}`;
@@ -165,8 +173,14 @@ export default function PricingPlans({ locale, plans }: Props) {
               ? p.buttonHref
               : `${base}${p.buttonHref.startsWith('/') ? '' : '/'}${p.buttonHref}`;
           const primaryLabel = trialPrimary ? copy.trial : p.buttonText || copy.contactFallback;
-          const checkoutReady =
-            billing === 'monthly' && p.paymentProvider === 'dodo_payments' && !!p.dodoProductId && monthly > 0;
+          // Card payment (PayNKolay, TRY) for the selected period, when set up.
+          const checkoutTry =
+            p.paymentProvider === 'paynkolay' && p.checkout
+              ? billing === 'yearly'
+                ? p.checkout.yearlyTry
+                : p.checkout.monthlyTry
+              : null;
+          const checkoutReady = checkoutTry != null && checkoutTry > 0;
 
           const muted = dark ? 'text-white/70' : 'text-[#525252]';
 
@@ -267,7 +281,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                 </Link>
                 {checkoutReady ? (
                   <a
-                    href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId as string)}`}
+                    href={`/api/billing/paynkolay/checkout?planId=${encodeURIComponent(p.id)}&cycle=${billing}&locale=${locale}`}
                     rel="nofollow"
                     className={`flex min-h-[44px] w-full items-center justify-center rounded-full text-[14px] font-medium underline decoration-2 underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
                       dark
@@ -275,7 +289,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                         : 'text-[#0A0A0A] decoration-[#C6F24E] hover:decoration-[#0A0A0A]'
                     }`}
                   >
-                    {copy.subscribe}
+                    {copy.subscribe} · {formatTry(checkoutTry as number, locale)}
                   </a>
                 ) : null}
                 {billing === 'yearly' && price > 0 ? (

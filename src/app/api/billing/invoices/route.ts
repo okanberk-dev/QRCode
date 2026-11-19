@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   }));
 
   // Stage 87 §38.167 — owner workspace-scoped invoices list; cache
-  // header private 60s/300sw (invoice generation Dodo Payments webhook
+  // header private 60s/300sw (invoice generation PayNKolay return
   // periyodik, intra-day mutation rare). §38.100 paterni reuse.
   return NextResponse.json(
     { data },

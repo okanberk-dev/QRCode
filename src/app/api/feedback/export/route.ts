@@ -139,14 +139,18 @@ export async function GET(req: NextRequest) {
     });
 
     // Generate CSV with Platform, Kaynak and KVKK columns
-    const header = ['ID', 'Tarih', 'Puan', 'KVKK Onayı', 'Platform', 'Kaynak', 'Yorum', 'İşletme', 'Şube', 'QR etiketi'];
+    // Column names follow the panel language (`?locale=en`); Turkish default.
+    const isEn = searchParams.get('locale') === 'en';
+    const header = isEn
+      ? ['ID', 'Date', 'Rating', 'KVKK consent', 'Platform', 'Source', 'Comment', 'Business', 'Branch', 'QR label']
+      : ['ID', 'Tarih', 'Puan', 'KVKK Onayı', 'Platform', 'Kaynak', 'Yorum', 'İşletme', 'Şube', 'QR etiketi'];
     // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
     const esc = (v: string) => csvCell(v);
     const rows = feedbacks.map((f) => [
       f.id,
       f.createdAt.toISOString(),
       f.rating.toString(),
-      f.hasKvkkConsent ? 'Onaylı' : 'Onaylanmamış',
+      f.hasKvkkConsent ? (isEn ? 'Given' : 'Onaylı') : isEn ? 'Not given' : 'Onaylanmamış',
       esc(f.platform ? (PLATFORM_LABELS[f.platform] || f.platform) : ''),
       esc(f.source || ''),
       esc(f.comment && f.comment !== SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT ? f.comment : ''),
@@ -157,8 +161,8 @@ export async function GET(req: NextRequest) {
 
     const csvContent = '﻿' + [header.join(','), ...rows.map(r => r.join(','))].join('\n');
     const filename = restaurantId && restaurantId !== 'all'
-      ? `degerlendirmeler-${restaurantId}-${new Date().toISOString().split('T')[0]}.csv`
-      : `degerlendirmeler-tumu-${new Date().toISOString().split('T')[0]}.csv`;
+      ? `${isEn ? 'reviews' : 'degerlendirmeler'}-${restaurantId}-${new Date().toISOString().split('T')[0]}.csv`
+      : `${isEn ? 'reviews-all' : 'degerlendirmeler-tumu'}-${new Date().toISOString().split('T')[0]}.csv`;
 
     return new NextResponse(csvContent, {
       status: 200,

@@ -462,6 +462,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     if (search) q.set('search', search);
     if (restaurantIdParam) q.set('restaurantId', restaurantIdParam);
     if (segmentFilter) q.set('segment', segmentFilter);
+    if (locale === 'en') q.set('locale', 'en');
     const qs = q.toString();
     return `/api/customers/export${qs ? `?${qs}` : ''}`;
   })();

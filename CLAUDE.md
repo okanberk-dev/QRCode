@@ -229,6 +229,7 @@ Eski akış tek "konum seç" işleminde **5-6 quota birim** yakıyordu (location
 - `surveysEnabled=false` (default `true`, 2026-10) olduğunda owner yeni anket oluşturamaz / yayınlayamaz / kopyalayamaz (`surveys_disabled` 403); yayındaki `/s/[slug]` linkleri 404 döner ve yanıt toplamaz. Mevcut anketler silinmez. Admin toggle `/admin/restaurants/[id]` → Paket Özellikleri.
 - `suspendedByAdmin` (default `false`, 2026-10): superadmin işletmeyi duraklattığında (detay formu active→paused geçişi veya bulk "Duraklat") set edilir; owner `PUT isActive:true` → 403 `SUSPENDED_BY_ADMIN`. Superadmin yeniden etkinleştirince temizlenir. Owner'ın kendi duraklatması bu bayrağı set etmez.
 - `externalPlatformsEnabled=false` olduğunda Google dışı review platformları (Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Airbnb, Booking, Yandex, Yelp, Foursquare ve "Diğer") owner UI/API, QR üretimi, integration test/retest ve public `/r/[slug]` redirect resolver tarafında yok sayılır. Kayıtlı URL'ler ve owner platform tercihleri silinmez; gate tekrar açılınca kaldığı yerden kullanılabilir.
+- **Plan modülleri (2026-11, §38.258)**: `SubscriptionPlan.modulesManaged` açık bir pakette `moduleKeys` (`googleReviews | pulseAi | aiAnalytics | menu | surveys | externalPlatforms`, katalog `src/lib/plan-modules-catalog.ts`) sahibin TÜM işletmelerinde yukarıdaki şalterleri belirler: listede olan açılır, olmayan kapanır (menü kapanınca yayından kalkar, Pulse AI kapanınca bekleyen taslaklar silinir). Uygulama `applyPlanModulesForOwner` (`src/lib/plan-modules.ts`): kartla ödeme sonrası, admin fatura modalı kaydı, yeni işletme oluşturma ve paket düzenleme (`applyPlanModulesForPlan`) anlarında; yalnız aktif abonelikte. `modulesManaged=false` paketlerde şalterler eskisi gibi elle yönetilir. Admin `/admin/plans` → paket formunda modül kutuları.
 - Vercel env notu: `.env.local` gitignore altında kalır. Production'da `JWT_SECRET` boş bırakılmamalı; Pulse AI gerçek model çağrısı için `OPENAI_API_KEY` Production/Preview scope'larında dolu olmalı.
 
 ### 5.3 2026-05-03 oturum notları
@@ -924,7 +925,7 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 
 > **Kanonik kaynak:** `.env.example` — tüm env'lerin tam listesi orada (build script `node scripts/validate-env.js` ile zorunluları doğrular). Aşağıdaki tablo seçilmiş highlight'tır; çatışma halinde `.env.example` baz alınır.
 
-**Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (Pulse AI) + Dodo Payments (write-side billing, Stage 142 §38.222) yeterli. Stage 149 §38.229 — Iyzico provider iptal edildi (geçmişte planlanmıştı, Dodo Payments yerine geçince gerek kalmadı).
+**Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (Pulse AI) + PayNKolay (kartla ödeme, §44; 2026-11'de Dodo Payments'ın yerine) yeterli.
 
 | Env | Zorunluluk | Etki |
 |---|---|---|
@@ -935,8 +936,7 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_STORAGE_BUCKET` | Opsiyonel | Careers attachment + site-settings görselleri; eksikse 503 |
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
-| `DODO_PAYMENTS_API_KEY` + `DODO_PAYMENTS_WEBHOOK_SECRET` | Opsiyonel | Dodo Payments payment provider (CLAUDE.md §44, Stage 140 §38.220 Lemon Squeezy yerine + Stage 142 §38.222 `/api/` path migration). Eksikse `/api/checkout` + `/api/customer-portal` runtime error + webhook 401; mevcut manuel admin akışı (MemberBillingModal) intact. SDK signature verify HMAC kendisi yapar. |
-| `DODO_PAYMENTS_RETURN_URL` + `DODO_PAYMENTS_ENVIRONMENT` | Opsiyonel | RETURN_URL: successful checkout sonrası geri yönlendirme (lokal localhost:3000/success; prod buaze.com/dashboard/account). ENVIRONMENT: `'test_mode'` (default) veya `'live_mode'` — production'da explicit set zorunlu + live_ API key. |
+| `PAYNKOLAY_SX` + `PAYNKOLAY_SX_LIST` + `PAYNKOLAY_MERCHANT_SECRET_KEY` + `PAYNKOLAY_MERCHANT_NO` + `PAYNKOLAY_BASE_URL` | Opsiyonel | PayNKolay kartla ödeme (§44). Eksikse kartla ödeme düğmesi `?payment=unavailable`'a düşer; admin manuel fatura akışı çalışır. `PAYNKOLAY_BASE_URL` varsayılanı TEST sunucusu — canlıda `https://paynkolay.nkolayislem.com.tr`. |
 | `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, appId) | Opsiyonel | Google Sign-in client config; eksikse OAuth butonu UI'da disable, e-posta+şifre flow intact |
 | `FIREBASE_AUTH_PROXY_TARGET` | Opsiyonel | `__/auth/*` path'lerini Firebase'e proxy'ler (`next.config.ts:rewrites`); boşsa rewrite hiç eklenmez |
 | `FIREBASE_ADMIN_PROJECT_ID` | Opsiyonel | Server-side Firebase Admin SDK için (token verify) |
@@ -3277,7 +3277,7 @@ Buaze 125+ API endpoint'i çoğunlukla elle validation kullanıyor (CLAUDE.md §
 3. **Zod sadece yeni veya yüksek-risk modüller için.** Mevcut bir route'a sadece zaten o feature için PR açmışsan ekle.
 4. **Zod tercih edilen alanlar:**
    - Google Business Profile entegrasyonu (gelecek)
-   - Billing / subscription / invoice flow'ları (Dodo Payments §44)
+   - Billing / subscription / invoice flow'ları (PayNKolay §44)
    - Campaign create / update
    - QR create / update
    - Onboarding multi-step state
@@ -3456,7 +3456,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
   - Error boundary'ler (`global-error.tsx` + segment `error.tsx` dosyaları `reportBoundaryError` ile yapıyor)
   - API failure'lar (`onRequestError` zaten yakalıyor)
   - Cron failure'lar (cron handler `try/catch` + `captureException` + tag `{ cron: 'name' }`)
-  - Önemli integration failure'lar (OpenAI, Resend, Dodo Payments — fallback öncesi capture)
+  - Önemli integration failure'lar (OpenAI, Resend, PayNKolay — fallback öncesi capture)
 
 **Yapma:**
 - Microservice'lere bölme
@@ -3675,7 +3675,7 @@ Schema'da/kodda var ama 0 aktif callsite — kasten korundu:
 | `AutomationRule` model + `/api/automations/*` route'ları | UI yok, planlı feature |
 | `GoogleIntegration` model | OAuth flow setup var, tam bağlantı gelecek |
 | `NotificationPreference` model | Schema'da, kod minimal |
-| Billing field'ları (`billingAddress`, `taxNumber`, `discountActive`, `discountType`) | Dodo Payments webhook + admin manual override (§44.5) tüketiyor |
+| Billing field'ları (`billingAddress`, `taxNumber`, `discountActive`, `discountType`) | PayNKolay ödemesi + admin manual override (§44) tüketiyor |
 | `src/lib/api/validate.ts` (`validateBody` Zod helper) | §28 kanonik öneri, yeni high-risk route'lar için |
 | 2FA + Sessions backend (`/api/account/2fa/*`, `/api/account/sessions`) | UI silinmiş, magic-code 2FA için backend kalmış |
 
@@ -4372,7 +4372,7 @@ bu §38.0 özeti.
 - API & Webhook tab UI — owner-facing API erişimi **bilinçle ÇIKARILDI** (Stage 153 §38.233 — kullanıcı kararı: restoran sahibi API erişimi görmemeli, geliştirici konusu, owner için kafa karıştırıcı). Admin `/admin/api` API keys yönetimi canlı + sidebar "Sistem" grubunda. Owner panele API UI **eklenmez**. Kalan: **webhook CRUD** (`/api/webhooks` model + endpoint + delivery log + UI) hâlâ backlog — `/admin/api` + owner platforms webhook "Yakında" honest empty state'te bekliyor.
 - 2FA + Sessions + SSO UI (backend kalmış, UI silinmiş, low adoption — §34.1)
 - Account freeze + delete backend (Stage 113 §38.193 Wave B4 ile delete grace + cron canlı; freeze ayrı endpoint scope)
-- **Modüler entitlement sistemi** (Stage 150 §38.230 kullanıcı talebi) — "her pakette modül modül özellik olacak ve modülleri paralı yapacağız". Mevcut `Restaurant.{X}Enabled` master toggle'ları (§5.2) admin manuel; modüler tier-based entitlement gerek (örn. `SubscriptionPlan.features: JSON[]` veya yeni `Entitlement` table). Pattern karar (AskUserQuestion gerek): (a) Stripe/Linear-style metered + usage-based + per-feature limit, veya (b) Notion-style plan tier'ları (Free/Pro/Business/Enterprise) + feature matrix CSV, veya (c) Vercel-style hybrid (plan tier + per-feature top-up). Schema design + admin UI + owner self-service ayrımı + Dodo product mapping (§44 §15.2) + marketing /pricing feature matrix sync gerekecek. Kullanıcı modül listesini belirlediğinde ayrı PR.
+- ✅ ~~**Modüler entitlement sistemi**~~ — **KAPATILDI** (Stage 176 §38.258, plan başına modül listesi). Eski not: (Stage 150 §38.230 kullanıcı talebi) — "her pakette modül modül özellik olacak ve modülleri paralı yapacağız". Mevcut `Restaurant.{X}Enabled` master toggle'ları (§5.2) admin manuel; modüler tier-based entitlement gerek (örn. `SubscriptionPlan.features: JSON[]` veya yeni `Entitlement` table). Pattern karar (AskUserQuestion gerek): (a) Stripe/Linear-style metered + usage-based + per-feature limit, veya (b) Notion-style plan tier'ları (Free/Pro/Business/Enterprise) + feature matrix CSV, veya (c) Vercel-style hybrid (plan tier + per-feature top-up). Schema design + admin UI + owner self-service ayrımı + Dodo product mapping (§44 §15.2) + marketing /pricing feature matrix sync gerekecek. Kullanıcı modül listesini belirlediğinde ayrı PR.
 - **Marketing feature parity** (Stage 135 §38.215 audit) — owner sidebar'da prominent ama marketing'de detay sayfası yok:
   - `/features/google-reviews` — Google Business Profile entegrasyonu (Stage 125-129 + §43 Reputation OS suite). Auto-draft + rating impact tracking + health snapshot vurgusu.
   - `/features/qr-studio` — QR oluşturma + edit + history + analytics (mevcut `/solutions/qr-generator` sadece design tool).
@@ -4611,6 +4611,8 @@ GitHub PR referansı.
 - **Chat prompt history (Stage 174)**: 2026-11-17 kullanıcı: *"sistemde gönderilen mailleri kontrol et düzen kayma vs. olmasın ve başka cihazdan giriş yapıldı gibi saçma sapan mailleri de iptal et mail sistemini düzgünleştirip maine gönder ve vercel'de çok fazla enerji harcamasın"*; ara mesaj *"devam et medium mod ile token harcama fazla"*. Hangi maillerin "saçma" sayılacağı keşifle belirlendi (CLAUDE.md §10). Disipline override yok.
 - §38.257 — Stage 175 (PR yok, `claude/adoring-bell-kka7ez`) Owner ↔ admin panel paralellik denetimi ve temizlik. Üç ayrı ajanla yorum gelen kutusu, müşteriler + QR, işletmeler + analitik karşılaştırıldı; bulgular kodla doğrulanıp düzeltildi. (i) **Admin menüsü tek katalog** (`src/components/admin/admin-nav.ts`): kenar çubuğu, mobil alt menü ve Cmd+K paleti aynı listeyi okur (rol + `staff` izinleri + boş grup ayıklama, TR/EN etiket); eskiden üç ayrı kopyaydı, `staff` için mobil menü boştu, palet müşteri bulamıyordu (`key` yerine `id`, `?focus=` yerine `?detail=`) ve yalnız son 8 kaydı süzüyordu (artık sunucuda arar). Rol adları `adminRoleLabel` (Superadmin / Yönetici / Görevli). (ii) **Güvenlik**: `/admin/dashboard` (MRR, tüm işletmeler) yalnız superadmin + `analytics:read`'li staff; manager ilk izinli sayfasına yönlenir (`src/lib/admin-landing.ts`). `/admin/analytics` staff için `analytics:read` ister. Owner müşteri API'leri (`/api/customers/[key]`, `export`, `bulk`) admin hesabı için `customers:read/write` ister (manager izin olmadan PII okuyabiliyordu). (iii) **Gelen kutusu**: owner ton değişince eski tonla yeniden üretiyordu; iki tarafta da cevap gelmeden yorum değişince taslak/yanıt yanlış yoruma düşüyordu (`activeIdRef`); admin "Düşük puan" 1–2★ → 1–3★ (counts API dahil), "Yanıt bekliyor" → "Yanıtsız"; admin başarısız e-posta yanıtında "Yeniden dene"; toplu AI taslağı yalnız ≤3★ ve yalnız kaydedilen taslaklara rozet; ortak `src/components/reply/reply-errors.ts`; admin detaydaki yinelenen yıldız şeridi + zaman çizelgesi kaldırıldı. (iv) **QR**: ortak `src/components/panel/qr/qr-shared.ts` (10 platform etiketi, dosya adı, düz PNG indirme) — admin QR artık tüm işletmeleri yükler (20'de kalıyordu), kullanılmayan SVG ön yüklemesi (QR hız sınırını yakıyordu) kaldırıldı, platform filtresi veriden, geçmiş hatası görünür, TR/EN. (v) **Diğer**: analitik CSV özel aralıkta son günü dahil eder; owner panelde 5 kullanılmayan sorgu silindi; `restaurant.delete` denetim olayı admin özetinde görünür; admin işletme silme `res.ok` kontrol eder, silmede public menü yenilenir; iki kırık gelen kutusu bağlantısı (`?filter=low`, `?tab=unreplied`). (vi) **Silinenler** (hiçbir yerden kullanılmıyordu): admin `team`/`settings`/`billing`/`campaigns`/`trial-expired` sayfaları (yalnız admin paneline giremeyen `restaurant_owner` rolüne açıktı) + `SuperadminBlock` + `/api/campaigns` (Prisma `Campaign` modeli veri kaybı olmasın diye duruyor); bileşenler `PlatformDistribution`, `TrendsChart`, `PulseTrendChart`, `PlatformLowFeedbackPanel`, `PlatformProviderManager`, `BusinessIntegrationSettings`, `PlatformRedirectsPanel`, `FeedbackTimeline`, `ui/icons`; lib `feedback-timeline`, `admin-notification-read-state`, `qr-premium-template`, `audits/access`, `i18n`, `anim/index`, `buaze/`; API `feedback/stats`, `feedback/branches`, `feedback/[id]/tags`, `analytics/export`, `admin/analytics/export`, `admin/me/permissions`, `admin/customers/[id]`, `admin/restaurants/[id]/menu-settings`, `restaurants/[id]/redirect-stats`, `restaurants/[id]/qr/batch`, `restaurants/[id]/qr/export`, `dashboard/platforms/[provider]/low-feedback`, `admin/legal-documents/…/revisions/[id]` (GET; `revert` duruyor). **Bilinçli korunan**: 2FA API (§34.2), `/api/health`, `embed-stats`, `integrations/health`, denetim API'leri. **Disipline**: admin menüsüne sayfa eklemek = `admin-nav.ts`'e tek kayıt; birden çok tenant gösteren admin sayfası sunucuda rol/izin kontrolü yapar (menüde gizlemek yetmez); owner uç noktası admin hesabına açıksa admin rotasıyla aynı `hasPermission` kapısı.
 - **Chat prompt history (Stage 175)**: 2026-11-19 kullanıcı: *"projeyi detaylıca analiz et owner ve admin paneli burda paralellik olmayanları düzelt gereksiz olanları kaldır geliştirilebilir kodları geliştir ve eklenmesi gereken önnerdiğin özellikleri de bana söyleyebilir misin?"*; ara mesajlar *"kullanılmayanları silebilirsin sana tam yetki"*, *"opus ile devam et"*. Silme yetkisi verildi; yine de CLAUDE.md'de bilinçli korunduğu yazan parçalar (2FA, embed izleme, entegrasyon sağlık API'si) silinmedi. Disipline override yok.
+- §38.258 — Stage 176 (main'e doğrudan) PayNKolay, plan modülleri, yanıt şablonları, şube raporu, destek görünümü. (i) **Ödeme**: Dodo Payments kodu, paketi ve dönüş kök düzeni silindi; PayNKolay barındırılan ödeme sayfası + sunucudan PaymentList doğrulaması (§44), `BillingPayment` tablosu, süre dolunca `free`. (ii) **Plan modülleri** (§5.2): paket başına modül listesi sahibin işletme şalterlerini belirler (§38.A "Modüler entitlement" maddesi bu şekilde kapandı: kullanıcı modülleri seçti, metered/usage yok). (iii) **Yanıt şablonları**: `ReplyTemplate` (sahip başına en çok 50, ekip paylaşır, görüntüleyici yazamaz, kayıtta §48 risk kapısı), owner yanıt kutusunda `ReplyTemplatesMenu`. (iv) **Şube raporu**: `/dashboard/restaurants/report` (7/30/90 gün; yorum, puan + değişim, düşük puan ve yanıt oranı, QR okutma, platform yönlendirme, bozuk link; yazdır/PDF). (v) **Admin destek görünümü**: işletme sahibi detayında oturumlar (IP maskeli), son 30 gün başarısız mailler, bozuk linkler, Google bağlantısı, ödemeler (`/api/admin/members/[id]/support`, superadmin). (vi) **Paralellik**: admin işletme detayında 6 ek platform, şehir, sektör seçimi, Google linki yalnız değişince gönderilir, geçici kapalı rozeti; admin menü teması da marka ayarına yazılır + public menü yenilenir; `/r/[slug]` geçici kapalı uyarısı; CSV dışa aktarımları İngilizce başlık/etiketle. (vii) **Küfür + sorumluluk** (§47). (viii) **Coolify**: `.github/workflows/deploy-verify.yml` push'tan sonra `/api/health` commit'ini bekler, gerekirse deploy webhook'unu çağırır (docs/SELF_HOST.md). **Disipline**: ödeme sonucunu yalnız sağlayıcıya sunucudan sorarak kabul et; plan şalterlerini tek yerden (`applyPlanModulesForOwner`) değiştir; şemadan çıkan tabloyu/kolonu aynı deploy'da DROP etme.
+- **Chat prompt history (Stage 176)**: 2026-11-19 kullanıcı: *"henüz yapılmayanları da düzelt ve maine gönder ve aşağıdakileri ekleyebilirsin. 3, 4, 5, 6, ayrıca maillere cevaplarda türkçe ingilizce vs. tüm dillerdeki küfürlü kelimeler yazılırsa vs. engelle ve sorumluluk olmasın sorumluluk reddi ver ver türk hukukuna genel hukuna uygun yapıp maine gönder"*; ara mesajlar *"coolify'da da otomatik deploy olduğundan emin ol ayrıca; laffogato reposundaki nkolay sanal pos altyapısına bak ve tüm sanal posu qrcodedan kaldır nkolaya göre uyarlayıp yapar mısın?"*, *"ayrıca gereksiz token kullanımından kaçın"*. 3–6 = önceki turda önerilen şube raporu, yanıt şablonları, admin destek görünümü, plan modülleri. **Disipline override**: §15.2 USD-only kararı kısmen değişti — pazarlama USD gösterir ama kartla ödeme TL'dir (PayNKolay yalnız TL); "sorumluluk olmasın" hukuken mutlak muafiyet olamayacağı için yer sağlayıcı + işletme sorumluluğu + tazmin olarak yazıldı (kullanıcıya bildirildi).
 - §38.245 — Stage 163 (PR TBD) Google girişi penceresi kapanmıyor + yavaş giriş, site hızı, SEO ve Google uyumu. **Disipline**: (i) proxy'lenen üçüncü taraf sayfalara (`/__/*`) site güvenlik başlıklarını körlemesine uygulama — özellikle COOP opener'ı koparır; (ii) layout metadata'sına sayfaya özgü alan (canonical, hreflang, og:url, twitter başlığı) koyma, miras kalır; (iii) `'use client'` dosyası `@/lib/prisma` içeren modülü dolaylı da olsa import etmemeli (sabitleri ayrı modüle al); (iv) IntersectionObserver hedefi gerçek kutu olmalı (`display: contents` asla). **Not**: Firebase `authDomain` ve OAuth ayarlarına dokunulmadı; düzeltme… (Ayrıntı: git log.)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
@@ -5680,281 +5682,61 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
 
 ---
 
-## §44 — Dodo Payments Billing Foundation (kanonik, 2026-05, Stage 140 §38.220 + Stage 142 §38.222)
+## §44 — PayNKolay kartla ödeme (kanonik, 2026-11, Stage 176 §38.258)
 
-> **Tarihsel not**: Stage 137 §38.217 + Stage 138 §38.218 + Stage 139
-> §38.219'da Lemon Squeezy entegrasyonu kuruldu (foundation + Wave 2 +
-> admin polish). **Stage 140 §38.220'de Lemon Squeezy tamamen kaldırıldı**;
-> bu § Dodo Payments için yeniden yazıldı. Lemon Squeezy şu nedenle
-> değiştirildi: Buaze kullanıcı tercihi (operatör henüz prod env vars'ı
-> set etmemişti — schema migrasyonu safe, sıfır data kaybı).
->
-> **Path migration (Stage 141 + 142 §38.221-222)**: Stage 140'ta route'lar
-> `src/app/checkout/route.ts` + `src/app/customer-portal/route.ts` (top-
-> level) altındaydı; Vercel production deploy ERROR çıkardı (build success
-> ama post-build finalize fail). Stage 141 PR #725-#726'da geçici stub'a
-> alındı + dep sürüm 1.46.0 → 0.3.6 düşürüldü. Stage 142 PR'ında SDK
-> kodu restore edildi + route'lar **`/api/` altına taşındı** (tahmini kök
-> neden: top-level `app/<segment>/route.ts` Vercel adapter finalize
-> çakışması — webhook zaten `/api/` altındaydı ve sorunsuz çalışıyordu).
-> Yeni path'ler: `/api/checkout`, `/api/customer-portal`, `/api/webhook/dodo-payments`.
+> Dodo Payments (Stage 140–150) ve önceki Lemon Squeezy tamamen kaldırıldı;
+> tek kartlı ödeme sağlayıcısı PayNKolay (Nkolay Ödeme Kuruluşu). Entegrasyon
+> laffogato reposundaki PayNKolay altyapısından uyarlandı. Aşağıdaki eski
+> §38.217–§38.230 kayıtları tarihseldir.
 
-Buaze write-side billing entegrasyonu. CLAUDE.md §15.2 canonical billing
-parity ile birlikte çalışır — read-side (marketing `/pricing`, admin
-`/admin/plans`, owner `BillingReadOnlyCard`) intact, bu § write-side
-(checkout + webhook + subscription lifecycle) Dodo Payments SDK paterni.
+### §44.1 Akış
 
-### §44.0 — Bu PR'da yapılan değişikliklerin overview'i
+1. Owner `/pricing` kartından ya da Hesabım → fatura kartından
+   `GET /api/billing/paynkolay/checkout?planId&cycle&locale` açar. Yalnız
+   `restaurant_owner` (ekip üyesi / admin → `?payment=owner_only`); hız sınırı
+   10/10 dk. Tutar istemciden alınmaz: `paynkolayCheckoutAmounts()` DB'deki
+   TL fiyatından (`resolveBillingAmount(plan, cycle, 'TRY')`) hesaplanır.
+2. Rota `BillingPayment` (pending) satırı yazar ve PayNKolay barındırılan
+   ödeme sayfasına kendini gönderen bir form döner (`${base}/Vpos`,
+   `hashDataV2` = SHA-512 base64 `sx|ref|amount|successUrl|failUrl|rnd|customerKey|secret`).
+3. PayNKolay `POST /api/billing/paynkolay/return`'a döner. Dönüş gövdesine
+   güvenilmez: `confirmPayment()` `/Vpos/Payment/PaymentList` ile (sxList)
+   ödemeyi sunucudan sorgular; yalnız tutarı birebir tutan SUCCESS satışı
+   başarılı sayılır. `settlePaynkolayPayment()` idempotenttir (ödemeyi
+   `status != succeeded` koşuluyla sahiplenir), aboneliği bir dönem uzatır,
+   `User.plan`'ı günceller, `BillingInvoice` (`PNK-YYYYMM-xxxx`) yazar ve
+   plan modüllerini uygular (§5.2). 303 → `?payment=success|failed|pending`.
+4. Otomatik yenileme yok: her ödeme bir ay / bir yıl alır; owner "Süreyi
+   uzat" ile öder. `lifecycle-emails` cron'u süresi geçen PayNKolay
+   aboneliklerini `free`'ye çeker (`expireLapsedPaynkolayPeriods`).
 
-**Removal (Stage 140 §38.220)**: 12 dosya silindi (`src/lib/lemon-squeezy/`
-6 dosya + `src/app/api/billing/{checkout,portal,cancel,reactivate}/route.ts`
-4 dosya + `src/app/api/webhooks/lemon-squeezy/route.ts` + LS test file).
-Schema rollback migration `20260525000001_remove_lemon_squeezy` 4 BillingSub
-LS field + 4 SubPlan LS field + LemonSqueezyEvent table drop edildi (sıfır
-production row — Stage 137 prod'a deploy edilmemişti).
+### §44.2 Kurallar
 
-**Add**: `@dodopayments/nextjs` npm dep eklendi. 3 yeni route handler
-(Stage 142'de `/api/` altında):
-`src/app/api/checkout/route.ts` (GET static + POST session),
-`src/app/api/webhook/dodo-payments/route.ts` (POST + 8 spesifik event handler +
-GET ops probe), `src/app/api/customer-portal/route.ts` (GET).
-`SubscriptionPlan.dodoProductId` + `BillingSubscription.providerCustomerId`
-field'ları eklendi.
+- Yalnız TL (para birimi 949), tutarlar kuruş tam sayı. Pazarlama fiyatı USD
+  gösterir (§15.2); kartla ödeme düğmesi TL tutarı yazar. Bir paket ancak
+  admin `/admin/plans`'ta `paymentProvider: 'paynkolay'` + TL fiyat girerse
+  kartla satılır; aksi halde eski kayıt/iletişim akışı.
+- CSP: site `form-action 'self'` checkout rotasına uygulanmaz (`next.config.ts`
+  CSP kaynağı `/((?!api/billing/paynkolay/checkout).*)`); Chrome form-action'ı
+  3D Secure yönlendirmelerinde de uygular. Checkout HTML'i kendi dar CSP'sini taşır.
+- Env (hepsi opsiyonel, `validate-env.js`): `PAYNKOLAY_SX`, `PAYNKOLAY_SX_LIST`,
+  `PAYNKOLAY_MERCHANT_SECRET_KEY`, `PAYNKOLAY_MERCHANT_NO`, `PAYNKOLAY_BASE_URL`
+  (varsayılan TEST; canlıda `https://paynkolay.nkolayislem.com.tr`). Eksikse
+  checkout `?payment=unavailable` döner.
+- Admin `MemberBillingModal` manuel akışı (kurumsal, iade, eski fiyat) korunur;
+  `BillingSubscription.source` `'manual' | 'paynkolay'`.
+- DB'de eski `subscription_plans.dodo_product_id` kolonu ve `dodo_webhook_events`
+  tablosu bırakıldı (şemadan çıkarıldı, DROP yok — deploy sırasında eski
+  sürümün kırılmaması için). Ayrı bir temizlik migration'ı ile silinebilir.
+- Kart bilgisi Buaze'ye hiç gelmez; log/Sentry'ye yalnız `paymentId`, `userId`,
+  referans kodu yazılır (§37.7).
 
-### §44.1 Mimari
-
-1. **Resmi SDK** — `@dodopayments/nextjs` paketinin 3 named export'u
-   kullanılır: `Checkout`, `Webhooks`, `CustomerPortal`. SDK signature
-   verify + checkout URL üretimi + portal redirect kendisi handle eder
-   (manuel HMAC + REST fetch kodu yok). Sebep: Lemon Squeezy paterninden
-   farklı olarak Dodo SDK Next.js App Router'a doğrudan integration
-   (route handler factory exports).
-2. **3 route handler** — `src/app/api/checkout/route.ts` (GET static + POST
-   session), `src/app/api/webhook/dodo-payments/route.ts` (POST + 8
-   spesifik event handler + GET ops probe), `src/app/api/customer-portal/route.ts` (GET).
-   Hepsi `/api/` altında (Stage 142 §38.222 path migration — top-level
-   `app/<segment>/route.ts` Vercel adapter finalize çakışması olası
-   kök neden).
-3. **Schema** — `SubscriptionPlan.paymentProvider` ('manual' |
-   'dodo_payments') + `SubscriptionPlan.dodoProductId` (1 product ID per
-   tier — Lemon Squeezy 4-variant matrix'ten farklı, Dodo product = SaaS
-   tier, customer cycle/currency'i checkout sayfasında seçer).
-   `BillingSubscription.providerCustomerId` (Dodo customer_id,
-   /api/customer-portal redirect için). `BillingSubscription.source`
-   ('manual' | 'dodo_payments') + `cancelAtPeriodEnd` generic field
-   korunur. Stage 149 §38.229 — eski 'iyzico' enum slot iptal edildi.
-4. **Hybrid manual + automated** — `BillingSubscription.source` field
-   audit trail; admin `MemberBillingModal` Dodo-created row'ları
-   override edebilir (enterprise/legacy/discount), `source` orijinal
-   yaratıcıyı korur.
-5. **User resolution strategy** — `payload.data.metadata.user_id`
-   (checkout endpoint POST custom_data ile pass eder) → `payload.data.customer.email`
-   lookup fallback → null (event skip, admin manuel replay).
-
-### §44.2 Env vars (4 optional)
-
-| Env | Eksikse |
-|---|---|
-| `DODO_PAYMENTS_API_KEY` | /api/checkout + /api/customer-portal route handler runtime error; mevcut manuel admin akışı intact |
-| `DODO_PAYMENTS_WEBHOOK_SECRET` | /api/webhook/dodo-payments her POST'ta 401 — Dodo retry storm |
-| `DODO_PAYMENTS_RETURN_URL` | Successful checkout sonrası owner'ı geri yönlendirme URL'i (lokal: localhost:3000/success; prod: buaze.com/dashboard/account) |
-| `DODO_PAYMENTS_ENVIRONMENT` | `'test_mode'` (default) veya `'live_mode'`. Production deploy'da explicit `'live_mode'` zorunlu + live_ API key |
-
-### §44.3 Schema fields
-
-```prisma
-model BillingSubscription {
-  source              String   @default("manual")    // 'manual' | 'dodo_payments'
-  providerCustomerId  String?  @map("provider_customer_id")  // Dodo customer_id
-  cancelAtPeriodEnd   Boolean  @default(false)       // generic scheduled-cancel flag
-  // providerRef (existing @unique) reused — holds Dodo subscription_id
-}
-
-model SubscriptionPlan {
-  paymentProvider String  @default("manual")    // 'manual' | 'dodo_payments'
-  dodoProductId   String?                       // 1 product ID per tier
-}
-```
-
-Stage 149 §38.229 — eski 'iyzico' enum slot iptal edildi (Dodo Payments tek
-self-service sağlayıcı; admin manual override hybrid §44.5 intact).
-
-Lemon Squeezy 4-variant matrix (USD/TRY × monthly/yearly) **YOK** — Dodo
-paterni: 1 product ID, customer cycle/currency'i checkout sayfasında seçer.
-
-### §44.3.1 Webhook URL canonical domain (Stage 143 §38.223)
-
-External webhook entegrasyonu kurarken provider dashboard'taki webhook URL **her zaman canonical domain** olmalı (Buaze için `https://www.buaze.com/api/webhook/<provider>`). Apex (`https://buaze.com/...`) Vercel platform-level 307 redirect dönüyor; webhook delivery sistemleri (Dodo, Stripe, vb.) 3xx **takip etmez** (body persistency + idempotency riski) → Failed sayar, POST hiç function'a ulaşmaz.
-
-**Doğrulama** (yeni webhook entegrasyonu öncesi):
-```bash
-curl -X POST https://<apex>/api/webhook/xxx -d '{}' -H "Content-Type: application/json"
-# 307 → provider dashboard URL canonical değişmeli
-# 401/200 → URL doğru
-```
-
-### §44.3.2 Webhook handler diagnostic wrapper pattern (Stage 143 §38.223)
-
-Yeni webhook entegrasyonu (Stripe, PayPal, vb.) eklerken signature verify failure path'lerinde structured diagnostic log + Sentry warning ekle. PII-safe (raw secret YOK):
-
-```ts
-const sdkWebhookHandler = Webhooks({ webhookKey: process.env.X_SECRET, ... });
-
-export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  const startTime = Date.now();
-  const response = await sdkWebhookHandler(req);
-  if (response.status === 401 || response.status === 500) {
-    const clone = response.clone();
-    const bodyMessage = await clone.text().catch(() => '<body unavailable>');
-    const secret = process.env.X_SECRET ?? '';
-    const sigHeader = req.headers.get('webhook-signature') ?? '';
-    const diagnostic = {
-      status: response.status,
-      bodyMessage: bodyMessage.slice(0, 200),
-      durationMs: Date.now() - startTime,
-      headers: { hasId, hasTimestamp, hasSignature, signaturePrefix: sigHeader.slice(0, 6), signatureLength: sigHeader.length },
-      secret: { present, length, hasWhsecPrefix, first8Chars: secret.slice(0, 8) },
-    };
-    console.error('[x-webhook] verify fail', diagnostic);
-    Sentry.captureMessage('X webhook signature verify failed', {
-      level: 'warning',
-      tags: { integration: 'x', kind: response.status === 401 ? 'signature_verify_fail' : 'webhook_server_error' },
-      extra: diagnostic,
-    });
-  }
-  return response;
-};
-```
-
-Production'da 30 saniyede kök neden tespit (apex redirect, secret mismatch, header eksik, body modification, clock skew, vb.). Mevcut canonical implementation: `src/app/api/webhook/dodo-payments/route.ts`.
-
-**Yapma**: Raw secret değer log'la (KVKK + güvenlik). Customer email/name diagnostic'e ekle. Body content (sadece error message slice 200).
-
-**Yap**: Yeni webhook handler eklerken bu paterni klonla, `Sentry.captureMessage` tag'lerini provider ismine göre güncelle (`integration: 'stripe' / 'paypal' / ...`).
-
-### §44.4 Webhook event taxonomy
-
-Dodo SDK `Webhooks({ webhookKey, onPayload, on<EventName> })` paterni —
-catch-all + spesifik handler'lar. SDK signature verify'i HMAC ile kendisi
-yapar, manuel idempotency tablosu gerekmez.
-
-| Event | Side effect |
-|---|---|
-| `payment.succeeded` | BillingInvoice upsert (paid) + parent sub `status='active'` |
-| `payment.failed` | BillingInvoice (failed) + parent sub `past_due` + Sentry warn |
-| `payment.refunded` | BillingInvoice.status: 'refunded' |
-| `subscription.active` / `.renewed` | `handleSubscriptionUpsert` (status + cancelAtPeriodEnd:false + renewsAt + tier link + providerCustomerId) |
-| `subscription.on_hold` | status: 'past_due' (UI banner) |
-| `subscription.cancelled` | cancelAtPeriodEnd: true, status: 'active' (grace until renewsAt) |
-| `subscription.expired` | status: 'canceled' (terminal) |
-
-### §44.5 Hybrid mode (manuel + Dodo Payments)
-
-Owner self-service Dodo üzerinden subscribe/upgrade/cancel yapar. Admin
-`MemberBillingModal` manuel override için kalır:
-- **Enterprise deal'lar** — custom fiyat, off-platform anlaşma
-- **Legacy / grandfathered users** — early adopter pricing
-- **Refund / credit** — admin manuel credit (audit log'lanır)
-
-Stage 149 §38.229 — eski "Iyzico TR pazar" planı iptal edildi; Dodo Payments
-tek self-service sağlayıcı, admin manual override hybrid yeterli.
-
-`BillingSubscription.source` audit kaynak; Dodo-created row üzerine admin
-override yapılabilir, `source='dodo_payments'` korunur.
-
-### §44.6 Cancel + reactivate flow (Dodo portal-driven)
-
-Owner cancel/reactivate **inline UI'da YOK**. `BillingReadOnlyCard` tek
-CTA — "Aboneliği yönet" → `/api/customer-portal?customer_id=<dodo_customer_id>`
-→ Dodo signed portal URL → owner Dodo'nun full-featured UI'sında cancel/
-reactivate/payment method update/billing address update yapar.
-
-Sebep: Dodo customer portal full subscription management içerir; Buaze
-tarafında özel cancel modal + reactivate buton + confirm dialog (Stage
-138 Wave 2 paterni) **kaldırıldı** — UX iki yerden ikiye katlanır,
-inconsistent.
-
-Webhook events DB'yi senkronize tutar:
-- Portal'da cancel → `subscription.cancelled` → `cancelAtPeriodEnd=true`
-- Portal'da reactivate → `subscription.active`/`renewed` → `cancelAtPeriodEnd=false`
-- Portal'da kart güncelleme → DB row dokunulmaz (kart info Dodo'da)
-
-### §44.7 KVKK + PII discipline (§40.4 paterni)
-
-Dodo webhook payload'larında `customer.email` + `customer.name` gelir.
-Buaze tarafında:
-- **Webhook handler `onPayload` catch-all**: console.log sadece event type
-  + payment_id + subscription_id — email/name **YOK**
-- **Sentry tag/extra**: userId + paymentId + subscriptionId — email/name **ASLA**
-- `sendDefaultPii: false` (CLAUDE.md §26.2) SDK tarafı redact zaten devrede
-
-### §44.8 Tests
-
-Stage 140 PR'ında yeni test eklenmedi — SDK signature verify'i kendi
-yapıyor, eski Lemon Squeezy test file'ı silindi. Production smoke test:
-operatör Dodo dashboard'tan test mode webhook tetiklediğinde
-`BillingSubscription` upsert + `/dashboard/account` UI'da "Aboneliği yönet"
-CTA görünür.
-
-Gelecek test scope (opsiyonel): webhook handler unit tests (fake payload
-→ resolveUserId + resolveTierFromProduct + DB upsert assertion).
-
-### §44.9 Backlog (gelecek scope)
-
-✅ ~~**Marketing `/pricing` checkout wiring**~~ — **KAPATILDI** (Stage 148
-§38.228). `PublicPlan` interface'i `paymentProvider` + `dodoProductId`
-expose ediyor; `PricingPlans.tsx` `paymentProvider === 'dodo_payments'` +
-`dodoProductId` dolu ise CTA `/api/checkout?productId=<id>` (Dodo static
-checkout, SDK Dodo hosted page'e 302 redirect yapıyor). Wired olmayan
-tier'lar legacy `buttonHref` fallback (register/contact akışı).
-Owner panel'da da `BillingReadOnlyCard` "Planı yükselt" → inline plan
-picker Modal → her tier için aynı static checkout link.
-
-🚧 **Admin event audit UI** — `/admin/billing/events` — Dodo webhook
-event'lerini tablo halinde göster + failed handler retry. Şu an Dodo
-dashboard'tan görülebilir (üst ihtiyaç gelmedikçe ek UI gereksiz).
-
-🚧 **Ops alert** — `notifyOpsOfBillingFailure` helper (CLAUDE.md §21.33
-paterni) — `payment.failed` event'lerinde admin'e mail.
-
-> Stage 149 §38.229 — eski "Iyzico Wave 3.5" backlog item iptal edildi.
-> Dodo Payments tek self-service sağlayıcı; ileride başka TR-spesifik
-> provider gereği çıkarsa yeni `paymentProvider` enum literal + helper +
-> webhook + product ID field eklenir (§44.4 generic pattern reuse).
-
-### §44.10 Yapma / Yap
-
-**Yapma**:
-- SDK webhook signature verify'i atlayıp özel HMAC implementasyonu yazma
-  — SDK kendi yapıyor, manuel kod regression riski
-- `subscription.cancelled` event'inde DB row silmek — owner dönem sonuna
-  kadar erişim hakkı taşır, sadece `cancelAtPeriodEnd: true` flag
-- Inline cancel modal / reactivate buton ekleme — Dodo portal full UI
-  içerir, double-source drift kaynağı
-- Dodo amount field'ını MAJOR unit varsaymak — Dodo minor unit gönderir
-  (cents/kuruş), `minorToMajor(n)` helper ile çevir, BillingInvoice.amount
-  Decimal(10,2) MAJOR unit
-- API key'i client bundle'a koymak (NEXT_PUBLIC_) — full account erişimi
-- Test mode key + `'live_mode'` environment kombinasyonu — silent live
-  charge riski; operatör explicit set etmeli
-- Manuel admin akışı (`MemberBillingModal`) deprecate etmek — enterprise/
-  legacy/refund use case'leri için kalır (hybrid §44.5)
-
-**Yap**:
-- Yeni Dodo event handler eklerken: idempotent upsert + `resolveUserId`
-  (metadata preferred) + `resolveTierFromProduct` + Prisma sequential
-  await (CLAUDE.md §40.1 connection_limit=1)
-- Yeni payment provider eklerken (gelecek: Stripe / başka TR provider)
-  `BillingSubscription.source` + `paymentProvider` enum literal ekle,
-  `providerCustomerId` field reuse (generic), `providerRef` reuse
-  (subscription/transaction ID)
-- Dodo product ID admin `/admin/plans` editöründen set edilir; eksik =
-  o tier'da checkout button gizli
-- Webhook handler'da error catch + Sentry capture (tags: `integration:
-  'dodo-payments'`, `handler: 'subscription.X'`) — handler dispatch'i
-  bloklamasın; SDK 200 dönmeye devam etsin (retry storm önleme)
-
----
+**Yapma**: dönüş POST'undaki durum alanına güvenip aboneliği açma (her zaman
+PaymentList); tutarı istemciden alma; checkout rotasına site CSP'sini geri
+uygulama; otomatik yenileme varmış gibi metin yazma.
+**Yap**: yeni ödeme yüzeyi checkout rotasına link verir (`<a>`, Next `<Link>`
+değil); yeni plan alanı eklenirse `paynkolayCheckoutAmounts` ve `toPublicPlan`
+birlikte güncellenir.
 
 ## §45 — Reply Content Safety Gate + Responsibility Consent (kanonik, 2026-09)
 
@@ -6010,9 +5792,9 @@ checkbox after success only (not on transient failure).
 
 **Şirket unvanı tek kaynaktan**: admin → Hukuki metinler → Değişkenler → `COMPANY_NAME` (+ `COMPANY_ADDRESS`). Hukuki metinler, pazarlama footer'ı ve Organization JSON-LD `legalName` (layout + about) aynı değeri `getCompanyLegalInfo()` (`src/lib/legal/variables.ts`) ile okur. Değer varsayılan ("Buaze") veya `[yer tutucu]` iken yalnız marka adı gösterilir; kayıtsız bir "A.Ş." asla yayınlanmaz. Kodda unvan hardcode etme. ISR nedeniyle footer'a yansıması en geç 1 saat.
 
-**Küfür engeli**: `src/lib/profanity.ts` (`containsProfanity`) TR, EN, DE, FR, ES, PT, IT, RU ve AR küfürlerini yakalar (leet, uzatılmış harf ve "f.u.c.k" ayraç varyantları dahil). `moderateReplyContent` önce bunu çalıştırır (`reason: 'profanity'`, ağsız; OpenAI anahtarı yokken de çalışır), sonra OpenAI moderasyonu. İşletmenin müşteriye e-postayla yanıtı ve Google yanıtı 422 `content_blocked` ile durur. Yanlış pozitif kuralı: "sık", "sıkı", "sıkıntı", "sıkışık" ve "Amina" gibi masum kelimeler ASCII yazımda bile engellenmez — yeni kelime eklerken `tests/profanity.test.ts` masum listesine örnek ekle.
+**Küfür engeli**: `src/lib/profanity.ts` (`containsProfanity`) TR, EN, DE, FR, ES, PT, IT, RU, AR ve 2026-11'den beri NL, PL, RO, EL, Balkan dilleri, FA, HI/UR, ZH, JA, KO küfürlerini yakalar (Çince/Japonca/Korece kelime sınırı olmadığı için düz alt dize; masum kelime listesi testte) (leet, uzatılmış harf ve "f.u.c.k" ayraç varyantları dahil). `moderateReplyContent` önce bunu çalıştırır (`reason: 'profanity'`, ağsız; OpenAI anahtarı yokken de çalışır), sonra OpenAI moderasyonu. İşletmenin müşteriye e-postayla yanıtı ve Google yanıtı 422 `content_blocked` ile durur. Yanlış pozitif kuralı: "sık", "sıkı", "sıkıntı", "sıkışık" ve "Amina" gibi masum kelimeler ASCII yazımda bile engellenmez — yeni kelime eklerken `tests/profanity.test.ts` masum listesine örnek ekle.
 
-**Sorumluluk reddi**: müşteriye giden yanıt e-postasının (`customer-reply`) HTML ve düz metin sürümünde sabit (admin'de düzenlenemez) not: içerikten yalnız gönderen işletme sorumludur, Buaze içeriği yazmaz/onaylamaz, uygunsuz içerik support@buaze.com'a bildirilir. Gönderim başına sorumluluk onayı ve Kabul Edilebilir Kullanım Politikası (§45) ile birlikte çalışır.
+**Sorumluluk reddi**: müşteriye giden yanıt e-postasının (`customer-reply`) HTML ve düz metin sürümünde sabit (admin'de düzenlenemez) not: içerikten yalnız gönderen işletme sorumludur, Buaze içeriği yazmaz/onaylamaz, uygunsuz içerik support@buaze.com'a bildirilir. 2026-11'den beri metin Buaze'nin 5651 sayılı Kanun kapsamında yer sağlayıcı olduğunu (EN sürüm: Law 5651 + AB Dijital Hizmetler Yasası md. 4–6) belirtir. Kabul Edilebilir Kullanım Politikası §5.4 "Müşterilere gönderilen yanıtlar" (TCK 106/125/216, KVKK, TBK; filtreler sorumluluğu Buaze'ye geçirmez; gönderim başına onay; tazmin) aynı kuralı sözleşmeye bağlar. DB'deki yayımlanmış hukuki metin kopyası kod varsayılanından eskiyse admin → Hukuki metinler → "Varsayılana dön". Gönderim başına sorumluluk onayı (§45) ile birlikte çalışır.
 
 ## §46 — Zaman Damgası Saat Dilimi (kanonik, 2026-09)
 
@@ -6149,7 +5931,7 @@ Pazarlama sitesi (alt bilgi, menü, ana sayfa, özellik, sektör, ticari, şirke
 `src/app/layout.tsx` yok; her üst düzey bölümün kendi kök düzeni var, hepsi aynı kabuğu kullanır: `src/components/root/RootHtml.tsx` (`<html>/<body>`, `globals.css`, `fonts.ts`, ConditionalAnalytics, çerez bandı, Speed Insights + Analytics). Metadata varsayılanları ve viewport `src/lib/root-metadata.ts` (`buildBaseMetadata`, `APP_METADATA`, `siteIcons`, `ROOT_VIEWPORT`).
 
 - **Neden**: tek kök düzen `[locale]`'in üstünde kaldığı için dili bilemiyordu (`headers()` okumak ISR'ı bozar, §35.12.3); /en sayfaları sunucudan `lang="tr"` geliyordu ve yalnız JS ile düzeltiliyordu. Artık `src/app/[locale]/layout.tsx` kök düzendir ve `<RootHtml lang={locale}>` basar.
-- **Kök düzenler**: `[locale]` (lang = locale), `admin` (lang = `ADMIN_LOCALE` çerezi; düzen zaten çerez okuyor), `r`, `menu`, `s`, `embed`, `audits`, `dashboard` (locale'siz yönlendirme), `(root)` (`/` yönlendirmesi) — bunlarda lang `tr`. `/r/[slug]` dili istemcide seçtiği için `<html lang>`'ı kendisi günceller.
+- **Kök düzenler** (2026-11: Dodo dönüş adresi için duran locale'siz `dashboard` kök düzeni ve `/dashboard/account` yönlendirmesi silindi): `[locale]` (lang = locale), `admin` (lang = `ADMIN_LOCALE` çerezi; düzen zaten çerez okuyor), `r`, `menu`, `s`, `embed`, `audits`, `(root)` (`/` yönlendirmesi) — bunlarda lang `tr`. `/r/[slug]` dili istemcide seçtiği için `<html lang>`'ı kendisi günceller.
 - **404**: `app/not-found.tsx` yerine `app/global-not-found.tsx` (`experimental.globalNotFound`, kendi `<html>`'i; /en için `langFromPath` küçük betiği). `notFound()` çağıran bölümlerin kendi `not-found.tsx`'i var (`[locale]`, `r`, `embed` → `BrandedNotFound`; `admin`, `menu/[slug]`, `s/[slug]`, `audits/[token]` kendi tasarımları). Hiçbiri `headers()/cookies()/searchParams` okumaz. Global 404 bir kez statik üretildiği için istenen adresi bilmez: `BrandedNotFound detectLocaleOnClient` Türkçe başlar, dili mount sonrası adresten seçer (ilk render'da adres okumak React #418 hidrasyon hatası verir).
 - **Gezinme**: iki farklı kök düzen arasında geçiş tam sayfa yüklemesidir (Next.js); /tr ↔ /en aynı kök düzende kalır.
 - **Yapma**: `src/app/layout.tsx` geri ekleme (tüm kök düzenler iç içe `<html>` olur); yeni üst düzey bölümü kök düzensiz bırakma (derleme "missing root layout" ile durur) — `RootHtml` + `buildBaseMetadata` + `ROOT_VIEWPORT` ile 15 satırlık düzen ekle; `RootHtml`'e `<head>` yazma (kaynak ipuçları `react-dom` `prefetchDNS` ile).

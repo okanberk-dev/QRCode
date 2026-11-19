@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { AlertBanner, APSwitch, Badge, Modal } from '@/components/ui';
 import type { AdminPlanRow } from '@/lib/subscription-plans';
+import { PLAN_MODULES } from '@/lib/plan-modules-catalog';
 
 interface FormState {
   nameTr: string;
@@ -40,11 +41,12 @@ interface FormState {
   discountValue: string;
   discountLabelTr: string;
   discountLabelEn: string;
-  /** Payment provider (CLAUDE.md §44). 'manual' tier'lar checkout butonu
-   *  göstermez; 'dodo_payments' tier'lar `dodoProductId` slot'u kullanır.
-   *  Stage 149 §38.229 — eski 'iyzico' enum slot kaldırıldı (provider iptal). */
-  paymentProvider: 'manual' | 'dodo_payments';
-  dodoProductId: string;
+  /** Payment provider (CLAUDE.md §44). 'manual' = admin yönetir;
+   *  'paynkolay' = owner kartla öder (TL fiyat gerekir). */
+  paymentProvider: 'manual' | 'paynkolay';
+  /** Package modules (§5.2) applied to the owner's businesses. */
+  moduleKeys: string[];
+  modulesManaged: boolean;
 }
 
 const EMPTY_FORM: FormState = {
@@ -73,7 +75,8 @@ const EMPTY_FORM: FormState = {
   discountLabelTr: '',
   discountLabelEn: '',
   paymentProvider: 'manual',
-  dodoProductId: '',
+  moduleKeys: [],
+  modulesManaged: false,
 };
 
 function rowToForm(p: AdminPlanRow): FormState {
@@ -102,10 +105,9 @@ function rowToForm(p: AdminPlanRow): FormState {
     discountLabelEn: p.discountLabelEn || '',
     // Stage 149 §38.229 — 'iyzico' provider iptal edildi; legacy DB row'larda
     // bu değer kalmış olabilir, defansif olarak 'manual'a düşür.
-    paymentProvider: (p.paymentProvider === 'dodo_payments'
-      ? 'dodo_payments'
-      : 'manual') as FormState['paymentProvider'],
-    dodoProductId: p.dodoProductId ?? '',
+    paymentProvider: (p.paymentProvider === 'paynkolay' ? 'paynkolay' : 'manual') as FormState['paymentProvider'],
+    moduleKeys: p.moduleKeys ?? [],
+    modulesManaged: p.modulesManaged === true,
   };
 }
 
@@ -135,9 +137,8 @@ function formToBody(f: FormState) {
     discountLabelTr: f.discountActive ? f.discountLabelTr.trim() || null : null,
     discountLabelEn: f.discountActive ? f.discountLabelEn.trim() || null : null,
     paymentProvider: f.paymentProvider,
-    // Dodo Payments product ID — admin /admin/plans editöründen her tier
-    // için 1 product ID set edilir. Boş = null (admin override clear).
-    dodoProductId: f.dodoProductId.trim(),
+    moduleKeys: f.moduleKeys,
+    modulesManaged: f.modulesManaged,
   };
 }
 
@@ -266,6 +267,10 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
     if (form.priceUsd.trim() === '') return 'USD fiyatı zorunlu.';
     const usd = parseInt(form.priceUsd, 10);
     if (isNaN(usd) || usd < 0) return 'USD fiyatı geçersiz.';
+    // PayNKolay settles in TRY only (§44).
+    if (form.paymentProvider === 'paynkolay' && !(parseInt(form.priceTry, 10) > 0)) {
+      return 'PayNKolay ile ödeme için aylık TL fiyatı girin.';
+    }
     if (form.discountActive) {
       const v = parseInt(form.discountValue, 10);
       if (isNaN(v) || v <= 0) return 'İndirim değeri sıfırdan büyük olmalı.';
@@ -670,12 +675,8 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                             isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
                           }`}
                         >
-                          {/* Stage 149 §38.229 — Iyzico kaldırıldı; sadece
-                              dodo_payments badge gösterilir. Manual tier'lar
-                              `paymentProvider !== 'manual'` guard'ı ile zaten
-                              bu satıra girmiyor. */}
-                          Dodo
-                          {p.dodoProductId ? ' ✓' : ' (eksik)'}
+                          PayNKolay
+                          {p.priceTry > 0 ? ` · ₺${p.priceTry}` : ' (TL fiyat eksik)'}
                         </span>
                       </>
                     )}
@@ -1064,18 +1065,18 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
               </div>
             )}
 
-            {/* ── Ödeme sağlayıcı + Dodo Payments product mapping (CLAUDE.md §44, Stage 140) ── */}
+            {/* ── Ödeme (PayNKolay) + paket modülleri (CLAUDE.md §44, §5.2) ── */}
             <div className="bz-card-soft p-4">
               <div className="mb-3">
-                <p className="text-[13px] font-semibold text-[#0A0A0A]">Ödeme sağlayıcı</p>
+                <p className="text-[13px] font-semibold text-[#0A0A0A]">Ödeme ve paket modülleri</p>
                 <p className="mt-0.5 text-[11px] text-[#737373]">
-                  <strong>manual</strong> = admin elle yönetir (enterprise/legacy,
-                  checkout butonu gizli). <strong>dodo_payments</strong> = self-service
-                  checkout. Product ID&apos;yi Dodo Payments dashboard&apos;ından
-                  (Products → seçilen product URL&apos;sinden) kopyalayın.
+                  <strong>Elle</strong> = admin üyenin faturasını yönetir.{' '}
+                  <strong>PayNKolay</strong> = işletme sahibi kartla öder; TL fiyatı girin
+                  (PayNKolay yalnız TL tahsil eder). Her ödeme bir dönem (ay / yıl) açar,
+                  otomatik çekim yoktur.
                 </p>
               </div>
-              <Field label="Sağlayıcı">
+              <Field label="Ödeme">
                 <select
                   value={form.paymentProvider}
                   onChange={(e) =>
@@ -1086,39 +1087,67 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   }
                   className="bz-input"
                 >
-                  {/* Stage 149 §38.229 — Iyzico iptal edildi. Yalnız 2 seçenek:
-                      manual (admin override) ve dodo_payments (self-service). */}
-                  <option value="manual">manual (admin yönetir)</option>
-                  <option value="dodo_payments">dodo_payments (self-service)</option>
+                  <option value="manual">Elle (admin yönetir)</option>
+                  <option value="paynkolay">PayNKolay (kartla ödeme)</option>
                 </select>
               </Field>
-              {form.paymentProvider === 'dodo_payments' && (
-                <div className="mt-3">
-                  <Field
-                    label="Dodo Product ID"
-                    hint="Dodo Payments dashboard → Products → URL'deki ID (örn. pdt_abc123)"
-                  >
+              {form.paymentProvider === 'paynkolay' && (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <Field label="Aylık fiyat (TL)" required hint="Kartla tahsil edilen tutar, KDV dahil">
                     <input
-                      type="text"
-                      value={form.dodoProductId}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, dodoProductId: e.target.value }))
-                      }
-                      placeholder="pdt_abc123"
-                      className="bz-input bz-mono"
+                      type="number"
+                      min={0}
+                      value={form.priceTry}
+                      onChange={(e) => setForm((f) => ({ ...f, priceTry: e.target.value }))}
+                      className="bz-input"
                     />
                   </Field>
-                  <AlertBanner kind="info" className="mt-3">
-                    <p className="text-[12px] leading-[1.5]">
-                      Dodo product&apos;ında billing cycle (aylık/yıllık) ve
-                      currency (USD/TRY) konfigürasyonu Dodo dashboard&apos;ında
-                      tanımlanır. Owner checkout&apos;ta tek product ID ile
-                      varyantlar arasında seçim yapar. Bu slot boş ise
-                      checkout butonu owner panelinde gizli.
-                    </p>
-                  </AlertBanner>
+                  <Field label="Yıllık toplam (TL)" hint="Boş: aylık × 12 × 0,8">
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.priceYearlyTry}
+                      onChange={(e) => setForm((f) => ({ ...f, priceYearlyTry: e.target.value }))}
+                      className="bz-input"
+                    />
+                  </Field>
                 </div>
               )}
+              <div className="mt-4 border-t border-[#EDEDED] pt-3">
+                <label className="flex items-start gap-2 text-[12px] text-[#0A0A0A]">
+                  <input
+                    type="checkbox"
+                    checked={form.modulesManaged}
+                    onChange={(e) => setForm((f) => ({ ...f, modulesManaged: e.target.checked }))}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <strong>Modülleri bu paket belirlesin.</strong> Paket atandığında ya da ödendiğinde
+                    sahibin tüm işletmelerindeki özellik anahtarları aşağıdaki seçime göre ayarlanır.
+                  </span>
+                </label>
+                {form.modulesManaged && (
+                  <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                    {PLAN_MODULES.map((m) => (
+                      <label key={m.key} className="flex items-center gap-2 text-[12px] text-[#525252]">
+                        <input
+                          type="checkbox"
+                          checked={form.moduleKeys.includes(m.key)}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              moduleKeys: e.target.checked
+                                ? [...f.moduleKeys, m.key]
+                                : f.moduleKeys.filter((k) => k !== m.key),
+                            }))
+                          }
+                        />
+                        {m.tr}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

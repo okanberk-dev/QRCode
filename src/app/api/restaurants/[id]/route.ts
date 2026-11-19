@@ -748,6 +748,15 @@ export async function PUT(
       revalidatePublicMenu(restaurant.slug);
     }
 
+    // The owner Brand tab reads BrandSettings first; keep its colour in step
+    // so an admin change is neither hidden nor reverted by the next owner
+    // save (one source of truth for the brand colour).
+    if (primaryColor !== undefined && primaryColor) {
+      await prisma.brandSettings
+        .updateMany({ where: { restaurantId: id }, data: { primaryColor } })
+        .catch(() => undefined);
+    }
+
     // Audit trail (owner + admin + impersonated edits). Field NAMES only —
     // values can carry PII (phone, notification email, addresses).
     const changedFields = Object.keys(body as Record<string, unknown>).slice(0, 80);

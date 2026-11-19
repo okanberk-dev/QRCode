@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, ClipboardList, ClipboardCheck, ShieldAlert, PauseCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, APSwitch, PLATFORMS, PulseSelect, useConfirmDialog } from '@/components/ui';
 import RestaurantDetailLoading from './loading';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
+import { SECTORS } from '@/lib/sectors';
 import { MENU_THEMES, type MenuTheme as MenuThemeKey } from '@/lib/validations';
 import { formatStampInTimeZone } from '@/lib/timezone';
 
@@ -74,6 +75,16 @@ interface OwnerModulesOverview {
   owner: { scheduledDeletionAt: string | null; isActive: boolean | null };
 }
 
+/** Review platforms beyond Google and delivery (all 10 platforms, §5). */
+const OTHER_PLATFORMS = [
+  { id: 'tripadvisor', field: 'tripAdvisorUrl', label: 'Tripadvisor', color: '#34E0A1', placeholder: 'https://www.tripadvisor.com.tr/...' },
+  { id: 'booking', field: 'bookingUrl', label: 'Booking.com', color: '#003580', placeholder: 'https://www.booking.com/hotel/...' },
+  { id: 'airbnb', field: 'airbnbUrl', label: 'Airbnb', color: '#FF5A5F', placeholder: 'https://www.airbnb.com/rooms/...' },
+  { id: 'yelp', field: 'yelpUrl', label: 'Yelp', color: '#FF1A1A', placeholder: 'https://www.yelp.com/biz/...' },
+  { id: 'foursquare', field: 'foursquareUrl', label: 'Foursquare', color: '#F94877', placeholder: 'https://foursquare.com/v/...' },
+  { id: 'yandex', field: 'yandexUrl', label: 'Yandex', color: '#FC3F1D', placeholder: 'https://yandex.com.tr/maps/org/...' },
+] as const;
+
 export default function RestaurantDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -85,6 +96,8 @@ export default function RestaurantDetailPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [confirmDialog, askConfirm] = useConfirmDialog();
+  // Google link as loaded — sent back only when the admin edits it.
+  const loadedGoogleRef = useRef('');
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -96,6 +109,13 @@ export default function RestaurantDetailPage() {
     getirYemekUrl: '',
     yemekSepetiUrl: '',
     trendyolYemekUrl: '',
+    tripAdvisorUrl: '',
+    airbnbUrl: '',
+    bookingUrl: '',
+    yandexUrl: '',
+    yelpUrl: '',
+    foursquareUrl: '',
+    city: '',
     notificationEmail: '',
     primaryColor: '#C6F24E',
     isActive: true,
@@ -116,6 +136,7 @@ export default function RestaurantDetailPage() {
   const [externalPlatformsEnabled, setExternalPlatformsEnabled] = useState(true);
   const [surveysEnabled, setSurveysEnabled] = useState(true);
   const [suspendedByAdmin, setSuspendedByAdmin] = useState(false);
+  const [temporarilyClosed, setTemporarilyClosed] = useState(false);
   const [overview, setOverview] = useState<OwnerModulesOverview | null>(null);
   const [overviewError, setOverviewError] = useState(false);
   const [featureSaving, setFeatureSaving] = useState<FeatureToggleKey | null>(null);
@@ -165,6 +186,7 @@ export default function RestaurantDetailPage() {
         }
         if (res.ok) {
           const data = await res.json();
+          loadedGoogleRef.current = data.googlePlaceId || data.googleReviewUrl || '';
           setFormData({
             name: data.name || '',
             slug: data.slug || '',
@@ -176,6 +198,13 @@ export default function RestaurantDetailPage() {
             getirYemekUrl: data.getirYemekUrl || '',
             yemekSepetiUrl: data.yemekSepetiUrl || '',
             trendyolYemekUrl: data.trendyolYemekUrl || '',
+            tripAdvisorUrl: data.tripAdvisorUrl || '',
+            airbnbUrl: data.airbnbUrl || '',
+            bookingUrl: data.bookingUrl || '',
+            yandexUrl: data.yandexUrl || '',
+            yelpUrl: data.yelpUrl || '',
+            foursquareUrl: data.foursquareUrl || '',
+            city: data.city || '',
             notificationEmail: data.notificationEmail || '',
             primaryColor: data.primaryColor || '#C6F24E',
             isActive: data.isActive ?? true,
@@ -207,6 +236,7 @@ export default function RestaurantDetailPage() {
           setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
           setSurveysEnabled(data.surveysEnabled ?? true);
           setSuspendedByAdmin(Boolean(data.suspendedByAdmin));
+          setTemporarilyClosed(Boolean(data.temporarilyClosed));
         } else {
           setError('Bir hata oluştu');
         }
@@ -271,7 +301,11 @@ export default function RestaurantDetailPage() {
       // Mirror the Google review link to both columns. The detail form edits
       // `googlePlaceId`, but the public review surface and the owner platforms
       // page read `googleReviewUrl` (CLAUDE.md §4 platforms).
-      const payload = { ...base, googleReviewUrl: formData.googlePlaceId };
+      const { googlePlaceId: _googleInput, ...withoutGoogle } = base as typeof formData;
+      const googleChanged = formData.googlePlaceId !== loadedGoogleRef.current;
+      const payload = googleChanged
+        ? { ...withoutGoogle, googlePlaceId: formData.googlePlaceId, googleReviewUrl: formData.googlePlaceId }
+        : withoutGoogle;
       const res = await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -287,6 +321,7 @@ export default function RestaurantDetailPage() {
       }
 
       if (typeof data.suspendedByAdmin === 'boolean') setSuspendedByAdmin(data.suspendedByAdmin);
+      loadedGoogleRef.current = formData.googlePlaceId;
       setSuccess('İşletme başarıyla güncellendi.');
       setTimeout(() => setSuccess(''), 3000);
     } catch {
@@ -486,6 +521,11 @@ export default function RestaurantDetailPage() {
                     <span className={`h-1.5 w-1.5 rounded-full ${formData.isActive ? 'bg-[#16A34A]' : 'bg-[#A3A3A3]'}`} aria-hidden />
                     <span className="font-medium">{formData.isActive ? 'Aktif' : 'Pasif'}</span>
                   </span>
+                  {temporarilyClosed && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[11px] font-medium text-[#92400E]">
+                      Sahibi geçici olarak kapattı
+                    </span>
+                  )}
                   {suspendedByAdmin && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[11px] font-medium text-[#991B1B]">
                       <PauseCircle size={11} strokeWidth={2.25} />
@@ -935,17 +975,16 @@ export default function RestaurantDetailPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
                 >
-                  <option>Restoran</option>
-                  <option>Kafe</option>
-                  <option>Otel</option>
-                  <option>Klinik</option>
-                  <option>Güzellik Merkezi</option>
-                  <option>Mağaza</option>
-                  <option>Fast Food</option>
-                  <option>Fine Dining</option>
-                  <option>Meyhane</option>
-                  <option>Pastane</option>
-                  <option>Diğer</option>
+                  {/* Same list as the owner forms (src/lib/sectors.ts); a legacy
+                      value outside it stays selectable so saving keeps it. */}
+                  {!SECTORS.some((sec) => sec.label === formData.category) && formData.category && (
+                    <option value={formData.category}>{formData.category}</option>
+                  )}
+                  {SECTORS.map((sec) => (
+                    <option key={sec.id} value={sec.label}>
+                      {sec.display.tr}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1.5">
@@ -1000,6 +1039,17 @@ export default function RestaurantDetailPage() {
                 value={formData.address}
                 onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                 placeholder="Mahall Ankara, Çankaya/Ankara"
+                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="pulse-eyebrow text-[#737373]">Şehir</label>
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                maxLength={80}
+                placeholder="İstanbul"
                 className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
               />
             </div>
@@ -1135,6 +1185,33 @@ export default function RestaurantDetailPage() {
                 />
               </div>
             )}
+          </div>
+        </section>
+        )}
+
+        {OTHER_PLATFORMS.some((p) => allowedPlatforms.has(p.id)) && (
+        <section className="overflow-hidden rounded-xl border border-[#E8E8E8] bg-white shadow-sm">
+          <div className="border-b border-[#EDEDED] px-6 py-4">
+            <p className="pulse-eyebrow text-[#737373]">Yorum platformları</p>
+            <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Diğer platform bağlantıları</h3>
+          </div>
+          <div className="space-y-4 p-6">
+            {OTHER_PLATFORMS.filter((p) => allowedPlatforms.has(p.id)).map((p) => (
+              <div key={p.field} className="space-y-1.5">
+                <label htmlFor={`admin-${p.field}`} className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: p.color }} aria-hidden />
+                  {p.label} URL
+                </label>
+                <input
+                  id={`admin-${p.field}`}
+                  type="url"
+                  value={formData[p.field]}
+                  onChange={(e) => setFormData(prev => ({ ...prev, [p.field]: e.target.value }))}
+                  placeholder={p.placeholder}
+                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                />
+              </div>
+            ))}
           </div>
         </section>
         )}

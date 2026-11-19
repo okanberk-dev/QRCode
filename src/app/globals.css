@@ -1762,8 +1762,32 @@ select.bz-input option:checked {
 
 /* Print — yasal metinler PDF olarak kaydedilebilir, baskı temiz olsun. */
 @media print {
-  .legal-print-hide {
+  .legal-print-hide,
+  .bz-print-hide {
     display: none !important;
+  }
+  /* Printable panel pages (franchise report): only `.bz-print-area` prints;
+     the shell's fixed-height scroll containers must not clip it. */
+  body:has(.bz-print-area) * {
+    visibility: hidden !important;
+  }
+  body:has(.bz-print-area) .bz-print-area,
+  body:has(.bz-print-area) .bz-print-area * {
+    visibility: visible !important;
+  }
+  body:has(.bz-print-area) .bz-panel,
+  body:has(.bz-print-area) .bz-panel main,
+  body:has(.bz-print-area) .bz-panel [class*='overflow'] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  body:has(.bz-print-area) .bz-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
   }
   .prose-legal {
     color: #000;

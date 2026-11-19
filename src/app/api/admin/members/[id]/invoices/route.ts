@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 
 // Admin per-user invoice CRUD (list + create) — Faz 4 of billing flow.
-// Dodo Payments webhook (Stage 142 §38.222) `payment.succeeded` event'inde
+// PayNKolay dönüşünde (CLAUDE.md §44) ödeme doğrulanınca
 // otomatik tablo'ya yazar; admin manual override (enterprise/legacy/refund)
 // hybrid §44.5 paterniyle bu endpoint üzerinden korunur.
 //

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withCronGuard } from '@/lib/cron-guard';
 import { runLifecycleEmails } from '@/lib/lifecycle-email-rules';
 import { runTrialReminders } from '@/lib/trial-reminders';
+import { expireLapsedPaynkolayPeriods } from '@/lib/billing/paynkolay-billing';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -39,10 +40,18 @@ async function handleCron(req: NextRequest) {
     return null;
   });
 
-  if (errors.length === 2) {
+  // Card (PayNKolay) periods are never renewed automatically; a lapsed one
+  // moves the account to the free plan (CLAUDE.md §44).
+  const lapsedCardPeriods = await expireLapsedPaynkolayPeriods().catch((err) => {
+    console.error('[lifecycle-emails cron] card period expiry failed', err);
+    errors.push('card_period_expiry');
+    return null;
+  });
+
+  if (errors.length === 3) {
     return NextResponse.json({ error: 'cron_failed', failed: errors }, { status: 500 });
   }
-  return NextResponse.json({ ok: errors.length === 0, lifecycle, trialReminders, failed: errors });
+  return NextResponse.json({ ok: errors.length === 0, lifecycle, trialReminders, lapsedCardPeriods, failed: errors });
 }
 
 export const GET = withCronGuard('/api/cron/lifecycle-emails', handleCron);

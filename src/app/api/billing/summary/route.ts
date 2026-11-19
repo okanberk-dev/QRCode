@@ -148,17 +148,10 @@ export async function GET(req: NextRequest) {
             isFeatured: subscription.subscriptionPlan.isFeatured,
           }
         : null,
-      // §44 Stage 140 — Dodo Payments self-service signals. Owner UI
-      // (BillingReadOnlyCard) uses these to decide which CTAs to show:
-      //   source='dodo_payments' → "Aboneliği yönet" → /customer-portal
-      //   source='dodo_payments' + cancelAtPeriodEnd=true → grace period
-      //     caption ("İptal planlandı — dönem sonuna kadar aktif")
-      //   no subscription / source='manual' → "Planı yükselt" → /pricing
-      // `providerCustomerId` = Dodo customer_id (set by webhook). Required
-      // for /customer-portal redirect query param.
+      // §44 — 'paynkolay' = owner paid a period by card (UI shows
+      // "Süreyi uzat"); 'manual' = admin-managed.
       source: subscription?.source ?? null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
-      providerCustomerId: subscription?.providerCustomerId ?? null,
       // Billing address — never surface adminNotes (admin-only).
       billingAddress: subscription
         ? {
@@ -172,7 +165,7 @@ export async function GET(req: NextRequest) {
     {
       headers: {
         // Edge cache (CLAUDE.md §38.100 Stage 24). Plan + usage data —
-        // mutation frequency düşük (admin manual override + Dodo webhook
+        // mutation frequency düşük (admin manual override + PayNKolay return
         // events); 60s fresh + 5min SWR billing widget refresh için yeterli.
         'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
       },

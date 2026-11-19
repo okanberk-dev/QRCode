@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { applyPlanModulesForOwner } from '@/lib/plan-modules';
 import { getAdminFromRequest } from '@/lib/auth';
 import { resolveBillingAmount, toAdminRow } from '@/lib/subscription-plans';
 
@@ -314,8 +315,22 @@ export async function PUT(
     await prisma.user.update({ where: { id: userId }, data: { plan } });
   }
 
+  // Assigning a plan that manages modules sets the owner's feature switches
+  // (§5.2). Best effort: the billing change is already saved.
+  let modulesApplied = 0;
+  if (subscriptionPlanId !== undefined || status !== null) {
+    modulesApplied = await applyPlanModulesForOwner(userId).catch((err) => {
+      console.error('[admin/members/billing] plan modules not applied', {
+        userId,
+        error: (err as Error).message,
+      });
+      return 0;
+    });
+  }
+
   return NextResponse.json({
     ok: true,
+    modulesApplied,
     subscription: {
       plan: subscription.plan,
       status: subscription.status,

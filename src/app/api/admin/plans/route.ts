@@ -3,15 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { revalidatePricing } from '@/lib/marketing-revalidate';
+import { normalizeModuleKeys } from '@/lib/plan-modules-catalog';
 import { getAllPlansForAdmin, toAdminRow } from '@/lib/subscription-plans';
 
 export const dynamic = 'force-dynamic';
 
 const ALLOWED_PERIODS = new Set(['month', 'year', 'one-time']);
 const ALLOWED_DISCOUNT_TYPES = new Set(['percent', 'fixed']);
-// Stage 149 §38.229 — Iyzico provider iptal edildi; sadece manual + dodo_payments.
-const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'dodo_payments']);
-const PRODUCT_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
+// CLAUDE.md §44 — 'paynkolay' = owner pays by card (TRY price required).
+const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'paynkolay']);
 
 function asString(v: unknown, max = 1000): string {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -107,13 +107,10 @@ export async function POST(req: NextRequest) {
   const provider = asString(body.paymentProvider, 20) || 'manual';
   if (!ALLOWED_PAYMENT_PROVIDERS.has(provider)) errors.push('Geçersiz ödeme sağlayıcı.');
   else data.paymentProvider = provider;
-  const dodoProductId = asString(body.dodoProductId, 80);
-  if (!dodoProductId) {
-    data.dodoProductId = null;
-  } else if (!PRODUCT_ID_RE.test(dodoProductId)) {
-    errors.push('dodoProductId: geçersiz product ID (alnum/dash, 1-80 karakter).');
-  } else {
-    data.dodoProductId = dodoProductId;
+  data.moduleKeys = normalizeModuleKeys(body.moduleKeys);
+  data.modulesManaged = body.modulesManaged === true;
+  if (data.paymentProvider === 'paynkolay' && !(Number(data.priceTry) > 0)) {
+    errors.push('PayNKolay için aylık TL fiyatı zorunlu.');
   }
 
   if (errors.length) return NextResponse.json({ error: errors.join(' ') }, { status: 400 });

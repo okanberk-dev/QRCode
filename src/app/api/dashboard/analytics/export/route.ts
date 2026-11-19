@@ -147,7 +147,11 @@ export async function GET(req: NextRequest) {
   });
 
   // CSV build
-  const headers = [
+  // Column names follow the panel language (`?locale=en`).
+  const isEn = url.searchParams.get('locale') === 'en';
+  const headers = isEn
+    ? ['Date', 'Business', 'Branch', 'Platform', 'Rating', 'Food', 'Service', 'Atmosphere', 'Comment', 'Reply status', 'Reply time (hours)', 'KVKK', 'Marketing', 'Customer']
+    : [
     'Tarih',
     'Restoran',
     'Şube',
@@ -167,7 +171,7 @@ export async function GET(req: NextRequest) {
 
   for (const f of feedbacks) {
     const reply = f.replies[0];
-    const replyStatus = reply ? 'Yanıtlandı' : 'Bekliyor';
+    const replyStatus = reply ? (isEn ? 'Replied' : 'Yanıtlandı') : isEn ? 'Waiting' : 'Bekliyor';
     const responseHours = reply
       ? Math.round(((reply.createdAt.getTime() - f.createdAt.getTime()) / 3600000) * 10) / 10
       : '';
@@ -191,8 +195,8 @@ export async function GET(req: NextRequest) {
       csvEscape(f.comment ?? ''),
       csvEscape(replyStatus),
       csvEscape(responseHours),
-      csvEscape(f.hasKvkkConsent ? 'Evet' : 'Hayır'),
-      csvEscape(f.hasMarketingConsent ? 'Evet' : 'Hayır'),
+      csvEscape(f.hasKvkkConsent ? (isEn ? 'Yes' : 'Evet') : isEn ? 'No' : 'Hayır'),
+      csvEscape(f.hasMarketingConsent ? (isEn ? 'Yes' : 'Evet') : isEn ? 'No' : 'Hayır'),
       csvEscape(customerLabel),
     ];
     lines.push(row.join(','));

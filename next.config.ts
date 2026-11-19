@@ -329,6 +329,15 @@ const nextConfig: NextConfig = {
       { source: '/tr/:path*', headers: [{ key: 'Content-Language', value: 'tr' }] },
       { source: '/en', headers: [{ key: 'Content-Language', value: 'en' }] },
       { source: '/en/:path*', headers: [{ key: 'Content-Language', value: 'en' }] },
+      // Site CSP everywhere except the PayNKolay hand-off page: that page
+      // form-POSTs to the bank's payment host, and Chrome applies
+      // `form-action` to the whole redirect chain (PayNKolay → card-issuer
+      // 3D Secure page), so `'self'` would stop the payment. The route sends
+      // its own strict CSP instead (src/app/api/billing/paynkolay/checkout).
+      {
+        source: '/((?!api/billing/paynkolay/checkout).*)',
+        headers: [{ key: 'Content-Security-Policy', value: SITE_CSP }],
+      },
       {
         source: '/:path*',
         headers: [
@@ -343,7 +352,6 @@ const nextConfig: NextConfig = {
           // baseline security header (CLAUDE.md §34.15).
           { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
           { key: 'Permissions-Policy', value: PERMISSIONS_POLICY },
-          { key: 'Content-Security-Policy', value: SITE_CSP },
           // Cross-Origin-Opener-Policy — Firebase Google sign-in popup uses
           // `signInWithPopup` which polls `popup.closed` and calls
           // `popup.close()` after the auth callback completes. Modern Chrome

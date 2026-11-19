@@ -153,7 +153,7 @@
 //   status        String   @default("active") // active | past_due | canceled
 //   trialEndsAt   DateTime? @map("trial_ends_at")
 //   renewsAt      DateTime? @map("renews_at")
-//   providerRef   String?   @map("provider_ref") // Dodo Payments subscription id
+//   providerRef   String?   @map("provider_ref") // provider subscription id
 //   paymentBrand  String?   @map("payment_brand")
 //   paymentLast4  String?   @map("payment_last4")
 //   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
@@ -166,7 +166,7 @@
 //   amount      Decimal  @db.Decimal(10, 2)
 //   currency    String   @default("TRY")
 //   status      String   @default("paid") // paid | pending | failed | refunded
-//   providerRef String?  @map("provider_ref") // Dodo Payments invoice id
+//   providerRef String?  @map("provider_ref") // PayNKolay REFERENCE_CODE
 //   pdfUrl      String?  @map("pdf_url")
 //   issuedAt    DateTime @default(now()) @map("issued_at")
 //   @@index([userId, issuedAt])

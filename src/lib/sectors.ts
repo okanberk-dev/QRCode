@@ -1,4 +1,4 @@
-import type { SectorKey } from './sector-platforms';
+import { detectSector, type SectorKey } from './sector-platforms';
 
 // Single source of truth for the sector picker shown across:
 //   - Onboarding wizard (`src/app/[locale]/onboarding/page.tsx`)
@@ -132,7 +132,13 @@ export function getSectorByLabel(label: string | null | undefined): SectorOption
   const exact = SECTORS.find((s) => s.label === label);
   if (exact) return exact;
   const lower = label.toLowerCase();
-  return SECTORS.find((s) => lower.includes(s.label.toLowerCase()));
+  const partial = SECTORS.find((s) => lower.includes(s.label.toLowerCase()));
+  if (partial) return partial;
+  // Legacy labels ("Kafe", "Meyhane", "Güzellik Merkezi"…) map through the
+  // same keyword rules as the platform list, so the sector select and the
+  // platform chips agree.
+  const key = detectSector(label);
+  return SECTORS.find((s) => s.sectorKey === key);
 }
 
 /**

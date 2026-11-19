@@ -27,6 +27,31 @@ test('blocks swear words in supported languages', () => {
   }
 });
 
+test('blocks swear words in the wider language set', () => {
+  for (const t of [
+    'Seni qəhbə',
+    'kurwa mać',
+    'to je píča',
+    'fasz ez',
+    'jebem ti',
+    'klootzak!',
+    'μαλάκα είσαι',
+    'fitta',
+    'madarchod',
+    'kontol',
+    '씨발 뭐야',
+    '你个傻逼',
+    'כוס אמק',
+    'جنده',
+    'futu-ti',
+    'putang ina mo',
+    'курва',
+    'मादरचोद',
+  ]) {
+    assert.equal(containsProfanity(t), true, t);
+  }
+});
+
 test('allows everyday words that resemble swear words', () => {
   for (const t of [
     'Sık sık geldiğiniz için teşekkürler',
@@ -43,6 +68,15 @@ test('allows everyday words that resemble swear words', () => {
     'Ankara Gölbaşı şubemiz',
     'Hesap: 14.30 itibarıyla kapatıldı',
     'Got it, thank you!',
+    // Words kept out on purpose (innocent in another language).
+    'Bu kadar kir olmamalıydı',
+    'Malaka gezisinden döndük',
+    'Kut olsun',
+    'Peder Bey, teşekkürler',
+    'Pula şehrindeki şubemiz',
+    '시발역에서 만나요',
+    'Il futuro è luminoso',
+    'Pico de gallo sosuyla',
   ]) {
     assert.equal(containsProfanity(t), false, t);
   }

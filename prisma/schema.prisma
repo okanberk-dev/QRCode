@@ -76,6 +76,7 @@ model User {
   updatedAt                 DateTime  @updatedAt @map("updated_at")
 
   restaurants    Restaurant[]
+  replyTemplates ReplyTemplate[]
   sessions       UserSession[]
   // Stage A4 §38.96 — admin impersonation reverse relation. Bir owner'a
   // birden çok admin paralel impersonation açabilir (örn. iki ayrı support
@@ -1413,17 +1414,13 @@ model BillingSubscription {
   // Free-text admin notes — visible only on admin panel; never surfaced
   // owner-side (privacy: ops may store internal context like discount reason).
   adminNotes     String?   @map("admin_notes") @db.Text
-  // ── Payment provider fields (CLAUDE.md §44, generic) ──
-  // `providerRef` (existing @unique) holds the active provider's subscription
-  // ID (Dodo Payments subscription_id). `source` records who created the row
-  // — manual admin or self-service Dodo. Manual admin can override
-  // Dodo-created rows (hybrid §44.5) but `source` tracks original creator for
-  // audit. Stage 149 §38.229 — Iyzico iptal edildi; sadece manual + dodo.
+  // ── Payment provider fields (CLAUDE.md §44) ──
+  // `source` records who created the row: 'manual' (admin) or 'paynkolay'
+  // (owner paid a period on the PayNKolay page). Old rows may still read
+  // 'dodo_payments' (provider retired 2026-11); they are treated as manual.
   source                  String   @default("manual") @map("source")
-  // Provider customer ID — distinct from `providerRef` (subscription) in
-  // Dodo's data model. Needed for /customer-portal redirect (Dodo's portal
-  // endpoint takes `customer_id`). Webhook handler sets this from
-  // `payload.data.customer.customer_id` on subscription events.
+  // Unused since the Dodo Payments removal (2026-11); kept so old rows and
+  // the column survive. PayNKolay has no customer portal.
   providerCustomerId      String?  @map("provider_customer_id")
   // True when owner clicked "Cancel" but subscription stays active until
   // `renewsAt` (most providers follow "scheduled at period end" semantics —
@@ -1593,18 +1590,11 @@ model BillingInvoice {
   // Admin-only notes (NEVER returned via owner endpoints; analogous to
   // BillingSubscription.adminNotes privacy guard).
   adminNotes    String?  @map("admin_notes") @db.Text
-  // ── Dodo Payments fields (CLAUDE.md §44, Stage 142 §38.222) ──
-  // `providerRef` (existing @unique) reused for Dodo Payments invoice/payment
-  // ID (data.id from payment.succeeded webhook). Below are Dodo-specific
-  // extensions only.
-  //
-  // Public receipt URL from Dodo Payments (data.attributes.receipt_url).
-  // Used as `pdfUrl` fallback — owner panel can link directly to Dodo receipt.
+  // `providerRef` holds the PayNKolay REFERENCE_CODE for card payments.
+  // `receiptUrl` is a provider receipt link (old Dodo rows only).
   receiptUrl    String?  @map("receipt_url")
-  // Audit which provider created this invoice. 'manual' = admin
-  // BillingInvoiceModal (enterprise/legacy/refund override), 'dodo_payments'
-  // = webhook-generated from payment.succeeded. Stage 149 §38.229 — Iyzico
-  // iptal edildi; sadece manual + dodo_payments.
+  // Who created the invoice: 'manual' (admin) or 'paynkolay'. Old rows may
+  // read 'dodo_payments' (retired 2026-11).
   source        String   @default("manual") @map("source")
   issuedAt      DateTime @default(now()) @map("issued_at")
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
@@ -1613,18 +1603,27 @@ model BillingInvoice {
   @@map("billing_invoices")
 }
 
-// Dodo Payments webhook idempotency log (audit §38.B H2). Keyed on the Svix
-// `webhook-id` header (unique). The webhook route records an event only AFTER
-// signature verification + dispatch succeed (HTTP 200); a duplicate / retried
-// delivery with the same id is short-circuited before re-applying state
-// (prevents out-of-order revival + double invoicing). No PII — id + type only.
-model DodoWebhookEvent {
-  id        String   @id @default(cuid())
-  eventId   String   @unique @map("event_id")
-  eventType String?  @map("event_type")
-  createdAt DateTime @default(now()) @map("created_at")
+// Card payment for one subscription period on the PayNKolay hosted page
+// (CLAUDE.md §44). `id` is sent as PayNKolay `clientRefCode`. A row is
+// `succeeded` only after the PaymentList check confirms a SUCCESS sale of
+// exactly `amountMinor`. The old `dodo_webhook_events` table is left in the
+// database unused (no data loss); drop it in a later migration if wanted.
+model BillingPayment {
+  id                 String    @id @default(cuid())
+  userId             String    @map("user_id")
+  subscriptionPlanId String?   @map("subscription_plan_id")
+  billingCycle       String    @map("billing_cycle") // monthly | yearly
+  amountMinor        Int       @map("amount_minor") // kuruş
+  currency           String    @default("TRY")
+  status             String    @default("pending") // pending | succeeded | failed
+  referenceCode      String?   @unique @map("reference_code")
+  failureReason      String?   @map("failure_reason")
+  locale             String    @default("tr")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  completedAt        DateTime? @map("completed_at")
 
-  @@map("dodo_webhook_events")
+  @@index([userId, createdAt])
+  @@map("billing_payments")
 }
 
 // Public marketing pricing plans, fully managed from /admin/plans.
@@ -1676,19 +1675,18 @@ model SubscriptionPlan {
   discountLabelEn String? @map("discount_label_en")
 
   // ── Payment provider routing (CLAUDE.md §44) ──
-  //   • 'manual'        — admin manages subscription via MemberBillingModal
-  //                       (enterprise / legacy / discount). Checkout button
-  //                       hidden on the public /pricing card.
-  //   • 'dodo_payments' — self-service flow. Owner clicks /pricing CTA →
-  //                       /api/checkout → Dodo hosted page (Stage 142 §38.222).
-  //   (Stage 149 §38.229 — eski 'iyzico' enum slot iptal edildi.)
-  //
-  // `dodoProductId` is the Dodo Payments product ID for this tier (Dodo
-  // product = a SaaS subscription tier; the customer picks billing cycle
-  // and currency on the Dodo checkout page). Null = tier hasn't been wired
-  // to a Dodo product yet → checkout button disabled.
+  //   • 'manual'    — admin manages the subscription (MemberBillingModal).
+  //   • 'paynkolay' — owner pays a period by card on the PayNKolay page;
+  //                   needs a TRY price (`priceTry` / `priceYearlyTry`).
+  // The old `dodo_product_id` column stays in the database unused.
   paymentProvider String  @default("manual") @map("payment_provider")
-  dodoProductId   String? @map("dodo_product_id")
+
+  // ── Package modules (CLAUDE.md §5.2) ──
+  // When `modulesManaged` is true, assigning or paying for this plan sets
+  // each of the owner's businesses' feature switches from `moduleKeys`
+  // (src/lib/plan-modules.ts). False = switches stay manual (legacy).
+  moduleKeys     String[] @default([]) @map("module_keys")
+  modulesManaged Boolean  @default(false) @map("modules_managed")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -2395,4 +2393,20 @@ model AuditAnswer {
   @@unique([responseId, questionId])
   @@index([questionId, createdAt])
   @@map("audit_answers")
+}
+
+// Saved reply templates shared by a workspace (owner + team). Every save goes
+// through the reply risk gate (§48) so a stored template can always be sent.
+model ReplyTemplate {
+  id          String   @id @default(cuid())
+  ownerUserId String   @map("owner_user_id")
+  owner       User     @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  title       String
+  body        String   @db.Text
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerUserId, updatedAt])
+  @@map("reply_templates")
 }

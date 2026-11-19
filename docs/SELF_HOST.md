@@ -1,7 +1,7 @@
 # Self-host: Coolify (Vercel'den geçiş)
 
 Hedef: `https://www.buaze.com` (apex `buaze.com` → www), Coolify sunucusu `199.247.6.54` (gnbsite / Pruva ile aynı sunucu,
-Traefik + Let's Encrypt). Veritabanı, dosyalar ve Realtime **Supabase'te kalır**; Upstash, Sentry, Firebase, Resend, Dodo aynen
+Traefik + Let's Encrypt). Veritabanı, dosyalar ve Realtime **Supabase'te kalır**; Upstash, Sentry, Firebase, Resend, PayNKolay aynen
 kullanılır. Sunucu yalnız Next uygulamasını çalıştırır.
 
 Neden: repo `okanberk-dev` organizasyonuna taşındı; Vercel Hobby organizasyonun private reposundan deploy almaz.
@@ -32,6 +32,24 @@ sağlayıcının panelinden alınır. `JWT_SECRET` değişirse bütün oturumlar
 
 Kod Vercel'e özgü iki şeyi ayırır: Vercel Analytics / Speed Insights yalnız `VERCEL=1` iken yüklenir; `/api/health`'in `commit`
 alanı Coolify'da `SOURCE_COMMIT`'ten gelir.
+
+### Otomatik deploy denetimi
+
+`.github/workflows/deploy-verify.yml` `main`'e her push'ta `/api/health`'i yoklar; push edilen commit 20 dakikada yayına
+çıkmazsa Coolify deploy webhook'unu bir kez çağırır, yine çıkmazsa iş kırmızı biter (GitHub push edene mail atar).
+Gereken ayarlar:
+
+- Coolify uygulamasında Auto Deploy açık ve "Include Source Commit in Build" açık (`commit` alanı boş kalırsa denetim hep
+  kırmızı olur).
+- GitHub → Settings → Secrets and variables → Actions: secret `COOLIFY_DEPLOY_WEBHOOK` (Coolify → uygulama → Webhooks →
+  Deploy Webhook URL) ve `COOLIFY_TOKEN` (deploy izinli API token). İsteğe bağlı variable `DEPLOY_CHECK_URL`
+  (varsayılan `https://www.buaze.com`).
+
+### PayNKolay
+
+`PAYNKOLAY_SX`, `PAYNKOLAY_SX_LIST`, `PAYNKOLAY_MERCHANT_SECRET_KEY`, `PAYNKOLAY_MERCHANT_NO`, `PAYNKOLAY_BASE_URL`
+(canlı: `https://paynkolay.nkolayislem.com.tr`). Dönüş adresi `https://www.buaze.com/api/billing/paynkolay/return`
+(ödeme sırasında form ile gönderilir, PayNKolay panelinde ayrıca tanımlanması gerekmez).
 
 ## Zamanlanmış görevler (vercel.json `crons` + cron-hourly.yml)
 
@@ -73,7 +91,7 @@ kırmızı görünür (Coolify görev geçmişinde).
 2. DNS (Vercel DNS, `buaze.com` zonu): `@` ve `www` için A kaydı `199.247.6.54`; domainler Vercel projesinden çıkarılır.
    Coolify'da domainler eklenir, Let's Encrypt sertifikası alınır.
 3. Zamanlanmış görevler Coolify'a eklenir; Vercel projesi duraklatılır (Vercel Cron da durur).
-4. Firebase Auth (`/__/auth` proxy), Google OAuth yönlendirmesi ve Dodo webhook'u aynı alan adında kaldığı için değişiklik
+4. Firebase Auth (`/__/auth` proxy), Google OAuth yönlendirmesi ve PayNKolay dönüş adresi (`/api/billing/paynkolay/return`) aynı alan adında kaldığı için değişiklik
    gerekmez; yine de giriş ve ödeme sayfası denenir.
 
 Geri dönüş: DNS kayıtları silinip domainler Vercel projesine geri eklenir, proje `unpause` edilir.

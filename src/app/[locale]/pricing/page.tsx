@@ -82,7 +82,7 @@ function buildCopy(locale: 'tr' | 'en') {
         contact: 'Bize yazın',
       },
       paymentNote:
-        'Kartla abone olmadan önce ücretsiz hesabınızı açın ve ödeme sayfasında hesabınızın e-posta adresini kullanın; ödeme Dodo Payments’ın güvenli sayfasında alınır. Aboneliğinizi istediğiniz zaman iptal edebilirsiniz; iptalden sonra ödediğiniz dönemin sonuna kadar erişiminiz sürer.',
+        'Kartla ödemeden önce ücretsiz hesabınızı açın ve giriş yapın; ödeme PayNKolay’in güvenli kart sayfasında, Türk lirası olarak alınır. Her ödeme bir ay ya da bir yıl açar; kartınızdan otomatik çekim yapılmaz, dönem bitmeden panelden uzatırsınız.',
       included: {
         eyebrow: 'Her planda',
         title: 'Her planda bulunanlar',
@@ -163,7 +163,7 @@ function buildCopy(locale: 'tr' | 'en') {
       contact: 'Contact us',
     },
     paymentNote:
-      'Before you subscribe by card, create your free account and use its e-mail address on the checkout page; payment is taken on the secure Dodo Payments page. You can cancel at any time and keep access until the end of the period you paid for.',
+      'Before you pay by card, create your free account and sign in; payment is taken in Turkish lira on PayNKolay’s secure card page. Each payment opens one month or one year; your card is never charged automatically, you extend from the panel before the period ends.',
     included: {
       eyebrow: 'In every plan',
       title: 'Included in every plan',
@@ -242,7 +242,7 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
       },
       {
         q: 'Ödemeyi nasıl yapıyorum?',
-        a: 'Aylık abonelik USD olarak, kartla alınır. Ödeme Dodo Payments’ın güvenli ödeme sayfasında yapılır; faturalarınızı panelde görür, kart bilginizi ve aboneliğinizi müşteri portalından yönetirsiniz.',
+        a: 'Kartla ödeme Türk lirası olarak, PayNKolay’in güvenli kart sayfasında alınır (3D Secure). Kart bilgileriniz Buaze’ye ulaşmaz. Faturalarınızı panelde görürsünüz; otomatik çekim yoktur, dönemi panelden uzatırsınız.',
       },
       {
         q: 'Yıllık ödeme yapabilir miyim?',
@@ -273,7 +273,7 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
     },
     {
       q: 'How do I pay?',
-      a: 'Monthly subscriptions are charged in USD by card. Payment happens on the secure Dodo Payments checkout page; you see your invoices in the panel and manage your card and subscription in the customer portal.',
+      a: 'Card payments are charged in Turkish lira on PayNKolay’s secure card page (3D Secure). Your card details never reach Buaze. You see your invoices in the panel; there is no automatic charge, you extend the period from the panel.',
     },
     {
       q: 'Can I pay yearly?',
@@ -313,7 +313,7 @@ export default async function PricingPage({
   // error is NOT swallowed: during ISR regeneration Next keeps serving the
   // last good page instead of caching an empty one for an hour.
   const plans = await getActivePlans(locale);
-  const hasCheckout = plans.some((p) => p.paymentProvider === 'dodo_payments' && !!p.dodoProductId);
+  const hasCheckout = plans.some((p) => p.paymentProvider === 'paynkolay' && !!p.checkout);
 
   const pageUrl = `${SITE_URL}/${locale}/pricing`;
   const jsonLd = {

@@ -45,8 +45,9 @@ function tier(id: string, name: string, priceUsd: number, extra: Partial<AdminPl
     discountValue: null,
     discountLabelTr: null,
     discountLabelEn: null,
-    paymentProvider: 'dodo_payments',
-    dodoProductId: null,
+    paymentProvider: 'paynkolay',
+    moduleKeys: [],
+    modulesManaged: false,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...extra,
@@ -71,7 +72,7 @@ const growth = tier('t-growth', 'Growth', 40);
 const scale = tier('t-scale', 'Scale', 100, { priceYearlyUsd: 960 });
 const tiersById = new Map([starter, growth, scale].map((t) => [t.id, t]));
 
-test('subscriptionMonthlyUsd: tier price drives MRR (Dodo writes plan="monthly")', () => {
+test('subscriptionMonthlyUsd: tier price drives MRR (card payment writes plan="monthly")', () => {
   assert.equal(subscriptionMonthlyUsd(sub('u1', { subscriptionPlanId: 't-growth' }), growth), 40);
 });
 
@@ -115,7 +116,7 @@ test('classifyOwnerPlan: subscription row is authoritative, User.plan is the fal
   const future = new Date('2026-10-20T00:00:00Z');
   const past = new Date('2026-10-01T00:00:00Z');
   assert.equal(classifyOwnerPlan({ id: '1', plan: 'monthly', trialEndsAt: null }, sub('1'), now), 'paid');
-  // Expired Dodo subscriber: webhook sets plan "free" on both rows.
+  // Lapsed card subscriber: expiry sets plan "free" on both rows.
   assert.equal(
     classifyOwnerPlan({ id: '2', plan: 'free', trialEndsAt: null }, sub('2', { plan: 'free', status: 'canceled' }), now),
     'free',

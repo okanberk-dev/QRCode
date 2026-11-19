@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
 import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, PanelSelectionBar, PulseMenu, PulseMenuDivider, PulseMenuItem, PulseSelect, Tabs, useConfirmDialog } from '@/components/ui';
 import { countChains, groupByOwner, type FranchiseGroup } from '@/lib/admin-franchise';
+import { SECTORS } from '@/lib/sectors';
 import RestaurantsLoading from './loading';
 
 interface Restaurant {
@@ -885,20 +886,8 @@ export default function RestaurantsPage() {
                     onChange={(v) => setFormData((prev) => ({ ...prev, category: v }))}
                     ariaLabel="Kategori"
                     className="w-full"
-                    options={[
-                      { value: 'Restoran', label: 'Restoran' },
-                      { value: 'Kafe', label: 'Kafe' },
-                      { value: 'Otel', label: 'Otel' },
-                      { value: 'Klinik', label: 'Klinik' },
-                      { value: 'Güzellik Merkezi', label: 'Güzellik Merkezi' },
-                      { value: 'Mağaza', label: 'Mağaza' },
-                      { value: 'Fast Food', label: 'Fast Food' },
-                      { value: 'Fine Dining', label: 'Fine Dining' },
-                      { value: 'Meyhane', label: 'Meyhane' },
-                      { value: 'Pastane', label: 'Pastane' },
-                      { value: 'Otobüs/Gemi', label: 'Otobüs/Gemi' },
-                      { value: 'Diğer', label: 'Diğer' },
-                    ]}
+                    // Shared sector list (same as the owner forms, src/lib/sectors.ts).
+                    options={SECTORS.map((sec) => ({ value: sec.label, label: sec.display.tr }))}
                   />
                 </div>
                 <div className="space-y-1.5">

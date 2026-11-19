@@ -6,6 +6,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 import { validateBody } from '@/lib/api/validate';
 import { rateLimit } from '@/lib/rate-limit';
 import { MENU_THEMES, isValidHexColor } from '@/lib/validations';
+import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -44,8 +45,10 @@ const Body = z
         (v) => {
           if (!v) return true;
           if (v.startsWith('data:image/')) {
-            // base64 budget — ~300 KB raw, ~400 KB with prefix.
-            return v.length <= 410_000;
+            // Raster only, same 300 KB budget as the owner theme route — the
+            // public image route rejects SVG, so an SVG logo would just break.
+            if (!/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(v)) return false;
+            return v.length <= 300 * 1024;
           }
           return /^https?:\/\//i.test(v) && v.length <= 1000;
         },
@@ -146,8 +149,19 @@ export async function PATCH(
       menuAccentColor: true,
       menuLogoUrl: true,
       menuUpdatedAt: true,
+      slug: true,
     },
   });
+
+  // Same value in the owner Brand tab (BrandSettings is read first there).
+  const brandData: { accentColor?: string | null; logoUrl?: string | null } = {};
+  if (parsed.data.menuAccentColor !== undefined) brandData.accentColor = parsed.data.menuAccentColor;
+  if (parsed.data.menuLogoUrl !== undefined) brandData.logoUrl = parsed.data.menuLogoUrl;
+  if (Object.keys(brandData).length > 0) {
+    await prisma.brandSettings.updateMany({ where: { restaurantId: id }, data: brandData }).catch(() => undefined);
+  }
+  // The public menu is ISR-cached for an hour; show the change now.
+  revalidatePublicMenu(updated.slug);
 
   await writeAudit({
     actorId: String(admin.id),

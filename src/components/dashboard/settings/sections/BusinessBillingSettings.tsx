@@ -11,7 +11,7 @@ interface BusinessBillingSettingsProps {
 /**
  * Hesabım → Plan & Faturalama. Thin wrapper around `BillingReadOnlyCard`
  * (plan, usage, payment method, billing address, invoices, plan picker).
- * Self-service via Dodo Payments (§44); admin manual override intact.
+ * Card payments via PayNKolay (§44); admin manual override intact.
  */
 export function BusinessBillingSettings({ locale = "tr", usage }: BusinessBillingSettingsProps) {
   return <BillingReadOnlyCard isTr={locale === "tr"} usage={usage} />;

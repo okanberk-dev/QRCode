@@ -1079,12 +1079,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // exports all time (the endpoint caps a file at 10,000 rows); it used to
   // send 90 days while the toolbar said "Tüm zamanlar".
   const exportHref = useMemo(() => {
-    const q = new URLSearchParams({ days: String(days) });
+    const q = new URLSearchParams({ days: String(days), locale });
     if (scopedRestaurantId) q.set('restaurantId', scopedRestaurantId);
     if (platform !== 'all' && platform !== 'buaze_qr') q.set('platform', String(platform));
     if (rating !== 'all') q.set('rating', String(rating));
     return `/api/feedback/export?${q.toString()}`;
-  }, [days, scopedRestaurantId, platform, rating]);
+  }, [days, scopedRestaurantId, platform, rating, locale]);
 
   // Status tabs. Counts are shown only when exact: "Tümü" from the server
   // total, the others only once every row is loaded — never a 0 placeholder.

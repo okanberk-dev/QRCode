@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowDownToLine, Loader2, Mail, RotateCw, Send, Sparkles } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { ReplyRiskNotice, useReplyRisk } from '@/components/reply/ReplyRiskNotice';
+import { ReplyTemplatesMenu } from '@/components/reply/ReplyTemplatesMenu';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone } from './types';
 
 /** API limit for a reply body (`/api/feedback/[id]/reply` → 413 body_too_long). */
@@ -337,8 +338,18 @@ export function ReplyComposerCard({
         <label htmlFor={REPLY_TEXTAREA_ID} className="text-[13px] font-semibold text-[#0A0A0A]">
           {isTr ? 'Yanıtınız' : 'Your reply'}
         </label>
-        <span className="text-[11px] tabular-nums text-[#A3A3A3]" aria-live="polite">
-          {replyDraft.length} / {REPLY_MAX_LENGTH}
+        <span className="flex items-center gap-2">
+          <ReplyTemplatesMenu
+            locale={isTr ? 'tr' : 'en'}
+            draft={replyDraft}
+            onInsert={(text) => {
+              setReplyDraft(replyDraft.trim() ? `${replyDraft.trimEnd()}\n\n${text}` : text);
+              focusReplyTextarea();
+            }}
+          />
+          <span className="text-[11px] tabular-nums text-[#A3A3A3]" aria-live="polite">
+            {replyDraft.length} / {REPLY_MAX_LENGTH}
+          </span>
         </span>
       </div>
       <textarea

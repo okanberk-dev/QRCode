@@ -4,9 +4,13 @@
  * runs before the AI moderation call in `moderateReplyContent`, and still
  * works when OPENAI_API_KEY is missing.
  *
- * Languages: Turkish, English, German, French, Spanish, Italian, Portuguese,
- * Russian (Cyrillic) and Arabic (script + common Latin spellings). Other
- * languages are covered by the OpenAI moderation layer.
+ * Languages: Turkish, Azerbaijani, Kurdish, English, German, French, Dutch,
+ * Spanish, Italian, Portuguese, Romanian, Polish, Czech, Slovak, Hungarian,
+ * Serbian / Croatian / Bosnian, Bulgarian, Ukrainian, Russian, Greek,
+ * Albanian, Swedish / Norwegian / Danish, Arabic, Persian, Hebrew, Hindi /
+ * Urdu, Indonesian / Malay, Tagalog, Korean, Chinese and Japanese (script and
+ * common Latin spellings). Anything else is left to the OpenAI moderation
+ * layer.
  *
  * False positives block a legitimate reply with no override, so every entry
  * is either a whole word or a stem that has no common innocent meaning.
@@ -153,6 +157,121 @@ const PATTERNS: string[] = [
   stem('sharmut'),
   word('kos omak'),
   stem('kuss? ?ummak'),
+  // ── Azerbaijani / Kurdish ─────────────────────────────────────────────
+  stem('qəhbə'),
+  stem('qehbe'),
+  stem('qehpik'),
+  stem('gijdıllaq'),
+  stem('gijdillaq'),
+  // ── Persian (script + common Latin spellings) ─────────────────────────
+  stem('جنده'),
+  stem('کیرم'),
+  word('کیر'),
+  stem('کونی'),
+  stem('کس\\s*ننه'),
+  stem('jendeh'),
+  stem('kos\\s*nanat'),
+  stem('kos\\s*kesh'),
+  // ── Greek (script only: "malaka" is also a place name) ────────────────
+  stem('μαλάκα'),
+  stem('μαλακα'),
+  stem('γαμώ'),
+  stem('γαμω'),
+  stem('πουτάνα'),
+  stem('πουτανα'),
+  // ── Dutch ─────────────────────────────────────────────────────────────
+  stem('klootzak'),
+  stem('godverdomme'),
+  stem('kankerlijer'),
+  stem('kutwijf'),
+  // ── Polish / Czech / Slovak ───────────────────────────────────────────
+  stem('kurw'),
+  stem('chuj'),
+  stem('pierdol'),
+  stem('jeban'),
+  stem('skurwysyn'),
+  stem('spierdalaj'),
+  stem('píča'),
+  stem('zmrd'),
+  stem('kokot'),
+  stem('čurák'),
+  // ── Hungarian ─────────────────────────────────────────────────────────
+  word('kurva'),
+  stem('kurvaany'),
+  word('fasz'),
+  stem('faszfej'),
+  word('geci'),
+  stem('baszd'),
+  stem('bazdmeg'),
+  // ── Romanian ──────────────────────────────────────────────────────────
+  stem('pizd'),
+  // "Pula" is also a Croatian city: only the phrase counts.
+  stem('pula\\s*mea'),
+  word('muie'),
+  stem('futu\\s*-?\\s*ti'),
+  // ── Serbian / Croatian / Bosnian ──────────────────────────────────────
+  stem('jebem'),
+  stem('jebiga'),
+  stem('jebo'),
+  stem('kurac'),
+  stem('pička'),
+  stem('picka'),
+  // ── Bulgarian / Ukrainian / Serbian Cyrillic ──────────────────────────
+  stem('курв'),
+  stem('путка'),
+  stem('пичка'),
+  stem('мамка\\s*ти'),
+  stem('їбан'),
+  // ── Scandinavian ──────────────────────────────────────────────────────
+  stem('fitta'),
+  stem('jävla'),
+  stem('jævla'),
+  stem('kuksuger'),
+  word('faen'),
+  // ── Albanian ──────────────────────────────────────────────────────────
+  stem('qifsha'),
+  stem('pidh'),
+  // ── Hindi / Urdu (romanized + scripts) ────────────────────────────────
+  stem('madarchod'),
+  stem('behenchod'),
+  stem('bhenchod'),
+  stem('chutiya'),
+  stem('chutiye'),
+  stem('bhosdi'),
+  stem('gaandu'),
+  stem('मादरचोद'),
+  stem('बहनचोद'),
+  stem('भेनचोद'),
+  stem('चूतिया'),
+  stem('भोसड'),
+  stem('چوتیا'),
+  // ── Indonesian / Malay / Tagalog ──────────────────────────────────────
+  stem('kontol'),
+  word('memek'),
+  stem('ngentot'),
+  stem('bangsat'),
+  stem('pukimak'),
+  stem('putang\\s*ina'),
+  word('tangina'),
+  // ── Hebrew ────────────────────────────────────────────────────────────
+  stem('זונה'),
+  stem('בן\\s*זונה'),
+  stem('כוס\\s*אמק'),
+  // ── Korean (particles attach, so stems) ───────────────────────────────
+  stem('씨발'),
+  stem('씨팔'),
+  stem('개새끼'),
+  stem('병신'),
+  stem('좆'),
+  // ── Chinese / Japanese (no spaces between words: plain substrings) ────
+  '操你',
+  '肏',
+  '傻逼',
+  '他妈的',
+  '他媽的',
+  '婊子',
+  '王八蛋',
+  'くたばれ',
   // Obscene gesture emoji.
   '\u{1F595}',
 ];

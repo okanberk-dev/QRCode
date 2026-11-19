@@ -78,13 +78,22 @@ Aynı kullanıcı 90 (doksan) gün içinde **3 (üç) ayrı uyarı** alırsa, Bu
 
 Buaze, ihlalden dolayı **doğrudan veya dolaylı zarar görmesi** halinde tazminat hakkını saklı tutar. Kullanıcı, ihlal sebebiyle Buaze aleyhine açılan davalarda Buaze'yi **savunma maliyeti dahil** zararsız tutmayı taahhüt eder (indemnity).
 
+### 5.4 Müşterilere gönderilen yanıtlar
+
+Kullanıcının Buaze üzerinden müşterilere gönderdiği her yanıtı, e-postayı ve Google yorum yanıtını **kullanıcı kendisi yazar ve gönderir**. Buaze bu içerikler bakımından 5651 sayılı Kanun m. 5 uyarınca **yer sağlayıcıdır**: içeriği oluşturmaz, değiştirmez, onaylamaz ve önceden denetlemekle yükümlü değildir; hukuka aykırı içerikten haberdar edildiğinde içeriği erişime kapatır.
+
+- İçerikten doğan **hukuki, idari ve cezai sorumluluk yalnızca kullanıcıya aittir** (başta 5237 sayılı TCK m. 106 tehdit, m. 125 hakaret, m. 216 halkı kin ve düşmanlığa tahrik; 6698 sayılı KVKK ve 6098 sayılı Türk Borçlar Kanunu).
+- Buaze'nin gönderim öncesi uyguladığı otomatik kontroller (küfür, hakaret, tehdit, nefret söylemi, kişisel veri, yanıltıcı link ve olağan dışı karakter filtresi) yalnızca bir güvenlik önlemidir; bir içeriğin filtreden geçmesi onun hukuka uygun olduğu anlamına gelmez ve sorumluluğu Buaze'ye geçirmez.
+- Kullanıcı, her gönderimde bu sorumluluğu ayrıca onaylar. Bu içerikler nedeniyle üçüncü kişilerin Buaze'ye yönelttiği her türlü talep, ceza ve masraftan kullanıcı sorumludur ve Buaze'yi zararsız tutar (5.3).
+- Buaze, şikâyet veya resmî talep halinde ilgili içeriği ve gönderim kayıtlarını saklar, gerektiğinde yetkili mercilere iletir ve hesabı askıya alabilir.
+
 ## 6. İhbar ve şikâyet mekanizması
 
 Bu politikaya aykırı içerik veya davranış tespit ederseniz:
 
 - {{LEGAL_CONTACT_EMAIL}} adresine **delil + bağlantı + açıklama** ile ihbar gönderebilirsiniz.
 - Telif ihlali için "İçerik Moderasyon ve Şikâyet Politikası" akışını kullanın.
-- Şikâyetler ortalama **3 iş günü** içinde değerlendirilir; içerik kaldırma, askıya alma veya retweet kararı yazılı olarak iletilir.
+- Şikâyetler ortalama **3 iş günü** içinde değerlendirilir; içerik kaldırma, askıya alma veya ret kararı yazılı olarak iletilir.
 
 ## 7. İçeriklerin saklanması ve kanıt
 
@@ -160,6 +169,15 @@ For KVKK violations (unauthorised data uploads, sharing third-party PII), IP inf
 If a user receives **3 separate warnings within 90 (ninety) days**, Buaze **permanently terminates** the account on the 4th violation without further review. All paid fees are forfeited.
 
 Buaze reserves the right to claim compensation for damages — direct or indirect — arising from the breach. The user agrees to **indemnify and hold Buaze harmless** (including defence costs) in any third-party claim caused by the user's breach.
+
+### 5.4 Replies sent to customers
+
+Every reply, e-mail and Google review reply that the user sends to customers through Buaze is **written and sent by the user**. For this content Buaze is a **hosting provider** (Turkish Law No. 5651, Art. 5; EU Digital Services Act, Art. 4–6): it does not create, edit, endorse or pre-screen it, and it disables access once notified of unlawful content.
+
+- **Civil, administrative and criminal liability for the content lies solely with the user** (including the Turkish Penal Code Art. 106 threats, Art. 125 insult, Art. 216 incitement to hatred; Personal Data Protection Law No. 6698; Code of Obligations No. 6098; and any other law that applies to the user or the recipient).
+- The automatic checks Buaze runs before sending (profanity, insult, threats, hate speech, personal data, misleading links and unusual characters) are a safety measure only; content passing them is not thereby lawful and liability does not shift to Buaze.
+- The user confirms this responsibility again on every send. The user indemnifies and holds Buaze harmless from any third-party claim, fine or cost arising from such content (5.3).
+- On a complaint or an official request, Buaze preserves the content and sending records, discloses them to competent authorities where required and may suspend the account.
 
 ## 6. Reporting and complaints
 

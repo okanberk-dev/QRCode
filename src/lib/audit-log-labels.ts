@@ -146,6 +146,8 @@ export const ACTION_LABELS: Record<string, { tr: string; en: string }> = {
   'owner.team.update': { tr: 'Ekip üyesi güncellendi', en: 'Team member updated' },
   'owner.team.remove': { tr: 'Ekip üyesi çıkarıldı', en: 'Team member removed' },
   'restaurant.delete': { tr: 'İşletme silindi', en: 'Business deleted' },
+  'restaurant.create': { tr: 'İşletme oluşturuldu', en: 'Business created' },
+  'admin.member.plan_modules_apply': { tr: 'Paket modülleri uygulandı', en: 'Plan modules applied' },
 };
 
 export function actionLabel(action: string, locale: 'tr' | 'en' = 'tr'): string {

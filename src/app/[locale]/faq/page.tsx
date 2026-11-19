@@ -124,7 +124,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
           },
           {
             q: 'Fiyatlandırma nasıl işliyor?',
-            a: `Güncel planlar ve fiyatlar Fiyatlandırma sayfasında yer alır; fiyatlar ABD doları (USD) cinsindendir. Aylık abonelik kartla, Dodo Payments üzerinden ödenir. Yıllık ödeme için ${SUPPORT_EMAIL} adresine yazabilirsiniz.`,
+            a: `Güncel planlar ve fiyatlar Fiyatlandırma sayfasında yer alır; kartla ödeme Türk lirası olarak PayNKolay üzerinden alınır ve her ödeme bir ay ya da bir yıl açar. Kurumsal faturalama için ${SUPPORT_EMAIL} adresine yazabilirsiniz.`,
             links: [{ href: p('/pricing'), label: 'Fiyatlandırma' }],
           },
           {
@@ -257,7 +257,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
         },
         {
           q: 'How does pricing work?',
-          a: `Current plans and prices are on the Pricing page; prices are in US dollars (USD). Monthly subscriptions are paid by card through Dodo Payments. For yearly billing, write to ${SUPPORT_EMAIL}.`,
+          a: `Current plans and prices are on the Pricing page; card payments are taken in Turkish lira through PayNKolay and each payment opens one month or one year. For invoiced billing, write to ${SUPPORT_EMAIL}.`,
           links: [{ href: p('/pricing'), label: 'Pricing' }],
         },
         {

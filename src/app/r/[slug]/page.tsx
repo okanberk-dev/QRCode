@@ -26,6 +26,8 @@ interface RestaurantData {
   id: string;
   slug: string;
   name: string;
+  temporarilyClosed?: boolean;
+  closedReason?: string | null;
   category: string;
   address: string | null;
   phone: string | null;
@@ -741,6 +743,23 @@ function ReviewContent() {
             TR · EN
           </div>
         </header>
+
+        {/* Owner's "temporarily closed" switch (business settings → Çalışma
+            saatleri). Feedback stays open: a closed business can still hear
+            from a customer who visited earlier. */}
+        {restaurant.temporarilyClosed && (
+          <div
+            role="status"
+            className={`mt-3 rounded-xl px-3.5 py-2.5 text-[12.5px] leading-snug ${
+              isLight ? 'border border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]' : 'border border-white/15 bg-white/10 text-white'
+            }`}
+          >
+            <strong className="font-semibold">
+              {locale === 'tr' ? 'Geçici olarak kapalıyız.' : 'We are temporarily closed.'}
+            </strong>
+            {restaurant.closedReason ? ` ${restaurant.closedReason}` : ''}
+          </div>
+        )}
 
         {/* §38.145 Stage 64 — state-aware section bg + content layout.
             Step 1 (rate): dark page bg üstünde transparent + glass star

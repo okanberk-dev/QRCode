@@ -119,7 +119,7 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'PAYMENT_PROVIDER',
     label: { tr: 'Ödeme sağlayıcı', en: 'Payment provider' },
-    defaultValue: 'Dodo Payments',
+    defaultValue: 'PayNKolay (Nkolay Ödeme Kuruluşu A.Ş.)',
     description: {
       tr: 'Kart bilgilerini PCI-DSS standardında işleyen kuruluş.',
       en: 'Payment processor handling card data under PCI-DSS.',

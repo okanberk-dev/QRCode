@@ -3,16 +3,16 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { revalidatePricing } from '@/lib/marketing-revalidate';
+import { normalizeModuleKeys } from '@/lib/plan-modules-catalog';
+import { applyPlanModulesForPlan } from '@/lib/plan-modules';
 import { toAdminRow } from '@/lib/subscription-plans';
 
 export const dynamic = 'force-dynamic';
 
 const ALLOWED_PERIODS = new Set(['month', 'year', 'one-time']);
 const ALLOWED_DISCOUNT_TYPES = new Set(['percent', 'fixed']);
-// Stage 149 §38.229 — Iyzico provider iptal edildi; sadece manual + dodo_payments.
-const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'dodo_payments']);
-// Dodo Payments product IDs (and future provider IDs) — liberal alnum + dashes.
-const PRODUCT_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
+// CLAUDE.md §44 — 'paynkolay' = owner pays by card (TRY price required).
+const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'paynkolay']);
 
 function asString(v: unknown, max = 1000): string {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -126,16 +126,8 @@ export async function PATCH(
       data.paymentProvider = provider;
     }
   }
-  if (body.dodoProductId !== undefined) {
-    const v = asString(body.dodoProductId, 80);
-    if (v === '') {
-      data.dodoProductId = null;
-    } else if (!PRODUCT_ID_RE.test(v)) {
-      errors.push('dodoProductId: geçersiz product ID (alnum/dash, 1-80 karakter).');
-    } else {
-      data.dodoProductId = v;
-    }
-  }
+  if (body.moduleKeys !== undefined) data.moduleKeys = normalizeModuleKeys(body.moduleKeys);
+  if (body.modulesManaged !== undefined) data.modulesManaged = body.modulesManaged === true;
 
   if (errors.length) return NextResponse.json({ error: errors.join(' ') }, { status: 400 });
 
@@ -150,6 +142,13 @@ export async function PATCH(
       return tx.subscriptionPlan.update({ where: { id }, data });
     });
     revalidatePricing();
+    // A plan that manages modules re-applies them to its active subscribers
+    // (§5.2). Best effort: the plan save already succeeded.
+    if (updated.modulesManaged && (data.moduleKeys !== undefined || data.modulesManaged !== undefined)) {
+      applyPlanModulesForPlan(id).catch((err) =>
+        console.error('[admin/plans] module re-apply failed', { planId: id, error: (err as Error).message }),
+      );
+    }
     return NextResponse.json(
       { data: toAdminRow(updated), revalidated: true },
       {
