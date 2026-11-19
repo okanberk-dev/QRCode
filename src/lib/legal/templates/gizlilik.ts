@@ -75,7 +75,23 @@ KVKK m. 3(ç) ve m. 12 kapsamında Buaze, kullanım senaryosuna göre **iki fark
 
 **Buaze hesabı olan işletme sahipleri (panel kullanıcıları) için:** Veri sorumlusu **Buaze**'dir. Buaze, ödeme, kullanıcı yönetimi ve hizmet sunumu için panel kullanıcılarının verilerini doğrudan işler.
 
-Bu ayrım, GDPR Art. 4(7) "controller" ve Art. 4(8) "processor" tanımlarıyla paraleldir; Avrupa Birliği'nde mukim son müşterilerle çalışan işletmeler için ayrı bir veri işleyici sözleşmesi (DPA) imzalanır.`,
+Bu ayrım, GDPR Art. 4(7) "controller" ve Art. 4(8) "processor" tanımlarıyla paraleldir; Avrupa Birliği'nde mukim son müşterilerle çalışan işletmeler için ayrı bir veri işleyici sözleşmesi (DPA) imzalanır.
+
+## 11. Google kullanıcı verisi (Google İşletme Profili bağlantısı)
+
+İsterseniz Google hesabınızı Buaze'ye bağlayarak Google İşletme Profili yorumlarınızı panelde görüntüleyebilir ve yanıtlayabilirsiniz. Bağlantı yalnızca siz başlattığınızda kurulur ve ayrı bir Google izin ekranıyla onayınıza sunulur.
+
+**Eriştiğimiz veriler:** Yalnızca Google İşletme Profili yönetim yetkisi (https://www.googleapis.com/auth/business.manage) kapsamında; Google hesabınıza bağlı işletme hesapları ve konumları, konumlarınızın puanı ve yorumları ile bu yorumlara verdiğiniz yanıtlar.
+
+**Nasıl kullanırız:** Yalnızca yorumlarınızı panelde göstermek, yanıt taslağı hazırlamanıza yardımcı olmak ve sizin onayınızla yazdığınız yanıtı Google'a iletmek için. Yanıt, siz gönder düğmesine basmadan Google'a gönderilmez.
+
+**Paylaşım:** Google kullanıcı verisini satmayız, reklam veya profilleme amacıyla kullanmayız ve üçüncü taraflara aktarmayız. Yapay zekâ ile yanıt taslağı hazırlanırken yorum metni, taslağı üreten hizmet sağlayıcıya yalnızca o istek için iletilir.
+
+**Saklama ve güvenlik:** Erişim ve yenileme anahtarlarınız şifrelenmiş olarak (AES-256-GCM) saklanır. Google'dan okuduğumuz yorum metinlerini kalıcı olarak saklamayız; yalnızca sizin için hazırlanan yanıt taslakları ve gönderdiğiniz yanıtın kaydı tutulur.
+
+**Bağlantıyı kaldırma:** Bağlantıyı panelden istediğiniz an kaldırabilirsiniz; bu durumda erişim anahtarınız Google'da iptal edilir ve sistemimizden silinir. Erişimi ayrıca https://myaccount.google.com/permissions adresinden de kaldırabilirsiniz.
+
+**Google API Hizmetleri Kullanıcı Verisi Politikası:** Buaze'nin Google API'lerinden aldığı bilgileri kullanması ve başka bir uygulamaya aktarması, Sınırlı Kullanım (Limited Use) gereklilikleri dahil olmak üzere Google API Services User Data Policy'ye (https://developers.google.com/terms/api-services-user-data-policy) uygundur.`,
 };
 
 export const GIZLILIK_EN = {
@@ -148,5 +164,21 @@ Under GDPR Article 13(1)(a) and KVKK Article 3(ç) / 12, Buaze acts in **two dif
 
 **For the business operator's own panel users (the merchant accounts who sign up for Buaze):** Buaze is the **controller** (GDPR Art. 4(7)). Buaze directly processes panel user data for billing, account management and service delivery.
 
-A separate Data Processing Agreement (DPA) under GDPR Art. 28 is executed for business operators serving data subjects in the European Economic Area. The DPA covers sub-processor disclosure, security measures, breach notification timelines and data return / deletion at end of contract.`,
+A separate Data Processing Agreement (DPA) under GDPR Art. 28 is executed for business operators serving data subjects in the European Economic Area. The DPA covers sub-processor disclosure, security measures, breach notification timelines and data return / deletion at end of contract.
+
+## 11. Google user data (Google Business Profile connection)
+
+You can optionally connect your Google account to Buaze to view and reply to your Google Business Profile reviews in the dashboard. The connection is created only when you start it and is presented to you on a separate Google consent screen.
+
+**Data we access:** Only within the Google Business Profile management scope (https://www.googleapis.com/auth/business.manage): the business accounts and locations linked to your Google account, your locations' ratings and reviews, and the replies you have posted to those reviews.
+
+**How we use it:** Solely to show your reviews in the dashboard, to help you prepare reply drafts, and to send the reply you have written to Google with your approval. A reply is never sent to Google until you press send.
+
+**Sharing:** We do not sell Google user data, use it for advertising or profiling, or transfer it to third parties. When an AI reply draft is prepared, the review text is sent to the service provider that generates the draft for that request only.
+
+**Storage and security:** Your access and refresh tokens are stored encrypted (AES-256-GCM). We do not permanently store the review text we read from Google; we keep only the reply drafts prepared for you and a record of the replies you send.
+
+**Disconnecting:** You can disconnect at any time from the dashboard; your access token is then revoked at Google and deleted from our systems. You can also remove access at https://myaccount.google.com/permissions.
+
+**Google API Services User Data Policy:** Buaze's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements.`,
 };
