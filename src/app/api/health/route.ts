@@ -23,7 +23,8 @@ export async function GET() {
     {
       ok: true,
       ts: Date.now(),
-      commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+      // Vercel injects VERCEL_GIT_COMMIT_SHA; Coolify injects SOURCE_COMMIT at run time.
+      commit: (process.env.VERCEL_GIT_COMMIT_SHA || process.env.SOURCE_COMMIT)?.slice(0, 7) ?? null,
     },
     {
       // Never let a monitor hit the CDN — every probe must reach the origin.
