@@ -37,6 +37,9 @@ export default function RootHtml({
   prefetchDNS('https://mc.yandex.ru');
   prefetchDNS('https://www.googletagmanager.com');
 
+  // VERCEL=1 is set by Vercel at build and run time; absent on Coolify.
+  const onVercel = process.env.VERCEL === '1';
+
   return (
     <html lang={lang} className={rootFontClassName} suppressHydrationWarning={langFromPath}>
       <body
@@ -59,9 +62,11 @@ export default function RootHtml({
         <CookieConsentBanner />
         {/* Vercel telemetry: Speed Insights (Web Vitals) + Analytics (page
             views). Both are cookieless. Web Analytics must also be enabled
-            in the Vercel project settings to collect data. CLAUDE.md §31. */}
-        <SpeedInsights />
-        <Analytics />
+            in the Vercel project settings to collect data. CLAUDE.md §31.
+            Only on Vercel: self-hosted (Coolify) there is no /_vercel/insights
+            endpoint, so the scripts would 404 on every page view. */}
+        {onVercel && <SpeedInsights />}
+        {onVercel && <Analytics />}
       </body>
     </html>
   );
