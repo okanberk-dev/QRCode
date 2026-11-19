@@ -36,10 +36,11 @@ alanı Coolify'da `SOURCE_COMMIT`'ten gelir.
 ## Zamanlanmış görevler (vercel.json `crons` + cron-hourly.yml)
 
 Vercel Cron artık yok; Coolify → uygulama → **Scheduled Tasks**. Saatler **UTC** (Vercel Cron gibi; Coolify sunucusunun saat dilimi
-UTC değilse ifadeleri ona göre kaydırın). Her görevin komutu (konteynerde çalışır, `curl` gerektirmez):
+UTC değilse ifadeleri ona göre kaydırın). Her görevin komutu (konteynerde çalışır; `scripts/cron.mjs` 2xx dışında 1 ile çıkar,
+zaman aşımı Coolify'da 330 sn):
 
 ```sh
-node -e "fetch('http://127.0.0.1:3000'+process.argv[1],{headers:{authorization:'Bearer '+process.env.CRON_SECRET}}).then(async r=>{console.log(r.status,(await r.text()).slice(0,500));process.exit(r.ok?0:1)}).catch(e=>{console.error(e);process.exit(1)})" <YOL>
+node scripts/cron.mjs <YOL>
 ```
 
 | Görev | Yol | Zaman (UTC) |
