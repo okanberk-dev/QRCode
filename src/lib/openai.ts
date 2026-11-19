@@ -2,7 +2,8 @@
 // dependency on the `openai` SDK (CLAUDE.md §7: avoid new deps when the
 // project already has a working pattern).
 //
-// Requires `OPENAI_API_KEY` env var. When missing (dev / preview without
+// Provider: `ANTHROPIC_API_KEY` (Claude) is preferred; falls back to
+// `OPENAI_API_KEY`. When missing (dev / preview without
 // the secret), callers should fall back to a deterministic template so
 // the UI stays functional.
 
@@ -10,6 +11,9 @@ import * as Sentry from '@sentry/nextjs';
 import { notifyOpsOfOpenAiBillingFailure } from '@/lib/email/ops-alert';
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_VERSION = '2023-06-01';
+const ANTHROPIC_DEFAULT_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5';
 const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -44,9 +48,127 @@ export interface ChatOptions {
   timeoutMs?: number;
 }
 
+function hasAnthropicKey(): boolean {
+  const key = process.env.ANTHROPIC_API_KEY;
+  return !!key && key.length > 10;
+}
+
+/**
+ * True when any AI provider is configured. The name is kept for backwards
+ * compatibility with existing callers. `ANTHROPIC_API_KEY` (Claude) takes
+ * priority over `OPENAI_API_KEY` when both are set.
+ */
 export function hasOpenAIKey(): boolean {
+  if (hasAnthropicKey()) return true;
   const key = process.env.OPENAI_API_KEY;
   return !!key && key.length > 10;
+}
+
+/**
+ * Calls the Anthropic Messages API. Same contract as the OpenAI path:
+ * returns the text or null on any failure so callers fall back to templates.
+ */
+async function anthropicCompletion(
+  messages: ChatMessage[],
+  opts: ChatOptions,
+): Promise<string | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  const model = opts.model && opts.model.startsWith('claude') ? opts.model : ANTHROPIC_DEFAULT_MODEL;
+  const system = messages
+    .filter((m) => m.role === 'system')
+    .map((m) => m.content)
+    .join('\n\n');
+  const turns = messages
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+  if (turns.length === 0) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  try {
+    const res = await fetch(ANTHROPIC_URL, {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: opts.maxTokens ?? 400,
+        temperature: Math.min(1, Math.max(0, opts.temperature ?? 0.7)),
+        ...(system ? { system } : {}),
+        messages: turns,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.error('[anthropic] non-OK', res.status, text.slice(0, 200));
+      let errorType: string | undefined;
+      let errorMessage: string | undefined;
+      try {
+        const parsed = JSON.parse(text) as { error?: { type?: string; message?: string } };
+        errorType = parsed.error?.type;
+        errorMessage = parsed.error?.message;
+      } catch {
+        // non-JSON body
+      }
+      const billing =
+        res.status === 402 ||
+        errorType === 'billing_error' ||
+        /credit balance/i.test(errorMessage ?? '');
+      if (billing) {
+        notifyOpsOfOpenAiBillingFailure({
+          status: res.status,
+          errorType: errorType ?? 'billing_error',
+          message: errorMessage,
+          source: model,
+        }).catch(() => undefined);
+      }
+      Sentry.captureMessage('Anthropic non-OK response', {
+        level: 'warning',
+        tags: {
+          service: 'anthropic',
+          status: String(res.status),
+          ...(errorType ? { errorType } : {}),
+        },
+        extra: { bodySnippet: text.slice(0, 200), model },
+      });
+      return null;
+    }
+
+    const data = (await res.json()) as {
+      content?: Array<{ type?: string; text?: string }>;
+    };
+    const content = data.content
+      ?.filter((b) => b.type === 'text' && typeof b.text === 'string')
+      .map((b) => b.text)
+      .join('')
+      .trim();
+    return content && content.length > 0 ? content : null;
+  } catch (err) {
+    const isAbort =
+      err instanceof Error &&
+      (err.name === 'AbortError' || (err as { code?: number }).code === 20);
+    if (isAbort) {
+      console.warn('[anthropic] request aborted (timeout)', { model });
+      Sentry.captureMessage('Anthropic request aborted (timeout)', {
+        level: 'warning',
+        tags: { service: 'anthropic', kind: 'abort' },
+        extra: { timeoutMs: opts.timeoutMs ?? DEFAULT_TIMEOUT_MS, model },
+      });
+    } else {
+      console.error('[anthropic] request failed', err);
+      Sentry.captureException(err, { tags: { service: 'anthropic' } });
+    }
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /**
@@ -58,6 +180,8 @@ export async function chatCompletion(
   messages: ChatMessage[],
   opts: ChatOptions = {},
 ): Promise<string | null> {
+  if (hasAnthropicKey()) return anthropicCompletion(messages, opts);
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
