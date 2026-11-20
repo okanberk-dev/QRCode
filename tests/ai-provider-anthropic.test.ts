@@ -66,7 +66,7 @@ test(
     assert.equal(body.system, 'Sistem talimatı');
     assert.deepEqual(body.messages, [{ role: 'user', content: 'Selam' }]);
     assert.equal(body.max_tokens, 50);
-    assert.equal(body.temperature, 1); // clamped
+    assert.equal('temperature' in body, false); // newer Claude models reject it, so it is not sent
     assert.match(body.model, /^claude/);
   }),
 );
