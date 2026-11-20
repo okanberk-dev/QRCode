@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Clock, MapPin, Phone, Flame, Leaf, Star, Sparkles, WheatOff,
   Sun, Sprout, Heart, CalendarRange, Droplets,
@@ -292,22 +292,24 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
 
   if (!splashReady) {
     // Render the layout during SSR. Once mounted, we know whether to overlay the splash.
-    return renderLayout();
+    return <MenuFontScope>{renderLayout()}</MenuFontScope>;
   }
 
   if (showSplash) {
     return (
-      <MenuSplash
-        name={restaurant.name}
-        accent={accent}
-        logoUrl={restaurant.menuLogoUrl}
-        onDone={() => setShowSplash(false)}
-      />
+      <MenuFontScope>
+        <MenuSplash
+          name={restaurant.name}
+          accent={accent}
+          logoUrl={restaurant.menuLogoUrl}
+          onDone={() => setShowSplash(false)}
+        />
+      </MenuFontScope>
     );
   }
 
   return (
-    <>
+    <MenuFontScope>
       {renderLayout()}
       {detailItem && (
         <ProductDetailModal
@@ -317,8 +319,18 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
           onClose={() => setDetailItem(null)}
         />
       )}
-    </>
+    </MenuFontScope>
   );
+}
+
+// Restaurant menus are the owner's content, so they keep Space Grotesk: the
+// Clash Display license (site heading font, §11) forbids offering it for
+// customers' content. Re-pointing --font-heading here also covers the global
+// h1–h6 rule. `display: contents` adds no box, so layouts are unchanged.
+const MENU_FONT_SCOPE = { '--font-heading': 'var(--font-menu-heading)', display: 'contents' } as CSSProperties;
+
+function MenuFontScope({ children }: { children: ReactNode }) {
+  return <div style={MENU_FONT_SCOPE}>{children}</div>;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1170,7 +1182,7 @@ function PulseLayout({
               </span>
             )}
             <div className="min-w-0">
-              <p className="truncate text-[14px] font-medium leading-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+              <p className="truncate text-[14px] font-medium leading-tight" style={{ fontFamily: 'var(--font-menu-heading)' }}>
                 {restaurant.name}
               </p>
               <p className="truncate text-[10px] font-medium uppercase tracking-[0.18em] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -1205,7 +1217,7 @@ function PulseLayout({
               </p>
               <h1
                 className="mt-3 max-w-3xl text-[38px] font-medium leading-[0.95] tracking-[-0.025em] sm:text-[64px]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                style={{ fontFamily: 'var(--font-menu-heading)' }}
               >
                 {restaurant.name}.
               </h1>
@@ -1265,7 +1277,7 @@ function PulseLayout({
                       </p>
                       <h2
                         className="mt-1 text-[26px] font-medium leading-tight tracking-[-0.02em] sm:text-[32px]"
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        style={{ fontFamily: 'var(--font-menu-heading)' }}
                       >
                         {category.name}
                       </h2>
@@ -1323,7 +1335,7 @@ function PulseLayout({
                           <div className="flex items-start justify-between gap-3">
                             <h3
                               className="min-w-0 flex-1 text-[16px] font-medium leading-tight tracking-[-0.01em] sm:text-[17px]"
-                              style={{ fontFamily: 'var(--font-heading)' }}
+                              style={{ fontFamily: 'var(--font-menu-heading)' }}
                             >
                               {item.name}
                             </h3>

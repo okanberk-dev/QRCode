@@ -66,7 +66,7 @@ export default function MenuSplash({ name, accent, logoUrl, durationMs = 3000, o
           )}
         </div>
 
-        <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-4xl" style={{ fontFamily: 'var(--font-heading), inherit' }}>
+        <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-4xl" style={{ fontFamily: 'var(--font-menu-heading), inherit' }}>
           {name}
         </h1>
       </div>

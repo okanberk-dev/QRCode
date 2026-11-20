@@ -313,7 +313,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
     const qrCanvas = canvasRef.current;
     if (!qrCanvas) return null;
 
-    const headingFont = cssFontFamily('--font-heading', '"Space Grotesk", system-ui, sans-serif');
+    const headingFont = cssFontFamily('--font-space-grotesk', '"Space Grotesk", system-ui, sans-serif');
     const monoFont = cssFontFamily('--font-mono', 'ui-monospace, monospace');
     try {
       await Promise.all([
