@@ -83,4 +83,17 @@ describe('checkout hand-off page', () => {
     assert.match(INTERSTITIAL_SCRIPT, /prefers-reduced-motion/);
     assert.match(html, /<noscript><p>Devam etmek için düğmeye basın\.<\/p><\/noscript>/);
   });
+
+  it('5. the auto-renew line follows the billing cycle (a yearly plan never says "every month")', () => {
+    const from = new Date('2027-11-20T09:00:00Z');
+    const yearlyEn = renderCheckoutInterstitial(input({ locale: 'en' }, { cycle: 'yearly', amountMinor: 999000, autoRenewFrom: from }));
+    assert.match(yearlyEn, /every year from/);
+    assert.doesNotMatch(yearlyEn, /every month/);
+    const yearlyTr = renderCheckoutInterstitial(input({}, { cycle: 'yearly', amountMinor: 999000, autoRenewFrom: from }));
+    assert.match(yearlyTr, /her yıl/);
+    assert.doesNotMatch(yearlyTr, /her ay/);
+    const monthlyTr = renderCheckoutInterstitial(input({}, { cycle: 'monthly', autoRenewFrom: from }));
+    assert.match(monthlyTr, /her ay/);
+    assert.doesNotMatch(renderCheckoutInterstitial(input()), /Otomatik yenileme/, 'no auto-renew line without a start date');
+  });
 });

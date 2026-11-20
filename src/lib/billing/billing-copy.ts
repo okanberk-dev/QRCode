@@ -263,6 +263,10 @@ export const BILLING_COPY = {
     tr: 'Otomatik yenileme: {date} tarihinden itibaren her ay {amount} · istediğiniz an kapatın',
     en: 'Auto-renew: {amount} every month from {date} · turn off anytime',
   },
+  'inter.autoYearly': {
+    tr: 'Otomatik yenileme: {date} tarihinden itibaren her yıl {amount} · istediğiniz an kapatın',
+    en: 'Auto-renew: {amount} every year from {date} · turn off anytime',
+  },
   'inter.button': { tr: 'Güvenli ödemeye devam et', en: 'Continue to secure payment' },
   'inter.cancel': { tr: 'Vazgeç', en: 'Cancel' },
   'inter.noscript': { tr: 'Devam etmek için düğmeye basın.', en: 'Press the button to continue.' },

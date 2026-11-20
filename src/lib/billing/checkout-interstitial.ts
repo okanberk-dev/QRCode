@@ -167,7 +167,8 @@ export function renderCheckoutInterstitial(input: InterstitialInput): string {
   const ticks: string[] = [];
   if (summary.saveCard) ticks.push(`<p class="tick">${t('inter.save')}</p>`);
   if (summary.autoRenewFrom) {
-    ticks.push(`<p class="tick">${t('inter.auto', { date: formatIstanbulDate(summary.autoRenewFrom, locale), amount })}</p>`);
+    // The amount repeats once per billing cycle: a yearly plan must not read "every month".
+    ticks.push(`<p class="tick">${t(summary.cycle === 'yearly' ? 'inter.autoYearly' : 'inter.auto', { date: formatIstanbulDate(summary.autoRenewFrom, locale), amount })}</p>`);
   }
 
   return (
