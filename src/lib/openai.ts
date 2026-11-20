@@ -98,7 +98,8 @@ async function anthropicCompletion(
       body: JSON.stringify({
         model,
         max_tokens: opts.maxTokens ?? 400,
-        temperature: Math.min(1, Math.max(0, opts.temperature ?? 0.7)),
+        // Yeni Claude modelleri `temperature` parametresini reddediyor (400
+        // invalid_request_error: temperature is deprecated) — Anthropic'e gönderme.
         ...(system ? { system } : {}),
         messages: turns,
       }),
