@@ -180,7 +180,9 @@ for (const name of BILLING_FLAG_NAMES) {
   if (value && value !== 'on' && value !== 'off') billingErrors.push(`${name} must be "on" or "off" (unknown values are treated as off; dry run stays on)`);
 }
 
-const paynkolayEnv = envValue('PAYNKOLAY_ENV');
+// Back-compat: an exact allow-listed PAYNKOLAY_BASE_URL selects its env when PAYNKOLAY_ENV is unset.
+const paynkolayEnv = envValue('PAYNKOLAY_ENV') ||
+  Object.keys(PAYNKOLAY_HOSTS).find((k) => PAYNKOLAY_HOSTS[k] === (envValue('PAYNKOLAY_BASE_URL') || '').replace(/\/+$/, '')) || '';
 const paynkolayAnySet = Object.keys(process.env).some((k) => k.startsWith('PAYNKOLAY_') && k !== 'PAYNKOLAY_ENV' && envValue(k));
 if (paynkolayEnv && paynkolayEnv !== 'live' && paynkolayEnv !== 'test') {
   billingErrors.push('PAYNKOLAY_ENV must be "live" or "test"');

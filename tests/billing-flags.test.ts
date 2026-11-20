@@ -91,7 +91,10 @@ describe('getPaynkolayConfig host allow-list', () => {
   it('2. needs an explicit PAYNKOLAY_ENV; never defaults to the test host', () => {
     assert.equal(getPaynkolayConfig({ ...secrets, NODE_ENV: 'production' }), null);
     assert.equal(getPaynkolayConfig({ ...secrets, NODE_ENV: 'development' }), null);
-    assert.equal(getPaynkolayConfig({ ...secrets, PAYNKOLAY_BASE_URL: PAYNKOLAY_TEST_BASE_URL }), null);
+    // Back-compat: an exact allow-listed base URL selects its environment.
+    assert.equal(getPaynkolayConfig({ ...secrets, PAYNKOLAY_BASE_URL: PAYNKOLAY_TEST_BASE_URL })?.env, 'test');
+    assert.equal(getPaynkolayConfig({ ...secrets, PAYNKOLAY_BASE_URL: PAYNKOLAY_LIVE_BASE_URL })?.env, 'live');
+    assert.equal(getPaynkolayConfig({ ...secrets, PAYNKOLAY_BASE_URL: 'https://evil.example' }), null);
     assert.equal(getPaynkolayConfig({ ...secrets, PAYNKOLAY_ENV: 'staging' }), null);
     assert.equal(getPaynkolayConfig({ ...secrets, PAYNKOLAY_ENV: 'live' })?.baseUrl, PAYNKOLAY_LIVE_BASE_URL);
     assert.equal(getPaynkolayConfig({ ...secrets, PAYNKOLAY_ENV: 'test' })?.baseUrl, PAYNKOLAY_TEST_BASE_URL);

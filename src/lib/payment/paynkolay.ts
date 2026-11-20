@@ -81,7 +81,12 @@ export type PaynkolayBaseUrlResult =
  * `PAYNKOLAY_BASE_URL` is optional; when set it must equal that host exactly.
  */
 export function resolvePaynkolayBaseUrl(env: EnvSource = process.env): PaynkolayBaseUrlResult {
-  const rawEnv = env.PAYNKOLAY_ENV?.trim();
+  // Back-compat: deployments configured before PAYNKOLAY_ENV existed name
+  // the host only. An exact allow-listed PAYNKOLAY_BASE_URL selects its env.
+  const inferred = (Object.keys(PAYNKOLAY_BASE_URLS) as Array<keyof typeof PAYNKOLAY_BASE_URLS>).find(
+    (k) => PAYNKOLAY_BASE_URLS[k] === env.PAYNKOLAY_BASE_URL?.trim().replace(/\/+$/, ''),
+  );
+  const rawEnv = env.PAYNKOLAY_ENV?.trim() || inferred;
   if (!rawEnv) return { ok: false, reason: 'missing_env' };
   if (rawEnv !== 'live' && rawEnv !== 'test') return { ok: false, reason: 'invalid_env' };
   const allowed = PAYNKOLAY_BASE_URLS[rawEnv];
