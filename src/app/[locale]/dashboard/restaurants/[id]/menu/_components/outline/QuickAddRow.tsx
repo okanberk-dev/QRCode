@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { checkPrice, currencySymbol, priceToInput } from '../menu-item-form';
-import { isMultiLinePaste, parsePasteBlock, parseSingleLine, type PasteSection } from '../menu-paste';
+import { isMultiLinePaste, parsePasteBlock, parseSingleLine, splitTypedQuickAdd, type PasteSection } from '../menu-paste';
 import { useStudio } from '../studio/studio-context';
 import { PasteReview, announcePaste } from './PasteReview';
 
@@ -80,6 +80,12 @@ export function QuickAddRow({ categoryId, categoryName, disabled = false }: { ca
         if (!name.trim()) {
           setNameError(copy.item.nameRequired);
           return;
+        }
+        // A typed "Mocha 130" splits like a paste, so the price never ends up in the name.
+        const single = splitTypedQuickAdd(name, price);
+        if (single) {
+          setName(single.name);
+          setPrice(priceToInput(single.priceCents, isTr));
         }
         priceRef.current?.focus();
       } else submit();

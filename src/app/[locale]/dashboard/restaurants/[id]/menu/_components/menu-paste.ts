@@ -68,6 +68,16 @@ export function isMultiLinePaste(text: string): boolean {
   return nonBlankLines(text).length >= 2;
 }
 
+/**
+ * Quick-add name ⏎ with the price field still empty: a typed "Mocha 130" (the
+ * format the hint shows) splits like a paste would. Null keeps the fields as
+ * they are (price already typed, or no readable trailing price).
+ */
+export function splitTypedQuickAdd(name: string, price: string): { name: string; priceCents: number } | null {
+  if (price.trim()) return null;
+  return parseSingleLine(name);
+}
+
 /** One readable "name price" line (e.g. "Mercimek Çorbası 90"), else null. */
 export function parseSingleLine(text: string): { name: string; priceCents: number } | null {
   if (nonBlankLines(text).length !== 1) return null;
