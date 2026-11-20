@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, FolderPlus, PanelRightOpen, Plus, Search, Undo2, X } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, ClipboardPaste, FolderPlus, ListChecks, PanelRightOpen, Plus, Search, Undo2, X } from 'lucide-react';
 import { PulseMenu, PulseMenuItem } from '@/components/ui';
 import { useMenuCopy } from '../kit/useMenuCopy';
 import type { MenuFilter } from '../menu-filter';
@@ -12,16 +12,16 @@ import { ViewSwitch, type StudioView } from './ViewSwitch';
 
 /**
  * The studio toolbar (spec §7.6).
- * - ≥1024: sticky under the topbar, two rows (chunk 2 has no category rail, so
- *   the category chips keep row 2 at every desktop width): search · filters ·
- *   SaveIndicator · Undo / categories · Düzenle|Servis · + Ekle.
- * - <1024: not sticky — ViewSwitch, search, filter chips (the phone chip bar
- *   with "● Canlı" is separate and sticky).
- * "Seç" and "Sırala" arrive with selection / reorder (chunk 3).
+ * - ≥1024: sticky under the topbar. 1024–1399: two rows — search · filters ·
+ *   SaveIndicator · Undo / categories · Düzenle|Servis · Seç · + Ekle. ≥1400:
+ *   one row (the category rail replaces row 2; mode, Seç and + Ekle move up).
+ * - <1024: not sticky — ViewSwitch, search · Sırala (touch) · Seç, filter
+ *   chips (the phone chip bar with "● Canlı" is separate and sticky).
  */
 export function StudioToolbar({
   query, onQuery, filter, onFilter, counts, saveIndicator, canUndo, onUndo, mode, onMode, view, onView,
-  previewCollapsed, onShowPreview, categoryChips, onAdd, readOnly, showSearch,
+  previewCollapsed, onShowPreview, categoryChips, onAdd, readOnly, showSearch, selecting, onToggleSelect,
+  reorderMode, onToggleReorder, canSelect, canReorder,
 }: {
   query: string;
   onQuery: (q: string) => void;
@@ -42,6 +42,14 @@ export function StudioToolbar({
   readOnly: boolean;
   /** False while the phone "Önizle" view is on. */
   showSearch: boolean;
+  selecting: boolean;
+  onToggleSelect: () => void;
+  reorderMode: boolean;
+  onToggleReorder: () => void;
+  /** "Seç" is offered (edit mode, items to select). */
+  canSelect: boolean;
+  /** "Sırala" is offered (touch, can edit, edit mode). */
+  canReorder: boolean;
 }) {
   const copy = useMenuCopy();
   const sentinel = useRef<HTMLDivElement | null>(null);
@@ -113,10 +121,27 @@ export function StudioToolbar({
         {copy.toolbar.addCategory}
       </PulseMenuItem>
       {onAdd.paste && (
-        <PulseMenuItem onSelect={() => afterMenuCloses(onAdd.paste!)}>{copy.toolbar.pasteList}</PulseMenuItem>
+        <PulseMenuItem icon={<ClipboardPaste size={13} strokeWidth={2} />} onSelect={() => afterMenuCloses(onAdd.paste!)}>
+          {copy.toolbar.pasteList}
+        </PulseMenuItem>
       )}
     </PulseMenu>
   );
+
+  const selectButton = (className: string) =>
+    canSelect ? (
+      <button type="button" onClick={onToggleSelect} aria-pressed={selecting} className={`bz-btn-ghost shrink-0 ${className}`}>
+        {selecting ? <X size={14} strokeWidth={2} aria-hidden="true" /> : <ListChecks size={14} strokeWidth={2} aria-hidden="true" />}
+        {selecting ? copy.toolbar.selectOff : copy.toolbar.select}
+      </button>
+    ) : null;
+
+  const previewButton = previewCollapsed ? (
+    <button type="button" onClick={onShowPreview} className="bz-btn-ghost h-9 min-h-0 shrink-0">
+      <PanelRightOpen size={14} strokeWidth={2} aria-hidden="true" />
+      {copy.toolbar.showPreview}
+    </button>
+  ) : null;
 
   return (
     <>
@@ -143,17 +168,19 @@ export function StudioToolbar({
               <Undo2 size={16} strokeWidth={2} />
             </button>
           </div>
+          <div className="hidden shrink-0 items-center gap-2 min-[1400px]:flex">
+            <ModeSwitch value={mode} onChange={onMode} />
+            {selectButton('h-9 min-h-0')}
+            {addMenu}
+            {previewButton}
+          </div>
         </div>
-        <div className="flex h-14 items-center gap-2">
+        <div className="flex h-14 items-center gap-2 min-[1400px]:hidden">
           <div className="min-w-0 flex-1">{categoryChips}</div>
           <ModeSwitch value={mode} onChange={onMode} />
+          {selectButton('h-9 min-h-0')}
           {addMenu}
-          {previewCollapsed && (
-            <button type="button" onClick={onShowPreview} className="bz-btn-ghost h-9 min-h-0 shrink-0">
-              <PanelRightOpen size={14} strokeWidth={2} aria-hidden="true" />
-              {copy.toolbar.showPreview}
-            </button>
-          )}
+          {previewButton}
         </div>
       </div>
 
@@ -162,7 +189,16 @@ export function StudioToolbar({
         <ViewSwitch value={view} onChange={onView} />
         {showSearch && (
           <>
-            <div className="flex flex-wrap items-center gap-2">{search('min-w-0 flex-1 sm:w-[280px] sm:flex-none', 'h-11')}</div>
+            <div className="flex flex-wrap items-center gap-2">
+              {search('min-w-0 flex-1 sm:w-[280px] sm:flex-none', 'h-11')}
+              {canReorder && (
+                <button type="button" onClick={onToggleReorder} aria-pressed={reorderMode} className="bz-btn-ghost min-h-[44px] shrink-0">
+                  {reorderMode ? <X size={14} strokeWidth={2} aria-hidden="true" /> : <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />}
+                  {reorderMode ? copy.context.done : copy.toolbar.reorder}
+                </button>
+              )}
+              {selectButton('min-h-[44px]')}
+            </div>
             <FilterChips value={filter} onChange={onFilter} counts={counts} />
           </>
         )}

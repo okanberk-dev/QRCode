@@ -8,9 +8,11 @@ import type { MenuCopy } from '../menu-i18n';
 import type { ItemPatch } from '../menu-item-form';
 import {
   TEMP_PREFIX, applySavedCategory, applySavedItem, insertCategoryBySortOrder, insertItemBySortOrder, isTempId,
-  neighbourCategoryId, patchItem, patchItems, removeCategory, removeItems, replaceItem, withIndexSortOrder,
+  moveItemLocal, moveItemsToEnd, neighbourCategoryId, patchItem, patchItems, removeCategory, removeItems, replaceItem,
+  snapshotItemPositions, withIndexSortOrder,
   type SavedCategory, type SavedItem,
 } from '../menu-merge';
+import type { PastePlan, PastePlanItem } from '../menu-paste';
 import { runPool } from '../menu-queue';
 import { flagPatch, type FlagOp } from '../menu-status';
 import type { CategoryShape, MenuData, RowSaveState } from '../menu-types';
@@ -79,9 +81,44 @@ export interface MenuActions {
     opts: { deleteItems: boolean },
   ): Promise<ActionResult & { code?: string | null; itemCount?: number | null; neighbourId?: string | null }>;
   bulkSetFlags(ids: string[], op: FlagOp): Promise<ActionResult>;
+  /** Drag across categories / "Başka kategoriye taşı…" (one item). `toIndex` = drop position. */
+  moveItemToCategory(id: string, toCategoryId: string, toIndex?: number): Promise<ActionResult>;
+  /** New order of one category (drag, Alt+↑/↓, reorder-mode arrows). Pending rows stay last. */
+  reorderItems(categoryId: string, ids: string[]): Promise<ActionResult>;
+  /** New category order (rail, CategoryOrderSheet, section ⋯ up / down). */
+  reorderCategories(ids: string[]): Promise<ActionResult>;
+  /** BulkPriceDialog: N×PATCH `{ priceCents }`. The caller toasts (dialog closes first) or shows the partial banner. */
+  bulkSetPrices(
+    changes: { id: string; to: number }[],
+    onProgress?: (done: number) => void,
+  ): Promise<ActionResult & { failedIds: string[]; updated: number; undo?: UndoRun }>;
+  /** Selection → "Taşı…": lands at the end of the target in visual order. */
+  bulkMove(ids: string[], toCategoryId: string): Promise<ActionResult & { movedIds: string[] }>;
+  bulkDelete(ids: string[]): Promise<ActionResult>;
+  /** `POST …/items/bulk` (≤30, atomic). The caller toasts. */
+  bulkCreate(categoryId: string, rows: PastePlanItem[]): Promise<ActionResult & { items?: SavedItem[]; undo?: UndoRun }>;
+  /** Paste review "Ekle": the picked category, then each new category; stops at the first failure. */
+  commitPaste(
+    input: { targetCategoryId: string | null; plan: PastePlan },
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<CommitPasteResult>;
   publish(): Promise<ActionResult>;
   unpublish(): Promise<ActionResult>;
   clearSaveError(): void;
+}
+
+export interface CommitPasteResult {
+  ok: boolean;
+  message?: string;
+  /** The rows for the picked category were created (or there were none). */
+  targetDone: boolean;
+  /** How many of `plan.newCategories` were created together with their items. */
+  categoriesDone: number;
+  itemsAdded: number;
+  firstItemId: string | null;
+  firstCategoryId: string | null;
+  /** Removes everything this paste created (also after a partial failure). */
+  undo?: UndoRun;
 }
 
 export interface UseMenuActionsOptions {
@@ -118,6 +155,34 @@ function pick<T extends object>(source: T, keys: string[]): Partial<T> {
   for (const key of keys) out[key] = (source as Record<string, unknown>)[key];
   return out as Partial<T>;
 }
+
+/** Put one category's items in `ids` order (ids not listed — pending rows — stay last); sortOrder = index. */
+function orderIn(categories: CategoryShape[], categoryId: string, ids: string[]): CategoryShape[] {
+  return categories.map((cat) => {
+    if (cat.id !== categoryId) return cat;
+    const byId = new Map(cat.items.map((i) => [i.id, i]));
+    const listed = new Set(ids);
+    const ordered = ids.flatMap((id) => {
+      const item = byId.get(id);
+      return item ? [item] : [];
+    });
+    return { ...cat, items: withIndexSortOrder([...ordered, ...cat.items.filter((i) => !listed.has(i.id))]) };
+  });
+}
+
+/** Category order by `ids` (unlisted ones keep their place at the end); sortOrder = index. */
+function orderCategories(categories: CategoryShape[], ids: string[]): CategoryShape[] {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  const listed = new Set(ids);
+  const ordered = ids.flatMap((id) => {
+    const c = byId.get(id);
+    return c ? [c] : [];
+  });
+  return withIndexSortOrder([...ordered, ...categories.filter((c) => !listed.has(c.id))]);
+}
+
+const stableIds = (category: CategoryShape | undefined): string[] =>
+  (category?.items ?? []).filter((i) => !isTempId(i.id)).map((i) => i.id);
 
 let tempSeq = 0;
 
@@ -294,20 +359,107 @@ export function useMenuActions(options: UseMenuActionsOptions): {
       return { ok: true };
     };
 
-    const restoreItem = async (id: string, fallbackCategoryId: string): Promise<{ ok: boolean; message?: string }> => {
-      const r = await enqueue(`item:${id}`, () => api().restore({ itemIds: [id] }));
+    /** Bring deleted items back (≤100 per request); a non-empty `skipped` is a partial undo. */
+    const restoreItems = async (
+      ids: string[],
+      fallbackCategory: (id: string) => string | undefined,
+    ): Promise<{ ok: boolean; message?: string }> => {
+      const r = await enqueue(ids.length === 1 ? `item:${ids[0]}` : 'restore', () => api().restore({ itemIds: ids.slice(0, 100) }));
       if (!r.ok) return failed(r);
       const items = r.data?.items ?? [];
       let placed = true;
       setCats((c) =>
         items.reduce<CategoryShape[]>((acc, item) => {
-          const next = insertItemBySortOrder(acc, item.categoryId ?? fallbackCategoryId, item);
+          const categoryId = item.categoryId ?? fallbackCategory(item.id);
+          const next = categoryId ? insertItemBySortOrder(acc, categoryId, item) : null;
           if (!next) placed = false;
           return next ?? acc;
         }, c),
       );
       if (!placed) void refetch();
-      if (items.length === 0) return { ok: false, message: skippedMessage(r.data?.skipped, e().isTr) ?? generic() };
+      if (items.length) success();
+      const skipped = skippedMessage(r.data?.skipped, e().isTr);
+      if (skipped) return { ok: false, message: skipped };
+      if (items.length === 0) return { ok: false, message: generic() };
+      return { ok: true };
+    };
+    const restoreItem = (id: string, fallbackCategoryId: string) => restoreItems([id], () => fallbackCategoryId);
+
+    /** Store the local order of each category (pending rows left out); one reorder call per category. */
+    const persistOrder = async (categoryIds: string[]): Promise<ActionResult> => {
+      const unique = [...new Set(categoryIds)];
+      const results = await Promise.all(
+        unique.map((cid) => {
+          const ids = stableIds(cats().find((c) => c.id === cid));
+          return enqueue(`order:items:${cid}`, () => api().reorder({ items: ids.map((id, sortOrder) => ({ id, sortOrder })) }));
+        }),
+      );
+      const bad = results.find((r) => !r.ok);
+      if (bad && !bad.ok) {
+        failed(bad);
+        await refetch();
+        return { ok: false, message: bad.message };
+      }
+      success();
+      return { ok: true };
+    };
+
+    const setItemOrder = async (categoryId: string, ids: string[]): Promise<ActionResult> => {
+      setCats((c) => orderIn(c, categoryId, ids));
+      return persistOrder([categoryId]);
+    };
+
+    const setCategoryOrder = async (ids: string[]): Promise<ActionResult> => {
+      setCats((c) => orderCategories(c, ids));
+      const order = cats().map((c) => c.id);
+      const r = await enqueue('order:categories', () =>
+        api().reorder({ categories: order.map((id, sortOrder) => ({ id, sortOrder })) }),
+      );
+      if (!r.ok) {
+        failed(r);
+        await refetch();
+        return { ok: false, message: r.message };
+      }
+      success();
+      return { ok: true };
+    };
+
+    /** `POST …/items/bulk` + merge; ids of the created items. */
+    const bulkCreateRaw = async (
+      categoryId: string,
+      rows: PastePlanItem[],
+    ): Promise<{ ok: true; items: SavedItem[] } | { ok: false; message: string }> => {
+      const r = await enqueue(`append:${categoryId}`, () => api().bulkCreateItems(categoryId, rows));
+      if (!r.ok) return failed(r);
+      const items = [...(r.data?.items ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+      let merged = true;
+      setCats((c) =>
+        items.reduce<CategoryShape[]>((acc, item) => {
+          const next = applySavedItem(acc, 'create', item, categoryId);
+          if (!next) merged = false;
+          return next ?? acc;
+        }, c),
+      );
+      if (!merged) await refetch();
+      success();
+      return { ok: true, items };
+    };
+
+    /** Delete items that were just created (undo of paste / bulk add). */
+    const removeCreated = async (itemIds: string[], categoryIds: string[]): Promise<{ ok: boolean; message?: string }> => {
+      setCats((c) => categoryIds.reduce((acc, id) => removeCategory(acc, id), removeItems(c, itemIds)));
+      const results = [
+        ...(await runPool(itemIds.map((id) => () => enqueue(`item:${id}`, () => api().deleteItem(id))), 4)),
+        ...(await runPool(
+          categoryIds.map((id) => () => enqueue(`cat:${id}`, () => api().deleteCategory(id, { deleteItems: true }))),
+          2,
+        )),
+      ];
+      const bad = results.find((res) => res.status !== 'fulfilled' || !res.value.ok);
+      if (bad) {
+        await refetch();
+        return { ok: false, message: bad.status === 'fulfilled' && !bad.value.ok ? failed(bad.value).message : generic() };
+      }
       success();
       return { ok: true };
     };
@@ -421,7 +573,7 @@ export function useMenuActions(options: UseMenuActionsOptions): {
       return { ok: true };
     };
 
-    return {
+    const self: MenuActions = {
       renameItem: (id, name) => silentWrite(id, { name }, name),
       setItemPrice: (id, cents) => silentWrite(id, { priceCents: cents }, findItem(cats(), id)?.item.name ?? ''),
 
@@ -753,10 +905,304 @@ export function useMenuActions(options: UseMenuActionsOptions): {
         return { ok: false, message: fmt.toast.bulkPartial(bad.length) };
       },
 
+      moveItemToCategory: async (id, toCategoryId, toIndex) => {
+        const current = cats();
+        const found = findItem(current, id);
+        const target = current.find((c) => c.id === toCategoryId);
+        if (!found || !target || isTempId(id)) return { ok: false, message: generic() };
+        const from = found.category;
+        if (from.id === toCategoryId) {
+          if (toIndex === undefined) return { ok: true };
+          const ids = stableIds(from).filter((x) => x !== id);
+          ids.splice(Math.max(0, Math.min(toIndex, ids.length)), 0, id);
+          return self.reorderItems(from.id, ids);
+        }
+        const fromBefore = stableIds(from);
+        const targetBefore = stableIds(target);
+        setCats((c) => moveItemLocal(c, id, toCategoryId, toIndex) ?? c);
+        const r = await enqueue(`append:${toCategoryId}`, () => api().updateItem(id, { categoryId: toCategoryId }));
+        if (!r.ok) {
+          failed(r);
+          await refetch();
+          errorToast(r.message);
+          return { ok: false, message: r.message };
+        }
+        const saved = r.data?.item;
+        if (toIndex === undefined) {
+          if (saved) setCats((c) => applySavedItem(c, 'edit', saved, toCategoryId) ?? c);
+          success();
+        } else {
+          const o = await persistOrder([toCategoryId, from.id]);
+          if (!o.ok) {
+            errorToast(o.message);
+            return o;
+          }
+        }
+        const undo: UndoRun = async () => {
+          const back = await enqueue(`append:${from.id}`, () => api().updateItem(id, { categoryId: from.id }));
+          if (!back.ok) return failed(back);
+          setCats((c) => orderIn(orderIn(moveItemLocal(c, id, from.id) ?? c, from.id, fromBefore), toCategoryId, targetBefore));
+          return asUndo(await persistOrder([from.id, toCategoryId]));
+        };
+        toast(e().copy.fmt.toast.moved(found.item.name, target.name), undo);
+        return { ok: true };
+      },
+
+      reorderItems: async (categoryId, ids) => {
+        const before = stableIds(cats().find((c) => c.id === categoryId));
+        if (before.length === 0) return { ok: false, message: generic() };
+        if (before.length === ids.length && before.every((id, i) => id === ids[i])) return { ok: true };
+        const r = await setItemOrder(categoryId, ids);
+        if (!r.ok) {
+          errorToast(r.message);
+          return r;
+        }
+        e().toaster.notify({
+          message: e().copy.toast.orderSaved,
+          undo: async () => asUndo(await setItemOrder(categoryId, before)),
+          silentIfModal: true,
+        });
+        return { ok: true };
+      },
+
+      reorderCategories: async (ids) => {
+        const before = cats().map((c) => c.id);
+        if (before.length === ids.length && before.every((id, i) => id === ids[i])) return { ok: true };
+        const r = await setCategoryOrder(ids);
+        if (!r.ok) {
+          errorToast(r.message);
+          return r;
+        }
+        e().toaster.notify({
+          message: e().copy.toast.orderSaved,
+          undo: async () => asUndo(await setCategoryOrder(before)),
+          silentIfModal: true,
+        });
+        return { ok: true };
+      },
+
+      bulkSetPrices: async (requested, onProgress) => {
+        const current = cats();
+        const changes = requested.flatMap(({ id, to }) => {
+          const found = isTempId(id) ? null : findItem(current, id);
+          if (!found || found.item.priceCents === to) return [];
+          return [{ id, to, from: found.item.priceCents }];
+        });
+        if (changes.length === 0) return { ok: true, failedIds: [], updated: 0 };
+        setCats((c) => patchItems(c, changes.map(({ id, to }) => ({ id, patch: { priceCents: to } }))));
+        let done = 0;
+        const results = await runPool(
+          changes.map((ch) => async () => {
+            const r = await enqueue(`item:${ch.id}`, () => api().updateItem(ch.id, { priceCents: ch.to }));
+            done += 1;
+            onProgress?.(done);
+            return r;
+          }),
+          4,
+        );
+        const ok: typeof changes = [];
+        const bad: typeof changes = [];
+        let firstFailure: ApiFailure | null = null;
+        results.forEach((res, i) => {
+          if (res.status === 'fulfilled' && res.value.ok) ok.push(changes[i]);
+          else {
+            bad.push(changes[i]);
+            if (!firstFailure && res.status === 'fulfilled' && !res.value.ok) firstFailure = res.value;
+          }
+        });
+        if (bad.length) {
+          setCats((c) =>
+            patchItems(
+              c,
+              bad.flatMap((ch) => {
+                const now = findItem(c, ch.id);
+                return now && now.item.priceCents === ch.to ? [{ id: ch.id, patch: { priceCents: ch.from } }] : [];
+              }),
+            ),
+          );
+          if (firstFailure) failed(firstFailure);
+        }
+        if (ok.length) success();
+        const undo: UndoRun | undefined = ok.length
+          ? async () => {
+              const back = await runPool(ok.map((ch) => () => writeItem(ch.id, { priceCents: ch.from })), 4);
+              const failure = back.find((b) => b.status !== 'fulfilled' || !b.value.ok);
+              if (!failure) return { ok: true };
+              return { ok: false, message: failure.status === 'fulfilled' && !failure.value.ok ? failure.value.message : generic() };
+            }
+          : undefined;
+        const message = e().copy.fmt.bulkPrice.partial(bad.length);
+        return bad.length
+          ? { ok: false, message, failedIds: bad.map((b) => b.id), updated: ok.length, undo }
+          : { ok: true, failedIds: [], updated: ok.length, undo };
+      },
+
+      bulkMove: async (ids, toCategoryId) => {
+        const current = cats();
+        const target = current.find((c) => c.id === toCategoryId);
+        if (!target) return { ok: false, message: generic(), movedIds: [] };
+        const wanted = new Set(ids);
+        // Visual order: categories top to bottom, rows top to bottom.
+        const ordered = current.flatMap((c) =>
+          c.id === toCategoryId ? [] : c.items.filter((i) => wanted.has(i.id) && !isTempId(i.id)).map((i) => i.id),
+        );
+        if (ordered.length === 0) return { ok: true, movedIds: [] };
+        const snapshot = snapshotItemPositions(current, ordered);
+        const sourceOrders = new Map<string, string[]>();
+        for (const p of snapshot) {
+          if (!sourceOrders.has(p.categoryId)) sourceOrders.set(p.categoryId, stableIds(current.find((c) => c.id === p.categoryId)));
+        }
+        setCats((c) => moveItemsToEnd(c, ordered, toCategoryId));
+        const movedIds: string[] = [];
+        let firstFailure: ApiFailure | null = null;
+        for (const id of ordered) {
+          const r = await enqueue(`append:${toCategoryId}`, () => api().updateItem(id, { categoryId: toCategoryId }));
+          if (r.ok) {
+            movedIds.push(id);
+            const sortOrder = r.data?.item?.sortOrder;
+            if (typeof sortOrder === 'number') setCats((c) => patchItem(c, id, { sortOrder }));
+          } else if (!firstFailure) firstFailure = r;
+        }
+        if (firstFailure) {
+          failed(firstFailure);
+          await refetch();
+        }
+        if (movedIds.length) success();
+        const moved = new Set(movedIds);
+        const undo: UndoRun | undefined = movedIds.length
+          ? async () => {
+              for (const p of snapshot) {
+                if (!moved.has(p.item.id)) continue;
+                const back = await enqueue(`append:${p.categoryId}`, () => api().updateItem(p.item.id, { categoryId: p.categoryId }));
+                if (!back.ok) {
+                  failed(back);
+                  await refetch();
+                  return { ok: false, message: back.message };
+                }
+              }
+              setCats((c) => {
+                let next = c;
+                for (const p of snapshot) if (moved.has(p.item.id)) next = moveItemLocal(next, p.item.id, p.categoryId) ?? next;
+                for (const [cid, order] of sourceOrders) next = orderIn(next, cid, order);
+                return next;
+              });
+              return asUndo(await persistOrder([...sourceOrders.keys()]));
+            }
+          : undefined;
+        const { fmt } = e().copy;
+        const failedCount = ordered.length - movedIds.length;
+        if (failedCount === 0) {
+          toast(fmt.toast.bulkMoved(movedIds.length, target.name), undo);
+          return { ok: true, movedIds };
+        }
+        e().toaster.notify({ message: fmt.toast.bulkPartial(failedCount), tone: 'error', undo });
+        return { ok: false, message: fmt.toast.bulkPartial(failedCount), movedIds };
+      },
+
+      bulkDelete: async (ids) => {
+        const current = cats();
+        const targets = ids.flatMap((id) => {
+          const found = isTempId(id) ? null : findItem(current, id);
+          return found ? [found] : [];
+        });
+        if (targets.length === 0) return { ok: true };
+        const home = new Map(targets.map((t) => [t.item.id, t.category.id]));
+        setCats((c) => removeItems(c, targets.map((t) => t.item.id)));
+        const results = await runPool(
+          targets.map((t) => () => enqueue(`item:${t.item.id}`, () => api().deleteItem(t.item.id))),
+          4,
+        );
+        const okIds: string[] = [];
+        const bad: typeof targets = [];
+        let firstFailure: ApiFailure | null = null;
+        results.forEach((res, i) => {
+          if (res.status === 'fulfilled' && res.value.ok) okIds.push(targets[i].item.id);
+          else {
+            bad.push(targets[i]);
+            if (!firstFailure && res.status === 'fulfilled' && !res.value.ok) firstFailure = res.value;
+          }
+        });
+        if (bad.length) {
+          setCats((c) => bad.reduce((acc, t) => insertItemBySortOrder(acc, t.category.id, t.item) ?? acc, c));
+          if (firstFailure) failed(firstFailure);
+        }
+        if (okIds.length) success();
+        const undo: UndoRun | undefined = okIds.length ? () => restoreItems(okIds, (id) => home.get(id)) : undefined;
+        const { fmt } = e().copy;
+        if (bad.length === 0) {
+          toast(fmt.toast.bulkDeleted(okIds.length), undo);
+          return { ok: true };
+        }
+        e().toaster.notify({ message: fmt.toast.bulkPartial(bad.length), tone: 'error', undo });
+        return { ok: false, message: fmt.toast.bulkPartial(bad.length) };
+      },
+
+      bulkCreate: async (categoryId, rows) => {
+        const r = await bulkCreateRaw(categoryId, rows);
+        if (!r.ok) return r;
+        const ids = r.items.map((i) => i.id);
+        return { ok: true, items: r.items, undo: () => removeCreated(ids, []) };
+      },
+
+      commitPaste: async ({ targetCategoryId, plan }, onProgress) => {
+        const total = plan.intoTarget.length + plan.newCategories.reduce((n, c) => n + c.items.length, 0);
+        const targetItemIds: string[] = [];
+        const createdCategoryIds: string[] = [];
+        let done = 0;
+        let targetDone = plan.intoTarget.length === 0;
+        let categoriesDone = 0;
+        let firstItemId: string | null = null;
+        let firstCategoryId: string | null = null;
+        const undo: UndoRun = () => removeCreated(targetItemIds, createdCategoryIds);
+        const result = (ok: boolean, message?: string): CommitPasteResult => ({
+          ok, message, targetDone, categoriesDone, itemsAdded: done, firstItemId, firstCategoryId,
+          undo: targetItemIds.length || createdCategoryIds.length ? undo : undefined,
+        });
+
+        if (plan.intoTarget.length) {
+          if (!targetCategoryId) return result(false, generic());
+          const r = await bulkCreateRaw(targetCategoryId, plan.intoTarget);
+          if (!r.ok) return result(false, r.message);
+          targetItemIds.push(...r.items.map((i) => i.id));
+          firstItemId = r.items[0]?.id ?? null;
+          firstCategoryId = targetCategoryId;
+          done += r.items.length;
+          targetDone = true;
+          onProgress?.(done, total);
+        }
+        for (const next of plan.newCategories) {
+          const c = await enqueue('append:categories', () =>
+            api().createCategory({ name: next.name, description: null, isVisible: true }),
+          );
+          if (!c.ok) return result(false, failed(c).message);
+          const saved = c.data?.category;
+          if (!saved) {
+            await refetch();
+            return result(false, generic());
+          }
+          setCats((x) => applySavedCategory(x, 'create', saved as SavedCategory));
+          const b = await bulkCreateRaw(saved.id, next.items);
+          if (!b.ok) {
+            // Leave nothing half-made: the empty category goes again, so "Tekrar dene" starts clean.
+            setCats((x) => removeCategory(x, saved.id));
+            void enqueue(`cat:${saved.id}`, () => api().deleteCategory(saved.id, { deleteItems: false }));
+            return result(false, b.message);
+          }
+          createdCategoryIds.push(saved.id);
+          firstCategoryId ??= saved.id;
+          firstItemId ??= b.items[0]?.id ?? null;
+          done += b.items.length;
+          categoriesDone += 1;
+          onProgress?.(done, total);
+        }
+        return result(true);
+      },
+
       publish: () => setPublished(true),
       unpublish: () => setPublished(false),
       clearSaveError: () => setSaveError(null),
     };
+    return self;
   }, [enqueue, setRow, setPendingCreate]);
 
   return { actions, rows, pendingCreates, pending, savedAt, saveError, publishBusy };

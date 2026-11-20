@@ -46,6 +46,26 @@ export interface StudioContextValue {
   linger(itemId: string): void;
   /** After a row is removed: focus the next row, else the previous, else its section header. */
   focusAfterRemoval(itemId: string): void;
+  /** Number of categories (moving needs at least two). */
+  categoryCount: number;
+  // ── organise and bulk (chunk 3) ──
+  /** Selection mode is on (the selected ids reach rows as a `selected` prop). */
+  selecting: boolean;
+  /** Toggle one row; `range` selects from the last toggled row over the visible rows (Shift+click). */
+  toggleSelect(id: string, opts?: { range?: boolean }): void;
+  /** Turn selection on, optionally with rows already selected. */
+  startSelection(ids?: string[]): void;
+  /** Touch "Sırala" mode (grips + ↑ / ↓ in rows). */
+  reorderMode: boolean;
+  openMoveDialog(itemIds: string[]): void;
+  openBulkPrice(itemIds: string[]): void;
+  openCategoryOrder(): void;
+  openPasteSheet(categoryId: string | null): void;
+  /** One step up / down inside the category (⋯, Alt+↑/↓, reorder-mode arrows). */
+  moveItemBy(itemId: string, dir: -1 | 1): void;
+  moveCategoryBy(categoryId: string, dir: -1 | 1): void;
+  /** An inline paste review is open (`dirty`) or closed: the leave guard asks while one holds text. */
+  reportPasteDirty(key: string, dirty: boolean): void;
   askConfirm(opts: {
     title: string;
     body?: string;

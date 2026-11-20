@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 import {
-  CheckCircle2, ChevronDown, CircleSlash, Eye, EyeOff, MoreHorizontal, PencilLine, Plus, Text, Trash2,
+  ArrowDown, ArrowUp, CheckCircle2, CheckSquare, ChevronDown, CircleSlash, ClipboardPaste, Eye, EyeOff, ListOrdered,
+  MoreHorizontal, PencilLine, Percent, Plus, Text, Trash2,
 } from 'lucide-react';
 import { APSwitch, PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
 import { isTempId } from '../menu-merge';
@@ -21,14 +22,20 @@ const DESCRIPTION_MAX = 300;
  * rule beats utilities on the h3 itself, §15.3).
  */
 export function CategoryHeader({
-  category, collapsed, onToggleCollapse, sectionBodyId,
+  category, collapsed, onToggleCollapse, sectionBodyId, index, total,
 }: {
   category: CategoryShape;
   collapsed: boolean;
   onToggleCollapse: () => void;
   sectionBodyId: string;
+  /** Position in the menu; -1 while filtering (no up / down then). */
+  index: number;
+  total: number;
 }) {
-  const { copy, canEdit, finePointer, mode, actions, getCategories, focusQuickAdd, askConfirm } = useStudio();
+  const {
+    copy, canEdit, finePointer, mode, actions, getCategories, focusQuickAdd, askConfirm, openPasteSheet, openBulkPrice,
+    startSelection, moveCategoryBy, openCategoryOrder,
+  } = useStudio();
   const [editingDescription, setEditingDescription] = useState(false);
   const [description, setDescription] = useState('');
   const [descFocused, setDescFocused] = useState(false);
@@ -159,6 +166,9 @@ export function CategoryHeader({
               <PulseMenuItem icon={<Plus size={13} strokeWidth={2} />} onSelect={() => afterMenuCloses(() => focusQuickAdd(category.id))}>
                 {copy.category.addItemHere}
               </PulseMenuItem>
+              <PulseMenuItem icon={<ClipboardPaste size={13} strokeWidth={2} />} onSelect={() => afterMenuCloses(() => openPasteSheet(category.id))}>
+                {copy.category.pasteList}
+              </PulseMenuItem>
               <PulseMenuDivider />
             </>
           )}
@@ -178,6 +188,46 @@ export function CategoryHeader({
           </PulseMenuItem>
           {!service && (
             <>
+              <PulseMenuItem
+                icon={<Percent size={13} strokeWidth={2} />}
+                disabled={ids.length === 0}
+                onSelect={() => afterMenuCloses(() => openBulkPrice(ids))}
+              >
+                {copy.category.changePrices}
+              </PulseMenuItem>
+              <PulseMenuItem
+                icon={<CheckSquare size={13} strokeWidth={2} />}
+                disabled={ids.length === 0}
+                onSelect={() => startSelection(ids)}
+              >
+                {copy.category.selectItems}
+              </PulseMenuItem>
+              <PulseMenuDivider />
+              {index >= 0 && (
+                <>
+                  <PulseMenuItem
+                    icon={<ArrowUp size={13} strokeWidth={2} />}
+                    disabled={index <= 0}
+                    onSelect={() => moveCategoryBy(category.id, -1)}
+                  >
+                    {copy.category.moveUp}
+                  </PulseMenuItem>
+                  <PulseMenuItem
+                    icon={<ArrowDown size={13} strokeWidth={2} />}
+                    disabled={index >= total - 1}
+                    onSelect={() => moveCategoryBy(category.id, 1)}
+                  >
+                    {copy.category.moveDown}
+                  </PulseMenuItem>
+                </>
+              )}
+              <PulseMenuItem
+                icon={<ListOrdered size={13} strokeWidth={2} />}
+                disabled={total < 2 && index >= 0}
+                onSelect={() => afterMenuCloses(openCategoryOrder)}
+              >
+                {copy.category.reorderCategories}
+              </PulseMenuItem>
               <PulseMenuDivider />
               <PulseMenuItem
                 icon={category.isVisible ? <EyeOff size={13} strokeWidth={2} /> : <Eye size={13} strokeWidth={2} />}

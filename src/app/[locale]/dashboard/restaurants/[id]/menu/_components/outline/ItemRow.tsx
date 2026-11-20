@@ -1,9 +1,14 @@
 'use client';
 
-import { memo, useCallback, useRef, type MouseEvent } from 'react';
-import { Copy, Eye, EyeOff, ImagePlus, Loader2, MoreHorizontal, PencilLine, RotateCcw, Trash2, X } from 'lucide-react';
+import { memo, useCallback, useRef, type CSSProperties, type MouseEvent } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  ArrowDown, ArrowUp, CheckSquare, Copy, Eye, EyeOff, FolderInput, GripVertical, ImagePlus, Loader2, MoreHorizontal,
+  PencilLine, RotateCcw, Trash2, X,
+} from 'lucide-react';
 import type { MenuItemView } from '@/components/menu/PublicMenuView';
-import { Badge, PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
+import { APCheckbox, Badge, PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
 import type { PendingCreate, RowFeedback } from '../data/useMenuActions';
 import { BADGE_LABELS, BADGE_TINTS } from '../menu-constants';
 import { isTempId } from '../menu-merge';
@@ -17,8 +22,9 @@ import { InlineText } from './InlineText';
 import { RowPhoto, openRowPhotoPicker } from './RowPhoto';
 import { StatusCell } from './StatusCell';
 import {
-  CELL_EYE, CELL_LINE2, CELL_MENU, CELL_NAME, CELL_PHOTO, CELL_PRICE, CELL_STATUS, FROM_MEDIUM, ONLY_FULL,
-  ONLY_MEDIUM, ROW_BASE, ROW_FULL, ROW_MEDIUM, ROW_NARROW,
+  CELL_CHECK, CELL_CHECK_HOVER, CELL_EYE, CELL_GRIP, CELL_LINE2, CELL_LINE2_SEL, CELL_MENU, CELL_MENU_SEL, CELL_NAME,
+  CELL_NAME_SEL, CELL_PHOTO, CELL_PHOTO_SEL, CELL_PRICE, CELL_STATUS, FROM_MEDIUM, ONLY_FULL, ONLY_MEDIUM, ROW_BASE,
+  ROW_FULL, ROW_MEDIUM, ROW_NARROW, ROW_NARROW_SELECTING,
 } from './row-layout';
 
 /**
@@ -29,9 +35,15 @@ import {
  *  - photo: pick a file (empty) / open the item at its photo;
  *  - price: inline price; switch / Göster / eye: availability.
  * Pending quick-adds (`tmp_…`) are dimmed; a failed one offers Tekrar dene / Sil.
+ *
+ * Organise (chunk 3): a drag grip (fine pointers, hover; touch: "Sırala" mode,
+ * where ⋯ becomes the grip and line 2 holds ↑ / ↓), and selection — a
+ * checkbox column, a row click toggles, Shift+click selects the range; inline
+ * edits are off meanwhile, the availability switch stays usable.
  */
 export const ItemRow = memo(function ItemRow({
-  item, categoryId: _categoryId, categoryVisible, feedback, pending, completion,
+  item, categoryId, categoryVisible, feedback, pending, completion, index, count, dndEnabled, reorderMode,
+  selecting, selected,
 }: {
   item: MenuItemView;
   categoryId: string;
@@ -39,24 +51,71 @@ export const ItemRow = memo(function ItemRow({
   feedback?: RowFeedback;
   pending?: PendingCreate;
   completion: 'noPhoto' | 'noDescription' | null;
+  /** Position among the category's saved items (for ↑ / ↓). */
+  index: number;
+  count: number;
+  dndEnabled: boolean;
+  reorderMode: boolean;
+  selecting: boolean;
+  selected: boolean;
 }) {
   const {
     copy, isTr, readOnly, canEdit, finePointer, actions, openItem, registerNameCell, openNameCell,
-    focusAfterRemoval,
+    focusAfterRemoval, toggleSelect, startSelection, openMoveDialog, moveItemBy, categoryCount,
   } = useStudio();
+  const shiftClick = useRef(false);
   const pickPhoto = useRef<((file: File) => void) | null>(null);
   const temp = isTempId(item.id);
   const editable = canEdit && !temp;
   const badge = rowBadge(item, { isVisible: categoryVisible });
   const lang = isTr ? 'tr' : 'en';
   const registerName = useCallback((open: () => void) => registerNameCell(item.id, open), [registerNameCell, item.id]);
+  const sortable = useSortable({ id: item.id, disabled: !dndEnabled || temp });
+  const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } = sortable;
+  const style: CSSProperties | undefined = transform
+    ? { transform: CSS.Translate.toString(transform), transition }
+    : undefined;
+  const arranging = reorderMode && !finePointer && canEdit && !temp;
+  const cells = selecting
+    ? { photo: CELL_PHOTO_SEL, name: CELL_NAME_SEL, line2: CELL_LINE2_SEL, menu: CELL_MENU_SEL }
+    : { photo: CELL_PHOTO, name: CELL_NAME, line2: CELL_LINE2, menu: CELL_MENU };
 
   const onRowClick = (e: MouseEvent<HTMLLIElement>) => {
     if (temp) return;
     const target = e.target as Element;
+    if (selecting) {
+      if (target.closest('a,input,textarea,select,label,[role=menu],[role=switch],[data-no-open],[data-row-control]')) return;
+      toggleSelect(item.id, { range: e.shiftKey });
+      return;
+    }
     if (target.closest('button,a,input,textarea,select,label,[role=menu],[role=switch],[data-no-open]')) return;
     openItem(item.id);
   };
+  const checkbox = (
+    <div data-row-control="" onClickCapture={(e) => (shiftClick.current = e.shiftKey)}>
+      <APCheckbox
+        size="sm"
+        checked={selected}
+        disabled={temp}
+        onChange={() => (selecting ? toggleSelect(item.id, { range: shiftClick.current }) : startSelection([item.id]))}
+        ariaLabel={copy.item.selectAria(item.name)}
+        className="min-h-11 min-w-11 items-center justify-center pointer-fine:min-h-8 pointer-fine:min-w-5"
+      />
+    </div>
+  );
+  const grip = (className: string) => (
+    <button
+      type="button"
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      data-row-control=""
+      aria-label={copy.item.dragAria(item.name)}
+      className={`flex cursor-grab touch-none items-center justify-center rounded-md text-[#A3A3A3] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] active:cursor-grabbing ${className}`}
+    >
+      <GripVertical size={14} strokeWidth={2} />
+    </button>
+  );
 
   const remove = () => {
     focusAfterRemoval(item.id);
@@ -87,8 +146,11 @@ export const ItemRow = memo(function ItemRow({
 
   return (
     <li
+      ref={setNodeRef}
+      style={style}
       id={`menu-row-li-${item.id}`}
       data-item-id={item.id}
+      data-category-id={categoryId}
       data-dropzone=""
       aria-busy={pending?.status === 'saving' || undefined}
       onClick={onRowClick}
@@ -109,13 +171,22 @@ export const ItemRow = memo(function ItemRow({
         e.preventDefault();
         pickPhoto.current?.(file);
       }}
-      className={`group/row relative bg-white ${ROW_BASE} ${ROW_NARROW} ${ROW_MEDIUM} ${ROW_FULL} ${
-        temp ? '' : 'cursor-pointer hover:bg-[#FCFCFC]'
-      } ${pending?.status === 'saving' ? 'opacity-60' : ''} ${
-        pending?.status === 'error' ? 'bg-[#FEF2F2]/60 shadow-[inset_2px_0_0_#DC2626]' : ''
+      className={`group/row relative ${selected ? 'bg-[#F7FCE8]' : 'bg-white'} ${ROW_BASE} ${
+        selecting ? ROW_NARROW_SELECTING : ROW_NARROW
+      } ${ROW_MEDIUM} ${ROW_FULL} ${temp ? '' : `cursor-pointer ${selected ? '' : 'hover:bg-[#FCFCFC]'}`} ${
+        pending?.status === 'saving' ? 'opacity-60' : ''
+      } ${pending?.status === 'error' ? 'bg-[#FEF2F2]/60 shadow-[inset_2px_0_0_#DC2626]' : ''} ${
+        isDragging ? 'z-10 opacity-40' : ''
       }`}
     >
-      <div className={CELL_PHOTO}>
+      {selecting ? (
+        <div className={CELL_CHECK}>{checkbox}</div>
+      ) : (
+        canEdit && !temp && finePointer && <div className={CELL_CHECK_HOVER}>{checkbox}</div>
+      )}
+      {!selecting && dndEnabled && finePointer && !temp && <div className={CELL_GRIP}>{grip('h-8 w-5')}</div>}
+
+      <div className={cells.photo}>
         {temp ? (
           <span className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] pointer-fine:@min-[480px]/outline:h-10 pointer-fine:@min-[480px]/outline:w-10">
             {pending?.status === 'saving' && <Loader2 size={14} className="animate-spin text-[#737373]" aria-hidden="true" />}
@@ -133,10 +204,24 @@ export const ItemRow = memo(function ItemRow({
         )}
       </div>
 
-      <div className={CELL_NAME}>
+      <div className={cells.name}>
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {temp ? (
             <span className={nameClass}>{item.name}</span>
+          ) : selecting ? (
+            <button
+              type="button"
+              id={`menu-row-${item.id}`}
+              data-row-focus=""
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSelect(item.id, { range: e.shiftKey });
+              }}
+              aria-pressed={selected}
+              className="min-w-0 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            >
+              <span className={nameClass}>{item.name}</span>
+            </button>
           ) : finePointer && editable ? (
             <InlineText
               value={item.name}
@@ -222,24 +307,49 @@ export const ItemRow = memo(function ItemRow({
         )}
       </div>
 
-      <div className={CELL_LINE2}>
-        <div className={CELL_PRICE}>
-          <InlinePrice
-            itemId={item.id}
-            cents={item.priceCents}
-            currency={item.currency}
-            name={item.name}
-            editable={editable}
-            errorMessage={feedback?.state === 'error' ? feedback.message : undefined}
-          />
-        </div>
-        <div className={CELL_STATUS}>
-          {temp ? (
-            pending?.status === 'saving' ? <span className="text-[12.5px] text-[#737373]">{copy.outline.pendingSaving}</span> : null
-          ) : (
-            <StatusCell item={item} disabled={!canEdit} saving={feedback?.state === 'saving'} />
-          )}
-        </div>
+      <div className={cells.line2}>
+        {arranging ? (
+          <div className="flex items-center gap-2" data-row-control="">
+            <button
+              type="button"
+              disabled={index <= 0}
+              onClick={() => moveItemBy(item.id, -1)}
+              aria-label={`${copy.item.moveUp}: ${item.name}`}
+              className="bz-btn-icon h-11 w-11 disabled:opacity-30"
+            >
+              <ArrowUp size={16} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              disabled={index >= count - 1}
+              onClick={() => moveItemBy(item.id, 1)}
+              aria-label={`${copy.item.moveDown}: ${item.name}`}
+              className="bz-btn-icon h-11 w-11 disabled:opacity-30"
+            >
+              <ArrowDown size={16} strokeWidth={2} />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className={CELL_PRICE}>
+              <InlinePrice
+                itemId={item.id}
+                cents={item.priceCents}
+                currency={item.currency}
+                name={item.name}
+                editable={editable && !selecting}
+                errorMessage={feedback?.state === 'error' ? feedback.message : undefined}
+              />
+            </div>
+            <div className={CELL_STATUS}>
+              {temp ? (
+                pending?.status === 'saving' ? <span className="text-[12.5px] text-[#737373]">{copy.outline.pendingSaving}</span> : null
+              ) : (
+                <StatusCell item={item} disabled={!canEdit} saving={feedback?.state === 'saving'} />
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className={CELL_EYE}>
@@ -257,8 +367,10 @@ export const ItemRow = memo(function ItemRow({
         )}
       </div>
 
-      <div className={CELL_MENU}>
-        {!temp && (
+      <div className={cells.menu}>
+        {arranging && dndEnabled ? (
+          grip('h-11 w-8')
+        ) : !temp && (
           <PulseMenu
             className={`min-w-[220px] ${MENU_TOUCH}`}
             trigger={
@@ -299,11 +411,42 @@ export const ItemRow = memo(function ItemRow({
                 </PulseMenuItem>
                 <PulseMenuDivider />
                 <PulseMenuItem
+                  icon={<ArrowUp size={13} strokeWidth={2} />}
+                  trailing={finePointer ? (isMac() ? '⌥↑' : 'Alt+↑') : undefined}
+                  disabled={index <= 0}
+                  onSelect={() => moveItemBy(item.id, -1)}
+                >
+                  {copy.item.moveUp}
+                </PulseMenuItem>
+                <PulseMenuItem
+                  icon={<ArrowDown size={13} strokeWidth={2} />}
+                  trailing={finePointer ? (isMac() ? '⌥↓' : 'Alt+↓') : undefined}
+                  disabled={index >= count - 1}
+                  onSelect={() => moveItemBy(item.id, 1)}
+                >
+                  {copy.item.moveDown}
+                </PulseMenuItem>
+                <PulseMenuItem
+                  icon={<FolderInput size={13} strokeWidth={2} />}
+                  trailing={finePointer ? 'M' : undefined}
+                  disabled={categoryCount < 2}
+                  onSelect={() => afterMenuCloses(() => openMoveDialog([item.id]))}
+                >
+                  {copy.item.moveToCategory}
+                </PulseMenuItem>
+                <PulseMenuItem
                   icon={item.isAvailable ? <EyeOff size={13} strokeWidth={2} /> : <Eye size={13} strokeWidth={2} />}
                   trailing={finePointer ? 'H' : undefined}
                   onSelect={() => void (item.isAvailable ? actions.hideItem(item.id) : actions.showItem(item.id))}
                 >
                   {item.isAvailable ? copy.item.hide : copy.item.show}
+                </PulseMenuItem>
+                <PulseMenuItem
+                  icon={<CheckSquare size={13} strokeWidth={2} />}
+                  trailing={finePointer ? 'X' : undefined}
+                  onSelect={() => (selecting ? toggleSelect(item.id) : startSelection([item.id]))}
+                >
+                  {copy.item.select}
                 </PulseMenuItem>
                 <PulseMenuDivider />
                 <PulseMenuItem

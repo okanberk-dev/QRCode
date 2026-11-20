@@ -3,18 +3,22 @@
 import { useCallback, useEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { checkPrice, currencySymbol, priceToInput } from '../menu-item-form';
-import { isMultiLinePaste, parseSingleLine } from '../menu-paste';
+import { isMultiLinePaste, parsePasteBlock, parseSingleLine, type PasteSection } from '../menu-paste';
 import { useStudio } from '../studio/studio-context';
+import { PasteReview, announcePaste } from './PasteReview';
 
 /**
  * "+ Ürün ekle" at the end of a section (spec §7.7, G7). Name ⏎ → price ⏎ adds
  * the item at once as a pending row and clears the fields with focus back on
  * the name, so a menu can be typed without waiting (creates in one category
  * run one after another on the server). Pasting "Mercimek Çorbası 90" into the
- * empty name fills both fields. Esc clears; Esc / leaving with both empty closes.
+ * empty name fills both fields; several lines open the paste review in place
+ * (into this category). Esc clears; Esc / leaving with both empty closes.
  */
 export function QuickAddRow({ categoryId, categoryName }: { categoryId: string; categoryName: string }) {
-  const { copy, actions, registerQuickAdd, isTr } = useStudio();
+  const { copy, actions, registerQuickAdd, isTr, toaster, flashItem, reportPasteDirty } = useStudio();
+  const [pasted, setPasted] = useState<PasteSection[] | null>(null);
+  const onPasteDirty = useCallback((dirty: boolean) => reportPasteDirty(`quick:${categoryId}`, dirty), [reportPasteDirty, categoryId]);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -80,8 +84,13 @@ export function QuickAddRow({ categoryId, categoryName }: { categoryId: string; 
 
   const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData('text');
-    // Several lines → the paste review (chunk 3). One "name price" line fills both fields.
-    if (isMultiLinePaste(text) || name.trim()) return;
+    // Several lines → the paste review. One "name price" line fills both fields.
+    if (isMultiLinePaste(text)) {
+      e.preventDefault();
+      setPasted(parsePasteBlock(text, isTr).sections);
+      return;
+    }
+    if (name.trim()) return;
     const single = parseSingleLine(text);
     if (!single) return;
     e.preventDefault();
@@ -91,6 +100,26 @@ export function QuickAddRow({ categoryId, categoryName }: { categoryId: string; 
     setPriceError(null);
     requestAnimationFrame(() => priceRef.current?.focus());
   };
+
+  if (pasted) {
+    return (
+      <PasteReview
+        variant="inline"
+        initialSections={pasted}
+        targetCategoryId={categoryId}
+        onDirtyChange={onPasteDirty}
+        onCancel={() => {
+          setPasted(null);
+          requestAnimationFrame(() => nameRef.current?.focus());
+        }}
+        onDone={(r) => {
+          setPasted(null);
+          reset();
+          announcePaste(r, { copy, toaster, flashItem });
+        }}
+      />
+    );
+  }
 
   if (!open) {
     return (

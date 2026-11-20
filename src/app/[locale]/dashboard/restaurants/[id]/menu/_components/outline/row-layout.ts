@@ -59,6 +59,32 @@ export const CELL_EYE =
 export const CELL_MENU =
   'col-start-3 row-start-1 self-start justify-self-end pointer-fine:@min-[480px]/outline:col-start-6 pointer-fine:@min-[480px]/outline:self-center pointer-fine:@2xl/outline:col-start-8';
 
+// ── Selection mode in the narrow tier: a 28 px checkbox column first, so the
+// narrow cells move one column right. Medium / full placement is unchanged
+// (their 20 px column 1 holds the checkbox).
+
+export const ROW_NARROW_SELECTING =
+  'grid grid-cols-[28px_48px_minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-3 gap-y-1.5 px-3 py-3 min-h-[76px]';
+
+export const CELL_PHOTO_SEL =
+  'col-start-2 row-start-1 row-span-2 self-start pointer-fine:@min-[480px]/outline:col-start-2 pointer-fine:@min-[480px]/outline:row-span-1 pointer-fine:@min-[480px]/outline:self-center pointer-fine:@2xl/outline:col-start-3';
+export const CELL_NAME_SEL =
+  'col-start-3 row-start-1 min-w-0 pointer-fine:@min-[480px]/outline:col-start-3 pointer-fine:@2xl/outline:col-start-4';
+export const CELL_LINE2_SEL =
+  'col-start-3 col-span-2 row-start-2 flex min-w-0 items-center gap-3 pointer-fine:@min-[480px]/outline:contents';
+export const CELL_MENU_SEL =
+  'col-start-4 row-start-1 self-start justify-self-end pointer-fine:@min-[480px]/outline:col-start-6 pointer-fine:@min-[480px]/outline:self-center pointer-fine:@2xl/outline:col-start-8';
+
+/** Checkbox while selecting: narrow col 1 over both lines; medium / full col 1. */
+export const CELL_CHECK =
+  'col-start-1 row-start-1 row-span-2 flex items-center justify-center self-center pointer-fine:@min-[480px]/outline:row-span-1';
+/** Checkbox before selecting: full tier only, shown on row hover / focus (starts selection). */
+export const CELL_CHECK_HOVER =
+  'hidden items-center justify-center opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 pointer-fine:@2xl/outline:col-start-1 pointer-fine:@2xl/outline:row-start-1 pointer-fine:@2xl/outline:flex';
+/** Drag grip (fine pointers): medium col 1, full col 2; shown on hover / focus. */
+export const CELL_GRIP =
+  'hidden items-center justify-center opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 pointer-fine:@min-[480px]/outline:col-start-1 pointer-fine:@min-[480px]/outline:row-start-1 pointer-fine:@min-[480px]/outline:flex pointer-fine:@2xl/outline:col-start-2';
+
 /** Shown only in the medium tier (e.g. the inline "Tükendi" badge). */
 export const ONLY_MEDIUM = 'hidden pointer-fine:@min-[480px]/outline:inline-flex pointer-fine:@2xl/outline:hidden';
 /** Shown from the medium tier up (description line). */
