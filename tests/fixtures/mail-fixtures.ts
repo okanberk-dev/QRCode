@@ -10,6 +10,7 @@ import { FIXTURES_G5B } from './mail/g5b-forms';
 import { FIXTURES_G6 } from './mail/g6-roi';
 import { FIXTURES_G7 } from './mail/g7-designless';
 import { FIXTURES_G7B } from './mail/g7b-landing';
+import { FIXTURES_G8 } from './mail/g8-billing';
 
 export type { MailFixture } from './mail/_env';
 export { prepareMailRender };
@@ -24,4 +25,5 @@ export const MAIL_FIXTURES: MailFixture[] = [
   ...FIXTURES_G6,
   ...FIXTURES_G7,
   ...FIXTURES_G7B,
+  ...FIXTURES_G8,
 ];

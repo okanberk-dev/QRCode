@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
+import { SITE_URL } from '@/lib/site';
 import {
   confirmCharge,
   getPaynkolayConfig,
@@ -12,7 +13,8 @@ import {
 } from '@/lib/payment/paynkolay';
 import { fetchTransport, type PaynkolayTransport } from '@/lib/payment/paynkolay-transport';
 import { billingSettings, type BillingSettingsApi } from './billing-settings';
-import { loadProviderVaultDeps, purgeCardsWithKey } from './card-vault';
+import { billingMailer } from './billing-mails';
+import { loadCardVaultDeps, loadProviderVaultDeps, purgeCardsWithKey, reconcileCardsAfterSave } from './card-vault';
 import { loadBillingFlags, type BillingFlags } from './flags';
 import {
   applyPostSettleEffects,
@@ -25,28 +27,37 @@ import { billingLog, safeError } from './redact';
 import {
   classifyDecline,
   confirmBackoffMs,
+  evaluateRenewal,
+  graceEnd,
+  inIstanbulWindow,
   istanbulDay,
   istanbulHour,
   RENEWAL_POLICY,
   tombstoneBackoffMs,
   type RenewalState,
 } from './renewal-policy';
-import type { PaymentToConfirm, RenewalStore, StoredPaymentSummary } from './renewal-store';
+import type { PaymentToConfirm, RenewalContext, RenewalRow, RenewalStore, StoredPaymentSummary } from './renewal-store';
 import { prismaRenewalStore } from './renewal-store-prisma';
-import { runRetention } from './retention';
+import { runRetention, type MailTarget } from './retention';
 import { loadVaultKeys, openCustomerKey, VaultKeyError, type VaultKeys } from './vault-crypto';
 
 /**
  * The renewal engine tick (billing spec §9), run hourly by
  * `/api/cron/billing-renewals`.
  *
- * FOUNDATION SCOPE: this release contains no charge phase and no schedule or
- * mail phase — nothing here charges a card or mails an owner. It runs:
+ * SCOPE: this release contains no charge phase — nothing here charges a
+ * card. Renewal means REMINDER MODE: mails that lead the owner to a 3D
+ * Secure payment on the hosted page. It runs:
  *   1. reconcile — PaymentList decides every pending payment (settle on
  *      SUCCESS, fail on explicit failure rows, abandoned hosted checkouts
  *      fail after 45 min, unresolved ones go to review after 48 h), stale
- *      charge leases, expired owner_paying locks, and a 7-day late-success
- *      re-check of failed payments;
+ *      charge leases, expired owner_paying locks, a 7-day late-success
+ *      re-check of failed payments, and unconfirmed card saves;
+ *   2. schedule — a reminder-mode renewal row 7 days before each period end
+ *      (consented subscriptions always; others while card storage is
+ *      intended, O-2);
+ *   3. mails — inside 09:00–21:00 Istanbul only (D10): queued mails
+ *      (period ended) and the E−7d / E−1d reminders, each claimed once;
  *   5. lapse — renewal rows past grace, then the subscription expiry (§11.3);
  *   6. erasure tombstones — finish provider card deletions owed by erasures;
  *   7. daily scans — decline ratio, overdue refunds, and (once Q-16 is
@@ -76,9 +87,36 @@ export interface RenewalDeps {
   retention: ((now: Date) => Promise<unknown>) | null;
   /** Vault keys for erasure tombstones; null skips phase 6. */
   vault: { keys: VaultKeys } | null;
+  /** Reminder and period-ended mails (phase 3); absent/null skips phase 3 (claims stay free, queued mails wait). */
+  mailer?: RenewalMailer | null;
+  /** Absolute site origin for links in mails (SITE_URL). */
+  siteUrl?: string;
+  /** Saved cards: confirms a payment's unconfirmed card save (reconcileCardsAfterSave); absent skips it. */
+  cardSaveReconcile?: ((paymentId: string) => Promise<unknown>) | null;
   captureMessage: (msg: string, fingerprint: string, tags?: Record<string, string>) => void;
   captureException: (err: Error, tags?: Record<string, string>) => void;
   runId: string;
+}
+
+export type ReminderVariant = 'reminder_7' | 'reminder_1';
+
+/** Renewal mails of this release (billing-mails.ts). Each returns true only when the mail provider accepted the message. */
+export interface RenewalMailer {
+  upcoming(
+    to: MailTarget,
+    v: {
+      variant: ReminderVariant;
+      planName: string;
+      amountMinor: number | null;
+      cycle: 'monthly' | 'yearly';
+      periodEnd: Date;
+      /** The real access end: graceEndsAt for a consented (paused) renewal, else the period end. */
+      accessUntil: Date;
+      renewUrl: string;
+      savedCardLast4: string | null;
+    },
+  ): Promise<boolean>;
+  periodEnded(to: MailTarget, v: { planName: string; pricingUrl: string }): Promise<boolean>;
 }
 
 export interface RenewalTickSummary {
@@ -105,6 +143,24 @@ const HOUR_MS = 60 * 60_000;
 const DAY_MS = 24 * HOUR_MS;
 const SETTLED: ReadonlySet<SettleResult> = new Set<SettleResult>(['succeeded', 'late_success', 'duplicate_period', 'refund_pending']);
 const OPEN_FOR_LAPSE: RenewalState[] = ['scheduled', 'retry_wait', 'needs_action', 'manual_review'];
+/** Open states that get reminder mails (an owner payment or a charge in flight gets none). */
+const REMINDABLE: RenewalState[] = ['scheduled', 'retry_wait', 'needs_action'];
+const ALL_OPEN_AND_ENDED: RenewalState[] = ['scheduled', 'retry_wait', 'needs_action', 'manual_review', 'lapsed', 'canceled', 'succeeded'];
+const MAX_SCHEDULE_PER_RUN = 200;
+const MAX_MAILS_PER_RUN = 100;
+const MAX_CARD_SAVES_PER_RUN = 20;
+
+/** The account can receive billing mails: active, not deactivated, not scheduled for deletion. */
+function mailable(ctx: RenewalContext | null): ctx is RenewalContext {
+  return !!ctx && ctx.user.isActive && !ctx.user.deactivatedAt && !ctx.user.scheduledDeletionAt && !!ctx.user.email;
+}
+
+/** Links in renewal mails: the review page for a renewable plan, else the plan picker in the panel. */
+export function renewLinkFor(siteUrl: string, locale: 'tr' | 'en', r: Pick<RenewalRow, 'modeReason'>): string {
+  return r.modeReason === 'plan_changed'
+    ? `${siteUrl}/${locale}/dashboard/account?section=billing`
+    : `${siteUrl}/billing/${locale}/checkout?intent=renew`;
+}
 
 function emptySummary(): RenewalTickSummary {
   return {
@@ -434,6 +490,137 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
           capture('billing: PaymentList success does not match the payment', 'billing-charged-mismatch', { paymentId: p.id });
         }
       }
+
+      // (e) card saves the return route could not confirm (provider list failed): retried, provider calls.
+      if (deps.cardSaveReconcile) {
+        const saves = await store.listPendingCardSaves(env, clock(), MAX_CARD_SAVES_PER_RUN);
+        for (const p of saves) {
+          if (!providerTime()) break;
+          try {
+            await deps.cardSaveReconcile(p.id);
+          } catch (err) {
+            billingLog('warn', 'renewal.card_save_retry_failed', { paymentId: p.id, code: errCode(err) });
+          }
+        }
+      }
+    });
+
+    // ── Phase 2: schedule (DB only; reminder mode — this release has no charge phase) ──
+    await phase('schedule', async () => {
+      const now = clock();
+      const candidates = await store.findSubscriptionsToSchedule(now, MAX_SCHEDULE_PER_RUN, deps.flags.cardStorageIntent);
+      for (const c of candidates) {
+        const ctx = await store.loadRenewalContext(c.userId);
+        if (!ctx || !ctx.sub.renewsAt || ctx.sub.renewsAt.getTime() !== c.renewsAt.getTime()) continue;
+        const decision = evaluateRenewal({
+          flags: deps.flags,
+          sub: ctx.sub,
+          user: ctx.user,
+          plan: ctx.plan,
+          consent: ctx.consent,
+          boundCard: ctx.boundCard,
+        });
+        let modeReason: string;
+        if (!decision.eligible) {
+          // A plan that can no longer be bought still gets reminders (pointing to the plan picker).
+          if (decision.reason !== 'plan_unavailable') continue;
+          modeReason = 'plan_changed';
+        } else {
+          // Without a charge phase every renewal is a reminder; 'auto' would mean auto-charging is configured.
+          modeReason = decision.mode === 'auto' ? 'flag_off' : decision.modeReason;
+        }
+        // D4: a subscription with an effective auto-renew consent keeps access until graceEnd, whatever the mode.
+        const consented = ctx.sub.autoRenew && ctx.consent !== null;
+        const created = await store.createRenewal({
+          userId: c.userId,
+          providerEnv: env,
+          periodEnd: c.renewsAt,
+          subscriptionPlanId: ctx.sub.subscriptionPlanId,
+          billingCycle: ctx.sub.billingCycle === 'yearly' ? 'yearly' : 'monthly',
+          mode: 'reminder',
+          modeReason: modeReason.slice(0, 32),
+          nextAttemptAt: null,
+          consentId: consented && ctx.consent ? ctx.consent.id : null,
+          graceEndsAt: consented ? graceEnd(c.renewsAt) : null,
+        });
+        if (created !== 'exists') summary.scheduled += 1;
+      }
+    });
+
+    // ── Phase 3: mails (inside 09:00–21:00 Istanbul only, D10) ──
+    await phase('mails', async () => {
+      const mailer = deps.mailer;
+      if (!mailer) return;
+      const siteUrl = (deps.siteUrl ?? '').replace(/\/+$/, '');
+      let budget = MAX_MAILS_PER_RUN;
+
+      // (a) queued mails (produced by lapse / reconciliation, possibly outside the window).
+      const queued = await store.listRenewals({ states: ALL_OPEN_AND_ENDED, providerEnv: env, withPendingMail: true }, MAX_MAILS_PER_RUN);
+      for (const r of queued) {
+        if (budget <= 0 || !inIstanbulWindow(clock())) break;
+        if (r.pendingMail !== 'period_ended') continue; // other queued mails belong to the charge release
+        const ctx = await store.loadRenewalContext(r.userId);
+        if (!mailable(ctx)) {
+          await store.clearPendingMail(r.id, r.pendingMail);
+          continue;
+        }
+        budget -= 1;
+        const sent = await mailer.periodEnded(
+          { email: ctx.user.email, locale: ctx.user.locale },
+          { planName: ctx.plan?.name ?? '', pricingUrl: `${siteUrl}/${ctx.user.locale}/pricing` },
+        );
+        if (sent) {
+          await store.clearPendingMail(r.id, r.pendingMail);
+          summary.mailed += 1;
+        }
+      }
+
+      // (b) reminders before the period end: E−7d (notice slot) and E−1d (last-call slot), each claimed once.
+      const open = await store.listRenewals({ states: REMINDABLE, providerEnv: env }, 500);
+      for (const r of open) {
+        if (budget <= 0) break;
+        const now = clock();
+        if (!inIstanbulWindow(now)) break;
+        if (r.mode !== 'reminder') continue;
+        const untilEnd = r.periodEnd.getTime() - now.getTime();
+        if (untilEnd <= 0) continue;
+        let variant: ReminderVariant | null = null;
+        let slot: 'notice' | 'last_call' | null = null;
+        if (untilEnd <= RENEWAL_POLICY.reminderHours[1] * HOUR_MS) {
+          if (!r.lastCallClaimedAt) {
+            variant = 'reminder_1';
+            slot = 'last_call';
+          }
+        } else if (untilEnd <= RENEWAL_POLICY.reminderHours[0] * HOUR_MS && !r.noticeClaimedAt) {
+          variant = 'reminder_7';
+          slot = 'notice';
+        }
+        if (!variant || !slot) continue;
+        const sub = await store.subscriptionSnapshot(r.userId);
+        if (!sub?.renewsAt || sub.renewsAt.getTime() !== r.periodEnd.getTime()) continue; // renewed or superseded
+        if (!(await store.claimMail(r.id, slot, now))) continue;
+        // The E−1d mail makes a still-unsent E−7d mail pointless: its slot is consumed silently.
+        if (slot === 'last_call' && !r.noticeClaimedAt) await store.claimMail(r.id, 'notice', now);
+        const ctx = await store.loadRenewalContext(r.userId);
+        if (!mailable(ctx)) continue; // nobody to mail; the claim stays
+        budget -= 1;
+        const locale = ctx.user.locale;
+        const sent = await mailer.upcoming(
+          { email: ctx.user.email, locale },
+          {
+            variant,
+            planName: ctx.plan?.name ?? '',
+            amountMinor: ctx.plan?.amountMinor ?? null,
+            cycle: r.billingCycle === 'yearly' ? 'yearly' : 'monthly',
+            periodEnd: r.periodEnd,
+            accessUntil: r.graceEndsAt ?? r.periodEnd,
+            renewUrl: renewLinkFor(siteUrl, locale, r),
+            savedCardLast4: ctx.savedCard?.last4 ?? null,
+          },
+        );
+        if (sent) summary.mailed += 1;
+        else await store.releaseMailClaim(r.id, slot);
+      }
     });
 
     // ── Phase 5: lapse (DB only) ──
@@ -577,13 +764,30 @@ export async function runBillingRenewals(): Promise<RenewalTickSummary> {
     settings: billingSettings,
     clock: () => new Date(),
     settle: (paymentId, decision) => settlePaynkolayPayment(paymentId, decision),
-    postSettle: (paymentId) => applyPostSettleEffects(paymentId, { db: prisma, store, now: () => new Date() }),
+    postSettle: (paymentId) =>
+      applyPostSettleEffects(paymentId, {
+        db: prisma,
+        store,
+        now: () => new Date(),
+        reconcileCards: async (id) => {
+          const vaultDeps = await loadCardVaultDeps();
+          if (vaultDeps) await reconcileCardsAfterSave(vaultDeps, id);
+        },
+      }),
     expireLapsed: (now) => expireLapsedPaynkolayPeriods(now),
     retention: cfg
       ? async (now) =>
-          runRetention({ db: prisma, env: cfg.env, vault: await loadProviderVaultDeps(), mailer: null }, now)
+          runRetention({ db: prisma, env: cfg.env, vault: await loadProviderVaultDeps(), mailer: billingMailer }, now)
       : null,
     vault: keys ? { keys } : null,
+    mailer: billingMailer,
+    siteUrl: SITE_URL,
+    cardSaveReconcile: flags.cardStorage
+      ? async (paymentId) => {
+          const vaultDeps = await loadCardVaultDeps();
+          if (vaultDeps) await reconcileCardsAfterSave(vaultDeps, paymentId);
+        }
+      : null,
     captureMessage: (msg, fingerprint, tags) =>
       Sentry.captureMessage(msg, {
         level: fingerprint === 'billing-binding-skipped' ? 'warning' : 'error',

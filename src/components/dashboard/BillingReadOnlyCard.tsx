@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { paymentResultMessage } from '@/lib/billing/payment-result-copy';
+import type { RenewalNoticeData } from '@/lib/billing/card-types';
 import { Check, Download, FileText, Loader2, Receipt } from 'lucide-react';
+import SavedCardPanel from '@/components/dashboard/billing/SavedCardPanel';
+import RenewalNotice from '@/components/dashboard/billing/RenewalNotice';
+import { billingText } from '@/components/dashboard/billing/billing-copy';
 import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { PublicPlan } from '@/lib/subscription-plans';
@@ -47,6 +51,13 @@ interface BillingSummary {
    *  Stage 149 §38.229 — eski 'iyzico' enum slot kaldırıldı (provider iptal). */
   source?: string | null;
   cancelAtPeriodEnd?: boolean;
+  /** Saved cards on (PAYNKOLAY_CARD_STORAGE + binding + keys): the card panel replaces the legacy caption. */
+  cardStorage?: boolean;
+  /** The viewer is the workspace owner (team members never see card details, D9). */
+  viewerIsOwner?: boolean;
+  autoRenew?: boolean;
+  /** The open renewal of the current period (reminder mode), for the banner. */
+  renewal?: RenewalNoticeData | null;
   billingAddress: {
     companyName: string | null;
     taxNumber: string | null;
@@ -122,6 +133,17 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
     : isTr ? 'Deneme' : 'Trial';
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; message: string } | null>(null);
   const paidByCard = summary?.source === 'paynkolay';
+  const locale = isTr ? 'tr' : 'en';
+  const cardStorage = summary?.cardStorage === true;
+  // A card subscription that can be renewed or have its card replaced on the review page.
+  const renewable = cardStorage && paidByCard && (summary?.status === 'active' || summary?.status === 'past_due');
+  const needsPayment =
+    renewable &&
+    (summary?.status === 'past_due' ||
+      summary?.renewal?.state === 'retry_wait' ||
+      summary?.renewal?.state === 'needs_action' ||
+      summary?.renewal?.state === 'manual_review');
+  const [pickerCycle, setPickerCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   // Result of a PayNKolay payment: the return route sends the owner back
   // with `?payment=<status>` (CLAUDE.md §44). Shown once, then dropped from
@@ -282,6 +304,17 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         </AlertBanner>
       )}
 
+      {cardStorage && summary?.viewerIsOwner ? (
+        <RenewalNotice
+          locale={locale}
+          renewal={summary.renewal ?? null}
+          status={summary.status ?? null}
+          renewsAt={summary.renewsAt}
+          canRenew={renewable}
+          now={new Date()}
+        />
+      ) : null}
+
       {/* ─── Top row: Plan hero (dark) + Payment method ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
         {/* Plan hero — graphite bg */}
@@ -351,33 +384,37 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {/* §44 PayNKolay: each payment buys one period; there is no
                 automatic charge, so a card subscriber extends from here. */}
-            <button
-              type="button"
-              onClick={handleOpenPicker}
-              className="bz-btn-lime inline-flex items-center"
-            >
-              {paidByCard
-                ? isTr
-                  ? 'Süreyi uzat'
-                  : 'Extend period'
-                : isTr
-                  ? 'Planı yükselt'
-                  : 'Upgrade plan'}
-            </button>
+            {needsPayment ? (
+              <a href={`/billing/${locale}/checkout?intent=renew`} className="bz-btn-lime inline-flex min-h-[44px] items-center sm:min-h-0">
+                {billingText('hero.payNow', locale)}
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={handleOpenPicker}
+                className="bz-btn-lime inline-flex min-h-[44px] items-center sm:min-h-0"
+              >
+                {billingText(paidByCard ? 'hero.extend' : 'hero.upgrade', locale)}
+              </button>
+            )}
             <span className="text-[11px] text-[#A3A3A3]">
-              {paidByCard
-                ? isTr
-                  ? 'Kartınızdan otomatik çekim yapılmaz; dönem bitmeden uzatabilirsiniz.'
-                  : 'Your card is never charged automatically; extend before the period ends.'
-                : isTr
-                  ? 'Paketinizi seçin, PayNKolay güvenli ödeme sayfasına geçin.'
-                  : 'Pick a plan and continue to the secure PayNKolay page.'}
+              {billingText(paidByCard ? 'hero.autoOff' : 'hero.pickPlan', locale)}
             </span>
           </div>
         </div>
 
         {/* Payment method + Billing address (right column stacked) */}
         <div className="flex flex-col gap-3.5">
+          {cardStorage ? (
+            summary?.viewerIsOwner ? (
+              <SavedCardPanel locale={locale} renewable={renewable} onPickPlan={handleOpenPicker} />
+            ) : (
+              <div className="bz-card p-5">
+                <Eyebrow>{billingText('pm.eyebrow', locale)}</Eyebrow>
+                <p className="mt-3 text-[13px] leading-[1.5] text-[#525252]">{billingText('pm.teamOnly', locale)}</p>
+              </div>
+            )
+          ) : (
           <div className="bz-card p-5">
             <Eyebrow>{isTr ? 'ÖDEME YÖNTEMİ' : 'PAYMENT METHOD'}</Eyebrow>
             {summary?.paymentMethod ? (
@@ -389,20 +426,16 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   <div className="text-[14px] font-medium text-[#0A0A0A]">
                     •••• {summary.paymentMethod.last4}
                   </div>
-                  <div className="text-[11px] text-[#737373] mt-0.5">
-                    {isTr ? 'Admin tarafından yönetilir' : 'Managed by admin'}
-                  </div>
+                  {summary.source === 'manual' ? (
+                    <div className="text-[11px] text-[#737373] mt-0.5">{billingText('pm.legacyManual', locale)}</div>
+                  ) : null}
                 </div>
               </div>
             ) : (
-              <p className="mt-3 text-[13px] text-[#737373]">
-                {isTr ? 'Henüz ödeme yöntemi eklenmedi.' : 'No payment method on file.'}
-              </p>
+              <p className="mt-3 text-[13px] text-[#737373]">{billingText('pm.legacyNone', locale)}</p>
             )}
-            <div className="mt-3">
-              <Badge kind="ghost">{isTr ? 'Destek üzerinden' : 'Via support'}</Badge>
-            </div>
           </div>
+          )}
 
           <div className="bz-card p-5">
             <Eyebrow>{isTr ? 'FATURA ADRESİ' : 'BILLING ADDRESS'}</Eyebrow>
@@ -629,10 +662,24 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         title={isTr ? 'Paket seç' : 'Pick a plan'}
       >
         <p className="-mt-1 mb-4 text-[13px] text-[#737373] leading-snug">
-          {isTr
-            ? 'Tek tıkla güvenli ödemeye geç. İptal istediğiniz zaman müşteri portalından yapılır.'
-            : 'Continue to secure checkout in one click. Cancel anytime via the customer portal.'}
+          {billingText(cardStorage ? 'picker.intro' : 'picker.introLegacy', locale)}
         </p>
+        <div role="group" aria-label={billingText('review.cycle', locale)} className="mb-4 inline-flex rounded-full bg-[#F2F2F2] p-1">
+          {(['monthly', 'yearly'] as const).map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-pressed={pickerCycle === c}
+              onClick={() => setPickerCycle(c)}
+              className={`min-h-[36px] rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
+                pickerCycle === c ? 'bg-white text-[#0A0A0A] shadow-sm' : 'text-[#525252] hover:text-[#0A0A0A]'
+              }`}
+            >
+              {billingText(c === 'monthly' ? 'review.monthly' : 'review.yearly', locale)}
+              {c === 'yearly' ? <span className="ml-1.5 text-[11px] text-[#4D5C00]">· {billingText('review.yearlyHint', locale)}</span> : null}
+            </button>
+          ))}
+        </div>
         {pickerLoading && (
           <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-[#737373]">
             <Loader2 size={14} className="animate-spin" />
@@ -654,9 +701,16 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         {!pickerLoading && !pickerError && pickerPlans && pickerPlans.length > 0 && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pickerPlans.map((p) => {
-              // Card payment (PayNKolay, TRY): one month here; yearly is on /pricing.
-              const checkoutTry = p.paymentProvider === 'paynkolay' ? p.checkout?.monthlyTry ?? null : null;
+              // Card payment (PayNKolay, TRY) for the chosen cycle.
+              const checkoutTry =
+                p.paymentProvider === 'paynkolay'
+                  ? (pickerCycle === 'yearly' ? p.checkout?.yearlyTry : p.checkout?.monthlyTry) ?? null
+                  : null;
               const wired = checkoutTry != null && checkoutTry > 0;
+              const isCurrent = !!summary?.subscriptionPlanId && summary.subscriptionPlanId === p.id && summary.billingCycle === pickerCycle;
+              const checkoutHref = cardStorage
+                ? `/billing/${locale}/checkout?planId=${encodeURIComponent(p.id)}&cycle=${pickerCycle}`
+                : `/api/billing/paynkolay/checkout?planId=${encodeURIComponent(p.id)}&cycle=${pickerCycle}&locale=${locale}`;
               const isDark = p.isFeatured;
               const monthlyShown = p.discount.active ? p.discount.discountedMonthly : p.priceMonthly;
               return (
@@ -668,11 +722,14 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       : 'border border-[#EDEDED] bg-white'
                   }`}
                 >
-                  {isDark && (
-                    <div className="mb-2">
-                      <span className="pulse-eyebrow inline-block rounded-full bg-[#C6F24E] px-3 py-1 text-[#0A0A0A]">
-                        {isTr ? 'EN POPÜLER' : 'MOST POPULAR'}
-                      </span>
+                  {(isDark || isCurrent) && (
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                      {isDark ? (
+                        <span className="pulse-eyebrow inline-block rounded-full bg-[#C6F24E] px-3 py-1 text-[#0A0A0A]">
+                          {isTr ? 'EN POPÜLER' : 'MOST POPULAR'}
+                        </span>
+                      ) : null}
+                      {isCurrent ? <Badge kind="lime">{billingText('picker.current', locale)}</Badge> : null}
                     </div>
                   )}
                   <h3
@@ -705,7 +762,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       <span
                         className={`pulse-eyebrow ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
                       >
-                        {isTr ? '/ AY' : '/ MO'}
+                        {wired && pickerCycle === 'yearly' ? (isTr ? '/ YIL' : '/ YR') : isTr ? '/ AY' : '/ MO'}
                       </span>
                     )}
                   </div>
@@ -746,7 +803,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   </ul>
                   {wired ? (
                     <a
-                      href={`/api/billing/paynkolay/checkout?planId=${encodeURIComponent(p.id)}&cycle=monthly&locale=${isTr ? 'tr' : 'en'}`}
+                      href={checkoutHref}
                       rel="nofollow"
                       className={`block min-h-[40px] w-full rounded-full py-2.5 text-center text-[13px] font-medium transition-colors ${
                         isDark
@@ -754,8 +811,9 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                           : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
                       }`}
                     >
-                      {isTr ? 'Kartla öde' : 'Pay by card'} ·{' '}
-                      {new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'TRY', maximumFractionDigits: 2 }).format(checkoutTry as number)}
+                      {billingText('picker.continue', locale, {
+                        price: `${new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(checkoutTry as number)}${billingText(pickerCycle === 'yearly' ? 'picker.yearlyShort' : 'picker.monthlyShort', locale)}`,
+                      })}
                     </a>
                   ) : (
                     <button
@@ -777,9 +835,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
           </div>
         )}
         <p className="pulse-eyebrow mt-6 text-center text-[#737373]">
-          {isTr
-            ? 'GÜVENLİ ÖDEME · İSTEDİĞİNDE İPTAL · TAAHHÜTSÜZ'
-            : 'SECURE PAYMENT · CANCEL ANYTIME · NO COMMITMENT'}
+          {billingText('picker.footer', locale)}
         </p>
       </Modal>
       )}

@@ -8,8 +8,10 @@
 
 import { canTransition, isRenewalState, TERMINAL_STATES, type RenewalState } from '../../src/lib/billing/renewal-policy';
 import type {
+  NewRenewal,
   OptOutReason,
   PaymentToConfirm,
+  RenewalContext,
   RenewalPatch,
   RenewalRow,
   RenewalStore,
@@ -48,6 +50,27 @@ export interface MemSubscription {
   status: string;
   renewsAt: Date | null;
   autoRenew: boolean;
+  /** Scheduling inputs (defaults: paynkolay, monthly, plan_1, no consent). */
+  source?: string;
+  billingCycle?: string;
+  subscriptionPlanId?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  autoRenewConsentId?: string | null;
+}
+
+/** Owner data for loadRenewalContext (mail target, plan price, cards). */
+export interface MemOwner {
+  email: string;
+  locale: 'tr' | 'en';
+  firstName?: string | null;
+  isActive?: boolean;
+  scheduledDeletionAt?: Date | null;
+  planName?: string;
+  planActive?: boolean;
+  amountMinor?: number | null;
+  savedCardLast4?: string | null;
+  consent?: RenewalContext['consent'];
+  boundCard?: RenewalContext['boundCard'];
 }
 
 export function makePayment(p: Partial<MemPayment> & { id: string; userId: string }): MemPayment {
@@ -112,6 +135,9 @@ export interface MemoryStore extends RenewalStore {
   payments: MemPayment[];
   renewals: RenewalRow[];
   subscriptions: Map<string, MemSubscription>;
+  owners: Map<string, MemOwner>;
+  /** Payments whose card save is unconfirmed (listPendingCardSaves). */
+  pendingCardSaves: string[];
   tombstones: (TombstoneRow & { state: string; nextAttemptAt: Date; lastError: string | null; manualSince: Date | null })[];
   optOuts: { userId: string; reason: OptOutReason }[];
 }
@@ -126,6 +152,9 @@ export function memoryRenewalStore(clock: () => Date): MemoryStore {
   const subscriptions = new Map<string, MemSubscription>();
   const tombstones: MemoryStore['tombstones'] = [];
   const optOuts: MemoryStore['optOuts'] = [];
+  const owners = new Map<string, MemOwner>();
+  const pendingCardSaves: string[] = [];
+  let seq = 0;
 
   const store: MemoryStore = {
     payments,
@@ -133,6 +162,81 @@ export function memoryRenewalStore(clock: () => Date): MemoryStore {
     subscriptions,
     tombstones,
     optOuts,
+    owners,
+    pendingCardSaves,
+
+    async findSubscriptionsToSchedule(now, limit, includeNonConsented) {
+      const to = now.getTime() + 7 * DAY_MS;
+      const from = now.getTime() - 5 * DAY_MS;
+      const out: { userId: string; renewsAt: Date }[] = [];
+      for (const [userId, s] of subscriptions) {
+        if ((s.source ?? 'paynkolay') !== 'paynkolay' || !['active', 'past_due'].includes(s.status) || !s.renewsAt) continue;
+        const t = s.renewsAt.getTime();
+        if (t > to) continue;
+        const consented = !!s.autoRenewConsentId && t >= from;
+        const other = includeNonConsented && t > now.getTime();
+        if (!consented && !other) continue;
+        if (renewals.some((r) => r.userId === userId && r.periodEnd.getTime() === t)) continue;
+        out.push({ userId, renewsAt: s.renewsAt });
+      }
+      return out.sort((a, b) => a.renewsAt.getTime() - b.renewsAt.getTime()).slice(0, limit);
+    },
+    async loadRenewalContext(userId): Promise<RenewalContext | null> {
+      const s = subscriptions.get(userId);
+      const o = owners.get(userId);
+      if (!s || !o) return null;
+      return {
+        sub: {
+          source: s.source ?? 'paynkolay',
+          status: s.status,
+          autoRenew: s.autoRenew,
+          cancelAtPeriodEnd: s.cancelAtPeriodEnd ?? false,
+          billingCycle: s.billingCycle ?? 'monthly',
+          renewsAt: s.renewsAt,
+          subscriptionPlanId: s.subscriptionPlanId === undefined ? 'plan_1' : s.subscriptionPlanId,
+          autoRenewConsentId: s.autoRenewConsentId ?? null,
+        },
+        user: {
+          userId,
+          email: o.email,
+          locale: o.locale,
+          firstName: o.firstName ?? null,
+          isActive: o.isActive ?? true,
+          deactivatedAt: null,
+          scheduledDeletionAt: o.scheduledDeletionAt ?? null,
+        },
+        plan: { id: 'plan_1', name: o.planName ?? 'Büyüme', isActive: o.planActive ?? true, amountMinor: o.amountMinor === undefined ? 99900 : o.amountMinor },
+        consent: o.consent ?? null,
+        boundCard: o.boundCard ?? null,
+        savedCard: o.savedCardLast4 ? { last4: o.savedCardLast4 } : null,
+      };
+    },
+    async createRenewal(row: NewRenewal) {
+      if (renewals.some((r) => r.userId === row.userId && r.periodEnd.getTime() === row.periodEnd.getTime())) return 'exists';
+      seq += 1;
+      const created = makeRenewal({ id: `r_new_${seq}`, ...row, updatedAt: clock() });
+      renewals.push(created);
+      return { ...created };
+    },
+    async claimMail(id, slot, now) {
+      const r = renewals.find((x) => x.id === id);
+      if (!r) return false;
+      const field = slot === 'notice' ? 'noticeClaimedAt' : 'lastCallClaimedAt';
+      if (r[field] !== null) return false;
+      r[field] = now;
+      return true;
+    },
+    async releaseMailClaim(id, slot) {
+      const r = renewals.find((x) => x.id === id);
+      if (r) r[slot === 'notice' ? 'noticeClaimedAt' : 'lastCallClaimedAt'] = null;
+    },
+    async clearPendingMail(id, mail) {
+      const r = renewals.find((x) => x.id === id && x.pendingMail === mail);
+      if (r) r.pendingMail = null;
+    },
+    async listPendingCardSaves(_env, _now, limit) {
+      return pendingCardSaves.slice(0, limit).map((id) => ({ id }));
+    },
 
     async listRenewals(filter, limit) {
       return renewals
@@ -142,6 +246,7 @@ export function memoryRenewalStore(clock: () => Date): MemoryStore {
             r.providerEnv === filter.providerEnv &&
             (!filter.dueBefore || (r.nextAttemptAt && r.nextAttemptAt <= filter.dueBefore)) &&
             (!filter.confirmBefore || (r.confirmAfter && r.confirmAfter <= filter.confirmBefore)) &&
+            (!filter.withPendingMail || r.pendingMail !== null) &&
             (!filter.lockedBefore || (r.lockedUntil && r.lockedUntil < filter.lockedBefore)),
         )
         .slice(0, limit)

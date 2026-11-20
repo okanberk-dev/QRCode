@@ -5866,6 +5866,40 @@ sorgu dizgesini Sentry'ye / loga verme.
 değil); yeni plan alanı eklenirse `paynkolayCheckoutAmounts` ve `toPublicPlan`
 birlikte güncellenir.
 
+### §44.4 Kayıtlı kart (PR 2, `PAYNKOLAY_CARD_STORAGE`, varsayılan kapalı)
+
+Bayrak kapalıyken owner bugünkü akışı görür (GET checkout → aktarım sayfası); kart arayüzü, inceleme sayfası ve
+hatırlatma maili yoktur. Yalnız şu düzeltmeler her durumda geçerlidir: aktarım sayfası sabit betik/stil + SHA-256
+CSP ile (`checkout-interstitial.ts`, `unsafe-inline` yok), `cardHolderIP` güvenilir istemci IP'si, eski "Admin
+tarafından yönetilir" etiketi yalnız `source='manual'`, "Destek üzerinden" rozeti yok, plan seçicide aylık/yıllık.
+
+- **Kart yalnız ödeme sırasında, PayNKolay'in sayfasında kaydedilir** (`customerKey` + `csAutoSave` + `csCardAlias`,
+  D2). `customerKey` tarayıcıya yalnız kart kaydeden ödemede gider (D13). Kayıt PayNKolay listesiyle doğrulanır
+  (`reconcileCardsAfterSave`: alias eşleşmesi ya da yeni kimlik + `card_save` onayı); sonra diğer bağlanmamış
+  kartlar silinir (D1). Doğrulanamazsa `cardSaveResult='pending'` kalır, motor tekrar dener.
+- **Sayfalar** (`src/app/billing/[locale]/`, kendi kök düzeni, `RootHtml secure`): `/billing/{l}/checkout` inceleme +
+  onay (yerel form → `POST /api/billing/paynkolay/checkout`), `/billing/{l}/result` sonuç (yalnız ödemenin sahibine
+  ayrıntı). Middleware nonce + `'strict-dynamic'` CSP (`page-csp.ts`), `Referrer-Policy: no-referrer`, Session
+  Replay kapalı, `robots` dışı. Bayrak açıkken GET checkout inceleme sayfasına 303 yapar, dönüş sonuç sayfasına gider.
+- **Checkout POST** (`checkout-post.ts`): Origin, sahip (impersonation yok), D18, hız sınırları + kart deneme
+  kontrolleri (hesap 5/24 sa, 7 günden genç hesap 3/24 sa, 3 başarısız/24 sa, IP 10/24 sa + 5 başarısız IP bloğu),
+  reCAPTCHA giriş skoru (`users.last_login_risk_score` ≥ 0,5, < 24 sa; login/register/Google yazar — ödeme
+  sayfasına Google betiği girmez), kart kaydı yalnız doğrulanmış ve ≥ 24 sa hesap, onay metni hash'i, sayfadaki
+  tutar. Tek işlem: abonelik `FOR UPDATE`, ödeme, `card_save` onayı (metin + hash + hukuki metin sürümleri + IP + UA),
+  açık yenileme varsa `owner_paying` kilidi (D19). Otomatik yenileme kutusu bu sürümde yok (`autoRenew` → unavailable).
+- **API**: `GET /api/billing/payment-method` (sahip; impersonation yalnız okur), `DELETE /api/billing/cards/[handle]`
+  (handle yalnız sahibin kendi listesinde çözülür → başka sahibin handle'ı 404, sağlayıcıya silme gitmez; silme
+  yeniden listeyle doğrulanır, değilse 502 `delete_unconfirmed`). Yanıtlar `private, no-store`; token, TranId,
+  customerKey asla. Ortak tipler `card-types.ts` (istemci bunları import eder, `card-vault`'u değil).
+- **Hatırlatma modu** (motor faz 2-3): kart saklama niyeti açıkken her PayNKolay aboneliğine E−7g'de satır;
+  09:00–21:00 İstanbul içinde E−7g ve E−1g mailleri (`billing-renewal-upcoming`), düşen dönemde
+  `billing-period-ended`, saklı kart silinmeden 14 gün önce `billing-card-retention`. Çekim fazı yok (PR 3).
+- **Panel**: `src/components/dashboard/billing/` (`CardVisual`, `SavedCardPanel`, `RenewalNotice`,
+  `usePaymentMethod`, `billing-copy` → `src/lib/billing/billing-copy.ts` TR/EN). Ekip üyesi kart görmez (D9).
+
+**Yapma**: inceleme/sonuç sayfasına üçüncü taraf betik veya `RootHtml`'siz düzen ekleme; aktarım betiğine/stiline
+değer gömme (hash değişir); kartı ödeme dışında kaydetmeye çalışma; handle'ı başka sahibin listesinde arama.
+
 ## §45 — Reply Content Safety Gate + Responsibility Consent (kanonik, 2026-09)
 
 Owner/admin replies go out under the Buaze brand (email sender, Google
@@ -6059,7 +6093,7 @@ Pazarlama sitesi (alt bilgi, menü, ana sayfa, özellik, sektör, ticari, şirke
 `src/app/layout.tsx` yok; her üst düzey bölümün kendi kök düzeni var, hepsi aynı kabuğu kullanır: `src/components/root/RootHtml.tsx` (`<html>/<body>`, `globals.css`, `fonts.ts`, ConditionalAnalytics, çerez bandı, Speed Insights + Analytics). Metadata varsayılanları ve viewport `src/lib/root-metadata.ts` (`buildBaseMetadata`, `APP_METADATA`, `siteIcons`, `ROOT_VIEWPORT`).
 
 - **Neden**: tek kök düzen `[locale]`'in üstünde kaldığı için dili bilemiyordu (`headers()` okumak ISR'ı bozar, §35.12.3); /en sayfaları sunucudan `lang="tr"` geliyordu ve yalnız JS ile düzeltiliyordu. Artık `src/app/[locale]/layout.tsx` kök düzendir ve `<RootHtml lang={locale}>` basar.
-- **Kök düzenler** (2026-11: Dodo dönüş adresi için duran locale'siz `dashboard` kök düzeni ve `/dashboard/account` yönlendirmesi silindi): `[locale]` (lang = locale), `admin` (lang = `ADMIN_LOCALE` çerezi; düzen zaten çerez okuyor), `r`, `menu`, `s`, `embed`, `audits`, `(root)` (`/` yönlendirmesi) — bunlarda lang `tr`. `/r/[slug]` dili istemcide seçtiği için `<html lang>`'ı kendisi günceller.
+- **Kök düzenler** (2026-11: Dodo dönüş adresi için duran locale'siz `dashboard` kök düzeni ve `/dashboard/account` yönlendirmesi silindi): `[locale]` (lang = locale), `admin` (lang = `ADMIN_LOCALE` çerezi; düzen zaten çerez okuyor), `r`, `menu`, `s`, `embed`, `audits`, `(root)` (`/` yönlendirmesi) — bunlarda lang `tr`. `billing/[locale]` (§44.4): `<RootHtml lang={locale} secure>` — analitik, çerez bandı ve Vercel betikleri yok, middleware nonce CSP. `/r/[slug]` dili istemcide seçtiği için `<html lang>`'ı kendisi günceller.
 - **404**: `app/not-found.tsx` yerine `app/global-not-found.tsx` (`experimental.globalNotFound`, kendi `<html>`'i; /en için `langFromPath` küçük betiği). `notFound()` çağıran bölümlerin kendi `not-found.tsx`'i var (`[locale]`, `r`, `embed` → `BrandedNotFound`; `admin`, `menu/[slug]`, `s/[slug]`, `audits/[token]` kendi tasarımları). Hiçbiri `headers()/cookies()/searchParams` okumaz. Global 404 bir kez statik üretildiği için istenen adresi bilmez: `BrandedNotFound detectLocaleOnClient` Türkçe başlar, dili mount sonrası adresten seçer (ilk render'da adres okumak React #418 hidrasyon hatası verir).
 - **Gezinme**: iki farklı kök düzen arasında geçiş tam sayfa yüklemesidir (Next.js); /tr ↔ /en aynı kök düzende kalır.
 - **Yapma**: `src/app/layout.tsx` geri ekleme (tüm kök düzenler iç içe `<html>` olur); yeni üst düzey bölümü kök düzensiz bırakma (derleme "missing root layout" ile durur) — `RootHtml` + `buildBaseMetadata` + `ROOT_VIEWPORT` ile 15 satırlık düzen ekle; `RootHtml`'e `<head>` yazma (kaynak ipuçları `react-dom` `prefetchDNS` ile).
