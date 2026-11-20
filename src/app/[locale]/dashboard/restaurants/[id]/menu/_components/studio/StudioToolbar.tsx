@@ -65,11 +65,13 @@ export function StudioToolbar({
     return () => io.disconnect();
   }, []);
 
-  const search = (className: string, inputClass: string) => (
+  // Two search fields (≥1024 toolbar, <1024 row); `/` focuses the visible one (`data-menu-search`).
+  const search = (id: string, className: string, inputClass: string) => (
     <div className={`relative ${className}`}>
       <Search size={15} strokeWidth={2} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]" aria-hidden="true" />
       <input
-        id="menu-search"
+        id={id}
+        data-menu-search=""
         type="search"
         value={query}
         onChange={(e) => onQuery(e.target.value)}
@@ -130,7 +132,13 @@ export function StudioToolbar({
 
   const selectButton = (className: string) =>
     canSelect ? (
-      <button type="button" onClick={onToggleSelect} aria-pressed={selecting} className={`bz-btn-ghost shrink-0 ${className}`}>
+      <button
+        type="button"
+        onClick={onToggleSelect}
+        disabled={readOnly}
+        aria-pressed={selecting}
+        className={`bz-btn-ghost shrink-0 ${className}`}
+      >
         {selecting ? <X size={14} strokeWidth={2} aria-hidden="true" /> : <ListChecks size={14} strokeWidth={2} aria-hidden="true" />}
         {selecting ? copy.toolbar.selectOff : copy.toolbar.select}
       </button>
@@ -152,7 +160,7 @@ export function StudioToolbar({
         className="-mx-4 hidden bg-[#FAFAFA]/95 px-4 backdrop-blur data-[stuck=true]:border-b data-[stuck=true]:border-[#EDEDED] sm:-mx-7 sm:px-7 lg:sticky lg:top-14 lg:z-20 lg:!mt-0 lg:block"
       >
         <div className="flex h-14 items-center gap-2">
-          {search('w-[240px] shrink-0 xl:w-[300px]', 'h-9')}
+          {search('menu-search', 'w-[240px] shrink-0 xl:w-[300px]', 'h-9')}
           <FilterChips value={filter} onChange={onFilter} counts={counts} className="flex-1" />
           <div className="ml-auto flex shrink-0 items-center gap-1">
             {saveIndicator}
@@ -190,7 +198,7 @@ export function StudioToolbar({
         {showSearch && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              {search('min-w-0 flex-1 sm:w-[280px] sm:flex-none', 'h-11')}
+              {search('menu-search-compact', 'min-w-0 flex-1 sm:w-[280px] sm:flex-none', 'h-11')}
               {canReorder && (
                 <button type="button" onClick={onToggleReorder} aria-pressed={reorderMode} className="bz-btn-ghost min-h-[44px] shrink-0">
                   {reorderMode ? <X size={14} strokeWidth={2} aria-hidden="true" /> : <ArrowUpDown size={14} strokeWidth={2} aria-hidden="true" />}

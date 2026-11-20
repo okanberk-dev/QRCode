@@ -190,19 +190,23 @@ export function ToasterProvider({
     <ApiContext.Provider value={api}>
       <StateContext.Provider value={state}>
         {children}
-        <div role="status" aria-live="polite" className="sr-only">
-          {announce}
+        {/* `contents`: the dashboard shell sizes its direct children (`[&>*]:w-full`), which would
+            stretch the absolute sr-only region to the panel's width (sideways overflow) and the fixed bar. */}
+        <div className="contents">
+          <div role="status" aria-live="polite" className="sr-only">
+            {announce}
+          </div>
+          {toast && (
+            <ToastBar
+              key={toast.key}
+              toast={toast}
+              copy={copy}
+              published={published}
+              onUndo={(id) => void undoById(id)}
+              onDismiss={dismiss}
+            />
+          )}
         </div>
-        {toast && (
-          <ToastBar
-            key={toast.key}
-            toast={toast}
-            copy={copy}
-            published={published}
-            onUndo={(id) => void undoById(id)}
-            onDismiss={dismiss}
-          />
-        )}
       </StateContext.Provider>
     </ApiContext.Provider>
   );

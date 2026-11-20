@@ -14,8 +14,13 @@
  * Tailwind reads these strings from source, so every class is written out in full.
  */
 
+/**
+ * Focus clearance under the sticky bars (spec §3.2). `min-[87.5rem]` is 1400 px
+ * written in rem: Tailwind v4 emits px breakpoints before rem ones, so a
+ * `min-[1400px]:` value would lose to `lg:` (64rem) on the same property.
+ */
 export const ROW_BASE =
-  'scroll-mt-[124px] lg:scroll-mt-[180px] scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+var(--menu-stack,0px)+16px)]';
+  'scroll-mt-[124px] lg:scroll-mt-[180px] min-[87.5rem]:scroll-mt-[124px] scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+var(--menu-stack,0px)+16px)]';
 
 export const ROW_NARROW =
   'grid grid-cols-[48px_minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-3 gap-y-1.5 px-3 py-3 min-h-[76px]';

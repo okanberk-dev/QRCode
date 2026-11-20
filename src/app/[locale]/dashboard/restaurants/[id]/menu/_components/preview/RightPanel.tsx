@@ -12,8 +12,9 @@ import { useMenuCopy } from '../kit/useMenuCopy';
  * (hidden) on the preview tab so nothing typed is lost; the preview is
  * unmounted on the item tab (one preview at a time).
  *
- * Chunk 2 has no category rail, so the column sticks under the two-row
- * toolbar at every width (top 184 = topbar 56 + toolbar 112 + 16).
+ * Sticky under the toolbar: 1024–1399 two rows (top 184 = topbar 56 +
+ * toolbar 112 + 16); ≥1400 one row, the category rail holds the chips
+ * (top 128 = 56 + 56 + 16).
  */
 export function RightPanel({
   itemOpen, itemTitle, tab, onTab, onCloseItem, onCollapse, preview, item, published, openLink,
@@ -32,12 +33,14 @@ export function RightPanel({
   const copy = useMenuCopy();
   return (
     <>
-      <a href="#menu-items-pane" className="bz-skip-link">
+      {/* Positioned against the page wrapper (not the top of the page), so `.bz-skip-link`'s
+          top: -40px would leave it on screen: hidden until it has focus. */}
+      <a href="#menu-items-pane" className="bz-skip-link pointer-events-none opacity-0 focus:pointer-events-auto focus:opacity-100">
         {copy.preview.skip}
       </a>
       <aside
         aria-labelledby="right-panel-title"
-        className="bz-card sticky top-[184px] hidden max-h-[calc(100dvh-200px)] flex-col self-start overflow-hidden p-0 lg:flex"
+        className="bz-card sticky top-[184px] hidden max-h-[calc(100dvh-200px)] flex-col self-start overflow-hidden p-0 lg:flex min-[1400px]:top-[128px] min-[1400px]:max-h-[calc(100dvh-144px)]"
       >
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[#EDEDED] px-3">
           {itemOpen ? (

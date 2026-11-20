@@ -15,7 +15,7 @@ import { MENU_TOUCH, afterMenuCloses } from '../menu-ui';
  */
 export function StudioHeader({
   restaurantName, canDesign, designReady, canShare, designActive, onOpenDesign, onOpenShare, analyticsHref, fullPreview,
-  onSortCategories, onPasteList, onCollapseAll, onExpandAll, onShortcuts, designDisabledReason,
+  onSortCategories, onPasteList, onCollapseAll, onExpandAll, onShortcuts, designDisabledReason, organiseDisabled = false,
 }: {
   restaurantName: string;
   canDesign: boolean;
@@ -33,6 +33,8 @@ export function StudioHeader({
   onExpandAll?: () => void;
   onShortcuts?: () => void;
   designDisabledReason?: string | null;
+  /** Read-only: "Kategorileri sırala" / "Liste yapıştır" stay listed but disabled. */
+  organiseDisabled?: boolean;
 }) {
   const copy = useMenuCopy();
   const router = useRouter();
@@ -100,12 +102,20 @@ export function StudioHeader({
               </PulseMenuItem>
               {(onSortCategories || onPasteList || onCollapseAll || onExpandAll) && <PulseMenuDivider />}
               {onSortCategories && (
-                <PulseMenuItem icon={<ListOrdered size={13} strokeWidth={2} />} onSelect={() => afterMenuCloses(onSortCategories)}>
+                <PulseMenuItem
+                  icon={<ListOrdered size={13} strokeWidth={2} />}
+                  disabled={organiseDisabled}
+                  onSelect={() => afterMenuCloses(onSortCategories)}
+                >
                   {copy.header.sortCategories}
                 </PulseMenuItem>
               )}
               {onPasteList && (
-                <PulseMenuItem icon={<ClipboardPaste size={13} strokeWidth={2} />} onSelect={() => afterMenuCloses(onPasteList)}>
+                <PulseMenuItem
+                  icon={<ClipboardPaste size={13} strokeWidth={2} />}
+                  disabled={organiseDisabled}
+                  onSelect={() => afterMenuCloses(onPasteList)}
+                >
                   {copy.header.pasteList}
                 </PulseMenuItem>
               )}
@@ -120,7 +130,7 @@ export function StudioHeader({
                 </PulseMenuItem>
               )}
               {onShortcuts && (
-                <PulseMenuItem icon={<Keyboard size={13} strokeWidth={2} />} onSelect={() => afterMenuCloses(onShortcuts)}>
+                <PulseMenuItem icon={<Keyboard size={13} strokeWidth={2} />} trailing="?" onSelect={() => afterMenuCloses(onShortcuts)}>
                   {copy.header.shortcuts}
                 </PulseMenuItem>
               )}

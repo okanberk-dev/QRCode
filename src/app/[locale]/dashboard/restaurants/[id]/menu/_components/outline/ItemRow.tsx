@@ -154,6 +154,10 @@ export const ItemRow = memo(function ItemRow({
       data-dropzone=""
       aria-busy={pending?.status === 'saving' || undefined}
       onClick={onRowClick}
+      // Shift+click selects a range of rows, not the text between them.
+      onMouseDown={(e) => {
+        if (selecting && e.shiftKey) e.preventDefault();
+      }}
       onDragOver={(e) => {
         if (editable && e.dataTransfer.types.includes('Files')) e.preventDefault();
       }}

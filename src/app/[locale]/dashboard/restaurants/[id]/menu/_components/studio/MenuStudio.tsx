@@ -11,18 +11,25 @@ import { useMenuActions } from '../data/useMenuActions';
 import { useMenuData, type MenuDataHandle } from '../data/useMenuData';
 import { usePhotoUpload } from '../data/usePhotoUpload';
 import { ItemPanel, useItemPanelKey, type ItemPanelSaved } from '../item/ItemPanel';
+import { PasteSheet } from '../item/PasteSheet';
 import { SaveIndicator } from '../kit/SaveIndicator';
 import { STORAGE_KEYS, safeLocalGet, safeLocalSet } from '../kit/storage';
 import { ToasterProvider, useToaster, useToasterState } from '../kit/Toaster';
 import { useFileDropGuard } from '../kit/useFileDropGuard';
 import { filterCounts, filterMenu, visibleItemIds, type MenuFilter } from '../menu-filter';
 import { getMenuCopy } from '../menu-i18n';
+import type { ShortcutId } from '../menu-keys';
 import { DRAFT_ITEM_ID, isTempId, overlayItemDraft, withoutTemps, type ItemDraftOverlay } from '../menu-merge';
 import { customerVisibility, menuNudges } from '../menu-status';
 import type { ItemTarget, MenuData } from '../menu-types';
-import { scrollBehavior, useFinePointer, useIsDesktop, useOnline } from '../menu-ui';
+import { scrollBehavior, useFinePointer, useIsDesktop, useIsWide, useOnline } from '../menu-ui';
+import { BulkPriceDialog } from '../outline/BulkPriceDialog';
 import { CategoryChips } from '../outline/CategoryChips';
+import { CategoryOrderSheet } from '../outline/CategoryOrderSheet';
+import { CategoryRail } from '../outline/CategoryRail';
 import { MenuOutline } from '../outline/MenuOutline';
+import { MoveToCategoryDialog } from '../outline/MoveToCategoryDialog';
+import { SelectionBar } from '../outline/SelectionBar';
 import { PhonePreview } from '../preview/PhonePreview';
 import { PreviewPanel } from '../preview/PreviewPanel';
 import { RightPanel } from '../preview/RightPanel';
@@ -30,15 +37,34 @@ import { ShareDialog } from '../share/ShareDialog';
 import { ContextBar } from './ContextBar';
 import { LoadErrorView } from './LoadErrorView';
 import { MenuStatusCard, type MenuStepId } from './MenuStatusCard';
+import { ShortcutsDialog } from './ShortcutsDialog';
 import { StudioContext, type StudioContextValue } from './studio-context';
 import { StudioHeader } from './StudioHeader';
 import { StudioToolbar } from './StudioToolbar';
 import { useScrollSpy } from './useScrollSpy';
+import { detectMac, useStudioShortcuts, type ShortcutHit } from './useStudioShortcuts';
 import { useUrlIntents } from './useUrlIntents';
 import type { StudioView } from './ViewSwitch';
 
 const EMPTY_SET: Set<string> = new Set();
 const LINGER_MS = 1200;
+/** Most rows one bulk action takes (spec §8.16; also the restore endpoint's limit). */
+const SELECTION_CAP = 100;
+
+/** Add ids to `base` up to the cap (pending rows never); reports whether some did not fit. */
+function addCapped(base: Set<string>, ids: string[]): { next: Set<string>; capped: boolean } {
+  const next = new Set(base);
+  let capped = false;
+  for (const id of ids) {
+    if (isTempId(id) || next.has(id)) continue;
+    if (next.size >= SELECTION_CAP) {
+      capped = true;
+      break;
+    }
+    next.add(id);
+  }
+  return { next, capped };
+}
 
 function readCollapsed(restaurantId: string): Set<string> {
   try {
@@ -108,6 +134,7 @@ function StudioLoaded({
   const isPublished = restaurant.menuPublished && menuEnabled;
 
   const isDesktop = useIsDesktop(true);
+  const isWide = useIsWide();
   const finePointer = useFinePointer();
   const online = useOnline();
   const upload = usePhotoUpload(restaurantId, isTr);
@@ -135,6 +162,19 @@ function StudioLoaded({
   const [serviceHintSeen, setServiceHintSeen] = useState(() => safeLocalGet(STORAGE_KEYS.serviceHint) === '1');
   const [confirmDialog, askConfirm] = useConfirmDialog();
   const itemDirtyRef = useRef(false);
+  // organise and bulk (chunk 3)
+  const [selection, setSelectionState] = useState<Set<string> | null>(null);
+  const selectionRef = useRef<Set<string> | null>(null);
+  const anchorRef = useRef<string | null>(null);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [moveDialog, setMoveDialog] = useState<{ itemIds: string[]; fromSelection: boolean } | null>(null);
+  const [bulkPrice, setBulkPrice] = useState<{ itemIds: string[] } | null>(null);
+  const [categoryOrderOpen, setCategoryOrderOpen] = useState(false);
+  const [pasteSheet, setPasteSheet] = useState<{ categoryId: string | null } | null>(null);
+  const [pasteDirtyKeys, setPasteDirtyKeys] = useState<Set<string>>(EMPTY_SET);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [singleKeys, setSingleKeys] = useState(() => safeLocalGet(STORAGE_KEYS.singleKeys) !== '0');
+  const [isMac] = useState(detectMac);
 
   // ── row flash (Web Animations: survives React re-renders of the row) ──
   const flashItem = useCallback((itemId: string) => {
@@ -185,11 +225,19 @@ function StudioLoaded({
   const visibleIds = useMemo(() => visibleItemIds(filtered.sections, effectiveCollapsed), [filtered.sections, effectiveCollapsed]);
   const completion = filter === 'noPhoto' || filter === 'noDescription' ? filter : null;
   const sectionIds = useMemo(() => filtered.sections.map((s) => s.category.id), [filtered.sections]);
-  const activeCategoryId = useScrollSpy(sectionIds, isDesktop ? 180 : 124);
+  const activeCategoryId = useScrollSpy(sectionIds, isWide ? 124 : isDesktop ? 180 : 124);
   const soldOutIds = useMemo(
     () => (filter === 'soldOut' ? filtered.sections.flatMap((s) => s.items.filter((i) => i.isOutOfStock).map((i) => i.id)) : []),
     [filter, filtered.sections],
   );
+  const hasItems = stable.some((c) => c.items.length > 0);
+  // Selected rows that still exist (deleted / moved-away rows drop out on their own).
+  const liveSelection = useMemo(() => {
+    if (!selection) return null;
+    const existing = new Set(stable.flatMap((c) => c.items.map((i) => i.id)));
+    const next = new Set([...selection].filter((id) => existing.has(id)));
+    return next.size === selection.size ? selection : next;
+  }, [selection, stable]);
 
   // Latest values for the stable callbacks below.
   const latest = useRef({ categories, visibleIds, activeCategoryId, collapsed, filterActive: filtered.active, mode });
@@ -216,20 +264,93 @@ function StudioLoaded({
     };
   }, []);
 
-  // ── modes ──
-  const setMode = useCallback((m: 'edit' | 'service') => {
-    setModeState(m);
-    safeLocalSet(STORAGE_KEYS.mode, m);
-    setPhonePreview(false);
+  // ── selection (spec §8.16): React state; rows get a boolean `selected` ──
+  const setSelection = useCallback((next: Set<string> | null) => {
+    selectionRef.current = next;
+    if (next === null) anchorRef.current = null;
+    setSelectionState(next);
   }, []);
+  const exitSelection = useCallback(() => setSelection(null), [setSelection]);
+  const notifyCap = useCallback(() => toaster.notify({ message: copy.selection.cap, tone: 'info' }), [toaster, copy]);
 
-  /** Leave search / filter / Servis / phone preview so a section's editing rows are on screen. */
+  const toggleSelect = useCallback(
+    (id: string, opts?: { range?: boolean }) => {
+      if (isTempId(id)) return;
+      const base = selectionRef.current ?? new Set<string>();
+      const ids = latest.current.visibleIds;
+      const anchor = anchorRef.current;
+      let result: { next: Set<string>; capped: boolean };
+      if (opts?.range && anchor && anchor !== id && ids.includes(anchor) && ids.includes(id)) {
+        const a = ids.indexOf(anchor);
+        const b = ids.indexOf(id);
+        result = addCapped(base, ids.slice(Math.min(a, b), Math.max(a, b) + 1));
+      } else if (base.has(id)) {
+        const next = new Set(base);
+        next.delete(id);
+        result = { next, capped: false };
+      } else {
+        result = addCapped(base, [id]);
+      }
+      setReorderMode(false);
+      setSelection(result.next);
+      anchorRef.current = id;
+      if (result.capped) notifyCap();
+    },
+    [setSelection, notifyCap],
+  );
+
+  const startSelection = useCallback(
+    (ids: string[] = []) => {
+      const { next, capped } = addCapped(selectionRef.current ?? new Set<string>(), ids);
+      setReorderMode(false);
+      setSelection(next);
+      anchorRef.current = ids[ids.length - 1] ?? anchorRef.current;
+      if (capped) notifyCap();
+    },
+    [setSelection, notifyCap],
+  );
+
+  const selectVisible = () => {
+    const { next, capped } = addCapped(selectionRef.current ?? new Set<string>(), visibleIds);
+    setSelection(next);
+    if (capped) notifyCap();
+  };
+
+  // ── modes ──
+  const setMode = useCallback(
+    (m: 'edit' | 'service') => {
+      setModeState(m);
+      safeLocalSet(STORAGE_KEYS.mode, m);
+      setPhonePreview(false);
+      if (m === 'service') {
+        setSelection(null);
+        setReorderMode(false);
+      }
+    },
+    [setSelection],
+  );
+
+  /** Leave search / filter / Servis / selection / phone preview so a section's editing rows are on screen. */
   const showEditing = useCallback(() => {
     setQuery('');
     setFilter('all');
     setPhonePreview(false);
+    setSelection(null);
+    setReorderMode(false);
     if (latest.current.mode !== 'edit') setMode('edit');
-  }, [setMode]);
+  }, [setMode, setSelection]);
+
+  const toggleReorder = () => {
+    if (reorderMode) {
+      setReorderMode(false);
+      return;
+    }
+    // Arrows and grips work on whole categories: leave search, filter and selection first.
+    setSelection(null);
+    setQuery('');
+    setFilter('all');
+    setReorderMode(true);
+  };
 
   const expand = useCallback((categoryId: string) => {
     setCollapsed((prev) => {
@@ -360,6 +481,15 @@ function StudioLoaded({
     },
     [expand],
   );
+  /** Rail jump (≥1400) is one of the item panel's close paths (spec §7.8): guarded, then closed. */
+  const railJump = useCallback(
+    (categoryId: string) =>
+      guardItem(() => {
+        closeItemNow(false);
+        jumpToCategory(categoryId);
+      }),
+    [guardItem, closeItemNow, jumpToCategory],
+  );
   const focusQuickAdd = useCallback(
     (categoryId: string) => {
       showEditing();
@@ -398,23 +528,84 @@ function StudioLoaded({
 
   const getCategories = useCallback(() => latest.current.categories, []);
 
+  // ── organise: one step up / down, dialogs and sheets ──
+  const moveItemBy = useCallback(
+    (itemId: string, dir: -1 | 1) => {
+      if (isTempId(itemId)) return;
+      const category = latest.current.categories.find((c) => c.items.some((i) => i.id === itemId));
+      if (!category) return;
+      const ids = category.items.filter((i) => !isTempId(i.id)).map((i) => i.id);
+      const from = ids.indexOf(itemId);
+      const to = from + dir;
+      if (from === -1 || to < 0 || to >= ids.length) return;
+      [ids[from], ids[to]] = [ids[to], ids[from]];
+      void actions.reorderItems(category.id, ids);
+    },
+    [actions],
+  );
+  const moveCategoryBy = useCallback(
+    (categoryId: string, dir: -1 | 1) => {
+      const ids = latest.current.categories.map((c) => c.id);
+      const from = ids.indexOf(categoryId);
+      const to = from + dir;
+      if (from === -1 || to < 0 || to >= ids.length) return;
+      [ids[from], ids[to]] = [ids[to], ids[from]];
+      void actions.reorderCategories(ids).then((r) => {
+        if (!r.ok) return;
+        requestAnimationFrame(() =>
+          document.getElementById(`menu-section-${categoryId}`)?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() }),
+        );
+      });
+    },
+    [actions],
+  );
+  const openMoveDialog = useCallback((itemIds: string[]) => {
+    const ids = itemIds.filter((id) => !isTempId(id));
+    if (ids.length === 0 || latest.current.categories.length < 2) return;
+    const current = selectionRef.current;
+    const fromSelection = current !== null && current.size === ids.length && ids.every((id) => current.has(id));
+    setMoveDialog({ itemIds: ids, fromSelection });
+  }, []);
+  const openBulkPrice = useCallback((itemIds: string[]) => {
+    const ids = itemIds.filter((id) => !isTempId(id));
+    if (ids.length) setBulkPrice({ itemIds: ids });
+  }, []);
+  const openCategoryOrder = useCallback(() => setCategoryOrderOpen(true), []);
+  const openPasteSheet = useCallback((categoryId: string | null) => {
+    const { activeCategoryId: active, categories: cats } = latest.current;
+    setPasteSheet({ categoryId: categoryId ?? active ?? cats[0]?.id ?? null });
+  }, []);
+  const reportPasteDirty = useCallback((key: string, dirty: boolean) => {
+    setPasteDirtyKeys((prev) => {
+      if (prev.has(key) === dirty) return prev;
+      const next = new Set(prev);
+      if (dirty) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }, []);
+
   const studio = useMemo<StudioContextValue>(
     () => ({
       restaurantId, locale, isTr, copy, readOnly, canEdit, isPublished, finePointer, mode, actions, toaster,
       getCategories, openItem, createItemIn, focusQuickAdd, focusNewCategory, jumpToCategory, registerQuickAdd,
       registerNewCategory, registerPriceCell, openPriceCell, registerNameCell, openNameCell, flashItem, linger,
-      focusAfterRemoval, askConfirm,
+      focusAfterRemoval, askConfirm, categoryCount: categories.length, selecting: selection !== null, toggleSelect,
+      startSelection, reorderMode, openMoveDialog, openBulkPrice, openCategoryOrder, openPasteSheet, moveItemBy,
+      moveCategoryBy, reportPasteDirty,
     }),
     [
       restaurantId, locale, isTr, copy, readOnly, canEdit, isPublished, finePointer, mode, actions, toaster,
       getCategories, openItem, createItemIn, focusQuickAdd, focusNewCategory, jumpToCategory, registerQuickAdd,
       registerNewCategory, registerPriceCell, openPriceCell, registerNameCell, openNameCell, flashItem, linger,
-      focusAfterRemoval, askConfirm,
+      focusAfterRemoval, askConfirm, categories.length, selection, toggleSelect, startSelection, reorderMode,
+      openMoveDialog, openBulkPrice, openCategoryOrder, openPasteSheet, moveItemBy, moveCategoryBy, reportPasteDirty,
     ],
   );
 
   // ── guards & URL intents ──
-  const guard = useUnsavedGuard(itemDirty || pending > 0, locale);
+  const pasteDirty = pasteDirtyKeys.size > 0;
+  const guard = useUnsavedGuard(itemDirty || pasteDirty || pending > 0, locale);
   const onEditIntent = useCallback(
     (itemId: string, categoryId: string) => {
       expand(categoryId);
@@ -517,12 +708,153 @@ function StudioLoaded({
     followCategoryId: activeCategoryId,
     onPickItem: openItem,
     hiddenNote,
+    topOffset: isWide ? 128 : 184,
   };
 
   const collapsePreview = (value: boolean) => {
     setPreviewCollapsed(value);
     safeLocalSet(STORAGE_KEYS.previewCollapsed, value ? '1' : null);
   };
+
+  // ── keyboard shortcuts (spec §9) ──
+  const changeSingleKeys = (on: boolean) => {
+    setSingleKeys(on);
+    safeLocalSet(STORAGE_KEYS.singleKeys, on ? null : '0');
+  };
+  const focusSearch = () => {
+    if (phonePreview) setPhonePreview(false);
+    requestAnimationFrame(() => {
+      const field = [...document.querySelectorAll<HTMLInputElement>('[data-menu-search]')].find((el) => el.offsetParent !== null);
+      field?.focus();
+      field?.select();
+    });
+  };
+  const focusRowBy = (rowId: string | null, dir: -1 | 1) => {
+    const index = rowId ? visibleIds.indexOf(rowId) : -1;
+    const next = index === -1 ? undefined : visibleIds[index + dir];
+    if (!next) return;
+    document.querySelector<HTMLElement>(`#menu-items-pane [data-item-id="${CSS.escape(next)}"] [data-row-focus]`)?.focus();
+  };
+  const refocusRow = (itemId: string) =>
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLElement>(`#menu-items-pane [data-item-id="${CSS.escape(itemId)}"] [data-row-focus]`)?.focus(),
+      ),
+    );
+  /** Esc, from the innermost thing outwards: panel → selection → reorder mode → search → filter. */
+  const escapeCascade = (hit: ShortcutHit): boolean => {
+    if (hit.target?.hasAttribute('data-menu-search')) {
+      if (filter === 'all') return false;
+      setFilter('all');
+      return true;
+    }
+    if (hit.typing) return false;
+    if (isDesktop && itemTarget) {
+      requestCloseItem();
+      return true;
+    }
+    if (selectionRef.current) {
+      exitSelection();
+      return true;
+    }
+    if (reorderMode) {
+      setReorderMode(false);
+      return true;
+    }
+    if (query) {
+      setQuery('');
+      return true;
+    }
+    if (filter !== 'all') {
+      setFilter('all');
+      return true;
+    }
+    return false;
+  };
+  const onShortcut = (id: ShortcutId, hit: ShortcutHit, event: KeyboardEvent): boolean => {
+    const rowId = hit.rowId && !isTempId(hit.rowId) ? hit.rowId : null;
+    const row = rowId ? categories.flatMap((c) => c.items).find((i) => i.id === rowId) : undefined;
+    const editRow = canEdit && mode === 'edit' && row !== undefined;
+    switch (id) {
+      case 'escape':
+        return escapeCascade(hit);
+      case 'search':
+        focusSearch();
+        return true;
+      case 'help':
+        setShortcutsOpen(true);
+        return true;
+      case 'newItem': {
+        if (!canEdit) return false;
+        const target = activeCategoryId ?? categories[0]?.id;
+        if (target) focusQuickAdd(target);
+        else focusNewCategory();
+        return true;
+      }
+      case 'newCategory':
+        if (!canEdit) return false;
+        focusNewCategory();
+        return true;
+      case 'togglePreview':
+        if (!isDesktop) onView(phonePreview ? mode : 'preview');
+        else if (itemOpen) setRightTab((t) => (t === 'preview' ? 'item' : 'preview'));
+        else collapsePreview(!previewCollapsed);
+        return true;
+      case 'undo':
+        void toaster.undoLatest();
+        return true;
+      case 'rowPrev':
+      case 'rowNext':
+        focusRowBy(hit.rowId, id === 'rowPrev' ? -1 : 1);
+        return true;
+      case 'open':
+        // Enter on a button keeps its own meaning (inline rename on the name, the switch, ⋯).
+        if (!rowId || (event.key === 'Enter' && hit.target?.closest('button,a,input,select,textarea,[role=switch]'))) return false;
+        openItem(rowId);
+        return true;
+      case 'toggleSoldOut':
+        if (!canEdit || !row) return false;
+        if (!row.isAvailable) toaster.notify({ message: copy.item.hiddenNoSoldOut, tone: 'info' });
+        else void actions.toggleSoldOut(row.id);
+        return true;
+      case 'toggleHidden':
+        if (!canEdit || !row) return false;
+        void (row.isAvailable ? actions.hideItem(row.id) : actions.showItem(row.id));
+        return true;
+      case 'select':
+        if (!editRow || !row) return false;
+        if (selectionRef.current) toggleSelect(row.id);
+        else startSelection([row.id]);
+        return true;
+      case 'move':
+        if (!editRow || !row || categories.length < 2) return false;
+        openMoveDialog([row.id]);
+        return true;
+      case 'duplicate':
+        if (!editRow || !row) return false;
+        void actions.duplicateItem(row.id).then((r) => {
+          if (r.ok && r.copyId && finePointer) {
+            const copyId = r.copyId;
+            requestAnimationFrame(() => requestAnimationFrame(() => openNameCell(copyId)));
+          }
+        });
+        return true;
+      case 'delete':
+        if (!editRow || !row) return false;
+        focusAfterRemoval(row.id);
+        void actions.deleteItem(row.id);
+        return true;
+      case 'moveUp':
+      case 'moveDown':
+        if (!editRow || !row || selectionRef.current) return false;
+        moveItemBy(row.id, id === 'moveUp' ? -1 : 1);
+        refocusRow(row.id);
+        return true;
+      default:
+        return false;
+    }
+  };
+  useStudioShortcuts(singleKeys, onShortcut);
 
   const saveIndicator = (variant: 'desktop' | 'compact') => (
     <SaveIndicator
@@ -533,17 +865,18 @@ function StudioLoaded({
       error={saveError}
       online={online}
       lastSilentUndo={toasterState.lastSilentUndo}
-      onUndo={(id) => void toaster.undoById(id)}
+      onUndo={(undoId) => void toaster.undoById(undoId)}
       onJumpToError={() => {
-        const id = saveError?.itemId;
-        if (!id) return;
-        flashItem(id);
-        document.getElementById(`menu-row-${id}`)?.focus({ preventScroll: true });
+        const errorId = saveError?.itemId;
+        if (!errorId) return;
+        flashItem(errorId);
+        document.getElementById(`menu-row-${errorId}`)?.focus({ preventScroll: true });
       }}
     />
   );
 
   const empty = categories.length === 0;
+  const hasRail = !empty;
   const panelKey = useItemPanelKey(itemTarget, itemNonce);
   const editedItemName =
     itemTarget?.mode === 'edit'
@@ -588,6 +921,20 @@ function StudioLoaded({
       />
     ) : null;
 
+  // Grid (spec §3.1). `min-[87.5rem]` / `min-[100rem]` are 1400 / 1600 px in rem so they sort after `xl:`.
+  const gridCols = rightVisible
+    ? hasRail
+      ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] min-[87.5rem]:grid-cols-[184px_minmax(0,1fr)_360px] min-[100rem]:grid-cols-[184px_minmax(0,1fr)_380px]'
+      : 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] min-[100rem]:grid-cols-[minmax(0,1fr)_380px]'
+    : hasRail
+      ? 'lg:grid-cols-[minmax(0,1fr)] min-[87.5rem]:grid-cols-[184px_minmax(0,1fr)]'
+      : 'lg:grid-cols-[minmax(0,1fr)]';
+
+  const clearSearch = () => {
+    setQuery('');
+    setFilter('all');
+  };
+
   return (
     <StudioContext.Provider value={studio}>
       <div className="relative mx-auto w-full max-w-[1600px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
@@ -601,8 +948,12 @@ function StudioLoaded({
           onOpenShare={() => setShareOpen(true)}
           analyticsHref={`${menuHref}/analytics`}
           fullPreview={openLink}
+          onSortCategories={empty ? undefined : openCategoryOrder}
+          onPasteList={empty ? undefined : () => openPasteSheet(null)}
+          organiseDisabled={!canEdit}
           onCollapseAll={empty ? undefined : () => setAllCollapsed(true)}
           onExpandAll={empty ? undefined : () => setAllCollapsed(false)}
+          onShortcuts={finePointer ? () => setShortcutsOpen(true) : undefined}
           designDisabledReason={!menuEnabled ? copy.header.designLockedReason : isViewer ? copy.header.designViewerReason : null}
         />
 
@@ -662,9 +1013,16 @@ function StudioLoaded({
                       if (target) createItemIn(target);
                     },
                     category: focusNewCategory,
+                    paste: () => openPasteSheet(null),
                   }}
                   readOnly={readOnly}
                   showSearch={!phonePreview}
+                  selecting={selection !== null}
+                  onToggleSelect={() => (selectionRef.current ? exitSelection() : startSelection())}
+                  reorderMode={reorderMode}
+                  onToggleReorder={toggleReorder}
+                  canSelect={mode === 'edit' && hasItems}
+                  canReorder={!finePointer && canEdit && mode === 'edit' && hasItems}
                 />
                 {!pagePreview && (
                   <CategoryChips
@@ -695,44 +1053,60 @@ function StudioLoaded({
               </>
             )}
 
-            <div
-              className={`lg:grid lg:items-start lg:gap-5 ${
-                rightVisible
-                  ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] min-[100rem]:grid-cols-[minmax(0,1fr)_380px]'
-                  : 'lg:grid-cols-[minmax(0,1fr)]'
-              }`}
-            >
+            <div className={`lg:grid lg:items-start lg:gap-5 ${gridCols}`}>
+              {hasRail && (
+                <CategoryRail
+                  categories={categories}
+                  activeId={activeCategoryId}
+                  onJump={railJump}
+                  onAddCategory={canEdit && mode === 'edit' ? focusNewCategory : undefined}
+                  canReorder={canEdit && mode === 'edit'}
+                />
+              )}
+
               <div
                 id="menu-items-pane"
                 hidden={pagePreview}
                 onFocusCapture={onFocusCapture}
-                className="@container/outline min-w-0 scroll-mt-[124px] space-y-3 lg:scroll-mt-[180px]"
+                className="@container/outline min-w-0 scroll-mt-[124px] space-y-3 lg:scroll-mt-[180px] min-[87.5rem]:scroll-mt-[124px]"
               >
                 <ContextBar
                   query={deferredQuery}
                   filter={filter}
                   total={filtered.total}
-                  onClear={() => {
-                    setQuery('');
-                    setFilter('all');
-                  }}
+                  onClear={clearSearch}
                   onRestockAll={(ids) => void actions.bulkSetFlags(ids, 'markAvailable')}
                   canEdit={canEdit}
                   soldOutIds={soldOutIds}
+                  dragNote={finePointer && canEdit && mode === 'edit' && filtered.active}
+                  selection={
+                    liveSelection
+                      ? {
+                          count: liveSelection.size,
+                          outsideFilter: filtered.active
+                            ? [...liveSelection].filter((sid) => !filtered.sections.some((s) => s.items.some((i) => i.id === sid))).length
+                            : 0,
+                          visible: visibleIds.length,
+                          allVisibleSelected: visibleIds.length > 0 && visibleIds.every((vid) => liveSelection.has(vid)),
+                          onSelectVisible: selectVisible,
+                          onClear: () => setSelection(new Set()),
+                        }
+                      : null
+                  }
+                  reorder={reorderMode ? { onDone: () => setReorderMode(false) } : null}
                 />
                 <MenuOutline
                   sections={filtered.sections}
                   filterActive={filtered.active}
                   query={deferredQuery}
-                  onClearSearch={() => {
-                    setQuery('');
-                    setFilter('all');
-                  }}
+                  onClearSearch={clearSearch}
                   collapsed={effectiveCollapsed}
                   onToggleCollapse={onToggleCollapse}
                   completion={completion}
                   rows={rows}
                   pendingCreates={pendingCreates}
+                  selection={liveSelection}
+                  reorderMode={reorderMode}
                 />
               </div>
 
@@ -764,6 +1138,10 @@ function StudioLoaded({
 
         {!isDesktop && itemPanel('sheet')}
 
+        {liveSelection && liveSelection.size > 0 && canEdit && mode === 'edit' && (
+          <SelectionBar selection={liveSelection} categories={categories} onClear={exitSelection} />
+        )}
+
         {shareOpen && canShare && (
           <ShareDialog
             restaurantId={restaurantId}
@@ -776,6 +1154,35 @@ function StudioLoaded({
             analyticsHref={`${menuHref}/analytics`}
             onPublish={() => void publish()}
             onClose={() => setShareOpen(false)}
+          />
+        )}
+        {moveDialog && (
+          <MoveToCategoryDialog
+            itemIds={moveDialog.itemIds}
+            onClose={() => setMoveDialog(null)}
+            onMoved={moveDialog.fromSelection ? exitSelection : undefined}
+          />
+        )}
+        {bulkPrice && <BulkPriceDialog itemIds={bulkPrice.itemIds} categories={categories} onClose={() => setBulkPrice(null)} />}
+        {categoryOrderOpen && <CategoryOrderSheet categories={categories} onClose={() => setCategoryOrderOpen(false)} />}
+        {pasteSheet && (
+          <PasteSheet
+            initialCategoryId={pasteSheet.categoryId}
+            categories={stable}
+            onClose={() => {
+              setPasteSheet(null);
+              reportPasteDirty('sheet', false);
+            }}
+            onDirtyChange={(dirty) => reportPasteDirty('sheet', dirty)}
+          />
+        )}
+        {shortcutsOpen && (
+          <ShortcutsDialog
+            locale={locale}
+            isMac={isMac}
+            singleKeys={singleKeys}
+            onSingleKeys={changeSingleKeys}
+            onClose={() => setShortcutsOpen(false)}
           />
         )}
         {confirmDialog}

@@ -9,9 +9,12 @@ import {
  * by this segment, by `MenuStudio` (menu or role still loading), by the
  * `?preview=1` screen and by `dashboard/menu/loading.tsx` + `MenuHubRedirect`.
  * Clones the studio DOM with the same classes — header → status card →
- * (<1024) view switch, search, filters, sticky chip bar / (≥1024) two-row
- * sticky toolbar → [outline | right column]. Rows use `row-layout.ts`, so a
- * row has the same tier geometry here as in the studio.
+ * (<1024) view switch, search, filters, sticky chip bar / (≥1024) sticky
+ * toolbar, two rows below 1400 and one row from 1400 → [category rail (≥1400) |
+ * outline | right column]. Rows use `row-layout.ts`, so a row has the same
+ * tier geometry here as in the studio. The grid classes are the studio's
+ * (`min-[87.5rem]` / `min-[100rem]` = 1400 / 1600 px written in rem so they
+ * sort after `xl:`).
  */
 export default function MenuBuilderSkeleton() {
   return (
@@ -57,8 +60,13 @@ export default function MenuBuilderSkeleton() {
           ))}
           <SkBox className="ml-auto h-4 w-28" />
           <SkBox className="h-9 w-9" />
+          <div className="hidden shrink-0 items-center gap-2 min-[1400px]:flex">
+            <SkBox className="h-9 w-[150px] rounded-[10px]" />
+            <SkBox className="h-9 w-16 rounded-lg" />
+            <SkBox className="h-[34px] w-20 rounded-lg" />
+          </div>
         </div>
-        <div className="flex h-14 items-center gap-2">
+        <div className="flex h-14 items-center gap-2 min-[1400px]:hidden">
           {Array.from({ length: 5 }).map((_, i) => (
             <SkBox key={i} className="h-9 w-24 rounded-full" />
           ))}
@@ -89,8 +97,17 @@ export default function MenuBuilderSkeleton() {
         </div>
       </div>
 
-      {/* Outline | right column */}
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-5 xl:grid-cols-[minmax(0,1fr)_360px] min-[100rem]:grid-cols-[minmax(0,1fr)_380px]">
+      {/* Category rail (≥1400) | outline | right column */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-5 xl:grid-cols-[minmax(0,1fr)_360px] min-[87.5rem]:grid-cols-[184px_minmax(0,1fr)_360px] min-[100rem]:grid-cols-[184px_minmax(0,1fr)_380px]">
+        <div className="bz-card sticky top-[128px] hidden self-start p-2 min-[1400px]:block" aria-hidden="true">
+          <SkBox className="mx-2 mb-1.5 mt-1 h-3 w-20" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex h-10 items-center gap-2 px-2">
+              <SkBox className="h-3.5 flex-1" />
+              <SkBox className="h-3 w-4" />
+            </div>
+          ))}
+        </div>
         <div className="@container/outline min-w-0 space-y-3">
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, s) => (
@@ -138,7 +155,7 @@ export default function MenuBuilderSkeleton() {
           </div>
         </div>
 
-        <div className="bz-card sticky top-[184px] hidden max-h-[calc(100dvh-200px)] flex-col self-start overflow-hidden p-0 lg:flex">
+        <div className="bz-card sticky top-[184px] hidden max-h-[calc(100dvh-200px)] flex-col self-start overflow-hidden p-0 lg:flex min-[1400px]:top-[128px] min-[1400px]:max-h-[calc(100dvh-144px)]">
           <div className="flex h-11 items-center gap-2 border-b border-[#EDEDED] px-3">
             <SkBox className="h-3.5 w-36" />
             <SkBox className="ml-auto h-7 w-24 rounded-lg" />
