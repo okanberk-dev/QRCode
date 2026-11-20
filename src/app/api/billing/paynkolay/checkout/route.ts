@@ -71,6 +71,8 @@ export async function GET(req: NextRequest) {
       billingCycle: cycle,
       amountMinor: Math.round(amountTry * 100),
       locale,
+      // Binds the row to its PayNKolay environment (billing spec D18).
+      providerEnv: cfg.env,
     },
     select: { id: true, amountMinor: true },
   });

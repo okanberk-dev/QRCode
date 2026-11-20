@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { paymentResultMessage } from '@/lib/billing/payment-result-copy';
 import { Check, Download, FileText, Loader2, Receipt } from 'lucide-react';
 import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
@@ -129,21 +130,8 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
     const params = new URLSearchParams(window.location.search);
     const status = params.get('payment');
     if (!status) return;
-    const messages: Record<string, { kind: 'success' | 'danger'; tr: string; en: string }> = {
-      success: { kind: 'success', tr: 'Ödeme alındı, paketiniz etkin.', en: 'Payment received, your plan is active.' },
-      failed: { kind: 'danger', tr: 'Ödeme tamamlanmadı. Kartınızdan tutar çekilmedi.', en: 'The payment was not completed. Your card was not charged.' },
-      pending: {
-        kind: 'danger',
-        tr: 'Ödemenin sonucu henüz doğrulanamadı. Birkaç dakika içinde bu sayfayı yenileyin; sorun sürerse destek ekibine yazın.',
-        en: 'The payment could not be confirmed yet. Refresh this page in a few minutes; contact support if it persists.',
-      },
-      unavailable: { kind: 'danger', tr: 'Bu paket için kartla ödeme şu an açık değil.', en: 'Card payment is not available for this plan right now.' },
-      owner_only: { kind: 'danger', tr: 'Ödemeyi yalnızca hesap sahibi yapabilir.', en: 'Only the account owner can pay.' },
-      plan_too_small: { kind: 'danger', tr: 'Bu plan, sahip olduğunuz işletme sayısından az işletmeyi kapsıyor. Daha büyük bir plan seçin.', en: 'This plan covers fewer businesses than you already have. Choose a larger plan.' },
-      rate_limited: { kind: 'danger', tr: 'Çok fazla deneme yapıldı. Biraz sonra tekrar deneyin.', en: 'Too many attempts. Please try again shortly.' },
-    };
-    const m = messages[status];
-    if (m) setNotice({ kind: m.kind, message: isTr ? m.tr : m.en });
+    const m = paymentResultMessage(status, isTr ? 'tr' : 'en');
+    if (m) setNotice(m);
     params.delete('payment');
     const qs = params.toString();
     window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);

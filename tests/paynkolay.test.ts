@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildHostedCheckout,
+  confirmPayment,
   decidePayment,
   formatPaynkolayDay,
   formatPaynkolayRnd,
@@ -75,16 +76,17 @@ test('PaymentList: "no record" is empty, refusals throw', () => {
   assert.throws(() => paymentListRows({ result: '{"RESPONSE_DATA":"API : hashData error"}' }));
 });
 
-test('decidePayment: only a SUCCESS sale of the exact amount counts', () => {
-  const ok = { REFERENCE_CODE: 'R1', STATUS: 'SUCCESS', TRANSACTION_TYPE: 'SALES', AUTHORIZATION_AMOUNT: '499.00' };
-  assert.deepEqual(decidePayment([ok], 49900, 'R1'), { status: 'succeeded', referenceCode: 'R1', amountMinor: 49900 });
-  assert.equal(decidePayment([ok], 50000, 'R1').status, 'failed');
-  assert.equal(decidePayment([{ ...ok, STATUS: 'NEW' }], 49900, 'R1').status, 'failed');
-  assert.equal(decidePayment([{ ...ok, TRANSACTION_TYPE: 'CANCEL' }], 49900, 'R1').status, 'failed');
-  assert.equal(decidePayment([], 49900, '').status, 'failed');
+test('decidePayment: only a SUCCESS sale of the exact amount for this clientRefCode counts', () => {
+  const ok = { CLIENT_REFERENCE_CODE: 'pay123', REFERENCE_CODE: 'R1', STATUS: 'SUCCESS', TRANSACTION_TYPE: 'SALES', AUTHORIZATION_AMOUNT: '499.00' };
+  const expected = { clientRefCode: 'pay123', amountMinor: 49900, hosted: true };
+  assert.deepEqual(decidePayment([ok], expected, 'R1'), { kind: 'succeeded', referenceCode: 'R1', amountMinor: 49900 });
+  assert.equal(decidePayment([ok], { ...expected, amountMinor: 50000 }, 'R1').kind, 'charged_mismatch');
+  assert.equal(decidePayment([{ ...ok, STATUS: 'NEW' }], expected, 'R1').kind, 'indeterminate');
+  assert.equal(decidePayment([{ ...ok, TRANSACTION_TYPE: 'CANCEL' }], expected, 'R1').kind, 'charged_mismatch');
+  assert.equal(decidePayment([], expected, '').kind, 'not_found');
 });
 
-test('period: a payment extends an active period instead of overlapping', () => {
+test('period: a payment extends an active period instead of overlapping (Istanbul calendar)', () => {
   const now = new Date(Date.UTC(2026, 0, 15));
   assert.equal(nextPeriodEnd('monthly', null, now).toISOString(), '2026-02-15T00:00:00.000Z');
   assert.equal(
@@ -92,6 +94,43 @@ test('period: a payment extends an active period instead of overlapping', () => 
     '2026-02-20T00:00:00.000Z',
   );
   assert.equal(nextPeriodEnd('yearly', new Date(Date.UTC(2025, 0, 1)), now).toISOString(), '2027-01-15T00:00:00.000Z');
+  // Month end: 31 Jan → 28 Feb (not 3 Mar), and with the anchor back to 31 Mar.
+  const jan31 = new Date('2027-01-31T09:00:00Z');
+  const feb = nextPeriodEnd('monthly', jan31, new Date('2027-01-20T00:00:00Z'));
+  assert.equal(feb.toISOString(), '2027-02-28T09:00:00.000Z');
+  assert.equal(nextPeriodEnd('monthly', feb, new Date('2027-02-20T00:00:00Z'), 31).toISOString(), '2027-03-31T09:00:00.000Z');
+  // 01:30 Istanbul on 1 March anchors to the 1st, not to 28 February UTC.
+  assert.equal(nextPeriodEnd('monthly', null, new Date('2027-02-28T22:30:00Z')).toISOString(), '2027-03-31T22:30:00.000Z');
+});
+
+test('confirmPayment: PaymentList through an injected transport, PaymentDecision result', async () => {
+  const sent: Record<string, string>[] = [];
+  const transport = {
+    async postForm(url: string, form: Record<string, string>) {
+      assert.equal(url, 'https://pos.test/Vpos/Payment/PaymentList');
+      sent.push(form);
+      const rows = [
+        { CLIENT_REFERENCE_CODE: 'other', REFERENCE_CODE: 'R1', STATUS: 'SUCCESS', AUTHORIZATION_AMOUNT: '499.00' },
+        { CLIENT_REFERENCE_CODE: 'pay123', REFERENCE_CODE: 'R2', STATUS: 'SUCCESS', TRANSACTION_TYPE: 'SALES', AUTHORIZATION_AMOUNT: '499.00' },
+      ];
+      return { status: 200, contentType: 'application/json', text: JSON.stringify({ result: { LIST: rows } }) };
+    },
+  };
+  const now = new Date(Date.UTC(2026, 0, 2, 9));
+  const decision = await confirmPayment(
+    cfg,
+    { REFERENCE_CODE: 'R1' },
+    { clientRefCode: 'pay123', amountMinor: 49900, createdAt: new Date(Date.UTC(2026, 0, 2, 8)) },
+    transport,
+    now,
+  );
+  assert.deepEqual(decision, { kind: 'succeeded', referenceCode: 'R2', amountMinor: 49900 });
+  assert.equal(sent[0].sx, 'SXL');
+  assert.equal(sent[0].clientRefCode, 'pay123');
+  assert.equal(sent[0].hashDatav2, paynkolayHash(['SXL', sent[0].startDate, sent[0].endDate, 'pay123'], 'SECRET'));
+
+  const failing = { async postForm() { return { status: 502, contentType: 'text/html', text: '<html>x</html>' }; } };
+  await assert.rejects(confirmPayment(cfg, {}, { clientRefCode: 'pay123', amountMinor: 1, createdAt: now }, failing, now));
 });
 
 test('plan modules: unknown keys dropped, switches derived', () => {

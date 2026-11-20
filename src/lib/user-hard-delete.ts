@@ -46,10 +46,27 @@
 //
 // Deleted (userId is PK, cannot null):
 //   BillingSubscription      → deleted
+//
+// Saved cards (billing spec §11.6), whatever the billing flags say:
+//   - deferred (`{ deferred: 'billing_in_flight' }`, nothing deleted) while a
+//     payment of the user is pending (< 7 days) or a renewal is in
+//     owner_paying / charging / awaiting_confirmation (< 7 days);
+//   - before the transaction, cards stored at PayNKolay are purged (verified
+//     by re-list) when config, binding and vault keys are available; if not,
+//     or if the purge is not verified, a tombstone keeps the VERBATIM sealed
+//     customer key + AAD user id so phase 6 of the renewal engine can finish
+//     the provider deletion later (no key needed at delete time);
+//   - BillingConsent / BillingPayment.userId → the same `del_…` pseudonym
+//     (consents get purge_after = now + 10 y); renewals, card mirror rows and
+//     the customer row are deleted (the customer FK is RESTRICT on purpose).
 
-import { createHash } from 'crypto';
-import type { Prisma } from '@prisma/client';
+import { createHash, randomBytes, randomUUID } from 'crypto';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { loadProviderVaultDeps, purgeProviderCards, type VaultDeps } from '@/lib/billing/card-vault';
+import { billingLog } from '@/lib/billing/redact';
+import { IN_FLIGHT_STATES } from '@/lib/billing/renewal-policy';
+import { loadHmacKeys, userPseudonym, type HmacKeys } from '@/lib/billing/vault-crypto';
 
 export interface HardDeleteActor {
   /** Audit log actor.id (admin user id, or null for cron). */
@@ -72,6 +89,61 @@ export interface HardDeleteResult {
   /** §38.238 — FK-less user-owned rows removed (google integration, api keys,
    *  team members, notification preferences). */
   orphanRowsDeleted: number;
+  /** Stored cards were deleted at PayNKolay and the deletion was verified. */
+  billingVaultPurged: boolean;
+  /** Provider deletion is still owed: a tombstone was written. */
+  billingTombstoned: boolean;
+  consentsPseudonymised: number;
+  paymentsPseudonymised: number;
+}
+
+export interface HardDeleteDeferred {
+  deferred: 'billing_in_flight';
+}
+
+export function isHardDeleteDeferred(value: HardDeleteResult | HardDeleteDeferred): value is HardDeleteDeferred {
+  return 'deferred' in value;
+}
+
+export interface HardDeleteBillingDeps {
+  db: PrismaClient;
+  now: () => Date;
+  /** Provider purge context (config + binding + vault keys), or null when any is missing. */
+  vault: () => Promise<VaultDeps | null>;
+  hmac: () => HmacKeys | null;
+}
+
+const BILLING_DEFER_MS = 7 * 24 * 60 * 60_000;
+const CONSENT_RETENTION_YEARS = 10;
+
+function defaultBillingDeps(): HardDeleteBillingDeps {
+  return {
+    db: prisma,
+    now: () => new Date(),
+    vault: () => loadProviderVaultDeps(),
+    hmac: () => {
+      try {
+        return loadHmacKeys();
+      } catch {
+        return null;
+      }
+    },
+  };
+}
+
+/** True while billing for the user is in flight (bounded to 7 days, §11.6). */
+export async function billingInFlight(db: PrismaClient, userId: string, now: Date): Promise<boolean> {
+  const since = new Date(now.getTime() - BILLING_DEFER_MS);
+  const payment = await db.billingPayment.findFirst({
+    where: { userId, status: 'pending', createdAt: { gte: since } },
+    select: { id: true },
+  });
+  if (payment) return true;
+  const renewal = await db.billingRenewal.findFirst({
+    where: { userId, state: { in: [...IN_FLIGHT_STATES] }, updatedAt: { gte: since } },
+    select: { id: true },
+  });
+  return renewal !== null;
 }
 
 /** SHA-256 short prefix used to retain a non-reversible audit hint of who was
@@ -96,10 +168,40 @@ export async function executeUserHardDelete(
   userId: string,
   email: string,
   actor: HardDeleteActor,
-): Promise<HardDeleteResult> {
+  overrides: Partial<HardDeleteBillingDeps> = {},
+): Promise<HardDeleteResult | HardDeleteDeferred> {
+  const deps: HardDeleteBillingDeps = { ...defaultBillingDeps(), ...overrides };
+  const db = deps.db;
   const emailHash = hashEmailShort(email);
+  const now = deps.now();
 
-  return prisma.$transaction(async (tx) => {
+  if (await billingInFlight(db, userId, now)) return { deferred: 'billing_in_flight' };
+
+  // Network I/O is not allowed inside the transaction: purge stored cards first.
+  const customer = await db.billingCustomer.findUnique({
+    where: { userId },
+    select: { customerKeyEnc: true, providerEnv: true },
+  });
+  let billingVaultPurged = false;
+  if (customer) {
+    try {
+      const vault = await deps.vault();
+      if (vault && vault.cfg.env === customer.providerEnv) {
+        billingVaultPurged = (await purgeProviderCards(vault, userId, 'account_deleted')).ok;
+      }
+    } catch (err) {
+      // Never blocks the erasure: the tombstone below finishes it later.
+      billingLog('warn', 'erasure.purge_failed', { userId, code: err instanceof Error ? err.name : 'unknown' });
+    }
+  }
+  const billingTombstoned = customer !== null && !billingVaultPurged;
+  const hmac = deps.hmac();
+  // Only has to be consistent within this deletion when the HMAC key is unavailable.
+  const pseudonym = hmac ? userPseudonym(userId, hmac) : `del_${randomBytes(16).toString('base64url').slice(0, 22)}`;
+  const consentPurgeAfter = new Date(now.getTime());
+  consentPurgeAfter.setUTCFullYear(consentPurgeAfter.getUTCFullYear() + CONSENT_RETENTION_YEARS);
+
+  return db.$transaction(async (tx) => {
     // Audit logs — anonymize PII before the cascade wipes the User row.
     // actorId is nullable (Stage A migration); payload may contain email
     // snapshots from past admin.members.* writes which we redact here.
@@ -135,6 +237,27 @@ export async function executeUserHardDelete(
     const subscriptionDel = await tx.billingSubscription.deleteMany({
       where: { userId },
     });
+
+    // Saved cards (§11.6). The tombstone copies the sealed blob verbatim.
+    if (billingTombstoned && customer) {
+      await tx.billingVaultTombstone.create({
+        data: {
+          id: `tb_${randomUUID()}`,
+          providerEnv: customer.providerEnv,
+          customerKeyEnc: customer.customerKeyEnc,
+          aadUserId: userId,
+        },
+        select: { id: true },
+      });
+    }
+    const consentsPseudonymised = (
+      await tx.billingConsent.updateMany({ where: { userId }, data: { userId: pseudonym, purgeAfter: consentPurgeAfter } })
+    ).count;
+    // Amounts and reference fingerprints stay, so a dispute can still be traced from the payment id.
+    const paymentsPseudonymised = (await tx.billingPayment.updateMany({ where: { userId }, data: { userId: pseudonym } })).count;
+    await tx.billingRenewal.deleteMany({ where: { userId } });
+    await tx.billingCard.deleteMany({ where: { userId } });
+    await tx.billingCustomer.deleteMany({ where: { userId } });
 
     // Menu items must be cleared BEFORE their categories.
     // `menu_items.category_id` is the one ON DELETE RESTRICT foreign key in the
@@ -209,6 +332,10 @@ export async function executeUserHardDelete(
           auditRowsRedacted: audited.length,
           restaurantsDeleted: restaurantDel.count,
           orphanRowsDeleted,
+          billingVaultPurged,
+          billingTombstoned,
+          consentsPseudonymised,
+          paymentsPseudonymised,
           ...(actor.extra ?? {}),
         },
       },
@@ -220,6 +347,10 @@ export async function executeUserHardDelete(
       auditRowsRedacted: audited.length,
       restaurantsDeleted: restaurantDel.count,
       orphanRowsDeleted,
+      billingVaultPurged,
+      billingTombstoned,
+      consentsPseudonymised,
+      paymentsPseudonymised,
     };
   });
 }

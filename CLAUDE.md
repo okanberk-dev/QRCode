@@ -1501,7 +1501,7 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 
 ### 21.12 Cron path listesi (mevcut)
 
-`vercel.json` `crons` array'inde **13 entry** (2026-11'de 16'dan indi, §21.39). Tek source-of-truth: `vercel.json` — schedule için her zaman ona bak.
+`vercel.json` `crons` array'inde **14 entry** (2026-11'de 16'dan indi, §21.39). Tek source-of-truth: `vercel.json` — schedule için her zaman ona bak.
 
 **Cron hata maili (§38.241, kanonik)**: Vercel, cron uç noktası 2xx dışı yanıt dönünce "cron run failed" maili atar. Tüm cron route'ları `export const GET = withCronGuard('/api/cron/<ad>', handleCron)` ile sarılır (`src/lib/cron-guard.ts`): gerçek Vercel çağrısında (`user-agent: vercel-cron`) handler'ın 5xx yanıtı veya fırlattığı hata **200 + `{ ok:false }`** olarak döner ve Sentry'ye (`tag cron`, cron başına tek issue fingerprint) yazılır. 401 korunur (CRON_SECRET bozuksa görünür kalmalı). Manuel/admin tetiklemede gerçek status döner. `tests/cron-guard.test.ts` her `vercel.json` cron'unun sarıldığını doğrular — yeni cron eklerken sarmayı unutursan test kırılır. Not: Hobby planda günlük cron saat içinde rastgele dakikada tetiklenir (04:00 → 04:59 gözlendi); Sentry `automaticVercelMonitors` yalnız Pages Router `pages/api` route'larını sardığı için bu projede hiç çalışmıyordu ve kaldırıldı.
 
@@ -1520,6 +1520,7 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 | `/api/cron/rating-drop-alert` | `0 11 * * 1` | Haftalık puan düşüşü uyarısı |
 | `/api/cron/monthly-newsletter` | `0 12 1 * *` | Aylık bülten |
 | `/api/cron/monthly-health-report` | `0 13 1 * *` | Aylık sağlık raporu maili (§43) |
+| `/api/cron/billing-renewals` | `0 6 * * *` (Vercel test sözleşmesi; üretim Coolify saatlik `25 * * * *`) | Faturalama motoru: mutabakat, dönem sonu, tombstone, tarama, saklama (§44.3) |
 
 ### 21.13 Cron logic'i admin panelden tetikleme (anti-pattern: self-fetch)
 
@@ -5709,10 +5710,12 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
    başarılı sayılır. `settlePaynkolayPayment()` idempotenttir (ödemeyi
    `status != succeeded` koşuluyla sahiplenir), aboneliği bir dönem uzatır,
    `User.plan`'ı günceller, `BillingInvoice` (`PNK-YYYYMM-xxxx`) yazar ve
-   plan modüllerini uygular (§5.2). 303 → `?payment=success|failed|pending`.
-4. Otomatik yenileme yok: her ödeme bir ay / bir yıl alır; owner "Süreyi
-   uzat" ile öder. `lifecycle-emails` cron'u süresi geçen PayNKolay
-   aboneliklerini `free`'ye çeker (`expireLapsedPaynkolayPeriods`).
+   plan modüllerini uygular (§5.2). 303 → `?payment=success|failed|pending|review`
+   (süresi dolmuş owner `/pricing?plan=expired&payment=…`'e gider, §44.3).
+4. Otomatik yenileme yok (kayıtlı kart / otomatik yenileme altyapısı bayraklar
+   arkasında kapalı, §44.3): her ödeme bir ay / bir yıl alır; owner "Süreyi
+   uzat" ile öder. Süresi geçen PayNKolay dönemleri `expireLapsedPaynkolayPeriods`
+   ile `expired`'a çekilir (`lifecycle-emails` günlük + `billing-renewals` saatlik).
 
 ### §44.2 Kurallar
 
@@ -5741,9 +5744,65 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
 - Kart bilgisi Buaze'ye hiç gelmez; log/Sentry'ye yalnız `paymentId`, `userId`,
   referans kodu yazılır (§37.7).
 
+### §44.3 Kayıtlı kart + otomatik yenileme altyapısı (temel, PR 1; spec `billing-spec-final.md`)
+
+Owner'a görünmez temel katman. Kart saklama, otomatik çekim, hatırlatma ve
+onay ekranları sonraki PR'larda gelir; bu katman hiçbir kartı çekmez, owner'a
+mail atmaz.
+
+- **Modüller** (`src/lib/billing/`): `flags.ts` (tek okuyucu; bağlama),
+  `billing-settings.ts` (singleton: tick lease, breaker, günlük işaretler),
+  `vault-crypto.ts` + `sensitive.ts` + `redact.ts` (mühürleme, HMAC kimlikler,
+  log/Sentry temizleme), `renewal-policy.ts` (saf: İstanbul takvimi,
+  `addPeriod`, deneme takvimi, durum makinesi `canTransition`,
+  `evaluateRenewal`), `renewal-store.ts` + `renewal-store-prisma.ts`,
+  `renewal-engine.ts` (`runRenewalTick`), `paynkolay-billing.ts` (settle /
+  post-settle / expiry), `card-vault.ts` (şimdilik yalnız sağlayıcı silme),
+  `retention.ts`, `refund-queue.ts`, `return-flow.ts`. Ödeme kararı
+  `src/lib/payment/paynkolay.ts` `decidePayment` (`PaymentDecision`: yalnız
+  aynı `CLIENT_REFERENCE_CODE` satırları; `succeeded|duplicate|failed|not_found|indeterminate|charged_mismatch`).
+- **Bayraklar (adlar)**: `PAYNKOLAY_CARD_STORAGE`, `PAYNKOLAY_HOSTED_CARD_SELECT`,
+  `PAYNKOLAY_AUTO_CHARGE` (hepsi varsayılan kapalı; bilinmeyen değer = kapalı),
+  `PAYNKOLAY_AUTO_CHARGE_DRY_RUN` (yalnız tam `off` iken kapalı). Diğer adlar:
+  `PAYNKOLAY_ENV`, `BILLING_VAULT_KEY`, `BILLING_HMAC_KEY` (+`_PREVIOUS`),
+  `BILLING_ALLOWED_HOSTS`, `BILLING_LIVE_DB_REF`, `TRUSTED_PROXIES`,
+  `PAYNKOLAY_MIT_*`, `PAYNKOLAY_NON3D_LIMIT_TRY`. Gizliler yalnız runtime.
+- **Bağlama (D18)**: `billing_settings.provider_env` yalnız
+  `scripts/billing-bind-env.ts` ile yazılır. İzinli host + açık `PAYNKOLAY_ENV`
+  + satır eşleşmesi yoksa motor hiçbir şey yapmaz (`skipped: 'binding'`).
+  Ödeme/yenileme satırları `provider_env` taşır; NULL = `live`.
+- **Cron**: `GET /api/cron/billing-renewals` (`withCronGuard`,
+  `isCronAuthorized` sabit zamanlı). Coolify saatlik `25 * * * *`;
+  `vercel.json` günlük `0 6 * * *` yalnız test sözleşmesi. Tick: lease (advisory
+  lock değil), 240 sn bütçe; fazlar: reconcile (bekleyen ödeme PaymentList ile
+  kapanır; terk edilmiş hosted ödeme 45 dk sonra `failed('no_transaction')`,
+  7 gün geç-başarı kontrolü; 48 sa çözülmeyen → inceleme), lapse (+expiry),
+  tombstone, günlük tarama (red oranı, geciken iade; tarih aralığı taraması
+  Q-16 doğrulanana dek kapalı), retention (İstanbul günü başına bir kez).
+  **Çekim fazı yok.**
+- **Settle (§11.2)**: `FOR UPDATE` ile seri; dönem İstanbul takviminde ve
+  çapa günüyle (`billingAnchorDay`, 31 Oca → 28 Şub → 31 Mar); past_due / 7
+  gün içinde düşmüş aynı plan E'ye çapalanır; aynı dönem için ikinci ödeme
+  `duplicate_period` → iade kuyruğu (D19, `scripts/billing-refund-queue.ts`);
+  silinmiş hesap (`del_…`) ve tekrar kullanılan referans → `needs_review`.
+  REFERENCE_CODE yalnız `rf1_` parmak izi (anahtar yoksa `paynkolay:<id>`).
+- **Expiry (§11.3)**: `active` ve `past_due`; ödemesi süren ya da grace'i
+  bitmemiş onaylı yenileme atlanır; settle ile aynı satır kilidi.
+- **Silme (§11.6)**: bekleyen ödeme / süren çekim varken en çok 7 gün ertelenir
+  (`deferred: 'billing_in_flight'`, admin 409); kartlar önce sağlayıcıda silinir,
+  olmazsa mühürlü anahtarın birebir kopyasıyla tombstone; ödeme ve onaylar `del_`
+  takma adıyla saklanır.
+- **Kapılar**: G0 (anahtarlar runtime-only, `billing-bind-env --env live`,
+  `backfill-reference-fingerprints`, ardından `prisma/migrations-gated`
+  migration'ı). Çekim kodu (PR 3) yalnız sandbox soruları (Q-1, Q-3, Q-6, Q-7,
+  Q-9, Q-16) doğrulanınca birleşir.
+
 **Yapma**: dönüş POST'undaki durum alanına güvenip aboneliği açma (her zaman
 PaymentList); tutarı istemciden alma; checkout rotasına site CSP'sini geri
-uygulama; otomatik yenileme varmış gibi metin yazma.
+uygulama; otomatik yenileme varmış gibi metin yazma; onay gelmemesini "ödenmedi"
+sayma; token, TranId veya ham REFERENCE_CODE saklama; `customerKey`'i JSON, URL
+ya da loga koyma; faturalamada `ENCRYPTION_KEY` kullanma; dönüş gövdesini ya da
+sorgu dizgesini Sentry'ye / loga verme.
 **Yap**: yeni ödeme yüzeyi checkout rotasına link verir (`<a>`, Next `<Link>`
 değil); yeni plan alanı eklenirse `paynkolayCheckoutAmounts` ve `toPublicPlan`
 birlikte güncellenir.

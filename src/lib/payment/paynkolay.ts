@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { billingLog, redactString } from '@/lib/billing/redact';
+import type { PaynkolayHttpResult, PaynkolayTransport } from './paynkolay-transport';
 
 /**
  * PayNKolay (Nkolay Ödeme Kuruluşu) virtual POS — the only card payment
@@ -10,11 +11,12 @@ import { billingLog, redactString } from '@/lib/billing/redact';
  * Flow
  *   1. `buildHostedCheckout` → form fields signed with `hashDataV2`; the
  *      browser POSTs them to `${baseUrl}/Vpos` (PayNKolay's own card page,
- *      3D Secure always on).
+ *      3D Secure requested; `use3D` is unsigned, see billing spec §3.3).
  *   2. PayNKolay form-POSTs the outcome to `successUrl` / `failUrl`.
  *   3. That POST is NOT trusted on its own: `confirmPayment` asks the
- *      `PaymentList` service for the transaction and only a SUCCESS sale whose
- *      amount equals what we asked for counts. PayNKolay sends no
+ *      `PaymentList` service for the transaction and `decidePayment` decides
+ *      (billing spec §7.3): only a SUCCESS sale for exactly this
+ *      clientRefCode, of the exact amount, counts. PayNKolay sends no
  *      server-to-server webhook.
  *
  * Amounts are integer kuruş everywhere; `1280.10` style strings exist only at
@@ -22,7 +24,6 @@ import { billingLog, redactString } from '@/lib/billing/redact';
  */
 
 const CURRENCY_CODE = '949'; // TRY
-const POS_TIMEOUT_MS = 15_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const PAYNKOLAY_TEST_BASE_URL = 'https://paynkolaytest.nkolayislem.com.tr';
@@ -268,35 +269,167 @@ export function paymentListRows(payload: unknown): Record<string, unknown>[] {
   throw new Error(`paynkolay PaymentList: no transaction list${detail}`);
 }
 
+/** Legacy shape kept for code that has not moved to `PaymentDecision` yet. */
 export type PaymentCheck =
   | { status: 'succeeded'; referenceCode: string; amountMinor: number }
   | { status: 'failed'; reason: string };
 
 /**
- * Decides a payment from PaymentList rows. Only a SUCCESS *sale* counts; a
- * same-day cancel shows up as the same row with TRANSACTION_TYPE CANCEL.
+ * PaymentList statuses that prove a transaction did not go through. Initial
+ * set; finalised from Q-20 / sandbox step §16.2-5. Anything else that is not
+ * SUCCESS is "in progress / unknown" and never counts as a failure.
+ */
+export const TERMINAL_FAILURE_STATUSES: ReadonlySet<string> = new Set([
+  'FAIL',
+  'FAILED',
+  'ERROR',
+  'DECLINED',
+  'REJECTED',
+  'CANCELED',
+  'CANCELLED',
+]);
+
+/**
+ * PaymentList field names this code reads. `required` stays false until the
+ * row schema is verified (Q-20): a missing optional field skips its check; a
+ * field marked required but missing makes the decision `indeterminate`.
+ */
+export const PAYMENT_LIST_FIELDS = {
+  clientRef: ['CLIENT_REFERENCE_CODE', 'clientRefCode', 'clientReferenceCode'],
+  reference: ['REFERENCE_CODE', 'referenceCode'],
+  status: ['STATUS', 'status'],
+  type: ['TRANSACTION_TYPE', 'transactionType'],
+  amount: ['AUTHORIZATION_AMOUNT', 'authorizationAmount'],
+  currency: { names: ['CURRENCY_CODE', 'CURRENCY', 'currencyCode'], required: false },
+  threeD: { names: ['USE_3D', 'IS_3D', 'use3D'], required: false },
+  installment: { names: ['INSTALLMENT', 'installment', 'INSTALLMENT_COUNT'], required: false },
+} as const;
+
+export type PaymentDecision =
+  | { kind: 'succeeded'; referenceCode: string | null; amountMinor: number }
+  /** PayNKolay charged this clientRefCode more than once: settle once, alert, refund. */
+  | { kind: 'duplicate'; referenceCode: string | null; amountMinor: number; successCount: number }
+  /** ≥ 1 matching row, all in TERMINAL_FAILURE_STATUSES, no SUCCESS. */
+  | { kind: 'failed'; reason: string }
+  /** No row for this clientRefCode. */
+  | { kind: 'not_found' }
+  /** A matching row in a non-terminal / unknown status. */
+  | { kind: 'indeterminate'; status: string }
+  | {
+      kind: 'charged_mismatch';
+      reason: 'amount' | 'currency' | 'installment' | 'not_3d' | 'type';
+      referenceCode: string | null;
+    };
+
+export interface ExpectedPayment {
+  clientRefCode: string;
+  amountMinor: number;
+  /** Hosted-page payment (`checkout` / `renewal_link`): also needs 3D, one instalment (§3.3). */
+  hosted: boolean;
+}
+
+function readOptional(row: Record<string, unknown>, names: readonly string[]): string | null {
+  for (const name of names) {
+    if (!(name in row)) continue;
+    const value = row[name];
+    if (value === null || value === undefined) continue;
+    return typeof value === 'string' ? value.trim() : String(value);
+  }
+  return null;
+}
+
+function isFalseFlag(value: string): boolean {
+  return /^(false|0|no|n)$/i.test(value.trim());
+}
+
+const SALES_TYPES = new Set(['', 'SALES', 'SALE']);
+
+/**
+ * Decides a payment from PaymentList rows (billing spec §7.3).
+ *  1. Only rows whose CLIENT_REFERENCE_CODE equals the payment id count, so
+ *     correctness never depends on PaymentList honouring the filter.
+ *  2. SUCCESS sales: amount (and currency, and for hosted payments 3D +
+ *     single instalment) must match, else `charged_mismatch`; more than one
+ *     → `duplicate`; exactly one → `succeeded`.
+ *  3. A SUCCESS row of another type (REFUND, CANCEL, …) → `charged_mismatch('type')`.
+ *  4. No SUCCESS: every row terminal → `failed`; anything else → `indeterminate`.
+ *  5. No matching row → `not_found`.
+ * `returnedReference` only picks between matching SUCCESS rows; it can never
+ * select a row of another clientRefCode.
  */
 export function decidePayment(
   rows: Record<string, unknown>[],
-  expectedAmountMinor: number,
-  returnedReference: string,
-): PaymentCheck {
-  const row = returnedReference
-    ? rows.find((r) => readField(r, 'REFERENCE_CODE', 'referenceCode') === returnedReference)
-    : rows.find((r) => readField(r, 'STATUS', 'status').toUpperCase() === 'SUCCESS') ?? rows[0];
-  if (!row) return { status: 'failed', reason: 'transaction_not_found' };
-  const status = readField(row, 'STATUS', 'status').toUpperCase();
-  if (status !== 'SUCCESS') return { status: 'failed', reason: `status_${(status || 'unknown').toLowerCase()}` };
-  const kind = readField(row, 'TRANSACTION_TYPE', 'transactionType').toLowerCase();
-  if (kind && kind !== 'sales') return { status: 'failed', reason: `transaction_${kind}` };
-  const settled = paynkolayAmountToMinor(readField(row, 'AUTHORIZATION_AMOUNT', 'authorizationAmount'));
-  if (settled === null || settled <= 0) return { status: 'failed', reason: 'amount_unreadable' };
-  if (settled !== expectedAmountMinor) return { status: 'failed', reason: 'amount_mismatch' };
-  return {
-    status: 'succeeded',
-    referenceCode: readField(row, 'REFERENCE_CODE', 'referenceCode') || returnedReference,
-    amountMinor: settled,
-  };
+  expected: ExpectedPayment,
+  returnedReference?: string | null,
+): PaymentDecision {
+  const matching = rows.filter(
+    (row) => isRecord(row) && readField(row, ...PAYMENT_LIST_FIELDS.clientRef) === expected.clientRefCode,
+  );
+  if (matching.length === 0) return { kind: 'not_found' };
+
+  const statusOf = (row: Record<string, unknown>) => readField(row, ...PAYMENT_LIST_FIELDS.status).toUpperCase();
+  const typeOf = (row: Record<string, unknown>) => readField(row, ...PAYMENT_LIST_FIELDS.type).toUpperCase();
+  const refOf = (row: Record<string, unknown>) => readField(row, ...PAYMENT_LIST_FIELDS.reference) || null;
+
+  const successes = matching.filter((row) => statusOf(row) === 'SUCCESS');
+  if (successes.length > 0) {
+    const sales = successes.filter((row) => SALES_TYPES.has(typeOf(row)));
+    const other = successes.find((row) => !SALES_TYPES.has(typeOf(row)));
+    if (other) return { kind: 'charged_mismatch', reason: 'type', referenceCode: refOf(other) };
+
+    for (const row of sales) {
+      const ref = refOf(row);
+      const settled = paynkolayAmountToMinor(readField(row, ...PAYMENT_LIST_FIELDS.amount));
+      if (settled === null || settled !== expected.amountMinor) {
+        return { kind: 'charged_mismatch', reason: 'amount', referenceCode: ref };
+      }
+      const currency = readOptional(row, PAYMENT_LIST_FIELDS.currency.names);
+      if (currency === null && PAYMENT_LIST_FIELDS.currency.required) return { kind: 'indeterminate', status: 'SUCCESS' };
+      if (currency !== null && currency !== '' && currency !== CURRENCY_CODE && currency.toUpperCase() !== 'TRY') {
+        return { kind: 'charged_mismatch', reason: 'currency', referenceCode: ref };
+      }
+      if (expected.hosted) {
+        const threeD = readOptional(row, PAYMENT_LIST_FIELDS.threeD.names);
+        if (threeD === null && PAYMENT_LIST_FIELDS.threeD.required) return { kind: 'indeterminate', status: 'SUCCESS' };
+        if (threeD !== null && isFalseFlag(threeD)) return { kind: 'charged_mismatch', reason: 'not_3d', referenceCode: ref };
+        const installment = readOptional(row, PAYMENT_LIST_FIELDS.installment.names);
+        if (installment !== null && !['', '0', '1'].includes(installment)) {
+          return { kind: 'charged_mismatch', reason: 'installment', referenceCode: ref };
+        }
+      }
+    }
+
+    const wanted = returnedReference?.trim();
+    const chosen = (wanted && sales.find((row) => refOf(row) === wanted)) || sales[0];
+    if (sales.length > 1) {
+      return { kind: 'duplicate', referenceCode: refOf(chosen), amountMinor: expected.amountMinor, successCount: sales.length };
+    }
+    return { kind: 'succeeded', referenceCode: refOf(chosen), amountMinor: expected.amountMinor };
+  }
+
+  const statuses = matching.map(statusOf);
+  if (statuses.every((status) => TERMINAL_FAILURE_STATUSES.has(status))) {
+    return { kind: 'failed', reason: `provider:${statuses[0].toLowerCase()}` };
+  }
+  const open = statuses.find((status) => !TERMINAL_FAILURE_STATUSES.has(status)) ?? '';
+  return { kind: 'indeterminate', status: open.replace(/[^A-Z0-9_]/g, '').slice(0, 24) || 'UNKNOWN' };
+}
+
+/** Maps a `PaymentDecision` to the legacy `PaymentCheck` (only `succeeded`/`duplicate` settle). */
+export function paymentDecisionToCheck(decision: PaymentDecision): PaymentCheck {
+  switch (decision.kind) {
+    case 'succeeded':
+    case 'duplicate':
+      return { status: 'succeeded', referenceCode: decision.referenceCode ?? '', amountMinor: decision.amountMinor };
+    case 'failed':
+      return { status: 'failed', reason: decision.reason };
+    case 'not_found':
+      return { status: 'failed', reason: 'transaction_not_found' };
+    case 'indeterminate':
+      return { status: 'failed', reason: `status_${decision.status.toLowerCase()}` };
+    case 'charged_mismatch':
+      return { status: 'failed', reason: `mismatch_${decision.reason}` };
+  }
 }
 
 // ── POS calls ───────────────────────────────────────────────────────────────
@@ -344,53 +477,109 @@ export function buildHostedCheckout(
   return { action: `${cfg.baseUrl}/Vpos`, fields };
 }
 
-async function queryTransactions(
-  cfg: PaynkolayConfig,
-  clientRefCode: string,
-  from: Date,
-  to: Date,
-): Promise<Record<string, unknown>[]> {
-  const startDate = formatPaynkolayDay(from);
-  const endDate = formatPaynkolayDay(to);
-  const body = new FormData();
-  body.append('sx', cfg.sxList);
-  body.append('startDate', startDate);
-  body.append('endDate', endDate);
-  body.append('clientRefCode', clientRefCode);
-  // Lower-case `v` on this endpoint.
-  body.append('hashDatav2', paynkolayHash([cfg.sxList, startDate, endDate, clientRefCode], cfg.merchantSecretKey));
-  const res = await fetch(`${cfg.baseUrl}/Vpos/Payment/PaymentList`, {
-    method: 'POST',
-    body,
-    cache: 'no-store',
-    signal: AbortSignal.timeout(POS_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`paynkolay PaymentList HTTP ${res.status}`);
-  const text = await res.text();
+/**
+ * Daily-scan date-range query without `clientRefCode` (billing spec §9 phase 7).
+ * The hash for this request shape is unverified (Q-16), so the scan stays off
+ * and this function refuses to run until sandbox step §16.2-8 confirms it.
+ */
+export const PAYMENT_LIST_RANGE_VERIFIED: boolean = false;
+
+function paymentListResult(res: PaynkolayHttpResult): Record<string, unknown>[] {
+  if (res.status < 200 || res.status > 299) throw new Error(`paynkolay PaymentList HTTP ${Number.isInteger(res.status) ? res.status : 0}`);
   let json: unknown;
   try {
-    json = JSON.parse(text);
+    json = JSON.parse(res.text);
   } catch {
     throw new Error('paynkolay PaymentList: response is not JSON');
   }
   return paymentListRows(json);
 }
 
+/** PaymentList rows for one `clientRefCode` (sxList; hash `sxList|startDate|endDate|clientRefCode|secret`). Throws when the POS cannot be asked. */
+export async function queryPaymentList(
+  cfg: PaynkolayConfig,
+  transport: PaynkolayTransport,
+  clientRefCode: string,
+  from: Date,
+  to: Date,
+): Promise<Record<string, unknown>[]> {
+  const startDate = formatPaynkolayDay(from);
+  const endDate = formatPaynkolayDay(to);
+  const res = await transport.postForm(`${cfg.baseUrl}/Vpos/Payment/PaymentList`, {
+    sx: cfg.sxList,
+    startDate,
+    endDate,
+    clientRefCode,
+    // Lower-case `v` on this endpoint.
+    hashDatav2: paynkolayHash([cfg.sxList, startDate, endDate, clientRefCode], cfg.merchantSecretKey),
+  });
+  return paymentListResult(res);
+}
+
+/** PaymentList rows for a date range (daily scan). Refuses until Q-16 is verified. [VERIFY Q-16] */
+export async function queryPaymentListRange(
+  cfg: PaynkolayConfig,
+  transport: PaynkolayTransport,
+  from: Date,
+  to: Date,
+): Promise<Record<string, unknown>[]> {
+  if (!PAYMENT_LIST_RANGE_VERIFIED) throw new Error('paynkolay PaymentList: range query not verified (Q-16)');
+  const startDate = formatPaynkolayDay(from);
+  const endDate = formatPaynkolayDay(to);
+  const res = await transport.postForm(`${cfg.baseUrl}/Vpos/Payment/PaymentList`, {
+    sx: cfg.sxList,
+    startDate,
+    endDate,
+    clientRefCode: '',
+    hashDatav2: paynkolayHash([cfg.sxList, startDate, endDate, ''], cfg.merchantSecretKey),
+  });
+  return paymentListResult(res);
+}
+
+/** A payment that crosses midnight lands on the previous day: query from one day before. */
+function queryWindow(createdAt: Date, now: Date): Date {
+  return new Date(Math.min(createdAt.getTime(), now.getTime() - DAY_MS));
+}
+
 /**
- * Server-side confirmation of a returned payment. Throws when the POS cannot
- * be asked (timeout, refused key) — the caller keeps the payment pending.
+ * Server-side confirmation of a returned hosted payment. The return hash is
+ * checked for logging only; PaymentList decides. Throws when the POS cannot be
+ * asked (timeout, refused key) — the caller keeps the payment pending.
  */
 export async function confirmPayment(
   cfg: PaynkolayConfig,
   params: Record<string, string>,
   expected: { clientRefCode: string; amountMinor: number; createdAt: Date },
-): Promise<PaymentCheck> {
+  transport: PaynkolayTransport,
+  now: Date = new Date(),
+): Promise<PaymentDecision> {
   if (!verifyPaynkolayReturnHash(params, cfg.merchantSecretKey)) {
     billingLog('warn', 'paynkolay.return_hash_unverified', { paymentId: expected.clientRefCode });
   }
-  const now = new Date();
-  // A payment that crosses midnight lands on the previous day.
-  const from = new Date(Math.min(expected.createdAt.getTime(), now.getTime() - DAY_MS));
-  const rows = await queryTransactions(cfg, expected.clientRefCode, from, now);
-  return decidePayment(rows, expected.amountMinor, (params.REFERENCE_CODE ?? '').trim());
+  const rows = await queryPaymentList(cfg, transport, expected.clientRefCode, queryWindow(expected.createdAt, now), now);
+  return decidePayment(
+    rows,
+    { clientRefCode: expected.clientRefCode, amountMinor: expected.amountMinor, hosted: true },
+    (params.REFERENCE_CODE ?? '').trim() || null,
+  );
+}
+
+/**
+ * PaymentList decision for any stored payment (reconciliation, the engine,
+ * the renewal_auto return). `renewal_auto` is merchant-initiated (no 3D);
+ * every other kind is a hosted payment.
+ */
+export async function confirmCharge(
+  cfg: PaynkolayConfig,
+  transport: PaynkolayTransport,
+  expected: { clientRefCode: string; amountMinor: number; createdAt: Date; kind: string },
+  now: Date = new Date(),
+  returnedReference?: string | null,
+): Promise<PaymentDecision> {
+  const rows = await queryPaymentList(cfg, transport, expected.clientRefCode, queryWindow(expected.createdAt, now), now);
+  return decidePayment(
+    rows,
+    { clientRefCode: expected.clientRefCode, amountMinor: expected.amountMinor, hosted: expected.kind !== 'renewal_auto' },
+    returnedReference ?? null,
+  );
 }

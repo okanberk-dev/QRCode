@@ -31,7 +31,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
-import { executeUserHardDelete, hashEmailShort } from '@/lib/user-hard-delete';
+import { executeUserHardDelete, hashEmailShort, isHardDeleteDeferred } from '@/lib/user-hard-delete';
 import { getAdminFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
 import { rateLimit } from '@/lib/rate-limit';
@@ -114,6 +114,16 @@ export async function DELETE(
         elapsedDays: ageDays,
       },
     });
+    if (isHardDeleteDeferred(stats)) {
+      // A payment or automatic charge of this member is in flight (at most 7 days, billing spec §11.6).
+      return NextResponse.json(
+        {
+          error: 'billing_in_flight',
+          message: 'Üyenin işlemdeki bir ödemesi var. Kalıcı silme en geç 7 gün içinde yapılabilir.',
+        },
+        { status: 409 },
+      );
+    }
 
     return NextResponse.json({ ok: true, stats });
   } catch (err) {
