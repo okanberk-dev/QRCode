@@ -371,6 +371,9 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
+        // The ~0.5 MB cover data URL is only for the Studio, which reads it from
+        // GET /api/restaurants/[id] (menu design spec §8.6). List rows never carry it.
+        omit: { menuCoverUrl: true },
         include: {
           user: {
             select: {

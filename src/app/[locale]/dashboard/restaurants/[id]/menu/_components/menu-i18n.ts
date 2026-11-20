@@ -417,7 +417,7 @@ const tr = {
     contrastPicked: 'Seçtiğin',
     contrastUsed: 'Menüde',
     contrastText: (surface: string, lighter: boolean) =>
-      `Bu renk ${surface} zeminde yazı için çok ${lighter ? 'koyu' : 'açık'}. Fiyat ve vurgu yazılarında okunur kalsın diye daha ${lighter ? 'açık' : 'koyu'} bir tonu kullanılıyor.`,
+      `Bu renk ${String(surface).toLocaleLowerCase('tr-TR')} zeminde yazı için çok ${lighter ? 'koyu' : 'açık'}. Fiyat ve vurgu yazılarında okunur kalsın diye daha ${lighter ? 'açık' : 'koyu'} bir ton kullanılıyor.`,
     contrastFill: 'Düğme ve etiketlerdeki yazı okunsun diye ton hafifçe ayarlandı.',
     accent: 'Vurgu rengi',
     accentHint:
@@ -1069,7 +1069,7 @@ const en: MenuCopy = {
     contrastPicked: 'Your pick',
     contrastUsed: 'On the menu',
     contrastText: (surface: string, lighter: boolean) =>
-      `This color is too ${lighter ? 'dark' : 'light'} for text on ${surface}. A ${lighter ? 'lighter' : 'darker'} shade is used for prices and accent text so they stay readable.`,
+      `This color is too ${lighter ? 'dark' : 'light'} for text on ${String(surface).toLocaleLowerCase('en')}. A ${lighter ? 'lighter' : 'darker'} shade is used for prices and accent text so they stay readable.`,
     contrastFill: 'The shade was adjusted slightly so text on buttons and labels stays readable.',
     accent: 'Accent color',
     accentHint:

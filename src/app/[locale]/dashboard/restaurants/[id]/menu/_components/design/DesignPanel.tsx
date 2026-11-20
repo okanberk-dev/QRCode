@@ -189,7 +189,7 @@ export function DesignPanel({
   // The preview jumps to its top when something at the top of the menu changes.
   const previewTop = useRef(onPreviewTop);
   previewTop.current = onPreviewTop;
-  const topSignal = [resolved.structure.header, resolved.knobs.surface, draft.menuLogoUrl, draft.menuCoverUrl, resolved.tagline, tab === 'brand'];
+  const topSignal = [resolved.structure.header, resolved.knobs.surface, draft.menuLogoUrl, draft.menuCoverUrl, resolved.tagline];
   const firstTop = useRef(true);
   useEffect(() => {
     if (firstTop.current) {
@@ -199,6 +199,13 @@ export function DesignPanel({
     previewTop.current?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, topSignal);
+  // Opening Marka also shows the top (where logo, cover and tagline live), but
+  // leaving it keeps the owner's scroll position (spec §11.1).
+  const prevTab = useRef(tab);
+  useEffect(() => {
+    if (tab === 'brand' && prevTab.current !== 'brand') previewTop.current?.();
+    prevTab.current = tab;
+  }, [tab]);
 
   const pickPreset = (id: MenuPresetId) => {
     if (id === presetId) return;
@@ -534,7 +541,7 @@ export function DesignPanel({
         onRequestClose={onRequestClose}
         footer={applyBar}
         overlay={confirm}
-        bodyClassName="@container flex-1 overflow-y-auto px-4 py-4 sm:px-6"
+        bodyClassName="flex-1 overflow-y-auto px-4 py-4 sm:px-6"
       >
         <div className="sm:grid sm:grid-cols-[minmax(0,1fr)_280px] sm:items-start sm:gap-5">
           {preview && (
@@ -542,7 +549,9 @@ export function DesignPanel({
               {preview}
             </div>
           )}
-          <div className="min-w-0 sm:order-1">{settings}</div>
+          {/* The container is the settings column, not the sheet body: on a tablet the
+              280 px preview sits beside it, so the grids must measure the column. */}
+          <div className="@container min-w-0 sm:order-1">{settings}</div>
         </div>
       </Sheet>
     );

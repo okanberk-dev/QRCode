@@ -618,6 +618,9 @@ export async function PUT(
 
     const restaurant = await prisma.restaurant.update({
       where: { id },
+      // Do not echo the cover blob (up to ~0.5 MB) after a settings save; the
+      // Studio reads it from GET only (menu design spec §8.6).
+      omit: { menuCoverUrl: true },
       data: {
         ...(name !== undefined && { name }),
         ...(slug !== undefined && { slug }),

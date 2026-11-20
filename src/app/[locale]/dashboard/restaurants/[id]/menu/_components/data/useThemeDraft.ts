@@ -5,7 +5,7 @@ import { MENU_THEMES, type MenuTheme } from '@/lib/validations';
 import { readMenuDesign, type MenuKnobKey, type MenuKnobs, type MenuPresetId } from '@/lib/menu-design';
 import {
   beginThemeSave, createThemeSync, isThemeDirty, settleThemeSave, themeDiff,
-  withKnob, withoutKnobs, withPreset, withTagline,
+  withKnob, withoutKnobs, withPreset, withPresetRestored, withTagline,
   type ThemeSyncState, type ThemeValues,
 } from '../menu-theme';
 import type { MenuData, RestaurantShape } from '../menu-types';
@@ -168,7 +168,7 @@ export function useThemeDraft({
   const restorePreset = useCallback(() => {
     const before = beforePreset.current;
     beforePreset.current = null;
-    if (before) setDraft((d) => ({ ...d, ...before }));
+    if (before) setDraft((d) => withPresetRestored(d, before));
   }, []);
   const setKnob = useCallback(<K extends MenuKnobKey>(key: K, value: MenuKnobs[K]) => {
     beforePreset.current = null;

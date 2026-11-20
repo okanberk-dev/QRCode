@@ -188,6 +188,19 @@ export function withoutKnobs(values: ThemeValues): ThemeValues {
   return { ...values, menuDesign };
 }
 
+/**
+ * Stil "Geri al": the family and design from before the preset switch, with
+ * the tagline as it is NOW. The tagline is content (§5.4), so an edit made
+ * after the switch must survive the undo.
+ */
+export function withPresetRestored(
+  values: ThemeValues,
+  before: Pick<ThemeValues, 'menuTheme' | 'menuDesign'>,
+): ThemeValues {
+  const restored: ThemeValues = { ...values, menuTheme: before.menuTheme, menuDesign: before.menuDesign };
+  return withTagline(restored, values.menuDesign?.tagline ?? '');
+}
+
 /** The tagline as typed: sanitised; empty removes it. */
 export function withTagline(values: ThemeValues, raw: string): ThemeValues {
   const tagline = sanitizeTagline(raw);

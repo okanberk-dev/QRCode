@@ -17,6 +17,7 @@ import {
   withKnob,
   withoutKnobs,
   withPreset,
+  withPresetRestored,
   withTagline,
   type ThemeValues,
 } from '../src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-theme';
@@ -170,6 +171,26 @@ test('withPreset: drops knobs, keeps the tagline, reports what it dropped', () =
   assert.deepEqual(switched.values.menuDesign, { v: 1, preset: 'atelier', tagline: '1987’den beri' });
   assert.equal(withPreset(start, 'pulse').dropped, false);
   assert.equal(withPreset(start, 'classic').values, start, 'the current preset is a no-op');
+});
+
+test('withPresetRestored: undo of a preset switch keeps the tagline typed after it', () => {
+  const custom = withTagline(withKnob(start, 'density', 'compact'), 'Eski slogan');
+  const before = { menuTheme: custom.menuTheme, menuDesign: custom.menuDesign };
+  const switched = withTagline(withPreset(custom, 'atelier').values, 'Yeni slogan');
+  const restored = withPresetRestored(switched, before);
+  assert.equal(restored.menuTheme, custom.menuTheme);
+  assert.deepEqual(restored.menuDesign, { ...custom.menuDesign, tagline: 'Yeni slogan' });
+  // A tagline cleared after the switch stays cleared.
+  const cleared = withPresetRestored(withTagline(switched, ''), before);
+  assert.equal(cleared.menuDesign?.tagline, undefined);
+  assert.equal(cleared.menuDesign?.density, 'compact');
+  // Restoring a legacy (null) design with a new tagline keeps the tagline.
+  const fromNull = withPresetRestored(withTagline(withPreset(start, 'noir').values, 'Kokteyl'), {
+    menuTheme: start.menuTheme,
+    menuDesign: null,
+  });
+  assert.equal(fromNull.menuTheme, start.menuTheme);
+  assert.equal(fromNull.menuDesign?.tagline, 'Kokteyl');
 });
 
 test('withoutKnobs + withTagline: reset keeps content; empty tagline removes the key', () => {

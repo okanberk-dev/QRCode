@@ -60,10 +60,21 @@ export function knownBadges(list: readonly string[] | null | undefined): MenuBad
   return [...chef, ...known.filter((b) => b !== 'sef_onerisi')];
 }
 
-/** First letter of a name, upper-cased for the locale (Turkish dotted İ). */
+/**
+ * First grapheme of a name, upper-cased for the locale (Turkish dotted İ).
+ * A grapheme, not a code point: a flag, a ZWJ emoji or a decomposed "Ç" stays
+ * whole (spec §9.6). Falls back to the first code point without Segmenter.
+ */
 export function monogramOf(name: string, locale: MenuLocale): string {
-  const first = Array.from((name ?? '').trim())[0];
-  return first ? first.toLocaleUpperCase(locale === 'tr' ? 'tr-TR' : 'en-US') : '·';
+  const tag = locale === 'tr' ? 'tr-TR' : 'en-US';
+  const text = (typeof name === 'string' ? name : '').normalize('NFC').trim();
+  if (!text) return '·';
+  let first: string | undefined;
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+    first = new Intl.Segmenter(tag, { granularity: 'grapheme' }).segment(text)[Symbol.iterator]().next().value?.segment;
+  }
+  first ??= Array.from(text)[0];
+  return first ? first.toLocaleUpperCase(tag) : '·';
 }
 
 export interface MenuCopy {
