@@ -21,6 +21,8 @@ interface PanelSelectionBarProps {
   onClear: () => void;
   clearLabel: string;
   countLocale?: string;
+  /** Count line style; defaults to the mono eyebrow. */
+  countClassName?: string;
   /**
    * §49 — render an in-flow spacer so the last rows of the page can scroll
    * above the bar instead of staying hidden under it. Turn off where the
@@ -48,6 +50,7 @@ export function PanelSelectionBar({
   onClear,
   clearLabel,
   countLocale = 'tr-TR',
+  countClassName = 'pulse-eyebrow text-[#C6F24E]',
   reserveSpace = true,
 }: PanelSelectionBarProps) {
   if (count === 0) return null;
@@ -63,7 +66,7 @@ export function PanelSelectionBar({
       <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#0A0A0A] p-3 text-white shadow-[0_24px_70px_-24px_rgba(0,0,0,0.55)] sm:flex-row sm:items-center">
         <div className="flex items-center gap-2 sm:contents">
           <div className="min-w-0 flex-1 sm:order-1 sm:flex-none sm:pl-1">
-            <div className="pulse-eyebrow text-[#C6F24E]" aria-live="polite">
+            <div className={countClassName} aria-live="polite">
               {count.toLocaleString(countLocale)} {label}
             </div>
           </div>

@@ -140,3 +140,26 @@ test('mapMenuApiError: Turkish and English strings differ for every known failur
     assert.notEqual(mapMenuApiError(input, true), mapMenuApiError(input, false));
   }
 });
+
+test('mapMenuApiError: RESTORE_EXPIRED (410 from the restore endpoint, or a skipped code)', () => {
+  assert.equal(mapMenuApiError({ status: 410, code: 'RESTORE_EXPIRED', error: 'Geri alma süresi doldu' }, true), 'Bu işlem artık geri alınamıyor.');
+  assert.equal(mapMenuApiError({ status: 410, code: 'RESTORE_EXPIRED' }, false), 'This can no longer be undone.');
+  assert.equal(mapMenuApiError({ code: 'RESTORE_EXPIRED' }, true), 'Bu işlem artık geri alınamıyor.');
+});
+
+test('mapMenuApiError: CATEGORY_DELETED (a skipped code of an item restore)', () => {
+  assert.equal(
+    mapMenuApiError({ status: 200, code: 'CATEGORY_DELETED' }, true),
+    'Ürünün kategorisi silinmiş. Önce kategoriyi geri al.',
+  );
+  assert.equal(
+    mapMenuApiError({ code: 'CATEGORY_DELETED' }, false),
+    "This item's category was deleted. Restore the category first.",
+  );
+});
+
+test('mapMenuApiError: DESIGN_CONFLICT (theme PATCH 409)', () => {
+  const input = { status: 409, error: 'DESIGN_CONFLICT' };
+  assert.equal(mapMenuApiError(input, true), 'Görünüm başka bir yerden değişti. Sayfayı yenileyip tekrar dene.');
+  assert.equal(mapMenuApiError(input, false), 'The design was changed somewhere else. Refresh the page and try again.');
+});

@@ -51,6 +51,22 @@ const KNOWN: Record<string, Copy> = {
     tr: 'Bu fotoğraf işlenemedi. Başka bir fotoğraf dene.',
     en: "This photo couldn't be processed. Try another.",
   },
+  // `POST …/menu/restore` (undo of a delete): the 30-minute window has passed
+  // (410), or an item's category is itself still deleted (a `skipped` code).
+  RESTORE_EXPIRED: {
+    tr: 'Bu işlem artık geri alınamıyor.',
+    en: 'This can no longer be undone.',
+  },
+  CATEGORY_DELETED: {
+    tr: 'Ürünün kategorisi silinmiş. Önce kategoriyi geri al.',
+    en: "This item's category was deleted. Restore the category first.",
+  },
+  // `PATCH …/theme`: the stored menu theme moved to another family since the
+  // Studio loaded (an admin, another tab), so the design no longer fits it.
+  DESIGN_CONFLICT: {
+    tr: 'Görünüm başka bir yerden değişti. Sayfayı yenileyip tekrar dene.',
+    en: 'The design was changed somewhere else. Refresh the page and try again.',
+  },
 };
 
 const RATE_LIMITED: Copy = {

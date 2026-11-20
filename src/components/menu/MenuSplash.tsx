@@ -1,86 +1,76 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import type { ResolvedMenuDesign } from '@/lib/menu-design';
+import { menuCopy, monogramOf, type MenuLocale } from './menu-labels';
 
-interface Props {
-  name: string;
-  accent: string;
-  logoUrl: string | null;
-  durationMs?: number;
-  onDone: () => void;
-}
+const SPLASH_MS = 3000;
+const SPLASH_OUT_MS = 280;
 
 /**
- * Branded 3-second splash that appears when the menu is opened via QR scan
- * (?source=qr). Fires `onDone` after the full duration and is then unmounted
- * by the parent. The parent also cleans the URL so a refresh doesn't re-trigger.
+ * Branded splash for QR visits (`?source=qr`), drawn as an overlay above the
+ * always-mounted menu. It is in the SSR HTML (no menu-then-splash flash); if
+ * JavaScript never runs, the CSS animation still hides it at 3.28 s. Under
+ * prefers-reduced-motion it is hidden by CSS and `onDone` fires at once.
  */
-export default function MenuSplash({ name, accent, logoUrl, durationMs = 3000, onDone }: Props) {
+export default function MenuSplash({
+  name, category, logoUrl, design, locale, onDone,
+}: {
+  name: string;
+  category?: string | null;
+  logoUrl: string | null;
+  design: ResolvedMenuDesign;
+  locale: MenuLocale;
+  onDone: () => void;
+}) {
   const doneRef = useRef(false);
 
   useEffect(() => {
-    // Respect OS-level reduced-motion preference: skip the 3-second splash
-    // entirely so users with vestibular sensitivity or screen readers go
-    // straight to the menu. The globals.css blanket disables the keyframes
-    // but a 3s blank wait would still feel broken.
     const reduceMotion =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const effectiveDuration = reduceMotion ? 0 : durationMs;
-
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const t = window.setTimeout(() => {
-      if (!doneRef.current) {
-        doneRef.current = true;
-        onDone();
-      }
-    }, effectiveDuration);
+      if (doneRef.current) return;
+      doneRef.current = true;
+      onDone();
+    }, reduceMotion ? 0 : SPLASH_MS + SPLASH_OUT_MS);
     return () => window.clearTimeout(t);
-  }, [durationMs, onDone]);
+  }, [onDone]);
 
-  const initial = name.trim().charAt(0).toUpperCase() || '·';
+  const banner = design.structure.header === 'banner';
+  const copy = menuCopy(locale);
 
   return (
     <div
-      role="presentation"
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden px-8 text-center"
-      style={{ background: `linear-gradient(135deg, ${accent} 0%, ${accent}cc 60%, ${accent}88 100%)` }}
+      data-menu-splash=""
+      role="status"
+      aria-label={copy.splash(name)}
+      className={`fixed inset-0 z-[60] flex touch-none flex-col items-center justify-center overscroll-contain px-8 text-center ${
+        banner
+          ? 'bzm-on-banner bg-[linear-gradient(160deg,var(--m-banner),var(--m-banner-end))] text-(--m-on-banner)'
+          : 'bg-(--m-bg) text-(--m-ink)'
+      }`}
+      style={{ animation: `bzm-splash-out ${SPLASH_OUT_MS}ms cubic-bezier(.2,.8,.2,1) ${SPLASH_MS}ms forwards` }}
     >
-      {/* Soft glow backdrop */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-50"
-        style={{ background: 'radial-gradient(circle at 50% 40%, rgba(255,255,255,0.25), transparent 60%)' }}
-      />
-
-      <div className="relative animate-in fade-in slide-in-from-bottom-6 duration-500">
-        <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-[32px] bg-white/95 shadow-2xl ring-1 ring-white/40 sm:h-32 sm:w-32">
+      {!banner && design.scheme === 'dark' && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_55%_at_50%_30%,var(--m-glow),transparent_70%)]" />
+      )}
+      <div className="relative flex flex-col items-center">
+        <div className="flex size-24 items-center justify-center overflow-hidden rounded-(--m-r-card) bg-(--m-accent-fill) text-(--m-on-accent) shadow-[inset_0_0_0_1px_var(--m-accent-edge),0_18px_40px_-18px_rgb(0_0_0/.45)]">
           {logoUrl ? (
-             
-            <img src={logoUrl} alt={name} decoding="async" className="h-full w-full object-cover" />
+            <img src={logoUrl} alt="" decoding="async" className="h-full w-full bg-(--m-surface) object-cover" />
           ) : (
-            <span className="text-5xl font-extrabold tracking-tight sm:text-6xl" style={{ color: accent }}>
-              {initial}
-            </span>
+            <span aria-hidden className="bzm-monogram-tile bzm-monogram-tile--lg">{monogramOf(name, locale)}</span>
           )}
         </div>
-
-        <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-4xl" style={{ fontFamily: 'var(--font-menu-heading), inherit' }}>
-          {name}
-        </h1>
+        {category && <p className="bzm-label mt-7">{category}</p>}
+        <p className={`bzm-name ${category ? 'mt-2' : 'mt-7'} max-w-[18ch]`}>{name}</p>
       </div>
-
-      {/* Progress line */}
-      <div className="absolute bottom-12 left-1/2 h-1 w-40 -translate-x-1/2 overflow-hidden rounded-full bg-white/25 sm:w-48">
+      <div className={`absolute bottom-14 left-1/2 h-[2px] w-40 -translate-x-1/2 overflow-hidden rounded-full ${banner ? 'bg-current/25' : 'bg-(--m-rule)'}`}>
         <span
-          className="block h-full rounded-full bg-white"
-          style={{ animation: `buaze-splash-fill ${durationMs}ms linear forwards` }}
+          className={`block h-full rounded-full ${banner ? 'bg-current' : 'bg-(--m-accent-ui)'}`}
+          style={{ animation: `buaze-splash-fill ${SPLASH_MS}ms linear forwards` }}
         />
       </div>
-      {/* CSS Performance §38.61 — `@keyframes buaze-splash-fill` styled-jsx
-          block'undan globals.css'e taşındı. Reduced-motion için inline-style
-          selector blanket'i `[style*='buaze-splash-fill']` ile kapsanır. */}
     </div>
   );
 }

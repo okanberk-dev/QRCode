@@ -3,8 +3,9 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { reportBoundaryError, scheduleTransientRetry } from '@/lib/error-boundary';
+import { getMenuCopy } from './_components/menu-i18n';
 
 export default function MenuBuilderError({
   error,
@@ -15,7 +16,7 @@ export default function MenuBuilderError({
 }) {
   const params = useParams();
   const locale = params?.locale === 'en' ? 'en' : 'tr';
-  const isTr = locale === 'tr';
+  const copy = getMenuCopy(locale);
 
   useEffect(() => {
     reportBoundaryError('menu-builder-error-boundary', error);
@@ -23,46 +24,27 @@ export default function MenuBuilderError({
   }, [error, reset]);
 
   return (
-    <div className="mx-auto max-w-[640px] px-4 sm:px-7 py-12 lg:py-16">
+    <div className="mx-auto max-w-[640px] px-4 py-12 sm:px-7 lg:py-16">
       <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-6 sm:p-8">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-[#DC2626]/10 p-2">
-            <AlertTriangle size={20} className="text-[#DC2626]" />
+            <AlertTriangle size={20} className="text-[#DC2626]" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="bz-h-tight text-[20px] sm:text-[22px] text-[#0A0A0A]">
-              {isTr ? 'Menü düzenleyici açılamadı' : 'Menu builder could not open'}
-            </h1>
-            <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">
-              {isTr
-                ? 'Menü verileri yüklenirken bir hata oluştu. Sayfayı yenilemeyi dene; sorun sürerse menü listesine dön.'
-                : 'Something went wrong loading the menu data. Try refreshing; if it persists, go back to the menu list.'}
-            </p>
-            {error.digest && (
-              <p className="mt-2 text-[11px] text-[#737373] font-mono">
-                ref: {error.digest}
-              </p>
-            )}
+            <h1 className="bz-h-tight text-[20px] text-[#0A0A0A] sm:text-[22px]">{copy.errors.boundaryTitle}</h1>
+            <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{copy.errors.boundaryBody}</p>
+            {error.digest && <p className="mt-2 font-mono text-[12px] text-[#737373]">ref: {error.digest}</p>}
           </div>
         </div>
-
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={reset}
-            className="bz-btn-primary"
-          >
-            <RefreshCw size={14} strokeWidth={2} />
-            {isTr ? 'Tekrar dene' : 'Try again'}
+          <button type="button" onClick={reset} className="bz-btn-primary">
+            <RefreshCw size={14} strokeWidth={2} aria-hidden="true" />
+            {copy.errors.retry}
           </button>
-          {/* There is no menu list to go back to (the menu hub only opens
-              this builder), so the way out is the panel home. */}
-          <Link
-            href={`/${locale}/dashboard`}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
-          >
-            <ArrowLeft size={14} strokeWidth={2} />
-            {isTr ? 'Panele dön' : 'Back to dashboard'}
+          {/* There is no menu list to go back to (the menu hub only opens this builder). */}
+          <Link href={`/${locale}/dashboard`} className="bz-btn-ghost">
+            <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
+            {copy.errors.backToDashboard}
           </Link>
         </div>
       </div>

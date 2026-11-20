@@ -2,8 +2,9 @@
  * Pure logic of the item editor (no React): the price field, what counts as
  * "unsaved", and which fields go into the PATCH.
  *
- * Kept apart from `ItemEditorModal` so the rules can be tested with node:test
- * and so the modal stays about layout and focus.
+ * Kept apart from the item panel (`item/ItemForm.tsx`, `item/ItemPanel.tsx`)
+ * so the rules can be tested with node:test and the panel stays about layout
+ * and focus.
  */
 import { formatPrice, parsePriceInput } from '@/lib/format';
 

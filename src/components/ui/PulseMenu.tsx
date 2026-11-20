@@ -95,6 +95,11 @@ export interface PulseMenuItemProps {
   icon?: ReactNode;
   /** Trailing slot (shortcut, badge, vb.) — `selected` true ise check öncelikli. */
   trailing?: ReactNode;
+  /**
+   * `aria-keyshortcuts` for the item's action (e.g. `Shift+N`). The trailing
+   * hint is aria-hidden, so this is how assistive tech learns the shortcut.
+   */
+  ariaKeyShortcuts?: string;
 }
 
 export function PulseMenuItem({
@@ -105,6 +110,7 @@ export function PulseMenuItem({
   disabled = false,
   icon,
   trailing,
+  ariaKeyShortcuts,
 }: PulseMenuItemProps) {
   const classes = ['bz-menu-item', selected ? 'justify-between' : '', danger ? 'danger' : '']
     .filter(Boolean)
@@ -121,6 +127,7 @@ export function PulseMenuItem({
       }}
       disabled={disabled}
       aria-selected={selected || undefined}
+      aria-keyshortcuts={ariaKeyShortcuts}
       className={classes}
     >
       {icon ? <span aria-hidden="true">{icon}</span> : null}

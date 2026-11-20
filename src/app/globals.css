@@ -1150,6 +1150,26 @@ select.bz-input option:checked {
 }
 .bz-fade-in { animation: bz-fade-in 220ms ease both; }
 
+/* ── Menu Studio: row flash + toast entrance (menu spec §15.6) ──
+ * `bz-row-flash` marks a row that was just saved / added / moved;
+ * `bz-toast-in` is the single toast bar's entrance. Reduced motion: the
+ * toast simply appears, and the flash becomes a static lime tint for the
+ * same 900ms (no fade). */
+@keyframes bz-row-flash {
+  from { background-color: #EAF9B8; }
+  to { background-color: transparent; }
+}
+.bz-row-flash { animation: bz-row-flash 900ms ease-out 1; }
+@keyframes bz-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.bz-toast-in { animation: bz-toast-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .bz-toast-in { animation: none !important; }
+  .bz-row-flash { animation: bz-row-flash 900ms steps(1, end) 1 !important; }
+}
+
 /* §38.101 — `.bz-side-item-active` removed (0 callsite — sidebar nav
  * active state inline Tailwind `bg-[#C6F24E]` paterniyle uygulanır). */
 
@@ -1817,3 +1837,84 @@ select.bz-input option:checked {
    so it ships only when the survey route renders. Marketing surfaces no
    longer download these ~157 lines (~1.2 KB gzip) on every cold load.
    Edit survey styles in that file, not here. */
+
+/* ── Public menu (menu-design-final §9.12) ──────────────────────────────────
+ * Static only: every value reads a --m-* token written by the resolver
+ * (src/lib/menu-design.ts) — no owner input reaches this file. Unlayered on
+ * purpose and scoped by [data-menu-root] (0,2,0), so the roles beat the global
+ * :where(h1…h6) rule and the panel's :root:has(.bz-panel) heading override in
+ * the Studio preview. Never put Tailwind font utilities on a role element. */
+[data-menu-root] .bzm-display { font-family: var(--font-menu-heading); font-weight: var(--m-fw-display);
+  font-size: var(--m-fs-display); line-height: var(--m-lh-display); letter-spacing: var(--m-track-display);
+  text-wrap: balance; overflow-wrap: anywhere; }
+[data-menu-root] .bzm-name { font-family: var(--font-menu-heading); font-weight: var(--m-fw-display);
+  font-size: var(--m-fs-name); line-height: var(--m-lh-name); letter-spacing: var(--m-track-display);
+  text-wrap: balance; overflow-wrap: anywhere; }
+[data-menu-root] .bzm-section { font-family: var(--font-menu-heading); font-weight: var(--m-fw-section);
+  font-size: var(--m-fs-section); line-height: var(--m-lh-section); letter-spacing: -0.015em;
+  text-wrap: balance; overflow-wrap: anywhere; }
+[data-menu-root] .bzm-item { font-family: var(--m-font-item); font-weight: var(--m-fw-item);
+  font-size: var(--m-fs-item); line-height: var(--m-lh-item); letter-spacing: var(--m-track-item);
+  text-wrap: pretty; overflow-wrap: anywhere; }
+[data-menu-root] .bzm-item--grid { font-size: var(--m-fs-item-grid); line-height: var(--m-lh-item-grid); }
+[data-menu-root] .bzm-item--feature { font-size: var(--m-fs-item-feature); line-height: var(--m-lh-item-feature); }
+[data-menu-root] .bzm-desc { font-family: var(--m-font-body); font-size: var(--m-fs-desc); line-height: var(--m-lh-desc);
+  color: var(--m-ink-2); text-wrap: pretty; overflow-wrap: anywhere; }
+[data-menu-root] .bzm-desc--ink { color: var(--m-ink); }
+[data-menu-root] .bzm-catdesc, [data-menu-root] .bzm-tagline { font-family: var(--m-font-catdesc);
+  font-style: var(--m-catdesc-style); font-size: var(--m-fs-catdesc); line-height: var(--m-lh-catdesc);
+  color: var(--m-ink-2); text-wrap: pretty; overflow-wrap: anywhere; }
+[data-menu-root] .bzm-price { font-family: var(--m-font-price); font-weight: var(--m-fw-price);
+  font-size: var(--m-fs-price); line-height: var(--m-lh-price);
+  font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+[data-menu-root] .bzm-price--lg { font-size: 20px; line-height: 26px; }
+[data-menu-root] .bzm-label { font-family: var(--m-font-body); font-size: 12px; line-height: 16px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--m-muted); }
+[data-menu-root] .bzm-on-banner .bzm-label,
+[data-menu-root] .bzm-on-banner .bzm-tagline { color: var(--m-on-banner); }
+[data-menu-root] .bzm-monogram { font-family: var(--font-menu-heading); font-weight: var(--m-fw-display);
+  font-size: 40cqw; line-height: 1; user-select: none; }
+[data-menu-root] .bzm-monogram-tile { font-family: var(--font-menu-heading); font-weight: var(--m-fw-display);
+  font-size: 28px; line-height: 1; }
+[data-menu-root] .bzm-monogram-tile--sm { font-size: 22px; }
+[data-menu-root] .bzm-monogram-tile--lg { font-size: 44px; }
+[data-menu-root] .bzm-media[data-sold-out] { filter: grayscale(1) opacity(.6); }
+[data-menu-root] img { -webkit-user-drag: none; }
+@container menu (min-width: 42rem) {
+  [data-menu-root] .bzm-display { font-size: var(--m-fs-display-lg); line-height: var(--m-lh-display-lg); }
+  [data-menu-root] .bzm-name { font-size: var(--m-fs-name-lg); line-height: var(--m-lh-name-lg); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  [data-menu-root] .bzm-media-img { transition: transform 600ms cubic-bezier(.2,.8,.2,1); }
+  [data-menu-root] article:hover .bzm-media-img { transform: scale(1.03); }
+}
+
+/* Sticky category nav: solid first, translucent + blur where supported. */
+.bzm-nav { background-color: var(--m-bg); }
+@supports ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))) and (background-color: color-mix(in srgb, red 50%, transparent)) {
+  .bzm-nav {
+    background-color: color-mix(in srgb, var(--m-bg) 92%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+}
+.bzm-nav-scroll {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 24px), transparent);
+}
+
+@keyframes bzm-sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes bzm-pop-in { from { transform: scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes bzm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bzm-splash-out { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+.bzm-sheet-in { animation: bzm-sheet-in 260ms cubic-bezier(.2,.8,.2,1) both; }
+.bzm-pop-in { animation: bzm-pop-in 220ms cubic-bezier(.2,.8,.2,1) both; }
+.bzm-fade-in { animation: bzm-fade-in 180ms cubic-bezier(.2,.8,.2,1) both; }
+@container sheet (min-width: 36rem) {
+  .bzm-sheet-in { animation-name: bzm-pop-in; animation-duration: 220ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bzm-sheet-in, .bzm-pop-in, .bzm-fade-in { animation: none !important; }
+  [data-menu-splash] { display: none !important; }
+  [style*='bzm-splash-out'] { animation: none !important; }
+}

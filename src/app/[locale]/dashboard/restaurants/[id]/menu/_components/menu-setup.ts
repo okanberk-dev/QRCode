@@ -1,6 +1,6 @@
 // Menu setup wizard — pure state helpers (no React, no network).
 //
-// The wizard (`MenuSetupWizard`) asks three things for an empty menu:
+// The wizard (`setup/SetupWizard.tsx`) asks three things for an empty menu:
 //   1. what kind of business (a starter preset, or "my own list")
 //   2. the category names (rename / remove / reorder / add)
 //   3. optionally, items per category as a pasted list ("Klasik Burger 185")
