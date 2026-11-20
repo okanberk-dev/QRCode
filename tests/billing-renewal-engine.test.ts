@@ -103,9 +103,12 @@ describe('renewal engine (foundation phases)', () => {
       assert.equal(t.store.payments[0].status, 'pending');
       assert.equal(t.settings.row?.tickLeaseId, null);
       assert.equal(t.expireCalls.length, 0);
+      // configured but unbound is reported, not silent: hosted payments stay pending until it is fixed
+      assert.deepEqual(t.captured, ['billing-binding-skipped']);
     }
     const t = setup();
     assert.equal((await runRenewalTick({ ...t.deps, cfg: null })).skipped, 'config_missing');
+    assert.deepEqual(t.captured, []); // no PayNKolay config at all: nothing to report
     // a binding of the other environment is not this deployment's binding
     assert.equal((await runRenewalTick({ ...t.deps, flags: flags({ binding: { ok: true, env: 'test', reason: null } }) })).skipped, 'binding');
   });
@@ -336,7 +339,7 @@ describe('renewal engine (foundation phases)', () => {
     assert.ok(t.captured.includes('billing-tombstone-stuck'));
   });
 
-  it('daily scans: once per Istanbul day after 06:00 UTC — decline ratio and overdue refunds', async () => {
+  it('daily scans: once per Istanbul day from 09:00 Istanbul (06:00 UTC) — decline ratio and overdue refunds', async () => {
     const t = setup({ start: '2026-12-10T05:00:00Z' });
     const now = t.clock().getTime();
     for (let i = 0; i < 10; i++) {
@@ -346,7 +349,7 @@ describe('renewal engine (foundation phases)', () => {
     }
     t.store.payments.push(makePayment({ id: 'dup', userId: 'u9', status: 'succeeded', refundState: 'required', refundReason: 'duplicate_period', completedAt: new Date(now - 4 * DAY) }));
     await runRenewalTick(t.deps);
-    assert.equal(t.captured.includes('billing-decline-ratio'), false); // before 06:00 UTC
+    assert.equal(t.captured.includes('billing-decline-ratio'), false); // before 09:00 Istanbul
     t.clock.advance(2 * HOUR);
     await runRenewalTick(t.deps);
     assert.ok(t.captured.includes('billing-decline-ratio'));
@@ -357,6 +360,17 @@ describe('renewal engine (foundation phases)', () => {
     assert.equal(t.captured.length, count); // marker already claimed today
     // the range scan stays off until Q-16 is verified
     assert.equal(t.paymentListCalls(), 0);
+  });
+
+  it('daily scans: the 21:25 UTC tick (00:25 Istanbul, next Istanbul day) does not claim the day; 06:25 UTC does', async () => {
+    const t = setup({ start: '2026-12-10T21:25:00Z' });
+    const now = t.clock().getTime();
+    t.store.payments.push(makePayment({ id: 'dup', userId: 'u9', status: 'succeeded', refundState: 'required', refundReason: 'duplicate_period', completedAt: new Date(now - 4 * DAY) }));
+    await runRenewalTick(t.deps);
+    assert.equal(t.captured.includes('billing-refund-overdue'), false); // 00:25 Istanbul: not yet
+    t.clock.advance(9 * HOUR); // 2026-12-11T06:25Z = 09:25 Istanbul, same Istanbul day
+    await runRenewalTick(t.deps);
+    assert.ok(t.captured.includes('billing-refund-overdue'));
   });
 
   it('retention runs once per Istanbul day', async () => {

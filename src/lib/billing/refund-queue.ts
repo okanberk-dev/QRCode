@@ -13,12 +13,24 @@ import type { PrismaClient } from '@prisma/client';
  * then marks the entry `refunded` (invoice → refunded) or `waived` with a
  * reason. Entries older than 3 days raise `billing-refund-overdue` (engine
  * phase 7). Outputs carry ids, amounts and reasons only.
+ *
+ * `provider_duplicate` is different: the payment itself is kept (its period
+ * was granted and its invoice stands); only the EXTRA charges PayNKolay made
+ * for the same clientRefCode go back, and they never had an invoice.
  */
+
+/** Reasons where the payment and its invoice are kept and only extra provider charges are refunded. */
+const KEEPS_INVOICE_REASONS: ReadonlySet<string> = new Set(['provider_duplicate']);
 
 export interface RefundQueueEntry {
   paymentId: string;
+  /** One charge of this payment. */
   amountMinor: number;
+  /** What must be refunded in total (more than one charge when PayNKolay charged the clientRefCode repeatedly). */
+  refundAmountMinor: number;
   reason: string | null;
+  /** True when the payment's own invoice stays paid (only extra charges are refunded). */
+  keepsInvoice: boolean;
   status: string;
   kind: string;
   since: Date;
@@ -32,12 +44,23 @@ export async function listRefundQueue(db: PrismaClient, limit = 200): Promise<Re
     where: { refundState: 'required' },
     orderBy: { createdAt: 'asc' },
     take: limit,
-    select: { id: true, amountMinor: true, refundReason: true, status: true, kind: true, completedAt: true, createdAt: true },
+    select: {
+      id: true,
+      amountMinor: true,
+      refundAmountMinor: true,
+      refundReason: true,
+      status: true,
+      kind: true,
+      completedAt: true,
+      createdAt: true,
+    },
   });
   return rows.map((r) => ({
     paymentId: r.id,
     amountMinor: r.amountMinor,
+    refundAmountMinor: r.refundAmountMinor ?? r.amountMinor,
     reason: r.refundReason,
+    keepsInvoice: KEEPS_INVOICE_REASONS.has(r.refundReason ?? ''),
     status: r.status,
     kind: r.kind,
     since: r.completedAt ?? r.createdAt,
@@ -48,8 +71,10 @@ export type MarkRefundResult = 'marked' | 'not_in_queue' | 'invalid_ref';
 
 /**
  * Closes a queue entry. `refunded` also marks the payment's invoice as
- * refunded (the credit note follows accounting practice). The panel reference
- * is appended to the invoice admin notes, which owners never see.
+ * refunded (the credit note follows accounting practice) — except for
+ * `provider_duplicate`, where the invoice belongs to the charge the owner
+ * keeps. The panel reference is appended to the invoice admin notes, which
+ * owners never see.
  */
 export async function markRefund(
   db: PrismaClient,
@@ -65,7 +90,10 @@ export async function markRefund(
       data: { refundState: outcome },
     });
     if (res.count === 0) return 'not_in_queue';
-    const note = `[${now.toISOString()}] refund ${outcome}: ${panelRef}`;
+    // Read after the conditional update, so this is the row we just closed.
+    const payment = await tx.billingPayment.findUnique({ where: { id: paymentId }, select: { refundReason: true } });
+    const keepsInvoice = KEEPS_INVOICE_REASONS.has(payment?.refundReason ?? '');
+    const note = `[${now.toISOString()}] refund ${outcome}${keepsInvoice ? ' (extra provider charges; invoice kept)' : ''}: ${panelRef}`;
     const invoices = await tx.billingInvoice.findMany({
       where: { source: 'paynkolay', invoiceNumber: { endsWith: paymentId.slice(-8).toUpperCase() } },
       select: { id: true, adminNotes: true },
@@ -75,7 +103,7 @@ export async function markRefund(
       await tx.billingInvoice.update({
         where: { id: invoice.id },
         data: {
-          ...(outcome === 'refunded' ? { status: 'refunded' } : {}),
+          ...(outcome === 'refunded' && !keepsInvoice ? { status: 'refunded' } : {}),
           adminNotes: invoice.adminNotes ? `${invoice.adminNotes}\n${note}` : note,
         },
         select: { id: true },

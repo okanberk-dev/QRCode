@@ -86,9 +86,16 @@ function refundReasonFor(reason: OptOutReason): string {
   return reason === 'owner_off' ? 'owner_opt_out' : reason;
 }
 
-function stripDigitRuns(value: string | null | undefined, max: number): string | null {
+// 12+ digits, optionally separated by single spaces or dashes (a PAN typed with
+// separators). Dots are not separators here: user agents carry dotted versions.
+// Same pattern as the billing_consents_no_pan_grouped_ua CHECK.
+const UA_PAN_RUN = /[0-9](?:[ -]?[0-9]){11,}/g;
+
+export function stripDigitRuns(value: string | null | undefined, max: number): string | null {
   if (!value) return null;
-  const out = value.replace(/[0-9]{12,}/g, '').slice(0, max).trim();
+  const out = value.replace(UA_PAN_RUN, '').slice(0, max).trim();
+  // Defensive: if removing one run ever joined digits into another, store nothing.
+  if (new RegExp(UA_PAN_RUN.source).test(out)) return null;
   return out || null;
 }
 

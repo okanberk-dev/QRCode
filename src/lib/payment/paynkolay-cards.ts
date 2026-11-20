@@ -204,12 +204,17 @@ function safeCode(raw: string | null): string {
   return raw && /^[A-Za-z0-9_-]{1,16}$/.test(raw) ? raw : 'unknown';
 }
 
-const DIGIT_RUN_12 = /[0-9]{12,}/;
+/**
+ * 12+ digits with at most one space, dot or dash between them: a PAN written
+ * as "4111111111111111", "4111 1111 1111 1111", "4111-1111-…" or "4111.1111.…".
+ * Same pattern as the billing_cards CHECK constraints.
+ */
+const PAN_LIKE_RUN = /[0-9](?:[ .-]?[0-9]){11,}/;
 
-/** Display text from the provider: trimmed, capped, and dropped if it holds a 12+ digit run. */
+/** Display text from the provider: trimmed, capped, and dropped if it holds a PAN-like digit run. */
 function displayText(raw: string | null, maxLength: number): string | null {
   if (!raw) return null;
-  if (DIGIT_RUN_12.test(raw)) return null;
+  if (PAN_LIKE_RUN.test(raw)) return null;
   const text = raw.replace(/\s+/g, ' ').trim().slice(0, maxLength);
   return text || null;
 }

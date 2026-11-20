@@ -247,11 +247,19 @@ export async function PUT(
   // ── Upsert + audit (single transaction) ──
   const before = await prisma.billingSubscription.findUnique({ where: { userId } });
 
+  // The card billing anchor day (billing spec §11.1) describes the current period end, plan and cycle. An admin
+  // change of any of them leaves it stale, so it is cleared; the next card payment derives a fresh one.
+  const periodChanged =
+    (renewsAt !== undefined && (renewsAt?.getTime() ?? null) !== (before?.renewsAt?.getTime() ?? null)) ||
+    (billingCycle !== undefined && billingCycle !== (before?.billingCycle ?? null)) ||
+    (subscriptionPlanId !== undefined && subscriptionPlanId !== (before?.subscriptionPlanId ?? null));
+
   const data = {
     ...(plan !== null ? { plan } : {}),
     ...(status !== null ? { status } : {}),
     ...(renewsAt !== undefined ? { renewsAt } : {}),
     ...(subscriptionPlanId !== undefined ? { subscriptionPlanId } : {}),
+    ...(periodChanged ? { billingAnchorDay: null } : {}),
     paymentBrand,
     paymentLast4,
     amount,

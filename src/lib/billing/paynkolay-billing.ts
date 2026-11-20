@@ -4,9 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { applyPlanModulesForOwner } from '@/lib/plan-modules';
 import type { PaymentDecision } from '@/lib/payment/paynkolay';
 import { getBillingSettings } from './billing-settings';
+import { hostedPaymentEnvCheck } from './flags';
 import { billingLog, safeError } from './redact';
 import {
   addPeriod,
+  anchorFits,
   canTransition,
   IN_FLIGHT_STATES,
   isRenewalState,
@@ -79,9 +81,19 @@ export interface SettleDeps {
   hmac: HmacKeys | null;
   /** billing_settings.referenceBackfillDoneAt is set: no raw reference can exist any more. */
   backfillDone: boolean;
+  /** The billing_settings binding row (D18); null = not bound yet (gate G0). */
+  binding: { providerEnv: string } | null;
   now: () => Date;
   capture: (message: string, fingerprint: string, extra?: Record<string, string | number>) => void;
   applyPlanModules: (userId: string) => Promise<unknown>;
+}
+
+/** Thrown before any write when a payment of the other PayNKolay environment reaches settle (D18). */
+export class BillingEnvMismatchError extends Error {
+  constructor(readonly reason: string) {
+    super('billing environment mismatch');
+    this.name = 'BillingEnvMismatchError';
+  }
 }
 
 function defaultCapture(message: string, fingerprint: string, extra?: Record<string, string | number>): void {
@@ -98,22 +110,40 @@ function loadHmacOrNull(): HmacKeys | null {
 
 export async function defaultSettleDeps(overrides: Partial<SettleDeps> = {}): Promise<SettleDeps> {
   let backfillDone = overrides.backfillDone;
-  if (backfillDone === undefined) {
+  let binding = overrides.binding;
+  if (backfillDone === undefined || binding === undefined) {
+    let settings: Awaited<ReturnType<typeof getBillingSettings>> = null;
     try {
-      backfillDone = (await getBillingSettings())?.referenceBackfillDoneAt != null;
+      settings = await getBillingSettings();
     } catch {
-      backfillDone = false;
+      settings = null;
     }
+    if (backfillDone === undefined) backfillDone = settings?.referenceBackfillDoneAt != null;
+    if (binding === undefined) binding = settings ? { providerEnv: settings.providerEnv } : null;
   }
   return {
     db: overrides.db ?? prisma,
     hmac: overrides.hmac !== undefined ? overrides.hmac : loadHmacOrNull(),
     backfillDone,
+    binding,
     now: overrides.now ?? (() => new Date()),
     capture: overrides.capture ?? defaultCapture,
     applyPlanModules: overrides.applyPlanModules ?? applyPlanModulesForOwner,
   };
 }
+
+/**
+ * The anchor day for the next period after `periodEnd`: the stored one while it
+ * still fits `periodEnd` (§11.1), else the Istanbul day of `periodEnd` itself.
+ * A stored anchor stops fitting when the period end was moved by an admin edit;
+ * using it then would shorten (or lengthen) a full paid period.
+ */
+function anchorFor(storedAnchor: number | null, periodEnd: Date): number {
+  return storedAnchor != null && anchorFits(storedAnchor, periodEnd) ? storedAnchor : istanbulDayOfMonth(periodEnd);
+}
+
+// One Sentry report per process for references that arrive while BILLING_HMAC_KEY is unavailable.
+let hmacMissingReported = false;
 
 interface Alert {
   message: string;
@@ -152,9 +182,17 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
     const alerts: Alert[] = [];
     const already: SettleOutcome = { result: 'already', alerts, userId: null, periodGranted: false };
 
-    // 1. The payment (explicit select).
-    const payment = await tx.billingPayment.findUnique({ where: { id: paymentId }, select: PAYMENT_SELECT });
-    if (!payment || payment.status === 'succeeded' || payment.status === 'needs_review') return already;
+    // 1. The payment (explicit select). Only the owner, status and environment are used before the claim: the
+    //    rest is read again after it, under the locks (an opt-out may have changed it in between).
+    const seen = await tx.billingPayment.findUnique({
+      where: { id: paymentId },
+      select: { userId: true, status: true, providerEnv: true },
+    });
+    if (!seen || seen.status === 'succeeded' || seen.status === 'needs_review') return already;
+
+    // D18 backstop: a payment of the other PayNKolay environment is never settled here (nothing is written).
+    const envCheck = hostedPaymentEnvCheck(seen.providerEnv, deps.binding, process.env);
+    if (!envCheck.ok) throw new BillingEnvMismatchError(envCheck.reason);
 
     const review = async (reason: string, refundReason: string, alert: Alert): Promise<SettleOutcome> => {
       const res = await tx.billingPayment.updateMany({
@@ -163,11 +201,11 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
       });
       if (res.count === 0) return already;
       alerts.push(alert);
-      return { result: 'review', alerts, userId: payment.userId, periodGranted: false };
+      return { result: 'review', alerts, userId: seen.userId, periodGranted: false };
     };
 
     // 2. Pseudonymised owner (erased account): money received, nothing to grant.
-    if (payment.userId.startsWith('del_')) {
+    if (seen.userId.startsWith('del_')) {
       return review('erased_user', 'erased_user', {
         message: 'billing: a payment of an erased account succeeded; refund required',
         fingerprint: 'billing-refund-required',
@@ -175,7 +213,14 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
       });
     }
 
-    // 3. Reference guard: a REFERENCE_CODE already used by another payment is never accepted twice.
+    // 3. Serialise on the subscription row BEFORE touching the payment row: the same lock order as
+    //    disableAutoRenew and the expiry (subscription → payment). Two settles (or a settle and the expiry, or an
+    //    opt-out) never interleave, can never deadlock, and an opt-out that committed while we waited is seen
+    //    by the claim below. When the row does not exist yet nothing is locked; the create below then fails
+    //    with P2002 for the loser of a concurrent first settle and the whole transaction is retried.
+    await tx.$queryRaw`SELECT "user_id" FROM "billing_subscriptions" WHERE "user_id" = ${seen.userId} FOR UPDATE`;
+
+    // 4. Reference guard: a REFERENCE_CODE already used by another payment is never accepted twice.
     const rawRef = decision.referenceCode?.trim() || null;
     const rf = rawRef && deps.hmac ? referenceFingerprint(rawRef, deps.hmac) : null;
     if (rawRef) {
@@ -200,15 +245,26 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
       }
     }
 
-    // 4. Claim (failed allowed: a late success; needs_review never).
+    // 5. Claim (failed allowed: a late success; needs_review never), then re-read the payment under its row lock:
+    //    refundOnSuccess / refundReason are the values committed by any opt-out that ran before our lock.
     const claimed = await tx.billingPayment.updateMany({
       where: { id: paymentId, status: { in: ['pending', 'failed'] } },
       data: { status: 'succeeded', completedAt: now, referenceCode: rf, failureReason: null },
     });
     if (claimed.count === 0) return already;
+    const payment = await tx.billingPayment.findUnique({ where: { id: paymentId }, select: PAYMENT_SELECT });
+    if (!payment) return already;
+    if (payment.userId !== seen.userId) {
+      // The account was erased (its payments pseudonymised) between the first read and the claim.
+      await tx.billingPayment.update({
+        where: { id: paymentId },
+        data: { status: 'needs_review', failureReason: 'erased_user', refundState: 'required', refundReason: 'erased_user' },
+        select: { id: true },
+      });
+      alerts.push({ message: 'billing: a payment of an erased account succeeded; refund required', fingerprint: 'billing-refund-required', extra: { paymentId } });
+      return { result: 'review', alerts, userId: payment.userId, periodGranted: false };
+    }
 
-    // 5. Serialise on the subscription row: two settles (or a settle and the expiry) never interleave.
-    await tx.$queryRaw`SELECT "user_id" FROM "billing_subscriptions" WHERE "user_id" = ${payment.userId} FOR UPDATE`;
     const current = await tx.billingSubscription.findUnique({
       where: { userId: payment.userId },
       select: { renewsAt: true, status: true, subscriptionPlanId: true, billingCycle: true, billingAnchorDay: true },
@@ -221,14 +277,14 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
     const renewalState = renewal && isRenewalState(renewal.state) ? renewal.state : null;
 
     const cycle: BillingCycle = payment.billingCycle === 'yearly' ? 'yearly' : 'monthly';
-    const samePlan =
-      !!current &&
-      current.subscriptionPlanId === payment.subscriptionPlanId &&
-      (current.billingCycle ?? cycle) === cycle;
+    const samePlanId = !!current && current.subscriptionPlanId === payment.subscriptionPlanId;
+    const sameCycle = !!current && (current.billingCycle ?? cycle) === cycle;
+    const samePlan = samePlanId && sameCycle;
     const amountMajor = payment.amountMinor / 100;
     let result: SettleResult = 'succeeded';
     let period: { renewsAt: Date; anchorDay: number } | null = null;
     let refundReason: string | null = null;
+    let refundAmountMinor: number | null = null;
 
     const activeAndPaidAhead = current?.status === 'active' && !!current.renewsAt && current.renewsAt.getTime() > now.getTime();
 
@@ -257,7 +313,7 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
       samePlan
     ) {
       // c. Renewal payment: anchored to E, even when paid during grace.
-      const anchorDay = current.billingAnchorDay ?? istanbulDayOfMonth(renewal.periodEnd);
+      const anchorDay = anchorFor(current.billingAnchorDay, renewal.periodEnd);
       period = { renewsAt: addPeriod(cycle, renewal.periodEnd, anchorDay), anchorDay };
       await tx.billingRenewal.updateMany({
         where: { id: renewal.id, state: { in: statesThatCanReach('succeeded') } },
@@ -291,20 +347,30 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
         current.renewsAt.getTime() >= now.getTime() - RENEWAL_POLICY.anchorAfterLapseDays * DAY_MS;
       if (samePlan && current?.renewsAt && (current.status === 'past_due' || recentlyLapsed)) {
         // Grace days are paid for: the new period starts at the old period end (E-17).
-        const anchorDay = current.billingAnchorDay ?? istanbulDayOfMonth(current.renewsAt);
+        const anchorDay = anchorFor(current.billingAnchorDay, current.renewsAt);
         const renewsAt = addPeriod(cycle, current.renewsAt, anchorDay);
         period = renewsAt.getTime() > now.getTime() ? { renewsAt, anchorDay } : nextPeriod(cycle, null, now);
-      } else if (samePlan && current?.status === 'active') {
-        period = nextPeriod(cycle, current.renewsAt, now, current.billingAnchorDay);
+      } else if (samePlanId && current?.status === 'active') {
+        // Same plan, active: stacking as before (§11.2 e), whatever the cycle — the days already paid for are
+        // never lost. A cycle change re-anchors to the current period end (§11.1).
+        const anchor = current.renewsAt && sameCycle ? anchorFor(current.billingAnchorDay, current.renewsAt) : null;
+        period = nextPeriod(cycle, current.renewsAt, now, anchor);
       } else {
         // New or changed plan: restart from now with a fresh anchor day.
         period = nextPeriod(cycle, null, now);
       }
     }
 
-    // 8. PayNKolay charged this clientRefCode more than once.
+    // 8. PayNKolay charged this clientRefCode more than once. The queue records what must go back: the extra
+    //    charges when this payment is kept, every charge when this payment itself is refunded (a–d above).
     if (decision.kind === 'duplicate') {
-      refundReason = refundReason ?? 'provider_duplicate';
+      const charges = Math.max(2, Math.trunc(decision.successCount) || 2);
+      if (refundReason) {
+        refundAmountMinor = payment.amountMinor * charges;
+      } else {
+        refundReason = 'provider_duplicate';
+        refundAmountMinor = payment.amountMinor * (charges - 1);
+      }
       alerts.push({
         message: 'billing: PayNKolay reports more than one successful sale for one payment',
         fingerprint: 'billing-duplicate-charge',
@@ -314,7 +380,7 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
     if (refundReason) {
       await tx.billingPayment.update({
         where: { id: paymentId },
-        data: { refundState: 'required', refundReason: refundReason.slice(0, 32) },
+        data: { refundState: 'required', refundReason: refundReason.slice(0, 32), refundAmountMinor },
         select: { id: true },
       });
     }
@@ -332,13 +398,23 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
         source: 'paynkolay',
         billingAnchorDay: period.anchorDay,
       };
-      await tx.billingSubscription.upsert({
-        where: { userId: payment.userId },
-        create: { userId: payment.userId, ...common, cancelAtPeriodEnd: false },
-        // autoRenew is never set here; cancelAtPeriodEnd is reset only by an owner-initiated payment.
-        update: { ...common, trialEndsAt: null, ...(ownerKind ? { cancelAtPeriodEnd: false } : {}) },
-        select: { userId: true },
-      });
+      if (current) {
+        // The row is locked FOR UPDATE above. autoRenew is never set here; cancelAtPeriodEnd is reset only by an
+        // owner-initiated payment.
+        await tx.billingSubscription.update({
+          where: { userId: payment.userId },
+          data: { ...common, trialEndsAt: null, ...(ownerKind ? { cancelAtPeriodEnd: false } : {}) },
+          select: { userId: true },
+        });
+      } else {
+        // A plain INSERT, never an upsert: Prisma runs upsert as INSERT … ON CONFLICT DO UPDATE, which would let a
+        // concurrent first settle silently overwrite this one (two payments, one period). The INSERT instead
+        // fails with P2002 for the loser, and settlePaynkolayPayment retries it against the winner's locked row.
+        await tx.billingSubscription.create({
+          data: { userId: payment.userId, ...common, cancelAtPeriodEnd: false },
+          select: { userId: true },
+        });
+      }
       // `User.plan` drives the trial gate and quotas (§15.2).
       await tx.user.update({ where: { id: payment.userId }, data: { plan: cycle }, select: { id: true } });
     }
@@ -376,7 +452,8 @@ function isUniqueViolation(err: unknown): boolean {
  * Idempotent: the payment is claimed with `status IN ('pending','failed')`,
  * so a replayed return, the engine and a concurrent return settle it once.
  * Results: 'succeeded' | 'already' | 'duplicate_period' | 'refund_pending' |
- * 'late_success' | 'review'.
+ * 'late_success' | 'review'. Throws BillingEnvMismatchError, before any
+ * write, for a payment of the other PayNKolay environment (D18).
  */
 export async function settlePaynkolayPayment(
   paymentId: string,
@@ -388,9 +465,15 @@ export async function settlePaynkolayPayment(
   try {
     outcome = await settleOnce(paymentId, decision, deps);
   } catch (err) {
-    // A concurrent first-time subscription insert: retry the whole transaction once.
+    // A concurrent first-time subscription insert (or the same reference claimed by two payments at once):
+    // retry the whole transaction once. The winner's row now exists, so the retry is serialised on it.
     if (!isUniqueViolation(err)) throw err;
     outcome = await settleOnce(paymentId, decision, deps);
+  }
+  if (decision.referenceCode?.trim() && !deps.hmac && !hmacMissingReported) {
+    // The reference was not fingerprinted, so the reuse guard cannot see it later (§11.2 step 3).
+    hmacMissingReported = true;
+    deps.capture('billing: BILLING_HMAC_KEY unavailable at settle; reference fingerprints are not stored', 'billing-vault-key', { paymentId });
   }
   for (const alert of outcome.alerts) deps.capture(alert.message, alert.fingerprint, alert.extra);
   if (outcome.alerts.length > 0) billingLog('warn', 'settle.alert', { paymentId, reason: outcome.alerts[0].fingerprint });

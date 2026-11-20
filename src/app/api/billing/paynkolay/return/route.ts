@@ -6,6 +6,7 @@ import { SITE_URL } from '@/lib/site';
 import { getTrustedClientIp } from '@/lib/client-ip';
 import { confirmCharge, confirmPayment, getPaynkolayConfig } from '@/lib/payment/paynkolay';
 import { fetchTransport } from '@/lib/payment/paynkolay-transport';
+import { loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
 import { applyPostSettleEffects, settlePaynkolayPayment } from '@/lib/billing/paynkolay-billing';
 import { billingLog, safeError } from '@/lib/billing/redact';
 import { prismaRenewalStore } from '@/lib/billing/renewal-store-prisma';
@@ -16,6 +17,7 @@ import {
   readReturnPost,
   resultForDecision,
   resultForSettle,
+  returnEnvGate,
   type PaymentResultStatus,
   type ReturnInput,
 } from '@/lib/billing/return-flow';
@@ -42,6 +44,11 @@ function noStoreRedirect(path: string): NextResponse {
   res.headers.set('Cache-Control', 'no-store');
   res.headers.set('Referrer-Policy', 'no-referrer');
   return res;
+}
+
+/** Answer to PayNKolay's server-to-server post of a merchant-initiated result (no browser involved). */
+function okText(): NextResponse {
+  return new NextResponse('ok', { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
 async function ownerLapsed(userId: string): Promise<boolean> {
@@ -86,8 +93,24 @@ async function handle(req: NextRequest, input: ReturnInput): Promise<NextRespons
 
   if (!payment) return finish('failed');
   const cfg = getPaynkolayConfig();
-  // A row of the other PayNKolay environment (D18; NULL = created before saved cards = live): nothing else happens.
-  if (cfg && (payment.providerEnv ?? 'live') !== cfg.env) return finish(null);
+  // D18. A row of the other PayNKolay environment (NULL = created before saved cards = live): nothing else
+  // happens. A row the database binding refuses (e.g. a test deployment pointed at the production database):
+  // never confirmed, failed or settled here.
+  const envCheck = await loadHostedPaymentEnvCheck(payment.providerEnv);
+  const gate = returnEnvGate(payment.providerEnv, cfg?.env ?? null, envCheck);
+  if (gate === 'other_environment') return finish(null);
+  if (gate === 'refused') {
+    if (ipLimit.allowed) {
+      Sentry.captureMessage('billing: payment environment does not match the database binding; not settled', {
+        level: 'error',
+        fingerprint: ['billing-env-mismatch'],
+        tags: { billing: 'return' },
+        extra: { paymentId: payment.id, reason: envCheck.ok ? 'ok' : envCheck.reason },
+      });
+    }
+    if (payment.kind === 'renewal_auto') return okText();
+    return finish('pending');
+  }
 
   if (payment.kind === 'renewal_auto') {
     // PayNKolay posting a merchant-initiated (non-3D) result: no browser is involved.
@@ -107,7 +130,7 @@ async function handle(req: NextRequest, input: ReturnInput): Promise<NextRespons
         Sentry.captureException(safeError(err, 'return_auto'), { tags: { billing: 'return' } });
       }
     }
-    return new NextResponse('ok', { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+    return okText();
   }
 
   if (payment.status === 'succeeded') return finish('success');

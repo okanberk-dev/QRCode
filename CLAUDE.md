@@ -4219,6 +4219,12 @@ Kural:
 - Yeni mail dispatch / cron / privileged endpoint'i log'unda PII varsa Sentry'e gitmeden önce redact et (`{ recipient: _omit, ...safe }` pattern'i — `ops-alert.ts` referans).
 - Sentry `sendDefaultPii: false` (CLAUDE.md §26.2) zaten meta header/body'i kapatıyor; bu kural `console.error(..., {explicit PII})` yolunu kapatır.
 
+**Faturalama redaksiyonu ve Sentry temizleyicisi (2026-11, billing spec §14, §44.3)**:
+- Faturalama kodu yalnız `billingLog()` ile loglar (`src/lib/billing/redact.ts`): hassas anahtarlar (`token`, `customerKey`, `referenceCode`, `authCode`, `hashDataV2`, `sx`, …; `_`/`-` yok sayılır) `[redacted]`, PAN / uzun base64 / customer-key biçimleri maskelenir, URL sorguları atılır, `Error` yalnız `{ name, code }`; `email`, `ip`, `url`, `body`, `headers` alanları hiç yazılmaz. Sentry'ye giden hata `safeError(err, code)` (orijinal mesaj yok).
+- Sunucu + edge Sentry config'leri `beforeSend`, `beforeSendTransaction` ve `beforeSendLog`'da `scrubSentryEvent` / `scrubSentryLog` çalıştırır: `request` sorgusu, çerezleri ve user-agent/content-type dışı başlıkları, faturalama istek gövdesi, breadcrumb/span URL sorguları; **contexts** dahil (kök span'den kopyalanan `trace.data` `http.url`/`http.target`/`url.query`, `nextjs.request_path`): her URL/path sorgusunu kaybeder, `*query` değerleri boşaltılır, `http.client_ip` / `client.address` / `net.peer.ip` ve başlık öznitelikleri silinir. Faturalama olaylarında yığın çerçevelerinin `vars`'ı silinir; üretimde `includeLocalVariables` kapalı.
+- PAN koruması ayraç toleranslıdır: kart görüntü alanları (alias, issuer, brand, type) ve onay user-agent'ı için `[0-9]([ .-]?[0-9]){11,}` (UA'da nokta ayraç sayılmaz) hem ayrıştırıcıda hem DB CHECK'lerinde.
+- **Yapma**: ham REFERENCE_CODE, dönüş gövdesi ya da sorgu dizgesini log/Sentry'ye verme; yeni bir Sentry config'i `scrubSentryEvent` olmadan açma.
+
 ### 37.8 CSP / security headers — uygulanmış grup + backlog
 
 **`next.config.ts:headers()` mevcut state**:
@@ -4331,6 +4337,20 @@ Kasıtlı tasarım kararı — User/Restaurant cascade'inden bağımsız:
 **Yapma**: `User` üzerinde direkt `prisma.user.delete` çağırmak. CLAUDE.md §34.5 soft-delete pattern only.
 
 **Yap**: Yeni cascade tanımlanırken `onDelete:` explicit yazılmalı (Prisma 6 default'a güvenmek schema-okuyucu için bilgi kaybı).
+
+#### Kayıtlı kart tabloları ve hesap silme (2026-11, billing spec §11.6, §44.3)
+
+Hesap silme (`executeUserHardDelete`) artık var; faturalama tabloları bilinçli olarak farklı davranır:
+
+| Tablo | `user_id` FK | Silmede |
+|---|---|---|
+| `billing_customers` | **RESTRICT** | Kod satırı açıkça siler (önce sağlayıcıda kartlar silinir). Unutulursa `user.delete()` hata verir: mühürlü PayNKolay müşteri anahtarı sessizce yetim kalamaz. |
+| `billing_cards` | Cascade | `deleteMany` (yalnız görüntü aynası). |
+| `billing_renewals` | — | `deleteMany`. |
+| `billing_payments`, `billing_consents` | FK yok | Silinmez; `user_id` = `del_<HMAC(userId)>` takma adı (HMAC anahtarı yoksa rastgele `del_`), tutar ve referans parmak izi kalır: itiraz ödeme kimliğinden izlenir. Onaylar `purgeAfter = now + 10 y`. |
+| `billing_vault_tombstones` | FK yok | Sağlayıcı silmesi doğrulanamazsa mühürlü anahtarın **birebir** kopyası (yeniden mühürleme yok, silme anında anahtar gerekmez); motorun faz 6'sı sonra siler. |
+
+Bekleyen ödeme / süren çekim varken silme en çok 7 gün ertelenir (`deferred: 'billing_in_flight'`). Silinmiş hesabın geç gelen başarılı ödemesi dönem açmaz, `needs_review` + iade kuyruğu.
 
 ---
 
@@ -4618,6 +4638,7 @@ GitHub PR referansı.
 - **Chat prompt history (Stage 176)**: 2026-11-19 kullanıcı: *"henüz yapılmayanları da düzelt ve maine gönder ve aşağıdakileri ekleyebilirsin. 3, 4, 5, 6, ayrıca maillere cevaplarda türkçe ingilizce vs. tüm dillerdeki küfürlü kelimeler yazılırsa vs. engelle ve sorumluluk olmasın sorumluluk reddi ver ver türk hukukuna genel hukuna uygun yapıp maine gönder"*; ara mesajlar *"coolify'da da otomatik deploy olduğundan emin ol ayrıca; laffogato reposundaki nkolay sanal pos altyapısına bak ve tüm sanal posu qrcodedan kaldır nkolaya göre uyarlayıp yapar mısın?"*, *"ayrıca gereksiz token kullanımından kaçın"*. 3–6 = önceki turda önerilen şube raporu, yanıt şablonları, admin destek görünümü, plan modülleri. **Disipline override**: §15.2 USD-only kararı kısmen değişti — pazarlama USD gösterir ama kartla ödeme TL'dir (PayNKolay yalnız TL); "sorumluluk olmasın" hukuken mutlak muafiyet olamayacağı için yer sağlayıcı + işletme sorumluluğu + tazmin olarak yazıldı (kullanıcıya bildirildi).
 - §38.259 — Stage 177 (main'e doğrudan) Paket stratejisi ve yönetimi (§15.2): katalog, işletme sınırı, TL fiyat gösterimi, süresi dolan dönem kapısı, yerinde güncelleyen öneri düğmesi, data migration (yerel Postgres'te eski paketlerle denendi). **Disipline**: paket maddesi yalnız kodda uygulanan farkı söyler; plan verisini migration ile değiştirirken satırı silme, yerinde güncelle (abonelik bağı korunur).
 - **Chat prompt history (Stage 177)**: 2026-11-19 kullanıcı: *"sen paket yönetimini ve paketleri düzenle en iyi şekilde ve strateji yap"*; ara mesaj *"token fazla harcamadan devam et"*. Fiyatlar kullanıcı yetkisiyle belirlendi. **Disipline override**: §15.2 USD-only → TR sayfada TL.
+- §38.260 — Stage 178 (yığın PR 1, `claude/billing-1-foundation`) Kayıtlı kart + otomatik yenileme temeli (§44.3, spec `billing-spec-final.md` §16.4 PR 1): migration, `billing_settings` bağlaması, bayraklar, kasa + HMAC kriptosu, redaksiyon + Sentry temizleyicisi (§37.7), istemci IP yardımcısı, `decidePayment` yeniden yazımı, settle/expiry/hesap silme (§37.9), dönüş rotası, iade kuyruğu, çekimsiz motor fazları. Üç bağımsız incelemenin bulguları aynı PR'da kapandı: aynı paket + `active` döngü değişse de üstüne eklenir (yıllık abonenin aylık "Süreyi uzat" ödemesi kalan yılı silmez); ilk eşzamanlı iki settle iki dönem verir (upsert yerine `create` + P2002 yeniden deneme); settle kilit sırası abonelik → ödeme; bayat çapa yok sayılır, admin PUT çapayı sıfırlar; `provider_duplicate` iadesi owner faturasını `refunded` yapmaz, kuyruk `refundAmountMinor` gösterir; günlük tarama 09:00 İstanbul; D18 checkout → dönüş → settle'da (`hostedPaymentEnvCheck`); Sentry contexts sorgu/IP temizliği; site host açıkça yazılmalı + Coolify/Vercel önizleme sinyali; ayraçlı PAN koruması; HMAC anahtarı faz 0'dan denetlenir; SELF_HOST.md `billing-renewals` + env listesi. **Disipline**: Prisma `upsert` eşzamanlı ilk yazımda P2002 vermez (`ON CONFLICT DO UPDATE`); kilitlenecek satır yoksa `create` kullan. Birden çok tabloyu kilitleyen faturalama işlemlerinde sıra hep abonelik → ödeme. Bayraksız çalışan ödeme yolları da ortam bağlamasını denetler.
 - §38.245 — Stage 163 (PR TBD) Google girişi penceresi kapanmıyor + yavaş giriş, site hızı, SEO ve Google uyumu. **Disipline**: (i) proxy'lenen üçüncü taraf sayfalara (`/__/*`) site güvenlik başlıklarını körlemesine uygulama — özellikle COOP opener'ı koparır; (ii) layout metadata'sına sayfaya özgü alan (canonical, hreflang, og:url, twitter başlığı) koyma, miras kalır; (iii) `'use client'` dosyası `@/lib/prisma` içeren modülü dolaylı da olsa import etmemeli (sabitleri ayrı modüle al); (iv) IntersectionObserver hedefi gerçek kutu olmalı (`display: contents` asla). **Not**: Firebase `authDomain` ve OAuth ayarlarına dokunulmadı; düzeltme… (Ayrıntı: git log.)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
@@ -5706,12 +5727,17 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
    `hashDataV2` = SHA-512 base64 `sx|ref|amount|successUrl|failUrl|rnd|customerKey|secret`).
 3. PayNKolay `POST /api/billing/paynkolay/return`'a döner. Dönüş gövdesine
    güvenilmez: `confirmPayment()` `/Vpos/Payment/PaymentList` ile (sxList)
-   ödemeyi sunucudan sorgular; yalnız tutarı birebir tutan SUCCESS satışı
-   başarılı sayılır. `settlePaynkolayPayment()` idempotenttir (ödemeyi
-   `status != succeeded` koşuluyla sahiplenir), aboneliği bir dönem uzatır,
-   `User.plan`'ı günceller, `BillingInvoice` (`PNK-YYYYMM-xxxx`) yazar ve
-   plan modüllerini uygular (§5.2). 303 → `?payment=success|failed|pending|review`
-   (süresi dolmuş owner `/pricing?plan=expired&payment=…`'e gider, §44.3).
+   ödemeyi sunucudan sorgular ve `decidePayment()` yalnız aynı
+   `CLIENT_REFERENCE_CODE` satırlarına bakar: tutar (ve para birimi, 3D, tek
+   taksit) birebir tutan tek SUCCESS satışı `succeeded`, birden çoğu
+   `duplicate`, tutmayan `charged_mismatch` (inceleme), sonuçsuz olan
+   `not_found|indeterminate` (pending kalır, motor mutabakatı karar verir).
+   `settlePaynkolayPayment()` idempotenttir: abonelik satırını `FOR UPDATE`
+   kilitler, ödemeyi `status IN ('pending','failed')` koşuluyla sahiplenir
+   (`needs_review` asla), aboneliği bir dönem uzatır, `User.plan`'ı günceller,
+   `BillingInvoice` (`PNK-YYYYMM-xxxx`) yazar ve plan modüllerini uygular (§5.2).
+   303 → `?payment=success|failed|pending|review` (süresi dolmuş owner
+   `/pricing?plan=expired&payment=…`'e gider, §44.3).
 4. Otomatik yenileme yok (kayıtlı kart / otomatik yenileme altyapısı bayraklar
    arkasında kapalı, §44.3): her ödeme bir ay / bir yıl alır; owner "Süreyi
    uzat" ile öder. Süresi geçen PayNKolay dönemleri `expireLapsedPaynkolayPeriods`
@@ -5741,8 +5767,10 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
 - DB'de eski `subscription_plans.dodo_product_id` kolonu ve `dodo_webhook_events`
   tablosu bırakıldı (şemadan çıkarıldı, DROP yok — deploy sırasında eski
   sürümün kırılmaması için). Ayrı bir temizlik migration'ı ile silinebilir.
-- Kart bilgisi Buaze'ye hiç gelmez; log/Sentry'ye yalnız `paymentId`, `userId`,
-  referans kodu yazılır (§37.7).
+- Kart bilgisi Buaze'ye hiç gelmez; log/Sentry'ye yalnız `paymentId` ve
+  `userId` yazılır (§37.7). Ham REFERENCE_CODE asla (csTranId gibi
+  çalışabilir, D7; `referencecode` `SENSITIVE_KEYS`'te); gerekirse yalnız
+  `rf1_` parmak izi.
 
 ### §44.3 Kayıtlı kart + otomatik yenileme altyapısı (temel, PR 1; spec `billing-spec-final.md`)
 
@@ -5768,34 +5796,65 @@ mail atmaz.
   `BILLING_ALLOWED_HOSTS`, `BILLING_LIVE_DB_REF`, `TRUSTED_PROXIES`,
   `PAYNKOLAY_MIT_*`, `PAYNKOLAY_NON3D_LIMIT_TRY`. Gizliler yalnız runtime.
 - **Bağlama (D18)**: `billing_settings.provider_env` yalnız
-  `scripts/billing-bind-env.ts` ile yazılır. İzinli host + açık `PAYNKOLAY_ENV`
-  + satır eşleşmesi yoksa motor hiçbir şey yapmaz (`skipped: 'binding'`).
-  Ödeme/yenileme satırları `provider_env` taşır; NULL = `live`.
+  `scripts/billing-bind-env.ts` ile yazılır. `binding.ok` için: izinli
+  PayNKolay host'u + açık `PAYNKOLAY_ENV`; **açıkça yazılmış**
+  `NEXT_PUBLIC_SITE_URL` host'u `BILLING_ALLOWED_HOSTS`'ta (SITE_URL'in üretim
+  varsayılanı sayılmaz); Coolify `COOLIFY_FQDN`/`COOLIFY_URL` verirse en az biri
+  listede; `NODE_ENV=production` ve Vercel önizlemesi değil (`VERCEL_ENV`)
+  ya da `PAYNKOLAY_ENV=test`; satır eşleşmesi. Tutmazsa motor hiçbir şey yapmaz
+  (`skipped: 'binding'`, Sentry uyarısı `billing-binding-skipped`). Ödeme/yenileme
+  satırları `provider_env` taşır; NULL = `live`.
+- **Barındırılan ödeme ortamı (D18, bayraksız akış)**: `hostedPaymentEnvCheck`
+  checkout, dönüş ve settle'da: test ödemesi üretim veritabanında
+  (`BILLING_LIVE_DB_REF`) ya da `test`'e bağlanmamış veritabanında asla
+  oluşturulmaz / sonuçlanmaz; bağlı veritabanında ortam eşleşmeli; G0'dan önce
+  (satır yok) yalnız `live`. Checkout `?payment=unavailable`, dönüş `pending` +
+  Sentry `billing-env-mismatch`, settle yazmadan `BillingEnvMismatchError`.
+  `validate-env` `PAYNKOLAY_ENV=test` + üretim DB'sini bayraklardan bağımsız reddeder.
 - **Cron**: `GET /api/cron/billing-renewals` (`withCronGuard`,
   `isCronAuthorized` sabit zamanlı). Coolify saatlik `25 * * * *`;
   `vercel.json` günlük `0 6 * * *` yalnız test sözleşmesi. Tick: lease (advisory
   lock değil), 240 sn bütçe; fazlar: reconcile (bekleyen ödeme PaymentList ile
   kapanır; terk edilmiş hosted ödeme 45 dk sonra `failed('no_transaction')`,
   7 gün geç-başarı kontrolü; 48 sa çözülmeyen → inceleme), lapse (+expiry),
-  tombstone, günlük tarama (red oranı, geciken iade; tarih aralığı taraması
-  Q-16 doğrulanana dek kapalı), retention (İstanbul günü başına bir kez).
+  tombstone, günlük tarama (İstanbul günü başına bir kez, 09:00 İstanbul'dan
+  sonraki ilk tick; red oranı, geciken iade; tarih aralığı taraması Q-16
+  doğrulanana dek kapalı), retention (İstanbul günü başına bir kez).
   **Çekim fazı yok.**
-- **Settle (§11.2)**: `FOR UPDATE` ile seri; dönem İstanbul takviminde ve
-  çapa günüyle (`billingAnchorDay`, 31 Oca → 28 Şub → 31 Mar); past_due / 7
-  gün içinde düşmüş aynı plan E'ye çapalanır; aynı dönem için ikinci ödeme
+- **Settle (§11.2)**: kilit sırası abonelik → ödeme (`disableAutoRenew` ve
+  expiry ile aynı): önce abonelik `FOR UPDATE`, sonra sahiplenme ve ödemenin
+  yeniden okunması (`refundOnSuccess` kilit altında). Abonelik satırı yoksa
+  `create` (upsert değil: Prisma upsert'i `ON CONFLICT DO UPDATE` olur, eşzamanlı
+  iki ilk ödemeden biri sessizce ezilirdi) → kaybeden P2002 → bir kez yeniden.
+  Dönem İstanbul takviminde ve çapa günüyle (`billingAnchorDay`, 31 Oca → 28 Şub
+  → 31 Mar); çapa yalnız `renewsAt`'e uyuyorsa kullanılır (admin düzenlemesi
+  bayatlatır; admin fatura PUT'u dönem/döngü/paket değişince çapayı sıfırlar).
+  Aynı paket + `active` → döngü değişse de mevcut dönemin üstüne eklenir (ödenmiş
+  günler kaybolmaz; döngü değişince çapa `renewsAt` gününe). past_due / 7 gün
+  içinde düşmüş aynı paket + döngü E'ye çapalanır; aynı dönem için ikinci ödeme
   `duplicate_period` → iade kuyruğu (D19, `scripts/billing-refund-queue.ts`);
-  silinmiş hesap (`del_…`) ve tekrar kullanılan referans → `needs_review`.
-  REFERENCE_CODE yalnız `rf1_` parmak izi (anahtar yoksa `paynkolay:<id>`).
+  PayNKolay aynı `clientRefCode`'u birden çok çektiyse `provider_duplicate`
+  (`refundAmountMinor` = fazla çekimler; owner'ın faturası `paid` kalır) ya da,
+  ödemenin kendisi iade ediliyorsa, tüm çekimler; silinmiş hesap (`del_…`) ve
+  tekrar kullanılan referans → `needs_review`. REFERENCE_CODE yalnız `rf1_`
+  parmak izi (anahtar yoksa `paynkolay:<id>` + Sentry `billing-vault-key`,
+  süreç başına bir kez).
 - **Expiry (§11.3)**: `active` ve `past_due`; ödemesi süren ya da grace'i
   bitmemiş onaylı yenileme atlanır; settle ile aynı satır kilidi.
 - **Silme (§11.6)**: bekleyen ödeme / süren çekim varken en çok 7 gün ertelenir
   (`deferred: 'billing_in_flight'`, admin 409); kartlar önce sağlayıcıda silinir,
   olmazsa mühürlü anahtarın birebir kopyasıyla tombstone; ödeme ve onaylar `del_`
   takma adıyla saklanır.
-- **Kapılar**: G0 (anahtarlar runtime-only, `billing-bind-env --env live`,
-  `backfill-reference-fingerprints`, ardından `prisma/migrations-gated`
-  migration'ı). Çekim kodu (PR 3) yalnız sandbox soruları (Q-1, Q-3, Q-6, Q-7,
-  Q-9, Q-16) doğrulanınca birleşir.
+- **Kapılar**: G0 — gizliler runtime-only ve imaj incelendi; `BILLING_HMAC_KEY`
+  + `BILLING_VAULT_KEY` üretildi, ayarlandı, çevrimdışı yedeklendi (HMAC anahtarı
+  PayNKolay yapılandırılır yapılandırılmaz gerekir: settle parmak izi, silmede
+  sabit takma ad; yoksa başlangıçta `billing-vault-key`); `NEXT_PUBLIC_SITE_URL`
+  açıkça, `BILLING_ALLOWED_HOSTS=www.buaze.com,buaze.com`, `BILLING_LIVE_DB_REF`;
+  Coolify Scheduled Task `billing-renewals` (`25 * * * *`, docs/SELF_HOST.md);
+  `billing-bind-env --env live`; `backfill-reference-fingerprints`, ardından
+  `prisma/migrations-gated` migration'ı; ilk tick yanıtında `skipped` yok.
+  Çekim kodu (PR 3) yalnız sandbox soruları (Q-1, Q-3, Q-6, Q-7, Q-9, Q-16)
+  doğrulanınca birleşir.
 
 **Yapma**: dönüş POST'undaki durum alanına güvenip aboneliği açma (her zaman
 PaymentList); tutarı istemciden alma; checkout rotasına site CSP'sini geri

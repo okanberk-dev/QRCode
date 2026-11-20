@@ -43,6 +43,8 @@ describe('billing settlement against PostgreSQL', { skip }, () => {
     db,
     hmac,
     backfillDone: true,
+    // Explicit, so the shared test DB's billing_settings row (other test files rebind it) never matters here.
+    binding: null,
     now: () => now,
     capture: (_m, fp) => {
       captured.push(fp);
@@ -246,11 +248,148 @@ describe('billing settlement against PostgreSQL', { skip }, () => {
     void legacy;
     const third = await payment(u);
     assert.equal(await settlePaynkolayPayment(third, ok('RAW-LEGACY'), deps(new Date(), { backfillDone: false })), 'review');
-    // without the HMAC key nothing raw is stored
+    // without the HMAC key nothing raw is stored, and the gap is reported (once per process)
     const fourth = await payment(u);
+    captured.length = 0;
     await settlePaynkolayPayment(fourth, ok('REF-NOKEY'), deps(new Date(), { hmac: null }));
     assert.equal((await payOf(fourth))?.referenceCode, null);
     assert.equal(await db.billingInvoice.count({ where: { providerRef: `paynkolay:${fourth}` } }), 1);
+    assert.ok(captured.includes('billing-vault-key'));
+    const fifth = await payment(u);
+    captured.length = 0;
+    await settlePaynkolayPayment(fifth, ok('REF-NOKEY-2'), deps(new Date(), { hmac: null }));
+    assert.ok(!captured.includes('billing-vault-key'));
+  });
+
+  it('same plan, active: a cycle change still stacks on the paid period (yearly → monthly, monthly → yearly)', async () => {
+    const yearly = await user();
+    await sub(yearly, { plan: 'yearly', billingCycle: 'yearly', renewsAt: new Date('2028-01-01T09:00:00Z'), billingAnchorDay: 1 });
+    // "Süreyi uzat" sends a monthly checkout for the same plan
+    assert.equal(await settlePaynkolayPayment(await payment(yearly), ok('REF-Y2M'), deps(new Date('2027-03-01T09:00:00Z'))), 'succeeded');
+    const y = await subOf(yearly);
+    assert.equal(y?.renewsAt?.toISOString(), '2028-02-01T09:00:00.000Z'); // a month on top of the paid year
+    assert.equal(y?.billingAnchorDay, 1);
+
+    const monthly = await user();
+    await sub(monthly, { renewsAt: new Date('2027-03-21T09:00:00Z'), billingAnchorDay: 21 });
+    const toYearly = await payment(monthly, { billingCycle: 'yearly', amountMinor: 999000 });
+    assert.equal(await settlePaynkolayPayment(toYearly, ok('REF-M2Y'), deps(new Date('2027-03-01T09:00:00Z'))), 'succeeded');
+    const m = await subOf(monthly);
+    assert.equal(m?.renewsAt?.toISOString(), '2028-03-21T09:00:00.000Z'); // the 20 days left are kept
+    assert.equal(m?.plan, 'yearly');
+
+    // a cycle change re-anchors to the current period end (§11.1): a stale anchor 31 is not carried over
+    const reanchor = await user();
+    await sub(reanchor, { plan: 'yearly', billingCycle: 'yearly', renewsAt: new Date('2027-06-15T09:00:00Z'), billingAnchorDay: 31 });
+    await settlePaynkolayPayment(await payment(reanchor), ok('REF-RA'), deps(new Date('2027-03-01T09:00:00Z')));
+    const r = await subOf(reanchor);
+    assert.deepEqual([r?.renewsAt?.toISOString(), r?.billingAnchorDay], ['2027-07-15T09:00:00.000Z', 15]);
+  });
+
+  it('an anchor left stale by an admin edit of renewsAt is ignored (a full month is a full month)', async () => {
+    const u = await user();
+    // the first settle anchored to the 1st; an admin later moved renewsAt to 20 March without touching the anchor
+    await sub(u, { renewsAt: new Date('2027-03-20T09:00:00Z'), billingAnchorDay: 1 });
+    await settlePaynkolayPayment(await payment(u), ok('REF-STALE'), deps(new Date('2027-03-10T09:00:00Z')));
+    const s = await subOf(u);
+    assert.deepEqual([s?.renewsAt?.toISOString(), s?.billingAnchorDay], ['2027-04-20T09:00:00.000Z', 20]);
+  });
+
+  it('two concurrent first settles for an owner without a subscription row both count (no silent overwrite)', async () => {
+    for (let run = 0; run < 3; run++) {
+      const u = await user();
+      const a = await payment(u);
+      const b = await payment(u);
+      const now = new Date('2027-03-01T09:00:00Z');
+      const results = await Promise.all([
+        settlePaynkolayPayment(a, ok(`REF-NA-${run}`), deps(now)),
+        settlePaynkolayPayment(b, ok(`REF-NB-${run}`), deps(now)),
+      ]);
+      assert.deepEqual(results, ['succeeded', 'succeeded']);
+      assert.equal((await subOf(u))?.renewsAt?.toISOString(), '2027-05-01T09:00:00.000Z', `run ${run}`);
+      assert.equal(await db.billingInvoice.count({ where: { userId: u } }), 2);
+    }
+  });
+
+  it('an opt-out committed while settle waits for the subscription lock is honoured (refund, no period)', async () => {
+    const u = await user();
+    const E = new Date('2027-10-10T09:00:00Z');
+    await sub(u, { renewsAt: E, autoRenew: true });
+    const r = await db.billingRenewal.create({
+      data: { userId: u, providerEnv: 'live', periodEnd: E, billingCycle: 'monthly', subscriptionPlanId: planId, mode: 'auto', state: 'awaiting_confirmation', attempts: 1 },
+      select: { id: true },
+    });
+    const auto = await payment(u, { kind: 'renewal_auto', renewalId: r.id, attemptNo: 1 });
+    let settled: Promise<string> | null = null;
+    // The opt-out takes the subscription lock first (as disableAutoRenew does) and flags the in-flight payment;
+    // the settle starts while that transaction is still open.
+    await db.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT "user_id" FROM "billing_subscriptions" WHERE "user_id" = ${u} FOR UPDATE`;
+        await tx.billingPayment.updateMany({ where: { id: auto, status: 'pending' }, data: { refundOnSuccess: true, refundReason: 'owner_opt_out' } });
+        await tx.billingSubscription.update({ where: { userId: u }, data: { autoRenew: false } });
+        settled = settlePaynkolayPayment(auto, ok('REF-OPT'), deps(new Date('2027-10-10T10:00:00Z')));
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      },
+      { timeout: 10_000 },
+    );
+    assert.equal(await settled, 'refund_pending');
+    assert.equal((await subOf(u))?.renewsAt?.toISOString(), E.toISOString());
+    const p = await payOf(auto);
+    assert.deepEqual([p?.status, p?.refundState, p?.refundReason], ['succeeded', 'required', 'owner_opt_out']);
+  });
+
+  it('PayNKolay charged one clientRefCode more than once: the kept invoice stays paid; the queue shows the extra charges', async () => {
+    const u = await user();
+    const p = await payment(u);
+    const dup = { kind: 'duplicate' as const, referenceCode: 'REF-DUP3', amountMinor: 99900, successCount: 3 };
+    assert.equal(await settlePaynkolayPayment(p, dup, deps(new Date('2027-11-01T09:00:00Z'))), 'succeeded');
+    assert.equal((await subOf(u))?.status, 'active');
+    const entry = (await listRefundQueue(db)).find((e) => e.paymentId === p);
+    assert.deepEqual(
+      [entry?.reason, entry?.amountMinor, entry?.refundAmountMinor, entry?.keepsInvoice],
+      ['provider_duplicate', 99900, 199800, true],
+    );
+    assert.equal(await markRefund(db, p, 'refunded', 'PNL-DUP'), 'marked');
+    const inv = await db.billingInvoice.findMany({ where: { userId: u }, select: { status: true, adminNotes: true } });
+    assert.equal(inv.length, 1);
+    assert.equal(inv[0].status, 'paid'); // the owner's real invoice for the period they keep
+    assert.match(inv[0].adminNotes ?? '', /invoice kept/);
+
+    // a duplicate inside an already paid period: every charge of this clientRefCode goes back
+    const v = await user();
+    const E = new Date('2027-12-15T09:00:00Z');
+    await sub(v, { renewsAt: E, billingAnchorDay: 15 });
+    const r = await db.billingRenewal.create({
+      data: { userId: v, providerEnv: 'live', periodEnd: E, subscriptionPlanId: planId, billingCycle: 'monthly', mode: 'reminder', state: 'succeeded', succeededPaymentId: `other-${suffix}` },
+      select: { id: true },
+    });
+    const second = await payment(v, { kind: 'renewal_link', renewalId: r.id });
+    const twice = { kind: 'duplicate' as const, referenceCode: 'REF-DUP2', amountMinor: 99900, successCount: 2 };
+    assert.equal(await settlePaynkolayPayment(second, twice, deps(new Date('2027-12-14T09:00:00Z'))), 'duplicate_period');
+    const e2 = (await listRefundQueue(db)).find((e) => e.paymentId === second);
+    assert.deepEqual([e2?.reason, e2?.refundAmountMinor, e2?.keepsInvoice], ['duplicate_period', 199800, false]);
+    assert.equal(await markRefund(db, second, 'refunded', 'PNL-DUP2'), 'marked');
+    const inv2 = await db.billingInvoice.findFirst({ where: { userId: v }, select: { status: true } });
+    assert.equal(inv2?.status, 'refunded');
+  });
+
+  it('D18 backstop: a payment of the other PayNKolay environment is never settled (nothing written)', async () => {
+    const u = await user();
+    const testPay = await payment(u, { providerEnv: 'test' });
+    const now = new Date('2027-05-01T09:00:00Z');
+    // DB bound to live (or not bound at all): a test payment is refused before any write
+    for (const binding of [{ providerEnv: 'live' }, null]) {
+      await assert.rejects(settlePaynkolayPayment(testPay, ok('REF-ENV'), deps(now, { binding })), (err: Error) => err.name === 'BillingEnvMismatchError');
+    }
+    assert.equal((await payOf(testPay))?.status, 'pending');
+    assert.equal(await subOf(u), null);
+    assert.equal(await db.billingInvoice.count({ where: { userId: u } }), 0);
+    // a live payment on a test-bound database is refused too
+    const livePay = await payment(u);
+    await assert.rejects(settlePaynkolayPayment(livePay, ok('REF-ENV2'), deps(now, { binding: { providerEnv: 'test' } })), /environment mismatch/);
+    // a test payment on a test-bound database settles
+    assert.equal(await settlePaynkolayPayment(testPay, ok('REF-ENV3'), deps(now, { binding: { providerEnv: 'test' } })), 'succeeded');
   });
 
   it('expiry: past_due expires, consented grace and in-flight payments are respected, a settle in between wins', async () => {

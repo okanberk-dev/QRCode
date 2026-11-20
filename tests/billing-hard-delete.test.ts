@@ -113,7 +113,7 @@ describe('account erasure with saved-card billing', { skip }, () => {
     const result = await settlePaynkolayPayment(
       pending.id,
       { kind: 'succeeded', referenceCode: null, amountMinor: 99900 },
-      { db, hmac, backfillDone: true, capture: () => undefined, applyPlanModules: async () => 0 },
+      { db, hmac, backfillDone: true, binding: null, capture: () => undefined, applyPlanModules: async () => 0 },
     );
     assert.equal(result, 'review');
     const p = await db.billingPayment.findUnique({ where: { id: pending.id }, select: { status: true, refundState: true, refundReason: true } });

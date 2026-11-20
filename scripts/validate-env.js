@@ -192,13 +192,14 @@ if (paynkolayBase && PAYNKOLAY_HOSTS[paynkolayEnv] && paynkolayBase.replace(/\/+
   billingErrors.push(`PAYNKOLAY_BASE_URL must be exactly ${PAYNKOLAY_HOSTS[paynkolayEnv]} for PAYNKOLAY_ENV=${paynkolayEnv}`);
 }
 const liveDbRef = envValue('BILLING_LIVE_DB_REF');
+// D18: whatever the flags say, a test deployment can create and settle hosted card payments, so it never
+// runs against the production database.
 if (
   paynkolayEnv === 'test' &&
-  envValue('PAYNKOLAY_CARD_STORAGE') === 'on' &&
   liveDbRef &&
-  (process.env.DATABASE_URL || '').includes(liveDbRef)
+  [process.env.DATABASE_URL, process.env.DIRECT_URL].some((url) => (url || '').includes(liveDbRef))
 ) {
-  billingErrors.push('PAYNKOLAY_ENV=test with PAYNKOLAY_CARD_STORAGE=on against the production database (BILLING_LIVE_DB_REF); use a separate test database');
+  billingErrors.push('PAYNKOLAY_ENV=test against the production database (BILLING_LIVE_DB_REF); use a separate test database');
 }
 if (envValue('PAYNKOLAY_AUTO_CHARGE') === 'on' && process.env.VERCEL === '1') {
   billingErrors.push('PAYNKOLAY_AUTO_CHARGE=on is not allowed on Vercel (auto-charge runs only on the Coolify server)');

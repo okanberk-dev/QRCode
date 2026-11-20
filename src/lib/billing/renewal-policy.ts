@@ -46,8 +46,13 @@ export const RENEWAL_POLICY = {
   maxReconcilesPerRun: 200,
   maxTombstonesPerRun: 20,
   tombstoneMaxAttempts: 14,
-  /** Daily scans run on the first tick at or after this UTC hour (06:00 UTC = 09:00 Istanbul). */
-  dailyScanUtcHour: 6,
+  /**
+   * Daily scans run on the first tick at or after this Istanbul wall-clock hour
+   * of each Istanbul day (09:00 Istanbul = 06:00 UTC). Gating on the same
+   * calendar as the once-per-day marker keeps the 21:25 UTC tick (00:25
+   * Istanbul, already the next Istanbul day) from claiming the day at night.
+   */
+  dailyScanIstanbulHour: 9,
   refundOverdueMs: 3 * 24 * 60 * 60_000,
   declineRatio: { ratio: 0.3, minSample: 10, perAccount: 3 },
   panelEnable: true,
@@ -186,6 +191,25 @@ export function istanbulDay(d: Date): string {
 /** Istanbul day of month (1..31). */
 export function istanbulDayOfMonth(d: Date): number {
   return istanbulWall(d).day;
+}
+
+/** Istanbul wall-clock hour (0..23). */
+export function istanbulHour(d: Date): number {
+  return istanbulWall(d).hour;
+}
+
+/**
+ * True when `anchorDay` still describes the period end `at`: its Istanbul day
+ * equals the anchor, or the anchor is past the end of that month and `at` is
+ * the month's last day (the Jan 31 → Feb 28 clamp). A stored anchor that does
+ * not fit was left behind by an edit of the period end (an admin change), and
+ * must not be used to compute the next period.
+ */
+export function anchorFits(anchorDay: number, at: Date): boolean {
+  if (!Number.isInteger(anchorDay) || anchorDay < 1 || anchorDay > 31) return false;
+  const w = istanbulWall(at);
+  const last = daysInMonth(w.year, w.month);
+  return w.day === anchorDay || (anchorDay > last && w.day === last);
 }
 
 /** Istanbul `YYYYMM` (invoice numbers). */

@@ -1656,6 +1656,9 @@ model BillingPayment {
   refundOnSuccess     Boolean   @default(false) @map("refund_on_success")
   refundState         String?   @map("refund_state") @db.VarChar(12) // required | refunded | waived
   refundReason        String?   @map("refund_reason") @db.VarChar(32) // duplicate_period | owner_opt_out | charged_mismatch | erased_user | …
+  /// What the operator must refund, in kuruş, when it is not one charge of amountMinor: PayNKolay charged this
+  /// clientRefCode more than once (provider_duplicate: the extra charges; any other reason: every charge). Null = amountMinor.
+  refundAmountMinor   Int?      @map("refund_amount_minor")
 
   @@unique([renewalId, attemptNo]) // NULLs allowed → checkout rows unaffected
   @@index([userId, createdAt])

@@ -229,6 +229,68 @@ describe('scrubSentryEvent', () => {
     assert.equal(ev.spans[0].data['http.query'], '');
     assert.equal(ev.spans[0].data.url, 'https://x.test/a');
   });
+
+  const RETURN_QUERY = 'clientRefCode=cm1abc&REFERENCE_CODE=PNK7781234&AUTH_CODE=123456&TRAN_ID=TX99812';
+  const PROVIDER_VALUES = ['PNK7781234', '123456', 'TX99812', '203.0.113.77', '198.51.100.4'];
+
+  it('transaction contexts: trace data loses URL queries and the client address (root span attributes)', () => {
+    const ev = scrubSentryEvent({
+      type: 'transaction',
+      transaction: 'GET /api/billing/paynkolay/return',
+      contexts: {
+        trace: {
+          op: 'http.server',
+          description: `GET /api/billing/paynkolay/return?${RETURN_QUERY}`,
+          data: {
+            'http.url': `https://www.buaze.com/api/billing/paynkolay/return?${RETURN_QUERY}`,
+            'http.target': `/api/billing/paynkolay/return?${RETURN_QUERY}`,
+            'url.query': `?${RETURN_QUERY}`,
+            'url.full': `https://www.buaze.com/api/billing/paynkolay/return?${RETURN_QUERY}`,
+            'http.client_ip': '203.0.113.77',
+            'client.address': '203.0.113.77',
+            'net.peer.ip': '198.51.100.4',
+            'http.request.header.x_forwarded_for': '203.0.113.77',
+            'http.request.header.user_agent': 'UA/1',
+            'http.method': 'GET',
+            'http.route': '/api/billing/paynkolay/return',
+          },
+        },
+        runtime: { name: 'node', version: 'v22.0.0' },
+      },
+    }) as Record<string, any>;
+    const data = ev.contexts.trace.data;
+    assert.equal(data['http.url'], 'https://www.buaze.com/api/billing/paynkolay/return');
+    assert.equal(data['http.target'], '/api/billing/paynkolay/return');
+    assert.equal(data['url.full'], 'https://www.buaze.com/api/billing/paynkolay/return');
+    assert.equal(data['url.query'], '');
+    assert.equal(data['http.route'], '/api/billing/paynkolay/return');
+    assert.equal(data['http.request.header.user_agent'], 'UA/1');
+    for (const key of ['http.client_ip', 'client.address', 'net.peer.ip', 'http.request.header.x_forwarded_for']) {
+      assert.equal(key in data, false, key);
+    }
+    assert.equal(ev.contexts.trace.description, 'GET /api/billing/paynkolay/return');
+    assert.deepEqual(ev.contexts.runtime, { name: 'node', version: 'v22.0.0' });
+    const json = JSON.stringify(ev);
+    for (const value of PROVIDER_VALUES) assert.ok(!json.includes(value), value);
+  });
+
+  it('error contexts: nextjs.request_path (captureRequestError) loses its query', () => {
+    const ev = scrubSentryEvent({
+      exception: { values: [{ type: 'Error', value: 'db down' }] },
+      contexts: {
+        nextjs: {
+          request_path: `/api/billing/paynkolay/return?${RETURN_QUERY}`,
+          router_kind: 'App Router',
+          router_path: '/api/billing/paynkolay/return',
+          route_type: 'route',
+        },
+      },
+    }) as Record<string, any>;
+    assert.equal(ev.contexts.nextjs.request_path, '/api/billing/paynkolay/return');
+    assert.equal(ev.contexts.nextjs.router_kind, 'App Router');
+    const json = JSON.stringify(ev);
+    for (const value of PROVIDER_VALUES) assert.ok(!json.includes(value), value);
+  });
 });
 
 describe('scrubSentryLog', () => {

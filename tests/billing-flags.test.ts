@@ -12,7 +12,15 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { checkBillingRuntime, readBillingFlags, readOnOff } from '../src/lib/billing/flags';
+import {
+  checkBillingRuntime,
+  hostedPaymentEnvCheck,
+  isLiveDatabase,
+  platformHosts,
+  readBillingFlags,
+  readOnOff,
+} from '../src/lib/billing/flags';
+import { returnEnvGate } from '../src/lib/billing/return-flow';
 import {
   getPaynkolayConfig,
   paynkolayAdvertised,
@@ -134,6 +142,57 @@ describe('binding', () => {
       assert.equal(flags.autoCharge, false);
     }
   });
+
+  it('the site host must be configured explicitly: no fallback to the production default', () => {
+    // a deployment that copied the production env but not NEXT_PUBLIC_SITE_URL
+    assert.equal(readBillingFlags({ ...READY, NEXT_PUBLIC_SITE_URL: undefined }, LIVE).binding.reason, 'host_not_allowed');
+    assert.equal(readBillingFlags({ ...READY, NEXT_PUBLIC_SITE_URL: '  ' }, LIVE).binding.reason, 'host_not_allowed');
+    assert.equal(readBillingFlags({ ...READY, NEXT_PUBLIC_SITE_URL: undefined }, LIVE).cardStorage, false);
+  });
+
+  it('a deployment the platform identifies as a preview never binds, even with a copied production env', () => {
+    assert.equal(readBillingFlags({ ...READY, VERCEL_ENV: 'preview' }, LIVE).binding.reason, 'not_production');
+    assert.equal(readBillingFlags({ ...READY, VERCEL_ENV: 'development' }, LIVE).binding.reason, 'not_production');
+    assert.equal(readBillingFlags({ ...READY, VERCEL_ENV: 'production' }, LIVE).binding.ok, true);
+    // Coolify sets the deployment's own domains; they must include an allow-listed host
+    assert.equal(readBillingFlags({ ...READY, COOLIFY_FQDN: 'https://pr-12.buaze.dev' }, LIVE).binding.reason, 'host_not_allowed');
+    assert.equal(readBillingFlags({ ...READY, COOLIFY_URL: 'pr-12.buaze.dev' }, LIVE).binding.reason, 'host_not_allowed');
+    assert.equal(readBillingFlags({ ...READY, COOLIFY_FQDN: 'https://www.buaze.com,https://buaze.com' }, LIVE).binding.ok, true);
+    assert.equal(readBillingFlags({ ...READY, COOLIFY_FQDN: 'www.buaze.com', COOLIFY_URL: 'https://www.buaze.com:3000' }, LIVE).binding.ok, true);
+    assert.deepEqual(platformHosts({ COOLIFY_FQDN: 'https://www.buaze.com:3000, buaze.com', COOLIFY_URL: '' }), ['www.buaze.com', 'buaze.com']);
+    assert.equal(platformHosts({}), null);
+    // a sandbox (test env) on a preview with its own test-bound database stays possible
+    const sandbox = { ...READY, PAYNKOLAY_ENV: 'test', VERCEL_ENV: 'preview' };
+    assert.equal(readBillingFlags(sandbox, { providerEnv: 'test' }).binding.ok, true);
+  });
+});
+
+describe('hosted payment environment (D18 on checkout → return → settle, which run without flags)', () => {
+  const LIVE_DB = { BILLING_LIVE_DB_REF: 'prodref123', DATABASE_URL: 'postgresql://u@db.prodref123.example.invalid:6543/postgres' };
+
+  it('a test payment is refused on the production database and on any database not bound to test', () => {
+    assert.deepEqual(hostedPaymentEnvCheck('test', LIVE, {}), { ok: false, reason: 'env_mismatch' });
+    assert.deepEqual(hostedPaymentEnvCheck('test', null, {}), { ok: false, reason: 'test_unbound' });
+    assert.deepEqual(hostedPaymentEnvCheck('test', { providerEnv: 'test' }, LIVE_DB), { ok: false, reason: 'test_on_live_db' });
+    assert.deepEqual(hostedPaymentEnvCheck('test', { providerEnv: 'test' }, {}), { ok: true });
+  });
+
+  it('a live payment needs no binding yet (before G0), but never runs on a test-bound database', () => {
+    assert.deepEqual(hostedPaymentEnvCheck('live', null, LIVE_DB), { ok: true });
+    assert.deepEqual(hostedPaymentEnvCheck(null, null, {}), { ok: true }); // NULL = created before saved cards = live
+    assert.deepEqual(hostedPaymentEnvCheck('live', LIVE, LIVE_DB), { ok: true });
+    assert.deepEqual(hostedPaymentEnvCheck('live', { providerEnv: 'test' }, {}), { ok: false, reason: 'env_mismatch' });
+    assert.equal(isLiveDatabase({ ...LIVE_DB, DATABASE_URL: undefined, DIRECT_URL: LIVE_DB.DATABASE_URL }), true);
+    assert.equal(isLiveDatabase({ DATABASE_URL: LIVE_DB.DATABASE_URL }), false);
+  });
+
+  it('the return route never settles a test payment of a test deployment on a live-bound database', () => {
+    const check = hostedPaymentEnvCheck('test', LIVE, {});
+    assert.equal(returnEnvGate('test', 'test', check), 'refused');
+    assert.equal(returnEnvGate('test', 'live', hostedPaymentEnvCheck('test', LIVE, {})), 'other_environment');
+    assert.equal(returnEnvGate(null, 'live', hostedPaymentEnvCheck(null, LIVE, {})), 'proceed');
+    assert.equal(returnEnvGate('live', null, hostedPaymentEnvCheck('live', null, {})), 'proceed');
+  });
 });
 
 describe('capabilities', () => {
@@ -182,11 +241,39 @@ describe('checkBillingRuntime', () => {
     assert.equal(run({ ...READY, PAYNKOLAY_CARD_STORAGE: 'off', BILLING_VAULT_KEY: undefined }).report.errors.length, 0);
   });
 
+  it('BILLING_HMAC_KEY is checked from phase 0: required once PayNKolay is configured, and any set key must be valid', () => {
+    const live = { PAYNKOLAY_ENV: 'live', PAYNKOLAY_SX: 'SX', PAYNKOLAY_SX_LIST: 'SXL', PAYNKOLAY_MERCHANT_SECRET_KEY: 'SECRET' };
+    // card storage off, HMAC key missing → reported (settle stores no fingerprints, erasure pseudonyms are random)
+    const missing = run(live);
+    assert.deepEqual(missing.report.errors.map((e) => e.code), ['billing-vault-key']);
+    assert.match(missing.report.errors[0].message, /BILLING_HMAC_KEY: missing/);
+    assert.equal(run({ ...live, BILLING_HMAC_KEY: HMAC }).report.errors.length, 0);
+    // a malformed key (e.g. 64 hex chars from `openssl rand -hex 32`) is reported whatever the flags say
+    const hex = run({ ...live, BILLING_HMAC_KEY: 'a'.repeat(64) });
+    assert.deepEqual(hex.report.errors.map((e) => e.code), ['billing-vault-key']);
+    assert.ok(!JSON.stringify(hex.calls).includes('a'.repeat(64)));
+    assert.deepEqual(run({ BILLING_VAULT_KEY: 'not-a-key' }).report.errors.map((e) => e.code), ['billing-vault-key']);
+    // nothing configured, nothing set: nothing to say
+    assert.equal(run({}).report.errors.length, 0);
+  });
+
+  it('reports a test PayNKolay environment against the production database', () => {
+    const env = {
+      PAYNKOLAY_ENV: 'test',
+      BILLING_HMAC_KEY: HMAC,
+      BILLING_LIVE_DB_REF: 'prodref123',
+      DATABASE_URL: 'postgresql://u@db.prodref123.example.invalid:6543/postgres',
+    };
+    assert.deepEqual(run(env).report.errors.map((e) => e.code), ['billing-env-mismatch']);
+    assert.equal(run({ ...env, PAYNKOLAY_ENV: 'live' }).report.errors.length, 0);
+  });
+
   it('reports PayNKolay values without a valid PAYNKOLAY_ENV, unknown flags and missing auto-charge prerequisites', () => {
-    assert.deepEqual(run({ PAYNKOLAY_SX: 'SX' }).report.errors.map((e) => e.code), ['billing-config']);
-    assert.deepEqual(run({ PAYNKOLAY_ENV: 'live', PAYNKOLAY_BASE_URL: 'https://evil.example' }).report.errors.map((e) => e.code), [
-      'billing-config',
-    ]);
+    assert.deepEqual(run({ PAYNKOLAY_SX: 'SX', BILLING_HMAC_KEY: HMAC }).report.errors.map((e) => e.code), ['billing-config']);
+    assert.deepEqual(
+      run({ PAYNKOLAY_ENV: 'live', PAYNKOLAY_BASE_URL: 'https://evil.example', BILLING_HMAC_KEY: HMAC }).report.errors.map((e) => e.code),
+      ['billing-config'],
+    );
     assert.deepEqual(run({ PAYNKOLAY_AUTO_CHARGE: 'maybe' }).report.warnings.map((w) => w.code), ['billing-flag-unknown']);
     const auto = run({ ...READY, PAYNKOLAY_AUTO_CHARGE: 'on' });
     assert.deepEqual(auto.report.warnings.map((w) => w.code), ['billing-auto-charge-off']);
@@ -233,6 +320,11 @@ describe('scripts/validate-env.js billing rules', () => {
       validate({ PAYNKOLAY_ENV: 'test', PAYNKOLAY_CARD_STORAGE: 'on', BILLING_LIVE_DB_REF: 'db.example.invalid' }).code,
       1,
     );
+    // also with card storage off: a test deployment can still create and settle hosted payments
+    const testOnLive = validate({ PAYNKOLAY_ENV: 'test', BILLING_LIVE_DB_REF: 'db.example.invalid' });
+    assert.equal(testOnLive.code, 1);
+    assert.match(testOnLive.out, /PAYNKOLAY_ENV=test against the production database/);
+    assert.equal(validate({ PAYNKOLAY_ENV: 'test', BILLING_LIVE_DB_REF: 'other-ref.invalid' }).code, 0);
     assert.equal(validate({ PAYNKOLAY_ENV: 'live', PAYNKOLAY_BASE_URL: PAYNKOLAY_LIVE_BASE_URL, PAYNKOLAY_CARD_STORAGE: 'on' }).code, 0);
   });
 

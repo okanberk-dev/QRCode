@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addPeriod,
+  anchorFits,
   attemptSchedule,
   canTransition,
   classifyDecline,
@@ -10,6 +11,7 @@ import {
   inIstanbulWindow,
   istanbulDay,
   istanbulDayOfMonth,
+  istanbulHour,
   nextWindowSlot,
   RENEWAL_POLICY,
   type RenewalEvalInput,
@@ -22,6 +24,18 @@ import { nextPeriodEnd } from '../src/lib/billing/paynkolay-billing';
 
 const HOUR = 3600_000;
 const iso = (d: Date) => d.toISOString();
+
+test('anchorFits: the stored anchor must describe the period end (exact day or month-end clamp)', () => {
+  assert.equal(anchorFits(20, new Date('2027-03-20T09:00:00Z')), true);
+  assert.equal(anchorFits(1, new Date('2027-03-20T09:00:00Z')), false); // left behind by an admin edit
+  assert.equal(anchorFits(31, new Date('2027-02-28T09:00:00Z')), true); // Jan 31 → Feb 28
+  assert.equal(anchorFits(29, new Date('2027-02-28T09:00:00Z')), true); // yearly Feb 29 → Feb 28
+  assert.equal(anchorFits(31, new Date('2027-04-29T09:00:00Z')), false);
+  assert.equal(anchorFits(1, new Date('2027-02-28T21:30:00Z')), true); // 00:30 Istanbul on 1 March
+  assert.equal(anchorFits(0, new Date('2027-03-20T09:00:00Z')), false);
+  assert.equal(istanbulHour(new Date('2027-03-01T21:25:00Z')), 0);
+  assert.equal(istanbulHour(new Date('2027-03-02T06:25:00Z')), 9);
+});
 
 test('attemptSchedule: A1 ≥ E in the window, 48 h apart, all before graceEnd, never before E', () => {
   const E = new Date('2026-12-18T07:00:00Z'); // 10:00 Istanbul

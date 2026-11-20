@@ -53,6 +53,24 @@ export function readReturnGet(get: (name: string) => string | null): ReturnInput
   return { paymentId: cleanId(get('clientRefCode') || get('CLIENT_REFERENCE_CODE')), hashFields: {} };
 }
 
+export type ReturnEnvGate = 'proceed' | 'other_environment' | 'refused';
+
+/**
+ * D18 gate of the return route (pure; `check` is `hostedPaymentEnvCheck` of
+ * the payment against the database binding).
+ *  - `other_environment`: the row belongs to the other PayNKolay environment
+ *    than this deployment → the generic result page, nothing else;
+ *  - `refused`: this deployment's environment matches the row, but the
+ *    database refuses it (a test deployment pointed at the production
+ *    database, or a database bound to the other environment) → answer
+ *    pending, alert, never confirm, fail or settle;
+ *  - `proceed`: normal handling.
+ */
+export function returnEnvGate(paymentEnv: string | null, cfgEnv: string | null, check: { ok: boolean }): ReturnEnvGate {
+  if (cfgEnv && (paymentEnv ?? 'live') !== cfgEnv) return 'other_environment';
+  return check.ok ? 'proceed' : 'refused';
+}
+
 export type PaymentResultStatus = 'success' | 'failed' | 'pending' | 'review';
 
 /** What the owner is told after a settle attempt. */

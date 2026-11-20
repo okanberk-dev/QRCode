@@ -186,6 +186,22 @@ describe('parseCardList', () => {
     assert.equal(last4FromMasked(null), null);
   });
 
+  it('5. a PAN typed with spaces, dashes or dots (alias / issuer / brand / type) is dropped, not displayed', () => {
+    for (const pan of ['4111 1111 1111 1111', '4111-1111-1111-1111', '4111.1111.1111.1111', '4111 111111 11111']) {
+      const list = parseCardList(
+        cardListBody([{ ...row, Token: 'TOK-4', CARD_ALIACE: pan, CARDISSUER: `Bank ${pan}`, CARDBRAND: pan, CARDTYPE: pan }]),
+      );
+      assert.equal(list.kind, 'cards', pan);
+      if (list.kind !== 'cards') continue;
+      const card = list.cards[0];
+      assert.deepEqual([card.alias, card.issuer, card.brand, card.cardType], [null, null, null, null], pan);
+      assert.ok(!JSON.stringify(list).includes(pan), pan);
+    }
+    // short digit groups (an alias with a year, a bank branch number) stay
+    const ok = parseCardList(cardListBody([{ ...row, CARD_ALIACE: 'İş 2024-11' }]));
+    assert.equal(ok.kind === 'cards' ? ok.cards[0].alias : null, 'İş 2024-11');
+  });
+
   it('parseCardDelete is advisory', () => {
     assert.deepEqual(parseCardDelete({ ProcReturnCode: '00' }), { providerAccepted: true, code: '00' });
     assert.deepEqual(parseCardDelete({ ProcReturnCode: '99', ErrMsg: 'x' }), { providerAccepted: false, code: '99' });

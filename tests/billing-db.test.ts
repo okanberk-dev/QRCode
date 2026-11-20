@@ -154,10 +154,16 @@ describe('billing database constraints and helpers', { skip }, () => {
     const base = { userId, handle };
     await rejects(db.billingCard.create({ data: { ...base, last4: '41111111' as string } }), /too long|billing_cards_last4_digits/);
     await rejects(db.billingCard.create({ data: { ...base, last4: '54a4' } }), /billing_cards_last4_digits/);
-    await rejects(db.billingCard.create({ data: { ...base, issuer: 'Bank 4111111111111111' } }), /billing_cards_no_pan_issuer/);
-    await rejects(db.billingCard.create({ data: { ...base, alias: '4111111111111111' } }), /billing_cards_no_pan_alias/);
-    await rejects(db.billingCard.create({ data: { ...base, brand: '411111111111' } }), /billing_cards_no_pan_brand/);
-    await rejects(db.billingCard.create({ data: { ...base, cardType: '4111111111111' } }), /billing_cards_no_pan_type/);
+    await rejects(db.billingCard.create({ data: { ...base, issuer: 'Bank 4111111111111111' } }), /billing_cards_no_pan_(grouped_)?issuer/);
+    await rejects(db.billingCard.create({ data: { ...base, alias: '4111111111111111' } }), /billing_cards_no_pan_(grouped_)?alias/);
+    await rejects(db.billingCard.create({ data: { ...base, brand: '411111111111' } }), /billing_cards_no_pan_(grouped_)?brand/);
+    await rejects(db.billingCard.create({ data: { ...base, cardType: '4111111111111' } }), /billing_cards_no_pan_(grouped_)?type/);
+    // a PAN typed with separators is caught too
+    await rejects(db.billingCard.create({ data: { ...base, alias: '4111 1111 1111 1111' } }), /billing_cards_no_pan_grouped_alias/);
+    await rejects(db.billingCard.create({ data: { ...base, alias: '4111-1111-1111-1111' } }), /billing_cards_no_pan_grouped_alias/);
+    await rejects(db.billingCard.create({ data: { ...base, issuer: 'Bank 4111.1111.1111.1111' } }), /billing_cards_no_pan_grouped_issuer/);
+    await rejects(db.billingCard.create({ data: { ...base, brand: '4111 111111 11111' } }), /billing_cards_no_pan_grouped_brand/);
+    await rejects(db.billingCard.create({ data: { ...base, cardType: '4111-1111-1111' } }), /billing_cards_no_pan_grouped_type/);
     await rejects(db.billingCard.create({ data: { userId, handle: 'cd_short' } }), /billing_cards_handle_format/);
     await db.billingCard.create({ data: { ...base, last4: '5454', brand: 'MASTERCARD', alias: 'Buaze-7K2Q9X' }, select: { id: true } });
     await rejects(db.billingCard.create({ data: { ...base, last4: '1111' } }), /Unique constraint|P2002/);
@@ -166,7 +172,20 @@ describe('billing database constraints and helpers', { skip }, () => {
   it('consents, renewals, payments and tombstones enforce their CHECKs and unique keys', async () => {
     await rejects(
       db.billingConsent.create({ data: { userId, kind: 'card_save', actor: 'owner', userAgent: 'UA 4111111111111111' } }),
-      /billing_consents_no_pan_ua/,
+      /billing_consents_no_pan_(grouped_)?ua/,
+    );
+    await rejects(
+      db.billingConsent.create({ data: { userId, kind: 'card_save', actor: 'owner', userAgent: 'UA 4111 1111 1111 1111' } }),
+      /billing_consents_no_pan_grouped_ua/,
+    );
+    // dotted version numbers in a real user agent stay allowed
+    await db.billingConsent.create({
+      data: { userId, kind: 'card_save', actor: 'owner', userAgent: 'Mozilla/5.0 Chrome/131.0.6778.204 Safari/537.36' },
+      select: { id: true },
+    });
+    await rejects(
+      db.billingPayment.create({ data: { userId, billingCycle: 'monthly', amountMinor: 1, refundAmountMinor: 0 } }),
+      /billing_payments_refund_amount_positive/,
     );
     const periodEnd = new Date('2027-01-31T21:00:00.000Z');
     const renewal = { userId, providerEnv: 'live', periodEnd, billingCycle: 'monthly', mode: 'auto' };

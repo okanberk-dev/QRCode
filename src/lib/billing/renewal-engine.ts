@@ -26,6 +26,7 @@ import {
   classifyDecline,
   confirmBackoffMs,
   istanbulDay,
+  istanbulHour,
   RENEWAL_POLICY,
   tombstoneBackoffMs,
   type RenewalState,
@@ -210,7 +211,18 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
   const start = clock();
 
   if (!cfg) return { ...summary, skipped: 'config_missing' };
-  if (!deps.flags.binding.ok || deps.flags.binding.env !== cfg.env) return { ...summary, skipped: 'binding' };
+  if (!deps.flags.binding.ok || deps.flags.binding.env !== cfg.env) {
+    // PayNKolay is configured but nothing runs — not even reconciliation, so hosted payments stay pending.
+    // Say so (a warning, grouped by fingerprint) instead of answering a silent { ok: true }.
+    try {
+      deps.captureMessage('billing: renewal tick skipped, the PayNKolay environment binding does not hold', 'billing-binding-skipped', {
+        reason: deps.flags.binding.reason ?? 'env_mismatch',
+      });
+    } catch {
+      /* reporting never breaks the tick */
+    }
+    return { ...summary, skipped: 'binding' };
+  }
   const env = cfg.env;
 
   if (!(await deps.settings.acquireTickLease(start, RENEWAL_POLICY.tickLeaseMs, deps.runId))) {
@@ -489,7 +501,8 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
       // ── Phase 7: daily scans ──
       await phase('daily_scan', async () => {
         const now = clock();
-        if (now.getUTCHours() < RENEWAL_POLICY.dailyScanUtcHour) return;
+        // Same calendar as the marker: the first tick at or after 09:00 Istanbul of each Istanbul day.
+        if (istanbulHour(now) < RENEWAL_POLICY.dailyScanIstanbulHour) return;
         if (!(await deps.settings.claimDailyMarker('lastDailyScanOn', istanbulDay(now)))) return;
 
         const stats = await store.hostedPaymentStats(env, new Date(now.getTime() - DAY_MS));
@@ -572,7 +585,12 @@ export async function runBillingRenewals(): Promise<RenewalTickSummary> {
       : null,
     vault: keys ? { keys } : null,
     captureMessage: (msg, fingerprint, tags) =>
-      Sentry.captureMessage(msg, { level: 'error', fingerprint: [fingerprint], tags: { billing: 'engine' }, extra: tags }),
+      Sentry.captureMessage(msg, {
+        level: fingerprint === 'billing-binding-skipped' ? 'warning' : 'error',
+        fingerprint: [fingerprint],
+        tags: { billing: 'engine' },
+        extra: tags,
+      }),
     captureException: (err, tags) => Sentry.captureException(err, { tags: { billing: 'engine', ...tags } }),
     runId: randomBytes(12).toString('base64url'),
   });

@@ -221,11 +221,66 @@ export function isBillingEvent(event: unknown): boolean {
 const KEPT_HEADERS: ReadonlySet<string> = new Set(['user-agent', 'content-type']);
 const URL_DATA_KEYS = ['url', 'to', 'from', 'http.url', 'http.query', 'http.target', 'url.full', 'url.query'];
 
+// Span / trace attributes that carry the client address (sendDefaultPii is off, but the HTTP server
+// instrumentation still records them). Matched after lower-casing and replacing "-" with "_".
+const CLIENT_ADDRESS_KEYS: ReadonlySet<string> = new Set([
+  'http.client_ip',
+  'client.address',
+  'client.socket.address',
+  'net.peer.ip',
+  'net.sock.peer.addr',
+  'network.peer.address',
+]);
+const HEADER_ATTR_RE = /^http\.(request|response)\.header\.(.+)$/;
+
+function dropClientAttributes(data: Record<string, unknown>): void {
+  for (const key of Object.keys(data)) {
+    const k = key.toLowerCase().replace(/-/g, '_');
+    const header = HEADER_ATTR_RE.exec(k);
+    if (CLIENT_ADDRESS_KEYS.has(k) || (header && !KEPT_HEADERS.has(header[2].replace(/_/g, '-')))) delete data[key];
+  }
+}
+
 function scrubUrlData(data: Record<string, unknown>, billing: boolean): Record<string, unknown> {
   for (const key of URL_DATA_KEYS) {
     if (typeof data[key] === 'string') data[key] = key.endsWith('query') ? '' : stripQuery(data[key] as string);
   }
+  dropClientAttributes(data);
   return redactDeep(data, { billing });
+}
+
+// A URL or a path ("/api/…?x=1", also "GET /api/…?x=1"): its query and fragment are dropped wherever it
+// appears in contexts.
+const URL_OR_PATH_RE = /^(?:[A-Z]{3,7} )?(?:[a-z][a-z0-9+.-]*:\/\/|\/)/i;
+
+/**
+ * contexts (trace data copied from the root span, nextjs.request_path, otel
+ * attributes, …) — walked without depth surprises: client-address and header
+ * attributes are removed, `*query` / `querystring` values blanked, the query
+ * of every URL or path string dropped (also inside free text), then
+ * redactDeep'ed.
+ */
+function scrubContexts(contexts: unknown, billing: boolean): unknown {
+  const visit = (value: unknown, depth: number): unknown => {
+    if (typeof value === 'string') return stripUrlQueries(URL_OR_PATH_RE.test(value) ? stripQuery(value) : value);
+    if (depth >= MAX_DEPTH || value === null || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.map((item) => visit(item, depth + 1));
+    // Only plain objects are rebuilt here; Date, Error, Sensitive, Map, … are left to redactDeep.
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== Object.prototype && proto !== null) return value;
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) {
+      const k = normalizeKey(key);
+      if (k.endsWith('query') || k === 'querystring') {
+        out[key] = typeof item === 'string' ? '' : item;
+        continue;
+      }
+      out[key] = visit(item, depth + 1);
+    }
+    dropClientAttributes(out);
+    return out;
+  };
+  return redactDeep(visit(contexts, 0), { billing });
 }
 
 /**
@@ -234,6 +289,9 @@ function scrubUrlData(data: Record<string, unknown>, billing: boolean): Record<s
  *    content-type headers; strip "?…" from request.url; delete request.data
  *    on billing URLs/events, else redactDeep it;
  *  - transaction, breadcrumb data.url/to/from and span URLs: strip "?…";
+ *  - contexts (trace data, nextjs.request_path, …): every URL or path loses
+ *    its query, `*query` values are blanked, client-address and header
+ *    attributes are dropped; span data the same;
  *  - exception values, message, logentry: redactString (billing patterns on
  *    billing events);
  *  - extra, contexts, tags, breadcrumb data: redactDeep;
@@ -303,7 +361,9 @@ export function scrubSentryEvent<E>(event: E): E {
   }
 
   if ('extra' in ev) ev.extra = redactDeep(ev.extra, { billing });
-  if ('contexts' in ev) ev.contexts = redactDeep(ev.contexts, { billing });
+  // Transactions copy the root span's attributes (http.url, http.target, url.query, http.client_ip) into
+  // contexts.trace.data, and captureRequestError sets contexts.nextjs.request_path including the query.
+  if ('contexts' in ev) ev.contexts = scrubContexts(ev.contexts, billing);
   if ('tags' in ev) ev.tags = redactDeep(ev.tags, { billing });
 
   if (Array.isArray(ev.spans)) {

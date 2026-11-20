@@ -47,9 +47,26 @@ Gereken ayarlar:
 
 ### PayNKolay
 
-`PAYNKOLAY_SX`, `PAYNKOLAY_SX_LIST`, `PAYNKOLAY_MERCHANT_SECRET_KEY`, `PAYNKOLAY_MERCHANT_NO`, `PAYNKOLAY_BASE_URL`
-(canlı: `https://paynkolay.nkolayislem.com.tr`). Dönüş adresi `https://www.buaze.com/api/billing/paynkolay/return`
-(ödeme sırasında form ile gönderilir, PayNKolay panelinde ayrıca tanımlanması gerekmez).
+- `PAYNKOLAY_ENV=live` **zorunlu** (PayNKolay değerlerinden biri varken yoksa `validate-env` derlemeyi durdurur; çalışma anında
+  kartla ödeme kapalıdır). Varsayılan sunucu yoktur.
+- `PAYNKOLAY_SX`, `PAYNKOLAY_SX_LIST`, `PAYNKOLAY_MERCHANT_SECRET_KEY`, `PAYNKOLAY_MERCHANT_NO`; `PAYNKOLAY_BASE_URL` isteğe bağlı,
+  verilirse tam olarak `https://paynkolay.nkolayislem.com.tr` olmalı. Dönüş adresi
+  `https://www.buaze.com/api/billing/paynkolay/return` (ödeme sırasında form ile gönderilir, PayNKolay panelinde ayrıca
+  tanımlanması gerekmez).
+- Faturalama bağlaması (billing spec §5): `NEXT_PUBLIC_SITE_URL=https://www.buaze.com` (açıkça yazılmalı; boşsa bağlama tutmaz),
+  `BILLING_ALLOWED_HOSTS=www.buaze.com,buaze.com` (Coolify Domains listesindeki host'lardan en az biri de bu listede olmalı),
+  `BILLING_LIVE_DB_REF=<üretim Supabase proje ref'i>`, `BILLING_HMAC_KEY` ve `BILLING_VAULT_KEY` (32 bayt base64,
+  `openssl rand -base64 32`; çevrimdışı yedeklenir), isteğe bağlı `TRUSTED_PROXIES`. Ardından üretim veritabanında bir kez
+  `npx tsx scripts/billing-bind-env.ts --env live`. Bağlama tutmazsa `billing-renewals` hiçbir şey yapmaz (yanıt
+  `skipped: "binding"`, Sentry uyarısı `billing-binding-skipped`): bekleyen kart ödemeleri mutabakat görmez, `pending` kalır.
+- **Yalnız çalışma anında** (Coolify'da "Available at Buildtime" kapalı): `PAYNKOLAY_SX`, `PAYNKOLAY_SX_LIST`,
+  `PAYNKOLAY_MERCHANT_SECRET_KEY`, `PAYNKOLAY_MIT_SX`, `PAYNKOLAY_MIT_SECRET_KEY`, `BILLING_VAULT_KEY(_PREVIOUS)`,
+  `BILLING_HMAC_KEY(_PREVIOUS)`, `ENCRYPTION_KEY`, `CRON_SECRET`. Nixpacks derleme değişkenlerini imaja gömer.
+- `PAYNKOLAY_ENV=test` yalnız ayrı bir test veritabanıyla (`billing-bind-env --env test`); üretim veritabanına karşı
+  derleme hata verir, ödeme oluşturulmaz ve sonuçlandırılmaz.
+- Vekil düzeni: istemci → Traefik (Coolify, `199.247.6.54`) → uygulama, CDN yok. Traefik `forwardedHeaders.trustedIPs` boş
+  kalır (istemcinin gönderdiği `X-Forwarded-For`'u ezer). Önüne bir CDN konursa aralıkları aynı değişiklikte hem Traefik
+  `forwardedHeaders.trustedIPs`'e hem `TRUSTED_PROXIES`'e eklenir. Traefik erişim günlüğü bu uygulama için kapalı kalır.
 
 ## Zamanlanmış görevler (vercel.json `crons` + cron-hourly.yml)
 
@@ -76,6 +93,13 @@ node scripts/cron.mjs <YOL>
 | monthly-health-report | `/api/cron/monthly-health-report` | `0 13 1 * *` |
 | process-scheduled-deletions | `/api/cron/process-scheduled-deletions` | `0 3 * * *` |
 | rating-drop-alert | `/api/cron/rating-drop-alert` | `0 11 * * 1` |
+| billing-renewals | `/api/cron/billing-renewals` | `25 * * * *` (saatlik) |
+
+`billing-renewals` (zaman aşımı 330 sn): kart ödemelerinin mutabakatı (dönüşte doğrulanamayan ödemeler `pending` kalır ve
+burada sonuçlanır), dönem sonları, hesap silme sonrası kart temizliği, günlük taramalar ve saklama. Bu görev yoksa **hiçbir şey
+zamanında yenilenmez ya da sona ermez** (dönem sonu yine 08:00'deki lifecycle-emails ile işler) ve bekleyen ödemeler `pending`
+kalır; hesap silmeler en çok 7 gün ertelenir. vercel.json'daki günlük satır yalnız test sözleşmesidir; `cron-hourly.yml`'a
+eklenmez.
 
 Saatlik dört görev Vercel'de günde bir kez (Hobby sınırı) koşuyordu, saatlik turu GitHub Actions'taki `cron-hourly.yml`
 veriyordu. Burada ikisi tek görevde: saatte bir, `cron-hourly.yml`'ın sırasıyla (önce taslaklar, sonra uyarı). O iş akışı devre

@@ -25,8 +25,10 @@ async function main(): Promise<number> {
       const entries = await listRefundQueue(prisma);
       if (entries.length === 0) console.log('[billing-refund-queue] empty');
       for (const e of entries) {
+        // "refund" is the total to send back; for provider_duplicate it covers only the extra charges and the
+        // payment's own invoice stays paid.
         console.log(
-          `${e.paymentId}\t${(e.amountMinor / 100).toFixed(2)} TRY\t${e.reason ?? '-'}\t${e.kind}/${e.status}\tsince ${e.since.toISOString()}`,
+          `${e.paymentId}\trefund ${(e.refundAmountMinor / 100).toFixed(2)} TRY (charge ${(e.amountMinor / 100).toFixed(2)})\t${e.reason ?? '-'}${e.keepsInvoice ? ' (invoice kept)' : ''}\t${e.kind}/${e.status}\tsince ${e.since.toISOString()}`,
         );
       }
       return 0;
