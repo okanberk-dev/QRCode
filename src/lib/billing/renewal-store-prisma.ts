@@ -65,6 +65,7 @@ const RENEWAL_SELECT = {
   succeededPaymentId: true,
   endedAt: true,
   endReason: true,
+  dryRunCountedAt: true,
   updatedAt: true,
 } as const;
 

@@ -50,6 +50,8 @@ export interface RenewalRow {
   succeededPaymentId: string | null;
   endedAt: Date | null;
   endReason: string | null;
+  /** Dry run (§9.1): when this renewal was counted as a would-charge (once). */
+  dryRunCountedAt?: Date | null;
   updatedAt: Date;
 }
 

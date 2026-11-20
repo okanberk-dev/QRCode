@@ -250,7 +250,7 @@ describe('renewal engine (foundation phases)', () => {
     assert.equal(t.store.renewals[0].state, 'awaiting_confirmation');
     assert.equal(t.store.payments[1].status, 'failed');
     assert.equal(t.store.payments[1].failureReason, 'declined:51');
-    assert.equal(t.store.renewals[1].state, 'needs_action');
+    assert.equal(t.store.renewals[1].state, 'retry_wait', 'soft decline with attempts left → retry (§10.2)');
     t.clock.advance(48 * HOUR);
     await runRenewalTick(t.deps);
     assert.equal(t.store.payments[0].status, 'pending');
