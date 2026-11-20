@@ -83,10 +83,31 @@ const optional = [
   ['SUPABASE_JWT_SECRET', '/api/realtime/token endpoint returns 503, ActivityFeed falls back to page-reload mode'],
   // CLAUDE.md §44 — PayNKolay virtual POS. Missing values only turn off
   // card checkout; admin-managed (manual) billing keeps working.
-  ['PAYNKOLAY_SX', 'Card checkout disabled (PayNKolay "sx (Token)").'],
-  ['PAYNKOLAY_SX_LIST', 'Card checkout disabled: payments cannot be verified (PayNKolay "sx List").'],
-  ['PAYNKOLAY_MERCHANT_SECRET_KEY', 'Card checkout disabled (PayNKolay merchant secret key).'],
-  ['PAYNKOLAY_BASE_URL', 'Defaults to the PayNKolay TEST host; production must set https://paynkolay.nkolayislem.com.tr.'],
+  // PayNKolay secrets are runtime-only (Coolify: untick "Available at
+  // Buildtime"), so "not set" here is expected on Coolify builds; the
+  // runtime startup check (instrumentation.ts) validates them.
+  ['PAYNKOLAY_ENV', 'Card checkout disabled: "live" or "test" selects the allow-listed PayNKolay host (required whenever any PAYNKOLAY_* is set; no default).'],
+  ['PAYNKOLAY_SX', 'Card checkout disabled (PayNKolay "sx (Token)"). Runtime-only secret.'],
+  ['PAYNKOLAY_SX_LIST', 'Card checkout disabled: payments cannot be verified (PayNKolay "sx List"). Runtime-only secret.'],
+  ['PAYNKOLAY_MERCHANT_SECRET_KEY', 'Card checkout disabled (PayNKolay merchant secret key). Runtime-only secret.'],
+  ['PAYNKOLAY_BASE_URL', 'Optional; when set it must equal the allow-listed host of PAYNKOLAY_ENV.'],
+  ['PAYNKOLAY_MERCHANT_NO', 'Merchant number for the PayNKolay check scripts and the daily scan.'],
+  ['PAYNKOLAY_MIT_SX', 'No separate merchant-initiated terminal; auto-charge stays off unless PAYNKOLAY_HOSTED_3D_ENFORCED=confirmed. Runtime-only secret.'],
+  ['PAYNKOLAY_MIT_SECRET_KEY', 'No separate merchant-initiated terminal (see PAYNKOLAY_MIT_SX). Runtime-only secret.'],
+  ['PAYNKOLAY_HOSTED_3D_ENFORCED', 'Unset: the hosted sx is never used for merchant-initiated charges.'],
+  ['PAYNKOLAY_CARD_STORAGE', 'Saved cards off (default).'],
+  ['PAYNKOLAY_HOSTED_CARD_SELECT', 'customerKey is sent only on payments that save a card (default).'],
+  ['PAYNKOLAY_AUTO_CHARGE', 'Auto-renew charging off (default).'],
+  ['PAYNKOLAY_AUTO_CHARGE_DRY_RUN', 'Dry run ON (default; only the exact value "off" disables it).'],
+  ['PAYNKOLAY_NON3D_LIMIT_TRY', 'Auto-charge stays off (no non-3D limit).'],
+  ['PAYNKOLAY_MIT_CARDHOLDER_IP', 'Auto-charge stays off (no cardHolderIP for merchant-initiated charges).'],
+  ['BILLING_VAULT_KEY', 'Saved cards stay off (seal key for PayNKolay customer keys). Runtime-only secret.'],
+  ['BILLING_VAULT_KEY_PREVIOUS', 'Only during a vault-key rotation. Runtime-only secret.'],
+  ['BILLING_HMAC_KEY', 'Saved cards stay off (HMAC key for handles and fingerprints). Runtime-only secret.'],
+  ['BILLING_HMAC_KEY_PREVIOUS', 'Only after an HMAC-key compromise. Runtime-only secret.'],
+  ['BILLING_ALLOWED_HOSTS', 'Every billing flag stays off (site host must be listed, e.g. www.buaze.com,buaze.com).'],
+  ['BILLING_LIVE_DB_REF', 'No guard against binding the production database to the PayNKolay test environment.'],
+  ['TRUSTED_PROXIES', 'Billing client IP uses the default private ranges as trusted proxies.'],
 ];
 
 const missing = [];
@@ -111,6 +132,105 @@ for (const [name, effect] of optional) {
 if (missingOptional.length > 0) {
   console.warn('[validate-env] ⚠️  Optional env vars not set (features degrade gracefully):');
   for (const m of missingOptional) console.warn(`  - ${m.name}: ${m.effect}`);
+}
+
+// ── Billing / PayNKolay (CLAUDE.md §44, billing spec §5.3) ────────────────
+// Errors only for NON-secret inputs (they are available at build). Anything
+// that needs a secret is a warning, because secrets are deliberately absent
+// at build time; runtime startup (instrumentation.ts) enforces them and the
+// billing flags fail closed regardless.
+const PAYNKOLAY_HOSTS = {
+  live: 'https://paynkolay.nkolayislem.com.tr',
+  test: 'https://paynkolaytest.nkolayislem.com.tr',
+};
+const BILLING_FLAG_NAMES = [
+  'PAYNKOLAY_CARD_STORAGE',
+  'PAYNKOLAY_HOSTED_CARD_SELECT',
+  'PAYNKOLAY_AUTO_CHARGE',
+  'PAYNKOLAY_AUTO_CHARGE_DRY_RUN',
+];
+const RUNTIME_ONLY_SECRETS = [
+  'PAYNKOLAY_MERCHANT_SECRET_KEY',
+  'PAYNKOLAY_SX',
+  'PAYNKOLAY_SX_LIST',
+  'PAYNKOLAY_MIT_SX',
+  'PAYNKOLAY_MIT_SECRET_KEY',
+  'BILLING_VAULT_KEY',
+  'BILLING_VAULT_KEY_PREVIOUS',
+  'BILLING_HMAC_KEY',
+  'BILLING_HMAC_KEY_PREVIOUS',
+  'ENCRYPTION_KEY',
+  'CRON_SECRET',
+];
+
+function envValue(name) {
+  const value = process.env[name];
+  return value && value.trim() ? value.trim() : '';
+}
+
+function is32ByteKey(value) {
+  return /^[A-Za-z0-9+/_-]{43}=?$/.test(value) && Buffer.from(value.replace(/-/g, '+').replace(/_/g, '/'), 'base64').length === 32;
+}
+
+const billingErrors = [];
+const billingWarnings = [];
+
+for (const name of BILLING_FLAG_NAMES) {
+  const value = envValue(name);
+  if (value && value !== 'on' && value !== 'off') billingErrors.push(`${name} must be "on" or "off" (unknown values are treated as off; dry run stays on)`);
+}
+
+const paynkolayEnv = envValue('PAYNKOLAY_ENV');
+const paynkolayAnySet = Object.keys(process.env).some((k) => k.startsWith('PAYNKOLAY_') && k !== 'PAYNKOLAY_ENV' && envValue(k));
+if (paynkolayEnv && paynkolayEnv !== 'live' && paynkolayEnv !== 'test') {
+  billingErrors.push('PAYNKOLAY_ENV must be "live" or "test"');
+} else if (paynkolayAnySet && !paynkolayEnv) {
+  billingErrors.push('PAYNKOLAY_* values are set without PAYNKOLAY_ENV ("live" or "test"); there is no default host');
+}
+const paynkolayBase = envValue('PAYNKOLAY_BASE_URL');
+if (paynkolayBase && PAYNKOLAY_HOSTS[paynkolayEnv] && paynkolayBase.replace(/\/+$/, '') !== PAYNKOLAY_HOSTS[paynkolayEnv]) {
+  billingErrors.push(`PAYNKOLAY_BASE_URL must be exactly ${PAYNKOLAY_HOSTS[paynkolayEnv]} for PAYNKOLAY_ENV=${paynkolayEnv}`);
+}
+const liveDbRef = envValue('BILLING_LIVE_DB_REF');
+if (
+  paynkolayEnv === 'test' &&
+  envValue('PAYNKOLAY_CARD_STORAGE') === 'on' &&
+  liveDbRef &&
+  (process.env.DATABASE_URL || '').includes(liveDbRef)
+) {
+  billingErrors.push('PAYNKOLAY_ENV=test with PAYNKOLAY_CARD_STORAGE=on against the production database (BILLING_LIVE_DB_REF); use a separate test database');
+}
+if (envValue('PAYNKOLAY_AUTO_CHARGE') === 'on' && process.env.VERCEL === '1') {
+  billingErrors.push('PAYNKOLAY_AUTO_CHARGE=on is not allowed on Vercel (auto-charge runs only on the Coolify server)');
+}
+
+for (const name of RUNTIME_ONLY_SECRETS) {
+  if (envValue(name)) billingWarnings.push(`${name} is visible at build time: mark it runtime-only (Coolify: untick "Available at Buildtime")`);
+}
+if (envValue('PAYNKOLAY_CARD_STORAGE') === 'on') {
+  for (const name of ['BILLING_VAULT_KEY', 'BILLING_HMAC_KEY']) {
+    const value = envValue(name);
+    if (value && !is32ByteKey(value)) billingWarnings.push(`${name} is not a 32-byte base64 key; saved cards will stay off`);
+    else if (!value) billingWarnings.push(`${name} not visible at build (expected when runtime-only); checked again at startup`);
+  }
+}
+if (envValue('PAYNKOLAY_AUTO_CHARGE') === 'on') {
+  if (!/^\d{1,7}$/.test(envValue('PAYNKOLAY_NON3D_LIMIT_TRY'))) billingWarnings.push('auto-charge needs PAYNKOLAY_NON3D_LIMIT_TRY (integer TL)');
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(envValue('PAYNKOLAY_MIT_CARDHOLDER_IP'))) billingWarnings.push('auto-charge needs PAYNKOLAY_MIT_CARDHOLDER_IP (IPv4)');
+  if (envValue('PAYNKOLAY_HOSTED_3D_ENFORCED') !== 'confirmed') {
+    billingWarnings.push('auto-charge needs PAYNKOLAY_MIT_SX + PAYNKOLAY_MIT_SECRET_KEY at runtime, or PAYNKOLAY_HOSTED_3D_ENFORCED=confirmed');
+  }
+}
+
+if (billingWarnings.length > 0) {
+  console.warn('[validate-env] ⚠️  Billing:');
+  for (const w of billingWarnings) console.warn(`  - ${w}`);
+}
+if (billingErrors.length > 0) {
+  console.error('\n[validate-env] ❌ Invalid billing / PayNKolay configuration:\n');
+  for (const e of billingErrors) console.error(`  - ${e}`);
+  console.error('');
+  process.exit(1);
 }
 
 console.log('[validate-env] ✅ All required environment variables are set.');

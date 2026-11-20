@@ -939,7 +939,7 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_STORAGE_BUCKET` | Opsiyonel | Careers attachment + site-settings görselleri; eksikse 503 |
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
-| `PAYNKOLAY_SX` + `PAYNKOLAY_SX_LIST` + `PAYNKOLAY_MERCHANT_SECRET_KEY` + `PAYNKOLAY_MERCHANT_NO` + `PAYNKOLAY_BASE_URL` | Opsiyonel | PayNKolay kartla ödeme (§44). Eksikse kartla ödeme düğmesi `?payment=unavailable`'a düşer; admin manuel fatura akışı çalışır. `PAYNKOLAY_BASE_URL` varsayılanı TEST sunucusu — canlıda `https://paynkolay.nkolayislem.com.tr`. |
+| `PAYNKOLAY_ENV` + `PAYNKOLAY_SX` + `PAYNKOLAY_SX_LIST` + `PAYNKOLAY_MERCHANT_SECRET_KEY` + `PAYNKOLAY_MERCHANT_NO` + `PAYNKOLAY_BASE_URL` | Opsiyonel | PayNKolay kartla ödeme (§44). Eksikse kartla ödeme düğmesi `?payment=unavailable`'a düşer; admin manuel fatura akışı çalışır. `PAYNKOLAY_ENV` (`live` \| `test`) zorunlu ve varsayılan sunucu YOK: izinli iki host'tan birini seçer; `PAYNKOLAY_BASE_URL` opsiyonel, verilirse o host'a birebir eşit olmalı (aksi halde config `null`). Gizli değerler yalnız runtime (Coolify'da "Available at Buildtime" kapalı). Kayıtlı kart / otomatik yenileme env'leri (`PAYNKOLAY_CARD_STORAGE`, `BILLING_VAULT_KEY`, `BILLING_HMAC_KEY`, …) `.env.example`'da; hepsi varsayılan kapalı. |
 | `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, appId) | Opsiyonel | Google Sign-in client config; eksikse OAuth butonu UI'da disable, e-posta+şifre flow intact |
 | `FIREBASE_AUTH_PROXY_TARGET` | Opsiyonel | `__/auth/*` path'lerini Firebase'e proxy'ler (`next.config.ts:rewrites`); boşsa rewrite hiç eklenmez |
 | `FIREBASE_ADMIN_PROJECT_ID` | Opsiyonel | Server-side Firebase Admin SDK için (token verify) |
@@ -3146,7 +3146,7 @@ Bundle README + user prompt: *"mobil uygulama değil responsive olacak sadece"*.
 | Dosya | Görev |
 |---|---|
 | `instrumentation.ts` | `register()` runtime'a göre lazy import + `onRequestError = Sentry.captureRequestError` (Next 15 unhandled server error hook, SDK >= 8.28) |
-| `sentry.server.config.ts` | Server runtime init; DSN fallback `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN`; `includeLocalVariables: true` (stack trace'de local vars) |
+| `sentry.server.config.ts` | Server runtime init; DSN fallback `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN`; `includeLocalVariables` yalnız production dışında açık (V8 inspector `Sensitive` sarmalayıcısını aşar, kart token'ı/anahtar sızabilir); `beforeSend`/`beforeSendTransaction` → `scrubSentryEvent`, `beforeSendLog: scrubSentryLog` zorunlu (`src/lib/billing/redact.ts`; edge config da aynı scrubber'ları kullanır) |
 | `sentry.edge.config.ts` | Edge runtime init; DSN fallback `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN` |
 | `instrumentation-client.ts` | Browser init + `Sentry.replayIntegration()` + `onRouterTransitionStart` |
 | `src/app/global-error.tsx` | Branded safe-mode uncaught boundary; `reportBoundaryError('global-error-boundary', error)` + retry/home CTA |
@@ -5723,10 +5723,16 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
 - CSP: site `form-action 'self'` checkout rotasına uygulanmaz (`next.config.ts`
   CSP kaynağı `/((?!api/billing/paynkolay/checkout).*)`); Chrome form-action'ı
   3D Secure yönlendirmelerinde de uygular. Checkout HTML'i kendi dar CSP'sini taşır.
-- Env (hepsi opsiyonel, `validate-env.js`): `PAYNKOLAY_SX`, `PAYNKOLAY_SX_LIST`,
-  `PAYNKOLAY_MERCHANT_SECRET_KEY`, `PAYNKOLAY_MERCHANT_NO`, `PAYNKOLAY_BASE_URL`
-  (varsayılan TEST; canlıda `https://paynkolay.nkolayislem.com.tr`). Eksikse
-  checkout `?payment=unavailable` döner.
+- Env (hepsi opsiyonel, `validate-env.js`): `PAYNKOLAY_ENV`, `PAYNKOLAY_SX`,
+  `PAYNKOLAY_SX_LIST`, `PAYNKOLAY_MERCHANT_SECRET_KEY`, `PAYNKOLAY_MERCHANT_NO`,
+  `PAYNKOLAY_BASE_URL`. `PAYNKOLAY_ENV=live|test` zorunlu, varsayılan host yok:
+  live → `https://paynkolay.nkolayislem.com.tr`, test →
+  `https://paynkolaytest.nkolayislem.com.tr`; `PAYNKOLAY_BASE_URL` verilirse bu
+  host'a birebir eşit olmalı. Eksik/hatalıysa checkout `?payment=unavailable`
+  döner; herhangi bir `PAYNKOLAY_*` `PAYNKOLAY_ENV`'siz verilirse build hata verir.
+  Fiyat sayfası kart düğmesini gizli değer gerektirmeyen `paynkolayAdvertised()`
+  ile gösterir. Gizli değerler yalnız runtime'da (Coolify: "Available at
+  Buildtime" kapalı); başlangıç kontrolü `checkBillingRuntime()` (instrumentation).
 - Admin `MemberBillingModal` manuel akışı (kurumsal, iade, eski fiyat) korunur;
   `BillingSubscription.source` `'manual' | 'paynkolay'`.
 - DB'de eski `subscription_plans.dodo_product_id` kolonu ve `dodo_webhook_events`

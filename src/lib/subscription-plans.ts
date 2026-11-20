@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { getPaynkolayConfig } from '@/lib/payment/paynkolay';
+import { paynkolayAdvertised } from '@/lib/payment/paynkolay';
 
 /** Public-shaped subscription plan — locale projection applied. */
 export interface PublicPlan {
@@ -366,7 +366,9 @@ export async function getActivePlans(locale: 'tr' | 'en'): Promise<PublicPlan[]>
     where: { isActive: true },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
   });
-  const checkoutEnabled = getPaynkolayConfig() !== null;
+  // Non-secret check only: prerendered pricing pages never need the
+  // runtime-only PayNKolay secrets (the checkout route still does).
+  const checkoutEnabled = paynkolayAdvertised();
   return rows.map((r) => toPublicPlan(toAdminRow(r), locale, { checkoutEnabled }));
 }
 

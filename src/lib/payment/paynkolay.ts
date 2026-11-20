@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { billingLog, redactString } from '@/lib/billing/redact';
 
 /**
  * PayNKolay (Nkolay Ödeme Kuruluşu) virtual POS — the only card payment
@@ -27,8 +28,17 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const PAYNKOLAY_TEST_BASE_URL = 'https://paynkolaytest.nkolayislem.com.tr';
 export const PAYNKOLAY_LIVE_BASE_URL = 'https://paynkolay.nkolayislem.com.tr';
 
+/** The two PayNKolay environments. Each maps to exactly one allow-listed host. */
+export type PaynkolayEnv = 'live' | 'test';
+
+/** Host allow-list: these two origins, `https` only, no path. Nothing else is ever called. */
+export const PAYNKOLAY_BASE_URLS: Readonly<Record<PaynkolayEnv, string>> = Object.freeze({
+  live: PAYNKOLAY_LIVE_BASE_URL,
+  test: PAYNKOLAY_TEST_BASE_URL,
+});
+
 export interface PaynkolayConfig {
-  /** Panel → "sx (Token)": payment form. */
+  /** Panel → "sx (Token)": payment form, card list and card delete. */
   sx: string;
   /** Panel → "sx List": transaction verification. */
   sxList: string;
@@ -36,19 +46,82 @@ export interface PaynkolayConfig {
   merchantSecretKey: string;
   /** Merchant number, first field of the return hash. */
   merchantNo: string;
+  /** Always one of `PAYNKOLAY_BASE_URLS`, the one that belongs to `env`. */
   baseUrl: string;
+  /** `PAYNKOLAY_ENV`: which PayNKolay environment this deployment talks to. */
+  env: PaynkolayEnv;
+  /**
+   * Separate merchant-initiated (non-3D) terminal (`PAYNKOLAY_MIT_SX` +
+   * `PAYNKOLAY_MIT_SECRET_KEY`), used only server-to-server. Null unless both
+   * are set.
+   */
+  mit: { sx: string; secret: string } | null;
+  /**
+   * `PAYNKOLAY_HOSTED_3D_ENFORCED=confirmed`: PayNKolay confirmed in writing
+   * that the hosted page always enforces 3D Secure, so the hosted `sx` may be
+   * used for merchant-initiated API charges when no MIT terminal exists.
+   */
+  hosted3dEnforced: boolean;
 }
 
-/** Null when PayNKolay is not configured — checkout is then unavailable. */
-export function getPaynkolayConfig(): PaynkolayConfig | null {
-  const sx = process.env.PAYNKOLAY_SX?.trim();
-  const sxList = process.env.PAYNKOLAY_SX_LIST?.trim();
-  const merchantSecretKey = process.env.PAYNKOLAY_MERCHANT_SECRET_KEY?.trim();
-  const merchantNo = process.env.PAYNKOLAY_MERCHANT_NO?.trim() ?? '';
+/** Anything shaped like `process.env` (tests pass plain objects). */
+export type EnvSource = Readonly<Record<string, string | undefined>>;
+
+export type PaynkolayBaseUrlResult =
+  | { ok: true; env: PaynkolayEnv; baseUrl: string }
+  | { ok: false; reason: 'missing_env' | 'invalid_env' | 'base_url_not_allowed' };
+
+/**
+ * The allow-listed base URL for `PAYNKOLAY_ENV` (needs no secret, so it also
+ * works at build time). `PAYNKOLAY_ENV` is required in every environment —
+ * there is no default host, so a missing or mistyped value never silently
+ * sends owners to the TEST host (or test traffic to the live one).
+ * `PAYNKOLAY_BASE_URL` is optional; when set it must equal that host exactly.
+ */
+export function resolvePaynkolayBaseUrl(env: EnvSource = process.env): PaynkolayBaseUrlResult {
+  const rawEnv = env.PAYNKOLAY_ENV?.trim();
+  if (!rawEnv) return { ok: false, reason: 'missing_env' };
+  if (rawEnv !== 'live' && rawEnv !== 'test') return { ok: false, reason: 'invalid_env' };
+  const allowed = PAYNKOLAY_BASE_URLS[rawEnv];
+  const rawBase = env.PAYNKOLAY_BASE_URL?.trim();
+  if (rawBase && rawBase.replace(/\/+$/, '') !== allowed) return { ok: false, reason: 'base_url_not_allowed' };
+  return { ok: true, env: rawEnv, baseUrl: allowed };
+}
+
+/**
+ * Null when PayNKolay is not configured — checkout is then unavailable.
+ * Requires an explicit, allow-listed `PAYNKOLAY_ENV` plus the three secrets.
+ */
+export function getPaynkolayConfig(env: EnvSource = process.env): PaynkolayConfig | null {
+  const base = resolvePaynkolayBaseUrl(env);
+  if (!base.ok) return null;
+  const sx = env.PAYNKOLAY_SX?.trim();
+  const sxList = env.PAYNKOLAY_SX_LIST?.trim();
+  const merchantSecretKey = env.PAYNKOLAY_MERCHANT_SECRET_KEY?.trim();
+  const merchantNo = env.PAYNKOLAY_MERCHANT_NO?.trim() ?? '';
   if (!sx || !sxList || !merchantSecretKey) return null;
-  const raw = process.env.PAYNKOLAY_BASE_URL?.trim();
-  const baseUrl = (raw || PAYNKOLAY_TEST_BASE_URL).replace(/\/+$/, '');
-  return { sx, sxList, merchantSecretKey, merchantNo, baseUrl };
+  const mitSx = env.PAYNKOLAY_MIT_SX?.trim();
+  const mitSecret = env.PAYNKOLAY_MIT_SECRET_KEY?.trim();
+  return {
+    sx,
+    sxList,
+    merchantSecretKey,
+    merchantNo,
+    baseUrl: base.baseUrl,
+    env: base.env,
+    mit: mitSx && mitSecret ? { sx: mitSx, secret: mitSecret } : null,
+    hosted3dEnforced: env.PAYNKOLAY_HOSTED_3D_ENFORCED?.trim() === 'confirmed',
+  };
+}
+
+/**
+ * Whether public pages may advertise card checkout. Reads only the non-secret
+ * `PAYNKOLAY_ENV` (+ optional `PAYNKOLAY_BASE_URL`), so prerendered pricing
+ * pages never need the runtime-only secrets. The checkout routes still need
+ * the full `getPaynkolayConfig()` and answer `unavailable` without it.
+ */
+export function paynkolayAdvertised(env: EnvSource = process.env): boolean {
+  return resolvePaynkolayBaseUrl(env).ok;
 }
 
 // ── Pure helpers (tests/paynkolay.test.ts) ─────────────────────────────────
@@ -190,7 +263,9 @@ export function paymentListRows(payload: unknown): Record<string, unknown>[] {
   ) {
     return [];
   }
-  throw new Error(`paynkolay PaymentList: no transaction list${message ? ` (${message.slice(0, 120)})` : ''}`);
+  // Provider text: truncated and redacted (billing spec §14.2).
+  const detail = message ? ` (${redactString(message.slice(0, 120), { billing: true })})` : '';
+  throw new Error(`paynkolay PaymentList: no transaction list${detail}`);
 }
 
 export type PaymentCheck =
@@ -252,7 +327,10 @@ export function buildHostedCheckout(
     successUrl: input.successUrl,
     failUrl: input.failUrl,
     rnd: formatPaynkolayRnd(now),
-    // Always 3D Secure: chargeback liability moves to the issuer.
+    // Requests 3D Secure, but `use3D` is NOT covered by hashDataV2 and can be
+    // edited in the browser, so it is no guarantee (billing spec §3.3): the
+    // hosted `sx` must never hold Non-Secure permission, and confirmation
+    // must come from the PaymentList row.
     use3D: 'true',
     transactionType: 'SALES',
     cardHolderIP: input.buyerIp?.trim() || '0.0.0.0',
@@ -308,9 +386,7 @@ export async function confirmPayment(
   expected: { clientRefCode: string; amountMinor: number; createdAt: Date },
 ): Promise<PaymentCheck> {
   if (!verifyPaynkolayReturnHash(params, cfg.merchantSecretKey)) {
-    console.warn('[paynkolay] return hash did not verify; deciding from PaymentList', {
-      ref: expected.clientRefCode,
-    });
+    billingLog('warn', 'paynkolay.return_hash_unverified', { paymentId: expected.clientRefCode });
   }
   const now = new Date();
   // A payment that crosses midnight lands on the previous day.

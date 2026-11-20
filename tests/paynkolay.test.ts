@@ -14,7 +14,16 @@ import {
 import { nextPeriodEnd } from '../src/lib/billing/paynkolay-billing';
 import { moduleSwitches, normalizeModuleKeys } from '../src/lib/plan-modules-catalog';
 
-const cfg = { sx: 'SX', sxList: 'SXL', merchantSecretKey: 'SECRET', merchantNo: '400', baseUrl: 'https://pos.test' };
+const cfg = {
+  sx: 'SX',
+  sxList: 'SXL',
+  merchantSecretKey: 'SECRET',
+  merchantNo: '400',
+  baseUrl: 'https://pos.test',
+  env: 'test' as const,
+  mit: null,
+  hosted3dEnforced: false,
+};
 
 test('amounts: kuruş ↔ PayNKolay string without floats', () => {
   assert.equal(minorToPaynkolayAmount(128010), '1280.10');

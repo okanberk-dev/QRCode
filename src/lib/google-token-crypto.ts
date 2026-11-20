@@ -1,10 +1,14 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import * as Sentry from '@sentry/nextjs';
+import { GCM_IV_LENGTH, GCM_TAG_LENGTH, gcmOpen, gcmSeal } from '@/lib/crypto/aes-gcm';
 
 /**
  * AES-256-GCM at-rest encryption for Google OAuth tokens (CLAUDE.md §40.12).
  *
  * **Format**: `v1:${ivBase64}:${ciphertextBase64}:${authTagBase64}`
+ * (12-byte IV, 16-byte tag, no AAD). The cipher itself lives in
+ * `src/lib/crypto/aes-gcm.ts`; this file keeps the Google-only key
+ * (`ENCRYPTION_KEY`), the `v1:` format and the graceful degrade, so existing
+ * ciphertexts decrypt unchanged. Billing never uses this helper or its key.
  *
  * **Backward compat (CRITICAL — lazy migration paterni)**:
  * - `decryptToken` `v1:` prefix yoksa → plain text döner (mevcut row'lar etkilenmez)
@@ -18,8 +22,8 @@ import * as Sentry from '@sentry/nextjs';
  */
 
 const VERSION_PREFIX = 'v1:';
-const IV_LENGTH = 12; // GCM standart
-const AUTH_TAG_LENGTH = 16;
+const IV_LENGTH = GCM_IV_LENGTH; // GCM standart (12)
+const AUTH_TAG_LENGTH = GCM_TAG_LENGTH; // 16
 
 let warnedMissingKey = false;
 
@@ -68,10 +72,7 @@ export function encryptToken(plain: string): string {
     // okuma path'i plain'i kabul eder, yeni write encrypted yapar
     return plain;
   }
-  const iv = randomBytes(IV_LENGTH);
-  const cipher = createCipheriv('aes-256-gcm', key, iv);
-  const ciphertext = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
-  const authTag = cipher.getAuthTag();
+  const { iv, ct: ciphertext, tag: authTag } = gcmSeal(key, plain);
   return `${VERSION_PREFIX}${iv.toString('base64')}:${ciphertext.toString('base64')}:${authTag.toString('base64')}`;
 }
 
@@ -110,10 +111,7 @@ export function decryptToken(blob: string): string {
     if (authTag.length !== AUTH_TAG_LENGTH) {
       throw new Error(`invalid auth tag length: ${authTag.length}`);
     }
-    const decipher = createDecipheriv('aes-256-gcm', key, iv);
-    decipher.setAuthTag(authTag);
-    const plain = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-    return plain.toString('utf8');
+    return gcmOpen(key, { iv, ct: ciphertext, tag: authTag });
   } catch (err) {
     // Auth tag mismatch (wrong key) veya truncated blob
     Sentry.captureException(err, {

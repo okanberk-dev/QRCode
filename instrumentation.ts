@@ -3,6 +3,15 @@ import * as Sentry from '@sentry/nextjs';
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('./sentry.server.config');
+    // Billing secrets are runtime-only (never available at build), so their
+    // validation happens here. Reports names and codes only; flags fail
+    // closed regardless. Never blocks startup.
+    try {
+      const { checkBillingRuntime } = await import('./src/lib/billing/flags');
+      checkBillingRuntime();
+    } catch {
+      console.error('[billing] runtime check could not run');
+    }
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
