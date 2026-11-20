@@ -110,7 +110,11 @@ function RailRow({
         type="button"
         onClick={() => onJump(category.id)}
         aria-current={active ? 'true' : undefined}
-        aria-label={copy.fmt.categoryChipLabel(category.name, items.length)}
+        // The label replaces the content, so the state the icon / dot shows is part of it (never colour-only).
+        aria-label={[
+          copy.fmt.categoryChipLabel(category.name, items.length),
+          !category.isVisible ? copy.category.hidden : soldOut ? copy.item.soldOut : null,
+        ].filter(Boolean).join(', ')}
         className="flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-lg pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
       >
         <span className={`min-w-0 flex-1 truncate font-body text-[13.5px] text-[#0A0A0A] ${active ? 'font-semibold' : 'font-medium'}`}>

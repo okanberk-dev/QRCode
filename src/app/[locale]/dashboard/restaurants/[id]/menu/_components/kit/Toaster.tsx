@@ -265,7 +265,7 @@ function ToastBar({
             toast.action?.run();
             onDismiss();
           }}
-          className={`h-9 shrink-0 rounded-lg px-3 text-[13px] font-semibold ${
+          className={`h-11 shrink-0 rounded-lg px-3 text-[13px] font-semibold pointer-fine:h-9 ${
             error ? 'bg-white text-[#991B1B] ring-1 ring-[#FECACA]' : 'bg-[#C6F24E] text-[#0A0A0A]'
           }`}
         >
@@ -276,7 +276,7 @@ function ToastBar({
         <button
           type="button"
           onClick={() => toast.undoId && onUndo(toast.undoId)}
-          className="h-9 shrink-0 rounded-lg bg-[#C6F24E] px-3 text-[13px] font-semibold text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="h-11 shrink-0 rounded-lg bg-[#C6F24E] px-3 pointer-fine:h-9 text-[13px] font-semibold text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           {toast.undoLabel}
         </button>
@@ -285,7 +285,7 @@ function ToastBar({
         type="button"
         onClick={onDismiss}
         aria-label={copy.toast.dismiss}
-        className={`bz-btn-icon shrink-0 ${error ? '' : 'bz-btn-icon-on-dark'}`}
+        className={`bz-btn-icon h-11 w-11 shrink-0 pointer-fine:h-8 pointer-fine:w-8 ${error ? '' : 'bz-btn-icon-on-dark'}`}
       >
         <X size={14} strokeWidth={2} />
       </button>

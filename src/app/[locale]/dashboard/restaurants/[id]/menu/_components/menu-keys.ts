@@ -205,3 +205,12 @@ export function ariaKeyShortcuts(def: ShortcutDef): string {
   }
   return out.join(' ');
 }
+
+/** `aria-keyshortcuts` for one shortcut id (undefined when unknown). */
+export function ariaKeysFor(id: string): string | undefined {
+  const def = SHORTCUTS.find((d) => d.id === id);
+  return def ? ariaKeyShortcuts(def) : undefined;
+}
+
+/** Every row-scope shortcut, for the row focus control (§9). */
+export const ROW_ARIA_KEYS = SHORTCUTS.filter((d) => d.scope === 'row').map(ariaKeyShortcuts).join(' ');

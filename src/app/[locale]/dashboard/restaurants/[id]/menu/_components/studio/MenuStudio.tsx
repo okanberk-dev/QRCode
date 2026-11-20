@@ -414,8 +414,11 @@ function StudioLoaded({
 
   // ── item panel (every open / close path goes through the dirty guard) ──
   const guardItem = useCallback((proceed: () => void) => {
-    if (itemDirtyRef.current) setPendingLeave(() => proceed);
-    else proceed();
+    if (itemDirtyRef.current) {
+      // The leave confirm lives in the item panel: bring its tab forward, or it opens hidden (≥1024).
+      setRightTab('item');
+      setPendingLeave(() => proceed);
+    } else proceed();
   }, []);
   const onDirtyChange = useCallback((dirty: boolean) => {
     itemDirtyRef.current = dirty;
@@ -594,12 +597,18 @@ function StudioLoaded({
     requestAnimationFrame(() => requestAnimationFrame(() => newCategoryOpen.current?.()));
   }, [showEditing]);
 
-  const openPriceCell = useCallback((fromItemId: string, dir: 1 | -1) => {
+  const priceCellTarget = useCallback((fromItemId: string, dir: 1 | -1 | 0) => {
     const ids = latest.current.visibleIds;
     const index = ids.indexOf(fromItemId);
     const target = index === -1 ? undefined : ids[index + dir];
-    if (target) priceCells.current.get(target)?.();
+    return target ? priceCells.current.get(target) : undefined;
   }, []);
+  const hasPriceCell = useCallback((fromItemId: string, dir: 1 | -1 | 0) => !!priceCellTarget(fromItemId, dir), [priceCellTarget]);
+  const openPriceCell = useCallback((fromItemId: string, dir: 1 | -1 | 0) => {
+    const open = priceCellTarget(fromItemId, dir);
+    open?.();
+    return !!open;
+  }, [priceCellTarget]);
   const openNameCell = useCallback((itemId: string) => nameCells.current.get(itemId)?.(), []);
 
   const focusAfterRemoval = useCallback((itemId: string) => {
@@ -680,7 +689,7 @@ function StudioLoaded({
     () => ({
       restaurantId, locale, isTr, copy, readOnly, canEdit, isPublished, finePointer, mode, actions, toaster,
       getCategories, openItem, createItemIn, focusQuickAdd, focusNewCategory, jumpToCategory, registerQuickAdd,
-      registerNewCategory, registerPriceCell, openPriceCell, registerNameCell, openNameCell, flashItem, linger,
+      registerNewCategory, registerPriceCell, openPriceCell, hasPriceCell, registerNameCell, openNameCell, flashItem, linger,
       focusAfterRemoval, askConfirm, categoryCount: categories.length, selecting: selection !== null, toggleSelect,
       startSelection, reorderMode, openMoveDialog, openBulkPrice, openCategoryOrder, openPasteSheet, moveItemBy,
       moveCategoryBy, reportPasteDirty,
@@ -688,7 +697,7 @@ function StudioLoaded({
     [
       restaurantId, locale, isTr, copy, readOnly, canEdit, isPublished, finePointer, mode, actions, toaster,
       getCategories, openItem, createItemIn, focusQuickAdd, focusNewCategory, jumpToCategory, registerQuickAdd,
-      registerNewCategory, registerPriceCell, openPriceCell, registerNameCell, openNameCell, flashItem, linger,
+      registerNewCategory, registerPriceCell, openPriceCell, hasPriceCell, registerNameCell, openNameCell, flashItem, linger,
       focusAfterRemoval, askConfirm, categories.length, selection, toggleSelect, startSelection, reorderMode,
       openMoveDialog, openBulkPrice, openCategoryOrder, openPasteSheet, moveItemBy, moveCategoryBy, reportPasteDirty,
     ],

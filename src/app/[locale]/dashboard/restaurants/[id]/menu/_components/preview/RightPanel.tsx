@@ -63,7 +63,7 @@ export function RightPanel({
                     role="tab"
                     aria-selected={tab === t}
                     onClick={() => onTab(t)}
-                    className={`h-7 rounded-[7px] px-3 text-[12.5px] font-medium ${
+                    className={`h-11 rounded-[7px] px-3 text-[12.5px] font-medium pointer-fine:h-7 ${
                       tab === t ? 'bg-white text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]' : 'text-[#525252] hover:text-[#0A0A0A]'
                     }`}
                   >
@@ -73,7 +73,7 @@ export function RightPanel({
                 ))}
               </div>
               <span className="flex-1" />
-              <button type="button" onClick={onCloseItem} aria-label={copy.preview.closeItem} className="bz-btn-icon h-8 w-8">
+              <button type="button" onClick={onCloseItem} aria-label={copy.preview.closeItem} className="bz-btn-icon h-11 w-11 pointer-fine:h-8 pointer-fine:w-8">
                 <X size={15} strokeWidth={2} />
               </button>
             </>
@@ -95,7 +95,7 @@ export function RightPanel({
                 </Link>
               )}
               {onCollapse && (
-                <button type="button" onClick={onCollapse} aria-label={copy.preview.collapse} title={copy.preview.collapse} className="bz-btn-icon h-8 w-8 shrink-0">
+                <button type="button" onClick={onCollapse} aria-label={copy.preview.collapse} title={copy.preview.collapse} className="bz-btn-icon h-11 w-11 shrink-0 pointer-fine:h-8 pointer-fine:w-8">
                   <PanelRightClose size={15} strokeWidth={2} />
                 </button>
               )}

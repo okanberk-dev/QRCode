@@ -10,6 +10,7 @@ import {
   pastePlan,
   revalidateRow,
   setupCategoriesFromPaste,
+  targetReadableCount,
   type PasteSection,
 } from '../src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-paste';
 
@@ -83,6 +84,16 @@ test('parsePasteBlock: overLimit per section beyond 30 readable items', () => {
   const plan = pastePlan(sections);
   assert.equal(plan.intoTarget.length, 30, 'capped at 30 per list');
   assert.deepEqual(plan.newCategories.map((c) => c.items.length), [1]);
+});
+
+test('targetReadableCount: headerless lines and unticked headers share one 30-item cap (REG-3)', () => {
+  const block = (prefix: string) => Array.from({ length: 20 }, (_, i) => `${prefix} ${i + 1} - ${10 + i}`).join('\n');
+  const { sections } = parsePasteBlock(`${block('Ana')}\nTatlılar:\n${block('Tatlı')}`, true);
+  assert.deepEqual(sections.map((s) => s.overLimit), [false, false], 'no single section is over the cap');
+  assert.equal(targetReadableCount(sections), 20, 'the ticked header goes to its own category');
+  const merged = sections.map((s) => ({ ...s, asCategory: false }));
+  assert.equal(targetReadableCount(merged), 40, 'unticking the header merges both sections into the target');
+  assert.equal(pastePlan(merged).intoTarget.length, 30, 'the plan still sends at most 30');
 });
 
 test('revalidateRow: re-reads edited rows', () => {

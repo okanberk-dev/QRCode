@@ -181,6 +181,16 @@ export interface PastePlan {
   newCategories: { name: string; items: PastePlanItem[] }[];
 }
 
+/**
+ * Readable rows bound for the picked category: headerless lines and unticked
+ * headers merge there, so the 30-item cap applies to their sum, not to each section.
+ */
+export function targetReadableCount(sections: PasteSection[]): number {
+  return sections
+    .filter((s) => s.header === null || !s.asCategory)
+    .reduce((n, s) => n + countReadable(s.rows), 0);
+}
+
 /** What "Ekle" will create. Rows with errors are left out. */
 export function pastePlan(sections: PasteSection[]): PastePlan {
   const intoTarget: PastePlanItem[] = [];

@@ -51,3 +51,17 @@ export async function runPool<T>(tasks: (() => Promise<T>)[], limit = 4): Promis
   await Promise.all(workers);
   return results;
 }
+
+/**
+ * Per-key "latest wins" tokens. `begin(key)` returns a check that stays true
+ * only until the next `begin` for the same key, so a slow older task can tell
+ * it was superseded before it writes (row photo uploads, spec §8.7).
+ */
+export function createLatestGate(): (key: string) => () => boolean {
+  const seq = new Map<string, number>();
+  return (key) => {
+    const mine = (seq.get(key) ?? 0) + 1;
+    seq.set(key, mine);
+    return () => seq.get(key) === mine;
+  };
+}

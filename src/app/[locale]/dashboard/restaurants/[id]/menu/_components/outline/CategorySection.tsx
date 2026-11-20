@@ -100,13 +100,14 @@ export const CategorySection = memo(function CategorySection({
             ) : (
               <div className="min-h-[56px] px-4 py-4">
                 <p className="text-[13px] font-medium text-[#0A0A0A]">{copy.outline.emptyCategory}</p>
-                {canEdit && !service && (
+                {!service && (
                   <p className="mt-0.5 text-[12.5px] text-[#737373]">
                     {copy.outline.emptyCategoryBody}{' '}
                     <button
                       type="button"
                       onClick={() => openPasteSheet(category.id)}
-                      className="min-h-11 font-semibold text-[#0A0A0A] underline underline-offset-2 pointer-fine:min-h-0"
+                      disabled={!canEdit}
+                      className="min-h-11 font-semibold text-[#0A0A0A] underline underline-offset-2 pointer-fine:min-h-0 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {copy.category.pasteList}
                     </button>
@@ -114,9 +115,9 @@ export const CategorySection = memo(function CategorySection({
                 )}
               </div>
             )}
-            {canEdit && !service && !filterActive && !selecting && !reorderMode && (
+            {!service && !filterActive && !selecting && !reorderMode && (
               <div className="border-t border-[#EDEDED]">
-                <QuickAddRow categoryId={category.id} categoryName={category.name} />
+                <QuickAddRow categoryId={category.id} categoryName={category.name} disabled={!canEdit} />
               </div>
             )}
           </>

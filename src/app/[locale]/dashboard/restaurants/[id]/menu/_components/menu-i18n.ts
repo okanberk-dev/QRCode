@@ -334,7 +334,7 @@ const tr = {
     selectedLabel: 'seçili',
     barAria: 'Seçili ürünler için işlemler',
     count: (n: number) => `${n} seçili`,
-    outsideFilter: (k: number) => `${k}’i filtre dışında`,
+    outsideFilter: (k: number) => `${k} tanesi filtre dışında`,
     selectVisible: (n: number) => `Tümünü seç (görünen ${n})`,
   },
   bulkPrice: {

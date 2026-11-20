@@ -49,7 +49,7 @@ export function CategoryChips({
             data-chip={c.id}
             onClick={() => onJump(c.id)}
             aria-current={active ? 'true' : undefined}
-            aria-label={copy.fmt.categoryChipLabel(c.name, count)}
+            aria-label={[copy.fmt.categoryChipLabel(c.name, count), c.isVisible ? null : copy.category.hidden].filter(Boolean).join(', ')}
             className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
               active ? 'border-[#D9EE7A] bg-[#EAF9B8] text-[#0A0A0A]' : 'border-[#E5E5E5] bg-white text-[#525252] hover:text-[#0A0A0A]'
             }`}

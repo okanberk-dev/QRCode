@@ -3,6 +3,16 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { useMenuCopy } from '../kit/useMenuCopy';
+import { ROW_ARIA_KEYS } from '../menu-keys';
+
+/** The closest row focus button or ⋯ trigger around `from`, so focus never falls to <body>. */
+function nearestRowControl(from: HTMLElement | null): HTMLElement | null {
+  for (let el = from?.parentElement ?? null; el; el = el.parentElement) {
+    const target = el.querySelector<HTMLElement>('[data-row-focus], [aria-haspopup="menu"]:not([disabled])');
+    if (target) return target;
+  }
+  return null;
+}
 
 /**
  * Click-to-rename text (item names on fine pointers, category names).
@@ -47,6 +57,8 @@ export function InlineText({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const displayRef = useRef<HTMLButtonElement | null>(null);
+  /** Plain-text display (opened from a menu): focus returns to the nearest row control instead. */
+  const spanRef = useRef<HTMLSpanElement | null>(null);
   const closing = useRef(false);
   const errorId = useId();
 
@@ -72,7 +84,7 @@ export function InlineText({
     closing.current = true;
     setEditing(false);
     setError(null);
-    if (focusDisplay) requestAnimationFrame(() => displayRef.current?.focus());
+    if (focusDisplay) requestAnimationFrame(() => (displayRef.current ?? nearestRowControl(spanRef.current))?.focus());
   };
 
   /** Returns true when the editor closed. */
@@ -177,7 +189,11 @@ export function InlineText({
   }
 
   if (!editable && !onDisplayClick) {
-    return <span className={displayClassName}>{value}</span>;
+    return (
+      <span ref={spanRef} className={displayClassName}>
+        {value}
+      </span>
+    );
   }
 
   return (
@@ -186,6 +202,7 @@ export function InlineText({
       id={displayId}
       type="button"
       data-row-focus={rowFocus ? '' : undefined}
+      aria-keyshortcuts={rowFocus ? ROW_ARIA_KEYS : undefined}
       onClick={editable ? open : onDisplayClick}
       aria-label={editable ? copy.inline.editLabel(label, value) : displayAriaLabel}
       className={`group/inline inline-flex max-w-full min-w-0 items-start gap-1.5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${

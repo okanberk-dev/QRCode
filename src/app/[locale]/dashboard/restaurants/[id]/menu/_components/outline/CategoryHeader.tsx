@@ -67,15 +67,20 @@ export function CategoryHeader({
     const next = description.trim() || null;
     if (next !== (category.description?.trim() || null)) void actions.setCategoryDescription(category.id, next);
   };
+  // Keyboard close of the description editor returns focus to the section ⋯ (never <body>).
+  const actionsRef = useRef<HTMLButtonElement | null>(null);
+  const refocusActions = () => requestAnimationFrame(() => actionsRef.current?.focus());
   const onDescKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.nativeEvent.isComposing) return;
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       setEditingDescription(false);
+      refocusActions();
     } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       saveDescription();
+      refocusActions();
     }
   };
 
@@ -146,6 +151,7 @@ export function CategoryHeader({
           className={`min-w-[220px] ${MENU_TOUCH}`}
           trigger={
             <button
+              ref={actionsRef}
               type="button"
               disabled={!canEdit}
               aria-label={copy.category.actionsAria(category.name)}
@@ -265,7 +271,7 @@ export function CategoryHeader({
             }}
             aria-label={copy.category.description}
             placeholder={copy.category.descriptionPlaceholder}
-            className="bz-input min-h-[64px] resize-none text-[13px]"
+            className="bz-input min-h-[64px] resize-none text-[16px] sm:text-[13px]"
           />
           {descFocused && description.length > 250 && (
             <p className="mt-1 text-right text-[11.5px] text-[#737373]">

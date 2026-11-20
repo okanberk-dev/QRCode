@@ -136,6 +136,25 @@ export function withoutTemps(categories: CategoryShape[]): CategoryShape[] {
 }
 
 /**
+ * A refetch replaces the cache with the server snapshot, which cannot know the
+ * pending quick-add rows (still saving, or failed with the owner's text kept).
+ * Put them back at the end of their category; a row whose category is gone is dropped.
+ */
+export function keepPendingRows(
+  categories: CategoryShape[],
+  pending: { categoryId: string; item: MenuItemView }[],
+): CategoryShape[] {
+  if (pending.length === 0) return categories;
+  return categories.map((c) => {
+    const shown = new Set(c.items.map((i) => i.id));
+    const add = pending.filter((p) => p.categoryId === c.id && !shown.has(p.item.id));
+    if (add.length === 0) return c;
+    const base = c.items.reduce((max, i) => Math.max(max, i.sortOrder), -1);
+    return { ...c, items: [...c.items, ...add.map((p, k) => ({ ...p.item, sortOrder: base + 1 + k }))] };
+  });
+}
+
+/**
  * Swap a pending row for the item the server created, in place.
  * - The temp row is gone (discarded meanwhile) and the id is new: append like a create.
  * - The saved id is already on screen (merged by another path): drop the temp row, never duplicate.

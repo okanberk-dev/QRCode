@@ -7,13 +7,13 @@ import type { ToasterApi } from '../kit/Toaster';
 import type { MenuCopy } from '../menu-i18n';
 import type { ItemPatch } from '../menu-item-form';
 import {
-  TEMP_PREFIX, applySavedCategory, applySavedItem, insertCategoryBySortOrder, insertItemBySortOrder, isTempId,
+  TEMP_PREFIX, applySavedCategory, applySavedItem, insertCategoryBySortOrder, insertItemBySortOrder, isTempId, keepPendingRows,
   moveItemLocal, moveItemsToEnd, neighbourCategoryId, patchItem, patchItems, removeCategory, removeItems, replaceItem,
   snapshotItemPositions, withIndexSortOrder,
   type SavedCategory, type SavedItem,
 } from '../menu-merge';
 import type { PastePlan, PastePlanItem } from '../menu-paste';
-import { runPool } from '../menu-queue';
+import { createLatestGate, runPool } from '../menu-queue';
 import type { SetupPlanCategory } from '../menu-setup';
 import { flagPatch, type FlagOp } from '../menu-status';
 import type { CategoryShape, MenuData, RowSaveState } from '../menu-types';
@@ -196,6 +196,12 @@ const stableIds = (category: CategoryShape | undefined): string[] =>
 
 let tempSeq = 0;
 
+/** The on-screen row of a pending quick-add (sortOrder is set where it is placed). */
+const tempView = (tempId: string, p: CreateItemPayload): MenuItemView => ({
+  id: tempId, name: p.name, description: null, priceCents: p.priceCents, currency: 'TRY', imageUrl: null,
+  badges: [], allergens: [], isAvailable: true, isOutOfStock: false, sortOrder: 0,
+});
+
 export function useMenuActions(options: UseMenuActionsOptions): {
   actions: MenuActions;
   rows: Record<string, RowFeedback>;
@@ -217,6 +223,8 @@ export function useMenuActions(options: UseMenuActionsOptions): {
   const rowTimers = useRef(new Map<string, number>());
   const tempPayloads = useRef(new Map<string, CreateItemPayload>());
   const lastAccessLost = useRef(0);
+  /** Row photo writes: a pick that started later supersedes an older upload still running. */
+  const photoGate = useRef(createLatestGate());
 
   useEffect(() => {
     const timers = rowTimers.current;
@@ -293,9 +301,15 @@ export function useMenuActions(options: UseMenuActionsOptions): {
       return { ok: false, message: r.message };
     };
     const errorToast = (message: string) => e().toaster.notify({ message, tone: 'error' });
+    const beginPhoto = (itemId: string) => photoGate.current(`photo:${itemId}`);
     /** Silent refetch; a failure keeps the data on screen and offers "Tekrar dene". */
     const refetch = async (): Promise<void> => {
-      if (await e().menu.fetchAll()) return;
+      if (await e().menu.fetchAll()) {
+        // The snapshot replaced the cache: put pending / failed quick-add rows back (§12, text kept).
+        const pending = [...tempPayloads.current].map(([tempId, p]) => ({ categoryId: p.categoryId, item: tempView(tempId, p) }));
+        if (pending.length) setCats((c) => keepPendingRows(c, pending));
+        return;
+      }
       const { errors } = e().copy;
       e().toaster.notify({ message: errors.refreshFailed, tone: 'error', action: { label: errors.retry, run: () => void refetch() } });
     };
@@ -455,13 +469,23 @@ export function useMenuActions(options: UseMenuActionsOptions): {
       return { ok: true, items };
     };
 
-    /** Delete items that were just created (undo of paste / bulk add). */
+    /**
+     * Undo of paste / bulk add: delete the created items one by one, then the created
+     * categories WITHOUT the cascade. A row the owner added to a new category since then
+     * keeps it alive (409 CATEGORY_NOT_EMPTY → refetch, partial undo) instead of being
+     * swept away with it.
+     */
     const removeCreated = async (itemIds: string[], categoryIds: string[]): Promise<{ ok: boolean; message?: string }> => {
-      setCats((c) => categoryIds.reduce((acc, id) => removeCategory(acc, id), removeItems(c, itemIds)));
+      setCats((c) =>
+        categoryIds.reduce(
+          (acc, id) => (acc.find((x) => x.id === id)?.items.length ? acc : removeCategory(acc, id)),
+          removeItems(c, itemIds),
+        ),
+      );
       const results = [
         ...(await runPool(itemIds.map((id) => () => enqueue(`item:${id}`, () => api().deleteItem(id))), 4)),
         ...(await runPool(
-          categoryIds.map((id) => () => enqueue(`cat:${id}`, () => api().deleteCategory(id, { deleteItems: true }))),
+          categoryIds.map((id) => () => enqueue(`cat:${id}`, () => api().deleteCategory(id, { deleteItems: false }))),
           2,
         )),
       ];
@@ -615,17 +639,7 @@ export function useMenuActions(options: UseMenuActionsOptions): {
           currency: 'TRY',
         };
         tempPayloads.current.set(tempId, payload);
-        setCats((c) =>
-          c.map((cat) => {
-            if (cat.id !== categoryId) return cat;
-            const sortOrder = cat.items.reduce((max, i) => Math.max(max, i.sortOrder), -1) + 1;
-            const temp: MenuItemView = {
-              id: tempId, name, description: null, priceCents, currency: 'TRY', imageUrl: null,
-              badges: [], allergens: [], isAvailable: true, isOutOfStock: false, sortOrder,
-            };
-            return { ...cat, items: [...cat.items, temp] };
-          }),
-        );
+        setCats((c) => keepPendingRows(c, [{ categoryId, item: tempView(tempId, payload) }]));
         void submitTemp(tempId);
         return tempId;
       },
@@ -748,7 +762,10 @@ export function useMenuActions(options: UseMenuActionsOptions): {
       },
 
       setItemPhoto: async (id, file) => {
+        const isLatest = beginPhoto(id);
         const uploaded = await e().upload(file, 'item');
+        // A newer pick for this row started while this one uploaded: only the latest writes (§8.7).
+        if (!isLatest()) return { ok: true };
         if (!uploaded.ok) {
           setRow(id, 'error', uploaded.message);
           return { ok: false, message: uploaded.message };
@@ -757,7 +774,10 @@ export function useMenuActions(options: UseMenuActionsOptions): {
         if (r.ok) e().onFlash?.(id);
         return r;
       },
-      setItemPhotoUrl: (id, url) => silentWrite(id, { imageUrl: url }, findItem(cats(), id)?.item.name ?? ''),
+      setItemPhotoUrl: (id, url) => {
+        beginPhoto(id); // supersedes any upload still running for this row
+        return silentWrite(id, { imageUrl: url }, findItem(cats(), id)?.item.name ?? '');
+      },
 
       createCategory: async (name) => {
         const r = await enqueue('append:categories', () =>
@@ -1156,24 +1176,25 @@ export function useMenuActions(options: UseMenuActionsOptions): {
 
       commitPaste: async ({ targetCategoryId, plan }, onProgress) => {
         const total = plan.intoTarget.length + plan.newCategories.reduce((n, c) => n + c.items.length, 0);
-        const targetItemIds: string[] = [];
+        /** Every item this paste created (target + new categories): undo deletes them one by one. */
+        const createdItemIds: string[] = [];
         const createdCategoryIds: string[] = [];
         let done = 0;
         let targetDone = plan.intoTarget.length === 0;
         let categoriesDone = 0;
         let firstItemId: string | null = null;
         let firstCategoryId: string | null = null;
-        const undo: UndoRun = () => removeCreated(targetItemIds, createdCategoryIds);
+        const undo: UndoRun = () => removeCreated(createdItemIds, createdCategoryIds);
         const result = (ok: boolean, message?: string): CommitPasteResult => ({
           ok, message, targetDone, categoriesDone, itemsAdded: done, firstItemId, firstCategoryId,
-          undo: targetItemIds.length || createdCategoryIds.length ? undo : undefined,
+          undo: createdItemIds.length || createdCategoryIds.length ? undo : undefined,
         });
 
         if (plan.intoTarget.length) {
           if (!targetCategoryId) return result(false, generic());
           const r = await bulkCreateRaw(targetCategoryId, plan.intoTarget);
           if (!r.ok) return result(false, r.message);
-          targetItemIds.push(...r.items.map((i) => i.id));
+          createdItemIds.push(...r.items.map((i) => i.id));
           firstItemId = r.items[0]?.id ?? null;
           firstCategoryId = targetCategoryId;
           done += r.items.length;
@@ -1199,6 +1220,7 @@ export function useMenuActions(options: UseMenuActionsOptions): {
             return result(false, b.message);
           }
           createdCategoryIds.push(saved.id);
+          createdItemIds.push(...b.items.map((i) => i.id));
           firstCategoryId ??= saved.id;
           firstItemId ??= b.items[0]?.id ?? null;
           done += b.items.length;

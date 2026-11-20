@@ -176,7 +176,14 @@ export function ItemPanel({
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.nativeEvent.isComposing) {
       e.preventDefault();
       void save(false);
-    } else if (e.key === 'Escape' && presentation === 'docked' && !leaveConfirm) {
+    } else if (
+      e.key === 'Escape' &&
+      presentation === 'docked' &&
+      !leaveConfirm &&
+      // Esc already handled by an inner layer (⋯ menu, a portaled popover) closes only that layer.
+      !e.defaultPrevented &&
+      e.currentTarget.contains(e.target as Node)
+    ) {
       e.preventDefault();
       onRequestClose();
     }
@@ -261,7 +268,7 @@ export function ItemPanel({
             setNotice(null);
             if (id) void toaster.undoById(id);
           }}
-          className="shrink-0 font-semibold underline underline-offset-2"
+          className="-my-3 inline-flex min-h-11 shrink-0 items-center px-2 font-semibold underline underline-offset-2 pointer-fine:my-0 pointer-fine:min-h-0 pointer-fine:px-0"
         >
           {copy.save.undo}
         </button>

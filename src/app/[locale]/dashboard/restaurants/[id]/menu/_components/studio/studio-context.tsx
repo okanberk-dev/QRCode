@@ -36,7 +36,9 @@ export interface StudioContextValue {
   registerNewCategory(open: () => void): () => void;
   /** Spreadsheet price run over the visible rows (fine pointers). */
   registerPriceCell(itemId: string, open: () => void): () => void;
-  openPriceCell(fromItemId: string, dir: 1 | -1): void;
+  /** Opens the price editor `dir` rows away (0 = the same row); false when there is no such row. */
+  openPriceCell(fromItemId: string, dir: 1 | -1 | 0): boolean;
+  hasPriceCell(fromItemId: string, dir: 1 | -1 | 0): boolean;
   /** Inline rename opened from elsewhere (a duplicate's name on fine pointers). */
   registerNameCell(itemId: string, open: () => void): () => void;
   openNameCell(itemId: string): void;

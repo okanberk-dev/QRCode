@@ -9,7 +9,7 @@ import type { CommitPasteResult } from '../data/useMenuActions';
 import type { ToasterApi } from '../kit/Toaster';
 import type { MenuCopy } from '../menu-i18n';
 import { currencySymbol } from '../menu-item-form';
-import { pastePlan, revalidateRow, type PasteRow, type PasteRowError, type PasteSection } from '../menu-paste';
+import { pastePlan, revalidateRow, targetReadableCount, type PasteRow, type PasteRowError, type PasteSection } from '../menu-paste';
 import { useStudio } from '../studio/studio-context';
 
 /** Toast for a finished paste (+ undo), then scroll to and flash the first new row. */
@@ -73,6 +73,8 @@ export function PasteReview({
   const unreadable = sections.reduce((n, s) => n + s.rows.filter((r) => r.error !== null).length, 0);
   const busy = progress !== null;
   const blockedByTarget = plan.intoTarget.length > 0 && !targetCategoryId;
+  // Sections bound for the picked category merge, so the cap is checked on their sum.
+  const targetOverLimit = targetReadableCount(sections) > MENU_BULK_MAX_ITEMS;
 
   const markEdited = () => {
     if (!edited) {
@@ -172,6 +174,9 @@ export function PasteReview({
       </div>
 
       {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+      {targetOverLimit && (
+        <p className="text-[12px] text-[#92400E]">{copy.fmt.paste.overLimitNote(MENU_BULK_MAX_ITEMS)}</p>
+      )}
 
       <div className="max-h-[50dvh] space-y-3 overflow-y-auto">
         {sections.map((section) => (
@@ -255,7 +260,7 @@ export function PasteReview({
                 );
               })}
             </ul>
-            {section.overLimit && (
+            {section.overLimit && !intoTarget(section) && (
               <p className="border-t border-[#EDEDED] px-3 py-2 text-[12px] text-[#92400E]">
                 {copy.fmt.paste.overLimitNote(MENU_BULK_MAX_ITEMS)}
               </p>

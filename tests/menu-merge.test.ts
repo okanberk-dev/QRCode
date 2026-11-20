@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   applySavedCategory, applySavedItem, neighbourCategoryId, patchItem, removeCategory, removeItem, withIndexSortOrder,
   DRAFT_ITEM_ID, TEMP_PREFIX, insertCategoryBySortOrder, insertItemBySortOrder, isTempId, moveItemLocal, moveItemsToEnd,
-  overlayItemDraft, patchItems, removeItems, replaceItem, snapshotItemPositions, withoutTemps,
+  overlayItemDraft, patchItems, removeItems, replaceItem, snapshotItemPositions, withoutTemps, keepPendingRows,
 } from '../src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-merge';
 import type { ItemFormValues } from '../src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-item-form';
 
@@ -243,4 +243,22 @@ test('overlayItemDraft (create) appends a __draft__ row; unknown item → unchan
     overlayItemDraft(cats, { mode: 'edit', itemId: 'nope', categoryId: 'a', fallbackName: '', currency: 'TRY', values: formValues() }),
     cats,
   );
+});
+
+test('keepPendingRows: a refetch snapshot keeps failed / saving quick-add rows at the end of their category (REG-5)', () => {
+  const row = (id: string, sortOrder: number) => ({
+    id, name: id, description: null, priceCents: 100, currency: 'TRY', imageUrl: null,
+    badges: [], allergens: [], isAvailable: true, isOutOfStock: false, sortOrder,
+  });
+  const snapshot = [
+    { id: 'c1', name: 'A', description: null, isVisible: true, sortOrder: 0, items: [row('i1', 0), row('i2', 1)] },
+    { id: 'c2', name: 'B', description: null, isVisible: true, sortOrder: 1, items: [] },
+  ] as unknown as Parameters<typeof keepPendingRows>[0];
+  const temp = { ...row(`${TEMP_PREFIX}x`, 0), name: 'Sütlaç' };
+  const gone = row(`${TEMP_PREFIX}y`, 0);
+  const next = keepPendingRows(snapshot, [{ categoryId: 'c1', item: temp }, { categoryId: 'deleted', item: gone }]);
+  assert.deepEqual(next[0].items.map((i) => [i.id, i.sortOrder, i.name]), [['i1', 0, 'i1'], ['i2', 1, 'i2'], [temp.id, 2, 'Sütlaç']]);
+  assert.equal(next[1], snapshot[1], 'untouched categories keep their identity');
+  assert.equal(keepPendingRows(next, [{ categoryId: 'c1', item: temp }])[0].items.length, 3, 'never duplicated');
+  assert.equal(keepPendingRows(snapshot, []), snapshot);
 });

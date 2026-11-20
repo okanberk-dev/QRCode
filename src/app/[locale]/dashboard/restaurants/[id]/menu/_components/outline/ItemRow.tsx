@@ -14,6 +14,7 @@ import { BADGE_LABELS, BADGE_TINTS } from '../menu-constants';
 import { isTempId } from '../menu-merge';
 import { rowBadge } from '../menu-status';
 import { MENU_TOUCH, afterMenuCloses } from '../menu-ui';
+import { ROW_ARIA_KEYS } from '../menu-keys';
 import type { MenuBadge } from '@/lib/validations';
 import { isImageFile } from '../data/usePhotoUpload';
 import { useStudio } from '../studio/studio-context';
@@ -62,6 +63,7 @@ export const ItemRow = memo(function ItemRow({
   const {
     copy, isTr, readOnly, canEdit, finePointer, actions, openItem, registerNameCell, openNameCell,
     focusAfterRemoval, toggleSelect, startSelection, openMoveDialog, moveItemBy, categoryCount,
+    openPriceCell,
   } = useStudio();
   const shiftClick = useRef(false);
   const pickPhoto = useRef<((file: File) => void) | null>(null);
@@ -217,6 +219,7 @@ export const ItemRow = memo(function ItemRow({
               type="button"
               id={`menu-row-${item.id}`}
               data-row-focus=""
+              aria-keyshortcuts={ROW_ARIA_KEYS}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleSelect(item.id, { range: e.shiftKey });
@@ -237,12 +240,15 @@ export const ItemRow = memo(function ItemRow({
               displayClassName={nameClass}
               registerOpen={registerName}
               onCommit={(name) => void actions.renameItem(item.id, name)}
+              // Spreadsheet flow (§8.1): Tab from the name opens this row's price.
+              onTabNext={() => openPriceCell(item.id, 0)}
             />
           ) : (
             <button
               type="button"
               id={`menu-row-${item.id}`}
               data-row-focus=""
+              aria-keyshortcuts={ROW_ARIA_KEYS}
               onClick={() => openItem(item.id)}
               aria-label={copy.item.openAria(item.name)}
               className="min-w-0 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"

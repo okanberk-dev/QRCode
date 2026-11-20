@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, ArrowRight, Loader2 } from 'lucide-react';
-import { AlertBanner, Field, Modal, PulseSelect } from '@/components/ui';
+import { AlertBanner, Field, Modal } from '@/components/ui';
 import { formatPrice } from '@/lib/format';
 import {
   PRICE_ROUNDINGS, parsePercentInput, previewPriceOp, type PriceOp, type PriceRounding,
@@ -32,6 +32,7 @@ export function BulkPriceDialog({
   const { copy, isTr, actions, toaster } = useStudio();
   const locale = isTr ? 'tr-TR' : 'en-US';
   const valueId = useId();
+  const roundId = useId();
   const items = useMemo(() => {
     const wanted = new Set(itemIds);
     return categories.flatMap((c) => c.items.filter((i) => wanted.has(i.id) && !isTempId(i.id)));
@@ -198,9 +199,13 @@ export function BulkPriceDialog({
             htmlFor={valueId}
             error={parsed.error ?? undefined}
           >
-            <div className="relative">
+            {/* Field wires the label to its first child: the wrapper gets its own id, so the
+                label and the error reach the input itself. */}
+            <div id={`${valueId}-box`} className="relative">
               <input
                 id={valueId}
+                aria-describedby={parsed.error ? `${valueId}-error` : undefined}
+                aria-invalid={parsed.error ? true : undefined}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 disabled={busy || frozen}
@@ -215,17 +220,24 @@ export function BulkPriceDialog({
               </span>
             </div>
           </Field>
-          <Field label={copy.bulkPrice.round}>
-            <PulseSelect
+          <Field label={copy.bulkPrice.round} htmlFor={roundId}>
+            {/* Native select: keyboard-operable inside the Modal and Esc closes only the list. */}
+            <select
+              id={roundId}
               value={String(rounding)}
-              onChange={(v) => {
+              onChange={(e) => {
                 roundingTouched.current = true;
-                setRounding(Number(v) as PriceRounding);
+                setRounding(Number(e.target.value) as PriceRounding);
               }}
-              options={PRICE_ROUNDINGS.map((step) => ({ value: String(step), label: roundLabel(step) }))}
               disabled={busy || frozen}
-              className="w-full"
-            />
+              className="bz-input h-11 w-full pointer-fine:h-9"
+            >
+              {PRICE_ROUNDINGS.map((step) => (
+                <option key={step} value={String(step)}>
+                  {roundLabel(step)}
+                </option>
+              ))}
+            </select>
           </Field>
         </div>
 

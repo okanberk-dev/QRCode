@@ -25,7 +25,7 @@ export function InlinePrice({
   /** The last save of this row failed (shown under the price). */
   errorMessage?: string;
 }) {
-  const { copy, isTr, finePointer, actions, registerPriceCell, openPriceCell } = useStudio();
+  const { copy, isTr, finePointer, actions, registerPriceCell, openPriceCell, hasPriceCell } = useStudio();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -85,9 +85,11 @@ export function InlinePrice({
       close(true);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const run = finePointer;
+      const dir = e.shiftKey ? -1 : 1;
+      // A price run moves to the next row; at the end of the list focus returns to this row's price.
+      const run = finePointer && hasPriceCell(itemId, dir);
       if (!commit(!run)) return;
-      if (run) openPriceCell(itemId, e.shiftKey ? -1 : 1);
+      if (run) openPriceCell(itemId, dir);
     } else if (e.key === 'Tab') {
       if (!commit(false)) e.preventDefault();
     }

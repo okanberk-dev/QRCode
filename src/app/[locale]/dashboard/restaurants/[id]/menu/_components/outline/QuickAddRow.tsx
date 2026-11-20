@@ -15,7 +15,8 @@ import { PasteReview, announcePaste } from './PasteReview';
  * empty name fills both fields; several lines open the paste review in place
  * (into this category). Esc clears; Esc / leaving with both empty closes.
  */
-export function QuickAddRow({ categoryId, categoryName }: { categoryId: string; categoryName: string }) {
+/** `disabled`: read-only viewers see the same row, inert (spec §2: disabled, never hidden). */
+export function QuickAddRow({ categoryId, categoryName, disabled = false }: { categoryId: string; categoryName: string; disabled?: boolean }) {
   const { copy, actions, registerQuickAdd, isTr, toaster, flashItem, reportPasteDirty } = useStudio();
   const [pasted, setPasted] = useState<PasteSection[] | null>(null);
   const onPasteDirty = useCallback((dirty: boolean) => reportPasteDirty(`quick:${categoryId}`, dirty), [reportPasteDirty, categoryId]);
@@ -28,6 +29,14 @@ export function QuickAddRow({ categoryId, categoryName }: { categoryId: string; 
   const priceRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
   const hintId = useId();
+  const collapsedRef = useRef<HTMLButtonElement | null>(null);
+  const refocusCollapsed = useRef(false);
+  useEffect(() => {
+    if (!open && refocusCollapsed.current) {
+      refocusCollapsed.current = false;
+      collapsedRef.current?.focus();
+    }
+  }, [open]);
 
   const openForm = useCallback(() => {
     setOpen(true);
@@ -77,8 +86,10 @@ export function QuickAddRow({ categoryId, categoryName }: { categoryId: string; 
     } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      if (!name && !price) setOpen(false);
-      else reset();
+      if (!name && !price) {
+        refocusCollapsed.current = true; // focus never falls to <body>
+        setOpen(false);
+      } else reset();
     }
   };
 
@@ -121,12 +132,14 @@ export function QuickAddRow({ categoryId, categoryName }: { categoryId: string; 
     );
   }
 
-  if (!open) {
+  if (!open || disabled) {
     return (
       <button
+        ref={collapsedRef}
         type="button"
         onClick={openForm}
-        className="flex min-h-[48px] w-full items-center gap-2 px-4 text-left text-[13.5px] font-medium text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E]"
+        disabled={disabled}
+        className="flex min-h-[48px] w-full items-center gap-2 px-4 text-left text-[13.5px] font-medium text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[#525252]"
       >
         <Plus size={15} strokeWidth={2.25} aria-hidden="true" />
         {copy.outline.addItem}

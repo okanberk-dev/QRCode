@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowUpDown, ChevronDown, ClipboardPaste, FolderPlus, ListChecks, PanelRightOpen, Plus, Search, Undo2, X } from 'lucide-react';
 import { PulseMenu, PulseMenuItem } from '@/components/ui';
+import { ariaKeysFor } from '../menu-keys';
 import { useMenuCopy } from '../kit/useMenuCopy';
 import type { MenuFilter } from '../menu-filter';
 import { MENU_TOUCH, afterMenuCloses } from '../menu-ui';
@@ -70,6 +71,7 @@ export function StudioToolbar({
     <div className={`relative ${className}`}>
       <Search size={15} strokeWidth={2} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]" aria-hidden="true" />
       <input
+        aria-keyshortcuts={ariaKeysFor('search')}
         id={id}
         data-menu-search=""
         type="search"

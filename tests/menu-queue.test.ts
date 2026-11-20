@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createSerialQueue, runPool } from '../src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-queue';
+import { createLatestGate, createSerialQueue, runPool } from '../src/app/[locale]/dashboard/restaurants/[id]/menu/_components/menu-queue';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -123,4 +123,17 @@ test('runPool: default limit 4, empty list, limit larger than the list', async (
   const two = await runPool([task, task], 10);
   assert.equal(two.length, 2);
   assert.equal(peak, 2);
+});
+
+test('createLatestGate: only the latest begin per key stays current (REG-1)', async () => {
+  const begin = createLatestGate();
+  const writes: string[] = [];
+  const upload = async (key: string, url: string, ms: number) => {
+    const isLatest = begin(key);
+    await new Promise((r) => setTimeout(r, ms));
+    if (isLatest()) writes.push(`${key}=${url}`);
+  };
+  // A (slow) is picked first, B (fast) second on the same row; another row is independent.
+  await Promise.all([upload('item:1', 'A', 30), upload('item:1', 'B', 5), upload('item:2', 'C', 10)]);
+  assert.deepEqual(writes.sort(), ['item:1=B', 'item:2=C'], 'the older upload never writes over the newer photo');
 });

@@ -166,7 +166,7 @@ export const MenuOutline = memo(function MenuOutline({
                 />
               );
             })}
-            {canEdit && mode === 'edit' && !filterActive && !selecting && !reorderMode && <NewCategoryRow />}
+            {mode === 'edit' && !filterActive && !selecting && !reorderMode && <NewCategoryRow disabled={!canEdit} />}
           </div>
           <DragOverlay zIndex={45} dropAnimation={reduced ? null : undefined}>
             {activeItem ? <DragPreviewRow item={activeItem} locale={isTr ? 'tr' : 'en'} /> : null}

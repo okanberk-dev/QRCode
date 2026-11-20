@@ -2,7 +2,7 @@
 
 import { useCallback, useId, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { Field, PulseSelect } from '@/components/ui';
+import { Field } from '@/components/ui';
 import { Sheet } from '../kit/Sheet';
 import { parsePasteBlock } from '../menu-paste';
 import type { CategoryShape } from '../menu-types';
@@ -28,6 +28,7 @@ export function PasteSheet({
   const { copy, isTr, toaster, flashItem } = useStudio();
   const smUp = useIsSmUp();
   const textId = useId();
+  const categorySelectId = useId();
   const [target, setTarget] = useState<string>(initialCategoryId ?? categories[0]?.id ?? '');
   const [text, setText] = useState('');
   const [readText, setReadText] = useState('');
@@ -80,13 +81,20 @@ export function PasteSheet({
         <p className="text-[13px] text-[#525252]">
           {copy.paste.help} {copy.paste.headerHelp}
         </p>
-        <Field label={copy.paste.whichCategory}>
-          <PulseSelect
+        <Field label={copy.paste.whichCategory} htmlFor={categorySelectId}>
+          {/* Native select: a portaled PulseSelect cannot be used inside the modal sheet. */}
+          <select
+            id={categorySelectId}
             value={target}
-            onChange={setTarget}
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
-            className="w-full sm:w-[280px]"
-          />
+            onChange={(e) => setTarget(e.target.value)}
+            className="bz-input w-full sm:w-[280px]"
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label={copy.paste.title} htmlFor={textId}>
           <textarea

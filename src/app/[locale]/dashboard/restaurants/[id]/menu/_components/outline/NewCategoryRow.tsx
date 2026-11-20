@@ -17,13 +17,22 @@ export function isDuplicateCategoryName(name: string, others: { id: string; name
  * "+ Yeni kategori" under the outline: a dashed button that turns into a name
  * field. Enter adds the category; its quick-add opens right away.
  */
-export function NewCategoryRow({ autoFocus = false }: { autoFocus?: boolean }) {
+/** `disabled`: read-only viewers see the same row, inert (spec §2: disabled, never hidden). */
+export function NewCategoryRow({ autoFocus = false, disabled = false }: { autoFocus?: boolean; disabled?: boolean }) {
   const { copy, actions, getCategories, registerNewCategory, focusQuickAdd } = useStudio();
-  const [open, setOpen] = useState(autoFocus);
+  const [open, setOpen] = useState(autoFocus && !disabled);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const collapsedRef = useRef<HTMLButtonElement | null>(null);
+  const refocusCollapsed = useRef(false);
+  useEffect(() => {
+    if (!open && refocusCollapsed.current) {
+      refocusCollapsed.current = false;
+      collapsedRef.current?.focus();
+    }
+  }, [open]);
 
   const openForm = useCallback(() => {
     setOpen(true);
@@ -62,18 +71,21 @@ export function NewCategoryRow({ autoFocus = false }: { autoFocus?: boolean }) {
       void submit();
     } else if (e.key === 'Escape' && !autoFocus) {
       e.preventDefault();
+      refocusCollapsed.current = true; // focus never falls to <body>
       setOpen(false);
       setName('');
       setError(null);
     }
   };
 
-  if (!open) {
+  if (!open || disabled) {
     return (
       <button
+        ref={collapsedRef}
         type="button"
         onClick={openForm}
-        className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#D4D4D4] bg-white text-[13.5px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+        disabled={disabled}
+        className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#D4D4D4] bg-white text-[13.5px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-[#D4D4D4] disabled:hover:text-[#525252]"
       >
         <Plus size={15} strokeWidth={2.25} aria-hidden="true" />
         {copy.outline.newCategory}
