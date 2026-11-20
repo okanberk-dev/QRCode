@@ -9,8 +9,8 @@ import type { RenewalEvalInput, RenewalState } from './renewal-policy';
  * The foundation carries the methods the reconcile, lapse, tombstone, scan
  * and opt-out paths need; saved cards add scheduling and reminder mails
  * (`findSubscriptionsToSchedule`, `loadRenewalContext`, `createRenewal`,
- * `claimMail`, …). The charge methods of §6.1 (`claimForCharge`,
- * `createRenewalPayment`, `recordChargeOutcome`) arrive with the charge phase.
+ * `claimMail`, …); auto-charge adds the charge methods of §6.1
+ * (`claimForCharge`, `createRenewalPayment`, `recordChargeOutcome`).
  * The owner_paying lock (D19) is written by the checkout POST transaction.
  *
  * Every provider-facing listing is scoped to one PayNKolay environment; rows
@@ -50,6 +50,8 @@ export interface RenewalRow {
   succeededPaymentId: string | null;
   endedAt: Date | null;
   endReason: string | null;
+  /** Dry run (§9.1): when this renewal was counted as a would-charge (once). */
+  dryRunCountedAt?: Date | null;
   updatedAt: Date;
 }
 
@@ -78,7 +80,55 @@ export type RenewalPatch = Partial<
   lastFailureCode?: string | null;
   lastFailureKind?: 'soft' | 'hard' | null;
   cancelReason?: string | null;
+  // Auto mode (§9.2 phases 2-4): notice fields, bound card, dry-run marker.
+  noticeClaimedAt?: Date | null;
+  noticeDeliveredAt?: Date | null;
+  noticeCardId?: string | null;
+  quotedAmountMinor?: number | null;
+  announcedAttemptTimes?: string[] | null;
+  chargeCardId?: string | null;
+  consentId?: string | null;
+  dryRunCountedAt?: Date | null;
+  dunningStep?: number;
 };
+
+/** A notice reset (§9.2 phase 3): a fresh notice with fresh dates is required before any charge. */
+export const NOTICE_RESET: RenewalPatch = {
+  noticeClaimedAt: null,
+  noticeDeliveredAt: null,
+  quotedAmountMinor: null,
+  noticeCardId: null,
+  announcedAttemptTimes: null,
+};
+
+/** createRenewalPayment answer (§6.1). */
+export type CreatePaymentResult =
+  | { id: string; createdAt: Date }
+  | 'duplicate'
+  | { rejected: 'auto_renew_off' | 'consent_changed' | 'superseded' | 'status' | 'account' | 'cancel_requested' | 'lease_lost' };
+
+export interface NewRenewalPayment {
+  userId: string;
+  renewalId: string;
+  leaseId: string;
+  attemptNo: number;
+  consentId: string;
+  periodEnd: Date;
+  subscriptionPlanId: string | null;
+  billingCycle: string;
+  amountMinor: number;
+  chargeCardId: string;
+  providerEnv: BillingEnv;
+  locale: 'tr' | 'en';
+}
+
+/** What the synchronous charge call said (persisted with the state change, §9.4-1). */
+export interface ChargeOutcomeRecord {
+  kind: 'approved_claimed' | 'declined' | 'three_d_required' | 'unknown';
+  declineCode: string | null;
+  /** Next PaymentList check of this payment. */
+  confirmAfter: Date;
+}
 
 export interface PaymentToConfirm {
   id: string;
@@ -152,7 +202,8 @@ export interface RenewalContext {
   sub: RenewalEvalInput['sub'] & { autoRenewConsentId: string | null };
   user: RenewalEvalInput['user'] & { email: string; locale: 'tr' | 'en'; firstName: string | null };
   plan: { id: string; name: string; isActive: boolean; amountMinor: number | null } | null;
-  consent: RenewalEvalInput['consent'];
+  /** The effective auto-renew consent; `firstChargeDate` from its terms (D4: never charged before it). */
+  consent: (NonNullable<RenewalEvalInput['consent']> & { firstChargeDate?: Date | null }) | null;
   /** billing_cards row bound to the consent, not deleted. */
   boundCard: { id: string; last4: string | null } | null;
   /** The newest verified saved card (display only). */
@@ -234,6 +285,35 @@ export interface RenewalStore {
   releaseOwnerPaying(renewalId: string, paymentId: string): Promise<boolean>;
   paymentsForRenewal(renewalId: string): Promise<RenewalPaymentRow[]>;
   subscriptionSnapshot(userId: string): Promise<SubscriptionSnapshot | null>;
+  /** Queues a mail for the next Istanbul window (any state, also terminal: the `paid` mail of a succeeded renewal). */
+  queueMail(id: string, mail: string): Promise<void>;
+  /** noticeFailures + 1; returns the new count. */
+  bumpNoticeFailures(id: string): Promise<number>;
+
+  // ── Charge phase (§9.2 phase 4, §6.1) ──
+  /**
+   * Atomic claim: state scheduled|retry_wait → charging, attempts + 1, lease —
+   * only for mode auto, own env, due, lease free, attempts left, no cancel
+   * request, a notice delivered ≥ 72 h before the attempt, and no pending
+   * owner-initiated payment of the user younger than 45 min (D19). Null when
+   * any guard fails.
+   */
+  claimForCharge(id: string, env: BillingEnv, now: Date, leaseMs: number, leaseId: string): Promise<RenewalRow | null>;
+  /**
+   * ONE transaction with the subscription row locked FOR UPDATE (the lock
+   * disableAutoRenew takes): re-checks auto-renew, the consent, the period,
+   * the status, the account, the lease and the cancel request, then inserts
+   * the renewal_auto payment (provider_outcome 'not_sent'). The row is
+   * committed before any HTTP call (§9.4-1). Unique (renewalId, attemptNo) →
+   * 'duplicate'.
+   */
+  createRenewalPayment(row: NewRenewalPayment): Promise<CreatePaymentResult>;
+  /** ONE transaction: the payment's provider outcome + the renewal's move to awaiting_confirmation. */
+  recordChargeOutcome(paymentId: string, renewalId: string, leaseId: string, outcome: ChargeOutcomeRecord, now: Date): Promise<void>;
+  /** A pending payment's next PaymentList check. */
+  setPaymentConfirmAfter(id: string, at: Date): Promise<void>;
+  /** D4: past_due only after a failed attempt (WHERE status 'active' AND renews_at = periodEnd). */
+  setSubscriptionPastDue(userId: string, periodEnd: Date): Promise<void>;
 
   // ── Payments ──
   /** status pending and (confirmAfter ≤ now, or hosted kinds ≥ 30 min old), at most 7 days old, own env. */
