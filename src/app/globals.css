@@ -930,7 +930,9 @@ input::-webkit-inner-spin-button {
 .bz-input::placeholder { color: #A3A3A3; }
 .bz-input:hover:not(:disabled) { border-color: #D4D4D4; }
 .bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.35); }
-.bz-input:disabled { background: #FAFAFA; color: #737373; cursor: not-allowed; }
+/* background-color, not the shorthand: the shorthand reset the select chevron's
+   repeat/position, so a disabled <select> showed a row of chevrons. */
+.bz-input:disabled { background-color: #FAFAFA; color: #737373; cursor: not-allowed; }
 /* ── Pulse-themed native <select> (Stage 97) ──
    Native picker preserved (best mobile UX — iOS/Android open native sheet).
    Visual layer is fully Pulse: SVG chevron, lime focus ring, smooth
