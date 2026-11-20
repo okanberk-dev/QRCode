@@ -28,12 +28,15 @@ function htmlEscape(value: string): string {
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const locale = sp.get('locale') === 'en' ? 'en' : 'tr';
+  // SITE_URL, not req.url: behind the self-host proxy req.url is the
+  // container's own origin (https://localhost:3000), which the browser
+  // cannot reach. The return route builds its redirects the same way.
   const accountUrl = (status: string) =>
-    new URL(`/${locale}/dashboard/account?section=billing&payment=${status}`, req.url);
+    new URL(`/${locale}/dashboard/account?section=billing&payment=${status}`, SITE_URL);
 
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
-    return NextResponse.redirect(new URL(`/${locale}/auth/login?redirect=/${locale}/pricing`, req.url));
+    return NextResponse.redirect(new URL(`/${locale}/auth/login?redirect=/${locale}/pricing`, SITE_URL));
   }
   // Workspace owner only — team members and admins cannot pay for a workspace.
   if (actor.source !== 'user' || actor.role !== 'restaurant_owner') {
