@@ -38,7 +38,7 @@ function recordCallbackFailure(
     tags: {
       integration: 'google-oauth',
       reason: status,
-      host: new URL(req.nextUrl.origin).hostname,
+      host: new URL(publicOrigin(req)).hostname,
     },
     extra: {
       actorSource: actor?.source ?? null,
@@ -59,11 +59,35 @@ function safeReturnTo(value: unknown): string | null {
   return value;
 }
 
+// Coolify/Traefik arkasında req.nextUrl.origin container'ın iç adresi (https://localhost:3000)
+// olarak gelir. Kullanıcıyı yönlendirirken public adresi kullan:
+// GOOGLE_REDIRECT_URI → NEXT_PUBLIC_APP_URL → NEXT_PUBLIC_SITE_URL → forwarded header → nextUrl.
+function publicOrigin(req: NextRequest): string {
+  for (const candidate of [
+    process.env.GOOGLE_REDIRECT_URI,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+  ]) {
+    if (!candidate) continue;
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      // geçersiz değer — sıradakini dene
+    }
+  }
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+  if (host && !/^localhost(:\d+)?$/i.test(host)) {
+    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+    return `${proto}://${host}`;
+  }
+  return req.nextUrl.origin;
+}
+
 function redirectBack(req: NextRequest, status: string, returnTo?: string | null): NextResponse {
-  const url = new URL(req.nextUrl.origin);
+  const url = new URL(publicOrigin(req));
   const safePath = safeReturnTo(returnTo);
   if (safePath) {
-    const target = new URL(safePath, req.nextUrl.origin);
+    const target = new URL(safePath, publicOrigin(req));
     url.pathname = target.pathname;
     url.search = target.search;
   } else {
