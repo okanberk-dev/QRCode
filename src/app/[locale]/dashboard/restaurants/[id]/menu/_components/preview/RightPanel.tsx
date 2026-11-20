@@ -14,17 +14,20 @@ import { useMenuCopy } from '../kit/useMenuCopy';
  *
  * Sticky under the toolbar: 1024–1399 two rows (top 184 = topbar 56 +
  * toolbar 112 + 16); ≥1400 one row, the category rail holds the chips
- * (top 128 = 56 + 56 + 16).
+ * (top 128 = 56 + 56 + 16). Without the toolbar (design mode, empty-menu
+ * setup) it sticks under the topbar (`stickyTop="page"`: 72 = 56 + 16) and
+ * cannot be collapsed (no `onCollapse`).
  */
 export function RightPanel({
-  itemOpen, itemTitle, tab, onTab, onCloseItem, onCollapse, preview, item, published, openLink,
+  itemOpen, itemTitle, tab, onTab, onCloseItem, onCollapse, preview, item, published, openLink, stickyTop = 'toolbar',
 }: {
   itemOpen: boolean;
   itemTitle: string | null;
   tab: 'preview' | 'item';
   onTab: (tab: 'preview' | 'item') => void;
   onCloseItem: () => void;
-  onCollapse: () => void;
+  onCollapse?: () => void;
+  stickyTop?: 'toolbar' | 'page';
   preview: ReactNode;
   item: ReactNode;
   published: boolean;
@@ -40,7 +43,11 @@ export function RightPanel({
       </a>
       <aside
         aria-labelledby="right-panel-title"
-        className="bz-card sticky top-[184px] hidden max-h-[calc(100dvh-200px)] flex-col self-start overflow-hidden p-0 lg:flex min-[1400px]:top-[128px] min-[1400px]:max-h-[calc(100dvh-144px)]"
+        className={`bz-card sticky hidden flex-col self-start overflow-hidden p-0 lg:flex ${
+          stickyTop === 'page'
+            ? 'top-[72px] max-h-[calc(100dvh-88px)]'
+            : 'top-[184px] max-h-[calc(100dvh-200px)] min-[1400px]:top-[128px] min-[1400px]:max-h-[calc(100dvh-144px)]'
+        }`}
       >
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[#EDEDED] px-3">
           {itemOpen ? (
@@ -87,9 +94,11 @@ export function RightPanel({
                   {copy.preview.fullScreen}
                 </Link>
               )}
-              <button type="button" onClick={onCollapse} aria-label={copy.preview.collapse} title={copy.preview.collapse} className="bz-btn-icon h-8 w-8 shrink-0">
-                <PanelRightClose size={15} strokeWidth={2} />
-              </button>
+              {onCollapse && (
+                <button type="button" onClick={onCollapse} aria-label={copy.preview.collapse} title={copy.preview.collapse} className="bz-btn-icon h-8 w-8 shrink-0">
+                  <PanelRightClose size={15} strokeWidth={2} />
+                </button>
+              )}
             </>
           )}
         </div>

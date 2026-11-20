@@ -1,8 +1,7 @@
 /**
  * Menu Studio copy (TR/EN) — the single copy module of the builder
- * (spec §14). Replaces `menu-copy.ts` (`buildMenuCopy` / `menuFmt`), the
- * setup wizard's `setupCopy` and the inline strings of the old components;
- * those stay on disk until chunk 4 removes the old UI.
+ * (spec §14). It replaced the old builder's copy helpers, the setup wizard's
+ * inline copy and the inline strings of the old components (all removed).
  *
  * - `MenuCopy` is the Turkish object's type, so the English object must have
  *   exactly the same keys and function signatures (TypeScript enforces it;
@@ -471,6 +470,7 @@ const tr = {
     lessTemplates: 'Daha az göster',
     pasteStepTitle: 'Menünü yapıştır',
     pasteStepBody: 'Her satıra bir ürün: önce adı, sonra fiyatı. Fiyatı olmayan satırlar (örn. “Tatlılar:”) kategori olur.',
+    pastePlaceholder: 'Çorbalar:\nMercimek Çorbası 90\nEzogelin 90\nTatlılar:\nSütlaç 110\nKünefe 160',
     s1Title: 'Kategorileri düzenle',
     s1Body: 'Adını değiştir, sil ya da sırasını değiştir. Müşteriler menüde bu sırayla görür.',
     categoryPlaceholder: 'Örn. Tatlılar',
@@ -496,6 +496,7 @@ const tr = {
     next: 'İleri',
     replaceTitle: 'Kategoriler değişsin mi?',
     replaceBody: 'Yeni tür seçersen yazdığın kategori ve ürün listesi silinir.',
+    replacePasteBody: 'Listeyi değiştirdin. Kategoriler ve ürünler yeni listeden yeniden hazırlanır; sonraki adımlarda yaptığın düzenlemeler silinir.',
     replace: 'Değiştir',
     keep: 'Vazgeç',
     previewEmpty: 'Bir şablon seçtiğinde ya da listeni yapıştırdığında menün burada görünür.',
@@ -1084,6 +1085,7 @@ const en: MenuCopy = {
     lessTemplates: 'Show fewer',
     pasteStepTitle: 'Paste your menu',
     pasteStepBody: 'One item per line: name first, then price. Lines without a price (e.g. “Desserts:”) become categories.',
+    pastePlaceholder: 'Soups:\nLentil Soup 90\nTomato Soup 90\nDesserts:\nRice Pudding 110\nKunefe 160',
     s1Title: 'Adjust the categories',
     s1Body: 'Rename, delete or reorder. Customers see them in this order.',
     categoryPlaceholder: 'e.g. Desserts',
@@ -1107,6 +1109,7 @@ const en: MenuCopy = {
     next: 'Next',
     replaceTitle: 'Replace the categories?',
     replaceBody: 'Picking a new type replaces the categories and items you wrote.',
+    replacePasteBody: 'You changed the list. The categories and items are rebuilt from it; your edits in the next steps are lost.',
     replace: 'Replace',
     keep: 'Cancel',
     previewEmpty: 'Your menu shows up here once you pick a template or paste your list.',

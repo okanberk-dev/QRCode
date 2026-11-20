@@ -1,15 +1,20 @@
 'use client';
 
-import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import { EmptyState, useConfirmDialog } from '@/components/ui';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getMenuReadiness } from '@/lib/menu-readiness';
+import { normaliseHex } from '@/lib/qr-colors';
+import { detectSector } from '@/lib/sector-platforms';
 import { useUnsavedGuard } from '@/app/[locale]/dashboard/surveys/_components/useUnsavedGuard';
 import MenuBuilderSkeleton from '../../loading';
-import { useMenuActions } from '../data/useMenuActions';
+import { useMenuActions, type UndoRun } from '../data/useMenuActions';
 import { useMenuData, type MenuDataHandle } from '../data/useMenuData';
 import { usePhotoUpload } from '../data/usePhotoUpload';
+import { useThemeDraft } from '../data/useThemeDraft';
+import { DesignPanel } from '../design/DesignPanel';
 import { ItemPanel, useItemPanelKey, type ItemPanelSaved } from '../item/ItemPanel';
 import { PasteSheet } from '../item/PasteSheet';
 import { SaveIndicator } from '../kit/SaveIndicator';
@@ -20,6 +25,8 @@ import { filterCounts, filterMenu, visibleItemIds, type MenuFilter } from '../me
 import { getMenuCopy } from '../menu-i18n';
 import type { ShortcutId } from '../menu-keys';
 import { DRAFT_ITEM_ID, isTempId, overlayItemDraft, withoutTemps, type ItemDraftOverlay } from '../menu-merge';
+import type { SetupPlanCategory } from '../menu-setup';
+import { planToPreviewCategories } from '../menu-setup-preview';
 import { customerVisibility, menuNudges } from '../menu-status';
 import type { ItemTarget, MenuData } from '../menu-types';
 import { scrollBehavior, useFinePointer, useIsDesktop, useIsWide, useOnline } from '../menu-ui';
@@ -33,6 +40,10 @@ import { SelectionBar } from '../outline/SelectionBar';
 import { PhonePreview } from '../preview/PhonePreview';
 import { PreviewPanel } from '../preview/PreviewPanel';
 import { RightPanel } from '../preview/RightPanel';
+import { SetupPreviewEmpty } from '../setup/SetupPreviewEmpty';
+import { SetupStart, type SetupStartChoice } from '../setup/SetupStart';
+import { SetupWizard } from '../setup/SetupWizard';
+import { useSetupDraft, type SetupDraftState } from '../setup/useSetupDraft';
 import { ShareDialog } from '../share/ShareDialog';
 import { ContextBar } from './ContextBar';
 import { LoadErrorView } from './LoadErrorView';
@@ -175,6 +186,19 @@ function StudioLoaded({
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [singleKeys, setSingleKeys] = useState(() => safeLocalGet(STORAGE_KEYS.singleKeys) !== '0');
   const [isMac] = useState(detectMac);
+  // design ("Görünüm") and empty-menu setup
+  const [designOpen, setDesignOpen] = useState(false);
+  const [designLeave, setDesignLeave] = useState<(() => void) | null>(null);
+  const designOpenRef = useRef(false);
+  designOpenRef.current = designOpen;
+  const requestCloseDesignRef = useRef<() => void>(() => undefined);
+  const setupDraft = useSetupDraft(restaurantId);
+  const startsEmpty = categories.length === 0;
+  const [setupMode, setSetupMode] = useState<SetupStartChoice | null>(() => (startsEmpty ? setupDraft.restored?.entry ?? null : null));
+  const [setupInitial, setSetupInitial] = useState<SetupDraftState | null>(() => (startsEmpty ? setupDraft.restored : null));
+  const [setupRestored, setSetupRestored] = useState(() => startsEmpty && setupDraft.restored !== null);
+  const [setupPlan, setSetupPlan] = useState<SetupPlanCategory[]>([]);
+  const [setupKey, setSetupKey] = useState(0);
 
   // ── row flash (Web Animations: survives React re-renders of the row) ──
   const flashItem = useCallback((itemId: string) => {
@@ -210,6 +234,15 @@ function StudioLoaded({
     onAccessLost,
     onFlash: flashItem,
   });
+  const design = useThemeDraft({
+    restaurantId,
+    isTr,
+    restaurant,
+    menu: { setMenu: menu.setMenu, touchLocal: menu.touchLocal },
+    upload,
+    onAccessLost,
+  });
+  const { discard: discardDesign, dirty: designDirty } = design;
 
   // ── derived ──
   const stable = useMemo(() => withoutTemps(categories), [categories]);
@@ -332,6 +365,7 @@ function StudioLoaded({
 
   /** Leave search / filter / Servis / selection / phone preview so a section's editing rows are on screen. */
   const showEditing = useCallback(() => {
+    if (designOpenRef.current) requestCloseDesignRef.current();
     setQuery('');
     setFilter('all');
     setPhonePreview(false);
@@ -431,6 +465,63 @@ function StudioLoaded({
     setRightTab('preview');
   }, []);
   const requestCloseItem = useCallback(() => guardItem(() => closeItemNow()), [guardItem, closeItemNow]);
+
+  // ── design ("Görünüm"): docked ≥1024 (replaces the outline), sheet below ──
+  const closeDesignNow = useCallback(() => {
+    discardDesign();
+    setDesignOpen(false);
+    setDesignLeave(null);
+    requestAnimationFrame(() => document.getElementById('menu-design-toggle')?.focus({ preventScroll: true }));
+  }, [discardDesign]);
+  /** Every close path of the design panel: asks first while there are unapplied changes. */
+  const requestCloseDesign = useCallback(() => {
+    if (!designDirty) {
+      closeDesignNow();
+      return;
+    }
+    if (isDesktop) {
+      askConfirm({
+        title: copy.design.closeDirtyTitle,
+        body: copy.design.closeDirtyBody,
+        confirmLabel: copy.design.closeDirtyConfirm,
+        cancelLabel: copy.design.closeDirtyCancel,
+        variant: 'danger',
+        onConfirm: closeDesignNow,
+      });
+    } else {
+      // Inside the sheet: nothing outside a Radix modal is clickable, so the question renders in place.
+      setDesignLeave(() => closeDesignNow);
+    }
+  }, [designDirty, isDesktop, askConfirm, copy, closeDesignNow]);
+  requestCloseDesignRef.current = requestCloseDesign;
+  /** Entering design closes the item panel (guarded) and the organise modes; the preview shows the draft. */
+  const openDesign = useCallback(() => {
+    guardItem(() => {
+      closeItemNow(false);
+      setSelection(null);
+      setReorderMode(false);
+      setPhonePreview(false);
+      setRightTab('preview');
+      setDesignOpen(true);
+    });
+  }, [guardItem, closeItemNow, setSelection]);
+  const onDesignApplied = useCallback(
+    (undo: UndoRun | undefined) => {
+      const notify = () => toaster.notify({ message: copy.toast.themeApplied, undo });
+      if (isDesktop) {
+        notify();
+        return;
+      }
+      // The sheet closes first: a toast behind a Radix modal would be inert.
+      closeDesignNow();
+      requestAnimationFrame(() => requestAnimationFrame(notify));
+    },
+    [isDesktop, toaster, copy, closeDesignNow],
+  );
+  // Access lost mid-session (viewer / module off): the panel goes away, nothing was saved.
+  useEffect(() => {
+    if (designOpen && !canDesign) closeDesignNow();
+  }, [designOpen, canDesign, closeDesignNow]);
 
   const linger = useCallback((itemId: string) => {
     setLingerIds((prev) => new Set(prev).add(itemId));
@@ -605,7 +696,7 @@ function StudioLoaded({
 
   // ── guards & URL intents ──
   const pasteDirty = pasteDirtyKeys.size > 0;
-  const guard = useUnsavedGuard(itemDirty || pasteDirty || pending > 0, locale);
+  const guard = useUnsavedGuard(itemDirty || pasteDirty || designDirty || pending + design.pending > 0, locale);
   const onEditIntent = useCallback(
     (itemId: string, categoryId: string) => {
       expand(categoryId);
@@ -655,6 +746,66 @@ function StudioLoaded({
     scrollToOutline();
   };
 
+  // ── empty menu: setup (spec §10) ──
+  const { save: saveSetupDraft, clear: clearSetupDraft } = setupDraft;
+  const empty = categories.length === 0;
+  // The menu has categories now (wizard done, first category added, another tab): leave setup.
+  useEffect(() => {
+    if (empty) return;
+    setSetupMode(null);
+    setSetupInitial(null);
+    setSetupRestored(false);
+    setSetupPlan([]);
+    clearSetupDraft();
+  }, [empty, clearSetupDraft]);
+  const onSetupPick = (choice: SetupStartChoice) => {
+    setSetupInitial(null);
+    setSetupRestored(false);
+    setSetupPlan([]);
+    setSetupKey((k) => k + 1);
+    setSetupMode(choice);
+  };
+  /** "Geri" on the first wizard step, "Baştan başla", "Şablonlara dön": back to the three ways in. */
+  const exitSetup = () => {
+    clearSetupDraft();
+    setSetupInitial(null);
+    setSetupRestored(false);
+    setSetupPlan([]);
+    setSetupMode(null);
+  };
+  const onSetupChange = useCallback(
+    (state: SetupDraftState, plan: SetupPlanCategory[]) => {
+      // Nothing picked or typed yet: nothing worth restoring after a reload.
+      if (state.reached === 0 && !state.choice && !state.pasteText.trim()) clearSetupDraft();
+      else saveSetupDraft(state);
+      setSetupPlan(plan);
+    },
+    [saveSetupDraft, clearSetupDraft],
+  );
+  const createFromSetup = useCallback(
+    async (plan: SetupPlanCategory[], onProgress: (done: number, total: number) => void) => {
+      const r = await actions.createMenuFromSetup(plan, onProgress);
+      if (r.categories > 0) {
+        clearSetupDraft();
+        toaster.notify(
+          r.failed
+            ? { message: copy.fmt.toast.presetPartial(), tone: 'error' }
+            : { message: copy.fmt.toast.setupCreated(r.categories, r.items), tone: 'success' },
+        );
+        if (!isDesktop) {
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() =>
+              document.getElementById('menu-items-pane')?.scrollIntoView({ block: 'start', behavior: scrollBehavior() }),
+            ),
+          );
+        }
+      }
+      return r;
+    },
+    [actions, clearSetupDraft, toaster, copy, isDesktop],
+  );
+  const setupPreview = useMemo(() => planToPreviewCategories(setupPlan), [setupPlan]);
+
   // ── view switching ──
   const view: StudioView = phonePreview ? 'preview' : mode;
   const onView = (v: StudioView) => {
@@ -692,23 +843,37 @@ function StudioLoaded({
     return null;
   }, [focusItemId, previewCategories, copy]);
 
-  const rightVisible = isDesktop && (!previewCollapsed || itemOpen);
+  // Preview slot (spec §7.2): exactly one host renders PublicMenuView at a time.
+  const designDocked = designOpen && isDesktop;
+  const designSheetOpen = designOpen && !isDesktop;
+  // No sticky toolbar above the grid: the right column sticks under the topbar.
+  const noToolbar = empty || designDocked;
+  const rightVisible = isDesktop && (empty || designDocked || !previewCollapsed || itemOpen);
   const sheetPreviewActive = !isDesktop && itemOpen && itemSheetTab === 'preview';
-  const pagePreview = !isDesktop && phonePreview && !sheetPreviewActive;
+  const pagePreview = !isDesktop && phonePreview && !sheetPreviewActive && !designSheetOpen;
   const menuHref = `/${locale}/dashboard/restaurants/${restaurantId}/menu`;
   const openLink = isPublished
     ? { href: `/menu/${restaurant.slug}`, external: true }
     : { href: `${menuHref}?preview=1`, external: false };
 
+  // Design is previewed locally until "Uygula"; the QR and the live menu keep the applied values.
+  const previewRestaurant = useMemo(() => ({ ...restaurant, ...design.draft }), [restaurant, design.draft]);
+  const inSetup = empty && !readOnly && setupMode !== 'blank';
+  // Empty menu: the setup plan (or nothing yet) instead of the real, empty categories.
+  const setupCategories = empty && !readOnly ? (inSetup ? setupPreview : []) : null;
+  // Nothing to show yet — except while choosing a design: the empty menu still shows its header in the theme.
+  const previewNothing = !designOpen && setupCategories !== null && setupCategories.length === 0;
+  const fallbackAccent = normaliseHex(restaurant.primaryColor ?? '') ?? '#C6F24E';
+
   const phoneProps = {
-    restaurant,
-    categories: previewCategories,
+    restaurant: previewRestaurant,
+    categories: setupCategories ?? previewCategories,
     locale,
-    focusItemId,
+    focusItemId: designOpen ? null : focusItemId,
     followCategoryId: activeCategoryId,
-    onPickItem: openItem,
-    hiddenNote,
-    topOffset: isWide ? 128 : 184,
+    onPickItem: designOpen || setupCategories !== null ? undefined : openItem,
+    hiddenNote: designOpen ? null : hiddenNote,
+    topOffset: noToolbar ? 72 : isWide ? 128 : 184,
   };
 
   const collapsePreview = (value: boolean) => {
@@ -749,6 +914,10 @@ function StudioLoaded({
       return true;
     }
     if (hit.typing) return false;
+    if (designDocked) {
+      requestCloseDesign();
+      return true;
+    }
     if (isDesktop && itemTarget) {
       requestCloseItem();
       return true;
@@ -775,6 +944,10 @@ function StudioLoaded({
     const rowId = hit.rowId && !isTempId(hit.rowId) ? hit.rowId : null;
     const row = rowId ? categories.flatMap((c) => c.items).find((i) => i.id === rowId) : undefined;
     const editRow = canEdit && mode === 'edit' && row !== undefined;
+    // The design panel replaces the outline: only Esc (close), "?" and ⌘Z apply.
+    if (designOpen && id !== 'escape' && id !== 'help' && id !== 'undo') return false;
+    // Empty menu (setup): nothing to search or edit yet.
+    if (empty && id !== 'escape' && id !== 'help' && id !== 'undo' && id !== 'newCategory') return false;
     switch (id) {
       case 'escape':
         return escapeCascade(hit);
@@ -860,7 +1033,7 @@ function StudioLoaded({
     <SaveIndicator
       variant={variant}
       published={isPublished}
-      pending={pending}
+      pending={pending + design.pending}
       savedAt={savedAt}
       error={saveError}
       online={online}
@@ -875,8 +1048,7 @@ function StudioLoaded({
     />
   );
 
-  const empty = categories.length === 0;
-  const hasRail = !empty;
+  const hasRail = !empty && !designDocked;
   const panelKey = useItemPanelKey(itemTarget, itemNonce);
   const editedItemName =
     itemTarget?.mode === 'edit'
@@ -941,10 +1113,9 @@ function StudioLoaded({
         <StudioHeader
           restaurantName={restaurant.name}
           canDesign={canDesign}
-          designReady={false}
           canShare={canShare}
-          designActive={false}
-          onOpenDesign={() => undefined}
+          designActive={designOpen}
+          onOpenDesign={() => (designOpen ? requestCloseDesign() : openDesign())}
           onOpenShare={() => setShareOpen(true)}
           analyticsHref={`${menuHref}/analytics`}
           fullPreview={openLink}
@@ -981,7 +1152,7 @@ function StudioLoaded({
           <EmptyState title={copy.outline.emptyMenuReadOnly} />
         ) : (
           <>
-            {!empty && (
+            {!empty && !designDocked && (
               <>
                 <StudioToolbar
                   query={query}
@@ -1064,51 +1235,99 @@ function StudioLoaded({
                 />
               )}
 
-              <div
-                id="menu-items-pane"
-                hidden={pagePreview}
-                onFocusCapture={onFocusCapture}
-                className="@container/outline min-w-0 scroll-mt-[124px] space-y-3 lg:scroll-mt-[180px] min-[87.5rem]:scroll-mt-[124px]"
-              >
-                <ContextBar
-                  query={deferredQuery}
-                  filter={filter}
-                  total={filtered.total}
-                  onClear={clearSearch}
-                  onRestockAll={(ids) => void actions.bulkSetFlags(ids, 'markAvailable')}
-                  canEdit={canEdit}
-                  soldOutIds={soldOutIds}
-                  dragNote={finePointer && canEdit && mode === 'edit' && filtered.active}
-                  selection={
-                    liveSelection
-                      ? {
-                          count: liveSelection.size,
-                          outsideFilter: filtered.active
-                            ? [...liveSelection].filter((sid) => !filtered.sections.some((s) => s.items.some((i) => i.id === sid))).length
-                            : 0,
-                          visible: visibleIds.length,
-                          allVisibleSelected: visibleIds.length > 0 && visibleIds.every((vid) => liveSelection.has(vid)),
-                          onSelectVisible: selectVisible,
-                          onClear: () => setSelection(new Set()),
-                        }
-                      : null
-                  }
-                  reorder={reorderMode ? { onDone: () => setReorderMode(false) } : null}
-                />
-                <MenuOutline
-                  sections={filtered.sections}
-                  filterActive={filtered.active}
-                  query={deferredQuery}
-                  onClearSearch={clearSearch}
-                  collapsed={effectiveCollapsed}
-                  onToggleCollapse={onToggleCollapse}
-                  completion={completion}
-                  rows={rows}
-                  pendingCreates={pendingCreates}
-                  selection={liveSelection}
-                  reorderMode={reorderMode}
-                />
-              </div>
+              {designDocked && (
+                <div className="min-w-0">
+                  <DesignPanel
+                    presentation="docked"
+                    design={design}
+                    fallbackAccent={fallbackAccent}
+                    isTr={isTr}
+                    isPublished={isPublished}
+                    onRequestClose={requestCloseDesign}
+                    onApplied={onDesignApplied}
+                  />
+                </div>
+              )}
+
+              {inSetup && (
+                // Kept mounted (hidden) while the design panel is open, so the wizard keeps its state.
+                <div className="min-w-0" hidden={designDocked}>
+                  {setupMode === null ? (
+                    <SetupStart onPick={onSetupPick} />
+                  ) : (
+                    <SetupWizard
+                      key={setupKey}
+                      entry={setupMode === 'paste' ? 'paste' : 'template'}
+                      initial={setupInitial}
+                      sector={restaurant.category ? detectSector(restaurant.category) : null}
+                      isTr={isTr}
+                      restored={setupRestored}
+                      onStartOver={exitSetup}
+                      onExit={exitSetup}
+                      onChange={onSetupChange}
+                      onCreate={createFromSetup}
+                    />
+                  )}
+                </div>
+              )}
+
+              {!inSetup && (
+                <div
+                  id="menu-items-pane"
+                  hidden={pagePreview || designDocked}
+                  onFocusCapture={onFocusCapture}
+                  className="@container/outline min-w-0 scroll-mt-[124px] space-y-3 lg:scroll-mt-[180px] min-[87.5rem]:scroll-mt-[124px]"
+                >
+                  {empty && setupMode === 'blank' && (
+                    <button
+                      type="button"
+                      onClick={exitSetup}
+                      className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-[#0A0A0A] pointer-fine:min-h-8"
+                    >
+                      <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
+                      {copy.setup.backToTemplates}
+                    </button>
+                  )}
+                  <ContextBar
+                    query={deferredQuery}
+                    filter={filter}
+                    total={filtered.total}
+                    onClear={clearSearch}
+                    onRestockAll={(ids) => void actions.bulkSetFlags(ids, 'markAvailable')}
+                    canEdit={canEdit}
+                    soldOutIds={soldOutIds}
+                    dragNote={finePointer && canEdit && mode === 'edit' && filtered.active}
+                    selection={
+                      liveSelection
+                        ? {
+                            count: liveSelection.size,
+                            outsideFilter: filtered.active
+                              ? [...liveSelection].filter((sid) => !filtered.sections.some((s) => s.items.some((i) => i.id === sid))).length
+                              : 0,
+                            visible: visibleIds.length,
+                            allVisibleSelected: visibleIds.length > 0 && visibleIds.every((vid) => liveSelection.has(vid)),
+                            onSelectVisible: selectVisible,
+                            onClear: () => setSelection(new Set()),
+                          }
+                        : null
+                    }
+                    reorder={reorderMode ? { onDone: () => setReorderMode(false) } : null}
+                  />
+                  <MenuOutline
+                    sections={filtered.sections}
+                    filterActive={filtered.active}
+                    query={deferredQuery}
+                    onClearSearch={clearSearch}
+                    collapsed={effectiveCollapsed}
+                    onToggleCollapse={onToggleCollapse}
+                    completion={completion}
+                    rows={rows}
+                    pendingCreates={pendingCreates}
+                    selection={liveSelection}
+                    reorderMode={reorderMode}
+                  />
+                </div>
+              )}
 
               {pagePreview && (
                 <div className="lg:hidden">
@@ -1123,11 +1342,25 @@ function StudioLoaded({
                   tab={itemOpen ? rightTab : 'preview'}
                   onTab={setRightTab}
                   onCloseItem={requestCloseItem}
-                  onCollapse={() => collapsePreview(true)}
+                  onCollapse={noToolbar ? undefined : () => collapsePreview(true)}
+                  stickyTop={noToolbar ? 'page' : 'toolbar'}
                   published={isPublished}
                   openLink={openLink}
                   preview={
-                    <PreviewPanel {...phoneProps} badge={itemOpen && itemDirty ? copy.preview.unsavedBadge : null} />
+                    previewNothing ? (
+                      <SetupPreviewEmpty />
+                    ) : (
+                      <PreviewPanel
+                        {...phoneProps}
+                        badge={
+                          designOpen && designDirty
+                            ? copy.preview.draftBadge
+                            : itemOpen && itemDirty
+                              ? copy.preview.unsavedBadge
+                              : null
+                        }
+                      />
+                    )
                   }
                   item={itemPanel('docked')}
                 />
@@ -1137,6 +1370,37 @@ function StudioLoaded({
         )}
 
         {!isDesktop && itemPanel('sheet')}
+
+        {designSheetOpen && (
+          <DesignPanel
+            presentation="sheet"
+            design={design}
+            fallbackAccent={fallbackAccent}
+            isTr={isTr}
+            isPublished={isPublished}
+            onRequestClose={requestCloseDesign}
+            onApplied={onDesignApplied}
+            leaveConfirm={
+              designLeave
+                ? {
+                    onConfirm: () => designLeave(),
+                    onCancel: () => setDesignLeave(null),
+                  }
+                : null
+            }
+            preview={
+              previewNothing ? (
+                <SetupPreviewEmpty />
+              ) : (
+                <PhonePreview
+                  {...phoneProps}
+                  variant="bare"
+                  height={Math.round(window.innerHeight * (window.innerWidth >= 640 ? 0.6 : 0.38))}
+                />
+              )
+            }
+          />
+        )}
 
         {liveSelection && liveSelection.size > 0 && canEdit && mode === 'edit' && (
           <SelectionBar selection={liveSelection} categories={categories} onClear={exitSelection} />

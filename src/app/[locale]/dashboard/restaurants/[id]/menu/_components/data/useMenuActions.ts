@@ -14,6 +14,7 @@ import {
 } from '../menu-merge';
 import type { PastePlan, PastePlanItem } from '../menu-paste';
 import { runPool } from '../menu-queue';
+import type { SetupPlanCategory } from '../menu-setup';
 import { flagPatch, type FlagOp } from '../menu-status';
 import type { CategoryShape, MenuData, RowSaveState } from '../menu-types';
 import { menuApi, skippedMessage, type ApiFailure, type CreateItemPayload } from './menu-api';
@@ -102,6 +103,15 @@ export interface MenuActions {
     input: { targetCategoryId: string | null; plan: PastePlan },
     onProgress?: (done: number, total: number) => void,
   ): Promise<CommitPasteResult>;
+  /**
+   * Setup wizard "Menüyü oluştur": each category, then its items in one bulk
+   * request, in order; stops at the first failure and always refetches the
+   * menu (must-keep #11). The caller toasts `setupCreated` / `presetPartial`.
+   */
+  createMenuFromSetup(
+    plan: SetupPlanCategory[],
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ categories: number; items: number; failed: string | null }>;
   publish(): Promise<ActionResult>;
   unpublish(): Promise<ActionResult>;
   clearSaveError(): void;
@@ -1196,6 +1206,38 @@ export function useMenuActions(options: UseMenuActionsOptions): {
           onProgress?.(done, total);
         }
         return result(true);
+      },
+
+      createMenuFromSetup: async (plan, onProgress) => {
+        let categories = 0;
+        let items = 0;
+        let failure: string | null = null;
+        try {
+          for (const entry of plan) {
+            onProgress?.(categories, plan.length);
+            const c = await enqueue('append:categories', () => api().createCategory({ name: entry.name, isVisible: true }));
+            if (!c.ok) {
+              failure = failed(c).message;
+              break;
+            }
+            categories += 1;
+            const categoryId = c.data?.category?.id;
+            if (categoryId && entry.items.length > 0) {
+              const b = await enqueue(`append:${categoryId}`, () => api().bulkCreateItems(categoryId, entry.items));
+              if (!b.ok) {
+                failure = failed(b).message;
+                break;
+              }
+              items += b.data?.items?.length ?? entry.items.length;
+            }
+          }
+          onProgress?.(categories, plan.length);
+        } finally {
+          // Whatever was created is shown: never an empty wizard next to categories that exist.
+          await e().menu.fetchAll();
+        }
+        if (categories > 0) success();
+        return { categories, items, failed: failure };
       },
 
       publish: () => setPublished(true),

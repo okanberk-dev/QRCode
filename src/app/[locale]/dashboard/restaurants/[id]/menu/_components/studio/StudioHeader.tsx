@@ -10,17 +10,15 @@ import { MENU_TOUCH, afterMenuCloses } from '../menu-ui';
  * Page header (§49: one primary, one secondary, the rest under "Diğer"):
  * primary "Paylaş ve QR", secondary "Görünüm", "Diğer" = Analitik · Tam ekran
  * önizle · (organise items) · Tümünü daralt / genişlet · Klavye kısayolları.
- * Optional entries appear once their chunk wires them. "Yayına al" /
+ * Organise entries are left out on an empty menu. "Yayına al" /
  * "Yayından kaldır" live only in the status card.
  */
 export function StudioHeader({
-  restaurantName, canDesign, designReady, canShare, designActive, onOpenDesign, onOpenShare, analyticsHref, fullPreview,
+  restaurantName, canDesign, canShare, designActive, onOpenDesign, onOpenShare, analyticsHref, fullPreview,
   onSortCategories, onPasteList, onCollapseAll, onExpandAll, onShortcuts, designDisabledReason, organiseDisabled = false,
 }: {
   restaurantName: string;
   canDesign: boolean;
-  /** The design panel exists (chunk 4); until then the button is `aria-disabled`. */
-  designReady: boolean;
   canShare: boolean;
   designActive: boolean;
   onOpenDesign: () => void;
@@ -42,7 +40,7 @@ export function StudioHeader({
     if (fullPreview.external) window.open(fullPreview.href, '_blank', 'noopener,noreferrer');
     else router.push(fullPreview.href);
   };
-  const designOff = !canDesign || !designReady;
+  const designOff = !canDesign;
   return (
     <div>
       <PageHeader
@@ -53,6 +51,7 @@ export function StudioHeader({
         actions={
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
+              id="menu-design-toggle"
               type="button"
               aria-pressed={designActive}
               aria-disabled={designOff || undefined}

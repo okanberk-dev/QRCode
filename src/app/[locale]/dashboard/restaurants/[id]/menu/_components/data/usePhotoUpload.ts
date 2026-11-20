@@ -12,7 +12,7 @@ export type PhotoUploadResult = { ok: true; url: string } | { ok: false; message
 const MAX_BYTES = 5 * 1024 * 1024;
 
 /**
- * Image pipeline shared by row photos, the item panel and (chunk 4) the logo
+ * Image pipeline shared by row photos, the item panel and the design logo
  * field (must-keep #13): `image/*` check → `compressImage` in the browser →
  * > 5 MB refused → `POST …/menu/upload` (`{ file, kind }`) → data URL. Known
  * failures keep their own sentence (too large, can't be processed, no

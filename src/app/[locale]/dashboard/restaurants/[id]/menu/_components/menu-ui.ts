@@ -40,8 +40,9 @@ export function useMediaQuery(query: string, readNow = false): boolean {
 }
 
 /**
- * Tailwind `lg` — where the category list becomes a column instead of a chip strip.
- * `readNow` as in `useMediaQuery` (the Menu Studio mounts only in the browser).
+ * Tailwind `lg` — where the right column (preview / item panel) and the docked
+ * design panel appear. `readNow` as in `useMediaQuery` (the Menu Studio mounts
+ * only in the browser).
  */
 export function useIsDesktop(readNow = false): boolean {
   return useMediaQuery('(min-width: 1024px)', readNow);
@@ -172,32 +173,6 @@ export function useDndAccessibility(
   return { announcements, screenReaderInstructions };
 }
 
-/** Copy text to the clipboard; falls back to a hidden textarea where the Clipboard API is blocked. Resolves to success. */
-export async function copyText(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    /* fall through to the textarea path */
-  }
-  try {
-    const area = document.createElement('textarea');
-    area.value = text;
-    area.setAttribute('readonly', '');
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    document.body.appendChild(area);
-    area.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(area);
-    return ok;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Run `fn` once a Radix menu has finished closing. Radix hands focus back to
  * the menu's trigger a tick AFTER the item was selected; a dialog opened in the
@@ -208,10 +183,3 @@ export async function copyText(text: string): Promise<boolean> {
 export function afterMenuCloses(fn: () => void): void {
   window.setTimeout(fn, 120);
 }
-
-/** Text input / textarea look shared by the builder's dialogs (16px on phones so iOS does not zoom). */
-export const MENU_INPUT_CLASS =
-  'w-full bz-card px-4 py-3 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40';
-
-/** Small label above a field (same look as the shared `Field`, for the few fields that cannot use it). */
-export const MENU_LABEL_CLASS = 'mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]';
