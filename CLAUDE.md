@@ -1021,16 +1021,15 @@ Response `meta.degraded: { joins, tags } | null` döner. UI amber banner ile "DB
 
 **Mevcut iyi kullanımlar (template):** `/google-compliance/page.tsx` policy card + `/r/[slug]` low-rating form transparency. Yeni copy yazılırken bunlardan referans al.
 
-### 19.1.2 NAP parity (footer + contact + LocalBusiness)
+### 19.1.2 NAP parity + şirket kimliği (footer + contact + JSON-LD + mail)
 
-Google'ın NAP consistency rule'una göre Name + Address + Phone three surface'ta birebir aynı string olmalı: site footer, contact sayfa JSON-LD, LocalBusiness schema. Drift tespit edildi (2026-05) ve bu PR ile düzeltildi:
+**Şirket (2026-11-20, kullanıcı kararı):** Buaze, **NEXTGEN YAZILIM EĞİTİM İNŞAAT SANAYİ VE TİCARET LİMİTED ŞİRKETİ** (NextGen Yazılım Ltd. Şti.) markasıdır — L'Affogato'yu işleten şirketle aynı. Tek kaynak `src/lib/legal/company-entity.ts` (`COMPANY_ENTITY`): unvan, Tuzla adresi, Tuzla V.D. vergi no, MERSİS, telefon; değerler laffogato reposundaki vergi levhasıyla doğrulanmış `src/lib/legal/entity.ts`'ten alındı. Şirket bilgisi değişirse **iki repoyu birlikte** güncelle.
 
-- **`MarketingFooter.tsx` bottom rail** — yeni `<address>` block (semantic, not-italic, screen reader uyumlu): `Buaze Bilişim A.Ş. · Workinton Maslak, Kat 4 · Maslak / İstanbul · support@buaze.com`. Mobile'da stack, desktop'ta inline dot-separated.
-- **`/[locale]/contact/page.tsx` JSON-LD Organization** — email `hello@buaze.com` → `support@buaze.com` (root layout ile parity); address tek satır → 4-field `PostalAddress` (`streetAddress`, `addressLocality`, `addressRegion`, `addressCountry`).
+- **Hukuki metinler** `{{COMPANY_NAME}}`, `{{COMPANY_ADDRESS}}`, `{{COMPANY_TAX_ID}}`, `{{COMPANY_PHONE}}` değişkenlerini kullanır (`src/lib/legal/variables.ts`); varsayılanları `COMPANY_ENTITY`'den gelir, canlı değerler `legal_variables` tablosunda (admin → Hukuki metinler → Değişkenler) ve `20261120090000_company_entity_nextgen` migration'ı ile bu değerlere çekildi. `tests/company-entity.test.ts` varsayılan ↔ migration ↔ mail altbilgisi eşliğini korur.
+- **Yüzeyler** `getCompanyFacts()` üzerinden: footer `<address>` (unvan · adres · support@buaze.com + MERSİS / vergi satırı), /contact, /about ve /press "şirket bilgileri", locale layout Organization JSON-LD (`legalName`, `taxID`, MERSİS `identifier`, yapılandırılmış `PostalAddress`). Sicil numaraları yalnız admin'deki unvan `COMPANY_ENTITY.legalName` ile aynıyken basılır (`registry`).
+- **E-posta altbilgisi** (`renderFooter`) her mailde gönderen kimliğini taşır: "Buaze, <unvan> markasıdır. <adres> · MERSİS <no>" (6563 sayılı Kanun, ticari elektronik ileti).
 
-**Yapma:** `hello@`, `info@`, ad-hoc email'ler kullanma (gelecek mailbox provisioning yapılana kadar tek public email `support@buaze.com`). Footer `<address>` string'ini "İSTANBUL" gibi kısa form'la değiştirme — Google PostalAddress field'ları ile aynı detayda olmalı.
-
-**Yap:** LocalBusiness schema PR'ı eklenirken (kullanıcı tam adres + posta kodu paylaşana kadar bekliyor) **aynı string'i** kullan. Geo coords (`40.9923;29.1244` Ataşehir) ile address (Maslak) tutarsızlığı LocalBusiness PR'da tek source of truth ile çözülecek — bu PR sadece Footer + Contact'ı root layout'la uyumlu hale getirdi.
+**Yapma:** `hello@`, `info@`, ad-hoc email'ler kullanma — tek public Buaze kutusu `support@buaze.com` (şirketin `info@nextgenlab.com.tr` adresi Buaze yüzeylerinde kullanılmaz). Unvanı kısaltıp hukuki metne yazma; kısa ad (`shortName`) yalnız dar alanlar içindir. "Buaze Bilişim A.Ş." / "Workinton Maslak" gibi eski yer tutucuları geri getirme — böyle bir tüzel kişi yok.
 
 ### 19.2 Default redirect platform — orphan default uyarısı
 

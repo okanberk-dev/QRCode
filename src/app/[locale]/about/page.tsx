@@ -56,6 +56,8 @@ const COPY = {
       founded: 'Kuruluş',
       based: 'Merkez',
       legalName: 'Ticari unvan',
+      mersis: 'MERSİS no',
+      tax: 'Vergi dairesi / no',
       product: 'Ürün',
       productValue: 'QR ile geri bildirim ve yorum bağlantıları (SaaS)',
       languages: 'Diller',
@@ -157,6 +159,8 @@ const COPY = {
       founded: 'Founded',
       based: 'Based in',
       legalName: 'Legal name',
+      mersis: 'MERSIS no',
+      tax: 'Tax office / no',
       product: 'Product',
       productValue: 'QR feedback and review links (SaaS)',
       languages: 'Languages',
@@ -331,6 +335,12 @@ export default async function AboutPage({
     { term: copy.facts.founded, value: '2023' },
     { term: copy.facts.based, value: company.addressDisplay[lang] },
     ...(company.legalName ? [{ term: copy.facts.legalName, value: company.legalName }] : []),
+    ...(company.registry
+      ? [
+          { term: copy.facts.mersis, value: company.registry.mersisNo },
+          { term: copy.facts.tax, value: `${company.registry.taxOffice} · ${company.registry.taxNo}` },
+        ]
+      : []),
     { term: copy.facts.product, value: copy.facts.productValue },
     { term: copy.facts.languages, value: copy.facts.languagesValue },
     {

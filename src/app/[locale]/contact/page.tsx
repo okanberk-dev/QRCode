@@ -247,6 +247,11 @@ export default async function ContactPage({
                           </>
                         ) : null}
                         {company.addressDisplay[lang]}
+                        {company.registry ? (
+                          <span className="mt-1 block text-[13px] text-[#737373]">
+                            MERSİS {company.registry.mersisNo} · {company.registry.taxOffice} {company.registry.taxNo}
+                          </span>
+                        ) : null}
                       </address>
                     </dd>
                   </div>

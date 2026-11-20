@@ -54,6 +54,8 @@ const COPY = {
     facts: {
       brand: 'Marka',
       legalName: 'Ticari unvan',
+      mersis: 'MERSİS no',
+      tax: 'Vergi dairesi / no',
       founded: 'Kuruluş',
       based: 'Merkez',
       product: 'Ürün',
@@ -118,6 +120,8 @@ const COPY = {
     facts: {
       brand: 'Brand',
       legalName: 'Legal name',
+      mersis: 'MERSIS no',
+      tax: 'Tax office / no',
       founded: 'Founded',
       based: 'Based in',
       product: 'Product',
@@ -235,6 +239,12 @@ export default async function PressPage({
   const facts: Array<{ term: string; value: ReactNode }> = [
     { term: copy.facts.brand, value: 'Buaze' },
     ...(company.legalName ? [{ term: copy.facts.legalName, value: company.legalName }] : []),
+    ...(company.registry
+      ? [
+          { term: copy.facts.mersis, value: company.registry.mersisNo },
+          { term: copy.facts.tax, value: `${company.registry.taxOffice} · ${company.registry.taxNo}` },
+        ]
+      : []),
     { term: copy.facts.founded, value: '2023' },
     { term: copy.facts.based, value: company.addressDisplay[lang] },
     { term: copy.facts.product, value: copy.facts.productValue },

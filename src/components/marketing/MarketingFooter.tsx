@@ -294,6 +294,15 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
               >
                 {company.supportEmail}
               </a>
+              {company.registry ? (
+                <span className="mt-1.5 block text-[12.5px] text-white/50">
+                  MERSİS {company.registry.mersisNo}
+                  <span aria-hidden="true" className="mx-2 text-white/30">
+                    ·
+                  </span>
+                  {company.registry.taxOffice} {company.registry.taxNo}
+                </span>
+              ) : null}
             </address>
 
             <nav aria-label={isTr ? 'Yasal bilgiler' : 'Legal'} className="mt-5">

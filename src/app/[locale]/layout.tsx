@@ -147,6 +147,17 @@ export default async function LocaleLayout({
       '@id': ORGANIZATION_ID,
       name: 'Buaze',
       ...(company.legalName ? { legalName: company.legalName } : {}),
+      // Registry facts of the operating company (same as the footer).
+      ...(company.registry
+        ? {
+            taxID: company.registry.taxNo,
+            identifier: {
+              '@type': 'PropertyValue',
+              propertyID: 'MERSİS',
+              value: company.registry.mersisNo,
+            },
+          }
+        : {}),
       alternateName: ['Buaze (the company)', 'Buaze SaaS'],
       // "buaze" is also the Chichewa name of the Securidaca longipedunculata
       // plant; this tells search engines the two are different entities.
