@@ -366,6 +366,41 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'notYouTitle', label: '"Sen bunu yapmadıysan?" başlık (kilitli)' },
     { key: 'notYouBody', label: '"Sen bunu yapmadıysan?" açıklama (kilitli)', multiline: true },
   ],
+  // Saved cards (billing spec §13.4). Subjects are fixed in code; amounts, dates and the card come from the engine.
+  'billing-renewal-upcoming': [
+    { key: 'headerEyebrow', label: 'Üst etiket' },
+    { key: 'eyebrow7', label: 'Eyebrow (7 gün kala)', placeholders: MAIL_PLACEHOLDERS['billing-renewal-upcoming'] },
+    { key: 'eyebrow1', label: 'Eyebrow (1 gün kala)' },
+    { key: 'title7', label: 'Başlık (7 gün kala)', placeholders: MAIL_PLACEHOLDERS['billing-renewal-upcoming'] },
+    { key: 'title1', label: 'Başlık (1 gün kala)' },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['billing-renewal-upcoming'] },
+    { key: 'introGrace', label: 'Ek süre cümlesi', multiline: true, placeholders: MAIL_PLACEHOLDERS['billing-renewal-upcoming'] },
+    { key: 'howTo', label: 'Ödeme açıklaması', multiline: true },
+    { key: 'labelPlan', label: 'Satır etiketi — paket' },
+    { key: 'labelAmount', label: 'Satır etiketi — tutar' },
+    { key: 'labelPeriodEnd', label: 'Satır etiketi — dönem sonu' },
+    { key: 'labelCard', label: 'Satır etiketi — kart' },
+    { key: 'perMonth', label: 'Tutar notu (aylık)' },
+    { key: 'perYear', label: 'Tutar notu (yıllık)' },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'footnote', label: 'Dipnot', multiline: true },
+  ],
+  'billing-period-ended': [
+    { key: 'headerEyebrow', label: 'Üst etiket' },
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık' },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['billing-period-ended'] },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'footnote', label: 'Dipnot', multiline: true },
+  ],
+  'billing-card-retention': [
+    { key: 'headerEyebrow', label: 'Üst etiket' },
+    { key: 'eyebrow', label: 'Eyebrow', placeholders: MAIL_PLACEHOLDERS['billing-card-retention'] },
+    { key: 'title', label: 'Başlık', placeholders: MAIL_PLACEHOLDERS['billing-card-retention'] },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['billing-card-retention'] },
+    { key: 'outro', label: 'Kapanış paragrafı', multiline: true },
+    { key: 'cta', label: 'CTA buton metni' },
+  ],
 };
 
 // Display names live in a shared module (also used by the list page).

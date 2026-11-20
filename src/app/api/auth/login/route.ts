@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { getSecret } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
+import { recordLoginRiskScore } from '@/lib/login-risk';
 import { issueLoginSession } from '@/lib/login-session';
 import * as jose from 'jose';
 
@@ -136,6 +137,8 @@ export async function POST(req: NextRequest) {
     if (captcha.assessmentName) {
       await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
     }
+    // Card checkout gate (billing spec §3.3): the score of this assessed sign-in.
+    await recordLoginRiskScore(user.id, captcha);
 
     // 2FA challenge — şifre doğru, kullanıcı twoFactorEnabled=true ise cookie
     // set ETME, kısa ömürlü challenge JWT döner. Client /api/auth/login/2fa

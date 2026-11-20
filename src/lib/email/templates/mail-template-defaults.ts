@@ -33,6 +33,14 @@
 // between render fn imports and this registry. Future PR can apply the same
 // pattern to the 12 others — mechanical refactor, drift-free.
 
+import {
+  BILLING_CARD_RETENTION_EN,
+  BILLING_CARD_RETENTION_TR,
+  BILLING_PERIOD_ENDED_EN,
+  BILLING_PERIOD_ENDED_TR,
+  BILLING_RENEWAL_UPCOMING_EN,
+  BILLING_RENEWAL_UPCOMING_TR,
+} from './billing-defaults';
 import type { MailLocale, MailTemplateKey } from '../copy-loader';
 import { SUPPORT_EMAIL } from '@/lib/company-constants';
 import { LIFECYCLE_INLINE_DEFAULTS } from './lifecycle-defaults';
@@ -820,6 +828,10 @@ export const MAIL_INLINE_DEFAULTS: Record<
   // Wave C (CLAUDE.md §38.194) — rating drop + data export defaults.
   'rating-drop-alert': { tr: RATING_DROP_ALERT_TR, en: RATING_DROP_ALERT_EN },
   'data-export-confirmation': { tr: DATA_EXPORT_CONFIRMATION_TR, en: DATA_EXPORT_CONFIRMATION_EN },
+  // Saved cards (billing spec §13.4) — shared with the render fns (no copy).
+  'billing-renewal-upcoming': { tr: BILLING_RENEWAL_UPCOMING_TR, en: BILLING_RENEWAL_UPCOMING_EN },
+  'billing-period-ended': { tr: BILLING_PERIOD_ENDED_TR, en: BILLING_PERIOD_ENDED_EN },
+  'billing-card-retention': { tr: BILLING_CARD_RETENTION_TR, en: BILLING_CARD_RETENTION_EN },
 };
 
 /**

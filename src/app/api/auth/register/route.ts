@@ -6,6 +6,7 @@ import { signJwt } from '@/lib/auth';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { isStrongPassword } from '@/lib/validations';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { recordLoginRiskScore } from '@/lib/login-risk';
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 import { createUserSessionForToken } from '@/lib/user-session';
@@ -86,6 +87,8 @@ export async function POST(req: NextRequest) {
         trialEndsAt,
       },
     });
+    // Card checkout gate (billing spec §3.3): the score of this assessed sign-up.
+    await recordLoginRiskScore(user.id, captcha);
 
     // Stage 31b §38.108 (§45'de genişletildi) — Kayıt onayı log'u (KVKK §10 +
     // 6502 sayılı TKHK m.4 uyumlu). UI'da 5 explicit checkbox (4 zorunlu + 1

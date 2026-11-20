@@ -4,6 +4,7 @@ import { SITE_URL, SITE_HOST } from '@/lib/site';
 const PRIVATE_PATHS = [
   '/admin/',
   '/api/',
+  '/billing/',
   '/r/',
   '/tr/dashboard/',
   '/en/dashboard/',

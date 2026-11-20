@@ -46,6 +46,8 @@ export interface HmacKeySet {
   card: Buffer;
   pseud: Buffer;
   offLink: Buffer;
+  /** Client-IP fingerprints of hosted payments (the per-IP failed-payment cap, §3.3). */
+  ip: Buffer;
 }
 
 export interface HmacKeys extends HmacKeySet {
@@ -118,12 +120,13 @@ function hmacSet(ikm: Buffer): HmacKeySet {
     card: hkdf(ikm, HMAC_SALT, 'card'),
     pseud: hkdf(ikm, HMAC_SALT, 'pseud'),
     offLink: hkdf(ikm, HMAC_SALT, 'off-link'),
+    ip: hkdf(ikm, HMAC_SALT, 'client-ip'),
   };
 }
 
 /**
  * HKDF-SHA256(ikm = b64(BILLING_HMAC_KEY), salt = "buaze-billing-hmac-v1",
- * info = "handle"|"ref"|"ckfp"|"card"|"pseud"|"off-link", 32).
+ * info = "handle"|"ref"|"ckfp"|"card"|"pseud"|"off-link"|"client-ip", 32).
  * Refuses a key equal to `BILLING_VAULT_KEY` or `ENCRYPTION_KEY` (separate lifecycles).
  */
 export function loadHmacKeys(env: EnvSource = process.env): HmacKeys {
@@ -249,6 +252,16 @@ export function referenceFingerprint(referenceCode: string, hk: HmacKeySet): str
 /** [current, previous?] */
 export function referenceFingerprints(referenceCode: string, hk: HmacKeys): string[] {
   return keySets(hk).map((set) => referenceFingerprint(referenceCode, set));
+}
+
+/**
+ * "ip1_" + 22 base64url chars of HMAC(hk.ip, "ip:v1|" + trusted client IP): stored on a hosted payment
+ * so the per-IP failed-payment cap (§3.3) is counted in the database, for every instance and for
+ * failures found by reconciliation. Never the IP itself; cleared by retention after 2 days.
+ */
+export function clientIpFingerprint(ip: string, hk: HmacKeySet): string {
+  if (typeof ip !== 'string' || !ip) throw new VaultKeyError('malformed');
+  return `ip1_${mac(hk.ip, `ip:v1|${ip}`).slice(0, 22)}`;
 }
 
 /** "del_" + 22 base64url chars of HMAC(hk.pseud, "del:v1|" + userId) — erasure pseudonym. */

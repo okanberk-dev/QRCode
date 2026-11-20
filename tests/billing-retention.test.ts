@@ -11,7 +11,7 @@ import { PrismaClient } from '@prisma/client';
 import type { VaultDeps } from '../src/lib/billing/card-vault';
 import { RETENTION, runRetention, truncateIp, type RetentionMailer } from '../src/lib/billing/retention';
 import { sensitive } from '../src/lib/billing/sensitive';
-import { customerKeyFingerprint, loadHmacKeys, loadVaultKeys, sealCustomerKey } from '../src/lib/billing/vault-crypto';
+import { clientIpFingerprint, customerKeyFingerprint, loadHmacKeys, loadVaultKeys, sealCustomerKey } from '../src/lib/billing/vault-crypto';
 import { cardListBody, fakeTransport, randomTestKey, testConfig } from './fixtures/paynkolay-fakes';
 
 const url = process.env.TEST_DATABASE_URL?.trim();
@@ -166,5 +166,27 @@ describe('retention against PostgreSQL', { skip }, () => {
     const summary = await runRetention({ db, env: 'live', vault: null, mailer: null }, now);
     assert.ok(summary.providerSkipped >= 1);
     assert.equal(await db.billingCustomer.count({ where: { userId: u } }), 1);
+  });
+
+  it('client-IP fingerprints of payments are nulled 2 days after the payment; a raw IP is refused by the DB', async () => {
+    const u = await owner(null);
+    const fp = clientIpFingerprint('203.0.113.7', hmac);
+    const old = await db.billingPayment.create({
+      data: { userId: u, amountMinor: 100, billingCycle: 'monthly', kind: 'checkout', clientIpFp: fp, createdAt: new Date(now.getTime() - 3 * DAY) },
+      select: { id: true },
+    });
+    const fresh = await db.billingPayment.create({
+      data: { userId: u, amountMinor: 100, billingCycle: 'monthly', kind: 'checkout', clientIpFp: fp, createdAt: new Date(now.getTime() - DAY) },
+      select: { id: true },
+    });
+    const summary = await runRetention({ db, env: 'live', vault: null, mailer: null }, now);
+    assert.ok(summary.ipFingerprintsCleared >= 1);
+    const rows = await db.billingPayment.findMany({ where: { id: { in: [old.id, fresh.id] } }, select: { id: true, clientIpFp: true } });
+    assert.equal(rows.find((r) => r.id === old.id)?.clientIpFp, null);
+    assert.equal(rows.find((r) => r.id === fresh.id)?.clientIpFp, fp, 'still inside the 24 h cap window (+1 day margin)');
+    await assert.rejects(() =>
+      db.billingPayment.create({ data: { userId: u, amountMinor: 1, billingCycle: 'monthly', clientIpFp: '203.0.113.7' }, select: { id: true } }),
+    );
+    await db.billingPayment.deleteMany({ where: { userId: u } });
   });
 });

@@ -1,11 +1,15 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { paynkolayCheckoutAmounts, toAdminRow } from '@/lib/subscription-plans';
 import type { BillingEnv } from './flags';
 import { canTransition, isRenewalState, RENEWAL_POLICY, TERMINAL_STATES, type RenewalState } from './renewal-policy';
 import type {
   FailedPaymentToRecheck,
   HostedPaymentStats,
+  MailSlot,
   OptOutReason,
+  RenewalContext,
+  ScheduleCandidate,
   PaymentToConfirm,
   RenewalPaymentRow,
   RenewalRow,
@@ -82,6 +86,14 @@ export function paymentEnvFilter(env: BillingEnv): Prisma.BillingPaymentWhereInp
   return env === 'live' ? { OR: [{ providerEnv: 'live' }, { providerEnv: null }] } : { providerEnv: env };
 }
 
+const SLOT_FIELD: Record<MailSlot, 'noticeClaimedAt' | 'lastCallClaimedAt'> = {
+  notice: 'noticeClaimedAt',
+  last_call: 'lastCallClaimedAt',
+};
+const SCHEDULE_LEAD_MS = RENEWAL_POLICY.scheduleLeadHours * 60 * 60_000;
+const CONSENTED_LOOKBACK_MS = 5 * DAY_MS;
+const CARD_SAVE_SETTLE_MS = 5 * 60_000;
+
 function refundReasonFor(reason: OptOutReason): string {
   return reason === 'owner_off' ? 'owner_opt_out' : reason;
 }
@@ -106,6 +118,7 @@ export function createPrismaRenewalStore(db: PrismaClient = prisma): RenewalStor
         where: {
           state: { in: filter.states },
           providerEnv: filter.providerEnv,
+          ...(filter.withPendingMail ? { pendingMail: { not: null } } : {}),
           ...(filter.dueBefore ? { nextAttemptAt: { lte: filter.dueBefore } } : {}),
           ...(filter.confirmBefore ? { confirmAfter: { lte: filter.confirmBefore } } : {}),
           ...(filter.lockedBefore ? { lockedUntil: { lt: filter.lockedBefore } } : {}),
@@ -115,6 +128,163 @@ export function createPrismaRenewalStore(db: PrismaClient = prisma): RenewalStor
         select: RENEWAL_SELECT,
       });
       return rows.map(toRenewalRow);
+    },
+
+    async findSubscriptionsToSchedule(now, limit, includeNonConsented): Promise<ScheduleCandidate[]> {
+      const to = new Date(now.getTime() + SCHEDULE_LEAD_MS);
+      const from = new Date(now.getTime() - CONSENTED_LOOKBACK_MS);
+      return db.$queryRaw<ScheduleCandidate[]>`
+        SELECT s."user_id" AS "userId", s."renews_at" AS "renewsAt"
+        FROM "billing_subscriptions" s
+        WHERE s."source" = 'paynkolay'
+          AND s."status" IN ('active', 'past_due')
+          AND s."renews_at" IS NOT NULL
+          AND s."renews_at" <= ${to}
+          AND (
+            (s."auto_renew_consent_id" IS NOT NULL AND s."renews_at" >= ${from})
+            OR (${includeNonConsented} AND s."renews_at" > ${now})
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM "billing_renewals" r WHERE r."user_id" = s."user_id" AND r."period_end" = s."renews_at"
+          )
+        ORDER BY s."renews_at" ASC
+        LIMIT ${limit}`;
+    },
+
+    async loadRenewalContext(userId): Promise<RenewalContext | null> {
+      const sub = await db.billingSubscription.findUnique({
+        where: { userId },
+        select: {
+          source: true,
+          status: true,
+          autoRenew: true,
+          cancelAtPeriodEnd: true,
+          billingCycle: true,
+          renewsAt: true,
+          subscriptionPlanId: true,
+          autoRenewConsentId: true,
+        },
+      });
+      if (!sub) return null;
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: { email: true, locale: true, name: true, isActive: true, deactivatedAt: true, scheduledDeletionAt: true },
+      });
+      if (!user) return null;
+      const locale = user.locale === 'en' ? 'en' : 'tr';
+      const planRow = sub.subscriptionPlanId ? await db.subscriptionPlan.findUnique({ where: { id: sub.subscriptionPlanId } }) : null;
+      let plan: RenewalContext['plan'] = null;
+      if (planRow) {
+        const amounts = paynkolayCheckoutAmounts(toAdminRow(planRow));
+        const amountTry = sub.billingCycle === 'yearly' ? amounts?.yearlyTry : amounts?.monthlyTry;
+        plan = {
+          id: planRow.id,
+          name: locale === 'en' ? planRow.nameEn : planRow.nameTr,
+          isActive: planRow.isActive,
+          amountMinor: amountTry ? Math.round(amountTry * 100) : null,
+        };
+      }
+      const consent = sub.autoRenewConsentId
+        ? await db.billingConsent.findFirst({
+            where: { id: sub.autoRenewConsentId, userId, effectiveAt: { not: null } },
+            select: { id: true, amountMinor: true, subscriptionPlanId: true, billingCycle: true, cardId: true },
+          })
+        : null;
+      const boundCard = consent
+        ? await db.billingCard.findFirst({ where: { userId, boundConsentId: consent.id, deletedAt: null }, select: { id: true, last4: true } })
+        : null;
+      const savedCard = await db.billingCard.findFirst({
+        where: { userId, deletedAt: null, savedByPaymentId: { not: null } },
+        orderBy: { createdAt: 'desc' },
+        select: { last4: true },
+      });
+      return {
+        sub,
+        user: {
+          userId,
+          email: user.email,
+          locale,
+          firstName: user.name?.trim().split(/\s+/)[0] || null,
+          isActive: user.isActive,
+          deactivatedAt: user.deactivatedAt,
+          scheduledDeletionAt: user.scheduledDeletionAt,
+        },
+        plan,
+        consent,
+        boundCard,
+        savedCard,
+      };
+    },
+
+    async createRenewal(row) {
+      try {
+        const created = await db.billingRenewal.create({ data: row, select: RENEWAL_SELECT });
+        return toRenewalRow(created);
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') return 'exists';
+        throw err;
+      }
+    },
+
+    async claimMail(id, slot, now) {
+      const field = SLOT_FIELD[slot];
+      const res = await db.billingRenewal.updateMany({ where: { id, [field]: null }, data: { [field]: now } });
+      return res.count === 1;
+    },
+
+    async releaseMailClaim(id, slot) {
+      await db.billingRenewal.updateMany({ where: { id }, data: { [SLOT_FIELD[slot]]: null } });
+    },
+
+    async clearPendingMail(id, mail) {
+      await db.billingRenewal.updateMany({ where: { id, pendingMail: mail }, data: { pendingMail: null } });
+    },
+
+    async listPendingCardSaves(env, now, limit) {
+      return db.billingPayment.findMany({
+        where: {
+          status: 'succeeded',
+          saveCard: true,
+          cardSaveResult: 'pending',
+          completedAt: { lte: new Date(now.getTime() - CARD_SAVE_SETTLE_MS) },
+          createdAt: { gte: new Date(now.getTime() - RENEWAL_POLICY.recheckFailedDays * DAY_MS) },
+          AND: [paymentEnvFilter(env)],
+        },
+        orderBy: { createdAt: 'asc' },
+        take: limit,
+        select: { id: true },
+      });
+    },
+
+    async listCardCleanupsOwed(env, now, limit) {
+      const saves = await db.billingPayment.findMany({
+        where: {
+          status: 'succeeded',
+          saveCard: true,
+          cardSaveResult: 'saved',
+          createdAt: { gte: new Date(now.getTime() - RENEWAL_POLICY.recheckFailedDays * DAY_MS) },
+          AND: [paymentEnvFilter(env)],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+        select: { id: true, userId: true },
+      });
+      const newest = new Map<string, string>();
+      for (const s of saves) if (!newest.has(s.userId)) newest.set(s.userId, s.id); // a later save owns the clean-up
+      if (newest.size === 0) return [];
+      const cards = await db.billingCard.findMany({
+        where: { userId: { in: [...newest.keys()] }, deletedAt: null },
+        select: { userId: true, savedByPaymentId: true, boundConsentId: true },
+      });
+      const out: { id: string }[] = [];
+      for (const [userId, paymentId] of newest) {
+        const own = cards.filter((c) => c.userId === userId);
+        const savedLive = own.some((c) => c.savedByPaymentId === paymentId);
+        const others = own.some((c) => c.savedByPaymentId !== paymentId && c.boundConsentId === null);
+        if (savedLive && others) out.push({ id: paymentId });
+        if (out.length >= limit) break;
+      }
+      return out;
     },
 
     async getRenewal(id) {

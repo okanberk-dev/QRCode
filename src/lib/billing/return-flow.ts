@@ -116,6 +116,29 @@ export function paymentResultPath(locale: 'tr' | 'en', status: PaymentResultStat
   return `/${locale}/dashboard/account?section=billing${payment ? `&${payment}` : ''}`;
 }
 
+/**
+ * The billing result page (`/billing/{locale}/result`, billing spec §12.6),
+ * used once saved cards are on. It lives outside the dashboard gate, so a
+ * lapsed owner sees it too. `p` is our own payment id (a cuid, not
+ * chargeable); the page shows details only to that payment's owner.
+ */
+export function billingResultPath(locale: 'tr' | 'en', status: PaymentResultStatus | null, paymentId: string | null): string {
+  const qs = new URLSearchParams();
+  if (status) qs.set('payment', status);
+  if (status && paymentId && CLIENT_REF_RE.test(paymentId)) qs.set('p', paymentId);
+  const q = qs.toString();
+  return `/billing/${locale}/result${q ? `?${q}` : ''}`;
+}
+
+/** Card-testing control (§3.3): a trusted client IP with 5 failed hosted payments in 24 h is blocked from checkout. */
+export const FAILED_HOSTED_PER_IP_24H = 5;
+export function checkoutIpFailKey(ip: string): string {
+  return `billing:checkout:ipfail:${ip}`;
+}
+export function checkoutIpBlockKey(ip: string): string {
+  return `billing:checkout:ipblock:${ip}`;
+}
+
 /** Mirrors the dashboard layout gate: an expired paid period or an expired trial. */
 export function isOwnerLapsed(user: { plan: string; trialEndsAt: Date | null } | null, now: Date): boolean {
   if (!user) return false;

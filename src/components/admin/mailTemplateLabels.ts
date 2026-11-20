@@ -27,4 +27,7 @@ export const MAIL_TEMPLATE_LABELS: Record<string, string> = {
   'account-deletion-canceled': 'Hesap silme iptal',
   'rating-drop-alert': 'Puan düşüşü uyarısı',
   'data-export-confirmation': 'KVKK veri indirme onayı',
+  'billing-renewal-upcoming': 'Abonelik yenileme hatırlatması',
+  'billing-period-ended': 'Abonelik süresi doldu',
+  'billing-card-retention': 'Kayıtlı kart silinecek',
 };

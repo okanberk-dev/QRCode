@@ -359,6 +359,23 @@ async function settleOnce(paymentId: string, decision: SettleDecision, deps: Set
         // New or changed plan: restart from now with a fresh anchor day.
         period = nextPeriod(cycle, null, now);
       }
+      // The owner paid (another plan or cycle) while holding an open renewal of the old period (D19,
+      // checkout of any intent): that renewal is resolved by this payment. Without this it would stay
+      // owner_paying (never superseded, never lapsed) and keep deferring an account deletion.
+      if (renewal && renewalState === 'owner_paying' && canTransition('owner_paying', 'succeeded')) {
+        await tx.billingRenewal.updateMany({
+          where: { id: renewal.id, state: 'owner_paying', ownerPaymentId: paymentId },
+          data: {
+            state: 'succeeded',
+            succeededPaymentId: paymentId,
+            endedAt: now,
+            endReason: 'replaced',
+            lockedUntil: null,
+            ownerPaymentId: null,
+            ownerPrevState: null,
+          },
+        });
+      }
     }
 
     // 8. PayNKolay charged this clientRefCode more than once. The queue records what must go back: the extra
@@ -494,11 +511,19 @@ export interface PostSettleDeps {
   db: PrismaClient;
   store: Pick<RenewalStore, 'disableAutoRenew'>;
   now: () => Date;
+  /**
+   * Saved cards (billing spec §11.2): confirms the card a `saveCard` payment
+   * stored (`reconcileCardsAfterSave`). Absent or failing → the payment keeps
+   * `cardSaveResult = 'pending'` and the renewal engine retries.
+   */
+  reconcileCards?: (paymentId: string) => Promise<unknown>;
 }
 
 /**
  * Best-effort effects after a successful settle (billing spec §11.2). Logs
- * only ids. Card reconciliation after a save arrives with saved cards; here:
+ * only ids:
+ *  - a payment that asked to save the card: confirm the saved card
+ *    (`reconcileCards`, verified by PayNKolay's list, D1);
  *  - a checkout for another plan/cycle than the active auto-renew consent
  *    (without a new consent) turns auto-renew off (`plan_changed`);
  *  - open renewals of another period are superseded;
@@ -510,9 +535,26 @@ export async function applyPostSettleEffects(paymentId: string, deps: PostSettle
   try {
     const payment = await db.billingPayment.findUnique({
       where: { id: paymentId },
-      select: { userId: true, kind: true, status: true, subscriptionPlanId: true, billingCycle: true, autoRenewConsentId: true },
+      select: {
+        userId: true,
+        kind: true,
+        status: true,
+        subscriptionPlanId: true,
+        billingCycle: true,
+        autoRenewConsentId: true,
+        saveCard: true,
+        cardSaveResult: true,
+      },
     });
     if (!payment || payment.status !== 'succeeded' || payment.userId.startsWith('del_')) return;
+
+    if (payment.saveCard && payment.cardSaveResult === 'pending' && deps.reconcileCards) {
+      try {
+        await deps.reconcileCards(paymentId);
+      } catch (err) {
+        billingLog('warn', 'settle.card_reconcile_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
+      }
+    }
     const sub = await db.billingSubscription.findUnique({
       where: { userId: payment.userId },
       select: { autoRenew: true, autoRenewConsentId: true, renewsAt: true },

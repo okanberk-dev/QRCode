@@ -104,7 +104,13 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   // it from Sentry's CDN after the panel is idle; marketing, auth and the
   // public review/menu pages never download it. Failure (ad-blocker, offline)
   // just means no replay.
-  if (typeof window !== 'undefined' && /^\/(?:admin|(?:tr|en)\/dashboard)(?:\/|$)/.test(window.location.pathname)) {
+  // Never on the billing pages (/billing/*, billing spec §3.4, §14.9): Session Replay records the DOM of
+  // the pages that hand the owner to the card page; the regex below never matches them, and this guard keeps it so.
+  if (
+    typeof window !== 'undefined' &&
+    !window.location.pathname.startsWith('/billing/') &&
+    /^\/(?:admin|(?:tr|en)\/dashboard)(?:\/|$)/.test(window.location.pathname)
+  ) {
     const loadReplay = () => {
       Sentry.lazyLoadIntegration('replayIntegration')
         .then((replayIntegration) => Sentry.addIntegration(replayIntegration()))

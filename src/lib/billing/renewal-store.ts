@@ -1,16 +1,17 @@
 import type { BillingEnv } from './flags';
-import type { RenewalState } from './renewal-policy';
+import type { RenewalEvalInput, RenewalState } from './renewal-policy';
 
 /**
  * Storage interface of the renewal engine (billing spec §6.1). The Prisma
  * implementation lives in `renewal-store-prisma.ts`; tests use an in-memory
  * store with the same conditional-update semantics.
  *
- * PR 1 (foundation) carries the methods the reconcile, lapse, tombstone,
- * scan and opt-out paths need. The scheduling, notice and charge methods of
- * §6.1 (`findSubscriptionsToSchedule`, `createRenewal`, `claimForCharge`,
- * `createRenewalPayment`, `recordChargeOutcome`, `enterOwnerPaying`, …) are
- * added with the phases that use them.
+ * The foundation carries the methods the reconcile, lapse, tombstone, scan
+ * and opt-out paths need; saved cards add scheduling and reminder mails
+ * (`findSubscriptionsToSchedule`, `loadRenewalContext`, `createRenewal`,
+ * `claimMail`, …). The charge methods of §6.1 (`claimForCharge`,
+ * `createRenewalPayment`, `recordChargeOutcome`) arrive with the charge phase.
+ * The owner_paying lock (D19) is written by the checkout POST transaction.
  *
  * Every provider-facing listing is scoped to one PayNKolay environment; rows
  * whose `provider_env` is NULL (created before saved cards) count as `live`.
@@ -141,6 +142,39 @@ export interface SubscriptionSnapshot {
   autoRenew: boolean;
 }
 
+export interface ScheduleCandidate {
+  userId: string;
+  renewsAt: Date;
+}
+
+/** Everything `evaluateRenewal` and the reminder mails need about one owner (fresh read). */
+export interface RenewalContext {
+  sub: RenewalEvalInput['sub'] & { autoRenewConsentId: string | null };
+  user: RenewalEvalInput['user'] & { email: string; locale: 'tr' | 'en'; firstName: string | null };
+  plan: { id: string; name: string; isActive: boolean; amountMinor: number | null } | null;
+  consent: RenewalEvalInput['consent'];
+  /** billing_cards row bound to the consent, not deleted. */
+  boundCard: { id: string; last4: string | null } | null;
+  /** The newest verified saved card (display only). */
+  savedCard: { last4: string | null } | null;
+}
+
+export interface NewRenewal {
+  userId: string;
+  providerEnv: BillingEnv;
+  periodEnd: Date;
+  subscriptionPlanId: string | null;
+  billingCycle: string;
+  mode: 'auto' | 'reminder';
+  modeReason: string | null;
+  nextAttemptAt: Date | null;
+  consentId: string | null;
+  graceEndsAt: Date | null;
+}
+
+/** `notice` = the auto notice / reminder_7 slot; `last_call` = reminder_1. */
+export type MailSlot = 'notice' | 'last_call';
+
 export type OptOutReason =
   | 'owner_off'
   | 'card_removed'
@@ -154,9 +188,43 @@ export type OptOutReason =
 export interface RenewalStore {
   // ── Renewals ──
   listRenewals(
-    filter: { states: RenewalState[]; providerEnv: BillingEnv; dueBefore?: Date; confirmBefore?: Date; lockedBefore?: Date },
+    filter: {
+      states: RenewalState[];
+      providerEnv: BillingEnv;
+      dueBefore?: Date;
+      confirmBefore?: Date;
+      lockedBefore?: Date;
+      /** Only rows with a queued mail (`pendingMail` set). */
+      withPendingMail?: boolean;
+    },
     limit: number,
   ): Promise<RenewalRow[]>;
+
+  // ── Scheduling and reminder mails (phases 2-3) ──
+  /**
+   * PayNKolay subscriptions (active | past_due) whose period ends within the
+   * next 7 days and that have no renewal row for that period yet. Consented
+   * subscriptions always (also up to 5 days after the period end, for their
+   * grace); others only when `includeNonConsented` (card storage intended,
+   * O-2) and only before the period end.
+   */
+  findSubscriptionsToSchedule(now: Date, limit: number, includeNonConsented: boolean): Promise<ScheduleCandidate[]>;
+  loadRenewalContext(userId: string): Promise<RenewalContext | null>;
+  /** Unique (userId, periodEnd): a second insert answers 'exists'. */
+  createRenewal(row: NewRenewal): Promise<RenewalRow | 'exists'>;
+  /** UPDATE … SET <slot>_claimed_at = now WHERE <slot>_claimed_at IS NULL; false when already claimed. */
+  claimMail(id: string, slot: MailSlot, now: Date): Promise<boolean>;
+  /** The mailer did not accept the message: the slot is free again for the next tick. */
+  releaseMailClaim(id: string, slot: MailSlot): Promise<void>;
+  /** Clears a queued mail once it was sent (only while it is still `mail`). */
+  clearPendingMail(id: string, mail: string): Promise<void>;
+  /** Succeeded payments that saved a card whose save is still unconfirmed (cardSaveResult 'pending'), own env, < 7 days. */
+  listPendingCardSaves(env: BillingEnv, now: Date, limit: number): Promise<{ id: string }[]>;
+  /**
+   * D1 clean-up still owed: the owner's newest verified save (cardSaveResult 'saved', own env, < 7 days)
+   * whose card is live while another live, unbound card of the owner is still in the mirror.
+   */
+  listCardCleanupsOwed(env: BillingEnv, now: Date, limit: number): Promise<{ id: string }[]>;
   getRenewal(id: string): Promise<RenewalRow | null>;
   /** The renewal a payment belongs to: by `renewalId`, else the one whose `ownerPaymentId` is the payment. */
   renewalForPayment(payment: { id: string; renewalId: string | null }): Promise<RenewalRow | null>;

@@ -18,18 +18,39 @@ import { rootFontClassName, rootBodyFontClassName } from './fonts';
  * that renders this same shell. Navigating between two root layouts is a
  * full page load (Next.js), which only happens between the site and the
  * admin panel or a public QR page.
+ *
+ * `secure` (the billing pages, billing spec D12 / §3.4): the pages that hand
+ * the owner to PayNKolay's card page run NO third-party script — no
+ * analytics (GA, Yandex), no cookie banner, no Vercel scripts, no DNS hints
+ * to third parties. Only Next.js chunks and the first-party Sentry SDK load,
+ * under the nonce CSP set by src/middleware.ts.
  */
 export default function RootHtml({
   lang,
   langFromPath = false,
+  secure = false,
   children,
 }: {
   lang: 'tr' | 'en';
   /** Only for global-not-found, which cannot know the locale on the server:
    *  switches `lang` to "en" for /en URLs before the first paint. */
   langFromPath?: boolean;
+  /** Payment hand-off pages: render no third-party script or component. */
+  secure?: boolean;
   children: React.ReactNode;
 }) {
+  if (secure) {
+    return (
+      <html lang={lang} className={rootFontClassName}>
+        <body
+          className={`${rootBodyFontClassName} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-dvh`}
+        >
+          {children}
+        </body>
+      </html>
+    );
+  }
+
   // Resource hints. Fonts are self-hosted by next/font, so no Google Fonts
   // connections are needed. GTM and Yandex load only after analytics consent
   // (ConditionalAnalytics, lazyOnload), so a full preconnect would usually be
