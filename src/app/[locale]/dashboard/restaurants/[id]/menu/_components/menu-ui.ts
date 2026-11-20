@@ -39,10 +39,88 @@ export function useMediaQuery(query: string, readNow = false): boolean {
   return matches;
 }
 
-/** Tailwind `lg` — where the category list becomes a column instead of a chip strip. */
-export function useIsDesktop(): boolean {
-  return useMediaQuery('(min-width: 1024px)');
+/**
+ * Tailwind `lg` — where the category list becomes a column instead of a chip strip.
+ * `readNow` as in `useMediaQuery` (the Menu Studio mounts only in the browser).
+ */
+export function useIsDesktop(readNow = false): boolean {
+  return useMediaQuery('(min-width: 1024px)', readNow);
 }
+
+// ── Menu Studio hooks (spec §7.10). The studio renders only after a browser
+// fetch, never on the server, so these read the real answer on the first render.
+
+/** Mouse / trackpad as the primary pointer (rows get the dense tiers, inline rename). */
+export function useFinePointer(): boolean {
+  return useMediaQuery('(pointer: fine)', true);
+}
+
+/** ≥1400px. */
+export function useIsWide(): boolean {
+  return useMediaQuery('(min-width: 1400px)', true);
+}
+
+/** ≥640px (Tailwind `sm`): sheets open from the right instead of the bottom. */
+export function useIsSmUp(): boolean {
+  return useMediaQuery('(min-width: 640px)', true);
+}
+
+export function usePrefersReducedMotion(): boolean {
+  return useMediaQuery('(prefers-reduced-motion: reduce)', true);
+}
+
+/** `scrollIntoView` / `scrollTo` behaviour that respects reduced motion (read at call time). */
+export function scrollBehavior(): ScrollBehavior {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'auto';
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+}
+
+/**
+ * Height of the on-screen keyboard over the layout viewport (iOS Safari keeps
+ * `position: fixed` elements under it). 0 when there is none or the browser has
+ * no `visualViewport`. rAF-throttled.
+ */
+export function useKeyboardInset(): number {
+  const [inset, setInset] = useState(0);
+  useEffect(() => {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!vv) return;
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        setInset(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+      });
+    };
+    measure();
+    vv.addEventListener('resize', measure);
+    vv.addEventListener('scroll', measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      vv.removeEventListener('resize', measure);
+      vv.removeEventListener('scroll', measure);
+    };
+  }, []);
+  return inset;
+}
+
+/** `navigator.onLine`, kept current by the `online` / `offline` events. */
+export function useOnline(): boolean {
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine !== false);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
+  return online;
+}
+
+export { MENU_TOUCH } from '@/app/[locale]/dashboard/surveys/_components/menu-touch';
 
 /** Drag sensors shared by the category list and the item list: mouse, touch (long press) and keyboard. */
 export function useMenuDndSensors() {
@@ -57,8 +135,21 @@ export function useMenuDndSensors() {
  * Screen-reader text for drag and drop in the owner's language (dnd-kit ships
  * English only). `nameOf` turns a draggable id into the name a person knows.
  */
-export function useDndAccessibility(isTr: boolean, nameOf: (id: string) => string, instructions: string) {
-  const name = useCallback((id: string | number) => nameOf(String(id)), [nameOf]);
+export function useDndAccessibility(
+  isTr: boolean,
+  nameOf: (id: string) => string,
+  instructions: string,
+  /** Menu Studio: drop targets `container:<categoryId>` read as "{name} kategorisi". */
+  containerName?: (categoryId: string) => string,
+) {
+  const name = useCallback(
+    (id: string | number) => {
+      const key = String(id);
+      if (containerName && key.startsWith('container:')) return containerName(key.slice('container:'.length));
+      return nameOf(key);
+    },
+    [nameOf, containerName],
+  );
   const announcements: Announcements = {
     onDragStart: ({ active }) => (isTr ? `${name(active.id)} tutuldu.` : `Picked up ${name(active.id)}.`),
     onDragOver: ({ active, over }) =>
