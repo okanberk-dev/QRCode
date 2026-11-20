@@ -111,6 +111,20 @@ export function stripDigitRuns(value: string | null | undefined, max: number): s
   return out || null;
 }
 
+/** `terms.firstChargeDate` of a consent row (ISO string) or null. */
+export function termsFirstChargeDate(terms: unknown): Date | null {
+  if (!terms || typeof terms !== 'object') return null;
+  const raw = (terms as { firstChargeDate?: unknown }).firstChargeDate;
+  if (typeof raw !== 'string') return null;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** UTC wall-clock literal for `timestamp(3)` columns in raw SQL (as billing-settings.ts). */
+function utc(at: Date): Prisma.Sql {
+  return Prisma.sql`(${at.toISOString()}::timestamptz AT TIME ZONE 'UTC')`;
+}
+
 export function createPrismaRenewalStore(db: PrismaClient = prisma): RenewalStore {
   return {
     async listRenewals(filter, limit) {
@@ -184,11 +198,21 @@ export function createPrismaRenewalStore(db: PrismaClient = prisma): RenewalStor
           amountMinor: amountTry ? Math.round(amountTry * 100) : null,
         };
       }
-      const consent = sub.autoRenewConsentId
+      const consentRow = sub.autoRenewConsentId
         ? await db.billingConsent.findFirst({
             where: { id: sub.autoRenewConsentId, userId, effectiveAt: { not: null } },
-            select: { id: true, amountMinor: true, subscriptionPlanId: true, billingCycle: true, cardId: true },
+            select: { id: true, amountMinor: true, subscriptionPlanId: true, billingCycle: true, cardId: true, terms: true },
           })
+        : null;
+      const consent = consentRow
+        ? {
+            id: consentRow.id,
+            amountMinor: consentRow.amountMinor,
+            subscriptionPlanId: consentRow.subscriptionPlanId,
+            billingCycle: consentRow.billingCycle,
+            cardId: consentRow.cardId,
+            firstChargeDate: termsFirstChargeDate(consentRow.terms),
+          }
         : null;
       const boundCard = consent
         ? await db.billingCard.findFirst({ where: { userId, boundConsentId: consent.id, deletedAt: null }, select: { id: true, last4: true } })
@@ -302,11 +326,130 @@ export function createPrismaRenewalStore(db: PrismaClient = prisma): RenewalStor
     async transition(id, from, patch, leaseId) {
       const allowed = patch.state ? from.filter((state) => canTransition(state, patch.state as RenewalState)) : from.filter((s) => !TERMINAL_STATES.has(s));
       if (allowed.length === 0) return false;
+      const { announcedAttemptTimes, ...rest } = patch;
+      const data: Prisma.BillingRenewalUpdateManyMutationInput = {
+        ...rest,
+        ...(announcedAttemptTimes !== undefined
+          ? { announcedAttemptTimes: announcedAttemptTimes === null ? Prisma.DbNull : announcedAttemptTimes }
+          : {}),
+      };
       const res = await db.billingRenewal.updateMany({
         where: { id, state: { in: allowed }, ...(leaseId ? { leaseId } : {}) },
-        data: patch,
+        data,
       });
       return res.count === 1;
+    },
+
+    async queueMail(id, mail) {
+      await db.billingRenewal.updateMany({ where: { id }, data: { pendingMail: mail.slice(0, 24) } });
+    },
+
+    async bumpNoticeFailures(id) {
+      const row = await db.billingRenewal.update({ where: { id }, data: { noticeFailures: { increment: 1 } }, select: { noticeFailures: true } });
+      return row.noticeFailures;
+    },
+
+    async claimForCharge(id, env, now, leaseMs, leaseId) {
+      const until = new Date(now.getTime() + leaseMs);
+      const claimed = await db.$queryRaw<{ id: string }[]>(Prisma.sql`
+        UPDATE "billing_renewals" r
+        SET "state" = 'charging', "attempts" = r."attempts" + 1, "locked_until" = ${utc(until)},
+            "lease_id" = ${leaseId}, "updated_at" = ${utc(now)}
+        WHERE r."id" = ${id}
+          AND r."provider_env" = ${env}
+          AND r."state" IN ('scheduled', 'retry_wait')
+          AND r."mode" = 'auto'
+          AND r."next_attempt_at" <= ${utc(now)}
+          AND (r."locked_until" IS NULL OR r."locked_until" < ${utc(now)})
+          AND r."attempts" < r."max_attempts"
+          AND r."cancel_requested_at" IS NULL
+          AND r."notice_delivered_at" IS NOT NULL
+          AND r."notice_delivered_at" <= r."next_attempt_at" - interval '72 hours'
+          AND NOT EXISTS (
+            SELECT 1 FROM "billing_payments" p
+            WHERE p."user_id" = r."user_id" AND p."status" = 'pending'
+              AND p."kind" IN ('checkout', 'renewal_link')
+              AND p."created_at" > ${utc(new Date(now.getTime() - RENEWAL_POLICY.ownerPayingLockMs))}
+          )
+        RETURNING r."id"`);
+      if (claimed.length !== 1) return null;
+      const row = await db.billingRenewal.findUnique({ where: { id }, select: RENEWAL_SELECT });
+      return row && row.leaseId === leaseId ? toRenewalRow(row) : null;
+    },
+
+    async createRenewalPayment(row) {
+      try {
+        return await db.$transaction(async (tx) => {
+          await tx.$queryRaw`SELECT "user_id" FROM "billing_subscriptions" WHERE "user_id" = ${row.userId} FOR UPDATE`;
+          const sub = await tx.billingSubscription.findUnique({
+            where: { userId: row.userId },
+            select: { autoRenew: true, autoRenewConsentId: true, renewsAt: true, status: true, cancelAtPeriodEnd: true },
+          });
+          if (!sub) return { rejected: 'status' as const };
+          if (!sub.autoRenew) return { rejected: 'auto_renew_off' as const };
+          if (sub.autoRenewConsentId !== row.consentId) return { rejected: 'consent_changed' as const };
+          if (!sub.renewsAt || sub.renewsAt.getTime() !== row.periodEnd.getTime()) return { rejected: 'superseded' as const };
+          if ((sub.status !== 'active' && sub.status !== 'past_due') || sub.cancelAtPeriodEnd) return { rejected: 'status' as const };
+          const user = await tx.user.findUnique({
+            where: { id: row.userId },
+            select: { isActive: true, deactivatedAt: true, scheduledDeletionAt: true },
+          });
+          if (!user || !user.isActive || user.deactivatedAt || user.scheduledDeletionAt) return { rejected: 'account' as const };
+          const renewal = await tx.billingRenewal.findUnique({
+            where: { id: row.renewalId },
+            select: { state: true, leaseId: true, cancelRequestedAt: true },
+          });
+          if (!renewal || renewal.state !== 'charging' || renewal.leaseId !== row.leaseId) return { rejected: 'lease_lost' as const };
+          if (renewal.cancelRequestedAt) return { rejected: 'cancel_requested' as const };
+          return tx.billingPayment.create({
+            data: {
+              userId: row.userId,
+              kind: 'renewal_auto',
+              providerEnv: row.providerEnv,
+              renewalId: row.renewalId,
+              attemptNo: row.attemptNo,
+              subscriptionPlanId: row.subscriptionPlanId,
+              billingCycle: row.billingCycle,
+              amountMinor: row.amountMinor,
+              currency: 'TRY',
+              locale: row.locale,
+              autoRenewConsentId: row.consentId,
+              chargeCardId: row.chargeCardId,
+              providerOutcome: 'not_sent',
+            },
+            select: { id: true, createdAt: true },
+          });
+        });
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') return 'duplicate';
+        throw err;
+      }
+    },
+
+    async recordChargeOutcome(paymentId, renewalId, leaseId, outcome, now) {
+      await db.$transaction(async (tx) => {
+        await tx.billingPayment.updateMany({
+          where: { id: paymentId, status: 'pending' },
+          data: {
+            providerOutcome: outcome.kind,
+            providerOutcomeAt: now,
+            providerDeclineCode: outcome.declineCode ? outcome.declineCode.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 16) || null : null,
+            confirmAfter: outcome.confirmAfter,
+          },
+        });
+        await tx.billingRenewal.updateMany({
+          where: { id: renewalId, state: 'charging', leaseId },
+          data: { state: 'awaiting_confirmation', confirmAfter: now, lockedUntil: null, leaseId: null },
+        });
+      });
+    },
+
+    async setPaymentConfirmAfter(id, at) {
+      await db.billingPayment.updateMany({ where: { id, status: 'pending' }, data: { confirmAfter: at } });
+    },
+
+    async setSubscriptionPastDue(userId, periodEnd) {
+      await db.billingSubscription.updateMany({ where: { userId, status: 'active', renewsAt: periodEnd }, data: { status: 'past_due' } });
     },
 
     async releaseOwnerPaying(renewalId, paymentId) {

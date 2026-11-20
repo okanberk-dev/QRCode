@@ -98,7 +98,8 @@ export const IN_FLIGHT_STATES: ReadonlySet<RenewalState> = new Set<RenewalState>
 /** §10.2 transition table. A non-terminal state may always be patched in place (from === to). */
 const TRANSITIONS: Readonly<Record<RenewalState, readonly RenewalState[]>> = {
   scheduled: ['charging', 'owner_paying', 'canceled', 'lapsed'],
-  retry_wait: ['charging', 'owner_paying', 'canceled', 'lapsed'],
+  // retry_wait → manual_review: an earlier attempt re-checked before attempt n+1 is unresolved (§9.2 4.3).
+  retry_wait: ['charging', 'owner_paying', 'manual_review', 'canceled', 'lapsed'],
   charging: ['awaiting_confirmation', 'scheduled', 'retry_wait', 'needs_action', 'canceled'],
   awaiting_confirmation: ['succeeded', 'retry_wait', 'needs_action', 'manual_review'],
   // owner_paying goes back to whatever state it came from (ownerPrevState).

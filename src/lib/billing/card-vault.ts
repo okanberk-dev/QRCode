@@ -327,6 +327,61 @@ export async function deleteOwnerCard(
   return 'deleted';
 }
 
+export type ChargeableCard =
+  | { ok: true; customerKey: Sensitive; token: Sensitive; cardId: string; last4: string | null }
+  | {
+      ok: false;
+      reason: 'no_customer' | 'no_bound_card' | 'bound_missing_first' | 'bound_missing_confirmed' | 'unbound_card_present' | 'list_failed';
+      /** bound_missing_first: the mirror saw the bound card < 48 h ago (breaker input, §9.5). */
+      freshMirror?: boolean;
+    };
+
+const MIRROR_FRESH_MS = 48 * 60 * 60_000;
+
+/**
+ * Server-internal, used ONLY by the renewal engine (§9.2 phase 4 step 7):
+ * re-lists the owner's cards with the owner's own customer key and returns
+ * the token of the card bound to `consentId` (D1). Any other live card at
+ * PayNKolay means 'unbound_card_present' — nothing is charged until the owner
+ * removes it. A bound card missing from one list is 'bound_missing_first'
+ * (nothing disabled); only a second miss ≥ 24 h later (the mirror then
+ * soft-deletes it) is 'bound_missing_confirmed'. The token never leaves
+ * memory and is wrapped in `Sensitive`.
+ */
+export async function resolveChargeableCard(deps: VaultDeps, userId: string, consentId: string): Promise<ChargeableCard> {
+  const { db } = deps;
+  const now = deps.now();
+  const bound = await db.billingCard.findFirst({
+    where: { userId, boundConsentId: consentId, deletedAt: null },
+    select: { id: true, handle: true, last4: true, lastSeenAt: true },
+  });
+  if (!bound) return { ok: false, reason: 'no_bound_card' };
+  let customerKey: Sensitive | null;
+  try {
+    customerKey = await getCustomerKey(deps, userId);
+  } catch (err) {
+    billingLog('warn', 'vault.chargeable_key_failed', { userId, code: err instanceof Error ? err.name : 'unknown' });
+    return { ok: false, reason: 'list_failed' };
+  }
+  if (!customerKey) return { ok: false, reason: 'no_customer' };
+  let listed: ListedCard[];
+  try {
+    listed = await listWithHandles(deps, userId, customerKey);
+  } catch (err) {
+    billingLog('warn', 'vault.chargeable_list_failed', { userId, code: err instanceof Error ? err.name : 'unknown' });
+    return { ok: false, reason: 'list_failed' };
+  }
+  await syncMirror(deps, userId, listed, now);
+  const match = listed.find((c) => c.handle === bound.handle);
+  if (!match) {
+    const after = await db.billingCard.findFirst({ where: { id: bound.id }, select: { deletedAt: true } });
+    if (!after || after.deletedAt) return { ok: false, reason: 'bound_missing_confirmed' };
+    return { ok: false, reason: 'bound_missing_first', freshMirror: bound.lastSeenAt.getTime() > now.getTime() - MIRROR_FRESH_MS };
+  }
+  if (listed.some((c) => c.handle !== bound.handle)) return { ok: false, reason: 'unbound_card_present' };
+  return { ok: true, customerKey, token: match.card.token, cardId: bound.id, last4: bound.last4 };
+}
+
 export type CardSaveResult = 'saved' | 'not_saved' | 'pending';
 
 /**
