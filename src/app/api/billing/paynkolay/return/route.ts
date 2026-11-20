@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
-import { rateLimit } from '@/lib/rate-limit';
+import { blockKey, rateLimit } from '@/lib/rate-limit';
 import { SITE_URL } from '@/lib/site';
 import { getTrustedClientIp } from '@/lib/client-ip';
 import { confirmCharge, confirmPayment, getPaynkolayConfig } from '@/lib/payment/paynkolay';
 import { fetchTransport } from '@/lib/payment/paynkolay-transport';
-import { loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
+import { loadCardVaultDeps, reconcileCardsAfterSave } from '@/lib/billing/card-vault';
+import { loadBillingFlags, loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
 import { applyPostSettleEffects, settlePaynkolayPayment } from '@/lib/billing/paynkolay-billing';
 import { billingLog, safeError } from '@/lib/billing/redact';
 import { prismaRenewalStore } from '@/lib/billing/renewal-store-prisma';
 import {
+  billingResultPath,
+  checkoutIpBlockKey,
+  checkoutIpFailKey,
+  FAILED_HOSTED_PER_IP_24H,
   isOwnerLapsed,
   paymentResultPath,
   readReturnGet,
@@ -37,7 +42,24 @@ export const runtime = 'nodejs';
  */
 
 const store = prismaRenewalStore;
-const postSettleDeps = { db: prisma, store, now: () => new Date() };
+const DAY_MS = 24 * 60 * 60_000;
+const postSettleDeps = {
+  db: prisma,
+  store,
+  now: () => new Date(),
+  // Saved cards: confirm the card this payment saved (best effort; the engine retries a 'pending' result).
+  reconcileCards: async (paymentId: string) => {
+    const vault = await loadCardVaultDeps();
+    if (vault) await reconcileCardsAfterSave(vault, paymentId);
+  },
+};
+
+/** Card-testing control (§3.3): count a failed hosted payment against the trusted client IP. */
+async function countIpFailure(ip: string): Promise<void> {
+  if (ip === 'unknown') return;
+  const res = await rateLimit(checkoutIpFailKey(ip), FAILED_HOSTED_PER_IP_24H - 1, DAY_MS);
+  if (!res.allowed) blockKey(checkoutIpBlockKey(ip), DAY_MS);
+}
 
 function noStoreRedirect(path: string): NextResponse {
   const res = NextResponse.redirect(new URL(path, SITE_URL), 303);
@@ -88,8 +110,15 @@ async function handle(req: NextRequest, input: ReturnInput): Promise<NextRespons
       })
     : null;
   const locale = payment?.locale === 'en' ? 'en' : 'tr';
+  // Saved cards on: the billing result page (outside the dashboard gate, no third-party script, §12.6).
+  // Otherwise the original destination (account page, or /pricing for a lapsed owner).
+  const resultPage = (await loadBillingFlags()).cardStorage;
   const finish = async (status: PaymentResultStatus | null) =>
-    noStoreRedirect(paymentResultPath(locale, status, payment ? await ownerLapsed(payment.userId) : false));
+    noStoreRedirect(
+      resultPage
+        ? billingResultPath(locale, status, payment?.id ?? null)
+        : paymentResultPath(locale, status, payment ? await ownerLapsed(payment.userId) : false),
+    );
 
   if (!payment) return finish('failed');
   const cfg = getPaynkolayConfig();
@@ -153,7 +182,7 @@ async function handle(req: NextRequest, input: ReturnInput): Promise<NextRespons
       return finish(resultForSettle(result));
     }
     if (decision.kind === 'failed') {
-      await store.markPaymentFailed(payment.id, decision.reason, new Date());
+      if (await store.markPaymentFailed(payment.id, decision.reason, new Date())) await countIpFailure(ip);
       await releaseOwnerLock(payment);
     } else if (decision.kind === 'charged_mismatch') {
       // Money may have been taken without 3D / with instalments / another amount: hold it, never grant a period.

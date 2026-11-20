@@ -96,6 +96,14 @@ export type { RatingDropAlertParams } from './rating-drop-alert';
 export { renderDataExportConfirmation } from './data-export-confirmation';
 export type { DataExportConfirmationParams } from './data-export-confirmation';
 
+// Saved cards (billing spec §13.4) — renewal engine mails, DB-driven copy.
+export { renderBillingRenewalUpcoming } from './billing-renewal-upcoming';
+export type { BillingRenewalUpcomingParams } from './billing-renewal-upcoming';
+export { renderBillingPeriodEnded } from './billing-period-ended';
+export type { BillingPeriodEndedParams } from './billing-period-ended';
+export { renderBillingCardRetention } from './billing-card-retention';
+export type { BillingCardRetentionParams } from './billing-card-retention';
+
 // Render-only security notice (CLAUDE.md §38.96) — admin impersonation start
 // mail to the account owner. Not DB-driven, not in SUPPORTED_MAIL_KEYS.
 export { renderImpersonationStart } from './impersonation-start';

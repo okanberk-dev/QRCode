@@ -83,7 +83,7 @@ function buildCopy(locale: 'tr' | 'en') {
         contact: 'Bize yazın',
       },
       paymentNote:
-        'Kartla ödemeden önce ücretsiz hesabınızı açın ve giriş yapın; ödeme PayNKolay’in güvenli kart sayfasında, Türk lirası olarak alınır. Her ödeme bir ay ya da bir yıl açar; kartınızdan otomatik çekim yapılmaz, dönem bitmeden panelden uzatırsınız.',
+        'Kartla ödemeden önce ücretsiz hesabınızı açın ve giriş yapın; ödeme PayNKolay’ın güvenli kart sayfasında, Türk lirası olarak alınır. Her ödeme bir ay ya da bir yıl açar; kartınızdan otomatik çekim yapılmaz, dönem bitmeden panelden uzatırsınız.',
       included: {
         eyebrow: 'Her planda',
         title: 'Her planda bulunanlar',
@@ -243,7 +243,7 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
       },
       {
         q: 'Ödemeyi nasıl yapıyorum?',
-        a: 'Kartla ödeme Türk lirası olarak, PayNKolay’in güvenli kart sayfasında alınır (3D Secure). Kart bilgileriniz Buaze’ye ulaşmaz. Faturalarınızı panelde görürsünüz; otomatik çekim yoktur, dönemi panelden uzatırsınız.',
+        a: 'Kartla ödeme Türk lirası olarak, PayNKolay’ın güvenli kart sayfasında alınır (3D Secure). Kart bilgileriniz Buaze’ye ulaşmaz. Faturalarınızı panelde görürsünüz; otomatik çekim yoktur, dönemi panelden uzatırsınız.',
       },
       {
         q: 'Yıllık ödeme yapabilir miyim?',

@@ -1,5 +1,6 @@
 'use client';
 
+import { safeRedirectPath } from '@/lib/safe-redirect';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -93,7 +94,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
     const needsOnboarding = data.isNewUser || data.onboardingCompleted === false;
     const redirectPath = needsOnboarding
       ? `/${locale}/onboarding`
-      : (searchParams.get('redirect') || `/${locale}/dashboard`);
+      : safeRedirectPath(searchParams.get('redirect'), `/${locale}/dashboard`);
     window.location.href = redirectPath;
   };
 
@@ -234,7 +235,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         return;
       }
 
-      const redirectPath = searchParams.get('redirect') || `/${locale}/dashboard`;
+      const redirectPath = safeRedirectPath(searchParams.get('redirect'), `/${locale}/dashboard`);
       window.location.href = redirectPath;
     } catch {
       setError(locale === 'tr' ? 'Bağlantı hatası.' : 'Connection error.');
@@ -259,7 +260,7 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
         setLoading(false);
         return;
       }
-      const redirectPath = searchParams.get('redirect') || `/${locale}/dashboard`;
+      const redirectPath = safeRedirectPath(searchParams.get('redirect'), `/${locale}/dashboard`);
       window.location.href = redirectPath;
     } catch {
       setError(locale === 'tr' ? 'Bağlantı hatası.' : 'Connection error.');

@@ -4,6 +4,10 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { resolveOwnerUserId } from '@/lib/panel-access';
 import { PLAN_QUOTA, PLAN_QUOTA_AI_REPLIES, PLAN_LABELS } from '@/lib/constants';
 import { resolveBillingAmount, toAdminRow } from '@/lib/subscription-plans';
+import { openRenewalFor } from '@/lib/billing/card-api';
+import { loadBillingFlags } from '@/lib/billing/flags';
+import { summaryPaymentMethod } from '@/lib/billing/owner-guard';
+import { isRenewalState } from '@/lib/billing/renewal-policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +36,26 @@ export async function GET(req: NextRequest) {
     }),
     prisma.billingSubscription.findUnique({
       where: { userId },
-      include: { subscriptionPlan: true },
+      select: {
+        plan: true,
+        status: true,
+        renewsAt: true,
+        trialEndsAt: true,
+        amount: true,
+        currency: true,
+        billingCycle: true,
+        subscriptionPlanId: true,
+        source: true,
+        cancelAtPeriodEnd: true,
+        autoRenew: true,
+        paymentBrand: true,
+        paymentLast4: true,
+        companyName: true,
+        taxNumber: true,
+        billingAddress: true,
+        billingCity: true,
+        subscriptionPlan: true,
+      },
     }),
     prisma.restaurant.findMany({
       where: { userId },
@@ -116,9 +139,25 @@ export async function GET(req: NextRequest) {
   const limit = PLAN_QUOTA[plan] ?? PLAN_QUOTA.trial;
   const aiRepliesQuota = PLAN_QUOTA_AI_REPLIES[plan] ?? PLAN_QUOTA_AI_REPLIES.trial;
 
-  const paymentMethod =
-    subscription?.paymentBrand && subscription?.paymentLast4
-      ? { brand: subscription.paymentBrand, last4: subscription.paymentLast4 }
+  // Saved cards (billing spec §11.5): team-readable renewal state, never card data (D9). The panel asks
+  // /api/billing/payment-method (owner only) for the saved card; the admin-entered card label (brand +
+  // last4) goes to the owner only, never to a team member.
+  const flags = await loadBillingFlags();
+  const viewerIsOwner = actor.source === 'user' && actor.role === 'restaurant_owner' && actor.id === userId;
+  const paymentMethod = summaryPaymentMethod(subscription ?? null, viewerIsOwner);
+  const openRenewal = flags.cardStorageIntent ? await openRenewalFor(prisma, userId, renewsAt) : null;
+  const renewal =
+    openRenewal && isRenewalState(openRenewal.state)
+      ? {
+          state: openRenewal.state,
+          mode: openRenewal.mode === 'auto' ? 'auto' : 'reminder',
+          periodEnd: openRenewal.periodEnd.toISOString(),
+          nextAttemptAt: openRenewal.nextAttemptAt ? openRenewal.nextAttemptAt.toISOString() : null,
+          graceEndsAt: openRenewal.graceEndsAt ? openRenewal.graceEndsAt.toISOString() : null,
+          attempts: openRenewal.attempts,
+          maxAttempts: openRenewal.maxAttempts,
+          lastFailureKind: openRenewal.lastFailureKind === 'soft' || openRenewal.lastFailureKind === 'hard' ? openRenewal.lastFailureKind : null,
+        }
       : null;
 
   return NextResponse.json(
@@ -152,6 +191,10 @@ export async function GET(req: NextRequest) {
       // "Süreyi uzat"); 'manual' = admin-managed.
       source: subscription?.source ?? null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
+      autoRenew: subscription?.autoRenew ?? false,
+      renewal,
+      cardStorage: flags.cardStorage,
+      viewerIsOwner,
       // Billing address — never surface adminNotes (admin-only).
       billingAddress: subscription
         ? {
@@ -164,10 +207,9 @@ export async function GET(req: NextRequest) {
     },
     {
       headers: {
-        // Edge cache (CLAUDE.md §38.100 Stage 24). Plan + usage data —
-        // mutation frequency düşük (admin manual override + PayNKolay return
-        // events); 60s fresh + 5min SWR billing widget refresh için yeterli.
-        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+        // Every /api/billing/* JSON response is private and never cached
+        // (billing spec §6.2): a payment result must show up right away.
+        'Cache-Control': 'private, no-store',
       },
     },
   );

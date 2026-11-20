@@ -25,6 +25,12 @@ import {
   renderRatingDropAlert,
   renderDataExportConfirmation,
   renderImpersonationStart,
+  renderBillingRenewalUpcoming,
+  renderBillingPeriodEnded,
+  renderBillingCardRetention,
+  type BillingRenewalUpcomingParams,
+  type BillingPeriodEndedParams,
+  type BillingCardRetentionParams,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -806,6 +812,46 @@ export async function sendUpgradeSuggestionEmail(
     html: rendered.html,
     text: rendered.text,
   });
+}
+
+// ─── Billing (saved cards, billing spec §13.4) ──────────────────────────
+// Sent by the renewal engine (reminder mode, lapse, card retention). Each
+// returns true only when Resend accepted the message: a reminder whose send
+// failed is released and retried on the next tick.
+
+export async function sendBillingRenewalUpcomingEmail(
+  params: BillingRenewalUpcomingParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const loc = locale ?? 'tr';
+  const rendered = await renderBillingRenewalUpcoming(rest, loc);
+  return sendResendEmail({
+    template: 'billing-renewal-upcoming',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { variant: params.variant },
+  });
+}
+
+export async function sendBillingPeriodEndedEmail(
+  params: BillingPeriodEndedParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const loc = locale ?? 'tr';
+  const rendered = await renderBillingPeriodEnded(rest, loc);
+  return sendResendEmail({ template: 'billing-period-ended', locale: loc, to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+export async function sendBillingCardRetentionEmail(
+  params: BillingCardRetentionParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const loc = locale ?? 'tr';
+  const rendered = await renderBillingCardRetention(rest, loc);
+  return sendResendEmail({ template: 'billing-card-retention', locale: loc, to, subject: rendered.subject, html: rendered.html, text: rendered.text });
 }
 
 // ─── Newsletter (monthly cron) ──────────────────────────────────────────

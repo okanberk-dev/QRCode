@@ -47,6 +47,10 @@ export const MAIL_PLACEHOLDERS = {
   // Wave C (CLAUDE.md §38.194) — lifecycle expansion placeholders.
   'rating-drop-alert': ['firstName', 'restaurantName', 'currentAvg', 'baselineAvg', 'delta', 'reviewCount'],
   'data-export-confirmation': ['firstName'],
+  // Saved cards (billing spec §13.4).
+  'billing-renewal-upcoming': ['planName', 'date', 'grace'],
+  'billing-period-ended': ['planName'],
+  'billing-card-retention': ['date', 'card'],
   // Wave D (CLAUDE.md §38.195) — new-device login.
 } as const;
 

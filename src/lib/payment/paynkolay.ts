@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { billingLog, redactString } from '@/lib/billing/redact';
+import type { Sensitive } from '@/lib/billing/sensitive';
 import type { PaynkolayHttpResult, PaynkolayTransport } from './paynkolay-transport';
 
 /**
@@ -441,6 +442,26 @@ export interface HostedCheckoutInput {
   successUrl: string;
   failUrl: string;
   buyerIp?: string | null;
+  /**
+   * The owner's PayNKolay customer key (D13): sent only on a payment that
+   * saves a card (or, once PAYNKOLAY_HOSTED_CARD_SELECT is on, to offer a
+   * verified saved card). It is covered by hashDataV2; empty otherwise.
+   */
+  customerKey?: Sensitive | null;
+  /** Ask PayNKolay to store the card (`csAutoSave=true` + `csCardAlias`). Needs `customerKey`. */
+  saveCard?: boolean;
+  /** `csCardAlias`, `Buaze-XXXXXX` (≤ 20 chars of [A-Za-z0-9-]); used to recognise the saved card. */
+  cardAlias?: string;
+}
+
+const HOSTED_CUSTOMER_KEY_RE = /^[A-Z0-9]{11}$/;
+export const CARD_ALIAS_RE = /^[A-Za-z0-9-]{1,20}$/;
+
+/** `csCardAlias` of a payment: `Buaze-` + the last 6 alphanumeric characters of its id, upper-cased. */
+export function cardAliasFor(paymentId: string): string {
+  const alias = `Buaze-${paymentId.replace(/[^A-Za-z0-9]/g, '').slice(-6).toUpperCase()}`;
+  if (!CARD_ALIAS_RE.test(alias)) throw new Error('paynkolay: invalid card alias');
+  return alias;
 }
 
 /** Fields for the auto-submitted form to `${baseUrl}/Vpos`. */
@@ -451,6 +472,15 @@ export function buildHostedCheckout(
 ): { action: string; fields: Record<string, string> } {
   if (!/^[A-Za-z0-9._-]{1,64}$/.test(input.clientRefCode)) {
     throw new Error('paynkolay: clientRefCode must be ASCII [A-Za-z0-9._-]{1,64}');
+  }
+  let customerKey = '';
+  if (input.customerKey) {
+    customerKey = input.customerKey.reveal();
+    if (!HOSTED_CUSTOMER_KEY_RE.test(customerKey)) throw new Error('paynkolay: invalid customer key');
+  }
+  if (input.saveCard) {
+    if (!customerKey) throw new Error('paynkolay: saving a card needs a customer key');
+    if (!input.cardAlias || !CARD_ALIAS_RE.test(input.cardAlias)) throw new Error('paynkolay: invalid card alias');
   }
   const fields: Record<string, string> = {
     sx: cfg.sx,
@@ -467,8 +497,13 @@ export function buildHostedCheckout(
     use3D: 'true',
     transactionType: 'SALES',
     cardHolderIP: input.buyerIp?.trim() || '0.0.0.0',
-    customerKey: '',
+    customerKey,
   };
+  if (input.saveCard) {
+    // Not covered by hashDataV2 (billing spec §3.3): a card stored without these is never bound or charged (D1).
+    fields.csAutoSave = 'true';
+    fields.csCardAlias = input.cardAlias as string;
+  }
   // Hash over the exact strings that go into the form.
   fields.hashDataV2 = paynkolayHash(
     [fields.sx, fields.clientRefCode, fields.amount, fields.successUrl, fields.failUrl, fields.rnd, fields.customerKey],

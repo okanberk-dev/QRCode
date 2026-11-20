@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
+import { BILLING_PAGE_PREFIX, BILLING_PAGE_REFERRER_POLICY, billingLocaleOf, billingPageCsp, generateNonce } from './lib/billing/page-csp';
 
 // Mirror of lib/auth.ts secret resolution. Kept inline so the middleware
 // (edge runtime) doesn't pull in Prisma or Node-only deps. In production
@@ -76,10 +77,46 @@ function rootLocaleRedirect(req: NextRequest): NextResponse {
   return res;
 }
 
+/**
+ * Billing pages (`/billing/{locale}/…`, billing spec D12 / §3.4): an enforced
+ * per-request nonce CSP with 'strict-dynamic'. The policy is also set on the
+ * REQUEST headers so Next.js puts the nonce on its own scripts. An unknown
+ * locale segment goes to the Turkish page of the same path.
+ */
+function billingPage(req: NextRequest): NextResponse {
+  const { pathname, search } = req.nextUrl;
+  const segments = pathname.slice(BILLING_PAGE_PREFIX.length).split('/');
+  if (!billingLocaleOf(segments[0])) {
+    const url = req.nextUrl.clone();
+    // `/billing/de/result` → `/billing/tr/result`; `/billing/result` → `/billing/tr/result`.
+    const first = segments[0] ?? '';
+    const rest = (/^[a-z]{2}$/i.test(first) ? segments.slice(1) : segments).join('/');
+    url.pathname = `${BILLING_PAGE_PREFIX}tr/${rest || 'checkout'}`;
+    url.search = search;
+    return NextResponse.redirect(url);
+  }
+  const nonce = generateNonce();
+  const csp = billingPageCsp(nonce, { dev: process.env.NODE_ENV === 'development' });
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('content-security-policy', csp);
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  res.headers.set('Content-Security-Policy', csp);
+  // same-origin (not no-referrer): the review page's form POST must keep its real Origin (page-csp.ts).
+  res.headers.set('Referrer-Policy', BILLING_PAGE_REFERRER_POLICY);
+  res.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  res.headers.set('Cache-Control', 'private, no-store');
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname === '/') return rootLocaleRedirect(req);
+  if (pathname === '/billing' || pathname.startsWith(BILLING_PAGE_PREFIX)) {
+    if (pathname === '/billing') return NextResponse.redirect(new URL(`${BILLING_PAGE_PREFIX}tr/checkout`, req.url));
+    return billingPage(req);
+  }
 
   // /admin (login page): if the visitor is already authenticated, send
   // them straight to the dashboard. Otherwise the AdminLayout would still
@@ -135,7 +172,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // `/` for the edge locale redirect; otherwise only /admin/* (not the
-  // marketing /[locale]/* pages).
-  matcher: ['/', '/admin/:path*'],
+  // `/` for the edge locale redirect, /admin/* for the admin gate and
+  // /billing/* for the billing pages' nonce CSP (not the marketing
+  // /[locale]/* pages).
+  matcher: ['/', '/admin/:path*', '/billing', '/billing/:path*'],
 };

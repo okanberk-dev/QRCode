@@ -434,3 +434,32 @@ export async function deleteSavedCard(
   const res = await t.postForm(req.url, req.form);
   return parseCardDelete(parseJsonBody(res, 'card_delete_failed'));
 }
+
+/** A charge request PayNKolay may still be processing: wait longer than for a list call. */
+export const CHARGE_TIMEOUT_MS = 25_000;
+
+/**
+ * Merchant-initiated charge of a saved card (D15): server-to-server, use3D
+ * false, only through the MIT terminal (or the hosted sx once PayNKolay
+ * confirmed in writing that its hosted page always enforces 3D). Never throws
+ * for a provider answer: a timeout, a network failure or any other transport
+ * error is `unknown` — a missing confirmation is never "not charged" (D17),
+ * and only a PaymentList SUCCESS row settles the payment. Throws only when the
+ * request cannot be built (no MIT path, bad input): nothing was sent then.
+ */
+export async function chargeSavedCard(
+  cfg: PaynkolayConfig,
+  t: PaynkolayTransport,
+  input: SavedCardChargeInput,
+  now: Date,
+): Promise<DirectChargeOutcome> {
+  const req = savedCardChargeRequest(cfg, input, now);
+  let res: PaynkolayHttpResult;
+  try {
+    res = await t.postForm(req.url, req.form, { timeoutMs: CHARGE_TIMEOUT_MS });
+  } catch (err) {
+    const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : '';
+    return { kind: 'unknown', why: code === 'timeout' ? 'timeout' : 'empty' };
+  }
+  return parseDirectCharge(res);
+}

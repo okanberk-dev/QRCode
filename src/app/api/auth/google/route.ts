@@ -6,6 +6,7 @@ import { signJwt } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { verifyFirebaseIdToken, getFirebaseProjectId } from '@/lib/firebase-admin';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { recordLoginRiskScore } from '@/lib/login-risk';
 import { handleOAuthSignIn, type OAuthDeps } from '@/lib/oauth';
 import { createUserSessionForToken } from '@/lib/user-session';
 
@@ -99,6 +100,8 @@ export async function POST(req: NextRequest) {
     }
 
     const { user, isNewUser, token } = result;
+    // Card checkout gate (billing spec §3.3): the score of this assessed sign-in.
+    await recordLoginRiskScore(user.id, captcha);
 
     resetRateLimit(`google-auth:ip:${ip}`);
 

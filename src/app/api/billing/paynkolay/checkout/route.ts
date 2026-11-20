@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
+import { loadCardVaultDeps } from '@/lib/billing/card-vault';
+import { interstitialHeaders, renderCheckoutInterstitial } from '@/lib/billing/checkout-interstitial';
+import { checkoutPostCore, parseCheckoutForm } from '@/lib/billing/checkout-post';
+import { loadBillingFlags, loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
+import { allowedBillingOrigins, billingFormOriginOk } from '@/lib/billing/owner-guard';
+import { safeError } from '@/lib/billing/redact';
+import { checkoutIpBlockKey } from '@/lib/billing/return-flow';
+import { getTrustedClientIp } from '@/lib/client-ip';
 import { prisma } from '@/lib/prisma';
-import { getClientIp, rateLimit } from '@/lib/rate-limit';
+import { isBlocked, rateLimit } from '@/lib/rate-limit';
+import { isRecaptchaServerConfigured } from '@/lib/recaptcha';
 import { SITE_URL } from '@/lib/site';
 import { buildHostedCheckout, getPaynkolayConfig } from '@/lib/payment/paynkolay';
 import { paynkolayCheckoutAmounts, toAdminRow } from '@/lib/subscription-plans';
@@ -12,19 +20,31 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * GET /api/billing/paynkolay/checkout?planId=…&cycle=monthly|yearly&locale=tr
+ * PayNKolay checkout (CLAUDE.md §44, billing spec §8.4).
  *
- * Starts a card payment for one subscription period (CLAUDE.md §44): records
- * a pending BillingPayment, then answers with a page that auto-submits the
- * signed form to PayNKolay's hosted card page. Only the workspace owner pays;
- * the amount comes from the plan in the database, never from the browser.
+ * GET  ?planId=…&cycle=monthly|yearly&locale=tr — the links on /pricing and
+ *      in the plan picker. With saved cards on (PAYNKOLAY_CARD_STORAGE) it
+ *      303s to the review page (`/billing/{locale}/checkout`), where the owner
+ *      can choose to save the card. Otherwise it is the original one-step
+ *      flow: a pending BillingPayment and the hand-off page.
+ * POST — the review page's form (checkoutPostCore): card-testing controls,
+ *      card-save consent, owner_paying lock, then the hand-off page.
+ *
+ * The amount always comes from the plan in the database. The hand-off page
+ * carries its own hash-based CSP (the site CSP is not applied to this path,
+ * next.config.ts, because Chrome checks form-action on the 3D Secure
+ * redirect chain).
  */
-function htmlEscape(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+
+function htmlResponse(html: string): NextResponse {
+  return new NextResponse(html, { status: 200, headers: interstitialHeaders() });
+}
+
+function seeOther(path: string): NextResponse {
+  const res = NextResponse.redirect(new URL(path, SITE_URL), 303);
+  res.headers.set('Cache-Control', 'no-store');
+  res.headers.set('Referrer-Policy', 'no-referrer');
+  return res;
 }
 
 export async function GET(req: NextRequest) {
@@ -35,6 +55,16 @@ export async function GET(req: NextRequest) {
   // cannot reach. The return route builds its redirects the same way.
   const accountUrl = (status: string) =>
     new URL(`/${locale}/dashboard/account?section=billing&payment=${status}`, SITE_URL);
+  const planId = (sp.get('planId') || '').trim();
+  const cycle = sp.get('cycle') === 'yearly' ? 'yearly' : 'monthly';
+
+  const flags = await loadBillingFlags();
+  if (flags.cardStorage) {
+    // Saved cards: the review page shows the order, the save option and its consent before the hand-off.
+    const qs = new URLSearchParams({ cycle });
+    if (/^[A-Za-z0-9_-]{1,64}$/.test(planId)) qs.set('planId', planId);
+    return seeOther(`/billing/${locale}/checkout?${qs.toString()}`);
+  }
 
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
@@ -63,8 +93,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(accountUrl('unavailable'));
   }
 
-  const planId = (sp.get('planId') || '').trim();
-  const cycle = sp.get('cycle') === 'yearly' ? 'yearly' : 'monthly';
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(planId)) return NextResponse.redirect(accountUrl('unavailable'));
 
   const row = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
@@ -98,29 +126,75 @@ export async function GET(req: NextRequest) {
     amountMinor: payment.amountMinor,
     successUrl: returnUrl,
     failUrl: returnUrl,
-    buyerIp: getClientIp(req.headers),
+    buyerIp: getTrustedClientIp(req.headers),
   });
 
-  const inputs = Object.entries(fields)
-    .map(([k, v]) => `<input type="hidden" name="${htmlEscape(k)}" value="${htmlEscape(v)}">`)
-    .join('');
-  const label = locale === 'en' ? 'Continue to secure payment' : 'Güvenli ödemeye devam et';
-  const note =
-    locale === 'en'
-      ? 'You are being sent to the PayNKolay card page. Card details are entered there, not on Buaze.'
-      : 'PayNKolay kart sayfasına yönlendiriliyorsunuz. Kart bilgileri Buaze’de değil, orada girilir.';
-  const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>PayNKolay</title><style>body{font-family:system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#FAFAFA;color:#0A0A0A}main{max-width:420px;padding:24px;text-align:center}button{margin-top:16px;padding:12px 20px;border-radius:999px;border:0;background:#0A0A0A;color:#fff;font-size:15px;cursor:pointer}p{color:#525252;font-size:14px;line-height:1.5}</style></head><body><main><p>${htmlEscape(note)}</p><form id="pnk" method="post" action="${htmlEscape(action)}">${inputs}<button type="submit">${htmlEscape(label)}</button></form></main><script>document.getElementById('pnk').submit();</script></body></html>`;
+  return htmlResponse(
+    renderCheckoutInterstitial({
+      action,
+      fields,
+      locale,
+      summary: {
+        planName: locale === 'en' ? row.nameEn : row.nameTr,
+        cycle,
+        amountMinor: payment.amountMinor,
+        saveCard: false,
+        autoRenewFrom: null,
+        intent: 'new',
+      },
+      backUrl: `/${locale}/dashboard/account?section=billing`,
+    }),
+  );
+}
 
-  return new NextResponse(html, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-store',
-      // No form-action here on purpose: the POST continues to the card
-      // issuer's 3D Secure page and Chrome checks form-action on redirects.
-      'Content-Security-Policy':
-        "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
-      'Referrer-Policy': 'no-referrer',
-    },
-  });
+export async function POST(req: NextRequest) {
+  const contentType = req.headers.get('content-type') ?? '';
+  let form: FormData | null = null;
+  if (contentType.startsWith('application/x-www-form-urlencoded') || contentType.startsWith('multipart/form-data')) {
+    try {
+      form = await req.formData();
+    } catch {
+      form = null;
+    }
+  }
+  const read = (name: string) => {
+    const value = form?.get(name);
+    return typeof value === 'string' ? value.slice(0, 256) : null;
+  };
+  const parsed = parseCheckoutForm(read);
+  if (!form) return seeOther(`/billing/${parsed.locale}/checkout?error=unavailable`);
+
+  const flags = await loadBillingFlags();
+  const origin = req.headers.get('origin');
+  const ip = getTrustedClientIp(req.headers);
+  try {
+    const outcome = await checkoutPostCore(
+      {
+        db: prisma,
+        cfg: getPaynkolayConfig(),
+        flags,
+        vault: flags.cardStorage ? await loadCardVaultDeps() : null,
+        envCheck: (env) => loadHostedPaymentEnvCheck(env),
+        rateLimit,
+        isIpBlocked: (value) => isBlocked(checkoutIpBlockKey(value)),
+        recaptchaConfigured: isRecaptchaServerConfigured(),
+        siteUrl: SITE_URL,
+        now: () => new Date(),
+        capture: (message, fingerprint, extra) =>
+          Sentry.captureMessage(message, { level: 'error', fingerprint: [fingerprint], tags: { billing: 'checkout' }, extra }),
+      },
+      {
+        actor: await getPanelActorFromRequest(req),
+        originOk: billingFormOriginOk(origin, req.headers.get('sec-fetch-site'), allowedBillingOrigins(req.nextUrl.origin)),
+        ip,
+        userAgent: req.headers.get('user-agent'),
+      },
+      parsed,
+    );
+    if (outcome.kind === 'redirect') return seeOther(outcome.location);
+    return htmlResponse(outcome.html);
+  } catch (err) {
+    Sentry.captureException(safeError(err, 'checkout'), { tags: { billing: 'checkout' } });
+    return seeOther(`/billing/${parsed.locale}/checkout?error=unavailable`);
+  }
 }

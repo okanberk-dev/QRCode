@@ -297,6 +297,8 @@ function softFail(
   reason: string,
   detail: Record<string, unknown>,
   failure: RecaptchaFailure,
+  /** Soft-passed assessments keep their score (the checkout gate stores it, billing spec §3.3). */
+  score?: number,
 ): RecaptchaSuccess | RecaptchaFailure {
   if (ENFORCE) return failure;
   console.warn(`[recaptcha] ${reason} — soft-pass (set RECAPTCHA_ENFORCE=true to block)`, detail);
@@ -306,7 +308,7 @@ function softFail(
   // {reason, action}. PII-safe: caller details never include IP, token,
   // or user identifiers — see CLAUDE.md §37.3 #2.
   Sentry.captureMessage('reCAPTCHA soft-pass', buildSoftPassSentryEnvelope(reason, detail));
-  return { ok: true, skipped: true };
+  return { ok: true, skipped: true, ...(typeof score === 'number' ? { score } : {}) };
 }
 
 export async function verifyRecaptchaToken(
@@ -389,11 +391,12 @@ export async function verifyRecaptchaToken(
     }
 
     if (score < MIN_SCORE) {
-      return softFail('low score', { score, reasons, action: expectedAction }, {
-        ok: false,
-        error: msg('lowScore', locale),
-        status: 403,
-      });
+      return softFail(
+        'low score',
+        { score, reasons, action: expectedAction },
+        { ok: false, error: msg('lowScore', locale), status: 403 },
+        score,
+      );
     }
 
     return {
