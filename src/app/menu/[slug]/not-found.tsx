@@ -1,9 +1,14 @@
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { UtensilsCrossed, ArrowLeft } from 'lucide-react';
 
 export default function MenuNotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FFFFFF] px-6 py-16">
+    // A menu URL never shows Clash Display (licence, CLAUDE.md §11).
+    <div
+      className="flex min-h-screen items-center justify-center bg-[#FFFFFF] px-6 py-16"
+      style={{ '--font-heading': 'var(--font-menu-heading)' } as CSSProperties}
+    >
       <div className="mx-auto max-w-md rounded-[24px] border border-[#EDEDED] bg-white p-10 text-center shadow-sm">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C6F24E]">
           <UtensilsCrossed size={28} strokeWidth={2} className="text-[#0A0A0A]" />

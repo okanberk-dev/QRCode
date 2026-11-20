@@ -109,3 +109,11 @@ test('getMenuCopy falls back to Turkish for anything but en', () => {
   assert.equal(getMenuCopy('en'), en);
   assert.equal(getMenuCopy('de' as 'tr'), tr);
 });
+
+test('contrast note reads the surface name mid-sentence in lower case', () => {
+  const trText = tr.design.contrastText(tr.design.surfaces.night, false);
+  assert.match(trText, /^Bu renk gece mavisi zeminde yazı için çok açık\./);
+  assert.match(trText, /daha koyu bir ton kullanılıyor\.$/);
+  assert.equal(tr.design.contrastText('Işık', true).includes('ışık zeminde'), true, 'Turkish dotless i lower-cases correctly');
+  assert.match(en.design.contrastText(en.design.surfaces.white, true), /for text on white\. A lighter shade/);
+});

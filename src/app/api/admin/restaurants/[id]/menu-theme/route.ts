@@ -5,8 +5,10 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { validateBody } from '@/lib/api/validate';
 import { rateLimit } from '@/lib/rate-limit';
-import { MENU_THEMES, isValidHexColor } from '@/lib/validations';
+import { MENU_THEMES } from '@/lib/validations';
 import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
+import { PRESETS, normalizeMenuDesign, readMenuDesign } from '@/lib/menu-design';
+import { AccentWrite } from '@/lib/menu-design-schema';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,13 +32,9 @@ export const dynamic = 'force-dynamic';
 const Body = z
   .object({
     menuTheme: z.enum(MENU_THEMES).optional(),
-    // Color: 6-digit hex like #C6F24E or null (clears override → falls back to
-    // primaryColor at render time).
-    menuAccentColor: z
-      .string()
-      .refine((v) => isValidHexColor(v), { message: 'invalid_hex_color' })
-      .nullable()
-      .optional(),
+    // Color: #RGB / #RRGGBB, stored as uppercase #RRGGBB, or null (clears the
+    // override → falls back to primaryColor at render time).
+    menuAccentColor: AccentWrite.nullable().optional(),
     // Logo: data:image/ base64 (≤300 KB) or http(s) URL (≤1000 chars), or null.
     menuLogoUrl: z
       .string()
@@ -56,6 +54,9 @@ const Body = z
       )
       .nullable()
       .optional(),
+    // Reset / remove only — admins do not design for owners (menu-design-final §8.2).
+    menuDesign: z.null().optional(),
+    menuCoverUrl: z.null().optional(),
   })
   .strict();
 
@@ -115,6 +116,8 @@ export async function PATCH(
       menuTheme: true,
       menuAccentColor: true,
       menuLogoUrl: true,
+      menuDesign: true,
+      menuCoverVersion: true,
     },
   });
   if (!before) {
@@ -123,9 +126,24 @@ export async function PATCH(
 
   // Build a partial patch — only include keys the client explicitly sent.
   // Mirrors the feature-access endpoint's "no fields → 400" pattern.
-  const data: Record<string, unknown> = {};
+  const data: Prisma.RestaurantUpdateInput = {};
   if (parsed.data.menuTheme !== undefined) {
     data.menuTheme = parsed.data.menuTheme;
+  }
+  if (parsed.data.menuDesign === null) {
+    data.menuDesign = Prisma.DbNull;
+  } else if (parsed.data.menuTheme !== undefined) {
+    // Family consistency: a stored design from another family is rewritten
+    // onto the new theme's own preset, keeping the owner's knobs + tagline.
+    const stored = readMenuDesign(before.menuDesign);
+    if (stored && PRESETS[stored.preset].family !== parsed.data.menuTheme) {
+      const rewritten = normalizeMenuDesign(parsed.data.menuTheme, { ...stored, preset: parsed.data.menuTheme });
+      data.menuDesign = rewritten ? (rewritten as unknown as Prisma.InputJsonObject) : Prisma.DbNull;
+    }
+  }
+  if (parsed.data.menuCoverUrl === null) {
+    data.menuCoverUrl = null;
+    data.menuCoverVersion = null;
   }
   if (parsed.data.menuAccentColor !== undefined) {
     data.menuAccentColor = parsed.data.menuAccentColor;
@@ -148,6 +166,8 @@ export async function PATCH(
       menuTheme: true,
       menuAccentColor: true,
       menuLogoUrl: true,
+      menuDesign: true,
+      menuCoverVersion: true,
       menuUpdatedAt: true,
       slug: true,
     },
@@ -172,11 +192,15 @@ export async function PATCH(
         theme: before.menuTheme,
         accent: before.menuAccentColor,
         hasLogo: Boolean(before.menuLogoUrl),
+        hasDesign: before.menuDesign !== null,
+        hasCover: Boolean(before.menuCoverVersion),
       },
       after: {
         theme: updated.menuTheme,
         accent: updated.menuAccentColor,
         hasLogo: Boolean(updated.menuLogoUrl),
+        hasDesign: updated.menuDesign !== null,
+        hasCover: Boolean(updated.menuCoverVersion),
       },
     },
   });

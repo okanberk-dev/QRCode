@@ -15,6 +15,7 @@ import { Badge, EmptyState, PageHeader } from '@/components/ui';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { MENU_PRESET_LABELS, effectivePresetId, readMenuDesign } from '@/lib/menu-design';
 
 /**
  * Admin read-only menu viewer.
@@ -91,6 +92,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
       menuTheme: true,
       menuAccentColor: true,
       menuLogoUrl: true,
+      menuDesign: true,
       menuEnabled: true,
       menuPublished: true,
       primaryColor: true,
@@ -128,7 +130,9 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
 
   const totalItems = categories.reduce((acc, c) => acc + c.items.length, 0);
   const visibleCategories = categories.filter((c) => c.isVisible).length;
-  const themeLabel = THEME_LABEL[restaurant.menuTheme] ?? restaurant.menuTheme;
+  // The preset that renders (menu-design-final §11.2); the family label is the fallback.
+  const presetId = effectivePresetId(restaurant.menuTheme, readMenuDesign(restaurant.menuDesign));
+  const themeLabel = MENU_PRESET_LABELS[presetId]?.tr ?? THEME_LABEL[restaurant.menuTheme] ?? restaurant.menuTheme;
   const accent = restaurant.menuAccentColor || restaurant.primaryColor || '#C6F24E';
 
   return (

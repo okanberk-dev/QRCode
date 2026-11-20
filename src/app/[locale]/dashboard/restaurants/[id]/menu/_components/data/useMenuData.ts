@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MENU_THEMES } from '@/lib/validations';
+import { readMenuDesign } from '@/lib/menu-design';
 import { getMenuCopy } from '../menu-i18n';
 import type { CategoryShape, MenuData, RestaurantShape } from '../menu-types';
 
@@ -43,6 +44,8 @@ export async function fetchMenuData(restaurantId: string, isTr: boolean): Promis
     menuTheme: (MENU_THEMES as readonly string[]).includes(r.menuTheme) ? r.menuTheme : 'classic',
     menuAccentColor: r.menuAccentColor ?? null,
     menuLogoUrl: r.menuLogoUrl ?? null,
+    menuDesign: readMenuDesign(r.menuDesign),
+    menuCoverUrl: typeof r.menuCoverUrl === 'string' ? r.menuCoverUrl : null,
   };
   const categories: CategoryShape[] = (c.categories ?? []).map((cat: CategoryShape) => ({
     ...cat,

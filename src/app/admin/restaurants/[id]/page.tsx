@@ -11,6 +11,7 @@ import RestaurantDetailLoading from './loading';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
 import { SECTORS } from '@/lib/sectors';
 import { MENU_THEMES, type MenuTheme as MenuThemeKey } from '@/lib/validations';
+import { MENU_PRESET_LABELS, countOverrides, effectivePresetId, readMenuDesign, type MenuDesign } from '@/lib/menu-design';
 import { formatStampInTimeZone } from '@/lib/timezone';
 
 // Theme label map — matches owner builder copy (CLAUDE.md §12). TR-only here
@@ -129,6 +130,9 @@ export default function RestaurantDetailPage() {
   const [menuTheme, setMenuTheme] = useState<MenuThemeKey>('classic');
   const [menuAccentColor, setMenuAccentColor] = useState<string | null>(null);
   const [menuLogoUrl, setMenuLogoUrl] = useState<string | null>(null);
+  // Owner's menu design (presets + knobs, menu-design-final §11.2): read-only
+  // summary here; admins can only reset it.
+  const [menuDesign, setMenuDesign] = useState<MenuDesign | null>(null);
   const [themeSaving, setThemeSaving] = useState(false);
   const [themeNotice, setThemeNotice] = useState<{ kind: 'success' | 'danger'; text: string } | null>(null);
   const [pulseAiEnabled, setPulseAiEnabled] = useState(true);
@@ -231,6 +235,7 @@ export default function RestaurantDetailPage() {
           setMenuTheme(theme);
           setMenuAccentColor(data.menuAccentColor ?? null);
           setMenuLogoUrl(data.menuLogoUrl ?? null);
+          setMenuDesign(readMenuDesign(data.menuDesign));
           setPulseAiEnabled(data.pulseAiEnabled ?? true);
           setAiAnalyticsEnabled(data.aiAnalyticsEnabled ?? true);
           setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
@@ -389,6 +394,7 @@ export default function RestaurantDetailPage() {
     menuTheme?: MenuThemeKey;
     menuAccentColor?: string | null;
     menuLogoUrl?: string | null;
+    menuDesign?: null;
   }) => {
     setThemeSaving(true);
     setThemeNotice(null);
@@ -405,6 +411,8 @@ export default function RestaurantDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Tema güncellenemedi');
+      // A theme change rewrites the design to the new family (and a reset clears it).
+      if (data.restaurant && 'menuDesign' in data.restaurant) setMenuDesign(readMenuDesign(data.restaurant.menuDesign));
       setThemeNotice({ kind: 'success', text: 'Menü görünümü kaydedildi' });
       setTimeout(() => setThemeNotice(null), 3000);
     } catch (e) {
@@ -416,6 +424,18 @@ export default function RestaurantDetailPage() {
     }
     setThemeSaving(false);
   };
+
+  const resetMenuDesign = () => {
+    askConfirm({
+      title: 'Tasarımı sıfırla?',
+      body: 'Menü tasarımı stilin varsayılanlarına döner. Vurgu rengi, logo ve kapak değişmez.',
+      confirmLabel: 'Tasarımı sıfırla',
+      cancelLabel: 'İptal',
+      onConfirm: () => saveMenuTheme({ menuDesign: null }),
+    });
+  };
+  const designPreset = effectivePresetId(menuTheme, menuDesign);
+  const designOverrides = countOverrides(menuDesign);
 
   const handleDelete = () => {
     askConfirm({
@@ -719,6 +739,23 @@ export default function RestaurantDetailPage() {
                   </button>
                 );
               })}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <p className="text-[12.5px] text-[#525252]">
+                Stil: <span className="font-semibold text-[#0A0A0A]">{MENU_PRESET_LABELS[designPreset].tr}</span>
+                {' · '}
+                {designOverrides > 0 ? `${designOverrides} özelleştirme` : 'özelleştirme yok'}
+              </p>
+              {menuDesign && (
+                <button
+                  type="button"
+                  onClick={resetMenuDesign}
+                  disabled={themeSaving}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-50"
+                >
+                  Tasarımı sıfırla
+                </button>
+              )}
             </div>
           </div>
 
