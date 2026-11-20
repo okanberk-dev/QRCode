@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import type { MenuNav } from '@/lib/menu-design';
 
-const NAV_PAD = 20;
+/** Minimum visible margin around the followed link (the edge-fade mask is 16/24 px). */
+const NAV_FADE = 24;
 
 /**
  * Sticky category nav: pills or underline. Links stay native anchors
@@ -31,13 +32,18 @@ export default function CategoryNav({
     if (!scroller || !activeId) return;
     const link = scroller.querySelector<HTMLElement>(`[data-nav-id="${CSS.escape(activeId)}"]`);
     if (!link) return;
+    // The row's real start padding (it grows on wide screens to line up with
+    // the content column), never less than the edge fade.
+    const row = link.parentElement;
+    const padStart = row ? parseFloat(window.getComputedStyle(row).paddingLeft) || 0 : 0;
+    const pad = Math.max(NAV_FADE, Math.min(padStart, scroller.clientWidth / 4));
     const left = link.offsetLeft;
     const right = left + link.offsetWidth;
     const viewLeft = scroller.scrollLeft;
     const viewRight = viewLeft + scroller.clientWidth;
-    if (left >= viewLeft + NAV_PAD - 1 && right <= viewRight - NAV_PAD + 1) return;
+    if (left >= viewLeft + NAV_FADE - 1 && right <= viewRight - NAV_FADE + 1) return;
     const reduced = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    scroller.scrollTo({ left: Math.max(0, left - NAV_PAD), behavior: reduced ? 'auto' : 'smooth' });
+    scroller.scrollTo({ left: Math.max(0, left - pad), behavior: reduced ? 'auto' : 'smooth' });
   }, [activeId]);
 
   const pills = variant === 'pills';

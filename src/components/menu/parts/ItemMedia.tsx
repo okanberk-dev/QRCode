@@ -10,11 +10,13 @@ import { monogramOf, type MenuLocale } from '../menu-labels';
  * `className` sets the box size / aspect ratio and radius.
  */
 export default function ItemMedia({
-  src, name, locale, eager = false, highPriority = false, soldOut = false, className = '', children,
+  src, name, locale, alt = '', eager = false, highPriority = false, soldOut = false, className = '', children,
 }: {
   src: string | null;
   name: string;
   locale: MenuLocale;
+  /** Cards repeat the name next to the photo, so it is decorative there; the sheet passes the name. */
+  alt?: string;
   eager?: boolean;
   highPriority?: boolean;
   soldOut?: boolean;
@@ -52,7 +54,7 @@ export default function ItemMedia({
         <img
           ref={imgRef}
           src={src ?? undefined}
-          alt=""
+          alt={alt}
           decoding="async"
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={highPriority ? 'high' : undefined}

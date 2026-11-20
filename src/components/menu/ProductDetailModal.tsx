@@ -31,7 +31,7 @@ export default function ProductDetailModal({
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
+    // Focus returns to the opening card from PublicMenuView (see openerId).
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus({ preventScroll: true });
@@ -59,7 +59,6 @@ export default function ProductDetailModal({
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKey);
-      if (opener && typeof opener.focus === 'function' && opener.isConnected) opener.focus({ preventScroll: true });
     };
   }, [onClose]);
 
@@ -92,6 +91,7 @@ export default function ProductDetailModal({
             <ItemMedia
               src={item.imageUrl}
               name={item.name}
+              alt={item.name}
               locale={locale}
               eager
               soldOut={item.isOutOfStock}

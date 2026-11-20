@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Clock, MapPin, Phone } from 'lucide-react';
 import { monogramOf } from '../menu-labels';
 import type { MenuRenderContext } from './types';
@@ -31,12 +31,11 @@ function MetaLine({ ctx, centered, onBanner }: { ctx: MenuRenderContext; centere
   }
   if (items.length === 0) return null;
   return (
-    <p className={`flex flex-wrap gap-x-2.5 gap-y-1 text-[13px] leading-5 ${onBanner ? 'text-(--m-on-banner)' : 'text-(--m-ink-2)'} ${centered ? 'justify-center' : ''}`}>
-      {items.map((it, i) => (
-        <Fragment key={it.key}>
-          {i > 0 && <span aria-hidden>·</span>}
-          <span className="inline-flex min-w-0 gap-1.5">{it.node}</span>
-        </Fragment>
+    // The icons already separate the parts; a "·" between them dangled at the
+    // end of a wrapped line on phones, so the parts are spaced instead.
+    <p className={`flex flex-wrap gap-x-4 gap-y-1 text-[13px] leading-5 ${onBanner ? 'text-(--m-on-banner)' : 'text-(--m-ink-2)'} ${centered ? 'justify-center' : ''}`}>
+      {items.map((it) => (
+        <span key={it.key} className="inline-flex min-w-0 gap-1.5">{it.node}</span>
       ))}
     </p>
   );

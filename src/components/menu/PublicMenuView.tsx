@@ -149,7 +149,12 @@ export default function PublicMenuView({
     onCategoryClick(categoryId);
   }, [onCategoryClick]);
 
+  // The card whose sheet is open. Focus returns to its button on close; the
+  // sheet cannot remember the opener itself, because making the canvas inert
+  // in the same commit already moved focus to <body>.
+  const openerId = useRef<string | null>(null);
   const onProductClick = useCallback((item: MenuItemView, categoryId: string | null) => {
+    openerId.current = item.id;
     setDetailItem(item);
     if (analyticsEnabled) analytics.trackProductClick(item.id, categoryId);
   }, [analyticsEnabled, analytics]);
@@ -183,6 +188,15 @@ export default function PublicMenuView({
   // JavaScript fails stays usable once CSS has hidden the splash.
   const inertCanvas = (mounted && splashOn) || detailItem !== null;
   const closeDetail = useCallback(() => setDetailItem(null), []);
+  useEffect(() => {
+    // Runs after the commit that removed `inert`, so the card can take focus.
+    if (detailItem !== null || !openerId.current) return;
+    const id = openerId.current;
+    openerId.current = null;
+    canvasRef.current
+      ?.querySelector<HTMLElement>(`[data-pid="${CSS.escape(id)}"] button`)
+      ?.focus({ preventScroll: true });
+  }, [detailItem]);
   const endSplash = useCallback(() => setSplashOn(false), []);
 
   return (
