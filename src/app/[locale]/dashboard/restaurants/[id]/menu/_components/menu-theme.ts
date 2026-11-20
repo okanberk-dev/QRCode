@@ -90,3 +90,33 @@ export function settleThemeSave(
   const next: ThemeSyncState = { ...state, inFlight, confirmed, confirmedSeq };
   return { state: next, ui: inFlight === 0 ? confirmed : null };
 }
+
+// ── Local design draft (Menu Studio, spec §5.7 / §7.11) ──────────────────
+// Theme, accent and logo change only the preview until "Uygula". Apply sends
+// exactly the fields that differ from what is saved.
+
+function accentKey(value: string | null): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  return normaliseHex(value) ?? value;
+}
+
+/**
+ * The PATCH that turns `applied` into `draft` — only changed keys, `{}` when
+ * nothing changed. Accent colours are compared after `normaliseHex`
+ * (`#c6f24e` equals `#C6F24E`) and sent normalised; the logo is compared as a
+ * string, and removing it sends `null`.
+ */
+export function themeDiff(applied: ThemeValues, draft: ThemeValues): Partial<ThemeValues> {
+  const diff: Partial<ThemeValues> = {};
+  if (draft.menuTheme !== applied.menuTheme) diff.menuTheme = draft.menuTheme;
+  const accent = accentKey(draft.menuAccentColor);
+  if (accent !== accentKey(applied.menuAccentColor)) diff.menuAccentColor = accent;
+  const logo = draft.menuLogoUrl || null;
+  if (logo !== (applied.menuLogoUrl || null)) diff.menuLogoUrl = logo;
+  return diff;
+}
+
+/** True when the draft has something "Uygula" would send. */
+export function isThemeDirty(applied: ThemeValues, draft: ThemeValues): boolean {
+  return Object.keys(themeDiff(applied, draft)).length > 0;
+}
