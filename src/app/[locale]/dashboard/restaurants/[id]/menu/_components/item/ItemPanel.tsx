@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronUp, Copy, Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
 import { AlertBanner, PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
 import type { UndoRun } from '../data/useMenuActions';
@@ -24,6 +24,17 @@ export interface ItemPanelSaved {
 }
 
 /**
+ * The form of one panel instance, kept by the page so a remount that is not a
+ * new open (the 1024px breakpoint flips docked ⇄ sheet) seeds the new panel
+ * with what was typed. `key` names the instance; a new open gets a new key.
+ */
+export interface ItemPanelDraft {
+  key: string;
+  initial: ItemFormValues;
+  values: ItemFormValues;
+}
+
+/**
  * Add / edit one item (spec §7.8). `docked`: the right column's "Ürün" tab
  * (≥1024) — the outline stays usable next to it. `sheet`: a right (tablet) or
  * bottom (phone) sheet with its own "Düzenle / Önizle" switch.
@@ -35,7 +46,7 @@ export interface ItemPanelSaved {
  */
 export function ItemPanel({
   target, presentation, categories, visibleIds, readOnly, focusField, onRequestClose, onSaved, onGone,
-  onNavigate, onDraftChange, onDirtyChange, leaveConfirm, sheetTab = 'edit', onSheetTab, preview,
+  onNavigate, onDraftChange, onDirtyChange, leaveConfirm, sheetTab = 'edit', onSheetTab, preview, draftStash, draftKey,
 }: {
   target: ItemTarget;
   presentation: 'docked' | 'sheet';
@@ -56,21 +67,33 @@ export function ItemPanel({
   onSheetTab?: (tab: 'edit' | 'preview') => void;
   /** Sheet "Önizle" tab content (owns the preview slot while shown). */
   preview?: ReactNode;
+  /** Page-held copy of this instance's form (see `ItemPanelDraft`). */
+  draftStash?: MutableRefObject<ItemPanelDraft | null>;
+  draftKey?: string;
 }) {
   const { copy, isTr, isPublished, canEdit, finePointer, actions, toaster } = useStudio();
   const smUp = useIsSmUp();
 
   const owner = target.mode === 'edit' ? categories.find((c) => c.items.some((i) => i.id === target.itemId)) : undefined;
   const item = owner && target.mode === 'edit' ? owner.items.find((i) => i.id === target.itemId) : undefined;
-  const [initial] = useState<ItemFormValues>(() =>
-    initialItemFormValues(
-      target.mode,
-      target.mode === 'edit' && item ? { ...item, categoryId: owner?.id } : { categoryId: target.mode === 'create' ? target.categoryId : undefined },
-      categories[0]?.id ?? '',
-      isTr,
-    ),
+  // Same instance remounted in the other presentation: keep its baseline and what was typed.
+  const [restored] = useState<ItemPanelDraft | null>(() =>
+    draftStash && draftKey && draftStash.current?.key === draftKey ? draftStash.current : null,
   );
-  const [values, setValues] = useState<ItemFormValues>(initial);
+  const [initial] = useState<ItemFormValues>(
+    () =>
+      restored?.initial ??
+      initialItemFormValues(
+        target.mode,
+        target.mode === 'edit' && item ? { ...item, categoryId: owner?.id } : { categoryId: target.mode === 'create' ? target.categoryId : undefined },
+        categories[0]?.id ?? '',
+        isTr,
+      ),
+  );
+  const [values, setValues] = useState<ItemFormValues>(() => restored?.values ?? initial);
+  useEffect(() => {
+    if (draftStash && draftKey) draftStash.current = { key: draftKey, initial, values };
+  }, [draftStash, draftKey, initial, values]);
   const [nameError, setNameError] = useState<string | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);

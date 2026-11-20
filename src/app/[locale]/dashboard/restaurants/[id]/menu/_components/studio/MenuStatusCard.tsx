@@ -12,6 +12,7 @@ import { useMenuCopy } from '../kit/useMenuCopy';
 import type { MenuFilter } from '../menu-filter';
 import type { MenuNudges } from '../menu-status';
 import type { RestaurantShape } from '../menu-types';
+import { STATUS_TEXT_COLUMN } from './status-layout';
 
 export type MenuStepId = 'category' | 'items' | 'publish';
 export type MenuLockReason = 'locked' | 'viewer' | null;
@@ -219,12 +220,12 @@ export function MenuStatusCard({
       </Badge>,
       <>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
-          <div className="min-w-0">
+          <div className={STATUS_TEXT_COLUMN}>
             {title(copy.status.liveTitle)}
             <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">{copy.status.liveBody}</p>
             {updated && <p className="mt-0.5 text-[12px] text-[#737373]">{updated}</p>}
           </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-2 lg:shrink-0 lg:justify-end">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
             {linkChip}
             {copyButton}
             {shareButton}
@@ -287,12 +288,12 @@ export function MenuStatusCard({
     <Badge kind="off">{copy.status.draftBadge}</Badge>,
     <>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
-        <div className="min-w-0">
+        <div className={STATUS_TEXT_COLUMN}>
           {title(copy.status.draftTitle)}
           <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">{copy.status.draftBody}</p>
           {updated && <p className="mt-0.5 text-[12px] text-[#737373]">{updated}</p>}
         </div>
-        <div className="flex flex-col gap-2 lg:shrink-0 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:min-w-0 lg:justify-end">
           <ol aria-label={copy.status.stepsAria} className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center">
             {steps.map((step, idx) => {
               const current = readiness.nextStep === step.id;
@@ -341,7 +342,7 @@ export function MenuStatusCard({
             onClick={() => !blocked && !publishBusy && onPublish()}
             aria-disabled={blocked || publishBusy || undefined}
             aria-describedby={!readiness.canPublish ? 'menu-publish-reason' : undefined}
-            className={`bz-btn-lime min-h-[44px] w-full lg:w-auto ${blocked ? 'cursor-not-allowed opacity-50' : ''}`}
+            className={`bz-btn-lime min-h-[44px] w-full sm:w-auto ${blocked ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             {publishBusy ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Rocket size={14} strokeWidth={2} aria-hidden="true" />}
             {publishBusy ? copy.status.publishing : copy.status.publish}

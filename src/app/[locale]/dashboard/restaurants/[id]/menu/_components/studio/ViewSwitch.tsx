@@ -2,6 +2,7 @@
 
 import { PencilLine, Smartphone, ToggleRight } from 'lucide-react';
 import { useMenuCopy } from '../kit/useMenuCopy';
+import { ariaKeysFor } from '../menu-keys';
 
 export type StudioView = 'edit' | 'service' | 'preview';
 
@@ -25,6 +26,7 @@ export function ViewSwitch({ value, onChange }: { value: StudioView; onChange: (
           key={item.id}
           type="button"
           aria-pressed={value === item.id}
+          aria-keyshortcuts={item.id === 'preview' ? ariaKeysFor('togglePreview') : undefined}
           onClick={() => onChange(item.id)}
           className={`${SEGMENT} min-h-[44px] flex-1 sm:flex-none ${value === item.id ? ON : OFF}`}
         >

@@ -1,8 +1,23 @@
+import type { ReactNode } from 'react';
 import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
+import { getMenuCopy } from './_components/menu-i18n';
 import {
   CELL_LINE2, CELL_MENU, CELL_NAME, CELL_PHOTO, CELL_PRICE, CELL_STATUS, FROM_MEDIUM, ROW_BASE, ROW_FULL, ROW_MEDIUM,
   ROW_NARROW,
 } from './_components/outline/row-layout';
+import { STATUS_TEXT_COLUMN } from './_components/studio/status-layout';
+
+/** The status card's copy, laid out invisibly so the bars wrap exactly like the real lines. */
+const STATUS_COPY = getMenuCopy('tr');
+
+/** A line of real copy drawn as grey bars: same classes → same line boxes and wrapping as the studio. */
+function SkText({ className = '', textClassName = '', children }: { className?: string; textClassName?: string; children: ReactNode }) {
+  return (
+    <div className={className}>
+      <span className={`select-none rounded bg-[#EDEDED] text-transparent [box-decoration-break:clone] ${textClassName}`}>{children}</span>
+    </div>
+  );
+}
 
 /**
  * Menu Studio skeleton (spec §11, CLAUDE.md §40.10). Default export imported
@@ -12,7 +27,10 @@ import {
  * (<1024) view switch, search, filters, sticky chip bar / (≥1024) sticky
  * toolbar, two rows below 1400 and one row from 1400 → [category rail (≥1400) |
  * outline | right column]. Rows use `row-layout.ts`, so a row has the same
- * tier geometry here as in the studio. The grid classes are the studio's
+ * tier geometry here as in the studio; the status card uses `status-layout.ts`
+ * and lays out the real copy as grey bars, so it is exactly as tall as a live
+ * or draft card with "Son değişiklik" (measured at 375 / 768 / 1024 / 1440,
+ * no native-share button, no nudge row). The grid classes are the studio's
  * (`min-[87.5rem]` / `min-[100rem]` = 1400 / 1600 px written in rem so they
  * sort after `xl:`).
  */
@@ -26,7 +44,8 @@ export default function MenuBuilderSkeleton() {
             <div className="mt-1" style={{ height: 'calc(clamp(20px, 2.6vw, 24px) * 1.15)' }}>
               <SkBox className="h-full w-24" />
             </div>
-            <div className="mt-2 flex h-5 items-center">
+            {/* PageHeader description: 13px × line-height 1.55 */}
+            <div className="mt-2 flex items-center" style={{ height: 'calc(13px * 1.55)' }}>
               <SkBox className="h-4 w-36 max-w-full" />
             </div>
           </div>
@@ -38,15 +57,27 @@ export default function MenuBuilderSkeleton() {
         </div>
       </div>
 
-      {/* Status card */}
-      <div className="bz-card min-h-[164px] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
-        <SkBox className="mb-2 h-5 w-16" />
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <SkBox className="h-5 w-48" />
-            <SkBox className="h-3.5 w-72 max-w-full" />
+      {/* Status card: the line boxes of a live (or draft) card with "Son değişiklik" — badge, 18px
+          title, body, date line, actions — so the swap to the studio does not move what is below. */}
+      <div className="bz-card min-h-[164px] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]" aria-hidden="true">
+        <div className="mb-2">
+          <span className="bz-badge w-[72px] bg-[#EDEDED]">
+            <span className="h-1.5 w-1.5 shrink-0" />
+          </span>
+        </div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
+          <div className={STATUS_TEXT_COLUMN}>
+            <SkText className="bz-h-tight" textClassName="text-[18px]">
+              {STATUS_COPY.status.liveTitle}
+            </SkText>
+            <SkText className="mt-1 text-[13px] leading-relaxed">{STATUS_COPY.status.liveBody}</SkText>
+            <SkText className="mt-0.5 text-[12px]">{STATUS_COPY.fmt.lastChange('19 Kasım 2026 13:00')}</SkText>
           </div>
-          <SkBox className="h-11 w-full rounded-lg lg:h-9 lg:w-28" />
+          <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
+            <SkBox className="h-11 w-[240px] max-w-full rounded-lg lg:h-9" />
+            <SkBox className="h-11 w-[134px] rounded-full sm:h-10" />
+            <SkBox className="h-11 w-[126px] rounded-lg pointer-fine:h-8" />
+          </div>
         </div>
       </div>
 
@@ -77,7 +108,8 @@ export default function MenuBuilderSkeleton() {
 
       {/* <1024: view switch, search, filters */}
       <div className="space-y-3 lg:hidden">
-        <SkBox className="h-11 w-full rounded-[10px] sm:w-[300px]" />
+        {/* ViewSwitch: 44px segments inside a 3px track */}
+        <SkBox className="h-[50px] w-full rounded-[10px] sm:w-[300px]" />
         <SkBox className="h-11 w-full rounded-lg sm:w-[280px]" />
         <div className="flex gap-1.5 overflow-hidden">
           {Array.from({ length: 3 }).map((_, i) => (

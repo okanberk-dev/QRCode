@@ -14,7 +14,7 @@ import { BADGE_LABELS, BADGE_TINTS } from '../menu-constants';
 import { isTempId } from '../menu-merge';
 import { rowBadge } from '../menu-status';
 import { MENU_TOUCH, afterMenuCloses } from '../menu-ui';
-import { ROW_ARIA_KEYS } from '../menu-keys';
+import { ROW_ARIA_KEYS, ariaKeysFor } from '../menu-keys';
 import type { MenuBadge } from '@/lib/validations';
 import { isImageFile } from '../data/usePhotoUpload';
 import { useStudio } from '../studio/studio-context';
@@ -402,6 +402,7 @@ export const ItemRow = memo(function ItemRow({
                 <PulseMenuItem
                   icon={<PencilLine size={13} strokeWidth={2} />}
                   trailing={finePointer ? 'E' : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('open') : undefined}
                   onSelect={() => afterMenuCloses(() => openItem(item.id))}
                 >
                   {copy.item.details}
@@ -415,6 +416,7 @@ export const ItemRow = memo(function ItemRow({
                 <PulseMenuItem
                   icon={<Copy size={13} strokeWidth={2} />}
                   trailing={finePointer ? (isMac() ? '⌘D' : 'Ctrl+D') : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('duplicate') : undefined}
                   onSelect={() => void duplicate()}
                 >
                   {copy.item.duplicate}
@@ -423,6 +425,7 @@ export const ItemRow = memo(function ItemRow({
                 <PulseMenuItem
                   icon={<ArrowUp size={13} strokeWidth={2} />}
                   trailing={finePointer ? (isMac() ? '⌥↑' : 'Alt+↑') : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('moveUp') : undefined}
                   disabled={index <= 0}
                   onSelect={() => moveItemBy(item.id, -1)}
                 >
@@ -431,6 +434,7 @@ export const ItemRow = memo(function ItemRow({
                 <PulseMenuItem
                   icon={<ArrowDown size={13} strokeWidth={2} />}
                   trailing={finePointer ? (isMac() ? '⌥↓' : 'Alt+↓') : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('moveDown') : undefined}
                   disabled={index >= count - 1}
                   onSelect={() => moveItemBy(item.id, 1)}
                 >
@@ -439,6 +443,7 @@ export const ItemRow = memo(function ItemRow({
                 <PulseMenuItem
                   icon={<FolderInput size={13} strokeWidth={2} />}
                   trailing={finePointer ? 'M' : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('move') : undefined}
                   disabled={categoryCount < 2}
                   onSelect={() => afterMenuCloses(() => openMoveDialog([item.id]))}
                 >
@@ -447,6 +452,7 @@ export const ItemRow = memo(function ItemRow({
                 <PulseMenuItem
                   icon={item.isAvailable ? <EyeOff size={13} strokeWidth={2} /> : <Eye size={13} strokeWidth={2} />}
                   trailing={finePointer ? 'H' : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('toggleHidden') : undefined}
                   onSelect={() => void (item.isAvailable ? actions.hideItem(item.id) : actions.showItem(item.id))}
                 >
                   {item.isAvailable ? copy.item.hide : copy.item.show}
@@ -454,6 +460,7 @@ export const ItemRow = memo(function ItemRow({
                 <PulseMenuItem
                   icon={<CheckSquare size={13} strokeWidth={2} />}
                   trailing={finePointer ? 'X' : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('select') : undefined}
                   onSelect={() => (selecting ? toggleSelect(item.id) : startSelection([item.id]))}
                 >
                   {copy.item.select}
@@ -463,6 +470,7 @@ export const ItemRow = memo(function ItemRow({
                   danger
                   icon={<Trash2 size={13} strokeWidth={2} />}
                   trailing={finePointer ? 'Del' : undefined}
+                  ariaKeyShortcuts={finePointer ? ariaKeysFor('delete') : undefined}
                   onSelect={remove}
                 >
                   {copy.item.delete}

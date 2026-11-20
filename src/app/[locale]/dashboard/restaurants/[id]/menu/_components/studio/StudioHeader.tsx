@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { BarChart3, ChevronsDownUp, ChevronsUpDown, ClipboardPaste, Keyboard, ListOrdered, Maximize2, MoreHorizontal, Palette, QrCode } from 'lucide-react';
 import { PageHeader, PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
 import { useMenuCopy } from '../kit/useMenuCopy';
+import { ariaKeysFor } from '../menu-keys';
 import { MENU_TOUCH, afterMenuCloses } from '../menu-ui';
 
 /**
@@ -129,7 +130,12 @@ export function StudioHeader({
                 </PulseMenuItem>
               )}
               {onShortcuts && (
-                <PulseMenuItem icon={<Keyboard size={13} strokeWidth={2} />} trailing="?" onSelect={() => afterMenuCloses(onShortcuts)}>
+                <PulseMenuItem
+                  icon={<Keyboard size={13} strokeWidth={2} />}
+                  trailing="?"
+                  ariaKeyShortcuts={ariaKeysFor('help')}
+                  onSelect={() => afterMenuCloses(onShortcuts)}
+                >
                   {copy.header.shortcuts}
                 </PulseMenuItem>
               )}

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ExternalLink, Maximize2, PanelRightClose, Smartphone, X } from 'lucide-react';
 import { useMenuCopy } from '../kit/useMenuCopy';
+import { ariaKeysFor } from '../menu-keys';
 
 /**
  * The right column from 1024 px (spec §7.9, G5): "Müşterinin gördüğü" preview,
@@ -95,7 +96,7 @@ export function RightPanel({
                 </Link>
               )}
               {onCollapse && (
-                <button type="button" onClick={onCollapse} aria-label={copy.preview.collapse} title={copy.preview.collapse} className="bz-btn-icon h-11 w-11 shrink-0 pointer-fine:h-8 pointer-fine:w-8">
+                <button type="button" onClick={onCollapse} aria-label={copy.preview.collapse} title={copy.preview.collapse} aria-keyshortcuts={ariaKeysFor('togglePreview')} className="bz-btn-icon h-11 w-11 shrink-0 pointer-fine:h-8 pointer-fine:w-8">
                   <PanelRightClose size={15} strokeWidth={2} />
                 </button>
               )}

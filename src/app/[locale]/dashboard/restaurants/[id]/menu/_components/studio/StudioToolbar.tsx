@@ -118,10 +118,20 @@ export function StudioToolbar({
         </button>
       }
     >
-      <PulseMenuItem icon={<Plus size={13} strokeWidth={2} />} trailing="N" onSelect={() => afterMenuCloses(onAdd.item)}>
+      <PulseMenuItem
+        icon={<Plus size={13} strokeWidth={2} />}
+        trailing="N"
+        ariaKeyShortcuts={ariaKeysFor('newItem')}
+        onSelect={() => afterMenuCloses(onAdd.item)}
+      >
         {copy.toolbar.addItem}
       </PulseMenuItem>
-      <PulseMenuItem icon={<FolderPlus size={13} strokeWidth={2} />} trailing="⇧N" onSelect={() => afterMenuCloses(onAdd.category)}>
+      <PulseMenuItem
+        icon={<FolderPlus size={13} strokeWidth={2} />}
+        trailing="⇧N"
+        ariaKeyShortcuts={ariaKeysFor('newCategory')}
+        onSelect={() => afterMenuCloses(onAdd.category)}
+      >
         {copy.toolbar.addCategory}
       </PulseMenuItem>
       {onAdd.paste && (
@@ -147,7 +157,7 @@ export function StudioToolbar({
     ) : null;
 
   const previewButton = previewCollapsed ? (
-    <button type="button" onClick={onShowPreview} className="bz-btn-ghost h-9 min-h-0 shrink-0">
+    <button type="button" onClick={onShowPreview} aria-keyshortcuts={ariaKeysFor('togglePreview')} className="bz-btn-ghost h-9 min-h-0 shrink-0">
       <PanelRightOpen size={14} strokeWidth={2} aria-hidden="true" />
       {copy.toolbar.showPreview}
     </button>

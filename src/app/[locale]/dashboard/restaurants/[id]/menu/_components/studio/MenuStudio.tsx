@@ -15,7 +15,7 @@ import { useMenuData, type MenuDataHandle } from '../data/useMenuData';
 import { usePhotoUpload } from '../data/usePhotoUpload';
 import { useThemeDraft } from '../data/useThemeDraft';
 import { DesignPanel } from '../design/DesignPanel';
-import { ItemPanel, useItemPanelKey, type ItemPanelSaved } from '../item/ItemPanel';
+import { ItemPanel, useItemPanelKey, type ItemPanelDraft, type ItemPanelSaved } from '../item/ItemPanel';
 import { PasteSheet } from '../item/PasteSheet';
 import { SaveIndicator } from '../kit/SaveIndicator';
 import { STORAGE_KEYS, safeLocalGet, safeLocalSet } from '../kit/storage';
@@ -173,6 +173,8 @@ function StudioLoaded({
   const [serviceHintSeen, setServiceHintSeen] = useState(() => safeLocalGet(STORAGE_KEYS.serviceHint) === '1');
   const [confirmDialog, askConfirm] = useConfirmDialog();
   const itemDirtyRef = useRef(false);
+  // The open panel's form, so crossing 1024px (docked ⇄ sheet remount) keeps what was typed.
+  const itemStashRef = useRef<ItemPanelDraft | null>(null);
   // organise and bulk (chunk 3)
   const [selection, setSelectionState] = useState<Set<string> | null>(null);
   const selectionRef = useRef<Set<string> | null>(null);
@@ -461,6 +463,7 @@ function StudioLoaded({
       }
       return null;
     });
+    itemStashRef.current = null;
     setItemDraft(null);
     itemDirtyRef.current = false;
     setItemDirty(false);
@@ -1098,6 +1101,9 @@ function StudioLoaded({
         leaveConfirm={leaveConfirm}
         sheetTab={itemSheetTab}
         onSheetTab={setItemSheetTab}
+        // Every open bumps the nonce, so only a breakpoint remount of this same open restores the stash.
+        draftStash={itemStashRef}
+        draftKey={`${panelKey}#${itemNonce}`}
         preview={sheetPreviewActive ? <PhonePreview {...phoneProps} variant="bare" height={Math.round(window.innerHeight * 0.6)} /> : null}
       />
     ) : null;
