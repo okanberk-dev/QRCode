@@ -4,6 +4,8 @@
 // handles mobile breakpoints. No flex/grid where it can be avoided.
 
 import { PULSE, FONTS, INSTAGRAM_HANDLE, INSTAGRAM_URL, mailAssetUrl } from './tokens';
+import { COMPANY_ENTITY } from '../legal/company-entity';
+import { escapeHtml } from './escape';
 
 export function renderLogo(opts: { size?: number; dark?: boolean; accent?: string } = {}): string {
   const size = opts.size ?? 22;
@@ -85,9 +87,14 @@ export function renderFooter(params: FooterParams = {}): string {
   const links = isTr ? ['buaze.com', 'Yardım', 'Gizlilik'] : ['buaze.com', 'Help', 'Privacy'];
   const linksLabel = isTr ? 'Bağlantılar' : 'Links';
   const followCopy = isTr ? 'Bizi takip et — vakalar, tüyolar, perde arkası.' : 'Follow us — cases, tips, behind the scenes.';
-  // §38.198 — Tüzel kişilik (Buaze Bilişim A.Ş.) ve adres satırı kaldırıldı.
-  // Henüz şirket kurulmadığı için hukuki disclosure üretmek yanıltıcı; sadece
-  // "Buaze" brand name yeterli. Şirket kurulduğunda buraya geri eklenir.
+  // Sender identity (2026-11): Buaze is a brand of NextGen Yazılım Ltd. Şti.
+  // 6563 sayılı Kanun requires commercial e-mails to identify the service
+  // provider (trade name, address, MERSİS), so every mail carries this line.
+  const identityLine = escapeHtml(
+    isTr
+      ? `Buaze, ${COMPANY_ENTITY.legalName} markasıdır. ${COMPANY_ENTITY.addressLine} · MERSİS ${COMPANY_ENTITY.mersisNo}`
+      : `Buaze is a brand of ${COMPANY_ENTITY.legalName}. ${COMPANY_ENTITY.addressLine} · MERSIS ${COMPANY_ENTITY.mersisNo}`,
+  );
   const tagline = isTr ? 'Her yorum bir nabız.' : 'Every review is a pulse.';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   // §38.197 — /help/page route YOK (CLAUDE.md §22 /help index vs
@@ -116,9 +123,8 @@ export function renderFooter(params: FooterParams = {}): string {
             <tr>
               <td class="stack-col" valign="top" style="font-family:${FONTS.body};">
                 ${renderLogo({ size: 16 })}
-                <!-- §38.198 — Adres satırı yerine kısa Pulse tagline.
-                     Hukuki disclosure (A.Ş. + Maslak adres) henüz şirket
-                     kurulmadığı için kaldırıldı; gelecek scope. -->
+                <!-- Short Pulse tagline; the sender identity sits in the
+                     bottom rail (identityLine). -->
                 <div style="font-size:11px;color:${PULSE.n500};margin-top:10px;line-height:1.5;font-style:italic;">${tagline}</div>
               </td>
               <td class="stack-col" valign="top" align="right" style="font-family:${FONTS.body};">
@@ -149,11 +155,11 @@ export function renderFooter(params: FooterParams = {}): string {
           <div style="border-top:1px solid ${PULSE.n200};padding-top:16px;font-family:${FONTS.body};font-size:11px;color:${PULSE.n400};">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <!-- §38.198 — "Buaze Bilişim" → "Buaze". -->
                 <td class="stack-col" align="left">© ${new Date().getFullYear()} Buaze — ${isTr ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}</td>
                 <td class="stack-col" align="right">${unsubBlock}</td>
               </tr>
             </table>
+            <div style="margin-top:10px;font-size:11px;line-height:1.5;color:${PULSE.n400};">${identityLine}</div>
           </div>
         </td>
       </tr>

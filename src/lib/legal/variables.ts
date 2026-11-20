@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { COMPANY_ENTITY, COMPANY_TAX_LINE } from '@/lib/legal/company-entity';
 
 /**
  * Hukuki metinlerde kullanılan placeholder değişkenleri için kanonik
@@ -25,17 +26,17 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'COMPANY_NAME',
     label: { tr: 'Şirket unvanı', en: 'Company name' },
-    defaultValue: 'Buaze',
+    defaultValue: COMPANY_ENTITY.legalName,
     description: {
-      tr: 'Tüm metinlerde geçen tam ticari unvan (ör. "Buaze Bilişim A.Ş.").',
-      en: 'Full registered company name used across documents.',
+      tr: 'Tüm metinlerde geçen tam ticari unvan (vergi levhasındaki gibi). Buaze, NextGen Yazılım Ltd. Şti. markasıdır.',
+      en: 'Full registered company name used across documents (as on the tax certificate).',
     },
     group: 'company',
   },
   {
     key: 'COMPANY_ADDRESS',
     label: { tr: 'Şirket adresi', en: 'Company address' },
-    defaultValue: '[Şirket adresinizi buraya girin]',
+    defaultValue: COMPANY_ENTITY.addressLine,
     description: {
       tr: 'Tebligat adresi — KVKK başvuru ve mesafeli sözleşme için zorunlu.',
       en: 'Notification address — required for KVKK applications + distance contract.',
@@ -45,7 +46,7 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'COMPANY_TAX_ID',
     label: { tr: 'Vergi / Mersis no', en: 'Tax / Mersis number' },
-    defaultValue: '[VKN veya MERSIS]',
+    defaultValue: COMPANY_TAX_LINE,
     description: {
       tr: 'Vergi numarası veya MERSIS numarası (TBK ve TKHK gereği).',
       en: 'Tax number or MERSIS registration number.',
@@ -55,7 +56,7 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'COMPANY_PHONE',
     label: { tr: 'Şirket telefonu', en: 'Company phone' },
-    defaultValue: '[Telefon]',
+    defaultValue: COMPANY_ENTITY.phone,
     description: {
       tr: 'Mesafeli Sözleşmeler Yönetmeliği gereği tüketicinin ulaşabileceği telefon.',
       en: 'Phone for consumers per Turkish Distance Contract Regulation.',
