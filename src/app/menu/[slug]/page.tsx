@@ -1,6 +1,9 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { jsonLdString } from '@/lib/seo/json-ld';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { ROOT_VIEWPORT } from '@/lib/root-metadata';
+import { readMenuDesign, resolveMenuDesign } from '@/lib/menu-design';
 import { prisma } from '@/lib/prisma';
 import PublicMenuView, { type MenuCategoryView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { MENU_THEMES, type MenuTheme } from '@/lib/validations';
@@ -10,6 +13,7 @@ import {
   contentVersion,
   itemImageVersion,
   jsonLdImageUrl,
+  menuImagePath,
   publicImageSrc,
 } from '@/lib/menu-image-url';
 
@@ -22,17 +26,29 @@ import {
 // %85+ azalır, mobile 4G LCP ~200-400ms iyileşir.
 export const revalidate = 3600;
 
+const ITEM_SELECT = {
+  id: true, name: true, description: true, priceCents: true, currency: true, imageUrl: true,
+  badges: true, allergens: true, isAvailable: true, isOutOfStock: true, sortOrder: true, updatedAt: true,
+} as const;
+
+// Explicit select (CLAUDE.md §14.1): never `menuCoverUrl` — the ~0.5 MB cover
+// blob is served by the image route; the page only needs its version.
 async function loadMenu(slug: string) {
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug },
-    include: {
+    select: {
+      id: true, slug: true, name: true, category: true, address: true, phone: true, workingHours: true,
+      primaryColor: true, isActive: true, menuEnabled: true, menuPublished: true,
+      menuTheme: true, menuAccentColor: true, menuLogoUrl: true, menuDesign: true, menuCoverVersion: true,
       menuCategories: {
         where: { isVisible: true, deletedAt: null },
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-        include: {
+        select: {
+          id: true, name: true, description: true, sortOrder: true, isVisible: true,
           items: {
             where: { deletedAt: null, isAvailable: true },
             orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+            select: ITEM_SELECT,
           },
         },
       },
@@ -42,6 +58,29 @@ async function loadMenu(slug: string) {
     return null;
   }
   return restaurant;
+}
+
+// Page + viewport share one query per request.
+const getMenu = cache(loadMenu);
+
+function resolvedFor(data: NonNullable<Awaited<ReturnType<typeof loadMenu>>>) {
+  return resolveMenuDesign({
+    menuTheme: data.menuTheme,
+    menuAccentColor: data.menuAccentColor,
+    primaryColor: data.primaryColor,
+    menuDesign: data.menuDesign,
+    hasCover: Boolean(data.menuCoverVersion),
+  });
+}
+
+const HEX6 = /^#[0-9A-F]{6}$/;
+
+export async function generateViewport({ params }: { params: Promise<{ slug: string }> }): Promise<Viewport> {
+  const { slug } = await params;
+  const data = await getMenu(slug);
+  if (!data) return ROOT_VIEWPORT;
+  const color = resolvedFor(data).themeColor;
+  return HEX6.test(color) ? { ...ROOT_VIEWPORT, themeColor: color } : ROOT_VIEWPORT;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -55,6 +94,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       isActive: true,
       menuEnabled: true,
       menuPublished: true,
+      menuCoverVersion: true,
       _count: { select: { menuItems: { where: { deletedAt: null, isAvailable: true } } } },
     },
   });
@@ -78,6 +118,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description,
       url: canonical,
       type: 'website',
+      ...(restaurant.menuCoverVersion
+        ? { images: [{ url: `${SITE_URL}${menuImagePath(slug, 'cover', restaurant.menuCoverVersion)}`, width: 1600, height: 900 }] }
+        : {}),
     },
     twitter: {
       card: 'summary_large_image',
@@ -98,12 +141,12 @@ export default async function PublicMenuPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ lang?: string }>;
+  searchParams: Promise<{ lang?: string; source?: string }>;
 }) {
   const { slug } = await params;
-  const { lang } = await searchParams;
+  const { lang, source } = await searchParams;
 
-  const data = await loadMenu(slug);
+  const data = await getMenu(slug);
   if (!data) notFound();
 
   const locale = detectLocale(null, lang);
@@ -136,6 +179,8 @@ export default async function PublicMenuPage({
       imageUrl: data.menuLogoUrl,
       version: logoVersion,
     }),
+    menuDesign: readMenuDesign(data.menuDesign),
+    menuCoverUrl: data.menuCoverVersion ? menuImagePath(data.slug, 'cover', data.menuCoverVersion) : null,
   };
 
   const categories: MenuCategoryView[] = data.menuCategories.map((c) => ({
@@ -166,18 +211,31 @@ export default async function PublicMenuPage({
   }));
 
   const canonical = `https://www.buaze.com/menu/${data.slug}`;
+  const logoImage = jsonLdImageUrl({
+    siteUrl: SITE_URL,
+    slug: data.slug,
+    itemIdOrLogo: 'logo',
+    imageUrl: data.menuLogoUrl,
+    version: logoVersion,
+  });
+  const coverImage = data.menuCoverVersion
+    ? `${SITE_URL}${menuImagePath(data.slug, 'cover', data.menuCoverVersion)}`
+    : undefined;
+  const images = [logoImage, coverImage].filter((u): u is string => typeof u === 'string' && u.length > 0);
+  const restaurantImage = images.length > 1 ? images : images[0];
+
+  // Page canvas colour from enumerated surface constants only (validated hex).
+  const design = resolvedFor(data);
+  const canvasCss = HEX6.test(design.colors.bg)
+    ? `html,body{background-color:${design.colors.bg};color-scheme:${design.scheme === 'dark' ? 'dark' : 'light'}}html{scroll-behavior:smooth}`
+    : 'html{scroll-behavior:smooth}';
+
   const restaurantNode = {
     '@type': 'Restaurant',
     '@id': `${canonical}#restaurant`,
     name: data.name,
     url: canonical,
-    image: jsonLdImageUrl({
-      siteUrl: SITE_URL,
-      slug: data.slug,
-      itemIdOrLogo: 'logo',
-      imageUrl: data.menuLogoUrl,
-      version: logoVersion,
-    }),
+    image: restaurantImage,
     address: data.address
       ? { '@type': 'PostalAddress', streetAddress: data.address, addressCountry: 'TR' }
       : undefined,
@@ -232,11 +290,12 @@ export default async function PublicMenuPage({
 
   return (
     <>
+      <style>{canvasCss}</style>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
-      <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} />
+      <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} initialSplash={source === 'qr'} />
     </>
   );
 }

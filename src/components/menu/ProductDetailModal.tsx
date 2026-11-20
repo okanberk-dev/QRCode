@@ -1,182 +1,147 @@
 'use client';
 
-import { useEffect } from 'react';
-import { Flame, Leaf, Star, Sparkles, WheatOff, X, Sun, Sprout, Heart, CalendarRange, Droplets, Info } from 'lucide-react';
-import { formatPrice } from '@/lib/format';
-import type { MenuAllergen, MenuBadge } from '@/lib/validations';
+import { useEffect, useId, useRef } from 'react';
+import { Info, X } from 'lucide-react';
+import type { ResolvedMenuDesign } from '@/lib/menu-design';
+import { ALLERGEN_META, knownAllergens, menuCopy, type MenuLocale } from './menu-labels';
+import { Badges, Price } from './parts/ItemBits';
+import ItemMedia from './parts/ItemMedia';
 import type { MenuItemView } from './PublicMenuView';
 
-const ALLERGEN_LABELS: Record<MenuAllergen, { tr: string; en: string }> = {
-  gluten:    { tr: 'Gluten',                en: 'Gluten' },
-  sut:       { tr: 'Süt / laktoz',          en: 'Milk / lactose' },
-  yumurta:   { tr: 'Yumurta',               en: 'Egg' },
-  findik:    { tr: 'Sert kabuklu yemiş',    en: 'Tree nut' },
-  fistik:    { tr: 'Yer fıstığı',           en: 'Peanut' },
-  soya:      { tr: 'Soya',                  en: 'Soy' },
-  balik:     { tr: 'Balık',                 en: 'Fish' },
-  kabuklu:   { tr: 'Kabuklu deniz ürünü',   en: 'Crustacean' },
-  yumusakca: { tr: 'Yumuşakça',             en: 'Mollusc' },
-  susam:     { tr: 'Susam',                 en: 'Sesame' },
-  hardal:    { tr: 'Hardal',                en: 'Mustard' },
-  kereviz:   { tr: 'Kereviz',               en: 'Celery' },
-};
+const FOCUSABLE = 'a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
-const BADGE_META: Record<MenuBadge, { tr: string; en: string; icon: typeof Flame; cls: string }> = {
-  populer:     { tr: 'Popüler',       en: 'Popular',       icon: Star,     cls: 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]' },
-  yeni:        { tr: 'Yeni',          en: 'New',           icon: Sparkles, cls: 'bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]' },
-  vegan:       { tr: 'Vegan',         en: 'Vegan',         icon: Leaf,     cls: 'bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]' },
-  vegetaryen:  { tr: 'Vejetaryen',    en: 'Vegetarian',    icon: Leaf,     cls: 'bg-[#EAF9B8] text-[#4D5C00] border border-[#D9EE7A]' },
-  aci:         { tr: 'Acı',           en: 'Spicy',         icon: Flame,    cls: 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]' },
-  sef_onerisi: { tr: 'Şef Önerisi',   en: "Chef's Pick",   icon: Star,     cls: 'bg-[#0A0A0A] text-[#C6F24E]' },
-  glutensiz:   { tr: 'Glutensiz',     en: 'Gluten-Free',   icon: WheatOff, cls: 'bg-[#EAF9B8] text-[#0A0A0A]' },
-  kahvalti:    { tr: 'Kahvaltı',      en: 'Breakfast',     icon: Sun,            cls: 'bg-[#FFEDD5] text-[#9A3412] border border-[#FED7AA]' },
-  organik:     { tr: 'Organik',       en: 'Organic',       icon: Sprout,         cls: 'bg-[#ECFDF5] text-[#14532D] border border-[#A7F3D0]' },
-  taze:        { tr: 'Taze',          en: 'Fresh',         icon: Droplets,       cls: 'bg-[#ECFEFF] text-[#155E75] border border-[#A5F3FC]' },
-  sezonluk:    { tr: 'Sezonluk',      en: 'Seasonal',      icon: CalendarRange,  cls: 'bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]' },
-  ev_yapimi:   { tr: 'Ev Yapımı',     en: 'Homemade',      icon: Heart,          cls: 'bg-[#FEF3C7] text-[#854D0E] border border-[#FDE68A]' },
-};
-
-interface Props {
+/**
+ * Product sheet: a bottom sheet on narrow screens, a centred dialog from
+ * 36rem (container query on the overlay). ESC / backdrop close, body scroll
+ * lock, initial focus on Close, Tab trap, focus returns to the opener.
+ * Rendered as a sibling of the menu canvas so `position: fixed` works.
+ */
+export default function ProductDetailModal({
+  item, design: d, locale, priceLocale, onClose,
+}: {
   item: MenuItemView;
-  accent: string;
-  locale: 'tr' | 'en';
+  design: ResolvedMenuDesign;
+  locale: MenuLocale;
+  priceLocale: string;
   onClose: () => void;
-}
+}) {
+  const copy = menuCopy(locale);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
-export default function ProductDetailModal({ item, accent, locale, onClose }: Props) {
-  // Lock body scroll + ESC to close.
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    closeRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !panelRef.current) return;
+      const nodes = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+      if (nodes.length === 0) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !panelRef.current.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !panelRef.current.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKey);
+      if (opener && typeof opener.focus === 'function' && opener.isConnected) opener.focus({ preventScroll: true });
     };
   }, [onClose]);
 
-  const priceLocale = locale === 'tr' ? 'tr-TR' : 'en-US';
-  const outLabel = locale === 'tr' ? 'Tükendi' : 'Out of stock';
-  const closeLabel = locale === 'tr' ? 'Kapat' : 'Close';
+  const allergens = knownAllergens(item.allergens);
+  const hasPhoto = Boolean(item.imageUrl);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
-
+    <div className="@container/sheet fixed inset-0 z-50">
+      <div aria-hidden onClick={onClose} className="bzm-fade-in absolute inset-0 bg-[rgb(0_0_0/.55)]" />
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl animate-in slide-in-from-bottom-6 fade-in duration-300"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bzm-sheet-in absolute inset-x-0 bottom-0 flex max-h-[92%] flex-col overflow-hidden rounded-t-(--m-r-sheet) bg-(--m-surface) text-(--m-ink) shadow-[0_-12px_40px_-12px_rgb(0_0_0/.35)] @xl/sheet:inset-x-auto @xl/sheet:bottom-auto @xl/sheet:top-1/2 @xl/sheet:left-1/2 @xl/sheet:max-h-[min(88%,820px)] @xl/sheet:w-[min(560px,calc(100%-48px))] @xl/sheet:-translate-x-1/2 @xl/sheet:-translate-y-1/2 @xl/sheet:rounded-(--m-r-sheet) @xl/sheet:shadow-[0_24px_60px_-20px_rgb(0_0_0/.45)]"
       >
-        {/* Sticky close button (thumb-accessible on mobile) */}
+        <span aria-hidden className="absolute top-2 left-1/2 z-10 h-1 w-9 -translate-x-1/2 rounded-full bg-(--m-rule) @xl/sheet:hidden" />
         <button
+          ref={closeRef}
+          type="button"
           onClick={onClose}
-          aria-label={closeLabel}
-          className="sticky top-3 float-right z-10 mr-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-[#0A0A0A] shadow-md backdrop-blur transition-all hover:bg-white active:scale-95"
+          aria-label={copy.close}
+          className="absolute top-3 right-3 z-10 inline-flex size-11 items-center justify-center rounded-full bg-(--m-surface) text-(--m-ink) shadow-[0_2px_10px_rgb(0_0_0/.18)] ring-1 ring-(--m-rule) transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-focus)"
         >
-          <X size={18} strokeWidth={2.4} />
+          <X size={18} strokeWidth={2.25} aria-hidden />
         </button>
 
-        {/* Hero image */}
-        <div className="relative -mt-10 aspect-[4/3] w-full overflow-hidden bg-[#FFFFFF]">
-          {item.imageUrl ? (
-             
-            <img
+        <div className="overflow-y-auto overscroll-contain pb-[max(24px,env(safe-area-inset-bottom))]">
+          {hasPhoto && (
+            <ItemMedia
               src={item.imageUrl}
-              alt={item.name}
-              loading="eager"
-              decoding="async"
-              className="h-full w-full object-cover"
+              name={item.name}
+              locale={locale}
+              eager
+              soldOut={item.isOutOfStock}
+              className="aspect-[4/3] w-full"
             />
-          ) : (
-            <div
-              className="flex h-full w-full items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${accent}22, ${accent}11)` }}
-            >
-              <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="1.2" aria-hidden>
-                <path d="M12 2v4M8 6h8M6 9c0 2 2 3 6 3s6-1 6-3M6 9v9a2 2 0 002 2h8a2 2 0 002-2V9" />
-              </svg>
+          )}
+
+          <div className={`space-y-5 px-5 @md/sheet:px-7 ${hasPhoto ? 'pt-5' : 'pt-7 pr-16'}`}>
+            <div>
+              <h2 id={titleId} className="bzm-section">{item.name}</h2>
+              <Price item={item} d={d} priceLocale={priceLocale} large className="mt-2 block" />
             </div>
-          )}
-          {item.isOutOfStock && (
-            <span className="absolute left-4 top-4 rounded-full bg-black/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white backdrop-blur">
-              {outLabel}
-            </span>
-          )}
-        </div>
 
-        <div className="space-y-5 px-5 pb-8 pt-5 sm:px-7 sm:pb-9">
-          <div className="flex items-start justify-between gap-4">
-            <h2 className="text-2xl font-semibold leading-tight tracking-tight text-[#0A0A0A] sm:text-3xl">
-              {item.name}
-            </h2>
-            <span className="shrink-0 rounded-2xl px-3 py-2 text-lg font-semibold tabular-nums sm:text-xl" style={{ backgroundColor: `${accent}1A`, color: accent }}>
-              {formatPrice(item.priceCents, item.currency, priceLocale)}
-            </span>
-          </div>
-
-          {item.badges.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {item.badges.map((b) => {
-                const meta = BADGE_META[b as MenuBadge];
-                if (!meta) return null;
-                const Icon = meta.icon;
-                return (
-                  <span key={b} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${meta.cls}`}>
-                    <Icon size={11} strokeWidth={2} />
-                    {meta[locale]}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
-          {item.description && (
-            <p className="whitespace-pre-line text-[15px] font-medium leading-relaxed text-[#1A1A1A]">
-              {item.description}
-            </p>
-          )}
-
-          {item.allergens && item.allergens.length > 0 && (
-            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3">
-              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#737373]">
-                <Info size={11} strokeWidth={2.25} />
-                {locale === 'tr' ? 'Alerjen bilgisi' : 'Allergen info'}
+            {item.isOutOfStock && (
+              <p className="rounded-(--m-r-card) bg-(--m-surface-2) px-4 py-3 text-[14px] leading-5 font-semibold text-(--m-ink)">
+                {copy.soldOutSheet}
               </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {item.allergens
-                  .filter((a): a is MenuAllergen => a in ALLERGEN_LABELS)
-                  .map((a) => (
-                    <span
-                      key={a}
-                      className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#525252] ring-1 ring-[#EDEDED]"
-                    >
-                      {ALLERGEN_LABELS[a][locale]}
-                    </span>
+            )}
+
+            <Badges badges={item.badges} d={d} locale={locale} />
+
+            {item.description && (
+              <p className="bzm-desc bzm-desc--ink whitespace-pre-line">{item.description}</p>
+            )}
+
+            {allergens.length > 0 && (
+              <div className="rounded-(--m-r-card) bg-(--m-surface-2) p-4">
+                <p className="flex items-center gap-1.5 text-[12px] leading-4 font-semibold tracking-[0.12em] text-(--m-ink-2) uppercase">
+                  <Info size={14} strokeWidth={2.25} aria-hidden />
+                  {copy.allergenInfo}
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-1.5">
+                  {allergens.map((a) => (
+                    <li key={a} className="inline-flex h-7 items-center rounded-(--m-r-pill) bg-(--m-surface) px-2.5 text-[13px] leading-5 font-medium text-(--m-ink) ring-1 ring-(--m-rule)">
+                      {ALLERGEN_META[a][locale]}
+                    </li>
                   ))}
+                </ul>
+                <p className="mt-3 text-[12px] leading-[18px] text-(--m-ink-2)">{copy.allergenDisclaimer}</p>
               </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-[#A3A3A3]">
-                {locale === 'tr'
-                  ? 'Bu ürün listelenen alerjenleri içerir veya çapraz bulaşma riski taşır.'
-                  : 'This item contains or may have come into contact with the listed allergens.'}
-              </p>
-            </div>
-          )}
+            )}
 
-          <button
-            onClick={onClose}
-            className="mt-2 w-full rounded-2xl py-4 text-sm font-semibold uppercase tracking-widest text-white shadow-md transition-all active:scale-[0.99]"
-            style={{ backgroundColor: accent }}
-          >
-            {closeLabel}
-          </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-12 w-full rounded-(--m-r-card) bg-(--m-surface-2) text-[15px] font-semibold text-(--m-ink) transition-colors hover:bg-(--m-rule) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-focus)"
+            >
+              {copy.close}
+            </button>
+          </div>
         </div>
       </div>
     </div>
