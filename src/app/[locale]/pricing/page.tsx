@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import PaymentResultNotice from '@/components/marketing/PaymentResultNotice';
 import Link from 'next/link';
 import { BarChart3, Bell, Check, Link2, QrCode, Sparkles, Users } from 'lucide-react';
 import { jsonLdString } from '@/lib/seo/json-ld';
@@ -352,6 +353,7 @@ export default async function PricingPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <MarketingNavbar locale={locale} />
       <main id="main-content">
+        <PaymentResultNotice locale={locale} />
         <PageHero
           align="center"
           eyebrow={copy.eyebrow}

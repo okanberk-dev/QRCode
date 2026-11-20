@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { scrubSentryEvent, scrubSentryLog } from './src/lib/billing/redact';
 
 const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -16,10 +17,21 @@ if (dsn) {
     // documents the canonical 0 / 1.0 (off / on-error) split.
     replaysSessionSampleRate: 0,
     tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
-    includeLocalVariables: true,
+    // Local variables are read through the V8 inspector, which no in-app
+    // wrapper (e.g. billing `Sensitive`) can hide, and a frame can hold a
+    // revealed card token or key. Off in production; dev keeps them.
+    includeLocalVariables: process.env.NODE_ENV !== 'production',
+    // Logs bypass beforeSend: enableLogs stays on only together with the
+    // mandatory beforeSendLog scrubber.
     enableLogs: true,
+    beforeSendLog: scrubSentryLog,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
     release: process.env.VERCEL_GIT_COMMIT_SHA,
+    // Query strings, cookies, non-allow-listed headers, billing request
+    // bodies and PAN/base64/key-shaped values never leave (billing/redact.ts).
+    beforeSendTransaction(event) {
+      return scrubSentryEvent(event);
+    },
     // Stage A4 §38.96 — impersonation flow tag injection. Helper'lar
     // (writeAdminAuditLog + impersonate endpoint'leri) zaten manuel
     // `tags.kind='impersonation'` set ediyor; bu beforeSend onRequestError
@@ -27,6 +39,7 @@ if (dsn) {
     // için: tag'li event filter dashboard'da impersonation süresince
     // çıkan tüm hataları görme imkanı verir.
     beforeSend(event) {
+      event = scrubSentryEvent(event);
       // Mevcut event tag'lerine zarar verme — sadece impersonation context
       // varsa zenginleştir. Tag header'lar Vercel runtime'da
       // `globalThis.__buazeImpersonationContext` ile set edilirse etiketle

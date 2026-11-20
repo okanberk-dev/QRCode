@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { scrubSentryEvent, scrubSentryLog } from './src/lib/billing/redact';
 
 const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -11,7 +12,12 @@ if (dsn) {
     // client configs to keep all three runtimes aligned. CLAUDE.md §26.2.
     replaysSessionSampleRate: 0,
     tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
+    // Same scrubbers as the server config (billing/redact.ts is edge-safe):
+    // enableLogs stays on only together with beforeSendLog.
     enableLogs: true,
+    beforeSendLog: scrubSentryLog,
+    beforeSend: (event) => scrubSentryEvent(event),
+    beforeSendTransaction: (event) => scrubSentryEvent(event),
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
     release: process.env.VERCEL_GIT_COMMIT_SHA,
   });

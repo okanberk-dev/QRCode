@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withCronGuard } from '@/lib/cron-guard';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
-import { executeUserHardDelete } from '@/lib/user-hard-delete';
+import { executeUserHardDelete, isHardDeleteDeferred } from '@/lib/user-hard-delete';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -31,6 +31,8 @@ const BATCH_SIZE = 50;
 interface ProcessSummary {
   candidates: number;
   deleted: number;
+  /** Billing still in flight (pending payment / charge, at most 7 days): retried tomorrow. */
+  deferred: number;
   failures: number;
   invoicesAnonymized: number;
   subscriptionsDeleted: number;
@@ -61,6 +63,7 @@ export async function runScheduledDeletions(): Promise<ProcessSummary> {
   });
 
   let deleted = 0;
+  let deferred = 0;
   let failures = 0;
   let invoicesAnonymized = 0;
   let subscriptionsDeleted = 0;
@@ -78,6 +81,11 @@ export async function runScheduledDeletions(): Promise<ProcessSummary> {
           gracePolicy: '30d',
         },
       });
+      if (isHardDeleteDeferred(stats)) {
+        // A payment or automatic charge is in flight; the cron retries tomorrow (billing spec §11.6).
+        deferred += 1;
+        continue;
+      }
       deleted += 1;
       invoicesAnonymized += stats.invoicesAnonymized;
       subscriptionsDeleted += stats.subscriptionsDeleted;
@@ -102,6 +110,7 @@ export async function runScheduledDeletions(): Promise<ProcessSummary> {
   return {
     candidates: candidates.length,
     deleted,
+    deferred,
     failures,
     invoicesAnonymized,
     subscriptionsDeleted,

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
 import { prisma } from '@/lib/prisma';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { SITE_URL } from '@/lib/site';
@@ -48,6 +50,19 @@ export async function GET(req: NextRequest) {
   const limit = await rateLimit(`paynkolay:checkout:${actor.id}`, 10, 10 * 60 * 1000);
   if (!limit.allowed) return NextResponse.redirect(accountUrl('rate_limited'));
 
+  // D18: no payment row of an environment the database refuses (a test deployment pointed at the
+  // production database, or a database bound to the other environment) is ever created.
+  const envCheck = await loadHostedPaymentEnvCheck(cfg.env);
+  if (!envCheck.ok) {
+    Sentry.captureMessage('billing: checkout refused, PayNKolay environment does not match the database binding', {
+      level: 'error',
+      fingerprint: ['billing-env-mismatch'],
+      tags: { billing: 'checkout' },
+      extra: { reason: envCheck.reason },
+    });
+    return NextResponse.redirect(accountUrl('unavailable'));
+  }
+
   const planId = (sp.get('planId') || '').trim();
   const cycle = sp.get('cycle') === 'yearly' ? 'yearly' : 'monthly';
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(planId)) return NextResponse.redirect(accountUrl('unavailable'));
@@ -71,6 +86,8 @@ export async function GET(req: NextRequest) {
       billingCycle: cycle,
       amountMinor: Math.round(amountTry * 100),
       locale,
+      // Binds the row to its PayNKolay environment (billing spec D18).
+      providerEnv: cfg.env,
     },
     select: { id: true, amountMinor: true },
   });

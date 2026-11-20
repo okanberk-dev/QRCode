@@ -72,6 +72,9 @@ model User {
   emailVerified             Boolean   @default(false) @map("email_verified")
   emailVerifyToken          String?   @unique @map("email_verify_token")
   emailVerifyTokenExpiresAt DateTime? @map("email_verify_token_expires_at")
+  /// reCAPTCHA Enterprise score of the last assessed sign-in (login, register, Google). Checkout gate (CLAUDE.md §44).
+  lastLoginRiskScore        Float?    @map("last_login_risk_score")
+  lastLoginRiskAt           DateTime? @map("last_login_risk_at")
   createdAt                 DateTime  @default(now()) @map("created_at")
   updatedAt                 DateTime  @updatedAt @map("updated_at")
 
@@ -82,6 +85,9 @@ model User {
   // birden çok admin paralel impersonation açabilir (örn. iki ayrı support
   // ticket); her biri kendi 30dk pencere'sinde expire eder.
   impersonations ImpersonationSession[] @relation("UserImpersonations")
+  // Saved cards (PayNKolay card storage). Schema-only relations, no column.
+  billingCustomer BillingCustomer?
+  billingCards    BillingCard[]
 
   @@map("users")
 }
@@ -1426,10 +1432,18 @@ model BillingSubscription {
   // `renewsAt` (most providers follow "scheduled at period end" semantics —
   // owner keeps access until period end). UI: amber banner + "Yeniden başlat".
   cancelAtPeriodEnd       Boolean  @default(false) @map("cancel_at_period_end")
+  // ── Opt-in monthly auto-renew (saved cards) ──
+  autoRenew               Boolean   @default(false) @map("auto_renew")
+  /// Latest effective auto_renew_on or auto_renew_card_change consent. The bound card is billing_cards.bound_consent_id = this.
+  autoRenewConsentId      String?   @map("auto_renew_consent_id")
+  autoRenewChangedAt      DateTime? @map("auto_renew_changed_at")
+  /// Europe/Istanbul day-of-month the paid period is anchored to (1..31); stops month-end drift (Jan 31 → Feb 28 → Mar 31).
+  billingAnchorDay        Int?      @map("billing_anchor_day")
   updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@index([subscriptionPlanId])
   @@index([providerCustomerId])
+  @@index([autoRenew, renewsAt])
   @@map("billing_subscriptions")
 }
 
@@ -1615,15 +1629,218 @@ model BillingPayment {
   billingCycle       String    @map("billing_cycle") // monthly | yearly
   amountMinor        Int       @map("amount_minor") // kuruş
   currency           String    @default("TRY")
-  status             String    @default("pending") // pending | succeeded | failed
+  status             String    @default("pending") // pending | succeeded | failed | needs_review
+  /// PayNKolay REFERENCE_CODE, stored only as an HMAC fingerprint ("rf1_…") or "paynkolay:<id>" (DB CHECK after the back-fill).
   referenceCode      String?   @unique @map("reference_code")
   failureReason      String?   @map("failure_reason")
   locale             String    @default("tr")
   createdAt          DateTime  @default(now()) @map("created_at")
   completedAt        DateTime? @map("completed_at")
+  // ── Saved cards + opt-in auto-renew ──
+  kind                String    @default("checkout") @db.VarChar(16) // checkout | renewal_link | renewal_auto
+  providerEnv         String?   @map("provider_env") @db.VarChar(8) // live | test; null only on rows created before saved cards
+  renewalId           String?   @map("renewal_id")
+  attemptNo           Int?      @map("attempt_no")
+  saveCard            Boolean   @default(false) @map("save_card") // csAutoSave sent
+  cardAlias           String?   @map("card_alias") @db.VarChar(32)
+  cardSaveResult      String?   @map("card_save_result") @db.VarChar(16) // pending | saved | not_saved
+  autoRenewConsentId  String?   @map("auto_renew_consent_id")
+  chargeCardId        String?   @map("charge_card_id") // renewal_auto: billing_cards.id charged
+  confirmAfter        DateTime? @map("confirm_after")
+  confirmAttempts     Int       @default(0) @map("confirm_attempts")
+  /// renewal_auto: what the synchronous call said. Written in the same transaction as the renewal's move to awaiting_confirmation.
+  providerOutcome     String?   @map("provider_outcome") @db.VarChar(20) // not_sent | approved_claimed | declined | three_d_required | unknown
+  providerOutcomeAt   DateTime? @map("provider_outcome_at")
+  providerDeclineCode String?   @map("provider_decline_code") @db.VarChar(16)
+  /// The owner opted out / removed the card / requested deletion while this charge was in flight: refund on success.
+  refundOnSuccess     Boolean   @default(false) @map("refund_on_success")
+  refundState         String?   @map("refund_state") @db.VarChar(12) // required | refunded | waived
+  refundReason        String?   @map("refund_reason") @db.VarChar(32) // duplicate_period | owner_opt_out | charged_mismatch | erased_user | …
+  /// What the operator must refund, in kuruş, when it is not one charge of amountMinor: PayNKolay charged this
+  /// clientRefCode more than once (provider_duplicate: the extra charges; any other reason: every charge). Null = amountMinor.
+  refundAmountMinor   Int?      @map("refund_amount_minor")
+
+  @@unique([renewalId, attemptNo]) // NULLs allowed → checkout rows unaffected
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([refundState])
+  @@map("billing_payments")
+}
+
+/// Singleton. Binds this database to one PayNKolay environment and holds engine-wide state.
+model BillingSettings {
+  id                      String     @id @default("singleton") @db.VarChar(16)
+  /// 'live' | 'test'. Written once by scripts/billing-bind-env.ts; never by the app.
+  providerEnv             String     @map("provider_env") @db.VarChar(8)
+  breakerUntil            DateTime?  @map("breaker_until")
+  breakerReason           String?    @map("breaker_reason") @db.VarChar(40)
+  breakerTrippedAt        DateTime[] @default([]) @map("breaker_tripped_at") // last trips, pruned to 24 h
+  tickLeaseId             String?    @map("tick_lease_id") @db.VarChar(32)
+  tickLeaseUntil          DateTime?  @map("tick_lease_until")
+  lastDailyScanOn         String?    @map("last_daily_scan_on") @db.VarChar(10) // Istanbul YYYY-MM-DD
+  lastRetentionOn         String?    @map("last_retention_on") @db.VarChar(10)
+  referenceBackfillDoneAt DateTime?  @map("reference_backfill_done_at")
+  createdAt               DateTime   @default(now()) @map("created_at")
+  updatedAt               DateTime   @updatedAt @map("updated_at")
+
+  @@map("billing_settings")
+}
+
+/// One per owner who ever saved a card. Holds the sealed PayNKolay customerKey.
+model BillingCustomer {
+  userId            String    @id @map("user_id")
+  /// RESTRICT: account deletion must purge the provider cards first (tombstone on failure), never cascade silently.
+  user              User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  provider          String    @default("paynkolay") @db.VarChar(16)
+  providerEnv       String    @map("provider_env") @db.VarChar(8)
+  /// "cv1.<kid>.<iv>.<ct>.<tag>" (base64url parts), AES-256-GCM, AAD "cv1|<kid>|customer-key|<userId>". Never plaintext (DB CHECK).
+  customerKeyEnc    String    @map("customer_key_enc")
+  /// "ckf1_" + base64url(HMAC-SHA256(hmac.ckfp, "ckf:v1|" + plainKey))[0..32] — uniqueness without decrypting.
+  customerKeyFp     String    @unique @map("customer_key_fp") @db.VarChar(40)
+  lastListedAt      DateTime? @map("last_listed_at")
+  retentionNoticeAt DateTime? @map("retention_notice_at") // stored-card retention notice
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("billing_customers")
+}
+
+/// Display-only mirror of PayNKolay's card list. Nothing here is chargeable.
+model BillingCard {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "cd_" + 22 base64url chars of HMAC-SHA256(hmac.handle, "card-handle:v2|<userId>|<identity>").
+  handle           String    @unique @db.VarChar(25)
+  last4            String?   @db.VarChar(4)
+  brand            String?   @db.VarChar(24) // VISA | MASTERCARD | TROY | AMEX | … (upper-cased CARDBRAND)
+  issuer           String?   @db.VarChar(64) // CARDISSUER
+  cardType         String?   @map("card_type") @db.VarChar(16) // credit | debit | prepaid (when CARDTYPE is listed)
+  expMonth         Int?      @map("exp_month")
+  expYear          Int?      @map("exp_year")
+  /// csCardAlias we sent ("Buaze-XXXXXX"); used only to match a list row to the payment that saved it.
+  alias            String?   @db.VarChar(32)
+  /// Set only for a payment with saveCard=true and a card_save consent ("verified save").
+  savedByPaymentId String?   @map("saved_by_payment_id")
+  /// The auto-renew consent (or card-change amendment) that makes this card chargeable. At most one card per consent.
+  boundConsentId   String?   @unique @map("bound_consent_id")
+  /// First time a list call did not return this card; cleared when it reappears. Acted on only after a 2nd miss ≥ 24 h later.
+  missingSince     DateTime? @map("missing_since")
+  lastSeenAt       DateTime  @default(now()) @map("last_seen_at")
+  deletedAt        DateTime? @map("deleted_at")
+  deleteReason     String?   @map("delete_reason") @db.VarChar(24) // owner | replaced | provider_missing | unbound | retention | account_deleted
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId, deletedAt])
+  @@index([deletedAt])
+  @@map("billing_cards")
+}
+
+/// Append-only consent / mandate evidence. On account erasure userId becomes the pseudonym "del_…".
+model BillingConsent {
+  id                 String    @id @default(cuid())
+  userId             String?   @map("user_id") // owner id, or "del_<22>" after erasure
+  kind               String    @db.VarChar(24) // auto_renew_on | auto_renew_off | auto_renew_card_change | card_save | card_delete
+  actor              String    @db.VarChar(12) // owner | system | admin
+  authMethod         String?   @map("auth_method") @db.VarChar(16) // 3ds_checkout | stepup_totp | stepup_password | stepup_google | mail_link | session
+  reason             String?   @db.VarChar(40)
+  textVersion        String?   @map("text_version") @db.VarChar(32)
+  textHash           String?   @map("text_hash") @db.VarChar(64) // sha256 hex of textRendered (NFC)
+  /// The exact NFC string shown to the owner. textHash can always be re-verified from it.
+  textRendered       String?   @map("text_rendered") @db.Text
+  /// Canonical terms: { version, locale, planId, planName, amountMinor, cycle, firstChargeDate, last4, retryGapHours, graceHours, noticeHours }
+  terms              Json?
+  /// Versions of the legal documents the text refers to.
+  legalDocVersions   Json?     @map("legal_doc_versions")
+  locale             String?   @db.VarChar(2)
+  subscriptionPlanId String?   @map("subscription_plan_id")
+  billingCycle       String?   @map("billing_cycle") @db.VarChar(8)
+  amountMinor        Int?      @map("amount_minor") // consented per-charge ceiling (kuruş)
+  cardId             String?   @map("card_id") // billing_cards.id this consent covers (stable; not the handle)
+  paymentId          String?   @map("payment_id") // checkout that carried the consent
+  effectiveAt        DateTime? @map("effective_at")
+  confirmationSentAt DateTime? @map("confirmation_sent_at")
+  ipAddress          String?   @map("ip_address") @db.VarChar(45)
+  userAgent          String?   @map("user_agent") @db.VarChar(255)
+  ipPurgeAfter       DateTime? @map("ip_purge_after")
+  ipTruncatedAt      DateTime? @map("ip_truncated_at")
+  purgeAfter         DateTime? @map("purge_after") // row deleted after this
+  createdAt          DateTime  @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
-  @@map("billing_payments")
+  @@index([ipPurgeAfter])
+  @@index([purgeAfter])
+  @@map("billing_consents")
+}
+
+/// One row per (owner, period being renewed). The idempotency anchor of the renewal engine.
+model BillingRenewal {
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  providerEnv           String    @map("provider_env") @db.VarChar(8)
+  periodEnd             DateTime  @map("period_end") // BillingSubscription.renewsAt at scheduling time (E)
+  subscriptionPlanId    String?   @map("subscription_plan_id")
+  billingCycle          String    @map("billing_cycle") @db.VarChar(8)
+  mode                  String    @db.VarChar(10) // auto | reminder
+  modeReason            String?   @map("mode_reason") @db.VarChar(32)
+  state                 String    @default("scheduled") @db.VarChar(24)
+  attempts              Int       @default(0)
+  maxAttempts           Int       @default(3) @map("max_attempts")
+  nextAttemptAt         DateTime? @map("next_attempt_at")
+  confirmAfter          DateTime? @map("confirm_after")
+  lockedUntil           DateTime? @map("locked_until")
+  leaseId               String?   @map("lease_id") @db.VarChar(32)
+  /// graceEnd(E) for every renewal whose subscription had an effective auto-renew consent at creation; null otherwise.
+  graceEndsAt           DateTime? @map("grace_ends_at")
+  consentId             String?   @map("consent_id")
+  chargeCardId          String?   @map("charge_card_id") // billing_cards.id bound at notice time
+  quotedAmountMinor     Int?      @map("quoted_amount_minor") // amount stated in the delivered notice
+  noticeClaimedAt       DateTime? @map("notice_claimed_at")
+  noticeDeliveredAt     DateTime? @map("notice_delivered_at") // set only when the mailer returned true
+  noticeCardId          String?   @map("notice_card_id")
+  noticeFailures        Int       @default(0) @map("notice_failures")
+  announcedAttemptTimes Json?     @map("announced_attempt_times") // ISO strings named in the notice (A1..A3)
+  lastCallClaimedAt     DateTime? @map("last_call_claimed_at")
+  pendingMail           String?   @map("pending_mail") @db.VarChar(24)
+  lastFailureCode       String?   @map("last_failure_code") @db.VarChar(40)
+  lastFailureKind       String?   @map("last_failure_kind") @db.VarChar(8) // soft | hard
+  ownerPaymentId        String?   @map("owner_payment_id")
+  ownerPrevState        String?   @map("owner_prev_state") @db.VarChar(24)
+  cancelRequestedAt     DateTime? @map("cancel_requested_at")
+  cancelReason          String?   @map("cancel_reason") @db.VarChar(32)
+  manualReviewAt        DateTime? @map("manual_review_at")
+  succeededPaymentId    String?   @unique @map("succeeded_payment_id")
+  dunningStep           Int       @default(0) @map("dunning_step")
+  dryRunCountedAt       DateTime? @map("dry_run_counted_at")
+  endedAt               DateTime? @map("ended_at")
+  endReason             String?   @map("end_reason") @db.VarChar(32)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@unique([userId, periodEnd])
+  @@index([state, nextAttemptAt])
+  @@index([state, confirmAfter])
+  @@map("billing_renewals")
+}
+
+/// Provider-side card deletion still owed after an account was erased. Holds a verbatim copy of the sealed key.
+model BillingVaultTombstone {
+  id             String    @id // "tb_" + randomUUID()
+  providerEnv    String    @map("provider_env") @db.VarChar(8)
+  /// Verbatim copy of billing_customers.customer_key_enc (no re-seal, so no key is needed at delete time).
+  customerKeyEnc String    @map("customer_key_enc")
+  /// AAD context of the verbatim blob (the erased user's id). Kept only until provider deletion is verified.
+  aadUserId      String    @map("aad_user_id")
+  state          String    @default("open") @db.VarChar(8) // open | manual
+  attempts       Int       @default(0)
+  nextAttemptAt  DateTime  @default(now()) @map("next_attempt_at")
+  lastError      String?   @map("last_error") @db.VarChar(40)
+  manualSince    DateTime? @map("manual_since")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([state, nextAttemptAt])
+  @@map("billing_vault_tombstones")
 }
 
 // Public marketing pricing plans, fully managed from /admin/plans.
