@@ -1,5 +1,6 @@
 import type { MenuCategoryView, RestaurantView } from '@/components/menu/PublicMenuView';
 import type { MenuTheme } from '@/lib/validations';
+import type { MenuDesign } from '@/lib/menu-design';
 
 export interface RestaurantShape extends RestaurantView {
   menuEnabled: boolean;
@@ -8,6 +9,10 @@ export interface RestaurantShape extends RestaurantView {
   menuTheme: MenuTheme;
   menuAccentColor: string | null;
   menuLogoUrl: string | null;
+  /** Stored design (read with `readMenuDesign`), `null` = the family's own preset. */
+  menuDesign: MenuDesign | null;
+  /** Cover photo data URL (the Studio loads it; the public page only gets the image route). */
+  menuCoverUrl: string | null;
 }
 
 export type CategoryShape = MenuCategoryView;

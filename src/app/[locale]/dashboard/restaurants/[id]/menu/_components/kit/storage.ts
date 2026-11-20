@@ -5,6 +5,7 @@
  *
  * Keys in use: `buaze:menu:preview-collapsed`, `buaze:menu:live-hint:v1`,
  * `buaze:menu:mode`, `buaze:menu:service-hint:v1`, `buaze:menu:single-keys`,
+ * `buaze:menu:design-refresh:v1` (one-time "styles were refreshed" note),
  * `buaze:menu:collapsed:<restaurantId>`, `buaze:menu-setup:<restaurantId>` (session).
  */
 
@@ -55,6 +56,7 @@ export const STORAGE_KEYS = {
   mode: 'buaze:menu:mode',
   serviceHint: 'buaze:menu:service-hint:v1',
   singleKeys: 'buaze:menu:single-keys',
+  designRefresh: 'buaze:menu:design-refresh:v1',
   collapsed: (restaurantId: string) => `buaze:menu:collapsed:${restaurantId}`,
   setup: (restaurantId: string) => `buaze:menu-setup:${restaurantId}`,
 } as const;

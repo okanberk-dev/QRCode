@@ -24,7 +24,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
  */
 export function usePhotoUpload(restaurantId: string, isTr: boolean) {
   return useCallback(
-    async (file: File, kind: 'item' | 'logo'): Promise<PhotoUploadResult> => {
+    async (file: File, kind: 'item' | 'logo' | 'cover'): Promise<PhotoUploadResult> => {
       const failed = getMenuCopy(isTr ? 'tr' : 'en').photo.failed;
       if (!file.type.startsWith('image/')) {
         return { ok: false, message: mapMenuApiError({ code: 'IMAGE_UNPROCESSABLE' }, isTr) };
@@ -34,7 +34,12 @@ export function usePhotoUpload(restaurantId: string, isTr: boolean) {
       try {
         const compressed = await compressImage(
           file,
-          kind === 'item' ? { maxDim: 960, quality: 0.8 } : { maxDim: 1024, quality: 0.85 },
+          // The server still resizes the cover to 1600×900 and caps it at 380 KB.
+          kind === 'item'
+            ? { maxDim: 960, quality: 0.8 }
+            : kind === 'cover'
+              ? { maxDim: 1600, quality: 0.82 }
+              : { maxDim: 1024, quality: 0.85 },
         );
         if (compressed.size > MAX_BYTES) {
           return { ok: false, message: mapMenuApiError({ status: 413, code: 'IMAGE_TOO_LARGE' }, isTr) };

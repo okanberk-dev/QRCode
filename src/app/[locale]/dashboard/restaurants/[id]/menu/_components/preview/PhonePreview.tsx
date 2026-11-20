@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useId, useRef, type MouseEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, type MouseEvent } from 'react';
 import dynamic from 'next/dynamic';
 import { EyeOff } from 'lucide-react';
 import type { MenuCategoryView, RestaurantView } from '@/components/menu/PublicMenuView';
+import { resolveMenuDesign } from '@/lib/menu-design';
 import { useMenuCopy } from '../kit/useMenuCopy';
 import { DRAFT_ITEM_ID, isTempId } from '../menu-merge';
 import { PHONE_WIDTH, usePhoneFit } from './usePhoneFit';
@@ -51,7 +52,7 @@ function scrollPreviewTo(viewport: HTMLElement, el: HTMLElement, offset: number)
  */
 export function PhonePreview({
   restaurant, categories, locale, variant, focusItemId, followCategoryId, onPickItem, height, topOffset,
-  hiddenNote,
+  hiddenNote, scrollTopKey,
 }: {
   restaurant: RestaurantView;
   categories: MenuCategoryView[];
@@ -64,6 +65,8 @@ export function PhonePreview({
   topOffset?: number;
   /** Why the focused item is not in the preview (hidden item / category). */
   hiddenNote?: string | null;
+  /** Changing it scrolls the viewport back to the top (the design panel: header, logo, cover…). */
+  scrollTopKey?: number;
 }) {
   const copy = useMenuCopy();
   const uid = useId().replace(/[^A-Za-z0-9_-]/g, '');
@@ -71,6 +74,23 @@ export function PhonePreview({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const pausedUntil = useRef(0);
   const fit = usePhoneFit(stageRef, variant, { topOffset, height });
+  // The page colour under the menu (no white edge below a dark or cream menu).
+  const pageBg = useMemo(
+    () =>
+      resolveMenuDesign({
+        menuTheme: restaurant.menuTheme,
+        menuAccentColor: restaurant.menuAccentColor,
+        primaryColor: restaurant.primaryColor,
+        menuDesign: restaurant.menuDesign ?? null,
+        hasCover: Boolean(restaurant.menuCoverUrl),
+      }).colors.bg,
+    [restaurant.menuTheme, restaurant.menuAccentColor, restaurant.primaryColor, restaurant.menuDesign, restaurant.menuCoverUrl],
+  );
+
+  useEffect(() => {
+    if (scrollTopKey === undefined) return;
+    viewportRef.current?.scrollTo({ top: 0 });
+  }, [scrollTopKey]);
 
   const onClickCapture = (e: MouseEvent<HTMLDivElement>) => {
     if (!onPickItem) return;
@@ -130,8 +150,8 @@ export function PhonePreview({
       onTouchStart={pause}
       aria-label={copy.preview.label}
       role="region"
-      style={{ width: PHONE_WIDTH, height: fit.height, zoom: fit.zoom, contain: 'layout paint' }}
-      className="overflow-y-auto overflow-x-hidden bg-white [scrollbar-gutter:stable]"
+      style={{ width: PHONE_WIDTH, height: fit.height, zoom: fit.zoom, contain: 'layout paint', backgroundColor: pageBg }}
+      className="overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
     >
       {highlight}
       <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} disableAnalytics />

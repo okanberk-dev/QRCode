@@ -245,6 +245,9 @@ function StudioLoaded({
     onAccessLost,
   });
   const { discard: discardDesign, dirty: designDirty } = design;
+  // Bumped by the design panel: the preview jumps to the top of the menu.
+  const [previewTopKey, setPreviewTopKey] = useState(0);
+  const bumpPreviewTop = useCallback(() => setPreviewTopKey((k) => k + 1), []);
 
   // ── derived ──
   const stable = useMemo(() => withoutTemps(categories), [categories]);
@@ -886,6 +889,7 @@ function StudioLoaded({
     onPickItem: designOpen || setupCategories !== null ? undefined : openItem,
     hiddenNote: designOpen ? null : hiddenNote,
     topOffset: noToolbar ? 72 : isWide ? 128 : 184,
+    scrollTopKey: designOpen ? previewTopKey : undefined,
   };
 
   const collapsePreview = (value: boolean) => {
@@ -1255,11 +1259,14 @@ function StudioLoaded({
                   <DesignPanel
                     presentation="docked"
                     design={design}
+                    restaurantName={restaurant.name}
                     fallbackAccent={fallbackAccent}
                     isTr={isTr}
                     isPublished={isPublished}
+                    readOnly={!canDesign}
                     onRequestClose={requestCloseDesign}
                     onApplied={onDesignApplied}
+                    onPreviewTop={bumpPreviewTop}
                   />
                 </div>
               )}
@@ -1390,11 +1397,14 @@ function StudioLoaded({
           <DesignPanel
             presentation="sheet"
             design={design}
+            restaurantName={restaurant.name}
             fallbackAccent={fallbackAccent}
             isTr={isTr}
             isPublished={isPublished}
+            readOnly={!canDesign}
             onRequestClose={requestCloseDesign}
             onApplied={onDesignApplied}
+            onPreviewTop={bumpPreviewTop}
             leaveConfirm={
               designLeave
                 ? {

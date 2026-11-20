@@ -1,4 +1,5 @@
-import type { MenuAllergen, MenuBadge, MenuTheme } from '@/lib/validations';
+import type { MenuAllergen, MenuBadge } from '@/lib/validations';
+import { MENU_PRESETS, MENU_PRESET_LABELS, type MenuPresetId } from '@/lib/menu-design';
 
 export const BADGE_LABELS: Record<MenuBadge, { tr: string; en: string }> = {
   populer: { tr: 'Popüler', en: 'Popular' },
@@ -67,14 +68,9 @@ export const ALLERGEN_GROUPS: { tr: string; en: string; items: MenuAllergen[] }[
   { tr: 'Diğer',       en: 'Other',         items: ['soya', 'hardal', 'kereviz'] },
 ];
 
-// Hint per theme — small TR/EN copy chip on the card so a brand-new owner can
-// pick the layout that fits their venue without opening the public preview.
-export const THEME_VIBES: Record<MenuTheme, { tr: string; en: string }> = {
-  classic:    { tr: 'Restoran · Aile',         en: 'Restaurant · Family' },
-  modern:     { tr: 'Fast food · Burger',      en: 'Fast food · Burger' },
-  elegant:    { tr: 'Fine dining',             en: 'Fine dining' },
-  gastronomy: { tr: 'Şef · Bar · Gece',        en: 'Chef · Bar · Night' },
-  minimal:    { tr: 'Cafe · Pastane',          en: 'Cafe · Bakery' },
-  bistro:     { tr: 'Bistro · Kahvaltı',       en: 'Bistro · Brunch' },
-  pulse:      { tr: 'Pulse · Marka uyumlu',    en: 'Pulse · Brand-aligned' },
-};
+// Who each preset suits — a small TR/EN line on the card so a brand-new owner
+// can pick the look that fits their venue. Derived from MENU_PRESET_LABELS
+// (one source of truth); the 7 legacy ids stay valid keys.
+export const THEME_VIBES: Record<MenuPresetId, { tr: string; en: string }> = Object.fromEntries(
+  MENU_PRESETS.map((id) => [id, { tr: MENU_PRESET_LABELS[id].vibeTr, en: MENU_PRESET_LABELS[id].vibeEn }]),
+) as Record<MenuPresetId, { tr: string; en: string }>;

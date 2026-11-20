@@ -2,22 +2,26 @@
 
 import type { KeyboardEvent, Ref } from 'react';
 import { Check } from 'lucide-react';
-import type { MenuTheme } from '@/lib/validations';
+import type { ResolvedMenuDesign } from '@/lib/menu-design';
 import { ThemeThumb } from '../ThemeThumb';
 
 /**
- * One theme in the "Tema" radio group (spec §7.11): the kept `ThemeThumb`
- * drawn with the draft accent, the theme name and who it suits. Choosing it
- * changes only the preview.
+ * One style in the "Stil" radio group (menu-design-final §11.1): a live mini
+ * menu drawn from the resolver with the owner's name and draft accent, the
+ * style's name and who it suits. Choosing it changes only the preview.
+ * Selection uses Buaze owner styling (graphite ring + check), never menu tokens.
  */
 export function ThemeCard({
-  theme, label, vibe, ariaLabel, accent, checked, disabled, onSelect, onKeyDown, buttonRef,
+  resolved, restaurantName, label, vibe, ariaLabel, customizedLabel, customized, checked, disabled, onSelect, onKeyDown, buttonRef,
 }: {
-  theme: MenuTheme;
+  resolved: ResolvedMenuDesign;
+  restaurantName: string;
   label: string;
   vibe: string;
   ariaLabel: string;
-  accent: string;
+  customizedLabel: string;
+  /** Selected and has knob overrides. */
+  customized: boolean;
   checked: boolean;
   disabled?: boolean;
   onSelect: () => void;
@@ -35,21 +39,33 @@ export function ThemeCard({
       disabled={disabled}
       onClick={onSelect}
       onKeyDown={onKeyDown}
-      className={`group relative flex min-w-0 flex-col items-stretch gap-2.5 rounded-xl border bg-white p-2.5 text-left transition-[border-color,box-shadow] duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:opacity-60 ${
-        checked ? 'border-[#0A0A0A] shadow-[0_0_0_1px_#0A0A0A]' : 'border-[#E5E5E5] hover:border-[#A3A3A3]'
+      className={`group relative flex min-w-0 flex-col items-stretch gap-2 rounded-xl bg-white p-1.5 text-left transition-[box-shadow,transform] duration-[160ms] ease-[cubic-bezier(.2,.8,.2,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+        checked
+          ? 'shadow-[0_0_0_2px_#0A0A0A]'
+          : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3,0_6px_16px_-10px_rgba(10,10,10,0.35)]'
       }`}
     >
-      <ThemeThumb theme={theme} accent={accent} />
-      <span className="flex items-start justify-between gap-2 px-0.5">
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-semibold leading-tight text-[#0A0A0A]">{label}</span>
-          <span className="mt-0.5 block truncate text-[12px] text-[#737373]">{vibe}</span>
-        </span>
+      <span className="relative block">
+        <ThemeThumb d={resolved} name={restaurantName} />
         {checked && (
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]" aria-hidden="true">
-            <Check size={12} strokeWidth={3} className="text-[#0A0A0A]" />
+          <span
+            className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0A] shadow-[0_0_0_2px_#FFFFFF]"
+            aria-hidden="true"
+          >
+            <Check size={12} strokeWidth={3} className="text-white" />
           </span>
         )}
+      </span>
+      <span className="block px-1 pb-1">
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <span className="min-w-0 max-w-full truncate text-[13.5px] font-semibold leading-tight text-[#0A0A0A]">{label}</span>
+          {customized && (
+            <span className="shrink-0 rounded-full bg-[#EAF9B8] px-1.5 py-px text-[11px] font-medium leading-4 text-[#3F4A00]">
+              {customizedLabel}
+            </span>
+          )}
+        </span>
+        <span className="mt-0.5 line-clamp-2 block text-[12px] leading-snug text-[#737373]">{vibe}</span>
       </span>
     </button>
   );

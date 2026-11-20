@@ -18,6 +18,18 @@
  * Pure (no React) so it can be imported by tests and by any component.
  */
 import { MENU_BULK_MAX_ITEMS } from '@/lib/menu-bulk-parse';
+import {
+  MENU_PRESETS, MENU_PRESET_LABELS, MENU_SURFACES, MENU_TYPEFACES, SURFACES, TYPEFACES, MENU_TAGLINE_MAX,
+  type MenuPresetId, type MenuSurface, type MenuTypeface,
+} from '@/lib/menu-design';
+
+/** Preset names come from one source (MENU_PRESET_LABELS); the 7 legacy ids stay valid. */
+const presetNames = (lang: 'tr' | 'en') =>
+  Object.fromEntries(MENU_PRESETS.map((id) => [id, MENU_PRESET_LABELS[id][lang]])) as Record<MenuPresetId, string>;
+const surfaceNames = (lang: 'tr' | 'en') =>
+  Object.fromEntries(MENU_SURFACES.map((id) => [id, lang === 'tr' ? SURFACES[id].labelTr : SURFACES[id].labelEn])) as Record<MenuSurface, string>;
+const typefaceNames = (lang: 'tr' | 'en') =>
+  Object.fromEntries(MENU_TYPEFACES.map((id) => [id, lang === 'tr' ? TYPEFACES[id].labelTr : TYPEFACES[id].labelEn])) as Record<MenuTypeface, string>;
 import { SETUP_CATEGORY_NAME_MAX, SETUP_MAX_CATEGORIES, type SetupCategoryError } from './menu-setup';
 
 /** English noun agreement: "1 item" / "2 items". Turkish has no plural after a number. */
@@ -361,18 +373,55 @@ const tr = {
   },
   design: {
     title: 'Menü görünümü',
-    theme: 'Tema',
-    themes: {
-      classic: 'Klasik',
-      modern: 'Modern',
-      elegant: 'Şık',
-      gastronomy: 'Gastronomi',
-      minimal: 'Minimal',
-      bistro: 'Bistro',
-      pulse: 'Pulse',
+    theme: 'Stil',
+    themes: presetNames('tr'),
+    tabs: { style: 'Stil', color: 'Renk', type: 'Yazı', layout: 'Düzen', brand: 'Marka' },
+    tabDirty: (name: string) => `${name}, uygulanmamış değişiklik var`,
+    refreshNote:
+      'Menü stilleri yenilendi: daha okunaklı yazılar, otomatik renk uyumu ve 5 yeni stil. Senin bir şey yapman gerekmiyor.',
+    refreshDismiss: 'Tamam',
+    suggestedAccent: (name: string) => `Bu stil ${name} rengiyle güzel görünür`,
+    useSuggested: 'Rengi kullan',
+    knobsReset: 'Düzen ve yazı ayarların bu stile göre sıfırlandı.',
+    restoreKnobs: 'Geri al',
+    resetAll: 'Bu stilin varsayılanlarına dön',
+    presetDefault: 'stil varsayılanı',
+    customized: 'Özelleştirildi',
+    surface: 'Zemin',
+    surfaces: surfaceNames('tr'),
+    typeface: 'Yazı karakteri',
+    typefaces: typefaceNames('tr'),
+    typefaceSample: 'Mercimek çorbası',
+    knobs: {
+      items: { label: 'Ürünler', values: { list: 'Liste', grid: 'Izgara', feature: 'Vitrin', text: 'Metin' } },
+      header: { label: 'Üst alan', values: { banner: 'Bant', centered: 'Ortalı', cover: 'Kapak', compact: 'Kompakt' } },
+      nav: { label: 'Kategori menüsü', values: { pills: 'Hap', underline: 'Çizgi' } },
+      cardStyle: { label: 'Ürün kutusu', values: { cards: 'Kartlı', rows: 'Çizgili' } },
+      density: { label: 'Yoğunluk', values: { airy: 'Ferah', regular: 'Dengeli', compact: 'Sıkı' } },
+      corners: { label: 'Köşeler', values: { sharp: 'Keskin', soft: 'Yumuşak', round: 'Yuvarlak' } },
+      price: { label: 'Fiyat', values: { plain: 'Sade', accent: 'Renkli', mono: 'Daktilo' } },
+      badges: { label: 'Rozetler', values: { quiet: 'Sade', color: 'Renkli' } },
     },
+    coverNeeded: 'Kapak için bir fotoğraf ekle. Eklenene kadar ortalı üst alan görünür.',
+    addCover: 'Kapak ekle',
+    cover: 'Kapak fotoğrafı',
+    uploadCover: 'Kapak yükle',
+    changeCover: 'Kapağı değiştir',
+    removeCover: 'Kaldır',
+    coverHint: 'Yatay bir fotoğraf seç (en az 1600×900). Menünün en üstünde görünür; kenarları kırpılabilir.',
+    showCoverInHeader: 'Kapağı üst alanda göster',
+    tagline: 'Slogan',
+    taglinePlaceholder: 'Ör. 1987’den beri odun ateşinde',
+    taglineHint: 'Adının altında görünür. İki dilde de yazdığın gibi gösterilir.',
+    taglineCounter: (n: number) => `${n}/${MENU_TAGLINE_MAX}`,
+    contrastPicked: 'Seçtiğin',
+    contrastUsed: 'Menüde',
+    contrastText: (surface: string, lighter: boolean) =>
+      `Bu renk ${surface} zeminde yazı için çok ${lighter ? 'koyu' : 'açık'}. Fiyat ve vurgu yazılarında okunur kalsın diye daha ${lighter ? 'açık' : 'koyu'} bir tonu kullanılıyor.`,
+    contrastFill: 'Düğme ve etiketlerdeki yazı okunsun diye ton hafifçe ayarlandı.',
     accent: 'Vurgu rengi',
-    accentHint: 'Menü QR’ı bu rengi kullanır; okunabilirlik için çok açık renkler otomatik koyulaştırılır.',
+    accentHint:
+      'Renk düğmelerde, çizgilerde ve vurgularda kullanılır. Yazı olarak okunmayacak kadar açık ya da koyuysa menüde ve QR’da otomatik ayarlanır.',
     custom: 'Özel renk',
     customChip: 'Özel',
     defaultAccent: 'Varsayılan',
@@ -389,10 +438,10 @@ const tr = {
     clean: 'Görünüm kayıtlı',
     applyLiveHint: 'Uyguladığın anda müşteriler yeni görünümü görür.',
     closeDirtyTitle: 'Değişiklikler uygulanmadı',
-    closeDirtyBody: 'Uygulamadan çıkarsan seçtiğin tema, renk ve logo kaydedilmez.',
+    closeDirtyBody: 'Uygulamadan çıkarsan seçtiğin stil, renk, yazı ve görseller kaydedilmez.',
     closeDirtyConfirm: 'Uygulamadan çık',
     closeDirtyCancel: 'Geri dön',
-    themeCardLabel: (name: string) => `${name} teması`,
+    themeCardLabel: (name: string) => `${name} stili`,
   },
   share: {
     title: 'Paylaş ve QR',
@@ -976,18 +1025,55 @@ const en: MenuCopy = {
   },
   design: {
     title: 'Menu design',
-    theme: 'Theme',
-    themes: {
-      classic: 'Classic',
-      modern: 'Modern',
-      elegant: 'Elegant',
-      gastronomy: 'Gastronomy',
-      minimal: 'Minimal',
-      bistro: 'Bistro',
-      pulse: 'Pulse',
+    theme: 'Style',
+    themes: presetNames('en'),
+    tabs: { style: 'Style', color: 'Color', type: 'Type', layout: 'Layout', brand: 'Brand' },
+    tabDirty: (name: string) => `${name}, has unapplied changes`,
+    refreshNote:
+      'Menu styles were refreshed: easier reading, automatic color contrast and 5 new styles. Nothing to do on your side.',
+    refreshDismiss: 'Got it',
+    suggestedAccent: (name: string) => `This style looks great with ${name}`,
+    useSuggested: 'Use color',
+    knobsReset: 'Your layout and type settings were reset for this style.',
+    restoreKnobs: 'Undo',
+    resetAll: "Back to this style's defaults",
+    presetDefault: 'style default',
+    customized: 'Customized',
+    surface: 'Background',
+    surfaces: surfaceNames('en'),
+    typeface: 'Typeface',
+    typefaces: typefaceNames('en'),
+    typefaceSample: 'Lentil soup',
+    knobs: {
+      items: { label: 'Items', values: { list: 'List', grid: 'Grid', feature: 'Showcase', text: 'Text' } },
+      header: { label: 'Header', values: { banner: 'Band', centered: 'Centered', cover: 'Cover', compact: 'Compact' } },
+      nav: { label: 'Category menu', values: { pills: 'Pills', underline: 'Underline' } },
+      cardStyle: { label: 'Item style', values: { cards: 'Cards', rows: 'Lines' } },
+      density: { label: 'Spacing', values: { airy: 'Airy', regular: 'Balanced', compact: 'Compact' } },
+      corners: { label: 'Corners', values: { sharp: 'Sharp', soft: 'Soft', round: 'Round' } },
+      price: { label: 'Price', values: { plain: 'Plain', accent: 'Colored', mono: 'Typewriter' } },
+      badges: { label: 'Badges', values: { quiet: 'Quiet', color: 'Colorful' } },
     },
+    coverNeeded: 'Add a cover photo. Until then the centered header is shown.',
+    addCover: 'Add cover',
+    cover: 'Cover photo',
+    uploadCover: 'Upload cover',
+    changeCover: 'Change cover',
+    removeCover: 'Remove',
+    coverHint: 'Choose a landscape photo (at least 1600×900). It appears at the top of your menu; edges may be cropped.',
+    showCoverInHeader: 'Show the cover in the header',
+    tagline: 'Tagline',
+    taglinePlaceholder: 'E.g. Wood-fired since 1987',
+    taglineHint: 'Shown under your name, in both languages exactly as written.',
+    taglineCounter: (n: number) => `${n}/${MENU_TAGLINE_MAX}`,
+    contrastPicked: 'Your pick',
+    contrastUsed: 'On the menu',
+    contrastText: (surface: string, lighter: boolean) =>
+      `This color is too ${lighter ? 'dark' : 'light'} for text on ${surface}. A ${lighter ? 'lighter' : 'darker'} shade is used for prices and accent text so they stay readable.`,
+    contrastFill: 'The shade was adjusted slightly so text on buttons and labels stays readable.',
     accent: 'Accent color',
-    accentHint: 'The menu QR uses this color; very light colors are darkened automatically so it scans.',
+    accentHint:
+      'Your color is used for buttons, lines and highlights. If it is too light or dark to read as text, the menu and QR adjust it automatically.',
     custom: 'Custom color',
     customChip: 'Custom',
     defaultAccent: 'Default',
@@ -1004,10 +1090,10 @@ const en: MenuCopy = {
     clean: 'Design saved',
     applyLiveHint: 'Customers see the new design as soon as you apply it.',
     closeDirtyTitle: 'Changes not applied',
-    closeDirtyBody: "If you leave without applying, the theme, color and logo you picked won't be saved.",
+    closeDirtyBody: "If you leave without applying, your style, color, type and image choices won't be saved.",
     closeDirtyConfirm: 'Leave without applying',
     closeDirtyCancel: 'Go back',
-    themeCardLabel: (name: string) => `${name} theme`,
+    themeCardLabel: (name: string) => `${name} style`,
   },
   share: {
     title: 'Share & QR',

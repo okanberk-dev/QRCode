@@ -10,6 +10,7 @@
  */
 import type { MenuItemView } from '@/components/menu/PublicMenuView';
 import { mapMenuApiError } from '@/lib/menu-api-error';
+import type { MenuDesign } from '@/lib/menu-design';
 import type { RestoreSkipCode } from '@/lib/menu-restore';
 import type { ItemPatch } from '../menu-item-form';
 import type { SavedCategory, SavedItem } from '../menu-merge';
@@ -85,14 +86,27 @@ export function menuApi(restaurantId: string, isTr: boolean) {
         '/menu/publish',
         json('PATCH', { menuPublished }),
       ),
-    uploadImage: (file: Blob, kind: 'item' | 'logo') => {
+    uploadImage: (file: Blob, kind: 'item' | 'logo' | 'cover') => {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('kind', kind);
       return call<{ url: string }>('/menu/upload', { method: 'POST', body: fd });
     },
-    patchTheme: (patch: { menuTheme?: string; menuAccentColor?: string | null; menuLogoUrl?: string | null }) =>
-      call<Record<string, unknown>>('/theme', json('PATCH', patch)),
+    patchTheme: (patch: {
+      menuTheme?: string;
+      menuAccentColor?: string | null;
+      menuLogoUrl?: string | null;
+      menuDesign?: MenuDesign | null;
+      menuCoverUrl?: string | null;
+    }) =>
+      // Canonical values only — the route never echoes the logo or cover blobs.
+      call<{
+        id: string;
+        menuTheme: string;
+        menuAccentColor: string | null;
+        menuDesign: unknown;
+        menuCoverVersion: string | null;
+      }>('/theme', json('PATCH', patch)),
     restore: (body: { itemIds: string[] } | { categoryId: string }) =>
       call<RestoreAnswer>('/menu/restore', json('POST', body)),
     qrUrl: ({ format, width }: { format: 'png' | 'svg'; width: number }) =>
