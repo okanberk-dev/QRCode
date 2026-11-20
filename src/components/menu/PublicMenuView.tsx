@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 import type { MenuAllergen, MenuBadge, MenuTheme } from '@/lib/validations';
+import type { MenuDesign } from '@/lib/menu-design';
 import { useMenuAnalytics, useProductViewTracking } from '@/hooks/useMenuAnalytics';
 import ProductDetailModal from './ProductDetailModal';
 import MenuSplash from './MenuSplash';
@@ -46,6 +47,10 @@ export interface RestaurantView {
   menuTheme: MenuTheme;
   menuAccentColor: string | null;
   menuLogoUrl: string | null;
+  /** Stored design (menu-design-final §5); rendered by chunk 2, ignored until then. */
+  menuDesign?: MenuDesign | null;
+  /** Public cover src (the image route), or null. */
+  menuCoverUrl?: string | null;
 }
 
 interface PublicMenuViewProps {

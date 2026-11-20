@@ -271,6 +271,14 @@ model Restaurant {
   menuUpdatedAt           DateTime? @map("menu_updated_at")
   menuTheme               String    @default("classic") @map("menu_theme")
   menuAccentColor         String?   @map("menu_accent_color")
+  // Menu design (2026-11): versioned JSON of enumerated choices, read with
+  // readMenuDesign (src/lib/menu-design.ts). NULL = the refreshed look of menuTheme.
+  menuDesign              Json?     @map("menu_design")
+  // Optional menu cover: raster data URL (CLAUDE.md §3), served only via
+  // /api/menu/[slug]/img/cover. The version is a content hash written with it,
+  // so the public page never loads the blob to build the URL.
+  menuCoverUrl            String?   @map("menu_cover_url") @db.Text
+  menuCoverVersion        String?   @map("menu_cover_version")
   // Pulse AI auto-draft (CLAUDE.md §15). Owner opts in per-restaurant. When
   // enabled, low-rating (≤3★) feedback POSTs trigger an async draft that
   // surfaces in the inbox. Default tone seeds suggest-reply when caller does

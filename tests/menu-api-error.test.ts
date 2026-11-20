@@ -157,3 +157,9 @@ test('mapMenuApiError: CATEGORY_DELETED (a skipped code of an item restore)', ()
     "This item's category was deleted. Restore the category first.",
   );
 });
+
+test('mapMenuApiError: DESIGN_CONFLICT (theme PATCH 409)', () => {
+  const input = { status: 409, error: 'DESIGN_CONFLICT' };
+  assert.equal(mapMenuApiError(input, true), 'Görünüm başka bir yerden değişti. Sayfayı yenileyip tekrar dene.');
+  assert.equal(mapMenuApiError(input, false), 'The design was changed somewhere else. Refresh the page and try again.');
+});

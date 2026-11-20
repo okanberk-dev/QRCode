@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { isValidHexColor } from '@/lib/validations';
+import { normaliseHex } from '@/lib/qr-colors';
+import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,7 +139,7 @@ export async function PUT(req: NextRequest) {
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
-    select: { id: true },
+    select: { id: true, slug: true },
   });
   if (!restaurant) return NextResponse.json({ error: 'restaurant_not_found' }, { status: 404 });
 
@@ -206,11 +208,14 @@ export async function PUT(req: NextRequest) {
   // only the fields this request actually changed.
   const mirror = {
     ...(logoUrl !== undefined ? { menuLogoUrl: logoUrl } : {}),
-    ...(accentColor !== undefined ? { menuAccentColor: accentColor } : {}),
+    // The public menu reads uppercase #RRGGBB (#RGB is expanded).
+    ...(accentColor !== undefined ? { menuAccentColor: accentColor ? normaliseHex(accentColor) : null } : {}),
     ...(primaryColor ? { primaryColor } : {}),
   };
   if (Object.keys(mirror).length > 0) {
     await prisma.restaurant.update({ where: { id: restaurantId }, data: mirror });
+    // The public menu is ISR-cached; show the new logo / colours now.
+    revalidatePublicMenu(restaurant.slug);
   }
 
   return NextResponse.json({

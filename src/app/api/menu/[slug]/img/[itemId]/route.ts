@@ -5,7 +5,8 @@ import { parseRasterDataUrl } from '@/lib/menu-image-url';
 /**
  * GET /api/menu/[slug]/img/[itemId] — public photo of a published menu.
  *
- * Product photos (and the menu logo, `itemId = "logo"`) live as base64 data
+ * Product photos (plus the menu logo, `itemId = "logo"`, and the menu cover,
+ * `itemId = "cover"`) live as base64 data
  * URLs in Postgres (CLAUDE.md §3). Inlining them into the public page repeated
  * every photo up to four times in the HTML; this route serves each one once,
  * as a real image, with a year-long immutable cache. The page links to it with
@@ -49,6 +50,13 @@ export async function GET(
         select: { menuLogoUrl: true },
       });
       stored = restaurant?.menuLogoUrl;
+    } else if (itemId === 'cover') {
+      // Item ids are cuids, so the literal `cover` cannot collide.
+      const restaurant = await prisma.restaurant.findFirst({
+        where: publishedRestaurant,
+        select: { menuCoverUrl: true },
+      });
+      stored = restaurant?.menuCoverUrl;
     } else {
       const item = await prisma.menuItem.findFirst({
         where: {
