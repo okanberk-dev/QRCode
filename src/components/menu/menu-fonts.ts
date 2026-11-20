@@ -6,12 +6,15 @@ import { Bricolage_Grotesque, Fraunces, Instrument_Serif, Newsreader, Playfair_D
 // Turkish ğ/ş/İ. next/font needs literal options: no spreads, no variables.
 // Space Grotesk, Inter and JetBrains Mono come from src/components/root/fonts.ts.
 
+// Fraunces and Newsreader: pinned static weights instead of the variable
+// font with opsz (menu-design-final §10.3 budget gate: the variable files were
+// 274 KB / 450 KB for latin + latin-ext, normal + italic; the cap is 150 KB).
 const fraunces = Fraunces({
-  subsets: ['latin', 'latin-ext'], style: ['normal', 'italic'], axes: ['opsz'],
+  subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600'], style: ['normal', 'italic'],
   display: 'swap', preload: false, variable: '--font-m-fraunces',
 });
 const newsreader = Newsreader({
-  subsets: ['latin', 'latin-ext'], style: ['normal', 'italic'], axes: ['opsz'],
+  subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600'], style: ['normal', 'italic'],
   display: 'swap', preload: false, variable: '--font-m-newsreader',
 });
 const instrumentSerif = Instrument_Serif({
