@@ -14,7 +14,7 @@ type Copy = { tr: string; en: string };
 export const BILLING_COPY = {
   // ── Payment method card (§12.2) ──
   'pm.eyebrow': { tr: 'ÖDEME YÖNTEMİ', en: 'PAYMENT METHOD' },
-  'pm.meta': { tr: "PayNKolay'de saklanır · Kart numaranız Buaze'ye ulaşmaz", en: 'Stored by PayNKolay · Your card number never reaches Buaze' },
+  'pm.meta': { tr: "PayNKolay'da saklanır · Kart numaranız Buaze'ye ulaşmaz", en: 'Stored by PayNKolay · Your card number never reaches Buaze' },
   'pm.expires': { tr: 'Son kullanma {mm}/{yy}', en: 'Expires {mm}/{yy}' },
   'pm.expired': { tr: 'Süresi doldu', en: 'Expired' },
   'pm.expiresSoon': { tr: 'Kartınızın süresi bir sonraki yenilemeden önce doluyor.', en: 'Your card expires before the next renewal.' },
@@ -24,31 +24,35 @@ export const BILLING_COPY = {
   'pm.more': { tr: 'Kart — diğer işlemler', en: 'Card — more actions' },
   'pm.removeTitle': { tr: 'Kayıtlı kart kaldırılsın mı?', en: 'Remove saved card?' },
   'pm.removeBodyAuto': {
-    tr: 'Kart PayNKolay\'den silinir ve otomatik yenileme kapanır. Planınız {date} tarihine kadar açık kalır.',
+    tr: 'Kart PayNKolay\'dan silinir ve otomatik yenileme kapanır. Planınız {date} tarihine kadar açık kalır.',
     en: 'The card is deleted at PayNKolay and auto-renew turns off. Your plan stays active until {date}.',
   },
   'pm.removeBody': {
-    tr: "Kart PayNKolay'den silinir. Sonraki ödemede kart bilgilerinizi yeniden girersiniz.",
+    tr: "Kart PayNKolay'dan silinir. Sonraki ödemede kart bilgilerinizi yeniden girersiniz.",
     en: "The card is deleted at PayNKolay. You'll enter your card again next time you pay.",
   },
   'pm.removeConfirm': { tr: 'Kartı kaldır', en: 'Remove card' },
   'pm.cancel': { tr: 'Vazgeç', en: 'Cancel' },
   'pm.removed': { tr: 'Kart kaldırıldı.', en: 'Card removed.' },
   'pm.removeFailed': {
-    tr: 'Kart PayNKolay\'de hâlâ görünüyor; silme doğrulanamadı. Birazdan tekrar deneyin.',
+    tr: 'Kart PayNKolay\'da hâlâ görünüyor; silme doğrulanamadı. Birazdan tekrar deneyin.',
     en: 'PayNKolay still lists the card; the deletion could not be confirmed. Try again shortly.',
   },
   'pm.removeError': { tr: 'Kart kaldırılamadı. Tekrar deneyin.', en: "The card couldn't be removed. Try again." },
-  'pm.refreshed': { tr: 'Kart bilgisi PayNKolay\'den yenilendi.', en: 'Card details refreshed from PayNKolay.' },
+  'pm.removeNotListed': {
+    tr: 'PayNKolay bu kartı şu an listelemedi; kart kaldırılmadı. Birazdan tekrar deneyin.',
+    en: "PayNKolay didn't list this card just now; nothing was removed. Try again shortly.",
+  },
+  'pm.refreshed': { tr: 'Kart bilgisi PayNKolay\'dan yenilendi.', en: 'Card details refreshed from PayNKolay.' },
   'pm.refreshError': {
-    tr: "PayNKolay'e şu an ulaşılamadı; son bilinen kart gösteriliyor.",
+    tr: "PayNKolay'a şu an ulaşılamadı; son bilinen kart gösteriliyor.",
     en: "PayNKolay couldn't be reached; showing the last known card.",
   },
   'pm.loadError': { tr: 'Ödeme yöntemi yüklenemedi.', en: "The payment method couldn't be loaded." },
   'pm.retry': { tr: 'Tekrar dene', en: 'Try again' },
   'pm.empty': { tr: 'Kayıtlı kart yok', en: 'No saved card' },
   'pm.emptyBody': {
-    tr: "Kartınız bir ödeme sırasında, PayNKolay'in güvenli sayfasında kaydedilir.",
+    tr: "Kartınız bir ödeme sırasında, PayNKolay'ın güvenli sayfasında kaydedilir.",
     en: "Your card is saved during a payment, on PayNKolay's secure page.",
   },
   'pm.add': { tr: 'Ödeyip kartı kaydet', en: 'Pay and save card' },
@@ -65,6 +69,12 @@ export const BILLING_COPY = {
     en: "This card is never used for auto-renew. Remove it if you don't want it.",
   },
   'pm.otherRemove': { tr: 'Kaldır', en: 'Remove' },
+  'pm.previous': { tr: 'Önceki kart •••• {last4}', en: 'Previous card •••• {last4}' },
+  'pm.previousNoDigits': { tr: 'Önceki kart', en: 'Previous card' },
+  'pm.previousHint': {
+    tr: 'Yeni kartınız kaydedildi; bu kart PayNKolay\'dan silinmeyi bekliyor. Hemen kaldırabilirsiniz.',
+    en: 'Your new card is saved; this one is waiting to be deleted at PayNKolay. You can remove it now.',
+  },
   'pm.saveLater': {
     tr: 'Kart kaydı, hesabınız doğrulandıktan 24 saat sonra açılır.',
     en: 'Saving a card becomes available 24 hours after your account is verified.',
@@ -103,6 +113,10 @@ export const BILLING_COPY = {
     tr: 'Bu dönemin ödemesi şu anda işleniyor; sonucu birkaç dakika içinde göreceksiniz.',
     en: "This period's payment is being processed; you'll see the result in a few minutes.",
   },
+  'notice.ownerPaying': {
+    tr: 'Başlattığınız bir ödemenin sonucunu bekliyoruz. Ödemeyi tamamlamadıysanız yeniden ödeyebilirsiniz; iki ödeme de geçerse fazlasını iade ederiz.',
+    en: "We're waiting for the result of a payment you started. If you didn't finish it, you can pay again; if both payments go through, we refund the extra one.",
+  },
 
   // ── Review page (§12.4) ──
   'review.eyebrow': { tr: 'GÜVENLİ ÖDEME', en: 'SECURE PAYMENT' },
@@ -119,12 +133,7 @@ export const BILLING_COPY = {
   'review.businessOne': { tr: '1 işletme', en: '1 business' },
   'review.dueToday': { tr: 'Bugün ödenecek', en: 'Due today' },
   'review.vatIncluded': { tr: 'KDV dahil · Türk lirası', en: 'VAT included · Turkish lira' },
-  'review.saveCard': { tr: "Kartımı sonraki ödemeler için PayNKolay'de kaydet", en: 'Save my card at PayNKolay for future payments' },
-  'review.saveCardHint': {
-    tr: "Kart numaranız Buaze'ye ulaşmaz. Kartı istediğiniz zaman Hesabım'dan kaldırabilirsiniz.",
-    en: 'Your card number never reaches Buaze. Remove it anytime from Account.',
-  },
-  'review.consentDetails': { tr: 'Saklama onayının tam metni', en: 'Full text of the storage consent' },
+  'review.saveCard': { tr: "Kartımı sonraki ödemeler için PayNKolay'da kaydet", en: 'Save my card at PayNKolay for future payments' },
   'review.saveNewCard': { tr: 'Kartımı kaydet', en: 'Save my card' },
   'review.saveLater': {
     tr: 'Kart kaydı, hesabınız doğrulandıktan 24 saat sonra açılır. Şimdilik kart kaydetmeden ödeyebilirsiniz.',
@@ -135,7 +144,7 @@ export const BILLING_COPY = {
     en: 'Pick your saved card on the PayNKolay page and confirm with 3D Secure.',
   },
   'review.enterCard': {
-    tr: "Kart bilgilerinizi PayNKolay'in sayfasında girip 3D Secure ile onaylayın.",
+    tr: "Kart bilgilerinizi PayNKolay'ın sayfasında girip 3D Secure ile onaylayın.",
     en: "Enter your card on PayNKolay's page and confirm with 3D Secure.",
   },
   'review.saveNewHint': {
@@ -156,7 +165,7 @@ export const BILLING_COPY = {
     tr: '“{amount} öde” düğmesine basarak {amount} ödeme yükümlülüğü altına girdiğinizi kabul edersiniz.',
     en: 'By pressing “Pay {amount}” you accept the obligation to pay {amount}.',
   },
-  'review.trust': { tr: "3D Secure · Kart bilgileri PayNKolay'de girilir", en: 'Card details are entered at PayNKolay · 3D Secure' },
+  'review.trust': { tr: "3D Secure · Kart bilgileri PayNKolay'da girilir", en: 'Card details are entered at PayNKolay · 3D Secure' },
   'review.legal': { tr: 'Mesafeli Hizmet Sözleşmesi · İade ve İptal Politikası', en: 'Distance Service Agreement · Refund and Cancellation Policy' },
   'review.distance': { tr: 'Mesafeli Hizmet Sözleşmesi', en: 'Distance Service Agreement' },
   'review.refund': { tr: 'İade ve İptal Politikası', en: 'Refund and Cancellation Policy' },
@@ -186,13 +195,31 @@ export const BILLING_COPY = {
     en: 'The price or terms changed. Check the updated amount and try again.',
   },
   'review.err.renewal_in_progress': {
-    tr: 'Bu dönemin ödemesi şu anda işleniyor. Birkaç dakika sonra tekrar bakın.',
-    en: "This period's payment is being processed. Check again in a few minutes.",
+    tr: 'Bu dönem için başka bir ödeme şu anda doğrulanıyor. Sonucu Hesabım sayfasında görürsünüz; ödeme geçmezse buradan yeniden ödeyebilirsiniz.',
+    en: 'Another payment for this period is being confirmed. You will see the result under Account; if it fails, you can pay again here.',
   },
   'review.err.verification_required': {
-    tr: 'Güvenlik doğrulaması için çıkış yapıp yeniden giriş yapın.',
-    en: 'For a security check, sign out and sign in again.',
+    tr: 'Ödeme için güvenlik doğrulaması gerekiyor: yeniden giriş yapın. Sorun sürerse {email} adresine yazın.',
+    en: 'This payment needs a security check: sign in again. If the problem continues, write to {email}.',
   },
+  'review.verify.stale': {
+    tr: 'Ödemeden önce güvenlik doğrulaması gerekiyor: son girişiniz 24 saatten eski. Yeniden giriş yapın, ardından bu sayfaya dönersiniz.',
+    en: 'A security check is needed before paying: your last sign-in is more than 24 hours old. Sign in again and you will come back to this page.',
+  },
+  'review.verify.noScore': {
+    tr: 'Son girişinizde güvenlik kontrolü tamamlanamadı; tarayıcınız ya da bir eklenti Google reCAPTCHA\'yı engellemiş olabilir. Engelleyiciyi bu site için kapatıp yeniden giriş yapın. Sorun sürerse {email} adresine yazın.',
+    en: 'The security check did not complete at your last sign-in; your browser or an extension may have blocked Google reCAPTCHA. Allow it for this site and sign in again. If the problem continues, write to {email}.',
+  },
+  'review.verify.lowScore': {
+    tr: 'Son girişiniz güvenlik kontrolünden geçmedi. Yeniden giriş yapın; sorun sürerse {email} adresine yazın.',
+    en: 'Your last sign-in did not pass the security check. Sign in again; if the problem continues, write to {email}.',
+  },
+  'review.verify.button': { tr: 'Yeniden giriş yap', en: 'Sign in again' },
+  'review.expired': {
+    tr: 'Planınızın süresi doldu. Devam etmek için bir paket seçin.',
+    en: 'Your plan has ended. Pick a plan to continue.',
+  },
+  'review.seePlans': { tr: 'Paketleri gör', en: 'See plans' },
   'review.err.save_not_allowed': {
     tr: 'Kart kaydı şu an kullanılamıyor; ödemeyi kart kaydetmeden yapabilirsiniz.',
     en: "Saving a card isn't available yet; you can pay without saving it.",
@@ -216,14 +243,22 @@ export const BILLING_COPY = {
     en: 'This plan is too small for the businesses on your account. Pick a larger plan.',
   },
 
+  // ── Saved-card page (/billing/{l}/card, outside the dashboard gate) ──
+  'card.title': { tr: 'Kayıtlı kart', en: 'Saved card' },
+  'card.body': {
+    tr: "Kartınız PayNKolay'da saklanır; kart numaranız Buaze'ye ulaşmaz. Kartı buradan istediğiniz zaman kaldırabilirsiniz.",
+    en: 'Your card is stored by PayNKolay; your card number never reaches Buaze. You can remove it here at any time.',
+  },
+  'card.none': { tr: 'Kayıtlı kartınız yok.', en: 'You have no saved card.' },
+
   // ── Hand-off page (§12.5) ──
   'inter.eyebrow': { tr: 'GÜVENLİ ÖDEME', en: 'SECURE PAYMENT' },
-  'inter.title': { tr: "PayNKolay'e geçiyorsunuz", en: 'Taking you to PayNKolay' },
+  'inter.title': { tr: "PayNKolay'a geçiyorsunuz", en: 'Taking you to PayNKolay' },
   'inter.body': {
-    tr: "Kart bilgilerinizi PayNKolay'in sayfasında girersiniz; Buaze kart numaranızı görmez.",
+    tr: "Kart bilgilerinizi PayNKolay'ın sayfasında girersiniz; Buaze kart numaranızı görmez.",
     en: "You enter your card on PayNKolay's page; Buaze never sees your card number.",
   },
-  'inter.save': { tr: "Kartınız PayNKolay'de saklanacak.", en: 'Your card will be stored by PayNKolay.' },
+  'inter.save': { tr: "Kartınız PayNKolay'da saklanacak.", en: 'Your card will be stored by PayNKolay.' },
   'inter.auto': {
     tr: 'Otomatik yenileme: {date} tarihinden itibaren her ay {amount} · istediğiniz an kapatın',
     en: 'Auto-renew: {amount} every month from {date} · turn off anytime',
@@ -281,11 +316,11 @@ export const BILLING_COPY = {
   // ── Plan picker (§12.7) ──
   'picker.title': { tr: 'Paket seç', en: 'Pick a plan' },
   'picker.intro': {
-    tr: "Ödeme PayNKolay'in güvenli sayfasında alınır. Otomatik yenileme isteğe bağlıdır.",
+    tr: "Ödeme PayNKolay'ın güvenli sayfasında alınır. Otomatik yenileme isteğe bağlıdır.",
     en: "Payment is taken on PayNKolay's secure page. Auto-renew is optional.",
   },
   'picker.introLegacy': {
-    tr: "Ödeme PayNKolay'in güvenli sayfasında alınır. Kartınızdan otomatik çekim yapılmaz.",
+    tr: "Ödeme PayNKolay'ın güvenli sayfasında alınır. Kartınızdan otomatik çekim yapılmaz.",
     en: "Payment is taken on PayNKolay's secure page. Your card is never charged automatically.",
   },
   'picker.footer': { tr: 'GÜVENLİ ÖDEME · 3D SECURE · TAAHHÜTSÜZ', en: 'SECURE PAYMENT · 3D SECURE · NO COMMITMENT' },

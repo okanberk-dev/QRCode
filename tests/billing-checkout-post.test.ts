@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type { PanelActor } from '../src/lib/auth';
-import { checkoutPostCore, parseCheckoutForm, reviewPath, riskGatePasses, type CheckoutDeps, type CheckoutForm } from '../src/lib/billing/checkout-post';
+import { checkoutPostCore, parseCheckoutForm, reviewPath, riskGatePasses, riskGateState, type CheckoutDeps, type CheckoutForm } from '../src/lib/billing/checkout-post';
 import { cardSaveConsent, consentTextHash } from '../src/lib/billing/consent';
 import { cardFlags, fakeCardProvider, testVaultDeps } from './fixtures/card-provider';
 import { fakePrisma } from './fixtures/fake-prisma';
@@ -175,6 +175,13 @@ describe('checkout POST core', () => {
     assert.equal(out.kind === 'redirect' && out.error, 'verification_required');
     assert.equal(riskGatePasses(false, { lastLoginRiskScore: null, lastLoginRiskAt: null }, new Date()), true, 'no reCAPTCHA configured → no gate');
     assert.equal(riskGatePasses(true, { lastLoginRiskScore: 0.9, lastLoginRiskAt: new Date(Date.now() - 25 * HOUR) }, new Date()), false);
+    // The review page names the reason before the pay button (UX-02).
+    const at = new Date();
+    assert.equal(riskGateState(true, { lastLoginRiskScore: 0.9, lastLoginRiskAt: new Date(at.getTime() - 25 * HOUR) }, at), 'stale');
+    assert.equal(riskGateState(true, { lastLoginRiskScore: null, lastLoginRiskAt: null }, at), 'stale');
+    assert.equal(riskGateState(true, { lastLoginRiskScore: null, lastLoginRiskAt: at }, at), 'no_score');
+    assert.equal(riskGateState(true, { lastLoginRiskScore: 0.3, lastLoginRiskAt: at }, at), 'low_score');
+    assert.equal(riskGateState(true, { lastLoginRiskScore: 0.5, lastLoginRiskAt: at }, at), null);
 
     t = await setup({ userAgeMs: 3 * DAY });
     for (let i = 0; i < 3; i++) assert.equal((await checkoutPostCore(t.deps, t.ctx, form())).kind, 'interstitial');
@@ -199,6 +206,25 @@ describe('checkout POST core', () => {
     assert.equal(out.kind === 'redirect' && out.error, 'rate_limited', '3 failed hosted payments in 24 h');
   });
 
+  it('WEBSEC-4: the per-IP failed-payment cap is counted in the database (every instance, failures found by reconcile)', async () => {
+    const t = await setup();
+    const first = await checkoutPostCore(t.deps, t.ctx, form());
+    assert.equal(first.kind, 'interstitial');
+    const fp = String(t.db.billingPayment.rows[0].clientIpFp);
+    assert.match(fp, /^ip1_[A-Za-z0-9_-]{22}$/, 'an HMAC fingerprint is stored');
+    assert.ok(!fp.includes('203.0.113'), 'never the IP itself');
+    // Five hosted payments from this IP failed (other accounts, marked failed by reconciliation; no in-memory block).
+    for (let i = 0; i < 5; i++) {
+      await t.db.billingPayment.create({
+        data: { userId: `other${i}`, amountMinor: 1, billingCycle: 'monthly', status: 'failed', kind: 'checkout', clientIpFp: fp },
+      });
+    }
+    const out = await checkoutPostCore(t.deps, t.ctx, form());
+    assert.equal(out.kind === 'redirect' && out.error, 'rate_limited');
+    const elsewhere = await checkoutPostCore(t.deps, { ...t.ctx, ip: '198.51.100.9' }, form());
+    assert.equal(elsewhere.kind, 'interstitial', 'another IP is not affected');
+  });
+
   it('7. origin, owner and environment guards answer before anything else', async () => {
     const t = await setup();
     let out = await checkoutPostCore(t.deps, { ...t.ctx, originOk: false }, form());
@@ -217,7 +243,7 @@ describe('checkout POST core', () => {
     assert.equal(t.db.billingPayment.rows.length, 0);
   });
 
-  it('D19: paying for an open renewal holds it (owner_paying); a pending owner payment blocks a second one', async () => {
+  it('D19: paying for an open renewal holds it (owner_paying); paying again supersedes the owner\'s own pending payment', async () => {
     const t = await setup();
     const E = new Date('2026-12-14T09:00:00Z');
     await t.db.billingSubscription.create({
@@ -233,8 +259,21 @@ describe('checkout POST core', () => {
     const payment = t.db.billingPayment.rows[0];
     assert.equal(payment.kind, 'renewal_link');
     assert.equal(payment.renewalId, 'r1');
+    // §12.5: the owner backed out of PayNKolay's page and pays again — the new payment takes over the lock
+    // at once (no 45-105 min wait); the abandoned one stays pending for reconcile, and if both succeed the
+    // second is settled as duplicate_period and refunded.
     const second = await checkoutPostCore(t.deps, t.ctx, form({ intent: 'renew', planId: null }));
-    assert.equal(second.kind === 'redirect' && second.error, 'renewal_in_progress');
+    assert.equal(second.kind, 'interstitial');
+    const after = t.db.billingRenewal.rows[0];
+    assert.equal(after.state, 'owner_paying');
+    assert.equal(after.ownerPaymentId, second.kind === 'interstitial' ? second.paymentId : null);
+    assert.equal(after.ownerPrevState, 'scheduled', 'the state to return to is kept');
+    assert.equal(t.db.billingPayment.rows.length, 2);
+    assert.equal(t.db.billingPayment.rows[0].status, 'pending', 'the abandoned payment is left to reconcile');
+    // A pending payment that is not this owner's own hosted payment still blocks.
+    await t.db.billingPayment.updateMany({ where: { id: after.ownerPaymentId }, data: { kind: 'renewal_auto' } });
+    const blocked = await checkoutPostCore(t.deps, t.ctx, form({ intent: 'renew', planId: null }));
+    assert.equal(blocked.kind === 'redirect' && blocked.error, 'renewal_in_progress');
     // A charge in flight blocks too.
     await t.db.billingRenewal.updateMany({ where: { id: 'r1' }, data: { state: 'awaiting_confirmation' } });
     const third = await checkoutPostCore(t.deps, t.ctx, form());

@@ -51,6 +51,34 @@ export function allowedBillingOrigins(requestOrigin: string | null): string[] {
   return out;
 }
 
+/**
+ * CSRF check of a native form POST (the review page → checkout route). The
+ * `Origin` must be one of `allowed`. `Origin: null` is accepted only together
+ * with `Sec-Fetch-Site: same-origin`: a browser sends `null` for a same-origin
+ * form post when a referrer policy such as `no-referrer` is in force (Fetch
+ * standard), and `Sec-Fetch-*` is a forbidden header page script cannot set,
+ * so a cross-site or opaque-origin (sandboxed) form still fails. A missing
+ * Origin always fails.
+ */
+export function billingFormOriginOk(origin: string | null, secFetchSite: string | null, allowed: string[]): boolean {
+  if (!origin) return false;
+  if (allowed.includes(origin)) return true;
+  return origin === 'null' && secFetchSite === 'same-origin';
+}
+
+/**
+ * The admin-entered card label of `/api/billing/summary` (brand + last4) is
+ * card data: only the workspace owner gets it (D9, §11.5). Team members read
+ * the summary without it.
+ */
+export function summaryPaymentMethod(
+  sub: { paymentBrand: string | null; paymentLast4: string | null } | null,
+  viewerIsOwner: boolean,
+): { brand: string; last4: string } | null {
+  if (!viewerIsOwner || !sub?.paymentBrand || !sub.paymentLast4) return null;
+  return { brand: sub.paymentBrand, last4: sub.paymentLast4 };
+}
+
 export async function requireBillingOwner(
   req: NextRequest,
   opts: { mutate: boolean; needFlag: 'cardStorage' | 'autoCharge' | null; flags?: BillingFlags },

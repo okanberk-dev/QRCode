@@ -6,7 +6,14 @@ Spec: `billing-spec-final.md` (§3.4, §16). Code map: CLAUDE.md §44.3–§44.4
 
 Pages that start or end the hand-off to PayNKolay's hosted card page:
 `/billing/{tr,en}/checkout`, `/billing/{tr,en}/result` and the hand-off page answered by
-`POST|GET /api/billing/paynkolay/checkout`.
+`POST|GET /api/billing/paynkolay/checkout`. `/billing/{tr,en}/card` (the saved card and "Remove card",
+outside the dashboard gate so an owner whose plan ended can still delete it; the retention mail links
+here) runs under the same layout and CSP.
+
+The billing pages send `Referrer-Policy: same-origin` (header + meta), not `no-referrer`: under
+`no-referrer` browsers send `Origin: null` on the review page's form POST and every checkout would fail
+the origin check. `same-origin` still sends nothing to any other origin. The checkout route also accepts
+`Origin: null` together with `Sec-Fetch-Site: same-origin` (`billingFormOriginOk`).
 
 Allowed script sources:
 

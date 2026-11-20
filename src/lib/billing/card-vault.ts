@@ -81,6 +81,8 @@ const MIRROR_SELECT = {
 } as const;
 
 const CARD_MISSING_CONFIRM_MS = 24 * 60 * 60_000;
+/** A save whose card PayNKolay does not list yet stays 'pending' this long after settlement (one list is not proof). */
+const CARD_SAVE_NOT_LISTED_GRACE_MS = 60 * 60_000;
 
 function cardYearMonth(expMonth: number | null, expYear: number | null): number | null {
   if (!expMonth || !expYear || expMonth < 1 || expMonth > 12) return null;
@@ -282,12 +284,14 @@ export async function refreshCards(deps: VaultDeps, userId: string, nextChargeAt
 export type DeleteOwnerCardResult = 'deleted' | 'not_found' | 'unconfirmed';
 
 /**
- * Owner deletion: re-list with THIS owner's customer key only, find the card
- * whose handle (HMAC over this owner's id) equals `handle`, delete it at
- * PayNKolay, re-list to verify. A handle of another owner can never match, so
- * no provider delete is ever sent for it ('not_found', the IDOR path). A card
- * that is only in this owner's mirror (already gone at PayNKolay) is removed
- * from the mirror. 'unconfirmed' when PayNKolay still lists the card.
+ * Owner deletion (§8.2): re-list with THIS owner's customer key only, find the
+ * card whose handle (HMAC over this owner's id) equals `handle`, delete it at
+ * PayNKolay, re-list to verify. No match → 'not_found' and no provider delete:
+ * a handle of another owner can never match (the IDOR path), and a card of
+ * this owner that one list did not show is NOT reported deleted — one list
+ * is not proof (§9.5); the mirror sync records the miss and removes the row
+ * only on a second miss ≥ 24 h later. 'unconfirmed' when PayNKolay still
+ * lists the card after the delete. Only 'deleted' means a verified delete.
  */
 export async function deleteOwnerCard(
   deps: VaultDeps,
@@ -307,11 +311,8 @@ export async function deleteOwnerCard(
   const before = await listWithHandles(deps, userId, customerKey);
   const target = before.find((c) => c.handle === handle);
   if (!target) {
-    const own = await deps.db.billingCard.findFirst({ where: { userId, handle, deletedAt: null }, select: { id: true } });
     await syncMirror(deps, userId, before, now);
-    if (!own) return 'not_found';
-    await markDeleted();
-    return 'deleted';
+    return 'not_found';
   }
 
   try {
@@ -346,7 +347,17 @@ export async function reconcileCardsAfterSave(deps: VaultDeps, paymentId: string
   const { db } = deps;
   const payment = await db.billingPayment.findUnique({
     where: { id: paymentId },
-    select: { id: true, userId: true, status: true, saveCard: true, cardAlias: true, cardSaveResult: true, providerEnv: true },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      saveCard: true,
+      cardAlias: true,
+      cardSaveResult: true,
+      providerEnv: true,
+      createdAt: true,
+      completedAt: true,
+    },
   });
   if (!payment || !payment.saveCard) return 'not_saved';
   if (payment.cardSaveResult === 'saved' || payment.cardSaveResult === 'not_saved') return payment.cardSaveResult;
@@ -378,8 +389,16 @@ export async function reconcileCardsAfterSave(deps: VaultDeps, paymentId: string
   const saved =
     (payment.cardAlias ? listed.find((c) => c.card.alias === payment.cardAlias) : undefined) ??
     listed.find((c) => !knownBefore.has(c.handle));
-  if (!saved || !consent) {
-    billingLog('info', 'vault.card_not_saved', { paymentId, reason: !saved ? 'not_listed' : 'no_consent' });
+  if (!consent) {
+    billingLog('info', 'vault.card_not_saved', { paymentId, reason: 'no_consent' });
+    return setResult('not_saved');
+  }
+  if (!saved) {
+    // One list that does not show the new card (not there yet, or a one-off "02 Gecerli Kart Yok") is not
+    // proof: stay 'pending' (the engine re-lists every tick) for an hour after settlement, then give up.
+    const settledAt = (payment.completedAt ?? payment.createdAt).getTime();
+    if (now.getTime() - settledAt < CARD_SAVE_NOT_LISTED_GRACE_MS) return 'pending';
+    billingLog('info', 'vault.card_not_saved', { paymentId, reason: 'not_listed' });
     return setResult('not_saved');
   }
 
@@ -388,37 +407,83 @@ export async function reconcileCardsAfterSave(deps: VaultDeps, paymentId: string
   await db.billingCard.update({ where: { id: row.id }, data: { savedByPaymentId: paymentId }, select: { id: true } });
   await db.billingConsent.updateMany({ where: { id: consent.id, cardId: null }, data: { cardId: row.id, effectiveAt: now } });
 
-  // D1: one card on file. A card bound to an auto-renew consent is never deleted here: switching the
-  // chargeable card goes through the card-change amendment of the auto-renew release (D6).
+  // D1: one card on file. A failed or unverified clean-up does not undo the save: the engine retries it
+  // (listCardCleanupsOwed → retryCardCleanup) until the other cards are verified gone.
+  await deleteOtherCards(deps, userId, customerKey, saved.handle, listed, paymentId);
+  return setResult('saved');
+}
+
+/**
+ * D1 clean-up after a verified save: deletes every other card of the owner at
+ * PayNKolay except the saved one and any card bound to an auto-renew consent
+ * (switching the chargeable card is the D6 amendment), then re-lists. A card
+ * is marked 'replaced' only when that re-list is a real answer — it shows the
+ * saved card — and no longer shows the deleted one; an empty or failed
+ * re-list proves nothing. Returns true when no other card is left.
+ */
+async function deleteOtherCards(
+  deps: VaultDeps,
+  userId: string,
+  customerKey: Sensitive,
+  savedHandle: string,
+  listed: ListedCard[],
+  paymentId: string,
+): Promise<boolean> {
+  const { db } = deps;
   const bound = await db.billingCard.findMany({
     where: { userId, deletedAt: null, boundConsentId: { not: null } },
     select: { handle: true },
   });
-  const keep = new Set([saved.handle, ...bound.map((b) => b.handle)]);
+  const keep = new Set([savedHandle, ...bound.map((b) => b.handle)]);
   const others = listed.filter((c) => !keep.has(c.handle));
-  if (others.length > 0) {
-    for (const other of others) {
-      try {
-        await deleteSavedCard(deps.cfg, deps.transport, customerKey, other.card.token);
-      } catch (err) {
-        billingLog('warn', 'vault.card_delete_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
-      }
-    }
+  if (others.length === 0) return true;
+  for (const other of others) {
     try {
-      const after = await listWithHandles(deps, userId, customerKey);
-      const gone = others.filter((o) => !after.some((a) => a.handle === o.handle)).map((o) => o.handle);
-      if (gone.length > 0) {
-        await db.billingCard.updateMany({
-          where: { userId, handle: { in: gone }, deletedAt: null },
-          data: { deletedAt: deps.now(), deleteReason: 'replaced', boundConsentId: null },
-        });
-      }
-      await syncMirror(deps, userId, after, deps.now());
+      await deleteSavedCard(deps.cfg, deps.transport, customerKey, other.card.token);
     } catch (err) {
-      billingLog('warn', 'vault.reconcile_relist_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
+      billingLog('warn', 'vault.card_delete_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
     }
   }
-  return setResult('saved');
+  let after: ListedCard[];
+  try {
+    after = await listWithHandles(deps, userId, customerKey);
+  } catch (err) {
+    billingLog('warn', 'vault.reconcile_relist_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
+    return false;
+  }
+  if (!after.some((a) => a.handle === savedHandle)) {
+    billingLog('warn', 'vault.reconcile_relist_unreliable', { paymentId });
+    return false;
+  }
+  const gone = others.filter((o) => !after.some((a) => a.handle === o.handle)).map((o) => o.handle);
+  if (gone.length > 0) {
+    await db.billingCard.updateMany({
+      where: { userId, handle: { in: gone }, deletedAt: null },
+      data: { deletedAt: deps.now(), deleteReason: 'replaced', boundConsentId: null },
+    });
+  }
+  await syncMirror(deps, userId, after, deps.now());
+  return gone.length === others.length;
+}
+
+/**
+ * Engine retry of a D1 clean-up (§9 phase 1): the payment's verified card must
+ * still be live and listed (a list without it is not a real answer, so
+ * nothing is deleted on it). Returns true when no other card is left.
+ */
+export async function retryCardCleanup(deps: VaultDeps, paymentId: string): Promise<boolean> {
+  const { db } = deps;
+  const card = await db.billingCard.findFirst({
+    where: { savedByPaymentId: paymentId, deletedAt: null },
+    select: { userId: true, handle: true },
+  });
+  if (!card || card.userId.startsWith('del_')) return false;
+  const customerKey = await getCustomerKey(deps, card.userId);
+  if (!customerKey) return false;
+  const listed = await listWithHandles(deps, card.userId, customerKey);
+  if (!listed.some((c) => c.handle === card.handle)) return false;
+  await syncMirror(deps, card.userId, listed, deps.now());
+  return deleteOtherCards(deps, card.userId, customerKey, card.handle, listed, paymentId);
 }
 
 export interface PurgeResult {

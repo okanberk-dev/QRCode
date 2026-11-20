@@ -48,7 +48,9 @@ export default function CardVisual({
   const brand = cardBrandLabel(card.brand, locale);
   const expiry = formatCardExpiry(card.expMonth, card.expYear);
   return (
-    <div className={`w-full ${maxW}`}>
+    // `@container`: the number row sizes itself to the card, not the viewport (a 259 px card on a phone,
+    // ~292 px in the right column of a 1280 px laptop), so the expiry is never pushed past the edge.
+    <div className={`@container w-full ${maxW}`}>
       <div
         role="img"
         aria-label={cardAriaLabel(card, locale)}
@@ -77,7 +79,8 @@ export default function CardVisual({
         </svg>
         <div className="relative flex h-full flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <span className={`min-w-0 truncate text-[#A3A3A3] ${sm ? 'text-[11px]' : 'text-[12px]'}`}>{card.issuer ?? 'Buaze'}</span>
+            {/* No issuer from PayNKolay → nothing (never "Buaze": Buaze neither issues nor holds the card). */}
+            <span className={`min-w-0 truncate text-[#A3A3A3] ${sm ? 'text-[11px]' : 'text-[12px]'}`}>{card.issuer ?? ''}</span>
             <span className={`bz-mono shrink-0 uppercase tracking-[0.14em] text-white/80 ${sm ? 'text-[10px]' : 'text-[11px]'}`}>{brand}</span>
           </div>
           <svg aria-hidden="true" width={sm ? 24 : 28} height={sm ? 17 : 20} viewBox="0 0 28 20" fill="none">
@@ -85,7 +88,11 @@ export default function CardVisual({
             <path d="M0.5 7H9.5V13H0.5M27.5 7H18.5V13H27.5M9.5 10H18.5M14 0.5V7M14 13V19.5" stroke="#C6F24E" strokeOpacity="0.45" />
           </svg>
           <div className="flex items-end justify-between gap-3">
-            <span className={`bz-mono whitespace-nowrap tracking-[0.12em] ${sm ? 'text-[12.5px]' : 'text-[15px]'}`}>
+            <span
+              className={`bz-mono min-w-0 truncate whitespace-nowrap ${
+                sm ? 'text-[12px] tracking-[0.08em]' : 'text-[13px] tracking-[0.08em] @min-[320px]:text-[15px] @min-[320px]:tracking-[0.12em]'
+              }`}
+            >
               <span className="text-white/55">•••• •••• •••• </span>
               {card.last4 ?? '••••'}
             </span>

@@ -16,8 +16,15 @@ import { maskedCard } from './billing-mail-parts';
 export interface BillingCardRetentionParams {
   last4: string | null;
   deleteOn: Date;
-  /** `/{locale}/dashboard/account?section=billing`. */
+  /** `/billing/{locale}/card`: the saved-card page outside the dashboard gate (a lapsed owner can open it). */
   accountUrl: string;
+}
+
+/** The card as a whole noun phrase, so the last four digits never run into the date ("•••• 4242 19 Ara"). */
+export function retentionCardPhrase(last4: string | null, locale: 'tr' | 'en'): string {
+  const masked = maskedCard(last4);
+  if (locale === 'en') return masked ? `your card ending in ${last4}` : 'your saved card';
+  return masked ? `${masked} ile biten kartınız` : 'kartınız';
 }
 
 export async function renderBillingCardRetention(
@@ -28,7 +35,7 @@ export async function renderBillingCardRetention(
   const date = formatIstanbulDate(params.deleteOn, locale);
   const subject = isTr ? `Kayıtlı kartınız ${date} tarihinde silinecek` : `Your saved card will be deleted on ${date}`;
   const loaded = await loadMailCopy('billing-card-retention', locale, isTr ? BILLING_CARD_RETENTION_TR : BILLING_CARD_RETENTION_EN);
-  const card = maskedCard(params.last4) || (isTr ? '(kayıtlı kart)' : '(saved card)');
+  const card = retentionCardPhrase(params.last4, isTr ? 'tr' : 'en');
   const vars = { date, card };
   const copy = deepSubstitute(loaded, vars, 'html');
   const copyText = deepSubstitute(loaded, vars, 'text');

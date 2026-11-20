@@ -12,7 +12,7 @@ export const BILLING_RENEWAL_UPCOMING_TR = {
   title1: 'Planınız yarın sona eriyor.',
   intro: '${planName} paketiniz ${date} tarihine kadar açık. Kesintisiz devam etmek için dönem bitmeden yenileyin.',
   introGrace: 'Erişiminiz ${grace} tarihine kadar sürer; dilerseniz şimdi yenileyin.',
-  howTo: "Ödeme PayNKolay'in güvenli sayfasında 3D Secure ile alınır. Kartınızdan otomatik çekim yapılmaz; yenilemeyi siz onaylarsınız.",
+  howTo: "Ödeme PayNKolay'ın güvenli sayfasında 3D Secure ile alınır. Kartınızdan otomatik çekim yapılmaz; yenilemeyi siz onaylarsınız.",
   labelPlan: 'Paket',
   labelAmount: 'Tutar',
   labelPeriodEnd: 'Dönem sonu',
@@ -48,7 +48,7 @@ export const BILLING_PERIOD_ENDED_TR = {
   title: 'Planınızın süresi doldu.',
   intro: '${planName} döneminiz sona erdi ve panel erişiminiz durdu. Verileriniz yerinde duruyor; bir paket seçip ödediğinizde kaldığınız yerden devam edersiniz.',
   cta: 'Paketleri gör',
-  footnote: "Ödeme PayNKolay'in güvenli sayfasında 3D Secure ile alınır.",
+  footnote: "Ödeme PayNKolay'ın güvenli sayfasında 3D Secure ile alınır.",
 };
 
 export const BILLING_PERIOD_ENDED_EN = {
@@ -64,16 +64,16 @@ export const BILLING_CARD_RETENTION_TR = {
   headerEyebrow: 'Plan ve faturalama · Kayıtlı kart',
   eyebrow: 'Kart silinecek · ${date}',
   title: 'Kayıtlı kartınız ${date} tarihinde silinecek.',
-  intro: "Aboneliğiniz sona erdiği için PayNKolay'de saklanan kartınız ${card} ${date} tarihinde silinecek. Bir şey yapmanız gerekmiyor.",
-  outro: 'Aboneliğinizi yeniden başlatırsanız kartınızı bir sonraki ödemede tekrar kaydedebilirsiniz.',
-  cta: "Hesabım'a git",
+  intro: "Aboneliğiniz sona erdiği için PayNKolay'da saklanan ${card} ${date} tarihinde silinecek. Bir şey yapmanız gerekmiyor.",
+  outro: 'Kartı daha önce silmek isterseniz aşağıdaki sayfadan kaldırabilirsiniz. Aboneliğinizi yeniden başlatırsanız kartınızı bir sonraki ödemede tekrar kaydedebilirsiniz.',
+  cta: 'Kayıtlı kartı yönet',
 };
 
 export const BILLING_CARD_RETENTION_EN = {
   headerEyebrow: 'Plan & billing · Saved card',
   eyebrow: 'Card deletion · ${date}',
   title: 'Your saved card will be deleted on ${date}.',
-  intro: 'Your subscription has ended, so the card ${card} stored by PayNKolay will be deleted on ${date}. You don\'t need to do anything.',
-  outro: 'If you restart your subscription, you can save your card again at your next payment.',
-  cta: 'Go to Account',
+  intro: 'Your subscription has ended, so ${card} stored by PayNKolay will be deleted on ${date}. You don\'t need to do anything.',
+  outro: 'To remove the card sooner, use the page below. If you restart your subscription, you can save your card again at your next payment.',
+  cta: 'Manage saved card',
 };

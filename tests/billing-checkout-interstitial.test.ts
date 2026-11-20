@@ -69,7 +69,7 @@ describe('checkout hand-off page', () => {
     );
     assert.equal(saving.split(key).length - 1, 1);
     assert.match(saving, new RegExp(`<input type="hidden" name="customerKey" value="${key}">`));
-    assert.match(saving, /PayNKolay'de saklanacak|PayNKolay&#39;de saklanacak/);
+    assert.match(saving, /PayNKolay(?:'|&#39;)da saklanacak/);
   });
 
   it('4. auto-submit reads delay and back URL from data- attributes; pageshow goes back; noscript fallback', () => {

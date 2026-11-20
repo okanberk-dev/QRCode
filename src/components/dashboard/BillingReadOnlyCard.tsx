@@ -254,9 +254,13 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
             <div className="h-10 w-36 rounded-full bg-white/15 mt-6" />
           </div>
           <div className="flex flex-col gap-3.5">
-            <div className="bz-card p-5 space-y-3">
+            {/* Same shape as SavedCardPanel (card + meta line + actions), so nothing below jumps on load. */}
+            <div className="bz-card p-5">
               <SkBox className="h-3 w-28" />
-              <SkBox className="h-4 w-48 max-w-full" />
+              <SkBox className="mt-3 aspect-[1.586/1] w-full max-w-[340px] rounded-[14px]" />
+              <SkBox className="mt-3 h-3 w-56 max-w-full" />
+              <SkBox className="mt-4 h-11 w-32 rounded-full sm:h-8" />
+              <div className="mt-3 min-h-[18px]" />
             </div>
             <div className="bz-card p-5 space-y-3">
               <SkBox className="h-3 w-24" />
@@ -417,7 +421,10 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
           ) : (
           <div className="bz-card p-5">
             <Eyebrow>{isTr ? 'ÖDEME YÖNTEMİ' : 'PAYMENT METHOD'}</Eyebrow>
-            {summary?.paymentMethod ? (
+            {summary?.viewerIsOwner === false ? (
+              // D9: the summary carries no card data for team members.
+              <p className="mt-3 text-[13px] leading-[1.5] text-[#525252]">{billingText('pm.teamOnly', locale)}</p>
+            ) : summary?.paymentMethod ? (
               <div className="mt-3 flex items-center gap-3">
                 <div className="flex h-9 w-12 items-center justify-center rounded-md bg-[#1A1F71] text-[10px] font-bold text-white tracking-wider">
                   {summary.paymentMethod.brand.toUpperCase().slice(0, 4)}

@@ -23,12 +23,15 @@ export interface RenewalNoticeInput {
   now: Date;
 }
 
-export function renewalNoticeFor(input: RenewalNoticeInput): { kind: AlertKind; key: 'notice.needsAction' | 'notice.manualReview' | 'notice.pastDue' | 'notice.reminder' | 'notice.processing'; date: string | null; grace: string | null } | null {
+export function renewalNoticeFor(input: RenewalNoticeInput): { kind: AlertKind; key: 'notice.needsAction' | 'notice.manualReview' | 'notice.pastDue' | 'notice.reminder' | 'notice.processing' | 'notice.ownerPaying'; date: string | null; grace: string | null } | null {
   const r = input.renewal;
   const grace = r?.graceEndsAt ?? r?.periodEnd ?? input.renewsAt;
   if (r?.state === 'needs_action') return { kind: 'danger', key: 'notice.needsAction', date: r.periodEnd, grace };
   if (r?.state === 'manual_review') return { kind: 'warn', key: 'notice.manualReview', date: r.periodEnd, grace };
-  if (r?.state === 'owner_paying' || r?.state === 'charging' || r?.state === 'awaiting_confirmation') {
+  // The owner started a payment (maybe abandoned on PayNKolay's page): paying again is allowed and
+  // supersedes it (checkout-post.ts), so this notice keeps the action.
+  if (r?.state === 'owner_paying') return { kind: 'info', key: 'notice.ownerPaying', date: r.periodEnd, grace };
+  if (r?.state === 'charging' || r?.state === 'awaiting_confirmation') {
     return { kind: 'info', key: 'notice.processing', date: r.periodEnd, grace };
   }
   if (input.status === 'past_due' || r?.state === 'retry_wait') return { kind: 'warn', key: 'notice.pastDue', date: r?.periodEnd ?? input.renewsAt, grace };

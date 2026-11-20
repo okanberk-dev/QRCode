@@ -18,6 +18,8 @@ import { TERMINAL_STATES } from './renewal-policy';
  *    subscription has ended (cleared again if it restarts), deleted after it;
  *  - soft-deleted card mirror rows: deleted 30 days after `deleted_at`;
  *  - renewal rows: deleted 2 years after `ended_at`;
+ *  - client-IP fingerprints of payments (per-IP card-testing cap): nulled
+ *    2 days after the payment (the cap looks back 24 h);
  *  - stored cards at PayNKolay: notice at end + 166 d, provider purge at
  *    end + 180 d (verified by re-list; tombstone on failure), mirror rows
  *    soft-deleted 'retention', customer row deleted.
@@ -28,6 +30,8 @@ export const RETENTION = {
   /** Contract end + 10 years (TBK general limitation); also hard-coded in the SQL below. */
   consentYears: 10,
   cardRowDays: 30,
+  /** Payment client-IP fingerprints (§3.3 per-IP cap, 24 h window) are nulled after this. */
+  clientIpFpDays: 2,
   renewalYears: 2,
   cardNoticeDays: 166,
   cardPurgeDays: 180,
@@ -61,6 +65,7 @@ export interface RetentionSummary {
   consentsDeleted: number;
   cardRowsDeleted: number;
   renewalsDeleted: number;
+  ipFingerprintsCleared: number;
   retentionNotices: number;
   providerPurged: number;
   providerTombstoned: number;
@@ -107,6 +112,7 @@ export async function runRetention(deps: RetentionDeps, now: Date): Promise<Rete
     consentsDeleted: 0,
     cardRowsDeleted: 0,
     renewalsDeleted: 0,
+    ipFingerprintsCleared: 0,
     retentionNotices: 0,
     providerPurged: 0,
     providerTombstoned: 0,
@@ -156,6 +162,14 @@ export async function runRetention(deps: RetentionDeps, now: Date): Promise<Rete
   summary.renewalsDeleted = (
     await db.billingRenewal.deleteMany({
       where: { endedAt: { lte: addYears(now, -RETENTION.renewalYears) }, state: { in: [...TERMINAL_STATES] } },
+    })
+  ).count;
+
+  // 4b. Client-IP fingerprints: only the 24 h per-IP cap needs them.
+  summary.ipFingerprintsCleared = (
+    await db.billingPayment.updateMany({
+      where: { clientIpFp: { not: null }, createdAt: { lt: new Date(now.getTime() - RETENTION.clientIpFpDays * DAY_MS) } },
+      data: { clientIpFp: null },
     })
   ).count;
 

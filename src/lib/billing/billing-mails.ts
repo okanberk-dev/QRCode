@@ -56,7 +56,9 @@ export const billingMailer: RenewalMailer & RetentionMailer = {
         locale: to.locale,
         last4: v.last4,
         deleteOn: v.deleteOn,
-        accountUrl: `${SITE_URL}/${to.locale}/dashboard/account?section=billing`,
+        // The saved-card page outside the dashboard gate: the owner of an ended subscription is
+        // redirected away from /dashboard, but must still be able to remove the card (consent text, §13.2).
+        accountUrl: `${SITE_URL}/billing/${to.locale}/card`,
       }),
     );
   },

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
-import { BILLING_PAGE_PREFIX, billingLocaleOf, billingPageCsp, generateNonce } from './lib/billing/page-csp';
+import { BILLING_PAGE_PREFIX, BILLING_PAGE_REFERRER_POLICY, billingLocaleOf, billingPageCsp, generateNonce } from './lib/billing/page-csp';
 
 // Mirror of lib/auth.ts secret resolution. Kept inline so the middleware
 // (edge runtime) doesn't pull in Prisma or Node-only deps. In production
@@ -102,7 +102,8 @@ function billingPage(req: NextRequest): NextResponse {
   requestHeaders.set('content-security-policy', csp);
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set('Content-Security-Policy', csp);
-  res.headers.set('Referrer-Policy', 'no-referrer');
+  // same-origin (not no-referrer): the review page's form POST must keep its real Origin (page-csp.ts).
+  res.headers.set('Referrer-Policy', BILLING_PAGE_REFERRER_POLICY);
   res.headers.set('X-Robots-Tag', 'noindex, nofollow');
   res.headers.set('Cache-Control', 'private, no-store');
   return res;

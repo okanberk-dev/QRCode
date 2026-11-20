@@ -220,6 +220,11 @@ export interface RenewalStore {
   clearPendingMail(id: string, mail: string): Promise<void>;
   /** Succeeded payments that saved a card whose save is still unconfirmed (cardSaveResult 'pending'), own env, < 7 days. */
   listPendingCardSaves(env: BillingEnv, now: Date, limit: number): Promise<{ id: string }[]>;
+  /**
+   * D1 clean-up still owed: the owner's newest verified save (cardSaveResult 'saved', own env, < 7 days)
+   * whose card is live while another live, unbound card of the owner is still in the mirror.
+   */
+  listCardCleanupsOwed(env: BillingEnv, now: Date, limit: number): Promise<{ id: string }[]>;
   getRenewal(id: string): Promise<RenewalRow | null>;
   /** The renewal a payment belongs to: by `renewalId`, else the one whose `ownerPaymentId` is the payment. */
   renewalForPayment(payment: { id: string; renewalId: string | null }): Promise<RenewalRow | null>;

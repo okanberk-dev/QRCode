@@ -15,6 +15,16 @@
 /** Path prefix of the billing root layout (src/app/billing/[locale]/). */
 export const BILLING_PAGE_PREFIX = '/billing/';
 
+/**
+ * Referrer policy of the billing pages (response header + `<meta name="referrer">`).
+ * `same-origin`, NOT `no-referrer`: under `no-referrer` the Fetch standard
+ * serialises the `Origin` of a non-CORS POST as `null`, so the review page's
+ * native form post would fail the checkout route's origin check for every
+ * owner. `same-origin` still sends nothing (no referrer, `Origin: null` on a
+ * POST) to any other origin, so no billing URL or query leaves the site.
+ */
+export const BILLING_PAGE_REFERRER_POLICY = 'same-origin';
+
 /** A 128-bit nonce, base64 (24 characters). Web Crypto: works on the edge and in Node. */
 export function generateNonce(): string {
   const bytes = new Uint8Array(16);

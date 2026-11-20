@@ -3698,7 +3698,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Plana geçme',
             paragraphs: [
-              '**Hesabım → Plan ve faturalama** bölümünde **Planı yükselt** düğmesine basın ve planınızı seçin. Ödeme Türk lirası olarak, kartla, PayNKolay’in güvenli sayfasında alınır; her ödeme bir ay ya da bir yıl açar. Planlar ve güncel fiyatlar [fiyatlandırma sayfasında](/tr/pricing) yer alır.',
+              '**Hesabım → Plan ve faturalama** bölümünde **Planı yükselt** düğmesine basın ve planınızı seçin. Ödeme Türk lirası olarak, kartla, PayNKolay’ın güvenli sayfasında alınır; her ödeme bir ay ya da bir yıl açar. Planlar ve güncel fiyatlar [fiyatlandırma sayfasında](/tr/pricing) yer alır.',
             ],
           },
           {
@@ -3806,7 +3806,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Kartı değiştirme ve iptal',
             paragraphs: [
-              'Kartla ödenen paketlerde otomatik çekim yoktur: ödediğiniz dönem bitince hesabınız ücretsiz plana geçer. Süreyi **Hesabım → Plan ve faturalama → Süreyi uzat** ile, dönem bitmeden uzatabilirsiniz. Kart bilgileriniz PayNKolay’de girilir ve Buaze’de saklanmaz. Faturalandırmayı yalnızca hesap sahibi yönetebilir.',
+              'Kartla ödenen paketlerde otomatik çekim yoktur: ödediğiniz dönem bitince hesabınız ücretsiz plana geçer. Süreyi **Hesabım → Plan ve faturalama → Süreyi uzat** ile, dönem bitmeden uzatabilirsiniz. Kart bilgileriniz PayNKolay’da girilir ve Buaze’de saklanmaz. Faturalandırmayı yalnızca hesap sahibi yönetebilir.',
             ],
           },
           {

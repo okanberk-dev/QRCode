@@ -138,6 +138,8 @@ export interface MemoryStore extends RenewalStore {
   owners: Map<string, MemOwner>;
   /** Payments whose card save is unconfirmed (listPendingCardSaves). */
   pendingCardSaves: string[];
+  /** Payments whose D1 clean-up is still owed (listCardCleanupsOwed). */
+  cardCleanupsOwed: string[];
   tombstones: (TombstoneRow & { state: string; nextAttemptAt: Date; lastError: string | null; manualSince: Date | null })[];
   optOuts: { userId: string; reason: OptOutReason }[];
 }
@@ -154,6 +156,7 @@ export function memoryRenewalStore(clock: () => Date): MemoryStore {
   const optOuts: MemoryStore['optOuts'] = [];
   const owners = new Map<string, MemOwner>();
   const pendingCardSaves: string[] = [];
+  const cardCleanupsOwed: string[] = [];
   let seq = 0;
 
   const store: MemoryStore = {
@@ -164,6 +167,7 @@ export function memoryRenewalStore(clock: () => Date): MemoryStore {
     optOuts,
     owners,
     pendingCardSaves,
+    cardCleanupsOwed,
 
     async findSubscriptionsToSchedule(now, limit, includeNonConsented) {
       const to = now.getTime() + 7 * DAY_MS;
@@ -233,6 +237,9 @@ export function memoryRenewalStore(clock: () => Date): MemoryStore {
     async clearPendingMail(id, mail) {
       const r = renewals.find((x) => x.id === id && x.pendingMail === mail);
       if (r) r.pendingMail = null;
+    },
+    async listCardCleanupsOwed(_env, _now, limit) {
+      return cardCleanupsOwed.slice(0, limit).map((id) => ({ id }));
     },
     async listPendingCardSaves(_env, _now, limit) {
       return pendingCardSaves.slice(0, limit).map((id) => ({ id }));

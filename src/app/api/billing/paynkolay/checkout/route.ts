@@ -5,7 +5,7 @@ import { loadCardVaultDeps } from '@/lib/billing/card-vault';
 import { interstitialHeaders, renderCheckoutInterstitial } from '@/lib/billing/checkout-interstitial';
 import { checkoutPostCore, parseCheckoutForm } from '@/lib/billing/checkout-post';
 import { loadBillingFlags, loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
-import { allowedBillingOrigins } from '@/lib/billing/owner-guard';
+import { allowedBillingOrigins, billingFormOriginOk } from '@/lib/billing/owner-guard';
 import { safeError } from '@/lib/billing/redact';
 import { checkoutIpBlockKey } from '@/lib/billing/return-flow';
 import { getTrustedClientIp } from '@/lib/client-ip';
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
       },
       {
         actor: await getPanelActorFromRequest(req),
-        originOk: !!origin && allowedBillingOrigins(req.nextUrl.origin).includes(origin),
+        originOk: billingFormOriginOk(origin, req.headers.get('sec-fetch-site'), allowedBillingOrigins(req.nextUrl.origin)),
         ip,
         userAgent: req.headers.get('user-agent'),
       },

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { AlertTriangle, Check, CreditCard, Loader2, X } from 'lucide-react';
 import { verifyUserTokenForLayout } from '@/lib/auth';
@@ -9,6 +10,21 @@ import { prisma } from '@/lib/prisma';
 import ResultPoller from './ResultPoller';
 
 export const dynamic = 'force-dynamic';
+
+/** The result title in the tab and for screen readers (WCAG 2.4.2), e.g. "Ödemeniz alındı · Buaze". */
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const locale = (await params).locale === 'en' ? 'en' : 'tr';
+  const sp = await searchParams;
+  const status = statusFromQuery(typeof sp.payment === 'string' ? sp.payment : null);
+  const key: BillingCopyKey = status === 'success' ? 'result.success' : status === 'failed' ? 'result.failed' : status === 'pending' ? 'result.pending' : status === 'review' ? 'result.review' : 'result.generic';
+  return { title: { absolute: `${billingText(key, locale)} · Buaze` } };
+}
 
 /**
  * Payment result (billing spec §12.6), outside the dashboard gate so a lapsed

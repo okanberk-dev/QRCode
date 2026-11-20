@@ -256,6 +256,37 @@ export function createPrismaRenewalStore(db: PrismaClient = prisma): RenewalStor
       });
     },
 
+    async listCardCleanupsOwed(env, now, limit) {
+      const saves = await db.billingPayment.findMany({
+        where: {
+          status: 'succeeded',
+          saveCard: true,
+          cardSaveResult: 'saved',
+          createdAt: { gte: new Date(now.getTime() - RENEWAL_POLICY.recheckFailedDays * DAY_MS) },
+          AND: [paymentEnvFilter(env)],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+        select: { id: true, userId: true },
+      });
+      const newest = new Map<string, string>();
+      for (const s of saves) if (!newest.has(s.userId)) newest.set(s.userId, s.id); // a later save owns the clean-up
+      if (newest.size === 0) return [];
+      const cards = await db.billingCard.findMany({
+        where: { userId: { in: [...newest.keys()] }, deletedAt: null },
+        select: { userId: true, savedByPaymentId: true, boundConsentId: true },
+      });
+      const out: { id: string }[] = [];
+      for (const [userId, paymentId] of newest) {
+        const own = cards.filter((c) => c.userId === userId);
+        const savedLive = own.some((c) => c.savedByPaymentId === paymentId);
+        const others = own.some((c) => c.savedByPaymentId !== paymentId && c.boundConsentId === null);
+        if (savedLive && others) out.push({ id: paymentId });
+        if (out.length >= limit) break;
+      }
+      return out;
+    },
+
     async getRenewal(id) {
       const row = await db.billingRenewal.findUnique({ where: { id }, select: RENEWAL_SELECT });
       return row ? toRenewalRow(row) : null;

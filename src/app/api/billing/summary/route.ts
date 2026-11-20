@@ -6,6 +6,7 @@ import { PLAN_QUOTA, PLAN_QUOTA_AI_REPLIES, PLAN_LABELS } from '@/lib/constants'
 import { resolveBillingAmount, toAdminRow } from '@/lib/subscription-plans';
 import { openRenewalFor } from '@/lib/billing/card-api';
 import { loadBillingFlags } from '@/lib/billing/flags';
+import { summaryPaymentMethod } from '@/lib/billing/owner-guard';
 import { isRenewalState } from '@/lib/billing/renewal-policy';
 
 export const dynamic = 'force-dynamic';
@@ -138,15 +139,12 @@ export async function GET(req: NextRequest) {
   const limit = PLAN_QUOTA[plan] ?? PLAN_QUOTA.trial;
   const aiRepliesQuota = PLAN_QUOTA_AI_REPLIES[plan] ?? PLAN_QUOTA_AI_REPLIES.trial;
 
-  const paymentMethod =
-    subscription?.paymentBrand && subscription?.paymentLast4
-      ? { brand: subscription.paymentBrand, last4: subscription.paymentLast4 }
-      : null;
-
   // Saved cards (billing spec §11.5): team-readable renewal state, never card data (D9). The panel asks
-  // /api/billing/payment-method (owner only) for the card itself.
+  // /api/billing/payment-method (owner only) for the saved card; the admin-entered card label (brand +
+  // last4) goes to the owner only, never to a team member.
   const flags = await loadBillingFlags();
   const viewerIsOwner = actor.source === 'user' && actor.role === 'restaurant_owner' && actor.id === userId;
+  const paymentMethod = summaryPaymentMethod(subscription ?? null, viewerIsOwner);
   const openRenewal = flags.cardStorageIntent ? await openRenewalFor(prisma, userId, renewsAt) : null;
   const renewal =
     openRenewal && isRenewalState(openRenewal.state)

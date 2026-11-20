@@ -3,10 +3,10 @@ import { paynkolayCheckoutAmounts, toAdminRow, toPublicPlan } from '@/lib/subscr
 import type { ReviewErrorCode } from './billing-copy';
 import { saveCardAllowed } from './card-api';
 import { mirrorCards, type PublicSavedCard } from './card-vault';
-import type { CheckoutIntent } from './checkout-post';
+import { riskGateState, type CheckoutIntent, type RiskGateState } from './checkout-post';
 import { cardSaveConsent } from './consent';
 import type { BillingFlags } from './flags';
-import { addPeriod, anchorFits, istanbulDayOfMonth, TERMINAL_STATES } from './renewal-policy';
+import { addPeriod, anchorFits, istanbulDayOfMonth, RENEWAL_POLICY, TERMINAL_STATES } from './renewal-policy';
 
 /**
  * Server-side data of the review page (`/billing/{locale}/checkout`, billing
@@ -16,7 +16,7 @@ import { addPeriod, anchorFits, istanbulDayOfMonth, TERMINAL_STATES } from './re
  * Display only — the POST recomputes and checks everything.
  */
 
-export type ReviewBlocked = 'owner_only' | 'impersonating' | 'unavailable' | 'no_plan';
+export type ReviewBlocked = 'owner_only' | 'impersonating' | 'unavailable' | 'no_plan' | 'expired';
 
 export interface ReviewModel {
   locale: 'tr' | 'en';
@@ -39,6 +39,8 @@ export interface ReviewModel {
   consent: { textVersion: string; text: string; textHash: string } | null;
   pastDue: boolean;
   manualReview: boolean;
+  /** The sign-in score gate would refuse this payment (§3.3): shown before the pay button, which is disabled. */
+  verification: RiskGateState;
 }
 
 export interface ReviewInput {
@@ -51,6 +53,8 @@ export interface ReviewInput {
   planId: string | null;
   cycle: 'monthly' | 'yearly';
   error: ReviewErrorCode | null;
+  /** isRecaptchaServerConfigured(): the sign-in score gate applies. */
+  recaptchaConfigured: boolean;
   now: Date;
 }
 
@@ -73,6 +77,7 @@ function emptyModel(input: ReviewInput, blocked: ReviewBlocked): ReviewModel {
     consent: null,
     pastDue: false,
     manualReview: false,
+    verification: null,
   };
 }
 
@@ -86,16 +91,27 @@ export async function loadCheckoutReview(input: ReviewInput): Promise<ReviewMode
   });
   let planId = input.planId;
   let cycle = input.cycle;
-  if (input.intent !== 'new') {
+  let intent = input.intent;
+  if (intent !== 'new') {
     const renewable =
       sub?.source === 'paynkolay' && (sub.status === 'active' || sub.status === 'past_due') && !!sub.subscriptionPlanId;
-    if (!renewable) return emptyModel(input, 'unavailable');
-    planId = sub.subscriptionPlanId;
-    cycle = sub.billingCycle === 'yearly' ? 'yearly' : 'monthly';
+    if (!renewable) {
+      // The renew link of a reminder mail, clicked after the period ended (the subscription is now canceled /
+      // expired): the same plan and cycle as a new payment, which settlement anchors to the old period end
+      // when it ended ≤ 7 days ago (§11.2 e). "Try again later" would never work.
+      const lapsed = sub?.source === 'paynkolay' && sub.status === 'canceled' && !!sub.subscriptionPlanId;
+      if (intent !== 'renew' || !lapsed) return emptyModel(input, sub?.status === 'canceled' ? 'expired' : 'unavailable');
+      intent = 'new';
+      planId = sub.subscriptionPlanId;
+      cycle = sub.billingCycle === 'yearly' ? 'yearly' : 'monthly';
+    } else {
+      planId = sub.subscriptionPlanId;
+      cycle = sub.billingCycle === 'yearly' ? 'yearly' : 'monthly';
+    }
   }
   if (!planId) return emptyModel(input, 'no_plan');
   const row = await db.subscriptionPlan.findUnique({ where: { id: planId } });
-  if (!row || !row.isActive) return emptyModel(input, 'no_plan');
+  if (!row || !row.isActive) return emptyModel(input, intent !== input.intent ? 'expired' : 'no_plan');
   const admin = toAdminRow(row);
   const tryAmounts = paynkolayCheckoutAmounts(admin);
   const amounts = {
@@ -103,7 +119,7 @@ export async function loadCheckoutReview(input: ReviewInput): Promise<ReviewMode
     yearly: tryAmounts?.yearlyTry ? Math.round(tryAmounts.yearlyTry * 100) : null,
   };
   // A cycle the plan is not sold in falls back to the other one.
-  if (input.intent === 'new' && amounts[cycle] === null) cycle = cycle === 'monthly' ? 'yearly' : 'monthly';
+  if (intent === 'new' && amounts[cycle] === null) cycle = cycle === 'monthly' ? 'yearly' : 'monthly';
   const amountMinor = amounts[cycle];
   if (amountMinor === null) return emptyModel(input, 'no_plan');
   const pub = toPublicPlan(admin, locale);
@@ -112,7 +128,13 @@ export async function loadCheckoutReview(input: ReviewInput): Promise<ReviewMode
   const samePlan = !!sub && sub.subscriptionPlanId === row.id && (sub.billingCycle ?? cycle) === cycle;
   let from = now;
   let storedAnchor: number | null = null;
-  if (sub?.renewsAt && samePlan && (sub.status === 'past_due' || (sub.status === 'active' && sub.renewsAt.getTime() > now.getTime()))) {
+  // Anchored like settlement (§11.2 c/e): past due, paid ahead, or ended ≤ 7 days ago on the same plan.
+  const lapsedRecently = sub?.status === 'canceled' && !!sub.renewsAt && sub.renewsAt.getTime() >= now.getTime() - RENEWAL_POLICY.anchorAfterLapseDays * 24 * 60 * 60_000;
+  if (
+    sub?.renewsAt &&
+    samePlan &&
+    (sub.status === 'past_due' || lapsedRecently || (sub.status === 'active' && sub.renewsAt.getTime() > now.getTime()))
+  ) {
     from = sub.renewsAt;
     storedAnchor = sub.billingAnchorDay;
   }
@@ -126,7 +148,10 @@ export async function loadCheckoutReview(input: ReviewInput): Promise<ReviewMode
       })
     : null;
 
-  const user = await db.user.findUnique({ where: { id: input.userId }, select: { emailVerified: true, createdAt: true } });
+  const user = await db.user.findUnique({
+    where: { id: input.userId },
+    select: { emailVerified: true, createdAt: true, lastLoginRiskScore: true, lastLoginRiskAt: true },
+  });
   let savedCard: PublicSavedCard | null = null;
   if (input.flags.cardStorage) {
     const cards = await mirrorCards(db, input.userId, now, sub?.renewsAt ?? null);
@@ -136,7 +161,7 @@ export async function loadCheckoutReview(input: ReviewInput): Promise<ReviewMode
 
   return {
     locale,
-    intent: input.intent,
+    intent,
     blocked: null,
     error: input.error,
     plan: {
@@ -158,5 +183,6 @@ export async function loadCheckoutReview(input: ReviewInput): Promise<ReviewMode
     consent: input.flags.cardStorage ? cardSaveConsent(locale) : null,
     pastDue: sub?.status === 'past_due',
     manualReview: renewal?.state === 'manual_review',
+    verification: user ? riskGateState(input.recaptchaConfigured, user, now) : null,
   };
 }

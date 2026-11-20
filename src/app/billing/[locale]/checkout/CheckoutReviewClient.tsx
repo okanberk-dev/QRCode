@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, ChevronDown, Loader2, Lock, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Lock, ShieldCheck } from 'lucide-react';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { AlertBanner, APCheckbox } from '@/components/ui';
 import CardVisual from '@/components/dashboard/billing/CardVisual';
 import { billingText, formatIstanbulDate, formatTry, type BillingCopyKey } from '@/components/dashboard/billing/billing-copy';
 import type { ReviewModel } from '@/lib/billing/checkout-review';
+import { SUPPORT_EMAIL } from '@/lib/company-constants';
 
 /**
  * The review page body (billing spec §12.4). A native form, no fetch and no
@@ -15,7 +16,16 @@ import type { ReviewModel } from '@/lib/billing/checkout-review';
  * stale-page detection) and the hash of the card-save consent text shown. The
  * POST recomputes and checks all of it before anything is written.
  */
-export default function CheckoutReviewClient({ model, focusSave }: { model: ReviewModel; focusSave: boolean }) {
+export default function CheckoutReviewClient({
+  model,
+  focusSave,
+  loginUrl,
+}: {
+  model: ReviewModel;
+  focusSave: boolean;
+  /** Sign-in page that comes back to this review page (the sign-in score gate, §3.3). */
+  loginUrl: string;
+}) {
   const { locale } = model;
   const t = (key: BillingCopyKey, vars?: Record<string, string | number>) => billingText(key, locale, vars);
   const router = useRouter();
@@ -23,6 +33,7 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
   const [saveCard, setSaveCard] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [needSave, setNeedSave] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const saveRef = useRef<HTMLDivElement | null>(null);
   const dashboardUrl = `/${locale}/dashboard/account?section=billing`;
 
@@ -44,6 +55,19 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
     model.intent === 'renew' ? t('review.renewTitle') : model.intent === 'replace_card' ? t('review.replaceTitle') : t('review.title');
   const canSave = model.cardStorage && model.saveAllowed;
   const replaceBlocked = model.intent === 'replace_card' && !canSave;
+  // The sign-in score gate would refuse the payment: say so BEFORE the pay button, not after it.
+  const verifyBlocked = model.verification !== null;
+
+  // "Sign in again": end this session, then sign in and come straight back here (a fresh, assessed sign-in).
+  const signInAgain = async () => {
+    setSigningOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch {
+      /* the login page still works; the old session simply stays */
+    }
+    window.location.assign(loginUrl);
+  };
 
   const setCycle = (cycle: 'monthly' | 'yearly') => {
     if (cycle === model.cycle || !model.plan) return;
@@ -52,7 +76,7 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
   };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    if (submitting || replaceBlocked) {
+    if (submitting || replaceBlocked || verifyBlocked) {
       e.preventDefault();
       return;
     }
@@ -95,7 +119,10 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
           ? t('review.ownerOnly')
           : model.blocked === 'no_plan'
             ? t('review.noPlan')
-            : t('review.err.unavailable');
+            : model.blocked === 'expired'
+              ? t('review.expired')
+              : t('review.err.unavailable');
+    const expired = model.blocked === 'expired';
     return (
       <main className="min-h-dvh bg-[#FAFAFA] text-[#0A0A0A]">
         {header}
@@ -107,8 +134,9 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
             <p className="mt-4 text-[15px] leading-[1.55] text-[#404040]" role="status">
               {message}
             </p>
-            <a href={dashboardUrl} className="bz-btn-primary mt-6 inline-flex min-h-[44px] items-center">
-              {t('review.backToPanel')}
+            {/* An ended plan: the panel would redirect to the plan list anyway, so go there directly. */}
+            <a href={expired ? `/${locale}/pricing` : dashboardUrl} className="bz-btn-primary mt-6 inline-flex min-h-[44px] items-center">
+              {expired ? t('review.seePlans') : t('review.backToPanel')}
             </a>
           </div>
         </div>
@@ -129,7 +157,7 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
     to: formatIstanbulDate(model.period.to, locale),
   });
   const payLabel = t('review.pay', { amount });
-  const payDisabled = submitting || replaceBlocked;
+  const payDisabled = submitting || replaceBlocked || verifyBlocked;
 
   const payButton = (id: string, onDark: boolean) => (
     <button
@@ -176,7 +204,34 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
       <div className="mx-auto w-full max-w-[1040px] px-4 py-8 sm:px-7 lg:py-12">
         {model.error ? (
           <div className="mb-6" role="alert">
-            <AlertBanner kind="danger">{t(`review.err.${model.error}` as BillingCopyKey)}</AlertBanner>
+            <AlertBanner kind="danger">{t(`review.err.${model.error}` as BillingCopyKey, { email: SUPPORT_EMAIL })}</AlertBanner>
+          </div>
+        ) : null}
+        {model.verification ? (
+          <div className="mb-6" role="status">
+            <AlertBanner kind="warn">
+              <span className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <span>
+                  {t(
+                    model.verification === 'no_score'
+                      ? 'review.verify.noScore'
+                      : model.verification === 'low_score'
+                        ? 'review.verify.lowScore'
+                        : 'review.verify.stale',
+                    { email: SUPPORT_EMAIL },
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void signInAgain()}
+                  disabled={signingOut}
+                  className="bz-btn-primary inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start sm:min-h-[36px] sm:self-auto"
+                >
+                  {signingOut ? <Loader2 size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
+                  {t('review.verify.button')}
+                </button>
+              </span>
+            </AlertBanner>
           </div>
         ) : null}
 
@@ -264,6 +319,8 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
 
                 {model.cardStorage ? (
                   <div ref={saveRef} id="save-card" className={`rounded-xl p-4 ring-1 transition-colors ${needSave ? 'bg-[#FFFBEB] ring-[#FDE68A]' : 'bg-[#FAFAFA] ring-[#EDEDED]'}`}>
+                    {/* The consent text stored with the payment (textRendered, hashed) is the visible hint of the box:
+                        the owner consents to exactly what they see (§13.2). */}
                     <APCheckbox
                       name="saveCard"
                       value="on"
@@ -275,30 +332,24 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
                       }}
                       label={<span className="text-[14px] font-medium leading-[1.45] text-[#0A0A0A]">{saveLabel}</span>}
                       sublabel={
-                        <span className="text-[12.5px] leading-[1.55] text-[#525252]">
-                          {canSave
-                            ? model.intent === 'renew' && model.savedCard
-                              ? t('review.saveNewHint')
-                              : t('review.saveCardHint')
-                            : t('review.saveLater')}
-                        </span>
+                        canSave && model.consent ? (
+                          <span className="block text-[12.5px] leading-[1.55] text-[#525252]">
+                            {model.intent === 'renew' && model.savedCard ? (
+                              <span className="mb-1.5 block">{t('review.saveNewHint')}</span>
+                            ) : null}
+                            <span className="block whitespace-pre-line">{model.consent.text}</span>
+                          </span>
+                        ) : undefined
                       }
                     />
+                    {!canSave ? (
+                      // Outside the disabled checkbox (which is dimmed): the one line saying why stays readable.
+                      <p className="mt-2 pl-8 text-[12.5px] leading-[1.55] text-[#525252]">{t('review.saveLater')}</p>
+                    ) : null}
                     {needSave ? (
                       <p className="mt-2 text-[12.5px] font-medium text-[#92400E]" role="alert">
                         {t('review.replaceRequired')}
                       </p>
-                    ) : null}
-                    {model.consent && canSave ? (
-                      <details className="group mt-3">
-                        <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-1 text-[12.5px] font-medium text-[#525252] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] [&::-webkit-details-marker]:hidden">
-                          <ChevronDown size={14} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
-                          {t('review.consentDetails')}
-                        </summary>
-                        <p className="mt-2 whitespace-pre-line rounded-lg border border-[#EDEDED] bg-white p-3 text-[12.5px] leading-[1.6] text-[#525252]">
-                          {model.consent.text}
-                        </p>
-                      </details>
                     ) : null}
                   </div>
                 ) : null}
@@ -330,8 +381,11 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
             </aside>
           </div>
 
+          {/* The contract links stay in the page flow ABOVE the spacer, so the fixed bar never covers them; the
+              spacer is taller than the bar (amount, two-line obligation, button, trust line, safe area). */}
+          <div className="mt-6 lg:hidden">{legal(false)}</div>
+          <div aria-hidden="true" className="h-[calc(13rem+env(safe-area-inset-bottom))] lg:hidden" />
           {/* ── Amount + pay (phones and tablets): a sticky bar ── */}
-          <div aria-hidden="true" className="h-40 lg:hidden" />
           <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EDEDED] bg-white/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(10,10,10,0.06)] backdrop-blur pb-safe lg:hidden">
             <div className="mx-auto w-full max-w-[640px] pb-3">
               <div className="flex items-baseline justify-between gap-3">
@@ -347,7 +401,6 @@ export default function CheckoutReviewClient({ model, focusSave }: { model: Revi
             </div>
           </div>
         </form>
-        <div className="mt-6 lg:hidden">{legal(false)}</div>
       </div>
     </main>
   );

@@ -55,7 +55,9 @@ export async function loadResultModel(input: {
     bodyKey: status ? COPY[status].body : 'result.genericBody',
     details: null,
     card: null,
-    retryPath: status === 'failed' ? `/billing/${input.locale}/checkout` : null,
+    // Without the payment there is no plan to retry: "Panele dön" is the way back (a review URL with no
+    // plan would only say "card payment is not available for this plan").
+    retryPath: null,
   });
   if (!input.paymentId || !CLIENT_REF_RE.test(input.paymentId) || !input.viewerUserId) return generic(input.query);
 
@@ -80,8 +82,11 @@ export async function loadResultModel(input: {
     ? await input.db.subscriptionPlan.findUnique({ where: { id: payment.subscriptionPlanId }, select: { nameTr: true, nameEn: true } })
     : null;
   const sub =
-    status === 'success'
-      ? await input.db.billingSubscription.findUnique({ where: { userId: payment.userId }, select: { renewsAt: true } })
+    status === 'success' || status === 'failed'
+      ? await input.db.billingSubscription.findUnique({
+          where: { userId: payment.userId },
+          select: { renewsAt: true, source: true, status: true, subscriptionPlanId: true, billingCycle: true },
+        })
       : null;
 
   let card: ResultModel['card'] = null;
@@ -99,8 +104,19 @@ export async function loadResultModel(input: {
     }
   }
 
+  // "Try again" opens the same kind of payment: a renewal, a card replacement (a card-saving payment of the
+  // current card subscription's plan and cycle — that is what intent=replace_card is), or the plan bought.
+  const replacedCard =
+    payment.kind === 'checkout' &&
+    payment.saveCard &&
+    sub?.source === 'paynkolay' &&
+    (sub.status === 'active' || sub.status === 'past_due') &&
+    !!payment.subscriptionPlanId &&
+    sub.subscriptionPlanId === payment.subscriptionPlanId &&
+    (sub.billingCycle === 'yearly' ? 'yearly' : 'monthly') === cycle;
   const retry = new URLSearchParams();
   if (payment.kind === 'renewal_link') retry.set('intent', 'renew');
+  else if (replacedCard) retry.set('intent', 'replace_card');
   else if (payment.subscriptionPlanId) {
     retry.set('planId', payment.subscriptionPlanId);
     retry.set('cycle', cycle);
@@ -112,7 +128,7 @@ export async function loadResultModel(input: {
     details: {
       planName: plan ? (input.locale === 'en' ? plan.nameEn : plan.nameTr) : null,
       amountMinor: payment.amountMinor,
-      periodEnd: sub?.renewsAt ? sub.renewsAt.toISOString() : null,
+      periodEnd: status === 'success' && sub?.renewsAt ? sub.renewsAt.toISOString() : null,
       cycle,
     },
     card,

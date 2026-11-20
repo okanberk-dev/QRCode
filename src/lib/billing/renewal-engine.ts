@@ -14,7 +14,7 @@ import {
 import { fetchTransport, type PaynkolayTransport } from '@/lib/payment/paynkolay-transport';
 import { billingSettings, type BillingSettingsApi } from './billing-settings';
 import { billingMailer } from './billing-mails';
-import { loadCardVaultDeps, loadProviderVaultDeps, purgeCardsWithKey, reconcileCardsAfterSave } from './card-vault';
+import { loadCardVaultDeps, loadProviderVaultDeps, purgeCardsWithKey, reconcileCardsAfterSave, retryCardCleanup } from './card-vault';
 import { loadBillingFlags, type BillingFlags } from './flags';
 import {
   applyPostSettleEffects,
@@ -52,7 +52,8 @@ import { loadVaultKeys, openCustomerKey, VaultKeyError, type VaultKeys } from '.
  *      SUCCESS, fail on explicit failure rows, abandoned hosted checkouts
  *      fail after 45 min, unresolved ones go to review after 48 h), stale
  *      charge leases, expired owner_paying locks, a 7-day late-success
- *      re-check of failed payments, and unconfirmed card saves;
+ *      re-check of failed payments, unconfirmed card saves and unverified
+ *      D1 clean-ups (other cards after a verified save);
  *   2. schedule — a reminder-mode renewal row 7 days before each period end
  *      (consented subscriptions always; others while card storage is
  *      intended, O-2);
@@ -93,6 +94,8 @@ export interface RenewalDeps {
   siteUrl?: string;
   /** Saved cards: confirms a payment's unconfirmed card save (reconcileCardsAfterSave); absent skips it. */
   cardSaveReconcile?: ((paymentId: string) => Promise<unknown>) | null;
+  /** Saved cards: retries a D1 clean-up (other cards after a verified save) that was not verified; absent skips it. */
+  cardCleanup?: ((paymentId: string) => Promise<unknown>) | null;
   captureMessage: (msg: string, fingerprint: string, tags?: Record<string, string>) => void;
   captureException: (err: Error, tags?: Record<string, string>) => void;
   runId: string;
@@ -503,6 +506,20 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
           }
         }
       }
+
+      // (f) D1 clean-ups that did not verify (a delete timed out, the re-list failed or still showed the old
+      //     card): retried every tick for 7 days after the save, provider calls.
+      if (deps.cardCleanup) {
+        const owed = await store.listCardCleanupsOwed(env, clock(), MAX_CARD_SAVES_PER_RUN);
+        for (const p of owed) {
+          if (!providerTime()) break;
+          try {
+            await deps.cardCleanup(p.id);
+          } catch (err) {
+            billingLog('warn', 'renewal.card_cleanup_retry_failed', { paymentId: p.id, code: errCode(err) });
+          }
+        }
+      }
     });
 
     // ── Phase 2: schedule (DB only; reminder mode — this release has no charge phase) ──
@@ -564,6 +581,15 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
           await store.clearPendingMail(r.id, r.pendingMail);
           continue;
         }
+        // Renewed since the mail was queued (e.g. lapse at 22:35, paid at 08:00): "your plan has ended" would be false.
+        const renewed =
+          (ctx.sub.status === 'active' || ctx.sub.status === 'past_due') &&
+          !!ctx.sub.renewsAt &&
+          ctx.sub.renewsAt.getTime() > r.periodEnd.getTime();
+        if (renewed) {
+          await store.clearPendingMail(r.id, r.pendingMail);
+          continue;
+        }
         budget -= 1;
         const sent = await mailer.periodEnded(
           { email: ctx.user.email, locale: ctx.user.locale },
@@ -598,10 +624,34 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
         if (!variant || !slot) continue;
         const sub = await store.subscriptionSnapshot(r.userId);
         if (!sub?.renewsAt || sub.renewsAt.getTime() !== r.periodEnd.getTime()) continue; // renewed or superseded
+        // Re-check eligibility at send time, not only at scheduling: a subscription canceled, moved to manual
+        // invoicing or set to cancel at period end since E−7d gets no "renew by card" mail (its link would
+        // lead to an unavailable page). The row is closed with the reason. A plan that can no longer be
+        // bought keeps its reminders (plan picker link); a blocked account is handled by `mailable`.
+        const ctx = await store.loadRenewalContext(r.userId);
+        if (ctx) {
+          const decision = evaluateRenewal({
+            flags: deps.flags,
+            sub: ctx.sub,
+            user: ctx.user,
+            plan: ctx.plan,
+            consent: ctx.consent,
+            boundCard: ctx.boundCard,
+          });
+          if (!decision.eligible && decision.reason !== 'plan_unavailable' && decision.reason !== 'account_blocked') {
+            await store.transition(r.id, [r.state], {
+              state: 'canceled',
+              endedAt: now,
+              endReason: decision.reason.slice(0, 32),
+              nextAttemptAt: null,
+              lockedUntil: null,
+            });
+            continue;
+          }
+        }
         if (!(await store.claimMail(r.id, slot, now))) continue;
         // The E−1d mail makes a still-unsent E−7d mail pointless: its slot is consumed silently.
         if (slot === 'last_call' && !r.noticeClaimedAt) await store.claimMail(r.id, 'notice', now);
-        const ctx = await store.loadRenewalContext(r.userId);
         if (!mailable(ctx)) continue; // nobody to mail; the claim stays
         budget -= 1;
         const locale = ctx.user.locale;
@@ -727,6 +777,9 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
       await phase('retention', async () => {
         if (!deps.retention) return;
         const now = clock();
+        // D10: retention sends customer mail (the stored-card notice), so the day's run — and its marker —
+        // waits for the first tick inside 09:00–21:00 Istanbul (never the 00:25 tick).
+        if (!inIstanbulWindow(now)) return;
         if (!(await deps.settings.claimDailyMarker('lastRetentionOn', istanbulDay(now)))) return;
         await deps.retention(now);
       });
@@ -786,6 +839,12 @@ export async function runBillingRenewals(): Promise<RenewalTickSummary> {
       ? async (paymentId) => {
           const vaultDeps = await loadCardVaultDeps();
           if (vaultDeps) await reconcileCardsAfterSave(vaultDeps, paymentId);
+        }
+      : null,
+    cardCleanup: flags.cardStorage
+      ? async (paymentId) => {
+          const vaultDeps = await loadCardVaultDeps();
+          if (vaultDeps) await retryCardCleanup(vaultDeps, paymentId);
         }
       : null,
     captureMessage: (msg, fingerprint, tags) =>

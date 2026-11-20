@@ -10,6 +10,7 @@ import type { BillingFlags, HostedPaymentEnvCheck } from './flags';
 import { billingLog } from './redact';
 import { RENEWAL_POLICY, TERMINAL_STATES } from './renewal-policy';
 import type { Sensitive } from './sensitive';
+import { clientIpFingerprint } from './vault-crypto';
 
 /**
  * `POST /api/billing/paynkolay/checkout` — the form post from the review
@@ -82,7 +83,7 @@ export interface CheckoutDeps {
   /** D18 for the hosted payment (`loadHostedPaymentEnvCheck`). */
   envCheck: (paymentEnv: string | null) => Promise<HostedPaymentEnvCheck>;
   rateLimit: (key: string, max: number, windowMs: number) => Promise<{ allowed: boolean }>;
-  /** The trusted client IP had ≥ 5 failed hosted payments in 24 h. */
+  /** Instance-local block set by the return route (an extra, fast layer; the DB count below is authoritative). */
   isIpBlocked: (ip: string) => boolean;
   /** isRecaptchaServerConfigured(): the sign-in score gate applies. */
   recaptchaConfigured: boolean;
@@ -128,16 +129,34 @@ class CheckoutAbort extends Error {
   }
 }
 
+/**
+ * Why the sign-in score gate (§3.3) would refuse a payment now, or null when it passes:
+ *  - 'stale': no assessed sign-in in the last 24 h (sessions live 7 days);
+ *  - 'no_score': the last sign-in produced no score (token missing or invalid — often a blocked script —
+ *    or the assessment failed); login-risk.ts records that as a null score;
+ *  - 'low_score': the last sign-in scored below 0.5.
+ * The review page shows it before the pay button; the POST refuses with `verification_required`.
+ */
+export type RiskGateState = null | 'stale' | 'no_score' | 'low_score';
+
+export function riskGateState(
+  configured: boolean,
+  user: { lastLoginRiskScore: number | null; lastLoginRiskAt: Date | null },
+  now: Date,
+): RiskGateState {
+  if (!configured) return null;
+  if (!user.lastLoginRiskAt || user.lastLoginRiskAt.getTime() < now.getTime() - CHECKOUT_LIMITS.riskMaxAgeMs) return 'stale';
+  if (user.lastLoginRiskScore === null) return 'no_score';
+  return user.lastLoginRiskScore >= CHECKOUT_LIMITS.minRiskScore ? null : 'low_score';
+}
+
 /** The sign-in score gate (§3.3): a reCAPTCHA-assessed sign-in < 24 h old with score ≥ 0.5. */
 export function riskGatePasses(
   configured: boolean,
   user: { lastLoginRiskScore: number | null; lastLoginRiskAt: Date | null },
   now: Date,
 ): boolean {
-  if (!configured) return true;
-  if (user.lastLoginRiskScore === null || !user.lastLoginRiskAt) return false;
-  if (user.lastLoginRiskAt.getTime() < now.getTime() - CHECKOUT_LIMITS.riskMaxAgeMs) return false;
-  return user.lastLoginRiskScore >= CHECKOUT_LIMITS.minRiskScore;
+  return riskGateState(configured, user, now) === null;
 }
 
 export async function checkoutPostCore(
@@ -184,6 +203,16 @@ export async function checkoutPostCore(
     where: { userId, kind: { in: HOSTED_KINDS }, status: { in: ['failed', 'needs_review'] }, createdAt: { gte: since } },
   });
   if (failedRecent >= CHECKOUT_LIMITS.failedPerAccount24h) return fail('rate_limited');
+  // Per trusted IP: ≤ 5 failed hosted payments per 24 h, counted in the database over an HMAC fingerprint
+  // of the IP stored on each payment — the same answer on every instance, after a restart, and for
+  // payments that reconciliation (not the browser return) marked failed.
+  const ipFp = ctx.ip && deps.vault ? clientIpFingerprint(ctx.ip, deps.vault.hmac) : null;
+  if (ipFp) {
+    const failedFromIp = await db.billingPayment.count({
+      where: { clientIpFp: ipFp, kind: { in: HOSTED_KINDS }, status: { in: ['failed', 'needs_review'] }, createdAt: { gte: since } },
+    });
+    if (failedFromIp >= CHECKOUT_LIMITS.failedPerIp24h) return fail('rate_limited');
+  }
   if (deps.isIpBlocked(ip)) return fail('rate_limited');
   if (!(await deps.rateLimit(`billing:checkout:ip:${ip}`, CHECKOUT_LIMITS.perIp24h, DAY_MS)).allowed) return fail('rate_limited');
 
@@ -222,10 +251,18 @@ export async function checkoutPostCore(
         select: { id: true, state: true, ownerPaymentId: true },
       })
     : null;
-  const ownerPaymentPending = async (paymentId: string | null) =>
-    !!paymentId && (await db.billingPayment.count({ where: { id: paymentId, status: 'pending' } })) > 0;
+  // An owner_paying lock held by this owner's own pending hosted payment does NOT block: that payment
+  // may have been abandoned on PayNKolay's page (back button, closed tab, "Vazgeç"), and paying again
+  // creates a new payment that takes over the lock (§12.5). If both go through, settle marks the second
+  // one duplicate_period and queues its refund (D19) — the period is never stacked.
+  const foreignPending = (db0: Pick<PrismaClient, 'billingPayment'>, paymentId: string | null) =>
+    paymentId
+      ? db0.billingPayment.count({
+          where: { id: paymentId, status: 'pending', NOT: { userId, kind: { in: HOSTED_KINDS } } },
+        })
+      : Promise.resolve(0);
   if (openRenewal && (openRenewal.state === 'charging' || openRenewal.state === 'awaiting_confirmation')) return fail('renewal_in_progress');
-  if (openRenewal?.state === 'owner_paying' && (await ownerPaymentPending(openRenewal.ownerPaymentId))) return fail('renewal_in_progress');
+  if (openRenewal?.state === 'owner_paying' && (await foreignPending(db, openRenewal.ownerPaymentId)) > 0) return fail('renewal_in_progress');
 
   // ── Card saving and consent ──
   if (form.autoRenew) return fail('unavailable'); // auto-renew arrives with auto-charging
@@ -262,9 +299,8 @@ export async function checkoutPostCore(
           })
         : null;
       if (renewal && (renewal.state === 'charging' || renewal.state === 'awaiting_confirmation')) throw new CheckoutAbort('renewal_in_progress');
-      if (renewal?.state === 'owner_paying' && renewal.ownerPaymentId) {
-        const pending = await tx.billingPayment.count({ where: { id: renewal.ownerPaymentId, status: 'pending' } });
-        if (pending > 0) throw new CheckoutAbort('renewal_in_progress');
+      if (renewal?.state === 'owner_paying' && (await foreignPending(tx, renewal.ownerPaymentId)) > 0) {
+        throw new CheckoutAbort('renewal_in_progress');
       }
 
       const payment = await tx.billingPayment.create({
@@ -278,6 +314,7 @@ export async function checkoutPostCore(
           kind,
           saveCard: form.saveCard,
           cardSaveResult: form.saveCard ? 'pending' : null,
+          clientIpFp: ipFp,
         },
         select: { id: true },
       });

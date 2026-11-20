@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import RootHtml from '@/components/root/RootHtml';
+import { BILLING_PAGE_REFERRER_POLICY } from '@/lib/billing/page-csp';
 import { buildBaseMetadata, ROOT_VIEWPORT } from '@/lib/root-metadata';
 
 // Root layout of the billing pages (/billing/{locale}/checkout, /result;
@@ -18,7 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
     ...base,
     title: { absolute: 'Buaze' },
     robots: { index: false, follow: false },
-    referrer: 'no-referrer',
+    // same-origin, never no-referrer: the review form's POST must carry its Origin (page-csp.ts).
+    referrer: BILLING_PAGE_REFERRER_POLICY,
   };
 }
 

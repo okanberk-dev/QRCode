@@ -47,6 +47,9 @@ export function matches(row: Row, where: Row | undefined): boolean {
       if (!(cond as Row[]).every((w) => matches(row, w))) return false;
     } else if (key === 'OR') {
       if (!(cond as Row[]).some((w) => matches(row, w))) return false;
+    } else if (key === 'NOT') {
+      // Prisma: NOT {a, b} excludes rows matching all of them; NOT [x, y] excludes rows matching any.
+      if ((Array.isArray(cond) ? (cond as Row[]) : [cond as Row]).some((w) => matches(row, w))) return false;
     } else if (!matchValue(row[key], cond)) return false;
   }
   return true;

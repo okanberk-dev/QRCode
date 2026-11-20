@@ -41,6 +41,7 @@ export default function SavedCardPanel({
   const [confirm, setConfirm] = useState<PublicSavedCard | null>(null);
   const [status, setStatus] = useState<Status>(null);
   const statusTimer = useRef<number | null>(null);
+  const statusRef = useRef<HTMLParagraphElement | null>(null);
 
   useEffect(() => () => {
     if (statusTimer.current) window.clearTimeout(statusTimer.current);
@@ -53,11 +54,14 @@ export default function SavedCardPanel({
   };
 
   if (query.isPending) {
+    // Same shape as the loaded panel (card, meta line, actions, status line): nothing below moves.
     return (
       <div className="bz-card p-5" aria-busy="true">
         <Eyebrow>{billingText('pm.eyebrow', locale)}</Eyebrow>
         <div className="mt-3 aspect-[1.586/1] w-full max-w-[340px] animate-pulse rounded-[14px] bg-[#F2F2F2] motion-reduce:animate-none" />
         <div className="mt-3 h-3 w-56 max-w-full animate-pulse rounded bg-[#F2F2F2] motion-reduce:animate-none" />
+        <div className="mt-4 h-11 w-32 animate-pulse rounded-full bg-[#F2F2F2] motion-reduce:animate-none sm:h-8" />
+        <div className="mt-3 min-h-[18px]" />
       </div>
     );
   }
@@ -110,10 +114,14 @@ export default function SavedCardPanel({
       await del.mutateAsync(confirm.handle);
       setConfirm(null);
       announce({ tone: 'ok', text: billingText('pm.removed', locale) });
+      // The removed card's controls (and the dialog's return target) are gone after the refetch: move
+      // keyboard / screen-reader focus to the status line instead of letting it fall to <body>.
+      window.setTimeout(() => statusRef.current?.focus(), 150);
     } catch (err) {
       setConfirm(null);
-      const unconfirmed = err instanceof BillingApiError && err.code === 'delete_unconfirmed';
-      announce({ tone: 'error', text: billingText(unconfirmed ? 'pm.removeFailed' : 'pm.removeError', locale) });
+      const code = err instanceof BillingApiError ? err.code : null;
+      const key = code === 'delete_unconfirmed' ? 'pm.removeFailed' : code === 'card_not_found' ? 'pm.removeNotListed' : 'pm.removeError';
+      announce({ tone: 'error', text: billingText(key, locale) });
     }
   };
 
@@ -215,11 +223,15 @@ export default function SavedCardPanel({
                   {data.renewal?.state === 'needs_action' ? (
                     <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D97706]" />
                   ) : null}
-                  {other.last4
-                    ? billingText('pm.other', locale, { last4: other.last4 })
-                    : billingText('pm.otherNoDigits', locale)}
+                  {other.verified
+                    ? other.last4
+                      ? billingText('pm.previous', locale, { last4: other.last4 })
+                      : billingText('pm.previousNoDigits', locale)
+                    : other.last4
+                      ? billingText('pm.other', locale, { last4: other.last4 })
+                      : billingText('pm.otherNoDigits', locale)}
                 </p>
-                <p>{billingText('pm.otherHint', locale)}</p>
+                <p>{billingText(other.verified ? 'pm.previousHint' : 'pm.otherHint', locale)}</p>
               </div>
               <button
                 type="button"
@@ -238,9 +250,11 @@ export default function SavedCardPanel({
       {!manage ? <p className="mt-3 text-[12px] leading-[1.45] text-[#737373]">{billingText('pm.impersonating', locale)}</p> : null}
 
       <p
+        ref={statusRef}
+        tabIndex={-1}
         role="status"
         aria-live="polite"
-        className={`mt-3 min-h-[1px] text-[12px] leading-[1.45] ${status?.tone === 'error' ? 'text-[#991B1B]' : 'text-[#4D5C00]'}`}
+        className={`mt-3 min-h-[18px] text-[12px] leading-[1.45] focus:outline-none ${status?.tone === 'error' ? 'text-[#991B1B]' : 'text-[#4D5C00]'}`}
       >
         {status?.text ?? ''}
       </p>

@@ -1659,9 +1659,13 @@ model BillingPayment {
   /// What the operator must refund, in kuruş, when it is not one charge of amountMinor: PayNKolay charged this
   /// clientRefCode more than once (provider_duplicate: the extra charges; any other reason: every charge). Null = amountMinor.
   refundAmountMinor   Int?      @map("refund_amount_minor")
+  /// HMAC fingerprint (`ip1_…`, BILLING_HMAC_KEY) of the trusted client IP of a hosted payment: the per-IP
+  /// failed-payment cap (§3.3) is counted in the database. Never the IP itself; nulled by retention after 2 days.
+  clientIpFp          String?   @map("client_ip_fp") @db.VarChar(32)
 
   @@unique([renewalId, attemptNo]) // NULLs allowed → checkout rows unaffected
   @@index([userId, createdAt])
+  @@index([clientIpFp, createdAt])
   @@index([status, createdAt])
   @@index([refundState])
   @@map("billing_payments")

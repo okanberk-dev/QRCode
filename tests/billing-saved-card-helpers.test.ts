@@ -108,8 +108,10 @@ describe('result URLs, renewal banner, redirects, risk score', () => {
 
   it('sign-in risk score: stored only when the assessment produced a score, clamped to [0, 1]', () => {
     const now = new Date();
-    assert.equal(riskScoreUpdate({ ok: true }, now), null);
-    assert.deepEqual(riskScoreUpdate({ ok: true, score: 0.7 }, now), { lastLoginRiskScore: 0.7, lastLoginRiskAt: now });
-    assert.equal(riskScoreUpdate({ ok: true, score: 3 }, now)?.lastLoginRiskScore, 1);
+    assert.equal(riskScoreUpdate({ ok: true }, now, false), null, 'reCAPTCHA not configured: nothing written, the gate is off');
+    assert.deepEqual(riskScoreUpdate({ ok: true, score: 0.7 }, now, true), { lastLoginRiskScore: 0.7, lastLoginRiskAt: now });
+    assert.equal(riskScoreUpdate({ ok: true, score: 3 }, now, true)?.lastLoginRiskScore, 1);
+    // WEBSEC-3: a soft-passed sign-in without a score clears an older good score instead of leaving it valid.
+    assert.deepEqual(riskScoreUpdate({ ok: true }, now, true), { lastLoginRiskScore: null, lastLoginRiskAt: now });
   });
 });
