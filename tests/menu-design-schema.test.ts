@@ -43,6 +43,9 @@ test('CoverWrite: raster data URLs only; "" → null', () => {
   for (const bad of [
     'data:image/svg+xml;base64,PHN2Zz4=',
     'data:image/gif;base64,AAAA',
+    'data:image/webp;base64,',
+    'data:image/webp;base64,AA AA',
+    'data:image/png;base64,AAAA"><script>',
     'https://example.com/cover.jpg',
     'data:image/webp;base64,' + 'A'.repeat(MENU_COVER_MAX_CHARS),
   ]) {

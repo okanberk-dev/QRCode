@@ -54,9 +54,12 @@ export const AccentWrite = z
 
 /** The upload route caps the cover at 380 KB binary ≈ 519k base64 characters. */
 export const MENU_COVER_MAX_CHARS = 520_000;
-const RASTER_DATA_URL = /^data:image\/(jpeg|jpg|png|webp|avif);base64,/i;
+// The whole value is checked, not just the prefix: a cover with an empty or
+// non-base64 payload would get a version, switch the header to the cover
+// layout and then 404 on the image route (a broken box at the top of the menu).
+const RASTER_DATA_URL = /^data:image\/(jpeg|jpg|png|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/i;
 
-/** Raster data URL only (no http, no SVG, no GIF); '' or null clears it. */
+/** Raster data URL only (no http, no SVG, no GIF, base64 payload); '' or null clears it. */
 export const CoverWrite = z.union([
   z.null(),
   z.literal('').transform(() => null),
