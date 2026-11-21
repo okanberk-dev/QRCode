@@ -1,21 +1,59 @@
-# Buaze handoff (2026-11-21)
+# Buaze handoff (updated 2026-11-21)
 
-Work stopped at the weekly usage limit. Everything is committed and pushed; nothing secret is in these files (env vars are named only).
+Nothing secret is in this file (env vars are named only). Everything below is in `main` unless stated.
 
-## Branches and PRs
-| Branch | Base | State |
-|---|---|---|
-| claude/billing-1-foundation | main | Done, 3 reviews + fixes, QA green (all billing flags off by default) |
-| claude/billing-2-saved-cards | billing-1 | Done, 3 reviews + fixes, QA green (card storage flag off by default) |
-| claude/billing-3-auto-charge | billing-2 | WIP. Charge engine, breaker, dunning, notice gate + 34 tests done. Left: mail templates for the 3 new mailer methods, step-up (src/lib/auth/billing-step-up.ts + POST /api/billing/step-up), POST /api/billing/auto-renew, off-only link + page, card-api offer fields, panel UI (AutoRenewControl, consent modal), docs; then 3 reviews + fixes + QA. Do NOT merge before the PayNKolay sandbox answers (spec §16.4). |
-| claude/menu-studio-rebuild | main | Done, reviews + fixes, QA green |
-| claude/menu-design-themes | menu-studio | Chunks 1-3 built, 2 reviews done; review fixes were in progress (last commit is WIP). Left: finish the review fixes (findings are in the review step of that work; re-review quickly), then browser QA of every preset at 375/768/1440. |
+## 1. State of the work
+| Area | State |
+|---|---|
+| Checkout redirect fix, Clash Display fonts, company identity (NextGen Yazılım Ltd. Şti.) | Merged, live |
+| Billing foundation + saved cards (`docs/specs/billing-spec-final.md`, PR 1-2) | Merged, live. All billing flags OFF by default |
+| Auto-renew charge engine (PR 3) | Merged as WIP, OFF and dry-run by default so no card can be charged. Missing: see 2.1 |
+| Menu Studio rebuild (`docs/specs/menu-spec-final.md`) | Merged, QA done |
+| Public menu designs + owner design options (`docs/specs/menu-design-final.md`) | Merged. Chunks 1-3 built and reviewed; review fixes were in progress; browser QA of every preset NOT done. See 2.2 |
+| Deploy fix: `PAYNKOLAY_ENV` inferred from an allow-listed `PAYNKOLAY_BASE_URL` | Merged, live (`7d33c76`) |
+| `/api/health?db=1` probe (times 3x `SELECT 1`, shows port + param NAMES only) | Merged, live |
 
-## Specs (binding)
-- docs/specs/billing-spec-final.md: saved cards + auto-renew
-- docs/specs/menu-spec-final.md: Menu Studio
-- docs/specs/menu-design-final.md: public menu designs + owner design options
+## 2. Remaining work
 
-## Owner actions
-- PayNKolay: request card storage permission ("kart saklama yetkisi"), Non-Secure (3D'siz) permission with a limit, a hosted-page logo, and a separate Buaze merchant (spec D16).
-- Before turning any billing flag on: follow spec §16 gate G0 (BILLING_VAULT_KEY + BILLING_HMAC_KEY generated and backed up, NEXT_PUBLIC_SITE_URL set explicitly in Coolify, scripts/billing-bind-env.ts, Coolify scheduled task for /api/cron/billing-renewals every hour).
+### 2.1 Auto-renew (billing PR 3)
+Do NOT turn `PAYNKOLAY_AUTO_CHARGE` on before PayNKolay answers the sandbox questions (spec §16.4, §17). Left to build, in order:
+1. Production mail templates for the three new mailer methods in `src/lib/billing/billing-mails.ts`: auto_notice (amount, card last4, charge date, both retry dates, off link); charge results (paid, refund_pending, attempt_1, attempt_2, final, hard, action_needed, unresolved); auto-renew changed (on with full consent text + off link, off_owner, off_price_increase, off_provider_missing, off_card_removed, card_replaced). Follow CLAUDE.md §21.34; never hardcode a company name (use `{{COMPANY_NAME}}`, `src/lib/legal/company-entity.ts`, or "Buaze"). Until these exist the engine can never send a notice, so it can never charge.
+2. `src/lib/auth/billing-step-up.ts` (spec D14: TOTP / password / fresh Google sign-in, `bz_bsu` cookie) and `POST /api/billing/step-up`.
+3. `POST /api/billing/auto-renew` (spec §8.3): enable needs step-up + verified card + server-rebuilt offer (409 `terms_changed`), one transaction writes the consent row, binds the card and moves the open renewal to auto; disable is one click.
+4. Off-only link: `POST /api/billing/auto-renew/off-link` and the page `/billing/[locale]/auto-renew-off` (GET has no side effect).
+5. `card-api`: return the offer, step-up method and enable path; a `needs_action` renewal returns to `retry_wait` when the unbound card is removed or a `replace_card` is verified.
+6. Panel UI (Pulse, accessible, 375 and 1440 px): AutoRenewControl, AutoRenewConsentModal, RenewalNotice banner; TR/EN copy from spec §13.
+7. Then 3 independent reviews (double-charge/state machine, consent/security, spec/UX), fixes, browser QA.
+
+### 2.2 Public menu designs
+Finish the review fixes of the 2 reviews (safety, visual) on the merged code, then browser QA at 375/768/1440 of every preset and of the studio design panel (colours incl. low-contrast picks, fonts, layout, radius, density, cover, apply/reset, read-only viewer). Check no Clash Display on `/menu/*` (licence) and that old restaurants (only `menuTheme` + accent + logo) still look right. Look at a few live menus first: this redesign changes what every diner sees.
+
+### 2.3 Panel speed: DB round trips (task prompt for another chat)
+Audit done (branch `perf/db-roundtrips` exists locally with no commits; recreate from main). Findings:
+- Live `SELECT 1` takes 500-600 ms (`/api/health?db=1`) although app and DB are both in Frankfurt. `DATABASE_URL` still uses port 6543 + `pgbouncer=true`.
+- **Do first (owner action, Coolify):** in the Production env var `DATABASE_URL` change `:6543` to `:5432`, delete `pgbouncer=true`, keep `connection_limit=10`; redeploy; re-measure `/api/health?db=1`. If `selectOneMs` drops to single digits, most of the slowness is gone and 2.3 gains shrink. Do not use `DIRECT_URL` (may be IPv6-only). Revert by setting the port back to 6543.
+- The code issue: `prisma.$transaction([...])` array form runs queries sequentially, one round trip each plus BEGIN/COMMIT (75 places; history: pooler `connection_limit=1`, CLAUDE.md §14). With `connection_limit=10` `Promise.all` is safe (chunk big arrays).
+- No N+1 on page paths (only two seed scripts). No `unstable_cache` / `"use cache"` anywhere. All panel pages are `force-dynamic`.
+
+Route table (sequential round trips, static count; 500 ms each assumed):
+| Route | Queries | Seq. RTs now | Fix |
+|---|---|---|---|
+| `[locale]/dashboard` layout (every panel page) | 4-6 | 3 (+0-2) | owner: user ∥ restaurants(`where userId`) ∥ announcements ∥ site settings = 1 RT; team member 2 RT |
+| `dashboard` (owner home) | ~36 | ~31-37 | 24-query array (line ~239) to chunked `Promise.all`; scope+user+restaurants one step; 4-query array (line ~904) |
+| `dashboard/analytics` | 4-5 | 4 | user ∥ scope; two windows `Promise.all` |
+| `dashboard/restaurants` | 6-7 | 5-6 | array at line ~80 |
+| `dashboard/restaurants/report` | 8-10 | 9 | 7-query array at line ~77 |
+| `dashboard/account`, `platforms` | 3-4 | 4-5 | scope then small arrays |
+| `dashboard/qr`, `menu`, `google-reviews` | 2-3 | 2-3 | skip scope query for owners (`where userId`) |
+| `admin/dashboard` | ~21 | ~27 | 11- and 7-query arrays (lines ~95, ~255) |
+| `menu/[slug]` (public) | 2 | 2 | `cache()` so `generateMetadata` + page share one query; `searchParams` makes the route dynamic despite `revalidate=3600` |
+Biggest API arrays: `analytics/menu` (10), `restaurants/[id]` (8, 8), `admin/audits/stats` (8), `weekly-digest-runner` (8), `admin/restaurants/[id]/overview` (7).
+- Caching: no new shared cache for panel routes (all per-user/per-business). Marketing/legal pages already use `revalidate`.
+
+Prompt rules for that chat: branch `perf/db-roundtrips`; no .env/deploy/schema/migration changes; no secrets; small commits that say how many queries each route lost; keep per-user data out of shared caches; measure before/after with Prisma query logging locally (not committed); build, lint, tests green; report route | before | after | estimated gain; do not push without review.
+
+## 3. Owner actions
+- PayNKolay (application sent): card storage permission ("kart saklama yetkisi"), Non-Secure (3D'siz) permission with a limit, hosted-page logo, separate Buaze merchant (spec D16).
+- Coolify: `DATABASE_URL` port change (2.3). Before any billing flag: spec §16 gate G0 — `BILLING_VAULT_KEY` + `BILLING_HMAC_KEY` generated and backed up offline, `NEXT_PUBLIC_SITE_URL` set explicitly, `scripts/billing-bind-env.ts`, hourly Coolify scheduled task for `/api/cron/billing-renewals` (`25 * * * *`).
+- Legal: contract text now names NextGen Yazılım Ltd. Şti.; decide whether existing users need notice (version numbers did not change). Registry number "Kuruluş 2023" on /about vs tax-certificate start date 25.06.2026. Trade registry no., KEP, chamber, IBAN are empty in both repos.
+- Google (owner says set up): before changing Google gates (CLAUDE.md §5.1.1-5.1.2) say which parts were done.
