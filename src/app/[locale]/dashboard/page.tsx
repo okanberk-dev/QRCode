@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { scopedRestaurantWhereForUserPayload } from '@/lib/panel-access';
+import { parallelReads } from '@/lib/db-parallel';
 import { extractThemes, getCachedThemes } from '@/lib/analytics-themes';
 // §38.32 — deriveCustomerFields + CustomerSegment + SegmentChip artık
 // dashboard'da kullanılmıyor (BUGÜN BEKLEYEN feedback-detail render kaldırıldı).
@@ -123,32 +124,34 @@ async function renderDashboardPage({
   // User + the businesses this account can see. Same scope + order as the
   // dashboard layout (getScopedRestaurantIds, createdAt asc), so team members
   // get their assigned businesses instead of an empty dashboard (§38.240).
-  const scopedIds = await getScopedRestaurantIdsForUserPayload({
-    userId: payload.userId as string,
-    role: payload.role,
-    email: payload.email,
-  });
-  const [userRow, scopedRestaurants] = await prisma.$transaction([
+  // Both run at once; an owner's scope is `userId = id`, so owners skip the
+  // separate id-list query (team members still resolve it first).
+  const [userRow, scopedRestaurants] = await Promise.all([
     prisma.user.findUnique({
       where: { id: payload.userId as string },
       select: { id: true, name: true },
     }),
-    prisma.restaurant.findMany({
-      where: { id: { in: scopedIds } },
-      orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        category: true,
-        isActive: true,
-        initialGoogleRating: true,
-        currentGoogleRating: true,
-        // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
-        aiAnalyticsEnabled: true,
-        _count: { select: { feedbacks: true } },
-      },
-    }),
+    (async () =>
+      prisma.restaurant.findMany({
+        where: await scopedRestaurantWhereForUserPayload({
+          userId: payload.userId as string,
+          role: payload.role,
+          email: payload.email,
+        }),
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          category: true,
+          isActive: true,
+          initialGoogleRating: true,
+          currentGoogleRating: true,
+          // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
+          aiAnalyticsEnabled: true,
+          _count: { select: { feedbacks: true } },
+        },
+      }))(),
   ]);
   if (!userRow) redirect(`/${locale}/auth/login`);
   const user = { ...userRow, restaurants: scopedRestaurants };
@@ -207,12 +210,24 @@ async function renderDashboardPage({
   const ytdStart = new Date(new Date(now).getFullYear(), 0, 1);
   const trendOldestStart = ytdStart < ninetyDaysAgo ? ytdStart : ninetyDaysAgo;
 
-  // ---- Tek toplu Prisma transaction bloğu ----
-  // Supabase pooler production'da connection_limit=1 ile çalışır; aynı
-  // request içinde çok sayıda paralel query açmak pool_timeout riskini
-  // artırır. Array transaction tek connection üstünden sırayla çalışır.
-  // Boş restIds için Prisma `in: []` zaten 0 satır döner; fallback path
-  // gereksiz. (Postgres `WHERE id = ANY(ARRAY[]::text[])` syntactically OK.)
+  // §40.10 anti-double-skeleton — the activation checklist is computed here
+  // so ActivationChecklistCard hydrates with data. Its 4 reads join the batch
+  // below; a failure there stays soft (logged, card refetches on its own).
+  const activationTarget = selectedRestaurant ?? user.restaurants[0] ?? null;
+  const activationErrors: unknown[] = [];
+  const activationRead = <T,>(query: PromiseLike<T>) => () =>
+    Promise.resolve(query).catch((error: unknown) => {
+      activationErrors.push(error);
+      return null;
+    });
+  const activationTargetId = activationTarget?.id ?? '';
+
+  // ---- Tek toplu okuma bloğu ----
+  // Independent reads, at most 8 at a time (parallelReads). This used to be
+  // one array `$transaction`, which ran every query back to back plus
+  // BEGIN/COMMIT (~30 round trips) — needed only while the pool had
+  // connection_limit=1. Boş restIds için Prisma `in: []` zaten 0 satır
+  // döner; fallback path gereksiz.
   const [
     latestFeedbacks,
     trendFeedbacks,
@@ -236,7 +251,11 @@ async function renderDashboardPage({
     recentSystemEvents,
     googleSyncCheck,
     churnedCustomerRows,
-  ] = await prisma.$transaction([
+    activationRestaurant,
+    activationState,
+    activationQrCount,
+    activationFeedbackCount,
+  ] = await parallelReads([
     // Son yorumlar listesi (4 görünür "Son yorumlar" kartı için + 4 ek
     // CANLI AKIŞ timeline için — aynı veri reuse).
     prisma.feedback.findMany({
@@ -481,6 +500,34 @@ async function renderDashboardPage({
           ) churned_customers
         `)
       : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT 0::bigint AS count WHERE FALSE`),
+    // Activation checklist (soft-fail, only when there is a business).
+    activationTarget
+      ? activationRead(
+          prisma.restaurant.findUnique({
+            where: { id: activationTargetId },
+            select: {
+              name: true,
+              category: true,
+              googleReviewUrl: true,
+              googleEnabled: true,
+            },
+          }),
+        )
+      : () => Promise.resolve(null),
+    activationTarget
+      ? activationRead(
+          prisma.restaurantActivationState.findUnique({
+            where: { restaurantId: activationTargetId },
+            select: { qrPrintedSharedAt: true, dismissedAt: true },
+          }),
+        )
+      : () => Promise.resolve(null),
+    activationTarget
+      ? activationRead(prisma.qrGeneration.count({ where: { restaurantId: activationTargetId } }))
+      : () => Promise.resolve(null),
+    activationTarget
+      ? activationRead(prisma.feedback.count({ where: { restaurantId: activationTargetId } }))
+      : () => Promise.resolve(null),
   ]);
 
   // ---- Derived metrics ----
@@ -896,39 +943,22 @@ async function renderDashboardPage({
   // §40.10 anti-double-skeleton — server-compute activation here so the
   // ActivationChecklistCard hydrates with data and skips its own loading
   // skeleton flash (Next.js segment loading.tsx already covered the wait).
-  const activationTarget = selectedRestaurant ?? user.restaurants[0] ?? null;
+  // The reads ran in the batch above.
   let initialActivation: ReturnType<typeof computeActivation> | undefined;
   if (activationTarget) {
     try {
-      const [activationRestaurant, activationState, activationQrCount, activationFeedbackCount] =
-        await prisma.$transaction([
-          prisma.restaurant.findUnique({
-            where: { id: activationTarget.id },
-            select: {
-              name: true,
-              category: true,
-              googleReviewUrl: true,
-              googleEnabled: true,
-            },
-          }),
-          prisma.restaurantActivationState.findUnique({
-            where: { restaurantId: activationTarget.id },
-            select: { qrPrintedSharedAt: true, dismissedAt: true },
-          }),
-          prisma.qrGeneration.count({ where: { restaurantId: activationTarget.id } }),
-          prisma.feedback.count({ where: { restaurantId: activationTarget.id } }),
-        ]);
+      if (activationErrors.length > 0) throw activationErrors[0];
       if (activationRestaurant) {
         initialActivation = computeActivation({
           restaurant: activationRestaurant,
           state: activationState,
-          qrGenerationCount: activationQrCount,
-          feedbackCount: activationFeedbackCount,
+          qrGenerationCount: activationQrCount ?? 0,
+          feedbackCount: activationFeedbackCount ?? 0,
         });
       }
-    } catch (activationError) {
+    } catch (activationFailure) {
       // Soft-fail: client will refetch via own GET /activation endpoint.
-      console.error('[DashboardPage] activation hydration failed', activationError);
+      console.error('[DashboardPage] activation hydration failed', activationFailure);
     }
   }
 
