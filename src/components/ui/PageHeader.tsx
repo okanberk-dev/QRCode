@@ -14,6 +14,8 @@ interface PageHeaderProps {
    *  Son güncelleme" gibi). description'dan farklı: subtitle inline meta,
    *  description daha uzun açıklama. İkisi birlikte verilebilir. */
   subtitle?: ReactNode;
+  /** §53 meta row under the title: usually a <MetaBar> of label / value boxes. */
+  meta?: ReactNode;
   actions?: ReactNode;
   /** §38.66 — Title scale prop (Apple HIG hero vs kompakt 3-col layout):
    *   - `hero` (default, §38.65): clamp(28px, 5vw, 40px) — Dashboard, Hesabım,
@@ -32,6 +34,7 @@ export function PageHeader({
   title,
   description,
   subtitle,
+  meta,
   actions,
   titleScale = 'hero',
   className = "",
@@ -83,6 +86,7 @@ export function PageHeader({
             {subtitle}
           </p>
         )}
+        {meta && <div className="sm:mt-3">{meta}</div>}
         {description && (
           <p
             className="mt-2 max-w-2xl"

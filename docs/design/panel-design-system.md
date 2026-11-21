@@ -106,7 +106,7 @@ Odak: `0 0 0 3px rgba(198,242,78,.55)` + grafit kenarlık (tüm etkileşimli ö�
 | `ListRow` **(yeni)** | Önde avatar/karo, başlık + meta, sonda değer/ok; `active` grafit dolgu | bildirim ve makale satırları |
 | `LogoTile` **(yeni)** | 36 px karo, harf ya da görsel | yayıncı logoları |
 | `StatCard` | `tone`: `default` / `lime` / `sand` / `graphite` **(yeni)** | "91% Usage Rate" pastel karolar |
-| `PageHeader` | 24/600 başlık, 13 px açıklama, sağda işlemler | "Welcome, John Doe" |
+| `PageHeader` | 24/600 başlık, 13 px açıklama, sağda işlemler; `meta` prop'u başlığın altına `MetaBar` koyar (telefonda gizlenebilir) | "Welcome, John Doe" |
 
 ### 4.4 Diğer
 
@@ -116,6 +116,12 @@ Odak: `0 0 0 3px rgba(198,242,78,.55)` + grafit kenarlık (tüm etkileşimli ö�
 - **Tablolar**: başlık 12.5/500 ikincil, satır 56 px, hover `--pn-surface-2`, kenarlıksız kart içinde.
 - **Menü / pencere**: 12 px / 16 px köşe, `--pn-shadow-pop`.
 - **İlerleme**: 6 px, lime dolgu, grafit iz (başarı satırlarındaki mavi çubuk).
+
+### 4.5 Uygulanan sayfalar
+
+- Owner ana panel: `meta` şeridi (İşletme, Bugün; telefonda gizli), KPI'larda ilk kart `tone="graphite"`, yanıt oranı `tone="lime"`.
+- Admin ana panel: `meta` şeridi (İşletme, Deneme, son 24 saat; `md` altında gizli), MRR `graphite`, aktif denemeler `lime`.
+- Bir sayfada en çok bir grafit ve bir lime kart: vurgu seyrek kalır.
 
 ## 5. Kurallar
 

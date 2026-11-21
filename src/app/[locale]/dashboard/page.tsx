@@ -30,7 +30,7 @@ import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import ScopeDropdown from '@/components/dashboard/ScopeDropdown';
 import { buildActivityFeed } from '@/lib/activity-feed';
 import { buildPlatformDailyTrend, type PlatformDailyPoint } from '@/lib/analytics-platform-trend';
-import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
+import { Eyebrow, MetaBar, MetaItem, PageHeader, Sparkline, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
 import { isSameDayInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
@@ -1018,10 +1018,14 @@ async function renderDashboardPage({
     <div className="mx-auto max-w-[1440px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         title={`${greeting}, ${userFirstName}. ${pendingHook}`}
-        subtitle={
-          primaryRestaurantName
-            ? `${primaryRestaurantName} · ${dateText}`
-            : dateText
+        meta={
+          // Phones: the top bar already names the business and the scope sits in the dropdown.
+          <MetaBar className="hidden sm:flex">
+            {primaryRestaurantName ? (
+              <MetaItem label={isTr ? 'İşletme:' : 'Business:'} value={primaryRestaurantName} />
+            ) : null}
+            <MetaItem label={isTr ? 'Bugün:' : 'Today:'} value={dateText} />
+          </MetaBar>
         }
         actions={
           <>
@@ -1161,7 +1165,7 @@ async function renderDashboardPage({
           deltaKind={ratingDelta.kind}
           deltaSuffix={`${scopeLabel} vs. ${prevScopeLabel}`}
           icon={<Star size={14} strokeWidth={2} fill="#C6F24E" stroke="#C6F24E" />}
-          accent="#C6F24E"
+          tone="graphite"
         />
         <StatCard
           className={showMobileHero ? 'hidden sm:block' : ''}
@@ -1195,6 +1199,7 @@ async function renderDashboardPage({
                 : `low ratings · ${scopeLabel}`
           }
           icon={<MessageSquareReply size={14} strokeWidth={2} />}
+          tone="lime"
         />
         <StatCard
           label={isTr ? 'Yeni müşteri' : 'New customers'}

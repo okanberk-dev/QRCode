@@ -11,6 +11,8 @@ import { adminLandingPath } from '@/lib/admin-landing';
 import {
   BarChart,
   Eyebrow,
+  MetaBar,
+  MetaItem,
   PageHeader,
   ProgressBar,
   StatCard,
@@ -365,8 +367,14 @@ export default async function AdminDashboardPage() {
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
-        eyebrow="SİSTEM YÖNETİMİ"
         title="Panel"
+        meta={
+          <MetaBar className="hidden md:flex">
+            <MetaItem label="İşletme:" value={totalBusinesses.toLocaleString('tr-TR')} />
+            <MetaItem label="Deneme:" value={activeTrials.toLocaleString('tr-TR')} />
+            <MetaItem label="Son 24 saat:" value={`+${newBusinesses24h} işletme`} />
+          </MetaBar>
+        }
       />
 
       {/* Mobile-only "SİSTEM NABZI" hero (mobile-screens-2.jsx MAdminHome line 419-435 1:1) */}
@@ -416,7 +424,7 @@ export default async function AdminDashboardPage() {
           deltaKind={mrrDeltaKind}
           deltaSuffix={mrrDeltaSuffix}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrr > 0 ? '#C6F24E' : undefined}
+          tone="graphite"
         />
         <StatCard
           label="Aktif denemeler"
@@ -424,6 +432,7 @@ export default async function AdminDashboardPage() {
           delta={avgTrialDaysLeft != null ? `ort. ${avgTrialDaysLeft} gün kaldı` : undefined}
           deltaKind="neutral"
           icon={<Crown size={14} strokeWidth={2} />}
+          tone="lime"
         />
         <StatCard
           label="Aylık yorum"
