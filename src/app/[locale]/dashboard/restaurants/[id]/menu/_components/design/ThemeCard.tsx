@@ -47,21 +47,25 @@ export function ThemeCard({
     >
       <span className="relative block">
         <ThemeThumb d={resolved} name={restaurantName} />
-        {checked && (
-          <span
-            className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0A] shadow-[0_0_0_2px_#FFFFFF]"
-            aria-hidden="true"
-          >
-            <Check size={12} strokeWidth={3} className="text-white" />
-          </span>
-        )}
       </span>
       <span className="block px-1 pb-1">
-        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span className="min-w-0 max-w-full truncate text-[13.5px] font-semibold leading-tight text-[#0A0A0A]">{label}</span>
-          {customized && (
-            <span className="shrink-0 rounded-full bg-[#EAF9B8] px-1.5 py-px text-[11px] font-medium leading-4 text-[#3F4A00]">
-              {customizedLabel}
+        {/* The check sits beside the name, not on the drawing: on the thumb
+            it covered the restaurant name of banner / compact headers. */}
+        <span className="flex items-start gap-1.5">
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+            <span className="min-w-0 max-w-full truncate text-[13.5px] font-semibold leading-tight text-[#0A0A0A]">{label}</span>
+            {customized && (
+              <span className="shrink-0 rounded-full bg-[#EAF9B8] px-1.5 py-px text-[11px] font-medium leading-4 text-[#3F4A00]">
+                {customizedLabel}
+              </span>
+            )}
+          </span>
+          {checked && (
+            <span
+              className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[#0A0A0A]"
+              aria-hidden="true"
+            >
+              <Check size={11} strokeWidth={3} className="text-white" />
             </span>
           )}
         </span>
