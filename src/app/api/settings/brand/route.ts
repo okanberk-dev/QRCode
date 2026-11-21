@@ -83,8 +83,8 @@ export async function GET(req: NextRequest) {
   const access = await requireAccess(req, restaurantId);
   if ('error' in access) return NextResponse.json({ error: access.error }, { status: access.status });
 
-  // §40.1 — single pooled connection.
-  const [settings, restaurant] = await prisma.$transaction([
+  // Two independent reads, run at once (was an array $transaction).
+  const [settings, restaurant] = await Promise.all([
     prisma.brandSettings.findUnique({ where: { restaurantId } }),
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
