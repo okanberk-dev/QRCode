@@ -7,6 +7,7 @@ import { loadBillingFlags } from '@/lib/billing/flags';
 import { BILLING_NO_STORE, requireBillingOwner } from '@/lib/billing/owner-guard';
 import { prismaRenewalStore } from '@/lib/billing/renewal-store-prisma';
 import { CARD_HANDLE_RE } from '@/lib/billing/vault-crypto';
+import { sendAutoRenewOffMail } from '@/lib/billing/auto-renew-deps';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -27,7 +28,15 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ handle: 
 
   const vault = await loadCardVaultDeps();
   const res = await deleteCardCore(
-    { db: prisma, flags, vault, store: prismaRenewalStore, now: () => new Date(), rateLimit },
+    {
+      db: prisma,
+      flags,
+      vault,
+      store: prismaRenewalStore,
+      now: () => new Date(),
+      rateLimit,
+      mailCardRemoved: (userId) => sendAutoRenewOffMail(userId, 'off_card_removed'),
+    },
     { userId: guard.userId, canManage: guard.canManage },
     handle,
   );

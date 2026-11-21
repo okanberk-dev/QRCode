@@ -9,6 +9,7 @@ import { fetchTransport } from '@/lib/payment/paynkolay-transport';
 import { loadCardVaultDeps, reconcileCardsAfterSave } from '@/lib/billing/card-vault';
 import { loadBillingFlags, loadHostedPaymentEnvCheck } from '@/lib/billing/flags';
 import { applyPostSettleEffects, settlePaynkolayPayment } from '@/lib/billing/paynkolay-billing';
+import { sendAutoRenewOffMail } from '@/lib/billing/auto-renew-deps';
 import { billingLog, safeError } from '@/lib/billing/redact';
 import { prismaRenewalStore } from '@/lib/billing/renewal-store-prisma';
 import {
@@ -52,6 +53,7 @@ const postSettleDeps = {
     const vault = await loadCardVaultDeps();
     if (vault) await reconcileCardsAfterSave(vault, paymentId);
   },
+  mailAutoRenewOff: (userId: string, variant: 'off_plan_changed') => sendAutoRenewOffMail(userId, variant),
 };
 
 /** Card-testing control (§3.3): count a failed hosted payment against the trusted client IP. */

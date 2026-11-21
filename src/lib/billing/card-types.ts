@@ -46,10 +46,38 @@ export interface RenewalNoticeData {
   lastFailureKind: 'soft' | 'hard' | null;
 }
 
+export type AutoRenewUnavailable =
+  | 'no_card'
+  | 'yearly_cycle'
+  | 'not_card_subscription'
+  | 'subscription_inactive'
+  | 'above_non3d_limit'
+  | 'plan_unavailable'
+  | 'flag_off'
+  | 'cancel_at_period_end';
+
+export type StepUpMethodName = 'totp' | 'password' | 'google';
+
+/** The server's auto-renew offer (§8.3 step 4): the exact text the owner confirms, and its terms. */
+export interface AutoRenewOfferPublic {
+  textVersion: string;
+  text: string;
+  textHash: string;
+  cardHandle: string;
+  terms: {
+    planId: string;
+    planName: string;
+    amountMinor: number;
+    firstChargeDate: string;
+    last4: string | null;
+    locale: 'tr' | 'en';
+  };
+}
+
 export interface PaymentMethodResponse {
   /** flags.cardStorage: the saved-card UI is shown at all. */
   enabled: boolean;
-  /** flags.autoCharge (auto-renew arrives with auto-charging; false in this release). */
+  /** flags.autoCharge: auto-renew can be turned on (in dry run it then reads 'paused'). */
   autoChargeAvailable: boolean;
   /** False during admin impersonation (D8). */
   canManage: boolean;
@@ -61,12 +89,13 @@ export interface PaymentMethodResponse {
   otherCards: PublicSavedCard[];
   autoRenew: {
     status: AutoRenewStatus;
-    unavailableReason: null | 'flag_off';
+    unavailableReason: null | AutoRenewUnavailable;
     since: string | null;
-    nextCharge: null;
-    offer: null;
-    stepUp: null;
-    enableVia: 'checkout';
+    nextCharge: { date: string; amountMinor: number; currency: 'TRY' } | null;
+    /** Present iff status === 'off' and the subscription can renew automatically. */
+    offer: AutoRenewOfferPublic | null;
+    stepUp: { required: boolean; method: StepUpMethodName } | null;
+    enableVia: 'panel' | 'checkout';
   };
   renewal: RenewalNoticeData | null;
   /** BillingSubscription.renewsAt. */

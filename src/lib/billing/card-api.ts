@@ -1,10 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
-import type { DeleteCardResponse, PaymentMethodResponse, PublicSavedCard } from './card-types';
+import type { AutoRenewOfferPublic, AutoRenewUnavailable, DeleteCardResponse, PaymentMethodResponse, PublicSavedCard, StepUpMethodName } from './card-types';
 import { deleteOwnerCard, mirrorCards, refreshCards, type VaultDeps } from './card-vault';
 import { recordConsent } from './consent';
 import type { BillingFlags } from './flags';
 import { billingLog } from './redact';
-import { isRenewalState, TERMINAL_STATES } from './renewal-policy';
+import { attemptSchedule, graceEnd, isRenewalState, nextWindowSlot, RENEWAL_POLICY, TERMINAL_STATES } from './renewal-policy';
+import { termsFirstChargeDate } from './renewal-store-prisma';
 import type { RenewalStore } from './renewal-store';
 import { CARD_HANDLE_RE } from './vault-crypto';
 
@@ -27,6 +28,24 @@ export interface CardApiDeps {
   store: Pick<RenewalStore, 'disableAutoRenew'>;
   now: () => Date;
   rateLimit: (key: string, max: number, windowMs: number) => Promise<{ allowed: boolean }>;
+  /**
+   * The auto-renew part of the response (§8.1): the server offer, the reason it is unavailable, the next
+   * charge and the step-up method. Absent (tests, flags off) → no offer, as before auto-charging.
+   */
+  autoRenew?: ((userId: string, cards: PublicSavedCard[], now: Date) => Promise<AutoRenewInput>) | null;
+  /** §8.2: the `off_card_removed` mail after removing the chargeable card turned auto-renew off. */
+  mailCardRemoved?: ((userId: string) => Promise<boolean>) | null;
+}
+
+/** What the auto-renew loader returns for the payment-method response. */
+export interface AutoRenewInput {
+  offer: AutoRenewOfferPublic | null;
+  reason: AutoRenewUnavailable | null;
+  nextCharge: { date: Date; amountMinor: number } | null;
+  stepUpMethod: StepUpMethodName | null;
+  /** The open renewal is held in reminder mode by an operator switch (flag off, dry run, breaker). */
+  paused: boolean;
+  enableVia: 'panel' | 'checkout';
 }
 
 export interface CardApiCaller {
@@ -52,7 +71,7 @@ export function saveCardAllowed(user: { emailVerified: boolean; createdAt: Date 
 }
 
 export interface PaymentMethodInput {
-  flags: Pick<BillingFlags, 'cardStorage' | 'autoCharge'>;
+  flags: Pick<BillingFlags, 'cardStorage' | 'autoCharge'> & { dryRun?: boolean };
   canManage: boolean;
   saveAllowed: boolean;
   cards: PublicSavedCard[];
@@ -68,6 +87,7 @@ export interface PaymentMethodInput {
     lastFailureKind: string | null;
   } | null;
   stale?: boolean;
+  auto?: AutoRenewInput | null;
 }
 
 /** Pure serializer of `GET /api/billing/payment-method` (tested for leaks). */
@@ -78,22 +98,40 @@ export function buildPaymentMethodResponse(input: PaymentMethodInput): PaymentMe
   const sub = input.subscription;
   const r = input.renewal;
   const renewalState = r && isRenewalState(r.state) ? r.state : null;
+  const auto = input.auto ?? null;
+  const autoCharge = input.flags.autoCharge;
+  let status: PaymentMethodResponse['autoRenew']['status'];
+  let unavailableReason: PaymentMethodResponse['autoRenew']['unavailableReason'] = null;
+  if (sub?.autoRenew) {
+    status = !autoCharge || input.flags.dryRun || auto?.paused ? 'paused' : 'on';
+  } else if (!autoCharge) {
+    status = 'unavailable';
+    unavailableReason = 'flag_off';
+  } else if (auto?.offer) {
+    status = 'off';
+  } else {
+    status = 'unavailable';
+    unavailableReason = auto?.reason ?? 'no_card';
+  }
+  const offer = status === 'off' ? auto?.offer ?? null : null;
   return {
     enabled: input.flags.cardStorage,
-    // Auto-renew (consent, step-up, charging) is not part of this release.
-    autoChargeAvailable: false,
+    autoChargeAvailable: autoCharge,
     canManage: input.canManage,
     saveAllowed: input.saveAllowed,
     card,
     otherCards,
     autoRenew: {
-      status: sub?.autoRenew ? 'paused' : 'unavailable',
-      unavailableReason: sub?.autoRenew ? null : 'flag_off',
+      status,
+      unavailableReason,
       since: sub?.autoRenew && sub.autoRenewChangedAt ? sub.autoRenewChangedAt.toISOString() : null,
-      nextCharge: null,
-      offer: null,
-      stepUp: null,
-      enableVia: 'checkout',
+      nextCharge:
+        sub?.autoRenew && auto?.nextCharge
+          ? { date: auto.nextCharge.date.toISOString(), amountMinor: auto.nextCharge.amountMinor, currency: 'TRY' }
+          : null,
+      offer,
+      stepUp: offer && auto?.stepUpMethod && auto.enableVia === 'panel' ? { required: true, method: auto.stepUpMethod } : null,
+      enableVia: auto?.enableVia ?? 'checkout',
     },
     renewal:
       r && renewalState && !TERMINAL_STATES.has(renewalState)
@@ -174,6 +212,14 @@ export async function paymentMethodCore(
     cards = refreshed ?? (await mirrorCards(db, userId, now, subscription?.renewsAt ?? null));
   }
 
+  let auto: AutoRenewInput | null = null;
+  if (deps.autoRenew && flags.autoCharge) {
+    try {
+      auto = await deps.autoRenew(userId, cards, now);
+    } catch (err) {
+      billingLog('warn', 'billing.pm_auto_renew_failed', { userId, code: err instanceof Error ? err.name : 'unknown' });
+    }
+  }
   const body = buildPaymentMethodResponse({
     flags,
     canManage: caller.canManage,
@@ -182,6 +228,7 @@ export async function paymentMethodCore(
     subscription,
     renewal,
     stale,
+    auto,
   });
   if (stale && opts.refresh) return { status: 502, body: { error: 'provider_error', ...body } as PaymentMethodResponse & { error: string } };
   return { status: 200, body };
@@ -226,5 +273,49 @@ export async function deleteCardCore(
 
   await recordConsent(db, { userId, kind: 'card_delete', actor: 'owner', authMethod: 'session', cardId: mirrorRow?.id ?? null }, deps.now());
   billingLog('info', 'billing.card_deleted', { userId });
+  if (autoRenewDisabled && deps.mailCardRemoved) {
+    try {
+      await deps.mailCardRemoved(userId);
+    } catch (err) {
+      billingLog('warn', 'billing.card_removed_mail_failed', { userId, code: err instanceof Error ? err.name : 'unknown' });
+    }
+  }
+  // §10.2: a renewal held in needs_action only because another card sat next to the bound one goes back to
+  // retry_wait once that card is gone (attempts and a slot ≥ the delivered notice + 72 h before graceEnd left).
+  if (!mirrorRow?.boundConsentId) {
+    try {
+      await resumeAfterUnboundRemoved(db, userId, deps.now());
+    } catch (err) {
+      billingLog('warn', 'billing.resume_after_unbound_failed', { userId, code: err instanceof Error ? err.name : 'unknown' });
+    }
+  }
   return { status: 200, body: { ok: true, autoRenewDisabled, chargeInProgress, card: null } };
+}
+
+/** needs_action (unbound card present) → retry_wait after the unbound card was removed (§10.2). */
+export async function resumeAfterUnboundRemoved(db: PrismaClient, userId: string, now: Date): Promise<boolean> {
+  const sub = await db.billingSubscription.findUnique({ where: { userId }, select: { autoRenew: true, autoRenewConsentId: true, renewsAt: true } });
+  if (!sub?.autoRenew || !sub.autoRenewConsentId || !sub.renewsAt) return false;
+  const renewal = await db.billingRenewal.findFirst({
+    where: { userId, periodEnd: sub.renewsAt, state: 'needs_action', mode: 'auto', lastFailureCode: 'unbound_card', consentId: sub.autoRenewConsentId },
+    select: { id: true, attempts: true, maxAttempts: true, periodEnd: true, noticeDeliveredAt: true },
+  });
+  if (!renewal || renewal.attempts >= renewal.maxAttempts || now.getTime() >= graceEnd(renewal.periodEnd).getTime()) return false;
+  const others = await db.billingCard.count({ where: { userId, deletedAt: null, boundConsentId: null } });
+  if (others > 0) return false;
+  const consent = await db.billingConsent.findFirst({ where: { id: sub.autoRenewConsentId, userId }, select: { terms: true } });
+  const slot = attemptSchedule(renewal.periodEnd, {
+    firstChargeDate: termsFirstChargeDate(consent?.terms ?? null),
+    noticeDeliveredAt: renewal.noticeDeliveredAt,
+  })[renewal.attempts];
+  if (!slot || slot.getTime() <= now.getTime() - 60_000) {
+    // No announced slot left in the future: the next one is the first window slot from now, if still before graceEnd.
+    const next = nextWindowSlot(now);
+    if (!renewal.noticeDeliveredAt || next.getTime() < renewal.noticeDeliveredAt.getTime() + RENEWAL_POLICY.minNoticeHours * HOUR_MS) return false;
+    if (next.getTime() >= graceEnd(renewal.periodEnd).getTime()) return false;
+    const res = await db.billingRenewal.updateMany({ where: { id: renewal.id, state: 'needs_action' }, data: { state: 'retry_wait', nextAttemptAt: next, modeReason: null } });
+    return res.count === 1;
+  }
+  const res = await db.billingRenewal.updateMany({ where: { id: renewal.id, state: 'needs_action' }, data: { state: 'retry_wait', nextAttemptAt: slot, modeReason: null } });
+  return res.count === 1;
 }

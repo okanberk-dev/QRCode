@@ -1407,6 +1407,7 @@ export async function runBillingRenewals(): Promise<RenewalTickSummary> {
           const vaultDeps = await loadCardVaultDeps();
           if (vaultDeps) await reconcileCardsAfterSave(vaultDeps, id);
         },
+        mailAutoRenewOff: async (userId, variant) => (await import('./auto-renew-deps')).sendAutoRenewOffMail(userId, variant),
       }),
     expireLapsed: (now) => expireLapsedPaynkolayPeriods(now),
     retention: cfg

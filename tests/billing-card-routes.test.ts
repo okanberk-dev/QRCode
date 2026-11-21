@@ -199,16 +199,37 @@ describe('saved-card routes', () => {
     assert.equal(body.otherCards.length, 1);
   });
 
-  it('9. auto-renew reads paused while a consent exists (no charge phase in this release)', () => {
-    const body = buildPaymentMethodResponse({
-      flags: { cardStorage: true, autoCharge: true },
+  it('9. auto-renew status follows the flags: paused while charging is off or in dry run, on when live', () => {
+    const base = {
       canManage: true,
       saveAllowed: true,
       cards: [],
       subscription: { renewsAt: new Date('2027-01-01T00:00:00Z'), autoRenew: true, autoRenewChangedAt: new Date('2026-12-01T00:00:00Z') },
       renewal: null,
+    };
+    const off = buildPaymentMethodResponse({ ...base, flags: { cardStorage: true, autoCharge: false } });
+    assert.equal(off.autoRenew.status, 'paused');
+    assert.equal(off.autoChargeAvailable, false);
+    const dry = buildPaymentMethodResponse({ ...base, flags: { cardStorage: true, autoCharge: true, dryRun: true } });
+    assert.equal(dry.autoRenew.status, 'paused');
+    assert.equal(dry.autoChargeAvailable, true);
+    const live = buildPaymentMethodResponse({ ...base, flags: { cardStorage: true, autoCharge: true, dryRun: false } });
+    assert.equal(live.autoRenew.status, 'on');
+    const held = buildPaymentMethodResponse({
+      ...base,
+      flags: { cardStorage: true, autoCharge: true, dryRun: false },
+      auto: { offer: null, reason: null, nextCharge: null, stepUpMethod: null, paused: true, enableVia: 'panel' },
     });
-    assert.equal(body.autoRenew.status, 'paused');
-    assert.equal(body.autoChargeAvailable, false);
+    assert.equal(held.autoRenew.status, 'paused');
+    // Without a consent and without an offer, the reason is shown; the offer is never leaked when off is impossible.
+    const none = buildPaymentMethodResponse({
+      ...base,
+      subscription: { ...base.subscription, autoRenew: false },
+      flags: { cardStorage: true, autoCharge: true, dryRun: false },
+      auto: { offer: null, reason: 'yearly_cycle', nextCharge: null, stepUpMethod: 'password', paused: false, enableVia: 'panel' },
+    });
+    assert.equal(none.autoRenew.status, 'unavailable');
+    assert.equal(none.autoRenew.unavailableReason, 'yearly_cycle');
+    assert.equal(none.autoRenew.stepUp, null);
   });
 });

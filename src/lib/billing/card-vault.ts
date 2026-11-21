@@ -11,7 +11,8 @@ import {
 import { fetchTransport, type PaynkolayTransport } from '@/lib/payment/paynkolay-transport';
 import { loadBillingFlags } from './flags';
 import { billingLog } from './redact';
-import { istanbulYearMonth } from './renewal-policy';
+import { attemptSchedule, istanbulYearMonth } from './renewal-policy';
+import { applyCardChangeAmendment, markCardReplacedNotice } from './auto-renew';
 import type { PublicSavedCard } from './card-types';
 import type { Sensitive } from './sensitive';
 import {
@@ -52,6 +53,21 @@ export interface VaultDeps {
   keys: VaultKeys;
   hmac: HmacKeys;
   now: () => Date;
+  /**
+   * D6: after a verified replacement card, auto-renew moves to it (amendment consent). This sends the
+   * `card_replaced` mail and returns true when Resend accepted it. Absent → no mail (tests, retention).
+   */
+  notifyCardReplaced?: (userId: string, mail: CardReplacedMail) => Promise<boolean>;
+}
+
+export interface CardReplacedMail {
+  locale: 'tr' | 'en';
+  planName: string;
+  amountMinor: number;
+  last4: string | null;
+  chargeDate: Date;
+  retryDates: Date[];
+  consentId: string;
 }
 
 export type { PublicSavedCard } from './card-types';
@@ -462,6 +478,31 @@ export async function reconcileCardsAfterSave(deps: VaultDeps, paymentId: string
   await db.billingCard.update({ where: { id: row.id }, data: { savedByPaymentId: paymentId }, select: { id: true } });
   await db.billingConsent.updateMany({ where: { id: consent.id, cardId: null }, data: { cardId: row.id, effectiveAt: now } });
 
+  // D6: with auto-renew on, the verified replacement card becomes the chargeable one (amendment consent);
+  // the previously bound card is then unbound, so the clean-up below deletes it.
+  if (deps.notifyCardReplaced) {
+    try {
+      const amendment = await applyCardChangeAmendment(db, { userId, newCardId: row.id, paymentId, now });
+      if (amendment) {
+        const retryDates = amendment.renewal
+          ? attemptSchedule(amendment.renewal.periodEnd, { firstChargeDate: amendment.chargeDate, noticeDeliveredAt: now }).slice(amendment.renewal.attempts + 1)
+          : [];
+        const sent = await deps.notifyCardReplaced(userId, {
+          locale: amendment.locale,
+          planName: amendment.planName,
+          amountMinor: amendment.amountMinor,
+          last4: amendment.last4,
+          chargeDate: amendment.chargeDate,
+          retryDates,
+          consentId: amendment.consentId,
+        });
+        if (sent) await markCardReplacedNotice(db, amendment, row.id, deps.now());
+      }
+    } catch (err) {
+      billingLog('error', 'vault.card_change_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
+    }
+  }
+
   // D1: one card on file. A failed or unverified clean-up does not undo the save: the engine retries it
   // (listCardCleanupsOwed → retryCardCleanup) until the other cards are verified gone.
   await deleteOtherCards(deps, userId, customerKey, saved.handle, listed, paymentId);
@@ -603,10 +644,29 @@ export async function purgeProviderCards(
 
 function vaultDepsFor(db: PrismaClient, cfg: PaynkolayConfig): VaultDeps | null {
   try {
-    return { db, cfg, transport: fetchTransport, keys: loadVaultKeys(), hmac: loadHmacKeys(), now: () => new Date() };
+    return { db, cfg, transport: fetchTransport, keys: loadVaultKeys(), hmac: loadHmacKeys(), now: () => new Date(), notifyCardReplaced };
   } catch {
     return null;
   }
+}
+
+/** Production `card_replaced` mail (D6), with the off-only link of the amendment consent. */
+async function notifyCardReplaced(userId: string, mail: CardReplacedMail): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (!user?.email || user.email.endsWith('.invalid')) return false;
+  const [{ sendAutoRenewChangedMail }, { offLinkFor }] = await Promise.all([import('./billing-mails'), import('./renewal-engine')]);
+  return sendAutoRenewChangedMail(
+    { email: user.email, locale: mail.locale },
+    {
+      variant: 'card_replaced',
+      planName: mail.planName,
+      amountMinor: mail.amountMinor,
+      last4: mail.last4,
+      chargeDate: mail.chargeDate,
+      retryDates: mail.retryDates,
+      offLink: offLinkFor(mail.consentId, userId, mail.locale),
+    },
+  );
 }
 
 /**

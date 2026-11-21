@@ -15,6 +15,8 @@ export interface FirebaseTokenClaims {
   email_verified?: boolean;
   name?: string;
   picture?: string;
+  /** Unix seconds of the actual sign-in (not of the token refresh): used for fresh-sign-in checks. */
+  auth_time?: number;
   firebase?: { sign_in_provider?: string };
 }
 
@@ -43,6 +45,7 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<FirebaseTo
       email_verified: payload.email_verified === true,
       name: typeof payload.name === 'string' ? payload.name : undefined,
       picture: typeof payload.picture === 'string' ? payload.picture : undefined,
+      auth_time: typeof payload.auth_time === 'number' ? payload.auth_time : undefined,
       firebase: (payload.firebase as { sign_in_provider?: string }) ?? undefined,
     };
   } catch {

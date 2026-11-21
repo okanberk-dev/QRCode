@@ -517,6 +517,8 @@ export interface PostSettleDeps {
    * `cardSaveResult = 'pending'` and the renewal engine retries.
    */
   reconcileCards?: (paymentId: string) => Promise<unknown>;
+  /** §13.4 `off_plan_changed`: the owner is told a checkout for another plan ended the instruction. */
+  mailAutoRenewOff?: (userId: string, variant: 'off_plan_changed') => Promise<boolean>;
 }
 
 /**
@@ -566,7 +568,14 @@ export async function applyPostSettleEffects(paymentId: string, deps: PostSettle
         select: { subscriptionPlanId: true, billingCycle: true },
       });
       if (consent && (consent.subscriptionPlanId !== payment.subscriptionPlanId || consent.billingCycle !== payment.billingCycle)) {
-        await deps.store.disableAutoRenew(payment.userId, 'plan_changed', 'system', now);
+        const off = await deps.store.disableAutoRenew(payment.userId, 'plan_changed', 'system', now);
+        if (off.changed && deps.mailAutoRenewOff) {
+          try {
+            await deps.mailAutoRenewOff(payment.userId, 'off_plan_changed');
+          } catch (err) {
+            billingLog('warn', 'settle.plan_changed_mail_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
+          }
+        }
       }
     }
 

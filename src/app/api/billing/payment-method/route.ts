@@ -6,6 +6,7 @@ import { loadCardVaultDeps } from '@/lib/billing/card-vault';
 import { loadBillingFlags } from '@/lib/billing/flags';
 import { BILLING_NO_STORE, requireBillingOwner } from '@/lib/billing/owner-guard';
 import { prismaRenewalStore } from '@/lib/billing/renewal-store-prisma';
+import { paymentMethodAutoRenewLoader } from '@/lib/billing/auto-renew-deps';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -21,8 +22,17 @@ export async function GET(req: NextRequest) {
   if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status, headers: BILLING_NO_STORE });
 
   const vault = flags.cardStorage ? await loadCardVaultDeps() : null;
+  const locale = req.nextUrl.searchParams.get('locale') === 'en' ? 'en' : 'tr';
   const res = await paymentMethodCore(
-    { db: prisma, flags, vault, store: prismaRenewalStore, now: () => new Date(), rateLimit },
+    {
+      db: prisma,
+      flags,
+      vault,
+      store: prismaRenewalStore,
+      now: () => new Date(),
+      rateLimit,
+      autoRenew: flags.autoCharge && flags.binding.ok ? paymentMethodAutoRenewLoader(flags, locale) : null,
+    },
     { userId: guard.userId, canManage: guard.canManage },
     { refresh: req.nextUrl.searchParams.get('refresh') === '1' },
   );
