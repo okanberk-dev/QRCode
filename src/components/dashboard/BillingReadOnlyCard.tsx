@@ -6,7 +6,8 @@ import type { RenewalNoticeData } from '@/lib/billing/card-types';
 import { Check, Download, FileText, Loader2, Receipt } from 'lucide-react';
 import SavedCardPanel from '@/components/dashboard/billing/SavedCardPanel';
 import RenewalNotice from '@/components/dashboard/billing/RenewalNotice';
-import { billingText } from '@/components/dashboard/billing/billing-copy';
+import { billingText, formatIstanbulDate, formatTry } from '@/components/dashboard/billing/billing-copy';
+import { usePaymentMethod } from '@/components/dashboard/billing/usePaymentMethod';
 import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { PublicPlan } from '@/lib/subscription-plans';
@@ -144,6 +145,11 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
       summary?.renewal?.state === 'needs_action' ||
       summary?.renewal?.state === 'manual_review');
   const [pickerCycle, setPickerCycle] = useState<'monthly' | 'yearly'>('monthly');
+  // Shares the payment-method query of SavedCardPanel (same key): the hero shows the auto-renew line.
+  const pm = usePaymentMethod(cardStorage && summary?.viewerIsOwner === true);
+  const autoStatus = pm.data?.autoRenew.status ?? null;
+  const autoOn = autoStatus === 'on' || autoStatus === 'paused';
+  const autoNext = pm.data?.autoRenew.nextCharge ?? null;
 
   // Result of a PayNKolay payment: the return route sends the owner back
   // with `?payment=<status>` (CLAUDE.md §44). Shown once, then dropped from
@@ -315,6 +321,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
           status={summary.status ?? null}
           renewsAt={summary.renewsAt}
           canRenew={renewable}
+          autoRenewStatus={autoStatus}
           now={new Date()}
         />
       ) : null}
@@ -398,12 +405,29 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                 onClick={handleOpenPicker}
                 className="bz-btn-lime inline-flex min-h-[44px] items-center sm:min-h-0"
               >
-                {billingText(paidByCard ? 'hero.extend' : 'hero.upgrade', locale)}
+                {billingText(autoOn ? 'hero.changePlan' : paidByCard ? 'hero.extend' : 'hero.upgrade', locale)}
               </button>
             )}
-            <span className="text-[11px] text-[#A3A3A3]">
-              {billingText(paidByCard ? 'hero.autoOff' : 'hero.pickPlan', locale)}
-            </span>
+            {autoOn ? (
+              <span className="inline-flex items-center gap-2 text-[12px] text-[#A3A3A3]">
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6F24E] ${pm.data?.renewal?.state === 'charging' ? 'bz-pulse-dot' : ''}`}
+                />
+                {autoStatus === 'paused'
+                  ? billingText('ar.pausedShort', locale)
+                  : autoNext
+                    ? billingText('hero.autoOn', locale, {
+                        date: formatIstanbulDate(autoNext.date, locale),
+                        amount: formatTry(autoNext.amountMinor, locale),
+                      })
+                    : billingText('hero.autoOnShort', locale)}
+              </span>
+            ) : (
+              <span className="text-[11px] text-[#A3A3A3]">
+                {billingText(paidByCard ? 'hero.autoOff' : 'hero.pickPlan', locale)}
+              </span>
+            )}
           </div>
         </div>
 

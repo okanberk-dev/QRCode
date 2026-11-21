@@ -84,7 +84,7 @@ export const BILLING_COPY = {
 
   // ── Auto-renew (§12.3, §13.1) ──
   'ar.label': { tr: 'Otomatik yenileme', en: 'Auto-renew' },
-  'ar.on': { tr: 'Sonraki çekim {date} · {amount} · •••• {last4}', en: 'Next charge {date} · {amount} · •••• {last4}' },
+  'ar.on': { tr: 'Sonraki çekim {date} · {amount} · ••••\u00a0{last4}', en: 'Next charge {date} · {amount} · ••••\u00a0{last4}' },
   'ar.onNoCard': { tr: 'Sonraki çekim {date} · {amount}', en: 'Next charge {date} · {amount}' },
   'ar.off': { tr: 'Kapalı. Dönem sonunda planınızı kendiniz uzatırsınız.', en: 'Off. You extend your plan yourself at the end of the period.' },
   'ar.paused': {
@@ -181,6 +181,8 @@ export const BILLING_COPY = {
   'hero.changePlan': { tr: 'Planı değiştir', en: 'Change plan' },
   'hero.extend': { tr: 'Süreyi uzat', en: 'Extend period' },
   'hero.upgrade': { tr: 'Planı yükselt', en: 'Upgrade plan' },
+  'hero.autoOn': { tr: 'Otomatik yenileme açık · {date} · {amount}', en: 'Auto-renew on · {date} · {amount}' },
+  'hero.autoOnShort': { tr: 'Otomatik yenileme açık', en: 'Auto-renew on' },
   'hero.autoOff': { tr: 'Otomatik çekim kapalı; dönem bitmeden uzatabilirsiniz.', en: 'Automatic charging is off; extend before the period ends.' },
   'hero.pickPlan': {
     tr: 'Paketinizi seçin, PayNKolay güvenli ödeme sayfasına geçin.',
@@ -197,6 +199,10 @@ export const BILLING_COPY = {
     en: "This period hasn't been renewed. Pay by {grace} to keep your plan.",
   },
   'notice.reminder': { tr: 'Planınız {date} tarihinde sona eriyor.', en: 'Your plan ends on {date}.' },
+  'notice.autoScheduled': {
+    tr: 'Otomatik yenileme {date} tarihinde yapılacak; erişiminiz devam ediyor.',
+    en: 'Auto-renew will charge on {date}; your access continues.',
+  },
   'notice.renewSaved': { tr: 'Kayıtlı kartla yenile', en: 'Renew with saved card' },
   'notice.renewNow': { tr: 'Şimdi yenile', en: 'Renew now' },
   'notice.manualReview': {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, Lock, MoreHorizontal, RefreshCw, Trash2 } from 'lucide-react';
 import { Badge, ConfirmDialog, Eyebrow, PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
 import type { PublicSavedCard } from '@/lib/billing/card-types';
+import AutoRenewControl from './AutoRenewControl';
 import CardVisual from './CardVisual';
 import { billingText, formatCardExpiry, formatIstanbulDate, type BillingLocale } from './billing-copy';
 import { BillingApiError, useDeleteCard, usePaymentMethod, useRefreshCard } from './usePaymentMethod';
@@ -246,6 +247,8 @@ export default function SavedCardPanel({
           ))}
         </ul>
       ) : null}
+
+      <AutoRenewControl locale={locale} data={data} />
 
       {!manage ? <p className="mt-3 text-[12px] leading-[1.45] text-[#737373]">{billingText('pm.impersonating', locale)}</p> : null}
 

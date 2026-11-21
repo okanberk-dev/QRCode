@@ -93,7 +93,9 @@ export default function CardVisual({
                 sm ? 'text-[12px] tracking-[0.08em]' : 'text-[13px] tracking-[0.08em] @min-[320px]:text-[15px] @min-[320px]:tracking-[0.12em]'
               }`}
             >
-              <span className="text-white/55">•••• •••• •••• </span>
+              {/* The last four digits never truncate: on a narrow card (a phone) only one masked group shows. */}
+              <span className="hidden text-white/55 @min-[300px]:inline">•••• •••• </span>
+              <span className="text-white/55">•••• </span>
               {card.last4 ?? '••••'}
             </span>
             {expiry ? <span className={`bz-mono shrink-0 text-[#A3A3A3] ${sm ? 'text-[11px]' : 'text-[12px]'}`}>{expiry}</span> : null}

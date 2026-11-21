@@ -20,10 +20,17 @@ export interface RenewalNoticeInput {
   renewsAt: string | null;
   /** Renewal through the review page is possible (card subscription, saved cards on). */
   canRenew: boolean;
+  /** Auto-renew status from the payment-method answer (null while unknown). */
+  autoRenewStatus?: 'off' | 'on' | 'paused' | 'unavailable' | null;
   now: Date;
 }
 
-export function renewalNoticeFor(input: RenewalNoticeInput): { kind: AlertKind; key: 'notice.needsAction' | 'notice.manualReview' | 'notice.pastDue' | 'notice.reminder' | 'notice.processing' | 'notice.ownerPaying'; date: string | null; grace: string | null } | null {
+export function renewalNoticeFor(input: RenewalNoticeInput): {
+  kind: AlertKind;
+  key: 'notice.needsAction' | 'notice.manualReview' | 'notice.pastDue' | 'notice.reminder' | 'notice.processing' | 'notice.ownerPaying' | 'notice.autoScheduled' | 'ar.paused';
+  date: string | null;
+  grace: string | null;
+} | null {
   const r = input.renewal;
   const grace = r?.graceEndsAt ?? r?.periodEnd ?? input.renewsAt;
   if (r?.state === 'needs_action') return { kind: 'danger', key: 'notice.needsAction', date: r.periodEnd, grace };
@@ -35,9 +42,22 @@ export function renewalNoticeFor(input: RenewalNoticeInput): { kind: AlertKind; 
     return { kind: 'info', key: 'notice.processing', date: r.periodEnd, grace };
   }
   if (input.status === 'past_due' || r?.state === 'retry_wait') return { kind: 'warn', key: 'notice.pastDue', date: r?.periodEnd ?? input.renewsAt, grace };
+  // An auto renewal whose charge falls after the period end: access continues, nothing to do.
+  if (r && r.mode === 'auto' && r.state === 'scheduled' && r.nextAttemptAt && input.autoRenewStatus === 'on') {
+    const end = new Date(r.periodEnd).getTime();
+    const left = end - input.now.getTime();
+    if (new Date(r.nextAttemptAt).getTime() > end && left <= 7 * 24 * 60 * 60_000) {
+      return { kind: 'info', key: 'notice.autoScheduled', date: r.nextAttemptAt, grace };
+    }
+    return null;
+  }
   if (r && r.mode === 'reminder') {
     const end = new Date(r.periodEnd).getTime();
     const left = end - input.now.getTime();
+    // A paused instruction (flag off, dry run, breaker) keeps access until the grace end (D4).
+    if (input.autoRenewStatus === 'paused' && r.graceEndsAt && left <= 7 * 24 * 60 * 60_000) {
+      return { kind: 'info', key: 'ar.paused', date: r.periodEnd, grace: r.graceEndsAt };
+    }
     if (left > 0 && left <= 7 * 24 * 60 * 60_000) return { kind: 'info', key: 'notice.reminder', date: r.periodEnd, grace };
   }
   return null;
@@ -50,7 +70,7 @@ export default function RenewalNotice({ locale, ...input }: RenewalNoticeInput &
     date: formatIstanbulDate(notice.date, locale),
     grace: formatIstanbulDate(notice.grace, locale),
   });
-  const action = input.canRenew && notice.key !== 'notice.processing';
+  const action = input.canRenew && notice.key !== 'notice.processing' && notice.key !== 'notice.autoScheduled';
   return (
     <AlertBanner kind={notice.kind}>
       <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">

@@ -2422,7 +2422,7 @@ Placeholders come from `AutoRenewTerms`. Dates are Europe/Istanbul. The same tex
 panel modal, and repeated in the `on` mail.
 - TR:
   > Otomatik yenileme talimatı
-  > {planName} paketimin, {firstChargeDate} tarihinden başlayarak her ay {amount} (KDV dahil) tutarında, PayNKolay'de kayıtlı kartımdan ({last4} ile biten kart; kartımı Hesabım'dan değiştirirsem yeni kartımdan) otomatik olarak yenilenmesini istiyorum. Bu talimatla her ay {amount} ödeme yükümlülüğü altına girdiğimi kabul ediyorum.
+  > {planName} paketimin, {firstChargeDate} tarihinden başlayarak her ay {amount} (KDV dahil) tutarında, PayNKolay'da kayıtlı kartımdan ({last4} ile biten kart; kartımı Hesabım'dan değiştirirsem yeni kartımdan) otomatik olarak yenilenmesini istiyorum. Bu talimatla her ay {amount} ödeme yükümlülüğü altına girdiğimi kabul ediyorum.
   > • Çekim her dönemin bitiminde ya da sonrasında yapılır, hiçbir zaman öncesinde yapılmaz.
   > • Her çekimden en az 3 gün (72 saat) önce çekim tarihini, tutarı ve kartı bildiren bir e-posta alırım; bu e-posta bana ulaşmadan çekim yapılmaz.
   > • Fiyat artarsa yeni onayım alınmadan çekim yapılmaz.

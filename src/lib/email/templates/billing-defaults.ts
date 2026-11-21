@@ -210,7 +210,7 @@ export const BILLING_AUTO_RENEW_CHANGED_TR = {
   titleOff: 'Otomatik yenileme kapatıldı.',
   introOffOwner: 'Otomatik yenilemeyi kapattınız; kartınızdan otomatik çekim yapılmayacak. ${planName} paketiniz ${grace} tarihine kadar açık, sonrasında dilediğiniz zaman kendiniz uzatabilirsiniz.',
   introOffCardRemoved: 'Kayıtlı kartınızı kaldırdığınız için otomatik yenileme kapandı. ${planName} paketiniz ${grace} tarihine kadar açık.',
-  introOffProviderMissing: "Kayıtlı kartınız PayNKolay'de bulunamadığı için otomatik yenileme kapandı ve kartınızdan çekim yapılmadı. ${planName} paketiniz ${grace} tarihine kadar açık; devam etmek için dönem bitmeden ödeyin.",
+  introOffProviderMissing: "Kayıtlı kartınız PayNKolay'da bulunamadığı için otomatik yenileme kapandı ve kartınızdan çekim yapılmadı. ${planName} paketiniz ${grace} tarihine kadar açık; devam etmek için dönem bitmeden ödeyin.",
   introOffPlanChanged: "Paketinizi ya da ödeme döneminizi değiştirdiğiniz için önceki otomatik yenileme talimatı sona erdi. Yeni paketiniz için otomatik yenilemeyi Hesabım'dan yeniden açabilirsiniz.",
   introOffPriceIncrease: '${planName} paketinin fiyatı değiştiği için otomatik yenileme kapatıldı; yeni tutar için onayınız olmadan çekim yapılmaz. Paketiniz ${grace} tarihine kadar açık; devam etmek için yeni tutarla yenileyin ya da otomatik yenilemeyi yeniden açın.',
   introOffAdmin: 'Otomatik yenilemeniz destek ekibimiz tarafından kapatıldı; kartınızdan otomatik çekim yapılmayacak. ${planName} paketiniz ${grace} tarihine kadar açık. Sorunuz varsa support@buaze.com adresine yazın.',

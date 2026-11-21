@@ -265,6 +265,30 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
 }
 
 /**
+ * Google re-authentication for a step-up (billing D14): popup only, never a
+ * redirect (the step-up modal must keep its state). Returns the fresh ID
+ * token, or a reason the caller shows.
+ */
+export async function reauthenticateWithGooglePopup(): Promise<
+  { status: 'idToken'; idToken: string } | { status: 'unconfigured' } | { status: 'popup_failed' } | { status: 'cancelled' }
+> {
+  if (!isFirebaseConfigured()) return { status: 'unconfigured' };
+  const mods = await loadFirebase();
+  if (!mods) return { status: 'unconfigured' };
+  const { auth } = getAuthInstance(mods.appMod, mods.authMod);
+  const provider = new mods.authMod.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    const result = await mods.authMod.signInWithPopup(auth, provider);
+    return { status: 'idToken', idToken: await result.user.getIdToken(true) };
+  } catch (err) {
+    const code = (err as { code?: string })?.code ?? '';
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return { status: 'cancelled' };
+    return { status: 'popup_failed' };
+  }
+}
+
+/**
  * Call from a useEffect on the login/register page mount. Returns the
  * Firebase ID token if a redirect just completed; null otherwise.
  * Always clears the "redirect in progress" sentinel.
