@@ -51,8 +51,8 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
   let imageGET: Handler;
   let contentVersion: (value: string) => string;
 
-  const ids = { owner: '', viewer: '', restaurant: '' };
-  const tokens = { owner: '', viewer: '' };
+  const ids = { owner: '', viewer: '', stranger: '', restaurant: '' };
+  const tokens = { owner: '', viewer: '', stranger: '' };
   const originalConsoleError = console.error;
 
   function request(method: string, path: string, token: string | null, body?: unknown, extra?: Record<string, string>) {
@@ -117,6 +117,9 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
 
     const owner = await makeUser('owner', 'restaurant_owner');
     const viewer = await makeUser('viewer', 'team_member');
+    // Another restaurant owner with no link to this restaurant (IDOR check).
+    const stranger = await makeUser('stranger', 'restaurant_owner');
+    ids.stranger = stranger.id;
     ids.owner = owner.id;
     ids.viewer = viewer.id;
     ids.restaurant = (
@@ -131,12 +134,13 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
     });
     tokens.owner = await issueToken(owner.id, 'restaurant_owner', owner.email);
     tokens.viewer = await issueToken(viewer.id, 'team_member', viewer.email);
+    tokens.stranger = await issueToken(stranger.id, 'restaurant_owner', stranger.email);
   });
 
   after(async () => {
     console.error = originalConsoleError;
     if (!prisma) return;
-    const userIds = [ids.owner, ids.viewer].filter(Boolean);
+    const userIds = [ids.owner, ids.viewer, ids.stranger].filter(Boolean);
     if (ids.restaurant) await prisma.restaurant.deleteMany({ where: { id: ids.restaurant } });
     await prisma.teamMember.deleteMany({ where: { ownerId: { in: userIds } } });
     await prisma.userSession.deleteMany({ where: { userId: { in: userIds } } });
@@ -236,6 +240,13 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
   it('without a session the route answers 401', async () => {
     const res = await patch({ menuTheme: 'modern' }, null);
     assert.equal(res.status, 401);
+  });
+
+  it("another owner cannot change this restaurant's design (403)", async () => {
+    const res = await patch({ menuTheme: 'pulse', menuDesign: null }, tokens.stranger);
+    assert.equal(res.status, 403);
+    const row = await prisma.restaurant.findUnique({ where: { id: ids.restaurant }, select: { menuTheme: true } });
+    assert.equal(row?.menuTheme, 'modern');
   });
 
   it('rejects non-base64 covers, SVG, rgb() accents, empty taglines and free-text knob values', async () => {
