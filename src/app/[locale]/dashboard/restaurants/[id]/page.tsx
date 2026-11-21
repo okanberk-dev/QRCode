@@ -46,10 +46,10 @@ export default async function DashboardRestaurantDetailPage({
       const payload = await verifyJwt(userToken);
       const userId = typeof payload?.userId === 'string' ? payload.userId : null;
       if (userId) {
-        // One connection, one snapshot (CLAUDE.md §40.1). The link columns +
-        // latest checks feed the platform-links strip with the same counts
-        // the platforms overview and settings tab show.
-        const [restaurant, checkRows] = await prisma.$transaction([
+        // The link columns + latest checks feed the platform-links strip with
+        // the same counts the platforms overview and settings tab show. The
+        // two reads run at once (was an array $transaction).
+        const [restaurant, checkRows] = await Promise.all([
           prisma.restaurant.findFirst({
             where: { id, userId },
             select: {

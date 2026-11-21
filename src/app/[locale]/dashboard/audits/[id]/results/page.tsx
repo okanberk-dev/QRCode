@@ -42,8 +42,8 @@ export default async function AuditResultsPage({ params }: PageProps) {
 
   // Boş durum ayrımı ("hiç yanıt yok" ↔ "filtreye uyan yok") ve "Tüm maddeler tamam"
   // iddiasının doğruluğu (hiç puanlanabilir madde yoksa hiçbir şey denetlenmedi) için
-  // iki küçük okuma — tek transaction, açık select.
-  const [questionRows, responseCount] = await prisma.$transaction([
+  // iki küçük okuma — aynı anda (eskiden sıralı transaction), açık select.
+  const [questionRows, responseCount] = await Promise.all([
     prisma.auditQuestion.findMany({
       where: { templateId: initial.template.id },
       select: { type: true, correctAnswer: true },

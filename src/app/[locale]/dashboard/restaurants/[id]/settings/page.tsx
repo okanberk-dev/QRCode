@@ -44,10 +44,9 @@ export default async function RestaurantSettingsPage({
         // userId doesn't match restaurant.userId → findFirst returns null
         // → client falls back to its own fetch with proper IDOR via the
         // API route (`getPanelActorFromRequest` + `canAccessRestaurant`).
-        // One connection, one snapshot (CLAUDE.md §40.1 — pooler
-        // connection_limit=1). The checks read is discarded below when the
-        // ownership check fails.
-        const [r, checkRows] = await prisma.$transaction([
+        // The two reads run at once (was an array $transaction). The checks
+        // read is discarded below when the ownership check fails.
+        const [r, checkRows] = await Promise.all([
           prisma.restaurant.findFirst({
             where: { id, userId },
             select: {
