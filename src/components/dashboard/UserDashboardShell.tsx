@@ -846,13 +846,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                    eder; CTA + kartlar için saklı. */
                 /* §49 — shadcn sidebar density: 8px items, active graphite
                    with a lime icon (the outside lime stripe is gone). */
-                className={`relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium bz-motion-spring ${
+                className={`relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] font-medium bz-motion-spring ${
                   isActive
                     ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
-                    : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
+                    : 'text-[#525252] hover:bg-[#F4F4F5] hover:text-[#0A0A0A]'
                 }`}
               >
-                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                <Icon size={18} strokeWidth={1.75} className="shrink-0" />
                 {!isCollapsed && <span className="flex-1 truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
                 {item.badge !== undefined && item.badge !== 0 && (
                   <span
@@ -898,10 +898,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 //   ve parent group da gri — kullanıcı 2 menü "seçili" hissi
                 //   yaşadı. Şimdi parent group sadece chevron rotate + child
                 //   reveal animation; tek "active" görünüm child item'da.
-                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A]"
+                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] font-medium text-[#525252] transition-colors hover:bg-[#F4F4F5] hover:text-[#0A0A0A]"
                 aria-expanded={isExpanded}
               >
-                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                <Icon size={18} strokeWidth={1.75} className="shrink-0" />
                 {!isCollapsed && (
                   <>
                     <span className="flex-1 truncate text-left text-[12px] font-medium text-[#737373] animate-in fade-in slide-in-from-left-2 duration-300">
@@ -950,13 +950,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                           onClick={handleNavClick}
                           aria-current={isActive ? 'page' : undefined}
                           tabIndex={isExpanded ? 0 : -1}
-                          className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium transition-colors ${
+                          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
                             isActive
                               ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
-                              : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
+                              : 'text-[#525252] hover:bg-[#F4F4F5] hover:text-[#0A0A0A]'
                           }`}
                         >
-                          <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
+                          <ChildIcon size={16} strokeWidth={1.75} className="shrink-0" />
                           {!isCollapsed && (
                             <>
                               <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">
@@ -1341,7 +1341,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           // an explicit width each page shrank to its content: narrow strips on
           // desktop, sideways overflow on mobile (customers 565px at 390). Full
           // width + max-w + mx-auto centres them as intended (§42.3).
-          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 [&>*]:w-full"
+          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#F4F4F5] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 [&>*]:w-full"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />

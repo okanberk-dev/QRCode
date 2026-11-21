@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import RootHtml from '@/components/root/RootHtml';
 import { buildBaseMetadata, ROOT_VIEWPORT } from '@/lib/root-metadata';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import PanelTheme from '@/components/panel/PanelTheme';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
@@ -151,6 +152,7 @@ export default async function AdminLayout({
     <RootHtml lang={adminLocale}>
       <AdminTranslationProvider initialLocale={adminLocale}>
         <div className="bz-panel flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden selection:bg-[#C6F24E]/30 relative">
+          <PanelTheme />
           {showSidebar && (
             <a href="#panel-main-content" className="bz-skip-link">
               {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
@@ -170,7 +172,7 @@ export default async function AdminLayout({
                `mx-auto max-w-[N]` flex items; auto margins disable stretch, so
                without a width they shrank to their content (CSV button cut off
                at 1440, sideways overflow at 390). */
-            className={`flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable] flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA] [&>*]:w-full'}`}
+            className={`flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable] flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#F4F4F5] [&>*]:w-full'}`}
           >
             {impersonationActive && <ImpersonationBanner />}
             {showSidebar && (

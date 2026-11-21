@@ -40,12 +40,13 @@ export function PageHeader({
   // (yoğun 3-col layout için mütevazı). Her ikisinde de `bz-h-tight-2`
   // Space Grotesk weight 500 + tight tracking sabit; sadece size scale.
   // §49 — shadcn dashboard scale (text-2xl/3xl semibold) in the Geist panels.
+  // §53 (docs/design/panel-design-system.md §2): page title 24/30 (phones 22/28), DM Sans 600.
   const titleStyle = titleScale === 'compact'
-    ? { fontSize: 'clamp(20px, 2.6vw, 24px)', lineHeight: 1.15 }
-    : { fontSize: 'clamp(24px, 3vw, 30px)', lineHeight: 1.1 };
+    ? { fontSize: 'clamp(20px, 2.2vw, 22px)', lineHeight: 1.25 }
+    : { fontSize: 'clamp(22px, 2.4vw, 24px)', lineHeight: 1.25 };
   return (
     <div
-      className={`flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4 mb-5 ${className}`}
+      className={`flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4 mb-6 ${className}`}
     >
       <div className="min-w-0 flex-1">
         {eyebrow && (
@@ -85,7 +86,7 @@ export function PageHeader({
         {description && (
           <p
             className="mt-2 max-w-2xl"
-            style={{ fontSize: 13, color: "#525252", lineHeight: 1.55 }}
+            style={{ fontSize: 13.5, color: "#737373", lineHeight: 1.5 }}
           >
             {description}
           </p>

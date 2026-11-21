@@ -17,6 +17,11 @@ export { Eyebrow } from "./Eyebrow";
 export { Field } from "./Field";
 export { Modal } from "./Modal";
 export { PageHeader } from "./PageHeader";
+// §53 panel design system (docs/design/panel-design-system.md).
+export { MetaBar, MetaItem } from "./MetaBar";
+export { LogoTile } from "./LogoTile";
+export { FeatureCard } from "./FeatureCard";
+export { ListRow } from "./ListRow";
 export { PanelSelectionBar, type PanelSelectionAction } from "./PanelSelectionBar";
 export { PlatformChip, PLATFORMS, type PlatformId, type PlatformConfig } from "./PlatformChip";
 export { ProgressBar } from "./ProgressBar";

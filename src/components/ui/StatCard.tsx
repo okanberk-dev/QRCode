@@ -22,7 +22,19 @@ interface StatCardProps {
   sparkline?: number[];
   /** Sparkline rengi (default lime-deep `#A8D62E`). */
   sparklineColor?: string;
+  /**
+   * §53 tile tone (docs/design/panel-design-system.md §4.3): `default` white
+   * card, `lime` / `sand` pastel tiles, `graphite` the filled highlight tile.
+   */
+  tone?: "default" | "lime" | "sand" | "graphite";
 }
+
+const TONE_CLASS: Record<NonNullable<StatCardProps["tone"]>, string> = {
+  default: "",
+  lime: "!bg-[#EAF9B8] !shadow-none",
+  sand: "!bg-[#F4EFE6] !shadow-none",
+  graphite: "!bg-[#0A0A0A] !shadow-none text-white",
+};
 
 export function StatCard({
   label,
@@ -35,23 +47,32 @@ export function StatCard({
   className = "",
   sparkline,
   sparklineColor = "#A8D62E",
+  tone = "default",
 }: StatCardProps) {
-  const deltaColor =
-    deltaKind === "up" ? "#16A34A" : deltaKind === "down" ? "#DC2626" : "#737373";
+  const dark = tone === "graphite";
+  // On the graphite tile the delta uses lighter shades so it stays readable (AA).
+  const deltaColor = dark
+    ? deltaKind === "up" ? "#C6F24E" : deltaKind === "down" ? "#FCA5A5" : "rgba(255,255,255,0.7)"
+    : deltaKind === "up" ? "#16A34A" : deltaKind === "down" ? "#DC2626" : "#737373";
   const showSparkline = sparkline !== undefined && sparkline.length >= 2;
 
   return (
     <div
-      className={`bz-card relative min-w-0 p-3.5 sm:p-[18px] transition-shadow hover:shadow-sm ${className}`}
+      className={`bz-card relative min-w-0 p-3.5 sm:p-[18px] transition-shadow hover:shadow-sm ${TONE_CLASS[tone]} ${className}`}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <Eyebrow className="min-w-0 max-w-[calc(100%-2.25rem)] leading-[1.25] [overflow-wrap:anywhere]">
+        <Eyebrow
+          color={dark ? "rgba(255,255,255,0.68)" : tone === "default" ? "#737373" : "#525252"}
+          className="min-w-0 max-w-[calc(100%-2.25rem)] leading-[1.25] [overflow-wrap:anywhere]"
+        >
           {label}
         </Eyebrow>
         {icon && (
           <span
             aria-hidden="true"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FAFAFA] text-[#525252] sm:h-8 sm:w-8"
+            className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full sm:h-8 sm:w-8 ${
+              dark ? "bg-white/10 text-[#C6F24E]" : tone === "default" ? "bg-[#F4F4F5] text-[#525252]" : "bg-white/70 text-[#0A0A0A]"
+            }`}
           >
             {icon}
           </span>
@@ -74,7 +95,7 @@ export function StatCard({
             {delta}
           </span>
           {deltaSuffix && (
-            <span className="min-w-0 text-[10.5px] leading-snug text-[#737373] [overflow-wrap:anywhere] sm:text-[11px]">
+            <span className={`min-w-0 text-[10.5px] leading-snug [overflow-wrap:anywhere] sm:text-[11px] ${dark ? "text-white/60" : "text-[#737373]"}`}>
               {deltaSuffix}
             </span>
           )}

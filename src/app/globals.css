@@ -867,6 +867,103 @@ input::-webkit-inner-spin-button {
 /* Small variant — bz-btn/primary/lime/ghost/danger/warn/on-dark ile birlikte kullanılır.
    tokens.css line 127 birebir port. */
 .bz-btn-sm { min-height: 32px; font-size: 12px; padding: 7px 12px; }
+.bz-btn-lg { min-height: 44px; font-size: 14px; padding: 11px 18px; }
+
+/* §53 — outline + text buttons (docs/design/panel-design-system.md §4.1). */
+.bz-btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: transparent; color: #0A0A0A;
+  min-height: 38px;
+  font-size: 13px; font-weight: 600;
+  padding: 10px 16px; border-radius: 999px; border: 1px solid #0A0A0A;
+  cursor: pointer; transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  outline: none;
+}
+.bz-btn-outline:hover { background: #0A0A0A; color: #FFFFFF; }
+.bz-btn-outline:focus-visible { box-shadow: 0 0 0 3px rgba(198,242,78,0.55); }
+.bz-btn-outline:disabled, .bz-btn-outline[aria-disabled="true"] { border-color: #D4D4D4; color: #A3A3A3; background: transparent; cursor: not-allowed; }
+.bz-btn-text {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 32px; padding: 4px 2px;
+  background: transparent; border: 0;
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 500; color: #0A0A0A;
+  text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; text-decoration-thickness: 2px;
+  cursor: pointer; transition: text-decoration-color 150ms ease, color 150ms ease;
+  border-radius: 6px; outline: none; white-space: nowrap;
+}
+.bz-btn-text:hover { text-decoration-color: #C6F24E; }
+.bz-btn-text:focus-visible { box-shadow: 0 0 0 3px rgba(198,242,78,0.55); }
+.bz-btn-text:disabled, .bz-btn-text[aria-disabled="true"] { color: #A3A3A3; cursor: not-allowed; text-decoration-color: transparent; }
+.bz-btn-text svg { flex-shrink: 0; }
+
+/* §53 — chips: small filled tokens ("500 NICKLs", "Mootley Group"). */
+.bz-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 24px; padding: 0 8px; border-radius: 6px;
+  background: #0A0A0A; color: #FFFFFF;
+  font-family: var(--font-body); font-size: 12px; font-weight: 500; line-height: 1;
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.bz-chip-lime { background: #C6F24E; color: #0A0A0A; }
+.bz-chip-soft { background: #F4F4F5; color: #525252; }
+.bz-chip-sand { background: #F4EFE6; color: #6B4E1F; }
+.bz-chip-outline { background: transparent; color: #0A0A0A; box-shadow: inset 0 0 0 1px #E4E4E7; }
+
+/* §53 — list row (notifications, articles, businesses). */
+.bz-row {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 56px; padding: 10px 12px; border-radius: 12px;
+  background: #F7F7F8; color: #0A0A0A;
+  transition: background-color 150ms ease, color 150ms ease;
+  text-align: left; width: 100%;
+}
+a.bz-row:hover, button.bz-row:hover { background: #F0F0F1; }
+a.bz-row:focus-visible, button.bz-row:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(198,242,78,0.55); }
+.bz-row[data-active="true"] { background: #0A0A0A; color: #FFFFFF; }
+.bz-row[data-active="true"] .bz-row-meta { color: rgba(255,255,255,0.68); }
+.bz-row-title { font-size: 14px; font-weight: 500; line-height: 20px; overflow-wrap: anywhere; }
+.bz-row-meta { font-size: 12.5px; line-height: 18px; color: #737373; }
+
+/* §53 — logo / initial tile (36px, 8px). */
+.bz-tile {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 8px;
+  background: #FFFFFF; color: #0A0A0A; box-shadow: inset 0 0 0 1px #EDEDED;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600; overflow: hidden;
+}
+.bz-tile > img { width: 100%; height: 100%; object-fit: cover; }
+
+/* §53 — feature card: graphite surface with lime line art (the reference's
+ * cobalt publisher cards). The pattern is a CSS gradient, no image request. */
+.bz-feature {
+  position: relative; isolation: isolate; overflow: hidden;
+  border-radius: 16px; background: #0A0A0A; color: #FFFFFF;
+  padding: 18px; min-height: 128px;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 16px;
+}
+.bz-feature::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    repeating-radial-gradient(circle at 120% -30%, transparent 0 34px, rgba(198,242,78,0.16) 34px 35.5px, transparent 35.5px 52px);
+  opacity: 0.9;
+}
+.bz-feature .bz-tile { box-shadow: none; }
+a.bz-feature { transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 200ms ease; }
+a.bz-feature:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -14px rgba(10,10,10,0.45); }
+a.bz-feature:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(198,242,78,0.7); }
+@media (prefers-reduced-motion: reduce) { a.bz-feature:hover { transform: none; } }
+
+/* §53 — meta bar ("Started: 10/09/2022 · Next payment …"). */
+.bz-meta {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 28px; padding: 4px 10px; border-radius: 8px;
+  background: #FFFFFF; box-shadow: inset 0 0 0 1px #EDEDED;
+  font-family: var(--font-body); font-size: 13px; line-height: 18px; white-space: nowrap;
+}
+.bz-meta-label { color: #737373; }
+.bz-meta-value { color: #0A0A0A; font-weight: 500; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 640px) {
   .bz-btn,
@@ -875,7 +972,8 @@ input::-webkit-inner-spin-button {
   .bz-btn-ghost,
   .bz-btn-danger,
   .bz-btn-warn,
-  .bz-btn-on-dark {
+  .bz-btn-on-dark,
+  .bz-btn-outline {
     min-height: 44px;
   }
 
@@ -1507,111 +1605,152 @@ select.bz-input option:checked {
 .bz-progress.lime > i { background: #C6F24E; }
 
 /* ─────────────────────────────────────────────────────────────
- * §49 Panel theme — shadcn dashboard type + density, Pulse colors.
- * Active only where a panel shell (`.bz-panel`, owner dashboard + admin)
- * is on the page. `:root:has(...)` (not a `.bz-panel` ancestor selector)
- * so portaled menus, selects and modals rendered into <body> get it too.
- * Marketing, auth and the public /r /menu /s pages keep the §11 look even
- * though they reuse a few bz-* classes.
- * Fonts: the panels use the site pair (Clash Display + Inter, §11) — the
- * root --font-* stacks apply unchanged, so this block sets no font vars.
+ * §53 Panel design system — NICKLPASS adaptation (docs/design/panel-design-system.md).
+ * Metrics, type and component anatomy from the reference; colors from Pulse
+ * (§11): the reference's cobalt becomes graphite (selected / primary) and
+ * lime marks accent, focus and progress. Active only where a panel shell
+ * (`.bz-panel`, owner dashboard + admin) is on the page. `:root:has(...)`
+ * (not an ancestor selector) so portaled menus, selects and modals rendered
+ * into <body> get it too. Marketing, auth, /r /menu /s /billing keep §11.
  * ───────────────────────────────────────────────────────────── */
 :root:has(.bz-panel) {
-  --bz-shadow-xs: 0 1px 2px rgba(10, 10, 10, 0.05);
+  --pn-canvas: #F4F4F5;
+  --pn-surface: #FFFFFF;
+  --pn-surface-2: #F7F7F8;
+  --pn-line: #EDEDED;
+  --pn-line-2: #E4E4E7;
+  --pn-ink: #0A0A0A;
+  --pn-ink-2: #737373;
+  --pn-ink-3: #A3A3A3;
+  --pn-accent: #0A0A0A;
+  --pn-lime: #C6F24E;
+  --pn-tint-lime: #EAF9B8;
+  --pn-tint-sand: #F4EFE6;
+  --pn-tint-neutral: #F4F4F5;
+  --pn-radius-xs: 6px;
+  --pn-radius-sm: 8px;
+  --pn-radius-md: 12px;
+  --pn-radius-lg: 16px;
+  --pn-radius-xl: 20px;
+  --pn-shadow-card: 0 1px 2px rgba(10, 10, 10, 0.04), 0 6px 20px -8px rgba(10, 10, 10, 0.06);
+  --pn-shadow-pop: 0 16px 40px -12px rgba(10, 10, 10, 0.18), 0 2px 6px rgba(10, 10, 10, 0.06);
+  --pn-focus: 0 0 0 3px rgba(198, 242, 78, 0.55);
+  --bz-shadow-xs: 0 1px 2px rgba(10, 10, 10, 0.04);
+  /* DM Sans (panel-fonts.ts → PanelTheme publishes --font-panel-sans). */
+  --font-body: var(--font-panel-sans, var(--font-inter)), system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-panel-sans, var(--font-inter)), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
-/* Panel titles / numbers read best in Clash Display Semibold (§49). */
+
+/* Titles / numbers: DM Sans Semibold, tight. */
 :root:has(.bz-panel) :is(.bz-h-tight, .bz-h-tight-2, .bz-wordmark) {
+  font-family: var(--font-heading);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
-:root:has(.bz-panel) .pulse-eyebrow { letter-spacing: 0.1em; }
 
-/* Cards: 12px radius + hairline shadow (shadcn card). */
+/* Cards: borderless white on the canvas, 16px, soft shadow. */
 :root:has(.bz-panel) :is(.bz-card, .bz-card-soft) {
-  border-radius: 12px;
-  border-color: #E8E8E8;
+  border-radius: var(--pn-radius-lg);
+  border-color: transparent;
 }
-:root:has(.bz-panel) .bz-card { box-shadow: var(--bz-shadow-xs); }
+:root:has(.bz-panel) .bz-card { background: var(--pn-surface); box-shadow: var(--pn-shadow-card); }
+:root:has(.bz-panel) .bz-card-soft { background: var(--pn-surface-2); box-shadow: none; }
 
-/* Buttons: 8px rounded rectangles, medium weight (shadcn button). The
- * mobile 44px touch-target floor above is untouched (no min-height here). */
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-primary, .bz-btn-lime, .bz-btn-ghost, .bz-btn-danger, .bz-btn-warn, .bz-btn-on-dark) {
-  border-radius: 8px;
+/* Buttons: 8px rectangles, 36px tall, medium weight. The mobile 44px floor
+ * above is untouched (no min-height below 44 on phones). */
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-primary, .bz-btn-lime, .bz-btn-ghost, .bz-btn-outline, .bz-btn-danger, .bz-btn-warn, .bz-btn-on-dark) {
+  border-radius: var(--pn-radius-sm);
+  font-family: var(--font-body);
+  font-size: 13.5px;
   font-weight: 500;
+  min-height: 36px;
+  padding: 8px 14px;
+}
+:root:has(.bz-panel) .bz-btn-primary:hover { transform: none; background: #262626; }
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost) {
+  background: var(--pn-surface);
+  border-color: var(--pn-line-2);
+  box-shadow: var(--bz-shadow-xs);
+}
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):hover { background: var(--pn-surface-2); border-color: var(--pn-line-2); }
+:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost, .bz-btn-outline, .bz-btn-primary, .bz-btn-lime):focus-visible {
+  border-color: var(--pn-ink);
+  box-shadow: var(--pn-focus);
+}
+:root:has(.bz-panel) .bz-btn-sm { min-height: 32px; padding: 6px 12px; font-size: 12.5px; }
+:root:has(.bz-panel) .bz-btn-lg { min-height: 44px; padding: 10px 18px; font-size: 14px; }
+@media (max-width: 640px) {
+  :root:has(.bz-panel) :is(.bz-btn, .bz-btn-primary, .bz-btn-lime, .bz-btn-ghost, .bz-btn-outline, .bz-btn-danger, .bz-btn-warn, .bz-btn-on-dark) { min-height: 44px; }
+  :root:has(.bz-panel) .bz-btn-sm { min-height: 40px; }
+}
+:root:has(.bz-panel) .bz-btn-icon { border-radius: var(--pn-radius-sm); }
+:root:has(.bz-panel) .bz-side-cta { border-radius: var(--pn-radius-sm); font-weight: 500; }
+
+/* Badges + chips. */
+:root:has(.bz-panel) .bz-badge { font-weight: 500; border-radius: var(--pn-radius-xs); font-family: var(--font-body); }
+
+/* Inputs: 40px, 8px, hairline, white; graphite border + lime ring on focus. */
+:root:has(.bz-panel) .bz-input {
+  border-radius: var(--pn-radius-sm);
+  border-color: var(--pn-line-2);
+  background-color: var(--pn-surface);
+  box-shadow: none;
+  min-height: 40px;
   font-family: var(--font-body);
 }
-:root:has(.bz-panel) .bz-btn-primary:hover { transform: none; }
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost) {
-  background: #FFFFFF;
-  border-color: #E5E5E5;
-  box-shadow: var(--bz-shadow-xs);
-}
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):hover { background: #F5F5F5; border-color: #E5E5E5; }
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198, 242, 78, 0.45); }
-:root:has(.bz-panel) .bz-btn-icon { border-radius: 8px; }
-:root:has(.bz-panel) .bz-side-cta { border-radius: 8px; font-weight: 500; }
+:root:has(.bz-panel) .bz-input:focus { border-color: var(--pn-ink); box-shadow: var(--pn-focus); }
 
-/* Badges: shadcn badge (medium weight, 6px). */
-:root:has(.bz-panel) .bz-badge { font-weight: 500; border-radius: 6px; }
-
-/* Inputs: 8px + hairline shadow; lime focus ring stays (brand). */
-:root:has(.bz-panel) .bz-input {
-  border-radius: 8px;
-  border-color: #E5E5E5;
-  box-shadow: var(--bz-shadow-xs);
-}
-:root:has(.bz-panel) .bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198, 242, 78, 0.35); }
-
-/* Tabs: segmented control (shadcn TabsList) instead of an underline. */
+/* Tabs: segmented control; the selected segment is filled graphite. */
 :root:has(.bz-panel) .bz-tabs {
   display: inline-flex;
   width: auto;
   max-width: 100%;
-  gap: 2px;
-  padding: 3px;
+  gap: 4px;
+  padding: 4px;
   border: 0;
-  border-radius: 10px;
-  background: #F2F2F2;
+  border-radius: var(--pn-radius-md);
+  background: var(--pn-surface);
+  box-shadow: inset 0 0 0 1px var(--pn-line);
 }
 :root:has(.bz-panel) .bz-tab {
   padding: 6px 12px;
-  border-radius: 7px;
+  border-radius: var(--pn-radius-sm);
   font-size: 13px;
   font-weight: 500;
-  color: #525252;
+  color: var(--pn-ink-2);
   transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
 }
-:root:has(.bz-panel) .bz-tab:hover { color: #0A0A0A; }
-:root:has(.bz-panel) .bz-tab:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(198, 242, 78, 0.7); }
+:root:has(.bz-panel) .bz-tab:hover { color: var(--pn-ink); background: var(--pn-surface-2); }
+:root:has(.bz-panel) .bz-tab:focus-visible { outline: none; box-shadow: var(--pn-focus); }
 :root:has(.bz-panel) .bz-tab[aria-selected="true"] {
-  background: #FFFFFF;
-  color: #0A0A0A;
+  background: var(--pn-accent);
+  color: #FFFFFF;
   font-weight: 500;
-  box-shadow: 0 1px 2px rgba(10, 10, 10, 0.08), 0 0 0 1px rgba(10, 10, 10, 0.04);
+  box-shadow: none;
 }
 :root:has(.bz-panel) .bz-tab[aria-selected="true"]::after { content: none; }
-:root:has(.bz-panel) .bz-tab-vertical { border-radius: 8px; font-weight: 500; padding: 8px 12px; }
+:root:has(.bz-panel) .bz-tab-vertical { border-radius: var(--pn-radius-sm); font-weight: 500; padding: 9px 12px; }
 :root:has(.bz-panel) .bz-tab-vertical[aria-selected="true"] { font-weight: 500; }
 
-/* Tables: plain sentence-case header (shadcn table). */
+/* Tables: sentence-case header, airy rows, hover tint. */
 :root:has(.bz-panel) .bz-table th {
   background: transparent;
   text-transform: none;
   letter-spacing: 0;
   font-size: 12.5px;
   font-weight: 500;
-  color: #737373;
+  color: var(--pn-ink-2);
   height: 40px;
   padding: 8px 14px;
+  border-bottom-color: var(--pn-line);
 }
-:root:has(.bz-panel) .bz-table td { padding: 12px 14px; }
-:root:has(.bz-panel) .bz-table tbody tr:hover td { background: #FAFAFA; }
+:root:has(.bz-panel) .bz-table td { padding: 14px; border-color: var(--pn-line); }
+:root:has(.bz-panel) .bz-table tbody tr:hover td { background: var(--pn-surface-2); }
 
-/* Menus: 10px popover, 6px items (shadcn dropdown). */
-:root:has(.bz-panel) .bz-menu { border-radius: 10px; padding: 4px; border-color: #E8E8E8; }
-:root:has(.bz-panel) .bz-menu-item { border-radius: 6px; padding: 8px 10px; }
-:root:has(.bz-panel) .bz-menu-item:hover { background: #F5F5F5; }
-/* Phones: 44px rows so every panel menu meets the touch-target rule. */
+/* Menus / popovers: 12px, pop shadow, 8px items. */
+:root:has(.bz-panel) .bz-menu { border-radius: var(--pn-radius-md); padding: 6px; border-color: var(--pn-line); box-shadow: var(--pn-shadow-pop); }
+:root:has(.bz-panel) .bz-menu-item { border-radius: var(--pn-radius-sm); padding: 8px 10px; font-size: 13.5px; }
+:root:has(.bz-panel) .bz-menu-item:hover { background: var(--pn-surface-2); }
 @media (max-width: 639px) {
   :root:has(.bz-panel) .bz-menu-item { min-height: 44px; }
 }
@@ -1621,16 +1760,29 @@ select.bz-input option:checked {
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
-  color: #737373;
+  color: var(--pn-ink-2);
 }
-:root:has(.bz-panel) .bz-avatar { border-radius: 8px; font-family: var(--font-body); }
+:root:has(.bz-panel) .bz-avatar { border-radius: 999px; font-family: var(--font-body); }
+:root:has(.bz-panel) .bz-progress { height: 6px; border-radius: 999px; background: var(--pn-surface-2); }
+:root:has(.bz-panel) .bz-skeleton { border-radius: var(--pn-radius-sm); }
 } /* @layer components */
 
-/* §49 — headings are styled by an unlayered rule (`:where(h1…h6)` above),
- * so the panel weight override has to be unlayered too. */
-:root:has(.bz-panel) :where(h1, h2, h3, h4, h5, h6) {
+/* §53 — the body font class (next/font, unlayered) and the headings rule
+ * (`:where(h1…h6)` above) are unlayered, so the panel overrides are too. */
+:root:has(.bz-panel) body { font-family: var(--font-body); }
+/* Eyebrows: a DM Sans label (the reference has no mono labels). `.pulse-eyebrow`
+ * and `.bz-mono` are unlayered, so these overrides are too. */
+:root:has(.bz-panel) .pulse-eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.06em;
+}
+:root:has(.bz-panel) .bz-mono:not(kbd):not(code) { font-family: var(--font-body); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+:root:has(.bz-panel) :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 /* iOS Safari zooms into any focused field under 16px. Inside the layer a
