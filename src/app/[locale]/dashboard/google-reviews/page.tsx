@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { canWriteForUserPayload, getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { canWriteForUserPayload, scopedRestaurantWhereForUserPayload } from '@/lib/panel-access';
 import { googlePlacesConfigured } from '@/lib/google-business';
 import { GoogleReviewsLoadingShell } from '@/components/dashboard/google/GoogleReviewsSkeleton';
 import {
@@ -51,22 +51,27 @@ export default async function GoogleReviewsPage({
         // Team members included — the same scope the API layer resolves
         // (CLAUDE.md §38.240); paused businesses are left out, as in the
         // default `/api/restaurants` list, so they cannot start billed calls.
-        const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
-        initialRestaurants = await prisma.restaurant.findMany({
-          where: { id: { in: scopedIds }, isActive: true },
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            address: true,
-            googlePlaceId: true,
-            googleReviewUrl: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-        });
-        // Sequential on purpose (connection_limit=1, CLAUDE.md §40.1).
-        canWrite = await canWriteForUserPayload(tokenPayload);
+        // An owner's scope is `userId = id`, so owners skip the id-list query;
+        // the write check (team members only) runs at the same time.
+        const [rows, writable] = await Promise.all([
+          (async () =>
+            prisma.restaurant.findMany({
+              where: { ...(await scopedRestaurantWhereForUserPayload(tokenPayload)), isActive: true },
+              select: {
+                id: true,
+                name: true,
+                city: true,
+                address: true,
+                googlePlaceId: true,
+                googleReviewUrl: true,
+              },
+              orderBy: { createdAt: 'desc' },
+              take: 50,
+            }))(),
+          canWriteForUserPayload(tokenPayload),
+        ]);
+        initialRestaurants = rows;
+        canWrite = writable;
         placesConfigured = googlePlacesConfigured();
       }
     } catch (error) {

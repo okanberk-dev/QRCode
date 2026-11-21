@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Plus, UtensilsCrossed } from 'lucide-react';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { scopedRestaurantWhereForUserPayload } from '@/lib/panel-access';
 import type { Locale } from '@/lib/translations';
 import { EmptyState, PageHeader } from '@/components/ui';
 import MenuHubRedirect from './_components/MenuHubRedirect';
@@ -42,9 +42,10 @@ export default async function DashboardMenuPage({
   if (!payload || typeof payload.userId !== 'string') redirect(`/${locale}/auth/login`);
 
   // Team members included — same scope the API layer resolves
-  // (getScopedRestaurantIds). `userId: payload.userId` hid every
-  // restaurant from invited team members.
-  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+  // (getScopedRestaurantIds). `userId: payload.userId` alone hid every
+  // restaurant from invited team members; for a workspace owner it is exactly
+  // that scope, so owners skip the separate id-list query.
+  const restaurantWhere = await scopedRestaurantWhereForUserPayload({
     userId: payload.userId,
     role: payload.role,
     email: payload.email,
@@ -53,7 +54,7 @@ export default async function DashboardMenuPage({
   // instead of sending them to a page that bounces them back.
   const canCreateBusiness = payload.role !== 'team_member';
   const restaurants = await prisma.restaurant.findMany({
-    where: { id: { in: scopedIds } },
+    where: restaurantWhere,
     select: { id: true, isActive: true },
     orderBy: { createdAt: 'asc' },
   });
