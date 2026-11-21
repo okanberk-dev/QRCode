@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { latestChecksForRestaurants } from '@/lib/platform-link-test';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
@@ -72,9 +73,11 @@ export default async function FranchiseReportPage({
   const prevStart = new Date(now - 2 * days * DAY_MS);
   const where = { restaurantId: { in: ids } };
 
-  const [restaurants, current, previous, low, lowReplied, scans, redirects] =
+  // Independent reads, run at once (parallelReads) instead of back to back
+  // in an array $transaction; the link checks join the same batch.
+  const [restaurants, current, previous, low, lowReplied, scans, redirects, checks] =
     ids.length > 0
-      ? await prisma.$transaction([
+      ? await parallelReads([
           prisma.restaurant.findMany({
             where: { id: { in: ids } },
             select: { id: true, name: true, isActive: true },
@@ -117,9 +120,9 @@ export default async function FranchiseReportPage({
             _count: { _all: true },
             orderBy: { restaurantId: 'asc' },
           }),
+          latestChecksForRestaurants(ids, new Date(now - 90 * DAY_MS)),
         ])
-      : [[], [], [], [], [], [], []];
-  const checks = ids.length > 0 ? await latestChecksForRestaurants(ids, new Date(now - 90 * DAY_MS)) : [];
+      : [[], [], [], [], [], [], [], []];
 
   const currentById = new Map(current.map((r) => [r.restaurantId as string, r]));
   const prevById = new Map(previous.map((r) => [r.restaurantId as string, r._avg?.rating ?? null]));
