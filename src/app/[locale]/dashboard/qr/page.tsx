@@ -1,7 +1,9 @@
 import { cookies } from 'next/headers';
 import { verifyJwt } from '@/lib/auth';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { scopedRestaurantWhereForUserPayload } from '@/lib/panel-access';
+import { startRead } from '@/lib/db-parallel';
 import { dedupeQrRows } from '@/lib/qr-signature';
 import QrClient, { type QrHistoryItem } from './QrClient';
 
@@ -34,6 +36,31 @@ interface Restaurant {
  */
 const HISTORY_HYDRATION_LIMIT = 300;
 
+/** Businesses listed (and hydrated) on the page. */
+const RESTAURANT_LIST_LIMIT = 50;
+
+// Same filter and fields as GET /api/restaurants/[id]/qr/history.
+function qrHistoryQuery(where: Prisma.QrGenerationWhereInput) {
+  return prisma.qrGeneration.findMany({
+    where: { ...where, type: 'feedback' },
+    orderBy: { createdAt: 'desc' },
+    take: HISTORY_HYDRATION_LIMIT + 1,
+    select: {
+      id: true,
+      restaurantId: true,
+      qrUrl: true,
+      tableNumber: true,
+      platform: true,
+      serviceType: true,
+      type: true,
+      darkColor: true,
+      lightColor: true,
+      templateId: true,
+      createdAt: true,
+    },
+  });
+}
+
 export default async function DashboardQrPage() {
   // Auth — owner panel (user_token). Admin bypass handled by dashboard/layout.
   const cookieStore = await cookies();
@@ -42,6 +69,8 @@ export default async function DashboardQrPage() {
 
   let initialRestaurants: Restaurant[] | undefined;
   let initialHistories: Record<string, QrHistoryItem[]> | undefined;
+  // Owner only: QR history loaded next to the business list (see below).
+  let ownerHistory: Promise<Awaited<ReturnType<typeof qrHistoryQuery>>> | null = null;
 
   // Only hydrate from user_token — admin sessions keep client-fetch path
   // (consistent with /dashboard/account hydration scope, §38).
@@ -54,13 +83,21 @@ export default async function DashboardQrPage() {
         // (CLAUDE.md §38.240). `where: { userId }` returned [] for an invited
         // team member, and QrClient treats an SSR [] as "already loaded", so
         // the member saw "no business" and a disabled "Yeni QR oluştur".
-        const scopedIds = await getScopedRestaurantIdsForUserPayload({
+        // An owner's scope is `userId = id`, so owners skip the id-list query.
+        const restaurantWhere = await scopedRestaurantWhereForUserPayload({
           userId,
           role: payload?.role,
           email: payload?.email,
         });
+        // For an owner, "history of every listed business" is the history of
+        // every business they own whenever the list below is not cut at
+        // RESTAURANT_LIST_LIMIT, so it can load at the same time. It is used
+        // only in that case; otherwise the id-scoped query runs as before.
+        if ('userId' in restaurantWhere) {
+          ownerHistory = startRead(qrHistoryQuery({ restaurant: { userId: restaurantWhere.userId } }));
+        }
         initialRestaurants = await prisma.restaurant.findMany({
-          where: { id: { in: scopedIds } },
+          where: restaurantWhere,
           select: {
             id: true,
             slug: true,
@@ -79,7 +116,7 @@ export default async function DashboardQrPage() {
             externalPlatformsEnabled: true,
           },
           orderBy: { createdAt: 'asc' },
-          take: 50,
+          take: RESTAURANT_LIST_LIMIT,
         });
       }
     } catch (error) {
@@ -100,24 +137,10 @@ export default async function DashboardQrPage() {
       initialHistories = {};
     } else {
       try {
-        const rows = await prisma.qrGeneration.findMany({
-          where: { restaurantId: { in: ids }, type: 'feedback' },
-          orderBy: { createdAt: 'desc' },
-          take: HISTORY_HYDRATION_LIMIT + 1,
-          select: {
-            id: true,
-            restaurantId: true,
-            qrUrl: true,
-            tableNumber: true,
-            platform: true,
-            serviceType: true,
-            type: true,
-            darkColor: true,
-            lightColor: true,
-            templateId: true,
-            createdAt: true,
-          },
-        });
+        const rows =
+          ownerHistory && initialRestaurants.length < RESTAURANT_LIST_LIMIT
+            ? await ownerHistory
+            : await qrHistoryQuery({ restaurantId: { in: ids } });
         if (rows.length <= HISTORY_HYDRATION_LIMIT) {
           const byRestaurant: Record<string, QrHistoryItem[]> = {};
           for (const id of ids) byRestaurant[id] = [];
