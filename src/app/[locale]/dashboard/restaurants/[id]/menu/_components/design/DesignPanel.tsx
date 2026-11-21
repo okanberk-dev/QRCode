@@ -515,7 +515,7 @@ export function DesignPanel({
         className="absolute inset-0 z-20 flex items-center justify-center bg-white/95 p-6 backdrop-blur-sm"
       >
         <div className="w-full max-w-[320px] text-center">
-          <p id="design-leave-title" className="bz-h-tight text-[16px] text-[#0A0A0A]">
+          <p id="design-leave-title" className="bz-h-tight [word-spacing:0.1em] text-[16px] text-[#0A0A0A]">
             {copy.design.closeDirtyTitle}
           </p>
           <p id="design-leave-body" className="mt-2 text-[13px] leading-relaxed text-[#525252]">
@@ -562,7 +562,7 @@ export function DesignPanel({
       <div className="flex items-center gap-2 border-b border-[#EDEDED] px-4 py-3 sm:px-5">
         <Palette size={16} strokeWidth={2} className="shrink-0 text-[#525252]" aria-hidden="true" />
         <h2 id="design-panel-title" ref={titleRef} tabIndex={-1} className="min-w-0 flex-1 outline-none">
-          <span className="bz-h-tight text-[18px] text-[#0A0A0A]">{copy.design.title}</span>
+          <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A]">{copy.design.title}</span>
         </h2>
         <button type="button" onClick={onRequestClose} aria-label={copy.design.close} className="bz-btn-icon h-8 w-8 shrink-0">
           <X size={15} strokeWidth={2} />

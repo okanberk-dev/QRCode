@@ -145,9 +145,14 @@ export function ItemName({
   );
 }
 
-/** Shared article chrome: data-pid contract, focus ring (from the inner button), hover lift. */
+/**
+ * Shared article chrome: data-pid contract and the focus ring (from the inner
+ * button). No radius here: a `rows` list draws its dividers as each article's
+ * bottom border, and a rounded box curls those lines up at both ends. Cards and
+ * grid tiles add `rounded-(--m-r-card)` themselves.
+ */
 export const ITEM_ARTICLE_CLASS =
-  'group/item relative cursor-pointer rounded-(--m-r-card) outline-offset-2 has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-(--m-focus) has-[button:focus-visible]:outline-solid';
+  'group/item relative cursor-pointer outline-offset-2 has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-(--m-focus) has-[button:focus-visible]:outline-solid';
 
 export function SoldOutChip({ copy, className = '' }: { copy: MenuCopy; className?: string }) {
   return (

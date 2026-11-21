@@ -1,6 +1,8 @@
 'use client';
 
+import { useRef } from 'react';
 import { MENU_FILTERS, type MenuFilter } from '../menu-filter';
+import { useScrollFade } from '../menu-ui';
 import { useMenuCopy } from '../kit/useMenuCopy';
 
 /**
@@ -17,14 +19,16 @@ export function FilterChips({
   className?: string;
 }) {
   const copy = useMenuCopy();
+  const stripRef = useRef<HTMLDivElement | null>(null);
   const shown = MENU_FILTERS.filter((f) => counts[f] > 0 || f === value);
+  const fade = useScrollFade(stripRef, shown.map((f) => `${f}:${counts[f]}`).join(','));
   if (shown.length === 0 && value === 'all') return null;
   const chip = (active: boolean) =>
     `inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
       active ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#E5E5E5] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
     }`;
   return (
-    <div role="group" aria-label={copy.outline.filtersLabel} className={`no-scrollbar flex min-w-0 gap-1.5 overflow-x-auto ${className}`}>
+    <div ref={stripRef} role="group" aria-label={copy.outline.filtersLabel} className={`no-scrollbar flex min-w-0 gap-1.5 overflow-x-auto ${fade} ${className}`}>
       <button type="button" aria-pressed={value === 'all'} onClick={() => onChange('all')} className={chip(value === 'all')}>
         {copy.outline.filters.all}
       </button>

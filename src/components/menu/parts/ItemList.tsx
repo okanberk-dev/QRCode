@@ -51,7 +51,7 @@ export default function ItemList({
             className={`${ITEM_ARTICLE_CLASS} grid gap-4 py-(--m-row-py) ${
               withMedia ? (thumbStart ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)_auto]') : 'grid-cols-1'
             } ${cards
-              ? 'bg-(--m-surface) px-3.5 ring-1 ring-(--m-rule) group-data-[scheme=light]/menu:shadow-[0_1px_2px_rgb(0_0_0/0.04)]'
+              ? 'rounded-(--m-r-card) bg-(--m-surface) px-3.5 ring-1 ring-(--m-rule) group-data-[scheme=light]/menu:shadow-[0_1px_2px_rgb(0_0_0/0.04)]'
               : ''}`}
           >
             <div className={`min-w-0 ${withMedia ? 'self-center' : ''}`}>

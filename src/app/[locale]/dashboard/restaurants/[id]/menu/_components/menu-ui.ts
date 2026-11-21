@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type RefObject } from 'react';
 import {
   KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors,
   type Announcements, type ScreenReaderInstructions,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { scrollFadeClass, scrollFadeEdges, type ScrollFadeEdges } from './outline/scroll-fade';
 
 /**
  * True when the primary pointer is a mouse / trackpad (not a finger). Used to
@@ -56,14 +57,40 @@ export function useFinePointer(): boolean {
   return useMediaQuery('(pointer: fine)', true);
 }
 
-/** ≥1400px. */
+/** ≥1600px: one-row toolbar + category rail (StudioToolbar, CategoryRail). */
 export function useIsWide(): boolean {
-  return useMediaQuery('(min-width: 1400px)', true);
+  return useMediaQuery('(min-width: 1600px)', true);
 }
 
 /** ≥640px (Tailwind `sm`): sheets open from the right instead of the bottom. */
 export function useIsSmUp(): boolean {
   return useMediaQuery('(min-width: 640px)', true);
+}
+
+/**
+ * Mask classes for a horizontal scroller: fades the edge that has more content
+ * behind it (outline/scroll-fade.ts). Re-measures on scroll and resize; `dep`
+ * re-measures when the chips change.
+ */
+export function useScrollFade(ref: RefObject<HTMLElement | null>, dep?: unknown): string {
+  const [edges, setEdges] = useState<ScrollFadeEdges>({ start: false, end: false });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const next = scrollFadeEdges(el.scrollLeft, el.clientWidth, el.scrollWidth);
+      setEdges((prev) => (prev.start === next.start && prev.end === next.end ? prev : next));
+    };
+    measure();
+    el.addEventListener('scroll', measure, { passive: true });
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      ro?.disconnect();
+    };
+  }, [ref, dep]);
+  return scrollFadeClass(edges);
 }
 
 export function usePrefersReducedMotion(): boolean {

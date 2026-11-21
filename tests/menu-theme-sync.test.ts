@@ -12,6 +12,7 @@ import {
   draftPresetId,
   findSwatch,
   isThemeDirty,
+  rebaseThemeDraft,
   settleThemeSave,
   themeDiff,
   withKnob,
@@ -214,4 +215,45 @@ test('settleThemeSave confirms menuDesign; an out-of-order old answer never over
   s = settleThemeSave(s, second.seq, { menuDesign: newer }, true).state;
   const last = settleThemeSave(s, first.seq, { menuDesign: older }, true);
   assert.deepEqual(last.ui?.menuDesign, newer);
+});
+
+// ── Draft rebase when the applied values change (undo of Apply, refetch) ──
+
+test('rebaseThemeDraft: a clean draft becomes the new applied values', () => {
+  const before: ThemeValues = { ...start, menuLogoUrl: 'L1' };
+  const applied: ThemeValues = { ...start, menuLogoUrl: 'L0' };
+  assert.equal(rebaseThemeDraft(before, applied, { ...before }), applied);
+});
+
+test('rebaseThemeDraft: undo of Apply wins on the keys the owner did not touch again', () => {
+  // Applied logo L1, then the owner changes the accent, then presses "Geri al".
+  const before: ThemeValues = { ...start, menuLogoUrl: 'L1' };
+  const applied: ThemeValues = { ...start, menuLogoUrl: 'L0' };
+  const draft: ThemeValues = { ...before, menuAccentColor: '#E85A4F' };
+  const next = rebaseThemeDraft(before, applied, draft);
+  assert.equal(next.menuLogoUrl, 'L0', 'the undone logo is not kept in the draft');
+  assert.equal(next.menuAccentColor, '#E85A4F', 'the new accent stays');
+  assert.deepEqual(themeDiff(applied, next), { menuAccentColor: '#E85A4F' }, 'the next Uygula sends only the accent');
+});
+
+test('rebaseThemeDraft: an edited key keeps the edit; family and design move together', () => {
+  const modern = withPreset(start, 'modern').values;
+  const before: ThemeValues = { ...modern, menuCoverUrl: 'C1' };
+  const applied: ThemeValues = { ...start, menuCoverUrl: null };
+  const draft = withTagline(before, 'Taze');
+  const next = rebaseThemeDraft(before, applied, draft);
+  assert.equal(next.menuTheme, 'modern', 'the tagline was set on the modern preset: keep the family');
+  assert.equal(next.menuDesign?.tagline, 'Taze');
+  assert.equal(next.menuCoverUrl, null, 'the untouched cover follows the undo');
+});
+
+test('rebaseThemeDraft: equal canonical values count as untouched; no change keeps the same object', () => {
+  const before: ThemeValues = { ...start, menuAccentColor: '#C6F24E' };
+  const applied: ThemeValues = { ...start, menuAccentColor: '#C6F24E', menuLogoUrl: 'L2' };
+  const draft: ThemeValues = { ...start, menuAccentColor: '#c6f24e', menuLogoUrl: 'L9' };
+  const next = rebaseThemeDraft(before, applied, draft);
+  assert.equal(next.menuAccentColor, '#C6F24E', 'lower-case is the same colour: follows applied');
+  assert.equal(next.menuLogoUrl, 'L9');
+  const same: ThemeValues = { ...start, menuLogoUrl: 'L9' };
+  assert.equal(rebaseThemeDraft(start, { ...start }, same), same);
 });

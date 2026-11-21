@@ -132,7 +132,7 @@ export function BulkPriceDialog({
       onClose={busy ? () => undefined : onClose}
       title={
         <span className="flex flex-col">
-          <span className="bz-h-tight text-[18px]">{copy.bulkPrice.title}</span>
+          <span className="bz-h-tight [word-spacing:0.1em] text-[18px]">{copy.bulkPrice.title}</span>
           <span className="text-[12.5px] font-normal text-[#737373]">{copy.bulkPrice.subtitle(base.current.length)}</span>
         </span>
       }

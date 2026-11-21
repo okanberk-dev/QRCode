@@ -2,9 +2,9 @@ import type { ResolvedMenuDesign } from '@/lib/menu-design';
 import type { MenuCopy } from '../menu-labels';
 
 /**
- * Category title in one of four preset styles: `rule` (title + hairline),
- * `chapter` (centred, accent ornament), `numbered` (01 in accent text) and
- * `plain` (title, count, bottom rule).
+ * Category title in one of four preset styles: `rule` (title, accent dot,
+ * hairline), `chapter` (centred, accent ornament), `numbered` (01 in accent
+ * text) and `plain` (title, count, bottom rule).
  */
 export default function SectionHeader({
   d, title, description, index, count, copy, titleId,
@@ -66,15 +66,17 @@ export default function SectionHeader({
     );
   }
 
-  // rule
+  // rule: one decoration on the title row — an accent dot leading the hairline.
   return (
     <header className="mb-5">
       <div className="flex items-center gap-4">
         <h2 id={titleId} className="bzm-section min-w-0">{title}</h2>
-        <span aria-hidden className="h-px min-w-6 flex-1 bg-(--m-rule)" />
+        <span aria-hidden className="flex min-w-10 flex-1 items-center gap-2">
+          <span className="size-1.5 shrink-0 rounded-full bg-(--m-accent-ui)" />
+          <span className="h-px flex-1 bg-(--m-rule)" />
+        </span>
         {countEl}
       </div>
-      <span aria-hidden className="mt-3 block h-0.5 w-8 rounded-full bg-(--m-accent-ui)" />
       {desc}
     </header>
   );

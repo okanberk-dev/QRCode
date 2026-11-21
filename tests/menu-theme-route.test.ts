@@ -220,6 +220,31 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
     assert.equal('menuCoverUrl' in body, false);
   });
 
+  it('accent and logo are mirrored into brand settings (a Brand save must not revert them)', async () => {
+    await prisma.brandSettings.create({
+      data: { restaurantId: ids.restaurant, accentColor: '#111111', logoUrl: 'https://example.test/old.png' },
+      select: { restaurantId: true },
+    });
+    const res = await patch({ menuAccentColor: '#c6f24e', menuLogoUrl: COVER });
+    assert.equal(res.status, 200);
+    const brand = await prisma.brandSettings.findUnique({
+      where: { restaurantId: ids.restaurant },
+      select: { accentColor: true, logoUrl: true },
+    });
+    assert.equal(brand?.accentColor, '#C6F24E');
+    assert.equal(brand?.logoUrl, COVER);
+
+    // Only the keys that were sent are mirrored.
+    const accentOnly = await patch({ menuAccentColor: null });
+    assert.equal(accentOnly.status, 200);
+    const after = await prisma.brandSettings.findUnique({
+      where: { restaurantId: ids.restaurant },
+      select: { accentColor: true, logoUrl: true },
+    });
+    assert.equal(after?.accentColor, null);
+    assert.equal(after?.logoUrl, COVER);
+  });
+
   it('clearing the cover clears its version', async () => {
     const res = await patch({ menuCoverUrl: null });
     assert.equal(res.status, 200);

@@ -186,7 +186,9 @@ export const TYPEFACES: Record<MenuTypeface, TypefaceDef> = {
     labelTr: 'Sıcak', labelEn: 'Warm', family: 'Fraunces',
     display: 'var(--font-m-fraunces, Georgia), ' + SERIF,
     body: SANS, italic: true,
-    displaySize: { fs: 40, lh: 44, fsLg: 60, lhLg: 62, weight: 450, track: -0.02 },
+    // 500, not the spec's 450: Fraunces ships static 400/500/600 only
+    // (menu-fonts.ts budget), and 450 was already matched to 500.
+    displaySize: { fs: 40, lh: 44, fsLg: 60, lhLg: 62, weight: 500, track: -0.02 },
     name: { fs: 30, lh: 34, fsLg: 40, lhLg: 44 },
     section: { fs: 28, lh: 32, weight: 500 },
     item: { fs: 18, lh: 23, weight: 500, track: 0 },
@@ -411,7 +413,13 @@ export function sanitizeTagline(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const s = raw
     .normalize('NFC')
-    .replace(/[\p{Cc}\p{Cf}\u2028\u2029]/gu, ' ')
+    // Every control / format character except the joiners: U+200D builds
+    // emoji such as 🧑‍🍳 and U+200C is needed in Persian. Bidi controls and the
+    // rest of Cf still become spaces.
+    .replace(/(?![\u200C\u200D])[\p{Cc}\p{Cf}\u2028\u2029]/gu, ' ')
+    // A joiner only joins between two visible characters; a stray one at an
+    // edge or next to a space is dropped (it would render as nothing).
+    .replace(/(^|\s)[\u200C\u200D]+|[\u200C\u200D]+(?=\s|$)/gu, '$1')
     .replace(/\s+/gu, ' ')
     .trim();
   if (!s || s.length > MENU_TAGLINE_MAX) return null;
@@ -614,7 +622,9 @@ export function resolveMenuDesign(input: {
     '--font-menu-heading': tf.display,
     '--m-font-body': tf.body,
     '--m-font-item': tf.display,
-    '--m-font-price': mono ? MENU_MONO_STACK : tf.body,
+    // Newsreader draws U+20BA (₺) as a single-stroke "Ł", so book-serif
+    // prices use the sans stack, which has the real lira sign.
+    '--m-font-price': mono ? MENU_MONO_STACK : knobs.typeface === 'book-serif' ? SANS : tf.body,
     '--m-font-catdesc': tf.catdesc.face === 'display' ? tf.display : tf.body,
     '--m-catdesc-style': tf.catdesc.italic ? 'italic' : 'normal',
     '--m-fw-display': num(tf.displaySize.weight),

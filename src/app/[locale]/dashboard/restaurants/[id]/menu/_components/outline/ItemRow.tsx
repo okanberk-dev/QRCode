@@ -10,7 +10,7 @@ import {
 import type { MenuItemView } from '@/components/menu/PublicMenuView';
 import { APCheckbox, Badge, PulseMenu, PulseMenuDivider, PulseMenuItem } from '@/components/ui';
 import type { PendingCreate, RowFeedback } from '../data/useMenuActions';
-import { BADGE_LABELS, BADGE_TINTS } from '../menu-constants';
+import { BADGE_LABELS } from '../menu-constants';
 import { isTempId } from '../menu-merge';
 import { rowBadge } from '../menu-status';
 import { MENU_TOUCH, afterMenuCloses } from '../menu-ui';
@@ -63,13 +63,15 @@ export const ItemRow = memo(function ItemRow({
   const {
     copy, isTr, readOnly, canEdit, finePointer, actions, openItem, registerNameCell, openNameCell,
     focusAfterRemoval, toggleSelect, startSelection, openMoveDialog, moveItemBy, categoryCount,
-    openPriceCell,
+    openPriceCell, openItemId,
   } = useStudio();
   const shiftClick = useRef(false);
   const pickPhoto = useRef<((file: File) => void) | null>(null);
   const temp = isTempId(item.id);
   const editable = canEdit && !temp;
   const badge = rowBadge(item, { isVisible: categoryVisible });
+  // The row whose item is open in the panel: lime edge + tint, so the panel and its row read as one.
+  const open = !temp && openItemId === item.id;
   const lang = isTr ? 'tr' : 'en';
   const registerName = useCallback((open: () => void) => registerNameCell(item.id, open), [registerNameCell, item.id]);
   const sortable = useSortable({ id: item.id, disabled: !dndEnabled || temp });
@@ -143,7 +145,8 @@ export const ItemRow = memo(function ItemRow({
   const nameClass =
     'font-body text-[14.5px] font-medium leading-5 text-[#0A0A0A] line-clamp-2 break-words pointer-coarse:text-[15px] pointer-coarse:font-semibold pointer-fine:@min-[480px]/outline:line-clamp-1';
   const description = item.description?.trim();
-  const shownBadges = item.badges.slice(0, 2) as MenuBadge[];
+  // Studio rows stay calm: one neutral badge and a count (the public menu keeps the tints).
+  const shownBadges = item.badges as MenuBadge[];
   const allergenCount = item.allergens?.length ?? 0;
 
   return (
@@ -177,9 +180,10 @@ export const ItemRow = memo(function ItemRow({
         e.preventDefault();
         pickPhoto.current?.(file);
       }}
-      className={`group/row relative ${selected ? 'bg-[#F7FCE8]' : 'bg-white'} ${ROW_BASE} ${
+      aria-current={open ? 'true' : undefined}
+      className={`group/row relative ${open ? 'bg-[#F7FCE8] shadow-[inset_3px_0_0_#C6F24E]' : selected ? 'bg-[#F7FCE8]' : 'bg-white'} ${ROW_BASE} ${
         selecting ? ROW_NARROW_SELECTING : ROW_NARROW
-      } ${ROW_MEDIUM} ${ROW_FULL} ${temp ? '' : `cursor-pointer ${selected ? '' : 'hover:bg-[#FCFCFC]'}`} ${
+      } ${ROW_MEDIUM} ${ROW_FULL} ${temp ? '' : `cursor-pointer ${selected || open ? '' : 'hover:bg-[#FCFCFC]'}`} ${
         pending?.status === 'saving' ? 'opacity-60' : ''
       } ${pending?.status === 'error' ? 'bg-[#FEF2F2]/60 shadow-[inset_2px_0_0_#DC2626]' : ''} ${
         isDragging ? 'z-10 opacity-40' : ''
@@ -270,7 +274,7 @@ export const ItemRow = memo(function ItemRow({
                 <button
                   type="button"
                   onClick={() => openItem(item.id, 'description')}
-                  className="min-w-0 truncate text-left text-[12.5px] text-[#737373] hover:text-[#0A0A0A]"
+                  className="min-w-0 flex-1 truncate text-left text-[12.5px] text-[#737373] hover:text-[#0A0A0A]"
                 >
                   {description}
                 </button>
@@ -285,17 +289,14 @@ export const ItemRow = memo(function ItemRow({
                   + {copy.item.addDescription}
                 </button>
               ) : null}
-              {shownBadges.map((b) => (
-                <span
-                  key={b}
-                  className={`h-5 shrink-0 items-center rounded-full px-2 text-[11.5px] font-medium ${ONLY_FULL}`}
-                  style={{ background: BADGE_TINTS[b]?.bg, color: BADGE_TINTS[b]?.fg }}
-                >
-                  {BADGE_LABELS[b]?.[lang] ?? b}
+              {shownBadges.length > 0 && (
+                <span className={`h-5 shrink-0 items-center gap-1 rounded-full bg-[#F5F5F5] px-2 text-[11.5px] font-medium text-[#525252] ${ONLY_FULL}`}>
+                  {BADGE_LABELS[shownBadges[0]]?.[lang] ?? shownBadges[0]}
+                  {shownBadges.length > 1 && <span className="tabular-nums text-[#737373]">+{shownBadges.length - 1}</span>}
                 </span>
-              ))}
+              )}
               {allergenCount > 0 && (
-                <span className={`shrink-0 text-[11.5px] text-[#92400E] ${ONLY_FULL}`}>
+                <span className={`shrink-0 text-[11.5px] text-[#737373] ${ONLY_FULL}`}>
                   {copy.fmt.allergenCount(allergenCount)}
                 </span>
               )}
@@ -370,9 +371,10 @@ export const ItemRow = memo(function ItemRow({
             onClick={() => void actions.hideItem(item.id)}
             aria-label={copy.item.hideAria(item.name)}
             title={`${copy.item.hide} (H)`}
-            className="bz-btn-icon h-8 w-8 disabled:opacity-40"
+            className="bz-btn-icon h-8 w-8 text-[#737373] transition-opacity disabled:opacity-40 pointer-fine:opacity-0 pointer-fine:group-hover/row:opacity-100 pointer-fine:group-focus-within/row:opacity-100 pointer-fine:focus-visible:opacity-100"
           >
-            <EyeOff size={14} strokeWidth={2} />
+            {/* An action, not a state: the open eye at rest (the hidden state shows EyeOff in its badge). */}
+            <Eye size={14} strokeWidth={2} />
           </button>
         )}
       </div>

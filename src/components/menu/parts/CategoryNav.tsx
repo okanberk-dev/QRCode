@@ -1,20 +1,26 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MouseEvent } from 'react';
 import type { MenuNav } from '@/lib/menu-design';
+import { scrollSectionIntoView } from './nav-jump';
 
 /** Minimum visible margin around the followed link (the edge-fade mask is 16/24 px). */
 const NAV_FADE = 24;
 
 /**
- * Sticky category nav: pills or underline. Links stay native anchors
- * (`#cat-<id>`); smoothness comes from the page-level scroll-behavior, so the
- * Studio preview keeps instant jumps and nothing ever calls scrollIntoView
- * (which would also scroll the Studio page). The active link is kept in view
- * by scrolling the nav's own row only.
+ * Sticky category nav: pills or underline. Links keep their `#cat-<id>` href
+ * (no-JS still jumps), but a click scrolls only the section's own scroll
+ * container (`scrollSectionIntoView`): a native fragment jump — like
+ * scrollIntoView — would also scroll every ancestor (the Studio page, its
+ * panels) and push a history entry per tap. Smoothness comes from the
+ * container's scroll-behavior (smooth page, instant Studio preview; instant
+ * under reduced motion). The public page mirrors the section in the URL hash
+ * with replaceState (shareable, Back still leaves the menu); previews never
+ * touch the URL. The active link is kept in view by scrolling the nav's own
+ * row only.
  */
 export default function CategoryNav({
-  categories, activeId, variant, centered, label, wide, onSelect,
+  categories, activeId, variant, centered, label, wide, syncHash, onSelect,
 }: {
   categories: { id: string; name: string }[];
   activeId: string | null;
@@ -23,9 +29,30 @@ export default function CategoryNav({
   label: string;
   /** Content column is the 1040 px grid (else 680 px): the first link lines up with it. */
   wide: boolean;
+  /** Public page only: mirror the section in the URL hash (never in a preview). */
+  syncHash: boolean;
   onSelect: (id: string) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+
+  const onLinkClick = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
+    // New tab / window: leave it to the browser.
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const section = e.currentTarget
+      .closest('[data-menu-root]')
+      ?.querySelector<HTMLElement>(`[data-cat-id="${CSS.escape(id)}"]`);
+    onSelect(id);
+    if (!section) return; // fall back to the native jump
+    e.preventDefault();
+    scrollSectionIntoView(section);
+    // Keyboard activation (detail 0): move focus into the section like a
+    // fragment jump would, so Tab continues with its items.
+    if (e.detail === 0) section.focus({ preventScroll: true });
+    if (syncHash) {
+      const url = `${window.location.pathname}${window.location.search}#cat-${id}`;
+      window.history.replaceState(window.history.state, '', url);
+    }
+  };
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -71,7 +98,7 @@ export default function CategoryNav({
                 href={`#cat-${c.id}`}
                 data-nav-id={c.id}
                 aria-current={active ? 'true' : undefined}
-                onClick={() => onSelect(c.id)}
+                onClick={(e) => onLinkClick(e, c.id)}
                 className={`${cls} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-focus)`}
               >
                 {/* The bold twin reserves the active width, so pills never jitter. */}

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Clock, MapPin, Phone } from 'lucide-react';
-import { monogramOf } from '../menu-labels';
+import { menuEyebrow, monogramOf } from '../menu-labels';
 import type { MenuRenderContext } from './types';
 
 /** One wrapping meta line: address · hours · phone (tel: link, 44 px hit area). */
@@ -55,6 +55,7 @@ export default function Masthead({ ctx, maxWidth }: { ctx: MenuRenderContext; ma
   const header = d.structure.header;
   const logo = restaurant.menuLogoUrl;
   const letter = monogramOf(restaurant.name, locale);
+  const eyebrow = menuEyebrow(restaurant.category);
   const inner = `relative mx-auto w-full ${maxWidth} px-5 @md/menu:px-6`;
 
   if (header === 'banner') {
@@ -70,8 +71,8 @@ export default function Masthead({ ctx, maxWidth }: { ctx: MenuRenderContext; ma
               )}
             </div>
             <div className="min-w-0">
-              {restaurant.category && <p className="bzm-label">{restaurant.category}</p>}
-              <h1 className="bzm-name mt-1">{restaurant.name}</h1>
+              {eyebrow && <p className="bzm-label">{eyebrow}</p>}
+              <h1 className={`bzm-name ${eyebrow ? 'mt-1' : ''}`}>{restaurant.name}</h1>
             </div>
           </div>
           <Tagline text={d.tagline} className="mt-5 max-w-[44ch]" />
@@ -96,7 +97,7 @@ export default function Masthead({ ctx, maxWidth }: { ctx: MenuRenderContext; ma
               )}
             </div>
             <div className="min-w-0">
-              {restaurant.category && <p className="bzm-label">{restaurant.category}</p>}
+              {eyebrow && <p className="bzm-label">{eyebrow}</p>}
               <h1 className="bzm-name">{restaurant.name}</h1>
             </div>
           </div>
@@ -129,8 +130,8 @@ export default function Masthead({ ctx, maxWidth }: { ctx: MenuRenderContext; ma
             <img src={logo} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
           </div>
         ) : cover ? <div className="h-8" /> : null}
-        {restaurant.category && <p className={`bzm-label ${logo ? 'mt-5' : ''}`}>{restaurant.category}</p>}
-        <h1 className={`bzm-display ${restaurant.category || logo ? 'mt-2' : ''}`}>{restaurant.name}</h1>
+        {eyebrow && <p className={`bzm-label ${logo ? 'mt-5' : ''}`}>{eyebrow}</p>}
+        <h1 className={`bzm-display ${eyebrow ? 'mt-2' : logo ? 'mt-4' : ''}`}>{restaurant.name}</h1>
         <Tagline text={d.tagline} className="mt-3 max-w-[40ch]" />
         <span aria-hidden className="mt-6 block h-0.5 w-10 rounded-full bg-(--m-accent-ui)" />
         <div className="mt-5">

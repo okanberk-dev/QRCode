@@ -134,7 +134,7 @@ export function CategoryHeader({
             showButtons={!finePointer}
             onCommit={(name) => void actions.renameCategory(category.id, name)}
           />
-          <span className="whitespace-nowrap text-[12px] font-normal text-[#737373]">
+          <span className="whitespace-nowrap font-body text-[12px] font-normal tracking-normal tabular-nums text-[#737373]">
             {copy.fmt.itemCount(items.length)}
             {soldOut > 0 ? ` · ${copy.fmt.soldOutCount(soldOut)}` : ''}
           </span>

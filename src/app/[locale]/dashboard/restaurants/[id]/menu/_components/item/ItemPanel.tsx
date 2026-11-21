@@ -219,7 +219,7 @@ export function ItemPanel({
 
   const title =
     target.mode === 'create' ? (
-      <span className="bz-h-tight text-[18px]">{copy.item.newItem}</span>
+      <span className="bz-h-tight [word-spacing:0.1em] text-[18px]">{copy.item.newItem}</span>
     ) : (
       <>
         <span className="sr-only">{copy.item.editPrefix} </span>
@@ -372,7 +372,7 @@ export function ItemPanel({
       className="absolute inset-0 z-20 flex items-center justify-center bg-white/95 p-6 backdrop-blur-sm"
     >
       <div className="w-full max-w-[320px] text-center">
-        <p id="item-leave-title" className="bz-h-tight text-[16px] text-[#0A0A0A]">
+        <p id="item-leave-title" className="bz-h-tight [word-spacing:0.1em] text-[16px] text-[#0A0A0A]">
           {copy.dialogs.leaveTitle}
         </p>
         <p id="item-leave-body" className="mt-2 text-[13px] leading-relaxed text-[#525252]">

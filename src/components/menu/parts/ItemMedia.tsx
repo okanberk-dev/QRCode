@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { monogramOf, type MenuLocale } from '../menu-labels';
 
 /**
- * Fixed-size media box. A monogram (accent-soft tile, display face) is always
+ * Fixed-size media box. A quiet monogram (neutral tile, display face) is always
  * painted underneath, so a missing, slow or broken photo never changes the
  * layout: the photo simply covers it once loaded, and is removed on error.
  * `className` sets the box size / aspect ratio and radius.
@@ -42,11 +42,11 @@ export default function ItemMedia({
   return (
     <div
       data-sold-out={soldOut || undefined}
-      className={`bzm-media @container relative isolate shrink-0 overflow-hidden bg-(--m-accent-soft) ${className}`}
+      className={`bzm-media @container relative isolate shrink-0 overflow-hidden bg-(--m-surface-2) ${className}`}
     >
       <span
         aria-hidden
-        className="bzm-monogram absolute inset-0 flex items-center justify-center text-(--m-accent-mark)"
+        className="bzm-monogram absolute inset-0 flex items-center justify-center text-(--m-muted) opacity-60"
       >
         {monogramOf(name, locale)}
       </span>

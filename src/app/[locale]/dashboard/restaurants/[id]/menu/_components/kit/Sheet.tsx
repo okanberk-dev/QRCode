@@ -94,7 +94,7 @@ export function Sheet({
             </div>
           )}
           <div className="flex shrink-0 items-center gap-2 border-b border-[#EDEDED] px-4 py-2.5 sm:px-6">
-            <Dialog.Title className="min-w-0 flex-1 truncate bz-h-tight text-[18px] text-[#0A0A0A]">{title}</Dialog.Title>
+            <Dialog.Title className="min-w-0 flex-1 truncate bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A]">{title}</Dialog.Title>
             {headerExtra}
             <button type="button" onClick={onRequestClose} aria-label={copy.item.close} className="bz-btn-icon-lg shrink-0">
               <X size={16} strokeWidth={2} />

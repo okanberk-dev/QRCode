@@ -146,6 +146,28 @@ export function isThemeDirty(applied: ThemeValues, draft: ThemeValues): boolean 
   return Object.keys(themeDiff(applied, draft)).length > 0;
 }
 
+/**
+ * The draft after the applied values changed from `before` to `applied` (an
+ * undo of Apply, a refetch). Rebased per key: a key the owner left as it was
+ * follows the new applied value, a key the owner edited keeps the edit. Family
+ * and design move together (a knob or tagline belongs to the preset it was set
+ * on). So an undo is never silently re-applied by the next "Uygula" because the
+ * owner had also changed something else meanwhile.
+ */
+export function rebaseThemeDraft(before: ThemeValues, applied: ThemeValues, draft: ThemeValues): ThemeValues {
+  const edited = themeDiff(before, draft);
+  if (Object.keys(edited).length === 0) return applied;
+  const designEdited = 'menuTheme' in edited || 'menuDesign' in edited;
+  const next: ThemeValues = {
+    menuTheme: designEdited ? draft.menuTheme : applied.menuTheme,
+    menuDesign: designEdited ? draft.menuDesign : applied.menuDesign,
+    menuAccentColor: 'menuAccentColor' in edited ? draft.menuAccentColor : applied.menuAccentColor,
+    menuLogoUrl: 'menuLogoUrl' in edited ? draft.menuLogoUrl : applied.menuLogoUrl,
+    menuCoverUrl: 'menuCoverUrl' in edited ? draft.menuCoverUrl : applied.menuCoverUrl,
+  };
+  return THEME_KEYS.every((key) => next[key] === draft[key]) ? draft : next;
+}
+
 // ── Design edits (menu-design-final §5.4) ─────────────────────────────────
 
 /** The preset the draft renders (the design's preset when it fits the family). */

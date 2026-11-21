@@ -13,9 +13,11 @@ import { ViewSwitch, type StudioView } from './ViewSwitch';
 
 /**
  * The studio toolbar (spec §7.6).
- * - ≥1024: sticky under the topbar. 1024–1399: two rows — search · filters ·
- *   SaveIndicator · Undo / categories · Düzenle|Servis · Seç · + Ekle. ≥1400:
+ * - ≥1024: sticky under the topbar. 1024–1599: two rows — search · filters ·
+ *   SaveIndicator · Undo / categories · Düzenle|Servis · Seç · + Ekle. ≥1600:
  *   one row (the category rail replaces row 2; mode, Seç and + Ekle move up).
+ *   1600, not 1400: with the 248 px panel sidebar a 1440 window has no room
+ *   for the one-row toolbar, and the rail would squeeze the list to the medium tier.
  * - <1024: not sticky — ViewSwitch, search · Sırala (touch) · Seç, filter
  *   chips (the phone chip bar with "● Canlı" is separate and sticky).
  */
@@ -188,14 +190,14 @@ export function StudioToolbar({
               <Undo2 size={16} strokeWidth={2} />
             </button>
           </div>
-          <div className="hidden shrink-0 items-center gap-2 min-[1400px]:flex">
+          <div className="hidden shrink-0 items-center gap-2 min-[1600px]:flex">
             <ModeSwitch value={mode} onChange={onMode} />
             {selectButton('h-9 min-h-0')}
             {addMenu}
             {previewButton}
           </div>
         </div>
-        <div className="flex h-14 items-center gap-2 min-[1400px]:hidden">
+        <div className="flex h-14 items-center gap-2 min-[1600px]:hidden">
           <div className="min-w-0 flex-1">{categoryChips}</div>
           <ModeSwitch value={mode} onChange={onMode} />
           {selectButton('h-9 min-h-0')}

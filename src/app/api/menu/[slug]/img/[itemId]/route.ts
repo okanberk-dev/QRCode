@@ -19,7 +19,10 @@ import { parseRasterDataUrl } from '@/lib/menu-image-url';
  *   visible. Anything else is a plain 404 (nothing about drafts leaks).
  * - Raster images only (JPEG/PNG/WebP/GIF/AVIF). SVG is never served — opened
  *   directly it could run script on our origin.
- * - A stored http(s) link is not proxied; the caller is sent to it.
+ * - A stored http(s) link is neither proxied nor redirected to: that would
+ *   make this route an open redirect (an owner can store any http(s) URL). The
+ *   public page never links here for those — `publicImageSrc` and
+ *   `jsonLdImageUrl` use the external URL directly — so it is a 404.
  * - 404s are `no-store` so a miss right before publishing is not pinned in the
  *   CDN.
  */
@@ -77,11 +80,8 @@ export async function GET(
 
   if (!stored) return notFound();
 
-  // A link the owner pasted instead of uploading: send the visitor there.
-  if (/^https?:\/\//i.test(stored)) {
-    return NextResponse.redirect(stored, { status: 302, headers: { 'Cache-Control': 'no-store' } });
-  }
-
+  // A pasted http(s) link (or anything else that is not an inline raster) is
+  // not served: parseRasterDataUrl returns null for it → 404 no-store.
   const parsed = parseRasterDataUrl(stored);
   if (!parsed) return notFound();
 

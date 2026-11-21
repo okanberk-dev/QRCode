@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Eye, EyeOff, Plus } from 'lucide-react';
 import { useMenuCopy } from '../kit/useMenuCopy';
 import { isTempId } from '../menu-merge';
+import { useScrollFade } from '../menu-ui';
 import type { CategoryShape } from '../menu-types';
 
 /**
@@ -25,6 +26,7 @@ export function CategoryChips({
 }) {
   const copy = useMenuCopy();
   const stripRef = useRef<HTMLDivElement | null>(null);
+  const fade = useScrollFade(stripRef, categories.map((c) => `${c.name}:${c.items.length}`).join('\n'));
 
   useEffect(() => {
     const strip = stripRef.current;
@@ -38,7 +40,7 @@ export function CategoryChips({
   }, [activeId]);
 
   const chips = (
-    <div ref={stripRef} className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+    <div ref={stripRef} className={`no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto ${fade}`}>
       {categories.map((c) => {
         const active = c.id === activeId;
         const count = c.items.filter((i) => !isTempId(i.id)).length;

@@ -308,7 +308,7 @@ export function SetupWizard({
         className="outline-none"
       >
         <span className="sr-only">{f.stepOf(index + 1)}: </span>
-        <span className="bz-h-tight text-[18px] text-[#0A0A0A] sm:text-[20px]">{title}</span>
+        <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A] sm:text-[20px]">{title}</span>
       </h3>
       <p className="text-[13px] leading-[1.55] text-[#525252]">{body}</p>
     </div>
@@ -353,7 +353,7 @@ export function SetupWizard({
           </span>
           <div className="min-w-0">
             <h2 id="menu-setup-wizard-title">
-              <span className="bz-h-tight text-[20px] text-[#0A0A0A] sm:text-[22px]">{s.title}</span>
+              <span className="bz-h-tight [word-spacing:0.1em] text-[20px] text-[#0A0A0A] sm:text-[22px]">{s.title}</span>
             </h2>
             <p className="mt-1 max-w-[560px] text-[13px] leading-relaxed text-[#525252]">{s.body}</p>
           </div>

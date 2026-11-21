@@ -36,9 +36,15 @@ export function CustomerPreviewScreen({ restaurantId, locale }: { restaurantId: 
   }
 
   const { restaurant, categories } = menu.data;
+  // The menu scrolls in its own box below the panel's top bar and this bar, so its
+  // sticky category nav and its anchor jumps stop under them, not behind them.
+  // Height: the window minus the topbar (61 px phone / 56 px desktop) and, on
+  // phones, the shell's bottom padding that clears the floating nav. No overscroll
+  // containment: a trial / announcement banner above this screen makes it taller than the
+  // window, and the scroll has to chain to the page to bring the menu's bottom into view.
   return (
-    <div className="min-h-full">
-      <div className="sticky top-[61px] z-20 flex items-center justify-between gap-3 border-b border-[#1A1A1A] bg-[#0A0A0A] px-5 py-3 text-white lg:top-14">
+    <div className="flex h-[calc(100dvh-61px-96px-env(safe-area-inset-bottom,0px))] min-h-[420px] flex-col lg:h-[calc(100dvh-56px)]">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#1A1A1A] bg-[#0A0A0A] px-5 py-3 text-white">
         <div className="flex min-w-0 items-center gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-2.5 py-1 text-[12px] font-semibold text-[#0A0A0A]">
             <Eye size={13} strokeWidth={2.25} aria-hidden="true" />
@@ -51,7 +57,9 @@ export function CustomerPreviewScreen({ restaurantId, locale }: { restaurantId: 
           {copy.preview.exit}
         </Link>
       </div>
-      <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} disableAnalytics />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} disableAnalytics />
+      </div>
     </div>
   );
 }

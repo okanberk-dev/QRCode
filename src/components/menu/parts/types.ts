@@ -9,6 +9,8 @@ export interface MenuRenderContext {
   locale: MenuLocale;
   priceLocale: string;
   copy: MenuCopy;
+  /** Studio / admin preview (analytics off): never touches the page URL. */
+  preview: boolean;
   setProductRef: (productId: string, el: HTMLElement | null) => void;
   onProductClick: (item: MenuItemView, categoryId: string | null) => void;
   onCategoryClick: (categoryId: string) => void;

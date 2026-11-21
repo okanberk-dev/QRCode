@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MENU_THEMES, type MenuTheme } from '@/lib/validations';
 import { readMenuDesign, type MenuKnobKey, type MenuKnobs, type MenuPresetId } from '@/lib/menu-design';
 import {
-  beginThemeSave, createThemeSync, isThemeDirty, settleThemeSave, themeDiff,
+  beginThemeSave, createThemeSync, isThemeDirty, rebaseThemeDraft, settleThemeSave, themeDiff,
   withKnob, withoutKnobs, withPreset, withPresetRestored, withTagline,
   type ThemeSyncState, type ThemeValues,
 } from '../menu-theme';
@@ -128,13 +128,14 @@ export function useThemeDraft({
   const env = useRef({ restaurantId, isTr, menu, upload, onAccessLost });
   env.current = { restaurantId, isTr, menu, upload, onAccessLost };
 
-  // A clean draft follows the applied values (undo of Apply, refetch).
+  // The draft follows the applied values (undo of Apply, refetch) key by key:
+  // what the owner did not touch follows, what they edited stays.
   const prevApplied = useRef(applied);
   useEffect(() => {
     const before = prevApplied.current;
     prevApplied.current = applied;
     if (before === applied) return;
-    setDraft((d) => (isThemeDirty(before, d) ? d : applied));
+    setDraft((d) => rebaseThemeDraft(before, applied, d));
   }, [applied]);
 
   // ── accent: one state update per frame while the native picker is dragged ──

@@ -15,12 +15,13 @@
  */
 
 /**
- * Focus clearance under the sticky bars (spec §3.2). `min-[87.5rem]` is 1400 px
- * written in rem: Tailwind v4 emits px breakpoints before rem ones, so a
- * `min-[1400px]:` value would lose to `lg:` (64rem) on the same property.
+ * Focus clearance under the sticky bars (spec §3.2). `min-[100rem]` is 1600 px
+ * (where the toolbar becomes one row) written in rem: Tailwind v4 emits px
+ * breakpoints before rem ones, so a `min-[1600px]:` value would lose to `lg:`
+ * (64rem) on the same property.
  */
 export const ROW_BASE =
-  'scroll-mt-[124px] lg:scroll-mt-[180px] min-[87.5rem]:scroll-mt-[124px] scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+var(--menu-stack,0px)+16px)]';
+  'scroll-mt-[124px] lg:scroll-mt-[180px] min-[100rem]:scroll-mt-[124px] scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+var(--menu-stack,0px)+16px)]';
 
 export const ROW_NARROW =
   'grid grid-cols-[48px_minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-3 gap-y-1.5 px-3 py-3 min-h-[76px]';
@@ -48,9 +49,9 @@ export const CELL_NAME =
 export const CELL_LINE2 =
   'col-start-2 col-span-2 row-start-2 flex min-w-0 items-center gap-3 pointer-fine:@min-[480px]/outline:contents';
 
-/** Price: medium col 4; full col 5. */
+/** Price: medium col 4; full col 5. Right-aligned with a 10 px gutter so it never reads as part of the switch. */
 export const CELL_PRICE =
-  'relative min-w-0 pointer-fine:@min-[480px]/outline:col-start-4 pointer-fine:@min-[480px]/outline:row-start-1 pointer-fine:@min-[480px]/outline:justify-self-end pointer-fine:@2xl/outline:col-start-5';
+  'relative min-w-0 pointer-fine:@min-[480px]/outline:col-start-4 pointer-fine:@min-[480px]/outline:row-start-1 pointer-fine:@min-[480px]/outline:justify-self-end pointer-fine:@min-[480px]/outline:pr-2.5 pointer-fine:@2xl/outline:col-start-5';
 
 /** Status: narrow pushed right; medium col 5; full col 6. */
 export const CELL_STATUS =

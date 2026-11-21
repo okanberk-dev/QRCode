@@ -581,7 +581,7 @@ function StudioLoaded({
     },
     [expand],
   );
-  /** Rail jump (≥1400) is one of the item panel's close paths (spec §7.8): guarded, then closed. */
+  /** Rail jump (≥1600) is one of the item panel's close paths (spec §7.8): guarded, then closed. */
   const railJump = useCallback(
     (categoryId: string) =>
       guardItem(() => {
@@ -691,6 +691,7 @@ function StudioLoaded({
     });
   }, []);
 
+  const openItemId = itemTarget?.mode === 'edit' ? itemTarget.itemId : null;
   const studio = useMemo<StudioContextValue>(
     () => ({
       restaurantId, locale, isTr, copy, readOnly, canEdit, isPublished, finePointer, mode, actions, toaster,
@@ -698,14 +699,14 @@ function StudioLoaded({
       registerNewCategory, registerPriceCell, openPriceCell, hasPriceCell, registerNameCell, openNameCell, flashItem, linger,
       focusAfterRemoval, askConfirm, categoryCount: categories.length, selecting: selection !== null, toggleSelect,
       startSelection, reorderMode, openMoveDialog, openBulkPrice, openCategoryOrder, openPasteSheet, moveItemBy,
-      moveCategoryBy, reportPasteDirty,
+      moveCategoryBy, reportPasteDirty, openItemId,
     }),
     [
       restaurantId, locale, isTr, copy, readOnly, canEdit, isPublished, finePointer, mode, actions, toaster,
       getCategories, openItem, createItemIn, focusQuickAdd, focusNewCategory, jumpToCategory, registerQuickAdd,
       registerNewCategory, registerPriceCell, openPriceCell, hasPriceCell, registerNameCell, openNameCell, flashItem, linger,
       focusAfterRemoval, askConfirm, categories.length, selection, toggleSelect, startSelection, reorderMode,
-      openMoveDialog, openBulkPrice, openCategoryOrder, openPasteSheet, moveItemBy, moveCategoryBy, reportPasteDirty,
+      openMoveDialog, openBulkPrice, openCategoryOrder, openPasteSheet, moveItemBy, moveCategoryBy, reportPasteDirty, openItemId,
     ],
   );
 
@@ -885,7 +886,8 @@ function StudioLoaded({
     categories: setupCategories ?? previewCategories,
     locale,
     focusItemId: designOpen ? null : focusItemId,
-    followCategoryId: activeCategoryId,
+    // While choosing a design the preview stays at the top: the header is what styles change most.
+    followCategoryId: designOpen ? null : activeCategoryId,
     onPickItem: designOpen || setupCategories !== null ? undefined : openItem,
     hiddenNote: designOpen ? null : hiddenNote,
     topOffset: noToolbar ? 72 : isWide ? 128 : 184,
@@ -1112,13 +1114,14 @@ function StudioLoaded({
       />
     ) : null;
 
-  // Grid (spec §3.1). `min-[87.5rem]` / `min-[100rem]` are 1400 / 1600 px in rem so they sort after `xl:`.
+  // Grid (spec §3.1). `min-[100rem]` is 1600 px in rem so it sorts after `xl:`. The rail
+  // starts there too: below 1600 (with the 248 px panel sidebar) it would squeeze the list.
   const gridCols = rightVisible
     ? hasRail
-      ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] min-[87.5rem]:grid-cols-[184px_minmax(0,1fr)_360px] min-[100rem]:grid-cols-[184px_minmax(0,1fr)_380px]'
+      ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] min-[100rem]:grid-cols-[184px_minmax(0,1fr)_380px]'
       : 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] min-[100rem]:grid-cols-[minmax(0,1fr)_380px]'
     : hasRail
-      ? 'lg:grid-cols-[minmax(0,1fr)] min-[87.5rem]:grid-cols-[184px_minmax(0,1fr)]'
+      ? 'lg:grid-cols-[minmax(0,1fr)] min-[100rem]:grid-cols-[184px_minmax(0,1fr)]'
       : 'lg:grid-cols-[minmax(0,1fr)]';
 
   const clearSearch = () => {
@@ -1147,7 +1150,8 @@ function StudioLoaded({
           designDisabledReason={!menuEnabled ? copy.header.designLockedReason : isViewer ? copy.header.designViewerReason : null}
         />
 
-        {(!empty || readOnly) && (
+        {/* Hidden while the design panel is docked (≥1024): the panel and its preview take the screen. */}
+        {(!empty || readOnly) && !designDocked && (
           <MenuStatusCard
             isTr={isTr}
             restaurant={restaurant}
@@ -1298,7 +1302,7 @@ function StudioLoaded({
                   id="menu-items-pane"
                   hidden={pagePreview || designDocked}
                   onFocusCapture={onFocusCapture}
-                  className="@container/outline min-w-0 scroll-mt-[124px] space-y-3 lg:scroll-mt-[180px] min-[87.5rem]:scroll-mt-[124px]"
+                  className="@container/outline min-w-0 scroll-mt-[124px] space-y-3 lg:scroll-mt-[180px] min-[100rem]:scroll-mt-[124px]"
                 >
                   {empty && setupMode === 'blank' && (
                     <button

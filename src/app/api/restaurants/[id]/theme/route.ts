@@ -22,6 +22,7 @@ import { contentVersion } from '@/lib/menu-image-url';
 //   DESIGN_CONFLICT. It is stored normalised; a pure legacy look is SQL NULL
 //   (Prisma.DbNull, never JsonNull).
 // - The cover gets a content-hash version written with it; no blob is echoed.
+// - Accent and logo are mirrored into BrandSettings (see below).
 
 // Raster whitelist for the logo (unchanged rules; mirrors validations.ts).
 const DATA_URL_RASTER_RE = /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/i;
@@ -122,6 +123,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // No blobs are echoed (logo / cover stay server-side).
     select: { id: true, menuTheme: true, menuAccentColor: true, menuDesign: true, menuCoverVersion: true },
   });
+
+  // Brand settings keep their own copy of the accent and logo, and a Brand
+  // save writes that copy back onto the restaurant. Mirror what Studio just
+  // applied (as the admin menu-theme route does), or the next Brand save
+  // would silently revert it on the public menu.
+  const brandData: { accentColor?: string | null; logoUrl?: string | null } = {};
+  if (b.menuAccentColor !== undefined) brandData.accentColor = b.menuAccentColor;
+  if (b.menuLogoUrl !== undefined) brandData.logoUrl = b.menuLogoUrl;
+  if (Object.keys(brandData).length > 0) {
+    await prisma.brandSettings.updateMany({ where: { restaurantId: id }, data: brandData }).catch(() => undefined);
+  }
 
   await touchMenuUpdated(id);
 

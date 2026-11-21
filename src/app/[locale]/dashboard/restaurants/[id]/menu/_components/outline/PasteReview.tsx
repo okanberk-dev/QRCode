@@ -165,7 +165,7 @@ export function PasteReview({
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h4 id={titleId} className="text-[14px]">
-          <span className="bz-h-tight">{copy.paste.preview}</span>
+          <span className="bz-h-tight [word-spacing:0.1em]">{copy.paste.preview}</span>
         </h4>
         <p className="text-[12.5px] text-[#525252]" aria-live="polite">
           {copy.fmt.paste.willAdd(items)}

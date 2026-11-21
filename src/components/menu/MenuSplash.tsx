@@ -2,16 +2,25 @@
 
 import { useEffect, useRef } from 'react';
 import type { ResolvedMenuDesign } from '@/lib/menu-design';
-import { menuCopy, monogramOf, type MenuLocale } from './menu-labels';
+import { menuCopy, menuEyebrow, monogramOf, type MenuLocale } from './menu-labels';
+import { splashRemainingMs } from './splash-timing';
 
 const SPLASH_MS = 3000;
 const SPLASH_OUT_MS = 280;
+const SPLASH_TOTAL_MS = SPLASH_MS + SPLASH_OUT_MS;
+/** Must match the keyframes name in the inline style below (and globals.css). */
+const OUT_ANIMATION = 'bzm-splash-out';
 
 /**
  * Branded splash for QR visits (`?source=qr`), drawn as an overlay above the
  * always-mounted menu. It is in the SSR HTML (no menu-then-splash flash); if
  * JavaScript never runs, the CSS animation still hides it at 3.28 s. Under
  * prefers-reduced-motion it is hidden by CSS and `onDone` fires at once.
+ *
+ * `onDone` follows the CSS fade, not the mount: the SSR splash's animation
+ * started at first paint, so after a slow hydration only the rest of it is
+ * waited for (and nothing, if it already ended). Until `onDone` the menu
+ * canvas is inert, so a late `onDone` would leave a visible menu untappable.
  */
 export default function MenuSplash({
   name, category, logoUrl, design, locale, onDone,
@@ -23,24 +32,54 @@ export default function MenuSplash({
   locale: MenuLocale;
   onDone: () => void;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const doneRef = useRef(false);
 
   useEffect(() => {
-    const reduceMotion =
-      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const t = window.setTimeout(() => {
+    const el = rootRef.current;
+    const finish = () => {
       if (doneRef.current) return;
       doneRef.current = true;
       onDone();
-    }, reduceMotion ? 0 : SPLASH_MS + SPLASH_OUT_MS);
-    return () => window.clearTimeout(t);
+    };
+    const reduceMotion =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion || !el) {
+      finish();
+      return;
+    }
+    const anim = typeof el.getAnimations === 'function'
+      ? el.getAnimations().find((a) => (a as CSSAnimation).animationName === OUT_ANIMATION)
+      : undefined;
+    const remaining = splashRemainingMs({
+      totalMs: SPLASH_TOTAL_MS,
+      playState: anim?.playState ?? null,
+      currentTime: anim ? anim.currentTime : null,
+      hidden: window.getComputedStyle(el).visibility === 'hidden',
+    });
+    if (remaining === 0) {
+      finish();
+      return;
+    }
+    const onEnd = (e: AnimationEvent) => {
+      if (e.target === el && e.animationName === OUT_ANIMATION) finish();
+    };
+    el.addEventListener('animationend', onEnd);
+    // Safety net in case `animationend` never fires (tab in the background).
+    const t = window.setTimeout(finish, remaining);
+    return () => {
+      el.removeEventListener('animationend', onEnd);
+      window.clearTimeout(t);
+    };
   }, [onDone]);
 
   const banner = design.structure.header === 'banner';
   const copy = menuCopy(locale);
+  const eyebrow = menuEyebrow(category);
 
   return (
     <div
+      ref={rootRef}
       data-menu-splash=""
       role="status"
       aria-label={copy.splash(name)}
@@ -62,8 +101,8 @@ export default function MenuSplash({
             <span aria-hidden className="bzm-monogram-tile bzm-monogram-tile--lg">{monogramOf(name, locale)}</span>
           )}
         </div>
-        {category && <p className="bzm-label mt-7">{category}</p>}
-        <p className={`bzm-name ${category ? 'mt-2' : 'mt-7'} max-w-[18ch]`}>{name}</p>
+        {eyebrow && <p className="bzm-label mt-7">{eyebrow}</p>}
+        <p className={`bzm-name ${eyebrow ? 'mt-2' : 'mt-7'} max-w-[18ch]`}>{name}</p>
       </div>
       <div className={`absolute bottom-14 left-1/2 h-[2px] w-40 -translate-x-1/2 overflow-hidden rounded-full ${banner ? 'bg-current/25' : 'bg-(--m-rule)'}`}>
         <span

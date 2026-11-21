@@ -35,7 +35,7 @@ export function ShortcutsDialog({
   );
 
   return (
-    <Modal size={520} title={<span className="bz-h-tight text-[18px]">{copy.shortcuts.title}</span>} onClose={onClose}>
+    <Modal size={520} title={<span className="bz-h-tight [word-spacing:0.1em] text-[18px]">{copy.shortcuts.title}</span>} onClose={onClose}>
       <div className="space-y-5">
         <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
           <APSwitch

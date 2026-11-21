@@ -49,6 +49,7 @@ export default function MenuDocument({
               centered={centeredHeader}
               label={copy.navLabel}
               wide={wide}
+              syncHash={!ctx.preview}
               onSelect={onNavSelect}
             />
           )}
@@ -66,7 +67,8 @@ export default function MenuDocument({
                   id={`cat-${category.id}`}
                   data-cat-id={category.id}
                   aria-labelledby={titleId}
-                  className="scroll-mt-[calc(var(--m-nav-h)+16px)]"
+                  tabIndex={-1}
+                  className="scroll-mt-[calc(var(--m-nav-h)+16px)] outline-none"
                 >
                   <SectionHeader
                     d={d}

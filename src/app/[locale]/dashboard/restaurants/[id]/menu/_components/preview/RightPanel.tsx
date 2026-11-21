@@ -13,8 +13,8 @@ import { ariaKeysFor } from '../menu-keys';
  * (hidden) on the preview tab so nothing typed is lost; the preview is
  * unmounted on the item tab (one preview at a time).
  *
- * Sticky under the toolbar: 1024–1399 two rows (top 184 = topbar 56 +
- * toolbar 112 + 16); ≥1400 one row, the category rail holds the chips
+ * Sticky under the toolbar: 1024–1599 two rows (top 184 = topbar 56 +
+ * toolbar 112 + 16); ≥1600 one row, the category rail holds the chips
  * (top 128 = 56 + 56 + 16). Without the toolbar (design mode, empty-menu
  * setup) it sticks under the topbar (`stickyTop="page"`: 72 = 56 + 16) and
  * cannot be collapsed (no `onCollapse`).
@@ -47,7 +47,7 @@ export function RightPanel({
         className={`bz-card sticky hidden flex-col self-start overflow-hidden p-0 lg:flex ${
           stickyTop === 'page'
             ? 'top-[72px] max-h-[calc(100dvh-88px)]'
-            : 'top-[184px] max-h-[calc(100dvh-200px)] min-[1400px]:top-[128px] min-[1400px]:max-h-[calc(100dvh-144px)]'
+            : 'top-[184px] max-h-[calc(100dvh-200px)] min-[1600px]:top-[128px] min-[1600px]:max-h-[calc(100dvh-144px)]'
         }`}
       >
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[#EDEDED] px-3">
@@ -82,7 +82,7 @@ export function RightPanel({
             <>
               <Smartphone size={14} strokeWidth={2} className="shrink-0 text-[#525252]" aria-hidden="true" />
               <h2 id="right-panel-title" className="min-w-0 flex-1 truncate">
-                <span className="text-[13px] font-semibold text-[#0A0A0A]">{copy.preview.title}</span>
+                <span className="font-body text-[13px] font-semibold tracking-normal text-[#0A0A0A]">{copy.preview.title}</span>
               </h2>
               {openLink.external ? (
                 <a href={openLink.href} target="_blank" rel="noopener noreferrer" aria-label={copy.preview.openLiveAria} className="bz-btn bz-btn-sm shrink-0">

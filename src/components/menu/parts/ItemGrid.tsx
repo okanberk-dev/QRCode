@@ -38,12 +38,15 @@ export default function ItemGrid({
   const overlay = d.structure.priceOverlay;
 
   return (
-    <div className={grid ? 'grid grid-cols-2 gap-x-(--m-grid-gap) gap-y-[calc(var(--m-grid-gap)*1.75)] @2xl/menu:grid-cols-3' : 'flex flex-col gap-8'}>
+    <div className={grid ? 'grid grid-cols-2 gap-x-(--m-grid-gap) gap-y-[calc(var(--m-grid-gap)*1.75)] @2xl/menu:grid-cols-3 @2xl/menu:gap-x-[calc(var(--m-grid-gap)*1.5)]' : 'flex flex-col gap-8'}>
       {items.map((item, idx) => {
         const priceLabel = formatPrice(item.priceCents, item.currency, priceLocale);
         const hasPhoto = Boolean(item.imageUrl);
         const showMedia = grid || hasPhoto;
-        const chip = overlay && hasPhoto && !item.isOutOfStock;
+        // Grid always draws a media box (photo or monogram tile), so the chip
+        // keeps every price on the same spot across a row of cards. Feature
+        // items without a photo have no box: their price sits in the text.
+        const chip = overlay && showMedia && !item.isOutOfStock;
         const eager = idx < eagerCount;
         const media = showMedia ? (
           <ItemMedia
@@ -90,7 +93,7 @@ export default function ItemGrid({
             data-sold-out={item.isOutOfStock || undefined}
             ref={(el) => ctx.setProductRef(item.id, el)}
             onClick={() => ctx.onProductClick(item, categoryId)}
-            className={`${ITEM_ARTICLE_CLASS} flex flex-col ${
+            className={`${ITEM_ARTICLE_CLASS} flex flex-col rounded-(--m-r-card) ${
               cards
                 ? 'overflow-hidden bg-(--m-surface) ring-1 ring-(--m-rule) group-data-[scheme=light]/menu:shadow-[0_1px_2px_rgb(0_0_0/0.04)]'
                 : ''

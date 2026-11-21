@@ -31,7 +31,8 @@ const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 /** Instant scroll of the preview viewport to an element, with a correction for lazy content above it. */
 function scrollPreviewTo(viewport: HTMLElement, el: HTMLElement, offset: number) {
   const top = () => el.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
-  const zoom = parseFloat(viewport.style.zoom || '1') || 1;
+  // The zoom sits on the frame around the scroller (see `viewport` below).
+  const zoom = parseFloat(viewport.parentElement?.style.zoom || '1') || 1;
   viewport.scrollTop += top() / zoom - offset;
   requestAnimationFrame(() => {
     const residual = top() / zoom - offset;
@@ -140,21 +141,26 @@ export function PhonePreview({
       <style>{`[data-preview-root="${uid}"] [data-pid="${focusItemId}"]{outline:2px solid #C6F24E;outline-offset:3px;border-radius:14px;box-shadow:0 0 0 6px rgba(198,242,78,.25)}`}</style>
     ) : null;
 
+  // The frame (fixed size, zoom, containment) does not scroll; the scroller inside it does.
+  // Containment makes the frame the containing block of the menu's `position: fixed`
+  // product sheet and splash, so they pin to the phone instead of scrolling away with
+  // the content (a sheet opened after scrolling would otherwise land above the view).
   const viewport = (
-    <div
-      ref={viewportRef}
-      data-preview-root={uid}
-      onClickCapture={onClickCapture}
-      onPointerDown={pause}
-      onWheel={pause}
-      onTouchStart={pause}
-      aria-label={copy.preview.label}
-      role="region"
-      style={{ width: PHONE_WIDTH, height: fit.height, zoom: fit.zoom, contain: 'layout paint', backgroundColor: pageBg }}
-      className="overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
-    >
-      {highlight}
-      <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} disableAnalytics />
+    <div style={{ width: PHONE_WIDTH, height: fit.height, zoom: fit.zoom, contain: 'layout paint', backgroundColor: pageBg }} className="relative">
+      <div
+        ref={viewportRef}
+        data-preview-root={uid}
+        onClickCapture={onClickCapture}
+        onPointerDown={pause}
+        onWheel={pause}
+        onTouchStart={pause}
+        aria-label={copy.preview.label}
+        role="region"
+        className="h-full overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
+      >
+        {highlight}
+        <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} disableAnalytics />
+      </div>
     </div>
   );
 

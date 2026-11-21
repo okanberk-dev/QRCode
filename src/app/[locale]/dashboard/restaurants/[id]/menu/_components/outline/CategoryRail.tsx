@@ -11,7 +11,7 @@ import { useDndAccessibility, useMenuDndSensors } from '../menu-ui';
 import { useStudio } from '../studio/studio-context';
 
 /**
- * Category rail (≥1400, spec §7.7): jump to a section, drag to reorder
+ * Category rail (≥1600, spec §7.7): jump to a section, drag to reorder
  * categories, "+ Kategori ekle". Sticky under the one-row toolbar.
  */
 export function CategoryRail({
@@ -41,7 +41,7 @@ export function CategoryRail({
   return (
     <nav
       aria-labelledby="menu-rail-title"
-      className="bz-card sticky top-[128px] hidden max-h-[calc(100dvh-144px)] self-start overflow-y-auto p-2 min-[1400px]:block"
+      className="bz-card sticky top-[128px] hidden max-h-[calc(100dvh-144px)] self-start overflow-y-auto p-2 min-[1600px]:block"
     >
       <h2 id="menu-rail-title" className="px-2 pb-1.5 pt-1 text-[12px] font-semibold text-[#737373]">
         <span className="font-body">{copy.outline.categoriesTitle}</span>

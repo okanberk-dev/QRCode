@@ -45,7 +45,7 @@ export function MoveToCategoryDialog({ itemIds, onClose, onMoved }: {
   return (
     <Modal
       size={440}
-      title={<span className="bz-h-tight text-[18px]">{title}</span>}
+      title={<span className="bz-h-tight [word-spacing:0.1em] text-[18px]">{title}</span>}
       onClose={onClose}
       footer={
         <div className="flex flex-wrap justify-end gap-2">

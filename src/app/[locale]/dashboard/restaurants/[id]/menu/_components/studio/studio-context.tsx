@@ -50,6 +50,8 @@ export interface StudioContextValue {
   focusAfterRemoval(itemId: string): void;
   /** Number of categories (moving needs at least two). */
   categoryCount: number;
+  /** The item open in the item panel (edit mode), highlighted in the list. */
+  openItemId: string | null;
   // ── organise and bulk (chunk 3) ──
   /** Selection mode is on (the selected ids reach rows as a `selected` prop). */
   selecting: boolean;

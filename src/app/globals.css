@@ -1873,7 +1873,7 @@ select.bz-input option:checked {
 [data-menu-root] .bzm-on-banner .bzm-label,
 [data-menu-root] .bzm-on-banner .bzm-tagline { color: var(--m-on-banner); }
 [data-menu-root] .bzm-monogram { font-family: var(--font-menu-heading); font-weight: var(--m-fw-display);
-  font-size: 40cqw; line-height: 1; user-select: none; }
+  font-size: clamp(16px, 26cqw, 48px); line-height: 1; user-select: none; }
 [data-menu-root] .bzm-monogram-tile { font-family: var(--font-menu-heading); font-weight: var(--m-fw-display);
   font-size: 28px; line-height: 1; }
 [data-menu-root] .bzm-monogram-tile--sm { font-size: 22px; }

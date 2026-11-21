@@ -21,7 +21,7 @@ export function SetupStart({ onPick }: { onPick: (choice: SetupStartChoice) => v
   return (
     <section aria-labelledby="menu-setup-title" className="bz-card @container p-6 sm:p-8">
       <h2 id="menu-setup-title">
-        <span className="bz-h-tight text-[24px] text-[#0A0A0A]">{copy.setup.startTitle}</span>
+        <span className="bz-h-tight [word-spacing:0.1em] text-[24px] text-[#0A0A0A]">{copy.setup.startTitle}</span>
       </h2>
       <p className="mt-2 max-w-[560px] text-[13.5px] leading-relaxed text-[#525252]">{copy.setup.startBody}</p>
       <div className="mt-6 grid gap-3 @min-[640px]:grid-cols-3">

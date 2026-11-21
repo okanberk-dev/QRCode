@@ -21,7 +21,7 @@ export function LoadErrorView({
             <AlertTriangle size={20} strokeWidth={2} className="text-[#DC2626]" aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="bz-h-tight text-[20px] text-[#0A0A0A] sm:text-[22px]">{copy.errors.loadTitle}</h1>
+            <h1 className="bz-h-tight [word-spacing:0.1em] text-[20px] text-[#0A0A0A] sm:text-[22px]">{copy.errors.loadTitle}</h1>
             <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{message ?? copy.errors.loadBody}</p>
           </div>
         </div>

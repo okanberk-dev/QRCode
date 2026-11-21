@@ -77,6 +77,24 @@ export function monogramOf(name: string, locale: MenuLocale): string {
   return first ? first.toLocaleUpperCase(tag) : '·';
 }
 
+/**
+ * Sector labels that say nothing above a menu: the schema default
+ * ("Restoran") and the catch-all ("Diğer"). TR and EN spellings.
+ */
+const GENERIC_CATEGORIES = new Set(['restoran', 'restaurant', 'diğer', 'diger', 'other']);
+
+/**
+ * The masthead / splash eyebrow for a restaurant category, or null when the
+ * label is empty or generic ("RESTORAN" above a restaurant's own menu tells
+ * the guest nothing and takes the most prominent label slot).
+ */
+export function menuEyebrow(category: string | null | undefined): string | null {
+  if (typeof category !== 'string') return null;
+  const text = category.trim();
+  if (!text) return null;
+  return GENERIC_CATEGORIES.has(text.toLocaleLowerCase('tr-TR')) ? null : text;
+}
+
 export interface MenuCopy {
   skip: string;
   navLabel: string;

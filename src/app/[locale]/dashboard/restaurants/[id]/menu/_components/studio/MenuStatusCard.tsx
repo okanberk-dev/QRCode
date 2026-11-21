@@ -21,7 +21,7 @@ export type MenuLockReason = 'locked' | 'viewer' | null;
  * "Can customers see it?" (spec §7.5) — one card, one primary action per
  * state: locked (module off), viewer, draft (3 steps + "Yayına al"), live
  * (link, copy, share, open, quiet "Yayından kaldır"), just published.
- * Nudges (max 2) open the matching filter.
+ * Nudges (max 2, draft only, below 1024) open the matching filter.
  */
 export function MenuStatusCard({
   isTr, restaurant, readiness, nudges, lockReason, canEdit, publishBusy, justPublished, onPublish, onUnpublish,
@@ -87,14 +87,19 @@ export function MenuStatusCard({
   );
   const title = (text: string) => (
     <h2 id="menu-status-title" className="min-w-0">
-      <span className="bz-h-tight text-[18px] text-[#0A0A0A]">{text}</span>
+      <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A]">{text}</span>
     </h2>
   );
 
   const copyButton = (
-    <button type="button" onClick={() => void doCopy()} className="bz-btn-ghost shrink-0">
+    <button
+      type="button"
+      onClick={() => void doCopy()}
+      className="bz-btn-ghost shrink-0 max-sm:h-11 max-sm:w-11 max-sm:justify-center max-sm:px-0"
+    >
       {copied ? <Check size={14} strokeWidth={2.25} aria-hidden="true" /> : <Copy size={14} strokeWidth={2} aria-hidden="true" />}
-      {copied ? copy.status.copied : copy.status.copyLink}
+      {/* Phones: icon only, beside the link (the label stays the accessible name). */}
+      <span className="max-sm:sr-only">{copied ? copy.status.copied : copy.status.copyLink}</span>
     </button>
   );
   const shareButton = canNativeShare ? (
@@ -109,7 +114,7 @@ export function MenuStatusCard({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${copy.status.openMenu}: ${SITE_HOST}${path}`}
-      className="inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-1.5 rounded-lg bg-[#FAFAFA] px-2.5 font-mono text-[12.5px] text-[#525252] ring-1 ring-[#EDEDED] hover:text-[#0A0A0A] lg:min-h-[36px]"
+      className="inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-1.5 rounded-lg bg-[#FAFAFA] px-2.5 font-mono max-sm:flex-1 text-[12.5px] text-[#525252] ring-1 ring-[#EDEDED] hover:text-[#0A0A0A] lg:min-h-[36px]"
     >
       <span className="min-w-0 truncate">{SITE_HOST}{path}</span>
       <ExternalLink size={12} strokeWidth={2} className="shrink-0" aria-hidden="true" />
@@ -125,7 +130,7 @@ export function MenuStatusCard({
     if (nudges.noDescription > 0) list.push({ filter: 'noDescription', text: copy.fmt.nudgeNoDescription(nudges.noDescription) });
     if (list.length === 0) return null;
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[#EDEDED] pt-3" aria-label={copy.status.nudgesLabel} role="group">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[#EDEDED] pt-3 lg:hidden" aria-label={copy.status.nudgesLabel} role="group">
         {list.slice(0, 2).map((n) => (
           <span key={n.filter} className="inline-flex items-center gap-2">
             <button
@@ -213,21 +218,41 @@ export function MenuStatusCard({
   }
 
   if (live) {
-    return shell(
-      <Badge kind="ok" dot={false}>
-        <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A] bz-pulse-dot" aria-hidden="true" />
-        {copy.status.liveBadge}
-      </Badge>,
-      <>
+    // Live (spec §7.5, kept short so the list starts in the first viewport): the badge
+    // sits in the title row; the "every change is live" note shows once, with the undo hint.
+    return (
+      <section aria-labelledby="menu-status-title" className="bz-card p-4 sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
           <div className={STATUS_TEXT_COLUMN}>
-            {title(copy.status.liveTitle)}
-            <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">{copy.status.liveBody}</p>
-            {updated && <p className="mt-0.5 text-[12px] text-[#737373]">{updated}</p>}
+            <div className="flex min-w-0 items-center gap-2">
+              <Badge kind="ok" dot={false} className="shrink-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A] bz-pulse-dot" aria-hidden="true" />
+                {copy.status.liveBadge}
+              </Badge>
+              {title(copy.status.liveTitle)}
+            </div>
+            {!liveHintSeen && canEdit && (
+              <p className="mt-1.5 text-[13px] leading-relaxed text-[#525252]">
+                {copy.status.liveBody} {copy.status.liveHint}{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    safeLocalSet(STORAGE_KEYS.liveHint, '1');
+                    setLiveHintSeen(true);
+                  }}
+                  className="inline-flex min-h-11 items-center font-semibold text-[#0A0A0A] underline decoration-[#D4D4D4] underline-offset-4 hover:decoration-[#0A0A0A] pointer-fine:min-h-0"
+                >
+                  {copy.status.liveHintOk}
+                </button>
+              </p>
+            )}
+            {updated && <p className="mt-1 text-[12px] text-[#737373]">{updated}</p>}
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
-            {linkChip}
-            {copyButton}
+            <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+              {linkChip}
+              {copyButton}
+            </div>
             {shareButton}
             {canEdit && (
               <button
@@ -247,23 +272,9 @@ export function MenuStatusCard({
             {copy.status.liveEmpty}
           </AlertBanner>
         )}
-        {!liveHintSeen && canEdit && (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-[#FAFAFA] px-3 py-2 text-[12.5px] text-[#525252]">
-            <span>{copy.status.liveHint}</span>
-            <button
-              type="button"
-              onClick={() => {
-                safeLocalSet(STORAGE_KEYS.liveHint, '1');
-                setLiveHintSeen(true);
-              }}
-              className="min-h-11 shrink-0 font-semibold text-[#0A0A0A] pointer-fine:min-h-8"
-            >
-              {copy.status.liveHintOk}
-            </button>
-          </div>
-        )}
-        {nudgeRow()}
-      </>,
+        {/* No nudge row when live: the filter chips right below carry the same counts and
+            "Tükendi" brings the one-tap "Hepsini satışa aç" (ContextBar). */}
+      </section>
     );
   }
 

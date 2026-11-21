@@ -56,7 +56,7 @@ export const CategorySection = memo(function CategorySection({
       id={`menu-section-${category.id}`}
       aria-labelledby={`menu-section-title-${category.id}`}
       data-section-id={category.id}
-      className={`bz-card scroll-mt-[124px] overflow-hidden p-0 lg:scroll-mt-[180px] min-[87.5rem]:scroll-mt-[124px] ${
+      className={`bz-card scroll-mt-[124px] overflow-hidden p-0 lg:scroll-mt-[180px] min-[100rem]:scroll-mt-[124px] ${
         category.isVisible ? '' : 'border-l-[3px] border-l-[#D4D4D4]'
       } ${highlight ? 'outline-dashed outline-2 outline-offset-2 outline-[#C6F24E]' : ''}`}
     >

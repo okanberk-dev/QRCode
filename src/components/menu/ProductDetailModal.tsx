@@ -75,7 +75,14 @@ export default function ProductDetailModal({
         aria-labelledby={titleId}
         className="bzm-sheet-in absolute inset-x-0 bottom-0 flex max-h-[92%] flex-col overflow-hidden rounded-t-(--m-r-sheet) bg-(--m-surface) text-(--m-ink) shadow-[0_-12px_40px_-12px_rgb(0_0_0/.35)] @xl/sheet:inset-x-auto @xl/sheet:bottom-auto @xl/sheet:top-1/2 @xl/sheet:left-1/2 @xl/sheet:max-h-[min(88%,820px)] @xl/sheet:w-[min(560px,calc(100%-48px))] @xl/sheet:-translate-x-1/2 @xl/sheet:-translate-y-1/2 @xl/sheet:rounded-(--m-r-sheet) @xl/sheet:shadow-[0_24px_60px_-20px_rgb(0_0_0/.45)]"
       >
-        <span aria-hidden className="absolute top-2 left-1/2 z-10 h-1 w-9 -translate-x-1/2 rounded-full bg-(--m-rule) @xl/sheet:hidden" />
+        {/* Drag handle: on a photo it is a light bar with a hairline edge (a
+            dark --m-rule bar vanished into dark photos); else the strong rule. */}
+        <span
+          aria-hidden
+          className={`absolute top-2 left-1/2 z-10 h-1 w-9 -translate-x-1/2 rounded-full @xl/sheet:hidden ${
+            hasPhoto ? 'bg-white/85 shadow-[0_0_0_1px_rgb(0_0_0/.12)]' : 'bg-(--m-rule-strong)'
+          }`}
+        />
         <button
           ref={closeRef}
           type="button"

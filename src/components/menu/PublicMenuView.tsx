@@ -181,7 +181,7 @@ export default function PublicMenuView({
   const copy = menuCopy(locale);
   const priceLocale = locale === 'tr' ? 'tr-TR' : 'en-US';
   const ctx: MenuRenderContext = {
-    d, restaurant, locale, priceLocale, copy, setProductRef, onProductClick, onCategoryClick,
+    d, restaurant, locale, priceLocale, copy, preview: !analyticsEnabled, setProductRef, onProductClick, onCategoryClick,
   };
 
   // `inert` only after mount: it is never in the SSR HTML, so a page whose
