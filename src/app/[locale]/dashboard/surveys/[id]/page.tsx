@@ -48,24 +48,28 @@ export default async function SurveyDetailPage({ params, searchParams }: PagePro
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/surveys/${id}`);
   }
 
-  const survey = await prisma.survey.findUnique({
-    where: { id },
-    select: SURVEY_OWNER_SELECT,
-  });
+  const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
+  // The survey row, the token holder's scope and the write check are
+  // independent reads, so they run at once.
+  const [survey, scopedIds, canWrite] = await Promise.all([
+    prisma.survey.findUnique({
+      where: { id },
+      select: SURVEY_OWNER_SELECT,
+    }),
+    getScopedRestaurantIdsForUserPayload(tokenPayload),
+    // Viewer = read-only team member: no edit / publish / duplicate / delete.
+    canWriteForUserPayload(tokenPayload),
+  ]);
   if (!survey) notFound();
 
-  const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
   // IDOR: the survey's business must be one this user may see (team members
   // included — same scope as the survey APIs).
-  const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
   if (!scopedIds.includes(survey.restaurantId)) notFound();
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: survey.restaurantId },
     select: { id: true, name: true, slug: true, primaryColor: true, isActive: true, surveysEnabled: true },
   });
   if (!restaurant) notFound();
-  // Viewer = read-only team member: no edit / publish / duplicate / delete.
-  const canWrite = await canWriteForUserPayload(tokenPayload);
 
   // Serialize Date instances → ISO strings for the client component.
   // `type` is a free-form string in DB; narrow to the literal union the

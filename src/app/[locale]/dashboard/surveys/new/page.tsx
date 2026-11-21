@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { canWriteForUserPayload, getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { canWriteForUserPayload, scopedRestaurantWhereForUserPayload } from '@/lib/panel-access';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
 import { getSurveyTemplate } from '@/lib/survey-templates';
 import SurveyEditorClient from '../_components/SurveyEditorClient';
@@ -50,25 +50,30 @@ export default async function NewSurveyPage({ params, searchParams }: PageProps)
   }
 
   const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
+  // The write check and the business list are independent, so they run at
+  // once; the redirects below keep their order. Team members included — same
+  // scope the API layer resolves (owners filter on userId directly).
+  const [canWrite, restaurants] = await Promise.all([
+    canWriteForUserPayload(tokenPayload),
+    (async () =>
+      prisma.restaurant.findMany({
+        where: { ...(await scopedRestaurantWhereForUserPayload(tokenPayload)), isActive: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          primaryColor: true,
+          category: true,
+          surveysEnabled: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }))(),
+  ]);
   // A viewer (read-only team member) cannot create surveys; the API refuses too.
-  if (!(await canWriteForUserPayload(tokenPayload))) {
+  if (!canWrite) {
     redirect(`/${locale}/dashboard/surveys`);
   }
 
-  // Team members included — same scope the API layer resolves.
-  const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
-  const restaurants = await prisma.restaurant.findMany({
-    where: { id: { in: scopedIds }, isActive: true },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      primaryColor: true,
-      category: true,
-      surveysEnabled: true,
-    },
-    orderBy: { createdAt: 'asc' },
-  });
   if (restaurants.length === 0) {
     redirect(`/${locale}/dashboard/restaurants`);
   }
