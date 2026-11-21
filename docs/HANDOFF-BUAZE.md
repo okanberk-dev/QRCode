@@ -9,7 +9,7 @@ Nothing secret is in this file (env vars are named only). Everything below is in
 | Billing foundation + saved cards (`docs/specs/billing-spec-final.md`, PR 1-2) | Merged, live. All billing flags OFF by default |
 | Auto-renew charge engine (PR 3) | Merged as WIP, OFF and dry-run by default so no card can be charged. Missing: see 2.1 |
 | Menu Studio rebuild (`docs/specs/menu-spec-final.md`) | Merged, QA done |
-| Public menu designs + owner design options (`docs/specs/menu-design-final.md`) | Merged. Chunks 1-3 built and reviewed; review fixes were in progress; browser QA of every preset NOT done. See 2.2 |
+| Public menu designs + owner design options (`docs/specs/menu-design-final.md`) | Merged. Review re-done and fixed 2026-11-21 (CLAUDE.md §38.263); 12 presets screenshotted at 390 px + 3 at 1440 px. Remaining: see 2.2 |
 | Deploy fix: `PAYNKOLAY_ENV` inferred from an allow-listed `PAYNKOLAY_BASE_URL` | Merged, live (`7d33c76`) |
 | `/api/health?db=1` probe (times 3x `SELECT 1`, shows port + param NAMES only) | Merged, live |
 
@@ -26,9 +26,13 @@ Do NOT turn `PAYNKOLAY_AUTO_CHARGE` on before PayNKolay answers the sandbox ques
 7. Then 3 independent reviews (double-charge/state machine, consent/security, spec/UX), fixes, browser QA.
 
 ### 2.2 Public menu designs
+Done 2026-11-21 (§38.263): the lost review was redone (9 code + 15 visual findings, fixed and re-reviewed). Still open: QA at 768 px, low-contrast accent picks and the read-only viewer; a look at a few live menus.
+
 Finish the review fixes of the 2 reviews (safety, visual) on the merged code, then browser QA at 375/768/1440 of every preset and of the studio design panel (colours incl. low-contrast picks, fonts, layout, radius, density, cover, apply/reset, read-only viewer). Check no Clash Display on `/menu/*` (licence) and that old restaurants (only `menuTheme` + accent + logo) still look right. Look at a few live menus first: this redesign changes what every diner sees.
 
 ### 2.3 Panel speed: DB round trips (task prompt for another chat)
+Mostly done 2026-11-21 (§38.263): owner home 40 -> 16 SQL statements now run with bounded parallelism (`readAll`, `src/lib/db-batch.ts`, max 5) instead of one sequential `$transaction`; owner analytics and admin dashboard also on `readAll`; owner layout reads in parallel; admin restaurants / QR / member detail hydrate on the server; first-load JS of owner home 422 -> 256 kB. Left from the list below: the other `$transaction` arrays (report, restaurants, account, platforms, APIs), and the owner port change.
+
 Audit done (branch `perf/db-roundtrips` exists locally with no commits; recreate from main). Findings:
 - Live `SELECT 1` takes 500-600 ms (`/api/health?db=1`) although app and DB are both in Frankfurt. `DATABASE_URL` still uses port 6543 + `pgbouncer=true`.
 - **Do first (owner action, Coolify):** in the Production env var `DATABASE_URL` change `:6543` to `:5432`, delete `pgbouncer=true`, keep `connection_limit=10`; redeploy; re-measure `/api/health?db=1`. If `selectOneMs` drops to single digits, most of the slowness is gone and 2.3 gains shrink. Do not use `DIRECT_URL` (may be IPv6-only). Revert by setting the port back to 6543.

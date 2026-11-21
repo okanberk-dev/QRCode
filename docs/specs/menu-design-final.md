@@ -200,7 +200,7 @@ The table below gives size/line-height in px. Display and section weights are in
 |---|---|---|---|---|---|---|
 | TR / EN label | Çağdaş / Contemporary | Sıcak / Warm | Zarif / Refined | Dergi / Magazine | Güçlü / Bold | Klasik serif / Classic serif |
 | Family | Space Grotesk (existing) | Fraunces | Newsreader | Instrument Serif | Bricolage Grotesque | Playfair Display |
-| Display (masthead name) | 34/38, lg 48/52, w500, −0.025em | 40/44, lg 60/62, w450, −0.02em | 40/44, lg 58/60, w400, −0.015em | 46/46, lg 68/66, w400, −0.01em | 36/38, lg 52/54, w700, −0.03em | 38/42, lg 56/58, w600, −0.01em |
+| Display (masthead name) | 34/38, lg 48/52, w500, −0.025em | 40/44, lg 60/62, w500, −0.02em | 40/44, lg 58/60, w400, −0.015em | 46/46, lg 68/66, w400, −0.01em | 36/38, lg 52/54, w700, −0.03em | 38/42, lg 56/58, w600, −0.01em |
 | Banner/compact name | 28/32, lg 36/40 | 30/34, lg 40/44 | 30/34, lg 40/44 | 34/36, lg 44/46 | 28/32, lg 38/40 | 30/34, lg 40/44 |
 | Section title | 22/28 w500 | 28/32 w500 | 28/32 w500 | 32/34 w400 | 24/28 w650 | 26/30 w600 |
 | Item name (list/text) | 16/22 w500 −0.01em | 18/23 w500 | 18/23 w500 | 21/24 w400 | 17/22 w600 −0.01em | 18/23 w500 |
