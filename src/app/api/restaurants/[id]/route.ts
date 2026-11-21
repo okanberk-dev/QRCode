@@ -65,10 +65,9 @@ export async function GET(
     // (her regen = +1 row) — distinct (tableNumber, platform, type) combo'larını
     // ayrıca count'luyoruz; aksi halde owner panelde "1 QR var ama 2 yazıyor"
     // false-positive'i çıkıyor.
-    // CLAUDE.md §40.1 — Supabase pooler `connection_limit=1` altında same-request
-    // paralel Prisma read'leri `prisma.$transaction([...])` ile tek connection
-    // üstünden sıralı çalışmalı (Promise.all timeout riskini eler).
-    const [restaurant, qrDistinctRows] = await prisma.$transaction([
+    // The two reads are independent and run at once (they used to be an
+    // array $transaction, which ran them back to back plus BEGIN/COMMIT).
+    const [restaurant, qrDistinctRows] = await Promise.all([
       prisma.restaurant.findUnique({
         where: { id },
         include: {
@@ -828,8 +827,8 @@ export async function DELETE(
     // Cascade counts captured pre-transaction for the audit payload — gives
     // operator triage context ("delete wiped 1.2K feedbacks") without
     // re-querying after the row vanishes.
-    // §40.1 — single pooled connection: batch reads in a transaction.
-    const [feedbackCount, qrCount, menuItemCount] = await prisma.$transaction([
+    // Independent counts, run at once (the deletes below stay one transaction).
+    const [feedbackCount, qrCount, menuItemCount] = await Promise.all([
       prisma.feedback.count({ where: { restaurantId: id } }),
       prisma.qrGeneration.count({ where: { restaurantId: id } }),
       prisma.menuItem.count({ where: { restaurantId: id } }),
