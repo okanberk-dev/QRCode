@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
   const userId = await resolveOwnerUserId(actor);
   if (!userId) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  // CLAUDE.md §40.1 connection_limit=1 — two reads on the same pool slot.
-  const [pref, user] = await prisma.$transaction([
+  // Two independent reads, run at once (was an array $transaction).
+  const [pref, user] = await Promise.all([
     prisma.notificationPreference.findUnique({
       where: { userId },
       select: { lowRatingEmail: true, weeklyReport: true },
@@ -98,7 +98,7 @@ export async function PUT(req: NextRequest) {
   const parsed = validateBody(PreferencesBody, body);
   if (!parsed.ok) return parsed.response;
 
-  const [currentPref, currentUser] = await prisma.$transaction([
+  const [currentPref, currentUser] = await Promise.all([
     prisma.notificationPreference.findUnique({
       where: { userId },
       select: { lowRatingEmail: true, weeklyReport: true },

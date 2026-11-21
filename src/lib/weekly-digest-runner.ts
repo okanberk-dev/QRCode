@@ -9,6 +9,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { sendWeeklyDigest, sendWeeklyDigestSummary } from '@/lib/email';
 import { notifyOpsOfMailFailure } from '@/lib/email/ops-alert';
 import { getNotificationPrefsForUser } from '@/lib/notification-preferences';
@@ -60,7 +61,8 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
   // §38.197 — Owner hesabı silinmek üzere planlanmışsa (30g grace)
   // weekly digest gönderme. "Ayrılıyorum" diyen owner'a haftalık özet
   // UX-toxic + Resend kotası yakar.
-  const [restaurants, totalActive] = await prisma.$transaction([
+  // Independent reads, run at once (was an array $transaction).
+  const [restaurants, totalActive] = await Promise.all([
     prisma.restaurant.findMany({
       where: { isActive: true, user: { scheduledDeletionAt: null } },
       take: BATCH_SIZE,
@@ -133,8 +135,9 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       createdAt: { gte: sevenDaysAgo },
     };
 
-    // One pool slot for the whole fan-out (§40.1, connection_limit=1).
-    const [total, avgAgg, distribution, highRatings, googleRedirects, aspectAggs, commentRows, segmentRows] = await prisma.$transaction([
+    // Independent reads for this restaurant, run at once (parallelReads, at
+    // most 8) instead of back to back in an array $transaction.
+    const [total, avgAgg, distribution, highRatings, googleRedirects, aspectAggs, commentRows, segmentRows] = await parallelReads([
       prisma.feedback.count({ where }),
       prisma.feedback.aggregate({ _avg: { rating: true }, where }),
       prisma.feedback.groupBy({

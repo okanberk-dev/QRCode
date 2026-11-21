@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { AUDIT_SECTORS, type AuditSector } from '@/lib/audits/types';
@@ -64,10 +65,9 @@ export async function GET(req: NextRequest) {
   if (!gate.ok) return gate.res;
 
   try {
-    // 1) Sistem KPI + 2) sektör breakdown + 3) top templates + 4) per-restaurant
-    //    — 4 paralel query. Prisma `$transaction([read1, read2, ...])` connection
-    //    pooler altında tek connection üstünden sıralı çalıştırır
-    //    (CLAUDE.md §14.1 + §40.1). 4 query hepsi read-only.
+    // 1) Sistem KPI + 2) sektör breakdown + 3) top templates + 4) per-restaurant.
+    //    All read-only and independent, so they run at once (parallelReads,
+    //    8 at a time) instead of back to back in an array $transaction.
     const [
       totalTemplates,
       publishedTemplates,
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
       bySectorResponsesRaw,
       topTemplatesRaw,
       perRestaurantRaw,
-    ] = await prisma.$transaction([
+    ] = await parallelReads([
       prisma.auditTemplate.count(),
       prisma.auditTemplate.count({ where: { isPublished: true } }),
       prisma.auditResponse.count({ where: { completedAt: { not: null } } }),
@@ -123,16 +123,28 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Sektör response/avg lookup — bySectorResponsesRaw template başına;
-    // template → sector mapping bulmak için ek bir query.
+    // template → sector mapping bulmak için ek bir query. The per-restaurant
+    // name lookup only needs perRestaurantRaw, so both run at once.
     const templateIds = bySectorResponsesRaw
       .map((r) => r.templateId)
       .filter((id): id is string => Boolean(id));
-    const templates = templateIds.length
-      ? await prisma.auditTemplate.findMany({
-          where: { id: { in: templateIds } },
-          select: { id: true, sector: true, title: true, isPublished: true },
-        })
-      : [];
+    const restaurantIds = perRestaurantRaw
+      .map((r) => r.restaurantId)
+      .filter((id): id is string => Boolean(id));
+    const [templates, restaurants] = await Promise.all([
+      templateIds.length
+        ? prisma.auditTemplate.findMany({
+            where: { id: { in: templateIds } },
+            select: { id: true, sector: true, title: true, isPublished: true },
+          })
+        : Promise.resolve([]),
+      restaurantIds.length
+        ? prisma.restaurant.findMany({
+            where: { id: { in: restaurantIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+    ]);
     const templateLookup = new Map(templates.map((t) => [t.id, t]));
 
     const sectorResponsesAcc: Record<AuditSector, { count: number; sumScore: number; n: number }> = {
@@ -198,16 +210,7 @@ export async function GET(req: NextRequest) {
       })
       .filter((r): r is TopTemplateRow => r !== null);
 
-    // Per-restaurant — restaurant metadata join
-    const restaurantIds = perRestaurantRaw
-      .map((r) => r.restaurantId)
-      .filter((id): id is string => Boolean(id));
-    const restaurants = restaurantIds.length
-      ? await prisma.restaurant.findMany({
-          where: { id: { in: restaurantIds } },
-          select: { id: true, name: true },
-        })
-      : [];
+    // Per-restaurant — restaurant metadata join (names read above)
     const restaurantLookup = new Map(restaurants.map((r) => [r.id, r.name]));
 
     const perRestaurant: RestaurantRow[] = perRestaurantRaw

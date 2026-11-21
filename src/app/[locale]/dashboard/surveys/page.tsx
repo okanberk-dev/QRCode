@@ -57,10 +57,13 @@ export default async function OwnerSurveysPage({ params, searchParams }: PagePro
   // Team members included — same scope the API layer resolves
   // (getScopedRestaurantIds). `userId: payload.userId` hid every
   // restaurant from invited team members.
-  const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
   // A viewer may read and copy links but not create, publish or delete. The
-  // API is the real gate; this only decides which buttons render.
-  const canWrite = await canWriteForUserPayload(tokenPayload);
+  // API is the real gate; this only decides which buttons render. The two
+  // lookups are independent and run at once.
+  const [scopedIds, canWrite] = await Promise.all([
+    getScopedRestaurantIdsForUserPayload(tokenPayload),
+    canWriteForUserPayload(tokenPayload),
+  ]);
 
   const restaurants = await prisma.restaurant.findMany({
     where: { id: { in: scopedIds }, isActive: true },
@@ -75,8 +78,7 @@ export default async function OwnerSurveysPage({ params, searchParams }: PagePro
     queryRestaurantId: sp.restaurantId ?? sp.restaurant,
     storedRestaurantId: null,
   });
-  // Sequential on purpose (Supabase pooler connection_limit=1, §40.1); the list
-  // helper batches its own reads in one transaction.
+  // Needs the resolved business; the list helper runs its two reads at once.
   const initialSurveys = initialActiveRestaurantId
     ? await listSurveys(buildSurveyListWhere(scopedIds, initialActiveRestaurantId))
     : [];

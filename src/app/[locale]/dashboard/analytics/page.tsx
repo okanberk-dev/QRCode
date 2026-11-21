@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { scopedRestaurantWhereForUserPayload } from '@/lib/panel-access';
+import { parallelReads } from '@/lib/db-parallel';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
@@ -208,26 +209,31 @@ async function renderAnalyticsPage({
   const payload = await verifyJwt(token);
   if (!payload || typeof payload.userId !== 'string') redirect(`/${locale}/auth/login`);
 
-  const userRow = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: { id: true },
-  });
-  if (!userRow) redirect(`/${locale}/auth/login`);
   // Team members included — same scope the API layer resolves (CLAUDE.md
   // §38.240). `user.restaurants` (owned only) left invited team members with
-  // an empty analytics page.
-  const scopedIds = await getScopedRestaurantIdsForUserPayload({
-    userId: payload.userId,
-    role: payload.role,
-    email: payload.email,
-  });
+  // an empty analytics page. The user row and the businesses load together;
+  // an owner's scope is `userId = id`, so owners skip the id-list query.
+  const userId = payload.userId;
+  const [userRow, scopedRestaurants] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    }),
+    (async () =>
+      prisma.restaurant.findMany({
+        where: await scopedRestaurantWhereForUserPayload({
+          userId,
+          role: payload.role,
+          email: payload.email,
+        }),
+        select: { id: true, name: true, isActive: true, aiAnalyticsEnabled: true, targetRating: true },
+        orderBy: { createdAt: 'asc' },
+      }))(),
+  ]);
+  if (!userRow) redirect(`/${locale}/auth/login`);
   const user = {
     id: userRow.id,
-    restaurants: await prisma.restaurant.findMany({
-      where: { id: { in: scopedIds } },
-      select: { id: true, name: true, isActive: true, aiAnalyticsEnabled: true, targetRating: true },
-      orderBy: { createdAt: 'asc' },
-    }),
+    restaurants: scopedRestaurants,
   };
 
   // §38.50 — Custom range önceliği: `?range=custom&customStart=...&customEnd=...`
@@ -282,8 +288,9 @@ async function renderAnalyticsPage({
 
   // Only what the page renders is queried. The QR scan, redirect, low-rating
   // and "today" counts fed KPIs that were removed earlier (§38.50) and were
-  // still run on every load.
-  const [feedbacksWindow, feedbacksPrevWindow] = await prisma.$transaction([
+  // still run on every load. The two windows and the branch list are
+  // independent, so they run at once (parallelReads).
+  const [feedbacksWindow, feedbacksPrevWindow, branchRows] = await parallelReads([
     // Window feedback'leri — multi-purpose select: day/hour buckets,
     // theme analysis (comment), response time (replies). Tek query
     // multiple-section'ı besler (CLAUDE.md §7 — replication önleme).
@@ -311,20 +318,19 @@ async function renderAnalyticsPage({
     prisma.feedback.count({
       where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
     }),
+    // Distinct branches for the filter dropdown — limited to the business(es)
+    // in scope (a branch of another business would only ever show an empty
+    // page), not affected by the current branch filter so the owner can pick a
+    // different one.
+    restaurantIds.length
+      ? prisma.feedback.findMany({
+          where: { restaurantId: { in: restaurantIds }, branch: { not: null } },
+          distinct: ['branch'],
+          select: { branch: true },
+          take: 50,
+        })
+      : () => Promise.resolve([] as Array<{ branch: string | null }>),
   ]);
-
-  // Distinct branches for the filter dropdown — limited to the business(es)
-  // in scope (a branch of another business would only ever show an empty
-  // page), not affected by the current branch filter so the owner can pick a
-  // different one.
-  const branchRows = restaurantIds.length
-    ? await prisma.feedback.findMany({
-        where: { restaurantId: { in: restaurantIds }, branch: { not: null } },
-        distinct: ['branch'],
-        select: { branch: true },
-        take: 50,
-      })
-    : [];
   const branches = branchRows
     .map((r) => r.branch as string)
     .filter(Boolean)

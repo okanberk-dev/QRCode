@@ -85,7 +85,7 @@ export async function GET(
     responsesAllTime,
     latestResponse,
     contactResponses,
-  ] = await prisma.$transaction([
+  ] = await Promise.all([
     prisma.surveyResponse.count({ where: responseWhere }),
     prisma.surveyResponse.count({
       where: { ...responseWhere, completedAt: { not: null } },

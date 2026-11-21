@@ -40,6 +40,9 @@ async function loadMenu(slug: string) {
       id: true, slug: true, name: true, category: true, address: true, phone: true, workingHours: true,
       primaryColor: true, isActive: true, menuEnabled: true, menuPublished: true,
       menuTheme: true, menuAccentColor: true, menuLogoUrl: true, menuDesign: true, menuCoverVersion: true,
+      // For generateMetadata's indexability rule: every live item, including
+      // those in hidden categories (not the same as the rendered items).
+      _count: { select: { menuItems: { where: { deletedAt: null, isAvailable: true } } } },
       menuCategories: {
         where: { isVisible: true, deletedAt: null },
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -60,7 +63,7 @@ async function loadMenu(slug: string) {
   return restaurant;
 }
 
-// Page + viewport share one query per request.
+// Page, viewport and metadata share one query per request.
 const getMenu = cache(loadMenu);
 
 function resolvedFor(data: NonNullable<Awaited<ReturnType<typeof loadMenu>>>) {
@@ -85,20 +88,10 @@ export async function generateViewport({ params }: { params: Promise<{ slug: str
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug },
-    select: {
-      name: true,
-      category: true,
-      address: true,
-      isActive: true,
-      menuEnabled: true,
-      menuPublished: true,
-      menuCoverVersion: true,
-      _count: { select: { menuItems: { where: { deletedAt: null, isAvailable: true } } } },
-    },
-  });
-  if (!restaurant || !restaurant.isActive || !restaurant.menuEnabled || !restaurant.menuPublished) {
+  // Same request-scoped query as the page (getMenu returns null for a menu
+  // that is not live: inactive business, menu off or unpublished).
+  const restaurant = await getMenu(slug);
+  if (!restaurant) {
     return { title: 'Menü bulunamadı', robots: { index: false } };
   }
   // Test/demo or near-empty menus stay reachable for their owner's QR codes

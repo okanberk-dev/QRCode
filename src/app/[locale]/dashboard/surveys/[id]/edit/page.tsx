@@ -45,26 +45,32 @@ export default async function EditSurveyPage({ params }: PageProps) {
   const role = typeof payload.role === 'string' ? payload.role : 'restaurant_owner';
   if (isAdminRole(role)) redirect(loginNext);
 
-  const survey = await prisma.survey.findUnique({
-    where: { id },
-    select: SURVEY_EDIT_SELECT,
-  });
+  const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
+  // The survey row, the token holder's scope and the write check are
+  // independent reads, so they run at once; the checks below run in the same
+  // order as before.
+  const [survey, scopedIds, canWrite] = await Promise.all([
+    prisma.survey.findUnique({
+      where: { id },
+      select: SURVEY_EDIT_SELECT,
+    }),
+    getScopedRestaurantIdsForUserPayload(tokenPayload),
+    canWriteForUserPayload(tokenPayload),
+  ]);
   if (!survey) notFound();
 
-  const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
   // IDOR: the survey's business must be one this user may see (team members
   // included — same scope as the survey APIs).
-  const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
   if (!scopedIds.includes(survey.restaurantId)) notFound();
 
   // A viewer (read-only team member) reads results but cannot edit.
-  if (!(await canWriteForUserPayload(tokenPayload))) {
+  if (!canWrite) {
     redirect(`/${locale}/dashboard/surveys/${id}`);
   }
 
-  // One batch (Supabase pooler connection_limit=1, §40.1): the business, and the
-  // choice options that responses actually picked.
-  const [restaurant, usedRows] = await prisma.$transaction([
+  // The business, and the choice options that responses actually picked —
+  // run at once (was an array $transaction).
+  const [restaurant, usedRows] = await Promise.all([
     prisma.restaurant.findUnique({
       where: { id: survey.restaurantId },
       select: {

@@ -114,6 +114,23 @@ export async function getScopedRestaurantIdsForUserPayload(
 }
 
 /**
+ * Restaurant `where` filter for the same scope as
+ * `getScopedRestaurantIdsForUserPayload`, without its extra round trip for the
+ * common case. A workspace owner's scope is exactly `restaurant.userId = id`
+ * (see `getScopedRestaurantIds`), so the page can filter on that directly
+ * instead of first loading the id list and then querying `id IN (...)`. Every
+ * other role (team member, manager, staff, unknown) still resolves its ids
+ * through `getScopedRestaurantIds`, unchanged.
+ */
+export async function scopedRestaurantWhereForUserPayload(
+  payload: UserTokenPayload,
+): Promise<{ userId: string } | { id: { in: string[] } }> {
+  const actor = actorFromUserPayload(payload);
+  if (actor.role === 'restaurant_owner') return { userId: actor.id };
+  return { id: { in: (await getScopedRestaurantIds(actor)) ?? [] } };
+}
+
+/**
  * Server-component variant of `getTeamMemberRole` for pages that only hold a
  * verified `user_token` payload. `null` for the workspace owner (no gating).
  */

@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt, isAdminRole, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
 import type { Locale } from '@/lib/translations';
 import { latestChecksForRestaurants } from '@/lib/platform-link-test';
@@ -34,15 +35,24 @@ export default async function DashboardRestaurantsPage({ params }: PageProps) {
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/restaurants`);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: {
-      id: true,
-      email: true,
-      plan: true,
-      role: true,
-    },
-  });
+  // The owner's scope (restaurant ids by userId, what getScopedRestaurantIds
+  // returns for a workspace owner) is read next to the user row; it is used
+  // only if the user row says the account is a workspace owner.
+  const [user, ownerRestaurantRows] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        plan: true,
+        role: true,
+      },
+    }),
+    prisma.restaurant.findMany({
+      where: { userId: payload.userId },
+      select: { id: true },
+    }),
+  ]);
 
   if (!user) redirect(`/${locale}/auth/login?next=/${locale}/dashboard/restaurants`);
 
@@ -63,21 +73,29 @@ export default async function DashboardRestaurantsPage({ params }: PageProps) {
     plan: user.plan,
     source: 'user',
   };
-  const [scopedIds, teamRole] = await Promise.all([
-    getScopedRestaurantIds(actor),
-    getTeamMemberRole(actor),
-  ]);
+  let scopedIds: string[] | null;
+  let teamRole: string | null;
+  if (role === 'restaurant_owner') {
+    // Workspace owner: scope = own businesses (read above); no team role.
+    scopedIds = ownerRestaurantRows.map((r) => r.id);
+    teamRole = null;
+  } else {
+    [scopedIds, teamRole] = await Promise.all([
+      getScopedRestaurantIds(actor),
+      getTeamMemberRole(actor),
+    ]);
+  }
   const viewerMode = teamRole === 'viewer';
   const ids = scopedIds ?? [];
   const now = Date.now();
   const since30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
-  // One connection, one snapshot (CLAUDE.md §40.1). Feedback stats, the
-  // review-platform link summary and the business rows feed the franchise
-  // table (§49): reviews / rating (30 days), waiting low ratings, platform
-  // health and the newest review per business.
+  // Feedback stats, the review-platform link summary and the business rows
+  // feed the franchise table (§49): reviews / rating (30 days), waiting low
+  // ratings, platform health and the newest review per business. Independent
+  // reads, run at once (parallelReads) instead of back to back.
   const [restaurants, stats30, lowUnreadRows, lastRows, checkRows] =
     ids.length > 0
-      ? await prisma.$transaction([
+      ? await parallelReads([
           prisma.restaurant.findMany({
             // No isActive filter: a paused business used to vanish from this
             // list, leaving the owner no visible way to reactivate it.

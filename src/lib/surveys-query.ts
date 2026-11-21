@@ -61,11 +61,11 @@ export function buildSurveyListWhere(
 
 /**
  * Surveys matching `where`, newest first, each with the time of its latest
- * response. One transaction (one connection under `connection_limit=1`,
- * CLAUDE.md §40.1): the list and the per-survey `_max(createdAt)` grouping.
+ * response. The list and the per-survey `_max(createdAt)` grouping are
+ * independent and run at once (was an array $transaction, one after another).
  */
 export async function listSurveys(where: Prisma.SurveyWhereInput): Promise<SurveyListRow[]> {
-  const [rows, latest] = await prisma.$transaction([
+  const [rows, latest] = await Promise.all([
     prisma.survey.findMany({
       where,
       select: SURVEY_LIST_SELECT,

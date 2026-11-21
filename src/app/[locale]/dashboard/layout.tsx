@@ -8,7 +8,9 @@ import {
   verifyUserTokenForLayout,
   type PanelActor,
 } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { startRead } from '@/lib/db-parallel';
 import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
@@ -29,6 +31,31 @@ export const dynamic = 'force-dynamic';
 // panels within a minute, while a cold query (take 5) stays cheap.
 const ANNOUNCEMENTS_CACHE_TTL_MS = 60 * 1000;
 const announcementsCache = new Map<Locale, { data: DashboardAnnouncement[]; expiresAt: number }>();
+
+const SHELL_USER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  plan: true,
+  trialEndsAt: true,
+  createdAt: true,
+  isActive: true,
+  role: true,
+} satisfies Prisma.UserSelect;
+
+const SHELL_RESTAURANT_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  category: true,
+  primaryColor: true,
+  isActive: true,
+  menuEnabled: true,
+  externalPlatformsEnabled: true,
+  _count: { select: { feedbacks: true } },
+} satisfies Prisma.RestaurantSelect;
+
+type ShellRestaurantRow = Prisma.RestaurantGetPayload<{ select: typeof SHELL_RESTAURANT_SELECT }>;
 
 async function fetchActiveAnnouncements(locale: Locale): Promise<DashboardAnnouncement[]> {
   // Stage 25 §38.101 Phase A #3 — cache hit
@@ -135,6 +162,34 @@ export default async function DashboardLayout({
     redirect(`/${locale}/auth/login`);
   }
 
+  // Panel speed (HANDOFF 2.3): the session check, the user row, the owner's
+  // businesses, announcements and site settings used to run one after another
+  // (4-6 database round trips on every panel page). They only depend on the
+  // signed userId, so they now start together. `peekPayload` is the verified
+  // JWT of this same `user_token`; nothing below is used unless the full
+  // session check passes, so auth is unchanged — a revoked session still
+  // redirects before any of it renders.
+  const signedUserId =
+    peekPayload && typeof peekPayload.userId === 'string' ? peekPayload.userId : null;
+  const userQuery = signedUserId
+    ? startRead(prisma.user.findUnique({ where: { id: signedUserId }, select: SHELL_USER_SELECT }))
+    : null;
+  // A workspace owner's scope is `restaurant.userId = id` (getScopedRestaurantIds),
+  // so this is the same list the id-scoped query below returns for owners.
+  // Used only when the user row says `restaurant_owner`.
+  const ownerRestaurantsQuery = signedUserId
+    ? startRead(
+        prisma.restaurant.findMany({
+          where: { userId: signedUserId },
+          select: SHELL_RESTAURANT_SELECT,
+          orderBy: { createdAt: 'asc' },
+          take: 50,
+        }),
+      )
+    : null;
+  const announcementsQuery = fetchActiveAnnouncements(locale);
+  const siteSettingsQuery = getSiteSettings();
+
   // CLAUDE.md §38 audit-api-401 — full session check (matches API
   // `getUserFromRequest`). Bare `verifyJwt` previously admitted tokens
   // whose UserSession was revoked (logout-elsewhere, password reset,
@@ -145,19 +200,11 @@ export default async function DashboardLayout({
     redirect(`/${locale}/auth/login`);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      plan: true,
-      trialEndsAt: true,
-      createdAt: true,
-      isActive: true,
-      role: true,
-    },
-  });
+  // Same token, so the ids match; the fallback only guards against drift.
+  const sameUser = userQuery !== null && payload.userId === signedUserId;
+  const user = sameUser
+    ? await userQuery
+    : await prisma.user.findUnique({ where: { id: payload.userId }, select: SHELL_USER_SELECT });
 
   if (!user || !user.isActive) {
     redirect(`/${locale}/auth/login`);
@@ -187,38 +234,35 @@ export default async function DashboardLayout({
     plan: user.plan,
     source: 'user',
   };
-  // §22 viewer-mode UI gating — team_member ise TeamMember.role'u çek;
-  // owner için null döner (gating uygulanmaz). Helper Owner/admin/manager için
-  // erken return ile DB hit yapmaz. `getScopedRestaurantIds` ile paralel
-  // (ikisi de team_member için kısa findFirst/findMany; owner için biri
-  // findMany biri no-op — Promise.all güvenli).
-  const [scopedIds, teamRole] = await Promise.all([
-    getScopedRestaurantIds(actor),
-    getTeamMemberRole(actor),
-  ]);
-  const viewerMode = teamRole === 'viewer';
-  const restaurants =
-    scopedIds && scopedIds.length > 0
-      ? await prisma.restaurant.findMany({
-          where: { id: { in: scopedIds } },
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            category: true,
-            primaryColor: true,
-            isActive: true,
-            menuEnabled: true,
-            externalPlatformsEnabled: true,
-            _count: { select: { feedbacks: true } },
-          },
-          orderBy: { createdAt: 'asc' },
-          take: 50,
-        })
-      : [];
+  let restaurants: ShellRestaurantRow[];
+  let viewerMode = false;
+  if (actor.role === 'restaurant_owner' && sameUser && ownerRestaurantsQuery) {
+    // Owner: scope = own businesses (loaded above); getTeamMemberRole is null.
+    restaurants = await ownerRestaurantsQuery;
+  } else {
+    // §22 viewer-mode UI gating — team_member ise TeamMember.role'u çek;
+    // owner için null döner (gating uygulanmaz). Helper Owner/admin/manager için
+    // erken return ile DB hit yapmaz. `getScopedRestaurantIds` ile paralel
+    // (ikisi de team_member için kısa findFirst/findMany; owner için biri
+    // findMany biri no-op — Promise.all güvenli).
+    const [scopedIds, teamRole] = await Promise.all([
+      getScopedRestaurantIds(actor),
+      getTeamMemberRole(actor),
+    ]);
+    viewerMode = teamRole === 'viewer';
+    restaurants =
+      scopedIds && scopedIds.length > 0
+        ? await prisma.restaurant.findMany({
+            where: { id: { in: scopedIds } },
+            select: SHELL_RESTAURANT_SELECT,
+            orderBy: { createdAt: 'asc' },
+            take: 50,
+          })
+        : [];
+  }
 
-  const announcements = await fetchActiveAnnouncements(locale);
-  const { logoUrl } = await getSiteSettings();
+  const announcements = await announcementsQuery;
+  const { logoUrl } = await siteSettingsQuery;
   const totalFeedbacks = restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
 
   return (

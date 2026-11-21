@@ -53,7 +53,8 @@ export default async function AdminPlansPage() {
   // alındı — managedPlans helper kendi pool client'ını alır, ortak
   // transaction'a girmez ama paralel çalışır.
   const [ownersAndSubs, managedPlans] = await Promise.all([
-    prisma.$transaction([
+    // The two reads also run at once now (was a nested array $transaction).
+    Promise.all([
       prisma.user.findMany({
         where: { role: 'restaurant_owner' },
         select: { id: true, name: true, email: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
