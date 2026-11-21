@@ -48,6 +48,7 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
   let NextRequestCtor: typeof import('next/server').NextRequest;
   let themePATCH: Handler;
   let restaurantPUT: Handler;
+  let imageGET: Handler;
   let contentVersion: (value: string) => string;
 
   const ids = { owner: '', viewer: '', restaurant: '' };
@@ -111,6 +112,7 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
       PATCH: Handler;
     });
     ({ PUT: restaurantPUT } = (await import('../src/app/api/restaurants/[id]/route')) as unknown as { PUT: Handler });
+    ({ GET: imageGET } = (await import('../src/app/api/menu/[slug]/img/[itemId]/route')) as unknown as { GET: Handler });
     ({ contentVersion } = await import('../src/lib/menu-image-url'));
 
     const owner = await makeUser('owner', 'restaurant_owner');
@@ -230,5 +232,79 @@ describe('PATCH /api/restaurants/[id]/theme (route + database)', { skip }, () =>
     });
     assert.equal(row?.menuCoverUrl, null);
     assert.equal(row?.menuCoverVersion, null);
+  });
+  it('without a session the route answers 401', async () => {
+    const res = await patch({ menuTheme: 'modern' }, null);
+    assert.equal(res.status, 401);
+  });
+
+  it('rejects non-base64 covers, SVG, rgb() accents, empty taglines and free-text knob values', async () => {
+    const before = await prisma.restaurant.findUnique({
+      where: { id: ids.restaurant },
+      select: { menuAccentColor: true, menuCoverVersion: true, menuDesign: true },
+    });
+    for (const body of [
+      { menuCoverUrl: 'data:image/webp;base64,' },
+      { menuCoverUrl: 'data:image/png;base64,AAAA"><svg onload=alert(1)>' },
+      { menuCoverUrl: 'data:image/svg+xml;base64,PHN2Zz4=' },
+      { menuCoverUrl: 'https://example.com/cover.jpg' },
+      { menuAccentColor: 'rgb(0,0,0)' },
+      { menuAccentColor: '#12345;}' },
+      { menuDesign: { v: 1, preset: 'modern', tagline: '\u202E\u200B ' } },
+      { menuDesign: { v: 1, preset: 'modern', surface: 'url(x)' } },
+      { menuDesign: { v: 1, preset: 'modern', css: 'color:red' } },
+    ]) {
+      const res = await patch(body);
+      assert.equal(res.status, 400, JSON.stringify(body).slice(0, 60));
+    }
+    const after = await prisma.restaurant.findUnique({
+      where: { id: ids.restaurant },
+      select: { menuAccentColor: true, menuCoverVersion: true, menuDesign: true },
+    });
+    assert.deepEqual(after, before);
+  });
+
+  // The stored family is `modern` here (an earlier test switched it).
+  it('a tagline with markup is stored as plain text, sanitised', async () => {
+    const res = await patch({ menuDesign: { v: 1, preset: 'modern', tagline: '  <b>x</b>\n& "q"\u202E  ' } });
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.menuDesign, { v: 1, preset: 'modern', tagline: '<b>x</b> & "q"' });
+  });
+
+  it('the image route serves the cover only while the menu is published', async () => {
+    const slug = `theme-${suffix}`;
+    const set = await patch({ menuCoverUrl: COVER });
+    assert.equal(set.status, 200);
+    const get = () =>
+      imageGET(new NextRequestCtor(`http://localhost/api/menu/${slug}/img/cover?v=1`), {
+        params: Promise.resolve({ slug, itemId: 'cover' }),
+      });
+
+    let res = await get(); // menuPublished is false on a new restaurant
+    assert.equal(res.status, 404);
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+
+    await prisma.restaurant.update({ where: { id: ids.restaurant }, data: { menuPublished: true }, select: { id: true } });
+    res = await get();
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('content-type'), 'image/png');
+    assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+    assert.match(res.headers.get('cache-control') ?? '', /immutable/);
+
+    await prisma.restaurant.update({ where: { id: ids.restaurant }, data: { menuPublished: false }, select: { id: true } });
+    res = await get();
+    assert.equal(res.status, 404);
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+  });
+
+  it('with the menu module off the owner gets 403 MENU_MODULE_DISABLED', async () => {
+    await prisma.restaurant.update({ where: { id: ids.restaurant }, data: { menuEnabled: false }, select: { id: true } });
+    try {
+      const res = await patch({ menuTheme: 'modern' });
+      assert.equal(res.status, 403);
+      assert.equal(res.body.code, 'MENU_MODULE_DISABLED');
+    } finally {
+      await prisma.restaurant.update({ where: { id: ids.restaurant }, data: { menuEnabled: true }, select: { id: true } });
+    }
   });
 });
