@@ -12,8 +12,10 @@ import { useMenuCopy } from '../kit/useMenuCopy';
  * Rendered on the menu as a plain text node only.
  */
 export function TaglineField({
-  value, disabled, onChange,
+  labelId, value, disabled, onChange,
 }: {
+  /** Id of the visible "Slogan" heading: the input's accessible name. */
+  labelId: string;
   /** Draft tagline (sanitised), `null` = none. */
   value: string | null;
   disabled?: boolean;
@@ -37,6 +39,7 @@ export function TaglineField({
           maxLength={MENU_TAGLINE_MAX}
           disabled={disabled}
           placeholder={copy.design.taglinePlaceholder}
+          aria-labelledby={labelId}
           aria-describedby={`${id}-hint`}
           onChange={(e) => {
             setRaw(e.target.value);
