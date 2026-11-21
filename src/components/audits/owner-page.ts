@@ -47,8 +47,11 @@ export async function requireOwnerAuditContext(
   const tokenPayload = { userId: payload.userId, role: payload.role, email: payload.email };
   // Ekip üyeleri dahil — API katmanının çözdüğü kapsamın aynısı. `userId:
   // payload.userId` filtresi davetli üyelerden tüm işletmeleri gizlerdi.
-  const scopedIds = await getScopedRestaurantIdsForUserPayload(tokenPayload);
-  const canWrite = await canWriteForUserPayload(tokenPayload);
+  // The two lookups are independent (team members only hit the DB for both).
+  const [scopedIds, canWrite] = await Promise.all([
+    getScopedRestaurantIdsForUserPayload(tokenPayload),
+    canWriteForUserPayload(tokenPayload),
+  ]);
 
   return { locale, userId: payload.userId, scopedIds, canWrite };
 }

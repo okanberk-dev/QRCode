@@ -3,8 +3,9 @@
 //
 //   • sayfa (server hydration, CLAUDE.md §40.10) ile rota aynı fonksiyonu
 //     çağırır → ilk boyama ile sonraki client fetch AYNI şekli taşır
-//   • birden çok okuma gereken her fonksiyon tek `prisma.$transaction([...])`
-//     (Supabase pooler connection_limit=1, CLAUDE.md §40.1)
+//   • birden çok bağımsız okuma gereken fonksiyonlar onları aynı anda çalıştırır
+//     (`parallelReads`, en çok 8; eskiden tek `prisma.$transaction([...])`
+//     sorguları sırayla çalıştırıyordu — connection_limit=1 dönemi)
 //   • her sorguda açık `select` (CLAUDE.md §14.1 — şema/DB drift'ine bağışıklık)
 //   • dönen tarihler ISO string'tir → doğrudan client component prop'u veya
 //     `NextResponse.json` olarak geçilebilir (Date serileştirme tuzağı yok)
@@ -13,6 +14,7 @@
 // kind / misses / results / score / submit-guards modüllerindedir).
 
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { deriveAuditKind, deriveAuditStatus, type AuditKind, type AuditStatus } from './kind';
 import { rankMisses, summarizeMisses, type MissSummaryItem } from './misses';
 import { isScorableByDefinition } from './score';
@@ -211,7 +213,7 @@ export async function listCatalogForOwner(
   if (opts.sector) where.sector = opts.sector;
   if (opts.categoryId) where.categoryId = opts.categoryId;
 
-  const [rows, categories] = await prisma.$transaction([
+  const [rows, categories] = await parallelReads([
     prisma.auditTemplate.findMany({
       where,
       // Sektör anahtarına göre ABC sıralaması UI'da yeniden düzenlenir; burada
@@ -311,7 +313,7 @@ export interface ListAssignmentsArgs {
 
 /**
  * `auditAssignment.findMany` argümanları — hem tek başına (`listAuditAssignments`)
- * hem `getAuditDetail`'in `$transaction`'ı içinde kullanılır. `token` yalnız
+ * hem `getAuditDetail`'in toplu okumasında kullanılır. `token` yalnız
  * `includeTokens` iken seçilir: salt-okunur üyeler token'ı ASLA almaz.
  */
 export function buildAssignmentsFindManyArgs(args: ListAssignmentsArgs) {
@@ -474,7 +476,7 @@ export async function getAuditDetail(args: {
 }): Promise<AuditDetail | null> {
   const scope = { in: [...args.restaurantIds] };
 
-  const [tpl, recent, answered, assignmentRows] = await prisma.$transaction([
+  const [tpl, recent, answered, assignmentRows] = await parallelReads([
     prisma.auditTemplate.findFirst({
       where: { id: args.templateId, restaurantId: scope },
       select: {
@@ -651,7 +653,7 @@ export async function getAuditForEdit(args: {
   templateId: string;
   restaurantIds: readonly string[];
 }): Promise<AuditEditData | null> {
-  const [tpl, answered, categories] = await prisma.$transaction([
+  const [tpl, answered, categories] = await parallelReads([
     prisma.auditTemplate.findFirst({
       where: { id: args.templateId, restaurantId: { in: [...args.restaurantIds] } },
       select: {
@@ -824,7 +826,7 @@ export async function queryAuditResponses(
   const skip = (f.page - 1) * f.pageSize;
 
   const [rows, total, completed, avg, passedCount, passedEvaluated, scoreGroups] =
-    await prisma.$transaction([
+    await parallelReads([
       prisma.auditResponse.findMany({
         where,
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -920,7 +922,7 @@ export async function queryAuditMissSummary(args: {
     completedAt: rangeStart ? { not: null, gte: rangeStart } : { not: null },
   };
 
-  const [questions, total] = await prisma.$transaction([
+  const [questions, total] = await parallelReads([
     prisma.auditQuestion.findMany({
       where: { templateId: args.templateId },
       orderBy: { sortOrder: 'asc' },
