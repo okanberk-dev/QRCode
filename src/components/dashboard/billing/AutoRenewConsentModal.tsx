@@ -57,7 +57,18 @@ export default function AutoRenewConsentModal({
 
   const failVerify = (err: unknown) => {
     const code = err instanceof BillingApiError ? err.code : '';
-    setVerifyError(t(code === 'rate_limited' ? 'stepup.rateLimited' : 'stepup.error'));
+    setVerifyError(
+      t(
+        code === 'rate_limited'
+          ? 'stepup.rateLimited'
+          : code === 'email_unverified'
+            ? 'stepup.emailUnverified'
+            : code === 'email_recently_changed'
+              ? 'stepup.emailChanged'
+              : 'stepup.error',
+      ),
+    );
+    inputRef.current?.focus();
   };
 
   const submitVerify = async (proof: Parameters<typeof stepUp.mutateAsync>[0]) => {
@@ -73,9 +84,15 @@ export default function AutoRenewConsentModal({
 
   const onVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (method === 'password' && secret) await submitVerify({ method: 'password', password: secret });
-    else if (method === 'totp' && /^\d{6}$/.test(secret)) await submitVerify({ method: 'totp', code: secret });
-    else setVerifyError(t('stepup.error'));
+    if (busyVerify) return;
+    if (method === 'password') {
+      if (secret) await submitVerify({ method: 'password', password: secret });
+      else setVerifyError(t('stepup.passwordEmpty'));
+    } else if (method === 'totp') {
+      if (/^\d{6}$/.test(secret)) await submitVerify({ method: 'totp', code: secret });
+      else setVerifyError(t('stepup.totpFormat'));
+    }
+    if (method !== 'google') inputRef.current?.focus();
   };
 
   const onGoogle = async () => {
@@ -109,7 +126,16 @@ export default function AutoRenewConsentModal({
         }
         if (err.code === 'step_up_required') {
           setChecked(false);
+          setVerifyError(t('stepup.expired'));
           setStep('verify');
+          return;
+        }
+        if (err.code === 'email_unverified' || err.code === 'email_recently_changed') {
+          setConsentError({ kind: 'danger', text: t(err.code === 'email_unverified' ? 'stepup.emailUnverified' : 'stepup.emailChanged') });
+          return;
+        }
+        if (err.code === 'charge_in_progress') {
+          setConsentError({ kind: 'warn', text: t('ar.chargeInProgress') });
           return;
         }
         if (err.code === 'not_eligible') {

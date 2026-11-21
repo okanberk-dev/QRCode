@@ -58,6 +58,50 @@ export type AutoRenewUnavailableReason =
   | 'flag_off'
   | 'cancel_at_period_end';
 
+/** Days after an e-mail change during which a new payment instruction cannot be given (account-takeover guard). */
+export const EMAIL_CHANGE_COOLDOWN_DAYS = 7;
+
+/**
+ * Why this account may not give a new auto-renew instruction right now, or null. An unverified e-mail cannot
+ * receive the confirmation; a fresh e-mail change is the usual first step of an account takeover.
+ */
+export async function instructionBlockReason(
+  db: Pick<PrismaClient, 'user' | 'adminAuditLog'>,
+  userId: string,
+  now: Date,
+): Promise<'email_unverified' | 'email_recently_changed' | null> {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { emailVerified: true } });
+  if (!user?.emailVerified) return 'email_unverified';
+  const since = new Date(now.getTime() - EMAIL_CHANGE_COOLDOWN_DAYS * 86_400_000);
+  const changed = await db.adminAuditLog.count({
+    where: {
+      action: 'owner.account.security_update',
+      targetId: userId,
+      createdAt: { gte: since },
+      payload: { path: ['emailChanged'], equals: true },
+    },
+  });
+  return changed > 0 ? 'email_recently_changed' : null;
+}
+
+/**
+ * Whether an off-only mail link still speaks for the live instruction: its own consent, or a card-change
+ * amendment made after it (D6). After an off and a new opt-in, an older link no longer works; that opt-in
+ * mailed its own link.
+ */
+export async function offLinkSuperseded(
+  db: Pick<PrismaClient, 'billingConsent' | '$transaction'>,
+  token: { consentId: string; userId: string },
+  liveConsentId: string,
+): Promise<boolean> {
+  if (liveConsentId === token.consentId) return false;
+  const [linked, latestOn] = await db.$transaction([
+    db.billingConsent.findFirst({ where: { id: token.consentId, userId: token.userId }, select: { createdAt: true } }),
+    db.billingConsent.findFirst({ where: { userId: token.userId, kind: 'auto_renew_on' }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+  ]);
+  return !linked || !latestOn || linked.createdAt.getTime() < latestOn.createdAt.getTime();
+}
+
 /** Maps a non-auto decision of the hypothetical evaluation to the reason the panel shows. */
 export function unavailableReasonFor(decision: RenewalDecision): AutoRenewUnavailableReason | null {
   if (!decision.eligible) {
@@ -205,9 +249,18 @@ export interface AutoRenewDeps {
 export type EnableResult =
   | { status: 200; body: { ok: true; state: 'on' | 'paused'; firstChargeDate: string; confirmationSent: boolean } }
   | { status: 403; body: { error: 'step_up_required'; method: StepUpMethod } }
+  | { status: 403; body: { error: 'email_unverified' | 'email_recently_changed' } }
   | { status: 409; body: { error: 'terms_changed'; offer: AutoRenewOffer } }
   | { status: 409; body: { error: 'not_eligible'; reason: AutoRenewUnavailableReason } }
+  | { status: 409; body: { error: 'charge_in_progress' } }
   | { status: 503; body: { error: 'unavailable' } };
+
+const ISTANBUL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+/** Both lists name the same Istanbul calendar days, in order. */
+export function sameIstanbulDays(a: Date[], b: Date[]): boolean {
+  return a.length === b.length && a.every((d, i) => ISTANBUL_DAY.format(d) === ISTANBUL_DAY.format(b[i]));
+}
 
 const SAME_ISTANBUL_DAY = (a: string, b: Date): boolean => {
   const d = new Date(a);
@@ -234,6 +287,9 @@ export async function enableAutoRenew(
     const user = await db.user.findUnique({ where: { id: userId }, select: { twoFactorEnabled: true, totpSecret: true, passwordHash: true } });
     return { status: 403, body: { error: 'step_up_required', method: user ? stepUpMethodFor(user) : 'password' } };
   }
+
+  const blocked = await instructionBlockReason(db, userId, deps.now());
+  if (blocked) return { status: 403, body: { error: blocked } };
 
   // 2. The card, verified at PayNKolay first (a refresh), else the mirror.
   const sub0 = await db.billingSubscription.findUnique({ where: { userId }, select: { renewsAt: true } });
@@ -276,13 +332,27 @@ export async function enableAutoRenew(
       await tx.$queryRaw`SELECT "user_id" FROM "billing_subscriptions" WHERE "user_id" = ${userId} FOR UPDATE`;
       const sub = await tx.billingSubscription.findUnique({
         where: { userId },
-        select: { autoRenew: true, renewsAt: true, subscriptionPlanId: true, billingCycle: true, status: true, source: true },
+        select: { autoRenew: true, renewsAt: true, subscriptionPlanId: true, billingCycle: true, status: true, source: true, cancelAtPeriodEnd: true },
       });
-      if (!sub || sub.source !== 'paynkolay' || sub.subscriptionPlanId !== plan.id || sub.billingCycle !== 'monthly' || !sub.renewsAt) {
+      if (
+        !sub ||
+        sub.source !== 'paynkolay' ||
+        sub.subscriptionPlanId !== plan.id ||
+        sub.billingCycle !== 'monthly' ||
+        !sub.renewsAt ||
+        (sub.status !== 'active' && sub.status !== 'past_due') ||
+        sub.cancelAtPeriodEnd
+      ) {
         throw new EnableAbort('subscription_inactive');
       }
       if (sub.renewsAt.getTime() !== ctx.sub.renewsAt!.getTime()) throw new EnableAbort('terms_changed');
       if (sub.autoRenew) return { already: true as const };
+      // A charge of this period is still in flight (maybe marked refund-on-success by an earlier opt-out):
+      // a new instruction would promise a first charge date that this attempt contradicts. Wait for it.
+      const inFlight = await tx.billingRenewal.count({
+        where: { userId, periodEnd: sub.renewsAt, state: { in: ['charging', 'awaiting_confirmation', 'manual_review'] } },
+      });
+      if (inFlight > 0) throw new EnableAbort('charge_in_progress');
       const card = await tx.billingCard.findFirst({ where: { id: cardId, userId, deletedAt: null }, select: { id: true } });
       if (!card) throw new EnableAbort('no_card');
 
@@ -331,6 +401,9 @@ export async function enableAutoRenew(
             where: { id: open.id, state: open.state },
             data: {
               ...NOTICE_CLEARED,
+              // An earlier opt-out's cancel request must not block the new instruction's charge.
+              cancelRequestedAt: null,
+              cancelReason: null,
               mode: paused ? 'reminder' : 'auto',
               modeReason: paused ? 'dry_run' : null,
               consentId: consent.id,
@@ -347,6 +420,7 @@ export async function enableAutoRenew(
     });
   } catch (err) {
     if (!(err instanceof EnableAbort)) throw err;
+    if (err.reason === 'charge_in_progress') return { status: 409, body: { error: 'charge_in_progress' } };
     if (err.reason === 'terms_changed') {
       const fresh = await buildOwnerOffer(deps, userId, cards, offer.terms.locale, deps.now());
       if (fresh.offer) return { status: 409, body: { error: 'terms_changed', offer: fresh.offer } };
@@ -379,7 +453,10 @@ export async function enableAutoRenew(
     if (applied.renewal) {
       const schedule = attemptSchedule(applied.renewal.periodEnd, { firstChargeDate, noticeDeliveredAt: at });
       const next = schedule[applied.renewal.attempts];
-      if (next) {
+      // The mail counts as the notice only if it named the days the schedule now holds (the window edge can
+      // move a slot between building the mail and its delivery); otherwise phase 3 sends a fresh notice.
+      const mailed = [firstChargeDate, ...retryDates];
+      if (next && sameIstanbulDays(schedule.slice(applied.renewal.attempts), mailed)) {
         await db.billingRenewal.updateMany({
           where: { id: applied.renewal.id, mode: 'auto', consentId: applied.consentId, noticeDeliveredAt: null, state: { in: ['scheduled', 'retry_wait'] } },
           data: {
@@ -401,7 +478,7 @@ export async function enableAutoRenew(
 }
 
 class EnableAbort extends Error {
-  constructor(readonly reason: 'subscription_inactive' | 'terms_changed' | 'no_card') {
+  constructor(readonly reason: 'subscription_inactive' | 'terms_changed' | 'no_card' | 'charge_in_progress') {
     super(reason);
     this.name = 'EnableAbort';
   }

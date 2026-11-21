@@ -2101,7 +2101,7 @@ The top row grid stays `lg:grid-cols-[1.4fr_1fr]`.
 │ Aktif abonelik                                 │ │ │ ▭                               │            │
 │ ₺999 / ay                                      │ │ │ ••••  ••••  ••••  4242   08/28 │            │
 │ ● Otomatik yenileme açık · 18 Ara · ₺999,00    │ │ └────────────────────────────────┘            │
-│ [ Planı değiştir ]                              │ │ 🔒 PayNKolay'de saklanır · Kart numaranız …   │
+│ [ Planı değiştir ]                              │ │ 🔒 PayNKolay'da saklanır · Kart numaranız …   │
 └───────────────────────────────────────────────┘ │ [ Kartı değiştir ]  [ … ]                     │
                                                   │ ───────────────────────────────────────────── │
                                                   │ Otomatik yenileme                    (●───)   │
@@ -2219,8 +2219,8 @@ Layout, using marketing fonts (outside the panel):
 │ 3 işletme · Pulse AI · Menü · Anket               │ │ ₺999,00            (lime, 32px)     │
 │ Dönem: 19 Kas – 19 Ara 2026                       │ │ KDV dahil · Türk lirası             │
 │ ─────────────────────────────────────────────── │ │ [ ₺999,00 öde ]  (bz-btn-lime w-full)│
-│ ☐ Kartımı sonraki ödemeler için PayNKolay'de      │ │ 🔒 3D Secure · Kart bilgileri        │
-│   kaydet                                          │ │    PayNKolay'de girilir              │
+│ ☐ Kartımı sonraki ödemeler için PayNKolay'da      │ │ 🔒 3D Secure · Kart bilgileri        │
+│   kaydet                                          │ │    PayNKolay'da girilir              │
 │   Kart numaranız Buaze'ye ulaşmaz…                │ │ Mesafeli Hizmet Sözleşmesi ·         │
 │ ☐ Aboneliğim her ay otomatik yenilensin           │ │ İade ve İptal Politikası             │
 │   (disabled until the first box is ticked)        │ └──────────────────────────────────────┘
@@ -2260,12 +2260,12 @@ hash (§6.1). Per-request values (auto-submit delay, back URL) are read by the s
 ```
                     ● buaze                       (inline SVG mark: graphite bubble + lime dot)
                  GÜVENLİ ÖDEME                    (11px mono-ish, tracking .18em, #737373)
-           PayNKolay'e geçiyorsunuz               (22px/600 #0A0A0A)
+           PayNKolay'a geçiyorsunuz               (22px/600 #0A0A0A)
    Kart bilgilerinizi PayNKolay'in sayfasında girersiniz;
              Buaze kart numaranızı görmez.         (14px #525252)
   ┌──────────────────────────────────────────────┐
   │ Büyüme · Aylık                    ₺999,00     │  (white card, 1px #EDEDED, radius 14)
-  │ ✓ Kartınız PayNKolay'de saklanacak            │  (only when saveCard)
+  │ ✓ Kartınız PayNKolay'da saklanacak            │  (only when saveCard)
   │ ✓ Otomatik yenileme: 19 Ara 2026'dan itibaren │  (only when autoRenew)
   │   her ay ₺999,00 · istediğiniz an kapatın     │
   └──────────────────────────────────────────────┘
@@ -2326,7 +2326,7 @@ Rendered under the billing root layout (D12). Centred: `mx-auto max-w-[480px] px
 | Key | TR | EN |
 |---|---|---|
 | pm.eyebrow | ÖDEME YÖNTEMİ | PAYMENT METHOD |
-| pm.meta | PayNKolay'de saklanır · Kart numaranız Buaze'ye ulaşmaz | Stored by PayNKolay · Your card number never reaches Buaze |
+| pm.meta | PayNKolay'da saklanır · Kart numaranız Buaze'ye ulaşmaz | Stored by PayNKolay · Your card number never reaches Buaze |
 | pm.expires | Son kullanma {mm}/{yy} | Expires {mm}/{yy} |
 | pm.expired | Süresi doldu | Expired |
 | pm.expiresSoon | Kartınızın süresi bir sonraki yenilemeden önce doluyor. | Your card expires before the next renewal. |
@@ -2334,8 +2334,8 @@ Rendered under the billing root layout (D12). Centred: `mx-auto max-w-[480px] px
 | pm.refresh | Kartı yenile | Refresh card |
 | pm.remove | Kartı kaldır | Remove card |
 | pm.removeTitle | Kayıtlı kart kaldırılsın mı? | Remove saved card? |
-| pm.removeBodyAuto | Kart PayNKolay'den silinir ve otomatik yenileme kapanır. Planınız {date} tarihine kadar açık kalır. | The card is deleted at PayNKolay and auto-renew turns off. Your plan stays active until {date}. |
-| pm.removeBody | Kart PayNKolay'den silinir. Sonraki ödemede kart bilgilerinizi yeniden girersiniz. | The card is deleted at PayNKolay. You'll enter your card again next time you pay. |
+| pm.removeBodyAuto | Kart PayNKolay'dan silinir ve otomatik yenileme kapanır. Planınız {date} tarihine kadar açık kalır. | The card is deleted at PayNKolay and auto-renew turns off. Your plan stays active until {date}. |
+| pm.removeBody | Kart PayNKolay'dan silinir. Sonraki ödemede kart bilgilerinizi yeniden girersiniz. | The card is deleted at PayNKolay. You'll enter your card again next time you pay. |
 | pm.removed | Kart kaldırıldı. | Card removed. |
 | pm.empty | Kayıtlı kart yok | No saved card |
 | pm.emptyBody | Kartınız bir ödeme sırasında, PayNKolay'in güvenli sayfasında kaydedilir. | Your card is saved during a payment, on PayNKolay's secure page. |
@@ -2381,14 +2381,14 @@ Rendered under the billing root layout (D12). Centred: `mx-auto max-w-[480px] px
 | review.title | Ödeme özeti | Order summary |
 | review.renewTitle | Aboneliği yenile | Renew subscription |
 | review.replaceTitle | Kartı değiştir | Replace card |
-| review.saveCard | Kartımı sonraki ödemeler için PayNKolay'de kaydet | Save my card at PayNKolay for future payments |
+| review.saveCard | Kartımı sonraki ödemeler için PayNKolay'da kaydet | Save my card at PayNKolay for future payments |
 | review.saveCardHint | Kart numaranız Buaze'ye ulaşmaz. Kartı istediğiniz zaman Hesabım'dan kaldırabilirsiniz. | Your card number never reaches Buaze. Remove it anytime from Account. |
 | review.autoRenew | Aboneliğim her ay otomatik yenilensin; her ay {amount} ödeme yükümlülüğünü kabul ediyorum | Renew my subscription automatically every month; I accept the obligation to pay {amount} every month |
 | review.autoRenewHint | İlk otomatik çekim {date}, dönem bitiminde. Her çekimden en az 3 gün önce e-posta gelir; dönem bitmeden kapatırsanız o dönem için çekim yapılmaz. | First automatic charge on {date}, at the end of the period. You get an email at least 3 days before every charge; if you turn it off before the period ends, nothing is charged for that period. |
 | review.pay | {amount} öde | Pay {amount} |
 | review.obligation | “{amount} öde” düğmesine basarak {amount} ödeme yükümlülüğü altına girdiğinizi kabul edersiniz. | By pressing “Pay {amount}” you accept the obligation to pay {amount}. |
 | review.saveNewCard | Kartımı kaydet | Save my card |
-| review.trust | 3D Secure · Kart bilgileri PayNKolay'de girilir | 3D Secure · Card details are entered at PayNKolay |
+| review.trust | 3D Secure · Kart bilgileri PayNKolay'da girilir | 3D Secure · Card details are entered at PayNKolay |
 | review.err.consent_required | Otomatik yenileme için kartınızı kaydetmeniz ve talimatı onaylamanız gerekir. | Auto-renew needs a saved card and your consent. |
 | review.err.terms_changed | Fiyat ya da koşullar değişti. Güncel tutarı kontrol edip yeniden deneyin. | The price or terms changed. Check the updated amount and try again. |
 | review.err.renewal_in_progress | Bu dönemin ödemesi şu anda işleniyor. Birkaç dakika sonra tekrar bakın. | This period's payment is being processed. Check again in a few minutes. |
@@ -2396,9 +2396,9 @@ Rendered under the billing root layout (D12). Centred: `mx-auto max-w-[480px] px
 | review.err.save_not_allowed | Kart kaydı şu an kullanılamıyor; ödemeyi kart kaydetmeden yapabilirsiniz. | Saving a card isn't available yet; you can pay without saving it. |
 | review.err.rate_limited | Çok fazla deneme yapıldı. Bir süre sonra tekrar deneyin. | Too many attempts. Try again later. |
 | inter.eyebrow | GÜVENLİ ÖDEME | SECURE PAYMENT |
-| inter.title | PayNKolay'e geçiyorsunuz | Taking you to PayNKolay |
+| inter.title | PayNKolay'a geçiyorsunuz | Taking you to PayNKolay |
 | inter.body | Kart bilgilerinizi PayNKolay'in sayfasında girersiniz; Buaze kart numaranızı görmez. | You enter your card on PayNKolay's page; Buaze never sees your card number. |
-| inter.save | Kartınız PayNKolay'de saklanacak. | Your card will be stored by PayNKolay. |
+| inter.save | Kartınız PayNKolay'da saklanacak. | Your card will be stored by PayNKolay. |
 | inter.auto | Otomatik yenileme: {date} tarihinden itibaren her ay {amount} · istediğiniz an kapatın | Auto-renew: {amount} every month from {date} · turn off anytime |
 | inter.button | Güvenli ödemeye devam et | Continue to secure payment |
 | inter.cancel | Vazgeç | Cancel |
@@ -2508,7 +2508,7 @@ These statements stay true in both flag states, because auto-renew is opt-in.
 - `pricing/page.tsx` ticks "Otomatik çekim yok" (no automatic charge) → "Otomatik yenileme isteğe bağlı" (auto-renew is
   optional) / EN "Auto-renew is optional".
 - Lines 85/166, 245/280 and 253/288: "Kartınızdan siz açmadıkça otomatik çekim yapılmaz; otomatik yenilemeyi istediğiniz an
-  Hesabım'dan açıp kapatabilirsiniz. Kart bilgileriniz Buaze'ye ulaşmaz, PayNKolay'de saklanır." (your card is not charged
+  Hesabım'dan açıp kapatabilirsiniz. Kart bilgileriniz Buaze'ye ulaşmaz, PayNKolay'da saklanır." (your card is not charged
   automatically unless you turn it on; you can turn auto-renew on and off anytime in Account; your card details never reach
   Buaze and are stored by PayNKolay).
 - The cancel FAQ: "Otomatik yenileme açıksa Hesabım → Plan ve faturalama'dan tek tıkla kapatırsınız; ödediğiniz dönemin sonuna

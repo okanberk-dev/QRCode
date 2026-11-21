@@ -481,9 +481,17 @@ export async function reconcileCardsAfterSave(deps: VaultDeps, paymentId: string
   // D6: with auto-renew on, the verified replacement card becomes the chargeable one (amendment consent);
   // the previously bound card is then unbound, so the clean-up below deletes it.
   if (deps.notifyCardReplaced) {
+    let amendment: Awaited<ReturnType<typeof applyCardChangeAmendment>>;
     try {
-      const amendment = await applyCardChangeAmendment(db, { userId, newCardId: row.id, paymentId, now });
-      if (amendment) {
+      amendment = await applyCardChangeAmendment(db, { userId, newCardId: row.id, paymentId, now });
+    } catch (err) {
+      // The instruction still points at the old card: deleting it now would leave auto-renew without a card.
+      // Keep the save pending; the engine retries the reconcile.
+      billingLog('error', 'vault.card_change_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
+      return 'pending';
+    }
+    if (amendment) {
+      try {
         const retryDates = amendment.renewal
           ? attemptSchedule(amendment.renewal.periodEnd, { firstChargeDate: amendment.chargeDate, noticeDeliveredAt: now }).slice(amendment.renewal.attempts + 1)
           : [];
@@ -497,9 +505,9 @@ export async function reconcileCardsAfterSave(deps: VaultDeps, paymentId: string
           consentId: amendment.consentId,
         });
         if (sent) await markCardReplacedNotice(db, amendment, row.id, deps.now());
+      } catch (err) {
+        billingLog('error', 'vault.card_change_mail_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
       }
-    } catch (err) {
-      billingLog('error', 'vault.card_change_failed', { paymentId, code: err instanceof Error ? err.name : 'unknown' });
     }
   }
 

@@ -399,6 +399,7 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'eyebrowPaid', label: 'Eyebrow (ödendi)' },
     { key: 'titlePaid', label: 'Başlık (ödendi)' },
     { key: 'introPaid', label: 'Giriş (ödendi)', multiline: true, placeholders: MAIL_PLACEHOLDERS['billing-renewal-paid'] },
+    { key: 'introPaidNoDate', label: 'Giriş (ödendi, tarih yok)', multiline: true, placeholders: MAIL_PLACEHOLDERS['billing-renewal-paid'] },
     { key: 'eyebrowRefund', label: 'Eyebrow (iade)' },
     { key: 'titleRefund', label: 'Başlık (iade)' },
     { key: 'introRefund', label: 'Giriş (iade)', multiline: true, placeholders: MAIL_PLACEHOLDERS['billing-renewal-paid'] },

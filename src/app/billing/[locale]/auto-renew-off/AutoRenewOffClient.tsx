@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
-import { billingText, formatIstanbulDate, type BillingCopyKey } from '@/components/dashboard/billing/billing-copy';
+import { billingText, type BillingCopyKey } from '@/components/dashboard/billing/billing-copy';
 
-export type OffLinkState = 'ready' | 'already' | 'invalid';
+export type OffLinkState = 'ready' | 'already' | 'invalid' | 'superseded';
 
 type Result = { tone: 'ok' | 'error'; text: string } | null;
 
@@ -28,6 +28,11 @@ export default function AutoRenewOffClient({
   const statusRef = useRef<HTMLParagraphElement | null>(null);
   const accountUrl = `/${locale}/dashboard/account?section=billing`;
 
+  // The token stays in memory only: drop it from the address bar, history and any later page error report.
+  useEffect(() => {
+    if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
+  }, []);
+
   const turnOff = async () => {
     if (busy || !token) return;
     setBusy(true);
@@ -39,12 +44,11 @@ export default function AutoRenewOffClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ t: token }),
       });
-      const body = (await res.json().catch(() => ({}))) as { error?: string; alreadyOff?: boolean; accessUntil?: string | null; chargeInProgress?: boolean };
+      const body = (await res.json().catch(() => ({}))) as { error?: string; alreadyOff?: boolean; chargeInProgress?: boolean };
       if (res.ok) {
-        const date = body.accessUntil ? formatIstanbulDate(body.accessUntil, locale) : '';
         next = {
           tone: 'ok',
-          text: body.chargeInProgress ? t('ar.inFlightRefund') : body.alreadyOff ? t('off.already') : date ? t('off.doneUntil', { date }) : t('off.done'),
+          text: body.chargeInProgress ? t('ar.inFlightRefund') : body.alreadyOff ? t('off.already') : t('off.done'),
         };
         setState('done');
       } else {
@@ -77,6 +81,8 @@ export default function AutoRenewOffClient({
 
           {state === 'invalid' ? (
             <p className="mt-4 text-[14px] leading-[1.6] text-[#404040]">{t('off.invalid')}</p>
+          ) : state === 'superseded' ? (
+            <p className="mt-4 text-[14px] leading-[1.6] text-[#404040]">{t('off.superseded')}</p>
           ) : state === 'already' ? (
             <p className="mt-4 text-[14px] leading-[1.6] text-[#404040]">{t('off.already')}</p>
           ) : state === 'ready' ? (

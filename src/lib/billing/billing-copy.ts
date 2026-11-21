@@ -152,6 +152,12 @@ export const BILLING_COPY = {
   'stepup.google': { tr: 'Google ile doğrula', en: 'Verify with Google' },
   'stepup.googleHint': { tr: 'Google hesabınızla yeniden giriş yaparak doğrulayın.', en: 'Verify by signing in with your Google account again.' },
   'stepup.error': { tr: 'Doğrulama başarısız. Tekrar deneyin.', en: 'Verification failed. Try again.' },
+  'ar.chargeInProgress': { tr: 'Bu dönemin ödemesi şu anda işleniyor. Sonuçlandıktan sonra tekrar deneyin.', en: 'This period\'s payment is being processed. Try again once it completes.' },
+  'stepup.expired': { tr: 'Doğrulamanın süresi doldu. Devam etmek için kimliğinizi yeniden doğrulayın.', en: 'Your verification expired. Verify again to continue.' },
+  'stepup.totpFormat': { tr: 'Doğrulama uygulamanızdaki 6 haneli kodu girin.', en: 'Enter the 6-digit code from your authenticator app.' },
+  'stepup.passwordEmpty': { tr: 'Şifrenizi girin.', en: 'Enter your password.' },
+  'stepup.emailUnverified': { tr: 'Otomatik yenilemeyi açmak için önce e-posta adresinizi doğrulayın.', en: 'Verify your e-mail address before turning on auto-renew.' },
+  'stepup.emailChanged': { tr: 'E-posta adresiniz yakın zamanda değişti. Güvenliğiniz için otomatik yenilemeyi 7 gün sonra açabilirsiniz.', en: 'Your e-mail address changed recently. For your security, you can turn on auto-renew after 7 days.' },
   'stepup.rateLimited': { tr: 'Çok fazla deneme yapıldı. Bir süre sonra tekrar deneyin.', en: 'Too many attempts. Try again later.' },
 
   // ── Off-only mail link page (§8.8) ──
@@ -182,6 +188,7 @@ export const BILLING_COPY = {
   'hero.extend': { tr: 'Süreyi uzat', en: 'Extend period' },
   'hero.upgrade': { tr: 'Planı yükselt', en: 'Upgrade plan' },
   'hero.autoOn': { tr: 'Otomatik yenileme açık · {date} · {amount}', en: 'Auto-renew on · {date} · {amount}' },
+  'hero.autoPaused': { tr: 'Otomatik yenileme duraklatıldı', en: 'Auto-renew paused' },
   'hero.autoOnShort': { tr: 'Otomatik yenileme açık', en: 'Auto-renew on' },
   'hero.autoOff': { tr: 'Otomatik çekim kapalı; dönem bitmeden uzatabilirsiniz.', en: 'Automatic charging is off; extend before the period ends.' },
   'hero.pickPlan': {

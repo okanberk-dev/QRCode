@@ -412,10 +412,10 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
               <span className="inline-flex items-center gap-2 text-[12px] text-[#A3A3A3]">
                 <span
                   aria-hidden="true"
-                  className={`h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6F24E] ${pm.data?.renewal?.state === 'charging' ? 'bz-pulse-dot' : ''}`}
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${autoStatus === 'paused' ? 'bg-[#A3A3A3]' : 'bg-[#C6F24E]'} ${pm.data?.renewal?.state === 'charging' ? 'bz-pulse-dot' : ''}`}
                 />
                 {autoStatus === 'paused'
-                  ? billingText('ar.pausedShort', locale)
+                  ? billingText('hero.autoPaused', locale)
                   : autoNext
                     ? billingText('hero.autoOn', locale, {
                         date: formatIstanbulDate(autoNext.date, locale),

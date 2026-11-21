@@ -73,8 +73,8 @@ export async function renderBillingRenewalPaid(params: BillingRenewalPaidParams,
     ...(card ? [{ label: c.labelCard, value: card }] : []),
     ...(!refund && date ? [{ label: c.labelPeriodEnd, value: date }] : []),
   ];
-  const intro = refund ? copy.introRefund : copy.introPaid;
-  const introText = refund ? copyText.introRefund : copyText.introPaid;
+  const intro = refund ? copy.introRefund : date ? copy.introPaid : copy.introPaidNoDate;
+  const introText = refund ? copyText.introRefund : date ? copyText.introPaid : copyText.introPaidNoDate;
   // A refunded charge is not an auto-mode mail of a running instruction: no "turn off" footer.
   const footer = refund ? null : autoModeFooter({ copy: BILLING_AUTO_FOOTER[loc], manageUrl: params.accountUrl });
 

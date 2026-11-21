@@ -77,7 +77,7 @@ export function autoModeFooter(opts: {
     : '';
   const html = `<div style="border-top:1px solid ${PULSE.n200};padding-top:20px;">${manage}${off}</div>`;
   const text = [
-    `${opts.copy.manage}: ${opts.manageUrl}`,
+    `${opts.copy.manage} (${opts.manageUrl})`,
     ...(opts.offLink ? [`${opts.copy.offLead} ${opts.offLink}`] : []),
   ].join('\n');
   return { html, text };

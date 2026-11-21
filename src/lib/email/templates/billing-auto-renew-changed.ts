@@ -81,12 +81,12 @@ export async function renderBillingAutoRenewChanged(
   const date = params.chargeDate ? formatIstanbulDate(params.chargeDate, locale) : '';
   const grace = params.accessUntil ? formatIstanbulDate(params.accessUntil, locale) : '';
   const masked = maskedCard(params.last4);
-  const retries = replaced ? (params.retryDates ?? []).slice(0, 2).map((d) => formatIstanbulDate(d, locale)) : [];
+  const retries = on || replaced ? (params.retryDates ?? []).slice(0, 2).map((d) => formatIstanbulDate(d, locale)) : [];
 
   const subject = on
     ? isTr ? `Otomatik yenileme açıldı · ilk çekim ${date}` : `Auto-renew is on · first charge ${date}`
     : replaced
-      ? isTr ? `Otomatik yenileme artık ${masked || 'yeni kartınızla'} · sonraki çekim ${date}` : `Auto-renew now uses ${masked || 'your new card'} · next charge ${date}`
+      ? isTr ? `Otomatik yenileme artık ${masked ? `${masked} ile` : 'yeni kartınızla'} · sonraki çekim ${date}` : `Auto-renew now uses ${masked || 'your new card'} · next charge ${date}`
       : isTr ? 'Otomatik yenileme kapatıldı' : 'Auto-renew is off';
 
   const loaded = await loadMailCopy('billing-auto-renew-changed', locale, isTr ? BILLING_AUTO_RENEW_CHANGED_TR : BILLING_AUTO_RENEW_CHANGED_EN);

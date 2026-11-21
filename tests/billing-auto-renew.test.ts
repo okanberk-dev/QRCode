@@ -74,11 +74,12 @@ describe('billing step-up (D14)', () => {
 
     const google: StepUpUser = { ...user, passwordHash: await bcrypt.hash('x', UNUSABLE_PASSWORD_BCRYPT_COST) };
     const t = Math.floor(NOW.getTime() / 1000);
-    const claims = (over: object) => ({ verifyTotp: () => false, verifyFirebase: async () => ({ email: 'owner@example.test', email_verified: true, auth_time: t - 60, ...over }) });
+    const claims = (over: object) => ({ verifyTotp: () => false, verifyFirebase: async () => ({ email: 'owner@example.test', email_verified: true, auth_time: t - 60, firebase: { sign_in_provider: 'google.com' }, ...over }) });
     assert.equal((await verifyStepUpProof(google, { method: 'google', idToken: 'x' }, claims({}), NOW)).ok, true);
     assert.equal((await verifyStepUpProof(google, { method: 'google', idToken: 'x' }, claims({ auth_time: t - 600 }), NOW)).ok, false, 'sign-in too old');
     assert.equal((await verifyStepUpProof(google, { method: 'google', idToken: 'x' }, claims({ email: 'other@example.test' }), NOW)).ok, false, 'other account');
     assert.equal((await verifyStepUpProof(google, { method: 'google', idToken: 'x' }, claims({ email_verified: false }), NOW)).ok, false, 'unverified e-mail');
+    assert.equal((await verifyStepUpProof(google, { method: 'google', idToken: 'x' }, claims({ firebase: { sign_in_provider: 'password' } }), NOW)).ok, false, 'not a Google sign-in');
     assert.equal((await verifyStepUpProof(google, { method: 'google', idToken: 'x' }, claims({ auth_time: undefined }), NOW)).ok, false, 'no auth_time');
 
     const totp: StepUpUser = { ...user, twoFactorEnabled: true, totpSecret: 'JBSWY3DPEHPK3PXP' };
@@ -141,7 +142,7 @@ describe('auto-renew enable / disable / card change (database)', { skip }, () =>
     });
     created.plans.push(plan.id);
     const user = await db.user.create({
-      data: { email: `ar-${label}-${suffix}@example.test`, passwordHash: 'x', role: 'restaurant_owner', locale: 'tr' },
+      data: { email: `ar-${label}-${suffix}@example.test`, passwordHash: 'x', role: 'restaurant_owner', locale: 'tr', emailVerified: true },
       select: { id: true },
     });
     created.users.push(user.id);
@@ -389,6 +390,19 @@ describe('auto-renew enable / disable / card change (database)', { skip }, () =>
     assert.equal(await mod.applyCardChangeAmendment(db, { userId: o.userId, newCardId: newCard.id, paymentId: pay.id, now: later }), null);
   });
 
+  it('blocks a new instruction for an unverified e-mail and for 7 days after an e-mail change', async () => {
+    const now = new Date('2026-12-14T10:00:00Z');
+    const o = await owner('block', new Date('2026-12-20T09:00:00Z'), { withRenewal: false });
+    assert.equal(await mod.instructionBlockReason(db, o.userId, now), null);
+    await db.adminAuditLog.create({
+      data: { actorId: o.userId, actorSource: 'user', action: 'owner.account.security_update', targetId: o.userId, payload: { passwordChanged: false, emailChanged: true }, createdAt: new Date('2026-12-10T10:00:00Z') },
+    });
+    assert.equal(await mod.instructionBlockReason(db, o.userId, now), 'email_recently_changed');
+    assert.equal(await mod.instructionBlockReason(db, o.userId, new Date('2026-12-18T10:00:00Z')), null);
+    await db.user.update({ where: { id: o.userId }, data: { emailVerified: false } });
+    assert.equal(await mod.instructionBlockReason(db, o.userId, now), 'email_unverified');
+  });
+
   it('needs_action because of an unbound card resumes to retry_wait once that card is removed', async () => {
     const now = new Date('2026-12-14T10:00:00Z');
     const renewsAt = new Date('2026-12-13T09:00:00Z');
@@ -413,8 +427,10 @@ describe('auto-renew enable / disable / card change (database)', { skip }, () =>
     await db.billingCard.update({ where: { id: stray.id }, data: { deletedAt: now } });
     assert.equal(await cardApi.resumeAfterUnboundRemoved(db, o.userId, now), true);
     const after = await db.billingRenewal.findUniqueOrThrow({ where: { id: r.id } });
+    // The announced slot has passed: no charge without a fresh notice. The engine sends one, then charges.
     assert.equal(after.state, 'retry_wait');
-    assert.ok(after.nextAttemptAt && after.nextAttemptAt.getTime() >= now.getTime() - 60_000);
-    assert.ok(after.nextAttemptAt!.getTime() < renewsAt.getTime() + 120 * 3600_000);
+    assert.equal(after.nextAttemptAt, null);
+    assert.equal(after.noticeDeliveredAt, null);
+    assert.equal(after.modeReason, null);
   });
 });

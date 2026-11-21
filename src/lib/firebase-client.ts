@@ -277,7 +277,7 @@ export async function reauthenticateWithGooglePopup(): Promise<
   if (!mods) return { status: 'unconfigured' };
   const { auth } = getAuthInstance(mods.appMod, mods.authMod);
   const provider = new mods.authMod.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
+  provider.setCustomParameters({ prompt: 'login' }); // a real re-entry, not a silent account pick
   try {
     const result = await mods.authMod.signInWithPopup(auth, provider);
     return { status: 'idToken', idToken: await result.user.getIdToken(true) };

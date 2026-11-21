@@ -50,7 +50,7 @@ export default function AutoRenewControl({
 
   const sublabel = (() => {
     if (ar.status === 'on') {
-      if (!nextDate) return t('ar.off');
+      if (!nextDate) return t('hero.autoOnShort');
       return last4 ? t('ar.on', { date: nextDate, amount, last4 }) : t('ar.onNoCard', { date: nextDate, amount });
     }
     if (ar.status === 'paused') return t('ar.pausedShort');
@@ -104,13 +104,14 @@ export default function AutoRenewControl({
   const canToggle = data.canManage && (isOn || (ar.status === 'off' && !!ar.offer && !!ar.stepUp));
 
   return (
-    <div className="mt-4 border-t border-[#EDEDED] pt-4">
+    <div className="mt-4 border-t border-[#EDEDED] pt-4 [&>label]:min-h-[44px] sm:[&>label]:min-h-0">
       <APSwitch
         size="md"
         checked={isOn}
         onChange={onChange}
         label={t('ar.label')}
         sublabel={sublabel}
+        ariaLabel={`${t('ar.label')}. ${sublabel}`}
         loading={setAuto.isPending}
         disabled={!canToggle}
       />

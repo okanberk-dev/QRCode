@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { getTrustedClientIp } from '@/lib/client-ip';
-import { disableAutoRenew } from '@/lib/billing/auto-renew';
+import { disableAutoRenew, offLinkSuperseded } from '@/lib/billing/auto-renew';
 import { loadAutoRenewDeps } from '@/lib/billing/auto-renew-deps';
 import { loadBillingFlags } from '@/lib/billing/flags';
 import { allowedBillingOrigins, BILLING_NO_STORE } from '@/lib/billing/owner-guard';
@@ -49,22 +49,14 @@ export async function POST(req: NextRequest) {
   if (!sub?.autoRenew || !sub.autoRenewConsentId) {
     return NextResponse.json({ ok: true, alreadyOff: true }, { status: 200, headers: BILLING_NO_STORE });
   }
-  // Only the instruction this link was sent for: its own consent, or a card-change amendment of it (D6).
-  // After an off and a new opt-in, an older link no longer works; that opt-in mailed its own link.
-  if (sub.autoRenewConsentId !== token.consentId) {
-    const [linked, latestOn] = await prisma.$transaction([
-      prisma.billingConsent.findFirst({ where: { id: token.consentId, userId: token.userId }, select: { createdAt: true } }),
-      prisma.billingConsent.findFirst({ where: { userId: token.userId, kind: 'auto_renew_on' }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
-    ]);
-    if (!linked || !latestOn || linked.createdAt.getTime() < latestOn.createdAt.getTime()) {
-      return NextResponse.json({ error: 'link_superseded' }, { status: 409, headers: BILLING_NO_STORE });
-    }
+  if (await offLinkSuperseded(prisma, token, sub.autoRenewConsentId)) {
+    return NextResponse.json({ error: 'link_superseded' }, { status: 409, headers: BILLING_NO_STORE });
   }
   const flags = await loadBillingFlags();
   const deps = await loadAutoRenewDeps(flags);
   const res = await disableAutoRenew(deps, { userId: token.userId, authMethod: 'mail_link', ip, ua: req.headers.get('user-agent') });
   return NextResponse.json(
-    { ok: true, alreadyOff: !res.changed, chargeInProgress: res.chargeInProgress, accessUntil: res.accessUntil ? res.accessUntil.toISOString() : null },
+    { ok: true, alreadyOff: !res.changed, chargeInProgress: res.chargeInProgress },
     { status: 200, headers: BILLING_NO_STORE },
   );
 }

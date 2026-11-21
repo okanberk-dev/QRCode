@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
+import { instructionBlockReason } from '@/lib/billing/auto-renew';
 import { getSecret } from '@/lib/auth';
 import { hashToken } from '@/lib/session-hash';
 import { verifyToken } from '@/lib/totp';
@@ -54,6 +55,8 @@ export async function POST(req: NextRequest) {
   if (!user || !user.isActive) return NextResponse.json({ error: 'unauthorized' }, { status: 401, headers: BILLING_NO_STORE });
 
   const now = new Date();
+  const blocked = await instructionBlockReason(prisma, userId, now);
+  if (blocked) return NextResponse.json({ error: blocked }, { status: 403, headers: BILLING_NO_STORE });
   const result = await verifyStepUpProof(
     user,
     parsed.data,

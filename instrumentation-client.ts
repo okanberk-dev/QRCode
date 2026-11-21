@@ -25,6 +25,15 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // watches every DOM mutation from page load (the marketing hero animates
     // every frame). It is lazy-loaded below for the panels only.
     beforeSend(event, hint) {
+      // Billing pages carry one-time tokens in the query (?t=, payment ids): never send a query string.
+      if (event.request?.url) event.request.url = event.request.url.split('?')[0].split('#')[0];
+      if (event.request?.query_string) delete event.request.query_string;
+      for (const crumb of event.breadcrumbs ?? []) {
+        for (const key of ['url', 'from', 'to'] as const) {
+          const v = crumb.data?.[key];
+          if (typeof v === 'string' && v.includes('/billing/')) crumb.data![key] = v.split('?')[0];
+        }
+      }
       const original = hint.originalException;
       const originalMessage =
         original instanceof Error

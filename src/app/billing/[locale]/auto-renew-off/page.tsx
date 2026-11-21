@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { billingText } from '@/lib/billing/billing-copy';
 import { prisma } from '@/lib/prisma';
 import { loadHmacKeys, verifyOffLinkToken } from '@/lib/billing/vault-crypto';
+import { offLinkSuperseded } from '@/lib/billing/auto-renew';
 import AutoRenewOffClient, { type OffLinkState } from './AutoRenewOffClient';
 
 export const dynamic = 'force-dynamic';
@@ -41,10 +42,12 @@ export default async function AutoRenewOffPage({
   if (verified) {
     const sub = await prisma.billingSubscription.findUnique({
       where: { userId: verified.userId },
-      select: { autoRenew: true, subscriptionPlanId: true },
+      select: { autoRenew: true, autoRenewConsentId: true, subscriptionPlanId: true },
     });
-    if (!sub?.autoRenew) {
+    if (!sub?.autoRenew || !sub.autoRenewConsentId) {
       state = 'already';
+    } else if (await offLinkSuperseded(prisma, verified, sub.autoRenewConsentId)) {
+      state = 'superseded';
     } else {
       state = 'ready';
       if (sub.subscriptionPlanId) {

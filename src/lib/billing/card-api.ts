@@ -1,10 +1,10 @@
-import type { PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import type { AutoRenewOfferPublic, AutoRenewUnavailable, DeleteCardResponse, PaymentMethodResponse, PublicSavedCard, StepUpMethodName } from './card-types';
 import { deleteOwnerCard, mirrorCards, refreshCards, type VaultDeps } from './card-vault';
 import { recordConsent } from './consent';
 import type { BillingFlags } from './flags';
 import { billingLog } from './redact';
-import { attemptSchedule, graceEnd, isRenewalState, nextWindowSlot, RENEWAL_POLICY, TERMINAL_STATES } from './renewal-policy';
+import { attemptSchedule, graceEnd, isRenewalState, TERMINAL_STATES } from './renewal-policy';
 import { termsFirstChargeDate } from './renewal-store-prisma';
 import type { RenewalStore } from './renewal-store';
 import { CARD_HANDLE_RE } from './vault-crypto';
@@ -304,16 +304,25 @@ export async function resumeAfterUnboundRemoved(db: PrismaClient, userId: string
   const others = await db.billingCard.count({ where: { userId, deletedAt: null, boundConsentId: null } });
   if (others > 0) return false;
   const consent = await db.billingConsent.findFirst({ where: { id: sub.autoRenewConsentId, userId }, select: { terms: true } });
-  const slot = attemptSchedule(renewal.periodEnd, {
-    firstChargeDate: termsFirstChargeDate(consent?.terms ?? null),
-    noticeDeliveredAt: renewal.noticeDeliveredAt,
-  })[renewal.attempts];
-  if (!slot || slot.getTime() <= now.getTime() - 60_000) {
-    // No announced slot left in the future: the next one is the first window slot from now, if still before graceEnd.
-    const next = nextWindowSlot(now);
-    if (!renewal.noticeDeliveredAt || next.getTime() < renewal.noticeDeliveredAt.getTime() + RENEWAL_POLICY.minNoticeHours * HOUR_MS) return false;
-    if (next.getTime() >= graceEnd(renewal.periodEnd).getTime()) return false;
-    const res = await db.billingRenewal.updateMany({ where: { id: renewal.id, state: 'needs_action' }, data: { state: 'retry_wait', nextAttemptAt: next, modeReason: null } });
+  const firstChargeDate = termsFirstChargeDate(consent?.terms ?? null);
+  const slot = attemptSchedule(renewal.periodEnd, { firstChargeDate, noticeDeliveredAt: renewal.noticeDeliveredAt })[renewal.attempts];
+  if (!slot || slot.getTime() <= now.getTime()) {
+    // The announced slot is gone: never charge at a time no delivered mail stated (§10.2, D5). The notice
+    // starts over; phase 3 sends a fresh one (naming new dates) when a slot ≥ that notice + 72 h is left.
+    if (renewal.attempts > 0 || !attemptSchedule(renewal.periodEnd, { firstChargeDate, noticeDeliveredAt: now })[0]) return false;
+    const res = await db.billingRenewal.updateMany({
+      where: { id: renewal.id, state: 'needs_action' },
+      data: {
+        state: 'retry_wait',
+        nextAttemptAt: null,
+        modeReason: null,
+        noticeClaimedAt: null,
+        noticeDeliveredAt: null,
+        quotedAmountMinor: null,
+        noticeCardId: null,
+        announcedAttemptTimes: Prisma.DbNull,
+      },
+    });
     return res.count === 1;
   }
   const res = await db.billingRenewal.updateMany({ where: { id: renewal.id, state: 'needs_action' }, data: { state: 'retry_wait', nextAttemptAt: slot, modeReason: null } });

@@ -61,7 +61,7 @@ export type StepUpProof =
 
 export interface StepUpVerifiers {
   verifyTotp(secret: string, code: string): boolean;
-  verifyFirebase(idToken: string): Promise<{ email?: string; email_verified?: boolean; auth_time?: number } | null>;
+  verifyFirebase(idToken: string): Promise<{ email?: string; email_verified?: boolean; auth_time?: number; firebase?: { sign_in_provider?: string } } | null>;
 }
 
 function keyFrom(jwtSecret: Uint8Array): Buffer {
@@ -162,6 +162,7 @@ export async function verifyStepUpProof(
       const claims = await verifiers.verifyFirebase(proof.idToken);
       const fresh =
         !!claims &&
+        claims.firebase?.sign_in_provider === 'google.com' &&
         typeof claims.auth_time === 'number' &&
         Math.floor(now.getTime() / 1000) - claims.auth_time <= FIREBASE_AUTH_MAX_AGE_S &&
         Math.floor(now.getTime() / 1000) - claims.auth_time >= -60;
