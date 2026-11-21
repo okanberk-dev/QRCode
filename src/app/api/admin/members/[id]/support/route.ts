@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!user) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   const since30 = new Date(Date.now() - 30 * DAY_MS);
-  const [sessions, failedMails, restaurants, google, payments] = await prisma.$transaction([
+  const [sessions, failedMails, restaurants, google, payments] = await Promise.all([
     prisma.userSession.findMany({
       where: { userId: id },
       orderBy: { lastSeenAt: 'desc' },

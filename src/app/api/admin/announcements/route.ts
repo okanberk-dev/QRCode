@@ -25,10 +25,9 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
 
   try {
-    // Stage 108 §38.188 — Promise.all → $transaction (CLAUDE.md §40.1
-    // Supabase pooler connection_limit=1 disipline). Two parallel reads
-    // collapse onto a single pooled connection without queue contention.
-    const [announcements, total] = await prisma.$transaction([
+    // Two independent reads, run at once (the Stage 108 array $transaction
+    // ran them back to back; the pool now has more than one connection).
+    const [announcements, total] = await Promise.all([
       prisma.announcement.findMany({
         orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
         skip,

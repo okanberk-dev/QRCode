@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
   }> = [];
 
   try {
-    [total, entries] = await prisma.$transaction([
+    [total, entries] = await Promise.all([
       prisma.adminAuditLog.count({ where }),
       prisma.adminAuditLog.findMany({
         where,

@@ -148,9 +148,9 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Stage 108 §38.188 — Promise.all → $transaction (CLAUDE.md §40.1
-    // Supabase pooler connection_limit=1 disipline).
-    const [posts, total] = await prisma.$transaction([
+    // Two independent reads, run at once (the Stage 108 array $transaction
+    // ran them back to back; the pool now has more than one connection).
+    const [posts, total] = await Promise.all([
       prisma.blogPost.findMany({
         where,
         orderBy: { createdAt: 'desc' },

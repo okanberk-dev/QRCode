@@ -244,7 +244,7 @@ export async function loadRevenueInputs(): Promise<{
   subscriptions: RevenueSubscription[];
   tiers: AdminPlanRow[];
 }> {
-  const [subscriptions, tierRows] = await prisma.$transaction([
+  const [subscriptions, tierRows] = await Promise.all([
     prisma.billingSubscription.findMany({ select: REVENUE_SUBSCRIPTION_SELECT }),
     prisma.subscriptionPlan.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
   ]);
@@ -273,7 +273,7 @@ export interface MrrPoint {
  * Returns N month points (oldest → newest); month string format YYYY-MM.
  */
 export async function getMrrTrend(months: number, now: Date = new Date()): Promise<MrrPoint[]> {
-  const [owners, subscriptions, tierRows] = await prisma.$transaction([
+  const [owners, subscriptions, tierRows] = await Promise.all([
     prisma.user.findMany({
       where: { role: 'restaurant_owner' },
       select: { id: true, createdAt: true, isActive: true, deactivatedAt: true },
@@ -480,7 +480,7 @@ export async function getActivationFunnel(days: number, now: Date = new Date()):
     : [];
   const restaurantIds = restaurants.map((r) => r.id);
   const [qrRows, feedbackRows] = restaurantIds.length
-    ? await prisma.$transaction([
+    ? await Promise.all([
         prisma.qrGeneration.findMany({
           where: { restaurantId: { in: restaurantIds } },
           select: { restaurantId: true },
