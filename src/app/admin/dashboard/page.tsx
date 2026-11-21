@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CreditCard, Crown, MessageSquare, Store } from 'lucide-react';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { hasPermission } from '@/lib/rbac';
 import { adminLandingPath } from '@/lib/admin-landing';
 import {
@@ -79,8 +80,12 @@ export default async function AdminDashboardPage() {
   const twelveWeeksAgo = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
 
   // Aggregate queries — kept narrow so the dashboard stays a strategic
-  // overview (review-monitoring lives on /admin/reviews).
+  // overview (review-monitoring lives on /admin/reviews). Independent reads,
+  // at most 8 at a time (parallelReads) instead of an array $transaction that
+  // ran them back to back. The one with a relation (two SQL steps) goes first
+  // so it does not add a round trip at the tail.
   const [
+    recentRestaurants,
     totalBusinesses,
     newBusinesses24h,
     prev30Reviews,
@@ -89,10 +94,22 @@ export default async function AdminDashboardPage() {
     subscriptions,
     tierRows,
     restaurantsForGrowth,
-    recentRestaurants,
     menusEnabledCount,
     menusPublishedCount,
-  ] = await prisma.$transaction([
+  ] = await parallelReads([
+    // Recent businesses for "SON KATILAN İŞLETMELER" widget — design pattern
+    // gösteriyor: name + city + relative date + owner plan badge.
+    prisma.restaurant.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 4,
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        createdAt: true,
+        user: { select: { plan: true } },
+      },
+    }),
     prisma.restaurant.count(),
     prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
     prisma.feedback.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
@@ -109,19 +126,6 @@ export default async function AdminDashboardPage() {
     prisma.restaurant.findMany({
       where: { createdAt: { gte: twelveWeeksAgo } },
       select: { createdAt: true },
-    }),
-    // Recent businesses for "SON KATILAN İŞLETMELER" widget — design pattern
-    // gösteriyor: name + city + relative date + owner plan badge.
-    prisma.restaurant.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 4,
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        createdAt: true,
-        user: { select: { plan: true } },
-      },
     }),
     // Stage 109 §A1 — menu publish funnel metric (Yayında menü sayısı +
     // publish rate). menuEnabled=true but menuPublished=false → "draft"
@@ -223,11 +227,9 @@ export default async function AdminDashboardPage() {
   const nowDate = now;
 
   // Stage 26 §38.102 — attention metrics (Batch 2) + operational signals
-  // (Batch 3) tek transaction'a merge edildi. CLAUDE.md §14.1
-  // connection_limit=1 disipline: 2 ayrı transaction yerine 7 query tek
-  // connection üstünden serial; sequential connection açma overhead'i
-  // (~50-100ms per round-trip) ortadan kalkar. Query'ler bağımsız (Batch 2
-  // attention metric counts, Batch 3 audit log findMany) — merge safe.
+  // (Batch 3) in one batch. The queries are independent (Batch 2 attention
+  // metric counts, Batch 3 audit log findMany), so they now run at once
+  // (parallelReads) instead of back to back in an array $transaction.
   const thirtyDaysAuditAgo = thirtyDaysAgo;
   const BULK_ACTIONS = [
     'admin.restaurants.bulk.activate',
@@ -252,7 +254,7 @@ export default async function AdminDashboardPage() {
     unverifiedPlatform,
     bulkAuditRaw,
     destructiveAuditRaw,
-  ] = await prisma.$transaction([
+  ] = await parallelReads([
     // Batch 2 — attention metrics (CLAUDE.md §11.36 needs-attention deeplink)
     prisma.user.count({
       where: { plan: 'trial', trialEndsAt: { gt: nowDate, lte: sevenDaysAhead } },
