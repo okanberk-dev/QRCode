@@ -206,7 +206,7 @@ export async function buildPanelAnalyticsData({
     ...(platformFilter ? { platform: platformFilter } : {}),
   } as const;
 
-  const [feedbacksWindow, feedbacksPrevWindow] = await prisma.$transaction([
+  const [feedbacksWindow, feedbacksPrevWindow] = await Promise.all([
     prisma.feedback.findMany({
       where: { ...baseWhere, createdAt: { gte: windowStart, lte: windowEnd } },
       select: {

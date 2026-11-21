@@ -41,9 +41,8 @@ export async function GET(
   const { days, limit } = parsed.data;
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  // CLAUDE.md §40.1 — connection_limit=1 altında paralel read'leri
-  // `prisma.$transaction([...])` tek connection üstünde sıralar.
-  const [totalViews, domainGroups] = await prisma.$transaction([
+  // Two independent reads, run at once (was an array $transaction).
+  const [totalViews, domainGroups] = await Promise.all([
     prisma.embedView.count({
       where: { restaurantId: id, createdAt: { gte: since } },
     }),

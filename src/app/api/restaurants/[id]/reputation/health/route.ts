@@ -29,13 +29,11 @@ export async function GET(
 
   // Defensive: yeni tablo migrate olmadıysa graceful degrade
   try {
-    // CLAUDE.md §40.1 — connection_limit=1 altında paralel read'leri
-    // `prisma.$transaction([...])` tek connection üstünde sıralar.
-    // `getHealthSnapshotDelta` regular Promise döndüğü için `$transaction`'a
-    // konamaz (mixed promise) — sequential çalıştırılır; içerde kendi
-    // `$transaction`'ı var, böylece 2 connection cycle total.
-    const delta = await getHealthSnapshotDelta(id);
-    const [latestRow, restaurant] = await prisma.$transaction([
+    // The delta, the latest snapshot and the owner's locale are independent
+    // reads, so they run at once (they used to be two array $transactions,
+    // one after the other, each running its queries back to back).
+    const [delta, latestRow, restaurant] = await Promise.all([
+      getHealthSnapshotDelta(id),
       prisma.restaurantHealthSnapshot.findFirst({
         where: { restaurantId: id },
         orderBy: { capturedAt: 'desc' },
@@ -77,14 +75,15 @@ export async function GET(
         feedbackReplied: latestRow.feedbackReplied,
       };
     } else {
-      // Snapshot yok — sadece feedback aggregate'i çek (Google yok)
-      const total = await prisma.feedback.count({ where: { restaurantId: id } });
+      // Snapshot yok — sadece feedback aggregate'i çek (Google yok). The four
+      // reads run at once; the aggregates are used only when there is feedback.
+      const [total, avg, low, replied] = await Promise.all([
+        prisma.feedback.count({ where: { restaurantId: id } }),
+        prisma.feedback.aggregate({ where: { restaurantId: id }, _avg: { rating: true } }),
+        prisma.feedback.count({ where: { restaurantId: id, rating: { lte: 3 } } }),
+        prisma.feedback.count({ where: { restaurantId: id, replies: { some: {} } } }),
+      ]);
       if (total > 0) {
-        const [avg, low, replied] = await prisma.$transaction([
-          prisma.feedback.aggregate({ where: { restaurantId: id }, _avg: { rating: true } }),
-          prisma.feedback.count({ where: { restaurantId: id, rating: { lte: 3 } } }),
-          prisma.feedback.count({ where: { restaurantId: id, replies: { some: {} } } }),
-        ]);
         snapshotInput = {
           googleRating: null,
           googleReviewCount: null,

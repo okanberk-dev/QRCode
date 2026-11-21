@@ -80,10 +80,10 @@ export async function GET(
     );
   }
 
-  // Restoran + provider başına en yeni check tek `$transaction` (CLAUDE.md
-  // §40.1 pooler connection_limit=1). DISTINCT ON helper → "son 200 satır +
+  // Restoran + provider başına en yeni check aynı anda okunur (eskiden tek
+  // sıralı `$transaction`). DISTINCT ON helper → "son 200 satır +
   // JS reduce" pencere sorunu yok (bkz. /checks).
-  const [restaurant, checks] = await prisma.$transaction([
+  const [restaurant, checks] = await Promise.all([
     prisma.restaurant.findUnique({
       where: { id },
       select: {

@@ -55,7 +55,7 @@ export async function GET(
   // §38.78 — externalPlatformsEnabled gate parity (CLAUDE.md §5.2 + retest +
   // health). Admin master flag kapalıyken external provider check'leri
   // response'a dahil edilmez.
-  const [restaurant, rows] = await prisma.$transaction([
+  const [restaurant, rows] = await Promise.all([
     prisma.restaurant.findUnique({
       where: { id },
       select: { externalPlatformsEnabled: true },
