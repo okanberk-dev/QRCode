@@ -48,7 +48,10 @@ export const MAIL_PLACEHOLDERS = {
   'rating-drop-alert': ['firstName', 'restaurantName', 'currentAvg', 'baselineAvg', 'delta', 'reviewCount'],
   'data-export-confirmation': ['firstName'],
   // Saved cards (billing spec §13.4).
-  'billing-renewal-upcoming': ['planName', 'date', 'grace'],
+  'billing-renewal-upcoming': ['planName', 'date', 'grace', 'amount', 'card', 'retry1', 'retry2'],
+  'billing-renewal-paid': ['planName', 'amount', 'date'],
+  'billing-renewal-failed': ['planName', 'amount', 'date', 'grace'],
+  'billing-auto-renew-changed': ['planName', 'amount', 'date', 'grace', 'card'],
   'billing-period-ended': ['planName'],
   'billing-card-retention': ['date', 'card'],
   // Wave D (CLAUDE.md §38.195) — new-device login.

@@ -172,6 +172,8 @@ export interface RenewalMailer {
       nextAttemptAt: Date | null;
       accessUntil: Date;
       renewUrl: string;
+      /** `paid`: the subscription's period end after the settle (the new period). */
+      newPeriodEnd?: Date | null;
     },
   ): Promise<boolean>;
   /** Auto-renew changed by the system (§13.4): price increase, card missing at PayNKolay, card removed. */
@@ -534,6 +536,7 @@ export async function runRenewalTick(deps: RenewalDeps): Promise<RenewalTickSumm
         nextAttemptAt: charge === 'attempt_1' || charge === 'attempt_2' ? r.nextAttemptAt : null,
         accessUntil: r.graceEndsAt ?? r.periodEnd,
         renewUrl: renewLinkFor(siteUrl, ctx.user.locale, r),
+        newPeriodEnd: charge === 'paid' && ctx.sub.renewsAt && ctx.sub.renewsAt.getTime() > r.periodEnd.getTime() ? ctx.sub.renewsAt : null,
       });
     }
     const system = SYSTEM_MAIL_KEYS[key];

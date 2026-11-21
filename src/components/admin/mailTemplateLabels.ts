@@ -30,4 +30,7 @@ export const MAIL_TEMPLATE_LABELS: Record<string, string> = {
   'billing-renewal-upcoming': 'Abonelik yenileme hatırlatması',
   'billing-period-ended': 'Abonelik süresi doldu',
   'billing-card-retention': 'Kayıtlı kart silinecek',
+  'billing-renewal-paid': 'Otomatik yenileme ödemesi alındı',
+  'billing-renewal-failed': 'Otomatik yenileme ödemesi alınamadı',
+  'billing-auto-renew-changed': 'Otomatik yenileme açıldı / kapandı',
 };

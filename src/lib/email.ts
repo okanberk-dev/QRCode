@@ -28,6 +28,14 @@ import {
   renderBillingRenewalUpcoming,
   renderBillingPeriodEnded,
   renderBillingCardRetention,
+  renderBillingAutoNotice,
+  renderBillingRenewalPaid,
+  renderBillingRenewalFailed,
+  renderBillingAutoRenewChanged,
+  type BillingAutoNoticeParams,
+  type BillingRenewalPaidParams,
+  type BillingRenewalFailedParams,
+  type BillingAutoRenewChangedParams,
   type BillingRenewalUpcomingParams,
   type BillingPeriodEndedParams,
   type BillingCardRetentionParams,
@@ -852,6 +860,75 @@ export async function sendBillingCardRetentionEmail(
   const loc = locale ?? 'tr';
   const rendered = await renderBillingCardRetention(rest, loc);
   return sendResendEmail({ template: 'billing-card-retention', locale: loc, to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+/** Auto-renew pre-charge notice (billing spec §9.2 phase 3). Its delivery gates the charge (D5). */
+export async function sendBillingAutoNoticeEmail(
+  params: BillingAutoNoticeParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const loc = locale ?? 'tr';
+  const rendered = await renderBillingAutoNotice(rest, loc);
+  return sendResendEmail({
+    template: 'billing-renewal-upcoming',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { variant: 'auto_notice' },
+  });
+}
+
+export async function sendBillingRenewalPaidEmail(
+  params: BillingRenewalPaidParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const loc = locale ?? 'tr';
+  const rendered = await renderBillingRenewalPaid(rest, loc);
+  return sendResendEmail({
+    template: 'billing-renewal-paid',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { variant: params.variant },
+  });
+}
+
+export async function sendBillingRenewalFailedEmail(
+  params: BillingRenewalFailedParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const loc = locale ?? 'tr';
+  const rendered = await renderBillingRenewalFailed(rest, loc);
+  return sendResendEmail({
+    template: 'billing-renewal-failed',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { variant: params.variant },
+  });
+}
+
+export async function sendBillingAutoRenewChangedEmail(
+  params: BillingAutoRenewChangedParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const loc = locale ?? 'tr';
+  const rendered = await renderBillingAutoRenewChanged(rest, loc);
+  return sendResendEmail({
+    template: 'billing-auto-renew-changed',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { variant: params.variant },
+  });
 }
 
 // ─── Newsletter (monthly cron) ──────────────────────────────────────────

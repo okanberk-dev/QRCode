@@ -103,6 +103,12 @@ export { renderBillingPeriodEnded } from './billing-period-ended';
 export type { BillingPeriodEndedParams } from './billing-period-ended';
 export { renderBillingCardRetention } from './billing-card-retention';
 export type { BillingCardRetentionParams } from './billing-card-retention';
+export { renderBillingAutoNotice } from './billing-renewal-upcoming';
+export type { BillingAutoNoticeParams } from './billing-renewal-upcoming';
+export { renderBillingRenewalPaid, renderBillingRenewalFailed } from './billing-renewal-result';
+export type { BillingRenewalPaidParams, BillingRenewalFailedParams, BillingRenewalFailedVariant } from './billing-renewal-result';
+export { renderBillingAutoRenewChanged } from './billing-auto-renew-changed';
+export type { BillingAutoRenewChangedParams, BillingAutoRenewChangedVariant } from './billing-auto-renew-changed';
 
 // Render-only security notice (CLAUDE.md §38.96) — admin impersonation start
 // mail to the account owner. Not DB-driven, not in SUPPORTED_MAIL_KEYS.

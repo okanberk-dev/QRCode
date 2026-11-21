@@ -77,6 +77,9 @@ export const SUPPORTED_MAIL_KEYS = [
   'billing-renewal-upcoming',   // reminder mode: E−7d / E−1d, leads to a 3D Secure payment
   'billing-period-ended',       // a renewal lapsed: the paid period ended
   'billing-card-retention',     // stored card deleted 180 days after the subscription ended
+  'billing-renewal-paid',       // auto charge went through (or will be refunded: turned off mid-charge)
+  'billing-renewal-failed',     // auto charge failed: retry announced, final, hard, action needed, unresolved
+  'billing-auto-renew-changed', // instruction on (durable confirmation), card replaced, turned off
   // Retired 2026-11 (CLAUDE.md §21.39): new-device-login,
   // first-feedback-celebration, first-reply-celebration, team-member-removed,
   // qr-no-scans-reminder, inactive-reactivation. Their MailTemplate rows may

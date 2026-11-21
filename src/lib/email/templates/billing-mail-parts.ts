@@ -45,3 +45,40 @@ export function billingDetailsText(rows: BillingDetailRow[]): string {
 export function maskedCard(last4: string | null | undefined): string {
   return last4 && /^[0-9]{4}$/.test(last4) ? `•••• ${last4}` : '';
 }
+
+/**
+ * The card as the source of a charge, inside a sentence: TR in the ablative
+ * ("•••• 4242 ile biten kartınızdan"), EN as a noun phrase ("your card ending
+ * in 4242"). Without last four digits: "kayıtlı kartınızdan" / "your saved card".
+ */
+export function chargeCardPhrase(last4: string | null | undefined, locale: 'tr' | 'en'): string {
+  const masked = maskedCard(last4);
+  if (locale === 'en') return masked ? `your card ending in ${last4}` : 'your saved card';
+  return masked ? `${masked} ile biten kartınızdan` : 'kayıtlı kartınızdan';
+}
+
+/**
+ * The closing block of every auto-mode mail (billing spec §13.4): the panel
+ * path to turn auto-renew off and, in the mails that carry it (`on`,
+ * `auto_notice`, `card_replaced`), the off-only link (§8.8). Copy is fixed
+ * in code (`BILLING_AUTO_FOOTER`): leaving the instruction must always be
+ * explained the same way.
+ */
+export function autoModeFooter(opts: {
+  copy: { manage: string; offLead: string; offLabel: string };
+  manageUrl: string;
+  offLink?: string | null;
+}): { html: string; text: string } {
+  const link = `color:${PULSE.n700};text-decoration:underline;`;
+  const p = `font-family:${FONTS.body};font-size:12px;line-height:1.6;color:${PULSE.n500};margin:0;`;
+  const manage = `<p style="${p}"><a href="${escapeHtml(opts.manageUrl)}" style="${link}">${escapeHtml(opts.copy.manage)}</a></p>`;
+  const off = opts.offLink
+    ? `<p style="${p}margin-top:8px;">${escapeHtml(opts.copy.offLead)} <a href="${escapeHtml(opts.offLink)}" style="${link}font-weight:600;">${escapeHtml(opts.copy.offLabel)}</a></p>`
+    : '';
+  const html = `<div style="border-top:1px solid ${PULSE.n200};padding-top:20px;">${manage}${off}</div>`;
+  const text = [
+    `${opts.copy.manage}: ${opts.manageUrl}`,
+    ...(opts.offLink ? [`${opts.copy.offLead} ${opts.offLink}`] : []),
+  ].join('\n');
+  return { html, text };
+}

@@ -40,6 +40,12 @@ import {
   BILLING_PERIOD_ENDED_TR,
   BILLING_RENEWAL_UPCOMING_EN,
   BILLING_RENEWAL_UPCOMING_TR,
+  BILLING_RENEWAL_PAID_EN,
+  BILLING_RENEWAL_PAID_TR,
+  BILLING_RENEWAL_FAILED_EN,
+  BILLING_RENEWAL_FAILED_TR,
+  BILLING_AUTO_RENEW_CHANGED_EN,
+  BILLING_AUTO_RENEW_CHANGED_TR,
 } from './billing-defaults';
 import type { MailLocale, MailTemplateKey } from '../copy-loader';
 import { SUPPORT_EMAIL } from '@/lib/company-constants';
@@ -832,6 +838,9 @@ export const MAIL_INLINE_DEFAULTS: Record<
   'billing-renewal-upcoming': { tr: BILLING_RENEWAL_UPCOMING_TR, en: BILLING_RENEWAL_UPCOMING_EN },
   'billing-period-ended': { tr: BILLING_PERIOD_ENDED_TR, en: BILLING_PERIOD_ENDED_EN },
   'billing-card-retention': { tr: BILLING_CARD_RETENTION_TR, en: BILLING_CARD_RETENTION_EN },
+  'billing-renewal-paid': { tr: BILLING_RENEWAL_PAID_TR, en: BILLING_RENEWAL_PAID_EN },
+  'billing-renewal-failed': { tr: BILLING_RENEWAL_FAILED_TR, en: BILLING_RENEWAL_FAILED_EN },
+  'billing-auto-renew-changed': { tr: BILLING_AUTO_RENEW_CHANGED_TR, en: BILLING_AUTO_RENEW_CHANGED_EN },
 };
 
 /**
