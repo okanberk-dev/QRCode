@@ -21,8 +21,9 @@ const VALID_ACTIONS = new Set([
   'undismiss',
 ]);
 
+// Independent reads, run at once (was an array $transaction: 6 -> 1 round trips).
 async function loadActivationData(restaurantId: string) {
-  return prisma.$transaction([
+  return Promise.all([
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
       select: {

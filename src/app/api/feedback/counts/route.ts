@@ -41,32 +41,36 @@ export async function GET(req: NextRequest) {
     // returns the **gerçek total** instead of the 5-row dropdown cap.
     // CLAUDE.md §38.137 Stage 56 (Feedback.isRead schema) + §38.83 Stage 13
     // (PATCH endpoint) + §38.159 Stage 79 (backend filter wiring) zinciri.
-    const [all, attention, lowUnread] = await prisma.$transaction([
-      prisma.feedback.count({ where: baseWhere }),
-      // Low rating = 1–3★, same as the owner inbox and the toolbar filter.
-      prisma.feedback.count({ where: { ...baseWhere, rating: { lte: 3 } } }),
-      prisma.feedback.count({
-        where: { ...baseWhere, rating: { lte: 3 }, isRead: false },
-      }),
-    ]);
-
     // Replied count joins the FeedbackReply table which may not exist on
     // environments where schema migration has not run yet. Fall back to 0
     // so the counts strip still renders instead of blanking the page.
-    let replied = 0;
-    try {
-      replied = await prisma.feedback.count({
+    const repliedCount = prisma.feedback
+      .count({
         where: {
           ...baseWhere,
           replies: { some: {} },
         },
+      })
+      .catch((err: unknown) => {
+        console.warn(
+          '[feedback/counts] replied fallback — did schema migration run?',
+          (err as Error).message,
+        );
+        return 0;
       });
-    } catch (err) {
-      console.warn(
-        '[feedback/counts] replied fallback — did schema migration run?',
-        (err as Error).message,
-      );
-    }
+    // All four counts are independent and run at once (they used to be an
+    // array $transaction followed by the guarded replied count).
+    const [[all, attention, lowUnread], replied] = await Promise.all([
+      Promise.all([
+        prisma.feedback.count({ where: baseWhere }),
+        // Low rating = 1–3★, same as the owner inbox and the toolbar filter.
+        prisma.feedback.count({ where: { ...baseWhere, rating: { lte: 3 } } }),
+        prisma.feedback.count({
+          where: { ...baseWhere, rating: { lte: 3 }, isRead: false },
+        }),
+      ]),
+      repliedCount,
+    ]);
 
     return NextResponse.json(
       {

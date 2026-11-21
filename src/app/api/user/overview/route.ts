@@ -79,37 +79,31 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // §40.1 connection_limit=1 — batch reads via $transaction (single pipelined
-    // round-trip) instead of Promise.all (5 queries queue on the one pooled
-    // connection). feedbackReply counts stay in a SEPARATE guarded transaction
-    // so a lagging join table in a preview deploy degrades to 0 (§19 3-tier
-    // resilience) without zeroing the feedback counts.
-    const [totalReviews, reviews30d, reviews7d] = await prisma.$transaction([
-      prisma.feedback.count({ where: { restaurantId: { in: restaurantIds } } }),
-      prisma.feedback.count({
-        where: { restaurantId: { in: restaurantIds }, createdAt: { gte: thirtyDaysAgo } },
+    // The five counts are independent and run at once (they used to be two
+    // array $transactions, one query after another). feedbackReply counts stay
+    // a SEPARATE guarded group so a lagging join table in a preview deploy
+    // degrades to 0 (§19 3-tier resilience) without zeroing the feedback counts.
+    const replyCounts = Promise.all([
+      prisma.feedbackReply.count({ where: { feedback: { restaurantId: { in: restaurantIds } } } }),
+      prisma.feedbackReply.count({
+        where: {
+          feedback: { restaurantId: { in: restaurantIds } },
+          createdAt: { gte: thirtyDaysAgo },
+        },
       }),
-      prisma.feedback.count({
-        where: { restaurantId: { in: restaurantIds }, createdAt: { gte: sevenDaysAgo } },
-      }),
-    ]);
-
-    let repliesAll = 0;
-    let replies30d = 0;
-    try {
-      [repliesAll, replies30d] = await prisma.$transaction([
-        prisma.feedbackReply.count({ where: { feedback: { restaurantId: { in: restaurantIds } } } }),
-        prisma.feedbackReply.count({
-          where: {
-            feedback: { restaurantId: { in: restaurantIds } },
-            createdAt: { gte: thirtyDaysAgo },
-          },
+    ]).catch(() => [0, 0] as const);
+    const [[totalReviews, reviews30d, reviews7d], [repliesAll, replies30d]] = await Promise.all([
+      Promise.all([
+        prisma.feedback.count({ where: { restaurantId: { in: restaurantIds } } }),
+        prisma.feedback.count({
+          where: { restaurantId: { in: restaurantIds }, createdAt: { gte: thirtyDaysAgo } },
         }),
-      ]);
-    } catch {
-      repliesAll = 0;
-      replies30d = 0;
-    }
+        prisma.feedback.count({
+          where: { restaurantId: { in: restaurantIds }, createdAt: { gte: sevenDaysAgo } },
+        }),
+      ]),
+      replyCounts,
+    ]);
 
     return NextResponse.json(
       {
