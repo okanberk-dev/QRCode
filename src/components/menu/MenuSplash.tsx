@@ -24,16 +24,38 @@ export default function MenuSplash({
   onDone: () => void;
 }) {
   const doneRef = useRef(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const reduceMotion =
-      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const t = window.setTimeout(() => {
-      if (doneRef.current) return;
+    let cancelled = false;
+    const finish = () => {
+      if (cancelled || doneRef.current) return;
       doneRef.current = true;
       onDone();
-    }, reduceMotion ? 0 : SPLASH_MS + SPLASH_OUT_MS);
-    return () => window.clearTimeout(t);
+    };
+    const reduceMotion =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      const t = window.setTimeout(finish, 0);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(t);
+      };
+    }
+    // The SSR splash starts its CSS fade-out clock at first paint, not at
+    // hydration. Ending on the animation itself keeps the canvas inert only
+    // while the splash is actually visible: on a slow phone that hydrates
+    // late, a mount-based timer left the menu showing but untappable for as
+    // long as hydration took. The timer stays as the upper bound.
+    const fadeOut = rootRef.current
+      ?.getAnimations?.()
+      .find((a) => (a as CSSAnimation).animationName === 'bzm-splash-out');
+    fadeOut?.finished.then(finish, () => undefined);
+    const t = window.setTimeout(finish, SPLASH_MS + SPLASH_OUT_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
   }, [onDone]);
 
   const banner = design.structure.header === 'banner';
@@ -41,6 +63,7 @@ export default function MenuSplash({
 
   return (
     <div
+      ref={rootRef}
       data-menu-splash=""
       role="status"
       aria-label={copy.splash(name)}

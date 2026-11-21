@@ -419,7 +419,7 @@ export function DesignPanel({
       </section>
       <section aria-labelledby="menu-design-tagline">
         <SectionTitle id="menu-design-tagline">{copy.design.tagline}</SectionTitle>
-        <TaglineField value={resolved.tagline} disabled={locked} onChange={design.setTagline} />
+        <TaglineField labelId="menu-design-tagline" value={resolved.tagline} disabled={locked} onChange={design.setTagline} />
       </section>
     </div>
   );
