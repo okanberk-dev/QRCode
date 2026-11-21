@@ -26,7 +26,12 @@ import {
   type FeedbackInsertRow,
 } from '@/lib/activity-feed-realtime';
 import type { ActivityEvent } from '@/lib/activity-feed';
-import { getSupabaseRealtimeClient, setRealtimeAuth } from '@/lib/supabase-realtime';
+import {
+  getSupabaseRealtimeClient,
+  isRealtimeConfigured,
+  peekSupabaseRealtimeClient,
+  setRealtimeAuth,
+} from '@/lib/supabase-realtime';
 
 export type RealtimeStatus =
   | 'idle'
@@ -154,14 +159,22 @@ export function useRealtimeActivity({
     let canceled = false;
 
     async function bootstrap() {
-      const client = getSupabaseRealtimeClient();
-      if (!client) {
+      if (!isRealtimeConfigured()) {
         setStatus('disabled');
         return;
       }
       setStatus('connecting');
-      const tokenResponse = await fetchRealtimeToken();
+      // The SDK loads lazily; fetch the token meanwhile (creating the client
+      // opens no connection — the channel subscribe below does).
+      const [client, tokenResponse] = await Promise.all([
+        getSupabaseRealtimeClient(),
+        fetchRealtimeToken(),
+      ]);
       if (canceled) return;
+      if (!client) {
+        setStatus('disabled');
+        return;
+      }
       // Only the businesses this feed shows — otherwise a review for another
       // business would be pushed into the selected business's feed.
       const wanted = scopeKey ? new Set(scopeKey.split(',')) : null;
@@ -249,7 +262,7 @@ export function useRealtimeActivity({
         clearTimeout(newIdsTimerRef.current);
         newIdsTimerRef.current = null;
       }
-      const client = getSupabaseRealtimeClient();
+      const client = peekSupabaseRealtimeClient();
       if (client && channelRef.current) {
         client.removeChannel(channelRef.current).catch(() => {
           // teardown best-effort; uygulama kapanırken hata yutma kabul edilir

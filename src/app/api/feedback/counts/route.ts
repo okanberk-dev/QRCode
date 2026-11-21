@@ -35,6 +35,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0, lowUnread: 0 });
     }
 
+    // `?only=lowUnread` — the notification bell's badge poll needs just this
+    // one number; skip the other three counts (and the replies join). Callers
+    // without the param get the full shape, unchanged.
+    if (searchParams.get('only') === 'lowUnread') {
+      const lowUnread = await prisma.feedback.count({
+        where: { ...baseWhere, rating: { lte: 3 }, isRead: false },
+      });
+      return NextResponse.json(
+        { lowUnread },
+        { headers: { 'Cache-Control': 'private, s-maxage=15, stale-while-revalidate=60' } },
+      );
+    }
+
     // Stage 80 §38.160 — `lowUnread` count NotificationBell + bottom nav
     // badge için. `rating <= 3 AND isRead = false` matches NotificationBell
     // fetch URL filter (`/api/feedback?rating=low&isRead=false`) but

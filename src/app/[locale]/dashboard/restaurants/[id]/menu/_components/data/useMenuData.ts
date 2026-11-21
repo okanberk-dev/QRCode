@@ -21,7 +21,7 @@ class LoadError extends Error {}
 
 export async function fetchMenuData(restaurantId: string, isTr: boolean): Promise<MenuData> {
   const [rRes, cRes] = await Promise.all([
-    fetch(`/api/restaurants/${restaurantId}`),
+    fetch(`/api/restaurants/${restaurantId}?withCover=1`),
     fetch(`/api/restaurants/${restaurantId}/menu/categories`),
   ]);
   const copy = getMenuCopy(isTr ? 'tr' : 'en');

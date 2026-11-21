@@ -242,7 +242,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
     setLoading(true);
     (async () => {
       const [restData, custData] = await Promise.all([
-        canSeeRestaurants ? fetchJson(`/api/restaurants?status=all&limit=${RESULT_LIMIT}`) : null,
+        canSeeRestaurants ? fetchJson(`/api/restaurants?status=all&limit=${RESULT_LIMIT}&fields=options`) : null,
         canSeeCustomers ? fetchJson(`/api/admin/customers?limit=${RESULT_LIMIT}`) : null,
       ]);
       if (cancelled) return;
@@ -275,7 +275,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
     (async () => {
       const [restData, custData] = await Promise.all([
         canSeeRestaurants
-          ? fetchJson(`/api/restaurants?status=all&limit=${RESULT_LIMIT}&search=${q}`, controller.signal)
+          ? fetchJson(`/api/restaurants?status=all&limit=${RESULT_LIMIT}&search=${q}&fields=options`, controller.signal)
           : null,
         canSeeCustomers
           ? fetchJson(`/api/admin/customers?range=all&limit=${RESULT_LIMIT}&search=${q}`, controller.signal)

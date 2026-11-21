@@ -53,8 +53,9 @@ interface NotificationBellProps {
 const LAST_VIEWED_KEY_PREFIX = 'buaze.notifications.lastViewedAt:';
 // How long we trust the in-memory snapshot before refetching on open.
 const STALE_MS = 30_000;
-// Background poll interval while the tab is visible. Cheap — single GET
-// hitting `/api/feedback?rating=low&limit=5` returns at most 5 rows.
+// Background poll interval while the tab is visible. While the dropdown is
+// closed the poll only refreshes the badge (`/api/feedback/counts?only=
+// lowUnread`, one count); the 5-row list is fetched with it only while open.
 const POLL_MS = 60_000;
 
 function readLastViewed(scope: string): number {
@@ -132,51 +133,44 @@ export default function NotificationBell({
   const [lowUnreadCount, setLowUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  // When the dropdown list was last fetched (the badge has its own requests).
   const [lastFetchedAt, setLastFetchedAt] = useState(0);
   const [lastViewedAt, setLastViewedAt] = useState(0);
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Mirrors `open` for the poll / event handlers below.
+  const openRef = useRef(false);
+  // Set when the badge was refreshed without the list (dropdown closed), so
+  // the next open refetches the list instead of showing an older snapshot.
+  const listStaleRef = useRef(false);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   // Hydrate last-viewed timestamp on mount (SSR-safe).
   useEffect(() => {
     setLastViewedAt(readLastViewed(scope));
   }, [scope]);
 
-  const fetchAttention = useCallback(async () => {
+  // Dropdown list: the 5 newest unread low-rating reviews.
+  const fetchList = useCallback(async () => {
     setLoading(true);
     try {
       // Stage 79 §38.159 — `isRead=false` query param (CLAUDE.md §38.137
       // Stage 56 Feedback.isRead migration). Backend artık sadece okunmamış
       // low-rating feedback'leri döner; dropdown list 5-row cap'lenir.
-      //
-      // Stage 80 §38.160 — Badge gerçek total count için ek `/feedback/counts`
-      // GET (lowUnread field). attention.length max 5 cap'ten bağımsız real
-      // unread sayısı. Inbox'ta okundu yapınca PATCH isRead=true (§38.83
-      // Stage 13) sonrası `buaze:feedback-read` custom event tetiklenir
-      // (page-level listener) → NotificationBell anında refetch (60s polling
-      // beklemez) + bottom nav badge anında düşer.
       const feedbackParams = new URLSearchParams({
         rating: 'low',
         limit: '5',
         isRead: 'false',
       });
-      const countsParams = new URLSearchParams();
-      if (restaurantId) {
-        feedbackParams.set('restaurantId', restaurantId);
-        countsParams.set('restaurantId', restaurantId);
-      }
-
-      const countsQuery = countsParams.toString();
-      const [listRes, countsRes] = await Promise.all([
-        fetch(`/api/feedback?${feedbackParams.toString()}`, {
-          cache: 'no-store',
-        }),
-        fetch(`/api/feedback/counts${countsQuery ? `?${countsQuery}` : ''}`, {
-          cache: 'no-store',
-        }),
-      ]);
+      if (restaurantId) feedbackParams.set('restaurantId', restaurantId);
+      const listRes = await fetch(`/api/feedback?${feedbackParams.toString()}`, {
+        cache: 'no-store',
+      });
       if (listRes.ok) {
         const json = await listRes.json();
         const list: AttentionFeedback[] = Array.isArray(json) ? json : json?.data ?? [];
@@ -184,19 +178,55 @@ export default function NotificationBell({
       } else {
         setAttention([]);
       }
+    } catch {
+      // Network blip — leave the previous snapshot intact rather than
+      // flashing an empty list.
+    } finally {
+      // Cleared on failure too (like lastFetchedAt), so a failed fetch is not
+      // retried in a loop by the open effect.
+      listStaleRef.current = false;
+      setLoading(false);
+      setLastFetchedAt(Date.now());
+    }
+  }, [restaurantId]);
+
+  // Badge: Stage 80 §38.160 — real total of unread low ratings (`rating <= 3
+  // AND isRead = false`), independent of the 5-row list cap. Inbox'ta okundu
+  // yapınca PATCH isRead=true (§38.83 Stage 13) sonrası `buaze:feedback-read`
+  // custom event tetiklenir → bell anında refetch (60s polling beklemez) +
+  // bottom nav badge anında düşer.
+  const fetchBadge = useCallback(async () => {
+    try {
+      const countsParams = new URLSearchParams({ only: 'lowUnread' });
+      if (restaurantId) countsParams.set('restaurantId', restaurantId);
+      const countsRes = await fetch(`/api/feedback/counts?${countsParams.toString()}`, {
+        cache: 'no-store',
+      });
       if (countsRes.ok) {
         const counts = await countsRes.json();
         const lu = Number(counts?.lowUnread);
         setLowUnreadCount(Number.isFinite(lu) && lu >= 0 ? lu : 0);
       }
     } catch {
-      // Network blip — leave the previous snapshot intact rather than
-      // flashing an empty list.
-    } finally {
-      setLoading(false);
-      setLastFetchedAt(Date.now());
+      // Network blip — keep the previous badge.
     }
   }, [restaurantId]);
+
+  // List + badge together (first load, refresh while the dropdown is open).
+  const fetchAttention = useCallback(async () => {
+    await Promise.all([fetchList(), fetchBadge()]);
+  }, [fetchList, fetchBadge]);
+
+  // Background refresh: everything while the dropdown is open; only the
+  // badge while it is closed (the list is refetched when it next opens).
+  const refreshInBackground = useCallback(() => {
+    if (openRef.current) {
+      void fetchAttention();
+      return;
+    }
+    listStaleRef.current = true;
+    void fetchBadge();
+  }, [fetchAttention, fetchBadge]);
 
   // Stage 80 §38.160 — Inbox'ta row tıklanınca page-level PATCH isRead=true
   // sonrası `buaze:feedback-read` custom event tetiklenir; NotificationBell
@@ -204,16 +234,17 @@ export default function NotificationBell({
   // mevcut `buaze:notification-count` event'i ile (§38.141 Stage 60).
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const handler = () => void fetchAttention();
+    const handler = () => refreshInBackground();
     window.addEventListener('buaze:feedback-read', handler);
     return () => window.removeEventListener('buaze:feedback-read', handler);
-  }, [fetchAttention]);
+  }, [refreshInBackground]);
 
   // Lazy fetch on first open, refresh if the snapshot is older than
-  // STALE_MS so a long-idle tab still shows fresh data when re-opened.
+  // STALE_MS (or the badge moved on without it) so a long-idle tab still
+  // shows fresh data when re-opened.
   useEffect(() => {
     if (!open) return;
-    if (Date.now() - lastFetchedAt > STALE_MS) {
+    if (Date.now() - lastFetchedAt > STALE_MS || listStaleRef.current) {
       void fetchAttention();
     }
   }, [open, lastFetchedAt, fetchAttention]);
@@ -228,7 +259,7 @@ export default function NotificationBell({
       if (pollTimerRef.current) return;
       pollTimerRef.current = setInterval(() => {
         if (document.visibilityState === 'visible') {
-          void fetchAttention();
+          refreshInBackground();
         }
       }, POLL_MS);
     };
@@ -249,7 +280,7 @@ export default function NotificationBell({
       if (document.visibilityState === 'visible') {
         // Returning to the tab — refresh immediately, then resume the
         // polling cadence.
-        void fetchAttention();
+        refreshInBackground();
       }
     };
     document.addEventListener('visibilitychange', onVis);
@@ -261,7 +292,7 @@ export default function NotificationBell({
     // updates it itself. Re-creating the interval on every fetch would
     // shift the cadence forward unpredictably.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchAttention]);
+  }, [fetchAttention, refreshInBackground]);
 
   // Click-outside / Escape — close the panel.
   useEffect(() => {

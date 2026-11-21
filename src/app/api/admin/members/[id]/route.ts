@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
+import { loadAdminMemberDetail } from '@/lib/admin-member-detail';
 
 // GET /api/admin/members/[id] — full detail for the member detail page.
 // Returns user fields + counts (restaurants, feedback last 30d, invoices,
@@ -21,73 +22,10 @@ export async function GET(
   }
   const { id } = await params;
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      plan: true,
-      trialEndsAt: true,
-      isActive: true,
-      deactivatedAt: true,
-      scheduledDeletionAt: true,
-      lastInvitedAt: true,
-      lastTrialReminderAt: true,
-      locale: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: { select: { restaurants: true } },
-    },
-  });
-  if (!user) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
-
-  // Feedback count last 30d across owned restaurants.
-  const restaurantIds = (
-    await prisma.restaurant.findMany({ where: { userId: id }, select: { id: true } })
-  ).map((r) => r.id);
-
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const [feedbackCount30d, invoiceCount, teamCount, subscription] = await Promise.all([
-    restaurantIds.length === 0
-      ? 0
-      : prisma.feedback.count({
-          where: { restaurantId: { in: restaurantIds }, createdAt: { gte: since } },
-        }),
-    prisma.billingInvoice.count({ where: { userId: id } }),
-    prisma.teamMember.count({ where: { ownerId: id } }),
-    prisma.billingSubscription.findUnique({
-      where: { userId: id },
-      select: {
-        plan: true,
-        status: true,
-        renewsAt: true,
-        amount: true,
-        currency: true,
-        billingCycle: true,
-      },
-    }),
-  ]);
-
-  return NextResponse.json({
-    user,
-    counts: {
-      restaurants: user._count.restaurants,
-      feedbackLast30d: feedbackCount30d,
-      invoices: invoiceCount,
-      teamMembers: teamCount,
-    },
-    subscription: subscription
-      ? {
-          plan: subscription.plan,
-          status: subscription.status,
-          renewsAt: subscription.renewsAt?.toISOString() ?? null,
-          amount: subscription.amount ? Number(subscription.amount) : null,
-          currency: subscription.currency,
-          billingCycle: subscription.billingCycle,
-        }
-      : null,
-  });
+  // Shared with the server-rendered detail page (src/lib/admin-member-detail.ts).
+  const detail = await loadAdminMemberDetail(id);
+  if (!detail) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+  return NextResponse.json(detail);
 }
 
 // PUT /api/admin/members/[id] — update plan, isActive, trialEndsAt

@@ -490,26 +490,43 @@ export async function GET(req: NextRequest) {
     // kullanıcıyı "filter şu an pasif" şeklinde uyarır.
     let joinFiltersApplied = true;
     const fullWhere: Prisma.FeedbackWhereInput = { ...baseWhere, ...joinWhere };
+    // Happy path: list (with the 1:1 AI draft relation) and total count in one
+    // batched transaction — no separate count and draft round trips. Any
+    // failure falls through to the original tiers below, which keep their own
+    // count and draft lookup, so the `degraded` flags mean exactly what they
+    // meant before (a missing FeedbackAiDraft table still only degrades
+    // `aiDraft`).
+    let total: number | null = null;
+    let aiDraftsFromInclude = false;
     try {
-      feedbacks = await prisma.feedback.findMany({
-        where: fullWhere,
-        orderBy: { createdAt: sortOrder },
-        skip,
-        take: limit,
-        include: {
-          restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } },
-          flag: { select: { id: true } },
-          assignment: { select: { assigneeId: true } },
-          tags: { select: { id: true, label: true, score: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
-          _count: { select: { replies: true } },
-        },
-      });
-    } catch (joinErr) {
+      const [rows, count] = await prisma.$transaction([
+        prisma.feedback.findMany({
+          where: fullWhere,
+          orderBy: { createdAt: sortOrder },
+          skip,
+          take: limit,
+          include: {
+            restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } },
+            flag: { select: { id: true } },
+            assignment: { select: { assigneeId: true } },
+            tags: { select: { id: true, label: true, score: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
+            _count: { select: { replies: true } },
+            aiDraft: { select: { tone: true, source: true } },
+          },
+        }),
+        prisma.feedback.count({ where: fullWhere }),
+      ]);
+      feedbacks = rows;
+      total = count;
+      aiDraftsFromInclude = true;
+    } catch (happyErr) {
       console.warn(
-        '[feedback] tags+joins failed, retrying without tags — did schema migration run?',
-        (joinErr as Error).message,
+        '[feedback] batched list+count+draft query failed, retrying tier by tier',
+        (happyErr as Error).message,
       );
-      tagsAvailable = false;
+      feedbacks = [];
+    }
+    if (!aiDraftsFromInclude) {
       try {
         feedbacks = await prisma.feedback.findMany({
           where: fullWhere,
@@ -520,38 +537,66 @@ export async function GET(req: NextRequest) {
             restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } },
             flag: { select: { id: true } },
             assignment: { select: { assigneeId: true } },
+            tags: { select: { id: true, label: true, score: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
             _count: { select: { replies: true } },
           },
         });
-      } catch (innerErr) {
+      } catch (joinErr) {
         console.warn(
-          '[feedback] flag/assignment/replies joins failed, falling back to no joins + dropping JOIN filters',
-          (innerErr as Error).message,
+          '[feedback] tags+joins failed, retrying without tags — did schema migration run?',
+          (joinErr as Error).message,
         );
-        joinsAvailable = false;
-        joinFiltersApplied = false;
-        feedbacks = await prisma.feedback.findMany({
-          where: baseWhere,
-          orderBy: { createdAt: sortOrder },
-          skip,
-          take: limit,
-          include: { restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } } },
-        });
+        tagsAvailable = false;
+        try {
+          feedbacks = await prisma.feedback.findMany({
+            where: fullWhere,
+            orderBy: { createdAt: sortOrder },
+            skip,
+            take: limit,
+            include: {
+              restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } },
+              flag: { select: { id: true } },
+              assignment: { select: { assigneeId: true } },
+              _count: { select: { replies: true } },
+            },
+          });
+        } catch (innerErr) {
+          console.warn(
+            '[feedback] flag/assignment/replies joins failed, falling back to no joins + dropping JOIN filters',
+            (innerErr as Error).message,
+          );
+          joinsAvailable = false;
+          joinFiltersApplied = false;
+          feedbacks = await prisma.feedback.findMany({
+            where: baseWhere,
+            orderBy: { createdAt: sortOrder },
+            skip,
+            take: limit,
+            include: { restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } } },
+          });
+        }
       }
     }
 
     // PR15 — count'ı tier sonucuyla aynı where ile yap. joinFiltersApplied
     // false ise baseWhere kullan (yoksa count fail eder, total=0 görünür).
-    const total = await prisma.feedback.count({
-      where: joinFiltersApplied ? fullWhere : baseWhere,
-    });
+    if (total === null) {
+      total = await prisma.feedback.count({
+        where: joinFiltersApplied ? fullWhere : baseWhere,
+      });
+    }
 
     // Pulse AI draft lookup — separate from the main include chain so a
     // missing table (preview before schema migration) doesn't cascade into
     // the existing 3-tier resilience. Map by feedbackId for O(1) join.
     let aiDraftAvailable = true;
     const aiDraftMap = new Map<string, { tone: string; source: string }>();
-    if (feedbacks.length > 0) {
+    if (aiDraftsFromInclude) {
+      for (const f of feedbacks) {
+        const d = f.aiDraft as { tone: string; source: string } | null | undefined;
+        if (d) aiDraftMap.set(f.id as string, { tone: d.tone, source: d.source });
+      }
+    } else if (feedbacks.length > 0) {
       try {
         const ids = feedbacks.map((f) => f.id as string);
         const drafts = await prisma.feedbackAiDraft.findMany({
@@ -587,12 +632,16 @@ export async function GET(req: NextRequest) {
       // panel — including the reviewer's IP address and user agent, shown to
       // owners and read-only team viewers alike. Neither is used by the UI;
       // drop them here (KVKK data minimisation, §13.9 / §37.7).
-      const { ipAddress: _ip, userAgent: _ua, ...safe } = f as typeof f & {
+      // `aiDraft` (happy-path include) is only read through aiDraftMap; it is
+      // not part of the response row.
+      const { ipAddress: _ip, userAgent: _ua, aiDraft: _draft, ...safe } = f as typeof f & {
         ipAddress?: unknown;
         userAgent?: unknown;
+        aiDraft?: unknown;
       };
       void _ip;
       void _ua;
+      void _draft;
       return {
         ...safe,
         customerName: f.name,

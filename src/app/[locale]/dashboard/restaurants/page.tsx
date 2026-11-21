@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt, isAdminRole, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
+import { getTeamMemberRole } from '@/lib/panel-access';
+import { getPanelRestaurants, getPanelUser } from '../_lib/panel-data';
 import type { Locale } from '@/lib/translations';
 import { latestChecksForRestaurants } from '@/lib/platform-link-test';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
@@ -34,15 +35,9 @@ export default async function DashboardRestaurantsPage({ params }: PageProps) {
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/restaurants`);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: {
-      id: true,
-      email: true,
-      plan: true,
-      role: true,
-    },
-  });
+  // Request-memoised (React cache) — on a hard load the layout already read
+  // this user, so no second query.
+  const user = await getPanelUser(payload.userId);
 
   if (!user) redirect(`/${locale}/auth/login?next=/${locale}/dashboard/restaurants`);
 
@@ -63,12 +58,12 @@ export default async function DashboardRestaurantsPage({ params }: PageProps) {
     plan: user.plan,
     source: 'user',
   };
-  const [scopedIds, teamRole] = await Promise.all([
-    getScopedRestaurantIds(actor),
-    getTeamMemberRole(actor),
-  ]);
+  // The ids of the businesses in scope (getScopedRestaurantIds). Taken from
+  // the request-memoised business list the layout already loaded; they only
+  // feed `IN (...)` filters below, where an id without a row matches nothing.
+  const ids = (await getPanelRestaurants(actor.id, actor.role, actor.email)).map((r) => r.id);
+  const teamRole = await getTeamMemberRole(actor);
   const viewerMode = teamRole === 'viewer';
-  const ids = scopedIds ?? [];
   const now = Date.now();
   const since30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
   // One connection, one snapshot (CLAUDE.md §40.1). Feedback stats, the

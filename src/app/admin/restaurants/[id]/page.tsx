@@ -156,7 +156,7 @@ export default function RestaurantDetailPage() {
       return;
     }
     let cancelled = false;
-    fetch(`/api/restaurants?ownerId=${encodeURIComponent(ownerUserId)}&status=all&limit=100`)
+    fetch(`/api/restaurants?ownerId=${encodeURIComponent(ownerUserId)}&status=all&limit=100&fields=options`)
       .then((res) => (res.ok ? res.json() : null))
       .then((body) => {
         if (cancelled || !body) return;
@@ -274,15 +274,17 @@ export default function RestaurantDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const loadOwners = async () => {
       try {
         // /api/admin/members answers with a `{ data, meta }` envelope and
         // never a bare array, so this parse always produced [] — the owner
         // selector was permanently empty and a superadmin could not attach a
         // business to a customer, even though PUT fully supports `userId`.
         const res = await fetch('/api/admin/members?perPage=100');
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           const data = await res.json();
+          if (cancelled) return;
           setOwners(
             Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [],
           );
@@ -290,7 +292,22 @@ export default function RestaurantDetailPage() {
       } catch {
         // Only superadmin can list owners; scoped users simply don't see the selector.
       }
-    })();
+    };
+    // The owner selector is secondary: start its request once the browser
+    // is idle after hydration so it does not compete with the business
+    // fetch that paints the page. The selector still appears when it lands.
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(() => void loadOwners(), { timeout: 1500 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(handle);
+      };
+    }
+    const timer = window.setTimeout(() => void loadOwners(), 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   const handleSave = async (e: FormEvent) => {

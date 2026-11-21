@@ -74,7 +74,8 @@ export default async function AdminAnalyticsPage({
     redirect(await adminLandingPath(adminId, role, '/admin/analytics'));
   }
   const tokenRestaurantId = getStringClaim(payload, 'restaurantId');
-  const adminUser = adminId !== 'env-admin'
+  // Only a manager's scope reads this row; skip the round-trip otherwise.
+  const adminUser = role === 'manager' && adminId !== 'env-admin'
     ? await prisma.adminUser.findUnique({
         where: { id: adminId },
         select: { restaurantId: true },

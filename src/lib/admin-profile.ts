@@ -1,6 +1,13 @@
-import type { PanelActor } from '@/lib/auth';
+import type { JWTPayload } from 'jose';
+import { verifyAdminTokenForLayout, verifyJwt, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getSiteSettings } from '@/lib/site-settings';
+import {
+  adminActorFromPayload,
+  adminPermissionKeys,
+  adminProfileFromRow,
+  isAdminRowStale,
+} from '@/lib/admin-session-row';
 
 /**
  * Fetch granular RBAC grants for a non-superadmin admin. Superadmin bypasses
@@ -20,7 +27,7 @@ async function fetchAdminPermissions(adminUserId: string, role: string): Promise
       },
       select: { resource: true, action: true },
     });
-    return rows.map((r) => `${r.resource}:${r.action}`);
+    return adminPermissionKeys(role, rows);
   } catch (err) {
     const code = (err as { code?: string })?.code;
     if (code === 'P2022') return [];
@@ -134,21 +141,7 @@ export async function loadAdminPanelProfile(actor: PanelActor): Promise<AdminPan
     if (adminUser) {
       const role = adminUser.role || 'superadmin';
       const permissions = await fetchAdminPermissions(adminUser.id, role);
-      return {
-        id: adminUser.id,
-        username: adminUser.username,
-        email: adminUser.email || adminUser.username,
-        recoveryEmail: adminUser.email || null,
-        name: adminUser.username,
-        role,
-        plan: null,
-        trialEndsAt: null,
-        restaurantId: adminUser.restaurantId || null,
-        restaurantIds: adminUser.restaurantId ? [adminUser.restaurantId] : [],
-        logoUrl,
-        faviconUrl,
-        permissions,
-      };
+      return adminProfileFromRow(adminUser, permissions, { logoUrl, faviconUrl });
     }
   } catch (error) {
     console.error('[admin-profile] Failed to fetch admin profile:', error);
@@ -171,4 +164,97 @@ export async function loadAdminPanelProfile(actor: PanelActor): Promise<AdminPan
     faviconUrl,
     permissions: [],
   };
+}
+
+export interface AdminLayoutAuth {
+  payload: JWTPayload;
+  actor: PanelActor;
+  /**
+   * Built from the same AdminUser read that decided staleness. Null on the
+   * legacy path (env-admin, token without `iat`, or the combined read failed);
+   * the caller then loads it with `loadAdminPanelProfile(actor)` as before.
+   */
+  profile: AdminPanelProfile | null;
+}
+
+/**
+ * Admin layout auth + profile in one AdminUser read.
+ *
+ * Before: `verifyAdminTokenForLayout` read `passwordChangedAt`, then
+ * `loadAdminPanelProfile` read the same row again and then the permission
+ * grants — three sequential round-trips on every hard load of /admin/*.
+ * Now one `findUnique` carries the staleness column, the profile columns
+ * and the active grants. The verdict is the same as `isAdminTokenStale`
+ * (missing row = stale, iat*1000 < passwordChangedAt = stale) and the
+ * profile is the same as `loadAdminPanelProfile`.
+ *
+ * Any error on the combined read (a DB hiccup, P2022 on a preview database
+ * that misses a column) falls back to the exact previous two-step path,
+ * which keeps its fail-open staleness and P2022 profile fallback.
+ *
+ * Returns null when the token is invalid, not an admin token, or stale.
+ */
+export async function authenticateAdminLayout(rawToken: string): Promise<AdminLayoutAuth | null> {
+  const payload = await verifyJwt(rawToken);
+  const actor = payload ? adminActorFromPayload(payload) : null;
+  if (!payload || !actor) return null;
+
+  const adminId = typeof payload.id === 'string' ? payload.id : null;
+  const iat = typeof payload.iat === 'number' ? payload.iat : null;
+  // The fast path only runs where the staleness check would hit the DB with
+  // the same id the profile uses; every other case keeps the old code path.
+  if (adminId && adminId !== 'env-admin' && iat && actor.id === adminId) {
+    let row:
+      | {
+          id: string;
+          username: string;
+          role: string;
+          restaurantId: string | null;
+          email: string | null;
+          passwordChangedAt: Date | null;
+          permissions: Array<{ resource: string; action: string }>;
+        }
+      | null
+      | undefined;
+    try {
+      const now = new Date();
+      row = await prisma.adminUser.findUnique({
+        where: { id: adminId },
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          restaurantId: true,
+          email: true,
+          passwordChangedAt: true,
+          permissions: {
+            where: { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+            select: { resource: true, action: true },
+          },
+        },
+      });
+    } catch {
+      row = undefined;
+    }
+    if (row !== undefined) {
+      if (isAdminRowStale(iat, row)) return null;
+      // isAdminRowStale returned false, so the row exists.
+      const adminRow = row as NonNullable<typeof row>;
+      const { logoUrl, faviconUrl } = await getSiteSettings();
+      const role = adminRow.role || 'superadmin';
+      return {
+        payload,
+        actor,
+        profile: adminProfileFromRow(adminRow, adminPermissionKeys(role, adminRow.permissions), {
+          logoUrl,
+          faviconUrl,
+        }),
+      };
+    }
+  }
+
+  const verified = await verifyAdminTokenForLayout(rawToken);
+  const verifiedActor = verified ? adminActorFromPayload(verified) : null;
+  if (!verified || !verifiedActor) return null;
+  return { payload: verified, actor: verifiedActor, profile: null };
 }

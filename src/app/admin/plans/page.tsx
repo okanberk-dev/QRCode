@@ -13,7 +13,7 @@ import {
   ProgressBar,
   StatCard,
 } from '@/components/ui';
-import { getAllPlansForAdmin } from '@/lib/subscription-plans';
+import { toAdminRow, type AdminPlanRow } from '@/lib/subscription-plans';
 import {
   REVENUE_SUBSCRIPTION_SELECT,
   buildPlanDistribution,
@@ -47,26 +47,38 @@ export default async function AdminPlansPage() {
   // çalışır). Pre-fix: 3 protocol round-trip; post-fix: 1 protocol RT
   // (~80-150ms cold load tasarrufu).
   //
-  // `getAllPlansForAdmin()` internal'da kendi prisma çağrılarını yapar;
-  // helper'ı transaction içine alamadığımız için 2 ana read'i (owners +
-  // subscriptions) transaction'la, managedPlans paralel `Promise.all`'a
-  // alındı — managedPlans helper kendi pool client'ını alır, ortak
-  // transaction'a girmez ama paralel çalışır.
-  const [ownersAndSubs, managedPlans] = await Promise.all([
-    prisma.$transaction([
-      prisma.user.findMany({
-        where: { role: 'restaurant_owner' },
-        select: { id: true, name: true, email: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
+  // The plans read joins the same $transaction (no Promise.all over Prisma
+  // reads, §14.1). A failing plans read used to degrade to an empty tier
+  // list; that is kept: on error we retry without it and use [].
+  const ownersQuery = () =>
+    prisma.user.findMany({
+      where: { role: 'restaurant_owner' },
+      select: { id: true, name: true, email: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  // §15.2 canonical billing — tier usage + MRR come from BillingSubscription
+  // (subscriptionPlanId + billingCycle + admin override). `User.plan` is a
+  // lifecycle bucket (monthly/yearly/free…), never a tier name.
+  const subscriptionsQuery = () =>
+    prisma.billingSubscription.findMany({ select: REVENUE_SUBSCRIPTION_SELECT });
+  let owners: Awaited<ReturnType<typeof ownersQuery>>;
+  let subscriptions: Awaited<ReturnType<typeof subscriptionsQuery>>;
+  let managedPlans: AdminPlanRow[];
+  try {
+    const [ownerRows, subscriptionRows, planRows] = await prisma.$transaction([
+      ownersQuery(),
+      subscriptionsQuery(),
+      prisma.subscriptionPlan.findMany({
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       }),
-      // §15.2 canonical billing — tier usage + MRR come from BillingSubscription
-      // (subscriptionPlanId + billingCycle + admin override). `User.plan` is a
-      // lifecycle bucket (monthly/yearly/free…), never a tier name.
-      prisma.billingSubscription.findMany({ select: REVENUE_SUBSCRIPTION_SELECT }),
-    ]),
-    getAllPlansForAdmin().catch(() => []),
-  ]);
-  const [owners, subscriptions] = ownersAndSubs;
+    ]);
+    owners = ownerRows;
+    subscriptions = subscriptionRows;
+    managedPlans = planRows.map(toAdminRow);
+  } catch {
+    [owners, subscriptions] = await prisma.$transaction([ownersQuery(), subscriptionsQuery()]);
+    managedPlans = [];
+  }
   const now = new Date();
 
   const totalOwners = owners.length;

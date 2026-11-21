@@ -7,7 +7,7 @@ import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
-import { buildReplyTemplate } from '@/lib/scaffolding';
+import { buildReplyTemplate } from '@/lib/reply-template';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { getOwnerShellActiveRestaurantId } from '@/components/dashboard/UserDashboardShell';
 import {
@@ -509,12 +509,33 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     void markFeedbackRead(activeId);
   }, [activeId, feedbacks, loading, markFeedbackRead, isDesktop, isMobileDetailView]);
 
+  // The list row already says whether the selected review has replies
+  // (`isReplied` from the replies join). Read through a ref so the thread
+  // effect below still re-runs only on selection changes. Not trusted when
+  // the list came back without its joins (`degraded.joins`: every row then
+  // reads `isReplied: false`).
+  const activeKnownUnreplied = active?.isReplied === false && !degraded?.joins;
+  const activeKnownUnrepliedRef = useRef(activeKnownUnreplied);
+  useEffect(() => {
+    activeKnownUnrepliedRef.current = activeKnownUnreplied;
+  }, [activeKnownUnreplied]);
+
   // ============================================================
   // Sent reply thread fetch on selection
   // ============================================================
   useEffect(() => {
     if (!activeFeedbackId) {
       setSentReplies([]);
+      return;
+    }
+    // A review with no replies (and nothing sent from this tab) always gets
+    // an empty thread back — skip the request.
+    if (
+      activeKnownUnrepliedRef.current &&
+      (sentLocallyRef.current.get(activeFeedbackId)?.length ?? 0) === 0
+    ) {
+      setSentReplies([]);
+      setSentLoading(false);
       return;
     }
     let cancelled = false;

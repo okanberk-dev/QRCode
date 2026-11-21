@@ -46,6 +46,12 @@ interface CommandPaletteProps {
   base: string;
   /** Static nav items so users can quickly jump to top-level pages by name. */
   navItems: NavItem[];
+  /**
+   * Businesses resolved by the dashboard layout (active, newest first, max
+   * 20 — what `/api/restaurants` returns). When given, the palette does not
+   * fetch them on open.
+   */
+  restaurants?: Array<{ id: string; name: string; category?: string | null; slug?: string | null }>;
 }
 
 /**
@@ -69,14 +75,34 @@ interface CommandPaletteProps {
  *  - Esc          → close.
  *  - Backdrop     → close.
  */
-export default function CommandPalette({ open, onClose, locale, base, navItems }: CommandPaletteProps) {
+export default function CommandPalette({
+  open,
+  onClose,
+  locale,
+  base,
+  navItems,
+  restaurants: providedRestaurants,
+}: CommandPaletteProps) {
   const router = useRouter();
   const isTr = locale === 'tr';
 
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [restaurants, setRestaurants] = useState<RestaurantHit[]>([]);
+  const [fetchedRestaurants, setRestaurants] = useState<RestaurantHit[]>([]);
   const [restaurantsLoaded, setRestaurantsLoaded] = useState(false);
+  const restaurants = useMemo<RestaurantHit[]>(
+    () =>
+      providedRestaurants
+        ? providedRestaurants.map((r) => ({
+            kind: 'restaurant' as const,
+            id: r.id,
+            name: r.name,
+            category: r.category ?? null,
+            slug: r.slug ?? null,
+          }))
+        : fetchedRestaurants,
+    [providedRestaurants, fetchedRestaurants],
+  );
   const [feedbacks, setFeedbacks] = useState<FeedbackHit[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -96,9 +122,10 @@ export default function CommandPalette({ open, onClose, locale, base, navItems }
     }
   }, [open]);
 
-  // Lazy-load restaurants the first time the palette opens.
+  // Lazy-load restaurants the first time the palette opens (only when the
+  // shell did not pass them in).
   useEffect(() => {
-    if (!open || restaurantsLoaded) return;
+    if (!open || restaurantsLoaded || providedRestaurants) return;
     let cancelled = false;
     (async () => {
       try {
@@ -124,7 +151,7 @@ export default function CommandPalette({ open, onClose, locale, base, navItems }
     return () => {
       cancelled = true;
     };
-  }, [open, restaurantsLoaded]);
+  }, [open, restaurantsLoaded, providedRestaurants]);
 
   // Debounce the query — 250ms. Avoids feedback API hammering.
   useEffect(() => {

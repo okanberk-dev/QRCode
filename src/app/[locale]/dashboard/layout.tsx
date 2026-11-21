@@ -9,7 +9,8 @@ import {
   type PanelActor,
 } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
+import { getTeamMemberRole } from '@/lib/panel-access';
+import { getPanelRestaurants, getPanelUser } from './_lib/panel-data';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { Locale } from '@/lib/translations';
@@ -145,19 +146,9 @@ export default async function DashboardLayout({
     redirect(`/${locale}/auth/login`);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      plan: true,
-      trialEndsAt: true,
-      createdAt: true,
-      isActive: true,
-      role: true,
-    },
-  });
+  // Request-memoised (React cache): the page of this request reads the same
+  // user and business list without another query.
+  const user = await getPanelUser(payload.userId);
 
   if (!user || !user.isActive) {
     redirect(`/${locale}/auth/login`);
@@ -189,36 +180,34 @@ export default async function DashboardLayout({
   };
   // §22 viewer-mode UI gating — team_member ise TeamMember.role'u çek;
   // owner için null döner (gating uygulanmaz). Helper Owner/admin/manager için
-  // erken return ile DB hit yapmaz. `getScopedRestaurantIds` ile paralel
-  // (ikisi de team_member için kısa findFirst/findMany; owner için biri
-  // findMany biri no-op — Promise.all güvenli).
-  const [scopedIds, teamRole] = await Promise.all([
-    getScopedRestaurantIds(actor),
+  // erken return ile DB hit yapmaz.
+  //
+  // Businesses: same scope (getScopedRestaurantIds) and order (createdAt asc)
+  // as before; the shell shows the first 50. The full list is shared with the
+  // page through the request cache (owners: one `userId` query).
+  // Independent reads run side by side (each is a round trip to Supabase;
+  // CLAUDE.md §14.1 readAll note). Announcements and site settings are cached.
+  const [allRestaurants, teamRole, announcements, { logoUrl }] = await Promise.all([
+    getPanelRestaurants(actor.id, actor.role, actor.email),
     getTeamMemberRole(actor),
+    fetchActiveAnnouncements(locale),
+    getSiteSettings(),
   ]);
   const viewerMode = teamRole === 'viewer';
-  const restaurants =
-    scopedIds && scopedIds.length > 0
-      ? await prisma.restaurant.findMany({
-          where: { id: { in: scopedIds } },
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            category: true,
-            primaryColor: true,
-            isActive: true,
-            menuEnabled: true,
-            externalPlatformsEnabled: true,
-            _count: { select: { feedbacks: true } },
-          },
-          orderBy: { createdAt: 'asc' },
-          take: 50,
-        })
-      : [];
+  const restaurants = allRestaurants.slice(0, 50);
+  // Cmd+K palette list — what `GET /api/restaurants` returned to it on every
+  // open: active businesses in scope, newest first, at most 20.
+  const paletteRestaurants = allRestaurants
+    .filter((restaurant) => restaurant.isActive)
+    .reverse()
+    .slice(0, 20)
+    .map((restaurant) => ({
+      id: restaurant.id,
+      name: restaurant.name,
+      slug: restaurant.slug,
+      category: restaurant.category,
+    }));
 
-  const announcements = await fetchActiveAnnouncements(locale);
-  const { logoUrl } = await getSiteSettings();
   const totalFeedbacks = restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
 
   return (
@@ -229,6 +218,8 @@ export default async function DashboardLayout({
       logoUrl={logoUrl}
       viewerMode={viewerMode}
       canAddBusiness={(user.role || 'restaurant_owner') !== 'team_member'}
+      isImpersonating={isImpersonating}
+      paletteRestaurants={paletteRestaurants}
       user={{
         name: user.name,
         email: user.email,

@@ -7,15 +7,14 @@ import AdminMobileNav from '@/components/admin/AdminMobileNav';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import ImpersonationBanner from '@/components/dashboard/ImpersonationBanner';
-import {
-  isAdminRole,
-  verifyAdminTokenForLayout,
-  verifyJwt,
-  type PanelActor,
-} from '@/lib/auth';
+import { verifyJwt, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AdminTranslationProvider } from '@/components/admin/AdminTranslationProvider';
-import { loadAdminPanelProfile, type AdminPanelProfile } from '@/lib/admin-profile';
+import {
+  authenticateAdminLayout,
+  loadAdminPanelProfile,
+  type AdminPanelProfile,
+} from '@/lib/admin-profile';
 
 // Root layout for the admin panel (one root layout per top-level segment,
 // see src/components/root/RootHtml.tsx). It already reads cookies, so the
@@ -24,11 +23,6 @@ export const viewport: Viewport = ROOT_VIEWPORT;
 
 export function generateMetadata(): Promise<Metadata> {
   return buildBaseMetadata();
-}
-
-function getStringClaim(payload: Awaited<ReturnType<typeof verifyJwt>>, key: string) {
-  const value = payload?.[key];
-  return typeof value === 'string' && value.trim() ? value : null;
 }
 
 // Per-instance cache; short TTL so admin edits propagate within a minute.
@@ -90,32 +84,29 @@ export default async function AdminLayout({
   const adminLocale = (cookieStore.get('ADMIN_LOCALE')?.value === 'en' ? 'en' : 'tr') as 'tr' | 'en';
 
   let isAuthenticated = false;
-  let payload: Awaited<ReturnType<typeof verifyJwt>> = null;
   let actor: PanelActor | null = null;
+  // Filled by the same AdminUser read that checked staleness; null means
+  // "load it below the usual way" (env-admin / legacy path).
+  let preloadedProfile: AdminPanelProfile | null = null;
 
   try {
     if (token) {
-      // CLAUDE.md §38 audit-api-401 — staleness-aware verifier matches the
-      // API gate. Without it a token issued before the most recent admin
+      // CLAUDE.md §38 audit-api-401 — staleness-aware verification matches
+      // the API gate. Without it a token issued before the most recent admin
       // password rotation would render the panel chrome only for every
-      // downstream fetch to 401.
-      payload = await verifyAdminTokenForLayout(token);
-      const role = getStringClaim(payload, 'role');
-      isAuthenticated = !!payload && isAdminRole(role);
-      if (isAuthenticated && role) {
-        actor = {
-          id: getStringClaim(payload, 'id') || 'env-admin',
-          role,
-          restaurantId: getStringClaim(payload, 'restaurantId'),
-          username: getStringClaim(payload, 'username'),
-          email: getStringClaim(payload, 'email') || getStringClaim(payload, 'username'),
-          plan: getStringClaim(payload, 'plan'),
-          source: 'admin',
-        };
+      // downstream fetch to 401. One AdminUser read decides staleness and
+      // carries the profile + grants (§14.1, no repeated reads of the row).
+      const auth = await authenticateAdminLayout(token);
+      if (auth) {
+        isAuthenticated = true;
+        actor = auth.actor;
+        preloadedProfile = auth.profile;
       }
     }
   } catch {
     isAuthenticated = false;
+    actor = null;
+    preloadedProfile = null;
   }
 
   // Unauthenticated requests only ever reach the login / password-recovery
@@ -138,13 +129,13 @@ export default async function AdminLayout({
       !!userPeek && typeof userPeek.impersonating === 'object' && userPeek.impersonating !== null;
   }
 
+  // Sequential, not Promise.all over Prisma reads (CLAUDE.md §14.1,
+  // connection_limit=1). Announcements come from a 60 s process cache.
   let announcements: DashboardAnnouncement[] = [];
   let adminProfile: AdminPanelProfile | null = null;
   if (showSidebar && actor) {
-    [announcements, adminProfile] = await Promise.all([
-      fetchActiveAnnouncements(adminLocale),
-      loadAdminPanelProfile(actor),
-    ]);
+    adminProfile = preloadedProfile ?? (await loadAdminPanelProfile(actor));
+    announcements = await fetchActiveAnnouncements(adminLocale);
   }
 
   return (

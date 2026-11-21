@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Inbox, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import { buildReplyTemplate } from '@/lib/scaffolding';
+import { buildReplyTemplate } from '@/lib/reply-template';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { InboxToolbar } from '@/components/dashboard/feedbacks/InboxToolbar';
 import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';

@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   ClipboardCheck,
   Eye,
@@ -32,8 +33,17 @@ import {
   parseAuditErrorResponse,
   summarizeAuditError,
 } from '@/lib/audits/error-humanizer';
-import SeedResultModal, { type SeedResult } from '@/components/admin/audits/SeedResultModal';
-import CreateTemplateWizard from './_components/CreateTemplateWizard';
+import type { SeedResult } from '@/components/admin/audits/SeedResultModal';
+
+// Both render nothing until the admin acts (wizard closed / no seed result),
+// so their code (question builder, zod wizard state) loads on demand instead
+// of shipping with the page.
+const SeedResultModal = dynamic(() => import('@/components/admin/audits/SeedResultModal'), {
+  ssr: false,
+});
+const CreateTemplateWizard = dynamic(() => import('./_components/CreateTemplateWizard'), {
+  ssr: false,
+});
 
 interface CategoryRef {
   id: string;
@@ -105,6 +115,13 @@ export default function AuditTemplatesPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
+  // The wizard mounts on first open and then stays mounted, so its draft
+  // survives close + reopen exactly as when it was always mounted.
+  const [wizardMounted, setWizardMounted] = useState(false);
+  const openCreate = () => {
+    setWizardMounted(true);
+    setCreateOpen(true);
+  };
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
   const [confirmEl, askConfirm] = useConfirmDialog();
@@ -263,7 +280,7 @@ export default function AuditTemplatesPage() {
               {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Varsayılan içeriği yükle
             </button>
-            <button className="bz-btn-primary" onClick={() => setCreateOpen(true)}>
+            <button className="bz-btn-primary" onClick={openCreate}>
               <Plus size={14} strokeWidth={2} /> Yeni şablon
             </button>
           </div>
@@ -344,7 +361,7 @@ export default function AuditTemplatesPage() {
               <button
                 type="button"
                 className={filters.hasActive ? 'bz-btn-primary' : 'bz-btn-ghost'}
-                onClick={() => setCreateOpen(true)}
+                onClick={openCreate}
               >
                 <Plus size={14} strokeWidth={2} /> Yeni şablon
               </button>
@@ -525,17 +542,19 @@ export default function AuditTemplatesPage() {
         </>
       )}
 
-      <CreateTemplateWizard
-        open={createOpen}
-        categories={categories}
-        onClose={() => setCreateOpen(false)}
-        onCreated={(message) => {
-          setCreateOpen(false);
-          setNotice(message);
-          load();
-          setTimeout(() => setNotice(null), 4000);
-        }}
-      />
+      {wizardMounted && (
+        <CreateTemplateWizard
+          open={createOpen}
+          categories={categories}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(message) => {
+            setCreateOpen(false);
+            setNotice(message);
+            load();
+            setTimeout(() => setNotice(null), 4000);
+          }}
+        />
+      )}
 
       {confirmEl}
 

@@ -21,51 +21,88 @@
 //     JWT yazar. PostgREST + Realtime aynı JWT'yi tüketir. Bizim use case
 //     için doğru API.
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+// The SDK (~57 KB gzip) is loaded on demand: the client is only needed after
+// the activity feed mounts, and never when the realtime env is unset. A
+// static import put it in the dashboard home's initial JavaScript.
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let cachedClient: SupabaseClient | null = null;
+let clientPromise: Promise<SupabaseClient | null> | null = null;
 
-export function getSupabaseRealtimeClient(): SupabaseClient | null {
-  if (typeof window === 'undefined') return null;
-  if (cachedClient) return cachedClient;
-
+function realtimeEnv(): { url: string; anonKey: string } | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
+  if (!url || !anonKey) return null;
+  return { url, anonKey };
+}
+
+/**
+ * Whether Realtime can run in this browser (env set). Synchronous and does
+ * not download the SDK, so a missing env never costs a request.
+ */
+export function isRealtimeConfigured(): boolean {
+  if (typeof window === 'undefined') return false;
+  return realtimeEnv() !== null;
+}
+
+export function getSupabaseRealtimeClient(): Promise<SupabaseClient | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if (cachedClient) return Promise.resolve(cachedClient);
+
+  const env = realtimeEnv();
+  if (!env) {
     // Env yoksa Realtime aktif değil; caller graceful degrade ile sayfa
     // reload-bazlı CANLI AKIŞ (CLAUDE.md §38.31) modunda kalır.
-    return null;
+    return Promise.resolve(null);
   }
 
-  cachedClient = createClient(url, anonKey, {
-    auth: {
-      // Supabase Auth flow kullanmıyoruz (custom JWT, CLAUDE.md §4); bu
-      // ayarlar Auth state machine'inin browser side'da localStorage'a
-      // sahte oturum yazmasını engeller.
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-    realtime: {
-      params: {
-        // Server-side eventsPerSecond: tek client'ın yayabileceği max
-        // mesaj. Bizim use case sadece postgres_changes alıyor (server
-        // push); 10/sec yüksek burst trafik için emniyet.
-        eventsPerSecond: 10,
-      },
-    },
-  });
+  // One in-flight import for concurrent callers, so only one client (and one
+  // WebSocket transport) is ever created.
+  clientPromise ??= import('@supabase/supabase-js')
+    .then(({ createClient }) => {
+      cachedClient = createClient(env.url, env.anonKey, {
+        auth: {
+          // Supabase Auth flow kullanmıyoruz (custom JWT, CLAUDE.md §4); bu
+          // ayarlar Auth state machine'inin browser side'da localStorage'a
+          // sahte oturum yazmasını engeller.
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+        realtime: {
+          params: {
+            // Server-side eventsPerSecond: tek client'ın yayabileceği max
+            // mesaj. Bizim use case sadece postgres_changes alıyor (server
+            // push); 10/sec yüksek burst trafik için emniyet.
+            eventsPerSecond: 10,
+          },
+        },
+      });
+      return cachedClient;
+    })
+    .catch(() => {
+      // SDK chunk failed to load (offline / deploy swap): degrade like a
+      // missing env; the next mount tries again.
+      clientPromise = null;
+      return null;
+    });
 
+  return clientPromise;
+}
+
+/** The client if it has already been created (no import, no creation). */
+export function peekSupabaseRealtimeClient(): SupabaseClient | null {
   return cachedClient;
 }
 
 /**
  * Token mint endpoint'inden alınan JWT'yi Supabase realtime auth context'ine
  * yazar. Supabase WebSocket open ise yeni token connection'a propagate
- * edilir; channel'lar yeniden subscribe etmeden devam eder.
+ * edilir; channel'lar yeniden subscribe etmeden devam eder. Call after
+ * `getSupabaseRealtimeClient()` resolved a client.
  */
 export function setRealtimeAuth(token: string | null): void {
-  const client = getSupabaseRealtimeClient();
+  const client = cachedClient;
   if (!client) return;
   client.realtime.setAuth(token);
 }
@@ -79,4 +116,5 @@ export async function teardownRealtimeClient(): Promise<void> {
   if (!cachedClient) return;
   await cachedClient.removeAllChannels();
   cachedClient = null;
+  clientPromise = null;
 }

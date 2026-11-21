@@ -82,6 +82,18 @@ interface UserDashboardShellProps {
   viewerMode?: boolean;
   /** Team members cannot create businesses — hides "Yeni işletme". */
   canAddBusiness?: boolean;
+  /**
+   * The user_token carries an `impersonating` claim (known server-side in the
+   * layout). Only then can `/api/account/actor-context` return a
+   * `realAdminId`, so the banner — and its fetch — mount only in that case.
+   */
+  isImpersonating?: boolean;
+  /**
+   * Businesses for the Cmd+K palette: the active ones in scope, newest first,
+   * at most 20 — the same list `GET /api/restaurants` returned to the palette
+   * on every open, resolved once by the layout instead.
+   */
+  paletteRestaurants?: Array<{ id: string; name: string; slug: string; category: string }>;
   children: React.ReactNode;
 }
 
@@ -211,7 +223,7 @@ function saveSidebarScroll(scrollTop: number) {
   }
 }
 
-export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, canAddBusiness = true, children }: UserDashboardShellProps) {
+export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, canAddBusiness = true, isImpersonating = false, paletteRestaurants, children }: UserDashboardShellProps) {
   void TOP_BAR_MAP;
   const pathname = usePathname();
   const router = useRouter();
@@ -420,7 +432,37 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     if (pathRestaurantIdRaw && (!queryRestaurantId || !pathRestaurantId)) return;
     if (queryRestaurantId === next) return;
     const nextSearch = setRestaurantParam(searchParams.toString(), next);
-    router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
+    const nextUrl = nextSearch ? `${pathname}?${nextSearch}` : pathname;
+    // Without ?restaurantId every business-scoped server page already rendered
+    // the first active business — the same one `next` is when nothing else
+    // (a remembered business) picked another. Then only the address bar needs
+    // the param: the native History API updates it (Next syncs
+    // useSearchParams) without rendering the page a second time on the
+    // server. Customers is the exception: its default is "all businesses".
+    const customersHref = `/${locale}/dashboard/customers`;
+    const serverAlreadyShowsNext =
+      !queryRestaurantId &&
+      next === workspaceRestaurants[0]?.id &&
+      pathname !== customersHref &&
+      !pathname.startsWith(`${customersHref}/`);
+    if (serverAlreadyShowsNext) {
+      // Deferred to the next task: on a hard load this effect runs in the
+      // hydration commit before the AppRouter's own effect patches
+      // window.history (child effects run first). The unpatched call would
+      // replace Next's history state (`__NA` + tree) with null — the router
+      // then ignores Back to this entry — and useSearchParams would not see
+      // the param. Skipped when the page or its query changed meanwhile.
+      const timer = window.setTimeout(() => {
+        if (window.location.pathname !== pathname) return;
+        const current = window.location.search.replace(/^\?/, '');
+        const params = new URLSearchParams(current);
+        if (params.get('restaurantId') || params.get('restaurant')) return;
+        const search = setRestaurantParam(current, next);
+        window.history.replaceState(null, '', search ? `${pathname}?${search}` : pathname);
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+    router.replace(nextUrl, { scroll: false });
     // Effect intentionally re-runs only when the workspace list, the
     // ?restaurantId query or the path business changes. pathname/
     // searchParams/router are point-in-time reads — adding them would re-fire
@@ -1120,7 +1162,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           §38.158 — banner artık outer column flex'in birinci child'ı
           (eski lg:flex parent'ında flex item olarak layout'u bozuyordu);
           banner null durumda inner container tüm yüksekliği alır. */}
-      <ImpersonationBanner />
+      {isImpersonating && <ImpersonationBanner />}
       <a href="#panel-main-content" className="bz-skip-link">
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
@@ -1637,6 +1679,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           onClose={() => setPaletteOpen(false)}
           locale={locale}
           base={`/${locale}/dashboard`}
+          restaurants={paletteRestaurants}
           navItems={[
           { href: `/${locale}/dashboard`, label: copy.dashboard, keywords: ['panel', 'dashboard', 'genel'] },
           { href: `/${locale}/dashboard/feedbacks`, label: copy.feedbacks, keywords: ['yorum', 'review', 'feedback', 'inbox'] },

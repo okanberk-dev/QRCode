@@ -131,7 +131,7 @@ export default function AdminCustomersPage() {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch('/api/restaurants?status=all&limit=200');
+        const res = await fetch('/api/restaurants?status=all&limit=200&fields=options');
         if (!res.ok) return;
         const body = await res.json();
         const list = Array.isArray(body)

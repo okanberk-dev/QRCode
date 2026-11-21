@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CreditCard, Crown, MessageSquare, Store } from 'lucide-react';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { readAll } from '@/lib/db-batch';
 import { hasPermission } from '@/lib/rbac';
 import { adminLandingPath } from '@/lib/admin-landing';
 import {
@@ -77,7 +78,31 @@ export default async function AdminDashboardPage() {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const twelveWeeksAgo = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const nowDate = now;
+  const thirtyDaysAuditAgo = thirtyDaysAgo;
+  const BULK_ACTIONS = [
+    'admin.restaurants.bulk.activate',
+    'admin.restaurants.bulk.deactivate',
+    'admin.restaurants.bulk.feature_override',
+    'admin.owners.bulk.send_email',
+  ];
+  const DESTRUCTIVE_ACTIONS = [
+    'admin.users.delete',
+    'admin.members.deactivate',
+    'admin.restaurants.delete',
+    // What DELETE /api/restaurants/[id] actually writes.
+    'restaurant.delete',
+    'admin.impersonate.start',
+    'admin.permission.revoke',
+  ];
 
+  // Every read on this page in one bounded-parallel batch (readAll, CLAUDE.md
+  // §14.1; was one sequential $transaction): the overview aggregates (batch 1), the attention
+  // metrics + operational signals (batch 2) and the admin usernames the
+  // audit rows resolve against. The batches never depended on each other;
+  // running them as separate transactions only added BEGIN/COMMIT round-trips.
+  //
   // Aggregate queries — kept narrow so the dashboard stays a strategic
   // overview (review-monitoring lives on /admin/reviews).
   const [
@@ -92,7 +117,15 @@ export default async function AdminDashboardPage() {
     recentRestaurants,
     menusEnabledCount,
     menusPublishedCount,
-  ] = await prisma.$transaction([
+    trialExpiringSoon,
+    trialExpired,
+    staleAccounts,
+    restaurantsForQuota,
+    unverifiedPlatform,
+    bulkAuditRaw,
+    destructiveAuditRaw,
+    adminUsers,
+  ] = await readAll([
     prisma.restaurant.count(),
     prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
     prisma.feedback.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
@@ -129,6 +162,40 @@ export default async function AdminDashboardPage() {
     // list'in menuStatus filter'ı ile birebir parity.
     prisma.restaurant.count({ where: { menuEnabled: true } }),
     prisma.restaurant.count({ where: { menuEnabled: true, menuPublished: true } }),
+    // Batch 2 — attention metrics (CLAUDE.md §11.36 needs-attention deeplink)
+    prisma.user.count({
+      where: { plan: 'trial', trialEndsAt: { gt: nowDate, lte: sevenDaysAhead } },
+    }),
+    prisma.user.count({
+      where: { plan: 'trial', trialEndsAt: { lte: nowDate } },
+    }),
+    prisma.user.count({
+      where: { role: 'restaurant_owner', updatedAt: { lt: fourteenDaysAgo } },
+    }),
+    prisma.restaurant.findMany({
+      where: { user: { plan: 'trial' } },
+      select: { id: true, _count: { select: { feedbacks: true } } },
+    }),
+    prisma.restaurant.count({
+      where: { googleReviewUrl: { not: null }, googlePlaceId: null },
+    }),
+    // Batch 3 — operational signals (CLAUDE.md §38.97 Stage A5)
+    prisma.adminAuditLog.findMany({
+      where: { action: { in: BULK_ACTIONS }, createdAt: { gte: thirtyDaysAuditAgo } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, action: true, actorId: true, actorSource: true, targetId: true, createdAt: true, payload: true },
+    }),
+    prisma.adminAuditLog.findMany({
+      where: { action: { in: DESTRUCTIVE_ACTIONS }, createdAt: { gte: thirtyDaysAuditAgo } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, action: true, actorId: true, actorSource: true, targetId: true, createdAt: true, payload: true },
+    }),
+    // Admin usernames for the audit rows' actor column. AdminUser is a small
+    // table (Buaze team + operator accounts), so one unfiltered read here
+    // replaces the dependent lookup that used to wait for the audit rows.
+    prisma.adminUser.findMany({ select: { id: true, username: true } }),
   ]);
 
   // 30-day review volume vs the previous 30 days (same window as the value).
@@ -219,92 +286,13 @@ export default async function AdminDashboardPage() {
   //  3. 14+ gün giriş yapılmadı   → User.updatedAt (proxy, lastLoginAt yok)
   //  4. Kota %90+ doldu           → Trial restaurants whose feedback count ≥ 90% of TRIAL_QUOTA
   //  5. Doğrulanmamış platform    → Restaurant has googleReviewUrl but googlePlaceId null
-  const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const nowDate = now;
-
-  // Stage 26 §38.102 — attention metrics (Batch 2) + operational signals
-  // (Batch 3) tek transaction'a merge edildi. CLAUDE.md §14.1
-  // connection_limit=1 disipline: 2 ayrı transaction yerine 7 query tek
-  // connection üstünden serial; sequential connection açma overhead'i
-  // (~50-100ms per round-trip) ortadan kalkar. Query'ler bağımsız (Batch 2
-  // attention metric counts, Batch 3 audit log findMany) — merge safe.
-  const thirtyDaysAuditAgo = thirtyDaysAgo;
-  const BULK_ACTIONS = [
-    'admin.restaurants.bulk.activate',
-    'admin.restaurants.bulk.deactivate',
-    'admin.restaurants.bulk.feature_override',
-    'admin.owners.bulk.send_email',
-  ];
-  const DESTRUCTIVE_ACTIONS = [
-    'admin.users.delete',
-    'admin.members.deactivate',
-    'admin.restaurants.delete',
-    // What DELETE /api/restaurants/[id] actually writes.
-    'restaurant.delete',
-    'admin.impersonate.start',
-    'admin.permission.revoke',
-  ];
-  const [
-    trialExpiringSoon,
-    trialExpired,
-    staleAccounts,
-    restaurantsForQuota,
-    unverifiedPlatform,
-    bulkAuditRaw,
-    destructiveAuditRaw,
-  ] = await prisma.$transaction([
-    // Batch 2 — attention metrics (CLAUDE.md §11.36 needs-attention deeplink)
-    prisma.user.count({
-      where: { plan: 'trial', trialEndsAt: { gt: nowDate, lte: sevenDaysAhead } },
-    }),
-    prisma.user.count({
-      where: { plan: 'trial', trialEndsAt: { lte: nowDate } },
-    }),
-    prisma.user.count({
-      where: { role: 'restaurant_owner', updatedAt: { lt: fourteenDaysAgo } },
-    }),
-    prisma.restaurant.findMany({
-      where: { user: { plan: 'trial' } },
-      select: { id: true, _count: { select: { feedbacks: true } } },
-    }),
-    prisma.restaurant.count({
-      where: { googleReviewUrl: { not: null }, googlePlaceId: null },
-    }),
-    // Batch 3 — operational signals (CLAUDE.md §38.97 Stage A5)
-    prisma.adminAuditLog.findMany({
-      where: { action: { in: BULK_ACTIONS }, createdAt: { gte: thirtyDaysAuditAgo } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: { id: true, action: true, actorId: true, actorSource: true, targetId: true, createdAt: true, payload: true },
-    }),
-    prisma.adminAuditLog.findMany({
-      where: { action: { in: DESTRUCTIVE_ACTIONS }, createdAt: { gte: thirtyDaysAuditAgo } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: { id: true, action: true, actorId: true, actorSource: true, targetId: true, createdAt: true, payload: true },
-    }),
-  ]);
   const quotaNearFull = restaurantsForQuota.filter(
     (r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9,
   ).length;
 
-  // Resolve actor names (admin usernames). Both bulk + destructive actor IDs.
-  // Stage A — null actorId (KVKK hard-delete anonimizasyon) filter dışı.
-  const auditActorIds = Array.from(
-    new Set(
-      [...bulkAuditRaw, ...destructiveAuditRaw]
-        .map((r) => r.actorId)
-        .filter((id): id is string => typeof id === 'string'),
-    ),
-  );
-  const auditActors =
-    auditActorIds.length > 0
-      ? await prisma.adminUser.findMany({
-          where: { id: { in: auditActorIds } },
-          select: { id: true, username: true },
-        })
-      : [];
-  const actorNameMap = new Map(auditActors.map((a) => [a.id, a.username]));
+  // Resolve actor names (admin usernames) for bulk + destructive rows.
+  // Stage A — null actorId (KVKK hard-delete anonimizasyon) resolves to null.
+  const actorNameMap = new Map(adminUsers.map((a) => [a.id, a.username]));
 
   function mapAuditRow(row: typeof bulkAuditRaw[0]): OperationalSignalRow {
     const payload = (row.payload as { count?: number } | null) || null;

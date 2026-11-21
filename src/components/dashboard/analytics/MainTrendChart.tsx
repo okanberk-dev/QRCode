@@ -1,19 +1,21 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 import { MeasuredChart } from '@/components/charts/MeasuredChart';
 import {
   aggregatePlatformTotals,
   type PlatformDailyPoint,
 } from '@/lib/analytics-platform-trend';
+import { SERIES_META } from './trend-series';
+
+// recharts lives in TrendChartCanvas and loads after first paint. Until it
+// arrives the chart frame shows the same placeholder MeasuredChart renders
+// before it has a size (the server HTML never contained the chart).
+const TrendChartCanvas = dynamic(() => import('./TrendChartCanvas'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full rounded-xl bg-[#FAFAFA]" aria-hidden="true" />,
+});
 
 // Stage 66 §38.147 — HANDOFF AnalyticsDesktop main chart 30-day stacked
 // area (.design-owner-2026/page-analytics.jsx line 358-460 birebir).
@@ -41,97 +43,6 @@ export interface PlatformTrendChartBodyProps {
   isTr?: boolean;
   heightClassName?: string;
   emptyClassName?: string;
-}
-
-interface TooltipRow {
-  payload?: PlatformDailyPoint;
-}
-
-interface TooltipContentProps {
-  active?: boolean;
-  payload?: TooltipRow[];
-  isTr: boolean;
-}
-
-const SERIES_META: Array<{
-  key: keyof Pick<PlatformDailyPoint, 'google' | 'tripadvisor' | 'buazeQr' | 'other'>;
-  labelTr: string;
-  labelEn: string;
-  /** Stack rendering color (Pulse §11 palette). */
-  fill: string;
-  /** Legend chip color. */
-  swatch: string;
-  /** Stack opacity (0-1). */
-  fillOpacity: number;
-}> = [
-  {
-    key: 'google',
-    labelTr: 'Google',
-    labelEn: 'Google',
-    fill: '#0A0A0A',
-    swatch: '#0A0A0A',
-    fillOpacity: 0.85,
-  },
-  {
-    key: 'tripadvisor',
-    labelTr: 'Tripadvisor',
-    labelEn: 'Tripadvisor',
-    fill: '#737373',
-    swatch: '#737373',
-    fillOpacity: 0.7,
-  },
-  {
-    key: 'buazeQr',
-    labelTr: 'Buaze QR',
-    labelEn: 'Buaze QR',
-    fill: '#C6F24E',
-    swatch: '#C6F24E',
-    fillOpacity: 0.9,
-  },
-  {
-    key: 'other',
-    labelTr: 'Diğer',
-    labelEn: 'Other',
-    fill: '#E5E5E5',
-    swatch: '#A3A3A3',
-    fillOpacity: 0.85,
-  },
-];
-
-function MainTrendTooltip({ active, payload, isTr }: TooltipContentProps) {
-  if (!active) return null;
-  const row = payload?.find((item) => item.payload)?.payload;
-  if (!row) return null;
-  return (
-    <div className="rounded-[12px] border border-[#EDEDED] bg-white px-3 py-2.5 shadow-[0_16px_40px_rgba(10,10,10,0.12)]">
-      <div className="bz-mono text-[10.5px] font-semibold text-[#0A0A0A]">
-        {row.date}
-      </div>
-      <div className="mt-2 grid min-w-[180px] gap-1.5 text-[11.5px] text-[#525252]">
-        {SERIES_META.map((s) => {
-          const value = row[s.key];
-          if (value === 0) return null;
-          return (
-            <div key={s.key} className="flex items-center justify-between gap-4">
-              <span className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  className="h-2 w-2 rounded-sm"
-                  style={{ background: s.swatch }}
-                />
-                {isTr ? s.labelTr : s.labelEn}
-              </span>
-              <span className="bz-mono tabular-nums text-[#0A0A0A]">{value}</span>
-            </div>
-          );
-        })}
-        <div className="flex items-center justify-between gap-4 border-t border-[#F5F5F5] pt-1.5 mt-0.5">
-          <span className="font-semibold">{isTr ? 'Toplam' : 'Total'}</span>
-          <span className="bz-mono tabular-nums font-semibold text-[#0A0A0A]">{row.total}</span>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function PlatformTrendChartBody({
@@ -166,87 +77,13 @@ export function PlatformTrendChartBody({
     <div className="-mx-2 mt-5 overflow-x-auto no-scrollbar px-2 sm:mx-0 sm:px-0">
       <MeasuredChart className={heightClassName}>
         {({ width, height }) => (
-          <ComposedChart
+          <TrendChartCanvas
             width={width}
             height={height}
-            data={points}
-            margin={{ top: 18, right: 20, left: 0, bottom: 8 }}
-          >
-            <defs>
-              <linearGradient id="mainTrendBuazeQr" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#C6F24E" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#C6F24E" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke="#EDEDED" strokeDasharray="0" />
-            <XAxis
-              dataKey="date"
-              axisLine={false}
-              tickLine={false}
-              interval={tickInterval}
-              tick={{ fill: '#A3A3A3', fontSize: 10, fontWeight: 600 }}
-              dy={8}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#A3A3A3', fontSize: 10, fontWeight: 600 }}
-              width={32}
-            />
-            <Tooltip
-              cursor={{ stroke: '#0A0A0A', strokeWidth: 1, strokeDasharray: '3 3' }}
-              content={({ active, payload }) => (
-                <MainTrendTooltip
-                  active={active}
-                  payload={payload as unknown as TooltipRow[] | undefined}
-                  isTr={isTr}
-                />
-              )}
-            />
-            {/* Stacked area: Google (graphite, base) -> Tripadvisor (muted) ->
-                Buaze QR (lime, accent) -> Other (n200 top). Lower stackId
-                items render below upper ones in recharts. */}
-            <Area
-              type="monotone"
-              dataKey="google"
-              stackId="trend"
-              stroke="#0A0A0A"
-              strokeWidth={1}
-              fill="#0A0A0A"
-              fillOpacity={0.85}
-              isAnimationActive={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="tripadvisor"
-              stackId="trend"
-              stroke="#737373"
-              strokeWidth={1}
-              fill="#737373"
-              fillOpacity={0.7}
-              isAnimationActive={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="buazeQr"
-              stackId="trend"
-              stroke="#A8D62E"
-              strokeWidth={1.5}
-              fill="url(#mainTrendBuazeQr)"
-              fillOpacity={1}
-              isAnimationActive={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="other"
-              stackId="trend"
-              stroke="#A3A3A3"
-              strokeWidth={1}
-              fill="#E5E5E5"
-              fillOpacity={0.85}
-              isAnimationActive={false}
-            />
-          </ComposedChart>
+            points={points}
+            isTr={isTr}
+            tickInterval={tickInterval}
+          />
         )}
       </MeasuredChart>
     </div>

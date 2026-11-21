@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import type { PanelActor } from '@/lib/auth';
 
@@ -107,10 +108,59 @@ function actorFromUserPayload(payload: UserTokenPayload): PanelActor {
   };
 }
 
+/**
+ * The normalised identity a `user_token` payload resolves to. Server pages
+ * pass these primitives to the request-memoised helpers below, so the
+ * dashboard layout (which reads the same values from the user row) and the
+ * page share one result per request.
+ */
+export function resolveUserPayloadIdentity(payload: UserTokenPayload): {
+  userId: string;
+  role: string;
+  email: string | null;
+} {
+  const actor = actorFromUserPayload(payload);
+  return { userId: actor.id, role: actor.role, email: actor.email };
+}
+
+/**
+ * Request-scoped memo of `getScopedRestaurantIds` for a user-source actor
+ * (React `cache`, keyed by primitives). Server components only: the layout
+ * and the page of one request resolve the scope once. Outside a React render
+ * (route handlers) `cache` does not memoise, so this is a plain call there.
+ */
+const scopedRestaurantIdsForIdentity = cache(
+  (userId: string, role: string, email: string | null) =>
+    getScopedRestaurantIds({
+      id: userId,
+      role,
+      restaurantId: null,
+      username: null,
+      email,
+      plan: null,
+      source: 'user',
+    }),
+);
+
+/**
+ * Cached scope for a user-source identity. Returns a fresh array so a caller
+ * that sorts or pushes cannot change what the next caller in the request
+ * sees. `null` keeps `getScopedRestaurantIds`' "no restaurant scope" meaning.
+ */
+export async function getScopedRestaurantIdsForUserIdentity(
+  userId: string,
+  role: string,
+  email: string | null,
+): Promise<string[] | null> {
+  const ids = await scopedRestaurantIdsForIdentity(userId, role, email);
+  return ids ? [...ids] : ids;
+}
+
 export async function getScopedRestaurantIdsForUserPayload(
   payload: UserTokenPayload,
 ): Promise<string[]> {
-  return (await getScopedRestaurantIds(actorFromUserPayload(payload))) ?? [];
+  const { userId, role, email } = resolveUserPayloadIdentity(payload);
+  return (await getScopedRestaurantIdsForUserIdentity(userId, role, email)) ?? [];
 }
 
 /**

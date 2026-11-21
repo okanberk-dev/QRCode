@@ -197,7 +197,9 @@ export async function GET(req: NextRequest) {
   try {
     // Phase 8c+ — fetch up to MAX_AGGREGATE_ROWS aggregate rows; JS-side derive
     // segment/LTV/sentiment + filter + pagination (CLAUDE.md §38.19).
-    const [summary, aggregates] = await Promise.all([
+    // One $transaction, not Promise.all: the pool has connection_limit=1
+    // (CLAUDE.md §14.1), so the two reads run back to back on one connection.
+    const [summary, aggregates] = await prisma.$transaction([
       prisma.$queryRaw<SummaryRow[]>(Prisma.sql`
         SELECT
           COUNT(DISTINCT CONCAT(f.restaurant_id, '|', COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')))) AS customers,

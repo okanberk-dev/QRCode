@@ -284,11 +284,34 @@ export async function getMrrTrend(months: number, now: Date = new Date()): Promi
     }),
     prisma.subscriptionPlan.findMany(),
   ]);
-  const tiersById = new Map(tierRows.map((row) => [row.id, toAdminRow(row)]));
+  return buildMrrTrend({ owners, subscriptions, tiers: tierRows.map(toAdminRow), months, now });
+}
+
+/** The owner fields the MRR trend reads. */
+export interface MrrTrendOwner {
+  id: string;
+  createdAt: Date;
+  isActive: boolean;
+  deactivatedAt: Date | null;
+}
+
+/**
+ * Pure body of `getMrrTrend` (no DB): `subscriptions` are the ACTIVE
+ * subscription rows, `tiers` every subscription plan.
+ */
+export function buildMrrTrend(input: {
+  owners: readonly MrrTrendOwner[];
+  subscriptions: readonly RevenueSubscription[];
+  tiers: readonly AdminPlanRow[];
+  months: number;
+  now: Date;
+}): MrrPoint[] {
+  const { owners, subscriptions, months, now } = input;
+  const tiersById = new Map(input.tiers.map((t) => [t.id, t]));
   const ownersById = new Map(owners.map((o) => [o.id, o]));
 
   // Pre-price each paying subscription once.
-  const priced: Array<{ owner: (typeof owners)[number]; key: string; monthly: number }> = [];
+  const priced: Array<{ owner: MrrTrendOwner; key: string; monthly: number }> = [];
   for (const sub of subscriptions) {
     if (!isPaidSubscription(sub)) continue;
     const owner = ownersById.get(sub.userId);
@@ -344,7 +367,15 @@ export async function getChurnTrend(months: number, now: Date = new Date()): Pro
     where: { role: 'restaurant_owner' },
     select: { createdAt: true, deactivatedAt: true, isActive: true },
   });
+  return buildChurnTrend(owners, months, now);
+}
 
+/** Pure body of `getChurnTrend` (no DB). */
+export function buildChurnTrend(
+  owners: readonly { createdAt: Date; deactivatedAt: Date | null }[],
+  months: number,
+  now: Date,
+): ChurnPoint[] {
   const points: ChurnPoint[] = [];
   for (let i = months - 1; i >= 0; i--) {
     const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -398,6 +429,14 @@ export async function getNpsDistribution(sinceDays: number, now: Date = new Date
     where: { createdAt: { gte: since, lte: now } },
     _count: { _all: true },
   });
+  return buildNpsBucket(groups, sinceDays);
+}
+
+/** Pure body of `getNpsDistribution`: per-rating counts → NPS bucket. */
+export function buildNpsBucket(
+  groups: readonly { rating: number; _count: { _all: number } }[],
+  sinceDays: number,
+): NpsBucket {
   const nps = calculateNPSFromCounts(
     groups.map((g) => ({ rating: g.rating, count: g._count._all })),
   );
@@ -434,7 +473,15 @@ export async function getCohortRetention(months: number, now: Date = new Date())
     where: { role: 'restaurant_owner' },
     select: { createdAt: true, plan: true, isActive: true, trialEndsAt: true },
   });
+  return buildCohortRetention(owners, months, now);
+}
 
+/** Pure body of `getCohortRetention` (no DB). */
+export function buildCohortRetention(
+  owners: readonly { createdAt: Date; plan: string | null; isActive: boolean }[],
+  months: number,
+  now: Date,
+): CohortPoint[] {
   const points: CohortPoint[] = [];
   for (let i = months - 1; i >= 0; i--) {
     const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -516,28 +563,77 @@ export interface BiSnapshot {
 }
 
 /**
- * Convenience aggregator — calls 5 helpers in parallel. Used by the BI
- * endpoint + CSV export. Returns a single snapshot.
+ * Convenience aggregator used by the BI endpoint + CSV export. Returns a
+ * single snapshot with the same numbers as the five exported helpers.
+ *
+ * One $transaction loads every input once (CLAUDE.md §14.1, connection
+ * limit 1 — no Promise.all over Prisma reads): owners (the union of the
+ * fields each helper reads; the table used to be read three times), the
+ * active subscriptions, the plans, the NPS groupBy and the businesses of
+ * the funnel window's signups. A second $transaction reads the funnel's QR
+ * and rating presence, which needs those business ids. The JS bodies are
+ * the pure builders above.
  */
 export async function getBiSnapshot(range: '30d' | '90d' | '1y'): Promise<BiSnapshot> {
   const months = range === '30d' ? 6 : range === '90d' ? 12 : 12; // 1y = 12 months chart
   const npsDays = range === '30d' ? 30 : range === '90d' ? 90 : 365;
   const now = new Date();
-  const [mrr, churn, nps, cohort, funnel] = await Promise.all([
-    getMrrTrend(months, now),
-    getChurnTrend(months, now),
-    getNpsDistribution(npsDays, now),
-    getCohortRetention(months, now),
-    getActivationFunnel(npsDays, now),
+  const since = new Date(now.getTime() - npsDays * 24 * 60 * 60 * 1000);
+
+  const [owners, subscriptions, tierRows, npsGroups, funnelRestaurants] = await prisma.$transaction([
+    prisma.user.findMany({
+      where: { role: 'restaurant_owner' },
+      select: { id: true, createdAt: true, isActive: true, deactivatedAt: true, plan: true },
+    }),
+    prisma.billingSubscription.findMany({
+      where: { status: 'active' },
+      select: REVENUE_SUBSCRIPTION_SELECT,
+    }),
+    prisma.subscriptionPlan.findMany(),
+    prisma.feedback.groupBy({
+      by: ['rating'],
+      where: { createdAt: { gte: since, lte: now } },
+      _count: { _all: true },
+    }),
+    // Businesses of the owners who signed up in the funnel window — the same
+    // rows as `userId IN (those owners)` in getActivationFunnel.
+    prisma.restaurant.findMany({
+      where: { user: { role: 'restaurant_owner', createdAt: { gte: since } } },
+      select: { id: true, userId: true },
+    }),
   ]);
+
+  const funnelOwnerIds = owners.filter((o) => o.createdAt >= since).map((o) => o.id);
+  const funnelRestaurantIds = funnelRestaurants.map((r) => r.id);
+  const [qrRows, feedbackRows] = funnelRestaurantIds.length
+    ? await prisma.$transaction([
+        prisma.qrGeneration.findMany({
+          where: { restaurantId: { in: funnelRestaurantIds } },
+          select: { restaurantId: true },
+          distinct: ['restaurantId'],
+        }),
+        prisma.feedback.findMany({
+          where: { restaurantId: { in: funnelRestaurantIds } },
+          select: { restaurantId: true },
+          distinct: ['restaurantId'],
+        }),
+      ])
+    : [[], []];
+
   return {
     range,
     months,
-    mrr,
-    churn,
-    nps,
-    cohort,
-    funnel,
+    mrr: buildMrrTrend({ owners, subscriptions, tiers: tierRows.map(toAdminRow), months, now }),
+    churn: buildChurnTrend(owners, months, now),
+    nps: buildNpsBucket(npsGroups, npsDays),
+    cohort: buildCohortRetention(owners, months, now),
+    funnel: buildActivationFunnel({
+      windowDays: npsDays,
+      ownerIds: funnelOwnerIds,
+      restaurants: funnelRestaurants,
+      qrRestaurantIds: qrRows.map((r) => r.restaurantId),
+      feedbackRestaurantIds: feedbackRows.flatMap((r) => (r.restaurantId ? [r.restaurantId] : [])),
+    }),
     generatedAt: now.toISOString(),
   };
 }

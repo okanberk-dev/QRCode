@@ -3,7 +3,10 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { readAll } from '@/lib/db-batch';
+import { resolveUserPayloadIdentity } from '@/lib/panel-access';
+import { getPanelRestaurants, getPanelUser } from './_lib/panel-data';
+import { mapHomeFeedbackStats, type HomeFeedbackStatsRow } from './_lib/home-feedback-stats';
 import { extractThemes, getCachedThemes } from '@/lib/analytics-themes';
 // §38.32 — deriveCustomerFields + CustomerSegment + SegmentChip artık
 // dashboard'da kullanılmıyor (BUGÜN BEKLEYEN feedback-detail render kaldırıldı).
@@ -123,34 +126,22 @@ async function renderDashboardPage({
   // User + the businesses this account can see. Same scope + order as the
   // dashboard layout (getScopedRestaurantIds, createdAt asc), so team members
   // get their assigned businesses instead of an empty dashboard (§38.240).
-  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+  // Both reads are request-memoised (React cache): on a hard load the layout
+  // has already run them, so the page reuses the result.
+  const identity = resolveUserPayloadIdentity({
     userId: payload.userId as string,
     role: payload.role,
     email: payload.email,
   });
-  const [userRow, scopedRestaurants] = await prisma.$transaction([
-    prisma.user.findUnique({
-      where: { id: payload.userId as string },
-      select: { id: true, name: true },
-    }),
-    prisma.restaurant.findMany({
-      where: { id: { in: scopedIds } },
-      orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        category: true,
-        isActive: true,
-        initialGoogleRating: true,
-        currentGoogleRating: true,
-        // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
-        aiAnalyticsEnabled: true,
-        _count: { select: { feedbacks: true } },
-      },
-    }),
-  ]);
+  const userRow = await getPanelUser(identity.userId);
   if (!userRow) redirect(`/${locale}/auth/login`);
+  // Includes `aiAnalyticsEnabled` (§5.2 — admin master flag; AI tema
+  // çıkarımı bu flag kapalıyken çalışmamalı) and the activation fields.
+  const scopedRestaurants = await getPanelRestaurants(
+    identity.userId,
+    identity.role,
+    identity.email,
+  );
   const user = { ...userRow, restaurants: scopedRestaurants };
 
   // The panel always works on one business. Without a valid ?restaurantId
@@ -207,60 +198,170 @@ async function renderDashboardPage({
   const ytdStart = new Date(new Date(now).getFullYear(), 0, 1);
   const trendOldestStart = ytdStart < ninetyDaysAgo ? ytdStart : ninetyDaysAgo;
 
-  // ---- Tek toplu Prisma transaction bloğu ----
-  // Supabase pooler production'da connection_limit=1 ile çalışır; aynı
-  // request içinde çok sayıda paralel query açmak pool_timeout riskini
-  // artırır. Array transaction tek connection üstünden sırayla çalışır.
+  // ---- Bağımsız okumalar: sınırlı paralel (readAll, CLAUDE.md §14.1) ----
+  // Self-host tek örnek + connection_limit=10: array $transaction okumaları
+  // sırayla (+BEGIN/COMMIT) çalıştırıyordu; her gidiş-dönüş Supabase'e
+  // yüzlerce ms. readAll en çok 5'er sorguyu birlikte çalıştırır.
   // Boş restIds için Prisma `in: []` zaten 0 satır döner; fallback path
   // gereksiz. (Postgres `WHERE id = ANY(ARRAY[]::text[])` syntactically OK.)
+  // Activation checklist business (§40.10): the selected business, else the
+  // first one. Both are in `restIds`, so its feedback total comes from the
+  // per-business groupBy below and its profile fields from the business list.
+  const activationTarget = selectedRestaurant ?? user.restaurants[0] ?? null;
+  const restaurantNameById = new Map(user.restaurants.map((r) => [r.id, r.name]));
+  // §38.32 — BUGÜN BEKLEYEN "platform" task window (last 24 h).
+  const googleCheckSince = new Date(now - 24 * 3600 * 1000);
+
+  // The low-rating counts, new / churned customers, the activation QR count
+  // and the failing-Google-link check used to be seven separate statements.
+  // One raw statement returns them all (COUNT(*) FILTER + scalar
+  // sub-selects), each with the exact filter the Prisma query had:
+  // `replies: { some }` ⇔ EXISTS a reply row (feedback_replies.feedback_id is
+  // NOT NULL), `rating: { lte: 3 }` ⇔ `rating <= 3`, and the newest failing
+  // check (`findFirst … orderBy checkedAt desc`) ⇔ MAX(checked_at), which is
+  // NOT NULL, so "no row" ⇔ NULL. Mapping: ./_lib/home-feedback-stats.ts.
+  // Date parameters that replaced Prisma filters are compared as UTC
+  // wall-clock (`::timestamptz AT TIME ZONE 'UTC'`), exactly how Prisma binds
+  // them against these `timestamp(3)` columns — whatever the session time
+  // zone. The new-customer and churn sub-selects are the previous raw SQL,
+  // copied unchanged.
+  // restIds boşsa SQL `IN ()` syntax error olur — WHERE FALSE ile satır yok.
+  const homeStatsQuery =
+    restIds.length > 0
+      ? prisma.$queryRaw<HomeFeedbackStatsRow[]>(Prisma.sql`
+          SELECT
+            low.low_rated_in_scope,
+            low.low_rated_replied_in_scope,
+            low.unreplied_count,
+            low.oldest_unreplied_at,
+            (
+              SELECT COUNT(DISTINCT
+                CONCAT(f.restaurant_id, '|',
+                  COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
+                )
+              )::bigint
+              FROM feedback f
+              WHERE f.has_kvkk_consent = TRUE
+                AND f.restaurant_id IN (${Prisma.join(restIds)})
+                AND f.created_at >= ${scopeStart}
+                AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
+                    IS NOT NULL
+            ) AS new_customers,
+            (
+              SELECT COUNT(*)::bigint FROM (
+                SELECT
+                  COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) AS contact_key,
+                  MAX(f.created_at) AS last_at,
+                  COUNT(*) AS visits
+                FROM feedback f
+                WHERE f.has_kvkk_consent = TRUE
+                  AND f.restaurant_id IN (${Prisma.join(restIds)})
+                  AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
+                      IS NOT NULL
+                GROUP BY 1
+                HAVING MAX(f.created_at) < NOW() - INTERVAL '30 days'
+                  AND COUNT(*) >= 2
+              ) churned_customers
+            ) AS churned_customers,
+            (
+              SELECT COUNT(*)::bigint
+              FROM qr_generations q
+              WHERE q.restaurant_id = ${activationTarget?.id ?? null}
+            ) AS activation_qr_count,
+            (
+              SELECT MAX(p.checked_at)
+              FROM platform_link_checks p
+              WHERE p.restaurant_id IN (${Prisma.join(restIds)})
+                AND p.provider = 'google'
+                AND p.ok = FALSE
+                AND p.checked_at >= (${googleCheckSince}::timestamptz AT TIME ZONE 'UTC')
+            ) AS google_failing_check_at
+          FROM (
+            SELECT
+              COUNT(*) FILTER (
+                WHERE l.created_at >= (${scopeStart}::timestamptz AT TIME ZONE 'UTC')
+              )::bigint AS low_rated_in_scope,
+              COUNT(*) FILTER (
+                WHERE l.created_at >= (${scopeStart}::timestamptz AT TIME ZONE 'UTC')
+                  AND l.has_reply
+              )::bigint AS low_rated_replied_in_scope,
+              COUNT(*) FILTER (WHERE NOT l.has_reply)::bigint AS unreplied_count,
+              MIN(l.created_at) FILTER (WHERE NOT l.has_reply) AS oldest_unreplied_at
+            FROM (
+              SELECT
+                f.created_at,
+                EXISTS (
+                  SELECT 1 FROM feedback_replies r WHERE r.feedback_id = f.id
+                ) AS has_reply
+              FROM feedback f
+              WHERE f.restaurant_id IN (${Prisma.join(restIds)})
+                AND f.rating <= 3
+            ) l
+          ) low
+        `)
+      : prisma.$queryRaw<HomeFeedbackStatsRow[]>(Prisma.sql`
+          SELECT
+            0::bigint AS low_rated_in_scope,
+            0::bigint AS low_rated_replied_in_scope,
+            0::bigint AS unreplied_count,
+            NULL::timestamp AS oldest_unreplied_at,
+            0::bigint AS new_customers,
+            0::bigint AS churned_customers,
+            0::bigint AS activation_qr_count,
+            NULL::timestamp AS google_failing_check_at
+          WHERE FALSE
+        `);
+
+  // The activation state row runs beside the main reads; its failure stays
+  // soft (handled where it is used below).
+  const activationStatePromise = activationTarget
+    ? prisma.restaurantActivationState
+        .findUnique({
+          where: { restaurantId: activationTarget.id },
+          select: { qrPrintedSharedAt: true, dismissedAt: true },
+        })
+        .then(
+          (row) => ({ ok: true as const, row }),
+          (error: unknown) => ({ ok: false as const, error }),
+        )
+    : null;
+
   const [
     latestFeedbacks,
-    trendFeedbacks,
     restaurantRatings,
-    starGroups,
     platformGroups,
-    qrPerfRows,
-    qrScanGroups,
     last7Avg,
-    prev7Count,
-    prev7Avg,
-    lowRated30dCount,
-    lowRated30dRepliedCount,
-    newCustomers30dRows,
-    unrepliedAggregate,
+    prevScopeAggregate,
+    homeStatsRows,
     themesFeedbacks,
     trendFeedbacksRange,
     prevPlatformGroups,
     recentReplies,
     recentAiDrafts,
     recentSystemEvents,
-    googleSyncCheck,
-    churnedCustomerRows,
-  ] = await prisma.$transaction([
-    // Son yorumlar listesi (4 görünür "Son yorumlar" kartı için + 4 ek
-    // CANLI AKIŞ timeline için — aynı veri reuse).
+  ] = await readAll([
+    // Son yorumlar listesi (CANLI AKIŞ timeline). Restaurant names come from
+    // the business list above (every row is in restIds), so no join query.
     prisma.feedback.findMany({
       where: { restaurantId: restIdIn },
       orderBy: { createdAt: 'desc' },
       take: 8,
-      include: { restaurant: { select: { name: true } } },
+      select: {
+        id: true,
+        name: true,
+        rating: true,
+        platform: true,
+        createdAt: true,
+        restaurantId: true,
+        hasKvkkConsent: true,
+      },
     }),
-    // Trend (son 7 gün) — daily bucket için ham veri
-    prisma.feedback.findMany({
-      where: { restaurantId: restIdIn, createdAt: { gte: sevenDaysAgo } },
-      select: { createdAt: true, rating: true, restaurantId: true },
-    }),
-    // Per-restaurant avg + count (totalReviews + avgRating tek source)
+    // Per-restaurant avg + count (totalReviews + avgRating tek source; also
+    // the activation checklist's feedback total).
     prisma.feedback.groupBy({
       by: ['restaurantId'],
       where: { restaurantId: restIdIn },
       _avg: { rating: true },
-      _count: { _all: true },
-    }),
-    // Star distribution (5-bar chart)
-    prisma.feedback.groupBy({
-      by: ['rating'],
-      where: { restaurantId: restIdIn },
       _count: { _all: true },
     }),
     // Platform distribution (Yorum Görünümü section)
@@ -270,95 +371,30 @@ async function renderDashboardPage({
       _count: { _all: true },
       _avg: { rating: true },
     }),
-    // QR generations (top 5 için meta)
-    prisma.qrGeneration.findMany({
-      where: { restaurantId: restIdIn, type: 'feedback' },
-      orderBy: { createdAt: 'desc' },
-      take: 25,
-      select: {
-        id: true,
-        tableNumber: true,
-        platform: true,
-        createdAt: true,
-        restaurant: { select: { name: true, id: true } },
-      },
-    }),
-    // QR scan counts — gerçek scan event tracking (CLAUDE.md §34.x).
-    // Eski versiyon feedback proxy idi; artık QrScan tablosundan groupBy.
-    prisma.qrScan.groupBy({
-      by: ['restaurantId', 'tableNumber', 'platform'],
-      where: { restaurantId: restIdIn },
-      _count: { _all: true },
-    }),
     // §38.31 — Scope window total + avg (KPI Toplam yorum value + delta).
     prisma.feedback.aggregate({
       where: { restaurantId: restIdIn, createdAt: { gte: scopeStart } },
       _avg: { rating: true },
       _count: { _all: true },
     }),
-    // §38.31 — Önceki scope window count (delta baseline). YTD durumda
-    // prev_year YTD karşılaştırması.
-    prisma.feedback.count({
-      where: {
-        restaurantId: restIdIn,
-        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
-      },
-    }),
-    // §38.31 — Önceki scope window ortalama puan (delta baseline).
+    // §38.31 — Önceki scope window count + ortalama puan (delta baseline).
+    // YTD durumda prev_year YTD karşılaştırması. (Same filter for both, so
+    // one aggregate instead of a count + an aggregate.)
     prisma.feedback.aggregate({
       where: {
         restaurantId: restIdIn,
         createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
       },
       _avg: { rating: true },
-    }),
-    // §38.31 — Yanıt oranı KPI: scope window içinde rating ≤3 toplam +
-    // hangileri yanıtlanmış (some replies). Ratio = replied / total × 100.
-    // §38.27'de fixed 30d idi; §38.31 ile scope dropdown'a bağlandı.
-    prisma.feedback.count({
-      where: {
-        restaurantId: restIdIn,
-        createdAt: { gte: scopeStart },
-        rating: { lte: 3 },
-      },
-    }),
-    prisma.feedback.count({
-      where: {
-        restaurantId: restIdIn,
-        createdAt: { gte: scopeStart },
-        rating: { lte: 3 },
-        replies: { some: {} },
-      },
-    }),
-    // §38.31 — Yeni müşteri KPI: scope window'da yorum bırakan ve
-    // contact_key (email|phone) NOT NULL olan tekil müşteri sayısı.
-    // §38.27'de fixed 30d idi; §38.31 ile scope dropdown'a bağlandı.
-    // restIds boşsa SQL `IN ()` syntax error olur — WHERE FALSE ile 0 döner.
-    restIds.length > 0
-      ? prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
-          SELECT COUNT(DISTINCT
-            CONCAT(f.restaurant_id, '|',
-              COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
-            )
-          )::bigint AS count
-          FROM feedback f
-          WHERE f.has_kvkk_consent = TRUE
-            AND f.restaurant_id IN (${Prisma.join(restIds)})
-            AND f.created_at >= ${scopeStart}
-            AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
-                IS NOT NULL
-        `)
-      : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT 0::bigint AS count WHERE FALSE`),
-    // §38.32 — BUGÜN BEKLEYEN "reply" task: yanıtsız low-rating yorum
-    // toplam sayısı + en eskisinin tarihi (relative time için). Eski 4-feedback
-    // detail list (§38.17 segment crossover) kaldırıldı — UI duplikasyon
-    // (kullanıcı kararı: "anasayfada 2 defa tekrarlayan bilgiler"); yeni
-    // PendingTasks summary 3-task generic. Owner click → /feedbacks detayına.
-    prisma.feedback.aggregate({
-      where: { restaurantId: restIdIn, rating: { lte: 3 }, replies: { none: {} } },
       _count: { _all: true },
-      _min: { createdAt: true },
     }),
+    // §38.31 / §38.32 — Yanıt oranı (scope), BUGÜN BEKLEYEN reply + churn +
+    // platform tasks, Yeni müşteri KPI and the activation QR count (see
+    // above). §38.32 "platform" task: sadece Google için (Yemeksepeti/Getir/
+    // Trendyol public API yok, anlamlı sync check imkansız) — son 24 saat
+    // içinde provider='google' PlatformLinkCheck.ok=false varsa task aktif
+    // (CLAUDE.md §19.4 PlatformLinkCheck pattern).
+    homeStatsQuery,
     // SIK BAHSEDİLEN KONULAR — son 30 gün yorum metinleri (extractThemes
     // helper'ı için ham veri). Min 8 yorum + OpenAI key gereği helper içinde
     // (yetersiz → empty fallback). Cache 1 saat (CLAUDE.md §34.9).
@@ -376,7 +412,8 @@ async function renderDashboardPage({
     // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD chip toggle için ham veri.
     // En geriye uzanan window (YTD veya 90 gün, hangisi daha eski). JS-side
     // 3 dataset'e bucketlanır (trend30 daily, trend90 daily, trendYtd weekly).
-    // Mevcut 7-day trendFeedbacks (mobile hero sparkline) etkilenmez.
+    // The 7-day rows (mobile hero sparkline) are a subset of this window and
+    // are filtered from it below instead of being read again.
     prisma.feedback.findMany({
       where: { restaurantId: restIdIn, createdAt: { gte: trendOldestStart } },
       select: { createdAt: true, rating: true, platform: true },
@@ -445,43 +482,14 @@ async function renderDashboardPage({
         sentAt: true,
       },
     }),
-    // §38.32 — BUGÜN BEKLEYEN "platform" task: sadece Google için (Yemeksepeti/
-    // Getir/Trendyol public API yok, anlamlı sync check imkansız). Son 24 saat
-    // içinde provider='google' PlatformLinkCheck.ok=false varsa task aktif.
-    // CLAUDE.md §19.4 PlatformLinkCheck pattern.
-    prisma.platformLinkCheck.findFirst({
-      where: {
-        restaurantId: restIdIn,
-        provider: 'google',
-        ok: false,
-        checkedAt: { gte: new Date(now - 24 * 3600 * 1000) },
-      },
-      orderBy: { checkedAt: 'desc' },
-      select: { id: true, checkedAt: true },
-    }),
-    // §38.32 — BUGÜN BEKLEYEN "reminder" task: 30+ gündür dönüş yapmamış ≥2
-    // visit'li müşteri sayısı (kayıp müşteri / churn signal). Phase 8c segment
-    // helper'da `churned` yok (CLAUDE.md §38.16 4 segment + new); bu task için
-    // ayrı raw SQL aggregate. KVKK consent + non-anonim filter (§38.17 paterni).
-    restIds.length > 0
-      ? prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
-          SELECT COUNT(*)::bigint AS count FROM (
-            SELECT
-              COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) AS contact_key,
-              MAX(f.created_at) AS last_at,
-              COUNT(*) AS visits
-            FROM feedback f
-            WHERE f.has_kvkk_consent = TRUE
-              AND f.restaurant_id IN (${Prisma.join(restIds)})
-              AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
-                  IS NOT NULL
-            GROUP BY 1
-            HAVING MAX(f.created_at) < NOW() - INTERVAL '30 days'
-              AND COUNT(*) >= 2
-          ) churned_customers
-        `)
-      : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT 0::bigint AS count WHERE FALSE`),
   ]);
+  const homeStats = mapHomeFeedbackStats(homeStatsRows[0]);
+  // Mobile hero 7-day sparkline rows (`createdAt >= sevenDaysAgo`, the same
+  // filter the separate 7-day query had).
+  const sevenDaysAgoMs = sevenDaysAgo.getTime();
+  const trendFeedbacks = trendFeedbacksRange.filter(
+    (f) => f.createdAt.getTime() >= sevenDaysAgoMs,
+  );
 
   // ---- Derived metrics ----
   const totalReviews = restaurantRatings.reduce((a, r) => a + r._count._all, 0);
@@ -499,12 +507,6 @@ async function renderDashboardPage({
   // "last30" semantik; yorumda açıklandı.
   const last7Total = last7Avg._count._all;
   const last7AvgRating = last7Avg._avg.rating ?? 0;
-
-  // Star distribution
-  const starCounts: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  for (const g of starGroups) {
-    if (g.rating >= 1 && g.rating <= 5) starCounts[g.rating as 1 | 2 | 3 | 4 | 5] = g._count._all;
-  }
 
   // Platform distribution — Top platforms (3 değil, hepsi göster ama sıralı).
   // PlatformDistribution component zaten sıralayıp pill + bar grid çiziyor.
@@ -592,57 +594,6 @@ async function renderDashboardPage({
   // §38.27'deki 7-gün peak hesabı §38.30'da PulseRangeToggle içine taşındı;
   // dashboard'da ayrıca kullanılmıyor.
 
-  // Per-restaurant 7-day sparkline (QR Performansı için).
-  const sparklineByRestaurant = new Map<string, number[]>();
-  for (const r of restIds) sparklineByRestaurant.set(r, Array(7).fill(0));
-  for (const f of trendFeedbacks) {
-    if (!f.restaurantId) continue;
-    const dayIdx = Math.floor((Date.now() - f.createdAt.getTime()) / 86400000);
-    if (dayIdx >= 0 && dayIdx < 7) {
-      const arr = sparklineByRestaurant.get(f.restaurantId);
-      if (arr) arr[6 - dayIdx] = (arr[6 - dayIdx] || 0) + 1;
-    }
-  }
-
-  // QR scan count map — QrScan tablosundan groupBy(restaurantId, tableNumber, platform)
-  const qrScanCounts = new Map<string, number>();
-  for (const g of qrScanGroups) {
-    if (!g.restaurantId) continue;
-    const key = `${g.restaurantId}::${g.tableNumber || ''}::${g.platform || ''}`;
-    qrScanCounts.set(key, g._count._all);
-  }
-
-  // QR Performansı top 5 — dedup (restaurant, table, platform) tuple'ı
-  const seenKeys = new Set<string>();
-  const qrPerfTop: Array<{
-    id: string;
-    name: string;
-    platform: string | null;
-    sparkline: number[];
-    restaurantId: string;
-    scans: number;
-  }> = [];
-  for (const q of qrPerfRows) {
-    const key = `${q.restaurant.id}::${q.tableNumber || ''}::${q.platform || ''}`;
-    if (seenKeys.has(key)) continue;
-    seenKeys.add(key);
-    const restName = q.restaurant.name;
-    const label = q.tableNumber
-      ? `${restName} · ${isTr ? 'Masa' : 'Table'} ${q.tableNumber}`
-      : q.platform
-        ? `${restName} · ${q.platform}`
-        : restName;
-    qrPerfTop.push({
-      id: q.id,
-      name: label,
-      platform: q.platform,
-      sparkline: sparklineByRestaurant.get(q.restaurant.id) || Array(7).fill(0),
-      restaurantId: q.restaurant.id,
-      scans: qrScanCounts.get(key) ?? 0,
-    });
-    if (qrPerfTop.length >= 5) break;
-  }
-
   // SIK BAHSEDİLEN KONULAR — son 30 gün yorumlarından AI ile tema çıkarımı.
   // extractThemes helper içinde min 4 yorum + OpenAI key kontrolü; yoksa
   // empty fallback (UI section gizli). Cache 1 saat (CLAUDE.md §34.9).
@@ -695,14 +646,14 @@ async function renderDashboardPage({
   // segment crossover (§38.17) kaldırıldı. Yeni 3-task summary (reply / platform
   // Google sync / reminder churn). Detail için owner /feedbacks deep-link'e
   // tıklar. Customer segment chip Customers page + drawer'da hâlâ mevcut.
-  const pendingCount = unrepliedAggregate._count._all;
-  const oldestUnrepliedAt = unrepliedAggregate._min.createdAt ?? null;
-  const churnedCount = Number(churnedCustomerRows[0]?.count ?? 0);
+  const pendingCount = homeStats.unrepliedCount;
+  const oldestUnrepliedAt = homeStats.oldestUnrepliedAt;
+  const churnedCount = homeStats.churnedCustomers;
   const dashboardTasks = buildPendingTasks({
     unrepliedFeedbacks: { count: pendingCount, oldestUnrepliedAt },
     googlePlatformCheck: {
-      failing: googleSyncCheck !== null,
-      lastCheckedAt: googleSyncCheck?.checkedAt ?? null,
+      failing: homeStats.googleFailingCheckAt !== null,
+      lastCheckedAt: homeStats.googleFailingCheckAt,
     },
     churnedCustomers: { count: churnedCount },
     limit: 4,
@@ -755,9 +706,9 @@ async function renderDashboardPage({
     };
   };
 
-  const totalReviewsDelta = pctDelta(last7Total, prev7Count);
+  const totalReviewsDelta = pctDelta(last7Total, prevScopeAggregate._count._all);
 
-  const prevAvg = prev7Avg._avg.rating ?? 0;
+  const prevAvg = prevScopeAggregate._avg.rating ?? 0;
   const ratingDeltaNum =
     last7AvgRating > 0 && prevAvg > 0
       ? Math.round((last7AvgRating - prevAvg) * 10) / 10
@@ -832,7 +783,9 @@ async function renderDashboardPage({
       platform: f.platform,
       createdAt: f.createdAt,
       restaurantId: f.restaurantId,
-      restaurant: f.restaurant,
+      restaurant: f.restaurantId
+        ? { name: restaurantNameById.get(f.restaurantId) ?? '' }
+        : null,
       hasKvkkConsent: f.hasKvkkConsent,
     })),
     replies: recentReplies.map((r) => ({
@@ -880,7 +833,7 @@ async function renderDashboardPage({
         ? 'Good afternoon'
         : 'Good evening';
   const userFirstName = user.name?.trim().split(/\s+/)[0] || (isTr ? 'Hoş geldin' : 'Welcome');
-  // §38.32 — pendingCount line 729'da unrepliedAggregate._count._all'dan
+  // §38.32 — pendingCount yukarıda homeStats.unrepliedCount'tan
   // tanımlandı; greeting hook için reuse.
   // Every unreplied low-rated review counts, not only today's — so no
   // "Bugün" here (the pending card below shows how old the oldest one is).
@@ -896,36 +849,28 @@ async function renderDashboardPage({
   // §40.10 anti-double-skeleton — server-compute activation here so the
   // ActivationChecklistCard hydrates with data and skips its own loading
   // skeleton flash (Next.js segment loading.tsx already covered the wait).
-  const activationTarget = selectedRestaurant ?? user.restaurants[0] ?? null;
+  // Profile fields come from the business list, the feedback total from the
+  // per-business groupBy and the QR count from the stats query above; only
+  // the activation state row is read here. A failure there stays soft: the
+  // client refetches via its own GET /activation endpoint.
   let initialActivation: ReturnType<typeof computeActivation> | undefined;
   if (activationTarget) {
     try {
-      const [activationRestaurant, activationState, activationQrCount, activationFeedbackCount] =
-        await prisma.$transaction([
-          prisma.restaurant.findUnique({
-            where: { id: activationTarget.id },
-            select: {
-              name: true,
-              category: true,
-              googleReviewUrl: true,
-              googleEnabled: true,
-            },
-          }),
-          prisma.restaurantActivationState.findUnique({
-            where: { restaurantId: activationTarget.id },
-            select: { qrPrintedSharedAt: true, dismissedAt: true },
-          }),
-          prisma.qrGeneration.count({ where: { restaurantId: activationTarget.id } }),
-          prisma.feedback.count({ where: { restaurantId: activationTarget.id } }),
-        ]);
-      if (activationRestaurant) {
-        initialActivation = computeActivation({
-          restaurant: activationRestaurant,
-          state: activationState,
-          qrGenerationCount: activationQrCount,
-          feedbackCount: activationFeedbackCount,
-        });
-      }
+      const activationRead = await activationStatePromise;
+      if (!activationRead || !activationRead.ok) throw activationRead?.error ?? new Error('activation state unavailable');
+      const activationState = activationRead.row;
+      initialActivation = computeActivation({
+        restaurant: {
+          name: activationTarget.name,
+          category: activationTarget.category,
+          googleReviewUrl: activationTarget.googleReviewUrl,
+          googleEnabled: activationTarget.googleEnabled,
+        },
+        state: activationState,
+        qrGenerationCount: homeStats.activationQrCount,
+        feedbackCount:
+          restaurantRatings.find((r) => r.restaurantId === activationTarget.id)?._count._all ?? 0,
+      });
     } catch (activationError) {
       // Soft-fail: client will refetch via own GET /activation endpoint.
       console.error('[DashboardPage] activation hydration failed', activationError);
@@ -980,6 +925,8 @@ async function renderDashboardPage({
     totalReviewsDelta.value === '0%' || totalReviewsDelta.value === (isTr ? 'Yeni' : 'New')
       ? ''
       : ` (${totalReviewsDelta.value})`;
+  const lowRated30dCount = homeStats.lowRatedInScope;
+  const lowRated30dRepliedCount = homeStats.lowRatedRepliedInScope;
   const responseRate =
     lowRated30dCount > 0 ? Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100) : null;
   const pendingTaskItems = dashboardTasks.map((task) => ({ ...task, href: scopedHref(task.href) }));
@@ -1168,7 +1115,7 @@ async function renderDashboardPage({
         />
         <StatCard
           label={isTr ? 'Yeni müşteri' : 'New customers'}
-          value={Number(newCustomers30dRows[0]?.count ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          value={homeStats.newCustomers.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
           delta={scopeLabel}
           deltaKind="neutral"
           icon={<UserPlus size={14} strokeWidth={2} />}

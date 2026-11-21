@@ -68,9 +68,14 @@ export async function GET(
     // CLAUDE.md §40.1 — Supabase pooler `connection_limit=1` altında same-request
     // paralel Prisma read'leri `prisma.$transaction([...])` ile tek connection
     // üstünden sıralı çalışmalı (Promise.all timeout riskini eler).
+    //
+    // The ≤520K-char cover data URL is only read by the owner Menu Studio,
+    // which asks for it with `?withCover=1`; every other caller skips it.
+    const withCover = req.nextUrl.searchParams.get('withCover') === '1';
     const [restaurant, qrDistinctRows] = await prisma.$transaction([
       prisma.restaurant.findUnique({
         where: { id },
+        omit: { menuCoverUrl: !withCover },
         include: {
           user: {
             select: {

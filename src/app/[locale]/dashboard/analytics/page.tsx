@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { resolveUserPayloadIdentity } from '@/lib/panel-access';
 import { prisma } from '@/lib/prisma';
+import { readAll } from '@/lib/db-batch';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { Download } from 'lucide-react';
@@ -69,6 +70,7 @@ import { calculateNPS } from '@/lib/analytics-nps';
 // dashboard veya rapor surface'inde reuse ihtiyacı çıkarsa restore edilir.
 import { buildPlatformDailyTrend } from '@/lib/analytics-platform-trend';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
+import { getPanelRestaurants, getPanelUser } from '../_lib/panel-data';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
 // otomatik client boundary çizer, server-side pre-render minimal HTML
@@ -208,26 +210,22 @@ async function renderAnalyticsPage({
   const payload = await verifyJwt(token);
   if (!payload || typeof payload.userId !== 'string') redirect(`/${locale}/auth/login`);
 
-  const userRow = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: { id: true },
-  });
+  // Request-memoised (React cache): on a hard load the dashboard layout has
+  // already read the user and the business list, so these are not queried
+  // again.
+  const userRow = await getPanelUser(payload.userId);
   if (!userRow) redirect(`/${locale}/auth/login`);
   // Team members included — same scope the API layer resolves (CLAUDE.md
   // §38.240). `user.restaurants` (owned only) left invited team members with
-  // an empty analytics page.
-  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+  // an empty analytics page. Same scope + order (createdAt asc) as before.
+  const identity = resolveUserPayloadIdentity({
     userId: payload.userId,
     role: payload.role,
     email: payload.email,
   });
   const user = {
     id: userRow.id,
-    restaurants: await prisma.restaurant.findMany({
-      where: { id: { in: scopedIds } },
-      select: { id: true, name: true, isActive: true, aiAnalyticsEnabled: true, targetRating: true },
-      orderBy: { createdAt: 'asc' },
-    }),
+    restaurants: await getPanelRestaurants(identity.userId, identity.role, identity.email),
   };
 
   // §38.50 — Custom range önceliği: `?range=custom&customStart=...&customEnd=...`
@@ -283,7 +281,7 @@ async function renderAnalyticsPage({
   // Only what the page renders is queried. The QR scan, redirect, low-rating
   // and "today" counts fed KPIs that were removed earlier (§38.50) and were
   // still run on every load.
-  const [feedbacksWindow, feedbacksPrevWindow] = await prisma.$transaction([
+  const [feedbacksWindow, feedbacksPrevWindow, branchRows] = await readAll([
     // Window feedback'leri — multi-purpose select: day/hour buckets,
     // theme analysis (comment), response time (replies). Tek query
     // multiple-section'ı besler (CLAUDE.md §7 — replication önleme).
@@ -311,20 +309,17 @@ async function renderAnalyticsPage({
     prisma.feedback.count({
       where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
     }),
+    // Distinct branches for the filter dropdown — limited to the business(es)
+    // in scope (a branch of another business would only ever show an empty
+    // page), not affected by the current branch filter so the owner can pick
+    // a different one. With no business in scope `in: []` returns no rows.
+    prisma.feedback.findMany({
+      where: { restaurantId: { in: restaurantIds }, branch: { not: null } },
+      distinct: ['branch'],
+      select: { branch: true },
+      take: 50,
+    }),
   ]);
-
-  // Distinct branches for the filter dropdown — limited to the business(es)
-  // in scope (a branch of another business would only ever show an empty
-  // page), not affected by the current branch filter so the owner can pick a
-  // different one.
-  const branchRows = restaurantIds.length
-    ? await prisma.feedback.findMany({
-        where: { restaurantId: { in: restaurantIds }, branch: { not: null } },
-        distinct: ['branch'],
-        select: { branch: true },
-        take: 50,
-      })
-    : [];
   const branches = branchRows
     .map((r) => r.branch as string)
     .filter(Boolean)
@@ -601,10 +596,6 @@ async function renderAnalyticsPage({
     .filter((f) => typeof f.restaurantId === 'string' && aiEnabledRestaurantIds.has(f.restaurantId))
     .filter((f): f is typeof f & { comment: string } => typeof f.comment === 'string' && f.comment.trim().length > 0)
     .map((f) => ({ rating: f.rating, comment: f.comment }));
-  const themes = aiAnalyticsAvailable
-    ? await extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey, user.id)
-    : { themes: [], synthesis: '', source: 'fallback' as const };
-
   // §38.34 — Yapılandırılmış 3-segment AI içgörü (TREND/KAZANIM/RİSK).
   // Tasarım kaynağı: page-analytics.jsx AI İÇGÖRÜLER · BU HAFTA dark card.
   // Cache 1 hafta — pazartesi yenilenir. Empty fallback → kart gizli.
@@ -623,14 +614,22 @@ async function renderAnalyticsPage({
     const r = f.rating ?? 0;
     if (r >= 1 && r <= 5) ratingDistribution[r] = (ratingDistribution[r] ?? 0) + 1;
   }
-  const structuredInsight = aiAnalyticsAvailable
-    ? await extractStructuredInsight(
-        { comments: themesComments, ratingDistribution },
-        isTr ? 'tr' : 'en',
-        structuredCacheKey,
-        user.id,
-      )
-    : { trend: '', win: '', risk: '', source: 'fallback' as const };
+  // Both AI helpers need only the comments + rating distribution above and
+  // read no database (outbound OpenAI + quota checks only), so they run
+  // side by side instead of two LLM round trips back to back on a cache miss.
+  const [themes, structuredInsight] = await Promise.all([
+    aiAnalyticsAvailable
+      ? extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey, user.id)
+      : Promise.resolve({ themes: [], synthesis: '', source: 'fallback' as const }),
+    aiAnalyticsAvailable
+      ? extractStructuredInsight(
+          { comments: themesComments, ratingDistribution },
+          isTr ? 'tr' : 'en',
+          structuredCacheKey,
+          user.id,
+        )
+      : Promise.resolve({ trend: '', win: '', risk: '', source: 'fallback' as const }),
+  ]);
 
   // Phase 8c+ (CLAUDE.md §38.18) — KPI mini sparkline data from the daily
   // series. Min 2 nokta gerekir (StatCard guard).

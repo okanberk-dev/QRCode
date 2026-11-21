@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
+import { resolveUserPayloadIdentity } from '@/lib/panel-access';
+import { getPanelRestaurants } from '../_lib/panel-data';
 import AccountSettingsClient from './AccountSettingsClient';
 
 export const dynamic = 'force-dynamic';
@@ -49,18 +50,19 @@ export default async function AccountSettingsPage({
         // gave an invited team member an empty list, and the client-fetch
         // path (`/api/restaurants?status=all`) returned a different set than
         // this one, so the "İşletme" usage count changed with the load path.
-        const scopedIds = await getScopedRestaurantIdsForUserPayload({
+        // The business list is request-memoised (React cache): on a hard load
+        // the layout has already read it. Same scope + order, first 100.
+        const identity = resolveUserPayloadIdentity({
           userId,
           role: payload?.role,
           email: payload?.email,
         });
-        const [restaurants, profile, teamCount] = await prisma.$transaction([
-          prisma.restaurant.findMany({
-            where: { id: { in: scopedIds } },
-            select: { id: true, name: true },
-            orderBy: { createdAt: 'asc' },
-            take: 100,
-          }),
+        const restaurants = (
+          await getPanelRestaurants(identity.userId, identity.role, identity.email)
+        )
+          .slice(0, 100)
+          .map((restaurant) => ({ id: restaurant.id, name: restaurant.name }));
+        const [profile, teamCount] = await prisma.$transaction([
           prisma.user.findUnique({
             where: { id: userId },
             // scheduledDeletionAt drives the Security → danger zone state;

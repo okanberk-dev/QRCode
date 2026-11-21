@@ -61,7 +61,7 @@ function listFrom<T>(body: unknown): T[] {
 async function fetchRestaurantOptions(): Promise<Restaurant[] | null> {
   const all: Restaurant[] = [];
   for (let page = 1; page <= 10; page++) {
-    const res = await fetch(`/api/restaurants?status=all&limit=${PAGE_SIZE}&page=${page}`);
+    const res = await fetch(`/api/restaurants?status=all&limit=${PAGE_SIZE}&page=${page}&fields=options`);
     if (!res.ok) return page === 1 ? null : all;
     const body = await res.json();
     all.push(...listFrom<Restaurant>(body).map((r) => ({ id: r.id, name: r.name })));
