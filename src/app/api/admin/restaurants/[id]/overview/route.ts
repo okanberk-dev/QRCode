@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { getAdminFromRequest } from '@/lib/auth';
 import { parseGoogleLocationsCache, selectedGoogleLocation } from '@/lib/google-business';
 
@@ -39,7 +40,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   try {
-    // §40.1 — single pooled connection: batch all reads in one transaction.
+    // All reads only depend on the restaurant row, so they run at once
+    // (parallelReads, 8 at a time). They used to be two array $transactions
+    // (restaurant modules, then owner rows), each back to back.
     const [
       surveys,
       surveyCount,
@@ -48,7 +51,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       failingLinkChecks,
       latestLinkCheck,
       qrCount,
-    ] = await prisma.$transaction([
+      teamGroups,
+      integration,
+      ownerRow,
+    ] = await parallelReads([
       prisma.survey.findMany({
         where: { restaurantId: id },
         orderBy: { createdAt: 'desc' },
@@ -84,6 +90,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         select: { checkedAt: true },
       }),
       prisma.qrGeneration.count({ where: { restaurantId: id } }),
+      ownerId
+        ? prisma.teamMember.groupBy({
+            by: ['status'],
+            where: { ownerId },
+            _count: { _all: true },
+            orderBy: { status: 'asc' },
+          })
+        : () => Promise.resolve([]),
+      ownerId
+        ? prisma.googleIntegration.findUnique({
+            where: { userId: ownerId },
+            select: { locationsJson: true },
+          })
+        : () => Promise.resolve(null),
+      ownerId
+        ? prisma.user.findUnique({
+            where: { id: ownerId },
+            select: { scheduledDeletionAt: true, isActive: true },
+          })
+        : () => Promise.resolve(null),
     ]);
 
     const team = { active: 0, invited: 0 };
@@ -98,22 +124,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     };
 
     if (ownerId) {
-      const [teamGroups, integration, ownerRow] = await prisma.$transaction([
-        prisma.teamMember.groupBy({
-          by: ['status'],
-          where: { ownerId },
-          _count: { _all: true },
-          orderBy: { status: 'asc' },
-        }),
-        prisma.googleIntegration.findUnique({
-          where: { userId: ownerId },
-          select: { locationsJson: true },
-        }),
-        prisma.user.findUnique({
-          where: { id: ownerId },
-          select: { scheduledDeletionAt: true, isActive: true },
-        }),
-      ]);
       for (const g of teamGroups) {
         const n = typeof g._count === 'object' && g._count ? g._count._all ?? 0 : 0;
         if (g.status === 'active') team.active = n;
