@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { parallelReads } from '@/lib/db-parallel';
 import { requireRestaurantAccess } from '@/lib/menu-access';
 import {
   ANALYTICS_SOURCE_TYPES,
@@ -100,6 +101,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       ...(categoryId ? { categoryId } : {}),
     };
 
+    // Previous-period comparison filters (same filters, shifted window).
+    const prev = previousWindow(window);
+    const prevBase: Prisma.MenuAnalyticsEventWhereInput | null = prev
+      ? {
+          restaurantId: id,
+          createdAt: { gte: prev.start, lte: prev.end },
+          ...(rawSourceType && (ANALYTICS_SOURCE_TYPES as readonly string[]).includes(rawSourceType)
+            ? { sourceType: rawSourceType }
+            : {}),
+        }
+      : null;
+    const prevScoped: Prisma.MenuAnalyticsEventWhereInput | null = prevBase
+      ? { ...prevBase, ...(categoryId ? { categoryId } : {}) }
+      : null;
+
+    // Every read below only depends on the filters above, so they run at once
+    // (parallelReads, 8 at a time). They used to be an array $transaction plus
+    // two more sequential steps (previous period, trend), each back to back.
     const [
       menuState,
       menuCategories,
@@ -111,7 +130,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       clicksByCategory,
       productViews,
       productClicks,
-    ] = await prisma.$transaction([
+      prevMenuViews,
+      prevEvents,
+      trendRaw,
+    ] = await parallelReads([
       // Publish state, so an empty report can tell "menu is still a draft" from
       // "nobody has scanned yet".
       prisma.restaurant.findUnique({
@@ -156,6 +178,32 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         where: { ...scopedWhere, eventType: 'menu_product_click' },
         _count: { _all: true },
       }),
+      prevBase
+        ? prisma.menuAnalyticsEvent.count({ where: { ...prevBase, eventType: 'menu_view' } })
+        : () => Promise.resolve(0),
+      prevScoped
+        ? prisma.menuAnalyticsEvent.groupBy({ by: ['eventType'], where: prevScoped, _count: { _all: true } })
+        : () => Promise.resolve([]),
+      // Trend: daily series (only when the window has a start).
+      // Respects both categoryId and sourceType filters to stay in sync with the overview.
+      window.start
+        ? prisma.$queryRaw<{ bucket: Date; event_type: string; cnt: bigint }[]>`
+            SELECT date_trunc('day', "created_at") AS bucket, "event_type", COUNT(*) AS cnt
+            FROM "menu_analytics_events"
+            WHERE "restaurant_id" = ${id}
+              AND "created_at" >= ${window.start}
+              AND "created_at" <= ${window.end}
+              AND (
+                "event_type" = 'menu_view'
+                OR (${categoryId ? Prisma.sql`"category_id" = ${categoryId}` : Prisma.sql`TRUE`})
+              )
+              AND (${rawSourceType && (ANALYTICS_SOURCE_TYPES as readonly string[]).includes(rawSourceType)
+                ? Prisma.sql`"source_type" = ${rawSourceType}`
+                : Prisma.sql`TRUE`})
+            GROUP BY bucket, "event_type"
+            ORDER BY bucket ASC
+          `
+        : () => Promise.resolve([]),
     ]);
 
     // Overview totals
@@ -173,7 +221,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const productClickRate = clampRate(totalProductViews > 0 ? totalProductClicks / totalProductViews : 0);
 
     // Previous-period comparison (same filters, shifted window).
-    const prev = previousWindow(window);
     let compare: null | {
       menuViews: number | null;
       productViews: number | null;
@@ -181,18 +228,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       productClickRate: number | null;
     } = null;
     if (prev) {
-      const prevBase: Prisma.MenuAnalyticsEventWhereInput = {
-        restaurantId: id,
-        createdAt: { gte: prev.start, lte: prev.end },
-        ...(rawSourceType && (ANALYTICS_SOURCE_TYPES as readonly string[]).includes(rawSourceType)
-          ? { sourceType: rawSourceType }
-          : {}),
-      };
-      const prevScoped: Prisma.MenuAnalyticsEventWhereInput = { ...prevBase, ...(categoryId ? { categoryId } : {}) };
-      const [prevMenuViews, prevEvents] = await prisma.$transaction([
-        prisma.menuAnalyticsEvent.count({ where: { ...prevBase, eventType: 'menu_view' } }),
-        prisma.menuAnalyticsEvent.groupBy({ by: ['eventType'], where: prevScoped, _count: { _all: true } }),
-      ]);
       const prevTotals: Record<string, number> = {};
       for (const row of prevEvents) prevTotals[row.eventType] = row._count._all;
       const prevViews = prevTotals.menu_product_view ?? 0;
@@ -208,26 +243,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       };
     }
 
-    // Trend: daily series (only when the window has a start).
-    // Respects both categoryId and sourceType filters to stay in sync with the overview.
+    // Trend: daily series (only when the window has a start; read above).
     let trend: { date: string; menuViews: number; productClicks: number }[] = [];
     if (window.start) {
-      const raw = await prisma.$queryRaw<{ bucket: Date; event_type: string; cnt: bigint }[]>`
-        SELECT date_trunc('day', "created_at") AS bucket, "event_type", COUNT(*) AS cnt
-        FROM "menu_analytics_events"
-        WHERE "restaurant_id" = ${id}
-          AND "created_at" >= ${window.start}
-          AND "created_at" <= ${window.end}
-          AND (
-            "event_type" = 'menu_view'
-            OR (${categoryId ? Prisma.sql`"category_id" = ${categoryId}` : Prisma.sql`TRUE`})
-          )
-          AND (${rawSourceType && (ANALYTICS_SOURCE_TYPES as readonly string[]).includes(rawSourceType)
-            ? Prisma.sql`"source_type" = ${rawSourceType}`
-            : Prisma.sql`TRUE`})
-        GROUP BY bucket, "event_type"
-        ORDER BY bucket ASC
-      `;
+      const raw = trendRaw;
       const byDate = new Map<string, { menuViews: number; productClicks: number }>();
       for (const row of raw) {
         const iso = new Date(row.bucket).toISOString().slice(0, 10);
