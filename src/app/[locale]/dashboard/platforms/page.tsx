@@ -59,10 +59,10 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
     email: payload.email,
   });
   const since = new Date(Date.now() - CHECK_WINDOW_MS);
-  // One connection, one snapshot (CLAUDE.md §40.1 — pooler connection_limit=1).
   // Checks are loaded for EVERY scoped business so switching business on the
-  // page is instant and never shows another business's numbers.
-  const [restaurantRows, checkRows] = await prisma.$transaction([
+  // page is instant and never shows another business's numbers. The two reads
+  // are independent, so they run at once (was an array $transaction).
+  const [restaurantRows, checkRows] = await Promise.all([
     prisma.restaurant.findMany({
       where: { id: { in: scopedIds } },
       select: {

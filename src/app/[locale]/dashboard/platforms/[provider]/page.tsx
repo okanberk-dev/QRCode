@@ -103,12 +103,12 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
     email: payload.email,
   });
   const since = new Date(Date.now() - CHECK_WINDOW_MS);
-  // One connection, one snapshot (CLAUDE.md §40.1 — pooler connection_limit=1).
   // Checks are loaded on the server for EVERY scoped business — the status
   // pill, the business summary and "Varsayılan platform yap" must never
   // render from an empty check set (a failing link read as "Bağlı" until a
-  // client fetch returned), and switching business stays instant.
-  const [restaurantRows, checkRows] = await prisma.$transaction([
+  // client fetch returned), and switching business stays instant. The two
+  // reads are independent, so they run at once (was an array $transaction).
+  const [restaurantRows, checkRows] = await Promise.all([
     prisma.restaurant.findMany({
       where: { id: { in: scopedIds } },
       select: {
