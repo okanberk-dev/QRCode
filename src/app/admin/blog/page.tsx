@@ -27,8 +27,8 @@ export default async function AdminBlogPage() {
   let initialPosts: Awaited<ReturnType<typeof loadInitialPosts>> = [];
   let initialTotal = 0;
   try {
-    // §40.1 — single pooled connection: batch the reads in one transaction.
-    [initialPosts, initialTotal] = await prisma.$transaction([
+    // Two independent reads, run at once (was an array $transaction).
+    [initialPosts, initialTotal] = await Promise.all([
       loadInitialPosts(),
       prisma.blogPost.count(),
     ]);
@@ -40,7 +40,7 @@ export default async function AdminBlogPage() {
   return <AdminBlogClient initialPosts={initialPosts} initialTotal={initialTotal} />;
 }
 
-// Plain (non-async) so it returns a PrismaPromise for $transaction.
+// Plain (non-async): returns the lazy Prisma query.
 function loadInitialPosts() {
   return prisma.blogPost.findMany({
     orderBy: { createdAt: 'desc' },

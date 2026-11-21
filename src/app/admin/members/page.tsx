@@ -88,7 +88,8 @@ async function loadMembers(
   where: ReturnType<typeof buildMembersWhere>,
   params: ReturnType<typeof parseListMembersParams>,
 ) {
-  const [total, users] = await prisma.$transaction([
+  // Count and page run at once (was an array $transaction).
+  const [total, users] = await Promise.all([
     prisma.user.count({ where }),
     prisma.user.findMany({
       where,
