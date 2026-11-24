@@ -6,6 +6,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
 import { safeParseJson } from '@/lib/safe-json';
 import { encryptToken } from '@/lib/google-token-crypto';
+import { isGoogleTenantAllowed } from '@/lib/gbp-access';
 import { GOOGLE_OAUTH_STATE_COOKIE } from '../connect/route';
 
 export const dynamic = 'force-dynamic';
@@ -193,6 +194,13 @@ export async function GET(req: NextRequest) {
     return redirectBack(req, 'state-actor-mismatch', returnTo);
   }
 
+  // §53 — the allowlist is checked again here: a code obtained elsewhere
+  // (or before the tenant was closed) must never be exchanged or stored.
+  if (!(await isGoogleTenantAllowed(ownerRef(actor)))) {
+    recordCallbackFailure(req, 'tenant-not-allowed', actor);
+    return redirectBack(req, 'tenant-not-allowed', returnTo);
+  }
+
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -233,8 +241,12 @@ export async function GET(req: NextRequest) {
   const userId = ownerRef(actor);
   const existing = await prisma.googleIntegration.findUnique({
     where: { userId },
-    select: { refreshToken: true },
+    select: { refreshToken: true, clientId: true },
   });
+  // An old refresh token is only reusable if it came from the same OAuth
+  // client; a token from another Google Cloud project is dead weight.
+  const reusableRefreshToken =
+    existing?.clientId === clientId ? existing.refreshToken ?? null : null;
   const expiresAt = new Date(Date.now() + Math.max(60, tokens.expires_in ?? 3600) * 1000);
 
   // Fix #6 — Token at-rest encryption. ENCRYPTION_KEY env yoksa
@@ -249,13 +261,19 @@ export async function GET(req: NextRequest) {
       accessToken: encryptToken(tokens.access_token),
       refreshToken: tokens.refresh_token ? encryptToken(tokens.refresh_token) : null,
       expiresAt,
+      clientId,
     },
     update: {
       accessToken: encryptToken(tokens.access_token),
       refreshToken: tokens.refresh_token
         ? encryptToken(tokens.refresh_token)
-        : existing?.refreshToken ?? null,
+        : reusableRefreshToken,
       expiresAt,
+      // §53 — record the issuing client and clear any "broken" /
+      // "reconnect" state left by a revoked grant or a project switch.
+      clientId,
+      invalidatedAt: null,
+      invalidReason: null,
     },
   });
 

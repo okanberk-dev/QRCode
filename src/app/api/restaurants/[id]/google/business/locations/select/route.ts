@@ -16,6 +16,7 @@ import {
   GoogleBusinessApiError,
 } from '@/lib/google-business';
 import { captureBaselineSnapshot } from '@/lib/reputation/snapshot';
+import { enqueueGoogleReviewRefresh } from '@/lib/google-review-showcase';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -128,6 +129,9 @@ export async function POST(
   // Idempotent inside captureBaselineSnapshot (skips if baseline already
   // exists); never blocks response.
   void captureBaselineSnapshot(id);
+  // §53 — put the business at the front of the central review refresh queue
+  // (the next google-reviews-refresh run fetches it; no Google call here).
+  await enqueueGoogleReviewRefresh(id).catch(() => {});
 
   return NextResponse.json({
     selectedLocation: selectedGoogleLocation(nextCache, id),

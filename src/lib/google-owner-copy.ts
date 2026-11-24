@@ -81,6 +81,10 @@ const MESSAGES: Record<string, Copy> = {
     en: 'Google sent an unexpected response. Please try again shortly.',
   },
   GOOGLE_NOT_CONFIGURED: SIGN_IN_UNAVAILABLE,
+  GOOGLE_TENANT_NOT_ALLOWED: {
+    tr: 'Google yorumları yakında. Bu özellik henüz hesabın için açık değil.',
+    en: "Google reviews are coming soon. This isn't open for your account yet.",
+  },
   missing_google_client_id: SIGN_IN_UNAVAILABLE,
 
   // — warnings / route codes of the reply section —
@@ -157,6 +161,19 @@ const MESSAGES: Record<string, Copy> = {
 
   // — Reply section status rows —
   reply_badge_unavailable: { tr: 'Henüz açık değil', en: 'Not available yet' },
+  reply_badge_coming_soon: { tr: 'Yakında', en: 'Coming soon' },
+  reply_coming_soon: {
+    tr: 'Google yorumları yakında. Google hesabını bağlama bu hesap için henüz açık değil; profil analizin bundan etkilenmez.',
+    en: "Google reviews are coming soon. Connecting a Google account isn't open for this account yet; your profile check isn't affected.",
+  },
+  reply_reconnect_client_changed: {
+    tr: 'Google bağlantın yenilendi; yorumların güncel kalması için Google hesabını yeniden bağla. Son alınan yorumlar görünmeye devam eder.',
+    en: 'Your Google connection was renewed; reconnect your Google account to keep reviews up to date. The last fetched reviews stay visible.',
+  },
+  reply_connection_broken: {
+    tr: 'Google bağlantın koptu (erişim geri alınmış olabilir). Google hesabını yeniden bağla. Son alınan yorumlar görünmeye devam eder.',
+    en: 'Your Google connection broke (access may have been revoked). Reconnect your Google account. The last fetched reviews stay visible.',
+  },
   reply_unavailable: {
     tr: 'Google, yorum yanıtlama erişimini Buaze için henüz açmadı. Erişim açıldığında bu bölümden Google hesabını bağlayabileceksin; profil analizin bundan etkilenmez.',
     en: "Google hasn't enabled review replies for Buaze yet. Once it does, you'll be able to connect your Google account from this section; your profile check isn't affected.",

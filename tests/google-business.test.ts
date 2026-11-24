@@ -187,6 +187,13 @@ describe('googleBusinessErrorResponse — controlled HTTP mapping (no 500 chain)
 // ─────────────────────────────────────────────────────────────────────────
 
 type FetchResponse = Response | Error;
+
+// §53 — every Business Profile call is gated by the tenant allowlist and the
+// OAuth client the token was issued for. The stub row is an allowed tenant
+// whose token belongs to the current client.
+const TEST_CLIENT_ID = '123456789-test.apps.googleusercontent.com';
+process.env.GBP_ALLOWED_TENANTS = 'user-test';
+process.env.GOOGLE_CLIENT_ID = TEST_CLIENT_ID;
 type IntegrationStub = Parameters<typeof googleBusinessFetch>[0];
 
 function buildIntegration(overrides: Partial<{ refreshToken: string | null }> = {}): IntegrationStub {
@@ -194,6 +201,9 @@ function buildIntegration(overrides: Partial<{ refreshToken: string | null }> = 
   // for transport-level tests — only the fields the helper reads.
   return {
     id: 'integration-test',
+    userId: 'user-test',
+    clientId: TEST_CLIENT_ID,
+    invalidReason: null,
     accessToken: 'access-token-stub',
     expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1h fresh — skips refresh
     refreshToken: overrides.refreshToken === undefined ? 'refresh-token-stub' : overrides.refreshToken,

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import type { PanelActor } from '@/lib/auth';
 import type { Locale } from '@/lib/translations';
 import { decryptToken, encryptToken } from '@/lib/google-token-crypto';
+import { isGoogleTenantAllowed } from '@/lib/gbp-access';
+import { rateLimit } from '@/lib/rate-limit';
 import {
   PLACES_SEARCH_FIELD_MASK,
   PlacesApiError,
@@ -56,7 +58,9 @@ export type GoogleBusinessFailureCode =
   | 'GOOGLE_SERVER_ERROR'
   | 'GOOGLE_NETWORK_ERROR'
   | 'GOOGLE_API_ERROR'
-  | 'GOOGLE_NOT_CONFIGURED';
+  | 'GOOGLE_NOT_CONFIGURED'
+  /** Workspace is not in GBP_ALLOWED_TENANTS (CLAUDE.md §53). */
+  | 'GOOGLE_TENANT_NOT_ALLOWED';
 
 /**
  * CLAUDE.md §38 audit Fix #7 — locale-aware error messages.
@@ -94,6 +98,10 @@ const GOOGLE_FAILURE_MESSAGES: Record<GoogleBusinessFailureCode, Record<Locale, 
   GOOGLE_NOT_CONFIGURED: {
     tr: 'Google hesabı bağlama şu an kullanılamıyor. Lütfen daha sonra tekrar dene.',
     en: "Connecting a Google account isn't available right now. Please try again later.",
+  },
+  GOOGLE_TENANT_NOT_ALLOWED: {
+    tr: 'Google yorumları yakında. Bu özellik henüz hesabın için açık değil.',
+    en: "Google reviews are coming soon. This isn't open for your account yet.",
   },
 };
 
@@ -434,9 +442,42 @@ export type GoogleAccessTokenResult =
 export async function getFreshGoogleAccessToken(
   integration: GoogleIntegrationRow,
 ): Promise<GoogleAccessTokenResult> {
+  // §53 — tenant gate. Every Business Profile request passes here, so a
+  // workspace outside GBP_ALLOWED_TENANTS can never reach Google, whichever
+  // route, cron or page asked.
+  if (!(await isGoogleTenantAllowed(integration.userId))) {
+    return {
+      ok: false,
+      code: 'GOOGLE_TENANT_NOT_ALLOWED',
+      message: googleFailureMessage('GOOGLE_TENANT_NOT_ALLOWED'),
+    };
+  }
+
+  // §53 — tokens issued for another OAuth client (the deploy moved to a new
+  // Google Cloud project) cannot be refreshed with the current client and
+  // must not be used against its quota. Mark once, ask for a reconnect.
+  const currentClientId = process.env.GOOGLE_CLIENT_ID ?? null;
+  if (!currentClientId || integration.clientId !== currentClientId) {
+    if (currentClientId && integration.invalidReason !== 'client_changed') {
+      await markGoogleIntegrationInvalid(integration, 'client_changed');
+    }
+    return {
+      ok: false,
+      code: currentClientId ? 'GOOGLE_REAUTH_REQUIRED' : 'GOOGLE_NOT_CONFIGURED',
+      message: googleFailureMessage(currentClientId ? 'GOOGLE_REAUTH_REQUIRED' : 'GOOGLE_NOT_CONFIGURED'),
+    };
+  }
+  if (integration.invalidReason === 'revoked') {
+    return {
+      ok: false,
+      code: 'GOOGLE_REAUTH_REQUIRED',
+      message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
+    };
+  }
+
   // Fix #6 — token decrypt (backward-compat: plain text row'lar olduğu
   // gibi döner — `decryptToken` v1: prefix yoksa passthrough).
-  if (integration.expiresAt.getTime() > Date.now() + 60_000) {
+  if (!accessTokenNeedsRefresh(integration.expiresAt)) {
     try {
       return { ok: true, accessToken: decryptToken(integration.accessToken) };
     } catch {
@@ -477,99 +518,62 @@ export async function getFreshGoogleAccessToken(
     };
   }
 
-  const body = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshTokenPlain,
-    grant_type: 'refresh_token',
-  });
-
   // 1 retry on transient (network / 5xx / 429). Only a dead grant is terminal.
   for (let attempt = 0; attempt <= 1; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TOKEN_REFRESH_TIMEOUT_MS);
-    try {
-      const res = await fetch(OAUTH_TOKEN_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body,
-        signal: controller.signal,
+    const outcome = await requestGoogleTokenRefresh({
+      clientId,
+      clientSecret,
+      refreshToken: refreshTokenPlain,
+    });
+
+    if (outcome.kind === 'ok') {
+      const expiresAt = new Date(Date.now() + outcome.expiresInSeconds * 1000);
+      // Fix #6 — yeni access token encrypt'lenerek DB'ye yazılır.
+      const encryptedAccess = encryptToken(outcome.accessToken);
+      await prisma.googleIntegration.update({
+        where: { id: integration.id },
+        data: { accessToken: encryptedAccess, expiresAt },
       });
-
-      if (res.ok) {
-        const data = (await res.json()) as { access_token?: string; expires_in?: number };
-        if (!data.access_token) {
-          return {
-            ok: false,
-            code: 'GOOGLE_REAUTH_REQUIRED',
-            message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
-          };
-        }
-        const expiresAt = new Date(Date.now() + Math.max(60, data.expires_in ?? 3600) * 1000);
-        // Fix #6 — yeni access token encrypt'lenerek DB'ye yazılır.
-        const encryptedAccess = encryptToken(data.access_token);
-        await prisma.googleIntegration.update({
-          where: { id: integration.id },
-          data: { accessToken: encryptedAccess, expiresAt },
-        });
-        integration.accessToken = encryptedAccess;
-        integration.expiresAt = expiresAt;
-        return { ok: true, accessToken: data.access_token };
-      }
-
-      // 4xx — but ONLY a dead grant is terminal.
-      //
-      // The old code nulled `refreshToken` for EVERY 4xx. Google's token
-      // endpoint also answers 4xx for transient conditions — most importantly
-      // 429 during a quota spike, which this project hits regularly because
-      // the Google quota is project-wide (§5.1.1). One such blip permanently
-      // destroyed the owner's integration and forced a full re-OAuth. Only
-      // `invalid_grant` / `invalid_client` / `unauthorized_client` actually
-      // mean the refresh token will never work again.
-      if (res.status >= 400 && res.status < 500) {
-        const errBody = (await res.json().catch(() => null)) as { error?: unknown } | null;
-        const oauthError = typeof errBody?.error === 'string' ? errBody.error : '';
-        const grantIsDead =
-          oauthError === 'invalid_grant' ||
-          oauthError === 'invalid_client' ||
-          oauthError === 'unauthorized_client';
-
-        if (grantIsDead) {
-          await prisma.googleIntegration
-            .update({
-              where: { id: integration.id },
-              data: { refreshToken: null },
-            })
-            .catch(() => {
-              // best-effort cleanup; failure here shouldn't mask reauth signal
-            });
-          integration.refreshToken = null;
-          return {
-            ok: false,
-            code: 'GOOGLE_REAUTH_REQUIRED',
-            message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
-          };
-        }
-
-        // 429 → transient, retry once like a 5xx. Other non-grant 4xx →
-        // report a rate-limit/transient failure WITHOUT touching the stored
-        // refresh token, so the connection survives.
-        if (res.status !== 429 || attempt === 1) {
-          return {
-            ok: false,
-            code: 'GOOGLE_RATE_LIMITED',
-            message: googleFailureMessage('GOOGLE_RATE_LIMITED'),
-          };
-        }
-        // 429 on the first attempt → fall through to the retry below.
-      }
-      // 5xx → fall through to retry
-    } catch {
-      // network / abort → fall through to retry
-    } finally {
-      clearTimeout(timer);
+      integration.accessToken = encryptedAccess;
+      integration.expiresAt = expiresAt;
+      return { ok: true, accessToken: outcome.accessToken };
     }
 
+    if (outcome.kind === 'missing_token') {
+      return {
+        ok: false,
+        code: 'GOOGLE_REAUTH_REQUIRED',
+        message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
+      };
+    }
+
+    // The old code nulled `refreshToken` for EVERY 4xx. Google's token
+    // endpoint also answers 4xx for transient conditions — most importantly
+    // 429 during a quota spike (§5.1.1). Only `invalid_grant` /
+    // `invalid_client` / `unauthorized_client` mean the refresh token will
+    // never work again.
+    if (outcome.kind === 'dead_grant') {
+      // §53 — "broken": keep the row (and every cached review) so pages keep
+      // showing the last good data and the panel can say why.
+      await markGoogleIntegrationInvalid(integration, 'revoked', { dropRefreshToken: true });
+      return {
+        ok: false,
+        code: 'GOOGLE_REAUTH_REQUIRED',
+        message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
+      };
+    }
+
+    // Other 4xx, or 429 on the last attempt → transient failure WITHOUT
+    // touching the stored refresh token, so the connection survives.
+    if (outcome.kind === 'client_error' || (outcome.kind === 'rate_limited' && attempt === 1)) {
+      return {
+        ok: false,
+        code: 'GOOGLE_RATE_LIMITED',
+        message: googleFailureMessage('GOOGLE_RATE_LIMITED'),
+      };
+    }
+
+    // 429 on the first attempt, 5xx, network → retry once.
     if (attempt === 0) {
       await sleep(1000);
     }
@@ -580,6 +584,122 @@ export async function getFreshGoogleAccessToken(
     code: 'GOOGLE_NETWORK_ERROR',
     message: googleFailureMessage('GOOGLE_NETWORK_ERROR'),
   };
+}
+
+/**
+ * Flags a connection as needing a reconnect. Best effort: a failed write
+ * must not hide the reauth signal from the caller.
+ */
+async function markGoogleIntegrationInvalid(
+  integration: GoogleIntegrationRow,
+  reason: 'revoked' | 'client_changed',
+  opts: { dropRefreshToken?: boolean } = {},
+): Promise<void> {
+  const invalidatedAt = new Date();
+  await prisma.googleIntegration
+    .update({
+      where: { id: integration.id },
+      data: {
+        invalidatedAt,
+        invalidReason: reason,
+        ...(opts.dropRefreshToken ? { refreshToken: null } : {}),
+      },
+    })
+    .catch(() => {});
+  integration.invalidatedAt = invalidatedAt;
+  integration.invalidReason = reason;
+  if (opts.dropRefreshToken) integration.refreshToken = null;
+}
+
+/**
+ * Global Business Profile request budget per minute, shared by every tenant
+ * (`GBP_GLOBAL_RPM`, default 120). Google's per-project limit for the
+ * Account Management API is 300/min; a typo or non-positive value falls back
+ * to the default instead of removing the ceiling.
+ */
+export function gbpGlobalRequestsPerMinute(raw: string | undefined = process.env.GBP_GLOBAL_RPM): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 && n <= 300 ? n : 120;
+}
+
+/** Access tokens are reused while they have more than this left. */
+export const ACCESS_TOKEN_REUSE_MARGIN_MS = 60_000;
+
+/** True when the stored access token must be refreshed before use. */
+export function accessTokenNeedsRefresh(expiresAt: Date, now: number = Date.now()): boolean {
+  return expiresAt.getTime() <= now + ACCESS_TOKEN_REUSE_MARGIN_MS;
+}
+
+export type GoogleTokenRefreshOutcome =
+  | { kind: 'ok'; accessToken: string; expiresInSeconds: number }
+  /** 200 without an access_token — treated as a dead connection. */
+  | { kind: 'missing_token' }
+  /** invalid_grant / invalid_client / unauthorized_client — never retry. */
+  | { kind: 'dead_grant' }
+  | { kind: 'rate_limited' }
+  /** Any other 4xx. The stored refresh token is kept. */
+  | { kind: 'client_error' }
+  /** 5xx, network error or timeout. */
+  | { kind: 'transient' };
+
+/**
+ * One refresh_token → access_token exchange, classified. No DB access and no
+ * retries, so it is unit-testable with a fake `fetch`. Never logs and never
+ * returns the refresh token, the client secret or Google's error text.
+ */
+export async function requestGoogleTokenRefresh(
+  params: { clientId: string; clientSecret: string; refreshToken: string },
+  opts: { fetchImpl?: typeof fetch; timeoutMs?: number } = {},
+): Promise<GoogleTokenRefreshOutcome> {
+  const doFetch = opts.fetchImpl ?? fetch;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? TOKEN_REFRESH_TIMEOUT_MS);
+  try {
+    const res = await doFetch(OAUTH_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: params.clientId,
+        client_secret: params.clientSecret,
+        refresh_token: params.refreshToken,
+        grant_type: 'refresh_token',
+      }),
+      signal: controller.signal,
+    });
+
+    if (res.ok) {
+      const data = (await res.json().catch(() => null)) as
+        | { access_token?: unknown; expires_in?: unknown }
+        | null;
+      // Unparseable success body: retry like a 5xx (the old code's behaviour).
+      if (!data) return { kind: 'transient' };
+      const accessToken = typeof data.access_token === 'string' ? data.access_token : '';
+      if (!accessToken) return { kind: 'missing_token' };
+      const expiresIn =
+        typeof data.expires_in === 'number' && Number.isFinite(data.expires_in)
+          ? data.expires_in
+          : 3600;
+      return { kind: 'ok', accessToken, expiresInSeconds: Math.max(60, expiresIn) };
+    }
+
+    if (res.status >= 400 && res.status < 500) {
+      const errBody = (await res.json().catch(() => null)) as { error?: unknown } | null;
+      const oauthError = typeof errBody?.error === 'string' ? errBody.error : '';
+      if (
+        oauthError === 'invalid_grant' ||
+        oauthError === 'invalid_client' ||
+        oauthError === 'unauthorized_client'
+      ) {
+        return { kind: 'dead_grant' };
+      }
+      return res.status === 429 ? { kind: 'rate_limited' } : { kind: 'client_error' };
+    }
+    return { kind: 'transient' };
+  } catch {
+    return { kind: 'transient' };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 interface RawFetchOutcome {
@@ -713,7 +833,13 @@ export async function googleBusinessFetch<T>(
   if (!tokenResult.ok) {
     const requiresReauth = tokenResult.code === 'GOOGLE_REAUTH_REQUIRED';
     const fail = failure(
-      requiresReauth ? 401 : tokenResult.code === 'GOOGLE_NOT_CONFIGURED' ? 503 : 502,
+      requiresReauth
+        ? 401
+        : tokenResult.code === 'GOOGLE_TENANT_NOT_ALLOWED'
+          ? 403
+          : tokenResult.code === 'GOOGLE_NOT_CONFIGURED'
+            ? 503
+            : 502,
       tokenResult.code,
       tokenResult.message,
       requiresReauth,
@@ -727,6 +853,23 @@ export async function googleBusinessFetch<T>(
   let token = tokenResult.accessToken;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    // §53 — every tenant shares ONE Google Cloud project quota. A global
+    // per-minute budget keeps all callers (panel, crons, review refresh
+    // queue) together well under it; over budget we answer "busy" without
+    // spending a Google request.
+    const budget = await rateLimit('gbp:global', gbpGlobalRequestsPerMinute(), 60_000);
+    if (!budget.allowed) {
+      const fail = failure(
+        429,
+        'GOOGLE_RATE_LIMITED',
+        googleFailureMessage('GOOGLE_RATE_LIMITED'),
+        false,
+        Math.max(1, budget.retryAfterSeconds),
+      );
+      captureGoogleBusinessFailure(fail, { url, attempts: attempt + 1, method });
+      return fail;
+    }
+
     const outcome = await rawFetchWithTimeout(
       url,
       {

@@ -332,6 +332,7 @@ model Restaurant {
   // Reputation OS — health snapshot history + Google review AI draft cache.
   healthSnapshots          RestaurantHealthSnapshot[]
   googleReviewAiDrafts     GoogleReviewAiDraft[]
+  googleReviewCache        GoogleReviewCache?
 
   // Stage 17 §38.87 — Hot path: getScopedRestaurantIds her dashboard
   // request'inde `prisma.restaurant.findMany({ where: { userId } })`
@@ -664,6 +665,30 @@ model FeedbackAiDraft {
 // DB (live-fetched), so we key by external resource name instead of an
 // internal feedback FK. Restaurant relation cascade keeps cache clean when
 // owner deletes a restaurant.
+// Public Google review showcase cache (CLAUDE.md §53). One row per business:
+// the last SUCCESSFUL Business Profile reviews snapshot plus refresh state.
+// Readers always get the last good snapshot; a failed refresh only moves
+// `nextAttemptAt` (exponential backoff) and never clears the data.
+model GoogleReviewCache {
+  id               String     @id @default(cuid())
+  restaurantId     String     @unique @map("restaurant_id")
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  locationName     String?    @map("location_name") // accounts/{a}/locations/{l}
+  averageRating    Float?     @map("average_rating")
+  totalReviewCount Int        @default(0) @map("total_review_count")
+  reviews          Json? // PublicGoogleReview[] (normalized, newest first)
+  reviewsUrl       String?    @map("reviews_url") @db.Text
+  fetchedAt        DateTime?  @map("fetched_at") // last success
+  lastAttemptAt    DateTime?  @map("last_attempt_at") // refresh lease
+  nextAttemptAt    DateTime?  @map("next_attempt_at")
+  failureCount     Int        @default(0) @map("failure_count")
+  lastErrorCode    String?    @map("last_error_code")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  @@map("google_review_caches")
+}
+
 model GoogleReviewAiDraft {
   id           String     @id @default(cuid())
   restaurantId String     @map("restaurant_id")
@@ -815,6 +840,14 @@ model GoogleIntegration {
   expiresAt     DateTime @map("expires_at")
   accountId     String?  @map("account_id")
   locationsJson Json?    @map("locations_json")
+  // OAuth client the tokens were issued for (CLAUDE.md §53). A mismatch with
+  // the current GOOGLE_CLIENT_ID means the deploy moved to another Google
+  // Cloud project: the connection must be redone. NULL = pre-column row.
+  clientId      String?  @map("client_id")
+  // Set when Google answered invalid_grant / the token was revoked, or the
+  // client changed. Cleared on a fresh OAuth. Cached reviews stay visible.
+  invalidatedAt DateTime? @map("invalidated_at")
+  invalidReason String?  @map("invalid_reason") // revoked | client_changed
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

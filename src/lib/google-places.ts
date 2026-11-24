@@ -232,7 +232,8 @@ export interface PlacesSelectResponse {
  * sign-in). `not_provisioned`: Google quota is 0 project-wide; `disabled`:
  * the operator switched it off. Both mean: show no connect button.
  */
-export type GoogleReplyAvailability = 'available' | 'not_provisioned' | 'disabled';
+/** `coming_soon` = this workspace is outside GBP_ALLOWED_TENANTS (§53). */
+export type GoogleReplyAvailability = 'available' | 'not_provisioned' | 'disabled' | 'coming_soon';
 
 export interface GoogleSelectedLocationSummary {
   accountName: string;

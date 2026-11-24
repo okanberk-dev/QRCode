@@ -77,6 +77,45 @@ ADMIN_PASSWORD="..."
 
 ---
 
+## ⭐ Google reviews widget (Google Business Profile)
+
+Each workspace can connect its own Google Business Profile with OAuth and show
+its Google reviews in the embed widget `/embed/{slug}/google`. Full rules:
+CLAUDE.md §53.
+
+```env
+GOOGLE_CLIENT_ID="899672574996-....apps.googleusercontent.com"  # hizlakirala project
+GOOGLE_CLIENT_SECRET="..."          # runtime-only secret
+GOOGLE_REDIRECT_URI="https://www.buaze.com/api/integrations/google/callback"
+ENCRYPTION_KEY="..."                # 32-byte base64; tokens are stored AES-256-GCM
+GBP_ALLOWED_TENANTS="hizlakirala"   # business slug or owner user id; empty = nobody
+# GBP_GLOBAL_RPM=120                # shared per-minute Google budget (max 300)
+```
+
+- **Access lock**: Google's current approval covers one company, so only
+  workspaces in `GBP_ALLOWED_TENANTS` may connect. Everyone else sees "coming
+  soon"; connect, callback and every Google request refuse them on the server.
+- **Tokens**: the refresh token is encrypted per workspace together with the
+  OAuth client id it was issued for. The access token is refreshed on the
+  server. If `GOOGLE_CLIENT_ID` changes (moving to another Google Cloud
+  project) or Google answers `invalid_grant`, the connection shows
+  "reconnect" in the panel and the last cached reviews stay visible.
+- **Refresh**: the `google-reviews-refresh` job (Coolify, every 15 min) takes
+  the businesses whose turn has come; each refreshes every 6–12 hours. 429/403
+  back off exponentially (15 min doubling, max 12 h) and stop the run; a
+  global per-minute budget covers all tenants.
+- **Disconnect**: revokes the token at Google and deletes the cached reviews
+  and AI reply drafts of that workspace.
+- **Admin**: `GET /api/admin/google-business/status` (which project the client
+  id belongs to, open tenants, refresh queue, quota errors) and
+  `POST /api/admin/restaurants/{id}/google-reviews` with `{"action":"locate"}`
+  (finds the account/location; one location is selected automatically) or
+  `{"action":"refresh"}`.
+- No `AggregateRating` / `Review` JSON-LD: Google's review-snippet rules forbid
+  marking up reviews collected from another site.
+
+---
+
 ## 🗂 Key Directory Structure
 
 ```text

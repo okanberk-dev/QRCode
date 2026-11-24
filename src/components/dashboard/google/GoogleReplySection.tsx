@@ -109,6 +109,8 @@ interface GoogleStatus {
    * server) is treated as `available`.
    */
   replyAvailability?: GoogleReplyAvailability;
+  /** §53 — connection health (client changed / grant revoked). */
+  connectionState?: 'not_connected' | 'connected' | 'reconnect_required' | 'broken';
 }
 
 const STAR_VALUE: Record<string, number> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
@@ -1499,6 +1501,32 @@ export function GoogleReplySection({
   return (
     <>
           <ReplySection isTr={isTr} full={replyFull} intro={replyIntro} actions={replyActions}>
+            {!shouldShowStatusLoading &&
+              status?.connected &&
+              replyAvailability !== 'coming_soon' &&
+              (status.connectionState === 'reconnect_required' || status.connectionState === 'broken') && (
+                // §53 — the stored token belongs to another Google Cloud
+                // project, or Google revoked it. Last fetched reviews stay
+                // visible on the widget; one reconnect fixes both cases.
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <AlertBanner kind="warn">
+                    {ownerGoogleMessage(
+                      status.connectionState === 'reconnect_required'
+                        ? 'reply_reconnect_client_changed'
+                        : 'reply_connection_broken',
+                      locale,
+                    )}
+                  </AlertBanner>
+                  <button
+                    type="button"
+                    className="bz-btn-primary min-h-11 w-full shrink-0 sm:w-auto"
+                    disabled={connecting}
+                    onClick={() => void connectGoogleInline()}
+                  >
+                    {isTr ? 'Yeniden bağla' : 'Reconnect'}
+                  </button>
+                </div>
+              )}
             {shouldShowStatusLoading ? (
               <div className="space-y-3" aria-busy="true">
                 <SkBox className="h-4 w-full max-w-xl" />
@@ -1522,10 +1550,16 @@ export function GoogleReplySection({
               // only send the owner through a full Google sign-in into a dead end.
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                 <Badge kind="warn" dot={false}>
-                  {ownerGoogleMessage('reply_badge_unavailable', locale)}
+                  {ownerGoogleMessage(
+                    replyAvailability === 'coming_soon' ? 'reply_badge_coming_soon' : 'reply_badge_unavailable',
+                    locale,
+                  )}
                 </Badge>
                 <p className="text-[13px] leading-[1.6] text-[#525252]">
-                  {ownerGoogleMessage('reply_unavailable', locale)}
+                  {ownerGoogleMessage(
+                    replyAvailability === 'coming_soon' ? 'reply_coming_soon' : 'reply_unavailable',
+                    locale,
+                  )}
                 </p>
               </div>
             ) : status && !status.googleReviewManagementEnabled ? (

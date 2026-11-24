@@ -6,6 +6,7 @@ import type { PanelActor } from '@/lib/auth';
 import { GOOGLE_BUSINESS_SCOPE } from '@/lib/google-business';
 import { getLocaleFromRequest } from '@/lib/api/locale';
 import { ownerGoogleMessage } from '@/lib/google-owner-copy';
+import { isGoogleTenantAllowed } from '@/lib/gbp-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,20 @@ function safeReturnTo(value: unknown): string | null {
 export async function POST(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  // §53 — server-side tenant gate: a workspace outside GBP_ALLOWED_TENANTS
+  // never starts a Google sign-in (the UI hides the button too).
+  if (!(await isGoogleTenantAllowed(ownerRef(actor)))) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'GOOGLE_TENANT_NOT_ALLOWED',
+        code: 'GOOGLE_TENANT_NOT_ALLOWED',
+        message: ownerGoogleMessage('GOOGLE_TENANT_NOT_ALLOWED', getLocaleFromRequest(req)),
+      },
+      { status: 403 },
+    );
+  }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) {

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Copy, Check, Info, Sparkles } from 'lucide-react';
 import { AlertBanner, Eyebrow } from '@/components/ui';
 import EmbedBrowserPreview from './EmbedBrowserPreview';
+import GoogleReviewsEmbedCard from './GoogleReviewsEmbedCard';
 import type { Locale } from '@/lib/translations';
 
 interface BusinessWebsiteSettingsProps {
@@ -28,7 +29,7 @@ const APP_URL =
  * Sadece admin paneli /admin/restaurants/[id] üzerinden görülebilir.
  */
 export function BusinessWebsiteSettings({
-  restaurantId: _restaurantId,
+  restaurantId,
   slug,
   businessName,
   website,
@@ -240,6 +241,8 @@ export function BusinessWebsiteSettings({
           isTr={isTr}
         />
       </section>
+
+      <GoogleReviewsEmbedCard restaurantId={restaurantId} slug={slug} locale={isTr ? 'tr' : 'en'} />
     </div>
   );
 }

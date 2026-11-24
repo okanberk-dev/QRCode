@@ -79,17 +79,17 @@ Bu ayrım, GDPR Art. 4(7) "controller" ve Art. 4(8) "processor" tanımlarıyla p
 
 ## 11. Google kullanıcı verisi (Google İşletme Profili bağlantısı)
 
-İsterseniz Google hesabınızı Buaze'ye bağlayarak Google İşletme Profili yorumlarınızı panelde görüntüleyebilir ve yanıtlayabilirsiniz. Bağlantı yalnızca siz başlattığınızda kurulur ve ayrı bir Google izin ekranıyla onayınıza sunulur.
+İsterseniz Google hesabınızı Buaze'ye bağlayarak Google İşletme Profili yorumlarınızı panelde görüntüleyebilir, yanıtlayabilir ve kendi web sitenizdeki Buaze yorum widget'ında gösterebilirsiniz. Bağlantı yalnızca siz başlattığınızda kurulur ve ayrı bir Google izin ekranıyla onayınıza sunulur. Bu özellik şimdilik yalnızca erişimi açılmış hesaplarda kullanılabilir.
 
-**Eriştiğimiz veriler:** Yalnızca Google İşletme Profili yönetim yetkisi (https://www.googleapis.com/auth/business.manage) kapsamında; Google hesabınıza bağlı işletme hesapları ve konumları, konumlarınızın puanı ve yorumları ile bu yorumlara verdiğiniz yanıtlar.
+**Eriştiğimiz veriler:** Yalnızca Google İşletme Profili yönetim yetkisi (https://www.googleapis.com/auth/business.manage) kapsamında; Google hesabınıza bağlı işletme hesapları ve konumları, konumlarınızın ortalama puanı ve toplam yorum sayısı, yorumlar (yorum kimliği, yorumu yazanın Google'daki görünen adı ve profil fotoğrafı bağlantısı, yıldız puanı, yorum metni, oluşturulma ve güncellenme zamanı) ile bu yorumlara verdiğiniz yanıtlar.
 
-**Nasıl kullanırız:** Yalnızca yorumlarınızı panelde göstermek, yanıt taslağı hazırlamanıza yardımcı olmak ve sizin onayınızla yazdığınız yanıtı Google'a iletmek için. Yanıt, siz gönder düğmesine basmadan Google'a gönderilmez.
+**Nasıl kullanırız:** Yalnızca yorumlarınızı panelde göstermek, yorum widget'ını sitenize eklediğinizde orada göstermek, yanıt taslağı hazırlamanıza yardımcı olmak ve sizin onayınızla yazdığınız yanıtı Google'a iletmek için. Yorum metinlerini değiştirmeyiz. Yanıt, siz gönder düğmesine basmadan Google'a gönderilmez.
 
-**Paylaşım:** Google kullanıcı verisini satmayız, reklam veya profilleme amacıyla kullanmayız ve üçüncü taraflara aktarmayız. Yapay zekâ ile yanıt taslağı hazırlanırken yorum metni, taslağı üreten hizmet sağlayıcıya yalnızca o istek için iletilir.
+**Paylaşım:** Google kullanıcı verisini satmayız, reklam veya profilleme amacıyla kullanmayız ve üçüncü taraflara aktarmayız. Yorum widget'ı, Google'da zaten herkese açık olan yorumlarınızı yalnızca siz siteye eklediğinizde gösterir. Yapay zekâ ile yanıt taslağı hazırlanırken yorum metni, taslağı üreten hizmet sağlayıcıya yalnızca o istek için iletilir.
 
-**Saklama ve güvenlik:** Erişim ve yenileme anahtarlarınız şifrelenmiş olarak (AES-256-GCM) saklanır. Google'dan okuduğumuz yorum metinlerini kalıcı olarak saklamayız; yalnızca sizin için hazırlanan yanıt taslakları ve gönderdiğiniz yanıtın kaydı tutulur.
+**Saklama ve güvenlik:** Erişim ve yenileme anahtarlarınız şifrelenmiş olarak (AES-256-GCM) ve hangi Google uygulama kimliğiyle alındıklarıyla birlikte saklanır. Widget ve panel için yalnızca yukarıda sayılan yorum alanlarının son kopyasını sunucumuzda önbellekte tutarız; bu kopya 6–12 saatte bir Google'dan yenilenir ve en çok son 100 yorumu içerir. Ayrıca sizin için hazırlanan yanıt taslakları ve gönderdiğiniz yanıtın kaydı tutulur.
 
-**Bağlantıyı kaldırma:** Bağlantıyı panelden istediğiniz an kaldırabilirsiniz; bu durumda erişim anahtarınız Google'da iptal edilir ve sistemimizden silinir. Erişimi ayrıca https://myaccount.google.com/permissions adresinden de kaldırabilirsiniz.
+**Bağlantıyı kaldırma ve silme:** Bağlantıyı panelden istediğiniz an kaldırabilirsiniz; bu durumda erişim anahtarınız Google'da iptal edilir, sistemimizden silinir ve Google'dan alınan yorum önbelleği ile yanıt taslakları da silinir. Erişimi https://myaccount.google.com/permissions adresinden kaldırırsanız bağlantı "kopuk" görünür ve yenileme durur; önbelleğin silinmesi için bağlantıyı panelden de kaldırın ya da support@buaze.com adresine yazın. Hesabınız silindiğinde bu verilerin tamamı silinir.
 
 **Google API Hizmetleri Kullanıcı Verisi Politikası:** Buaze'nin Google API'lerinden aldığı bilgileri kullanması ve başka bir uygulamaya aktarması, Sınırlı Kullanım (Limited Use) gereklilikleri dahil olmak üzere Google API Services User Data Policy'ye (https://developers.google.com/terms/api-services-user-data-policy) uygundur.`,
 };
@@ -168,17 +168,17 @@ A separate Data Processing Agreement (DPA) under GDPR Art. 28 is executed for bu
 
 ## 11. Google user data (Google Business Profile connection)
 
-You can optionally connect your Google account to Buaze to view and reply to your Google Business Profile reviews in the dashboard. The connection is created only when you start it and is presented to you on a separate Google consent screen.
+You can optionally connect your Google account to Buaze to view and reply to your Google Business Profile reviews in the dashboard and to show them in the Buaze review widget on your own website. The connection is created only when you start it and is presented to you on a separate Google consent screen. For now this feature is available only to accounts it has been opened for.
 
-**Data we access:** Only within the Google Business Profile management scope (https://www.googleapis.com/auth/business.manage): the business accounts and locations linked to your Google account, your locations' ratings and reviews, and the replies you have posted to those reviews.
+**Data we access:** Only within the Google Business Profile management scope (https://www.googleapis.com/auth/business.manage): the business accounts and locations linked to your Google account, your locations' average rating and total review count, the reviews (review ID, the reviewer's Google display name and profile photo link, star rating, review text, creation and update time) and the replies you have posted to those reviews.
 
-**How we use it:** Solely to show your reviews in the dashboard, to help you prepare reply drafts, and to send the reply you have written to Google with your approval. A reply is never sent to Google until you press send.
+**How we use it:** Solely to show your reviews in the dashboard, to show them in the review widget when you add it to your site, to help you prepare reply drafts, and to send the reply you have written to Google with your approval. We do not change review text. A reply is never sent to Google until you press send.
 
-**Sharing:** We do not sell Google user data, use it for advertising or profiling, or transfer it to third parties. When an AI reply draft is prepared, the review text is sent to the service provider that generates the draft for that request only.
+**Sharing:** We do not sell Google user data, use it for advertising or profiling, or transfer it to third parties. The review widget shows your reviews, which are already public on Google, only where you add it to your site. When an AI reply draft is prepared, the review text is sent to the service provider that generates the draft for that request only.
 
-**Storage and security:** Your access and refresh tokens are stored encrypted (AES-256-GCM). We do not permanently store the review text we read from Google; we keep only the reply drafts prepared for you and a record of the replies you send.
+**Storage and security:** Your access and refresh tokens are stored encrypted (AES-256-GCM), together with the Google app ID they were issued for. For the widget and the dashboard we keep only the latest copy of the review fields listed above in a server cache; it is refreshed from Google every 6–12 hours and holds at most the latest 100 reviews. We also keep the reply drafts prepared for you and a record of the replies you send.
 
-**Disconnecting:** You can disconnect at any time from the dashboard; your access token is then revoked at Google and deleted from our systems. You can also remove access at https://myaccount.google.com/permissions.
+**Disconnecting and deletion:** You can disconnect at any time from the dashboard; your access token is then revoked at Google and deleted from our systems, and the cached Google reviews and reply drafts are deleted too. If you remove access at https://myaccount.google.com/permissions, the connection shows as broken and refreshing stops; to delete the cache as well, also disconnect in the dashboard or write to support@buaze.com. When your account is deleted, all of this data is deleted.
 
 **Google API Services User Data Policy:** Buaze's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements.`,
 };

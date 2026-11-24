@@ -58,6 +58,12 @@ export function googleBusinessErrorResponse(
         : 'Google is busy right now. Please try again in a few minutes.');
     return ApiErrors.tooManyRequests(body, 'GOOGLE_RATE_LIMITED', retryAfter);
   }
+  if (error.code === 'GOOGLE_TENANT_NOT_ALLOWED') {
+    return NextResponse.json(
+      { error: ownerGoogleMessage('GOOGLE_TENANT_NOT_ALLOWED', locale), code: error.code },
+      { status: 403 },
+    );
+  }
   const fallback = !isTr && fallbackMessageEn ? fallbackMessageEn : fallbackMessageTr;
   return NextResponse.json(
     { error: fallback, code: error.code },

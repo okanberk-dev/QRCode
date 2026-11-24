@@ -94,6 +94,11 @@ node scripts/cron.mjs <YOL>
 | process-scheduled-deletions | `/api/cron/process-scheduled-deletions` | `0 3 * * *` |
 | rating-drop-alert | `/api/cron/rating-drop-alert` | `0 11 * * 1` |
 | billing-renewals | `/api/cron/billing-renewals` | `25 * * * *` (saatlik) |
+| google-reviews-refresh | `/api/cron/google-reviews-refresh` | `*/15 * * * *` |
+
+`google-reviews-refresh` (zaman aşımı 330 sn): Google yorum widget'ının merkezi yenileme kuyruğu (CLAUDE.md §53). Her
+çalışmada sırası gelen en çok 20 işletmeyi tek tek yeniler (işletme başına 6–12 saatte bir), kota hatasında turu keser.
+vercel.json'daki günlük satır yalnız test sözleşmesidir.
 
 `billing-renewals` (zaman aşımı 330 sn): kart ödemelerinin mutabakatı (dönüşte doğrulanamayan ödemeler `pending` kalır ve
 burada sonuçlanır), dönem sonları, hesap silme sonrası kart temizliği, günlük taramalar ve saklama. Bu görev yoksa **hiçbir şey

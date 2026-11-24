@@ -11,6 +11,7 @@ import {
   selectedGoogleLocation,
 } from '@/lib/google-business';
 import { getReplyAvailability } from '@/lib/google-business-availability';
+import { googleConnectionState, isGoogleTenantAllowed } from '@/lib/gbp-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,13 @@ export async function GET(
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
-    select: { googleReviewManagementEnabled: true, pulseAiEnabled: true, googleAiEnabled: true },
+    select: {
+      userId: true,
+      slug: true,
+      googleReviewManagementEnabled: true,
+      pulseAiEnabled: true,
+      googleAiEnabled: true,
+    },
   });
 
   const reviewManagementEnabled = restaurant?.googleReviewManagementEnabled ?? false;
@@ -37,7 +44,15 @@ export async function GET(
   // Platform-level: is the optional reply sign-in worth offering at all?
   // ('not_provisioned' = Google quota is 0 project-wide; 'disabled' = operator
   // switch). Never a per-owner fact, so the UI hides the connect button.
-  const replyAvailability = await getReplyAvailability();
+  // §53 — a workspace outside GBP_ALLOWED_TENANTS sees "coming soon" and no
+  // connect button (connect + callback refuse it on the server as well).
+  const tenantAllowed = await isGoogleTenantAllowed(restaurant?.userId);
+  const replyAvailability = tenantAllowed ? await getReplyAvailability() : 'coming_soon';
+  const connectionState = googleConnectionState(integration, process.env.GOOGLE_CLIENT_ID);
+  const showcase = await prisma.googleReviewCache.findUnique({
+    where: { restaurantId: id },
+    select: { fetchedAt: true, totalReviewCount: true, lastErrorCode: true, nextAttemptAt: true },
+  });
   // Cache'lenmiş accounts üzerinden hızlı flag — UI ilk render'da owner'a
   // "Business Profile yok" durumunu konum endpoint'i çağrılmadan gösterebilir.
   // null = sync henüz yapılmamış (UI: locations endpoint'ini fetch eder),
@@ -63,6 +78,18 @@ export async function GET(
       accountCount,
       locationCount,
       replyAvailability,
+      tenantAllowed,
+      connectionState,
+      invalidReason: integration?.invalidReason ?? null,
+      showcase: showcase
+        ? {
+            fetchedAt: showcase.fetchedAt?.toISOString() ?? null,
+            totalReviewCount: showcase.totalReviewCount,
+            lastErrorCode: showcase.lastErrorCode,
+            nextAttemptAt: showcase.nextAttemptAt?.toISOString() ?? null,
+          }
+        : null,
+      embedUrl: restaurant?.slug ? `/embed/${restaurant.slug}/google` : null,
     },
     {
       // Owner-scoped status barely changes between requests — `private` so
