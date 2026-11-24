@@ -13,7 +13,8 @@ Neden: repo `okanberk-dev` organizasyonuna taşındı; Vercel Hobby organizasyon
 | Ayar | Değer |
 |---|---|
 | Kaynak | GitHub App (okanberk-dev), repo `okanberk-dev/QRCode`, dal `main`, Auto Deploy açık |
-| Build pack | Railpack (Dockerfile yok; `railpack.json` çalışma imajına `postgresql-client` (v17) ekler). Kurulum `npm ci` (postinstall: `prisma generate`), derleme `npm run build`, başlatma `npm run start` |
+| Build pack | Dockerfile (depo kökü, `node:22-trixie-slim` + `postgresql-client` 17 + `curl`). "Use Docker Build Secrets" açık (derleme sırları imaj geçmişine yazılmaz). Kurulum `npm ci` (postinstall: `prisma generate`), derleme `npm run build`, başlatma `npm run start`. Railpack kullanılmıyor: derleme `prisma migrate deploy` ve ön render için iç ağdaki veritabanına bağlanır, Railpack derlemesi o adı çözemiyor (`railpack.json` yalnız geri dönüş için duruyor) |
+| Sağlık kontrolü | `GET /api/health` (Coolify; curl ile). Yeni konteyner sağlıklı olmazsa eskisi çalışmaya devam eder. Dockerfile'dan önceki (Railpack) bir imaja rollback etmeden önce sağlık kontrolünü kapatın: o imajlarda curl yok |
 | Node | `NIXPACKS_NODE_VERSION=22` (CI ile aynı) |
 | Port | Exposes `3000`; Ports Mappings **boş** (Traefik Docker ağından erişir) |
 | Domains | `https://www.buaze.com,https://buaze.com` |
