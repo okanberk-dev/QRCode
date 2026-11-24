@@ -33,7 +33,13 @@ export async function GET(req: NextRequest) {
 
   const [slugMatches, integrations, caches] = await prisma.$transaction([
     prisma.restaurant.findMany({
-      where: { OR: [{ slug: { in: entries } }, { userId: { in: entries } }] },
+      where: {
+        OR: [
+          { slug: { in: entries } },
+          { userId: { in: entries } },
+          { user: { email: { in: entries, mode: 'insensitive' } } },
+        ],
+      },
       select: { id: true, slug: true, name: true, userId: true },
       take: 200,
     }),

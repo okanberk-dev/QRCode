@@ -88,7 +88,7 @@ GOOGLE_CLIENT_ID="899672574996-....apps.googleusercontent.com"  # hizlakirala pr
 GOOGLE_CLIENT_SECRET="..."          # runtime-only secret
 GOOGLE_REDIRECT_URI="https://www.buaze.com/api/integrations/google/callback"
 ENCRYPTION_KEY="..."                # 32-byte base64; tokens are stored AES-256-GCM
-GBP_ALLOWED_TENANTS="hizlakirala"   # business slug or owner user id; empty = nobody
+GBP_ALLOWED_TENANTS="owner@example.com"  # owner e-mail, user id or business slug; "*" = everyone; empty = nobody
 # GBP_GLOBAL_RPM=120                # shared per-minute Google budget (max 300)
 ```
 

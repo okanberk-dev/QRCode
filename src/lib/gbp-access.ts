@@ -7,9 +7,10 @@
  * approval is not allowed, so every Business Profile call is gated by an
  * allowlist: `GBP_ALLOWED_TENANTS`.
  *
- * A tenant is a Buaze workspace owner (User). An allowlist entry is either
- * the owner's user id or the slug of any business that owner has; matching
- * one slug opens the whole workspace. Unset / empty = nobody (fail-closed).
+ * A tenant is a Buaze workspace owner (User). An allowlist entry is the
+ * owner's sign-in e-mail, the owner's user id or the slug of any business
+ * that owner has; matching one opens the whole workspace (team members
+ * included). `*` opens everyone. Unset / empty = nobody (fail-closed).
  *
  * The gate runs on the server in three places: connect + callback (no sign-in
  * for a closed tenant), `getFreshGoogleAccessToken` (every Business Profile
@@ -31,15 +32,23 @@ export function parseAllowedTenants(raw: string | null | undefined): Set<string>
   );
 }
 
-/** True when any owner id or business slug of the tenant is allowlisted. */
+/** `*` opens every workspace (use only once Google's approval covers that). */
+export const ALLOW_ALL_TENANTS = '*';
+
+/**
+ * True when the allowlist is `*`, or any owner id, owner e-mail or business
+ * slug of the tenant is listed.
+ */
 export function tenantMatchesAllowlist(
   allowlist: ReadonlySet<string>,
-  tenant: { ownerIds: readonly string[]; slugs: readonly string[] },
+  tenant: { ownerIds: readonly string[]; slugs: readonly string[]; emails?: readonly string[] },
 ): boolean {
   if (allowlist.size === 0) return false;
+  if (allowlist.has(ALLOW_ALL_TENANTS)) return true;
   return (
     tenant.ownerIds.some((id) => allowlist.has(id.toLowerCase())) ||
-    tenant.slugs.some((slug) => allowlist.has(slug.toLowerCase()))
+    tenant.slugs.some((slug) => allowlist.has(slug.toLowerCase())) ||
+    (tenant.emails ?? []).some((email) => allowlist.has(email.trim().toLowerCase()))
   );
 }
 
@@ -100,7 +109,7 @@ export async function isGoogleTenantAllowed(userRef: string | null | undefined):
   if (!userRef || userRef.startsWith('admin:')) return false;
   const allowlist = allowedTenantEntries();
   if (allowlist.size === 0) return false;
-  if (allowlist.has(userRef.toLowerCase())) return true;
+  if (allowlist.has(ALLOW_ALL_TENANTS) || allowlist.has(userRef.toLowerCase())) return true;
 
   const now = Date.now();
   const cacheKey = `${process.env.GBP_ALLOWED_TENANTS ?? ''}|${userRef}`;
@@ -122,14 +131,22 @@ export async function isGoogleTenantAllowed(userRef: string | null | undefined):
       });
       for (const m of memberships) if (!ownerIds.includes(m.ownerId)) ownerIds.push(m.ownerId);
     }
-    const restaurants = await prisma.restaurant.findMany({
-      where: { userId: { in: ownerIds } },
-      select: { slug: true },
-      take: 500,
-    });
+    const [restaurants, owners] = await prisma.$transaction([
+      prisma.restaurant.findMany({
+        where: { userId: { in: ownerIds } },
+        select: { slug: true },
+        take: 500,
+      }),
+      prisma.user.findMany({
+        where: { id: { in: ownerIds } },
+        select: { email: true },
+      }),
+    ]);
     allowed = tenantMatchesAllowlist(allowlist, {
       ownerIds,
       slugs: restaurants.map((r) => r.slug),
+      // The workspace owner's sign-in e-mail (a team member inherits it).
+      emails: owners.map((o) => o.email).filter((e): e is string => Boolean(e)),
     });
   } catch {
     // Fail closed: a DB hiccup must never open Google access to a tenant.

@@ -161,6 +161,24 @@ describe('tenant allowlist', () => {
     assert.equal(tenantMatchesAllowlist(new Set(), { ownerIds: ['u1'], slugs: ['hizlakirala'] }), false);
   });
 
+  it("matches the owner's sign-in e-mail case-insensitively", () => {
+    const list = parseAllowedTenants('Owner@Example.com');
+    assert.equal(tenantMatchesAllowlist(list, { ownerIds: ['u1'], slugs: [], emails: ['owner@example.com'] }), true);
+    assert.equal(tenantMatchesAllowlist(list, { ownerIds: ['u1'], slugs: [], emails: ['other@example.com'] }), false);
+  });
+
+  it('opens every workspace with *, but still never admin rows', async () => {
+    assert.equal(tenantMatchesAllowlist(parseAllowedTenants('*'), { ownerIds: ['u9'], slugs: [] }), true);
+    const saved = process.env.GBP_ALLOWED_TENANTS;
+    try {
+      process.env.GBP_ALLOWED_TENANTS = '*';
+      assert.equal(await isGoogleTenantAllowed('any-user'), true);
+      assert.equal(await isGoogleTenantAllowed('admin:a1'), false);
+    } finally {
+      process.env.GBP_ALLOWED_TENANTS = saved;
+    }
+  });
+
   it('never opens admin-made rows and fails closed without an allowlist', async () => {
     const saved = process.env.GBP_ALLOWED_TENANTS;
     try {
