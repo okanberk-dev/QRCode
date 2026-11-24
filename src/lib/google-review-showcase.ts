@@ -29,6 +29,7 @@ import {
   type GoogleReview,
 } from '@/lib/google-business';
 import { googleConnectionState, isGoogleTenantAllowed } from '@/lib/gbp-access';
+import { collectAllReviewPages, persistReviewSync } from '@/lib/google-review-sync';
 
 // ─── types ───────────────────────────────────────────────────────────────
 
@@ -241,7 +242,8 @@ export function isQuotaPressure(code: ShowcaseFailureCode): boolean {
 
 // ─── database-backed ─────────────────────────────────────────────────────
 
-const MAX_PAGES = 2; // 2 × 50 = the newest 100 reviews
+/** The public widget shows at most the newest 100 (§53). */
+const SHOWCASE_LIMIT = 100;
 const LEASE_MS = 5 * 60 * 1000;
 
 export type RefreshResult =
@@ -322,28 +324,21 @@ export async function refreshGoogleReviewCache(
   if (!selection) return recordFailure(restaurantId, failures, 'GOOGLE_NO_LOCATION', now);
 
   try {
-    const raw: GoogleReview[] = [];
-    let averageRating: number | null = null;
-    let totalReviewCount = 0;
-    let pageToken: string | undefined;
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const res = await listGoogleReviews(integration, selection, pageToken);
-      if (page === 0) {
-        averageRating = res.averageRating;
-        totalReviewCount = res.totalReviewCount;
-      }
-      raw.push(...res.reviews);
-      pageToken = res.nextPageToken;
-      if (!pageToken) break;
-    }
+    // §54 — every page (nextPageToken), not only the newest 100: the reply
+    // inbox and its statistics read `google_reviews`.
+    const collected = await collectAllReviewPages((pageToken) =>
+      listGoogleReviews(integration, selection, pageToken),
+    );
+    await persistReviewSync(restaurantId, collected.reviews, { complete: collected.complete, seenAt: now });
 
-    const reviews = normalizeGoogleReviews(raw);
+    // The widget keeps showing only the newest 100 (normalized snapshot).
+    const reviews = normalizeGoogleReviews(collected.reviews.slice(0, SHOWCASE_LIMIT));
     await prisma.googleReviewCache.update({
       where: { restaurantId },
       data: {
         locationName: selection.locationName,
-        averageRating,
-        totalReviewCount,
+        averageRating: collected.averageRating,
+        totalReviewCount: collected.totalReviewCount,
         reviews: reviews as unknown as Prisma.InputJsonValue,
         reviewsUrl: reviewsUrlFor(selection),
         fetchedAt: now,
@@ -352,7 +347,12 @@ export async function refreshGoogleReviewCache(
         nextAttemptAt: new Date(now.getTime() + refreshIntervalMs(restaurantId)),
       },
     });
-    return { ok: true, reviews: reviews.length };
+    if (collected.error) {
+      // Kept what was read; the rest comes with the next attempt.
+      const { code, retryAfterSeconds } = showcaseFailureFromError(collected.error);
+      return recordFailure(restaurantId, 0, code, now, retryAfterSeconds);
+    }
+    return { ok: true, reviews: collected.reviews.length };
   } catch (err) {
     const { code, retryAfterSeconds } = showcaseFailureFromError(err);
     return recordFailure(restaurantId, failures, code, now, retryAfterSeconds);
@@ -468,7 +468,8 @@ export async function readGoogleReviewShowcase(restaurantId: string): Promise<Go
 
 /**
  * Deletes every piece of Google review data fetched with the connection of
- * `userRef` (cache rows + AI reply drafts of that owner's businesses).
+ * `userRef` (cache rows, stored reviews, reply jobs and AI reply drafts of
+ * that owner's businesses).
  * Called on disconnect. Returns the business ids that were cleaned.
  */
 export async function deleteGoogleReviewDataForOwner(userRef: string): Promise<string[]> {
@@ -482,6 +483,8 @@ export async function deleteGoogleReviewDataForOwner(userRef: string): Promise<s
   await prisma.$transaction([
     prisma.googleReviewCache.deleteMany({ where: { restaurantId: { in: ids } } }),
     prisma.googleReviewAiDraft.deleteMany({ where: { restaurantId: { in: ids } } }),
+    prisma.googleReview.deleteMany({ where: { restaurantId: { in: ids } } }),
+    prisma.googleReplyJob.deleteMany({ where: { restaurantId: { in: ids } } }),
   ]);
   return ids;
 }

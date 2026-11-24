@@ -293,6 +293,9 @@ model Restaurant {
   enableAiDraft           Boolean   @default(false) @map("enable_ai_draft")
   googleAiEnabled         Boolean   @default(true) @map("google_ai_enabled")
   aiDraftTone             String    @default("warm") @map("ai_draft_tone") // warm | formal | apologetic
+  // Google review reply settings (tone, length, address form, signature,
+  // banned phrases) — CLAUDE.md §54. Read with readGoogleReplySettings(); NULL = defaults.
+  googleReplySettings     Json?     @map("google_reply_settings")
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
 
@@ -333,6 +336,8 @@ model Restaurant {
   healthSnapshots          RestaurantHealthSnapshot[]
   googleReviewAiDrafts     GoogleReviewAiDraft[]
   googleReviewCache        GoogleReviewCache?
+  googleReviews            GoogleReview[]
+  googleReplyJobs          GoogleReplyJob[]
 
   // Stage 17 §38.87 — Hot path: getScopedRestaurantIds her dashboard
   // request'inde `prisma.restaurant.findMany({ where: { userId } })`
@@ -687,6 +692,82 @@ model GoogleReviewCache {
   updatedAt        DateTime   @updatedAt @map("updated_at")
 
   @@map("google_review_caches")
+}
+
+// One Google Business Profile review of a business (CLAUDE.md §54). Filled by
+// the central refresh queue (every page via nextPageToken); the reply inbox
+// reads only this table. `comment` is Google's text unchanged; `originalText`
+// / `translatedText` split Google's "(Translated by Google)" form for search,
+// language detection and keyword analysis.
+model GoogleReview {
+  id               String     @id @default(cuid())
+  restaurantId     String     @map("restaurant_id")
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  reviewId         String     @map("review_id")
+  reviewName       String     @map("review_name") @db.Text
+  reviewerName     String?    @map("reviewer_name")
+  reviewerPhotoUrl String?    @map("reviewer_photo_url") @db.Text
+  isAnonymous      Boolean    @default(false) @map("is_anonymous")
+  rating           Int? // 1..5
+  comment          String?    @db.Text
+  originalText     String?    @map("original_text") @db.Text
+  translatedText   String?    @map("translated_text") @db.Text
+  language         String?    @db.VarChar(8)
+  hasText          Boolean    @default(false) @map("has_text")
+  createTime       DateTime?  @map("create_time")
+  updateTime       DateTime?  @map("update_time")
+  hasReply         Boolean    @default(false) @map("has_reply")
+  replyComment     String?    @map("reply_comment") @db.Text
+  replyUpdateTime  DateTime?  @map("reply_update_time")
+  lastSeenAt       DateTime   @map("last_seen_at")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  @@unique([restaurantId, reviewId])
+  @@index([restaurantId, hasReply, createTime])
+  @@index([restaurantId, createTime])
+  @@map("google_reviews")
+}
+
+// Bulk Google reply job (CLAUDE.md §54): owner-approved replies sent one by
+// one by a server queue (quota-aware, retried with backoff, idempotent).
+model GoogleReplyJob {
+  id           String               @id @default(cuid())
+  restaurantId String               @map("restaurant_id")
+  restaurant   Restaurant           @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  actorId      String               @map("actor_id")
+  actorSource  String               @map("actor_source")
+  status       String               @default("running") // running | paused | done
+  total        Int
+  leaseUntil   DateTime?            @map("lease_until")
+  confirmedAt  DateTime             @map("confirmed_at")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  items        GoogleReplyJobItem[]
+
+  @@index([restaurantId, createdAt])
+  @@index([status, updatedAt])
+  @@map("google_reply_jobs")
+}
+
+model GoogleReplyJobItem {
+  id            String         @id @default(cuid())
+  jobId         String         @map("job_id")
+  job           GoogleReplyJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reviewId      String         @map("review_id")
+  comment       String         @db.Text
+  status        String         @default("pending") // pending | sending | sent | failed | skipped
+  attempts      Int            @default(0)
+  nextAttemptAt DateTime?      @map("next_attempt_at")
+  errorCode     String?        @map("error_code")
+  sentAt        DateTime?      @map("sent_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  @@unique([jobId, reviewId])
+  @@index([jobId, status])
+  @@index([reviewId, status])
+  @@map("google_reply_job_items")
 }
 
 model GoogleReviewAiDraft {

@@ -137,7 +137,7 @@ export interface PlacesProfileSectionProps {
   /** Move focus into the search field when the picker appears. */
   focusSearch?: boolean;
   /** Anchor id of the reply section (link from the sample reviews). */
-  replyAnchorId?: string;
+  replyAnchorId?: string | null;
   /**
    * What the server already knows (undefined = learn it from the requests):
    * `canWrite` false → read-only card at once; `placesConfigured` false →

@@ -1157,6 +1157,26 @@ export async function updateGoogleReviewReply(
   return res.data;
 }
 
+/**
+ * Removes the business's public reply from a review (CLAUDE.md §54). A
+ * reply that is already gone (404) counts as removed. Same canonical-name
+ * rule as `updateGoogleReviewReply`.
+ */
+export async function deleteGoogleReviewReply(
+  integration: GoogleIntegrationRow,
+  reviewName: string,
+): Promise<void> {
+  if (!GOOGLE_REVIEW_NAME_RE.test(reviewName)) {
+    throw new Error('invalid Google review resource name');
+  }
+  const res = await googleBusinessFetch<Record<string, never>>(
+    integration,
+    `${BUSINESS_PROFILE_V4_URL}/${reviewName}/reply`,
+    { method: 'DELETE' },
+  );
+  if (!res.ok && res.status !== 404) throw new GoogleBusinessApiError(res);
+}
+
 // Stage 10 — Google Business Profile media + Q&A helpers (CLAUDE.md §38.80,
 // §38.55 PROFİL SAĞLIĞI backlog kapanışı). Both back the per-restaurant
 // `/api/restaurants/[id]/google/business/profile-stats` endpoint that feeds

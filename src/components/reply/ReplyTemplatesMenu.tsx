@@ -18,6 +18,8 @@ interface Props {
   draft: string;
   /** Puts the template into the composer. */
   onInsert: (text: string) => void;
+  /** Extra classes for the trigger (e.g. a 44px touch target on phones). */
+  triggerClassName?: string;
 }
 
 /**
@@ -25,7 +27,7 @@ interface Props {
  * box. Loaded on first open; every save passes the reply risk gate on the
  * server (§48), so an inserted template can always be sent.
  */
-export function ReplyTemplatesMenu({ locale, draft, onInsert }: Props) {
+export function ReplyTemplatesMenu({ locale, draft, onInsert, triggerClassName = '' }: Props) {
   const isTr = locale === 'tr';
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -104,7 +106,7 @@ export function ReplyTemplatesMenu({ locale, draft, onInsert }: Props) {
           if (open && templates === null) void load();
         }}
         trigger={
-          <button type="button" className="bz-btn-ghost bz-btn-sm inline-flex items-center gap-1.5">
+          <button type="button" className={`bz-btn-ghost bz-btn-sm inline-flex items-center gap-1.5 ${triggerClassName}`}>
             <FileText size={13} aria-hidden="true" />
             {isTr ? 'Şablonlar' : 'Templates'}
           </button>

@@ -665,7 +665,8 @@ export function SampleReviews({
   profile: PlacesProfile;
   locale: UiLocale;
   className?: string;
-  replyAnchorId?: string;
+  /** Null hides the "reply on Google" link (reply feature not offered). */
+  replyAnchorId?: string | null;
 }) {
   const copy = useCopy(locale);
   const headingId = useId();
@@ -701,13 +702,15 @@ export function SampleReviews({
           {copy.allReviews}
           <ExternalLink size={13} aria-hidden="true" />
         </ExtLink>
-        <a
-          href={`#${replyAnchorId}`}
-          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-[#0A0A0A] underline underline-offset-2"
-        >
-          {copy.replyLink}
-          <ArrowRight size={13} aria-hidden="true" />
-        </a>
+        {replyAnchorId && (
+          <a
+            href={`#${replyAnchorId}`}
+            className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-[#0A0A0A] underline underline-offset-2"
+          >
+            {copy.replyLink}
+            <ArrowRight size={13} aria-hidden="true" />
+          </a>
+        )}
         <p className="text-[12px] font-normal text-[#525252]">
           {copy.source}: {copy.sourceName}
         </p>

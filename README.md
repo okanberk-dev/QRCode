@@ -101,11 +101,16 @@ GBP_ALLOWED_TENANTS="owner@example.com"  # owner e-mail, user id or business slu
   project) or Google answers `invalid_grant`, the connection shows
   "reconnect" in the panel and the last cached reviews stay visible.
 - **Refresh**: the `google-reviews-refresh` job (Coolify, every 15 min) takes
-  the businesses whose turn has come; each refreshes every 6–12 hours. 429/403
-  back off exponentially (15 min doubling, max 12 h) and stop the run; a
-  global per-minute budget covers all tenants.
-- **Disconnect**: revokes the token at Google and deletes the cached reviews
-  and AI reply drafts of that workspace.
+  the businesses whose turn has come; each refreshes every 6–12 hours and syncs
+  every review page (`nextPageToken`, up to 2,000) into `google_reviews`.
+  429/403 back off exponentially (15 min doubling, max 12 h) and stop the run;
+  a global per-minute budget covers all tenants. The same job resumes bulk
+  reply jobs that a request left unfinished.
+- **Reply inbox** (`/dashboard/google-reviews`, CLAUDE.md §54): reads only the
+  stored reviews; replies (single or a human-approved bulk queue for 4–5★)
+  are sent from the server within Google's update limits.
+- **Disconnect**: revokes the token at Google and deletes the cached and
+  stored reviews, reply jobs and AI reply drafts of that workspace.
 - **Admin**: `GET /api/admin/google-business/status` (which project the client
   id belongs to, open tenants, refresh queue, quota errors) and
   `POST /api/admin/restaurants/{id}/google-reviews` with `{"action":"locate"}`

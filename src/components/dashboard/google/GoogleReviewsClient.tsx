@@ -8,7 +8,7 @@ import type { Locale } from '@/lib/translations';
 import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 import { GoogleConnectFlashBanner } from '@/components/dashboard/google/GoogleConnectFlashBanner';
 import { GoogleReplySection } from '@/components/dashboard/google/GoogleReplySection';
-import { GoogleReviewsBodySkeleton } from '@/components/dashboard/google/GoogleReviewsSkeleton';
+import { GoogleReviewsBodySkeleton, PlacesProfileSkeleton } from '@/components/dashboard/google/GoogleReviewsSkeleton';
 import { PlacesProfileSection } from '@/components/dashboard/google/PlacesProfileSection';
 import { formatBusinessSummary } from '@/components/dashboard/google/places-client';
 import {
@@ -91,10 +91,11 @@ export function GoogleReviewsClient({
   // The reply region reports whether its first status request has settled and
   // whether the reply feature is fully set up. Keyed by business so a stale
   // report of the previous business never reaches the next one.
-  const [replyState, setReplyState] = useState<{ id: string | null; settled: boolean; active: boolean }>({
+  const [replyState, setReplyState] = useState<{ id: string | null; settled: boolean; active: boolean; offered: boolean }>({
     id: null,
     settled: false,
     active: false,
+    offered: false,
   });
 
   // The first run of the list effect below skips the request when the server
@@ -195,6 +196,29 @@ export function GoogleReviewsClient({
     });
   };
 
+  const replySettled = Boolean(activeRestaurant && replyState.id === activeRestaurant.id && replyState.settled);
+  const inboxActive = replySettled && replyState.active;
+  const profileSection = activeRestaurant ? (
+    <PlacesProfileSection
+      key={`profile-${activeRestaurant.id}`}
+      restaurant={activeRestaurant}
+      restaurants={restaurants}
+      locale={locale}
+      oauthActive={inboxActive}
+      statusLoaded={replySettled}
+      canWrite={canWrite}
+      placesConfigured={placesConfigured}
+      onLinked={(result) => handleLinked(activeRestaurant.id, result)}
+      onProfileState={handleProfileState}
+      onSwitchBusiness={(id) => {
+        setFocusSearchFor(id);
+        selectRestaurant(id);
+      }}
+      focusSearch={focusSearchFor === activeRestaurant.id}
+      replyAnchorId={replyState.offered ? 'google-reply' : null}
+    />
+  ) : null;
+
   return (
     <div className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
       {/* §38 audit Fix #1 — connect button returnTo bu sayfa, callback
@@ -271,26 +295,13 @@ export function GoogleReviewsClient({
 
           {/* The profile section is mounted ONLY once the active business is
               resolved (never for a provisional one: each Details call is
-              billed) and is keyed by it. */}
-          {activeRestaurant && (
-            <PlacesProfileSection
-              key={`profile-${activeRestaurant.id}`}
-              restaurant={activeRestaurant}
-              restaurants={restaurants}
-              locale={locale}
-              oauthActive={replyState.id === activeRestaurant.id && replyState.active}
-              statusLoaded={replyState.id === activeRestaurant.id && replyState.settled}
-              canWrite={canWrite}
-              placesConfigured={placesConfigured}
-              onLinked={(result) => handleLinked(activeRestaurant.id, result)}
-              onProfileState={handleProfileState}
-              onSwitchBusiness={(id) => {
-                setFocusSearchFor(id);
-                selectRestaurant(id);
-              }}
-              focusSearch={focusSearchFor === activeRestaurant.id}
-            />
-          )}
+              billed) and is keyed by it. §54 — once the reply inbox is set up
+              the profile moves into the inbox's collapsible "Analiz" (mounted
+              only when opened), so the inbox is the main view. Until the reply
+              status settles a skeleton holds its place, so no billed call is
+              made for a profile that would move a moment later. */}
+          {activeRestaurant && !replySettled && <PlacesProfileSkeleton />}
+          {activeRestaurant && replySettled && !inboxActive && profileSection}
 
           {activeRestaurant && (
             <GoogleReplySection
@@ -298,11 +309,16 @@ export function GoogleReviewsClient({
               restaurantId={activeRestaurant.id}
               restaurantName={activeRestaurant.name}
               locale={locale}
+              canWrite={canWrite}
+              profileSlot={inboxActive ? profileSection : null}
               onReplyState={(id, state) => {
                 setReplyState((prev) =>
-                  prev.id === id && prev.settled === state.settled && prev.active === state.active
+                  prev.id === id &&
+                  prev.settled === state.settled &&
+                  prev.active === state.active &&
+                  prev.offered === state.offered
                     ? prev
-                    : { id, settled: state.settled, active: state.active },
+                    : { id, settled: state.settled, active: state.active, offered: state.offered },
                 );
               }}
             />
