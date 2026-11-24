@@ -17,6 +17,7 @@ export function InboxAnalysis({
   locale,
   refreshKey,
   profileSlot,
+  embedded = false,
 }: {
   restaurantId: string;
   locale: 'tr' | 'en';
@@ -24,9 +25,12 @@ export function InboxAnalysis({
   refreshKey: number;
   /** The Google Maps profile (rating + checklist), rendered only when open. */
   profileSlot?: ReactNode;
+  /** Shown as a page tab: always open, no collapsible header. */
+  embedded?: boolean;
 }) {
   const isTr = locale === 'tr';
-  const [open, setOpen] = useState(false);
+  const [openState, setOpen] = useState(false);
+  const open = embedded || openState;
   const [stats, setStats] = useState<ReviewInsights | null>(null);
   const [error, setError] = useState(false);
 
@@ -73,6 +77,7 @@ export function InboxAnalysis({
 
   return (
     <section className="bz-card">
+      {!embedded && (
       <button
         type="button"
         onClick={toggle}
@@ -86,9 +91,10 @@ export function InboxAnalysis({
         </span>
         <ChevronDown size={16} aria-hidden="true" className={`ml-auto text-[#737373] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
+      )}
 
       {open && (
-        <div className="space-y-4 border-t border-[#EDEDED] px-4 py-4 sm:px-5">
+        <div className={`space-y-5 px-4 py-4 sm:px-5 ${embedded ? 'sm:py-5' : 'border-t border-[#EDEDED]'}`}>
           {error ? (
             <p className="text-[13px] text-[#991B1B]">{isTr ? 'Analiz yüklenemedi.' : 'Analysis could not be loaded.'}</p>
           ) : !stats ? (

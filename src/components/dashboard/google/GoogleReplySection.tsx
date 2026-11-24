@@ -22,7 +22,7 @@ import {
   ExternalLink,
   Unplug,
 } from 'lucide-react';
-import { AlertBanner, Badge, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, Badge, WizardSteps, useConfirmDialog } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { GoogleReviewsInbox } from '@/components/dashboard/google/inbox/GoogleReviewsInbox';
@@ -575,6 +575,20 @@ export function GoogleReplySection({
   // Refresh / disconnect live in the inbox's own menu (§54).
   const replyActions: ReactNode = null;
 
+  // §54 — setup wizard: shown while the reply feature is offered but not
+  // fully set up (connect → location → reply inbox).
+  const setupStep: number | null =
+    !shouldShowStatusLoading &&
+    status &&
+    !replyFull &&
+    status.googleReviewManagementEnabled &&
+    (status.replyAvailability ?? 'available') === 'available' &&
+    (status.connected || status.oauthConfigured)
+      ? status.connected
+        ? 1
+        : 0
+      : null;
+
   // The reply feature can actually be used for this business (plan on, not
   // closed for the workspace, sign-in configured or already connected). The
   // Places card hides its "reply on Google" link otherwise.
@@ -627,6 +641,18 @@ export function GoogleReplySection({
                   </button>
                 </div>
               )}
+            {setupStep !== null && (
+              <WizardSteps
+                className="mb-1"
+                ariaLabel={isTr ? 'Google yanıt kurulumu' : 'Google reply setup'}
+                current={setupStep}
+                steps={[
+                  { label: isTr ? 'Google hesabını bağla' : 'Connect Google', short: isTr ? 'Bağla' : 'Connect' },
+                  { label: isTr ? 'İşletme konumunu seç' : 'Pick the location', short: isTr ? 'Konum' : 'Location' },
+                  { label: isTr ? 'Yorumları yanıtla' : 'Reply to reviews', short: isTr ? 'Yanıtla' : 'Reply' },
+                ]}
+              />
+            )}
             {shouldShowStatusLoading ? (
               <div className="space-y-3" aria-busy="true">
                 <SkBox className="h-4 w-full max-w-xl" />
@@ -690,15 +716,28 @@ export function GoogleReplySection({
                     {connectError}
                   </AlertBanner>
                 )}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-[13px] leading-[1.6] text-[#525252]">
-                    {ownerGoogleMessage('reply_connect_hint', locale)}
-                  </p>
+                <div className="grid gap-4 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                  <div className="space-y-3">
+                    <p className="text-[13.5px] leading-[1.6] text-[#262626]">
+                      {ownerGoogleMessage('reply_connect_hint', locale)}
+                    </p>
+                    <ul className="grid gap-2 text-[12.5px] text-[#525252] sm:grid-cols-3">
+                      {(isTr
+                        ? ['Tüm Google yorumların tek listede', 'Yorumun dilinde AI taslağı', '4-5★ yorumlara onaylı toplu yanıt']
+                        : ['Every Google review in one list', 'AI drafts in the review language', 'Approved bulk replies for 4–5★']
+                      ).map((t) => (
+                        <li key={t} className="flex items-start gap-2">
+                          <CheckCircle2 size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-[#65A30D]" />
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   <button
                     type="button"
                     onClick={connectGoogleInline}
                     disabled={connecting}
-                    className="bz-btn-primary min-h-11 w-full shrink-0 sm:w-auto"
+                    className="bz-btn-primary min-h-11 w-full shrink-0 md:w-auto"
                   >
                     {connecting ? (
                       <Loader2 size={16} className="animate-spin" aria-hidden="true" />

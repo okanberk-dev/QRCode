@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  BarChart3,
   CheckSquare,
+  Inbox,
   ExternalLink,
   Loader2,
   MoreHorizontal,
@@ -105,6 +107,7 @@ export function GoogleReviewsInbox({
   const [bulkIds, setBulkIds] = useState<string[] | null>(null);
   const [resumeJobId, setResumeJobId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [view, setView] = useState<'inbox' | 'analysis'>('inbox');
   const [statsKey, setStatsKey] = useState(0);
   const autoSyncedRef = useRef(false);
   const seqRef = useRef(0);
@@ -433,82 +436,116 @@ export function GoogleReviewsInbox({
 
   return (
     <div className="space-y-4">
-      {/* One-line summary */}
-      <div className="bz-card flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#525252]">
-          {summary?.averageRating != null && (
-            <span className="inline-flex items-center gap-1 font-semibold text-[#0A0A0A]">
-              <Star size={14} aria-hidden="true" fill="#C6F24E" color="#0A0A0A" />
-              {summary.averageRating.toLocaleString(isTr ? 'tr-TR' : 'en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-            </span>
-          )}
-          <span>{summary ? `${fmt(summary.totalReviewCount)} ${isTr ? 'yorum' : 'reviews'}` : '—'}</span>
-          <span aria-hidden="true" className="text-[#D4D4D4]">·</span>
-          <span className={summary && summary.unreplied > 0 ? 'font-semibold text-[#92400E]' : ''}>
-            {summary ? `${fmt(summary.unreplied)} ${isTr ? 'yanıtsız' : 'unanswered'}` : '—'}
-          </span>
-          <span aria-hidden="true" className="text-[#D4D4D4]">·</span>
-          <span>{summary?.replyRate != null ? (isTr ? `%${summary.replyRate} yanıt oranı` : `${summary.replyRate}% reply rate`) : '—'}</span>
-          <span className="w-full text-[11.5px] text-[#A3A3A3] sm:w-auto">
-            {syncState === 'running' || summary?.syncing ? (
-              <span className="inline-flex items-center gap-1">
-                <Loader2 size={11} className="animate-spin" aria-hidden="true" />
-                {isTr ? "Google'dan alınıyor…" : 'Syncing from Google…'}
+      {/* Summary: rating + three numbers + actions */}
+      <section className="bz-card overflow-hidden">
+        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#0A0A0A] text-white">
+              <span className="text-[22px] font-semibold leading-none tabular-nums">
+                {summary?.averageRating != null
+                  ? summary.averageRating.toLocaleString(isTr ? 'tr-TR' : 'en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                  : '–'}
               </span>
-            ) : (
-              `${isTr ? 'Son senkron' : 'Last sync'}: ${ago(summary?.fetchedAt ?? null, locale)}`
-            )}
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {canWrite && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectMode((v) => !v);
-                setSelected(new Set());
-                setSelectNotice(null);
-              }}
-              aria-pressed={selectMode}
-              className={`${selectMode ? 'bz-btn-primary' : 'bz-btn-ghost'} min-h-11 text-[12.5px] sm:min-h-[36px]`}
-            >
-              <CheckSquare size={14} aria-hidden="true" />
-              {isTr ? 'Toplu yanıt' : 'Bulk reply'}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="bz-btn-ghost min-h-11 text-[12.5px] sm:min-h-[36px]"
-          >
-            <Settings2 size={14} aria-hidden="true" />
-            {isTr ? 'Yanıt ayarları' : 'Reply settings'}
-          </button>
-          <PulseMenu
-            trigger={
-              <button type="button" className="bz-btn-ghost min-h-11 min-w-11 text-[12.5px] sm:min-h-[36px]" aria-label={isTr ? 'Diğer işlemler' : 'More actions'}>
-                <MoreHorizontal size={14} aria-hidden="true" />
+              <span className="mt-1 inline-flex gap-px" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} size={8} fill={i <= Math.round(summary?.averageRating ?? 0) ? '#C6F24E' : 'transparent'} color="#C6F24E" />
+                ))}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Google puanı' : 'Google rating'}</p>
+              <p className="mt-0.5 text-[12px] text-[#737373]">
+                {syncState === 'running' || summary?.syncing ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Loader2 size={11} className="animate-spin" aria-hidden="true" />
+                    {isTr ? "Google'dan alınıyor…" : 'Syncing from Google…'}
+                  </span>
+                ) : (
+                  `${isTr ? 'Son senkron' : 'Last sync'}: ${ago(summary?.fetchedAt ?? null, locale)}`
+                )}
+              </p>
+            </div>
+          </div>
+          <dl className="grid grid-cols-3 gap-2">
+            {[
+              { label: isTr ? 'Toplam yorum' : 'Total reviews', value: summary ? fmt(summary.totalReviewCount) : '—', tone: '' },
+              {
+                label: isTr ? 'Yanıt bekleyen' : 'Awaiting reply',
+                value: summary ? fmt(summary.unreplied) : '—',
+                tone: summary && summary.unreplied > 0 ? 'text-[#B45309]' : '',
+              },
+              {
+                label: isTr ? 'Yanıt oranı' : 'Reply rate',
+                value: summary?.replyRate != null ? (isTr ? `%${summary.replyRate}` : `${summary.replyRate}%`) : '—',
+                tone: '',
+              },
+            ].map((t) => (
+              <div key={t.label} className="rounded-xl bg-[#FAFAFA] px-3 py-2.5">
+                <dt className="text-[11px] text-[#737373]">{t.label}</dt>
+                <dd className={`mt-0.5 text-[18px] font-semibold tabular-nums text-[#0A0A0A] ${t.tone}`}>{t.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="flex flex-wrap items-center gap-2">
+            {canWrite && (
+              <button
+                type="button"
+                onClick={() => {
+                  setView('inbox');
+                  setSelectMode((v) => !v);
+                  setSelected(new Set());
+                  setSelectNotice(null);
+                }}
+                aria-pressed={selectMode}
+                className={`${selectMode ? 'bz-btn-primary' : 'bz-btn-ghost'} min-h-11 text-[12.5px] sm:min-h-[36px]`}
+              >
+                <CheckSquare size={14} aria-hidden="true" />
+                {isTr ? 'Toplu yanıt' : 'Bulk reply'}
               </button>
-            }
-          >
-            {canWrite && (
-              <PulseMenuItem icon={<RefreshCw size={14} />} disabled={syncState === 'running'} onSelect={() => void syncNow(true)}>
-                {isTr ? "Yorumları Google'dan yenile" : 'Refresh reviews from Google'}
-              </PulseMenuItem>
             )}
-            {summary?.reviewsUrl && (
-              <PulseMenuItem icon={<ExternalLink size={14} />} onSelect={() => window.open(summary.reviewsUrl!, '_blank', 'noopener')}>
-                {isTr ? "Google'da tümünü gör" : 'See all on Google'}
-              </PulseMenuItem>
-            )}
-            {canWrite && (
-              <PulseMenuItem danger icon={<Unplug size={14} />} onSelect={() => window.setTimeout(onDisconnect, 350)}>
-                {isTr ? 'Google bağlantısını kes' : 'Disconnect Google'}
-              </PulseMenuItem>
-            )}
-          </PulseMenu>
+            <button type="button" onClick={() => setSettingsOpen(true)} className="bz-btn-ghost min-h-11 text-[12.5px] sm:min-h-[36px]">
+              <Settings2 size={14} aria-hidden="true" />
+              {isTr ? 'Yanıt ayarları' : 'Reply settings'}
+            </button>
+            <PulseMenu
+              trigger={
+                <button type="button" className="bz-btn-ghost min-h-11 min-w-11 text-[12.5px] sm:min-h-[36px]" aria-label={isTr ? 'Diğer işlemler' : 'More actions'}>
+                  <MoreHorizontal size={14} aria-hidden="true" />
+                </button>
+              }
+            >
+              {canWrite && (
+                <PulseMenuItem icon={<RefreshCw size={14} />} disabled={syncState === 'running'} onSelect={() => void syncNow(true)}>
+                  {isTr ? "Yorumları Google'dan yenile" : 'Refresh reviews from Google'}
+                </PulseMenuItem>
+              )}
+              {summary?.reviewsUrl && (
+                <PulseMenuItem icon={<ExternalLink size={14} />} onSelect={() => window.open(summary.reviewsUrl!, '_blank', 'noopener')}>
+                  {isTr ? "Google'da tümünü gör" : 'See all on Google'}
+                </PulseMenuItem>
+              )}
+              {canWrite && (
+                <PulseMenuItem danger icon={<Unplug size={14} />} onSelect={() => window.setTimeout(onDisconnect, 350)}>
+                  {isTr ? 'Google bağlantısını kes' : 'Disconnect Google'}
+                </PulseMenuItem>
+              )}
+            </PulseMenu>
+          </div>
         </div>
-      </div>
+        <div className="bz-tabs mx-4 mb-4 w-auto sm:mx-5" role="tablist" aria-label={isTr ? 'Bölüm' : 'Section'}>
+          <button type="button" role="tab" aria-selected={view === 'inbox'} onClick={() => setView('inbox')} className="bz-tab min-h-11 sm:min-h-0">
+            <Inbox size={13} aria-hidden="true" />
+            {isTr ? 'Yanıt kutusu' : 'Reply inbox'}
+            {summary && summary.unreplied > 0 && (
+              <span className="ml-1 rounded-full bg-[#C6F24E] px-1.5 text-[11px] font-semibold tabular-nums text-[#0A0A0A]">{fmt(summary.unreplied)}</span>
+            )}
+          </button>
+          <button type="button" role="tab" aria-selected={view === 'analysis'} onClick={() => setView('analysis')} className="bz-tab min-h-11 sm:min-h-0">
+            <BarChart3 size={13} aria-hidden="true" />
+            {isTr ? 'Analiz' : 'Analysis'}
+          </button>
+        </div>
+      </section>
 
       {syncNotice && (
         <AlertBanner kind={syncState === 'error' ? 'warn' : 'success'} onDismiss={() => setSyncNotice(null)}>
@@ -525,8 +562,11 @@ export function GoogleReviewsInbox({
         </div>
       )}
 
-      <InboxAnalysis restaurantId={restaurantId} locale={locale} refreshKey={statsKey} profileSlot={profileSlot} />
+      {view === 'analysis' && (
+        <InboxAnalysis restaurantId={restaurantId} locale={locale} refreshKey={statsKey} profileSlot={profileSlot} embedded />
+      )}
 
+      <div className={view === 'inbox' ? 'space-y-4' : 'hidden'}>
       {/* Filters */}
       <div className="space-y-2">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
@@ -721,7 +761,9 @@ export function GoogleReviewsInbox({
         )}
       </section>
 
-      <p className="hidden text-[11.5px] text-[#A3A3A3] lg:block">
+      </div>
+
+      <p className={view === 'inbox' ? 'hidden text-[11.5px] text-[#A3A3A3] lg:block' : 'hidden'}>
         {isTr
           ? 'Kısayollar: J / K yorumlar arasında gez · R yanıtla · / ara · ⌘/Ctrl + Enter gönder · ⌘/Ctrl + Shift + Enter gönder ve sonrakine geç'
           : 'Shortcuts: J / K move · R reply · / search · ⌘/Ctrl + Enter send · ⌘/Ctrl + Shift + Enter send & next'}
