@@ -100,6 +100,10 @@ async function anthropicCompletion(
         max_tokens: opts.maxTokens ?? 400,
         // Yeni Claude modelleri `temperature` parametresini reddediyor (400
         // invalid_request_error: temperature is deprecated) — Anthropic'e gönderme.
+        // Haiku 5.5 (varsayılan, en iyi fiyat/performans): yanıt taslağı ve
+        // kısa analizler için düşünme kapalı — daha ucuz ve küçük
+        // `max_tokens` düşünmeye harcanmaz (Haiku 5.5'te effort ≤ high ile izinli).
+        ...(model.startsWith('claude-haiku-5') ? { thinking: { type: 'disabled' } } : {}),
         ...(system ? { system } : {}),
         messages: turns,
       }),
