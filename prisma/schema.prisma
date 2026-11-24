@@ -2758,3 +2758,21 @@ model ReplyTemplate {
   @@index([ownerUserId, updatedAt])
   @@map("reply_templates")
 }
+
+/// Small public files (site logo, favicon, share images). Kept in the
+/// database so every database backup includes them; moved off Supabase
+/// Storage in 2026-11 (CLAUDE.md §55). Served by GET /api/files/[...path].
+/// Paths carry a timestamp, so a stored file never changes: the route caches
+/// it as immutable.
+model StoredFile {
+  id          String   @id @default(cuid())
+  path        String   @unique
+  contentType String   @map("content_type")
+  size        Int
+  sha256      String
+  data        Bytes
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("stored_files")
+}

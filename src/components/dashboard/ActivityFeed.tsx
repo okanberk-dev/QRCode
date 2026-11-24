@@ -7,12 +7,12 @@
 // yeterli — düşük etkileşim.
 //
 // Şimdi: client component. `initialEvents` server-render snapshot, mount
-// sonrası `useRealtimeActivity` hook'u Supabase Realtime ile feedback
+// sonrası `useRealtimeActivity` hook.u (SSE, /api/realtime/activity) ile feedback
 // INSERT'lerini push'lar. 200ms debounce + 50 buffer cap (CLAUDE.md
 // §38.86 spec). Toast on new events, slide-in highlight, connection
 // state badge.
 //
-// Disable durumu (env yok / token endpoint 503): hook status='disabled'
+// Disable durumu (oturum yok / işletme yok, akış hiç açılmadı): hook status='disabled'
 // döner — rozet gösterilmez (idle / disabled / ilk bağlantı denemesi),
 // sayfa yenileme modu korunur. Rozet yalnız "Canlı" ve bağlantı koptuğunda
 // ("Bağlanıyor" / "Çevrimdışı") görünür.

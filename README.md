@@ -12,7 +12,7 @@ This repository contains the source code for the **Buaze QR Feedback & Restauran
 *   **Framework:** Next.js (App Router `src/app`)
 *   **Language:** TypeScript
 *   **Database ORM:** Prisma
-*   **Database Provider:** Supabase (PostgreSQL) - Uses `DATABASE_URL` (Port 6543 pgbouncer for connections) & `DIRECT_URL` (Port 5432 for migrations).
+*   **Database:** PostgreSQL 17 on the Coolify server (`buaze-postgres`, internal network only, since 2026-11-24). `DATABASE_URL` and `DIRECT_URL` both point at it. Small public files (logo, favicon, share images) live in the `stored_files` table and are served at `/files/...`; the owner dashboard live feed is Server-Sent Events from the app (`/api/realtime/activity`). See "Veritabanı ve yedekler" below.
 *   **Styling:** Tailwind CSS + Lucide React (Icons)
 *   **Charts:** Recharts (Interactive visualization)
 *   **Authentication:** Custom JWT mechanism using `jose`. JWTs are stored in `httpOnly` secure cookies.
@@ -50,9 +50,9 @@ The platform features a data-rich administration suite (`src/app/admin/dashboard
 To deploy or run the build, the following variables are strictly mapped inside the environment. *Note: `JWT_SECRET` has a hardcoded default fallback in `src/lib/auth.ts` to prevent crashing on Vercel preview environments, but must be set for real production.*
 
 ```env
-# Supabase DB
-DATABASE_URL="postgres://..."
-DIRECT_URL="postgres://..."
+# Database (Coolify PostgreSQL, internal network)
+DATABASE_URL="postgresql://postgres:...@<db-uuid>:5432/buaze?connection_limit=10&pool_timeout=20"
+DIRECT_URL="postgresql://postgres:...@<db-uuid>:5432/buaze"
 
 # Marketing & Public Assets
 NEXT_PUBLIC_APP_URL="https://buaze.com"
@@ -155,7 +155,7 @@ The main layout relies heavily on a custom color palette defined mostly inline o
 ---
 
 ## 🔧 Build & Deploy
-This project deploys on Vercel with Prisma migration-based database changes.
+This project deploys on Coolify (Railpack build, see `docs/SELF_HOST.md`) with Prisma migration-based database changes.
 
 *   **Database Migrations:** The `package.json` build script runs `node scripts/validate-env.js && prisma migrate deploy && next build`. Schema changes must be committed under `prisma/migrations/`. Use `npm run db:push` only for local scratch databases where you intentionally do not need migration history.
 *   **Auto Admin Bootstrap:** Upon successful deployment, logging into `/admin` with the configured `ADMIN_USERNAME` and `ADMIN_PASSWORD` (default: `admin`/`123456+`) will automatically bootstrap your superadmin credentials to the newly created database tables.
@@ -170,3 +170,65 @@ npm run dev
 npm run build
 npm run start
 ```
+
+---
+
+## 🗄 Veritabanı ve yedekler (2026-11-24'ten beri)
+
+Veritabanı Supabase'ten (ABD, Virginia) uygulamayla aynı Coolify sunucusuna (Frankfurt) taşındı. Ayrıntılar: CLAUDE.md §55.
+
+| Parça | Nerede |
+|---|---|
+| PostgreSQL 17 | Coolify → Buaze projesi → `buaze-postgres` (`wgnqbhlzm6nbftv3qqkvzxv3`), yalnız iç ağ, kalıcı volume |
+| Dosyalar (logo, favicon, paylaşım görselleri) | `stored_files` tablosu → `/files/...` (her veritabanı yedeğinde var) |
+| Canlı akış | `/api/realtime/activity` (SSE), `src/lib/live-events.ts` |
+| Taşıma ve kontrol betikleri | `scripts/db-migration/` (Coolify zamanlanmış görev olarak uygulama konteynerinde çalışır; bağlantı adreslerini yazdırmaz) |
+| Taşıma dökümleri, dosya kopyaları, raporlar | Uygulama volume'ü `/app/ops-data` |
+
+### Otomatik yedek
+
+- Coolify → `buaze-postgres` → Backups: her gün 03:30 UTC `pg_dump` (custom format), sunucuda 14 gün / 14 kopya tutulur.
+- **Sunucu dışı kopya (yapılacak, hesap gerekir):** Cloudflare R2 (10 GB ücretsiz) ya da Backblaze B2 (10 GB ücretsiz)
+  hesabı açın, bir bucket ve yalnız o bucket'a yazabilen bir API anahtarı oluşturun. Coolify → Storages (S3) → Add:
+  endpoint (R2: `https://<account-id>.r2.cloudflarestorage.com`, B2: `https://s3.<region>.backblazeb2.com`), bucket, region
+  (`auto` / B2 bölgesi), anahtarlar → Validate. Sonra `buaze-postgres` → Backups → yedek ayarı: "Save to S3" açık, bu
+  storage, S3 saklama 14 gün.
+
+### Yedekten geri yükleme
+
+1. Önce ayrı bir test veritabanına yükleyip kontrol edin: Coolify'da geçici bir PostgreSQL 17 oluşturun → Import → Server
+   path = yedek dosyası (Backups listesindeki dosya yolu) → `bash scripts/db-migration/verify.sh` ile ana veritabanıyla
+   satır sayılarını karşılaştırın. İş bitince geçici veritabanını silin.
+2. Gerçekten geri dönmek gerekirse: bakım modunu açın (aşağıda), `buaze-postgres` → Import → aynı yedek, "replace existing",
+   sonra bakım modunu kapatın.
+
+### Bakım modu
+
+`MAINTENANCE_MODE=1` (Build + Runtime) ile yeniden deploy: her istek (sayfalar, API'ler, konteyner içi cron çağrıları,
+webhook'lar) 503 bakım sayfasına gider; yalnız `/api/health` açık kalır, böylece veritabanına hiçbir şey yazılmaz. Değişkeni
+silip yeniden deploy edince kapanır. Ayar derlemeye gömülür; açmak da kapatmak da bir deploy sürer (~4 dk).
+
+### Supabase'e geri dönüş (en geç 2026-12-08)
+
+Supabase projesi taşıma anındaki (2026-11-24) hâliyle, dokunulmadan bekler. Geri dönmek gerekirse:
+
+1. Bakım modunu açın (yukarıda) ve deploy'un bitmesini bekleyin.
+2. Taşımadan sonra gelen verileri Supabase'e kopyalayın: Coolify → buaze → Scheduled Tasks → geçici görev
+   `ALLOW_ROLLBACK=yes bash scripts/db-migration/rollback-copy.sh` → çalıştırın. Görev yeni veritabanını döker, Supabase'in
+   `public` şemasındaki tabloları bu dökümle yeniden kurar ve her tabloyu karşılaştırır; sonunda `ROLLBACK COPY OK` yazmalı.
+3. Coolify → buaze → Environment: `DATABASE_URL` ve `DIRECT_URL`'yi Supabase değerlerine geri alın (Supabase Dashboard →
+   Connect: işlem havuzu `...pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20`, oturum
+   havuzu `...:5432/postgres`). `MAINTENANCE_MODE`'u silin, deploy edin.
+4. `https://www.buaze.com/api/health?db=1` → `port` 5432 (kod Supabase işlem havuzu adresini oturum havuzuna çevirir),
+   panelde giriş ve yorum listesi çalışmalı.
+
+Dosyalar ve canlı akış Supabase'e bağlı değildir; geri dönüşte de çalışırlar.
+
+### Temizlik (2026-12-08'den sonra, geri dönüş süresi bitince)
+
+- `@supabase/supabase-js` paketini kaldırın (kod artık kullanmıyor).
+- Coolify env: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `SUPABASE_STORAGE_BUCKET`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ve `NEW_DATABASE_URL` silinebilir.
+- `/app/ops-data/rollback/supabase-direct-url` dosyasını silin. Supabase projesini silmeden önce son bir yedeğini alın.
+

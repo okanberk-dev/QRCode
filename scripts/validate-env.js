@@ -37,8 +37,8 @@ loadDotenvFile('.env');
 loadDotenvFile('.env.local');
 
 const required = [
-  ['DATABASE_URL', 'Supabase pooled connection (port 6543)'],
-  ['DIRECT_URL', 'Supabase direct connection (port 5432) — required for Prisma migrations'],
+  ['DATABASE_URL', 'PostgreSQL connection (Coolify database, CLAUDE.md §55)'],
+  ['DIRECT_URL', 'PostgreSQL connection for Prisma migrations'],
   ['JWT_SECRET', 'Auth token signing — set in production for any real deploy'],
   ['NEXT_PUBLIC_APP_URL', 'Used to build QR + email deeplinks'],
 ];
@@ -47,9 +47,6 @@ const optional = [
   ['NEXT_PUBLIC_SITE_URL', "canonical/hreflang/sitemap origin; defaults to https://www.buaze.com"],
   ['RESEND_API_KEY', 'mail send disabled, sendResendEmail returns false'],
   ['OPENAI_API_KEY', 'AI suggest-reply falls back to deterministic template'],
-  ['SUPABASE_URL', 'careers attachment uploads return 503'],
-  ['SUPABASE_SERVICE_ROLE_KEY', 'careers attachment uploads return 503'],
-  ['SUPABASE_STORAGE_BUCKET', 'careers attachment uploads return 503'],
   ['KV_REST_API_URL', 'rate limiter falls back to per-instance in-memory mode'],
   ['KV_REST_API_TOKEN', 'rate limiter falls back to per-instance in-memory mode'],
   // CLAUDE.md §38 audit Fix #2 — Google OAuth env'leri. Eksikse owner
@@ -74,13 +71,6 @@ const optional = [
   // Production after Sentry `tags.reason:low score` rate is healthy. Surface
   // here so operators see it on fresh deploys.
   ['RECAPTCHA_ENFORCE', 'reCAPTCHA stays in monitor mode — low scores logged to Sentry but not blocked. Set "true" to enforce.'],
-  // Stage 16 §38.86 — Supabase Realtime push for ActivityFeed. All three
-  // must be set together; missing any one disables realtime gracefully
-  // (page reload mode korunur, CLAUDE.md §38.31). Surface here so a fresh
-  // deploy notices before the first dashboard open.
-  ['NEXT_PUBLIC_SUPABASE_URL', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
-  ['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
-  ['SUPABASE_JWT_SECRET', '/api/realtime/token endpoint returns 503, ActivityFeed falls back to page-reload mode'],
   // CLAUDE.md §44 — PayNKolay virtual POS. Missing values only turn off
   // card checkout; admin-managed (manual) billing keeps working.
   // PayNKolay secrets are runtime-only (Coolify: untick "Available at
@@ -237,3 +227,27 @@ if (billingErrors.length > 0) {
 }
 
 console.log('[validate-env] ✅ All required environment variables are set.');
+
+// Database move (CLAUDE.md §55): when NEW_DATABASE_URL is visible at build
+// time, report whether this build can reach it (the build runs migrations
+// and pre-renders pages against DATABASE_URL). Informational, never fails.
+const newDbUrl = envValue('NEW_DATABASE_URL');
+if (newDbUrl) {
+  try {
+    const u = new URL(newDbUrl);
+    const started = Date.now();
+    const socket = require('node:net').connect({ host: u.hostname, port: Number(u.port || 5432), timeout: 3000 });
+    socket.once('connect', () => {
+      console.log(`[validate-env] new database reachable from the build (${Date.now() - started} ms)`);
+      socket.destroy();
+    });
+    const fail = (why) => {
+      console.warn(`[validate-env] ⚠️  new database NOT reachable from the build (${why})`);
+      socket.destroy();
+    };
+    socket.once('timeout', () => fail('timeout'));
+    socket.once('error', (e) => fail(e.code || 'error'));
+  } catch {
+    console.warn('[validate-env] ⚠️  NEW_DATABASE_URL is not a valid URL');
+  }
+}

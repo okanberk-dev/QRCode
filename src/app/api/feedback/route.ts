@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { publishFeedbackCreated, toLiveFeedbackRow } from '@/lib/live-events';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
@@ -193,6 +194,10 @@ export async function POST(req: NextRequest) {
         }),
       },
     });
+
+    // Owner dashboard live feed (CLAUDE.md §55): only the fields the feed
+    // shows, delivered over /api/realtime/activity.
+    publishFeedbackCreated(toLiveFeedbackRow(feedback));
 
     // KVKK / marketing onay log — fire-and-forget. Hata feedback yazımını
     // bozmamalı (CLAUDE.md §32). Açıkça reddedilen marketing onay'ı da

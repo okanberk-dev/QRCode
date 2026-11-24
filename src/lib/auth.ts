@@ -470,7 +470,7 @@ export async function getAdminFromRequest(req: NextRequest) {
  * CLAUDE.md §38 audit-api-401 fix — without this, dashboard layout +
  * APIs disagreed on whether a token was still valid. Users with revoked
  * sessions could land on the dashboard but every fetch returned 401
- * (NotificationBell polling, realtime-token refresh, audits/templates,
+ * (NotificationBell polling, live feed reconnects, audits/templates,
  * etc.). Layout now matches API; revoked sessions redirect to login.
  */
 export async function verifyUserTokenForLayout(

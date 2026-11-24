@@ -16,6 +16,11 @@ const firebaseAuthProxyTarget =
     ? `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`
     : '');
 
+function isMaintenanceBuild(): boolean {
+  const v = (process.env.MAINTENANCE_MODE ?? '').trim().toLowerCase();
+  return v === '1' || v === 'true';
+}
+
 // Locale-less public URLs (/pricing, /contact, /iletisim ...) used to 404: they are what
 // people type, what other sites link to and what AI assistants guess. Negotiated, so
 // temporary (307): Accept-Language starting with "en" -> /en/..., everything else
@@ -95,18 +100,28 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    if (!firebaseAuthProxyTarget) return [];
+    const firebaseProxy = firebaseAuthProxyTarget
+      ? [
+          {
+            source: '/__/auth/:path*',
+            destination: `https://${firebaseAuthProxyTarget}/__/auth/:path*`,
+          },
+          {
+            source: '/__/firebase/init.json',
+            destination: `https://${firebaseAuthProxyTarget}/__/firebase/init.json`,
+          },
+        ]
+      : [];
 
-    return [
-      {
-        source: '/__/auth/:path*',
-        destination: `https://${firebaseAuthProxyTarget}/__/auth/:path*`,
-      },
-      {
-        source: '/__/firebase/init.json',
-        destination: `https://${firebaseAuthProxyTarget}/__/firebase/init.json`,
-      },
-    ];
+    // Maintenance mode (CLAUDE.md §55): a build with MAINTENANCE_MODE=1 sends
+    // every request — pages, APIs, crons on localhost, webhooks — to a 503
+    // handler, so nothing writes to the database. /api/health and Next's own
+    // assets stay reachable. Off by default; costs nothing when off.
+    const maintenance = isMaintenanceBuild()
+      ? [{ source: '/:path((?!api/health|api/maintenance|_next/).*)', destination: '/api/maintenance' }]
+      : [];
+
+    return { beforeFiles: maintenance, afterFiles: firebaseProxy, fallback: [] };
   },
 
   // 301 redirects to preserve link equity when public-facing slugs are renamed.

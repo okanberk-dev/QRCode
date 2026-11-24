@@ -1,37 +1,24 @@
-// Stage 16 §38.86 — Realtime activity feed React hook.
+// Live activity feed React hook (CLAUDE.md §55).
 //
-// Sorumluluklar:
-//  1. /api/realtime/token endpoint'inden JWT al
-//  2. Supabase singleton'a setAuth(token) yaz
-//  3. Postgres `feedback` tablosuna INSERT subscribe et (filter:
-//     restaurant_id=in.(...)). Tablo adı tekil — Prisma model `Feedback`
-//     `@@map("feedback")` kullanıyor (CLAUDE.md schema reference).
-//  4. Incoming row'ları activity event'e çevir + 200ms debounce'lu buffer'a it
-//  5. ~55min'de proactive token refresh (channel kopmaz)
-//  6. Component unmount → channel kapat + flush timer iptal
-//  7. Connection state expose et: connected / connecting / reconnecting / offline / disabled
+//  1. Opens an EventSource on /api/realtime/activity (Server-Sent Events from
+//     our own server; replaced Supabase Realtime in 2026-11)
+//  2. Turns each `feedback` event into an activity item, 200 ms debounced
+//  3. Exposes the connection state: connected / connecting / reconnecting /
+//     offline / disabled. "disabled" = the stream closed before it opened
+//     (signed out, no business): the reload-based feed stays as it is.
 //
-// "Disabled" durumu: env yok veya sunucu 503/403 dönerse — sayfa
-// reload-bazlı CANLI AKIŞ (CLAUDE.md §38.31) korunur, hook subscribe
-// etmez. Bu sayede prod'da SUPABASE_JWT_SECRET unutulsa bile dashboard
-// kırılmaz.
+// The browser reconnects by itself; the server closes each stream after 30
+// minutes so access is re-checked.
 
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   bufferActivityEvents,
   feedbackInsertToActivity,
   type FeedbackInsertRow,
 } from '@/lib/activity-feed-realtime';
 import type { ActivityEvent } from '@/lib/activity-feed';
-import {
-  getSupabaseRealtimeClient,
-  isRealtimeConfigured,
-  peekSupabaseRealtimeClient,
-  setRealtimeAuth,
-} from '@/lib/supabase-realtime';
 
 export type RealtimeStatus =
   | 'idle'
@@ -41,11 +28,6 @@ export type RealtimeStatus =
   | 'offline'
   | 'disabled';
 
-interface TokenResponse {
-  token: string | null;
-  expiresAt: number;
-  restaurantIds: string[];
-}
 
 interface UseRealtimeActivityOptions {
   initialEvents: ActivityEvent[];
@@ -71,26 +53,6 @@ export interface UseRealtimeActivityResult {
   acknowledgeToast: () => void;
 }
 
-const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000; // refresh 5 min before expiry
-
-async function fetchRealtimeToken(): Promise<TokenResponse | null> {
-  try {
-    const res = await fetch('/api/realtime/token', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) {
-      // 401/403/429/503 → caller graceful degrade'e düşer
-      return null;
-    }
-    const data = (await res.json()) as TokenResponse;
-    return data;
-  } catch {
-    return null;
-  }
-}
-
 export function useRealtimeActivity({
   initialEvents,
   restaurantIds,
@@ -110,8 +72,6 @@ export function useRealtimeActivity({
   // tetiklemez, cleanup'ta dispose edilir.
   const pendingRef = useRef<ActivityEvent[]>([]);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const newIdsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
 
@@ -156,118 +116,52 @@ export function useRealtimeActivity({
 
   useEffect(() => {
     isMountedRef.current = true;
-    let canceled = false;
-
-    async function bootstrap() {
-      if (!isRealtimeConfigured()) {
-        setStatus('disabled');
-        return;
-      }
-      setStatus('connecting');
-      // The SDK loads lazily; fetch the token meanwhile (creating the client
-      // opens no connection — the channel subscribe below does).
-      const [client, tokenResponse] = await Promise.all([
-        getSupabaseRealtimeClient(),
-        fetchRealtimeToken(),
-      ]);
-      if (canceled) return;
-      if (!client) {
-        setStatus('disabled');
-        return;
-      }
-      // Only the businesses this feed shows — otherwise a review for another
-      // business would be pushed into the selected business's feed.
-      const wanted = scopeKey ? new Set(scopeKey.split(',')) : null;
-      const feedRestaurantIds = (tokenResponse?.restaurantIds ?? []).filter(
-        (id) => !wanted || wanted.has(id),
-      );
-      if (!tokenResponse || !tokenResponse.token || feedRestaurantIds.length === 0) {
-        setStatus('disabled');
-        return;
-      }
-      setRealtimeAuth(tokenResponse.token);
-
-      // Filter: restaurant_id IN (...). Supabase `in.` filter requires a
-      // CSV value (no surrounding parens). We cap to 50 ids; owner panel
-      // typically has 1-5 restaurants, but defensive cap avoids URL/header
-      // bloat if scope grows unexpectedly.
-      const idsForFilter = feedRestaurantIds.slice(0, 50).join(',');
-      const channel = client
-        .channel(`activity-feed:${feedRestaurantIds[0]}`, {
-          config: {
-            // Acknowledgement değeri INSERT event'lerine gerekmiyor; default
-            // ack:false. Broadcast self yok (server push).
-            broadcast: { ack: false, self: false },
-            presence: { key: '' },
-          },
-        })
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            // Postgres tablosu `public.feedback` (tekil) — Prisma
-            // `@@map("feedback")` ile bağlı. `feedbacks` (çoğul) yazmak
-            // CHANNEL_ERROR + Pasif badge ile sonuçlanır.
-            table: 'feedback',
-            filter: `restaurant_id=in.(${idsForFilter})`,
-          },
-          (payload) => {
-            const row = payload.new as FeedbackInsertRow | null;
-            if (!row) return;
-            const event = feedbackInsertToActivity(row, isTr);
-            if (event) enqueueEvent(event);
-          },
-        )
-        .subscribe((subscriptionStatus) => {
-          if (canceled) return;
-          // supabase-js status enum: SUBSCRIBED | CHANNEL_ERROR |
-          // TIMED_OUT | CLOSED. RealtimeChannel verir; davranış:
-          //  SUBSCRIBED   → connected
-          //  CHANNEL_ERROR / TIMED_OUT → reconnecting (otomatik retry)
-          //  CLOSED       → offline (manuel resubscribe gerek)
-          if (subscriptionStatus === 'SUBSCRIBED') setStatus('connected');
-          else if (subscriptionStatus === 'CHANNEL_ERROR' || subscriptionStatus === 'TIMED_OUT')
-            setStatus('reconnecting');
-          else if (subscriptionStatus === 'CLOSED') setStatus('offline');
-        });
-
-      channelRef.current = channel;
-
-      // Token refresh — exp - 5min'de yeniden mint et + setAuth.
-      const refreshDelay = Math.max(60_000, tokenResponse.expiresAt - Date.now() - TOKEN_REFRESH_MARGIN_MS);
-      refreshTimerRef.current = setTimeout(async function refresh() {
-        const next = await fetchRealtimeToken();
-        if (canceled || !next || !next.token) return;
-        setRealtimeAuth(next.token);
-        const nextDelay = Math.max(60_000, next.expiresAt - Date.now() - TOKEN_REFRESH_MARGIN_MS);
-        refreshTimerRef.current = setTimeout(refresh, nextDelay);
-      }, refreshDelay);
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
+      setStatus('disabled');
+      return;
     }
+    setStatus('connecting');
+    // Only the businesses this feed shows — otherwise a review for another
+    // business would be pushed into the selected business's feed.
+    const qs = scopeKey ? `?restaurantIds=${encodeURIComponent(scopeKey)}` : '';
+    const source = new EventSource(`/api/realtime/activity${qs}`, { withCredentials: true });
+    let opened = false;
 
-    bootstrap();
+    source.onopen = () => {
+      opened = true;
+      setStatus('connected');
+    };
+    source.onerror = () => {
+      if (source.readyState === EventSource.CLOSED) {
+        // Closed before it ever opened: not signed in, no business (204) or
+        // the endpoint is off — keep the reload-based feed quietly.
+        setStatus(opened ? 'offline' : 'disabled');
+      } else {
+        // The browser retries on its own (server sends `retry: 5000`).
+        setStatus('reconnecting');
+      }
+    };
+    source.addEventListener('feedback', (message) => {
+      let row: FeedbackInsertRow;
+      try {
+        row = JSON.parse((message as MessageEvent<string>).data) as FeedbackInsertRow;
+      } catch {
+        return;
+      }
+      const event = feedbackInsertToActivity(row, isTr);
+      if (event) enqueueEvent(event);
+    });
 
     return () => {
-      canceled = true;
       isMountedRef.current = false;
+      source.close();
       if (flushTimerRef.current) {
         clearTimeout(flushTimerRef.current);
         flushTimerRef.current = null;
       }
-      if (refreshTimerRef.current) {
-        clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
       if (newIdsTimerRef.current) {
         clearTimeout(newIdsTimerRef.current);
         newIdsTimerRef.current = null;
-      }
-      const client = peekSupabaseRealtimeClient();
-      if (client && channelRef.current) {
-        client.removeChannel(channelRef.current).catch(() => {
-          // teardown best-effort; uygulama kapanırken hata yutma kabul edilir
-        });
-        channelRef.current = null;
       }
     };
     // initialEvents kasten dep listinde değil — yalnız mount'ta okunur.

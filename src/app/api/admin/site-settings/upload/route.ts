@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
-import { uploadToStorage, isStorageConfigured } from '@/lib/supabase-storage';
+import { saveFile } from '@/lib/file-store';
 
 type Kind = 'logo' | 'favicon';
 
@@ -19,12 +19,6 @@ export async function POST(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized();
   if (admin.role !== 'superadmin') return ApiErrors.forbidden();
-
-  if (!isStorageConfigured()) {
-    return ApiErrors.internalError(
-      'Supabase Storage yapılandırılmamış. SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY env değişkenlerini ayarlayın.'
-    );
-  }
 
   try {
     const formData = await req.formData();
@@ -78,7 +72,8 @@ export async function POST(req: NextRequest) {
     }
 
     const path = `site/${kind}-${Date.now()}.${outExt}`;
-    const publicUrl = await uploadToStorage(outBuffer, path, outMime);
+    // Stored in Postgres (CLAUDE.md §55), served by /files/[...path].
+    const publicUrl = await saveFile(path, outBuffer, outMime);
 
     return NextResponse.json({ url: publicUrl });
   } catch (err) {

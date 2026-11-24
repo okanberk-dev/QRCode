@@ -1,8 +1,10 @@
 # Self-host: Coolify (Vercel'den geçiş)
 
 Hedef: `https://www.buaze.com` (apex `buaze.com` → www), Coolify sunucusu `199.247.6.54` (gnbsite / Pruva ile aynı sunucu,
-Traefik + Let's Encrypt). Veritabanı, dosyalar ve Realtime **Supabase'te kalır**; Upstash, Sentry, Firebase, Resend, PayNKolay aynen
-kullanılır. Sunucu yalnız Next uygulamasını çalıştırır.
+Traefik + Let's Encrypt). 2026-11-24'ten beri veritabanı da bu sunucuda: Coolify PostgreSQL 17 (`buaze-postgres`, iç ağ),
+dosyalar onun içinde (`stored_files`), canlı akış uygulamanın kendi SSE'si (README "Veritabanı ve yedekler", CLAUDE.md §55).
+Supabase yalnız 14 günlük geri dönüş yedeği olarak dokunulmadan bekler. Upstash, Sentry, Firebase, Resend, PayNKolay aynen
+kullanılır.
 
 Neden: repo `okanberk-dev` organizasyonuna taşındı; Vercel Hobby organizasyonun private reposundan deploy almaz.
 
@@ -11,7 +13,7 @@ Neden: repo `okanberk-dev` organizasyonuna taşındı; Vercel Hobby organizasyon
 | Ayar | Değer |
 |---|---|
 | Kaynak | GitHub App (okanberk-dev), repo `okanberk-dev/QRCode`, dal `main`, Auto Deploy açık |
-| Build pack | Nixpacks (Dockerfile yok). Kurulum `npm ci` (postinstall: `prisma generate`), derleme `npm run build`, başlatma `npm run start` |
+| Build pack | Railpack (Dockerfile yok; `railpack.json` çalışma imajına `postgresql-client` (v17) ekler). Kurulum `npm ci` (postinstall: `prisma generate`), derleme `npm run build`, başlatma `npm run start` |
 | Node | `NIXPACKS_NODE_VERSION=22` (CI ile aynı) |
 | Port | Exposes `3000`; Ports Mappings **boş** (Traefik Docker ağından erişir) |
 | Domains | `https://www.buaze.com,https://buaze.com` |
@@ -55,7 +57,7 @@ Gereken ayarlar:
   tanımlanması gerekmez).
 - Faturalama bağlaması (billing spec §5): `NEXT_PUBLIC_SITE_URL=https://www.buaze.com` (açıkça yazılmalı; boşsa bağlama tutmaz),
   `BILLING_ALLOWED_HOSTS=www.buaze.com,buaze.com` (Coolify Domains listesindeki host'lardan en az biri de bu listede olmalı),
-  `BILLING_LIVE_DB_REF=<üretim Supabase proje ref'i>`, `BILLING_HMAC_KEY` ve `BILLING_VAULT_KEY` (32 bayt base64,
+  `BILLING_LIVE_DB_REF=<üretim veritabanı host'u, DATABASE_URL içinde geçen: wgnqbhlzm6nbftv3qqkvzxv3>`, `BILLING_HMAC_KEY` ve `BILLING_VAULT_KEY` (32 bayt base64,
   `openssl rand -base64 32`; çevrimdışı yedeklenir), isteğe bağlı `TRUSTED_PROXIES`. Ardından üretim veritabanında bir kez
   `npx tsx scripts/billing-bind-env.ts --env live`. Bağlama tutmazsa `billing-renewals` hiçbir şey yapmaz (yanıt
   `skipped: "binding"`, Sentry uyarısı `billing-binding-skipped`): bekleyen kart ödemeleri mutabakat görmez, `pending` kalır.
