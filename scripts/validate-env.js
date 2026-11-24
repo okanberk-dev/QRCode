@@ -231,18 +231,30 @@ console.log('[validate-env] ✅ All required environment variables are set.');
 // Database move (CLAUDE.md §55): when NEW_DATABASE_URL is visible at build
 // time, report whether this build can reach it (the build runs migrations
 // and pre-renders pages against DATABASE_URL). Informational, never fails.
+// The result is also written to .build-db-probe.json (shipped in the image,
+// read by the ops scripts) because the build log is not always visible.
 const newDbUrl = envValue('NEW_DATABASE_URL');
+const writeProbe = (result) => {
+  try {
+    fs.writeFileSync('.build-db-probe.json', JSON.stringify({ ...result, at: new Date().toISOString() }) + '\n');
+  } catch {
+    /* read-only checkout: the log line is enough */
+  }
+};
 if (newDbUrl) {
   try {
     const u = new URL(newDbUrl);
     const started = Date.now();
     const socket = require('node:net').connect({ host: u.hostname, port: Number(u.port || 5432), timeout: 3000 });
     socket.once('connect', () => {
-      console.log(`[validate-env] new database reachable from the build (${Date.now() - started} ms)`);
+      const ms = Date.now() - started;
+      console.log(`[validate-env] new database reachable from the build (${ms} ms)`);
+      writeProbe({ reachable: true, ms });
       socket.destroy();
     });
     const fail = (why) => {
       console.warn(`[validate-env] ⚠️  new database NOT reachable from the build (${why})`);
+      writeProbe({ reachable: false, why });
       socket.destroy();
     };
     socket.once('timeout', () => fail('timeout'));

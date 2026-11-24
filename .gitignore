@@ -41,3 +41,6 @@ next-env.d.ts
 .claude/worktrees/
 .claude/settings.local.json
 .mail-audit/
+
+# Build-time database probe (scripts/validate-env.js, CLAUDE.md §55)
+.build-db-probe.json
