@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Live feed end to end (CLAUDE.md §55): opens /api/realtime/activity as the
 // owner, posts a review through /api/feedback and waits for the event.
-// WRITES one feedback row: run it only against the rehearsal copy.
+// WRITES one feedback row and one reply: run it only against the rehearsal copy.
 //   node scripts/db-migration/live-feed-check.mjs --base http://127.0.0.1:3001 --db new
 import { arg, prismaFor, log } from './common.mjs';
 import { openSessions } from './session.mjs';
@@ -44,6 +44,18 @@ try {
   const ev = await read((b) => (b.includes('event: feedback') ? b : null), 10000);
   if (!ev) throw new Error('no live event within 10 s');
   log(`LIVE FEED OK: event received ${Date.now() - t0} ms after the POST`);
+  // Reply flow on the same test review (internal note: the rehearsal copy
+  // runs without the mail key, so nothing is e-mailed).
+  const id = JSON.parse(ev.split('event: feedback')[1].split('data: ')[1].split('\n')[0]).id;
+  const reply = await fetch(`${base}/api/feedback/${id}/reply`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie: s.ownerCookie },
+    body: JSON.stringify({ body: 'Geri bildiriminiz için teşekkür ederiz.', channel: 'internal', confirmResponsibility: true, locale: 'tr' }),
+  });
+  const saved = await prisma.feedbackReply.count({ where: { feedbackId: id } });
+  log(`reply POST ${reply.status}, replies stored ${saved}`);
+  if (!reply.ok || saved < 1) throw new Error('reply flow failed');
+  log('REPLY FLOW OK');
 } catch (e) {
   log(`LIVE FEED FAILED: ${e.message}`);
   process.exitCode = 1;
