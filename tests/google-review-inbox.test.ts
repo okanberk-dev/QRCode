@@ -587,3 +587,35 @@ describe('reply settings and drafts', () => {
     assert.ok(prompt.user.includes('Кофе был холодный'));
   });
 });
+
+// ─── last-line content gate ──────────────────────────────────────────────
+
+import { ReplyContentBlockedError, updateGoogleReviewReply } from '../src/lib/google-business';
+import { sendOutcomeFromError } from '../src/lib/google-reply-jobs';
+
+describe('nothing unsafe reaches Google', () => {
+  const name = 'accounts/1/locations/2/reviews/abc';
+  const integration = {} as Parameters<typeof updateGoogleReviewReply>[0];
+
+  for (const text of ['Siktir git buradan', 'Sen bir aptalsın', 'Yorumunu silersen indirim yaparız', 'fuck you']) {
+    it(`blocks before any request: ${text}`, async () => {
+      let fetched = false;
+      const orig = globalThis.fetch;
+      globalThis.fetch = (async () => { fetched = true; return new Response('{}'); }) as typeof fetch;
+      try {
+        await assert.rejects(updateGoogleReviewReply(integration, name, text), ReplyContentBlockedError);
+      } finally {
+        globalThis.fetch = orig;
+      }
+      assert.equal(fetched, false);
+    });
+  }
+
+  it('the bulk queue fails a blocked reply without retrying', () => {
+    assert.deepEqual(sendOutcomeFromError(new ReplyContentBlockedError(['profanity'])), {
+      ok: false,
+      code: 'CONTENT_BLOCKED',
+      retriable: false,
+    });
+  });
+});

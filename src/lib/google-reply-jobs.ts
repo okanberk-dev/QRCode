@@ -8,6 +8,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { writeAdminAuditLog } from '@/lib/audit-log';
 import {
   GoogleBusinessApiError,
+  ReplyContentBlockedError,
   parseGoogleLocationsCache,
   selectedGoogleLocation,
   updateGoogleReviewReply,
@@ -139,6 +140,7 @@ function prismaReplyStore(restaurantId: string, audit: { actorId: string; actorS
 
 /** Maps a Google error to a queue outcome (retry, pause or fail). */
 export function sendOutcomeFromError(err: unknown): Extract<SendOutcome, { ok: false }> {
+  if (err instanceof ReplyContentBlockedError) return { ok: false, code: 'CONTENT_BLOCKED', retriable: false };
   if (err instanceof GoogleBusinessApiError) {
     const status = err.status;
     const code = err.code ?? 'GOOGLE_ERROR';

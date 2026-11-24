@@ -195,6 +195,10 @@ const ERROR_COPY: Record<string, { tr: string; en: string }> = {
     tr: 'Yanıt, işletme ayarlarındaki yasaklı ifadeleri içeriyor.',
     en: 'The reply contains phrases banned in the business settings.',
   },
+  CONTENT_BLOCKED: {
+    tr: "Yanıt küfür, hakaret ya da uygunsuz ifade içerdiği için Google'a gönderilmedi.",
+    en: 'The reply was not sent to Google because it contains profanity, insults or inappropriate content.',
+  },
   ALREADY_REPLIED: { tr: 'Bu yorum zaten yanıtlanmış.', en: 'This review already has a reply.' },
   ALREADY_QUEUED: { tr: 'Bu yorum zaten gönderim sırasında.', en: 'This review is already being sent.' },
   LOW_RATING_NOT_ALLOWED: {

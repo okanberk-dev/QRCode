@@ -6,6 +6,7 @@ import {
   deleteGoogleReviewReply,
   updateGoogleReviewReply,
   GoogleBusinessApiError,
+  ReplyContentBlockedError,
   GOOGLE_REVIEW_NAME_RE,
 } from '@/lib/google-business';
 import { googleBusinessErrorResponse } from '@/lib/google-business-response';
@@ -136,6 +137,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
     return NextResponse.json({ reply: { ...reply, comment: stored.comment, updateTime: stored.updateTime } });
   } catch (error) {
+    if (error instanceof ReplyContentBlockedError) {
+      const issues = error.issues.filter(isReplyRiskKind);
+      return NextResponse.json(
+        { error: isTr ? 'Bu yanıt gönderilemedi: riskli bir ifade içeriyor.' : 'This reply could not be sent: it contains risky content.', code: 'CONTENT_BLOCKED', issues, messages: replyRiskMessages(issues, isTr ? 'tr' : 'en') },
+        { status: 400 },
+      );
+    }
     if (error instanceof GoogleBusinessApiError) {
       return googleBusinessErrorResponse(error, 'Google yorum yanıtı gönderilemedi.', 'Failed to publish Google reply.', ctx.locale);
     }

@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
+import { checkReplyRisk } from '@/lib/reply-risk';
 import type { PanelActor } from '@/lib/auth';
 import type { Locale } from '@/lib/translations';
 import { decryptToken, encryptToken } from '@/lib/google-token-crypto';
@@ -1131,6 +1132,21 @@ export async function listGoogleReviews(
   };
 }
 
+/**
+ * Thrown when a reply would reach Google with profanity, insults, threats,
+ * hate, pressure, personal data or hidden characters (CLAUDE.md §48, §54).
+ * Last line of defence: routes and the bulk queue check first, but nothing
+ * that calls `updateGoogleReviewReply` can bypass this.
+ */
+export class ReplyContentBlockedError extends Error {
+  issues: string[];
+  constructor(issues: string[]) {
+    super('reply content blocked');
+    this.name = 'ReplyContentBlockedError';
+    this.issues = issues;
+  }
+}
+
 export async function updateGoogleReviewReply(
   integration: GoogleIntegrationRow,
   reviewName: string,
@@ -1144,6 +1160,9 @@ export async function updateGoogleReviewReply(
   if (!GOOGLE_REVIEW_NAME_RE.test(reviewName)) {
     throw new Error('invalid Google review resource name');
   }
+  // Links are checked by the callers against the business's own hosts.
+  const risk = checkReplyRisk(comment, { linksAsWarning: true });
+  if (risk.blocked) throw new ReplyContentBlockedError(risk.issues);
   const url = `${BUSINESS_PROFILE_V4_URL}/${reviewName}/reply`;
   const res = await googleBusinessFetch<{
     comment: string;
