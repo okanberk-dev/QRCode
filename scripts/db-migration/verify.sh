@@ -8,8 +8,12 @@ q_tables="select string_agg(format(\$q\$select %L as t, count(*) as n, coalesce(
 sql_a="$(psql "$a" -XAtc "$q_tables")"
 sql_b="$(psql "$b" -XAtc "$q_tables")"
 ra="$(mktemp)"; rb="$(mktemp)"
-psql "$a" -XAt -F' ' -c "$sql_a order by 1" > "$ra"
-psql "$b" -XAt -F' ' -c "$sql_b order by 1" > "$rb"
+# Floats: Supabase defaults to extra_float_digits=0 (15 significant digits),
+# Postgres 17 to 1 (shortest exact). Same setting on both, so equal values
+# render to the same text.
+fd="set extra_float_digits = 1"
+psql "$a" -XAtq -F' ' -c "$fd" -c "$sql_a order by 1" > "$ra"
+psql "$b" -XAtq -F' ' -c "$fd" -c "$sql_b order by 1" > "$rb"
 na=$(wc -l < "$ra"); nb=$(wc -l < "$rb")
 rows_a=$(awk '{s+=$2} END {print s+0}' "$ra"); rows_b=$(awk '{s+=$2} END {print s+0}' "$rb")
 report="$OPS_DIR/reports/verify-${1//[:\/]/-}-vs-${2//[:\/]/-}-$(ts).txt"
