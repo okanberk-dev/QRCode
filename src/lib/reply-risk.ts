@@ -150,11 +150,13 @@ function hasUnusualCharacters(raw: string): boolean {
 // ─── Profanity extras ───────────────────────────────────────────────────
 
 // "f*ck", "s*kt*r", "b**ch": letters with an asterisk/hash mask between them.
-const MASKED_SWEAR = /\p{L}[*#]+\p{L}/u;
+const MASKED_SWEAR = /\p{L}[*#]+\p{L}|(?<![\p{L}\p{N}])\p{L}[*#]{2,}(?![\p{L}\p{N}*#])/u;
 
 // ─── Insults (run on folded text) ───────────────────────────────────────
 
 const COPULA = '(?:sin(?:iz)?|sun(?:uz)?|\\s+mi(?:sin|siniz)|\\s+herif|\\s+adam|\\s+kadin|\\s+insan)';
+// "You're an animal lover" is a compliment, not an insult.
+const NOT_INSULT_TAIL = '(?![\\s-]+(?:lovers?|friendly|owners?|farmers?|person|people|rights|welfare|shelter|fans?|sanctuary|plant|about|for|enough|health))';
 
 const INSULT: RegExp[] = [
   rx(`${B}aptal(?:sin(?:iz)?|lar|lik|in)?${E}`),
@@ -182,8 +184,31 @@ const INSULT: RegExp[] = [
   rx(`${B}serseri\\p{L}*`),
   rx(`${B}psikopat\\p{L}*`),
   rx(`${B}herif\\p{L}*`),
-  rx(`${B}(?:mal|manyak|hayvan|esek|okuz|domuz|kopek|zavalli|rezil|pislik|ezik)${COPULA}${E}`),
+  rx(`${B}(?:mal|manyak|hayvan|esek|okuz|domuz|kopek|zavalli|rezil|pislik|ezik|ayi|sigir|aval|odun|sersem|hiyar|maganda|hirsiz)${COPULA}${E}`),
   rx(`${B}it\\s+(?:herif|oglu)`),
+  rx(`${B}(?:angut|andaval|mankafa|budala|kafasiz|akilsiz|yuzsuz|utanmaz|onursuz|arsiz|lavuk|kustah|ukala|kendini\\s+bilmez|kaz\\s+kafali)\\p{L}*`),
+  rx(`${B}keko(?:lar|su|lar[ia]?)?${E}`),
+  rx(`${B}asagilik\\p{L}*${E}(?!\\s+kompleks)`),
+  // "Lan / ulan" is rude in any reply; "LAN party / kablosu" is a network.
+  rx(`${B}u?lan${E}(?!\\s*(?:party|parti|kablo|ag|baglanti|port|bator|batur|ude)\\p{L}*)`),
+  // "Defolu" (defective) is a retail word: only the imperative counts.
+  rx(`${B}defol(?:un|sun|sunuz|up|asica)?${E}`),
+  rx(`${B}haddini(?:zi)?\\s+bil`),
+  rx(`${B}agzini(?:zi)?\\s+topla`),
+  rx(`${B}ceneni(?:zi)?\\s+kapa`),
+  rx(`${B}(?:sesini(?:zi)?\\s+kes|kes\\s+sesini)`),
+  rx(`${B}cehenneme\\s+(?:kadar|git|gidin|gidebilir|yolun)`),
+  rx(`${B}canin(?:iz)?\\s+cehenneme`),
+  rx(`${B}belani(?:zi)?\\s+(?:versin|bul)`),
+  rx(`${B}allah(?:'?in)?\\s+belasi`),
+  rx(`${B}(?:seni|sizi)\\s+(?:allah\\s+)?kahret`),
+  rx(`${B}kahrol(?:sun|un|asi\\p{L}*)${E}`),
+  rx(`${B}geberesice\\p{L}*`),
+  rx(`${B}ne\\s+cur'?etle`),
+  // Only with the noun right after "gibi": "sizin gibi değerli misafirleri
+  // kaybetmek istemiyoruz" is an apology, not an insult.
+  rx(`${B}(?:sizin|senin)\\s+gibi(?:ler\\p{L}*|\\s+(?:musteri|insan|kisi|tip)\\p{L}*)\\s+(?:istemiyoruz|istemiyorum|ihtiyacimiz\\s+yok|gerek\\s+yok|gelmesin|gelmeyin|tahammul\\s+edemeyiz)`),
+  rx(`${B}(?:aklin(?:iz)?\\s+(?:yok|kit|almiyor)|beyniniz?\\s+yok|kafan(?:iz)?\\s+(?:calismiyor|basmiyor))`),
   // English
   rx(`${B}idiot\\p{L}*`),
   rx(`${B}stupid${E}`),
@@ -198,13 +223,29 @@ const INSULT: RegExp[] = [
   rx(`${B}low\\s*life${E}`),
   rx(`${B}pathetic${E}`),
   rx(`${B}ignorant${E}`),
-  rx(`${B}you(?:'re|\\s+are)\\s+(?:a\\s+|an\\s+)?(?:joke|disgrace|clown|pig|animal|fool|nobody)${E}`),
+  rx(`${B}(?:cretin|dimwit|halfwit|nitwit|numb?skull|bonehead|airhead|dunce|buffoon|nincompoop|lunatic|nutjob|nutcase|scum|scumbag|cheapskate|freeloader|lowlife|dipstick|twit|jerk|tosser)s?${E}(?!\\s+(?:chicken|pork|sauce|seasoning|spice))`),
+  rx(`${B}you(?:'re|\\s+are|re)\\s+(?:a\\s+|an\\s+|so\\s+|such\\s+(?:a\\s+|an\\s+)?|just\\s+(?:a\\s+|an\\s+)?|nothing\\s+but\\s+(?:a\\s+|an\\s+)?|clearly\\s+(?:a\\s+|an\\s+)?|obviously\\s+(?:a\\s+|an\\s+)?|a\\s+total\\s+|a\\s+complete\\s+)?(?:joke|disgrace|clown|pig|animal|fool|nobody|trash|garbage|rubbish|scum|rat|snake|parasite|crazy|insane|mental|delusional|ungrateful|brat|ridiculous|worthless|useless|disgusting|lying|liar|greedy|entitled\\s+(?:brat|idiot|customer)|troll|fraud|fake)${E}${NOT_INSULT_TAIL}`),
+  rx(`${B}you\\s+(?:suck|stink|people\\s+are)${E}`),
+  rx(`${B}shut\\s+(?:the\\s+\\p{L}+\\s+)?up${E}(?!\\s+shop)`),
+  rx(`${B}go\\s+to\\s+hell${E}`),
+  rx(`${B}how\\s+dare\\s+you${E}`),
+  rx(`${B}get\\s+a\\s+(?:life|brain|clue)${E}`),
+  rx(`(?:^|[.!?,\\n]\\s*)(?:get\\s+lost|grow\\s+up|bite\\s+me|drop\\s+dead)${E}`),
+  rx(`${B}(?:customers|people|guests)\\s+like\\s+you\\s+(?:are\\s+not|aren't|are\\s+never|are\\s+the\\s+(?:reason|problem)|ruin|should)`),
+  rx(`${B}we\\s+(?:don't|do\\s+not)\\s+(?:need|want)\\s+(?:customers|people|guests)\\s+like\\s+you`),
+  rx(`${B}(?:learn\\s+to\\s+read|can\\s+you\\s+even\\s+read|use\\s+your\\s+brain)${E}`),
 ];
 
 // ─── Threats ────────────────────────────────────────────────────────────
 
 const THREAT: RegExp[] = [
-  rx(`${B}(?:seni|sizi)\\s+(?:\\p{L}+\\s+)?(?:oldur|gebert|dov|mahved|mahvet|bitir|yok\\s*ed|ezer|ezeri)\\p{L}*`),
+  // "dov" not followed by "iz": "sizi döviz kuru hakkında..." is about currency.
+  rx(`${B}(?:seni|sizi)\\s+(?:\\p{L}+\\s+)?(?:oldur|gebert|dov(?!iz)|mahved|mahvet|bitir|yok\\s*ed|ezer|ezeri|bicakla|vur(?:acag|dur)|bogaca|asacag|sakat\\s*birak|perisan\\s+ed)\\p{L}*`),
+  rx(`${B}dovdur(?:ur|ecek|ece)\\p{L}*`),
+  rx(`${B}ayagini(?:zi)?\\s+kir`),
+  rx(`${B}(?:dukkanini(?:zi)?|evini(?:zi)?|arabani(?:zi)?|isyerini(?:zi)?)\\s+(?:\\p{L}+\\s+)?(?:yak(?:ar|acag|aca|tir)|yik(?:ar|acag))\\p{L}*`),
+  rx(`${B}(?:olumunu(?:zu)?|olmenizi|olmeni)\\s+(?:istiyorum|diliyorum|bekliyorum)`),
+  rx(`${B}(?:seni|sizi)\\s+(?:\\p{L}+\\s+)?(?:pisman|perisan)\\s+ed(?:er|ecek)\\p{L}*`),
   rx(`${B}seni\\s+bul(?:ur|acag|acak|ucag)\\p{L}*`),
   rx(`${B}adamlarimi?\\s+(?:yollar|gonder)`),
   rx(`${B}kanini(?:zi)?\\s+dok`),
@@ -224,7 +265,12 @@ const THREAT: RegExp[] = [
   rx(`${B}intihar\\s+et(?:in|sene|seniz)`),
   rx(`${B}olsen(?:iz)?\\s+(?:iyi|daha\\s+iyi)`),
   // English
-  rx(`${B}(?:i|we)\\s*(?:will|'ll|am\\s+going\\s+to|'m\\s+going\\s+to|are\\s+going\\s+to|'re\\s+going\\s+to|gonna)\\s+(?:kill|hurt|destroy|beat|ruin)\\s+you`),
+  rx(`${B}(?:i|we)\\s*(?:will|'ll|am\\s+going\\s+to|'m\\s+going\\s+to|are\\s+going\\s+to|'re\\s+going\\s+to|gonna|would|'d|could|can)\\s+(?:\\p{L}+\\s+)?(?:kill|hurt|destroy|beat|ruin|punch|slap|stab|shoot|smash|strangle|choke|bury|crush|wreck|break)\\s+you(?:r\\s+(?:face|legs?|arms?|neck|head|bones|teeth|car|house|windows))?${E}`),
+  rx(`${B}you(?:'ll|\\s+will)\\s+(?:pay\\s+for\\s+(?:this|that|it)|get\\s+what's\\s+coming)${E}`),
+  rx(`${B}(?:i|we)\\s*(?:'ll|will)\\s+make\\s+you\\s+(?:pay|suffer|regret)${E}`),
+  rx(`${B}hope\\s+you\\s+(?:die|rot|choke|suffer|get\\s+(?:sick|hurt|cancer|what\\s+you\\s+deserve))`),
+  rx(`${B}you(?:'d)?\\s+better\\s+watch\\s+(?:out|yourself|it|your\\s+step)`),
+  rx(`${B}(?:burn|torch)\\s+(?:down\\s+)?your\\s+(?:house|car|place|shop)`),
   rx(`${B}(?:i|we)\\s+know\\s+where\\s+you\\s+live`),
   rx(`${B}watch\\s+your\\s+back`),
   rx(`${B}you(?:'ll|\\s+will)\\s+regret${E}`),
@@ -237,7 +283,7 @@ const THREAT: RegExp[] = [
 // ─── Legal intimidation (same sentence: legal term + aimed at the customer)
 
 const LEGAL_TERM = rx(
-  `${B}(?:dava(?:ci\\p{L}*|ya|yi|lar\\p{L}*|si|sini|niz)?${E}|mahkeme\\p{L}*|savci\\p{L}*|suc\\s*duyuru\\p{L}*|tazminat\\p{L}*|avukat\\p{L}*|icra\\p{L}*|polis\\p{L}*|hukuki\\s+(?:surec|islem|yol)\\p{L}*|yasal\\s+(?:surec|islem|yol)\\p{L}*)`,
+  `${B}(?:dava(?:ci\\p{L}*|ya|yi|lar\\p{L}*|si|sini|niz)?${E}|mahkeme\\p{L}*|savci\\p{L}*|suc\\s*duyuru\\p{L}*|tazminat\\p{L}*|avukat\\p{L}*|icra\\p{L}*|polis\\p{L}*|karakol\\p{L}*|jandarma\\p{L}*|hukuki\\s+(?:surec|islem|yol|hak)\\p{L}*|yasal\\s+(?:surec|islem|yol|hak)\\p{L}*|hukuk\\s+(?:birim|ekib|burosu)\\p{L}*|ihtarname\\p{L}*)`,
 );
 const AT_CUSTOMER = rx(
   `${B}(?:hakkiniz?da|hakkinda\\s+(?:siz|sen)|size\\s+karsi|sana\\s+karsi|sizi|seni|sizinle|seninle|aleyhinize|aleyhine|sizden|senden)${E}`,
@@ -251,11 +297,27 @@ const LEGAL_DIRECT: RegExp[] = [
   rx(`${B}our\\s+(?:lawyers?|attorneys?|legal\\s+team)\\s+will`),
   rx(`${B}report\\s+you\\s+to\\s+the\\s+police`),
   rx(`${B}file\\s+a\\s+(?:complaint|lawsuit|claim)\\s+against\\s+you`),
+  rx(`${B}(?:legal\\s+(?:action|steps|measures|proceedings)|lawsuit|press(?:ing)?\\s+charges|charges)\\s+against\\s+you`),
+  rx(`${B}(?:hear|hearing)\\s+from\\s+our\\s+(?:lawyers?|attorneys?|legal\\s+(?:team|department|counsel))`),
+  rx(`${B}our\\s+(?:lawyers?|attorneys?|legal\\s+(?:team|department|counsel))\\s+(?:is|are|has\\s+been|have\\s+been)\\s+(?:informed|notified|contacted|involved)`),
+  rx(`${B}cease\\s+and\\s+desist${E}`),
+  rx(`${B}(?:size|sana)\\s+(?:\\p{L}+\\s+){0,2}?(?:ihtarname|dava\\p{L}*|tazminat\\p{L}*)`),
+  rx(`${B}avukat\\p{L}*\\s+(?:\\p{L}+\\s+)?(?:size|sana)\\s+(?:ulas|donus|yazi|bildirim)\\p{L}*`),
+  rx(`${B}(?:call(?:ing)?|report(?:ing)?)\\s+(?:the\\s+police\\s+on\\s+you|you\\s+to\\s+(?:the\\s+)?(?:police|authorities))`),
+  rx(`${B}(?:sue|suing)\\s+(?:you|for\\s+defamation)`),
 ];
+// "Your review is defamatory / libellous" — calling the customer's words a
+// legal wrong is intimidation even without a direct threat.
+// ("Hakaret" is left out: "personelimizin size hakaret içeren sözleri için
+// özür dileriz" is an apology.)
+const DEFAMATION_CLAIM = rx(`${B}(?:defamatory|defamation|libel(?:l?ous)?|slander(?:ous)?|iftira\\p{L}*)${E}`);
+const CUSTOMER_WORDS = rx(
+  `${B}(?:your\\s+(?:\\p{L}+\\s+)?(?:review|comment|post|claims?|statements?|accusations?|allegations?|words)|yorumunuz\\p{L}*|yorumun\\p{L}*|iddialariniz\\p{L}*|paylasiminiz\\p{L}*|ifadeleriniz\\p{L}*|yazdiklariniz\\p{L}*)${E}`,
+);
 
 // ─── Hate ───────────────────────────────────────────────────────────────
 
-const GROUPS = '(?:suriyeli|arap|kurt|yahudi|ermeni|rum|cingene|multeci|yabanci|siyahi|escinsel|gay|lezbiyen|trans)';
+const GROUPS = '(?:suriyeli|arap|kurt|yahudi|ermeni|rum|cingene|multeci|yabanci|siyahi|escinsel|gay|lezbiyen|trans|afgan|afrikali|alevi|hristiyan|musluman|gocmen|ecnebi|pakistanli|iranli)';
 const HATE: RegExp[] = [
   rx(`${B}zenci\\p{L}*`),
   rx(`${B}kiro(?:lar|su|lari|larin)?${E}`),
@@ -272,6 +334,11 @@ const HATE: RegExp[] = [
   rx(`${B}pis\\s+${GROUPS}\\p{L}*`),
   rx(`${B}${GROUPS}\\p{L}*\\s+(?:defol|gitsin|istemiyoruz|giremez|alinmaz|almiyoruz|yasak)\\p{L}*`),
   rx(`${B}no\\s+(?:blacks|jews|muslims|arabs|gays|refugees|immigrants)\\s+allowed`),
+  rx(`${B}(?:wetbacks?|towelheads?|ragheads?|gooks?|beaners?|sand\\s*niggers?|spics|pakis|kaffirs?|shemales?)${E}`),
+  rx(`${B}kafir(?:ler|sin|siniz|lerin)?${E}`),
+  rx(`${B}go\\s+back\\s+to\\s+(?:your\\s+(?:own\\s+)?country|where\\s+you\\s+came\\s+from)`),
+  rx(`${B}(?:ulkene|ulkenize|memleketine|memleketinize)\\s+(?:geri\\s+)?(?:don(?:un|sun|esin)?|git(?:sin|in)?|defol\\p{L}*)${E}`),
+  rx(`${B}(?:dirty|filthy)\\s+(?:arabs?|jews?|muslims?|immigrants?|refugees?|foreigners?|gypsies|gypsy)${E}`),
 ];
 
 // ─── Review pressure ────────────────────────────────────────────────────
@@ -336,7 +403,7 @@ const EXCHANGE = rx(
 );
 
 const REVIEW_PRESSURE_EN: RegExp[] = [
-  rx(`${B}(?:remove|delete|take\\s+down|withdraw|change|edit|update|revise|raise|increase|amend)\\s+(?:your|the|this)\\s+(?:\\p{L}+\\s+)?(?:review|rating|comment|stars?|feedback)${E}`),
+  rx(`${B}(?:remove|delete|take\\s+down|withdraw|change|edit|update|revise|raise|increase|amend|reconsider|rethink|adjust|modify|retract|bump\\s+up)\\s+(?:your|the|this)\\s+(?:\\p{L}+\\s+)?(?:review|rating|comment|stars?|feedback)${E}`),
   rx(`${B}(?:give|leave)\\s+(?:us\\s+)?(?:a\\s+)?(?:5|five|4|four)[\\s-]*stars?`),
   rx(`${B}\\d\\s*yildiz\\s+(?:ver|birak)(?:in|irseniz|menizi|ir\\s+misiniz|ebilir)`),
 ];
@@ -543,7 +610,9 @@ export function checkReplyRisk(text: string, opts: ReplyRiskOptions = {}): Reply
   if (anyMatch(THREAT, folded)) found.add('threat');
   if (
     anyMatch(LEGAL_DIRECT, folded) ||
-    sentences(folded).some((s) => LEGAL_TERM.test(s) && AT_CUSTOMER.test(s))
+    sentences(folded).some(
+      (s) => (LEGAL_TERM.test(s) && AT_CUSTOMER.test(s)) || (DEFAMATION_CLAIM.test(s) && CUSTOMER_WORDS.test(s)),
+    )
   ) {
     found.add('legal_intimidation');
   }

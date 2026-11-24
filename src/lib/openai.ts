@@ -48,7 +48,7 @@ export interface ChatOptions {
   timeoutMs?: number;
 }
 
-function hasAnthropicKey(): boolean {
+export function hasAnthropicKey(): boolean {
   const key = process.env.ANTHROPIC_API_KEY;
   return !!key && key.length > 10;
 }
@@ -174,6 +174,19 @@ async function anthropicCompletion(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Claude only (no OpenAI fallback) — for callers that need Claude's
+ * judgement specifically, e.g. reply moderation. Null without a key or on
+ * any failure.
+ */
+export async function claudeCompletion(
+  messages: ChatMessage[],
+  opts: ChatOptions = {},
+): Promise<string | null> {
+  if (!hasAnthropicKey()) return null;
+  return anthropicCompletion(messages, opts);
 }
 
 /**

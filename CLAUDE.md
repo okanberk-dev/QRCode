@@ -27,7 +27,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | DB | PostgreSQL **via Supabase** | `DATABASE_URL` (pgbouncer 6543) + `DIRECT_URL` (5432 migration için) |
 | ORM | Prisma 6 | Vercel build'de `prisma migrate deploy`; `npm run db:push` sadece lokal scratch DB |
 | Auth | Custom JWT (`jose`) + httpOnly cookie | `src/lib/auth.ts` — edge compatible |
-| Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil |
+| Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil. `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=www.buaze.com` (2026-11): giriş penceresi `/__/auth/*` proxy'si ile kendi alan adımızda açılır; `buaze-c9039.firebaseapp.com` olursa iPhone'da "missing initial state" hatası çıkar (Safari/Chrome iOS üçüncü taraf depolamayı ayırır). `https://www.buaze.com/__/auth/handler` OAuth istemcisinde kayıtlı. |
 | UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | Elle yazılmış bileşenler + Radix UI primitive'leri (`@radix-ui/react-dialog`, `dropdown-menu`, `tabs`, `tooltip`, `popover`, `select`) headless infrastructure |
 | Server-state | `@tanstack/react-query` | Admin/dashboard fetch dağınıklığı için cache + dedup + retry. `<QueryProvider>` panel layout'unda (`src/app/[locale]/dashboard/layout.tsx`, CLAUDE.md §27) |
 | Charts | recharts | |
@@ -5937,11 +5937,17 @@ Business Profile reply, in-app record) — a threat or hate-speech reply is a
 legal exposure for Buaze, not just the sender. Two independent controls,
 both hard gates with no override:
 
-1. **Content safety** — `src/lib/content-safety.ts` `moderateReplyContent()`.
-   Primary detector: OpenAI Moderation endpoint (`omni-moderation-latest`,
-   free, purpose-built for harassment/threatening/hate/violence — multi-
-   language). Before it, the deterministic risk gate (§48,
-   `src/lib/reply-risk.ts`) — runs with or without `OPENAI_API_KEY`. Wired
+1. **Content safety** — `src/lib/content-safety.ts` `moderateReplyContent()`
+   (bulk: `moderateReplyContents()`). Layer 1: the deterministic risk gate
+   (§48, `src/lib/reply-risk.ts`), always. Layer 2 (AI, any language,
+   catches paraphrased insults / sarcasm): **Claude Haiku** when
+   `ANTHROPIC_API_KEY` is set (2026-11: production has no `OPENAI_API_KEY`,
+   so this is the live AI layer; ~$0.00007 per reply; bulk replies are
+   checked 20 per call, 4 calls in parallel), else OpenAI Moderation
+   (`omni-moderation-latest`). The prompt treats replies as data
+   (`buildModerationMessages`); an unreadable answer or infra failure fails
+   open on the AI layer only (`parseModerationVerdicts` → null). Claude's
+   categories are `ReplyRiskKind`s, so owner copy is specific. Wired
    into `/api/feedback/[id]/reply` POST (422 `content_blocked`) and
    `/api/restaurants/[id]/google/business/reviews/reply` POST (Zod
    `confirmResponsibility: z.literal(true)` + moderation before the Google
@@ -6036,7 +6042,7 @@ etmez. `tests/timezone.test.ts` host TZ'sinden bağımsızlığı sabitler.
 
 ## §48 — Yanıt risk kapısı (kanonik, 2026-11)
 
-İşletmenin müşteriye Buaze üzerinden gönderdiği her yanıt (düşük puana e-posta, dahili yanıt, Google yanıtı) Buaze adıyla çıkar; hukuki ya da gönderici itibarı riski taşıyan her şey **engellenir ve gönderilmez/kaydedilmez** — geçersiz kılma yok. Kaynak: `src/lib/reply-risk.ts` `checkReplyRisk(text, { allowedHosts })` — saf (ağ yok, Prisma yok), sunucu ve istemci aynı kuralları çalıştırır. `moderateReplyContent` (§45) önce bunu, sonra OpenAI moderasyonunu çalıştırır; anahtar yokken de kapı tam çalışır.
+İşletmenin müşteriye Buaze üzerinden gönderdiği her yanıt (düşük puana e-posta, dahili yanıt, Google yanıtı) Buaze adıyla çıkar; hukuki ya da gönderici itibarı riski taşıyan her şey **engellenir ve gönderilmez/kaydedilmez** — geçersiz kılma yok. Kaynak: `src/lib/reply-risk.ts` `checkReplyRisk(text, { allowedHosts })` — saf (ağ yok, Prisma yok), sunucu ve istemci aynı kuralları çalıştırır. `moderateReplyContent` (§45) önce bunu, sonra AI moderasyonunu (Claude Haiku, yoksa OpenAI) çalıştırır; anahtar yokken de kelime kapısı tam çalışır. 2026-11 genişletmesi: Türkçe (lan/defol/haddini bil/çeneni kapa/cehenneme, beddualar, "sizin gibi müşteri istemiyoruz", bıçaklama/yakma tehditleri, ihtarname, iftira iddiası, göçmen/din grupları) ve İngilizce (shut up, go to hell, how dare you, "you're a clown/trash/liar…", "customers like you", hear from our lawyers, defamatory, cease and desist, yeni slurlar, gizlenmiş "f***"). Yanlış pozitif koruması `tests/reply-risk-wide.test.ts`'te (döviz, defolu, jerk chicken, animal lover, "sizi yakar" acı sos…).
 
 Kategoriler (`ReplyRiskKind`): `threat`, `hate`, `profanity` (§47 sözlüğü + yıldızla gizlenmiş küfür + 🖕), `insult` (hakaret: aptal, yalancı, gerizekalı… — "yalancı dolma", "aptalca" gibi masum biçimler geçer), `legal_intimidation` (dava/mahkeme/savcılık/polis + müşteriye yönelik aynı cümlede), `review_pressure` (yorumu sil/kaldır/geri çek, puanı değiştir/yükselt, "5 yıldız verirseniz", "karşılığında indirim" — geçmiş zaman teşekkürü "5 yıldız verdiğiniz için" geçer), `personal_data` (geçerli TCKN, Luhn kart no, mod-97 IBAN), `link` (yalnız işletmenin kayıtlı web sitesi / platform / sosyal linkleri + `buaze.com`; kısaltıcı, IP, `user@host` hilesi, punycode, `[.]` gizleme engellenir; e-posta adresleri link sayılmaz), `markup` (`<script>`, `javascript:`, `onerror=`), `unusual_characters` ("uygunsuz harfler": yön değiştiren / kontrol / tag karakterleri, kelime içinde görünmeyen karakter, aynı kelimede Latin + Kiril/Yunan karışımı, süslü yazı tipi harfleri, zalgo).
 

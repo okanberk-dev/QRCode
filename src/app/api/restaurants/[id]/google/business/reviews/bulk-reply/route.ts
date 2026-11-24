@@ -6,7 +6,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
 import { writePanelAuditLog } from '@/lib/audit-log';
 import { gateConnectedGoogleReviewRoute } from '@/lib/google-review-route';
-import { moderateReplyContent } from '@/lib/content-safety';
+import { moderateReplyContents } from '@/lib/content-safety';
 import { loadReplyAllowedHosts } from '@/lib/reply-allowed-hosts';
 import { isReplyRiskKind, replyRiskMessages } from '@/lib/reply-risk';
 import { findBannedPhrases, readGoogleReplySettings } from '@/lib/google-reply-settings';
@@ -84,6 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const banned = readGoogleReplySettings(restaurant?.googleReplySettings).bannedPhrases;
 
   const rejected: Rejection[] = [];
+  const toModerate: typeof items = [];
   for (const item of items) {
     const row = byId.get(item.reviewId);
     if (!row) {
@@ -107,12 +108,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       rejected.push({ reviewId: item.reviewId, code: 'BANNED_PHRASE', phrases });
       continue;
     }
-    const safety = await moderateReplyContent(item.comment, { allowedHosts });
-    if (safety.blocked) {
-      const issues = safety.categories.filter(isReplyRiskKind);
-      rejected.push({ reviewId: item.reviewId, code: 'CONTENT_BLOCKED', messages: replyRiskMessages(issues, isTr ? 'tr' : 'en') });
-    }
+    toModerate.push(item);
   }
+  // One batched check (word lists + AI) for every reply that passed the rest.
+  const safety = await moderateReplyContents(
+    toModerate.map((i) => i.comment),
+    { allowedHosts },
+  );
+  safety.forEach((result, k) => {
+    if (!result.blocked) return;
+    const issues = result.categories.filter(isReplyRiskKind);
+    rejected.push({
+      reviewId: toModerate[k].reviewId,
+      code: 'CONTENT_BLOCKED',
+      messages: replyRiskMessages(issues, isTr ? 'tr' : 'en'),
+    });
+  });
   if (rejected.length > 0) {
     return NextResponse.json(
       {
