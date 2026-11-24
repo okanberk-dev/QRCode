@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveDatabaseUrl } from '../src/lib/database-url';
+import { effectiveDatabaseUrl, resolveDatabaseUrl } from '../src/lib/database-url';
 
 const TX = 'postgres://postgres.ref:p%40ss%2Fw0rd@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20';
 
@@ -36,4 +36,10 @@ test('leaves other addresses alone', () => {
     assert.equal(resolveDatabaseUrl(url, undefined), url);
   }
   assert.equal(resolveDatabaseUrl(undefined, undefined), undefined);
+});
+
+test('next build keeps the transaction pooler (worker processes would exceed the session cap)', () => {
+  assert.equal(effectiveDatabaseUrl({ DATABASE_URL: TX, NEXT_PHASE: 'phase-production-build' }), TX);
+  assert.equal(effectiveDatabaseUrl({ DATABASE_URL: TX, IS_NEXT_WORKER: 'true' }), TX);
+  assert.equal(new URL(effectiveDatabaseUrl({ DATABASE_URL: TX })!).port, '5432');
 });

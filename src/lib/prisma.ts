@@ -12,4 +12,7 @@ export const prisma =
     ...(datasourceUrl ? { datasourceUrl } : {}),
   });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// One client (one connection pool) per process, also in production: the
+// session pooler caps clients, so a duplicated module must not open a
+// second pool.
+globalForPrisma.prisma = prisma;

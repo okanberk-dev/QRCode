@@ -35,6 +35,13 @@ export function resolveDatabaseUrl(raw: string | undefined, mode: string | undef
   return url.toString();
 }
 
-export function effectiveDatabaseUrl(): string | undefined {
-  return resolveDatabaseUrl(process.env.DATABASE_URL, process.env.DATABASE_POOL_MODE);
+/**
+ * `next build` pre-renders pages in several worker processes, each with its
+ * own Prisma pool; through the session pooler they exceed its 15-client cap
+ * (EMAXCONNSESSION, failed deploy 2026-11-24). The build therefore keeps the
+ * transaction pooler; only the single long-lived server process switches.
+ */
+export function effectiveDatabaseUrl(env: Record<string, string | undefined> = process.env): string | undefined {
+  if (env.NEXT_PHASE === 'phase-production-build' || env.IS_NEXT_WORKER === 'true') return env.DATABASE_URL;
+  return resolveDatabaseUrl(env.DATABASE_URL, env.DATABASE_POOL_MODE);
 }
