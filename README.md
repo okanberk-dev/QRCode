@@ -206,7 +206,8 @@ Veritabanı Supabase'ten (ABD, Virginia) uygulamayla aynı Coolify sunucusuna (F
 
 `MAINTENANCE_MODE=1` (Build + Runtime) ile yeniden deploy: her istek (sayfalar, API'ler, konteyner içi cron çağrıları,
 webhook'lar) 503 bakım sayfasına gider; yalnız `/api/health` açık kalır, böylece veritabanına hiçbir şey yazılmaz. Değişkeni
-silip yeniden deploy edince kapanır. Ayar derlemeye gömülür; açmak da kapatmak da bir deploy sürer (~4 dk).
+silip yeniden deploy edince kapanır. Ayar derlemeye gömülür; açmak bir deploy sürer (~4 dk). Daha hızlı kapatmak için
+değişkeni silip Coolify → Rollback ile bakım öncesi imajı seçin (~1 dk, yeniden derleme yok).
 
 ### Supabase'e geri dönüş (en geç 2026-12-08)
 
