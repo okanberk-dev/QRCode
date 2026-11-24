@@ -35,7 +35,8 @@ Mostly done 2026-11-21 (§38.263): owner home 40 -> 16 SQL statements now run wi
 
 Audit done (branch `perf/db-roundtrips` exists locally with no commits; recreate from main). Findings:
 - Live `SELECT 1` takes 500-600 ms (`/api/health?db=1`) although app and DB are both in Frankfurt. `DATABASE_URL` still uses port 6543 + `pgbouncer=true`.
-- **Do first (owner action, Coolify):** in the Production env var `DATABASE_URL` change `:6543` to `:5432`, delete `pgbouncer=true`, keep `connection_limit=10`; redeploy; re-measure `/api/health?db=1`. If `selectOneMs` drops to single digits, most of the slowness is gone and 2.3 gains shrink. Do not use `DIRECT_URL` (may be IPv6-only). Revert by setting the port back to 6543.
+- **Done 2026-11-24 in code** (`src/lib/database-url.ts`): the app derives the 5432 session-pool address from the stored URL (connection_limit 5); measured on the server 467 ms -> 95 ms per query. The app is in Frankfurt but the database is in us-east-1 (~95 ms per round trip), so moving the database to eu-central-1 is the remaining big win. Revert: `DATABASE_POOL_MODE=transaction`.
+- (Old note) **Do first (owner action, Coolify):** in the Production env var `DATABASE_URL` change `:6543` to `:5432`, delete `pgbouncer=true`, keep `connection_limit=10`; redeploy; re-measure `/api/health?db=1`. If `selectOneMs` drops to single digits, most of the slowness is gone and 2.3 gains shrink. Do not use `DIRECT_URL` (may be IPv6-only). Revert by setting the port back to 6543.
 - The code issue: `prisma.$transaction([...])` array form runs queries sequentially, one round trip each plus BEGIN/COMMIT (75 places; history: pooler `connection_limit=1`, CLAUDE.md §14). With `connection_limit=10` `Promise.all` is safe (chunk big arrays).
 - No N+1 on page paths (only two seed scripts). No `unstable_cache` / `"use cache"` anywhere. All panel pages are `force-dynamic`.
 

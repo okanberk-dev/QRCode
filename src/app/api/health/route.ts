@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { effectiveDatabaseUrl } from '@/lib/database-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ async function dbProbe() {
   let port: string | null = null;
   let params: Record<string, string> = {};
   try {
-    const u = new URL(process.env.DATABASE_URL ?? '');
+    const u = new URL(effectiveDatabaseUrl() ?? '');
     port = u.port || null;
     const safe = new Set(['pgbouncer', 'connection_limit', 'pool_timeout', 'connect_timeout', 'sslmode']);
     params = Object.fromEntries([...u.searchParams.entries()].filter(([k]) => safe.has(k)));
