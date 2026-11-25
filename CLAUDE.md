@@ -5386,6 +5386,7 @@ Yeni session bir kural belirlediyse, hangi §'ye gider:
 | Panel hızı: Server-Timing, Coolify Redis, prefetch, Google Yorumları sunucu verisi, önbellekler | §56 |
 | Özellik analizi: kullanım verisi, menü yapısı, gizlenen araçlar, kaldırılan pazarlama sayfaları | §57 |
 | Panel metrikleri: puan / yönlendirme / geri bildirim, yanıt süresi, sağlık skoru yanıt oranı, ortak grafik, ⓘ tanımları | §58 |
+| Alt işleyiciler / barındırma / AI sağlayıcısı tek liste, yasal metin yer tutucuları | §59 |
 
 Yeni konu ortaya çıkarsa yeni `## §X` ekle; ama önce `grep -n "^## " CLAUDE.md` ile mevcut §-lere baktıktan sonra (overlap riski).
 
@@ -6228,3 +6229,7 @@ Yüksek puan yönlendirmeleri eskiden `comment = 'High Rating Redirect'` ile yor
 - **Düzen**: panel sayfaları en çok 1280 px, kartlar arası 24 px, kart içi 24 px (mobilde 16); etiketler 12–13 px normal yazı (büyük harf mono etiket yok). Kaydırma sütunu `bg-[#FAFAFA]` (gri bant içerik ortasında kesilmez).
 - **Yapma**: yönlendirmeyi yorum gibi saymak ya da AI'a göndermek; ortalama yanıt süresi; `%999+`; KPI'yı tanımsız bırakmak.
 
+## §59 — Alt işleyiciler tek kaynak (kanonik, 2026-11-25)
+
+`src/lib/legal/subprocessors.ts` barındırma (Vultr, Frankfurt), yapay zekâ (Anthropic birincil, OpenAI yalnız yedek: `src/lib/openai.ts` önce `ANTHROPIC_API_KEY`'i kullanır) ve tüm dış servislerin tek listesidir. Veri İşleyici Sözleşmesi tabloyu `{{SUBPROCESSOR_TABLE}}`, ABD aktarım listesini `{{SUBPROCESSOR_TRANSFER_LIST}}` ile alır; `loadActiveLegalDocumentRendered` bu değerleri koddan doldurur (admin değişkenleri ezemez). Ana sayfa "Müşteri verisi", `/google-compliance` ve `/features/pulse-ai` `DATA_COPY`'den okur. Geçiş notu (`TRANSITION`, Supabase/Upstash) 2026-12-08'den sonra kendiliğinden kalkar; o gün `TRANSITION` silinir. Migration `20261128100000_legal_subprocessors` yayımlı DB kopyalarındaki eski tabloyu yer tutucuyla değiştirir.
+- **Yapma**: yeni dış servisi yalnız bir sayfaya yazma; önce `SUBPROCESSORS`'a ekle (yeni alt işleyici için 30 gün önceden bildirim, DPA §6).

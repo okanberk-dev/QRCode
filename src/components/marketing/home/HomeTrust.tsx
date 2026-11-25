@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Check, Database, MessageSquareText } from 'lucide-react';
 import SectionHeader from './SectionHeader';
+import { DATA_COPY } from '@/lib/legal/subprocessors';
 
 /**
  * Trust — the homepage's single place for the review rules and data
@@ -30,8 +31,8 @@ const COPY = {
       items: [
         'Müşteri formunda KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır.',
         'IP adresleri 90 gün sonra anonimleştirilir.',
-        "Veritabanı AB'de (Frankfurt) çalışır; bazı alt işleyiciler ABD'dedir ve Veri İşleyici Sözleşmesi'nde listelenir.",
-        'Pulse AI taslakları ve analitikteki yapay zekâ konu özetleri için geri bildirim metni yapay zekâ sağlayıcısına (OpenAI) gönderilir.',
+        DATA_COPY.hosting.tr,
+        `Pulse AI taslakları ve analitikteki yapay zekâ konu özetleri için ${DATA_COPY.aiSent.tr}.`,
         'Hesap verilerinizi JSON olarak indirebilirsiniz; hesabınızı silerseniz 30 gün içinde geri alabilirsiniz.',
       ],
       links: [
@@ -60,8 +61,8 @@ const COPY = {
       items: [
         "The customer form asks for consent under KVKK, Turkey's data protection law; marketing consent is separate and off by default.",
         'IP addresses are anonymised after 90 days.',
-        'The database runs in the EU (Frankfurt); some sub-processors are in the US and are listed in the Data Processing Agreement.',
-        'For Pulse AI drafts and the AI topic summaries in analytics, the feedback text is sent to an AI provider (OpenAI).',
+        DATA_COPY.hosting.en,
+        `For Pulse AI drafts and the AI topic summaries in analytics, ${DATA_COPY.aiSent.en}.`,
         'You can export your account data as JSON, and if you delete your account you can undo it within 30 days.',
       ],
       links: [

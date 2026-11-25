@@ -8,6 +8,7 @@ import {
 } from './keys';
 import { getLegalTemplateDefault, type LegalTemplateContent } from './templates';
 import { loadLegalVariableMap, substituteLegalVariables } from './variables';
+import { subprocessorLegalVars } from './subprocessors';
 
 /**
  * In-process cache — Vercel serverless cold start'ta sıfırlanır, kabul
@@ -126,10 +127,13 @@ export async function loadActiveLegalDocumentRendered(
   key: LegalDocumentKey,
   locale: LegalLocale,
 ): Promise<LegalDocumentSnapshot> {
-  const [snapshot, vars] = await Promise.all([
+  const [snapshot, adminVars] = await Promise.all([
     loadActiveLegalDocument(key, locale),
     loadLegalVariableMap(),
   ]);
+  // Sub-processor list comes from code (lib/legal/subprocessors.ts), never
+  // from admin variables, so it always matches the real infrastructure.
+  const vars = { ...adminVars, ...subprocessorLegalVars(locale === 'en' ? 'en' : 'tr') };
   return {
     ...snapshot,
     title: substituteLegalVariables(snapshot.title, vars),

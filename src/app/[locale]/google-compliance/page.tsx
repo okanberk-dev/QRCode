@@ -17,6 +17,7 @@ import {
   TEXT_LINK,
 } from '@/components/marketing/commercial/styles';
 import type { Locale } from '@/lib/translations';
+import { DATA_COPY } from '@/lib/legal/subprocessors';
 
 // ISR (1 day): trust/policy content changes rarely.
 export const revalidate = 86400;
@@ -177,7 +178,7 @@ const COPY = {
       },
       {
         q: 'Pulse AI müşteri yorumlarını değiştiriyor mu?',
-        a: 'Hayır. Pulse AI yalnızca sizin yanıtınız için taslak hazırlar; taslağı siz düzenler ve onaylarsınız, onayınız olmadan hiçbir yanıt gönderilmez. Taslak hazırlanırken geri bildirim metni yapay zekâ sağlayıcımız OpenAI’ye gönderilir.',
+        a: 'Hayır. Pulse AI yalnızca sizin yanıtınız için taslak hazırlar; taslağı siz düzenler ve onaylarsınız, onayınız olmadan hiçbir yanıt gönderilmez. Taslak hazırlanırken ' + DATA_COPY.aiSent.tr + '.',
       },
       {
         q: 'Buaze, Google’ın iş ortağı mı?',
@@ -185,7 +186,7 @@ const COPY = {
       },
       {
         q: 'Müşteri verileri nasıl işleniyor?',
-        a: 'Formlarda KVKK aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanımız AB’de (Frankfurt) çalışır; bazı alt işleyicilerimiz ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir.',
+        a: 'Formlarda KVKK aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. ' + DATA_COPY.hosting.tr,
       },
     ],
     cta: {
@@ -306,7 +307,7 @@ const COPY = {
       },
       {
         q: 'Does Pulse AI change customer reviews?',
-        a: 'No. Pulse AI only drafts your reply; you edit and approve the draft, and no reply is sent without your approval. To prepare the draft, the feedback text is sent to our AI provider, OpenAI.',
+        a: 'No. Pulse AI only drafts your reply; you edit and approve the draft, and no reply is sent without your approval. To prepare the draft, ' + DATA_COPY.aiSent.en + '.',
       },
       {
         q: 'Is Buaze a Google partner?',
@@ -314,7 +315,7 @@ const COPY = {
       },
       {
         q: 'How is customer data processed?',
-        a: 'Forms show a KVKK notice and an explicit consent box; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. Our database runs in the EU (Frankfurt); some of our sub-processors are in the US and are listed in the Data Processing Agreement.',
+        a: 'Forms show a KVKK notice and an explicit consent box; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. ' + DATA_COPY.hosting.en,
       },
     ],
     cta: {

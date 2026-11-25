@@ -5,6 +5,7 @@ import FeaturePageLayout, { type FeaturePageCopy, type FeatureSchemaInfo } from 
 import { buildFeatureMetadata, isFeatureLocale, type FeatureLocale } from '@/lib/seo/feature-schema';
 import { relatedFeatureLinks } from '../_components/feature-catalog';
 import { PulseAiMock } from '../_components/mocks';
+import { DATA_COPY } from '@/lib/legal/subprocessors';
 
 // /features/pulse-ai — reply drafts for QR feedback. Facts from
 // src/lib/ai-draft.ts (3 tones, TR/EN, 2–4 sentences, ≤ 80 words, no
@@ -59,7 +60,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           'Taslaklar 2–4 cümle ve en fazla 80 kelimedir; emoji içermez, olumsuz yorumlarda ikram, indirim ya da hediye vaat etmez. Tonu sıcak, resmi veya özür dileyen olarak siz seçersiniz; taslaklar Türkçe ya da İngilizce hazırlanır.',
           'Pulse AI yanıtı sizin yerinize göndermez. Taslağı olduğu gibi kullanabilir, düzenleyebilir ya da silip kendi yanıtınızı yazabilirsiniz; gönder düğmesine basan her zaman sizsiniz.',
         ],
-        note: 'Taslak ve özet hazırlamak için geri bildirim metni yapay zekâ sağlayıcımız OpenAI’a gönderilir.',
+        note: `Taslak ve özet hazırlamak için ${DATA_COPY.aiSent.tr}.`,
         noteLink: { href: `${base}/veri-isleyici-sozlesmesi`, label: 'Alt işleyicileri görün' },
       },
       capabilities: {
@@ -163,7 +164,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             q: 'Hangi yapay zekâ sağlayıcısı kullanılıyor?',
-            a: 'Yapay zekâ sağlayıcımız OpenAI’dır. Taslak için işletmenizin adı ve türü ile müşterinin puanı, yorumu, geldiği platform ve varsa adı; özet için yalnızca puan ve yorum OpenAI’a gönderilir. Müşterinin e-posta adresi ve telefonu gönderilmez. Kullandığımız alt işleyiciler Veri İşleyici Sözleşmesi’nde listelenir.',
+            a: `Yapay zekâ sağlayıcımız ${DATA_COPY.aiProvider.tr}. Taslak için işletmenizin adı ve türü ile müşterinin puanı, yorumu, geldiği platform ve varsa adı; özet için yalnızca puan ve yorum gönderilir.`+ ' Müşterinin e-posta adresi ve telefonu gönderilmez. Kullandığımız alt işleyiciler Veri İşleyici Sözleşmesi’nde listelenir.',
           },
           {
             q: 'Yapay zekâ kullanılamazsa ne olur?',
@@ -195,7 +196,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         'Drafts are 2–4 sentences and at most 80 words; they contain no emoji and never promise free items, discounts or gifts in reply to a negative review. You choose a warm, formal or apologetic tone, and drafts are written in Turkish or English.',
         'Pulse AI never sends a reply for you. You can use the draft as it is, edit it, or delete it and write your own; you are always the one who presses send.',
       ],
-      note: 'To prepare drafts and summaries, the feedback text is sent to our AI provider, OpenAI.',
+      note: `To prepare drafts and summaries, ${DATA_COPY.aiSent.en}.`,
       noteLink: { href: `${base}/veri-isleyici-sozlesmesi`, label: 'See our sub-processors' },
     },
     capabilities: {
@@ -299,7 +300,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           q: 'Which AI provider is used?',
-          a: 'Our AI provider is OpenAI. For a draft, your business name and type and the customer’s rating, comment, platform and, if given, name are sent to OpenAI; for a summary, only the rating and the comment. The customer’s e-mail address and phone number are not sent. The sub-processors we use are listed in the Data Processing Agreement.',
+          a: `Our AI provider is ${DATA_COPY.aiProvider.en}. For a draft, your business name and type and the customer’s rating, comment, platform and, if given, name are sent; for a summary, only the rating and the comment.` + ' The customer’s e-mail address and phone number are not sent. The sub-processors we use are listed in the Data Processing Agreement.',
         },
         {
           q: 'What happens if AI is unavailable?',

@@ -41,7 +41,7 @@ Hukuki dayanak: meşru menfaat veya açık rıza.
 Kullanım istatistiği ve performans ölçümü için kullanılır. Örnekler:
 
 - Sayfa görüntüleme sayıları
-- Yavaş sayfa tespiti (Vercel Speed Insights, Sentry performance)
+- Yavaş sayfa tespiti (Sentry performans)
 
 Hukuki dayanak: açık rızanız (KVKK m. 5/1) veya yeterli anonimleştirme sağlandığında meşru menfaat.
 
@@ -53,7 +53,7 @@ Hukuki dayanak: açık rızanız (KVKK m. 5/1) veya yeterli anonimleştirme sağ
 
 Aşağıdaki üçüncü taraf hizmetler kendi çerezlerini bırakabilir:
 
-- Vercel (altyapı + analytics)
+- Vultr (sunucu altyapısı, Frankfurt)
 - Sentry (hata izleme)
 - {{ANALYTICS_PROVIDER}} (analitik) — eklenmesi durumunda
 - Google reCAPTCHA Enterprise (bot koruması)
@@ -118,7 +118,7 @@ Legal basis: legitimate interests or explicit consent.
 Usage statistics and performance measurement. Examples:
 
 - Page view counts
-- Slow-page detection (Vercel Speed Insights, Sentry performance)
+- Slow-page detection (Sentry performance)
 
 Legal basis: your explicit consent (KVKK Art. 5/1), or legitimate interests where adequately anonymised.
 
@@ -130,7 +130,7 @@ Used to show campaigns and content tailored to your interests. They run **only**
 
 The following third-party services may set their own cookies:
 
-- Vercel (infrastructure + analytics)
+- Vultr (server infrastructure, Frankfurt)
 - Sentry (error monitoring)
 - {{ANALYTICS_PROVIDER}} (analytics) — where added
 - Google reCAPTCHA Enterprise (bot protection)

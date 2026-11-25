@@ -60,23 +60,15 @@ Buaze, KVKK m. 12/3 uyarınca veri sorumlusu ile birlikte veri güvenliğinden m
 
 Buaze, hizmetin sunulması için aşağıdaki alt yüklenicileri **açıkça onaylı** olarak kullanır:
 
-| Alt yüklenici | Hizmet kategorisi | Veri lokasyonu |
-|---|---|---|
-| Supabase | PostgreSQL veritabanı + dosya depolama | EU (Frankfurt) |
-| Vercel | Hosting / serverless çalıştırma | ABD (us-east-1) |
-| Resend | İşlemsel e-posta gönderimi | ABD |
-| OpenAI | Pulse AI yanıt taslakları ve geri bildirim özetleri; analitikte öne çıkan konular ve haftalık özet değerlendirmesi | ABD |
-| Sentry | Hata izleme + performans | ABD |
-| Upstash | Rate limit + cache | EU (Frankfurt) |
-| Firebase | Google OAuth (yalnız oturum açma) | AB / ABD |
+{{SUBPROCESSOR_TABLE}}
 
 İşletme, hesap oluşturarak bu alt yüklenici listesini açıkça kabul eder. Yeni alt yüklenici eklenmesi durumunda 30 gün önceden bildirim yapılır; İşletme makul gerekçe ile itiraz edebilir, itirazı kabul edilirse hizmet etkilenen kısımda yeniden konfigüre edilir veya İşletme dönem sonunda aboneliği fesheder (iade yapılmaz).
 
 ## 7. Yurt dışı aktarım
 
-KVKK m. 9 kapsamında, alt-yüklenicilerin bulunduğu ülkelere veri aktarımı gerçekleşir. **ABD** (Vercel, Resend, OpenAI, Sentry, Firebase) için Kişisel Verileri Koruma Kurulu'nun yeterli koruma kararı bulunmadığından, transfer KVKK m. 9/2(b) **açık rıza** ve/veya m. 9/2(a) **taahhütname** çerçevesinde yapılır.
+KVKK m. 9 kapsamında, alt-yüklenicilerin bulunduğu ülkelere veri aktarımı gerçekleşir. **ABD** ({{SUBPROCESSOR_TRANSFER_LIST}}) için Kişisel Verileri Koruma Kurulu'nun yeterli koruma kararı bulunmadığından, transfer KVKK m. 9/2(b) **açık rıza** ve/veya m. 9/2(a) **taahhütname** çerçevesinde yapılır.
 
-İşletme, platformu kullanmaya başlamasıyla yurt dışı aktarım açık rızasını verir; aktarım yalnızca yukarıdaki tabloda belirtilen amaçlarla yapılır. Açık rıza geri alındığında ilgili hizmet özellikleri (Pulse AI taslak, transactional mail, hata izleme) devre dışı kalır.
+İşletme, platformu kullanmaya başlamasıyla yurt dışı aktarım açık rızasını verir; aktarım yalnızca yukarıdaki tabloda belirtilen amaçlarla yapılır. Açık rıza geri alındığında ilgili hizmet özellikleri (Pulse AI taslak, işlemsel e-posta, hata izleme) devre dışı kalır.
 
 ## 8. Veri ihlali bildirimi
 
@@ -164,21 +156,13 @@ Under KVKK Art. 12/3 Buaze is jointly responsible with the controller for data s
 
 Buaze relies on the following **explicitly approved** sub-processors:
 
-| Sub-processor | Service category | Data region |
-|---|---|---|
-| Supabase | PostgreSQL database + file storage | EU (Frankfurt) |
-| Vercel | Hosting / serverless runtime | USA (us-east-1) |
-| Resend | Transactional e-mail | USA |
-| OpenAI | Pulse AI reply drafts and feedback summaries; analytics topics and the weekly summary assessment | USA |
-| Sentry | Error tracking + performance | USA |
-| Upstash | Rate limit + cache | EU (Frankfurt) |
-| Firebase | Google OAuth (sign-in only) | EU / USA |
+{{SUBPROCESSOR_TABLE}}
 
 By creating an account the Business expressly accepts this sub-processor list. Buaze gives 30 days' notice before adding a new sub-processor; the Business may object on reasonable grounds, in which case the affected service is reconfigured or the Business may terminate the subscription at the end of the period (no refund).
 
 ## 7. Cross-border transfers
 
-Personal data is transferred to sub-processor regions listed above. **USA transfers** (Vercel, Resend, OpenAI, Sentry, Firebase) take place under KVKK Art. 9/2(b) **explicit consent** and/or Art. 9/2(a) **undertaking**, since the Turkish data protection authority has not issued an adequacy decision for the USA.
+Personal data is transferred to sub-processor regions listed above. **USA transfers** ({{SUBPROCESSOR_TRANSFER_LIST}}) take place under KVKK Art. 9/2(b) **explicit consent** and/or Art. 9/2(a) **undertaking**, since the Turkish data protection authority has not issued an adequacy decision for the USA.
 
 The Business gives explicit consent for cross-border transfers when activating the platform; transfers are limited to the purposes listed in the table above. If consent is withdrawn, the related service features (Pulse AI drafts, transactional mail, error tracking) are disabled.
 

@@ -91,7 +91,7 @@ Buaze, hizmet kalitesini sağlamak ve güvenlik olaylarını soruşturmak amacı
 
 ## 13. Mücbir sebep
 
-Doğal afet, salgın, savaş, kamu otoritesi kararları, internet altyapısının genel arızası, Tier 1 sağlayıcının kesintisi, alt yüklenicinin (Supabase, Vercel, Resend, OpenAI vb.) hizmet kesintisi gibi taraflar dışındaki olaylar mücbir sebep sayılır; bu sürede yükümlülükler askıya alınır ve Buaze gecikmeden sorumlu tutulmaz.
+Doğal afet, salgın, savaş, kamu otoritesi kararları, internet altyapısının genel arızası, Tier 1 sağlayıcının kesintisi, alt yüklenicinin (Vultr, Anthropic, Resend vb.) hizmet kesintisi gibi taraflar dışındaki olaylar mücbir sebep sayılır; bu sürede yükümlülükler askıya alınır ve Buaze gecikmeden sorumlu tutulmaz.
 
 ## 14. Bildirim
 
@@ -199,7 +199,7 @@ Buaze may inspect Customer restaurant data (reviews, usage stats, system logs) o
 
 ## 13. Force majeure
 
-Natural disasters, pandemics, war, public authority decisions, large-scale internet outages, Tier 1 provider failures, sub-processor outages (Supabase, Vercel, Resend, OpenAI, etc.) and similar events outside the parties' control are deemed force majeure; obligations are suspended for their duration and Buaze is not liable for delays.
+Natural disasters, pandemics, war, public authority decisions, large-scale internet outages, Tier 1 provider failures, sub-processor outages (Vultr, Anthropic, Resend, etc.) and similar events outside the parties' control are deemed force majeure; obligations are suspended for their duration and Buaze is not liable for delays.
 
 ## 14. Notices
 
