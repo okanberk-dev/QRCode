@@ -44,7 +44,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 
 | Veri | Nerede | Not |
 |---|---|---|
-| Veritabanı | Supabase PostgreSQL | Kalıcı (tüm ana veri) |
+| Veritabanı | PostgreSQL 17, Coolify'da uygulamayla aynı sunucu (§55; 2026-11-25'e kadar Supabase) | Kalıcı (tüm ana veri), günlük yedek |
 | Menü ürün görselleri | **Postgres TEXT kolonu** (`menu_items.image_url`) | Base64 data URL (`data:image/webp;base64,...`) — Vercel ephemeral FS riskini atlatır. Şemada `@db.Text` ile zorlanır (2026-04 audit fix). |
 | Menü logosu | **Postgres TEXT kolonu** (`restaurants.menu_logo_url`) | Aynı şekilde base64 data URL. `@db.Text` zorunlu. |
 | Menü kapağı | **Postgres TEXT kolonu** (`restaurants.menu_cover_url`) + `menu_cover_version` | Raster data URL, en çok 520.000 karakter (`CoverWrite`; SVG / http yok). Herkese açık menüde yalnız `/api/menu/[slug]/img/cover?v=<menu_cover_version>` üzerinden servis edilir; sürüm, kapakla birlikte yazılan sha1 önekidir, böylece sayfa blob'u hiç yüklemez. |
@@ -353,7 +353,7 @@ Aşağıdakiler **bilinçli kararlar** — değiştirmek için güçlü sebep ge
 - Production/Preview schema değişikliği için `npm run db:push` kullanma. Bu script yalnızca lokal scratch DB içindir; kalıcı değişiklik migration olarak commitlenir.
 - **Ortak abstraction'lar** (shared PLATFORM_CONFIG modülü gibi) **üç yerden fazla tekrar** olmadıkça yazma.
 - **AI / otomasyon / rol refactor** ekleme — kullanıcının açıkça istediği scope'a sadık kal.
-- **Disk'e yazma** — Vercel serverless ephemeral FS, `public/uploads/*` veya başka bir dizine runtime yazılmaz. Görsel/dosya akışı için §3 (base64-in-DB) veya Supabase Storage.
+- **Disk'e yazma** — Vercel serverless ephemeral FS, `public/uploads/*` veya başka bir dizine runtime yazılmaz. Görsel/dosya akışı için §3 (base64-in-DB) veya `stored_files` (`saveFile`, §55).
 
 ### 📏 Scope disiplini
 Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" konusunda nettir. Bir görev tanımlandığında:
@@ -371,8 +371,8 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 ### Prisma Client outdated
 - Schema değiştirdin ama `prisma generate` yapmadın → TS hataları. `npx prisma generate` (Dockerfile zaten yapıyor).
 
-### Supabase `DIRECT_URL` eksik
-- `prisma migrate deploy` direct bağlantı (5432) gerektirir. `DATABASE_URL` pgbouncer (6543) olabilir ama `DIRECT_URL` olmadan migration deploy başarısız.
+### `DIRECT_URL` eksik
+- `prisma migrate deploy` `DIRECT_URL` ile bağlanır; yoksa migration deploy başarısız. Coolify'da ikisi de `buaze-postgres` iç adresidir (§55), `DATABASE_URL` yalnız `?connection_limit=10&pool_timeout=20` taşır. psql bu iki parametreyi tanımaz: elle sorguda `DIRECT_URL` kullan.
 
 ---
 
@@ -654,8 +654,8 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 **Error boundary kuralı (2026-05-03):** Root `global-error.tsx` son güvenlik ağıdır; normal ürün akışları için segment bazlı `error.tsx` tercih edilir (`/[locale]/dashboard`, `/admin`, public QR/menu gibi). Tüm boundary'ler `reportBoundaryError(boundary, error)` ile Sentry'ye `boundary` tag'i yollar. Transient `TypeError: network error`, `failed to fetch`, `fetch failed`, `load failed` vakalarında `scheduleTransientRetry(...)` ile route başına 30 saniyede en fazla 1 otomatik retry yapılır; kalıcı hatada kullanıcıya `Tekrar dene` + güvenli dönüş CTA'sı gösterilir.
 
 **Zorunlu Vercel env var'ları:**
-- `DATABASE_URL` — Supabase pooler (port 6543)
-- `DIRECT_URL` — Supabase direct connection (port 5432) — Prisma migrations bunu kullanır. **Yoksa build fail eder.**
+- `DATABASE_URL` — Coolify Postgres iç adresi + `?connection_limit=10&pool_timeout=20` (§55)
+- `DIRECT_URL` — aynı adres, parametresiz — Prisma migrations bunu kullanır. **Yoksa build fail eder.**
 - `JWT_SECRET` — auth token signing
 - `NEXT_PUBLIC_APP_URL` — QR URL'lerinde kullanılır
 
@@ -942,7 +942,7 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 | `RESEND_FROM_EMAIL` | Opsiyonel | Varsayılan `"Buaze <noreply@buaze.com>"`; domain Resend'de doğrulanmış olmalı |
 | `NOTIFICATION_EMAIL` | Opsiyonel | Restoran `notification_email` set değilse default alıcı; ROI/contact/careers fallback |
 | `CAREERS_INBOX_EMAIL` | Opsiyonel | HR ayrı kutu; yoksa `NOTIFICATION_EMAIL` fallback |
-| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_STORAGE_BUCKET` | Opsiyonel | Careers attachment + site-settings görselleri; eksikse 503 |
+| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_STORAGE_BUCKET` | Geçici | Yalnız geri dönüş penceresi (2026-12-08'e kadar) ve taşıma betikleri; uygulama artık kullanmıyor. Site ayarı görselleri `stored_files`'ta (§55) |
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
 | `PAYNKOLAY_ENV` + `PAYNKOLAY_SX` + `PAYNKOLAY_SX_LIST` + `PAYNKOLAY_MERCHANT_SECRET_KEY` + `PAYNKOLAY_MERCHANT_NO` + `PAYNKOLAY_BASE_URL` | Opsiyonel | PayNKolay kartla ödeme (§44). Eksikse kartla ödeme düğmesi `?payment=unavailable`'a düşer; admin manuel fatura akışı çalışır. `PAYNKOLAY_ENV` (`live` \| `test`) zorunlu ve varsayılan sunucu YOK: izinli iki host'tan birini seçer; `PAYNKOLAY_BASE_URL` opsiyonel, verilirse o host'a birebir eşit olmalı (aksi halde config `null`). Gizli değerler yalnız runtime (Coolify'da "Available at Buildtime" kapalı). Kayıtlı kart / otomatik yenileme env'leri (`PAYNKOLAY_CARD_STORAGE`, `BILLING_VAULT_KEY`, `BILLING_HMAC_KEY`, …) `.env.example`'da; hepsi varsayılan kapalı. |
