@@ -17,6 +17,8 @@ const base = arg('--base', 'http://127.0.0.1:3000').replace(/\/$/, '');
 const runs = Number(arg('--runs', '20'));
 const label = arg('--label', 'perf');
 const bellList = process.argv.includes('--bell-list');
+// --after: the §56 client — no prefetch storm at load, Google data in the HTML.
+const after = process.argv.includes('--after');
 const prisma = prismaFor(arg('--db', 'DIRECT_URL'));
 
 const pct = (xs, p) => {
@@ -30,8 +32,9 @@ async function hit(path, cookie, extra = {}) {
     headers: { cookie, 'user-agent': 'buaze-perf-check', ...extra },
     redirect: 'manual',
   });
-  await res.arrayBuffer();
+  const body = Buffer.from(await res.arrayBuffer());
   return {
+    hasInbox: body.includes('reviewName'),
     path,
     status: res.status,
     ms: performance.now() - t0,
@@ -95,9 +98,11 @@ try {
     const t0 = performance.now();
     const doc = await hit(`/tr/dashboard/google-reviews?restaurantId=${rid}`, cookie, { accept: 'text/html' });
     const at = (r) => ({ path: r.path.replace(rid, '<id>'), status: r.status, startMs: Math.round(r.start - t0), ms: Math.round(r.ms), timing: parseTiming(r.timing) });
-    const events = [at(doc)];
-    const prefetches = sidebar.map((p) => hit(`/tr/dashboard${p}?_rsc=perf${round}`, cookie, prefetchHeaders));
-    const pageApis = (async () => {
+    const events = [{ ...at(doc), path: `${at(doc).path} (inbox in HTML: ${doc.hasInbox})` }];
+    const prefetches = after ? [] : sidebar.map((p) => hit(`/tr/dashboard${p}?_rsc=perf${round}`, cookie, prefetchHeaders));
+    const pageApis = after
+      ? Promise.all([hit('/api/feedback/counts?only=lowUnread', cookie)])
+      : (async () => {
       const first = await Promise.all([
         // Before §56 the bell also fetched its 5-row list on every page load.
         ...(bellList ? [hit('/api/feedback?rating=low&limit=5&isRead=false', cookie)] : []),
@@ -108,9 +113,15 @@ try {
       return [...first, inbox];
     })();
     const [pf, api] = await Promise.all([Promise.all(prefetches), pageApis]);
+    if (after) {
+      // Tab switch: served from the client cache; the background refresh is
+      // this request.
+      const tab = await hit(`/api/restaurants/${rid}/google/business/inbox?status=replied&limit=20`, cookie);
+      events.push({ ...at(tab), path: 'tab switch (background) ' + at(tab).path });
+    }
     events.push(...api.map(at));
-    const total = Math.round(Math.max(...api.map((r) => r.start + r.ms)) - t0);
-    const pfMax = Math.round(Math.max(...pf.map((r) => r.start + r.ms)) - t0);
+    const total = Math.round(Math.max(doc.ms, ...api.map((r) => r.start + r.ms - t0)));
+    const pfMax = pf.length ? Math.round(Math.max(...pf.map((r) => r.start + r.ms)) - t0) : 0;
     report.pageLoad.push({ round, totalMs: total, prefetchDoneMs: pfMax, events });
     log(`${label} page round ${round}: data ready ${total} ms (prefetches done ${pfMax} ms)`);
     for (const e of events) log(`   +${String(e.startMs).padStart(4)} ${String(e.ms).padStart(4)} ms ${e.status} ${e.path} ${JSON.stringify(e.timing)}`);
