@@ -5384,6 +5384,7 @@ Yeni session bir kural belirlediyse, hangi §'ye gider:
 | Google yorum yanıt kutusu, tam senkron, toplu yanıt kuyruğu, yanıt ayarları | §54 |
 | Veritabanı barındırma, yedek / geri yükleme, bakım modu, canlı akış (SSE), dosya deposu, Supabase'e geri dönüş | §55 |
 | Panel hızı: Server-Timing, Coolify Redis, prefetch, Google Yorumları sunucu verisi, önbellekler | §56 |
+| Özellik analizi: kullanım verisi, menü yapısı, gizlenen araçlar, kaldırılan pazarlama sayfaları | §57 |
 
 Yeni konu ortaya çıkarsa yeni `## §X` ekle; ama önce `grep -n "^## " CLAUDE.md` ile mevcut §-lere baktıktan sonra (overlap riski).
 
@@ -6197,4 +6198,15 @@ Taşımadan sonra panel API'leri sunucuda 6–11 ms idi ama tarayıcıda 600 ms'
 - **Ölçüm**: `scripts/perf/page-load.mjs` (uygulama konteynerinde Coolify zamanlanmış görevi olarak; kısa ömürlü oturum açar, sonunda siler): API p50/p95 + Server-Timing ve Google Yorumları sayfa açılış simülasyonu (belge + prefetch + sayfa API'leri). `--bell-list` eski zil davranışını taklit eder.
 - **Dışarıya bağımlı kalanlar** (2026-11-25): Firebase (Google girişi), Google API'leri (Places, Business Profile, OAuth), OpenAI / Anthropic (Pulse AI), Resend (e-posta), Sentry (hata izleme), PayNKolay (ödeme), reCAPTCHA Enterprise, Google Fonts (yalnız derleme anında; indirme başarısız olursa derleme düşer, yeniden deploy yeter), GTM / Yandex (çerez onaylı). Supabase ve Upstash yalnız geri dönüş penceresinde. Yedekler sunucu dışında değil (R2/B2 hesabı bekleniyor).
 - **Yapma**: panel kabuğuna görünür-alan prefetch'i geri getirme; Redis'i istek yolunda zorunlu yapma (her çağrı bellek yedekli kalmalı); `REDIS_URL`'i build-time env yapma.
+
+## §57 — Özellik analizi ve sadeleştirme (kanonik, 2026-11-25)
+
+Canlı kullanım (2026-11-25, `scripts/ops/feature-usage.mjs`, yalnız sayılar): 12 işletme (10 restoran, 1 hukuk, 1 klinik), 46 sahip hesabı (son 30 günde oturum açan 3), son 30 günde 78 puan / 271 QR okutma / 69 platform yönlendirmesi (tümünün %99'u Google). Yorumların yalnız %5'inde iletişim bilgisi var. Anket: 4 anket, toplam 4 yanıt (son yanıt Mayıs). Denetim: 2 tamamlanmış denetim (son Eylül). Menü: 4 işletme kategori açmış, 7 ürün. Panel sayfa ziyareti verisi yok (Vercel Analytics kapalı, §31.6).
+
+- **Owner menüsü**: 7 ana giriş (Panel, Yorumlar, Google Yorumları, QR kodları, Analitik, Platformlar, İşletmeler) + kapalı başlayan "Araçlar" grubu (Müşteriler, Menü (klinikte yok), Anketler, Denetim Merkezi, Kılavuz). Hesabım / Faturalama / Bildirimler kenar çubuğunun altındaki hesap menüsünde (mobilde "Daha fazla"). Mobil alt menü: Panel, Yorumlar, Google, QR. Yeni sayfa ancak çekirdek akışa (QR → puan → yönlendirme / özel geri bildirim → yanıt) doğrudan hizmet ediyorsa ana girişe eklenir; aksi halde "Araçlar".
+- **Gizlenen araçlar** (`src/lib/feature-visibility.ts`): Anketler ve Denetim Merkezi menüde ve Cmd+K'da yalnız kendi verisi olan çalışma alanlarına görünür (anket sayısı; kendi denetim şablonu + ataması). `FEATURE_SURVEYS` / `FEATURE_AUDITS` = `on` (herkese göster) / `off` (kimseye) / boş (veriye göre). Sayfalar, API'ler, herkese açık formlar ve veriler aynen çalışır; yalnız menü gizlenir.
+- **Metrikler**: Müşteriler'deki "LTV" (ziyaret × puan × 10, harcama değil) arayüzden ve CSV'den kaldırıldı, yerine "Ort. puan". Segment ve oran tanımları sayfada yazılı. Sağlık skoru kartındaki "Buaze öncesinden" değişimi artık "İlk ölçümden (tarih) bu yana" ve yalnız ilk ölçüm 14 günden eskiyse ve değişim sıfır değilse görünür; "Geçen aydan" da sıfırsa gizli.
+- **Pazarlama**: sektör sayfaları 17'den 6'ya (restaurants, delivery, hotels, healthcare, beauty-salon, retail). Birleştirilen / kaldırılanlar `src/lib/seo/retired-pages.ts` listesinde ve next.config'te 301: boutique-hotels → hotels; dentists, aesthetic, veterinary → healthcare; spa → beauty-salon; gym, schools, law-firms (Türk avukatlık reklam yasağı), hukuk, legal, real-estate, auto-service → /solutions; vs/individual-qr, vs/spreadsheet → /compare; careers → /about (genel başvuru notu /about'ta). Sitemap `generate-public-routes.mjs` ile güncellendi. Yeni sayfa kaldırırken `RETIRED_PAGES`'e ekle; test hedefin var olduğunu ve kaynağın sitemap'te olmadığını doğrular.
+- **Veri**: hiçbir tablo, kolon ya da kayıt silinmedi; gizlenen özelliklerin verisi veritabanında ve günlük yedekte.
+- **Yapma**: kullanım verisi olmadan yeni ana menü girişi ekleme; gizlenmiş aracı menüye geri koymak için kodu değiştirme (env bayrağını kullan); retired listesindeki bir adresi yeniden sayfa olarak açma (önce listeden çıkar).
 

@@ -95,6 +95,8 @@ interface UserDashboardShellProps {
    * on every open, resolved once by the layout instead.
    */
   paletteRestaurants?: Array<{ id: string; name: string; slug: string; category: string }>;
+  /** §57 — secondary tools shown in the menu (feature-visibility). */
+  tools?: { surveys: boolean; audits: boolean };
   children: React.ReactNode;
 }
 
@@ -144,8 +146,8 @@ function useTopBar(locale: Locale, pathname: string | null, section?: string | n
   if (rest.startsWith('/google-reviews')) return { breadcrumb: isTr ? 'PANEL / GOOGLE YORUMLARI' : 'PANEL / GOOGLE REVIEWS', title: isTr ? 'Google Yorumları' : 'Google Reviews' };
   if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'PANEL / QR KODLARI' : 'PANEL / QR CODES', title: isTr ? 'QR kodları' : 'QR codes' };
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
-  if (rest.startsWith('/surveys')) return { breadcrumb: isTr ? 'CRM / ANKETLER' : 'CRM / SURVEYS', title: isTr ? 'Anketler' : 'Surveys' };
-  if (rest.startsWith('/audits')) return { breadcrumb: isTr ? 'CRM / DENETİM MERKEZİ' : 'CRM / AUDIT CENTER', title: isTr ? 'Denetim Merkezi' : 'Audit Center' };
+  if (rest.startsWith('/surveys')) return { breadcrumb: isTr ? 'ARAÇLAR / ANKETLER' : 'TOOLS / SURVEYS', title: isTr ? 'Anketler' : 'Surveys' };
+  if (rest.startsWith('/audits')) return { breadcrumb: isTr ? 'ARAÇLAR / DENETİM MERKEZİ' : 'TOOLS / AUDIT CENTER', title: isTr ? 'Denetim Merkezi' : 'Audit Center' };
   if (MENU_BUILDER_REST_RE.test(rest)) {
     const isAnalytics = /\/menu\/analytics(\/|$)/.test(rest);
     return {
@@ -156,7 +158,7 @@ function useTopBar(locale: Locale, pathname: string | null, section?: string | n
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / İŞLETMELER' : 'PANEL / BUSINESSES', title: isTr ? 'İşletmeler' : 'Businesses' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
   if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
-  if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİLER' : 'CRM / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'ARAÇLAR / MÜŞTERİLER' : 'TOOLS / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
   if (rest.startsWith('/platforms/')) {
     // Provider page: "PLATFORM BAĞLANTILARI / YEMEKSEPETI" + platform name.
     const platformName = getManagedPlatform(rest.slice('/platforms/'.length).split('/')[0])?.name;
@@ -224,7 +226,7 @@ function saveSidebarScroll(scrollTop: number) {
   }
 }
 
-export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, canAddBusiness = true, isImpersonating = false, paletteRestaurants, children }: UserDashboardShellProps) {
+export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, canAddBusiness = true, isImpersonating = false, paletteRestaurants, tools, children }: UserDashboardShellProps) {
   void TOP_BAR_MAP;
   const pathname = usePathname();
   const router = useRouter();
@@ -597,8 +599,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   // basitleştirildi (createdAt prop pass etmiyor) → sidebar entry kalıcı.
   const showGuide = true;
   // §57 — surveys / audits in "Araçlar"; decided from live usage below.
-  const showSurveys = true;
-  const showAudits = true;
+  const showSurveys = tools?.surveys ?? true;
+  const showAudits = tools?.audits ?? true;
 
   // Cmd/Ctrl+K toggles the command palette anywhere in the dashboard.
   // We listen on window since the user may not have a focused input.
@@ -1634,7 +1636,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/platforms`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
           { href: `/${locale}/dashboard/customers`, label: copy.customers, keywords: ['müşteri', 'customer', 'crm'] },
           // Stage 98 — Surveys command palette (CLAUDE.md §42).
-          { href: `/${locale}/dashboard/surveys`, label: copy.surveys, keywords: ['anket', 'survey', 'nps', 'soru', 'question', 'feedback'] },
+          ...(showSurveys
+            ? [{ href: `/${locale}/dashboard/surveys`, label: copy.surveys, keywords: ['anket', 'survey', 'nps', 'soru', 'question', 'feedback'] }]
+            : []),
+          ...(showAudits
+            ? [{ href: `/${locale}/dashboard/audits`, label: copy.audits, keywords: ['denetim', 'audit', 'kontrol', 'checklist'] }]
+            : []),
           { href: `/${locale}/dashboard/guide`, label: copy.guide, keywords: ['kılavuz', 'guide', 'help', 'yardım'] },
           { href: `/${locale}/dashboard/account`, label: copy.account, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account', 'şifre', 'password', '2fa', 'güvenlik', 'security', 'ekip', 'team', 'kvkk', 'legal', 'bildirim', 'notification'] },
           // §38.58 — Faturalama ayrı palette entry'si (Account base'inden

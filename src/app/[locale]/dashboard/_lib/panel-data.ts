@@ -88,3 +88,19 @@ export async function getPanelRestaurants(
 ): Promise<PanelRestaurant[]> {
   return [...(await panelRestaurantsForIdentity(userId, role, email))];
 }
+
+/**
+ * Own surveys / audits of a workspace, for the menu (§57, feature-visibility).
+ * Audits count the workspace's own templates and assignments (the 24 shared
+ * starter templates do not count as use).
+ */
+export async function getToolUsage(restaurantIds: string[]): Promise<{ surveys: number; audits: number }> {
+  if (restaurantIds.length === 0) return { surveys: 0, audits: 0 };
+  const where = { restaurantId: { in: restaurantIds } };
+  const [surveys, templates, assignments] = await Promise.all([
+    prisma.survey.count({ where }),
+    prisma.auditTemplate.count({ where }),
+    prisma.auditAssignment.count({ where }),
+  ]);
+  return { surveys, audits: templates + assignments };
+}

@@ -580,6 +580,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         />
       </div>
 
+      {/* §57 — what the numbers mean. A "customer" is someone who left an
+          email or phone with a rating; anonymous ratings are not listed. */}
+      <p className="text-[12px] leading-[1.6] text-[#737373]">
+        {isTr
+          ? 'Müşteriler yalnız puanla birlikte e-posta ya da telefon bırakanlardır. VIP: 5+ değerlendirme ve ortalama 4★ ve üstü · Risk: 2+ değerlendirme ve ortalama 3★ altı · Kayıp: 2+ değerlendirme, 90 günden uzun süredir gelmedi · Geri dönüş: birden fazla değerlendirme bırakanların oranı.'
+          : 'Customers are people who left an email or phone number with their rating. VIP: 5+ ratings, average 4★ or more · At risk: 2+ ratings, average below 3★ · Churned: 2+ ratings, not back for over 90 days · Return rate: share who rated more than once.'}
+      </p>
+
       {/* §49 — one toolbar: segment · search · period · archive · clear.
           Every control applies immediately (no "Uygula"). The business scope
           comes from the shell's switcher (`?restaurantId`), never from here. */}

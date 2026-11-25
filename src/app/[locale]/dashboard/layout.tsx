@@ -10,7 +10,8 @@ import {
 } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getTeamMemberRole } from '@/lib/panel-access';
-import { getPanelRestaurants, getPanelUser } from './_lib/panel-data';
+import { getPanelRestaurants, getPanelUser, getToolUsage } from './_lib/panel-data';
+import { toolVisibility } from '@/lib/feature-visibility';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { Locale } from '@/lib/translations';
@@ -209,6 +210,8 @@ export default async function DashboardLayout({
     }));
 
   const totalFeedbacks = restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
+  // §57 — surveys / audits appear in "Araçlar" only for workspaces using them.
+  const tools = toolVisibility(await getToolUsage(allRestaurants.map((r) => r.id)));
 
   return (
     <>
@@ -220,6 +223,7 @@ export default async function DashboardLayout({
       canAddBusiness={(user.role || 'restaurant_owner') !== 'team_member'}
       isImpersonating={isImpersonating}
       paletteRestaurants={paletteRestaurants}
+      tools={tools}
       user={{
         name: user.name,
         email: user.email,
