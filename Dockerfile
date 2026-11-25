@@ -25,13 +25,17 @@ WORKDIR /app
 
 # Dependencies first so a code-only change reuses this layer.
 # `npm ci` runs the postinstall `prisma generate`, which needs the schema.
+# The npm download cache and Next's compiler cache live in BuildKit cache
+# mounts on the server, so a rebuild reuses them instead of starting cold.
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci --no-audit --no-fund
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+  npm ci --no-audit --no-fund --prefer-offline
 
 COPY . .
 # One retry when only the Google Fonts download failed (scripts/build-retry.mjs).
-RUN node scripts/build-retry.mjs
+RUN --mount=type=cache,target=/app/.next/cache,sharing=locked \
+  node scripts/build-retry.mjs
 
 ENV NODE_ENV=production
 ENV PORT=3000
