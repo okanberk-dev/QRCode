@@ -30,7 +30,8 @@ COPY prisma ./prisma
 RUN npm ci --no-audit --no-fund
 
 COPY . .
-RUN npm run build
+# One retry when only the Google Fonts download failed (scripts/build-retry.mjs).
+RUN node scripts/build-retry.mjs
 
 ENV NODE_ENV=production
 ENV PORT=3000

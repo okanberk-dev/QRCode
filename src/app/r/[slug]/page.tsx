@@ -1184,7 +1184,7 @@ function ReviewContent() {
                   <input
                     className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
                     type="email"
-                    placeholder={locale === 'tr' ? 'ulaşmamız için' : 'so we can reach you'}
+                    placeholder={locale === 'tr' ? 'yanıt için, isteğe bağlı' : 'for a reply, optional'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -1194,8 +1194,16 @@ function ReviewContent() {
                     spellCheck={false}
                     enterKeyHint="next"
                     style={{ fontSize: 16 }}
+                    aria-describedby="feedback-email-hint"
                   />
                 </div>
+                {/* Why leave an email (CLAUDE.md §57): only ~39% of private
+                    feedback carried contact info, so the owner could not reply. */}
+                <p id="feedback-email-hint" className="px-1 text-[11.5px] leading-[1.5] text-[#525252]">
+                  {locale === 'tr'
+                    ? 'E-posta bırakırsan işletme sana doğrudan yanıt verebilir. İzin vermedikçe kampanya e-postası gönderilmez.'
+                    : 'Leave your email and the business can reply to you directly. No marketing emails unless you allow them.'}
+                </p>
               </div>
 
               <div className="flex flex-col gap-2.5">
