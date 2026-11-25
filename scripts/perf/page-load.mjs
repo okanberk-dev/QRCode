@@ -34,7 +34,7 @@ async function hit(path, cookie, extra = {}) {
   });
   const body = Buffer.from(await res.arrayBuffer());
   return {
-    hasInbox: body.includes('reviewName'),
+    hasInbox: body.includes('activeJobId'),
     path,
     status: res.status,
     ms: performance.now() - t0,
