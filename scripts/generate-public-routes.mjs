@@ -34,12 +34,9 @@ const NOINDEX_PATHS = new Set(['help/search']);
 const REDIRECT_ALIASES = new Set([
   'solutions/otel',
   'solutions/klinik',
-  'solutions/hukuk',
   'solutions/hotel',
   'solutions/clinic',
-  'solutions/legal',
   'solutions/perakende',
-  'solutions/spa',
 ]);
 
 function isDynamicSegment(name) {

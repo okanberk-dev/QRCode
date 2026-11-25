@@ -3,14 +3,6 @@ import {
   Hotel,
   Stethoscope,
   Scissors,
-  Dumbbell,
-  Scale,
-  Home as HomeIcon,
-  Car,
-  Sparkles,
-  GraduationCap,
-  PawPrint,
-  Building2,
   ShoppingBag,
   Truck,
 } from 'lucide-react';
@@ -44,17 +36,8 @@ export const RELATED_SOLUTIONS_LIST: readonly RelatedSolution[] = [
   { slug: 'restaurants', Icon: Utensils, tr: 'Restoranlar ve kafeler', en: 'Restaurants and cafés' },
   { slug: 'delivery', Icon: Truck, tr: 'Paket servis', en: 'Delivery' },
   { slug: 'hotels', Icon: Hotel, tr: 'Oteller', en: 'Hotels' },
-  { slug: 'boutique-hotels', Icon: Building2, tr: 'Butik oteller', en: 'Boutique hotels' },
   { slug: 'healthcare', Icon: Stethoscope, tr: 'Sağlık klinikleri', en: 'Healthcare clinics' },
-  { slug: 'dentists', Icon: Stethoscope, tr: 'Diş klinikleri', en: 'Dental clinics' },
   { slug: 'beauty-salon', Icon: Scissors, tr: 'Güzellik salonları', en: 'Beauty salons' },
-  { slug: 'aesthetic', Icon: Sparkles, tr: 'Estetik klinikler', en: 'Aesthetic clinics' },
-  { slug: 'gym', Icon: Dumbbell, tr: 'Spor salonları', en: 'Gyms and fitness studios' },
-  { slug: 'veterinary', Icon: PawPrint, tr: 'Veteriner klinikleri', en: 'Veterinary clinics' },
-  { slug: 'law-firms', Icon: Scale, tr: 'Hukuk büroları', en: 'Law firms' },
-  { slug: 'real-estate', Icon: HomeIcon, tr: 'Emlak ofisleri', en: 'Real estate agencies' },
-  { slug: 'auto-service', Icon: Car, tr: 'Oto servisler', en: 'Auto repair shops' },
-  { slug: 'schools', Icon: GraduationCap, tr: 'Okullar ve kurslar', en: 'Schools and courses' },
   { slug: 'retail', Icon: ShoppingBag, tr: 'Perakende mağazalar', en: 'Retail stores' },
 ];
 
@@ -64,21 +47,12 @@ export const RELATED_SOLUTIONS_LIST: readonly RelatedSolution[] = [
  * (the old "first 4 of the list" strip left 10 pages with no sibling links).
  */
 const SECTOR_NEIGHBOURS: Record<string, readonly string[]> = {
-  restaurants: ['delivery', 'hotels', 'retail', 'boutique-hotels'],
-  delivery: ['restaurants', 'retail', 'hotels', 'auto-service'],
-  hotels: ['boutique-hotels', 'restaurants', 'beauty-salon', 'real-estate'],
-  'boutique-hotels': ['hotels', 'restaurants', 'aesthetic', 'beauty-salon'],
-  healthcare: ['dentists', 'aesthetic', 'veterinary', 'beauty-salon'],
-  dentists: ['healthcare', 'aesthetic', 'veterinary', 'law-firms'],
-  'beauty-salon': ['aesthetic', 'gym', 'retail', 'boutique-hotels'],
-  aesthetic: ['beauty-salon', 'dentists', 'healthcare', 'gym'],
-  gym: ['beauty-salon', 'schools', 'aesthetic', 'healthcare'],
-  veterinary: ['healthcare', 'dentists', 'retail', 'auto-service'],
-  'law-firms': ['real-estate', 'schools', 'dentists', 'auto-service'],
-  'real-estate': ['law-firms', 'hotels', 'auto-service', 'retail'],
-  'auto-service': ['retail', 'real-estate', 'delivery', 'veterinary'],
-  schools: ['gym', 'law-firms', 'healthcare', 'real-estate'],
-  retail: ['restaurants', 'beauty-salon', 'auto-service', 'delivery'],
+  restaurants: ['delivery', 'hotels', 'retail'],
+  delivery: ['restaurants', 'retail', 'hotels'],
+  hotels: ['restaurants', 'beauty-salon', 'delivery'],
+  healthcare: ['beauty-salon', 'retail', 'hotels'],
+  'beauty-salon': ['healthcare', 'retail', 'hotels'],
+  retail: ['restaurants', 'beauty-salon', 'delivery'],
 };
 
 /**

@@ -134,7 +134,6 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
         { label: isTr ? 'Hakkımızda' : 'About us', href: `${base}/about` },
         { label: isTr ? 'Google yorum kuralları' : 'Google review guidelines', href: `${base}/google-compliance` },
         { label: isTr ? 'Basın kiti' : 'Press kit', href: `${base}/press` },
-        { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers` },
         { label: isTr ? 'İletişim' : 'Contact', href: `${base}/contact` },
       ],
     },

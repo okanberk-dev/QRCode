@@ -63,6 +63,8 @@ const COPY = {
       languages: 'Diller',
       languagesValue: 'Türkçe, İngilizce',
       contact: 'İletişim',
+      careers: 'Kariyer',
+      careersValue: 'Şu anda açık pozisyon yok. Genel başvurunuzu özgeçmişinizle destek adresine gönderebilirsiniz.',
     },
     flow: {
       eyebrow: 'Nasıl çalışır',
@@ -166,6 +168,8 @@ const COPY = {
       languages: 'Languages',
       languagesValue: 'Turkish, English',
       contact: 'Contact',
+      careers: 'Careers',
+      careersValue: 'No open positions right now. You can send a general application with your CV to the support address.',
     },
     flow: {
       eyebrow: 'How it works',
@@ -354,6 +358,8 @@ export default async function AboutPage({
         </a>
       ),
     },
+    // §57 — /careers was retired (no open positions); its note lives here.
+    { term: copy.facts.careers, value: copy.facts.careersValue },
   ];
 
   return (

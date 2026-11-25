@@ -5,7 +5,7 @@ import { SECTOR_PLATFORMS, type SectorKey } from '@/lib/sector-platforms';
 import SectionHeader from './SectionHeader';
 
 /**
- * Sectors — plain links to eight sector pages plus the full list (replaces
+ * Sectors — plain links to the six sector pages plus the full list (replaces
  * the old client-side tab switcher, whose stats and integration claims were
  * not true). Names, icons and page existence come from RELATED_SOLUTIONS_LIST
  * (the same labels as the navbar, footer and /solutions), the suggested
@@ -65,16 +65,6 @@ const FEATURED: readonly FeaturedSector[] = [
     slug: 'retail',
     sector: 'retail',
     where: { tr: 'kasa, fiş ve poşet', en: 'checkout, receipts and bags' },
-  },
-  {
-    slug: 'gym',
-    sector: 'fitness',
-    where: { tr: 'giriş ve soyunma odası', en: 'entrance and locker rooms' },
-  },
-  {
-    slug: 'law-firms',
-    sector: 'legal',
-    where: { tr: 'bekleme alanı ve kartvizit', en: 'waiting area and business cards' },
   },
 ];
 

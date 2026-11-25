@@ -5,7 +5,7 @@ import Link from '@/components/navigation/IntentLink';
 import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -379,10 +379,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     // toggle yaptığında localStorage update olur.
     const loaded = loadGroupState();
     setExpandedGroups({
-      general: loaded.general ?? true,
-      crm: loaded.crm ?? true,
-      business: loaded.business ?? true,
-      settings: loaded.settings ?? true,
+      tools: loaded.tools ?? false,
       ...loaded,
     });
     const collapsed = window.localStorage.getItem('buaze.owner.sidebarCollapsed') === 'true';
@@ -599,6 +596,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   // `user.createdAt` prop'una bağlıydı; layout.tsx kullanıcı tarafından
   // basitleştirildi (createdAt prop pass etmiyor) → sidebar entry kalıcı.
   const showGuide = true;
+  // §57 — surveys / audits in "Araçlar"; decided from live usage below.
+  const showSurveys = true;
+  const showAudits = true;
 
   // Cmd/Ctrl+K toggles the command palette anywhere in the dashboard.
   // We listen on window since the user may not have a focused input.
@@ -659,97 +659,39 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   type NavGroup = { type: 'group'; id: string; icon: LucideIcon; label: string; children: NavChild[] };
   type Nav = NavItem | NavGroup;
 
-  // Phase 12 — sidebar nav full reorganize (tasarım .design-pulse-2026
-  // shell.jsx GENEL/CRM/AYARLAR paterni). 4 grup: GENEL, CRM, İŞLETME, AYARLAR.
-  // Eski grup ID'leri (feedback/growth/business) localStorage stale kalır,
-  // yeni ID'ler default expanded (useEffect migration).
+  // §57 — sidebar: seven core entries (the QR → rating → redirect → reply
+  // loop and the businesses it runs on), then "Araçlar" for the rest.
+  // Account, billing and notifications live in the account menu at the
+  // bottom of the sidebar (and Hesabım's own sections).
+  const toolItems: NavChild[] = [
+    { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
+    ...(!isClinicMode
+      ? [{ href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu }]
+      : []),
+    ...(showSurveys
+      ? [{ href: `/${locale}/dashboard/surveys`, icon: ClipboardList, label: copy.surveys }]
+      : []),
+    ...(showAudits
+      ? [{ href: `/${locale}/dashboard/audits`, icon: ClipboardCheck, label: copy.audits }]
+      : []),
+    ...(showGuide
+      ? [{ href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
+      : []),
+  ];
   const navItems: Nav[] = [
+    { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
+    { type: 'item', href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
+    { type: 'item', href: `/${locale}/dashboard/google-reviews`, icon: Star, label: copy.googleReviews },
+    { type: 'item', href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
+    { type: 'item', href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+    { type: 'item', href: `/${locale}/dashboard/platforms`, icon: Plug, label: copy.integrations },
+    { type: 'item', href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     {
       type: 'group',
-      id: 'general',
-      icon: LayoutDashboard,
-      label: locale === 'tr' ? 'Genel' : 'General',
-      children: [
-        { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
-        { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
-        { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'crm',
-      icon: UsersRound,
-      label: 'CRM',
-      // §38.56 — CRM grup: Müşteriler / Analitik / Anketler / Denetim.
-      // Müşteri kampanya maili özelliği kaldırıldı (CLAUDE.md §38.241).
-      children: [
-        { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
-        { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-        // Stage 98 — Surveys nav entry (CLAUDE.md §42). CRM group altında,
-        // Customers + Analytics ile aynı bilgi mimarisi (hepsi hedeflenmiş
-        // geri bildirim + insight kaynağı).
-        {
-          href: `/${locale}/dashboard/surveys`,
-          icon: ClipboardList,
-          label: copy.surveys,
-        },
-        // §42 Phase 2 — Audit Center entry. Surveys yanında: ikisi de form
-        // tabanlı veri toplama. Audit = internal team/ops; survey = customer.
-        {
-          href: `/${locale}/dashboard/audits`,
-          icon: ClipboardCheck,
-          label: copy.audits,
-        },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'business',
-      icon: Store,
-      label: locale === 'tr' ? 'İşletme' : 'Business',
-      children: [
-        { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-        ...(!isClinicMode
-          ? [{ href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu }]
-          : []),
-        { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
-        // /platforms ve /integrations aynı redirect'e (settings#integrations);
-        // tek menü item bırakıldı. Eski /platforms route'u backward-compat.
-        { href: `/${locale}/dashboard/platforms`, icon: Plug, label: copy.integrations },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'settings',
-      icon: UserCircle,
-      label: locale === 'tr' ? 'Ayarlar' : 'Settings',
-      children: [
-        // Unified Settings hub: Profile + Security + Notifications + Billing +
-        // Team + Legal. Per-restaurant ayarlar /restaurants/[id]/settings'te.
-        { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
-        // §38.58 — Faturalama nav item (tasarım a/shell.jsx:125 birebir).
-        // Account içinde billing subtab var; deeplink `?section=billing`
-        // ile aktiflik korunur. Tek-tık fatura erişimi (owner aylık ödeme
-        // sonrası fatura indirir, profilden geçmek redundant click).
-        {
-          href: `/${locale}/dashboard/account?section=billing`,
-          icon: CreditCard,
-          label: locale === 'tr' ? 'Faturalama' : 'Billing',
-        },
-        // §38.72 — Bildirimler nav item (Faturalama paterni reuse).
-        // /dashboard/notifications redirect-only stub; matchHref ile
-        // ?section=notifications subtab'ında lime active state korunur.
-        // Owner topbar bell icon'una ek olarak sidebar'da net link görür.
-        {
-          href: `/${locale}/dashboard/account?section=notifications`,
-          icon: Bell,
-          label: copy.notifications,
-        },
-        // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
-        ...(showGuide
-          ? [{ href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
-          : []),
-      ],
+      id: 'tools',
+      icon: Wrench,
+      label: locale === 'tr' ? 'Araçlar' : 'Tools',
+      children: toolItems,
     },
   ];
 
@@ -757,22 +699,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const bottomNavItems = [
     { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
-    isClinicMode
-      ? { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics }
-      : { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+    { href: `/${locale}/dashboard/google-reviews`, icon: Star, label: copy.googleReviews },
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
   ];
   const moreSheetItems = [
-    { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/platforms`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
-    { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
-    // Announcements bottom sheet'ten de kaldırıldı — banner zaten görünür.
-    // Guide yalnız ilk 30 gün.
-    ...(showGuide
-      ? [{ href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
-      : []),
+    ...toolItems,
     { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
   ];
   const moreActive = moreSheetItems.some((i) => isPathActive(i.href));

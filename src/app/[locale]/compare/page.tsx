@@ -240,14 +240,13 @@ function buildCopy(locale: 'tr' | 'en') {
               'Tek bir işletmeniz ve tek bir yorum bağlantınız varsa, geri bildirimi takip etmeniz de gerekmiyorsa ücretsiz bir statik QR yeterlidir. Bağlantınız değiştiğinde kodu yeniden basmanız gerekir.',
             links: [
               { href: '/solutions/qr-generator', label: 'Ücretsiz QR kod oluşturun' },
-              { href: '/vs/individual-qr', label: 'Statik QR ile Buaze karşılaştırması' },
             ],
           },
           {
             title: 'Excel veya Google E-Tablolar',
             body:
               'Ayda birkaç geri bildirim alıyorsanız ve kayıtları tek kişi tutuyorsa bir tablo iş görür. Geri bildirimi müşteriden alıp tabloya sizin girmeniz gerekir; düşük bir puanı da ancak tabloyu açtığınızda görürsünüz.',
-            links: [{ href: '/vs/spreadsheet', label: 'Excel ile Buaze karşılaştırması' }],
+            links: [],
           },
           {
             title: 'Kâğıt form',
@@ -291,14 +290,13 @@ function buildCopy(locale: 'tr' | 'en') {
               'If you run one business with one review link and do not need to track feedback, a free static QR code is enough. When your link changes, you have to reprint the code.',
             links: [
               { href: '/solutions/qr-generator', label: 'Create a free QR code' },
-              { href: '/vs/individual-qr', label: 'Static QR compared with Buaze' },
             ],
           },
           {
             title: 'Excel or Google Sheets',
             body:
               'If you get a few pieces of feedback a month and one person keeps the records, a spreadsheet does the job. You have to collect the feedback and type it in yourself, and you only see a low rating when you open the sheet.',
-            links: [{ href: '/vs/spreadsheet', label: 'Spreadsheets compared with Buaze' }],
+            links: [],
           },
           {
             title: 'Paper form',

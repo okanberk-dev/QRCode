@@ -51,7 +51,7 @@ const SEGMENT_LABEL_EN: Record<CustomerSegment, string> = {
 const SENTIMENT_LABEL_EN = { pos: 'Positive', neu: 'Neutral', neg: 'Negative' } as const;
 const HEADER_EN = [
   'Name', 'E-mail', 'Phone', 'Business', 'Branch', 'Channel', 'Last rating', 'Avg rating',
-  'Reviews', 'Segment', 'LTV', 'Sentiment', 'Last topic', 'Last visit (days ago)', 'Last review',
+  'Reviews', 'Segment', 'Sentiment', 'Last topic', 'Last visit (days ago)', 'Last review',
 ];
 
 interface AggregateRow {
@@ -182,7 +182,6 @@ async function handleGET(req: NextRequest) {
       'Ort. Puan',
       'Yorum Sayısı',
       'Segment',
-      'LTV',
       'Sentiment',
       'Son Konu',
       'Son Ziyaret (gün önce)',
@@ -223,7 +222,6 @@ async function handleGET(req: NextRequest) {
         esc(r.avg_rating != null ? r.avg_rating.toFixed(2) : ''),
         esc(visits),
         esc((isEn ? SEGMENT_LABEL_EN : SEGMENT_LABEL)[derived.segment]),
-        esc(derived.ltv),
         esc((isEn ? SENTIMENT_LABEL_EN : SENTIMENT_LABEL)[derived.sentiment]),
         esc(lastTopic),
         esc(derived.daysSinceLastVisit ?? ''),

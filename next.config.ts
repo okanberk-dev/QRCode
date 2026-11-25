@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import withBundleAnalyzer from "@next/bundle-analyzer";
 import { embedGoogleRewrites } from "./src/lib/embed-variant";
+import { retiredPageRedirects } from "./src/lib/seo/retired-pages";
 
 // Bundle analyzer — manuel monitoring tool. `ANALYZE=true npm run build`
 // `.next/analyze/{client,nodejs,edge}.html` raporları üretir. Default
@@ -131,6 +132,8 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       ...localeLessRedirects(),
+      // §57 — retired / merged marketing pages (301).
+      ...retiredPageRedirects(),
       // Marketing slug rename: /features/ai-copilot → /features/pulse-ai
       // Audit Section 5: URL slug must match the canonical product name.
       {

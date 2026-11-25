@@ -442,7 +442,6 @@ export default function AdminCustomersPage() {
                     <th className="px-5 py-3">Segment</th>
                     <th className="px-5 py-3 text-right">Son Puan</th>
                     <th className="px-5 py-3 text-right">Geri bildirim</th>
-                    <th className="px-5 py-3 text-right">LTV</th>
                     {/* §38.48 — Owner /customers paterni reuse: Son konu + Kanal */}
                     <th className="px-5 py-3">Son Konu</th>
                     <th className="px-5 py-3">Kanal</th>
@@ -524,14 +523,6 @@ export default function AdminCustomersPage() {
                           )}
                         </td>
                         <td className="px-5 py-3 text-right font-bold tabular-nums text-[#0A0A0A]">{r.feedbackCount}</td>
-                        <td className="px-5 py-3 text-right">
-                          <span
-                            className="bz-mono tabular-nums text-[12px] font-semibold text-[#0A0A0A]"
-                            title="Etkileşim ağırlığı (yorum × ortalama puan)"
-                          >
-                            {r.ltv.toLocaleString('tr-TR')}
-                          </span>
-                        </td>
                         {/* §38.48 — Son konu + Kanal (helper-derive, owner paterni reuse) */}
                         <td className="px-5 py-3 text-[#525252]">
                           {computeLastTopic(
@@ -633,7 +624,7 @@ export default function AdminCustomersPage() {
                       {r.branch && <p><MapPin size={10} className="mr-1 inline" strokeWidth={2} />{r.branch}</p>}
                     </div>
                     <div className="mt-2 flex items-center justify-between pulse-eyebrow text-[#6B7280]">
-                      <span>{r.feedbackCount} geri bildirim · LTV {r.ltv.toLocaleString('tr-TR')}</span>
+                      <span>{r.feedbackCount} geri bildirim</span>
                       <span>{new Date(r.lastAt).toLocaleDateString('tr-TR')}</span>
                     </div>
                   </div>

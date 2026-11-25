@@ -202,39 +202,6 @@ export const IllusSalon = ({ size = 280 }: IllusProps) => (
   </svg>
 );
 
-// ─── Law firms ───────────────────────────────────────────────────────────
-// Balance scale with lime pans, a document and a business card with a QR.
-export const IllusLaw = ({ size = 280 }: IllusProps) => (
-  <svg {...svgBase(size)} aria-hidden>
-    <circle cx="120" cy="104" r="86" fill="#EAF9B8" opacity="0.55" />
-    <rect x="22" y="194" width="196" height="10" rx="5" fill="#E4E4E4" />
-    {/* Document */}
-    <path d="M22 72 L74 72 L88 86 L88 186 L22 186 Z" fill="#FFFFFF" stroke="#0A0A0A" strokeWidth="2.5" strokeLinejoin="round" />
-    <path d="M74 72 L74 86 L88 86" fill="none" stroke="#0A0A0A" strokeWidth="2" strokeLinejoin="round" />
-    {[100, 112, 124, 136, 148].map((y, i) => (
-      <rect key={y} x="32" y={y} width={i % 2 === 0 ? 46 : 36} height="4" rx="2" fill="#0A0A0A" opacity="0.3" />
-    ))}
-    <rect x="32" y="162" width="28" height="12" rx="6" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="1.5" />
-    {/* Scale */}
-    <rect x="137" y="40" width="6" height="140" rx="3" fill="#0A0A0A" />
-    <path d="M112 186 L168 186 L160 172 L120 172 Z" fill="#0A0A0A" />
-    <circle cx="140" cy="36" r="8" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2.5" />
-    <path d="M96 56 L184 56" stroke="#0A0A0A" strokeWidth="4" strokeLinecap="round" />
-    <path d="M100 56 L86 96 M100 56 L114 96" stroke="#0A0A0A" strokeWidth="1.8" />
-    <path d="M180 56 L166 96 M180 56 L194 96" stroke="#0A0A0A" strokeWidth="1.8" />
-    <path d="M80 96 Q100 116 120 96 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2.5" strokeLinejoin="round" />
-    <path d="M160 96 Q180 116 200 96 Z" fill="#C6F24E" stroke="#0A0A0A" strokeWidth="2.5" strokeLinejoin="round" />
-    {/* Business card with a QR */}
-    <g transform="rotate(-8 196 156)">
-      <rect x="164" y="132" width="66" height="44" rx="5" fill="#0A0A0A" />
-      <rect x="170" y="138" width="30" height="30" rx="2" fill="#FFFFFF" />
-      <QrGlyph x={172} y={140} s={26} />
-      <rect x="205" y="142" width="18" height="4" rx="2" fill="#C6F24E" />
-      <rect x="205" y="152" width="14" height="3" rx="1.5" fill="#FFFFFF" opacity="0.6" />
-    </g>
-  </svg>
-);
-
 // ─── Retail stores ───────────────────────────────────────────────────────
 // Shopping bag and a receipt with a QR at the bottom.
 export const IllusRetail = ({ size = 280 }: IllusProps) => (

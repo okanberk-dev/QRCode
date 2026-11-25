@@ -45,49 +45,13 @@ const SECTOR_META: Record<string, SectorMeta> = {
     sector: 'hospitality',
     where: { tr: 'Oda, restoran ve resepsiyon', en: 'Rooms, restaurant and reception' },
   },
-  'boutique-hotels': {
-    sector: 'hospitality',
-    where: { tr: 'Oda kartı, kahvaltı salonu ve resepsiyon', en: 'Room cards, breakfast room and reception' },
-  },
   healthcare: {
     sector: 'clinic',
     where: { tr: 'Bölüm bekleme alanları ve çıkış bankosu', en: 'Department waiting areas and the checkout desk' },
   },
-  dentists: {
-    sector: 'clinic',
-    where: { tr: 'Ödeme bankosu ve bakım kartı', en: 'Payment desk and aftercare cards' },
-  },
-  aesthetic: {
-    sector: 'clinic',
-    where: { tr: 'Kontrol randevusu ve ödeme alanı', en: 'Follow-up visits and the payment area' },
-  },
-  veterinary: {
-    sector: 'clinic',
-    where: { tr: 'Ödeme bankosu ve aşı karnesi', en: 'Payment desk and vaccination cards' },
-  },
   'beauty-salon': {
     sector: 'spa',
     where: { tr: 'Ayna kenarı, kasa ve randevu kartı', en: 'Mirrors, front desk and appointment cards' },
-  },
-  gym: {
-    sector: 'fitness',
-    where: { tr: 'Turnike çıkışı ve soyunma odası koridoru', en: 'Turnstile exit and locker-room corridor' },
-  },
-  'law-firms': {
-    sector: 'legal',
-    where: { tr: 'Bekleme alanı ve kartvizit', en: 'Waiting area and business cards' },
-  },
-  'real-estate': {
-    sector: 'other',
-    where: { tr: 'Anahtar teslim zarfı ve kartvizit', en: 'Key handover envelopes and business cards' },
-  },
-  'auto-service': {
-    sector: 'other',
-    where: { tr: 'Dikiz aynası askısı ve fatura', en: 'Mirror hangers and invoices' },
-  },
-  schools: {
-    sector: 'education',
-    where: { tr: 'Veli toplantısı ve kayıt ofisi', en: 'Parent meetings and the admissions office' },
   },
   retail: {
     sector: 'retail',
@@ -97,19 +61,10 @@ const SECTOR_META: Record<string, SectorMeta> = {
 
 const SECTOR_GROUPS: ReadonlyArray<{ id: string; title: Localized; slugs: readonly string[] }> = [
   { id: 'food', title: { tr: 'Yeme-içme', en: 'Food and drink' }, slugs: ['restaurants', 'delivery'] },
-  { id: 'hospitality', title: { tr: 'Konaklama', en: 'Hospitality' }, slugs: ['hotels', 'boutique-hotels'] },
-  {
-    id: 'health',
-    title: { tr: 'Sağlık', en: 'Health' },
-    slugs: ['healthcare', 'dentists', 'aesthetic', 'veterinary'],
-  },
-  { id: 'care', title: { tr: 'Güzellik ve spor', en: 'Beauty and fitness' }, slugs: ['beauty-salon', 'gym'] },
-  { id: 'retail', title: { tr: 'Mağaza ve servis', en: 'Retail and repair' }, slugs: ['retail', 'auto-service'] },
-  {
-    id: 'services',
-    title: { tr: 'Profesyonel hizmetler ve eğitim', en: 'Professional services and education' },
-    slugs: ['law-firms', 'real-estate', 'schools'],
-  },
+  { id: 'hospitality', title: { tr: 'Konaklama', en: 'Hospitality' }, slugs: ['hotels'] },
+  { id: 'health', title: { tr: 'Sağlık', en: 'Health' }, slugs: ['healthcare'] },
+  { id: 'care', title: { tr: 'Güzellik', en: 'Beauty' }, slugs: ['beauty-salon'] },
+  { id: 'retail', title: { tr: 'Mağaza', en: 'Retail' }, slugs: ['retail'] },
 ];
 
 const OTHER_GROUP_TITLE: Localized = { tr: 'Diğer sektörler', en: 'Other industries' };

@@ -2,9 +2,9 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
+  Star,
   Users,
   Crown,
-  Wallet,
   Repeat2,
   AlertTriangle,
   Inbox,
@@ -395,10 +395,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     : visibleEnriched.length;
   const vipCount = segmentCounts.vip;
   const vipPct = totalCustomers > 0 ? (vipCount / totalCustomers) * 100 : 0;
-  const avgLtv =
-    visibleEnriched.length > 0
-      ? Math.round(visibleEnriched.reduce((sum, r) => sum + r.ltv, 0) / visibleEnriched.length)
-      : 0;
+  // §57 — "LTV" was visits × rating × 10, not money (there is no spend
+  // data); replaced by the customers' average rating.
+  const rated = visibleEnriched.filter((r) => r.avg_rating != null);
+  const avgRating =
+    rated.length > 0 ? rated.reduce((sum, r) => sum + (r.avg_rating ?? 0), 0) / rated.length : null;
   const returningCount = visibleEnriched.filter((r) => r.feedback_count >= 2).length;
   const returnRate = visibleEnriched.length > 0 ? (returningCount / visibleEnriched.length) * 100 : 0;
   // §38.47 — 5. KPI "Risk altında". `risk` + `churned` segment'lerin toplamı
@@ -514,7 +515,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </AlertBanner>
       )}
 
-      {/* §38.36 + §38.47 — 5 KPI cards (Toplam / VIP / Ort. LTV / Geri dönüş /
+      {/* §38.36 + §38.47 — 5 KPI cards (Toplam / VIP / Ort. puan / Geri dönüş /
           Risk altında). Mobile: total full width, then 2 × 2. md–lg: 2 + 3
           (five cards at 1024px would break the labels mid-word). xl: one
           row of 5. Same grid in loading.tsx (§40.10). */}
@@ -541,9 +542,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         />
         <StatCard
           className="md:col-span-2 xl:col-span-1"
-          label={isTr ? 'Ort. LTV' : 'Avg LTV'}
-          value={avgLtv > 0 ? avgLtv.toLocaleString(intLocale) : '—'}
-          icon={<Wallet size={14} />}
+          label={isTr ? 'Ort. puan' : 'Avg rating'}
+          value={avgRating != null ? avgRating.toLocaleString(intLocale, { maximumFractionDigits: 1, minimumFractionDigits: 1 }) : '—'}
+          icon={<Star size={14} />}
         />
         <StatCard
           className="md:col-span-2 xl:col-span-1"
@@ -644,7 +645,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   </th>
                   <th className="text-left">Segment</th>
                   <th className="text-right">{isTr ? 'Ziyaret' : 'Visits'}</th>
-                  <th className="text-right">LTV</th>
+                  <th className="text-right">{isTr ? 'Ort. puan' : 'Avg rating'}</th>
                   <th className="text-left">{isTr ? 'Son konu' : 'Last topic'}</th>
                   <th className="text-left">{isTr ? 'Kanal' : 'Channel'}</th>
                   <th className="text-right">{isTr ? 'Son ziyaret' : 'Last seen'}</th>
@@ -724,7 +725,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       </td>
                       <td className="text-right">
                         <span className="bz-mono tabular-nums text-[12.5px] font-semibold text-[#0A0A0A]">
-                          {r.ltv.toLocaleString(intLocale)}
+                          {r.avg_rating != null
+                            ? r.avg_rating.toLocaleString(intLocale, { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+                            : '—'}
                         </span>
                       </td>
                       <td>

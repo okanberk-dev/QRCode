@@ -33,15 +33,12 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
 
   // Comparison surfaces
   compare: { priority: 0.8, changefreq: 'monthly' },
-  'vs/individual-qr': { priority: 0.7, changefreq: 'monthly' },
-  'vs/spreadsheet': { priority: 0.7, changefreq: 'monthly' },
 
   // Trust + content
   about: { priority: 0.8, changefreq: 'monthly' },
   contact: { priority: 0.8, changefreq: 'monthly' },
   press: { priority: 0.7, changefreq: 'monthly' },
   faq: { priority: 0.8, changefreq: 'monthly' },
-  careers: { priority: 0.7, changefreq: 'monthly' },
   'how-it-works': { priority: 0.8, changefreq: 'monthly' },
   features: { priority: 0.85, changefreq: 'monthly' },
   'features/pulse-ai': { priority: 0.8, changefreq: 'monthly' },

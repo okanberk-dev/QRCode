@@ -136,7 +136,6 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         items: [
           { slug: 'restaurants', use: 'Masadaki QR kodla açılan yemek ve içecek menüsü.' },
           { slug: 'hotels', use: 'Oda servisi ve otel restoranı menüsü.' },
-          { slug: 'boutique-hotels', use: 'Kahvaltı ve bar menüsü.' },
           { slug: 'beauty-salon', use: 'Hizmet ve fiyat listesi.' },
           { slug: 'retail', use: 'Ürün ve fiyat listesi.' },
         ],
@@ -273,7 +272,6 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
       items: [
         { slug: 'restaurants', use: 'A food and drinks menu that opens from the table QR code.' },
         { slug: 'hotels', use: 'Room service and hotel restaurant menus.' },
-        { slug: 'boutique-hotels', use: 'Breakfast and bar menus.' },
         { slug: 'beauty-salon', use: 'A list of services and prices.' },
         { slug: 'retail', use: 'A list of products and prices.' },
       ],

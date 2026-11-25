@@ -5,7 +5,7 @@
 // Google Yorumları sayfasının üst kısmına yerleşir. Pulse §11 token'ları
 // (graphite/lime/pure white) + bz-card primitive'i. Owner tek bakışta:
 //   - Bugünkü health score + label
-//   - Buaze öncesi baseline → bugün delta (varsa)
+//   - ilk ölçüm (baseline) → bugün delta (en az 14 gün sonra ve sıfır değilse)
 //   - Önerilen aksiyonlar (top 5)
 
 import { useEffect, useState } from 'react';
@@ -124,12 +124,23 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
     );
   }
 
+  // §57 — a change is shown only when it means something: the first
+  // measurement is at least 14 days old and the score actually moved
+  // (a "0" right after connecting read as "Buaze did nothing").
+  const baselineAgeDays = data.baseline?.capturedAt
+    ? (Date.now() - Date.parse(data.baseline.capturedAt)) / 86_400_000
+    : 0;
   const baselineDelta =
-    data.baseline?.score != null && data.score != null ? data.score - data.baseline.score : null;
+    data.baseline?.score != null && data.score != null && baselineAgeDays >= 14
+      ? data.score - data.baseline.score
+      : null;
   const previousDelta =
     data.previousMonthly?.score != null && data.score != null
       ? data.score - data.previousMonthly.score
       : null;
+  const baselineDate = data.baseline?.capturedAt
+    ? new Date(data.baseline.capturedAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short' })
+    : '';
 
   return (
     <div className="bz-card p-5 sm:p-6 space-y-5">
@@ -155,13 +166,13 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
 
         {/* Delta badges */}
         <div className="flex flex-col gap-1.5 items-end">
-          {baselineDelta != null && (
+          {baselineDelta != null && baselineDelta !== 0 && (
             <DeltaBadge
-              label={isTr ? 'Buaze öncesinden' : 'Since Buaze start'}
+              label={isTr ? `İlk ölçümden (${baselineDate}) bu yana` : `Since first check (${baselineDate})`}
               value={baselineDelta}
             />
           )}
-          {previousDelta != null && (
+          {previousDelta != null && previousDelta !== 0 && (
             <DeltaBadge
               label={isTr ? 'Geçen aydan' : 'Vs last month'}
               value={previousDelta}

@@ -14,7 +14,6 @@ import {
   TrendingUp,
   AlertTriangle,
   ArrowRight,
-  Wallet,
 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
@@ -377,8 +376,8 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                 </dl>
               )}
 
-              {/* Stats — Phase 8c 4 tile (LTV eklendi) */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Stats — §57: LTV removed (visits × rating, not spend). */}
+              <div className="grid grid-cols-3 gap-2">
                 <div className="bz-card-soft p-3">
                   <span className="text-[12px] text-[#737373]">
                     {isTr ? 'Yorum' : 'Reviews'}
@@ -399,24 +398,6 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                       {data.stats.avgRating != null ? data.stats.avgRating.toFixed(1) : '—'}
                     </span>
                     <Star size={11} className="text-[#C6F24E]" fill="#C6F24E" />
-                  </div>
-                </div>
-                <div className="bz-card-soft p-3">
-                  <span className="text-[12px] text-[#737373]">LTV</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span
-                      className="bz-mono tabular-nums text-[18px] font-semibold text-[#0A0A0A]"
-                      title={
-                        isTr
-                          ? 'Etkileşim ağırlığı (yorum × ortalama puan)'
-                          : 'Engagement weight (reviews × avg rating)'
-                      }
-                    >
-                      {data.stats.ltv != null
-                        ? data.stats.ltv.toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US')
-                        : '—'}
-                    </span>
-                    <Wallet size={11} className="text-[#A3A3A3]" />
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">

@@ -14,7 +14,6 @@ import {
   TrendingUp,
   AlertTriangle,
   ArrowRight,
-  Wallet,
   Store,
   Shield,
 } from 'lucide-react';
@@ -374,21 +373,7 @@ export function AdminCustomerDrawer() {
                     <Star size={11} className="text-[#C6F24E]" fill="#C6F24E" />
                   </div>
                 </div>
-                <div className="bz-card-soft p-3">
-                  <span className="pulse-eyebrow text-[#737373]">LTV</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span
-                      className="bz-mono tabular-nums text-[18px] font-semibold text-[#0A0A0A]"
-                      title="Etkileşim ağırlığı (yorum × ortalama puan)"
-                    >
-                      {data.stats.ltv != null
-                        ? data.stats.ltv.toLocaleString('tr-TR')
-                        : '—'}
-                    </span>
-                    <Wallet size={11} className="text-[#A3A3A3]" />
-                  </div>
-                </div>
-                <div className="bz-card-soft p-3">
+                                <div className="bz-card-soft p-3">
                   <span className="pulse-eyebrow text-[#737373]">SON</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="bz-h-tight text-[14px] text-[#0A0A0A]">
