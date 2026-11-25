@@ -18,6 +18,7 @@ import { prisma } from '@/lib/prisma';
 import { writePanelAuditLog } from '@/lib/audit-log';
 import { gateConnectedGoogleReviewRoute, type GoogleReviewRouteConnected } from '@/lib/google-review-route';
 import { recordReplyOnReview } from '@/lib/google-review-sync';
+import { ReplyApprovalRequiredError, needsReplyApproval } from '@/lib/reply-approval';
 import { findBannedPhrases, readGoogleReplySettings } from '@/lib/google-reply-settings';
 
 export const dynamic = 'force-dynamic';
@@ -125,8 +126,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     );
   }
 
+  // The person sending is the approval for a 1–3★ review: who + when are
+  // recorded below with the audit entry (§54).
+  const reviewRow = await prisma.googleReview.findFirst({
+    where: { restaurantId: id, reviewId: owned.reviewId },
+    select: { rating: true },
+  });
+  const rating = reviewRow?.rating ?? null;
+  const approvedAt = new Date();
+
   try {
-    const reply = await updateGoogleReviewReply(ctx.integration, owned.name, parsed.data.comment);
+    const reply = await updateGoogleReviewReply(ctx.integration, owned.name, parsed.data.comment, {
+      rating,
+      approval: { actorId: ctx.actor.id, approvedAt },
+    });
     const stored = { comment: reply.comment ?? parsed.data.comment, updateTime: reply.updateTime ?? new Date().toISOString() };
     await recordReplyOnReview(id, owned.reviewId, stored);
     await prisma.googleReviewAiDraft.deleteMany({ where: { restaurantId: id, reviewName: owned.name } });
@@ -134,9 +147,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       reviewId: owned.reviewId,
       comment: parsed.data.comment.slice(0, 1000),
       confirmedResponsibility: true,
+      rating,
+      lowRatingApproval: needsReplyApproval(rating) ? { actorId: ctx.actor.id, approvedAt: approvedAt.toISOString() } : null,
     });
     return NextResponse.json({ reply: { ...reply, comment: stored.comment, updateTime: stored.updateTime } });
   } catch (error) {
+    if (error instanceof ReplyApprovalRequiredError) {
+      return NextResponse.json(
+        { error: isTr ? 'Bu yanıt için onay kaydı oluşturulamadı.' : 'No approval could be recorded for this reply.', code: 'APPROVAL_REQUIRED' },
+        { status: 403 },
+      );
+    }
     if (error instanceof ReplyContentBlockedError) {
       const issues = error.issues.filter(isReplyRiskKind);
       return NextResponse.json(

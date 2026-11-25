@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { assertReplyApproval, type ReplyApprovalGate } from '@/lib/reply-approval';
 import { prisma } from '@/lib/prisma';
 import { checkReplyRisk } from '@/lib/reply-risk';
 import type { PanelActor } from '@/lib/auth';
@@ -1161,6 +1162,7 @@ export async function updateGoogleReviewReply(
   integration: GoogleIntegrationRow,
   reviewName: string,
   comment: string,
+  gate: ReplyApprovalGate,
 ): Promise<{ comment: string; updateTime?: string; reviewReplyState?: string }> {
   // Hard assert, not a sanitiser. `reviewName` is concatenated into the URL and
   // `fetch()` resolves `..` dot-segments (WHATWG URL), so a name that merely
@@ -1170,6 +1172,8 @@ export async function updateGoogleReviewReply(
   if (!GOOGLE_REVIEW_NAME_RE.test(reviewName)) {
     throw new Error('invalid Google review resource name');
   }
+  // 1–3★ (or unknown rating) needs a recorded human approval (§54).
+  assertReplyApproval(gate);
   // Links are checked by the callers against the business's own hosts.
   const risk = checkReplyRisk(comment, { linksAsWarning: true });
   if (risk.blocked) throw new ReplyContentBlockedError(risk.issues);

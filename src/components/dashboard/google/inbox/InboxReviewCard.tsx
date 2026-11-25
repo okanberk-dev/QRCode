@@ -285,8 +285,8 @@ export function InboxReviewCard({
                 className="min-h-11 text-[11.5px] font-medium text-[#525252] underline-offset-2 hover:underline sm:min-h-0"
               >
                 {showTranslation
-                  ? isTr ? 'Google çevirisini gizle' : 'Hide Google translation'
-                  : isTr ? 'Google çevirisini göster' : 'Show Google translation'}
+                  ? isTr ? 'Çeviriyi gizle' : 'Hide translation'
+                  : isTr ? 'Çeviriyi göster' : 'Show translation'}
               </button>
               {showTranslation && (
                 <p className="mt-1 whitespace-pre-wrap break-words text-[12px] leading-[1.55] text-[#737373]">

@@ -49,6 +49,8 @@ export interface FeedbackReplyInput {
   createdAt: Date;
   /** "manual" | "ai_copilot" | "template_fallback" — AI ile owner ayırt için. */
   source: string | null;
+  /** Who sent it (panel user / team member / admin). Null → "Ekip". */
+  authorName?: string | null;
   feedback: {
     id: string;
     name: string | null;
@@ -88,9 +90,10 @@ export interface BuildActivityFeedInput {
 const COPY = {
   tr: {
     feedbackAction: 'geri bildirim bıraktı',
-    replyManualAction: 'yanıt verdi',
-    replyAiAction: 'AI yanıtı gönderdi',
-    aiDraftAction: 'yanıt önerisi hazırladı',
+    replyManualAction: 'yanıt gönderdi',
+    replyAiAction: 'AI taslağını onaylayıp gönderdi',
+    teamActor: 'Ekip',
+    aiDraftAction: 'yanıt taslağı hazırladı',
     systemActor: 'Sistem',
     qrNotDownloadedAction: 'QR hatırlatma gönderildi',
     firstFeedbackTipsAction: 'ilk yorum ipuçları gönderildi',
@@ -107,8 +110,9 @@ const COPY = {
   },
   en: {
     feedbackAction: 'left feedback',
-    replyManualAction: 'replied',
-    replyAiAction: 'sent AI reply',
+    replyManualAction: 'sent a reply',
+    replyAiAction: 'approved and sent an AI draft',
+    teamActor: 'Team',
     aiDraftAction: 'drafted a reply',
     systemActor: 'System',
     qrNotDownloadedAction: 'QR reminder sent',
@@ -212,10 +216,14 @@ export function buildActivityFeed({
       id: `reply:${r.id}`,
       type: 'reply',
       timestamp: r.createdAt,
-      // Manual yanıt: "Sahip yanıt verdi". AI yanıt: "AI Asistan AI yanıtı gönderdi".
-      actor: isAi ? c.aiActor : shortName(r.feedback.name, isTr),
+      // A person always sends; AI only drafts (§54). "Ayşe AI taslağını
+      // onaylayıp gönderdi → Mehmet K. ★★".
+      actor: r.authorName?.trim() || c.teamActor,
       action: isAi ? c.replyAiAction : c.replyManualAction,
-      target: r.feedback.rating && r.feedback.rating > 0 ? '★'.repeat(Math.round(r.feedback.rating)) : undefined,
+      target: [
+        r.feedback.name?.trim() ? `${c.targetTo} ${shortName(r.feedback.name, isTr)}` : null,
+        r.feedback.rating && r.feedback.rating > 0 ? '★'.repeat(Math.round(r.feedback.rating)) : null,
+      ].filter(Boolean).join(' ') || undefined,
       sentiment: ratingToSentiment(r.feedback.rating),
       href: `${dashboardPrefix}/feedbacks?id=${r.feedback.id}`,
     });

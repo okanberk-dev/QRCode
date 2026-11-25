@@ -9,6 +9,7 @@ import {
 } from '@/lib/google-review-showcase';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { parseEmbedVariant } from '@/lib/embed-variant';
+import { splitGoogleTranslation } from '@/lib/google-review-text';
 
 // Google reviews widget for one business (CLAUDE.md §53). Reads ONLY the
 // server cache filled by the central refresh queue — a page view never calls
@@ -59,6 +60,7 @@ const COPY = {
     anonymous: 'Google kullanıcısı',
     preparing: 'Google yorumları hazırlanıyor. Kısa süre sonra burada görünecek.',
     noText: 'Yalnız puan verdi.',
+    showTranslation: 'Çeviriyi göster',
     updated: (d: string) => `Son güncelleme ${d}`,
     rating: (r: number) => `5 üzerinden ${r} yıldız`,
   },
@@ -70,6 +72,7 @@ const COPY = {
     anonymous: 'Google user',
     preparing: 'Google reviews are being prepared and will appear here shortly.',
     noText: 'Left a rating only.',
+    showTranslation: 'Show translation',
     updated: (d: string) => `Updated ${d}`,
     rating: (r: number) => `${r} out of 5 stars`,
   },
@@ -237,15 +240,32 @@ export default async function GoogleReviewsEmbedPage({ params }: RouteParams) {
                 </div>
               </div>
             </div>
-            <p
-              style={{
-                margin: '8px 0 0', fontSize: 14, lineHeight: 1.55, whiteSpace: 'pre-line',
-                overflowWrap: 'anywhere', color: review.comment ? palette.fg : palette.muted,
-                display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-              }}
-            >
-              {review.comment ?? copy.noText}
-            </p>
+            {(() => {
+              // Original words first; Google's translation behind a toggle
+              // (no JS: <details> works inside the iframe).
+              const text = splitGoogleTranslation(review.comment);
+              return (
+                <>
+                  <p
+                    style={{
+                      margin: '8px 0 0', fontSize: 14, lineHeight: 1.55, whiteSpace: 'pre-line',
+                      overflowWrap: 'anywhere', color: text.original ? palette.fg : palette.muted,
+                      display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}
+                  >
+                    {text.original ?? copy.noText}
+                  </p>
+                  {text.translated && (
+                    <details style={{ marginTop: 6 }}>
+                      <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 600, color: palette.muted }}>{copy.showTranslation}</summary>
+                      <p style={{ margin: '4px 0 0', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-line', overflowWrap: 'anywhere', color: palette.muted }}>
+                        {text.translated}
+                      </p>
+                    </details>
+                  )}
+                </>
+              );
+            })()}
             {review.reviewReply && (
               <div style={{ marginTop: 10, padding: '10px 12px', background: palette.cardBg, borderRadius: 10, borderLeft: `3px solid ${palette.accent}` }}>
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: palette.muted }}>{copy.reply}</p>

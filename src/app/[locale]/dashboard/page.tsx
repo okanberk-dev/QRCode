@@ -455,6 +455,7 @@ async function renderDashboardPage({
         id: true,
         createdAt: true,
         source: true,
+        authorUserId: true,
         feedback: {
           select: {
             id: true,
@@ -695,6 +696,19 @@ async function renderDashboardPage({
 
   // §38.31 — CANLI AKIŞ event union build. 4 source helper'a geçirilir,
   // helper sort + slice + sentiment derive yapar (saf fonksiyon, test edilebilir).
+  // Who sent each reply (owner, team member or admin): the feed names the
+  // person, AI only drafts (§54).
+  const replyAuthorIds = [...new Set(recentReplies.map((r) => r.authorUserId))];
+  const [replyUsers, replyAdmins] = replyAuthorIds.length
+    ? await prisma.$transaction([
+        prisma.user.findMany({ where: { id: { in: replyAuthorIds } }, select: { id: true, name: true } }),
+        prisma.adminUser.findMany({ where: { id: { in: replyAuthorIds } }, select: { id: true, username: true } }),
+      ])
+    : [[], []];
+  const replyAuthorName = new Map<string, string>();
+  for (const u of replyUsers) if (u.name?.trim()) replyAuthorName.set(u.id, u.name.trim().split(/\s+/)[0]);
+  for (const a of replyAdmins) replyAuthorName.set(a.id, 'Buaze');
+
   const activityEvents = buildActivityFeed({
     // §38.32 — slice(0,8) caller-side redundant (helper limit=6 zaten 5-6'ya
     // crop eder); explicit cap ile clarity. KVKK consent helper'a geçirilir,
@@ -715,6 +729,7 @@ async function renderDashboardPage({
       id: r.id,
       createdAt: r.createdAt,
       source: r.source,
+      authorName: replyAuthorName.get(r.authorUserId) ?? null,
       feedback: r.feedback,
     })),
     aiDrafts: recentAiDrafts.map((d) => ({

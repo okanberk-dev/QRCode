@@ -14,6 +14,7 @@ import {
   updateGoogleReviewReply,
 } from '@/lib/google-business';
 import { recordReplyOnReview } from '@/lib/google-review-sync';
+import { ReplyApprovalRequiredError } from '@/lib/reply-approval';
 import {
   runReplyQueue,
   type ReplyJobStatus,
@@ -141,6 +142,7 @@ function prismaReplyStore(restaurantId: string, audit: { actorId: string; actorS
 /** Maps a Google error to a queue outcome (retry, pause or fail). */
 export function sendOutcomeFromError(err: unknown): Extract<SendOutcome, { ok: false }> {
   if (err instanceof ReplyContentBlockedError) return { ok: false, code: 'CONTENT_BLOCKED', retriable: false };
+  if (err instanceof ReplyApprovalRequiredError) return { ok: false, code: 'APPROVAL_REQUIRED', retriable: false };
   if (err instanceof GoogleBusinessApiError) {
     const status = err.status;
     const code = err.code ?? 'GOOGLE_ERROR';
@@ -173,7 +175,15 @@ async function googleReplySender(restaurantId: string): Promise<ReplySender | nu
     async send(reviewId, comment) {
       if (!/^[A-Za-z0-9_-]+$/.test(reviewId)) return { ok: false, code: 'REVIEW_NOT_FOUND', retriable: false };
       try {
-        const reply = await updateGoogleReviewReply(integration, `${prefix}${reviewId}`, comment);
+        const row = await prisma.googleReview.findFirst({
+          where: { restaurantId, reviewId },
+          select: { rating: true },
+        });
+        // Bulk/queue sends carry no per-review approval: 1–3★ is refused.
+        const reply = await updateGoogleReviewReply(integration, `${prefix}${reviewId}`, comment, {
+          rating: row?.rating ?? null,
+          approval: null,
+        });
         return { ok: true, reply: { comment: reply.comment ?? comment, updateTime: reply.updateTime ?? null } };
       } catch (err) {
         return sendOutcomeFromError(err);

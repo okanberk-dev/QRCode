@@ -87,7 +87,7 @@ test('buildActivityFeed: KVKK fallback when name null', () => {
   assert.equal(event.actor, 'İsimsiz');
 });
 
-test('buildActivityFeed: AI reply marked as AI Asistan actor', () => {
+test('buildActivityFeed: AI-drafted reply is sent by a person, not the AI', () => {
   const [event] = buildActivityFeed({
     feedbacks: [],
     replies: [
@@ -95,6 +95,7 @@ test('buildActivityFeed: AI reply marked as AI Asistan actor', () => {
         id: 'r1',
         createdAt: t('2026-05-04T11:00:00Z'),
         source: 'ai_copilot',
+        authorName: 'Ayşe Demir',
         feedback: { id: 'f1', name: 'Mehmet Kaya', rating: 3, platform: 'google' },
       },
     ],
@@ -102,11 +103,12 @@ test('buildActivityFeed: AI reply marked as AI Asistan actor', () => {
     systemEvents: [],
   });
   assert.equal(event.type, 'reply');
-  assert.equal(event.actor, 'AI Asistan');
-  assert.equal(event.action, 'AI yanıtı gönderdi');
+  assert.equal(event.actor, 'Ayşe Demir');
+  assert.equal(event.action, 'AI taslağını onaylayıp gönderdi');
+  assert.equal(event.target, '→ Mehmet K. ★★★');
 });
 
-test('buildActivityFeed: manual reply marked with customer name', () => {
+test('buildActivityFeed: manual reply names the sender, falls back to Ekip', () => {
   const [event] = buildActivityFeed({
     feedbacks: [],
     replies: [
@@ -120,8 +122,8 @@ test('buildActivityFeed: manual reply marked with customer name', () => {
     aiDrafts: [],
     systemEvents: [],
   });
-  assert.equal(event.actor, 'Mehmet K.');
-  assert.equal(event.action, 'yanıt verdi');
+  assert.equal(event.actor, 'Ekip');
+  assert.equal(event.action, 'yanıt gönderdi');
 });
 
 test('buildActivityFeed: system event types map to readable labels', () => {

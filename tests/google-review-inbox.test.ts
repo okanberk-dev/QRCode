@@ -603,7 +603,7 @@ describe('nothing unsafe reaches Google', () => {
       const orig = globalThis.fetch;
       globalThis.fetch = (async () => { fetched = true; return new Response('{}'); }) as typeof fetch;
       try {
-        await assert.rejects(updateGoogleReviewReply(integration, name, text), ReplyContentBlockedError);
+        await assert.rejects(updateGoogleReviewReply(integration, name, text, { rating: 5, approval: null }), ReplyContentBlockedError);
       } finally {
         globalThis.fetch = orig;
       }
