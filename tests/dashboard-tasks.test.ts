@@ -20,7 +20,7 @@ test('buildPendingTasks: reply task only when unreplied count > 0', () => {
   assert.equal(tasks.length, 1);
   assert.equal(tasks[0].type, 'reply');
   assert.equal(tasks[0].severity, 'high');
-  assert.match(tasks[0].title, /12 yorum yanıtsız/);
+  assert.match(tasks[0].title, /12 geri bildirim yanıtsız/);
 });
 
 test('buildPendingTasks: platform task only when Google sync failing', () => {

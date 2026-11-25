@@ -74,7 +74,7 @@ const COPY = {
   tr: {
     // Urgency is shown by the badge next to each task, so the meta line
     // does not repeat "Acil / Orta / Düşük".
-    replyTitle: (n: number) => `${n} yorum yanıtsız`,
+    replyTitle: (n: number) => `${n} geri bildirim yanıtsız`,
     replyMeta: (when: string) => `en eski ${when}`,
     replyMetaNoTime: 'Yanıt bekliyor',
     platformTitle: 'Google bağlantı sorunu',

@@ -378,11 +378,9 @@ export function ActivityFeed({
                       />
                     </span>
                     <span className="min-w-0 flex-1 truncate text-[13px] text-[#525252]">
-                      <strong className="font-semibold text-[#0A0A0A]">{event.actor}</strong>{' '}
-                      {event.action}
                       {inlineRating !== null && (
                         <span
-                          className="ml-1 inline-flex items-center align-middle gap-0.5"
+                          className="mr-1.5 inline-flex items-center align-middle gap-0.5"
                           aria-label={`${inlineRating} ${isTr ? 'yıldız' : 'stars'}`}
                         >
                           {[1, 2, 3, 4, 5].map((s) => (
@@ -396,6 +394,8 @@ export function ActivityFeed({
                           ))}
                         </span>
                       )}
+                      <strong className="font-semibold text-[#0A0A0A]">{event.actor}</strong>{' '}
+                      {event.action}
                       {targetWithoutStars && (
                         <>
                           {' '}

@@ -591,9 +591,8 @@ async function renderAnalyticsPage({
   const themes = cachedThemes ?? emptyThemes;
   const structuredInsight = cachedInsight ?? emptyInsight;
 
-  // KPI sparklines from the chart series. Average rating: running average
+  // KPI sparkline (the volume chart below shows daily counts). Average rating: running average
   // of the rated days so far (smooth, no day-to-day zigzag, §58).
-  const sparkReviews = volumePoints.map((p) => p.total);
   const sparkAvgRating: number[] = [];
   {
     let sum = 0;
@@ -646,8 +645,6 @@ async function renderAnalyticsPage({
             subtitle: isTr
               ? `${redirectCount} yönlendirme · ${feedbackOnly.length} geri bildirim`
               : `${redirectCount} redirects · ${feedbackOnly.length} feedback`,
-            sparkline: sparkReviews,
-            sparklineColor: '#0A0A0A',
           },
           {
             label: metricLabel('avgRating', isTr),
