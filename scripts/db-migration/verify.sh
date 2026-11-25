@@ -14,6 +14,9 @@ ra="$(mktemp)"; rb="$(mktemp)"
 fd="set extra_float_digits = 1"
 psql "$a" -XAtq -F' ' -c "$fd" -c "$sql_a order by 1" > "$ra"
 psql "$b" -XAtq -F' ' -c "$fd" -c "$sql_b order by 1" > "$rb"
+# Each server orders table names by its own collation (`_prisma_migrations`
+# sorts first under ICU en-US, among the p's under libc): compare in C order.
+LC_ALL=C sort -o "$ra" "$ra"; LC_ALL=C sort -o "$rb" "$rb"
 na=$(wc -l < "$ra"); nb=$(wc -l < "$rb")
 rows_a=$(awk '{s+=$2} END {print s+0}' "$ra"); rows_b=$(awk '{s+=$2} END {print s+0}' "$rb")
 report="$OPS_DIR/reports/verify-${1//[:\/]/-}-vs-${2//[:\/]/-}-$(ts).txt"

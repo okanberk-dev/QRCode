@@ -196,11 +196,17 @@ Veritabanı Supabase'ten (ABD, Virginia) uygulamayla aynı Coolify sunucusuna (F
 
 ### Yedekten geri yükleme
 
-1. Önce ayrı bir test veritabanına yükleyip kontrol edin: Coolify'da geçici bir PostgreSQL 17 oluşturun → Import → Server
-   path = yedek dosyası (Backups listesindeki dosya yolu) → `bash scripts/db-migration/verify.sh` ile ana veritabanıyla
-   satır sayılarını karşılaştırın. İş bitince geçici veritabanını silin.
-2. Gerçekten geri dönmek gerekirse: bakım modunu açın (aşağıda), `buaze-postgres` → Import → aynı yedek, "replace existing",
-   sonra bakım modunu kapatın.
+1. Önce ayrı bir test veritabanına yükleyip kontrol edin: Coolify'da geçici bir PostgreSQL 17 oluşturun. Yeni sunucuda
+   önce iki rolü oluşturun (eski Supabase politikaları bunları anar, yoksa import hata verir):
+   `psql <test-db-adresi> -c 'create role anon nologin' -c 'create role authenticated nologin'`. Sonra Import → Server
+   path = yedek dosyası (Backups listesindeki dosya yolu) → geçici görevde
+   `T=<test-db-adresi> bash scripts/db-migration/verify.sh T new` ile ana veritabanıyla karşılaştırın (yedekten sonra
+   yazılan tablolar farklı çıkabilir). İş bitince geçici veritabanını silin. Not: Coolify yeni veritabanını libc
+   sıralamasıyla kurar; canlı `buaze` veritabanı ICU `en-US`'tir (Supabase ile aynı). Sıfırdan kurulumda
+   `scripts/db-migration/restore.sh` kullanın, o ICU ile kurar.
+2. Gerçekten geri dönmek gerekirse: bakım modunu açın (aşağıda), `buaze-postgres` → Import → aynı yedek, "replace existing".
+   Sonra `select datlocprovider, datlocale from pg_database where datname = 'buaze'` → `i | en-US` olmalı (değilse
+   veritabanı libc ile yeniden kurulmuştur: yedeği `restore.sh` ile yükleyin). Bakım modunu kapatın.
 
 ### Bakım modu
 
