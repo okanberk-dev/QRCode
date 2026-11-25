@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { Eyebrow } from "./Eyebrow";
 import { Sparkline } from "./Sparkline";
+import { InfoTip } from "./InfoTip";
 
 export type DeltaKind = "up" | "down" | "neutral";
 
@@ -22,6 +22,9 @@ interface StatCardProps {
   sparkline?: number[];
   /** Sparkline rengi (default lime-deep `#A8D62E`). */
   sparklineColor?: string;
+  /** Metric definition, shown behind an ⓘ (CLAUDE.md §58). */
+  info?: string;
+  isTr?: boolean;
 }
 
 export function StatCard({
@@ -35,19 +38,22 @@ export function StatCard({
   className = "",
   sparkline,
   sparklineColor = "#A8D62E",
+  info,
+  isTr = true,
 }: StatCardProps) {
   const deltaColor =
-    deltaKind === "up" ? "#16A34A" : deltaKind === "down" ? "#DC2626" : "#737373";
+    deltaKind === "up" ? "#15803D" : deltaKind === "down" ? "#B91C1C" : "#737373";
   const showSparkline = sparkline !== undefined && sparkline.length >= 2;
 
   return (
     <div
-      className={`bz-card relative min-w-0 p-3.5 sm:p-[18px] transition-shadow hover:shadow-sm ${className}`}
+      className={`bz-card relative min-w-0 p-4 sm:p-6 transition-shadow hover:shadow-sm ${className}`}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <Eyebrow className="min-w-0 max-w-[calc(100%-2.25rem)] leading-[1.25] [overflow-wrap:anywhere]">
+        <span className="inline-flex min-w-0 items-center gap-1 text-[12.5px] font-medium leading-[1.3] text-[#525252] [overflow-wrap:anywhere]">
           {label}
-        </Eyebrow>
+          {info && typeof label === "string" && <InfoTip text={info} label={label} isTr={isTr} />}
+        </span>
         {icon && (
           <span
             aria-hidden="true"
@@ -107,7 +113,7 @@ export function StatCardSkeleton({ className = "" }: StatCardSkeletonProps) {
   // mt-2.5 / sm:text-[27px] sm:mt-3 on the real card), delta h-[11px] mt-2 →
   // h-3 mt-2.5 sm.
   return (
-    <div className={`bz-card p-3.5 sm:p-[18px] ${className}`}>
+    <div className={`bz-card p-4 sm:p-6 ${className}`}>
       <div className="bz-skeleton h-[11px] w-20" />
       <div className="bz-skeleton mt-2.5 sm:mt-3 h-[21px] sm:h-[27px] w-24" />
       <div className="bz-skeleton mt-2 sm:mt-2.5 h-[11px] w-32" />

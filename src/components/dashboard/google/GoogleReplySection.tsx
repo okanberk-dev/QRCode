@@ -1112,12 +1112,8 @@ export function GoogleReplySection({
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-[12.5px] text-[#737373]">
-            {isTr ? 'Bağlı Google konumu' : 'Connected Google location'}:{' '}
-            <span className="font-medium text-[#0A0A0A]">{status.selectedLocation.title}</span>
-            {status.selectedLocation.address ? ` · ${status.selectedLocation.address}` : ''}
-          </p>
           <GoogleReviewsInbox
+            locationLabel={status.selectedLocation.title}
             restaurantId={restaurantId}
             restaurantName={restaurantName}
             locale={isTr ? 'tr' : 'en'}

@@ -100,7 +100,9 @@ export async function loadGoogleInboxPage(
       matching,
       summary: {
         averageRating: cache?.averageRating ?? null,
-        totalReviewCount: cache?.totalReviewCount ?? stored,
+        // One number (CLAUDE.md §58): what the list holds. Google's own
+        // totalReviewCount lags behind the reviews it returns (187 vs 188).
+        totalReviewCount: stored > 0 ? stored : (cache?.totalReviewCount ?? 0),
         stored,
         unreplied,
         replied,

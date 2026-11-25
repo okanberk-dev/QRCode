@@ -572,6 +572,10 @@ model Feedback {
   hasKvkkConsent      Boolean @default(true) @map("has_kvkk_consent")
   hasMarketingConsent Boolean @default(false) @map("has_marketing_consent")
   platform            String? @map("platform") // google | yemeksepeti | getir | trendyol_go
+  // High-rating redirect event (CLAUDE.md §58): the customer rated and was
+  // sent to the platform; no text. Not a review: kept out of the inbox, review
+  // counters and AI analysis, still counted as a rating.
+  redirected          Boolean @default(false) @map("redirected")
 
   // Rich Feedback Additions
   serviceType      String? @map("service_type")
@@ -616,6 +620,7 @@ model Feedback {
   // tables that grow with feedback volume. Adding the indexes is safe and
   // additive (no data shape change, migration deploy applies them).
   @@index([restaurantId, rating, createdAt])
+  @@index([restaurantId, redirected, createdAt])
   @@index([restaurantId, platform, createdAt])
   @@index([restaurantId, branch, createdAt])
   @@map("feedback")

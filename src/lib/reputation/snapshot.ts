@@ -17,6 +17,7 @@
 // Google fields. Notes column records the partial-fetch reason for ops.
 
 import { prisma } from '@/lib/prisma';
+import { loadReplyCoverage } from './reply-stats';
 import {
   fetchGoogleBusinessLocations,
   googleReviewManagementEnabled,
@@ -282,7 +283,9 @@ export async function captureSnapshot(
     feedbackReplied: feedback.feedbackReplied,
   };
 
-  const { overall } = computeHealthScore(metrics);
+  // Score from reply coverage (1–3★ feedback + Google), §58.
+  const replyable = await loadReplyCoverage(restaurantId).catch(() => null);
+  const { overall } = computeHealthScore({ ...metrics, replyable });
   const partial = google.notes.length > 0;
 
   const row = await prisma.restaurantHealthSnapshot.create({

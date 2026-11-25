@@ -49,6 +49,8 @@ const FILTER_DEFAULTS = {
   hasReply: 'all' as HasReplyFilter,
   // boolean literal-type cast (CLAUDE.md §36.3).
   flagged: false as boolean,
+  // §58: high-rating redirects are hidden by default; this shows only them.
+  redirects: false as boolean,
 };
 type FilterKey = keyof typeof FILTER_DEFAULTS;
 
@@ -191,7 +193,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkNotice, setBulkNotice] = useState<{ msg: string; tone: 'success' | 'error' } | null>(null);
 
-  const { tab, days, rating, platform, hasReply, flagged } = filters.values;
+  const { tab, days, rating, platform, hasReply, flagged, redirects } = filters.values;
   const tabRef = useRef(tab);
   tabRef.current = tab;
   // Switching tabs starts a fresh unread view (see keptInUnreadTab).
@@ -226,6 +228,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (platform !== 'all') query.append('platform', String(platform));
     if (hasReply === 'pending') query.append('hasReply', 'false');
     if (flagged) query.append('isFlagged', 'true');
+    if (redirects) query.append('kind', 'redirects');
     if (listScopeRef.current) query.append('restaurantId', listScopeRef.current);
     return query;
   };
@@ -234,7 +237,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     const scope = scopedRestaurantId ?? getOwnerShellActiveRestaurantId() ?? null;
     // The URL catching up with the business this list was already loaded for
     // is not a new query.
-    const listKey = [scope ?? '', days, rating, platform, hasReply, flagged, listReloadKey].join('|');
+    const listKey = [scope ?? '', days, rating, platform, hasReply, flagged, redirects, listReloadKey].join('|');
     if (listKey === lastListKeyRef.current) return;
     lastListKeyRef.current = listKey;
     listScopeRef.current = scope;
@@ -293,7 +296,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       if (req === listReqRef.current) setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, rating, platform, hasReply, flagged, scopedRestaurantId, listReloadKey]);
+  }, [days, rating, platform, hasReply, flagged, redirects, scopedRestaurantId, listReloadKey]);
 
   const loadMoreFeedbacks = async () => {
     if (loadingMore || !hasMore) return;
@@ -401,7 +404,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // claimed when those rows cover the window (newest-first ordering): either
   // everything is loaded, or the oldest loaded row predates the window.
   const serverFiltered =
-    rating !== 'all' || platform !== 'all' || hasReply !== 'all' || flagged || days !== 'all';
+    rating !== 'all' || platform !== 'all' || hasReply !== 'all' || flagged || redirects || days !== 'all';
   const weekStats = useMemo(() => {
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 86400000;
@@ -1002,6 +1005,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       platform: 'all',
       hasReply: 'all',
       flagged: false,
+      redirects: false,
     });
   };
 
@@ -1091,7 +1095,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     (rating !== 'all' ? 1 : 0) +
     (platform !== 'all' ? 1 : 0) +
     (hasReply !== 'all' ? 1 : 0) +
-    (flagged ? 1 : 0);
+    (flagged ? 1 : 0) +
+    (redirects ? 1 : 0);
   const hasActiveFilter = allFiltersCount > 0 || tab !== 'all' || searchTerm.trim() !== '';
 
   // §0.5 — CSV export follows the selected business + toolbar filters.
@@ -1154,6 +1159,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       title: isTr ? 'Yalnız işaretli yorumlar' : 'Only flagged reviews',
       pressed: flagged,
       onToggle: () => writeFilters({ flagged: !flagged }),
+    },
+    {
+      id: 'redirects',
+      label: isTr ? 'Yönlendirmeler' : 'Redirects',
+      title: isTr
+        ? 'Yüksek puanla platforma yönlendirilen müşteriler (metin yok)'
+        : 'Customers sent to a platform with a high rating (no text)',
+      pressed: redirects,
+      onToggle: () => writeFilters({ redirects: !redirects }),
     },
   ];
 

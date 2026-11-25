@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, MessageSquareText, RefreshCw, Users } from 'lucide-react';
 import type { DashboardTask, TaskSeverity, TaskType } from '@/lib/dashboard-tasks';
-import { Badge, Eyebrow } from '@/components/ui';
+import { Badge } from '@/components/ui';
 import type { BadgeKind } from '@/components/ui/Badge';
 
 // Phase 8c+ §38.32 — BUGÜN BEKLEYEN section. Tasarım kaynağı:
@@ -52,8 +52,8 @@ export function PendingTasks({
     <section className={`bz-card p-5 sm:p-6 ${className}`}>
       <header className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <Eyebrow>{isTr ? 'BEKLEYEN İŞLER' : 'PENDING TASKS'}</Eyebrow>
-          <div className="bz-h-tight mt-1.5 text-[18px] sm:text-[20px]">{totalLabel}</div>
+          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Bekleyen işler' : 'Pending tasks'}</h2>
+          <p className="mt-0.5 text-[13px] text-[#525252]">{totalLabel}</p>
         </div>
         {tasks.length > 0 && viewAllHref && (
           <Link
@@ -113,16 +113,17 @@ export function PendingTasks({
                     <Icon size={14} strokeWidth={2} />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-[#0A0A0A] truncate">
+                    {/* Wraps instead of being cut off (§58). */}
+                    <p className="text-[13px] font-medium leading-snug text-[#0A0A0A]">
                       {task.title}
                     </p>
                     {meta && (
-                      <p className="bz-mono text-[10.5px] text-[#737373] mt-0.5">
+                      <p className="mt-0.5 text-[12px] text-[#737373]">
                         {meta}
                       </p>
                     )}
                   </div>
-                  <Badge kind={sev.kind} dot={false} className="shrink-0 text-[10.5px]">
+                  <Badge kind={sev.kind} dot={false} className="hidden shrink-0 text-[11px] sm:inline-flex">
                     {sevLabel}
                   </Badge>
                   <ArrowRight

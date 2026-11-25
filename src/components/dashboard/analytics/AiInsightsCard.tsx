@@ -21,18 +21,6 @@ export interface AiInsightsCardProps {
   eyebrowLabel?: string;
 }
 
-interface RowSpec {
-  key: 'trend' | 'win' | 'risk';
-  labelTr: string;
-  labelEn: string;
-  icon: typeof TrendingUp;
-  /** Border-left + icon + label color. Tone-based: lime/lime-deep/red. */
-  toneColor: string;
-  /** Tone label color (badge bg + label text). */
-  toneBg: string;
-  body: string;
-}
-
 export function AiInsightsCard({
   trend,
   win,
@@ -40,102 +28,54 @@ export function AiInsightsCard({
   isTr = true,
   eyebrowLabel,
 }: AiInsightsCardProps) {
-  const rows: RowSpec[] = [
-    {
-      key: 'trend',
-      labelTr: 'TREND',
-      labelEn: 'TREND',
-      icon: TrendingUp,
-      toneColor: '#A8D62E', // lime-deep — pozitif/nötr trend
-      toneBg: '#EAF9B8',
-      body: trend,
-    },
-    {
-      key: 'win',
-      labelTr: 'KAZANIM',
-      labelEn: 'WIN',
-      icon: Award,
-      toneColor: '#16A34A', // green — net pozitif
-      toneBg: '#DCFCE7',
-      body: win,
-    },
-    {
-      key: 'risk',
-      labelTr: 'RİSK',
-      labelEn: 'RISK',
-      icon: AlertTriangle,
-      toneColor: '#DC2626', // red — uyarı
-      toneBg: '#FEE2E2',
-      body: risk,
-    },
-  ];
+  // Calm light card (CLAUDE.md §58): one-line summary visible, the rest
+  // behind a native "Detay" disclosure (no JS).
+  const rows = [
+    { key: 'trend', label: isTr ? 'Eğilim' : 'Trend', icon: TrendingUp, color: '#525252', body: trend },
+    { key: 'win', label: isTr ? 'Güçlü yön' : 'Strength', icon: Award, color: '#15803D', body: win },
+    { key: 'risk', label: isTr ? 'Dikkat' : 'Watch', icon: AlertTriangle, color: '#B91C1C', body: risk },
+  ].filter((r) => r.body.trim().length > 0);
+  if (rows.length === 0) return null;
 
-  // En az bir alan dolu olmalı; tüm 3'ü boş ise kart render edilmez.
-  const visibleRows = rows.filter((r) => r.body.trim().length > 0);
-  if (visibleRows.length === 0) return null;
-
-  const eyebrow = eyebrowLabel ?? (isTr ? 'AI İÇGÖRÜLER · BU HAFTA' : 'AI INSIGHTS · THIS WEEK');
+  const title = eyebrowLabel ?? (isTr ? 'AI içgörüleri · bu hafta' : 'AI insights · this week');
+  const [first, ...rest] = rows;
+  const FirstIcon = first.icon;
 
   return (
-    <section
-      className="relative overflow-hidden rounded-[18px] bg-[#0A0A0A] p-5 sm:p-6 text-white"
-      aria-label={eyebrow}
-    >
-      {/* Lime corner accent (Pulse signature) */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#C6F24E]/10 blur-2xl"
-      />
-      <header className="relative mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden="true"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full"
-            style={{ background: 'rgba(198,242,78,0.15)', border: '1px solid rgba(198,242,78,0.4)' }}
-          >
-            <Sparkles size={13} className="text-[#C6F24E]" strokeWidth={2.2} />
-          </span>
-          <h3 className="pulse-eyebrow text-[10.5px] text-[#C6F24E]">{eyebrow}</h3>
-        </div>
-        <span className="bz-mono text-[10px] uppercase tracking-wider text-white/55">
-          {isTr ? 'haftalık özet' : 'weekly summary'}
+    <section className="bz-card p-5 sm:p-6" aria-label={title}>
+      <h2 className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#0A0A0A]">
+        <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="text-[#65A30D]" />
+        {title}
+      </h2>
+      <p className="mt-3 flex items-start gap-2 text-[13.5px] leading-[1.6] text-[#262626]">
+        <FirstIcon size={14} strokeWidth={2} aria-hidden="true" className="mt-1 shrink-0" style={{ color: first.color }} />
+        <span>
+          <span className="font-medium" style={{ color: first.color }}>{first.label}: </span>
+          {first.body}
         </span>
-      </header>
-      <ol className="relative flex flex-col gap-2.5">
-        {visibleRows.map((r) => {
-          const Icon = r.icon;
-          return (
-            <li
-              key={r.key}
-              className="flex items-start gap-3 rounded-[10px] p-3.5"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                borderLeft: `2px solid ${r.toneColor}`,
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md"
-                style={{
-                  background: '#1A1A1A',
-                  border: `1px solid ${r.toneColor}55`,
-                }}
-              >
-                <Icon size={13} strokeWidth={2.2} style={{ color: r.toneColor }} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div
-                  className="pulse-eyebrow mb-1 text-[10px]"
-                  style={{ color: r.toneColor }}
-                >
-                  {isTr ? r.labelTr : r.labelEn}
-                </div>
-                <p className="text-[12.5px] leading-[1.55] text-white/90">{r.body}</p>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+      </p>
+      {rest.length > 0 && (
+        <details className="group mt-2">
+          <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center text-[13px] font-medium text-[#0A0A0A] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] rounded sm:min-h-[32px]">
+            <span className="group-open:hidden">{isTr ? 'Detay' : 'Details'}</span>
+            <span className="hidden group-open:inline">{isTr ? 'Gizle' : 'Hide'}</span>
+          </summary>
+          <ul className="mt-1 space-y-2">
+            {rest.map((r) => {
+              const Icon = r.icon;
+              return (
+                <li key={r.key} className="flex items-start gap-2 text-[13.5px] leading-[1.6] text-[#262626]">
+                  <Icon size={14} strokeWidth={2} aria-hidden="true" className="mt-1 shrink-0" style={{ color: r.color }} />
+                  <span>
+                    <span className="font-medium" style={{ color: r.color }}>{r.label}: </span>
+                    {r.body}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      )}
     </section>
   );
 }

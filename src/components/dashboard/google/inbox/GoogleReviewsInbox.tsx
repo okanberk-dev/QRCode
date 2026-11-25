@@ -77,6 +77,8 @@ export interface GoogleReviewsInboxProps {
   onConnectionProblem: () => void;
   /** First page of the default filter, prepared on the server (§56). */
   initialPage?: InboxPage | null;
+  /** Connected Google location name, shown in the summary line (§58). */
+  locationLabel?: string | null;
 }
 
 /** How long a cached inbox page is shown without asking the server again. */
@@ -108,6 +110,7 @@ export function GoogleReviewsInbox({
   onDisconnect,
   onConnectionProblem,
   initialPage,
+  locationLabel,
 }: GoogleReviewsInboxProps) {
   const isTr = locale === 'tr';
   const api = `/api/restaurants/${restaurantId}/google/business`;
@@ -552,7 +555,7 @@ export function GoogleReviewsInbox({
     <div className="space-y-4">
       {/* Summary: rating + three numbers + actions */}
       <section className="bz-card overflow-hidden">
-        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
+        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#0A0A0A] text-white">
               <span className="text-[22px] font-semibold leading-none tabular-nums">
@@ -566,25 +569,42 @@ export function GoogleReviewsInbox({
                 ))}
               </span>
             </div>
+            {/* One line (§58): connected location · last sync · sync now. */}
             <div className="min-w-0">
-              <p className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Google puanı' : 'Google rating'}</p>
-              <p className="mt-0.5 text-[12px] text-[#737373]">
+              <p className="truncate text-[15px] font-semibold text-[#0A0A0A]">
+                {locationLabel ?? (isTr ? 'Google puanı' : 'Google rating')}
+              </p>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[12.5px] text-[#737373]">
                 {syncState === 'running' || summary?.syncing ? (
                   <span className="inline-flex items-center gap-1">
                     <Loader2 size={11} className="animate-spin" aria-hidden="true" />
                     {isTr ? "Google'dan alınıyor…" : 'Syncing from Google…'}
                   </span>
                 ) : (
-                  `${isTr ? 'Son senkron' : 'Last sync'}: ${ago(summary?.fetchedAt ?? null, locale)}`
+                  <>
+                    <span>{`${isTr ? 'Son senkron' : 'Last sync'}: ${ago(summary?.fetchedAt ?? null, locale)}`}</span>
+                    {canWrite && (
+                      <>
+                        <span aria-hidden="true">·</span>
+                        <button
+                          type="button"
+                          onClick={() => void syncNow(true)}
+                          className="-my-2 inline-flex min-h-[44px] items-center font-medium text-[#0A0A0A] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] rounded sm:min-h-0 sm:my-0"
+                        >
+                          {isTr ? 'Şimdi senkronla' : 'Sync now'}
+                        </button>
+                      </>
+                    )}
+                  </>
                 )}
               </p>
             </div>
           </div>
-          <dl className="grid grid-cols-3 gap-2">
+          <dl className="grid grid-cols-3 gap-3">
             {[
               { label: isTr ? 'Toplam yorum' : 'Total reviews', value: summary ? fmt(summary.totalReviewCount) : '—', tone: '' },
               {
-                label: isTr ? 'Yanıt bekleyen' : 'Awaiting reply',
+                label: isTr ? 'Yanıtsız' : 'Unreplied',
                 value: summary ? fmt(summary.unreplied) : '—',
                 tone: summary && summary.unreplied > 0 ? 'text-[#B45309]' : '',
               },
@@ -594,9 +614,9 @@ export function GoogleReviewsInbox({
                 tone: '',
               },
             ].map((t) => (
-              <div key={t.label} className="rounded-xl bg-[#FAFAFA] px-3 py-2.5">
-                <dt className="text-[11px] text-[#737373]">{t.label}</dt>
-                <dd className={`mt-0.5 text-[18px] font-semibold tabular-nums text-[#0A0A0A] ${t.tone}`}>{t.value}</dd>
+              <div key={t.label} className="rounded-xl bg-[#FAFAFA] px-4 py-3">
+                <dt className="text-[12.5px] text-[#525252]">{t.label}</dt>
+                <dd className={`mt-1 text-[20px] font-semibold tabular-nums text-[#0A0A0A] ${t.tone}`}>{t.value}</dd>
               </div>
             ))}
           </dl>

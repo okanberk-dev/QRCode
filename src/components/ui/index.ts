@@ -36,6 +36,7 @@ export { Skeleton, TableSkeleton, CardSkeleton } from "./Skeleton";
 export { Sparkline } from "./Sparkline";
 export { StarRow } from "./StarRow";
 export { StatCard, StatCardSkeleton, type DeltaKind } from "./StatCard";
+export { InfoTip } from "./InfoTip";
 export { Tabs, type TabItem } from "./Tabs";
 export { WizardSteps, type WizardStep } from "./WizardSteps";
 

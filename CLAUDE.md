@@ -5385,6 +5385,7 @@ Yeni session bir kural belirlediyse, hangi §'ye gider:
 | Veritabanı barındırma, yedek / geri yükleme, bakım modu, canlı akış (SSE), dosya deposu, Supabase'e geri dönüş | §55 |
 | Panel hızı: Server-Timing, Coolify Redis, prefetch, Google Yorumları sunucu verisi, önbellekler | §56 |
 | Özellik analizi: kullanım verisi, menü yapısı, gizlenen araçlar, kaldırılan pazarlama sayfaları | §57 |
+| Panel metrikleri: puan / yönlendirme / geri bildirim, yanıt süresi, sağlık skoru yanıt oranı, ortak grafik, ⓘ tanımları | §58 |
 
 Yeni konu ortaya çıkarsa yeni `## §X` ekle; ama önce `grep -n "^## " CLAUDE.md` ile mevcut §-lere baktıktan sonra (overlap riski).
 
@@ -6210,4 +6211,19 @@ Canlı kullanım (2026-11-25, `scripts/ops/feature-usage.mjs`, yalnız sayılar)
 - **Veri**: hiçbir tablo, kolon ya da kayıt silinmedi; gizlenen özelliklerin verisi veritabanında ve günlük yedekte.
 - **Derleme**: Dockerfile `node scripts/build-retry.mjs` çalıştırır: `npm run build` yalnız next/font hatasıyla ("from Google Fonts" / "An error occurred in `next/font`") düşerse 20 sn sonra bir kez yeniden dener (next/font zaten dosya başına 3 deneme yapıyor, fonts.gstatic.com yine de ara sıra düşüyor). Başka derleme hataları ilk denemede durur. Yerelde `npm run build` aynı kalır.
 - **Yapma**: kullanım verisi olmadan yeni ana menü girişi ekleme; gizlenmiş aracı menüye geri koymak için kodu değiştirme (env bayrağını kullan); retired listesindeki bir adresi yeniden sayfa olarak açma (önce listeden çıkar).
+
+## §58 — Panel metrikleri ve yönlendirme kayıtları (kanonik, 2026-11-25)
+
+Yüksek puan yönlendirmeleri eskiden `comment = 'High Rating Redirect'` ile yorum gibi saklanıyordu; listeyi, sayaçları ve AI analizini kirletiyordu (AI "yorumların çoğu kalıp metin" diyordu).
+
+- **Veri**: `Feedback.redirected` (migration `20261128090000_feedback_redirected`: eski işaretli satırlar `redirected = true, comment = NULL`). `/r/[slug]` `redirected: true` gönderir; `/api/feedback` POST eski önbellekli istemcinin işaret metnini de bayrağa çevirir.
+- **Sözlük** (`src/lib/feedback-metrics.ts`, tanımlar `METRICS`, her KPI'da ⓘ = `InfoTip`): **Puan** = tüm QR puanları (ortalama hepsinden); **Yönlendirme** = `redirected = true` (olay, metin yok); **Geri bildirim** = özel form (`redirected = false`, gelen kutusu); **Yanıt bekleyen** = yanıtsız 1–3★ geri bildirim.
+- **Kurallar**: gelen kutusu, yorum sayaçları (`/api/feedback`, `/counts`, Hesabım), AI tema/içgörü girdileri ve yanıt oranı yalnız `redirected = false`. `/api/feedback?kind=redirects|all` (owner + admin listesinde "Yönlendirmeler" çipi). Satırda "Google'a yönlendirildi" rozeti (`redirectBadgeLabel`), isimsiz müşteri "İsimsiz".
+- **Yanıt süresi** (`computeReplyTimes`): dönemde gelenlerin ilk yanıta kadar geçen süresinin **medyanı**; 30 günden eski kayda verilen yanıt "eski kayda yanıt" olarak ayrı sayılır. Google analizi aynı kural (oluşturma zamanına göre). Değişim `describeChange`: eşitse "Değişim yok", 2 kat ve üstü "3 kat", süre kısalınca yeşil ↓.
+- **Sağlık skoru**: yanıt bileşeni `loadReplyCoverage` = yanıtlı (1–3★ geri bildirim + Google yorumu) / toplam. Sağlık API'si skoru canlı hesaplar; eski snapshot skorları yeniden yazılmaz.
+- **Google sayısı**: tek sayı = listedeki yorum satırı (`google_reviews`); Google'ın `totalReviewCount`'u geride kalabiliyor (187 vs 188).
+- **Grafik**: Panel "Puan hacmi" ve Analitik aynı `VolumeChart` (`src/components/charts/`, recharts gövdesi `next/dynamic`): günlük ince yığılmış çubuk (yönlendirme lime, geri bildirim grafit), 92 günden uzun pencerede haftalık, gün sınırı işletme saat diliminde (`buildVolumeSeries`). Sparkline monoton eğri (`monotonePath`).
+- **AI**: Analitik AI çağrılarını beklemez (önbellek varsa gösterir, yoksa arka planda üretir). Önbellek anahtarları `v58` ile yenilendi.
+- **Düzen**: panel sayfaları en çok 1280 px, kartlar arası 24 px, kart içi 24 px (mobilde 16); etiketler 12–13 px normal yazı (büyük harf mono etiket yok). Kaydırma sütunu `bg-[#FAFAFA]` (gri bant içerik ortasında kesilmez).
+- **Yapma**: yönlendirmeyi yorum gibi saymak ya da AI'a göndermek; ortalama yanıt süresi; `%999+`; KPI'yı tanımsız bırakmak.
 

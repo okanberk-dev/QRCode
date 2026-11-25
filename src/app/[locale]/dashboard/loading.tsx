@@ -13,7 +13,7 @@ import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440} space={6}>
+    <SkPageShell max={1280} space={6}>
       {/* Same classes as the PageHeader primitive. */}
       <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end md:gap-4">
         <div className="min-w-0 flex-1">

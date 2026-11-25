@@ -1,4 +1,5 @@
-import { Sparkline } from '@/components/ui';
+import { InfoTip, Sparkline } from '@/components/ui';
+import type { ChangeText, ChangeTone } from '@/lib/feedback-metrics';
 
 // §38.50 — Analitik sayfası KPI grid 5-col single row (tasarım birebir).
 // Tasarım kaynağı: .design-owner-2026/project/page-analytics.jsx PageAnalytics
@@ -13,96 +14,68 @@ import { Sparkline } from '@/components/ui';
 export interface KpiSpec {
   label: string;
   value: string;
-  /** "+0.18" / "+24%" / "-2%" — delta string. null → render gizli. */
+  /** Metric definition behind an ⓘ (CLAUDE.md §58). */
+  info?: string;
+  /** Period change from describeChange / describeRatingChange. */
+  change?: ChangeText | null;
+  /** Legacy delta string (admin analytics). Ignored when `change` is set. */
   delta?: string | null;
-  /** "up" | "down" | "flat" | "neutral" — delta tone. */
   deltaKind?: 'up' | 'down' | 'flat' | 'neutral';
-  /** "hedef 4.6" / "156 önceki ay" / "Promoter %78" / "1.6 sa ortalama". */
   subtitle?: string;
-  /** Sparkline data; varsa render edilir. Min 2 nokta gerekir. */
+  /** Sparkline data; min 2 points. */
   sparkline?: number[];
-  /** Sparkline lime accent — sadece pozitif delta için anlamlı. */
   sparklineColor?: string;
 }
 
 export interface AnalyticsKpiGridProps {
-  /** 5 KPI tasarım birebir. */
   kpis: KpiSpec[];
   isTr?: boolean;
 }
 
-function KpiCard({ kpi }: { kpi: KpiSpec }) {
-  const deltaTone =
-    kpi.deltaKind === 'up'
-      ? 'text-[#16A34A]'
-      : kpi.deltaKind === 'down'
-        ? 'text-[#DC2626]'
-        : 'text-[#737373]';
+const TONE_COLOR: Record<ChangeTone, string> = { good: '#15803D', bad: '#B91C1C', neutral: '#737373' };
+
+function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
+  const change: ChangeText | null =
+    kpi.change ??
+    (kpi.delta
+      ? {
+          text: kpi.delta,
+          arrow: '',
+          tone: kpi.deltaKind === 'up' ? 'good' : kpi.deltaKind === 'down' ? 'bad' : 'neutral',
+        }
+      : null);
   return (
-    <article
-      className="bz-card relative overflow-hidden p-4 sm:p-5 flex flex-col gap-2"
-      aria-label={kpi.label}
-    >
-      {/* Stage 66 §38.147 — HANDOFF AnalyticsDesktop KPI lime sol stripe
-          (line 268-269 birebir). Visual signal: card'a Pulse signature
-          accent. 2.5px width lime, padding eşit (top/bottom 14px). */}
-      <span
-        aria-hidden="true"
-        className="absolute left-0 top-3.5 bottom-3.5 rounded-full bg-[#C6F24E]"
-        style={{ width: 2.5 }}
-      />
-      {/*
-        Stage 80 §38.160 — Eyebrow font-size 10px → 11px (Pulse §11
-        baseline `pulse-eyebrow` utility default 11px). Mobile okunabilirlik
-        kazandırır; tasarımdaki KPI hierarchy intact (uppercase + tracked).
-      */}
-      <div className="pulse-eyebrow text-[11px] text-[#737373]">{kpi.label}</div>
-      <div className="flex items-baseline justify-between gap-2">
-        <span
-          className="bz-mono tabular-nums"
-          style={{
-            fontSize: 26,
-            fontWeight: 600,
-            lineHeight: 1,
-            color: '#0A0A0A',
-            letterSpacing: '-0.02em',
-          }}
-        >
+    <article className="bz-card flex min-w-0 flex-col gap-2 p-4 sm:p-6">
+      <div className="inline-flex items-center gap-1 text-[12.5px] font-medium text-[#525252]">
+        {kpi.label}
+        {kpi.info && <InfoTip text={kpi.info} label={kpi.label} isTr={isTr} />}
+      </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+        <span className="text-[24px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-[#0A0A0A] sm:text-[26px]">
           {kpi.value}
         </span>
-        {kpi.delta && (
-          <span className={`text-[11px] font-semibold tabular-nums ${deltaTone}`}>
-            {kpi.delta}
+        {change && (
+          <span className="text-[12px] font-medium tabular-nums" style={{ color: TONE_COLOR[change.tone] }}>
+            {change.arrow ? `${change.arrow} ` : ''}
+            {change.text}
           </span>
         )}
       </div>
       {kpi.sparkline && kpi.sparkline.length >= 2 && (
-        <div className="h-7 -mx-1">
-          <Sparkline
-            values={kpi.sparkline}
-            w={140}
-            h={28}
-            color={kpi.sparklineColor ?? '#A8D62E'}
-            className="w-full"
-          />
+        <div className="h-7">
+          <Sparkline values={kpi.sparkline} w={140} h={28} color={kpi.sparklineColor ?? '#A8D62E'} className="w-full" />
         </div>
       )}
-      {/* mt-auto: KPIs without a sparkline keep their subtitle on the same
-          baseline as the ones that have one (grid rows stretch cards). */}
-      {kpi.subtitle && (
-        <div className="mt-auto bz-mono text-[10.5px] text-[#737373] tabular-nums">
-          {kpi.subtitle}
-        </div>
-      )}
+      {kpi.subtitle && <div className="mt-auto text-[12px] leading-snug text-[#737373]">{kpi.subtitle}</div>}
     </article>
   );
 }
 
-export function AnalyticsKpiGrid({ kpis }: AnalyticsKpiGridProps) {
+export function AnalyticsKpiGrid({ kpis, isTr = true }: AnalyticsKpiGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
       {kpis.map((kpi) => (
-        <KpiCard key={kpi.label} kpi={kpi} />
+        <KpiCard key={kpi.label} kpi={kpi} isTr={isTr} />
       ))}
     </div>
   );

@@ -1,3 +1,4 @@
+import { computeReplyTimes } from './feedback-metrics';
 /**
  * Google review reply inbox — query parsing, Prisma filters and statistics
  * (CLAUDE.md §54). Pure: no DB calls, so every rule here is unit-tested. The
@@ -134,11 +135,11 @@ export interface InsightRow {
 export type ResponseTrend = 'faster' | 'slower' | 'same';
 
 export interface ResponseTimeStats {
-  /** Average over every reply, in hours. */
+  /** Median reply time of reviews from the last 30 days, in hours. */
   overallHours: number | null;
-  /** Replies written in the last 30 days. */
+  /** Reviews created in the last 30 days (median). */
   currentHours: number | null;
-  /** Replies written 30–60 days ago. */
+  /** Reviews created 30–60 days ago (median). */
   previousHours: number | null;
   /**
    * Change of the average time, in percent (negative = got shorter). Null
@@ -147,6 +148,10 @@ export interface ResponseTimeStats {
   changePct: number | null;
   /** Shorter time is "faster" (good, green), longer is "slower" (red). */
   trend: ResponseTrend | null;
+  /** Reviews from the last 30 days in the median. */
+  answered: number;
+  /** Replies in the last 30 days to reviews that were already 30+ days old. */
+  backlogReplies: number;
 }
 
 export interface ReviewInsights {
@@ -163,34 +168,36 @@ export interface ReviewInsights {
 
 const DAY_MS = 24 * 3600_000;
 
-function average(values: number[]): number | null {
-  if (values.length === 0) return null;
-  return values.reduce((a, b) => a + b, 0) / values.length;
-}
-
 export function computeResponseTime(rows: InsightRow[], now: Date = new Date()): ResponseTimeStats {
+  // Median over reviews that ARRIVED in the window (CLAUDE.md §58): a bulk
+  // reply today to a two-month-old review is a backlog reply, counted apart,
+  // not a 60-day "reply time".
   const nowMs = now.getTime();
-  const all: number[] = [];
-  const current: number[] = [];
-  const previous: number[] = [];
-  for (const r of rows) {
-    if (!r.hasReply || !r.replyUpdateTime || !r.createTime) continue;
-    const diffH = (r.replyUpdateTime.getTime() - r.createTime.getTime()) / 3600_000;
-    if (!(diffH > 0)) continue;
-    all.push(diffH);
-    const age = nowMs - r.replyUpdateTime.getTime();
-    if (age < 30 * DAY_MS) current.push(diffH);
-    else if (age < 60 * DAY_MS) previous.push(diffH);
-  }
-  const currentHours = average(current);
-  const previousHours = average(previous);
+  const items = rows
+    .filter((r) => r.createTime)
+    .map((r) => ({
+      createdAt: r.createTime as Date,
+      firstReplyAt: r.hasReply && r.replyUpdateTime ? r.replyUpdateTime : null,
+    }));
+  const cur = computeReplyTimes(items, { start: new Date(nowMs - 30 * DAY_MS), end: new Date(nowMs + 1) });
+  const prev = computeReplyTimes(items, { start: new Date(nowMs - 60 * DAY_MS), end: new Date(nowMs - 30 * DAY_MS) });
+  const currentHours = cur.medianMs === null ? null : cur.medianMs / 3600_000;
+  const previousHours = prev.medianMs === null ? null : prev.medianMs / 3600_000;
   let changePct: number | null = null;
   let trend: ResponseTrend | null = null;
   if (currentHours !== null && previousHours !== null && previousHours > 0) {
     changePct = Math.round(((currentHours - previousHours) / previousHours) * 100);
     trend = changePct < 0 ? 'faster' : changePct > 0 ? 'slower' : 'same';
   }
-  return { overallHours: average(all), currentHours, previousHours, changePct, trend };
+  return {
+    overallHours: currentHours,
+    currentHours,
+    previousHours,
+    changePct,
+    trend,
+    answered: cur.answered,
+    backlogReplies: cur.backlogReplies,
+  };
 }
 
 export function computeInsights(rows: InsightRow[], now: Date = new Date()): ReviewInsights {

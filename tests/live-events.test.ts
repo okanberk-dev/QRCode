@@ -27,6 +27,6 @@ test('unsubscribe removes the listener', () => {
 
 test('the live row carries no e-mail, phone, IP or comment', () => {
   const r = row('r1');
-  assert.deepEqual(Object.keys(r).sort(), ['created_at', 'has_kvkk_consent', 'id', 'name', 'platform', 'rating', 'restaurant_id']);
+  assert.deepEqual(Object.keys(r).sort(), ['created_at', 'has_kvkk_consent', 'id', 'name', 'platform', 'rating', 'redirected', 'restaurant_id']);
   assert.equal(r.created_at, '2026-11-24T10:00:00.000Z');
 });

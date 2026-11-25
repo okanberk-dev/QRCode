@@ -84,7 +84,7 @@ test('buildActivityFeed: KVKK fallback when name null', () => {
     systemEvents: [],
     isTr: true,
   });
-  assert.equal(event.actor, 'Müşteri');
+  assert.equal(event.actor, 'İsimsiz');
 });
 
 test('buildActivityFeed: AI reply marked as AI Asistan actor', () => {
@@ -171,7 +171,7 @@ test('buildActivityFeed: platform target shows stars + platform label', () => {
     aiDrafts: [],
     systemEvents: [],
   });
-  assert.equal(event.target, '★★★★★ Google');
+  assert.equal(event.target, '★★★★★');
 });
 
 test('buildActivityFeed: KVKK consent false hides name (anonim fallback)', () => {
@@ -192,8 +192,8 @@ test('buildActivityFeed: KVKK consent false hides name (anonim fallback)', () =>
     systemEvents: [],
     isTr: true,
   });
-  // KVKK opt-out → name ifşa edilmez, fallback "Müşteri".
-  assert.equal(event.actor, 'Müşteri');
+  // KVKK opt-out → name ifşa edilmez, fallback "İsimsiz".
+  assert.equal(event.actor, 'İsimsiz');
 });
 
 test('buildActivityFeed: KVKK consent true preserves shortName', () => {
@@ -277,6 +277,6 @@ test('buildActivityFeed: locale EN', () => {
     systemEvents: [],
     isTr: false,
   });
-  assert.equal(event.actor, 'Customer');
-  assert.equal(event.action, 'left a review');
+  assert.equal(event.actor, 'Unnamed');
+  assert.equal(event.action, 'left feedback');
 });

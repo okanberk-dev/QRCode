@@ -1141,7 +1141,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           scrollbar lane up-front so the content width never jumps when the
           scrollbar appears (CLAUDE.md §42.5 applied to the real scroll
           container, not just <html>). */}
-      <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]">
+      <div className="flex min-w-0 flex-1 flex-col bg-[#FAFAFA] lg:h-full lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]">
         {/* Mobile top bar — §38.65 backdrop-blur-xl Apple "frosted glass" tier upgrade
             (kullanıcı kararı: sticky header only). Önceki `backdrop-blur` (8px) →
             `backdrop-blur-xl` (24px) Liquid Glass referansı; sadece header katmanında. */}

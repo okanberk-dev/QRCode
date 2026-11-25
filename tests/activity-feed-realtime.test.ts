@@ -134,23 +134,23 @@ describe('feedbackInsertToActivity', () => {
     assert.equal(result!.type, 'feedback');
     assert.equal(result!.id, 'feedback:feedback_xyz');
     assert.equal(result!.actor, 'Ayşe D.');
-    assert.equal(result!.action, 'yorum bıraktı');
+    assert.equal(result!.action, 'geri bildirim bıraktı');
     assert.equal(result!.sentiment, 'pos');
-    assert.match(result!.target, /Google/);
+    assert.equal(result!.target, '★★★★★');
     assert.equal(result!.href, '/tr/dashboard/feedbacks?id=feedback_xyz');
   });
 
-  it('falls back to "Müşteri" when has_kvkk_consent is false (KVKK guard)', () => {
+  it('falls back to "İsimsiz" when has_kvkk_consent is false (KVKK guard)', () => {
     const result = feedbackInsertToActivity(
       makeRow({ has_kvkk_consent: false }),
       true,
     );
-    assert.equal(result?.actor, 'Müşteri');
+    assert.equal(result?.actor, 'İsimsiz');
   });
 
   it('uses EN copy when isTr=false', () => {
     const result = feedbackInsertToActivity(makeRow(), false);
-    assert.equal(result?.action, 'left a review');
+    assert.equal(result?.action, 'left feedback');
     assert.equal(result?.href, '/en/dashboard/feedbacks?id=feedback_xyz');
   });
 
@@ -164,16 +164,16 @@ describe('feedbackInsertToActivity', () => {
     assert.equal(result?.sentiment, 'neu');
   });
 
-  it('handles null platform → "Buaze" target label', () => {
-    const result = feedbackInsertToActivity(makeRow({ platform: null, rating: 5 }));
-    assert.match(result?.target ?? '', /Buaze/);
+  it('redirect event reads "Google\'a yönlendirildi" (§58)', () => {
+    const result = feedbackInsertToActivity(makeRow({ platform: 'google', rating: 5, redirected: true }));
+    assert.equal(result?.action, "Google'a yönlendirildi");
   });
 
-  it('handles null name + consent given → "Müşteri" fallback (shortName)', () => {
+  it('handles null name + consent given → "İsimsiz" fallback (shortName)', () => {
     const result = feedbackInsertToActivity(
       makeRow({ name: null, has_kvkk_consent: true }),
       true,
     );
-    assert.equal(result?.actor, 'Müşteri');
+    assert.equal(result?.actor, 'İsimsiz');
   });
 });

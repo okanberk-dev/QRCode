@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
@@ -19,7 +20,7 @@ async function handleGET(req: NextRequest) {
       searchParams.get('restaurantId') ?? searchParams.get('restaurant'),
     );
     const scoped = await getScopedRestaurantIds(actor);
-    const baseWhere =
+    let baseWhere: Prisma.FeedbackWhereInput | null =
       scoped === null
         ? requestedRestaurantId
           ? { restaurantId: requestedRestaurantId }
@@ -33,8 +34,11 @@ async function handleGET(req: NextRequest) {
             : { restaurantId: { in: scoped } };
 
     if (baseWhere === null) {
-      return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0, lowUnread: 0 });
+      return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0, lowUnread: 0, redirects: 0 });
     }
+    // §58: redirect events are not reviews — counted apart, never in tabs.
+    const scopeWhere = baseWhere;
+    baseWhere = { ...baseWhere, redirected: false };
 
     // `?only=lowUnread` — the notification bell's badge poll needs just this
     // one number; skip the other three counts (and the replies join). Callers
@@ -55,13 +59,14 @@ async function handleGET(req: NextRequest) {
     // returns the **gerçek total** instead of the 5-row dropdown cap.
     // CLAUDE.md §38.137 Stage 56 (Feedback.isRead schema) + §38.83 Stage 13
     // (PATCH endpoint) + §38.159 Stage 79 (backend filter wiring) zinciri.
-    const [all, attention, lowUnread] = await prisma.$transaction([
+    const [all, attention, lowUnread, redirects] = await prisma.$transaction([
       prisma.feedback.count({ where: baseWhere }),
       // Low rating = 1–3★, same as the owner inbox and the toolbar filter.
       prisma.feedback.count({ where: { ...baseWhere, rating: { lte: 3 } } }),
       prisma.feedback.count({
         where: { ...baseWhere, rating: { lte: 3 }, isRead: false },
       }),
+      prisma.feedback.count({ where: { ...scopeWhere, redirected: true } }),
     ]);
 
     // Replied count joins the FeedbackReply table which may not exist on
@@ -89,6 +94,7 @@ async function handleGET(req: NextRequest) {
         attention,
         replied,
         lowUnread,
+        redirects,
       },
       {
         headers: {

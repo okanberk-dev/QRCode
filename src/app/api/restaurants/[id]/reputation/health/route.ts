@@ -8,6 +8,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
+import { loadReplyCoverage } from '@/lib/reputation/reply-stats';
 import { getHealthSnapshotDelta } from '@/lib/reputation/snapshot';
 import {
   computeHealthScore,
@@ -100,14 +101,19 @@ async function handleGET(
       }
     }
 
+    // Live reply coverage (1–3★ feedback + Google, §58): stored snapshots
+    // counted redirect events as unanswered feedback ("%3").
+    if (snapshotInput) {
+      snapshotInput.replyable = await loadReplyCoverage(id).catch(() => null);
+    }
     const breakdown = snapshotInput ? computeHealthScore(snapshotInput) : null;
     const recommendations = snapshotInput ? getProfileRecommendations(snapshotInput, locale) : [];
 
     return NextResponse.json(
       {
         latestCapturedAt: latestRow?.capturedAt?.toISOString() ?? null,
-        score: latestRow?.healthScore ?? breakdown?.overall ?? null,
-        scoreLabel: latestRow?.healthScore != null ? scoreLabel(latestRow.healthScore, locale) : null,
+        score: breakdown?.overall ?? latestRow?.healthScore ?? null,
+        scoreLabel: breakdown ? scoreLabel(breakdown.overall, locale) : latestRow?.healthScore != null ? scoreLabel(latestRow.healthScore, locale) : null,
         breakdown,
         metrics: snapshotInput,
         baseline: delta.baseline

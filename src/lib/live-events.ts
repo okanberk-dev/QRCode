@@ -28,6 +28,7 @@ export function toLiveFeedbackRow(f: {
   createdAt: Date;
   restaurantId: string | null;
   hasKvkkConsent: boolean;
+  redirected?: boolean;
 }): FeedbackInsertRow {
   return {
     id: f.id,
@@ -37,6 +38,7 @@ export function toLiveFeedbackRow(f: {
     created_at: f.createdAt.toISOString(),
     restaurant_id: f.restaurantId,
     has_kvkk_consent: f.hasKvkkConsent,
+    redirected: f.redirected === true,
   };
 }
 

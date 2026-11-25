@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, BarChart3, ChevronDown, Loader2, Minus } from 'lucide-react';
+import { BarChart3, ChevronDown, Loader2 } from 'lucide-react';
 import { ReputationHealthCard } from '@/components/dashboard/google-reviews/ReputationHealthCard';
-import { formatChangePct, formatHours, type ReviewInsights } from '@/lib/google-review-inbox';
+import { type ReviewInsights } from '@/lib/google-review-inbox';
+import { describeChange, formatDuration } from '@/lib/feedback-metrics';
 
 const OPEN_KEY = 'buaze:google-inbox:analysis-open';
 
@@ -72,8 +73,6 @@ export function InboxAnalysis({
 
   const max = Math.max(1, ...(stats?.distribution.map((d) => d.count) ?? [1]));
   const rt = stats?.responseTime;
-  const trendColor = rt?.trend === 'faster' ? '#16A34A' : rt?.trend === 'slower' ? '#DC2626' : '#737373';
-  const TrendIcon = rt?.trend === 'faster' ? ArrowDown : rt?.trend === 'slower' ? ArrowUp : Minus;
 
   return (
     <section className="bz-card">
@@ -106,7 +105,7 @@ export function InboxAnalysis({
             <>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
-                  <p className="pulse-eyebrow text-[#737373]">{isTr ? 'Puan dağılımı' : 'Rating mix'}</p>
+                  <p className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Puan dağılımı' : 'Rating mix'}</p>
                   <ul className="mt-2 space-y-1.5">
                     {stats.distribution.map((d) => (
                       <li key={d.rating} className="flex items-center gap-2 text-[12px]">
@@ -124,31 +123,43 @@ export function InboxAnalysis({
                 </div>
 
                 <div>
-                  <p className="pulse-eyebrow text-[#737373]">{isTr ? 'Ortalama yanıt süresi' : 'Average reply time'}</p>
-                  <p className="mt-2 text-[24px] font-semibold tabular-nums text-[#0A0A0A]">{formatHours(rt?.overallHours ?? null, locale)}</p>
-                  {rt && rt.changePct !== null ? (
-                    <p className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium" style={{ color: trendColor }}>
-                      <TrendIcon size={12} aria-hidden="true" />
-                      {formatChangePct(rt.changePct, locale)}{' '}
-                      {rt.trend === 'faster'
-                        ? isTr ? 'daha hızlı (son 30 gün)' : 'faster (last 30 days)'
-                        : rt.trend === 'slower'
-                          ? isTr ? 'daha yavaş (son 30 gün)' : 'slower (last 30 days)'
-                          : isTr ? 'değişmedi' : 'no change'}
-                    </p>
-                  ) : (
+                  <p className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Yanıt süresi (medyan)' : 'Reply time (median)'}</p>
+                  <p className="mt-2 text-[24px] font-semibold tabular-nums text-[#0A0A0A]">
+                    {rt?.currentHours != null ? formatDuration(rt.currentHours * 3600_000, isTr) : '—'}
+                  </p>
+                  {rt?.currentHours != null && rt.previousHours != null ? (() => {
+                    const c = describeChange(rt.currentHours, rt.previousHours, { isTr, lowerIsBetter: true });
+                    const color = c.tone === 'good' ? '#15803D' : c.tone === 'bad' ? '#B91C1C' : '#737373';
+                    return (
+                      <p className="mt-1 text-[12px] font-medium" style={{ color }}>
+                        {c.arrow ? `${c.arrow} ` : ''}
+                        {c.text}
+                        {c.arrow ? (isTr ? (c.tone === 'good' ? ' daha hızlı' : ' daha yavaş') : c.tone === 'good' ? ' faster' : ' slower') : ''}
+                        <span className="text-[#737373] font-normal">
+                          {' · '}
+                          {isTr ? 'önceki 30 gün' : 'previous 30 days'}: {formatDuration(rt.previousHours * 3600_000, isTr)}
+                        </span>
+                      </p>
+                    );
+                  })() : (
                     <p className="mt-1 text-[12px] text-[#737373]">
-                      {isTr ? 'Karşılaştırma için son 60 günde yeterli yanıt yok.' : 'Not enough replies in the last 60 days to compare.'}
+                      {rt?.currentHours == null
+                        ? isTr ? 'Son 30 günde gelip yanıtlanan yorum yok.' : 'No review from the last 30 days was replied to.'
+                        : isTr ? 'Önceki 30 günle karşılaştırma için yeterli yanıt yok.' : 'Not enough replies to compare with the previous 30 days.'}
                     </p>
                   )}
-                  <p className="mt-0.5 text-[11.5px] text-[#A3A3A3]">
-                    {isTr ? 'Son 30 gün' : 'Last 30 days'}: {formatHours(rt?.currentHours ?? null, locale)} · {isTr ? 'önceki 30 gün' : 'previous 30 days'}:{' '}
-                    {formatHours(rt?.previousHours ?? null, locale)}
+                  <p className="mt-0.5 text-[12px] text-[#737373]">
+                    {isTr ? 'Son 30 günde gelen yorumlar' : 'Reviews from the last 30 days'}
+                    {rt && rt.backlogReplies > 0
+                      ? isTr
+                        ? ` · eski yorumlara ${rt.backlogReplies} toplu yanıt ayrı sayıldı`
+                        : ` · ${rt.backlogReplies} replies to older reviews counted apart`
+                      : ''}
                   </p>
                 </div>
 
                 <div>
-                  <p className="pulse-eyebrow text-[#737373]">{isTr ? 'Yeni yorumlar' : 'New reviews'}</p>
+                  <p className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Yeni yorumlar' : 'New reviews'}</p>
                   <p className="mt-2 text-[24px] font-semibold tabular-nums text-[#0A0A0A]">{stats.newLast30}</p>
                   <p className="mt-1 text-[12px] text-[#737373]">
                     {isTr ? `Son 30 gün · önceki 30 gün: ${stats.newPrev30}` : `Last 30 days · previous 30 days: ${stats.newPrev30}`}
@@ -160,7 +171,7 @@ export function InboxAnalysis({
               </div>
 
               <div>
-                <p className="pulse-eyebrow text-[#737373]">{isTr ? 'Sık geçen kelimeler' : 'Frequent words'}</p>
+                <p className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Sık geçen kelimeler' : 'Frequent words'}</p>
                 {stats.keywords.length === 0 ? (
                   <p className="mt-2 text-[12.5px] text-[#737373]">
                     {isTr ? 'Henüz yeterli yorum metni yok.' : 'Not enough review text yet.'}

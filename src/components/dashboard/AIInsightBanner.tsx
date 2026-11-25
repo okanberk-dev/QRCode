@@ -71,46 +71,28 @@ export function AIInsightBanner({
     <section
       role="status"
       aria-label={isTr ? 'AI içgörü' : 'AI insight'}
-      /* §38.67 — Heavy shadow → bz-elev-3 (Apple-soft tier). Önceki
-         0_20px_50px_-30px_0.4 dramatic; banner graphite hero kartı,
-         floating modal değil → bz-elev-3 (0_12px_32px_0.10) doğru. */
-      className="relative rounded-2xl bg-[#0A0A0A] text-white px-5 py-4 sm:px-6 sm:py-5 bz-elev-3 flex items-start gap-4"
+      // Calm light strip (CLAUDE.md §58): two-line summary + "Detay".
+      className="flex items-start gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 sm:px-5"
     >
-      <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-5">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span
-            aria-hidden
-            className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30"
-          >
-            <Sparkles size={14} strokeWidth={2.2} className="text-[#C6F24E]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <span
-              className="pulse-eyebrow"
-              style={{ color: '#C6F24E' }}
-            >
-              {isTr ? 'AI İÇGÖRÜ' : 'AI INSIGHT'}
-            </span>
-            <p className="mt-1 text-[13px] sm:text-[13.5px] leading-[1.55] text-white/95">
-              {insight}
-            </p>
-          </div>
-        </div>
-        <Link
-          href={actionHref}
-          className="bz-btn-lime bz-btn-sm mt-2 min-h-[44px] shrink-0 self-start sm:mt-0 sm:min-h-[32px] sm:self-center"
-        >
-          {actionLabel ?? (isTr ? 'İncele' : 'Explore')}
-          <ArrowRight size={12} strokeWidth={2.2} aria-hidden="true" />
-        </Link>
-      </div>
+      <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#65A30D]" />
+      <p className="min-w-0 flex-1 text-[13.5px] leading-[1.55] text-[#262626] line-clamp-2">
+        <span className="font-medium text-[#0A0A0A]">{isTr ? 'AI özeti: ' : 'AI summary: '}</span>
+        {insight}
+      </p>
+      <Link
+        href={actionHref}
+        className="inline-flex min-h-[44px] shrink-0 items-center gap-1 self-center rounded-md px-1 text-[13px] font-medium text-[#0A0A0A] hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] sm:min-h-[32px]"
+      >
+        {actionLabel ?? (isTr ? 'Detay' : 'Details')}
+        <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+      </Link>
       <button
         type="button"
         onClick={handleDismiss}
         aria-label={isTr ? 'Bu haftalık içgörüyü gizle' : "Hide this week's insight"}
-        className="bz-btn-icon bz-btn-icon-on-dark -mr-2 -mt-2 h-11 w-11 shrink-0 sm:m-0 sm:h-8 sm:w-8"
+        className="-my-2 -mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#737373] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] sm:h-8 sm:w-8 sm:self-center sm:m-0"
       >
-        <X size={14} strokeWidth={2.2} aria-hidden="true" />
+        <X size={14} strokeWidth={2} aria-hidden="true" />
       </button>
     </section>
   );

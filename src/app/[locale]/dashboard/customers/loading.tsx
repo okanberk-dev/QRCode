@@ -14,7 +14,7 @@ import {
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1600}>
+    <SkPageShell max={1280} space={6}>
       {/* PageHeader: title + description, CSV button below on mobile. */}
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end md:gap-4">
         <div className="min-w-0 flex-1 space-y-3">
@@ -24,7 +24,7 @@ export default function Loading() {
         <SkBox className="h-11 w-28 shrink-0 sm:h-10" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-6 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}

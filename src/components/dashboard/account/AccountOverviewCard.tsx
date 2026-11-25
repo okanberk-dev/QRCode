@@ -193,7 +193,7 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
       icon: <Store size={14} strokeWidth={2} />,
     },
     {
-      label: isTr ? "Toplam yorum" : "Total reviews",
+      label: isTr ? "Geri bildirim" : "Feedback",
       value: numberFmt.format(data.totalReviews),
       icon: <MessageSquareText size={14} strokeWidth={2} />,
       sublabel: isTr ? `${numberFmt.format(data.reviews30d)} son 30 gün` : `${numberFmt.format(data.reviews30d)} last 30d`,

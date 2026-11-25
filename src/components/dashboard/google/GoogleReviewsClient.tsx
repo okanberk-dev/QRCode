@@ -233,7 +233,7 @@ export function GoogleReviewsClient({
   ) : null;
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
+    <div className="mx-auto w-full max-w-[1280px] space-y-6 px-4 py-6 sm:px-7 lg:py-8">
       {/* §38 audit Fix #1 — connect button returnTo bu sayfa, callback
           ?google=connected|state-*|token-* status'lerini yakalar. */}
       <GoogleConnectFlashBanner locale={locale} />

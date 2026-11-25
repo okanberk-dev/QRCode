@@ -72,8 +72,8 @@ export function TopMentionsPolarity({
   return (
     <section className="bz-card flex h-full flex-col p-5 sm:p-6">
       <header className="mb-3">
-        <span className="pulse-eyebrow text-[10px] text-[#737373]">
-          {isTr ? 'EN ÇOK BAHSEDİLENLER' : 'TOP MENTIONS'}
+        <span className="text-[12.5px] font-medium text-[#525252]">
+          {isTr ? 'En çok bahsedilenler' : 'Top mentions'}
         </span>
         <div className="bz-h-tight mt-1 text-[16px] sm:text-[18px]">
           {isTr ? 'Konu trendi · pozitif/negatif' : 'Topic trend · positive/negative'}

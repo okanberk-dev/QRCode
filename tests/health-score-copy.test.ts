@@ -127,7 +127,7 @@ describe('getProfileRecommendations — copy', () => {
     );
     assert.equal(
       body('low_reply_rate'),
-      "Müşteri geri bildirimlerinin %60'ından fazlasını yanıtlamak sadakati artırır. Pulse AI taslakları bu işi hızlandırır.",
+      "1–3 yıldızlı geri bildirimlerin ve Google yorumlarının %60'ından fazlasını yanıtlamak sadakati artırır. Pulse AI taslakları bu işi hızlandırır.",
     );
     assert.equal(
       body('few_google_reviews'),

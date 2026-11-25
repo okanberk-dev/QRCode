@@ -94,6 +94,12 @@ Respond ONLY with this JSON, no other text:
  *
  * cacheKey önerisi: `analytics-structured:${userId}:${ISO_WEEK}`
  */
+/** Cached result only (no AI call): lets pages render without waiting (§58). */
+export function getCachedStructuredInsight(cacheKey: string): StructuredInsight | null {
+  const cached = cache.get(cacheKey);
+  return cached && cached.expiresAt > Date.now() ? cached.result : null;
+}
+
 export async function extractStructuredInsight(
   input: StructuredInsightInput,
   locale: 'tr' | 'en',

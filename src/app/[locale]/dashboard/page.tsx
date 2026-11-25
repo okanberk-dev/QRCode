@@ -16,26 +16,34 @@ import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
 import {
   ArrowRight,
+  ExternalLink,
   Inbox,
   MessageSquareReply,
   Plus,
   Star,
-  UserPlus,
 } from 'lucide-react';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import { computeActivation } from '@/lib/activation';
 import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
-import PulseRangeToggle from '@/components/dashboard/PulseRangeToggle';
+import VolumeChart from '@/components/charts/VolumeChart';
 import ChannelDistribution from '@/components/dashboard/ChannelDistribution';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import ScopeDropdown from '@/components/dashboard/ScopeDropdown';
 import { buildActivityFeed } from '@/lib/activity-feed';
-import { buildPlatformDailyTrend, type PlatformDailyPoint } from '@/lib/analytics-platform-trend';
-import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
+import { buildVolumeSeries } from '@/lib/volume-series';
+import {
+  TOPIC_MIN_MENTIONS,
+  describeChange,
+  describeRatingChange,
+  metricInfo,
+  metricLabel,
+  topicSentimentText,
+} from '@/lib/feedback-metrics';
+import { PageHeader, Sparkline, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
-import { isSameDayInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
 // minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
@@ -161,7 +169,6 @@ async function renderDashboardPage({
 
   // Time windows used by KPIs + trend.
   const now = Date.now();
-  const sevenDaysAgo = new Date(now - 7 * 86400000);
   // Phase 8c+ §38.31 — scope-aware window computation. Scope dropdown
   // 7d/30d/90d/ytd değerini server'a URL searchParam ile geçirir; KPI
   // (Toplam yorum / Yanıt oranı / Yeni müşteri) ve delta hesabı bu
@@ -296,6 +303,7 @@ async function renderDashboardPage({
               FROM feedback f
               WHERE f.restaurant_id IN (${Prisma.join(restIds)})
                 AND f.rating <= 3
+                AND f.redirected = FALSE
             ) l
           ) low
         `)
@@ -339,6 +347,8 @@ async function renderDashboardPage({
     recentReplies,
     recentAiDrafts,
     recentSystemEvents,
+    scopeRedirects,
+    prevScopeRedirects,
   ] = await readAll([
     // Son yorumlar listesi (CANLI AKIŞ timeline). Restaurant names come from
     // the business list above (every row is in restIds), so no join query.
@@ -354,6 +364,7 @@ async function renderDashboardPage({
         createdAt: true,
         restaurantId: true,
         hasKvkkConsent: true,
+        redirected: true,
       },
     }),
     // Per-restaurant avg + count (totalReviews + avgRating tek source; also
@@ -367,7 +378,8 @@ async function renderDashboardPage({
     // Platform distribution (Yorum Görünümü section)
     prisma.feedback.groupBy({
       by: ['platform'],
-      where: { restaurantId: restIdIn, platform: { not: null } },
+      // Where redirected customers were sent (§58: redirects, not reviews).
+      where: { restaurantId: restIdIn, platform: { not: null }, redirected: true },
       _count: { _all: true },
       _avg: { rating: true },
     }),
@@ -403,6 +415,7 @@ async function renderDashboardPage({
         restaurantId: restIdIn,
         createdAt: { gte: new Date(now - 30 * 86400000) },
         comment: { not: null },
+        redirected: false,
       },
       orderBy: { createdAt: 'desc' },
       take: 80,
@@ -416,7 +429,7 @@ async function renderDashboardPage({
     // are filtered from it below instead of being read again.
     prisma.feedback.findMany({
       where: { restaurantId: restIdIn, createdAt: { gte: trendOldestStart } },
-      select: { createdAt: true, rating: true, platform: true },
+      select: { createdAt: true, rating: true, redirected: true },
     }),
     // §38.31 — KANAL DAĞILIMI delta için önceki scope window platform groupBy.
     // Mevcut platformGroups all-time aggregate; delta için aynı window'da
@@ -426,6 +439,7 @@ async function renderDashboardPage({
       where: {
         restaurantId: restIdIn,
         platform: { not: null },
+        redirected: true,
         createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
       },
       _count: { _all: true },
@@ -482,25 +496,17 @@ async function renderDashboardPage({
         sentAt: true,
       },
     }),
+    // §58 — redirects in the scope / previous window (KPI split).
+    prisma.feedback.count({
+      where: { restaurantId: restIdIn, redirected: true, createdAt: { gte: scopeStart } },
+    }),
+    prisma.feedback.count({
+      where: { restaurantId: restIdIn, redirected: true, createdAt: { gte: prevScopeStart, lt: prevScopeEnd } },
+    }),
   ]);
   const homeStats = mapHomeFeedbackStats(homeStatsRows[0]);
-  // Mobile hero 7-day sparkline rows (`createdAt >= sevenDaysAgo`, the same
-  // filter the separate 7-day query had).
-  const sevenDaysAgoMs = sevenDaysAgo.getTime();
-  const trendFeedbacks = trendFeedbacksRange.filter(
-    (f) => f.createdAt.getTime() >= sevenDaysAgoMs,
-  );
 
   // ---- Derived metrics ----
-  const totalReviews = restaurantRatings.reduce((a, r) => a + r._count._all, 0);
-  const totalRatedCount = totalReviews;
-  const avgRating =
-    totalRatedCount === 0
-      ? 0
-      : restaurantRatings.reduce(
-          (a, r) => a + (r._avg.rating ?? 0) * r._count._all,
-          0,
-        ) / totalRatedCount;
 
   // §38.31 — Scope window total + avg, scope dropdown'a parametrik. last7Avg
   // değişken adı korundu (lint silence) ama scope='30d' iken "last7" değil
@@ -519,80 +525,23 @@ async function renderDashboardPage({
       avgRating: g._avg.rating ?? null,
     }));
 
-  // 7-day trend buckets (TrendsChart Recharts için)
-  const dayLabelsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-  const dayLabelsEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const dayLabels = isTr ? dayLabelsTr : dayLabelsEn;
-  // §46 — gün sınırları işletme saat diliminde; sunucu UTC'de `setHours(0)`
-  // gece yarısına yakın yorumları bir önceki/sonraki güne kaydırıyordu.
+  // Rating volume (shared with Analytics, §58): daily for 30/90 days,
+  // weekly for the year. Days cut in the display time zone (§46).
   const displayTz = resolveDisplayTimeZone();
-  const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: displayTz });
-  const weekdayIdx: Record<string, number> = {
-    Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6,
-  };
-  const trendsChartData: { date: string; count: number; avgRating: number }[] = [];
-  for (let i = 0; i < 7; i++) {
-    const dayRef = new Date(now - (6 - i) * 86400000);
-    const labelIdx = weekdayIdx[weekdayFmt.format(dayRef)] ?? 0;
-    const dayFbs = trendFeedbacks.filter((f) =>
-      isSameDayInTimeZone(f.createdAt, dayRef, displayTz),
-    );
-    const count = dayFbs.length;
-    const ratingSum = dayFbs.reduce((sum, f) => sum + (f.rating || 0), 0);
-    const ratingAvg = count > 0 ? Math.round((ratingSum / count) * 10) / 10 : 0;
-    trendsChartData.push({ date: dayLabels[labelIdx], count, avgRating: ratingAvg });
-  }
-
-  // Phase 8c+ §38.30 — NABIZ chart artık analytics ana grafiğiyle aynı
-  // platform kırılımlı stacked area gövdesini kullanır. 30G/90G/YTD toggle
-  // korunur; datasetler analytics helper'ından üretildiği için tooltip ve
-  // platform bucket mantığı tek kaynakta kalır.
   const trendLocale = isTr ? 'tr' : 'en';
-  const trendNow = new Date(now);
+  const trendEnd = new Date(now);
   const ytdDays = Math.max(1, Math.ceil((now - ytdStart.getTime()) / 86400000) + 1);
-  const trendRows = trendFeedbacksRange.map((f) => ({
-    rating: f.rating,
-    platform: f.platform,
+  const volumeRows = trendFeedbacksRange.map((f) => ({
     createdAt: f.createdAt,
+    rating: f.rating,
+    redirected: f.redirected,
   }));
-  const trend30 = buildPlatformDailyTrend(trendRows, {
-    windowDays: 30,
-    locale: trendLocale,
-    now: trendNow,
-  });
-  const trend90 = buildPlatformDailyTrend(trendRows, {
-    windowDays: 90,
-    locale: trendLocale,
-    now: trendNow,
-  });
-  const trendYtd = buildPlatformDailyTrend(trendRows, {
-    windowDays: ytdDays,
-    locale: trendLocale,
-    now: trendNow,
-  });
-
-  function findPeak(
-    buckets: PlatformDailyPoint[],
-  ): { dateText: string; count: number } | null {
-    const peak = buckets.reduce<PlatformDailyPoint | null>(
-      (current, bucket) => (bucket.total > (current?.total ?? 0) ? bucket : current),
-      null,
-    );
-    if (!peak || peak.total === 0) return null;
-    return {
-      dateText: new Date(`${peak.isoDate}T00:00:00`).toLocaleDateString(
-        isTr ? 'tr-TR' : 'en-US',
-        { day: 'numeric', month: 'long' },
-      ),
-      count: peak.total,
-    };
-  }
-
-  const peak30 = findPeak(trend30);
-  const peak90 = findPeak(trend90);
-  const peakYtd = findPeak(trendYtd);
-  // §38.27'deki 7-gün peak hesabı §38.30'da PulseRangeToggle içine taşındı;
-  // dashboard'da ayrıca kullanılmıyor.
+  const volumeOpts = { end: trendEnd, timeZone: displayTz, locale: trendLocale } as const;
+  const volume30 = buildVolumeSeries(volumeRows, { ...volumeOpts, windowDays: 30 });
+  const volume90 = buildVolumeSeries(volumeRows, { ...volumeOpts, windowDays: 90 });
+  const volumeYtd = buildVolumeSeries(volumeRows, { ...volumeOpts, windowDays: ytdDays });
+  // Mobile summary sparkline: last 7 days.
+  const trendsChartData = volume30.slice(-7).map((p) => ({ count: p.total }));
 
   // SIK BAHSEDİLEN KONULAR — son 30 gün yorumlarından AI ile tema çıkarımı.
   // extractThemes helper içinde min 4 yorum + OpenAI key kontrolü; yoksa
@@ -627,7 +576,7 @@ async function renderDashboardPage({
     .map((f) => ({ rating: f.rating, comment: f.comment }));
   // Cache key AI-açık restoran kapsamını içerir — aksi halde kapsam/flag
   // değişince eski (başka restoranlardan üretilmiş) temalar gösterilirdi.
-  const themeCacheKey = `dashboard-themes:${user.id}:${[...aiEnabledRestaurantIds].sort().join(',')}:30d`;
+  const themeCacheKey = `dashboard-themes:v58:${user.id}:${[...aiEnabledRestaurantIds].sort().join(',')}:30d`;
   const cachedDashboardThemes = aiAnalyticsAvailable ? await getCachedThemes(themeCacheKey) : null;
   let dashboardThemes;
   if (!aiAnalyticsAvailable) {
@@ -693,39 +642,13 @@ async function renderDashboardPage({
     return search ? `${path}?${search}` : path;
   };
 
-  // ---- KPI delta hesaplamaları (tek pencere: 7d vs prev 7d) ----
-  const pctDelta = (curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } => {
-    if (prev === 0) {
-      if (curr === 0) return { value: '0%', kind: 'neutral' };
-      return { value: isTr ? 'Yeni' : 'New', kind: 'up' };
-    }
-    const pct = Math.round(((curr - prev) / prev) * 1000) / 10;
-    return {
-      value: `${pct >= 0 ? '+' : ''}${pct}%`,
-      kind: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral',
-    };
-  };
-
-  const totalReviewsDelta = pctDelta(last7Total, prevScopeAggregate._count._all);
-
-  const prevAvg = prevScopeAggregate._avg.rating ?? 0;
-  const ratingDeltaNum =
-    last7AvgRating > 0 && prevAvg > 0
-      ? Math.round((last7AvgRating - prevAvg) * 10) / 10
-      : null;
-  const ratingDelta: { value: string; kind: 'up' | 'down' | 'neutral' } =
-    ratingDeltaNum === null
-      ? { value: '—', kind: 'neutral' }
-      : ratingDeltaNum === 0
-        ? { value: '0', kind: 'neutral' }
-        : {
-            value: `${ratingDeltaNum > 0 ? '+' : ''}${ratingDeltaNum.toFixed(1)}`,
-            kind: ratingDeltaNum > 0 ? 'up' : 'down',
-          };
-
-  // ratingDelta değerleri '—' / '0' / '+0.3'; eski `!== '0%'` kontrolü hiç
-  // eşleşmiyor ve veri yokken "↑ —" basıyordu.
-  const showRatingDelta = ratingDeltaNum !== null && ratingDeltaNum !== 0;
+  // ---- KPI changes (lib/feedback-metrics.ts, §58) ----
+  const ratingsChange = describeChange(last7Total, prevScopeAggregate._count._all, { isTr });
+  const prevAvg = prevScopeAggregate._avg.rating ?? null;
+  const ratingChange = describeRatingChange(last7AvgRating || null, prevAvg, isTr);
+  const scopeFeedback = last7Total - scopeRedirects;
+  const redirectChange = describeChange(scopeRedirects, prevScopeRedirects, { isTr });
+  const toKind = (tone: 'good' | 'bad' | 'neutral') => (tone === 'good' ? 'up' : tone === 'bad' ? 'down' : 'neutral') as 'up' | 'down' | 'neutral';
 
   // ---- Google Rating Impact ----
   const impactStats = user.restaurants
@@ -835,15 +758,15 @@ async function renderDashboardPage({
   const userFirstName = user.name?.trim().split(/\s+/)[0] || (isTr ? 'Hoş geldin' : 'Welcome');
   // §38.32 — pendingCount yukarıda homeStats.unrepliedCount'tan
   // tanımlandı; greeting hook için reuse.
-  // Every unreplied low-rated review counts, not only today's — so no
+  // Every unreplied 1–3★ feedback counts, not only today's — so no
   // "Bugün" here (the pending card below shows how old the oldest one is).
   const pendingHook = isTr
     ? pendingCount > 0
-      ? `${pendingCount} yorum yanıt bekliyor.`
-      : 'Yanıt bekleyen yorum yok.'
+      ? `${pendingCount} geri bildirim yanıt bekliyor`
+      : 'Yanıt bekleyen geri bildirim yok.'
     : pendingCount > 0
-      ? `${pendingCount} ${pendingCount === 1 ? 'review is' : 'reviews are'} waiting for a reply.`
-      : 'No reviews are waiting for a reply.';
+      ? `${pendingCount} ${pendingCount === 1 ? 'piece of feedback is' : 'pieces of feedback are'} waiting for a reply`
+      : 'No feedback is waiting for a reply.';
   const primaryRestaurantName = selectedRestaurant?.name ?? user.restaurants[0]?.name ?? '';
 
   // §40.10 anti-double-skeleton — server-compute activation here so the
@@ -918,23 +841,38 @@ async function renderDashboardPage({
           ? 'prev 90 days'
           : 'same period last year';
 
-  // Mobile hero card (below sm) replaces the "Genel puan" + "Toplam yorum"
-  // KPI cards, so it also carries the scope-window review count + change.
-  const showMobileHero = avgRating > 0;
-  const reviewDeltaText =
-    totalReviewsDelta.value === '0%' || totalReviewsDelta.value === (isTr ? 'Yeni' : 'New')
-      ? ''
-      : ` (${totalReviewsDelta.value})`;
+  // Mobile summary card (below sm) stands in for the first two KPI cards.
+  const showMobileHero = last7AvgRating > 0;
   const lowRated30dCount = homeStats.lowRatedInScope;
   const lowRated30dRepliedCount = homeStats.lowRatedRepliedInScope;
   const responseRate =
     lowRated30dCount > 0 ? Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100) : null;
   const pendingTaskItems = dashboardTasks.map((task) => ({ ...task, href: scopedHref(task.href) }));
+  const pendingHref = scopedHref(`/${locale}/dashboard/feedbacks?tab=low&hasReply=pending`);
+  const fmtNum = (n: number) => n.toLocaleString(isTr ? 'tr-TR' : 'en-US');
+  const fmtRating = (n: number) => (isTr ? n.toFixed(1).replace('.', ',') : n.toFixed(1));
+  const vsPrev = isTr ? `${prevScopeLabel} göre` : `vs ${prevScopeLabel}`;
+  // One platform: the channel card would repeat the redirect KPI (§58).
+  const showChannels = channelStats.length >= 2;
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1280px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        title={`${greeting}, ${userFirstName}. ${pendingHook}`}
+        title={
+          <>
+            {greeting}, {userFirstName}.{' '}
+            {pendingCount > 0 ? (
+              <Link
+                href={pendingHref}
+                className="underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] rounded"
+              >
+                {pendingHook}
+              </Link>
+            ) : (
+              pendingHook
+            )}
+          </>
+        }
         subtitle={
           primaryRestaurantName
             ? `${primaryRestaurantName} · ${dateText}`
@@ -942,102 +880,63 @@ async function renderDashboardPage({
         }
         actions={
           <>
-            {/* Date window for the KPI cards (?scope=). The chart below has
-                its own 30G / 90G / YTD switch. */}
+            {/* Date window for the KPI cards (?scope=). */}
             <ScopeDropdown current={scopeUrlValue} isTr={isTr} />
-            {/* "Yorum iste" = create a QR customers scan to leave a review.
-                Hidden until there is a business: a QR needs one, and the
-                welcome card's "İlk işletmeni ekle" is then the one action. */}
             {hasRestaurant && (
               <Link
                 href={scopedHref(`/${locale}/dashboard/qr?new=1`)}
                 className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
               >
                 <Plus size={13} strokeWidth={2} aria-hidden="true" />
-                {isTr ? 'Yorum İste' : 'Request review'}
+                {isTr ? 'Yorum iste' : 'Request review'}
               </Link>
             )}
           </>
         }
       />
 
-      {/* Mobile-only summary (graphite + lime, 7-day sparkline). Below sm it
-          stands in for the "Genel puan" and "Toplam yorum" KPI cards. */}
+      {/* Mobile-only summary. Below sm it stands in for the first two KPIs. */}
       {showMobileHero && (
         <section
-          className="sm:hidden rounded-[18px] bg-[#0A0A0A] text-white p-[18px] relative overflow-hidden"
+          className="sm:hidden rounded-2xl bg-[#0A0A0A] p-5 text-white"
           aria-label={isTr ? 'Puan özeti' : 'Rating summary'}
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="pulse-eyebrow text-white/60 text-[9.5px]">
-              {isTr ? 'GENEL PUAN' : 'AVG RATING'}
+            <span className="text-[13px] font-medium text-white/75">
+              {isTr ? `Ortalama puan · ${scopeLabel}` : `Average rating · ${scopeLabel}`}
             </span>
             <Link
               href={scopedHref(`/${locale}/dashboard/analytics`)}
-              className="-my-3 -mr-2 inline-flex min-h-[44px] items-center gap-1 rounded-lg px-2 text-[12px] font-medium text-white/75 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+              className="-my-3 -mr-2 inline-flex min-h-[44px] items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
             >
               {isTr ? 'Analitik' : 'Analytics'}
               <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
             </Link>
           </div>
-          <div className="mt-2 mb-3">
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className="bz-h-tight"
-                style={{
-                  fontSize: 44,
-                  lineHeight: 0.9,
-                  letterSpacing: '-0.04em',
-                  color: '#C6F24E',
-                }}
-              >
-                {avgRating.toFixed(2)}
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-[40px] font-semibold leading-none tracking-[-0.03em] text-[#C6F24E] tabular-nums">
+              {fmtRating(last7AvgRating)}
+            </span>
+            {ratingChange && (
+              <span className="text-[13px] font-medium text-white/80">
+                {ratingChange.arrow} {ratingChange.text}
               </span>
-              <span className="flex gap-0.5" aria-hidden="true">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    size={13}
-                    className={s <= Math.round(avgRating) ? 'text-[#C6F24E]' : 'text-white/20'}
-                    fill={s <= Math.round(avgRating) ? '#C6F24E' : 'transparent'}
-                  />
-                ))}
-              </span>
-            </div>
-            <div className="bz-mono text-[11px] text-white/70 mt-1.5 space-y-0.5">
-              <p>
-                {totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                {isTr ? 'toplam yorum' : 'total reviews'}
-              </p>
-              <p>
-                {scopeLabel}: {last7Total.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                {isTr ? 'yorum' : last7Total === 1 ? 'review' : 'reviews'}
-                {reviewDeltaText}
-                {showRatingDelta && (
-                  <span className="text-[#C6F24E] font-semibold">
-                    {' · '}
-                    {isTr ? 'puan' : 'rating'} {ratingDelta.kind === 'down' ? '↓' : '↑'}{' '}
-                    {ratingDelta.value.replace(/^[+-]/, '')}
-                  </span>
-                )}
-              </p>
-            </div>
+            )}
           </div>
+          <p className="mt-2 text-[13px] text-white/75">
+            {isTr
+              ? `${fmtNum(last7Total)} puan · ${fmtNum(scopeRedirects)} yönlendirme · ${fmtNum(scopeFeedback)} geri bildirim`
+              : `${fmtNum(last7Total)} ratings · ${fmtNum(scopeRedirects)} redirects · ${fmtNum(scopeFeedback)} feedback`}
+          </p>
           {trendsChartData.length >= 2 && (
-            <div className="h-[50px] -mx-[18px] -mb-[18px] px-[18px] pb-[18px]">
-              <Sparkline
-                values={trendsChartData.map((d) => d.count)}
-                w={320}
-                h={50}
-                color="#C6F24E"
-                className="w-full"
-              />
+            <div className="mt-3 h-[44px]">
+              <Sparkline values={trendsChartData.map((d) => d.count)} w={320} h={44} color="#C6F24E" className="w-full" />
             </div>
           )}
         </section>
       )}
 
-      {/* Weekly AI insight (dismissible per ISO week). */}
+      {/* Weekly AI summary: calm light strip (dismissible per ISO week). */}
       {dashboardThemes.synthesis && (
         <AIInsightBanner
           insight={dashboardThemes.synthesis}
@@ -1046,9 +945,6 @@ async function renderDashboardPage({
         />
       )}
 
-      {/* One setup card at a time: the account-level checklist only while
-          there is no business yet; afterwards the per-business checklist
-          (same steps, plus manual "printed/shared" mark and dismiss). */}
       {!hasRestaurant && (
         <OnboardingNudge
           locale={locale}
@@ -1058,8 +954,6 @@ async function renderDashboardPage({
       )}
       {activationTarget && (
         <ActivationChecklistCard
-          // Seeded once from initialResult — remount per business so a
-          // switch does not keep the previous business's checklist.
           key={activationTarget.id}
           restaurantId={activationTarget.id}
           locale={locale}
@@ -1067,183 +961,142 @@ async function renderDashboardPage({
         />
       )}
 
-      {/* KPI cards. Below sm the first two live in the summary card above. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* KPI cards (§58 definitions behind ⓘ). Below sm the first two live
+          in the summary card above. */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           className={showMobileHero ? 'hidden sm:block' : ''}
-          label={isTr ? 'Genel puan' : 'Avg rating'}
-          value={avgRating > 0 ? `${avgRating.toFixed(1)}` : '—'}
-          // Value = all-time average; delta = scope window vs previous window.
-          delta={ratingDeltaNum !== null ? ratingDelta.value : undefined}
-          deltaKind={ratingDelta.kind}
-          deltaSuffix={`${scopeLabel} vs. ${prevScopeLabel}`}
+          label={metricLabel('avgRating', isTr)}
+          info={metricInfo('avgRating', isTr)}
+          isTr={isTr}
+          value={last7AvgRating > 0 ? fmtRating(last7AvgRating) : '—'}
+          delta={ratingChange?.text}
+          deltaKind={ratingChange ? toKind(ratingChange.tone) : 'neutral'}
+          deltaSuffix={ratingChange && ratingChange.arrow ? vsPrev : scopeLabel}
           icon={<Star size={14} strokeWidth={2} fill="#C6F24E" stroke="#C6F24E" />}
-          accent="#C6F24E"
         />
         <StatCard
           className={showMobileHero ? 'hidden sm:block' : ''}
-          label={isTr ? 'Toplam yorum' : 'Total reviews'}
-          value={totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          delta={totalReviewsDelta.value}
-          deltaKind={totalReviewsDelta.kind}
-          deltaSuffix={`${scopeLabel} vs. ${prevScopeLabel}`}
+          label={metricLabel('ratings', isTr)}
+          info={metricInfo('ratings', isTr)}
+          isTr={isTr}
+          value={fmtNum(last7Total)}
+          delta={ratingsChange.text}
+          deltaKind={toKind(ratingsChange.tone)}
+          deltaSuffix={
+            isTr
+              ? `${fmtNum(scopeRedirects)} yönlendirme · ${fmtNum(scopeFeedback)} geri bildirim`
+              : `${fmtNum(scopeRedirects)} redirects · ${fmtNum(scopeFeedback)} feedback`
+          }
           icon={<Inbox size={14} strokeWidth={2} />}
         />
         <StatCard
-          label={isTr ? 'Yanıt oranı' : 'Response rate'}
-          value={
-            responseRate === null ? '—' : isTr ? `%${responseRate}` : `${responseRate}%`
-          }
-          // StatCard shows the suffix only next to a delta, so the "x/y"
-          // count goes in the (neutral) delta slot.
+          label={metricLabel('redirects', isTr)}
+          info={metricInfo('redirects', isTr)}
+          isTr={isTr}
+          value={fmtNum(scopeRedirects)}
+          delta={redirectChange.text}
+          deltaKind={toKind(redirectChange.tone)}
+          deltaSuffix={redirectChange.arrow ? vsPrev : scopeLabel}
+          icon={<ExternalLink size={14} strokeWidth={2} />}
+        />
+        <StatCard
+          label={metricLabel('lowReplyRate', isTr)}
+          info={metricInfo('lowReplyRate', isTr)}
+          isTr={isTr}
+          value={responseRate === null ? '—' : isTr ? `%${responseRate}` : `${responseRate}%`}
           delta={
             responseRate === null
               ? isTr
-                ? 'Düşük puanlı yorum yok'
-                : 'No low ratings'
+                ? '1–3★ geri bildirim yok'
+                : 'No 1–3★ feedback'
               : `${lowRated30dRepliedCount}/${lowRated30dCount}`
           }
           deltaKind="neutral"
-          deltaSuffix={
-            responseRate === null
-              ? scopeLabel
-              : isTr
-                ? `düşük puanlı yorum · ${scopeLabel}`
-                : `low ratings · ${scopeLabel}`
-          }
+          deltaSuffix={scopeLabel}
           icon={<MessageSquareReply size={14} strokeWidth={2} />}
-        />
-        <StatCard
-          label={isTr ? 'Yeni müşteri' : 'New customers'}
-          value={homeStats.newCustomers.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          delta={scopeLabel}
-          deltaKind="neutral"
-          icon={<UserPlus size={14} strokeWidth={2} />}
         />
       </div>
 
-      {/* Two independent columns on lg (no empty holes when a card is
-          missing or short): chart + channels + topics on the left, pending
-          tasks + activity on the right. Below lg the column wrappers are
-          `display: contents`, so `order-*` keeps the single-column order:
-          chart, pending, channels, topics, activity.
-          Keyboard order still matches what is on screen: the channel and
-          topic sections are read-only (no links or buttons), so Tab goes
-          chart → pending tasks → activity in both layouts. Do not add a
-          focusable element to those two sections without revisiting this. */}
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
-        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3">
-          <section
-            className="bz-card p-5 sm:p-6 hidden sm:block order-1 lg:order-none"
-            aria-label={isTr ? 'Nabız' : 'Pulse'}
-          >
-            <PulseRangeToggle
-              ranges={{
-                '30g': { data: trend30, peak: peak30 },
-                '90g': { data: trend90, peak: peak90 },
-                ytd: { data: trendYtd, peak: peakYtd },
-              }}
-              defaultRange="30g"
+      {/* lg: two independent columns; below lg the wrappers are
+          `display: contents` and `order-*` keeps one column: chart,
+          pending, channels, topics, activity. */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
+          <div className="hidden sm:block order-1 lg:order-none">
+            <VolumeChart
+              title={isTr ? 'Puan hacmi' : 'Rating volume'}
+              subtitle={isTr ? 'Yönlendirme ve geri bildirim' : 'Redirects and feedback'}
+              ranges={[
+                { key: '30', label: isTr ? '30 gün' : '30 days', points: volume30 },
+                { key: '90', label: isTr ? '90 gün' : '90 days', points: volume90 },
+                { key: 'ytd', label: isTr ? 'Bu yıl' : 'This year', points: volumeYtd },
+              ]}
               isTr={isTr}
-              // Slot elements cross the server→client boundary; explicit keys
-              // keep React's key check quiet where they render next to siblings.
-              header={
-                <div key="pulse-header">
-                  <Eyebrow>{isTr ? 'NABIZ' : 'PULSE'}</Eyebrow>
-                  <p className="mt-1.5 text-[13px] text-[#525252]">
-                    {isTr ? 'Platformlara göre günlük yorum' : 'Daily reviews by platform'}
-                  </p>
-                </div>
-              }
-              footerAction={
+              footer={
                 <Link
-                  key="pulse-analytics"
                   href={scopedHref(`/${locale}/dashboard/analytics`)}
-                  className="inline-flex min-h-[32px] items-center gap-1.5 rounded-md text-[12px] font-medium text-[#525252] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                  className="inline-flex min-h-[32px] items-center gap-1 rounded-md text-[13px] font-medium text-[#404040] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E]"
                 >
-                  {isTr ? 'Detaylı analitik' : 'Detailed analytics'}
+                  {isTr ? 'Analitik' : 'Analytics'}
                   <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
                 </Link>
               }
             />
-          </section>
+          </div>
 
-          {/* Channel cards (Google card adds the rating-before/after strip). */}
-          {platformDistData.length > 0 && (
-            <section className="order-3 lg:order-none" aria-label={isTr ? 'Kanal dağılımı' : 'Channel breakdown'}>
-              {/* No link here: "Detaylı analitik" in the chart card (and
-                  "Analitik" in the mobile summary card) already opens the
-                  same page. */}
-              <header className="mb-3">
-                <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
-              </header>
-              <ChannelDistribution
-                channels={channelStats}
-                googleImpact={googleImpact}
-                isTr={isTr}
-              />
+          {showChannels && (
+            <section className="order-3 lg:order-none" aria-label={isTr ? 'Platformlar' : 'Platforms'}>
+              <h2 className="mb-3 text-[15px] font-semibold text-[#0A0A0A]">
+                {isTr ? 'Yönlendirilen platformlar' : 'Platforms customers were sent to'}
+              </h2>
+              <ChannelDistribution channels={channelStats} googleImpact={googleImpact} isTr={isTr} />
             </section>
           )}
 
-          {/* AI topics (last 30 days) — tablet + desktop only. */}
           {dashboardThemes.themes.length > 0 && (
             <section className="bz-card p-5 sm:p-6 hidden sm:block order-4 lg:order-none">
-              <header className="mb-5 flex items-center justify-between gap-3">
-                <Eyebrow>{isTr ? 'SIK BAHSEDİLEN KONULAR' : 'TRENDING TOPICS'}</Eyebrow>
-                <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
-                  {isTr ? 'SON 30 GÜN' : 'LAST 30 DAYS'}
-                </span>
+              <header className="mb-4 flex items-baseline justify-between gap-3">
+                <h2 className="text-[15px] font-semibold text-[#0A0A0A]">
+                  {isTr ? 'Sık bahsedilen konular' : 'Frequent topics'}
+                </h2>
+                <span className="shrink-0 text-[12.5px] text-[#737373]">{isTr ? 'Son 30 gün' : 'Last 30 days'}</span>
               </header>
-              <ul className="space-y-3.5">
+              <ul className="space-y-4">
                 {dashboardThemes.themes.slice(0, 5).map((t) => {
-                  // 3-segment sentiment bar (pos / neu / neg). Older cache
-                  // entries without sentiment fall back to a count bar.
                   const hasSentiment = typeof t.sentimentPositivePct === 'number';
                   const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
                   const neu = hasSentiment ? (t.sentimentNeutralPct ?? 0) : 0;
                   const neg = hasSentiment ? (t.sentimentNegativePct ?? Math.max(0, 100 - pos - neu)) : 0;
+                  // 1–2 mentions: too little data to read a share from.
+                  const thin = t.count < TOPIC_MIN_MENTIONS;
                   return (
-                    <li key={t.theme}>
-                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
-                        <span className="font-medium text-[#0A0A0A] truncate">{t.theme}</span>
-                        <span className="bz-mono tabular-nums text-[11px] text-[#737373] shrink-0">
-                          {t.count} {isTr ? 'bahsedilme' : 'mentions'}
+                    <li key={t.theme} className={thin ? 'opacity-60' : undefined}>
+                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[13.5px]">
+                        <span className="truncate font-medium text-[#0A0A0A]">{t.theme}</span>
+                        <span className="shrink-0 text-[12.5px] tabular-nums text-[#737373]">
+                          {t.count} {isTr ? 'bahsedilme' : t.count === 1 ? 'mention' : 'mentions'}
+                          {thin ? (isTr ? ' · az veri' : ' · little data') : ''}
                         </span>
                       </div>
                       {hasSentiment ? (
                         <>
                           <div
-                            className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
+                            className="flex h-1.5 overflow-hidden rounded-full bg-[#F0F0F0]"
                             role="img"
-                            aria-label={
-                              isTr
-                                ? `${pos}% pozitif, ${neu}% nötr, ${neg}% negatif`
-                                : `${pos}% positive, ${neu}% neutral, ${neg}% negative`
-                            }
+                            aria-label={topicSentimentText(pos, neg, isTr)}
                           >
                             <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
-                            <div className="h-full" style={{ width: `${neu}%`, background: '#A3A3A3' }} />
+                            <div className="h-full" style={{ width: `${neu}%`, background: '#D4D4D4' }} />
                             <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
                           </div>
-                          <div className="mt-1 flex justify-between gap-3 bz-mono text-[10px]">
-                            <span className="text-[#16A34A] font-semibold">
-                              +{pos}% {isTr ? 'pozitif' : 'positive'}
-                            </span>
-                            <span className="text-[#737373]">
-                              {isTr ? 'nötr' : 'neutral'} {neu}%
-                            </span>
-                            <span className="text-[#DC2626] font-semibold">
-                              -{neg}% {isTr ? 'negatif' : 'negative'}
-                            </span>
-                          </div>
+                          <p className="mt-1 text-[12px] text-[#525252]">{topicSentimentText(pos, neg, isTr)}</p>
                         </>
                       ) : (
-                        <div className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-[#F0F0F0]">
                           <div
-                            className="h-full rounded-full bg-[#0A0A0A] transition-all duration-500"
-                            style={{
-                              width: `${Math.max(8, (t.count / (dashboardThemes.themes[0]?.count ?? 1)) * 100)}%`,
-                            }}
+                            className="h-full rounded-full bg-[#0A0A0A]"
+                            style={{ width: `${Math.max(8, (t.count / (dashboardThemes.themes[0]?.count ?? 1)) * 100)}%` }}
                           />
                         </div>
                       )}
@@ -1255,11 +1108,9 @@ async function renderDashboardPage({
           )}
         </div>
 
-        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
           <PendingTasks className="order-2 lg:order-none" tasks={pendingTaskItems} isTr={isTr} />
           <ActivityFeed
-            // Keyed by business scope: the feed keeps its own list after mount
-            // (live pushes), so a business switch must remount it.
             key={restIds.join(',')}
             className="order-5 lg:order-none"
             events={activityEvents}

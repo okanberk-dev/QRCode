@@ -9,6 +9,7 @@ export interface FeedbackRow {
   comment: string | null;
   createdAt: string;
   platform: string | null;
+  redirected?: boolean;
   customerName: string | null;
   customerEmail: string | null;
   isReplied?: boolean;

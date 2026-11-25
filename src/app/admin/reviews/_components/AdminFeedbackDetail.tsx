@@ -190,7 +190,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                   tabIndex={-1}
                   className="bz-h-tight break-words text-[20px] text-[#0A0A0A] outline-none sm:text-[22px]"
                 >
-                  {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
+                  {active.customerName || (isTr ? 'İsimsiz' : 'Unnamed')}
                 </h2>
                 <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
                   <span className="inline-flex items-center gap-1.5">

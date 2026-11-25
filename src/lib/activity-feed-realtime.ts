@@ -63,6 +63,8 @@ export interface FeedbackInsertRow {
   created_at: string;
   restaurant_id: string | null;
   has_kvkk_consent: boolean | null;
+  /** §58 high-rating redirect event. */
+  redirected?: boolean | null;
 }
 
 /**
@@ -87,6 +89,7 @@ export function feedbackInsertToActivity(
         createdAt: created,
         restaurantId: row.restaurant_id,
         hasKvkkConsent: row.has_kvkk_consent,
+        redirected: row.redirected === true,
       },
     ],
     replies: [],

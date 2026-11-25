@@ -8,6 +8,8 @@ export interface FeedbackRow {
   comment: string | null;
   createdAt: string;
   platform: string | null;
+  /** §58 high-rating redirect event (no text). */
+  redirected?: boolean;
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;

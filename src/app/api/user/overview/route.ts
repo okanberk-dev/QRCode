@@ -85,12 +85,12 @@ export async function GET(req: NextRequest) {
     // so a lagging join table in a preview deploy degrades to 0 (§19 3-tier
     // resilience) without zeroing the feedback counts.
     const [totalReviews, reviews30d, reviews7d] = await prisma.$transaction([
-      prisma.feedback.count({ where: { restaurantId: { in: restaurantIds } } }),
+      prisma.feedback.count({ where: { restaurantId: { in: restaurantIds }, redirected: false } }),
       prisma.feedback.count({
-        where: { restaurantId: { in: restaurantIds }, createdAt: { gte: thirtyDaysAgo } },
+        where: { restaurantId: { in: restaurantIds }, redirected: false, createdAt: { gte: thirtyDaysAgo } },
       }),
       prisma.feedback.count({
-        where: { restaurantId: { in: restaurantIds }, createdAt: { gte: sevenDaysAgo } },
+        where: { restaurantId: { in: restaurantIds }, redirected: false, createdAt: { gte: sevenDaysAgo } },
       }),
     ]);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { redirectBadgeLabel } from '@/lib/feedback-metrics';
 import { ArrowLeft, Bookmark, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles } from 'lucide-react';
 import { AlertBanner, PlatformChip } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
@@ -195,7 +196,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                   tabIndex={-1}
                   className="bz-h-tight break-words text-[20px] text-[#0A0A0A] outline-none sm:text-[22px]"
                 >
-                  {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
+                  {active.customerName || (isTr ? 'İsimsiz' : 'Unnamed')}
                 </h2>
                 <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
                   <span className="inline-flex items-center gap-1.5">
@@ -265,11 +266,22 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <blockquote className="mt-5 whitespace-pre-line break-words rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-[15px] leading-[1.7] text-[#0A0A0A]">
               {active.comment}
             </blockquote>
+          ) : active.redirected ? (
+            <div className="mt-5 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[14px] leading-[1.6] text-[#404040]">
+              <span className="mb-1.5 inline-flex items-center rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[12px] font-medium text-[#365314]">
+                {redirectBadgeLabel(active.platform, isTr)}
+              </span>
+              <p>
+                {isTr
+                  ? 'Bu bir yorum değil, yönlendirme kaydı: müşteri puan verdi ve platformun yorum sayfası açıldı. Yazdığı yorum (yazdıysa) o platformda görünür.'
+                  : 'This is a redirect record, not a review: the customer rated and the platform review page opened. Any review they wrote appears on that platform.'}
+              </p>
+            </div>
           ) : (
-            <p className="mt-5 text-[14px] italic text-[#737373]">
+            <p className="mt-5 text-[14px] text-[#737373]">
               {isTr
-                ? 'Müşteri yorum yazmadı, yalnızca puan verdi.'
-                : 'The customer left a rating without a comment.'}
+                ? 'Müşteri metin yazmadı, yalnızca puan verdi.'
+                : 'The customer left a rating without text.'}
             </p>
           )}
 

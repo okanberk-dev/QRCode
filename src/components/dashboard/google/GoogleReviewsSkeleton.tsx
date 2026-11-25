@@ -149,7 +149,7 @@ export function GoogleReviewsLoadingShell({
   withSummary?: boolean;
 } = {}) {
   return (
-    <SkPageShell max={1440}>
+    <SkPageShell max={1280} space={6}>
       <GoogleReviewsHeaderSkeleton />
       <GoogleReviewsBodySkeleton withSwitcher={withSwitcher} withSummary={withSummary} />
     </SkPageShell>

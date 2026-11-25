@@ -9,21 +9,12 @@ import type { Locale } from '@/lib/translations';
 import { Download } from 'lucide-react';
 import {
   BarChart,
-  Eyebrow,
   PageHeader,
   PLATFORMS,
   type PlatformId,
 } from '@/components/ui';
 import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilterBar';
 import { HeatmapDayHour } from '@/components/dashboard/analytics/HeatmapDayHour';
-/** One day of the window, for the KPI sparklines. */
-interface DailyPoint {
-  /** Review count that day. */
-  reviews: number;
-  /** That day's average rating; null when there were no reviews. */
-  avgRating: number | null;
-}
-
 // Gün × Saat bucket'ları işletmenin yerel saatinde hesaplanır (CLAUDE.md §46).
 // `Date#getHours()` / `getDay()` sunucunun TZ'sini kullanır — Vercel'de UTC —
 // bu yüzden İstanbul'daki bir öğle yoğunluğu 09:00'da görünüyordu.
@@ -58,17 +49,26 @@ import { ChannelDistributionMini } from '@/components/dashboard/analytics/Channe
 // §49 — the static "GÜNCEL · BU SAYFA" live label and the mobile-only average
 // rating hero were removed: the header subtitle names the business + period,
 // and the ORTALAMA PUAN KPI card already shows the rating with its sparkline.
-import { MainTrendChart } from '@/components/dashboard/analytics/MainTrendChart';
+import { VolumeChart } from '@/components/charts/VolumeChart';
 import { SentimentDonut } from '@/components/dashboard/analytics/SentimentDonut';
 import { TopMentionsPolarity } from '@/components/dashboard/analytics/TopMentionsPolarity';
-import { extractThemes } from '@/lib/analytics-themes';
-import { extractStructuredInsight } from '@/lib/weekly-structured-insight';
+import { extractThemes, getCachedThemes } from '@/lib/analytics-themes';
+import { extractStructuredInsight, getCachedStructuredInsight } from '@/lib/weekly-structured-insight';
 import { calculateNPS } from '@/lib/analytics-nps';
 // §38.158 — buildWeeklyTrend + getWeeklyTrendWindow import kaldırıldı
 // (PulseTrendChart 14-haftalık görünüm sadece bu helper'ları tüketiyordu).
 // Helper dosyası lib/analytics-weekly-trend.ts orphan kaldı — gelecek
 // dashboard veya rapor surface'inde reuse ihtiyacı çıkarsa restore edilir.
-import { buildPlatformDailyTrend } from '@/lib/analytics-platform-trend';
+import { buildVolumeSeries } from '@/lib/volume-series';
+import {
+  BACKLOG_REPLY_DAYS,
+  computeReplyTimes,
+  describeChange,
+  describeRatingChange,
+  formatDuration,
+  metricInfo,
+  metricLabel,
+} from '@/lib/feedback-metrics';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { getPanelRestaurants, getPanelUser } from '../_lib/panel-data';
 
@@ -89,17 +89,6 @@ export async function generateMetadata({
   return {
     title: locale === 'tr' ? 'Analitik' : 'Analytics',
     robots: { index: false, follow: false },
-  };
-}
-
-function pctDelta(curr: number, prev: number): { value: string | null; kind: 'up' | 'down' | 'neutral' } {
-  // No reviews in the previous period: a percentage is meaningless (the old
-  // "Yeni" label was unclear and untranslated) — the subtitle says why.
-  if (prev === 0) return { value: null, kind: 'neutral' };
-  const pct = Math.round(((curr - prev) / prev) * 1000) / 10;
-  return {
-    value: `${pct >= 0 ? '+' : ''}${pct}%`,
-    kind: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral',
   };
 }
 
@@ -281,7 +270,7 @@ async function renderAnalyticsPage({
   // Only what the page renders is queried. The QR scan, redirect, low-rating
   // and "today" counts fed KPIs that were removed earlier (§38.50) and were
   // still run on every load.
-  const [feedbacksWindow, feedbacksPrevWindow, branchRows] = await readAll([
+  const [feedbacksWindow, prevAggregate, branchRows, backlogReplyRows] = await readAll([
     // Window feedback'leri — multi-purpose select: day/hour buckets,
     // theme analysis (comment), response time (replies). Tek query
     // multiple-section'ı besler (CLAUDE.md §7 — replication önleme).
@@ -299,6 +288,7 @@ async function renderAnalyticsPage({
         email: true,
         phone: true,
         hasKvkkConsent: true,
+        redirected: true,
         replies: {
           select: { createdAt: true },
           orderBy: { createdAt: 'asc' },
@@ -306,8 +296,11 @@ async function renderAnalyticsPage({
         },
       },
     }),
-    prisma.feedback.count({
+    // Previous period: rating count + average (KPI changes, §58).
+    prisma.feedback.aggregate({
       where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
+      _count: { _all: true },
+      _avg: { rating: true },
     }),
     // Distinct branches for the filter dropdown — limited to the business(es)
     // in scope (a branch of another business would only ever show an empty
@@ -319,7 +312,18 @@ async function renderAnalyticsPage({
       select: { branch: true },
       take: 50,
     }),
+    // Replies written in the window to feedback from before it: counted as
+    // backlog replies, kept out of the reply-time median (§58).
+    prisma.feedbackReply.findMany({
+      where: {
+        createdAt: { gte: windowStart, lte: windowEnd },
+        feedback: { ...baseWhere, redirected: false, createdAt: { lt: windowStart } },
+      },
+      select: { feedbackId: true, createdAt: true, feedback: { select: { createdAt: true } } },
+      take: 2000,
+    }),
   ]);
+  const feedbacksPrevWindow = prevAggregate._count._all;
   const branches = branchRows
     .map((r) => r.branch as string)
     .filter(Boolean)
@@ -365,51 +369,36 @@ async function renderAnalyticsPage({
   const exportQs = exportQuery.toString();
   const exportHref = `/api/dashboard/analytics/export${exportQs ? `?${exportQs}` : ''}`;
 
-  // KPI calculations.
+  // KPI calculations (definitions: lib/feedback-metrics.ts, §58).
+  // Ratings = every QR rating (redirects included); feedback = private form.
   const reviewsCount = feedbacksWindow.length;
-  const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow);
-
-  // 1) Ortalama Puan — no delta yet (the previous period's average is not
-  // queried).
+  const feedbackOnly = feedbacksWindow.filter((f) => !f.redirected);
+  const redirectCount = reviewsCount - feedbackOnly.length;
+  const ratingsChange = describeChange(reviewsCount, feedbacksPrevWindow, { isTr });
   const avgRatingNow =
     reviewsCount > 0
       ? feedbacksWindow.reduce((s, f) => s + (f.rating ?? 0), 0) / reviewsCount
       : 0;
-  // 2) NPS — calculateNPS saf helper
+  const ratingChange = describeRatingChange(avgRatingNow || null, prevAggregate._avg.rating ?? null, isTr);
+  // NPS over every rating.
   const npsResult = calculateNPS(feedbacksWindow.map((f) => ({ rating: f.rating ?? 0 })));
-  // 3) Yanıt sayısı (all feedback) — replied count, "Yanıt süresi" KPI subtitle.
-  const repliedCount = feedbacksWindow.filter(
-    (f) => Array.isArray(f.replies) && f.replies.length > 0,
-  ).length;
-
-  // 4) Avg response time (all feedback) — reply.createdAt − feedback.createdAt
-  let totalResponseMs = 0;
-  let responseCount = 0;
-  for (const f of feedbacksWindow) {
-    const firstReply = f.replies?.[0]?.createdAt;
-    if (!firstReply) continue;
-    const diff = firstReply.getTime() - f.createdAt.getTime();
-    if (diff > 0) {
-      totalResponseMs += diff;
-      responseCount += 1;
-    }
-  }
-  const avgResponseHours = responseCount > 0 ? totalResponseMs / responseCount / 3600000 : null;
-
-  // §38.50 — Yanıt süresi KPI (saat-bazlı, tasarım birebir parity).
-  // Display format: "2sa 18dk" / "2h 18m" — saatten azsa "X dk" / "Xm".
-  const avgResponseValueLabel = (() => {
-    if (avgResponseHours === null) return '—';
-    if (avgResponseHours < 1) {
-      const mins = Math.round(avgResponseHours * 60);
-      return `${mins} ${isTr ? 'dk' : 'm'}`;
-    }
-    const wholeH = Math.floor(avgResponseHours);
-    const mins = Math.round((avgResponseHours - wholeH) * 60);
-    return mins > 0
-      ? `${wholeH}${isTr ? 'sa' : 'h'} ${mins}${isTr ? 'dk' : 'm'}`
-      : `${wholeH}${isTr ? 'sa' : 'h'}`;
-  })();
+  // 1–3★ feedback reply rate in the window.
+  const lowFeedback = feedbackOnly.filter((f) => (f.rating ?? 0) <= 3);
+  const lowReplied = lowFeedback.filter((f) => f.replies.length > 0).length;
+  // Reply time: median over feedback that arrived in the window; replies to
+  // feedback older than 30 days are backlog replies.
+  const replyStats = computeReplyTimes(
+    [
+      ...feedbackOnly.map((f) => ({ createdAt: f.createdAt, firstReplyAt: f.replies[0]?.createdAt ?? null })),
+      ...backlogReplyRows.map((r) => ({ createdAt: r.feedback.createdAt, firstReplyAt: r.createdAt })),
+    ],
+    { start: windowStart, end: new Date(windowEnd.getTime() + 1) },
+  );
+  const backlogCount = new Set(
+    backlogReplyRows
+      .filter((r) => r.createdAt.getTime() - r.feedback.createdAt.getTime() > BACKLOG_REPLY_DAYS * 86_400_000)
+      .map((r) => r.feedbackId),
+  ).size;
 
   // §38.50 — Tekrar gelme KPI (Return Rate). KVKK consent + non-anonim
   // (email veya phone dolu) feedback'ler içinde aynı contact_key 2+ kez
@@ -429,53 +418,24 @@ async function renderAnalyticsPage({
       ? Math.round((returningCustomers / totalUniqueCustomers) * 100)
       : null;
 
-  // Daily series for the KPI sparklines — one point per day of the window,
-  // ending on the window's last day (same days as the trend chart).
-  const dailySeries: DailyPoint[] = Array.from({ length: windowDays }, (_, i) => {
-    const dayStart = new Date(seriesAnchor);
-    dayStart.setHours(0, 0, 0, 0);
-    dayStart.setDate(dayStart.getDate() - (windowDays - 1 - i));
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-    const dayFbs = feedbacksWindow.filter(
-      (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
-    );
-    const rated = dayFbs.filter((f) => (f.rating ?? 0) > 0);
-    const avgRating =
-      rated.length > 0 ? rated.reduce((sum, f) => sum + f.rating, 0) / rated.length : null;
-    return { reviews: dayFbs.length, avgRating };
-  });
-
-  // Platform paylaşımı — sadece "Tümü" filter'ında anlamlı (tek platform
-  // seçiliyse breakdown gereksiz). Platform filter aktifse bu kart gizlenir.
-  const platformShare = PLATFORM_DISPLAY.map((p) => {
-    const count = feedbacksWindow.filter(
-      (f) => (f.platform || '').toLowerCase() === p.key && f.rating >= 4,
-    ).length;
-    return { id: p.id, key: p.key, count };
-  })
-    .filter((p) => p.count > 0)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 4);
-  // KANAL DAĞILIMI rows: platforms + 'Buaze QR' (rating ≥4 with no platform).
-  const buazeQrCount = feedbacksWindow.filter(
-    (f) => (f.rating ?? 0) >= 4 && !f.platform,
-  ).length;
-  const channelRows = [
-    ...platformShare.map((p) => ({
+  // Where redirected customers were sent (§58). Only shown with 2+ platforms:
+  // with one platform the card repeats the KPI.
+  const channelCounts = new Map<string, number>();
+  for (const f of feedbacksWindow) {
+    if (!f.redirected) continue;
+    const key = (f.platform || '').toLowerCase();
+    if (!key) continue;
+    channelCounts.set(key, (channelCounts.get(key) ?? 0) + 1);
+  }
+  const channelRows = PLATFORM_DISPLAY.filter((p) => channelCounts.has(p.key))
+    .map((p) => ({
       platform: p.key,
       label: PLATFORMS[p.id].label,
-      count: p.count,
+      count: channelCounts.get(p.key) ?? 0,
       color: PLATFORMS[p.id].color,
-    })),
-    ...(buazeQrCount > 0
-      ? [{ platform: 'buaze_qr', label: 'Buaze QR', count: buazeQrCount, color: '#0A0A0A' }]
-      : []),
-  ];
-  // Only meaningful across platforms (hidden under a platform filter) and
-  // only when there is something to show — the card renders nothing for an
-  // empty list, which left an empty grid column.
-  const showPlatformShare = !platformFilter && channelRows.length > 0;
+    }))
+    .sort((a, b) => b.count - a.count);
+  const showPlatformShare = !platformFilter && channelRows.length >= 2;
 
   // Günlük dağılım (day-of-week) — over the selected period, like every other
   // card. It used a fixed last-7-days window, so with "Son 90 gün" or a custom
@@ -529,13 +489,9 @@ async function renderAnalyticsPage({
   // üretir (Google + Tripadvisor + Buaze QR + Other 4-bucket). Backend
   // gerek yok — mevcut feedbacksWindow query reuse (CLAUDE.md §7
   // replication önleme).
-  const platformTrendPoints = buildPlatformDailyTrend(
-    feedbacksWindow.map((f) => ({
-      rating: f.rating,
-      platform: f.platform,
-      createdAt: f.createdAt,
-    })),
-    { windowDays, locale: isTr ? 'tr' : 'en', now: seriesAnchor },
+  const volumePoints = buildVolumeSeries(
+    feedbacksWindow.map((f) => ({ createdAt: f.createdAt, rating: f.rating, redirected: f.redirected })),
+    { windowDays, end: seriesAnchor, timeZone: resolveDisplayTimeZone(), locale: isTr ? 'tr' : 'en' },
   );
 
   // Stage 66 §38.147 — HANDOFF AnalyticsDesktop sentiment donut overall
@@ -580,6 +536,7 @@ async function renderAnalyticsPage({
   // (restaurant + filter + window) ile process-local 1h TTL. Workspace-bazlı
   // owner restaurantId'ye göre; çoklu lokasyon "all" için userId.
   const themesCacheKey = [
+    'v58',
     user.id,
     restaurantIds.length > 1 ? 'all' : restaurantIds[0] || 'none',
     rangeKey,
@@ -592,7 +549,7 @@ async function renderAnalyticsPage({
   const aiAnalyticsAvailable = restaurantIds.some((restaurantId) =>
     aiEnabledRestaurantIds.has(restaurantId),
   );
-  const themesComments = feedbacksWindow
+  const themesComments = feedbackOnly
     .filter((f) => typeof f.restaurantId === 'string' && aiEnabledRestaurantIds.has(f.restaurantId))
     .filter((f): f is typeof f & { comment: string } => typeof f.comment === 'string' && f.comment.trim().length > 0)
     .map((f) => ({ rating: f.rating, comment: f.comment }));
@@ -608,47 +565,51 @@ async function renderAnalyticsPage({
     const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
     return `${year}-W${week}`;
   })();
-  const structuredCacheKey = `analytics-structured:${user.id}:${restaurantIds.join(',')}:${isoWeekKey}`;
+  const structuredCacheKey = `analytics-structured:v58:${user.id}:${restaurantIds.join(',')}:${isoWeekKey}`;
   const ratingDistribution: Record<number, number> = {};
-  for (const f of feedbacksWindow) {
+  for (const f of feedbackOnly) {
     const r = f.rating ?? 0;
     if (r >= 1 && r <= 5) ratingDistribution[r] = (ratingDistribution[r] ?? 0) + 1;
   }
-  // Both AI helpers need only the comments + rating distribution above and
-  // read no database (outbound OpenAI + quota checks only), so they run
-  // side by side instead of two LLM round trips back to back on a cache miss.
-  const [themes, structuredInsight] = await Promise.all([
-    aiAnalyticsAvailable
-      ? extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey, user.id)
-      : Promise.resolve({ themes: [], synthesis: '', source: 'fallback' as const }),
-    aiAnalyticsAvailable
-      ? extractStructuredInsight(
-          { comments: themesComments, ratingDistribution },
-          isTr ? 'tr' : 'en',
-          structuredCacheKey,
-          user.id,
-        )
-      : Promise.resolve({ trend: '', win: '', risk: '', source: 'fallback' as const }),
-  ]);
+  // Never wait for the model (§58): cached results render now; a miss
+  // starts the call in the background and the next visit shows it.
+  const emptyThemes = { themes: [], synthesis: '', source: 'fallback' as const };
+  const emptyInsight = { trend: '', win: '', risk: '', source: 'fallback' as const };
+  const cachedThemes = aiAnalyticsAvailable ? await getCachedThemes(themesCacheKey) : null;
+  const cachedInsight = aiAnalyticsAvailable ? getCachedStructuredInsight(structuredCacheKey) : null;
+  if (aiAnalyticsAvailable && !cachedThemes) {
+    void extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey, user.id).catch(() => {});
+  }
+  if (aiAnalyticsAvailable && !cachedInsight) {
+    void extractStructuredInsight(
+      { comments: themesComments, ratingDistribution },
+      isTr ? 'tr' : 'en',
+      structuredCacheKey,
+      user.id,
+    ).catch(() => {});
+  }
+  const themes = cachedThemes ?? emptyThemes;
+  const structuredInsight = cachedInsight ?? emptyInsight;
 
-  // Phase 8c+ (CLAUDE.md §38.18) — KPI mini sparkline data from the daily
-  // series. Min 2 nokta gerekir (StatCard guard).
-  const sparkReviews = dailySeries.map((d) => d.reviews);
-  // ORTALAMA PUAN — günlük ortalama. Yorumsuz günler son bilinen değeri
-  // taşır (sahte 0 çukuru olmasın); ilk yorumdan önceki günler atlanır.
-  // En az 2 günde yorum yoksa trend yok → sparkline gizli.
-  const ratedDays = dailySeries.filter((d) => d.avgRating !== null).length;
+  // KPI sparklines from the chart series. Average rating: running average
+  // of the rated days so far (smooth, no day-to-day zigzag, §58).
+  const sparkReviews = volumePoints.map((p) => p.total);
   const sparkAvgRating: number[] = [];
-  if (ratedDays >= 2) {
-    let lastAvg: number | null = null;
-    for (const d of dailySeries) {
-      if (d.avgRating !== null) lastAvg = d.avgRating;
-      if (lastAvg !== null) sparkAvgRating.push(Math.round(lastAvg * 100) / 100);
+  {
+    let sum = 0;
+    let n = 0;
+    for (const p of volumePoints) {
+      if (p.avgRating !== null) {
+        sum += p.avgRating * p.total;
+        n += p.total;
+      }
+      if (n > 0) sparkAvgRating.push(Math.round((sum / n) * 100) / 100);
     }
+    if (sparkAvgRating.length < 2) sparkAvgRating.length = 0;
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
       <PageHeader
         /* §38.66 — Analytics 5-col KPI + chart + heatmap + topic grid yoğun
            dashboard; hero h1 ezici hissedilir. titleScale="compact".
@@ -678,55 +639,54 @@ async function renderAnalyticsPage({
       <AnalyticsKpiGrid
         kpis={[
           {
-            label: isTr ? 'TOPLAM YORUM' : 'TOTAL REVIEWS',
+            label: metricLabel('ratings', isTr),
+            info: metricInfo('ratings', isTr),
             value: reviewsCount.toLocaleString(isTr ? 'tr-TR' : 'en-US'),
-            delta: reviewsDelta.value,
-            deltaKind: reviewsDelta.kind,
-            subtitle:
-              feedbacksPrevWindow > 0
-                ? isTr
-                  ? `önceki dönemde ${feedbacksPrevWindow.toLocaleString('tr-TR')}`
-                  : `${feedbacksPrevWindow.toLocaleString('en-US')} in previous period`
-                : isTr
-                  ? 'önceki dönemde yorum yok'
-                  : 'none in previous period',
+            change: feedbacksPrevWindow > 0 || reviewsCount > 0 ? ratingsChange : null,
+            subtitle: isTr
+              ? `${redirectCount} yönlendirme · ${feedbackOnly.length} geri bildirim`
+              : `${redirectCount} redirects · ${feedbackOnly.length} feedback`,
             sparkline: sparkReviews,
             sparklineColor: '#0A0A0A',
           },
           {
-            label: isTr ? 'ORTALAMA PUAN' : 'AVG RATING',
-            value: avgRatingNow > 0 ? avgRatingNow.toFixed(2) : '—',
-            // Sabit 4.0 baz alınan "+" delta önceki döneme göre değişim değildi
-            // (3.5 ortalamada "+-0.50" basıyordu); prev avg hesaplanana dek yok.
-            delta: null,
+            label: metricLabel('avgRating', isTr),
+            info: metricInfo('avgRating', isTr),
+            value: avgRatingNow > 0 ? avgRatingNow.toFixed(2).replace('.', isTr ? ',' : '.') : '—',
+            change: ratingChange,
             subtitle: isTr
-              ? `hedef ${resolvedTargetRating.toFixed(1)}`
+              ? `hedef ${resolvedTargetRating.toFixed(1).replace('.', ',')}`
               : `target ${resolvedTargetRating.toFixed(1)}`,
             sparkline: sparkAvgRating,
             sparklineColor: '#A8D62E',
           },
-          // YANIT SÜRESİ / NPS / TEKRAR GELME have no daily series of their own;
-          // they used to borrow the review-volume sparkline, which drew a
-          // rising trend even when the metric was "—". No sparkline instead.
           {
-            label: isTr ? 'YANIT SÜRESİ' : 'REPLY TIME',
-            value: avgResponseValueLabel,
-            delta: avgResponseHours !== null ? (isTr ? 'ortalama' : 'avg') : null,
-            deltaKind: 'flat',
-            subtitle:
-              reviewsCount > 0
+            label: metricLabel('replyTime', isTr),
+            info: metricInfo('replyTime', isTr),
+            value: replyStats.medianMs !== null ? formatDuration(replyStats.medianMs, isTr) : '—',
+            subtitle: [
+              lowFeedback.length > 0
                 ? isTr
-                  ? `${repliedCount}/${reviewsCount} yanıtlandı`
-                  : `${repliedCount}/${reviewsCount} replied`
+                  ? `1–3★: ${lowReplied}/${lowFeedback.length} yanıtlandı`
+                  : `1–3★: ${lowReplied}/${lowFeedback.length} replied`
                 : isTr
-                  ? 'henüz yanıt yok'
-                  : 'no replies yet',
+                  ? 'Bu dönemde 1–3★ geri bildirim yok'
+                  : 'No 1–3★ feedback in this period',
+              backlogCount > 0
+                ? isTr
+                  ? `eski ${backlogCount} kayda yanıt ayrı`
+                  : `${backlogCount} older replies apart`
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' · '),
           },
           {
-            label: isTr ? 'NPS' : 'NPS',
+            label: 'NPS',
+            info: isTr
+              ? '5★ destekçi, 4★ pasif, 1–3★ eleştiren. NPS = destekçi % − eleştiren %.'
+              : '5★ promoter, 4★ passive, 1–3★ detractor. NPS = promoter % − detractor %.',
             value: npsResult.total > 0 ? String(npsResult.npsScore) : '—',
-            // 5★ destekçi, 4★ pasif, 1-3★ eleştiren (lib/analytics-nps.ts).
-            delta: null,
             subtitle:
               npsResult.total > 0
                 ? isTr
@@ -737,21 +697,17 @@ async function renderAnalyticsPage({
                   : 'not enough data',
           },
           {
-            label: isTr ? 'TEKRAR GELME' : 'RETURN RATE',
+            label: metricLabel('returning', isTr),
+            info: metricInfo('returning', isTr),
             value: returnRate !== null ? (isTr ? `%${returnRate}` : `${returnRate}%`) : '—',
-            // The bare "2/6" next to the value was unclear — the subtitle
-            // says it in words.
-            delta: null,
             subtitle:
               totalUniqueCustomers > 0
                 ? isTr
-                  ? `${totalUniqueCustomers} müşteriden ${returningCustomers} kişi tekrar geldi`
-                  : `${returningCustomers} of ${totalUniqueCustomers} ${
-                      totalUniqueCustomers === 1 ? 'customer' : 'customers'
-                    } came back`
+                  ? `${totalUniqueCustomers} müşteriden ${returningCustomers} kişi`
+                  : `${returningCustomers} of ${totalUniqueCustomers}`
                 : isTr
-                  ? 'KVKK onaylı veri yok'
-                  : 'no consented data',
+                  ? 'İletişim bilgisi bırakan yok'
+                  : 'No contact details yet',
           },
         ]}
         isTr={isTr}
@@ -763,7 +719,12 @@ async function renderAnalyticsPage({
           breakdown. PulseTrendChart 14-week complementary alt section'da
           kalır (longitudinal weekly trend, Buaze-specific Stage 25 §38.25
           paterni intact). */}
-      <MainTrendChart points={platformTrendPoints} isTr={isTr} />
+      <VolumeChart
+        title={isTr ? 'Puan hacmi' : 'Rating volume'}
+        subtitle={windowDays > 92 ? (isTr ? 'Haftalık' : 'Weekly') : isTr ? 'Günlük' : 'Daily'}
+        ranges={[{ key: 'window', label: periodLabel, points: volumePoints }]}
+        isTr={isTr}
+      />
 
       {/* §38.158 — PUAN VE HACİM TRENDİ (PulseTrendChart 14 haftalık)
           kullanıcı talebi ile kaldırıldı ("analitik sayfasındaki 14 günlük
@@ -786,7 +747,7 @@ async function renderAnalyticsPage({
           platform filter it is hidden, but sentiment + top mentions stay
           (they used to disappear with it). */}
       <div
-        className={`grid gap-3.5 ${
+        className={`grid gap-6 ${
           showPlatformShare ? 'lg:grid-cols-[1.4fr_1fr_1fr]' : 'lg:grid-cols-2'
         }`}
       >
@@ -796,8 +757,8 @@ async function renderAnalyticsPage({
             isTr={isTr}
             caption={
               isTr
-                ? '4-5 yıldızlı yorumların geldiği kanallar'
-                : 'Where 4-5 star reviews came from'
+                ? 'Yüksek puanla yönlendirilen müşterilerin gittiği platformlar'
+                : 'Where high-rating customers were sent'
             }
           />
         )}
@@ -821,26 +782,22 @@ async function renderAnalyticsPage({
       </div>
 
       {/* 2-col 1fr/1fr: Günlük dağılım + Saat-bazlı dağılım */}
-      <div className="grid gap-3.5 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <section className="bz-card p-5 sm:p-6">
-          <Eyebrow>{isTr ? 'GÜNLÜK DAĞILIM' : 'DAY DISTRIBUTION'}</Eyebrow>
-          <div className="bz-h-tight mt-1 mb-3" style={{ fontSize: 18 }}>
-            {isTr ? 'Hangi günler en çok yorum geliyor?' : 'When are reviews coming in?'}
-          </div>
+          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Günlere göre' : 'By weekday'}</h2>
+          <p className="mt-0.5 mb-4 text-[13px] text-[#525252]">
+            {isTr ? 'Hangi günler daha çok puan geliyor?' : 'Which days bring the most ratings?'}
+          </p>
           <BarChart data={dayData} height={160} showValues />
         </section>
 
         <section className="bz-card p-5 sm:p-6">
-          <Eyebrow>{isTr ? 'SAAT BAZLI DAĞILIM' : 'HOUR DISTRIBUTION'}</Eyebrow>
-          <div className="bz-h-tight mt-1 mb-3" style={{ fontSize: 18 }}>
-            {isTr ? 'Yoğun saatler hangileri?' : 'Which hours are peak?'}
-          </div>
-          <BarChart data={hourData} height={160} />
-          <p className="mt-2 text-[11px] text-[#737373]">
-            {isTr
-              ? 'Personel ve kapasite planlaması için 24 saatlik dağılım.'
-              : 'Hourly distribution for staffing & capacity planning.'}
+          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Saatlere göre' : 'By hour'}</h2>
+          <p className="mt-0.5 mb-4 text-[13px] text-[#525252]">
+            {isTr ? 'Yoğun saatler hangileri?' : 'Which hours are busiest?'}
           </p>
+          <BarChart data={hourData} height={160} />
+
         </section>
       </div>
 

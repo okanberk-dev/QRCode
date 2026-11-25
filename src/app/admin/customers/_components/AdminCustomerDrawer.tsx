@@ -254,7 +254,7 @@ export function AdminCustomerDrawer() {
                 id="admin-customer-drawer-heading"
                 className="bz-h-tight mt-0.5 text-[18px] truncate text-[#0A0A0A]"
               >
-                {data?.customer.name || 'Anonim müşteri'}
+                {data?.customer.name || 'İsimsiz'}
               </h2>
               {data?.customer.restaurantName && (
                 <p className="mt-0.5 text-[12px] text-[#525252] truncate">

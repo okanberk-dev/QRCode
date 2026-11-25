@@ -1,3 +1,4 @@
+import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
@@ -165,6 +166,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const isRedirect = body.redirected === true || comment === SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT;
+
     // Save to DB
     const feedback = await prisma.feedback.create({
       data: {
@@ -172,7 +175,11 @@ export async function POST(req: NextRequest) {
         name: sanitizeText(name, 100),
         email: sanitizeText(email, 100),
         phone: sanitizeText(phone, 20),
-        comment: sanitizeText(comment, 2000),
+        // The /r page used to send a marker comment for high-rating
+        // redirects (cached clients still may): store the event as a
+        // textless rating instead (CLAUDE.md §58).
+        comment: isRedirect ? null : sanitizeText(comment, 2000),
+        redirected: isRedirect,
         source: sanitizeText(source, 50),
         branch: sanitizeText(branch, 50),
         tableNumber: sanitizeText(tableNumber, 20),
@@ -344,6 +351,9 @@ async function handleGET(req: NextRequest) {
   // → okundu. Geçersiz değer ignore (filter yok). Frontend mark-as-read
   // PATCH /api/feedback/[id] (CLAUDE.md §38.83 Stage 13) ile sync.
   const isReadParam = searchParams.get('isRead'); // 'true' | 'false'
+  // §58: high-rating redirects are events, not reviews. Default list hides
+  // them; ?kind=redirects shows only them, ?kind=all both.
+  const kindParam = searchParams.get('kind');
   const sortOrder: 'asc' | 'desc' = sortOrderParam === 'asc' ? 'asc' : 'desc';
 
   const skip = (page - 1) * limit;
@@ -408,6 +418,9 @@ async function handleGET(req: NextRequest) {
   } else {
     return ApiErrors.forbidden();
   }
+
+  if (kindParam === 'redirects') baseWhere.redirected = true;
+  else if (kindParam !== 'all') baseWhere.redirected = false;
 
   // Rating filter
   if (ratingFilter === 'low') {

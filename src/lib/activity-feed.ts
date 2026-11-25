@@ -1,3 +1,4 @@
+import { redirectBadgeLabel } from './feedback-metrics';
 // Phase 8c+ §38.31 — Owner dashboard CANLI AKIŞ timeline helper.
 // Tasarım kaynağı: .design-owner-2026/project/page-dashboard.jsx ActivityRow
 // line 120-132 (5-row mix: yorum bıraktı / AI yanıt önerisi / sistem rapor).
@@ -20,7 +21,7 @@ export interface ActivityEvent {
   /** "yorum bıraktı" | "yanıt önerisi hazırladı" | "günlük rapor gönderildi". */
   action: string;
   /** "★★★★★ Google" | "Mehmet T." | "owner@example.com" — sağda mute renk. */
-  target: string;
+  target?: string;
   sentiment: ActivitySentiment;
   /** Opsiyonel deep link (tıklayınca feedback detayı veya benzeri). */
   href?: string;
@@ -39,6 +40,8 @@ export interface FeedbackInput {
   restaurant?: { name: string } | null;
   /** §38.32 — KVKK consent flag. false → name expose etmez, "Müşteri" fallback. */
   hasKvkkConsent?: boolean | null;
+  /** High-rating redirect event (§58): "Google'a yönlendirildi". */
+  redirected?: boolean;
 }
 
 export interface FeedbackReplyInput {
@@ -84,7 +87,7 @@ export interface BuildActivityFeedInput {
 
 const COPY = {
   tr: {
-    feedbackAction: 'yorum bıraktı',
+    feedbackAction: 'geri bildirim bıraktı',
     replyManualAction: 'yanıt verdi',
     replyAiAction: 'AI yanıtı gönderdi',
     aiDraftAction: 'yanıt önerisi hazırladı',
@@ -98,12 +101,12 @@ const COPY = {
     weeklyReportAction: 'haftalık rapor gönderildi',
     genericSystemAction: 'sistem e-postası gönderildi',
     aiActor: 'AI Asistan',
-    customerFallback: 'Müşteri',
+    customerFallback: 'İsimsiz',
     targetFor: 'için',
     targetTo: '→',
   },
   en: {
-    feedbackAction: 'left a review',
+    feedbackAction: 'left feedback',
     replyManualAction: 'replied',
     replyAiAction: 'sent AI reply',
     aiDraftAction: 'drafted a reply',
@@ -117,7 +120,7 @@ const COPY = {
     weeklyReportAction: 'weekly report sent',
     genericSystemAction: 'system email sent',
     aiActor: 'AI Assistant',
-    customerFallback: 'Customer',
+    customerFallback: 'Unnamed',
     targetFor: 'for',
     targetTo: '→',
   },
@@ -145,24 +148,6 @@ function shortName(raw: string | null | undefined, isTr: boolean): string {
 
 // ---- Platform target string ----
 
-const PLATFORM_LABELS: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-  tripadvisor: 'Tripadvisor',
-  airbnb: 'Airbnb',
-  booking: 'Booking',
-  yandex: 'Yandex',
-  zomato: 'Zomato',
-};
-
-function platformTarget(rating: number | null, platform: string | null): string {
-  const stars = rating && rating > 0 ? '★'.repeat(Math.round(rating)) : '';
-  // Same name the dashboard chart legend uses for reviews left on Buaze.
-  const platLabel = platform ? PLATFORM_LABELS[platform] || platform : 'Buaze QR';
-  return stars ? `${stars} ${platLabel}` : platLabel;
-}
 
 // ---- System action mapping ----
 
@@ -213,8 +198,9 @@ export function buildActivityFeed({
       type: 'feedback',
       timestamp: f.createdAt,
       actor: consentGiven ? shortName(f.name, isTr) : c.customerFallback,
-      action: c.feedbackAction,
-      target: platformTarget(f.rating, f.platform),
+      action: f.redirected ? redirectBadgeLabel(f.platform, isTr) : c.feedbackAction,
+      // Stars only; the platform is in the action for redirects (§58).
+      target: f.rating && f.rating > 0 ? '★'.repeat(Math.round(f.rating)) : undefined,
       sentiment: ratingToSentiment(f.rating),
       href: `${dashboardPrefix}/feedbacks?id=${f.id}`,
     });
@@ -229,7 +215,7 @@ export function buildActivityFeed({
       // Manual yanıt: "Sahip yanıt verdi". AI yanıt: "AI Asistan AI yanıtı gönderdi".
       actor: isAi ? c.aiActor : shortName(r.feedback.name, isTr),
       action: isAi ? c.replyAiAction : c.replyManualAction,
-      target: platformTarget(r.feedback.rating, r.feedback.platform),
+      target: r.feedback.rating && r.feedback.rating > 0 ? '★'.repeat(Math.round(r.feedback.rating)) : undefined,
       sentiment: ratingToSentiment(r.feedback.rating),
       href: `${dashboardPrefix}/feedbacks?id=${r.feedback.id}`,
     });
@@ -242,7 +228,8 @@ export function buildActivityFeed({
       timestamp: d.generatedAt,
       actor: c.aiActor,
       action: c.aiDraftAction,
-      target: shortName(d.feedback.name, isTr),
+      // No "— İsimsiz" suffix when the customer left no name.
+      target: d.feedback.name?.trim() ? shortName(d.feedback.name, isTr) : undefined,
       sentiment: 'neu',
       href: `${dashboardPrefix}/feedbacks?id=${d.feedback.id}`,
     });

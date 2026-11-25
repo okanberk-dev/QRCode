@@ -32,7 +32,6 @@ import {
 import { formatDistanceToNowStrict, subDays } from 'date-fns';
 import { tr as trLocale, enUS as enLocale } from 'date-fns/locale';
 import type { ActivityEvent, ActivitySentiment, ActivityType } from '@/lib/activity-feed';
-import { Eyebrow } from '@/components/ui';
 import { useRealtimeActivity, type RealtimeStatus } from '@/hooks/useRealtimeActivity';
 import {
   formatClock,
@@ -267,7 +266,7 @@ export function ActivityFeed({
     return (
       <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
         <header className="mb-3 flex items-center justify-between gap-3">
-          <Eyebrow>{isTr ? 'SON AKTİVİTE' : 'RECENT ACTIVITY'}</Eyebrow>
+          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
           <ConnectionBadge status={status} isTr={isTr} />
         </header>
         <div className="flex flex-col items-center gap-2.5 py-6 text-center">
@@ -291,7 +290,7 @@ export function ActivityFeed({
     <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Eyebrow>{isTr ? 'SON AKTİVİTE' : 'RECENT ACTIVITY'}</Eyebrow>
+          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
           <ConnectionBadge status={status} isTr={isTr} />
         </div>
         {/*
@@ -309,7 +308,7 @@ export function ActivityFeed({
           href={viewAllHref}
           className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 -my-3 sm:m-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
         >
-          {isTr ? 'Tüm aktiviteyi gör' : 'View all activity'}
+          {isTr ? 'Tümü' : 'All'}
           <ArrowRight size={11} strokeWidth={2} />
         </Link>
       </header>
@@ -326,7 +325,7 @@ export function ActivityFeed({
       <div className="flex flex-col gap-3">
         {groupedEvents.map((group) => (
           <section key={group.label} aria-label={group.label}>
-            <h3 className="bz-mono text-[10px] font-semibold tracking-[0.18em] uppercase text-[#A3A3A3] mb-1.5">
+            <h3 className="mb-1 text-[12px] font-medium text-[#737373]">
               {group.label}
             </h3>
             <ol className="flex flex-col">
@@ -358,19 +357,18 @@ export function ActivityFeed({
 
                 const inner = (
                   <>
+                    {/* One line per event (§58): clock only, relative time
+                        in the tooltip. */}
                     <span
-                      className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5 flex flex-col leading-[1.3]"
-                      aria-hidden="true"
+                      className="w-[42px] shrink-0 text-[12px] tabular-nums text-[#737373]"
                       title={fullTime}
                     >
-                      {/* Relative time moves with the clock: server render and
-                          hydration can land in different minutes. */}
-                      <span suppressHydrationWarning>{relativeTime}</span>
-                      <span className="text-[#A3A3A3]">{clockTime}</span>
+                      <span className="sr-only" suppressHydrationWarning>{relativeTime} · </span>
+                      {clockTime}
                     </span>
                     <span
                       aria-hidden="true"
-                      className="relative shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-md mt-[1px]"
+                      className="relative shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-md"
                       style={{ background: meta.bg, color: meta.tint }}
                     >
                       <Icon size={11} strokeWidth={2.2} />
@@ -379,7 +377,7 @@ export function ActivityFeed({
                         style={{ background: dotColor }}
                       />
                     </span>
-                    <span className="flex-1 min-w-0 text-[12.5px] leading-[1.5] text-[#525252]">
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-[#525252]">
                       <strong className="font-semibold text-[#0A0A0A]">{event.actor}</strong>{' '}
                       {event.action}
                       {inlineRating !== null && (
@@ -403,9 +401,7 @@ export function ActivityFeed({
                           {' '}
                           {/* Short label (platform or customer first name):
                               keep "— Buaze QR" on one line. */}
-                          <span className="whitespace-nowrap text-[#737373]">
-                            — {targetWithoutStars}
-                          </span>
+                          <span className="text-[#737373]">· {targetWithoutStars}</span>
                         </>
                       )}
                     </span>
@@ -424,7 +420,7 @@ export function ActivityFeed({
                 // of its <li>), so every row lost its padding and links
                 // were ~38px tall on mobile. Rows are ≥44px tall there now.
                 const baseClass =
-                  'group flex min-h-[44px] items-start gap-2 py-2 sm:min-h-0 ' +
+                  'group flex min-h-[44px] items-center gap-2 py-2 ' +
                   (idx < group.events.length - 1 ? 'border-b border-[#F2F2F2]' : '');
                 const slideStyle = isNew
                   ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }

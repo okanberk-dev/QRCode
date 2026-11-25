@@ -109,8 +109,8 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
     // henüz snapshot almadıysa "ilk rapor 1 ay sonra" mesajı uygun.
     return (
       <div className="bz-card p-5 sm:p-6">
-        <p className="pulse-eyebrow text-[#737373]">
-          {isTr ? 'SAĞLIK SKORU' : 'HEALTH SCORE'}
+        <p className="text-[12.5px] font-medium text-[#525252]">
+          {isTr ? 'Sağlık skoru' : 'Health score'}
         </p>
         <p className="bz-h-tight text-[16px] mt-1">
           {isTr ? 'Veri toplanıyor' : 'Collecting data'}
@@ -147,8 +147,8 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
       {/* Hero */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'BUAZE SAĞLIK SKORU' : 'BUAZE HEALTH SCORE'}
+          <p className="text-[12.5px] font-medium text-[#525252]">
+            {isTr ? 'Sağlık skoru' : 'Health score'}
           </p>
           <div className="flex items-baseline gap-2 mt-1">
             <span
@@ -159,7 +159,7 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
             </span>
             <span className="text-[#A3A3A3] text-[16px] bz-mono">/100</span>
             {data.scoreLabel && (
-              <span className="ml-1 text-[12px] text-[#525252] pulse-eyebrow">{data.scoreLabel}</span>
+              <span className="ml-1 text-[12.5px] font-medium text-[#525252]">{data.scoreLabel}</span>
             )}
           </div>
         </div>
@@ -202,9 +202,9 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
       {/* Recommendations */}
       {data.recommendations.length > 0 && (
         <div className="border-t border-[#EDEDED] pt-4">
-          <p className="pulse-eyebrow text-[#737373] mb-2">
+          <p className="text-[12.5px] font-medium text-[#525252] mb-2">
             <Sparkles size={11} className="inline -mt-0.5 mr-1" />
-            {isTr ? 'BU AY ÖNERİLEN AKSİYONLAR' : 'RECOMMENDED ACTIONS THIS MONTH'}
+            {isTr ? 'Bu ay önerilenler' : 'Suggested this month'}
           </p>
           <ul className="space-y-2">
             {data.recommendations.slice(0, 4).map((r) => {
@@ -267,7 +267,7 @@ function DeltaBadge({ label, value }: { label: string; value: number }) {
       style={{ background: bg, color }}
     >
       {isUp ? <TrendingUp size={11} /> : isDown ? <TrendingDown size={11} /> : null}
-      <span className="text-[10px] text-[#737373] pulse-eyebrow mr-0.5">{label}</span>
+      <span className="mr-0.5 text-[12px] text-[#737373]">{label}</span>
       <span>
         {value > 0 ? '+' : ''}
         {value}
@@ -280,7 +280,7 @@ function BreakdownBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-xl p-3">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] text-[#737373] pulse-eyebrow">{label}</span>
+        <span className="text-[12px] text-[#737373]">{label}</span>
         <span className="bz-mono text-[12px] text-[#0A0A0A]">{value}</span>
       </div>
       <div className="h-1.5 rounded-full bg-[#EDEDED] overflow-hidden">

@@ -338,7 +338,10 @@ export async function refreshGoogleReviewCache(
       data: {
         locationName: selection.locationName,
         averageRating: collected.averageRating,
-        totalReviewCount: collected.totalReviewCount,
+        // A complete pass knows the real count; Google's counter can lag (§58).
+        totalReviewCount: collected.complete
+          ? Math.max(collected.totalReviewCount, collected.reviews.length)
+          : collected.totalReviewCount,
         reviews: reviews as unknown as Prisma.InputJsonValue,
         reviewsUrl: reviewsUrlFor(selection),
         fetchedAt: now,

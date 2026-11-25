@@ -25,6 +25,12 @@ export interface HealthSnapshotInput {
   feedbackAvgRating: number | null; // 1-5
   feedbackLowRated: number | null; // 1-3★ count
   feedbackReplied: number | null;
+  /**
+   * Reply coverage over 1–3★ private feedback + Google reviews (§58). When
+   * present it replaces feedbackReplied / feedbackTotal, which counted
+   * redirect events (never replyable) and ignored Google.
+   */
+  replyable?: { total: number; replied: number } | null;
 }
 
 export interface HealthScoreBreakdown {
@@ -61,8 +67,11 @@ export function computeHealthScore(snapshot: HealthSnapshotInput): HealthScoreBr
 
   // ─── 2. Responsiveness (30% weight) ────────────────────────────────────
   // Feedback'lere yanıt verme oranı + Google'da cevapsız soru yok mu?
-  const feedbackResponsiveness =
-    snapshot.feedbackTotal && snapshot.feedbackTotal > 0
+  const feedbackResponsiveness = snapshot.replyable
+    ? snapshot.replyable.total > 0
+      ? (snapshot.replyable.replied / snapshot.replyable.total) * 100
+      : 50
+    : snapshot.feedbackTotal && snapshot.feedbackTotal > 0
       ? ((snapshot.feedbackReplied ?? 0) / snapshot.feedbackTotal) * 100
       : 50; // henüz feedback yok → neutral
   const questionsScore =
@@ -205,12 +214,13 @@ export function getProfileRecommendations(
   }
 
   // WARN — yanıt oranı düşük
-  if (
-    snapshot.feedbackTotal != null &&
-    snapshot.feedbackTotal > 0 &&
-    snapshot.feedbackReplied != null
-  ) {
-    const replyRate = (snapshot.feedbackReplied / snapshot.feedbackTotal) * 100;
+  const replyBase = snapshot.replyable
+    ? snapshot.replyable
+    : snapshot.feedbackTotal != null && snapshot.feedbackReplied != null
+      ? { total: snapshot.feedbackTotal, replied: snapshot.feedbackReplied }
+      : null;
+  if (replyBase && replyBase.total > 0) {
+    const replyRate = (replyBase.replied / replyBase.total) * 100;
     if (replyRate < 60) {
       recs.push({
         id: 'low_reply_rate',
@@ -219,8 +229,8 @@ export function getProfileRecommendations(
           ? `Yanıt oranın düşük: %${Math.round(replyRate)}`
           : `Low reply rate: ${Math.round(replyRate)}%`,
         body: isTr
-          ? 'Müşteri geri bildirimlerinin %60\'ından fazlasını yanıtlamak sadakati artırır. Pulse AI taslakları bu işi hızlandırır.'
-          : 'Replying to more than 60% of customer feedback builds loyalty. Pulse AI drafts speed this up.',
+          ? '1–3 yıldızlı geri bildirimlerin ve Google yorumlarının %60\'ından fazlasını yanıtlamak sadakati artırır. Pulse AI taslakları bu işi hızlandırır.'
+          : 'Replying to more than 60% of 1–3 star feedback and Google reviews builds loyalty. Pulse AI drafts speed this up.',
         ctaLabel: isTr ? 'Yorumlara git' : 'Open reviews',
       });
     }

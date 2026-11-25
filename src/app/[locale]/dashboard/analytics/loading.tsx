@@ -3,12 +3,12 @@ import { SkBox, SkPageShell } from '@/components/ui/skeletons/PageSkeleton';
 /**
  * Owner analytics — header (title + scope/period subtitle + export) + one
  * filter toolbar + 5 KPI cards + main trend chart + 3-up breakdown row +
- * day/hour row + heatmap. Mirrors page.tsx (space-y-3.5, no eyebrow,
+ * day/hour row + heatmap. Mirrors page.tsx (space-y-6, no eyebrow,
  * toolbar without a card, same grids and gaps). (CLAUDE.md §40.10)
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1440} space={3.5}>
+    <SkPageShell max={1280} space={6}>
       {/* PageHeader: title + subtitle, export action */}
       <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end md:gap-4">
         <div className="space-y-2.5">
@@ -43,7 +43,7 @@ export default function Loading() {
       </div>
 
       {/* Channel · sentiment · top mentions — same 3-up grid as page.tsx */}
-      <div className="grid gap-3.5 lg:grid-cols-[1.4fr_1fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr_1fr]">
         {['w-32', 'w-36', 'w-40'].map((w) => (
           <div key={w} className="bz-card p-5 sm:p-6 space-y-3">
             <SkBox className="h-3 w-28" />
@@ -54,7 +54,7 @@ export default function Loading() {
       </div>
 
       {/* Day + hour distribution */}
-      <div className="grid gap-3.5 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         {['w-56', 'w-48'].map((w) => (
           <div key={w} className="bz-card p-5 sm:p-6 space-y-3">
             <SkBox className="h-3 w-28" />

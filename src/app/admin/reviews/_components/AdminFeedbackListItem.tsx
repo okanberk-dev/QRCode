@@ -1,5 +1,6 @@
 'use client';
 
+import { redirectBadgeLabel } from '@/lib/feedback-metrics';
 import { QrCode } from 'lucide-react';
 import { PlatformChip } from '@/components/ui';
 import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
@@ -35,7 +36,7 @@ export function AdminFeedbackListItem({
 }: AdminFeedbackListItemProps) {
   // Owner read state (Feedback.isRead); old rows without it count as unread.
   const isUnread = r.isRead === false || r.isRead === undefined;
-  const customerLabel = r.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer');
+  const customerLabel = r.customerName || (isTr ? 'İsimsiz' : 'Unnamed');
   const iconId = platformIconId(r.platform);
   const pLabel = platformLabel(r.platform, isTr);
   // High-rated reviews need no reply (the detail says so) — no state then.
@@ -109,8 +110,12 @@ export function AdminFeedbackListItem({
             </time>
           </div>
           <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#525252]">
-            {r.comment || (
-              <span className="italic text-[#A3A3A3]">{isTr ? 'Yorum yazılmadı' : 'No comment'}</span>
+            {r.redirected ? (
+              <span className="inline-flex items-center rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[12px] font-medium text-[#365314]">
+                {redirectBadgeLabel(r.platform, isTr)}
+              </span>
+            ) : (
+              r.comment || <span className="text-[#737373]">{isTr ? 'Metin yok' : 'No text'}</span>
             )}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] text-[#737373]">

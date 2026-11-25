@@ -290,7 +290,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                 className="bz-h-tight text-[18px] truncate text-[#0A0A0A]"
               >
                 {data ? (
-                  data.customer.name || (isTr ? 'Anonim müşteri' : 'Anonymous customer')
+                  data.customer.name || (isTr ? 'İsimsiz' : 'Unnamed')
                 ) : error ? (
                   isTr ? 'Müşteri detayı' : 'Customer details'
                 ) : (

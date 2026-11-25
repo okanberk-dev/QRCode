@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
 import { Star, Check, Loader2, Copy, MessageCircle, Share2, Utensils, ExternalLink } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
-import { SYSTEM_FEEDBACK, normalizeRedirectMinRating } from '@/lib/constants';
+import { normalizeRedirectMinRating } from '@/lib/constants';
 import { buildGoogleReviewUrl } from '@/lib/google-review';
 import { resolveBestRedirectPlatform } from '@/lib/platform-redirect-resolver';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
@@ -436,7 +436,7 @@ function ReviewContent() {
             source: sourceParam,
             branch: restaurant.name,
             tableNumber: tableParam,
-            comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
+            redirected: true,
             restaurantSlug: slug,
             platform: resolution.provider || null,
             recaptchaToken,

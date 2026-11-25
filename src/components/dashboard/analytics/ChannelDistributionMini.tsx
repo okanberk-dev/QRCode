@@ -1,4 +1,3 @@
-import { Eyebrow } from '@/components/ui';
 
 // Phase 8c+ §38.34 — KANAL DAĞILIMI mini variant (analytics rail).
 // Tasarım kaynağı: .design-owner-2026/project/page-analytics.jsx line 220+
@@ -43,7 +42,7 @@ export function ChannelDistributionMini({
   return (
     <section className={`bz-card p-5 sm:p-6 ${className}`}>
       <header className="mb-3.5">
-        <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
+        <span className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Kanal dağılımı' : 'Channels'}</span>
         {caption && <p className="mt-1 text-[12px] text-[#737373]">{caption}</p>}
       </header>
       <ul className="flex flex-col gap-2.5">

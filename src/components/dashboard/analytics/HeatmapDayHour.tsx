@@ -69,7 +69,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
     <div>
       <header className="mb-3 flex items-baseline justify-between gap-4">
         <div>
-          <span className="pulse-eyebrow">{isTr ? 'YORUM YOĞUNLUĞU' : 'REVIEW DENSITY'}</span>
+          <span className="text-[12.5px] font-medium text-[#525252]">{isTr ? 'Gün ve saate göre puan' : 'Ratings by day and hour'}</span>
           <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
             {isTr ? 'Gün × Saat' : 'Day × Hour'}
           </div>

@@ -154,7 +154,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const scopedIds = await getScopedRestaurantIds(actor);
   if (scopedIds === null || scopedIds.length === 0) {
     return (
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
         <PageHeader
           titleScale="compact"
           title={isTr ? 'Müşteriler' : 'Customers'}
@@ -478,7 +478,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const showBusinessName = !restaurantIdParam;
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
       <PageHeader
         /* §38.66 — dense list page: compact title. §49 — no eyebrow (the
            topbar breadcrumb already says where we are). */
@@ -519,16 +519,20 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           Risk altında). Mobile: total full width, then 2 × 2. md–lg: 2 + 3
           (five cards at 1024px would break the labels mid-word). xl: one
           row of 5. Same grid in loading.tsx (§40.10). */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-6 xl:grid-cols-5">
         <StatCard
           className="col-span-2 md:col-span-3 xl:col-span-1"
           label={isTr ? 'Toplam misafir' : 'Total guests'}
+          info={isTr ? 'Puanla birlikte e-posta ya da telefon bırakan, KVKK onaylı farklı kişiler. İsimsiz puanlar listelenmez.' : 'People who left an email or phone with a rating and gave consent. Anonymous ratings are not listed.'}
+          isTr={isTr}
           value={totalCustomers.toLocaleString(intLocale)}
           icon={<Users size={14} />}
         />
         <StatCard
           className="md:col-span-3 xl:col-span-1"
           label="VIP"
+          info={isTr ? '5 ya da daha fazla değerlendirme ve ortalama 4★ ve üstü.' : '5 or more ratings and an average of 4★ or higher.'}
+          isTr={isTr}
           value={vipCount.toLocaleString(intLocale)}
           icon={<Crown size={14} className="text-[#A8D62E]" />}
           delta={
@@ -543,12 +547,16 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         <StatCard
           className="md:col-span-2 xl:col-span-1"
           label={isTr ? 'Ort. puan' : 'Avg rating'}
+          info={isTr ? 'Listelenen müşterilerin puan ortalaması.' : 'Average rating of the listed customers.'}
+          isTr={isTr}
           value={avgRating != null ? avgRating.toLocaleString(intLocale, { maximumFractionDigits: 1, minimumFractionDigits: 1 }) : '—'}
           icon={<Star size={14} />}
         />
         <StatCard
           className="md:col-span-2 xl:col-span-1"
           label={isTr ? 'Geri dönüş oranı' : 'Return rate'}
+          info={isTr ? 'Birden fazla değerlendirme bırakan müşterilerin oranı.' : 'Share of customers who rated more than once.'}
+          isTr={isTr}
           value={
             visibleEnriched.length > 0
               ? isTr
@@ -567,6 +575,8 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         <StatCard
           className="md:col-span-2 xl:col-span-1"
           label={isTr ? 'Risk altında' : 'At risk'}
+          info={isTr ? 'Risk: 2+ değerlendirme ve ortalama 3★ altı. Kayıp: 2+ değerlendirme, 90 günden uzun süredir gelmedi.' : 'At risk: 2+ ratings, average below 3★. Churned: 2+ ratings, not back for over 90 days.'}
+          isTr={isTr}
           value={atRiskCount.toLocaleString(intLocale)}
           icon={<AlertTriangle size={14} className="text-[#DC2626]" />}
           delta={
@@ -579,14 +589,6 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           deltaKind="neutral"
         />
       </div>
-
-      {/* §57 — what the numbers mean. A "customer" is someone who left an
-          email or phone with a rating; anonymous ratings are not listed. */}
-      <p className="text-[12px] leading-[1.6] text-[#737373]">
-        {isTr
-          ? 'Müşteriler yalnız puanla birlikte e-posta ya da telefon bırakanlardır. VIP: 5+ değerlendirme ve ortalama 4★ ve üstü · Risk: 2+ değerlendirme ve ortalama 3★ altı · Kayıp: 2+ değerlendirme, 90 günden uzun süredir gelmedi · Geri dönüş: birden fazla değerlendirme bırakanların oranı.'
-          : 'Customers are people who left an email or phone number with their rating. VIP: 5+ ratings, average 4★ or more · At risk: 2+ ratings, average below 3★ · Churned: 2+ ratings, not back for over 90 days · Return rate: share who rated more than once.'}
-      </p>
 
       {/* §49 — one toolbar: segment · search · period · archive · clear.
           Every control applies immediately (no "Uygula"). The business scope

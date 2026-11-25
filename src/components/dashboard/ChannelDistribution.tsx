@@ -181,7 +181,7 @@ function ChannelCard({
           </div>
           <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
             {channel.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-            {isTr ? 'yorum' : channel.count === 1 ? 'review' : 'reviews'}
+            {isTr ? 'yönlendirme' : channel.count === 1 ? 'redirect' : 'redirects'}
           </span>
         </div>
       )}
