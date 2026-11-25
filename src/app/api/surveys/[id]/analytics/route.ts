@@ -21,6 +21,7 @@ import {
   buildPerQuestionStats,
   buildSurveySummary,
 } from '@/lib/survey-analytics';
+import { withServerTiming } from '@/lib/server-timing';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 
@@ -31,7 +32,7 @@ function rangeToDate(range: Range): Date | null {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 }
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -152,3 +153,6 @@ export async function GET(
     },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

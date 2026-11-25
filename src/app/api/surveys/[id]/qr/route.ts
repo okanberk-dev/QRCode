@@ -11,6 +11,7 @@ import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isValidHexColor } from '@/lib/validations';
 import { renderAestheticQrSvg } from '@/lib/qr-aesthetic';
 import { composePremiumQrPng, composePremiumQrSvg } from '@/lib/qr-premium-png';
+import { withServerTiming } from '@/lib/server-timing';
 
 const DEFAULT_DARK = '#000000';
 const DEFAULT_LIGHT = '#ffffff';
@@ -18,7 +19,7 @@ const MIN_WIDTH = 200;
 const MAX_WIDTH = 2000;
 const DEFAULT_WIDTH = 800;
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -216,3 +217,6 @@ export async function GET(
     },
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

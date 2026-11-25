@@ -12,6 +12,14 @@ export async function register() {
     } catch {
       console.error('[billing] runtime check could not run');
     }
+    // Open the Coolify Redis connection at startup so the first requests
+    // already use it (CLAUDE.md §56). Never blocks or fails startup.
+    try {
+      const { getRedis } = await import('./src/lib/redis');
+      getRedis();
+    } catch {
+      console.error('[redis] client could not start');
+    }
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {

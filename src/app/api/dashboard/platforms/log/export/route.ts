@@ -5,6 +5,7 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { PROVIDER_LABELS } from '@/lib/integration-domains';
 import { neutralizeCsvFormula } from '@/lib/csv-safe';
+import { withServerTiming } from '@/lib/server-timing';
 
 // §38.52 — Workspace-level Platform Bağlantı Log'u CSV export. Tasarım kaynağı:
 // .design-owner-2026/page-platforms.jsx PageHeader actions "Bağlantı log'u"
@@ -34,7 +35,7 @@ function platformLabel(provider: string): string {
   return (PROVIDER_LABELS as Record<string, string>)[provider] ?? provider;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -128,3 +129,6 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

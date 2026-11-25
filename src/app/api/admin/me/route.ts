@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { loadAdminPanelProfile } from '@/lib/admin-profile';
+import { withServerTiming } from '@/lib/server-timing';
 
 // Stage 26 §38.102 Fix #2 — cache header (CLAUDE.md §38.100 Stage 24 paterni
 // reuse). AdminSidebar her mount'ta `/api/admin/me` fetch ediyordu; admin
@@ -10,7 +11,7 @@ import { loadAdminPanelProfile } from '@/lib/admin-profile';
 // repeat fetch ~50-150ms → <10ms cache hit.
 const ADMIN_ME_CACHE_HEADER = 'private, s-maxage=30, stale-while-revalidate=120';
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
 
   if (!actor) {
@@ -20,3 +21,6 @@ export async function GET(req: NextRequest) {
   const profile = await loadAdminPanelProfile(actor);
   return NextResponse.json(profile, { headers: { 'Cache-Control': ADMIN_ME_CACHE_HEADER } });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

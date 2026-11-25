@@ -47,8 +47,7 @@ const optional = [
   ['NEXT_PUBLIC_SITE_URL', "canonical/hreflang/sitemap origin; defaults to https://www.buaze.com"],
   ['RESEND_API_KEY', 'mail send disabled, sendResendEmail returns false'],
   ['OPENAI_API_KEY', 'AI suggest-reply falls back to deterministic template'],
-  ['KV_REST_API_URL', 'rate limiter falls back to per-instance in-memory mode'],
-  ['KV_REST_API_TOKEN', 'rate limiter falls back to per-instance in-memory mode'],
+  ['REDIS_URL', 'rate limiter + ROI cache use Upstash (KV_REST_API_*) if set, else per-instance memory'],
   // CLAUDE.md §38 audit Fix #2 — Google OAuth env'leri. Eksikse owner
   // panelde "Google hesabını bağla" butonu config error döner, callback
   // çalışmaz. Build-time warn ile operatör fresh deploy'da fark eder.

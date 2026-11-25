@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
+import { embedGoogleSlug, embedOptionsFromQuery, embedVariant } from './lib/embed-variant';
 import { BILLING_PAGE_PREFIX, BILLING_PAGE_REFERRER_POLICY, billingLocaleOf, billingPageCsp, generateNonce } from './lib/billing/page-csp';
 
 // Mirror of lib/auth.ts secret resolution. Kept inline so the middleware
@@ -113,6 +114,17 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname === '/') return rootLocaleRedirect(req);
+  // Google reviews widget: query options → cached path variant (§56).
+  const embedSlug = embedGoogleSlug(pathname);
+  if (embedSlug) {
+    const sp = req.nextUrl.searchParams;
+    const url = req.nextUrl.clone();
+    url.pathname = `/embed/${embedSlug}/google/${embedVariant(
+      embedOptionsFromQuery({ theme: sp.get('theme'), limit: sp.get('limit'), lang: sp.get('lang') }),
+    )}`;
+    url.search = '';
+    return NextResponse.rewrite(url);
+  }
   if (pathname === '/billing' || pathname.startsWith(BILLING_PAGE_PREFIX)) {
     if (pathname === '/billing') return NextResponse.redirect(new URL(`${BILLING_PAGE_PREFIX}tr/checkout`, req.url));
     return billingPage(req);
@@ -174,6 +186,6 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // `/` for the edge locale redirect, /admin/* for the admin gate and
   // /billing/* for the billing pages' nonce CSP (not the marketing
-  // /[locale]/* pages).
-  matcher: ['/', '/admin/:path*', '/billing', '/billing/:path*'],
+  // /[locale]/* pages), and the Google reviews widget's query → path rewrite.
+  matcher: ['/', '/admin/:path*', '/billing', '/billing/:path*', '/embed/:slug/google'],
 };

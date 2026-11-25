@@ -15,8 +15,9 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { AUDIT_SECTORS } from '@/lib/audits/types';
 import { CATALOG_ROUTE_TAKE, listCatalogForOwner } from '@/lib/audits/queries';
+import { withServerTiming } from '@/lib/server-timing';
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return ApiErrors.unauthorized();
 
@@ -37,3 +38,6 @@ export async function GET(req: NextRequest) {
     { headers: { 'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=900' } },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

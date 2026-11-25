@@ -239,3 +239,10 @@ Dosyalar ve canlı akış Supabase'e bağlı değildir; geri dönüşte de çal�
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ve `NEW_DATABASE_URL` silinebilir.
 - `/app/ops-data/rollback/supabase-direct-url` dosyasını silin. Supabase projesini silmeden önce son bir yedeğini alın.
 
+## ⚡ Redis (Coolify, 2026-11-25'ten beri)
+
+- Coolify → Buaze → `buaze-redis` (`redis:7.2-alpine`, iç ağ, kalıcı volume, parola Coolify'da). Uygulama `REDIS_URL` (yalnız runtime) ile bağlanır.
+- Hız sınırı sayaçları ve ROI içgörü önbelleği burada. Redis kapalıysa site çalışmaya devam eder (sayaçlar o süre işlem belleğinde tutulur).
+- Upstash'e geri dönüş (2026-12-09'a kadar): Coolify'da `REDIS_URL`'i sil, uygulamayı yeniden başlat; `KV_REST_API_*` hâlâ tanımlı.
+- Panel hız ölçümü: Coolify'da geçici zamanlanmış görev olarak `node scripts/perf/page-load.mjs --base https://www.buaze.com --label <ad>` (CLAUDE.md §56).
+

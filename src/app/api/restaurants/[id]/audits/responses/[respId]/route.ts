@@ -24,6 +24,7 @@ import { validateBody } from '@/lib/api/validate';
 import { computeAuditScore, questionsForRecompute, shouldRecompute } from '@/lib/audits/score';
 import { getAuditResponseDetail } from '@/lib/audits/queries';
 import type { AuditQuestionType, AuditScoringMode } from '@/lib/audits/types';
+import { withServerTiming } from '@/lib/server-timing';
 
 type Params = { id: string; respId: string };
 
@@ -37,7 +38,7 @@ const PatchBody = z
   })
   .strict();
 
-export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
+async function handleGET(req: NextRequest, ctx: { params: Promise<Params> }) {
   const { id, respId } = await ctx.params;
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return ApiErrors.unauthorized();
@@ -179,3 +180,6 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<Params> }) 
 
   return NextResponse.json({ data: result });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

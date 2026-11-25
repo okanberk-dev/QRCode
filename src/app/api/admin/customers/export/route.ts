@@ -11,6 +11,7 @@ import {
   type CustomerSegment,
 } from '@/lib/customers';
 import { csvCell } from '@/lib/csv-safe';
+import { withServerTiming } from '@/lib/server-timing';
 
 // CSV export of the feedback-derived admin customer list. Mirrors the filter
 // surface of GET /api/admin/customers but returns the full filtered set (no
@@ -70,7 +71,7 @@ function esc(v: string | number | null | undefined): string {
   return csvCell(v);
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
   if (actor.role === 'restaurant_owner') {
@@ -231,3 +232,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'CSV oluşturulamadı' }, { status: 500 });
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

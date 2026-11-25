@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   CheckSquare,
@@ -18,9 +19,14 @@ import {
 import { AlertBanner, EmptyState, PanelSelectionBar, PulseMenu, PulseMenuItem, PulseSelect } from '@/components/ui';
 import { blockedReplyMessage, issuesFromBody } from '@/components/reply/ReplyRiskNotice';
 import { InboxReviewCard, type SendResult } from './InboxReviewCard';
-import { InboxAnalysis } from './InboxAnalysis';
-import { BulkReplyDialog } from './BulkReplyDialog';
-import { ReplySettingsDialog } from './ReplySettingsDialog';
+import dynamic from 'next/dynamic';
+
+// Loaded only when opened (§56): they are not part of the first view.
+const InboxAnalysis = dynamic(() => import('./InboxAnalysis').then((m) => m.InboxAnalysis), { ssr: false });
+const BulkReplyDialog = dynamic(() => import('./BulkReplyDialog').then((m) => m.BulkReplyDialog), { ssr: false });
+const ReplySettingsDialog = dynamic(() => import('./ReplySettingsDialog').then((m) => m.ReplySettingsDialog), {
+  ssr: false,
+});
 import {
   DEFAULT_FILTER,
   applyReplyDeleted,
@@ -69,7 +75,24 @@ export interface GoogleReviewsInboxProps {
   onDisconnect: () => void;
   /** A Google call said the connection must be renewed. */
   onConnectionProblem: () => void;
+  /** First page of the default filter, prepared on the server (§56). */
+  initialPage?: InboxPage | null;
 }
+
+/** How long a cached inbox page is shown without asking the server again. */
+const PAGE_FRESH_MS = 15_000;
+
+class InboxLoadError extends Error {
+  constructor(readonly code: string | null) {
+    super('inbox load failed');
+  }
+}
+
+const toListState = (page: InboxPage): InboxListState => ({
+  items: page.items,
+  matching: page.matching,
+  summary: page.summary,
+});
 
 /**
  * Google review reply inbox (CLAUDE.md §54). Reads the stored reviews only;
@@ -84,15 +107,16 @@ export function GoogleReviewsInbox({
   profileSlot,
   onDisconnect,
   onConnectionProblem,
+  initialPage,
 }: GoogleReviewsInboxProps) {
   const isTr = locale === 'tr';
   const api = `/api/restaurants/${restaurantId}/google/business`;
 
   const [filter, setFilter] = useState<InboxFilterState>(DEFAULT_FILTER);
   const [qInput, setQInput] = useState('');
-  const [list, setList] = useState<InboxListState | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [list, setList] = useState<InboxListState | null>(initialPage ? toListState(initialPage) : null);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialPage?.nextCursor ?? null);
+  const [loading, setLoading] = useState(!initialPage);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<'idle' | 'running' | 'error'>('idle');
@@ -147,33 +171,113 @@ export function GoogleReviewsInbox({
     return () => window.clearTimeout(t);
   }, [qInput]);
 
+  // §56 — one cache for inbox pages (React Query): each filter's first page
+  // is kept for a short while, so switching Yanıtsız / Yanıtlandı / Tümü is
+  // instant and only revalidates in the background. `listKeyRef` names the
+  // filter the list on screen belongs to.
+  const queryClient = useQueryClient();
+  const queryKeyFor = useCallback(
+    (f: InboxFilterState) => ['google-inbox', restaurantId, filterToQuery(f)] as const,
+    [restaurantId],
+  );
+  const listKeyRef = useRef<string | null>(initialPage ? filterToQuery(DEFAULT_FILTER) : null);
+  const seededRef = useRef(false);
+  if (!seededRef.current) {
+    seededRef.current = true;
+    if (initialPage) queryClient.setQueryData(queryKeyFor(DEFAULT_FILTER), initialPage);
+  }
+
+  const fetchPage = useCallback(
+    async (f: InboxFilterState, extra: Record<string, string>): Promise<InboxPage> => {
+      const res = await fetch(`${api}/inbox?${filterToQuery(f, extra)}`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) throw new InboxLoadError(errorCodeOf(data));
+      return data as InboxPage;
+    },
+    [api],
+  );
+
+  /** Fetch a filter's first page into the cache (no-op while it is fresh). */
+  const prefetchFilter = useCallback(
+    (f: InboxFilterState) =>
+      queryClient
+        .prefetchQuery({ queryKey: queryKeyFor(f), queryFn: () => fetchPage(f, { limit: '20' }), staleTime: PAGE_FRESH_MS })
+        .catch(() => undefined),
+    [fetchPage, queryClient, queryKeyFor],
+  );
+
+  // A reply changes which tab a review belongs to: drop the other filters'
+  // cached pages (the list on screen is already updated in place) and fetch
+  // the status tabs again in the background.
+  const refreshOtherFilters = useCallback(() => {
+    const current = listKeyRef.current;
+    queryClient.removeQueries({
+      queryKey: ['google-inbox', restaurantId],
+      predicate: (q) => q.queryKey[2] !== current,
+    });
+    if (!isFilterActive(filter)) {
+      for (const status of ['unreplied', 'replied', 'all'] as InboxStatus[]) {
+        if (status !== filter.status) void prefetchFilter({ ...filter, status });
+      }
+    }
+  }, [filter, prefetchFilter, queryClient, restaurantId]);
+
+  // Keep the cache in step with local edits (sent reply, new draft, more pages).
+  useEffect(() => {
+    if (loading || !list || !listKeyRef.current) return;
+    queryClient.setQueryData(['google-inbox', restaurantId, listKeyRef.current], { ...list, nextCursor });
+  }, [list, nextCursor, loading, queryClient, restaurantId]);
+
   const load = useCallback(
-    async (opts: { cursor?: string | null } = {}) => {
+    async (opts: { cursor?: string | null; force?: boolean } = {}) => {
       const seq = ++seqRef.current;
-      if (opts.cursor) setLoadingMore(true);
-      else setLoading(true);
+      const key = queryKeyFor(filter);
       setLoadError(null);
-      try {
-        const extra: Record<string, string> = { limit: '20' };
-        if (opts.cursor) extra.cursor = opts.cursor;
-        const res = await fetch(`${api}/inbox?${filterToQuery(filter, extra)}`);
-        const data = await res.json().catch(() => null);
-        if (seq !== seqRef.current) return null;
-        if (!res.ok || !data) {
-          setLoadError(inboxErrorMessage(errorCodeOf(data), locale));
-          return null;
+      let cached: InboxPage | undefined;
+      if (opts.cursor) {
+        setLoadingMore(true);
+      } else {
+        if (opts.force) queryClient.removeQueries({ queryKey: key, exact: true });
+        cached = queryClient.getQueryData<InboxPage>(key);
+        if (cached) {
+          // Cached: show it at once, revalidate below if it is old.
+          listKeyRef.current = key[2];
+          setList(toListState(cached));
+          setNextCursor(cached.nextCursor);
+          setLoading(false);
+        } else {
+          // Not cached: a skeleton, never the previous filter's list or an
+          // empty state that is not true yet.
+          if (listKeyRef.current !== key[2]) setList(null);
+          setLoading(true);
         }
-        const page = data as InboxPage;
+      }
+      try {
+        const page = opts.cursor
+          ? await fetchPage(filter, { limit: '20', cursor: opts.cursor })
+          : await queryClient.fetchQuery({
+              queryKey: key,
+              queryFn: () => fetchPage(filter, { limit: '20' }),
+              staleTime: PAGE_FRESH_MS,
+            });
+        if (seq !== seqRef.current) return null;
+        listKeyRef.current = key[2];
         setList((prev) =>
           opts.cursor && prev
             ? { items: [...prev.items, ...page.items], matching: page.matching, summary: page.summary }
-            : { items: page.items, matching: page.matching, summary: page.summary },
+            : toListState(page),
         );
         setNextCursor(page.nextCursor);
         return page;
-      } catch {
-        if (seq === seqRef.current) {
-          setLoadError(isTr ? 'Yorumlar yüklenemedi. Bağlantını kontrol edip tekrar dene.' : "Couldn't load reviews. Check your connection and try again.");
+      } catch (err) {
+        if (seq === seqRef.current && !cached) {
+          setLoadError(
+            err instanceof InboxLoadError
+              ? inboxErrorMessage(err.code, locale)
+              : isTr
+                ? 'Yorumlar yüklenemedi. Bağlantını kontrol edip tekrar dene.'
+                : "Couldn't load reviews. Check your connection and try again.",
+          );
         }
         return null;
       } finally {
@@ -183,7 +287,7 @@ export function GoogleReviewsInbox({
         }
       }
     },
-    [api, filter, isTr, locale],
+    [fetchPage, filter, isTr, locale, queryClient, queryKeyFor],
   );
 
   const syncNow = useCallback(
@@ -203,7 +307,8 @@ export function GoogleReviewsInbox({
         setSyncState('idle');
         if (manual) setSyncNotice(isTr ? 'Yorumlar güncellendi.' : 'Reviews updated.');
         setStatsKey((k) => k + 1);
-        await load();
+        await load({ force: true });
+        refreshOtherFilters();
       } catch {
         setSyncState('error');
         setSyncNotice(isTr ? "Google'a ulaşılamadı. Biraz sonra tekrar dene." : "Couldn't reach Google. Try again shortly.");
@@ -213,8 +318,15 @@ export function GoogleReviewsInbox({
   );
 
   // (Re)load on filter change; the very first load may trigger a first sync.
+  // The status tabs of an unfiltered list are fetched ahead so switching them
+  // shows cached data at once (§56).
   useEffect(() => {
     void load().then((page) => {
+      if (page && !isFilterActive(filter)) {
+        for (const status of ['unreplied', 'replied', 'all'] as InboxStatus[]) {
+          if (status !== filter.status) void prefetchFilter({ ...filter, status });
+        }
+      }
       if (page?.summary.needsSync && canWrite && !autoSyncedRef.current) {
         autoSyncedRef.current = true;
         void syncNow(false);
@@ -290,6 +402,7 @@ export function GoogleReviewsInbox({
         return n;
       });
       setStatsKey((k) => k + 1);
+      refreshOtherFilters();
       if (leaves || filter.status === 'unreplied') leaveAndFocusNext(review.reviewId, opts.next);
       else if (opts.next) {
         const next = neighbourAfter(items, review.reviewId);
@@ -325,6 +438,7 @@ export function GoogleReviewsInbox({
         return { items: nextState.items, matching: nextState.matching, summary: nextState.summary };
       });
       setStatsKey((k) => k + 1);
+      refreshOtherFilters();
       if (leaves || filter.status === 'replied') leaveAndFocusNext(review.reviewId, false);
       return { ok: true };
     } catch {
@@ -677,7 +791,7 @@ export function GoogleReviewsInbox({
         {loadError ? (
           <div className="space-y-3 p-5">
             <AlertBanner kind="danger">{loadError}</AlertBanner>
-            <button type="button" className="bz-btn-ghost min-h-11" onClick={() => void load()}>
+            <button type="button" className="bz-btn-ghost min-h-11" onClick={() => void load({ force: true })}>
               <RefreshCw size={13} aria-hidden="true" />
               {isTr ? 'Tekrar dene' : 'Try again'}
             </button>
@@ -794,7 +908,8 @@ export function GoogleReviewsInbox({
           resumeJobId={bulkIds.length === 0 ? resumeJobId : null}
           onClose={() => {
             setBulkIds(null);
-            void load().then((page) => setResumeJobId(page?.summary.activeJobId ?? null));
+            void load({ force: true }).then((page) => setResumeJobId(page?.summary.activeJobId ?? null));
+            refreshOtherFilters();
           }}
           onFinished={() => {
             setSelected(new Set());

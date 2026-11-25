@@ -92,8 +92,8 @@ function withSearchParams(href: string, values: Record<string, string | null | u
  * AdminTopbar. Two data sources:
  *   1. Server-fetched announcements (passed in, no refetch).
  *   2. Last 5 low-rating feedbacks (`/api/feedback?rating=low&limit=5`)
- *      fetched lazily on first open + refreshed in the background while
- *      the tab is visible. Page refresh restarts the cycle from scratch.
+ *      fetched lazily on first open (the badge count is fetched on mount)
+ *      and refreshed in the background while the dropdown is open. Page refresh restarts the cycle from scratch.
  *
  * UX:
  *   • Badge shows count of items newer than `lastViewedAt` (per-panel
@@ -270,10 +270,12 @@ export default function NotificationBell({
       }
     };
 
-    // Kick off an initial fetch so the badge is correct on first paint
-    // (otherwise the user has to open the bell once before it lights up).
+    // Badge only on mount (§56): the 5-row list is fetched when the bell is
+    // first opened, so a page load sends one small count request instead of
+    // also listing reviews on every panel page.
     if (lastFetchedAt === 0) {
-      void fetchAttention();
+      listStaleRef.current = true;
+      void fetchBadge();
     }
     start();
     const onVis = () => {

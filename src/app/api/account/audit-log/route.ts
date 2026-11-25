@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { sanitizeAuditPayload } from '@/lib/audit-log';
+import { withServerTiming } from '@/lib/server-timing';
 
 // Stage A3 §38.95 — owner-side KVKK transparency.
 //
@@ -18,7 +19,7 @@ export const dynamic = 'force-dynamic';
 const LIMIT = 100;
 const RETENTION_DAYS = 365 * 2;
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
@@ -131,3 +132,6 @@ export async function GET(req: NextRequest) {
     },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

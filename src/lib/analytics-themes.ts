@@ -1,6 +1,7 @@
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
 import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
 import { safeParseJson } from '@/lib/safe-json';
+import { prisma } from '@/lib/prisma';
 
 export interface ThemeItem {
   theme: string;
@@ -47,6 +48,46 @@ const TTL_MS = 60 * 60 * 1000; // 1 saat
 const MAX_CACHE_SIZE = 200; // ~10MB üst sınır (50KB/entry × 200)
 const PRUNE_INTERVAL = 50; // her N insert'te expired temizliği
 let insertCounter = 0;
+// §56 — results are also kept in `ai_theme_cache`, so a restart does not
+// empty them. A row older than TTL is still shown (up to STALE_MAX_MS) while
+// a background refresh replaces it.
+const STALE_MAX_MS = 7 * 24 * 60 * 60 * 1000;
+const refreshing = new Set<string>();
+
+async function readStoredThemes(key: string): Promise<{ result: ThemesResult; fresh: boolean } | null> {
+  try {
+    const row = await prisma.aiThemeCache.findUnique({
+      where: { key },
+      select: { result: true, freshUntil: true, updatedAt: true },
+    });
+    if (!row || Date.now() - row.updatedAt.getTime() > STALE_MAX_MS) return null;
+    const result = row.result as unknown as ThemesResult;
+    if (!result || !Array.isArray(result.themes)) return null;
+    return { result, fresh: row.freshUntil.getTime() > Date.now() };
+  } catch {
+    return null;
+  }
+}
+
+async function storeThemes(key: string, result: ThemesResult): Promise<void> {
+  try {
+    const freshUntil = new Date(Date.now() + TTL_MS);
+    const data = { result: result as unknown as object, freshUntil };
+    await prisma.aiThemeCache.upsert({ where: { key }, create: { key, ...data }, update: data });
+    if (insertCounter % PRUNE_INTERVAL === 0) {
+      await prisma.aiThemeCache.deleteMany({ where: { updatedAt: { lt: new Date(Date.now() - STALE_MAX_MS) } } });
+    }
+  } catch (err) {
+    console.error('[analytics-themes] cache write failed', { message: err instanceof Error ? err.message : 'unknown' });
+  }
+}
+
+function remember(key: string, result: ThemesResult, expiresAt = Date.now() + TTL_MS) {
+  insertCounter += 1;
+  if (insertCounter % PRUNE_INTERVAL === 0) pruneExpired();
+  evictIfNeeded();
+  cache.set(key, { result, expiresAt });
+}
 
 function pruneExpired(): void {
   const now = Date.now();
@@ -194,13 +235,18 @@ function parseLLMJson(raw: string): { themes: ThemeItem[]; synthesis: string } |
  * caller `cacheKey`'i versiyonsuz geçirir (extractThemes ile aynı
  * imzada).
  */
-export function getCachedThemes(cacheKey: string): ThemesResult | null {
+export async function getCachedThemes(cacheKey: string): Promise<ThemesResult | null> {
   const versionedKey = `${CACHE_KEY_VERSION}:${cacheKey}`;
   const cached = cache.get(versionedKey);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.result;
   }
-  return null;
+  // §56 — survives restarts; a stale row still counts as "cached" here (the
+  // caller starts extractThemes in the background, which refreshes it).
+  const stored = await readStoredThemes(versionedKey);
+  if (!stored) return null;
+  if (stored.fresh) remember(versionedKey, stored.result);
+  return stored.result;
 }
 
 export async function extractThemes(
@@ -222,7 +268,31 @@ export async function extractThemes(
   if (cached && cached.expiresAt > Date.now()) {
     return cached.result;
   }
+  // §56 — stored result: fresh → use it; stale → show it now and refresh in
+  // the background (one refresh per key at a time).
+  const stored = await readStoredThemes(versionedKey);
+  if (stored?.fresh) {
+    remember(versionedKey, stored.result);
+    return stored.result;
+  }
+  if (stored) {
+    if (!refreshing.has(versionedKey)) {
+      refreshing.add(versionedKey);
+      void computeThemes(comments, locale, versionedKey, workspaceId)
+        .catch(() => undefined)
+        .finally(() => refreshing.delete(versionedKey));
+    }
+    return stored.result;
+  }
+  return computeThemes(comments, locale, versionedKey, workspaceId);
+}
 
+async function computeThemes(
+  comments: Array<{ rating: number; comment: string }>,
+  locale: 'tr' | 'en',
+  versionedKey: string,
+  workspaceId?: string,
+): Promise<ThemesResult> {
   // Yetersiz veri veya OpenAI key yoksa empty fallback
   if (comments.length < MIN_COMMENTS_FOR_AI || !hasOpenAIKey()) {
     return emptyResult('fallback');
@@ -275,10 +345,7 @@ export async function extractThemes(
     source: 'openai',
   };
 
-  // Prune + evict insert öncesi (yeni entry için yer aç)
-  insertCounter += 1;
-  if (insertCounter % PRUNE_INTERVAL === 0) pruneExpired();
-  evictIfNeeded();
-  cache.set(versionedKey, { result, expiresAt: Date.now() + TTL_MS });
+  remember(versionedKey, result);
+  await storeThemes(versionedKey, result);
   return result;
 }

@@ -11,6 +11,7 @@ import {
   selectedGoogleLocation,
   GoogleBusinessApiError,
 } from '@/lib/google-business';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export const dynamic = 'force-dynamic';
  *     a 403 there must NOT take the rest of the gauge offline.
  *   - The owner UI renders a "— yakında" placeholder for any null count.
  */
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -113,3 +114,6 @@ export async function GET(
     },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

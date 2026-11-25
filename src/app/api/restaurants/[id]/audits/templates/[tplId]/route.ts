@@ -33,6 +33,7 @@ import {
   type QuestionWriteData,
 } from '@/lib/audits/question-diff';
 import { deriveAuditKind } from '@/lib/audits/kind';
+import { withServerTiming } from '@/lib/server-timing';
 
 type Params = { id: string; tplId: string };
 
@@ -93,7 +94,7 @@ function toCreateRow(templateId: string, d: QuestionWriteData) {
   };
 }
 
-export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
+async function handleGET(req: NextRequest, ctx: { params: Promise<Params> }) {
   const { id, tplId } = await ctx.params;
   const g = await gate(req, id, false);
   if (!g.ok) return g.res;
@@ -411,3 +412,6 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<Params> })
   await prisma.auditTemplate.delete({ where: { id: tplId } });
   return NextResponse.json({ ok: true, mode: 'deleted' });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

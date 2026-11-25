@@ -4,6 +4,7 @@ import { getAdminFromRequest, getPanelActorFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { deriveCustomerFields } from '@/lib/customers';
+import { withServerTiming } from '@/lib/server-timing';
 
 // GET /api/admin/customers/by-key/[key] — admin-tier cross-restaurant customer
 // detail (CLAUDE.md §38.93 Stage A1 + §4.5 admin terminology).
@@ -30,7 +31,7 @@ interface FeedbackPayload {
   createdAt: string;
 }
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   context: { params: Promise<{ key: string }> },
 ) {
@@ -187,3 +188,6 @@ export async function GET(
     return NextResponse.json({ error: 'Müşteri detayı getirilemedi' }, { status: 500 });
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

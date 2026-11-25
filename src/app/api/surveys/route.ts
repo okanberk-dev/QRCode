@@ -38,6 +38,7 @@ import {
   type SurveyQuestionType,
 } from '@/lib/surveys';
 import { createWithUniqueSlug, surveyWriteLimitResponse } from './_shared';
+import { withServerTiming } from '@/lib/server-timing';
 
 const QuestionInput = z
   .object({
@@ -75,7 +76,7 @@ const CreateBody = z
   })
   .strict();
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
 
@@ -215,3 +216,6 @@ export async function POST(req: NextRequest) {
     { status: 201 },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

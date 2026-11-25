@@ -5,6 +5,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { csvCell } from '@/lib/csv-safe';
+import { withServerTiming } from '@/lib/server-timing';
 
 // All 10 review platforms (§5); an unknown value is written as stored.
 const PLATFORM_LABELS: Record<string, string> = {
@@ -20,7 +21,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   foursquare: 'Foursquare',
 };
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
@@ -177,3 +178,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Dışa aktarma başarısız' }, { status: 500 });
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

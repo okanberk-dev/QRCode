@@ -5,6 +5,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getTeamMemberRole, resolveOwnerUserId } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
 import { rateLimit } from '@/lib/rate-limit';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ const PreferencesBody = z.object({
   disableTrialReminders: z.boolean().optional(),
 }).strict();
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
@@ -146,3 +147,6 @@ export async function PUT(req: NextRequest) {
     },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

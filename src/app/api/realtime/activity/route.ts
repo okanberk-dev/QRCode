@@ -3,6 +3,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { subscribeFeedback } from '@/lib/live-events';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,7 +21,7 @@ const MAX_IDS = 50;
  * to the businesses the feed shows; anything outside the actor's scope is
  * ignored. 204 (no businesses) tells EventSource not to reconnect.
  */
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
@@ -91,3 +92,6 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

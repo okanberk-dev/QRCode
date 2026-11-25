@@ -14,6 +14,7 @@ import {
   type ResolveProfileStateResult,
 } from '@/lib/google-places';
 import { makeDetailsReserver, reportPlacesFailure } from '@/lib/google-places-budget';
+import { timed, withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 15;
@@ -50,7 +51,7 @@ function noStore(res: NextResponse): NextResponse {
  */
 const inFlight = new Map<string, Promise<ResolveProfileStateResult>>();
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -103,7 +104,7 @@ export async function GET(
         canWrite,
         deps: {
           reserve: makeDetailsReserver(id),
-          fetchDetails: (pid) => fetchGooglePlaceDetails(pid),
+          fetchDetails: (pid) => timed('google', () => fetchGooglePlaceDetails(pid)),
           now: () => new Date(),
         },
       })
@@ -131,3 +132,6 @@ export async function GET(
     return noStore(ApiErrors.internalError('Google bilgileri alınamadı.'));
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

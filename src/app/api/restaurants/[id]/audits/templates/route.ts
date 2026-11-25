@@ -17,6 +17,7 @@ import { validateBody } from '@/lib/api/validate';
 import { AuditTemplateSubmitSchema, type AuditTemplateSubmitInput } from '@/lib/audits/wizard-state';
 import { generateAuditAssignmentToken } from '@/lib/audits/token';
 import { listOwnerAuditTemplates } from '@/lib/audits/queries';
+import { withServerTiming } from '@/lib/server-timing';
 
 async function gate(req: NextRequest, restaurantId: string, write: boolean) {
   const actor = await getPanelActorFromRequest(req);
@@ -28,7 +29,7 @@ async function gate(req: NextRequest, restaurantId: string, write: boolean) {
   return { ok: true as const, actor };
 }
 
-export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+async function handleGET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const g = await gate(req, id, false);
   if (!g.ok) return g.res;
@@ -166,3 +167,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     );
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

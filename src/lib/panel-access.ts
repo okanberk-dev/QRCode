@@ -90,13 +90,13 @@ export async function getTeamMemberRole(actor: PanelActor): Promise<string | nul
  * the APIs behind them already accepted their scope. This resolves the same
  * scope the API layer uses.
  */
-type UserTokenPayload = {
+export type UserTokenPayload = {
   userId: string;
   role?: unknown;
   email?: unknown;
 };
 
-function actorFromUserPayload(payload: UserTokenPayload): PanelActor {
+export function actorFromUserPayload(payload: UserTokenPayload): PanelActor {
   return {
     id: payload.userId,
     role: typeof payload.role === 'string' && payload.role ? payload.role : 'restaurant_owner',

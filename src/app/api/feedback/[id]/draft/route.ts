@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ async function requireFeedbackAccess(req: NextRequest, id: string) {
   return { actor, feedback };
 }
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) {
@@ -107,3 +108,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ ok: true, degraded: true });
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

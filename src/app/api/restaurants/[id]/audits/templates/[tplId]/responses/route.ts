@@ -19,10 +19,11 @@ import { canAccessRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { parsePaging } from '@/lib/audits/results';
 import { queryAuditResponses } from '@/lib/audits/queries';
+import { withServerTiming } from '@/lib/server-timing';
 
 type Params = { id: string; tplId: string };
 
-export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
+async function handleGET(req: NextRequest, ctx: { params: Promise<Params> }) {
   const { id, tplId } = await ctx.params;
 
   const actor = await getPanelActorFromRequest(req);
@@ -53,3 +54,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
 
   return NextResponse.json(body);
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

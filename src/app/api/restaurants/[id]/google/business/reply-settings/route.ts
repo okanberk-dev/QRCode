@@ -16,6 +16,7 @@ import {
   normalizeBannedPhrases,
   readGoogleReplySettings,
 } from '@/lib/google-reply-settings';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,7 @@ const GoogleReplySettingsSchema = z
   .strict();
 
 /** Google reply settings of one business (tone, length, address, signature, banned phrases). */
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const gate = await gateGoogleReviewRoute(req, id);
   if (!gate.ok) return gate.response;
@@ -68,3 +69,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   });
   return NextResponse.json({ settings });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

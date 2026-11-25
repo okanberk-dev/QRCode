@@ -34,6 +34,7 @@ import {
   type QuestionPlanSuccess,
 } from '@/lib/surveys';
 import { surveyWriteLimitResponse } from '../_shared';
+import { withServerTiming } from '@/lib/server-timing';
 
 const QuestionPatch = z
   .object({
@@ -76,7 +77,7 @@ class PlanFailed extends Error {
   }
 }
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -334,3 +335,6 @@ export async function DELETE(
 
   return NextResponse.json({ ok: true });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

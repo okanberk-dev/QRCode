@@ -9,6 +9,7 @@ import { isExternalPlatformField, isExternalReviewProvider } from '@/lib/restaur
 import { normalizeGoogleReviewInput } from '@/lib/restaurant-google-input';
 import { writePanelAuditLog } from '@/lib/audit-log';
 import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
+import { withServerTiming } from '@/lib/server-timing';
 
 // Field → provider mapping shared with /api/restaurants POST. Keeps the
 // hard-error gate (invalid_url / wrong_protocol / wrong_domain) consistent
@@ -45,7 +46,7 @@ function normalizeUrlInput(value: unknown): string | null {
 const MENU_LOGO_MAX_LEN = 300_000;
 
 // GET /api/restaurants/[id]
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -900,3 +901,6 @@ export async function DELETE(
     return ApiErrors.internalError('İşletme silinemedi');
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

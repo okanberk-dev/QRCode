@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/navigation/IntentLink';
+import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
@@ -552,6 +553,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     const nextSearch = setRestaurantParam(hrefQuery, activeRestaurantId);
     return nextSearch ? `${hrefPath}?${nextSearch}` : hrefPath;
   };
+
+  // §56 — sidebar links prefetch on intent (IntentLink); the most used
+  // sections are prefetched once the page is idle, one by one.
+  useIdlePrefetch(
+    ['', '/feedbacks', '/google-reviews', '/analytics']
+      .map((p) => hrefWithActiveRestaurant(`/${locale}/dashboard${p}`))
+      .filter((href) => href.split('?')[0] !== pathname),
+  );
 
   const selectRestaurantScope = (restaurantId: string) => {
     setActiveRestaurantId(restaurantId);

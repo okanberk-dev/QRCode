@@ -8,6 +8,7 @@ import { safeParseJson } from '@/lib/safe-json';
 import { encryptToken } from '@/lib/google-token-crypto';
 import { isGoogleTenantAllowed } from '@/lib/gbp-access';
 import { GOOGLE_OAUTH_STATE_COOKIE } from '../connect/route';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,7 +114,7 @@ function nonceMatches(a: string, b: string): boolean {
   return timingSafeEqual(ab, bb);
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const error = req.nextUrl.searchParams.get('error');
   if (error) {
     recordCallbackFailure(req, `error:${error}`, null);
@@ -279,3 +280,6 @@ export async function GET(req: NextRequest) {
 
   return redirectBack(req, 'connected', returnTo);
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

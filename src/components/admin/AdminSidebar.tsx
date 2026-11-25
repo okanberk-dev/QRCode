@@ -9,7 +9,7 @@ import {
   LogOut,
   Search as SearchIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/navigation/IntentLink';
 import { useAdminTranslation } from './AdminTranslationProvider';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import ViewportMount from '@/components/ui/ViewportMount';

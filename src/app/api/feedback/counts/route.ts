@@ -3,10 +3,11 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { normalizeRestaurantParam } from '@/lib/active-business';
 import { NextRequest, NextResponse } from 'next/server';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   try {
     const actor = await getPanelActorFromRequest(req);
     if (!actor) {
@@ -102,3 +103,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0, lowUnread: 0 });
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { neutralizeCsvFormula } from '@/lib/csv-safe';
+import { withServerTiming } from '@/lib/server-timing';
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -16,7 +17,7 @@ function csvEscape(value: unknown): string {
   return /[,";]/.test(str) ? `"${str}"` : str;
 }
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -120,3 +121,6 @@ export async function GET(
     },
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

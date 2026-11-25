@@ -26,6 +26,7 @@ import { AlertBanner, Badge, WizardSteps, useConfirmDialog } from '@/components/
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { GoogleReviewsInbox } from '@/components/dashboard/google/inbox/GoogleReviewsInbox';
+import type { InboxPage } from '@/components/dashboard/google/inbox/inbox-client';
 import {
   BANNER_TOUCH_CLS,
   ownerBodyMessage,
@@ -164,6 +165,11 @@ export interface GoogleReplySectionProps {
   canWrite?: boolean;
   /** Google Maps profile, shown inside the inbox's "Analiz" (§54). */
   profileSlot?: ReactNode;
+  /**
+   * Status and first inbox page prepared on the server for this business
+   * (§56). With it the section shows the inbox without any request.
+   */
+  initialData?: { status: unknown; inbox: InboxPage | null } | null;
 }
 
 export function GoogleReplySection({
@@ -173,13 +179,15 @@ export function GoogleReplySection({
   onReplyState,
   canWrite,
   profileSlot,
+  initialData,
 }: GoogleReplySectionProps) {
   const isTr = locale === 'tr';
   const activeRestaurantId: string = restaurantId;
 
-  const [status, setStatus] = useState<GoogleStatus | null>(null);
+  const serverStatus = (initialData?.status as GoogleStatus | undefined) ?? null;
+  const [status, setStatus] = useState<GoogleStatus | null>(serverStatus);
   const [statusLoading, setStatusLoading] = useState(false);
-  const [checkedRestaurantId, setCheckedRestaurantId] = useState<string | null>(null);
+  const [checkedRestaurantId, setCheckedRestaurantId] = useState<string | null>(serverStatus ? restaurantId : null);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   // The Places section (rating, checklist, sample reviews) is independent of
   // the reply region below it. It only needs to know two things about the
@@ -190,8 +198,10 @@ export function GoogleReplySection({
   //     (success or failure);
   //   - `replyActive`: the reply feature is fully set up (plan on, signed in,
   //     location chosen).
-  const [statusSettledFor, setStatusSettledFor] = useState<string | null>(null);
-  const [replyActive, setReplyActive] = useState(false);
+  const [statusSettledFor, setStatusSettledFor] = useState<string | null>(serverStatus ? restaurantId : null);
+  const [replyActive, setReplyActive] = useState(
+    Boolean(serverStatus?.googleReviewManagementEnabled && serverStatus?.connected && serverStatus?.selectedLocation),
+  );
   // Newest status request wins: a slow response for the business the owner
   // just left must never overwrite the one now on screen.
   const statusSeqRef = useRef(0);
@@ -278,7 +288,8 @@ export function GoogleReplySection({
   // The page mounts this component once per business (`key`), so every piece
   // of state above already starts fresh — just load the status. The ref keeps
   // the React StrictMode double effect (next dev) from sending it twice.
-  const loadStartedRef = useRef(false);
+  // A status prepared on the server (§56) needs no request.
+  const loadStartedRef = useRef(Boolean(serverStatus));
   useEffect(() => {
     if (loadStartedRef.current) return;
     loadStartedRef.current = true;
@@ -1115,6 +1126,7 @@ export function GoogleReplySection({
             profileSlot={profileSlot}
             onDisconnect={disconnectGoogle}
             onConnectionProblem={() => setConnectionProblem(true)}
+            initialPage={initialData?.inbox ?? null}
           />
         </div>
             )}

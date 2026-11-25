@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,7 +61,7 @@ function serializeKey(key: {
   };
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
@@ -147,3 +148,6 @@ export async function POST(req: NextRequest) {
     data: serializeKey(key),
   }, { status: 201 });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

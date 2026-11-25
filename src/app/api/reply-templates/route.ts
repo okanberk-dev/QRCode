@@ -6,6 +6,7 @@ import { getTeamMemberRole, resolveOwnerUserId } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { validateBody } from '@/lib/api/validate';
 import { checkReplyRisk } from '@/lib/reply-risk';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ const Body = z
  * Saved reply templates shared by a workspace (owner + team members).
  * Admin accounts have no workspace, so they get 403.
  */
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const ownerId = await resolveOwnerUserId(actor);
@@ -73,3 +74,6 @@ export async function POST(req: NextRequest) {
   });
   return NextResponse.json({ data: { ...row, updatedAt: row.updatedAt.toISOString() } }, { status: 201 });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

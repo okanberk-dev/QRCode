@@ -24,6 +24,7 @@ import { generateAuditAssignmentToken } from '@/lib/audits/token';
 import { parseAuditDueAt } from '@/lib/audits/datetime';
 import { listAuditAssignments } from '@/lib/audits/queries';
 import { rateLimit } from '@/lib/rate-limit';
+import { withServerTiming } from '@/lib/server-timing';
 
 type Params = { id: string };
 
@@ -41,7 +42,7 @@ const Body = z
   })
   .strict();
 
-export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
+async function handleGET(req: NextRequest, ctx: { params: Promise<Params> }) {
   const { id } = await ctx.params;
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return ApiErrors.unauthorized();
@@ -189,3 +190,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<Params> }) {
     );
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

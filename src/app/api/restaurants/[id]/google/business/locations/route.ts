@@ -20,6 +20,7 @@ import {
   markBusinessApiNotProvisioned,
 } from '@/lib/google-business-availability';
 import { prisma } from '@/lib/prisma';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,7 @@ function cacheAgeSeconds(cache: GoogleLocationsCache): number | null {
   return Math.max(0, Math.floor((Date.now() - ts) / 1000));
 }
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -302,3 +303,6 @@ export async function GET(
     );
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

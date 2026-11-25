@@ -5,6 +5,7 @@ import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { isValidHexColor } from '@/lib/validations';
 import { normaliseHex } from '@/lib/qr-colors';
 import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,7 +77,7 @@ async function requireWriteAccess(req: NextRequest, restaurantId: string) {
   return access;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const restaurantId = req.nextUrl.searchParams.get('restaurantId');
   if (!restaurantId) return NextResponse.json({ error: 'missing_restaurant_id' }, { status: 400 });
 
@@ -232,3 +233,6 @@ export async function PUT(req: NextRequest) {
     updatedAt: settings.updatedAt.toISOString(),
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

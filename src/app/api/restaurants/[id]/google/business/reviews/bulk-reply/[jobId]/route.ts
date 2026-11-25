@@ -3,6 +3,7 @@ import { ApiErrors } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { gateGoogleReviewRoute } from '@/lib/google-review-route';
 import { processReplyJob, readReplyJobProgress } from '@/lib/google-reply-jobs';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -12,7 +13,7 @@ export const maxDuration = 300;
  * expired) and that has items due is restarted from here, so the page's
  * polling alone keeps a job moving.
  */
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; jobId: string }> },
 ) {
@@ -38,3 +39,6 @@ export async function GET(
 
   return NextResponse.json(progress, { headers: { 'Cache-Control': 'private, no-store' } });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

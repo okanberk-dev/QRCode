@@ -14,6 +14,9 @@
 
 import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
+import type IORedis from 'ioredis';
+import { getRedis, redisReady } from './redis';
+import { timed } from './server-timing';
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -30,8 +33,60 @@ const REST_URL =
 const REST_TOKEN =
   process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
 
+/**
+ * Counter store (CLAUDE.md §56), in order:
+ *   1. `REDIS_URL` — the Coolify Redis next to the app (sub-millisecond);
+ *   2. Upstash REST (`KV_REST_API_*`) — only when REDIS_URL is unset (kept
+ *      until 2026-12-09 as the rollback path; it lives in another region);
+ *   3. in-process memory.
+ * Any store error falls back to memory for that call: a rate-limit outage
+ * never blocks or crashes a request.
+ */
 const redis: Redis | null =
-  REST_URL && REST_TOKEN ? new Redis({ url: REST_URL, token: REST_TOKEN }) : null;
+  !process.env.REDIS_URL && REST_URL && REST_TOKEN ? new Redis({ url: REST_URL, token: REST_TOKEN }) : null;
+
+// Sliding window counter (the same algorithm Upstash uses): the previous
+// window's count weighted by how much of it still overlaps, plus the current
+// window's count. One round trip, atomic.
+const SLIDING_WINDOW_LUA = `
+local c = tonumber(redis.call('GET', KEYS[1]) or '0')
+local p = tonumber(redis.call('GET', KEYS[2]) or '0')
+local limit = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local elapsed = tonumber(ARGV[3])
+local weighted = p * ((window - elapsed) / window) + c
+if weighted >= limit then return {0, c, p} end
+c = redis.call('INCR', KEYS[1])
+if c == 1 then redis.call('PEXPIRE', KEYS[1], window * 2 + 1000) end
+return {1, c, p}
+`;
+
+async function rateLimitRedis(
+  client: IORedis,
+  key: string,
+  max: number,
+  windowMs: number,
+): Promise<RateLimitResult> {
+  const now = Date.now();
+  const bucket = Math.floor(now / windowMs);
+  const elapsed = now - bucket * windowMs;
+  const base = `bz:rl:${max}:${windowMs}:${key}`;
+  const [allowed, current, previous] = (await client.eval(
+    SLIDING_WINDOW_LUA,
+    2,
+    `${base}:${bucket}`,
+    `${base}:${bucket - 1}`,
+    max,
+    windowMs,
+    elapsed,
+  )) as [number, number, number];
+  const weighted = previous * ((windowMs - elapsed) / windowMs) + current;
+  return {
+    allowed: allowed === 1,
+    remaining: Math.max(0, Math.floor(max - weighted)),
+    retryAfterSeconds: allowed === 1 ? 0 : Math.max(1, Math.ceil((windowMs - elapsed) / 1000)),
+  };
+}
 
 // Ratelimit instances are cached by `${max}:${windowMs}` so we don't pay
 // the Upstash RTT for re-creating the limiter on every call.
@@ -61,6 +116,7 @@ const buckets = new Map<string, Bucket>();
 
 function rateLimitInMemory(key: string, max: number, windowMs: number): RateLimitResult {
   const now = Date.now();
+  maybeSweep(now);
   const bucket = buckets.get(key);
   if (!bucket || bucket.resetAt <= now) {
     buckets.set(key, { count: 1, resetAt: now + windowMs });
@@ -94,11 +150,19 @@ function rateLimitInMemory(key: string, max: number, windowMs: number): RateLimi
  * @param max  Maximum allowed requests in the window
  * @param windowMs  Window length in milliseconds
  */
-export async function rateLimit(
-  key: string,
-  max: number,
-  windowMs: number,
-): Promise<RateLimitResult> {
+export function rateLimit(key: string, max: number, windowMs: number): Promise<RateLimitResult> {
+  return timed('ratelimit', () => rateLimitImpl(key, max, windowMs));
+}
+
+async function rateLimitImpl(key: string, max: number, windowMs: number): Promise<RateLimitResult> {
+  const local = getRedis();
+  if (redisReady(local)) {
+    try {
+      return await rateLimitRedis(local, key, max, windowMs);
+    } catch {
+      // Slow / failed command — memory for this call (logged by lib/redis).
+    }
+  }
   const limiter = getLimiter(max, windowMs);
   if (limiter) {
     try {
@@ -179,4 +243,4 @@ export function maybeSweep(now = Date.now()) {
  * Whether this process is using Upstash Redis (true) or the in-memory
  * fallback (false). Useful for diagnostics; not consumed by route logic.
  */
-export const isDistributedRateLimit = redis !== null;
+export const isDistributedRateLimit = Boolean(process.env.REDIS_URL) || redis !== null;

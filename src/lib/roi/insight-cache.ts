@@ -1,11 +1,12 @@
-// AI insight cache — Upstash Redis (production) + in-memory fallback (dev /
-// preview). One OpenAI call per identical estimate (24 h TTL): the same
+// AI insight cache — Coolify Redis (`REDIS_URL`, CLAUDE.md §56), else Upstash
+// (rollback path until 2026-12-09), else in-memory (dev / preview). One OpenAI call per identical estimate (24 h TTL): the same
 // visitor submitting the same values twice gets the same summary — saves
 // tokens and keeps the report consistent.
 //
 // CLAUDE.md §15 ROI insight + §14.2 Upstash pattern.
 
 import { Redis } from '@upstash/redis';
+import { getRedis, redisReady } from '@/lib/redis';
 import { createHash } from 'crypto';
 import type { RoiInsight } from './generate-insight';
 import type { RoiPdfData } from './RoiPdf';
@@ -16,7 +17,7 @@ const REST_TOKEN =
   process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
 
 const redis: Redis | null =
-  REST_URL && REST_TOKEN ? new Redis({ url: REST_URL, token: REST_TOKEN }) : null;
+  !process.env.REDIS_URL && REST_URL && REST_TOKEN ? new Redis({ url: REST_URL, token: REST_TOKEN }) : null;
 
 const TTL_SECONDS = 24 * 60 * 60; // 24 h
 
@@ -54,6 +55,15 @@ export function buildInsightCacheKey(
 }
 
 export async function getCachedInsight(key: string): Promise<RoiInsight | null> {
+  const local = getRedis();
+  if (redisReady(local)) {
+    try {
+      const raw = await local.get(key);
+      return raw ? (JSON.parse(raw) as RoiInsight) : null;
+    } catch {
+      // Fall through to in-memory.
+    }
+  }
   if (redis) {
     try {
       const value = await redis.get<RoiInsight>(key);
@@ -76,6 +86,15 @@ export async function setCachedInsight(
   key: string,
   insight: RoiInsight,
 ): Promise<void> {
+  const local = getRedis();
+  if (redisReady(local)) {
+    try {
+      await local.set(key, JSON.stringify(insight), 'EX', TTL_SECONDS);
+      return;
+    } catch {
+      // Fall through to in-memory.
+    }
+  }
   if (redis) {
     try {
       await redis.set(key, insight, { ex: TTL_SECONDS });

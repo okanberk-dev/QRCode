@@ -8,16 +8,26 @@ import {
   type PublicGoogleReview,
 } from '@/lib/google-review-showcase';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
+import { parseEmbedVariant } from '@/lib/embed-variant';
 
 // Google reviews widget for one business (CLAUDE.md §53). Reads ONLY the
 // server cache filled by the central refresh queue — a page view never calls
 // Google. No JSON-LD on purpose: Google's review-snippet rules forbid marking
 // up reviews collected from another site (Google Maps included).
-export const dynamic = 'force-dynamic';
+//
+// §56 — cached for 10 minutes (ISR). Middleware rewrites the public URL
+// `/embed/{slug}/google?theme=&limit=&lang=` to this path segment, so a
+// widget view is served from the cache instead of rendering on the server.
+// The cache itself is refilled at most every few hours (§53), so 10 minutes
+// adds little delay.
+export const revalidate = 600;
+export const dynamicParams = true;
+export function generateStaticParams(): { slug: string; variant: string }[] {
+  return [];
+}
 
 interface RouteParams {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ theme?: string; limit?: string; lang?: string }>;
+  params: Promise<{ slug: string; variant: string }>;
 }
 
 export async function generateMetadata({ params }: RouteParams): Promise<Metadata> {
@@ -112,14 +122,11 @@ function Avatar({ review, palette, anonymous }: {
   );
 }
 
-export default async function GoogleReviewsEmbedPage({ params, searchParams }: RouteParams) {
-  const { slug } = await params;
-  const sp = await searchParams;
-  const theme: Theme = sp.theme === 'dark' ? 'dark' : 'light';
-  const locale = sp.lang === 'en' ? 'en' : 'tr';
+export default async function GoogleReviewsEmbedPage({ params }: RouteParams) {
+  const { slug, variant } = await params;
+  const { theme, lang: locale, limit } = parseEmbedVariant(variant);
   const copy = COPY[locale];
   const palette = PALETTES[theme];
-  const limit = Math.min(10, Math.max(1, Number.parseInt(sp.limit ?? '', 10) || 5));
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug },

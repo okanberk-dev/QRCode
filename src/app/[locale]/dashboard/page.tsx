@@ -628,7 +628,7 @@ async function renderDashboardPage({
   // Cache key AI-açık restoran kapsamını içerir — aksi halde kapsam/flag
   // değişince eski (başka restoranlardan üretilmiş) temalar gösterilirdi.
   const themeCacheKey = `dashboard-themes:${user.id}:${[...aiEnabledRestaurantIds].sort().join(',')}:30d`;
-  const cachedDashboardThemes = aiAnalyticsAvailable ? getCachedThemes(themeCacheKey) : null;
+  const cachedDashboardThemes = aiAnalyticsAvailable ? await getCachedThemes(themeCacheKey) : null;
   let dashboardThemes;
   if (!aiAnalyticsAvailable) {
     dashboardThemes = { themes: [], synthesis: '', source: 'fallback' as const };

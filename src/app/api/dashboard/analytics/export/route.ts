@@ -5,6 +5,7 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { PLATFORMS, type PlatformId } from '@/components/ui';
 import { neutralizeCsvFormula } from '@/lib/csv-safe';
+import { withServerTiming } from '@/lib/server-timing';
 
 // §38.50 — Owner-scoped Analytics CSV export. Tasarımdaki "Rapor al" CTA bu
 // endpoint'i çağırır. URL params analytics page ile aynı (range/platform/
@@ -53,7 +54,7 @@ function platformLabel(p: string | null): string {
   return p;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -219,3 +220,6 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

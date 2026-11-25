@@ -14,6 +14,7 @@ import { getNotificationPrefsForRestaurant } from '@/lib/notification-preference
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import { withServerTiming } from '@/lib/server-timing';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -303,7 +304,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return ApiErrors.unauthorized();
@@ -709,3 +710,6 @@ export async function GET(req: NextRequest) {
     return ApiErrors.internalError('Veriler çekilemedi');
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

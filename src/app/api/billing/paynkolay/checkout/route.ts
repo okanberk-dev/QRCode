@@ -15,6 +15,7 @@ import { isRecaptchaServerConfigured } from '@/lib/recaptcha';
 import { SITE_URL } from '@/lib/site';
 import { buildHostedCheckout, getPaynkolayConfig } from '@/lib/payment/paynkolay';
 import { paynkolayCheckoutAmounts, toAdminRow } from '@/lib/subscription-plans';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -47,7 +48,7 @@ function seeOther(path: string): NextResponse {
   return res;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const locale = sp.get('locale') === 'en' ? 'en' : 'tr';
   // SITE_URL, not req.url: behind the self-host proxy req.url is the
@@ -198,3 +199,6 @@ export async function POST(req: NextRequest) {
     return seeOther(`/billing/${parsed.locale}/checkout?error=unavailable`);
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

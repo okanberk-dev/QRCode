@@ -8,6 +8,7 @@ import { openRenewalFor } from '@/lib/billing/card-api';
 import { loadBillingFlags } from '@/lib/billing/flags';
 import { summaryPaymentMethod } from '@/lib/billing/owner-guard';
 import { isRenewalState } from '@/lib/billing/renewal-policy';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ function trialDaysLeft(trialEndsAt: Date | null | undefined): number | null {
   return Math.ceil(ms / (24 * 60 * 60 * 1000));
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
@@ -214,3 +215,6 @@ export async function GET(req: NextRequest) {
     },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

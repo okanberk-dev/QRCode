@@ -9,6 +9,7 @@ import {
   type CustomerSegment,
   type CustomerSentiment,
 } from '@/lib/customers';
+import { withServerTiming } from '@/lib/server-timing';
 
 // Feedback-derived restaurant customer list. Each row = one real end-customer
 // (deduped by email or phone) across all accessible restaurants.
@@ -148,7 +149,7 @@ function buildFilters(opts: {
   return Prisma.join(parts, ' AND ');
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
@@ -319,3 +320,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Müşteriler getirilemedi' }, { status: 500 });
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

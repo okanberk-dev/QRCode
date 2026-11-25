@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from './prisma';
 import { hashToken } from './session-hash';
 import { getClientIp } from './rate-limit';
+import { timed } from './server-timing';
 
 // Phase: admin panel — `staff` is the granular sub-tier (Stage A2 §38.94 RBAC
 // infrastructure). `superadmin` bypasses all permission checks; `manager` and
@@ -553,7 +554,12 @@ export async function getUserFromRequest(req: NextRequest) {
   };
 }
 
-export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelActor | null> {
+/** Resolves the panel actor; timed as `auth` in Server-Timing (CLAUDE.md §56). */
+export function getPanelActorFromRequest(req: NextRequest): Promise<PanelActor | null> {
+  return timed('auth', () => resolvePanelActor(req));
+}
+
+async function resolvePanelActor(req: NextRequest): Promise<PanelActor | null> {
   // Impersonation takes precedence over the retained admin cookie.
   //
   // `/api/admin/impersonate` deliberately KEEPS the admin's own `admin_token`

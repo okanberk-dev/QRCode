@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { withServerTiming } from '@/lib/server-timing';
 
 // GET /api/account/actor-context — minimal actor surface for owner panel
 // to know if it's being viewed by an admin (CLAUDE.md §38.93 Stage A1).
@@ -18,7 +19,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 // Response shape kept tiny — no PII; safe to cache short-window per-cookie.
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
@@ -66,3 +67,6 @@ export async function GET(req: NextRequest) {
     },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

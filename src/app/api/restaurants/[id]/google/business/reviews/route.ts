@@ -14,10 +14,11 @@ import {
 } from '@/lib/google-business';
 import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 import { prisma } from '@/lib/prisma';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -135,3 +136,6 @@ export async function GET(
     );
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

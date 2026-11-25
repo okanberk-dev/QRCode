@@ -8,6 +8,7 @@ import { moderateReplyContent } from '@/lib/content-safety';
 import { loadReplyAllowedHosts } from '@/lib/reply-allowed-hosts';
 import { isReplyRiskKind, replyRiskMessages } from '@/lib/reply-risk';
 import { rateLimit } from '@/lib/rate-limit';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -221,7 +222,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
 }
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) {
@@ -245,3 +246,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     })),
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

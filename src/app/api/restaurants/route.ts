@@ -23,6 +23,7 @@ import {
   isBusinessLimitReached,
   ownerBusinessCount,
 } from '@/lib/plan-limits';
+import { withServerTiming } from '@/lib/server-timing';
 
 // Stage 28 §38.104 Fix A2 — admin restaurants list cross-tab refresh edge cache.
 // Restaurant mutation rare (admin POST/PATCH/DELETE always-fresh, no cache
@@ -84,7 +85,7 @@ const RestaurantPostBody = z
   .strict();
 
 // GET /api/restaurants - List all restaurants (admin) or get by slug (public)
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get('slug');
 
@@ -489,3 +490,6 @@ export async function POST(req: NextRequest) {
     return ApiErrors.internalError('İşletme oluşturulamadı');
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

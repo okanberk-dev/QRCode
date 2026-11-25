@@ -10,12 +10,13 @@ import { sendPasswordChangedEmail, sendVerifyEmail } from '@/lib/email';
 import { getClientIp } from '@/lib/rate-limit';
 import { isStrongPassword, isValidEmail } from '@/lib/validations';
 import { randomBytes } from 'crypto';
+import { withServerTiming } from '@/lib/server-timing';
 
 // Mirrors /api/auth/resend-verify — a self-service email change must go
 // through the same ownership proof as signup.
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   try {
     // §38.189 / §37.2.A — session-aware auth: getUserFromRequest runs the
     // UserSession revoke check, so a logged-out / password-reset session is
@@ -342,3 +343,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Güncelleme sırasında bir hata oluştu' }, { status: 500 });
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

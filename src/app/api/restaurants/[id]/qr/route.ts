@@ -12,6 +12,7 @@ import { isValidTemplateId } from '@/components/panel/qr/templates/registry';
 // Plain `qrcode` kept for `?style=plain` opt-out + sharp composite
 // fallback path (premium PNG render failure → mono QR rather than 500).
 import QRCode from 'qrcode';
+import { withServerTiming } from '@/lib/server-timing';
 
 const DEFAULT_DARK = '#000000';
 const DEFAULT_LIGHT = '#ffffff';
@@ -88,7 +89,7 @@ async function rememberFeedbackQr(params: {
   }
 }
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -436,3 +437,6 @@ export async function GET(
     );
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { dedupeQrRows } from '@/lib/qr-signature';
+import { withServerTiming } from '@/lib/server-timing';
 
-export async function GET(
+async function handleGET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -93,3 +94,6 @@ async function getFeedbackQrHistory(restaurantId: string) {
     }));
   }
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

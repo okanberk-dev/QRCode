@@ -13,6 +13,7 @@ import {
 import { sendTeamInviteEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/rate-limit';
 import { writePanelAuditLog } from '@/lib/audit-log';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +50,7 @@ const InviteSchema = z
   })
   .strict();
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
@@ -298,3 +299,6 @@ export async function POST(req: NextRequest) {
     },
   );
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);

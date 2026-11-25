@@ -6,6 +6,7 @@ import type { Locale } from '@/lib/translations';
 import { decryptToken, encryptToken } from '@/lib/google-token-crypto';
 import { isGoogleTenantAllowed } from '@/lib/gbp-access';
 import { rateLimit } from '@/lib/rate-limit';
+import { timed } from '@/lib/server-timing';
 import {
   PLACES_SEARCH_FIELD_MASK,
   PlacesApiError,
@@ -823,7 +824,16 @@ function outcomeMessage(outcome: RawFetchOutcome): string {
  * `requiresReauth` flag; existing callers that only inspect
  * `result.ok` / `result.message` keep working.
  */
-export async function googleBusinessFetch<T>(
+export function googleBusinessFetch<T>(
+  integration: GoogleIntegrationRow,
+  url: string,
+  init: RequestInit = {},
+): Promise<{ ok: true; data: T } | GoogleBusinessFailure> {
+  // Server-Timing `google` (CLAUDE.md §56).
+  return timed('google', () => googleBusinessFetchImpl<T>(integration, url, init));
+}
+
+async function googleBusinessFetchImpl<T>(
   integration: GoogleIntegrationRow,
   url: string,
   init: RequestInit = {},

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Building2, RefreshCw } from 'lucide-react';
 import { AlertBanner, Badge, EmptyState, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
+import type { InboxPage } from '@/components/dashboard/google/inbox/inbox-client';
 import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
 import { GoogleConnectFlashBanner } from '@/components/dashboard/google/GoogleConnectFlashBanner';
 import { GoogleReplySection } from '@/components/dashboard/google/GoogleReplySection';
@@ -28,6 +29,16 @@ export interface RestaurantRow {
   googleReviewUrl?: string | null;
 }
 
+/**
+ * Reply status + first inbox page of one business, prepared on the server
+ * (§56). Used only when the client lands on that same business.
+ */
+export interface InitialGoogleData {
+  restaurantId: string;
+  status: unknown;
+  inbox: InboxPage | null;
+}
+
 export interface GoogleReviewsClientProps {
   locale: Locale;
   /**
@@ -40,6 +51,7 @@ export interface GoogleReviewsClientProps {
   canWrite?: boolean;
   /** Server-known: false when Places search is not set up. */
   placesConfigured?: boolean;
+  initialGoogle?: InitialGoogleData | null;
 }
 
 /** Badge tone of a business's Google state in the status line. */
@@ -54,6 +66,7 @@ export function GoogleReviewsClient({
   initialRestaurants,
   canWrite,
   placesConfigured,
+  initialGoogle,
 }: GoogleReviewsClientProps) {
   const isTr = locale === 'tr';
 
@@ -311,6 +324,9 @@ export function GoogleReviewsClient({
               locale={locale}
               canWrite={canWrite}
               profileSlot={inboxActive ? profileSection : null}
+              initialData={
+                initialGoogle && initialGoogle.restaurantId === activeRestaurant.id ? initialGoogle : null
+              }
               onReplyState={(id, state) => {
                 setReplyState((prev) =>
                   prev.id === id &&

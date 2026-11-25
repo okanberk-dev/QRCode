@@ -1170,6 +1170,21 @@ model Settings {
   @@map("settings")
 }
 
+// Pulse AI review-theme results (CLAUDE.md §56). The analytics page and the
+// dashboard read themes from here, so a restart does not send every owner's
+// first analytics view through a 2-second OpenAI call. Fresh until
+// `fresh_until`; older rows (up to 7 days) are shown while a refresh runs in
+// the background. Holds AI output only — no review text, no personal data.
+model AiThemeCache {
+  key        String   @id
+  result     Json
+  freshUntil DateTime @map("fresh_until")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([updatedAt])
+  @@map("ai_theme_cache")
+}
+
 // DB-enforced daily call counters for billed Google Places calls (details +
 // search). Holds only a key and a count — no Places content, no personal data.
 // Keys look like "details:g:2026-10-13" or "search:r:<restaurantId>:2026-10-13".

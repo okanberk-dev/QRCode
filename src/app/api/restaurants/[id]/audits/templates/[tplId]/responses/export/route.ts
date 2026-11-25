@@ -10,6 +10,7 @@ import { canAccessRestaurant } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { ApiErrors } from '@/lib/api-errors';
 import { neutralizeCsvFormula } from '@/lib/csv-safe';
+import { withServerTiming } from '@/lib/server-timing';
 
 type Params = { id: string; tplId: string };
 
@@ -29,7 +30,7 @@ function csvField(value: unknown): string {
   return s;
 }
 
-export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
+async function handleGET(req: NextRequest, ctx: { params: Promise<Params> }) {
   const { id, tplId } = await ctx.params;
 
   const actor = await getPanelActorFromRequest(req);
@@ -108,3 +109,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
     },
   });
 }
+
+// Server-Timing: auth, db, ratelimit, google, total (CLAUDE.md §56).
+export const GET = withServerTiming(handleGET);
