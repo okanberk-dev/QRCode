@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import withBundleAnalyzer from "@next/bundle-analyzer";
+import { embedGoogleRewrites } from "./src/lib/embed-variant";
 
 // Bundle analyzer — manuel monitoring tool. `ANALYZE=true npm run build`
 // `.next/analyze/{client,nodejs,edge}.html` raporları üretir. Default
@@ -121,7 +122,8 @@ const nextConfig: NextConfig = {
       ? [{ source: '/:path((?!api/health|api/maintenance|_next/).*)', destination: '/api/maintenance' }]
       : [];
 
-    return { beforeFiles: maintenance, afterFiles: firebaseProxy, fallback: [] };
+    // §56 — Google reviews widget: query options → cached (ISR) path variant.
+    return { beforeFiles: [...maintenance, ...embedGoogleRewrites()], afterFiles: firebaseProxy, fallback: [] };
   },
 
   // 301 redirects to preserve link equity when public-facing slugs are renamed.

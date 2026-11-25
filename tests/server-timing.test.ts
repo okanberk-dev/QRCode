@@ -43,3 +43,13 @@ test('embed widget variant round-trips and clamps', () => {
   assert.equal(embedGoogleSlug('/embed/laffogato/google/dark-3-en'), null);
   assert.equal(embedGoogleSlug('/embed/laffogato'), null);
 });
+
+test('embed widget rewrites cover every present/missing combination, then a default', async () => {
+  const { embedGoogleRewrites } = await import('../src/lib/embed-variant');
+  const rules = embedGoogleRewrites();
+  assert.equal(rules.length, 9);
+  assert.equal(rules[0].destination, '/embed/:slug/google/:theme-:limit-:lang');
+  assert.equal(rules[7].destination, '/embed/:slug/google/light-5-tr');
+  assert.equal(rules[8].has, undefined);
+  assert.equal(rules[8].missing, undefined);
+});
