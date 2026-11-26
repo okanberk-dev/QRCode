@@ -13,7 +13,7 @@ import {
   recordAccountConsents,
   sendCustomerVerifyEmail,
 } from '@/lib/customer-account';
-import { accountErrorResponse, fail, limited } from '@/lib/customer-route';
+import { accountErrorResponse, fail, limited, refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,8 +35,10 @@ const Body = z
   .strict();
 
 export async function POST(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const ip = getClientIp(req.headers);
-  const rl = await limited(`customer-register:ip:${ip}`, 5, 10 * 60_000);
+  const rl = await limited(`customer-register:ip:${ip}`, 15, 10 * 60_000);
   if (rl) return rl;
 
   const parsed = validateBody<z.infer<typeof Body>>(Body, await req.json().catch(() => null));
@@ -50,6 +52,8 @@ export async function POST(req: NextRequest) {
   if (moderateText(`${firstName} ${lastName}`)) return fail('CONTENT_BLOCKED', 422);
   const email = d.email.toLowerCase();
   if (!isValidEmail(email)) return fail('INVALID_EMAIL');
+  const perEmail = await limited(`customer-register:email:${email}`, 5, 60 * 60_000);
+  if (perEmail) return perEmail;
   if (!isAcceptablePassword(d.password)) return fail('WEAK_PASSWORD');
   const phone = d.phone ? normalizePhone(d.phone) : null;
   if (d.phone && !phone) return fail('INVALID_PHONE');

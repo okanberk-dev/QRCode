@@ -16,6 +16,7 @@ import {
   toMemberDto,
 } from '@/lib/loyalty-server';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
+import { publishLoyaltyChange } from '@/lib/live-events';
 
 const Body = z.discriminatedUnion('type', [
   z
@@ -62,20 +63,24 @@ async function handlePOST(req: NextRequest, { params }: Ctx) {
         if (action.override) {
           await writePanelAuditLog(gate.actor, 'owner.loyalty.earn.override', id, { restaurantId: id, memberId, amount: r.amount });
         }
-        return NextResponse.json({ member: toMemberDto(r.member), amount: r.amount, expired: r.expired });
+        publishLoyaltyChange(memberId, { type: 'earn', amount: r.amount, balance: r.member.balance });
+        return NextResponse.json({ member: toMemberDto(r.member, { full: gate.access.manage }), amount: r.amount, expired: r.expired });
       }
       case 'redeem': {
         const r = await redeemLoyaltyReward(program, memberId, action.rewardId, actor);
-        return NextResponse.json({ member: toMemberDto(r.member), rewardTitle: r.rewardTitle });
+        publishLoyaltyChange(memberId, { type: 'redeem', amount: 0, balance: r.member.balance, rewardTitle: r.rewardTitle });
+        return NextResponse.json({ member: toMemberDto(r.member, { full: gate.access.manage }), rewardTitle: r.rewardTitle });
       }
       case 'birthday': {
         const member = await giveBirthdayGift(program, memberId, actor, resolveDisplayTimeZone());
-        return NextResponse.json({ member: toMemberDto(member) });
+        publishLoyaltyChange(memberId, { type: 'birthday', amount: 0, balance: member.balance });
+        return NextResponse.json({ member: toMemberDto(member, { full: gate.access.manage }) });
       }
       case 'adjust': {
         const member = await adjustLoyaltyBalance(program, memberId, action.delta, action.note, actor);
+        publishLoyaltyChange(memberId, { type: 'adjust', amount: action.delta, balance: member.balance });
         await writePanelAuditLog(gate.actor, 'owner.loyalty.adjust', id, { restaurantId: id, memberId, delta: action.delta });
-        return NextResponse.json({ member: toMemberDto(member) });
+        return NextResponse.json({ member: toMemberDto(member, { full: gate.access.manage }) });
       }
     }
   } catch (err) {

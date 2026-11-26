@@ -35,7 +35,7 @@ async function handleGET(req: NextRequest, { params }: Ctx) {
   const { cardToken, ...rest } = member;
   return NextResponse.json(
     {
-      member: toMemberDto(rest),
+      member: toMemberDto(rest, { full: gate.access.manage }),
       events: events.map((e) => ({ ...e, createdAt: e.createdAt.toISOString() })),
       // Staff can show the card QR to a customer who lost the link.
       cardPath: gate.access.operate ? loyaltyCardPath(program.slug, cardToken) : null,

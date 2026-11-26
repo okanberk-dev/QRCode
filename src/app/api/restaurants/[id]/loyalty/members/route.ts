@@ -37,7 +37,7 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
     minCost,
   });
   return NextResponse.json(
-    { ...result, items: result.items.map(toMemberDto) },
+    { ...result, items: result.items.map((m) => toMemberDto(m, { full: gate.access.manage })) },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }
@@ -102,7 +102,7 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
     );
     const { cardToken, ...rest } = member;
     return NextResponse.json(
-      { member: toMemberDto(rest), cardUrl: `/l/${program.slug}/k/${cardToken}` },
+      { member: toMemberDto(rest, { full: gate.access.manage }), cardUrl: `/l/${program.slug}/k/${cardToken}` },
       { status: 201 },
     );
   } catch (err) {

@@ -54,8 +54,12 @@ export interface MemberDto {
   lastName: string | null;
   /** Card is kept in a Buaze customer account (§61). */
   hasAccount: boolean;
+  /** Whole phone / e-mail: only for managers (null for staff and viewers). */
   phone: string | null;
   email: string | null;
+  /** "+90 532 *** ** 67" — always present. */
+  phoneMasked: string;
+  hasEmail: boolean;
   birthMonth: number | null;
   birthDay: number | null;
   marketingConsent: boolean;

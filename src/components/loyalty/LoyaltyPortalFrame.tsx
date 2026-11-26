@@ -66,6 +66,8 @@ export interface LoyaltyPortalFrameProps {
   preview?: boolean;
   /** Extra block after the offers (rewards, how it works …). */
   info?: React.ReactNode;
+  /** Small control on the cover, top left (the sound switch on /l pages). */
+  headerStart?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -82,7 +84,7 @@ export function portalStyle(portal: LoyaltyPortal, accentColor: string | null): 
     ['--p-band' as string]: p.band,
     ['--p-on-band' as string]: p.onBand,
     // Customer-content surface: never Clash Display (licence, CLAUDE.md §11).
-    ['--font-heading' as string]: "var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    ['--font-heading' as string]: "var(--font-space-grotesk), var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     fontFamily: "var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     background: p.bg,
     color: p.text,
@@ -104,6 +106,7 @@ export default function LoyaltyPortalFrame({
   account,
   preview = false,
   info,
+  headerStart,
   children,
 }: LoyaltyPortalFrameProps) {
   const c = COPY[locale];
@@ -126,37 +129,49 @@ export default function LoyaltyPortalFrame({
 
   return (
     <div style={portalStyle(portal, accentColor)} className={preview ? 'min-h-full' : 'min-h-dvh'}>
-      <div className="mx-auto w-full max-w-[480px] pb-10">
-        {/* Header: cover photo or brand band */}
+      <div
+        className="mx-auto w-full max-w-[480px]"
+        style={{ paddingBottom: preview ? '40px' : 'max(40px, calc(env(safe-area-inset-bottom) + 28px))' }}
+      >
+        {/* Header: cover photo or a living brand band */}
         <header className="relative">
           {portal.coverUrl ? (
-            <div className="relative aspect-[16/9] w-full overflow-hidden sm:rounded-b-[28px]">
+            <div className="relative aspect-[16/10] w-full overflow-hidden sm:rounded-b-[28px]">
               <img src={portal.coverUrl} alt="" className="h-full w-full object-cover" decoding="async" />
-              <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+              <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/25" />
             </div>
           ) : (
-            <div
-              aria-hidden
-              className="h-[132px] w-full sm:rounded-b-[28px]"
-              style={{
-                background:
-                  'radial-gradient(120% 140% at 85% 0%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--p-band)',
-              }}
-            />
+            <div aria-hidden className="relative h-[168px] w-full overflow-hidden sm:rounded-b-[28px]" style={{ background: 'var(--p-band)' }}>
+              <div
+                className={`${preview ? '' : 'bzl-aurora'} absolute -left-1/4 -top-1/2 h-[320px] w-[320px] rounded-full opacity-50 blur-3xl`}
+                style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 62%)' }}
+              />
+              <div
+                className="absolute inset-0 opacity-[0.16]"
+                style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1.2px)', backgroundSize: '16px 16px', color: 'var(--p-on-band)' }}
+              />
+              <div className="absolute inset-x-0 bottom-0 h-16" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.12))' }} />
+            </div>
           )}
-          <a
-            href={link(accountHref)}
-            className="absolute right-3 top-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-black/35 px-3 text-[13px] font-medium text-white backdrop-blur-md transition hover:bg-black/50"
+          <div
+            className="absolute inset-x-3 flex items-center justify-between gap-2"
+            style={{ top: preview ? '12px' : 'max(12px, env(safe-area-inset-top))' }}
           >
-            <UserRound size={15} aria-hidden />
-            {account ? account.firstName : c.signIn}
-          </a>
+            <div>{headerStart}</div>
+            <a
+              href={link(accountHref)}
+              className="bzl-tap inline-flex h-9 items-center gap-1.5 rounded-full bg-black/35 px-3 text-[13px] font-medium text-white backdrop-blur-md transition hover:bg-black/50"
+            >
+              <UserRound size={15} aria-hidden />
+              {account ? account.firstName : c.signIn}
+            </a>
+          </div>
         </header>
 
         <div className="px-4">
-          <div className="-mt-10 flex items-end gap-3">
+          <div className="-mt-11 flex items-end gap-3">
             <div
-              className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] text-[34px] font-semibold shadow-[0_10px_30px_-12px_rgba(0,0,0,0.45)] ring-4"
+              className="bzl-pop relative flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] text-[34px] font-semibold shadow-[0_10px_30px_-12px_rgba(0,0,0,0.45)] ring-4"
               style={{ background: portal.logoUrl ? '#FFFFFF' : 'var(--p-accent)', color: 'var(--p-on-accent)', ['--tw-ring-color' as string]: 'var(--p-bg)' }}
             >
               {portal.logoUrl ? (
@@ -166,7 +181,7 @@ export default function LoyaltyPortalFrame({
               )}
             </div>
           </div>
-          <h1 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em]">{business.name}</h1>
+          <h1 className="mt-3 text-[28px] font-semibold leading-[1.08] tracking-[-0.02em]">{business.name}</h1>
           <p className="mt-0.5 text-[15px] font-medium" style={{ color: 'var(--p-muted)' }}>
             {portal.headline ?? programName}
           </p>

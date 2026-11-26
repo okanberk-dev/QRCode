@@ -17,12 +17,13 @@ import {
   cleanName,
   deleteCustomerAccount,
   listCustomerCards,
+  sendCustomerEmailChangedEmail,
   sendCustomerVerifyEmail,
   syncLinkedCards,
 } from '@/lib/customer-account';
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { getClientIp } from '@/lib/rate-limit';
-import { accountErrorResponse, fail, limited } from '@/lib/customer-route';
+import { accountErrorResponse, fail, limited, refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,8 @@ const Patch = z
   .strict();
 
 export async function PATCH(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const account = await getCustomerFromRequest(req);
   if (!account) return fail('UNAUTHORIZED', 401);
   const rl = await limited(`customer-me:${account.id}`, 20, 10 * 60_000);
@@ -123,7 +126,10 @@ export async function PATCH(req: NextRequest) {
         [{ key: 'ticari-ileti', granted: updated.marketingConsent }],
       );
     }
-    if (emailChanged) await sendCustomerVerifyEmail(updated);
+    if (emailChanged) {
+      await sendCustomerVerifyEmail(updated);
+      await sendCustomerEmailChangedEmail(account.email, updated);
+    }
   });
   return NextResponse.json({ ok: true, account: toCustomerDto(updated) }, { headers: NO_STORE });
 }
@@ -138,6 +144,8 @@ const Delete = z
   .strict();
 
 export async function DELETE(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const account = await getCustomerFromRequest(req);
   if (!account) return fail('UNAUTHORIZED', 401);
   const rl = await limited(`customer-delete:${account.id}`, 5, 10 * 60_000);

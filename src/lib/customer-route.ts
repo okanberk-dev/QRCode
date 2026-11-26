@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { CustomerAccountError } from '@/lib/customer-account';
+import { isCrossSiteRequest } from '@/lib/request-origin';
 
 export async function limited(key: string, max: number, windowMs: number): Promise<NextResponse | null> {
   const r = await rateLimit(key, max, windowMs);
@@ -24,4 +25,9 @@ export function accountErrorResponse(err: unknown): NextResponse {
 
 export function parseLocale(v: unknown): 'tr' | 'en' {
   return v === 'en' ? 'en' : 'tr';
+}
+
+/** 403 for a cross-site browser request (see request-origin.ts), else null. */
+export function refuseCrossSite(req: Request): NextResponse | null {
+  return isCrossSiteRequest(req.headers) ? fail('FORBIDDEN', 403) : null;
 }

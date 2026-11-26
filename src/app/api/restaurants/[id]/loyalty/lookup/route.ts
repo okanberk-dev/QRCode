@@ -32,7 +32,7 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
     if (lost > 0) items = await findLoyaltyMembers(program.id, query);
   }
   return NextResponse.json(
-    { kind: query.kind, items: items.map(toMemberDto) },
+    { kind: query.kind, items: items.map((m) => toMemberDto(m, { full: gate.access.manage })) },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

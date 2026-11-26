@@ -14,7 +14,6 @@ import {
   expiresAt,
   formatMemberCode,
   formatPhoneForDisplay,
-  maskPhoneForDisplay,
   nextTier,
   redeemableRewards,
   tierFor,
@@ -147,15 +146,15 @@ export default function MemberActions({
           <p className="truncate text-[17px] font-semibold text-[#0A0A0A]">{member.name || (tr ? 'İsimsiz üye' : 'Unnamed member')}</p>
           <p className="mt-0.5 text-[12.5px] text-[#737373]">
             <span className="font-mono tracking-[0.1em]">{formatMemberCode(member.code)}</span>
-            {member.phone && (
+            {(member.phone || member.phoneMasked) && (
               <>
                 {' · '}
-                {access.manage ? (
+                {access.manage && member.phone ? (
                   <a href={`tel:${member.phone}`} className="tabular-nums underline-offset-2 hover:underline">
                     {formatPhoneForDisplay(member.phone)}
                   </a>
                 ) : (
-                  maskPhoneForDisplay(member.phone)
+                  member.phoneMasked
                 )}
               </>
             )}

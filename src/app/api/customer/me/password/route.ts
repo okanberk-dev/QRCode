@@ -14,7 +14,7 @@ import {
   signCustomerSession,
   verifyPassword,
 } from '@/lib/customer-auth';
-import { fail, limited } from '@/lib/customer-route';
+import { fail, limited, refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +23,8 @@ const Body = z
   .strict();
 
 export async function POST(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const account = await getCustomerFromRequest(req);
   if (!account) return fail('UNAUTHORIZED', 401);
   const rl = await limited(`customer-password:${account.id}`, 6, 10 * 60_000);

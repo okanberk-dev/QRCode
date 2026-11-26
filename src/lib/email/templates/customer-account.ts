@@ -98,3 +98,26 @@ export function renderCustomerResetMail(
       : 'The link works once, for 30 minutes. If you did not ask for this, your password stays the same.',
   });
 }
+
+/** Security notice to the OLD address when the account e-mail changes. */
+export function renderCustomerEmailChangedMail(
+  p: { firstName: string; newEmail: string; url: string },
+  locale: 'tr' | 'en' = 'tr',
+): Rendered {
+  const tr = locale !== 'en';
+  const masked = p.newEmail.replace(/^(.)[^@]*(@.*)$/, '$1***$2');
+  return wrap({
+    locale,
+    subject: tr ? 'Buaze hesabınızın e-postası değişti' : 'Your Buaze account e-mail changed',
+    preheader: tr ? 'Bu değişikliği siz yapmadıysanız bize yazın.' : 'If this was not you, tell us.',
+    eyebrow: tr ? 'Güvenlik bildirimi' : 'Security notice',
+    title: tr ? `Merhaba ${p.firstName},` : `Hi ${p.firstName},`,
+    lines: tr
+      ? [`Buaze müşteri hesabınızın e-posta adresi ${masked} olarak değiştirildi. Bu adrese artık hesapla ilgili e-posta gelmeyecek.`]
+      : [`The e-mail address of your Buaze customer account was changed to ${masked}. This address will no longer get account e-mails.`],
+    button: { href: p.url, label: tr ? 'Hesabıma git' : 'Go to my account' },
+    footnote: tr
+      ? 'Bu değişikliği siz yapmadıysanız hemen support@buaze.com adresine yazın; hesabınızı birlikte geri alalım.'
+      : 'If you did not make this change, write to support@buaze.com right away and we will recover your account with you.',
+  });
+}

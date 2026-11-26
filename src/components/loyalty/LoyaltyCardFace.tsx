@@ -37,6 +37,10 @@ export interface LoyaltyCardFaceProps {
   tierName?: string | null;
   locale: 'tr' | 'en';
   className?: string;
+  /** Stamps from this index on land with the stamp animation (customer card page, §61). */
+  highlightFrom?: number | null;
+  /** A soft light sweep over the card (customer pages). */
+  shine?: boolean;
 }
 
 export function LoyaltyCardFace({
@@ -51,6 +55,8 @@ export function LoyaltyCardFace({
   tierName,
   locale,
   className = '',
+  highlightFrom = null,
+  shine = false,
 }: LoyaltyCardFaceProps) {
   const tr = locale === 'tr';
   const bg = accentColor && /^#[0-9a-f]{6}$/i.test(accentColor) ? accentColor : DEFAULT_BG;
@@ -80,7 +86,19 @@ export function LoyaltyCardFace({
             : `${programName}: ${balance} points`
       }
     >
-      <div className="flex items-start justify-between gap-3">
+      {shine && (
+        <span
+          aria-hidden="true"
+          className="bzl-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)' }}
+        />
+      )}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full opacity-[0.14]"
+        style={{ background: mark }}
+      />
+      <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: muted }}>
             {businessName}
@@ -101,17 +119,19 @@ export function LoyaltyCardFace({
 
       {kind === 'stamps' ? (
         <div
-          className="mt-5 grid gap-2"
+          className="relative mt-5 grid gap-2"
           style={{ gridTemplateColumns: `repeat(${size <= 6 ? size : size <= 12 ? Math.ceil(size / 2) : Math.ceil(size / 3)}, minmax(0, 1fr))` }}
           aria-hidden="true"
         >
           {Array.from({ length: size }).map((_, i) => {
             const on = i < filled;
+            const landing = on && highlightFrom !== null && i >= highlightFrom;
             return (
               <span
                 key={i}
-                className="flex aspect-square items-center justify-center rounded-full border text-[11px] font-semibold"
+                className={`flex aspect-square items-center justify-center rounded-full border text-[11px] font-semibold ${landing ? 'bzl-stamp-in' : ''}`}
                 style={{
+                  animationDelay: landing ? `${(i - (highlightFrom ?? 0)) * 120}ms` : undefined,
                   borderColor: on ? mark : light ? 'rgba(10,10,10,0.25)' : 'rgba(255,255,255,0.28)',
                   background: on ? mark : 'transparent',
                   color: on ? markFg : muted,
@@ -123,8 +143,8 @@ export function LoyaltyCardFace({
           })}
         </div>
       ) : (
-        <div className="mt-5" aria-hidden="true">
-          <p className="text-[40px] font-semibold leading-none tabular-nums">
+        <div className="relative mt-5" aria-hidden="true">
+          <p className={`text-[40px] font-semibold leading-none tabular-nums ${highlightFrom !== null ? 'bzl-pop' : ''}`}>
             {balance.toLocaleString(tr ? 'tr-TR' : 'en-GB')}
             <span className="ml-2 text-[14px] font-medium" style={{ color: muted }}>
               {unitLabel('points', balance, locale)}
@@ -141,7 +161,7 @@ export function LoyaltyCardFace({
         </div>
       )}
 
-      <div className="mt-4 flex items-end justify-between gap-3 text-[12px]">
+      <div className="relative mt-4 flex items-end justify-between gap-3 text-[12px]">
         <p className="min-w-0 truncate" style={{ color: muted }}>
           {ready
             ? tr

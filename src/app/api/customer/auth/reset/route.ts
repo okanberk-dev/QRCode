@@ -13,13 +13,15 @@ import {
   setCustomerCookie,
   signCustomerSession,
 } from '@/lib/customer-auth';
-import { fail, limited } from '@/lib/customer-route';
+import { fail, limited, refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({ token: z.string().min(20).max(2000), password: z.string().max(200) }).strict();
 
 export async function POST(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const rl = await limited(`customer-reset:ip:${getClientIp(req.headers)}`, 10, 10 * 60_000);
   if (rl) return rl;
   const parsed = validateBody<z.infer<typeof Body>>(Body, await req.json().catch(() => null));

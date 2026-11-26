@@ -26,12 +26,18 @@ export interface LegalBusinessInfo {
   portal: Pick<LoyaltyPortal, 'legalName' | 'legalAddress' | 'legalEmail'>;
 }
 
+/** Business-entered text inside a legal document: one line, no markup the renderer would act on. */
+export function plainLegalValue(value: string | null | undefined): string {
+  return (value ?? '').replace(/[\r\n]+/g, ' ').replace(/[*#\[\]`|<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 240);
+}
+
 export function businessLegalVars(b: LegalBusinessInfo, locale: LegalLocale): Record<string, string> {
   const tr = locale !== 'en';
-  const contact = [b.portal.legalEmail, b.phone].filter(Boolean).join(' · ');
+  const contact = [b.portal.legalEmail, b.phone].map(plainLegalValue).filter(Boolean).join(' · ');
   return {
-    ISLETME_ADI: b.portal.legalName || b.name,
-    ISLETME_ADRESI: b.portal.legalAddress || b.address || (tr ? 'İşletmenin adresi' : 'the business’s address'),
+    ISLETME_ADI: plainLegalValue(b.portal.legalName) || plainLegalValue(b.name) || (tr ? 'İşletme' : 'The business'),
+    ISLETME_ADRESI:
+      plainLegalValue(b.portal.legalAddress) || plainLegalValue(b.address) || (tr ? 'İşletmenin adresi' : 'the business’s address'),
     ISLETME_ILETISIM: contact || (tr ? 'işletmenin kasası ve iletişim bilgileri' : 'the business’s counter and contact details'),
   };
 }

@@ -16,6 +16,11 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
   const gate = await gateLoyaltyRoute(req, id, 'manage');
   if (!gate.ok) return gate.response;
   const kind = req.nextUrl.searchParams.get('kind') === 'cover' ? 'cover' : 'logo';
+  // Refuse a huge body before reading it into memory.
+  const declared = Number(req.headers.get('content-length') ?? '0');
+  if (declared > MAX_UPLOAD + 64 * 1024) {
+    return NextResponse.json({ error: 'IMAGE_TOO_LARGE', code: 'IMAGE_TOO_LARGE' }, { status: 413 });
+  }
 
   const form = await req.formData().catch(() => null);
   const file = form?.get('file');

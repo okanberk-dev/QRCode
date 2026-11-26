@@ -64,3 +64,30 @@ export function subscribeFeedback(
 export function liveFeedbackSubscriberCount(): number {
   return bus.listenerCount(FEEDBACK);
 }
+
+// ─── loyalty card (customer's phone, CLAUDE.md §61) ───────────────────────
+
+export type LoyaltyChangeType = 'earn' | 'redeem' | 'birthday' | 'adjust';
+
+/** Only what the card page needs to animate; never names, phones or tokens. */
+export interface LoyaltyChange {
+  type: LoyaltyChangeType;
+  amount: number;
+  balance: number;
+  rewardTitle?: string | null;
+}
+
+const loyaltyChannel = (memberId: string) => `loyalty:${memberId}`;
+
+export function publishLoyaltyChange(memberId: string, change: LoyaltyChange): void {
+  bus.emit(loyaltyChannel(memberId), change);
+}
+
+/** Calls `onChange` when the counter changes this card; returns the unsubscribe. */
+export function subscribeLoyaltyMember(memberId: string, onChange: (change: LoyaltyChange) => void): () => void {
+  const name = loyaltyChannel(memberId);
+  bus.on(name, onChange);
+  return () => {
+    bus.off(name, onChange);
+  };
+}

@@ -7,13 +7,15 @@ import { validateBody } from '@/lib/api/validate';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { CUSTOMER_SELECT } from '@/lib/customer-auth';
 import { sendCustomerResetEmail } from '@/lib/customer-account';
-import { limited } from '@/lib/customer-route';
+import { limited, refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({ email: z.string().trim().max(160) }).strict();
 
 export async function POST(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const rl = await limited(`customer-forgot:ip:${getClientIp(req.headers)}`, 5, 10 * 60_000);
   if (rl) return rl;
   const parsed = validateBody<z.infer<typeof Body>>(Body, await req.json().catch(() => null));

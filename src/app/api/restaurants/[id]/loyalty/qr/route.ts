@@ -36,7 +36,8 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
     const cardUrl = `${base}${loyaltyCardPath(program.slug, member.cardToken)}`;
     // The card link itself, to write on an NFC key fob / sticker (§61).
     if (sp.get('format') === 'url') {
-      return NextResponse.json({ url: cardUrl }, { headers: { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' } });
+      // `?via=nfc`: a tap on the fob opens the card with the arrival screen.
+      return NextResponse.json({ url: `${cardUrl}?via=nfc` }, { headers: { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' } });
     }
     const svg = await QRCode.toString(cardUrl, {
       type: 'svg',

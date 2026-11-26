@@ -4,7 +4,8 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { normalizePhone } from '@/lib/loyalty';
+import { normalizePhone, phoneLast4 } from '@/lib/loyalty';
+import { rateLimit } from '@/lib/rate-limit';
 import { joinName } from '@/lib/loyalty-portal';
 import { loyaltyPublicBaseUrl } from '@/lib/loyalty-server';
 import { recordConsentBatch } from '@/lib/legal/consent';
@@ -149,21 +150,34 @@ export async function listCustomerCards(accountId: string) {
 export type CustomerCard = Awaited<ReturnType<typeof listCustomerCards>>[number];
 
 /**
- * Adds a card to the account. The card token is the proof: only whoever
- * holds the card link can claim it. A card already in another account, or
- * a second card of the same programme, is refused.
+ * Adds a card to the account. Holding the card link alone is not enough (a
+ * link can leak through a screenshot or a key fob): the account's phone must
+ * be the card's phone, or the customer types the card phone's last 4 digits
+ * (5 tries per card per hour). A card already in another account, or a
+ * second card of the same programme, is refused.
  */
-export async function linkCardByToken(accountId: string, token: string): Promise<{ slug: string }> {
+export async function linkCardByToken(
+  account: { id: string; phone: string | null },
+  token: string,
+  last4?: string | null,
+): Promise<{ slug: string }> {
   if (!/^[A-Za-z0-9_-]{24,64}$/.test(token)) throw new CustomerAccountError('CARD_NOT_FOUND', 404);
   const card = await prisma.loyaltyMember.findUnique({
     where: { cardToken: token },
-    select: { id: true, programId: true, customerAccountId: true, program: { select: { slug: true } } },
+    select: { id: true, programId: true, phone: true, customerAccountId: true, program: { select: { slug: true } } },
   });
   if (!card) throw new CustomerAccountError('CARD_NOT_FOUND', 404);
-  if (card.customerAccountId === accountId) return { slug: card.program.slug };
+  if (card.customerAccountId === account.id) return { slug: card.program.slug };
   if (card.customerAccountId) throw new CustomerAccountError('CARD_IN_OTHER_ACCOUNT', 409);
+  const samePhone = Boolean(card.phone && normalizePhone(account.phone ?? '') === card.phone);
+  if (!samePhone) {
+    if (!last4) throw new CustomerAccountError('CARD_VERIFY_REQUIRED', 409);
+    const tries = await rateLimit(`loyalty-link-verify:${card.id}`, 5, 60 * 60_000);
+    if (!tries.allowed) throw new CustomerAccountError('RATE_LIMIT', 429);
+    if (!/^\d{4}$/.test(last4) || phoneLast4(card.phone) !== last4) throw new CustomerAccountError('WRONG_DIGITS', 400);
+  }
   const res = await prisma.loyaltyMember
-    .updateMany({ where: { id: card.id, customerAccountId: null }, data: { customerAccountId: accountId } })
+    .updateMany({ where: { id: card.id, customerAccountId: null }, data: { customerAccountId: account.id } })
     .catch((err: unknown) => {
       if ((err as { code?: string }).code === 'P2002') throw new CustomerAccountError('ACCOUNT_HAS_CARD', 409);
       throw err;
@@ -250,6 +264,27 @@ export async function sendCustomerResetEmail(account: Pick<CustomerSessionAccoun
     html: r.html,
     text: r.text,
     template: 'customer-reset',
+    locale,
+    logMetadata: { account: customerLogRef(account.id) },
+  });
+}
+
+export async function sendCustomerEmailChangedEmail(
+  oldEmail: string,
+  account: Pick<CustomerSessionAccount, 'id' | 'email' | 'firstName' | 'locale'>,
+) {
+  const [{ renderCustomerEmailChangedMail }, { sendResendEmail }] = await Promise.all([
+    import('@/lib/email/templates/customer-account'),
+    import('@/lib/email-internal'),
+  ]);
+  const locale = account.locale === 'en' ? 'en' : 'tr';
+  const r = renderCustomerEmailChangedMail({ firstName: account.firstName, newEmail: account.email, url: `${loyaltyPublicBaseUrl()}/hesap` }, locale);
+  await sendResendEmail({
+    to: oldEmail,
+    subject: r.subject,
+    html: r.html,
+    text: r.text,
+    template: 'customer-email-changed',
     locale,
     logMetadata: { account: customerLogRef(account.id) },
   });

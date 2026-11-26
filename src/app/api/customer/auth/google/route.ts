@@ -13,7 +13,7 @@ import { splitName } from '@/lib/loyalty-portal';
 import { moderateText } from '@/lib/loyalty-moderation';
 import { CUSTOMER_SELECT, setCustomerCookie, signCustomerSession, toCustomerDto } from '@/lib/customer-auth';
 import { cleanName, createCustomerAccount, recordAccountConsents } from '@/lib/customer-account';
-import { accountErrorResponse, fail, limited } from '@/lib/customer-route';
+import { accountErrorResponse, fail, limited, refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,8 +33,10 @@ const Body = z
   .strict();
 
 export async function POST(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const ip = getClientIp(req.headers);
-  const rl = await limited(`customer-google:ip:${ip}`, 20, 10 * 60_000);
+  const rl = await limited(`customer-google:ip:${ip}`, 40, 10 * 60_000);
   if (rl) return rl;
   const parsed = validateBody<z.infer<typeof Body>>(Body, await req.json().catch(() => null));
   if (!parsed.ok) return parsed.response;
@@ -49,10 +51,18 @@ export async function POST(req: NextRequest) {
   if (!account) {
     const byEmail = await prisma.customerAccount.findUnique({ where: { email }, select: CUSTOMER_SELECT });
     if (byEmail) {
-      // Google verified this address: link it to the existing account.
+      // Google verified this address: link it to the existing account. If
+      // the address was never confirmed, whoever opened that account may not
+      // own it (pre-hijacking): drop its password and sign every session out,
+      // so only the Google sign-in that just proved the address keeps access.
+      const unconfirmed = !byEmail.emailVerifiedAt;
       account = await prisma.customerAccount.update({
         where: { id: byEmail.id },
-        data: { googleUid: claims.sub, emailVerifiedAt: byEmail.emailVerifiedAt ?? new Date() },
+        data: {
+          googleUid: claims.sub,
+          emailVerifiedAt: byEmail.emailVerifiedAt ?? new Date(),
+          ...(unconfirmed ? { passwordHash: null, tokenVersion: { increment: 1 } } : {}),
+        },
         select: CUSTOMER_SELECT,
       });
     }

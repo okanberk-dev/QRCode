@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, Loader2, Search, Trash2 } from 'lucide-react';
 import { AlertBanner, Badge, EmptyState, Modal, PulseSelect } from '@/components/ui';
-import { activeRewards, formatMemberCode, formatPhoneForDisplay, maskPhoneForDisplay, tierFor } from '@/lib/loyalty';
+import { activeRewards, formatMemberCode, formatPhoneForDisplay, tierFor } from '@/lib/loyalty';
 import MemberActions from './MemberActions';
 import { loyaltyFetch, loyaltyMessage, relativeDay, type AccessDto, type MemberDto, type ProgramDto } from './loyalty-client';
 
@@ -195,7 +195,7 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                       <td>
                         <span className="font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz' : 'Unnamed')}</span>
                         <span className="ml-2 text-[12px] tabular-nums text-[#737373]">
-                          {access.manage ? formatPhoneForDisplay(m.phone) : maskPhoneForDisplay(m.phone)}
+                          {access.manage && m.phone ? formatPhoneForDisplay(m.phone) : m.phoneMasked}
                         </span>
                         {tier && (
                           <Badge kind="lime" className="ml-2">

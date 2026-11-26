@@ -1,13 +1,18 @@
 'use client';
 
-// The customer's digital loyalty card (CLAUDE.md §60). Polls every 15 s
-// while the page is visible, so a stamp added at the counter shows up on the
-// customer's phone right away.
-import { useEffect, useRef, useState } from 'react';
+// The customer's digital loyalty card (CLAUDE.md §60, §61).
+//
+// Live: the page listens to the card's event stream (SSE), so a stamp added
+// at the counter lands on the phone at once — the stamp drops in, a short
+// sound plays (if the visitor touched the page once; browsers require it)
+// and the phone vibrates. Without the stream it polls. A reward that just
+// became ready gets confetti. The QR opens full screen for the counter.
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Cake, Check, Crown, Gift, Loader2, Smartphone, UserCheck } from 'lucide-react';
+import { Cake, Check, Crown, Download, Gift, Loader2, Maximize2, Share, UserCheck, UserPlus, X } from 'lucide-react';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import {
+  activeRewards,
   birthdayGiftAvailable,
   expiresAt,
   formatMemberCode,
@@ -16,9 +21,15 @@ import {
   unitLabel,
 } from '@/lib/loyalty';
 import type { PublicCardDto } from '@/lib/loyalty-server';
+import { haptic, playSound } from '@/lib/loyalty-sound';
 import { CARD_STORAGE_PREFIX, PUBLIC_COPY, type PublicLocale } from '../../../loyalty-public';
 
-const POLL_MS = 15_000;
+type Copy = (typeof PUBLIC_COPY)[PublicLocale];
+type Celebration = { id: number; title: string; body?: string; confetti: boolean };
+
+const POLL_FAST_MS = 8_000;
+const POLL_SLOW_MS = 20_000;
+const FAST_WINDOW_MS = 5 * 60_000;
 
 export default function CardView({
   locale,
@@ -41,7 +52,10 @@ export default function CardView({
   const t = PUBLIC_COPY[locale];
   const tr = locale === 'tr';
   const [card, setCard] = useState(initial);
-  const [toast, setToast] = useState<string | null>(null);
+  const [highlightFrom, setHighlightFrom] = useState<number | null>(justJoined ? 0 : null);
+  const [stampKey, setStampKey] = useState(0);
+  const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const [fullQr, setFullQr] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [last4, setLast4] = useState('');
   const [leaveBusy, setLeaveBusy] = useState(false);
@@ -49,27 +63,88 @@ export default function CardView({
   const [left, setLeft] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const balanceRef = useRef(initial.member.balance);
-  const [linkState, setLinkState] = useState<'idle' | 'busy' | 'done' | 'taken' | 'error'>(viewer.owns ? 'done' : 'idle');
+  const lastEventRef = useRef<string | null>(initial.events[0]?.id ?? null);
+  const openedAt = useRef(Date.now());
+  const celebrationId = useRef(0);
 
-  const addToAccount = async () => {
-    setLinkState('busy');
-    try {
-      const res = await fetch('/api/customer/cards/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-      if (res.ok) {
-        setLinkState('done');
+  const celebrate = useCallback((c: Omit<Celebration, 'id'>) => {
+    celebrationId.current += 1;
+    const id = celebrationId.current;
+    setCelebration({ ...c, id });
+    window.setTimeout(() => setCelebration((cur) => (cur?.id === id ? null : cur)), 3400);
+  }, []);
+
+  // React to what changed since the last read (stream or poll alike).
+  const applyCard = useCallback(
+    (next: PublicCardDto) => {
+      const before = balanceRef.current;
+      const after = next.member.balance;
+      const kind = next.program.kind;
+      const newestId = next.events[0]?.id ?? null;
+      const fresh: PublicCardDto['events'] = [];
+      for (const e of next.events) {
+        if (e.id === lastEventRef.current) break;
+        fresh.push(e);
+      }
+      lastEventRef.current = newestId;
+      balanceRef.current = after;
+      setCard(next);
+      if (fresh.length === 0) return;
+      const latest = fresh[0];
+      const wasReady = activeRewards(next.program.rewards).some((r) => r.cost <= before);
+      const isReady = activeRewards(next.program.rewards).some((r) => r.cost <= after);
+      if (latest.type === 'earn' || latest.type === 'birthday' || (latest.type === 'adjust' && after > before)) {
+        const gained = Math.max(0, after - before);
+        if (kind === 'stamps') setHighlightFrom(before);
+        else setHighlightFrom(0);
+        setStampKey((k) => k + 1);
+        haptic([18, 50, 24]);
+        if (!wasReady && isReady) {
+          playSound('stamp');
+          window.setTimeout(() => playSound('reward'), 420);
+          celebrate({ title: tr ? 'Ödülünüz hazır!' : 'Your reward is ready!', body: tr ? 'Kasada isteyin.' : 'Ask for it at the counter.', confetti: true });
+        } else {
+          playSound('stamp');
+          celebrate({
+            title: latest.type === 'birthday' ? (tr ? 'İyi ki doğdunuz!' : 'Happy birthday!') : `+${gained || latest.amount} ${unitLabel(kind, gained || latest.amount, locale)}`,
+            body: tr ? 'Kartınıza eklendi.' : 'Added to your card.',
+            confetti: latest.type === 'birthday',
+          });
+        }
         return;
       }
-      const data = (await res.json().catch(() => null)) as { code?: string } | null;
-      setLinkState(data?.code === 'CARD_IN_OTHER_ACCOUNT' || data?.code === 'ACCOUNT_HAS_CARD' ? 'taken' : 'error');
-    } catch {
-      setLinkState('error');
-    }
-  };
+      if (latest.type === 'redeem') {
+        haptic([24, 60, 24]);
+        playSound('reward');
+        celebrate({
+          title: tr ? 'Afiyet olsun!' : 'Enjoy!',
+          body: latest.rewardTitle ? (tr ? `${latest.rewardTitle} verildi.` : `${latest.rewardTitle} given.`) : undefined,
+          confetti: true,
+        });
+      }
+    },
+    [celebrate, locale, tr],
+  );
 
+  const refresh = useCallback(
+    async (remember = false) => {
+      if (left) return;
+      try {
+        const res = await fetch(`/api/public/loyalty/card/${token}${remember ? '?remember=1' : ''}`, { cache: 'no-store' });
+        if (res.status === 404) {
+          setLeft(true);
+          return;
+        }
+        if (!res.ok) return;
+        applyCard((await res.json()) as PublicCardDto);
+      } catch {
+        /* offline: the next tick tries again */
+      }
+    },
+    [applyCard, left, token],
+  );
+
+  // Mount: remember this phone, start the clock, celebrate a fresh card.
   useEffect(() => {
     document.documentElement.lang = locale;
     setNow(new Date());
@@ -78,41 +153,73 @@ export default function CardView({
     } catch {
       /* storage blocked */
     }
-  }, [locale, slug]);
+    void refresh(true);
+    if (justJoined) {
+      haptic([16, 40, 20]);
+      playSound('stamp');
+      celebrate({ title: tr ? 'Kartınız açıldı' : 'Your card is ready', body: tr ? 'Kasada bu kartı gösterin.' : 'Show this card at the counter.', confetti: true });
+      // Drop ?new=1 so a reload does not celebrate again.
+      const url = new URL(window.location.href);
+      url.searchParams.delete('new');
+      window.history.replaceState(window.history.state, '', url.pathname + url.search);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Live stream; polling only when the stream is not there.
   useEffect(() => {
     if (left) return;
-    const poll = async () => {
-      if (document.visibilityState !== 'visible') return;
-      try {
-        const res = await fetch(`/api/public/loyalty/card/${token}`, { cache: 'no-store' });
-        if (res.status === 404) {
-          setLeft(true);
-          return;
-        }
-        if (!res.ok) return;
-        const next = (await res.json()) as PublicCardDto;
-        const gained = next.member.balance - balanceRef.current;
-        if (gained > 0) {
-          setToast(t.updated(gained, unitLabel(next.program.kind, gained, locale)));
-          window.setTimeout(() => setToast(null), 4000);
-        }
-        balanceRef.current = next.member.balance;
-        setCard(next);
-      } catch {
-        /* offline: try again next tick */
+    let es: EventSource | null = null;
+    let streaming = false;
+    let timer: number | null = null;
+
+    const schedulePoll = () => {
+      if (timer !== null) window.clearTimeout(timer);
+      const fast = Date.now() - openedAt.current < FAST_WINDOW_MS;
+      timer = window.setTimeout(async () => {
+        if (document.visibilityState === 'visible' && !streaming) await refresh();
+        schedulePoll();
+      }, streaming ? POLL_SLOW_MS * 3 : fast ? POLL_FAST_MS : POLL_SLOW_MS);
+    };
+
+    const openStream = () => {
+      if (typeof EventSource === 'undefined' || es) return;
+      es = new EventSource(`/api/public/loyalty/card/${token}/events`);
+      es.addEventListener('open', () => {
+        streaming = true;
+      });
+      es.addEventListener('change', () => {
+        void refresh();
+      });
+      es.addEventListener('error', () => {
+        streaming = false;
+        if (es && es.readyState === EventSource.CLOSED) es = null;
+      });
+    };
+    const closeStream = () => {
+      es?.close();
+      es = null;
+      streaming = false;
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        openStream();
+        void refresh();
+      } else {
+        closeStream();
       }
     };
-    const timer = window.setInterval(() => void poll(), POLL_MS);
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void poll();
-    };
+
+    if (document.visibilityState === 'visible') openStream();
+    schedulePoll();
     document.addEventListener('visibilitychange', onVisible);
     return () => {
-      window.clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisible);
+      if (timer !== null) window.clearTimeout(timer);
+      closeStream();
     };
-  }, [left, locale, t, token]);
+  }, [left, refresh, token]);
 
   const leave = async () => {
     setLeaveBusy(true);
@@ -133,7 +240,7 @@ export default function CardView({
         setLeaveOpen(false);
         return;
       }
-      setLeaveError(res.status === 400 ? t.leaveWrong : t.errors.DEFAULT);
+      setLeaveError(res.status === 400 ? t.leaveWrong : res.status === 429 ? t.errors.RATE_LIMIT : t.errors.DEFAULT);
     } catch {
       setLeaveError(t.errors.DEFAULT);
     } finally {
@@ -160,23 +267,15 @@ export default function CardView({
   const expiry = expiresAt(member, program.expiryDays);
   const dateFmt = (iso: string | Date) =>
     new Date(iso).toLocaleDateString(tr ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul' });
+  const panel = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-5 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.5)]';
 
   return (
-    <div>
-      <div>
-        {toast && (
-          <div className="fixed inset-x-4 top-4 z-50 mx-auto max-w-[400px] rounded-2xl bg-[#0A0A0A] px-4 py-3 text-center text-[15px] font-semibold text-[#C6F24E] shadow-lg" role="status">
-            {toast}
-          </div>
-        )}
+    <div className="space-y-4">
+      {celebration && <CelebrationLayer key={celebration.id} celebration={celebration} />}
 
-        {justJoined && (
-          <p className="mb-4 rounded-2xl bg-[#F0FDF4] px-4 py-3 text-[14px] text-[#166534]" role="status">
-            {tr ? 'Kartınız açıldı. Bu sayfayı kaydedin ya da ana ekrana ekleyin.' : 'Your card is ready. Bookmark this page or add it to your home screen.'}
-          </p>
-        )}
-
+      <div className="bzl-float">
         <LoyaltyCardFace
+          key={stampKey}
           businessName={business.name}
           programName={program.name}
           kind={kind}
@@ -187,133 +286,357 @@ export default function CardView({
           code={member.code}
           tierName={tier?.name ?? null}
           locale={locale}
+          highlightFrom={highlightFrom}
+          shine
         />
+      </div>
 
-        <section className="mt-4 rounded-2xl border border-[color:var(--p-border)] bg-[var(--p-surface)] p-5 text-center">
-          <p className="text-[13px] font-medium text-[color:var(--p-muted)]">{t.showAtCounter}</p>
-          <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} width={200} height={200} className="mx-auto mt-3 h-[200px] w-[200px] rounded-xl bg-white p-2" />
-          <p className="mt-3 text-[12px] uppercase tracking-[0.14em] text-[color:var(--p-muted)]">{t.code}</p>
-          <p className="font-mono text-[26px] font-semibold tracking-[0.18em]">{formatMemberCode(member.code)}</p>
-        </section>
+      <section className={`${panel} text-center`}>
+        <p className="text-[13px] font-medium text-[color:var(--p-muted)]">{t.showAtCounter}</p>
+        <button
+          type="button"
+          onClick={() => setFullQr(true)}
+          className="bzl-tap group relative mx-auto mt-3 block rounded-2xl bg-white p-3 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.5)] transition active:scale-[0.98]"
+          aria-label={tr ? 'QR kodu büyüt' : 'Enlarge the QR code'}
+        >
+          { }
+          <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} width={196} height={196} className="h-[196px] w-[196px]" />
+          <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#0A0A0A] text-white">
+            <Maximize2 size={15} aria-hidden="true" />
+          </span>
+        </button>
+        <p className="mt-4 text-[11.5px] uppercase tracking-[0.16em] text-[color:var(--p-muted)]">{t.code}</p>
+        <p className="font-mono text-[30px] font-semibold tracking-[0.2em]">{formatMemberCode(member.code)}</p>
+      </section>
 
-        <AccountBlock
-          t={t}
-          slug={slug}
-          token={token}
-          locale={locale}
-          signedIn={viewer.signedIn}
-          hasAccount={card.member.hasAccount}
-          linkState={linkState}
-          onAdd={() => void addToAccount()}
-        />
+      <AccountBlock t={t} slug={slug} token={token} locale={locale} signedIn={viewer.signedIn} owns={viewer.owns} hasAccount={card.member.hasAccount} />
 
-        {birthday && program.birthdayReward && (
-          <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[#F5C6D6] bg-[#FFF1F5] px-4 py-3 text-[14px] text-[#831843]">
-            <Cake size={18} className="mt-0.5 shrink-0" aria-hidden="true" /> {t.birthdayNow(program.birthdayReward)}
-          </p>
-        )}
+      {birthday && program.birthdayReward && (
+        <p className="flex items-start gap-2 rounded-[20px] border border-[#F5C6D6] bg-[#FFF1F5] px-4 py-3 text-[14px] text-[#831843]">
+          <Cake size={18} className="mt-0.5 shrink-0" aria-hidden="true" /> {t.birthdayNow(program.birthdayReward)}
+        </p>
+      )}
 
-        <section className="mt-4 rounded-2xl border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4">
-          <h2 className="text-[15px] font-semibold">{t.rewards}</h2>
-          <ul className="mt-2 space-y-2">
-            {program.rewards.map((r) => {
-              const ready = member.balance >= r.cost;
-              return (
-                <li key={r.id} className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 ${ready ? 'bg-[#F6FCE4] text-[#0A0A0A]' : 'bg-[var(--p-bg)]'}`}>
-                  <span className="flex min-w-0 items-center gap-2 text-[14px]">
+      <section className={panel}>
+        <h2 className="text-[16px] font-semibold">{t.rewards}</h2>
+        <ul className="mt-3 space-y-2">
+          {program.rewards.map((r) => {
+            const ready = member.balance >= r.cost;
+            const pct = Math.min(100, Math.round((member.balance / r.cost) * 100));
+            return (
+              <li key={r.id} className={`overflow-hidden rounded-2xl ${ready ? 'bg-[#F6FCE4] text-[#0A0A0A]' : 'bg-[var(--p-bg)]'}`}>
+                <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+                  <span className="flex min-w-0 items-center gap-2 text-[14.5px] font-medium">
                     <Gift size={16} className="shrink-0" aria-hidden="true" />
                     <span className="truncate">{r.title}</span>
                   </span>
-                  <span className={`shrink-0 text-[12.5px] font-medium ${ready ? 'text-[#3F6212]' : 'text-[color:var(--p-muted)]'}`}>
+                  <span className={`shrink-0 text-[12.5px] font-semibold ${ready ? 'text-[#3F6212]' : 'text-[color:var(--p-muted)]'}`}>
                     {ready ? t.rewardReady : t.rewardLeft(r.cost - member.balance, unitLabel(kind, r.cost - member.balance, locale))}
                   </span>
-                </li>
-              );
-            })}
-          </ul>
-          {(tier || upcoming) && (
-            <p className="mt-3 flex items-start gap-2 text-[13.5px]">
-              <Crown size={16} className="mt-0.5 shrink-0 text-[#CA8A04]" aria-hidden="true" />
-              <span>
-                {tier && <>{t.tierNow(tier.name)}{tier.perk ? ` — ${tier.perk}` : ''}. </>}
-                {upcoming && t.tierNext(upcoming.visitsLeft, upcoming.tier.name)}
-              </span>
-            </p>
-          )}
-          {expiry && <p className="mt-2 text-[12.5px] text-[color:var(--p-muted)]">{t.expires(dateFmt(expiry))}</p>}
-          <p className="mt-2 text-[12.5px] text-[color:var(--p-muted)]">
-            {member.visits} {t.visits}
+                </div>
+                {!ready && (
+                  <div className="h-1 w-full" style={{ background: 'var(--p-border)' }}>
+                    <div className="h-full transition-[width] duration-700" style={{ width: `${pct}%`, background: 'var(--p-accent)' }} />
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        {(tier || upcoming) && (
+          <p className="mt-3 flex items-start gap-2 text-[13.5px]">
+            <Crown size={16} className="mt-0.5 shrink-0 text-[#CA8A04]" aria-hidden="true" />
+            <span>
+              {tier && (
+                <>
+                  {t.tierNow(tier.name)}
+                  {tier.perk ? ` — ${tier.perk}` : ''}.{' '}
+                </>
+              )}
+              {upcoming && t.tierNext(upcoming.visitsLeft, upcoming.tier.name)}
+            </span>
           </p>
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4">
-          <h2 className="text-[15px] font-semibold">{t.history}</h2>
-          {card.events.length === 0 ? (
-            <p className="mt-2 text-[13px] text-[color:var(--p-muted)]">{t.noHistory}</p>
-          ) : (
-            <ul className="mt-2 divide-y divide-[#F0F0F0]">
-              {card.events.map((e) => (
-                <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-[13.5px]">
-                  <span className="min-w-0 truncate">
-                    {t.events[e.type] ?? e.type}
-                    {e.rewardTitle ? `: ${e.rewardTitle}` : ''}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-3">
-                    {e.amount !== 0 && (
-                      <span className={`font-medium tabular-nums ${e.amount > 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
-                        {e.amount > 0 ? '+' : ''}
-                        {e.amount}
-                      </span>
-                    )}
-                    <span className="text-[12px] text-[color:var(--p-muted)]">{dateFmt(e.createdAt)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <p className="mt-4 flex items-start gap-2 text-[12.5px] text-[color:var(--p-muted)]">
-          <Smartphone size={15} className="mt-0.5 shrink-0" aria-hidden="true" /> {t.homeScreen}
+        )}
+        {expiry && <p className="mt-2 text-[12.5px] text-[color:var(--p-muted)]">{t.expires(dateFmt(expiry))}</p>}
+        <p className="mt-2 text-[12.5px] text-[color:var(--p-muted)]">
+          {member.visits} {t.visits}
         </p>
+      </section>
 
+      <InstallCard locale={locale} businessName={business.name} />
 
-        <div className="mt-6 text-center">
-          {!leaveOpen ? (
-            <button type="button" onClick={() => setLeaveOpen(true)} className="min-h-[44px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
-              {t.leave}
-            </button>
-          ) : (
-            <div className="rounded-2xl border border-[#FECACA] bg-[var(--p-surface)] p-4 text-left">
-              <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
-              <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">{t.leaveBody}</p>
-              <input
-                value={last4}
-                onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                inputMode="numeric"
-                autoComplete="off"
-                className="mt-3 w-32 rounded-xl border border-[color:var(--p-border)] bg-[var(--p-bg)] px-3 py-2.5 text-center font-mono text-[18px] tracking-[0.3em]"
-                aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
-                placeholder="••••"
-              />
-              {leaveError && <p className="mt-2 text-[13px] text-[#991B1B]" role="alert">{leaveError}</p>}
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setLeaveOpen(false)} className="min-h-[44px] flex-1 rounded-xl border border-[color:var(--p-border)] text-[14px]">
-                  {t.leaveCancel}
-                </button>
-                <button
-                  type="button"
-                  disabled={last4.length !== 4 || leaveBusy}
-                  onClick={() => void leave()}
-                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-[#B91C1C] text-[14px] font-semibold text-white disabled:opacity-40"
-                >
-                  {leaveBusy ? <Loader2 size={16} className="animate-spin" /> : t.leaveConfirm}
-                </button>
-              </div>
+      <section className={panel}>
+        <h2 className="text-[16px] font-semibold">{t.history}</h2>
+        {card.events.length === 0 ? (
+          <p className="mt-2 text-[13px] text-[color:var(--p-muted)]">{t.noHistory}</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-[color:var(--p-border)]">
+            {card.events.map((e) => (
+              <li key={e.id} className="flex items-center justify-between gap-3 py-2.5 text-[13.5px]">
+                <span className="min-w-0 truncate">
+                  {t.events[e.type] ?? e.type}
+                  {e.rewardTitle ? `: ${e.rewardTitle}` : ''}
+                </span>
+                <span className="flex shrink-0 items-center gap-3">
+                  {e.amount !== 0 && (
+                    <span className={`font-semibold tabular-nums ${e.amount > 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
+                      {e.amount > 0 ? '+' : ''}
+                      {e.amount}
+                    </span>
+                  )}
+                  <span className="text-[12px] text-[color:var(--p-muted)]">{dateFmt(e.createdAt)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <div className="flex flex-col items-center gap-1 pt-2 text-center">
+        <Link href={`/l/${slug}?new=1${tr ? '' : '&lang=en'}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
+          <UserPlus size={14} aria-hidden="true" /> {tr ? 'Bu telefonda başka biri için kart aç' : 'Open a card for someone else on this phone'}
+        </Link>
+        {!leaveOpen ? (
+          <button type="button" onClick={() => setLeaveOpen(true)} className="min-h-[44px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
+            {t.leave}
+          </button>
+        ) : (
+          <div className="mt-2 w-full rounded-[22px] border border-[#FECACA] bg-[var(--p-surface)] p-4 text-left">
+            <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
+            <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">{t.leaveBody}</p>
+            <input
+              value={last4}
+              onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              inputMode="numeric"
+              autoComplete="off"
+              className="mt-3 w-36 rounded-xl border border-[color:var(--p-border)] bg-[var(--p-bg)] px-3 py-3 text-center font-mono text-[20px] tracking-[0.3em]"
+              aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
+              placeholder="••••"
+            />
+            {leaveError && (
+              <p className="mt-2 text-[13px] text-[#991B1B]" role="alert">
+                {leaveError}
+              </p>
+            )}
+            <div className="mt-3 flex gap-2">
+              <button type="button" onClick={() => setLeaveOpen(false)} className="min-h-[46px] flex-1 rounded-xl border border-[color:var(--p-border)] text-[14px]">
+                {t.leaveCancel}
+              </button>
+              <button
+                type="button"
+                disabled={last4.length !== 4 || leaveBusy}
+                onClick={() => void leave()}
+                className="flex min-h-[46px] flex-1 items-center justify-center rounded-xl bg-[#B91C1C] text-[14px] font-semibold text-white disabled:opacity-40"
+              >
+                {leaveBusy ? <Loader2 size={16} className="animate-spin" /> : t.leaveConfirm}
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
 
+      {fullQr && (
+        <FullScreenQr
+          locale={locale}
+          qrDataUrl={qrDataUrl}
+          code={member.code}
+          businessName={business.name}
+          firstName={member.firstName}
+          onClose={() => setFullQr(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── pieces ───────────────────────────────────────────────────────────────
+
+const CONFETTI_COLOURS = ['#C6F24E', '#0A0A0A', '#FFFFFF', '#F59E0B', '#EC4899', '#38BDF8'];
+
+function CelebrationLayer({ celebration }: { celebration: Celebration }) {
+  const pieces = celebration.confetti
+    ? Array.from({ length: 36 }, (_, i) => {
+        const angle = (i / 36) * Math.PI * 2;
+        const dist = 120 + (i % 5) * 34;
+        return {
+          i,
+          dx: `${Math.round(Math.cos(angle) * dist)}px`,
+          dy: `${Math.round(Math.sin(angle) * dist + 160)}px`,
+          rot: `${(i * 47) % 360}deg`,
+          color: CONFETTI_COLOURS[i % CONFETTI_COLOURS.length],
+          delay: `${(i % 6) * 25}ms`,
+          w: i % 3 === 0 ? 10 : 7,
+        };
+      })
+    : [];
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[80]" aria-live="polite" role="status">
+      <div
+        className="bzl-toast absolute left-1/2 w-[min(92vw,420px)] rounded-[22px] px-5 py-4 text-center shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]"
+        style={{ top: 'max(14px, env(safe-area-inset-top))', background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
+      >
+        <p className="text-[22px] font-semibold leading-tight tracking-[-0.01em]" style={{ fontFamily: 'var(--font-heading)' }}>
+          {celebration.title}
+        </p>
+        {celebration.body && <p className="mt-0.5 text-[14px] opacity-85">{celebration.body}</p>}
+      </div>
+      {pieces.length > 0 && (
+        <div className="absolute left-1/2 top-[30%]" aria-hidden="true">
+          {pieces.map((p) => (
+            <span
+              key={p.i}
+              className="bzl-confetti absolute block rounded-[2px]"
+              style={
+                {
+                  width: p.w,
+                  height: p.w * 1.6,
+                  background: p.color,
+                  animationDelay: p.delay,
+                  ['--dx' as string]: p.dx,
+                  ['--dy' as string]: p.dy,
+                  ['--rot' as string]: p.rot,
+                } as React.CSSProperties
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FullScreenQr({
+  locale,
+  qrDataUrl,
+  code,
+  businessName,
+  firstName,
+  onClose,
+}: {
+  locale: PublicLocale;
+  qrDataUrl: string;
+  code: string;
+  businessName: string;
+  firstName: string | null;
+  onClose: () => void;
+}) {
+  const tr = locale === 'tr';
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={tr ? 'Kasada gösterilecek QR' : 'QR to show at the counter'}
+      className="bzl-fade fixed inset-0 z-[85] flex flex-col items-center justify-center bg-white px-6 text-[#0A0A0A]"
+      style={{ paddingTop: 'max(24px, env(safe-area-inset-top))', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+      onClick={onClose}
+    >
+      <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#737373]">{businessName}</p>
+      {firstName && <p className="mt-1 text-[20px] font-semibold">{firstName}</p>}
+      { }
+      <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} className="mt-6 aspect-square w-[min(82vw,380px)]" />
+      <p className="mt-6 font-mono text-[38px] font-semibold tracking-[0.22em]">{formatMemberCode(code)}</p>
+      <p className="mt-3 max-w-[300px] text-center text-[13.5px] text-[#525252]">
+        {tr ? 'Ekran parlaklığını artırın; görevli QR’ı okutur ya da kodu yazar.' : 'Turn the brightness up; staff scan the QR or type the code.'}
+      </p>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-[#0A0A0A] px-6 text-[15px] font-semibold text-white"
+      >
+        <X size={18} aria-hidden="true" /> {tr ? 'Kapat' : 'Close'}
+      </button>
+    </div>
+  );
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+/** "Add to home screen": Android shows the install prompt, iPhone gets the two steps. */
+function InstallCard({ locale, businessName }: { locale: PublicLocale; businessName: string }) {
+  const tr = locale === 'tr';
+  const [mode, setMode] = useState<'hidden' | 'android' | 'ios' | 'done'>('hidden');
+  const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia?.('(display-mode: standalone)').matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (standalone) return;
+    const ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (ios) setMode('ios');
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      promptRef.current = e as BeforeInstallPromptEvent;
+      setMode('android');
+    };
+    const onInstalled = () => setMode('done');
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  if (mode === 'hidden') return null;
+  const box = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4';
+  if (mode === 'done') {
+    return (
+      <p className={`${box} flex items-center gap-2 text-[14px]`}>
+        <Check size={16} aria-hidden="true" /> {tr ? 'Kart ana ekranınızda.' : 'The card is on your home screen.'}
+      </p>
+    );
+  }
+  return (
+    <div className={`${box} flex items-start gap-3`}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}>
+        <Download size={18} aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[14.5px] font-semibold">{tr ? 'Kartı ana ekrana ekleyin' : 'Add the card to your home screen'}</p>
+        {mode === 'android' ? (
+          <>
+            <p className="mt-0.5 text-[12.5px] text-[color:var(--p-muted)]">
+              {tr ? `${businessName} kartınız uygulama gibi tek dokunuşla açılır.` : `Your ${businessName} card opens in one tap, like an app.`}
+            </p>
+            <button
+              type="button"
+              className="mt-3 inline-flex h-10 items-center rounded-full px-4 text-[13.5px] font-semibold"
+              style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
+              onClick={async () => {
+                const p = promptRef.current;
+                if (!p) return;
+                await p.prompt();
+                const choice = await p.userChoice.catch(() => null);
+                if (choice?.outcome === 'accepted') setMode('done');
+              }}
+            >
+              {tr ? 'Ana ekrana ekle' : 'Add to home screen'}
+            </button>
+          </>
+        ) : (
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-[color:var(--p-muted)]">
+            {tr ? 'Safari’de alttaki ' : 'In Safari tap '}
+            <Share size={13} className="inline -translate-y-px" aria-label={tr ? 'Paylaş' : 'Share'} />
+            {tr ? ' Paylaş düğmesine, sonra “Ana Ekrana Ekle”ye dokunun.' : ' Share, then “Add to Home Screen”.'}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -325,42 +648,112 @@ function AccountBlock({
   token,
   locale,
   signedIn,
+  owns,
   hasAccount,
-  linkState,
-  onAdd,
 }: {
-  t: (typeof PUBLIC_COPY)[PublicLocale];
+  t: Copy;
   slug: string;
   token: string;
   locale: PublicLocale;
   signedIn: boolean;
+  owns: boolean;
   hasAccount: boolean;
-  linkState: 'idle' | 'busy' | 'done' | 'taken' | 'error';
-  onAdd: () => void;
 }) {
-  const box = 'mt-4 flex flex-col gap-2 rounded-2xl border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4 sm:flex-row sm:items-center sm:justify-between';
-  const btn = 'inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] disabled:opacity-50';
-  if (linkState === 'done') {
+  const tr = locale === 'tr';
+  const [state, setState] = useState<'idle' | 'busy' | 'verify' | 'done' | 'taken' | 'error'>(owns ? 'done' : 'idle');
+  const [digits, setDigits] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+  const box = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4';
+  const btn =
+    'bzl-tap inline-flex min-h-[46px] items-center justify-center rounded-2xl px-4 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] disabled:opacity-50';
+
+  const link = async (last4?: string) => {
+    setState('busy');
+    setMessage(null);
+    try {
+      const res = await fetch('/api/customer/cards/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(last4 ? { token, last4 } : { token }),
+      });
+      if (res.ok) {
+        setState('done');
+        return;
+      }
+      const data = (await res.json().catch(() => null)) as { code?: string } | null;
+      if (data?.code === 'CARD_VERIFY_REQUIRED') {
+        setState('verify');
+        return;
+      }
+      if (data?.code === 'WRONG_DIGITS') {
+        setState('verify');
+        setMessage(t.leaveWrong);
+        return;
+      }
+      if (data?.code === 'CARD_IN_OTHER_ACCOUNT' || data?.code === 'ACCOUNT_HAS_CARD') {
+        setState('taken');
+        return;
+      }
+      setState(last4 ? 'verify' : 'error');
+      setMessage(data?.code === 'RATE_LIMIT' ? t.errors.RATE_LIMIT : t.errors.DEFAULT);
+    } catch {
+      setState('error');
+      setMessage(t.errors.DEFAULT);
+    }
+  };
+
+  if (state === 'done') {
     return (
-      <div className={box}>
+      <div className={`${box} flex items-center justify-between gap-3`}>
         <span className="flex items-center gap-2 text-[14px] font-medium">
           <UserCheck size={17} aria-hidden /> {t.inAccount}
         </span>
         <Link href="/hesap" className="text-[13.5px] font-semibold underline underline-offset-2">
-          {locale === 'tr' ? 'Kartlarım' : 'My cards'}
+          {tr ? 'Kartlarım' : 'My cards'}
         </Link>
       </div>
     );
   }
   if (signedIn) {
-    if (hasAccount || linkState === 'taken') {
-      return <p className="mt-4 text-center text-[12.5px] text-[color:var(--p-muted)]">{t.otherAccountCard}</p>;
+    if ((hasAccount && state === 'idle') || state === 'taken') {
+      return <p className="text-center text-[12.5px] text-[color:var(--p-muted)]">{t.otherAccountCard}</p>;
+    }
+    if (state === 'verify') {
+      return (
+        <div className={box}>
+          <p className="text-[14px] font-semibold">{t.addToAccount}</p>
+          <p className="mt-1 text-[12.5px] text-[color:var(--p-muted)]">
+            {tr
+              ? 'Kartın sizin olduğunu doğrulamak için kartta kayıtlı telefonun son 4 hanesini yazın.'
+              : 'To confirm the card is yours, type the last 4 digits of the phone on the card.'}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <input
+              value={digits}
+              onChange={(e) => setDigits(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              inputMode="numeric"
+              autoComplete="off"
+              className="w-28 rounded-xl border border-[color:var(--p-border)] bg-[var(--p-bg)] px-3 py-2.5 text-center font-mono text-[18px] tracking-[0.3em]"
+              aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
+              placeholder="••••"
+            />
+            <button type="button" className={btn} disabled={digits.length !== 4} onClick={() => void link(digits)}>
+              {tr ? 'Doğrula' : 'Confirm'}
+            </button>
+          </div>
+          {message && (
+            <p className="mt-2 text-[12.5px] text-[#B91C1C]" role="alert">
+              {message}
+            </p>
+          )}
+        </div>
+      );
     }
     return (
-      <div className={box}>
-        <span className="text-[14px]">{linkState === 'error' ? t.errors.DEFAULT : t.createAccountLead}</span>
-        <button type="button" className={btn} onClick={onAdd} disabled={linkState === 'busy'}>
-          {linkState === 'busy' ? <Loader2 size={16} className="animate-spin" /> : t.addToAccount}
+      <div className={`${box} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+        <span className="text-[13.5px]">{state === 'error' && message ? message : t.createAccountLead}</span>
+        <button type="button" className={btn} onClick={() => void link()} disabled={state === 'busy'}>
+          {state === 'busy' ? <Loader2 size={16} className="animate-spin" /> : t.addToAccount}
         </button>
       </div>
     );
@@ -368,14 +761,14 @@ function AccountBlock({
   if (hasAccount) return null;
   const next = encodeURIComponent(`/l/${slug}/k/${token}`);
   return (
-    <div className={box}>
+    <div className={`${box} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
       <span className="min-w-0">
         <span className="block text-[14px] font-semibold">{t.createAccount}</span>
         <span className="block text-[12.5px] text-[color:var(--p-muted)]">{t.createAccountLead}</span>
       </span>
-      <a href={`/hesap/kayit?${locale === 'en' ? 'lang=en&' : ''}next=${next}`} className={btn}>
+      <Link href={`/hesap/kayit?${locale === 'en' ? 'lang=en&' : ''}next=${next}`} className={btn}>
         {t.addToAccount}
-      </a>
+      </Link>
     </div>
   );
 }

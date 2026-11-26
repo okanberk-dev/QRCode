@@ -13,19 +13,21 @@ import {
   toCustomerDto,
   verifyPassword,
 } from '@/lib/customer-auth';
-import { fail, limited } from '@/lib/customer-route';
+import { fail, limited, refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
 const Body = z.object({ email: z.string().trim().max(160), password: z.string().max(200) }).strict();
 
 export async function POST(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const ip = getClientIp(req.headers);
   const parsed = validateBody<z.infer<typeof Body>>(Body, await req.json().catch(() => null));
   if (!parsed.ok) return parsed.response;
   const email = parsed.data.email.toLowerCase();
   const rl =
-    (await limited(`customer-login:ip:${ip}`, 15, 10 * 60_000)) ??
+    (await limited(`customer-login:ip:${ip}`, 40, 10 * 60_000)) ??
     (await limited(`customer-login:email:${email}`, 8, 10 * 60_000));
   if (rl) return rl;
 

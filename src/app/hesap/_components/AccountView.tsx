@@ -144,6 +144,8 @@ function AddCard({ locale, onAdded }: { locale: AccountLocale; onAdded: () => vo
   const c = ACCOUNT_COPY[locale];
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
+  const [last4, setLast4] = useState('');
+  const [needDigits, setNeedDigits] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -158,12 +160,16 @@ function AddCard({ locale, onAdded }: { locale: AccountLocale; onAdded: () => vo
     setBusy(true);
     setError(null);
     try {
-      await customerApi('/api/customer/cards/link', { body: { token: m[1] } });
+      await customerApi('/api/customer/cards/link', { body: needDigits && last4.length === 4 ? { token: m[1], last4 } : { token: m[1] } });
       setDone(true);
       setValue('');
+      setLast4('');
+      setNeedDigits(false);
       onAdded();
     } catch (err) {
-      setError(accountError(c, errorCode(err)));
+      const code = errorCode(err);
+      if (code === 'CARD_VERIFY_REQUIRED' || code === 'WRONG_DIGITS') setNeedDigits(true);
+      setError(accountError(c, code));
     } finally {
       setBusy(false);
     }
@@ -171,7 +177,7 @@ function AddCard({ locale, onAdded }: { locale: AccountLocale; onAdded: () => vo
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] font-medium text-[#525252] underline-offset-2 hover:text-[#0A0A0A] hover:underline">
+      <button type="button" onClick={() => setOpen(true)} className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-[13.5px] font-medium text-[#525252] underline-offset-2 hover:text-[#0A0A0A] hover:underline">
         <Plus size={15} aria-hidden /> {c.addCard}
       </button>
     );
@@ -181,9 +187,20 @@ function AddCard({ locale, onAdded }: { locale: AccountLocale; onAdded: () => vo
       <p className="text-[14px] font-semibold">{c.addCard}</p>
       <p className="text-[13px] text-[#737373]">{c.addCardLead}</p>
       <input value={value} onChange={(e) => setValue(e.target.value)} className="bz-input w-full" placeholder={c.addCardPlaceholder} inputMode="url" autoCapitalize="off" autoCorrect="off" spellCheck={false} aria-label={c.addCard} />
+      {needDigits && (
+        <input
+          value={last4}
+          onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          className="bz-input w-32 text-center font-mono tracking-[0.3em]"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="••••"
+          aria-label={locale === 'tr' ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
+        />
+      )}
       {error && <ErrorLine text={error} />}
       {done && <p className="text-[13px] font-medium text-[#3F6212]">{c.addCardDone}</p>}
-      <button type="submit" className="bz-btn-primary" disabled={busy || !value.trim()}>
+      <button type="submit" className="bz-btn-primary" disabled={busy || !value.trim() || (needDigits && last4.length !== 4)}>
         {busy && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
         {c.addCardSubmit}
       </button>

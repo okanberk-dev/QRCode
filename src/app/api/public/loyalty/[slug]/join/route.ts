@@ -8,6 +8,7 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { validateBody } from '@/lib/api/validate';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
+import { isCrossSiteRequest } from '@/lib/request-origin';
 import { isValidEmail } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { recordConsentBatch } from '@/lib/legal/consent';
@@ -30,6 +31,7 @@ import {
   type PublicLoyaltyProgram,
 } from '@/lib/loyalty-server';
 import { moderateText } from '@/lib/loyalty-moderation';
+import { setCardCookie } from '@/lib/loyalty-device';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,8 +92,12 @@ async function mailCard(args: {
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (isCrossSiteRequest(req.headers)) return NextResponse.json({ error: 'forbidden', code: 'FORBIDDEN' }, { status: 403 });
   const ip = getClientIp(req.headers);
-  const ipLimit = await rateLimit(`loyalty-join:ip:${ip}`, 8, 10 * 60_000);
+  // Café Wi-Fi and mobile carriers put many customers behind one IP: the IP
+  // limit only stops floods; the per-phone and per-program limits below stop
+  // probing and spam.
+  const ipLimit = await rateLimit(`loyalty-join:ip:${ip}`, 30, 10 * 60_000);
   if (!ipLimit.allowed) {
     return NextResponse.json(
       { error: 'rate_limit', code: 'RATE_LIMIT' },
@@ -127,6 +133,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   }
   const phone = normalizePhone(d.phone ?? account?.phone ?? '');
   if (!phone) return NextResponse.json({ error: 'INVALID_PHONE', code: 'INVALID_PHONE' }, { status: 400 });
+  const [phoneLimit, programLimit] = await Promise.all([
+    rateLimit(`loyalty-join:phone:${program.id}:${phone}`, 5, 60 * 60_000),
+    rateLimit(`loyalty-join:program:${program.id}`, 400, 60 * 60_000),
+  ]);
+  if (!phoneLimit.allowed || !programLimit.allowed) {
+    return NextResponse.json({ error: 'rate_limit', code: 'RATE_LIMIT' }, { status: 429 });
+  }
   const email = account ? account.email : d.email ? d.email.toLowerCase() : null;
   if (email && !isValidEmail(email)) {
     return NextResponse.json({ error: 'INVALID_EMAIL', code: 'INVALID_EMAIL' }, { status: 400 });
@@ -181,10 +194,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         await mailCard({ program, to: email, name: firstName, token: member.cardToken, locale: d.locale, resend: false });
       }
     });
-    return NextResponse.json(
+    const created = NextResponse.json(
       { status: 'created', cardPath: loyaltyCardPath(program.slug, member.cardToken) },
       { status: 201 },
     );
+    setCardCookie(created, program.slug, member.cardToken, req);
+    return created;
   } catch (err) {
     if (err instanceof LoyaltyError && err.code === 'ACCOUNT_HAS_CARD' && account) {
       const own = await prisma.loyaltyMember.findFirst({

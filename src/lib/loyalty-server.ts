@@ -29,6 +29,7 @@ import {
   type LookupQuery,
   type LoyaltyKind,
   type LoyaltyTier,
+  maskPhoneForDisplay,
 } from '@/lib/loyalty';
 
 // ─── access ───────────────────────────────────────────────────────────────
@@ -260,10 +261,20 @@ export const LOYALTY_MEMBER_SELECT = {
 
 export type LoyaltyMemberRow = Prisma.LoyaltyMemberGetPayload<{ select: typeof LOYALTY_MEMBER_SELECT }>;
 
-export function toMemberDto(row: LoyaltyMemberRow) {
-  const { customerAccountId, ...rest } = row;
+/**
+ * Member for the panel. Whole phone and e-mail only with `full` (owner,
+ * workspace owner/manager, admin — `access.manage`); staff and viewers get
+ * the masked phone and no e-mail, so personal data never reaches them in
+ * the API either (§61).
+ */
+export function toMemberDto(row: LoyaltyMemberRow, opts: { full: boolean } = { full: false }) {
+  const { customerAccountId, phone, email, ...rest } = row;
   return {
     ...rest,
+    phone: opts.full ? phone : null,
+    email: opts.full ? email : null,
+    phoneMasked: maskPhoneForDisplay(phone),
+    hasEmail: Boolean(email),
     hasAccount: Boolean(customerAccountId),
     lastVisitAt: row.lastVisitAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),

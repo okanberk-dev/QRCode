@@ -2,10 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { clearCustomerCookie, getCustomerFromRequest } from '@/lib/customer-auth';
+import { refuseCrossSite } from '@/lib/customer-route';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const crossSite = refuseCrossSite(req);
+  if (crossSite) return crossSite;
   const body = (await req.json().catch(() => ({}))) as { all?: unknown };
   if (body?.all === true) {
     const account = await getCustomerFromRequest(req);

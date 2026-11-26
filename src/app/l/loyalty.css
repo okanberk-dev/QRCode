@@ -1,0 +1,81 @@
+/*
+ * Motion of the customer's loyalty pages (/l, CLAUDE.md §61). Segment-scoped
+ * (§40.11): loaded only by the /l root layout. Everything turns off under
+ * prefers-reduced-motion (the global blanket in globals.css also applies).
+ */
+@keyframes bzl-ripple {
+  from { transform: scale(0.55); opacity: 0.6; }
+  to { transform: scale(2.7); opacity: 0; }
+}
+@keyframes bzl-pop {
+  0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  60% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes bzl-rise {
+  from { transform: translateY(18px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes bzl-aurora {
+  0% { transform: translate3d(-12%, -8%, 0) scale(1); }
+  50% { transform: translate3d(10%, 8%, 0) scale(1.18); }
+  100% { transform: translate3d(-12%, -8%, 0) scale(1); }
+}
+@keyframes bzl-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+}
+@keyframes bzl-stamp-in {
+  0% { transform: scale(2.3) rotate(-20deg); opacity: 0; }
+  55% { transform: scale(0.86) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes bzl-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes bzl-sheen {
+  0% { transform: translateX(-140%) skewX(-18deg); }
+  60%, 100% { transform: translateX(380%) skewX(-18deg); }
+}
+@keyframes bzl-confetti {
+  0% { transform: translate3d(0, 0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate3d(var(--dx, 0), var(--dy, 0), 0) rotate(var(--rot, 180deg)); opacity: 0; }
+}
+@keyframes bzl-toast {
+  0% { transform: translate(-50%, -140%) scale(0.92); opacity: 0; }
+  10%, 86% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -140%) scale(0.95); opacity: 0; }
+}
+@keyframes bzl-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.bzl-ripple { animation: bzl-ripple 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+.bzl-pop { animation: bzl-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.bzl-rise { animation: bzl-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.bzl-aurora { animation: bzl-aurora 14s ease-in-out infinite; }
+.bzl-breathe { animation: bzl-breathe 2s ease-in-out infinite; }
+.bzl-stamp-in { animation: bzl-stamp-in 0.62s cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+.bzl-float { animation: bzl-float 5s ease-in-out infinite; }
+.bzl-sheen { animation: bzl-sheen 3.6s ease-in-out 0.6s 2 both; }
+.bzl-confetti { animation: bzl-confetti 1.3s cubic-bezier(0.15, 0.7, 0.3, 1) forwards; }
+.bzl-toast { animation: bzl-toast 3.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.bzl-fade { animation: bzl-fade 0.5s ease both; }
+
+/* Arrival screen: collapses into the point the visitor tapped. */
+.bzl-splash {
+  clip-path: circle(150% at var(--bzl-x, 50%) var(--bzl-y, 50%));
+  transition: clip-path 0.75s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.75s ease;
+}
+.bzl-splash[data-leaving='true'] {
+  clip-path: circle(0% at var(--bzl-x, 50%) var(--bzl-y, 50%));
+  opacity: 0.6;
+}
+
+.bzl-tap { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bzl-splash { display: none !important; }
+  .bzl-ripple, .bzl-pop, .bzl-rise, .bzl-aurora, .bzl-breathe, .bzl-stamp-in, .bzl-float, .bzl-sheen, .bzl-confetti, .bzl-toast, .bzl-fade {
+    animation: none !important;
+  }
+}

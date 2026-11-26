@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, Loader2, Nfc, Search, UserPlus } from 'lucide-react';
 import { AlertBanner, Field, Modal } from '@/components/ui';
-import { formatMemberCode, maskPhoneForDisplay, normalizePhone } from '@/lib/loyalty';
+import { formatMemberCode, normalizePhone } from '@/lib/loyalty';
 import MemberActions from './MemberActions';
 import ScanDialog from './ScanDialog';
 import NfcDialog from './NfcDialog';
@@ -233,7 +233,7 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
                   <span className="min-w-0">
                     <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz üye' : 'Unnamed')}</span>
                     <span className="text-[12px] text-[#737373]">
-                      {formatMemberCode(m.code)} · {maskPhoneForDisplay(m.phone)}
+                      {formatMemberCode(m.code)} · {m.phoneMasked}
                     </span>
                   </span>
                   <span className="shrink-0 text-[13px] font-semibold tabular-nums">{m.balance}</span>
