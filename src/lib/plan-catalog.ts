@@ -80,13 +80,14 @@ export const PLAN_CATALOG: readonly CatalogPlan[] = [
     priceUsd: 29,
     priceYearlyUsd: 290,
     maxBusinesses: 3,
-    moduleKeys: ['externalPlatforms', 'pulseAi', 'aiAnalytics', 'menu', 'surveys'],
+    moduleKeys: ['externalPlatforms', 'pulseAi', 'aiAnalytics', 'menu', 'surveys', 'loyalty'],
     featuresTr: [
       'Başlangıç planındaki her şey',
       'Pulse AI yanıt taslakları',
       'Yapay zekâyla yorum temaları ve haftalık içgörü',
       'Dijital QR menü (7 tema)',
       'Müşteri anketleri',
+      'Dijital sadakat kartı (damga veya puan)',
     ],
     featuresEn: [
       'Everything in Starter',
@@ -94,6 +95,7 @@ export const PLAN_CATALOG: readonly CatalogPlan[] = [
       'AI review themes and a weekly insight',
       'Digital QR menu (7 themes)',
       'Customer surveys',
+      'Digital loyalty card (stamps or points)',
     ],
     isFeatured: true,
     sortOrder: 20,
@@ -110,7 +112,7 @@ export const PLAN_CATALOG: readonly CatalogPlan[] = [
     priceUsd: 69,
     priceYearlyUsd: 690,
     maxBusinesses: 10,
-    moduleKeys: ['externalPlatforms', 'pulseAi', 'aiAnalytics', 'menu', 'surveys', 'googleReviews'],
+    moduleKeys: ['externalPlatforms', 'pulseAi', 'aiAnalytics', 'menu', 'surveys', 'loyalty', 'googleReviews'],
     featuresTr: [
       'Büyüme planındaki her şey',
       'Google yorumlarına panelden yanıt (Google erişim onayından sonra)',

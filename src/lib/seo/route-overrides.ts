@@ -50,6 +50,8 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   // süredir canlıydı ama pazarlama sayfası yoktu.
   'features/menu': { priority: 0.85, changefreq: 'monthly' },
   'features/surveys': { priority: 0.8, changefreq: 'monthly' },
+  // 'sadakat kartı' / 'dijital sadakat kartı' / 'kafe damga kartı' (§60).
+  'features/loyalty': { priority: 0.85, changefreq: 'monthly' },
   // /features/review-management + /features/analytics-reports heuristic
   // default 0.7 ile çalışıyor — Stage 134 priority audit gerekiyorsa
   // ayrı PR (kapsam dışı).

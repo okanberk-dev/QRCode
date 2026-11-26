@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, ClipboardList, ClipboardCheck, ShieldAlert, PauseCircle } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, ClipboardList, ClipboardCheck, ShieldAlert, PauseCircle, Gift } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
@@ -53,7 +53,8 @@ type FeatureToggleKey =
   | 'menuPublished'
   | 'aiAnalyticsEnabled'
   | 'externalPlatformsEnabled'
-  | 'surveysEnabled';
+  | 'surveysEnabled'
+  | 'loyaltyEnabled';
 
 // /api/admin/restaurants/[id]/overview — owner-side modules summary.
 interface OwnerModulesOverview {
@@ -139,6 +140,7 @@ export default function RestaurantDetailPage() {
   const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(true);
   const [externalPlatformsEnabled, setExternalPlatformsEnabled] = useState(true);
   const [surveysEnabled, setSurveysEnabled] = useState(true);
+  const [loyaltyEnabled, setLoyaltyEnabled] = useState(true);
   const [suspendedByAdmin, setSuspendedByAdmin] = useState(false);
   const [temporarilyClosed, setTemporarilyClosed] = useState(false);
   const [overview, setOverview] = useState<OwnerModulesOverview | null>(null);
@@ -240,6 +242,7 @@ export default function RestaurantDetailPage() {
           setAiAnalyticsEnabled(data.aiAnalyticsEnabled ?? true);
           setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
           setSurveysEnabled(data.surveysEnabled ?? true);
+          setLoyaltyEnabled(data.loyaltyEnabled ?? true);
           setSuspendedByAdmin(Boolean(data.suspendedByAdmin));
           setTemporarilyClosed(Boolean(data.temporarilyClosed));
         } else {
@@ -364,6 +367,7 @@ export default function RestaurantDetailPage() {
       setExternalPlatformsEnabled(Boolean(next.externalPlatformsEnabled));
     }
     if (next.surveysEnabled !== undefined) setSurveysEnabled(Boolean(next.surveysEnabled));
+    if (next.loyaltyEnabled !== undefined) setLoyaltyEnabled(Boolean(next.loyaltyEnabled));
   };
 
   const saveFeatureSetting = async (patch: Partial<Record<FeatureToggleKey, boolean>>) => {
@@ -381,6 +385,7 @@ export default function RestaurantDetailPage() {
       aiAnalyticsEnabled,
       externalPlatformsEnabled,
       surveysEnabled,
+      loyaltyEnabled,
     };
     const optimistic = { ...prev, ...patch };
     if (patch.menuEnabled === false) optimistic.menuPublished = false;
@@ -945,6 +950,15 @@ export default function RestaurantDetailPage() {
             checked={surveysEnabled}
             loading={featureSaving === 'surveysEnabled'}
             onChange={(next) => saveFeatureSetting({ surveysEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={<Gift size={17} strokeWidth={2.2} />}
+            eyebrow="Sadakat"
+            title="Sadakat kartı"
+            description="Kapalıyken owner programı düzenleyemez, kasada damga/puan veremez; müşteri katılım ve kart sayfaları kapanır. Üyeler ve bakiyeler silinmez."
+            checked={loyaltyEnabled}
+            loading={featureSaving === 'loyaltyEnabled'}
+            onChange={(next) => saveFeatureSetting({ loyaltyEnabled: next })}
           />
           <FeatureToggleCard
             icon={menuPublished ? <Eye size={17} strokeWidth={2.2} /> : <EyeOff size={17} strokeWidth={2.2} />}

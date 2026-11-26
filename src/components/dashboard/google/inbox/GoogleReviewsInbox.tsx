@@ -320,9 +320,46 @@ export function GoogleReviewsInbox({
     [api, isTr, load, locale, onConnectionProblem],
   );
 
-  // (Re)load on filter change; the very first load may trigger a first sync.
-  // The status tabs of an unfiltered list are fetched ahead so switching them
-  // shows cached data at once (§56).
+  // Opening the page refreshes from Google (§54): the newest page only, and
+  // the server skips it when the last sync is under 2 minutes old. Quiet: no
+  // error banner (the stored list stays), except a broken connection.
+  const pageSync = useCallback(async () => {
+    setSyncState('running');
+    try {
+      const res = await fetch(`${api}/reviews/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trigger: 'page' }),
+      });
+      const data = (await res.json().catch(() => null)) as
+        | { ok?: boolean; fresh?: boolean; busy?: boolean; inserted?: number; code?: string }
+        | null;
+      setSyncState('idle');
+      if (!res.ok || data?.ok === false) {
+        if (errorCodeOf(data) === 'GOOGLE_REAUTH_REQUIRED') onConnectionProblem();
+        return;
+      }
+      if (data?.fresh || data?.busy) return;
+      const inserted = data?.inserted ?? 0;
+      if (inserted > 0) {
+        setSyncNotice(
+          isTr
+            ? `${inserted} yeni Google yorumu geldi.`
+            : `${inserted} new Google review${inserted === 1 ? '' : 's'}.`,
+        );
+      }
+      setStatsKey((k) => k + 1);
+      await load({ force: true });
+      refreshOtherFilters();
+    } catch {
+      setSyncState('idle');
+    }
+  }, [api, isTr, load, onConnectionProblem, refreshOtherFilters]);
+
+  // (Re)load on filter change; the very first load also refreshes from
+  // Google (a full first sync when nothing is stored yet). The status tabs of
+  // an unfiltered list are fetched ahead so switching them shows cached data
+  // at once (§56).
   useEffect(() => {
     void load().then((page) => {
       if (page && !isFilterActive(filter)) {
@@ -330,9 +367,10 @@ export function GoogleReviewsInbox({
           if (status !== filter.status) void prefetchFilter({ ...filter, status });
         }
       }
-      if (page?.summary.needsSync && canWrite && !autoSyncedRef.current) {
+      if (page && !autoSyncedRef.current) {
         autoSyncedRef.current = true;
-        void syncNow(false);
+        if (page.summary.needsSync && canWrite) void syncNow(false);
+        else if (!page.summary.syncing) void pageSync();
       }
       if (page?.summary.activeJobId) setResumeJobId(page.summary.activeJobId);
     });

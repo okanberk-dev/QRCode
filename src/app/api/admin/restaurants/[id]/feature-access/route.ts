@@ -25,6 +25,7 @@ const PatchSchema = z.object({
   aiAnalyticsEnabled: z.boolean().optional(),
   externalPlatformsEnabled: z.boolean().optional(),
   surveysEnabled: z.boolean().optional(),
+  loyaltyEnabled: z.boolean().optional(),
 }).strict();
 
 type PatchInput = z.infer<typeof PatchSchema>;

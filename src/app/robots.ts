@@ -6,6 +6,8 @@ const PRIVATE_PATHS = [
   '/api/',
   '/billing/',
   '/r/',
+  // Loyalty join + card pages (CLAUDE.md §60): per-business, card links are secrets.
+  '/l/',
   '/tr/dashboard/',
   '/en/dashboard/',
   // /tr/auth/ and /en/auth/ are NOT disallowed on purpose: the auth pages

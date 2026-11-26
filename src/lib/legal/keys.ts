@@ -174,9 +174,10 @@ export type ConsentSource =
   | 'onboarding'
   | 'newsletter'
   | 'contact'
-  | 'admin';
+  | 'admin'
+  | 'loyalty_join';
 
 /**
  * Subject (consenter) type — polymorphic actor.
  */
-export type ConsentSubjectType = 'user' | 'feedback' | 'email' | 'admin';
+export type ConsentSubjectType = 'user' | 'feedback' | 'email' | 'admin' | 'loyalty_member';

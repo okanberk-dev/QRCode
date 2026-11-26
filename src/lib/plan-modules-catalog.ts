@@ -12,6 +12,7 @@ export const PLAN_MODULES = [
   { key: 'aiAnalytics', field: 'aiAnalyticsEnabled', tr: 'AI analitik', en: 'AI analytics' },
   { key: 'menu', field: 'menuEnabled', tr: 'Dijital menü', en: 'Digital menu' },
   { key: 'surveys', field: 'surveysEnabled', tr: 'Anketler', en: 'Surveys' },
+  { key: 'loyalty', field: 'loyaltyEnabled', tr: 'Sadakat kartı', en: 'Loyalty card' },
   { key: 'externalPlatforms', field: 'externalPlatformsEnabled', tr: 'Google dışı platformlar', en: 'Non-Google platforms' },
 ] as const;
 

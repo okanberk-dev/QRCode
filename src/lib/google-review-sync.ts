@@ -142,32 +142,42 @@ export function toGoogleReviewRow(raw: GoogleReview): GoogleReviewRowInput | nul
 const UPSERT_CHUNK = 200;
 
 /**
- * Stores a sync pass. Returns the number of rows written and deleted.
+ * Stores a sync pass. Returns the rows written, deleted and newly inserted.
  * `complete` allows deleting rows Google no longer returns.
+ *
+ * New rows wait for the owner alert (`notified_at` NULL, §54) — except on a
+ * business's first import, where every row is stored as already handled so
+ * connecting Google never mails a backlog of old reviews.
  */
 export async function persistReviewSync(
   restaurantId: string,
   rawReviews: GoogleReview[],
   opts: { complete: boolean; seenAt?: Date },
-): Promise<{ written: number; deleted: number }> {
+): Promise<{ written: number; deleted: number; inserted: number }> {
   const seenAt = opts.seenAt ?? new Date();
   const rows = rawReviews.map(toGoogleReviewRow).filter((r): r is GoogleReviewRowInput => r !== null);
+  const firstImport =
+    rows.length > 0 && (await prisma.googleReview.count({ where: { restaurantId }, take: 1 })) === 0;
+  const notifiedAt = firstImport ? seenAt : null;
 
   let written = 0;
+  let inserted = 0;
   for (let i = 0; i < rows.length; i += UPSERT_CHUNK) {
     const chunk = rows.slice(i, i + UPSERT_CHUNK);
     const values = chunk.map(
       (r) => Prisma.sql`(${randomUUID()}, ${restaurantId}, ${r.reviewId}, ${r.reviewName}, ${r.reviewerName},
         ${r.reviewerPhotoUrl}, ${r.isAnonymous}, ${r.rating}, ${r.comment}, ${r.originalText}, ${r.translatedText},
         ${r.language}, ${r.hasText}, ${r.createTime}, ${r.updateTime}, ${r.hasReply}, ${r.replyComment},
-        ${r.replyUpdateTime}, ${seenAt}, NOW(), NOW())`,
+        ${r.replyUpdateTime}, ${seenAt}, ${notifiedAt}, NOW(), NOW())`,
     );
-    written += await prisma.$executeRaw`
+    // `xmax = 0` is true only for a row this statement inserted (an
+    // ON CONFLICT update sets xmax), so new reviews are counted exactly.
+    const result = await prisma.$queryRaw<Array<{ inserted: boolean }>>`
       INSERT INTO "google_reviews" (
         "id", "restaurant_id", "review_id", "review_name", "reviewer_name", "reviewer_photo_url",
         "is_anonymous", "rating", "comment", "original_text", "translated_text", "language", "has_text",
         "create_time", "update_time", "has_reply", "reply_comment", "reply_update_time", "last_seen_at",
-        "created_at", "updated_at"
+        "notified_at", "created_at", "updated_at"
       ) VALUES ${Prisma.join(values)}
       ON CONFLICT ("restaurant_id", "review_id") DO UPDATE SET
         "review_name" = EXCLUDED."review_name",
@@ -187,7 +197,10 @@ export async function persistReviewSync(
         "reply_update_time" = EXCLUDED."reply_update_time",
         "last_seen_at" = EXCLUDED."last_seen_at",
         "updated_at" = NOW()
+      RETURNING (xmax = 0) AS "inserted"
     `;
+    written += result.length;
+    inserted += result.filter((r) => r.inserted).length;
   }
 
   let deleted = 0;
@@ -197,7 +210,7 @@ export async function persistReviewSync(
     });
     deleted = res.count;
   }
-  return { written, deleted };
+  return { written, deleted, inserted: firstImport ? 0 : inserted };
 }
 
 /** Writes a reply the owner just published (or removed) without waiting for the next sync. */

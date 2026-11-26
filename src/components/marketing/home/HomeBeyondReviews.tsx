@@ -1,9 +1,11 @@
 import Link from 'next/link';
-import { ArrowRight, Camera, Check, ClipboardCheck, MessageCircleQuestionMark } from 'lucide-react';
+import { ArrowRight, Camera, Check, ClipboardCheck, Gift, MessageCircleQuestionMark } from 'lucide-react';
+import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import SectionHeader from './SectionHeader';
 
 /**
- * "Yorumların ötesinde" — Denetim Merkezi and Anketler, each described once
+ * "Yorumların ötesinde" — Denetim Merkezi, Anketler and Sadakat kartı
+ * (CLAUDE.md §60), each described once
  * with verifiable numbers (6 question types / 3 scoring modes; 5 question
  * types / up to 30 questions / 8 templates / 0–10 recommend question). The
  * small mockups are labelled sample screens with generic content.
@@ -12,8 +14,8 @@ import SectionHeader from './SectionHeader';
 const COPY = {
   tr: {
     eyebrow: 'Yorumların ötesinde',
-    title: 'Ekibiniz için denetimler, müşterileriniz için anketler',
-    lead: "Ekibinizin kontrol listelerini ve testlerini Denetim Merkezi'nde yürütün; müşterilerinize puandan fazlasını sormak istediğinizde kısa bir anket hazırlayın.",
+    title: 'Ekibiniz için denetimler, müşterileriniz için anket ve sadakat kartı',
+    lead: "Ekibinizin kontrol listelerini Denetim Merkezi'nde yürütün, müşterilerinize puandan fazlasını kısa bir ankette sorun, düzenli gelenleri dijital damga ya da puan kartıyla ödüllendirin.",
     sample: 'Örnek ekran',
     audit: {
       name: 'Denetim Merkezi',
@@ -31,11 +33,19 @@ const COPY = {
       low: 'Hiç',
       high: 'Kesinlikle',
     },
+    loyalty: {
+      name: 'Sadakat kartı',
+      body: 'Kafe, restoran, berber ve salonlar için dijital damga ya da puan kartı. Müşteri kasadaki QR ile kartını telefonunda açar, uygulama indirmez; siz kasada ziyaret ekler, ödülü verirsiniz. Seviyeler, doğum günü hediyesi ve 6 hazır şablon vardır.',
+      link: 'Sadakat kartını inceleyin',
+      business: 'Örnek Kafe',
+      program: 'Kahve kartı',
+      reward: 'Ücretsiz kahve',
+    },
   },
   en: {
     eyebrow: 'Beyond reviews',
-    title: 'Audits for your team, surveys for your customers',
-    lead: "Run your team's checklists and tests in the Audit Center, and build a short survey when you want to ask customers more than a rating.",
+    title: 'Audits for your team, surveys and a loyalty card for your customers',
+    lead: "Run your team's checklists in the Audit Center, ask customers more than a rating in a short survey, and reward your regulars with a digital stamp or points card.",
     sample: 'Sample screen',
     audit: {
       name: 'Audit Center',
@@ -52,6 +62,14 @@ const COPY = {
       question: 'Would you recommend us to a friend?',
       low: 'Not at all',
       high: 'Definitely',
+    },
+    loyalty: {
+      name: 'Loyalty card',
+      body: 'A digital stamp or points card for cafés, restaurants, barbers and salons. Customers open it on their phone with the QR at the counter — no app — and you add visits and give rewards at the counter. Tiers, a birthday gift and 6 ready templates included.',
+      link: 'Explore the loyalty card',
+      business: 'Sample Café',
+      program: 'Coffee card',
+      reward: 'Free coffee',
     },
   },
 } as const;
@@ -135,6 +153,26 @@ export default function HomeBeyondReviews({ locale }: { locale: 'tr' | 'en' }) {
       link: copy.survey.link,
       mock: <SurveyMock copy={copy} />,
     },
+    {
+      key: 'loyalty',
+      icon: Gift,
+      name: copy.loyalty.name,
+      body: copy.loyalty.body,
+      href: `${base}/features/loyalty`,
+      link: copy.loyalty.link,
+      mock: (
+        <LoyaltyCardFace
+          businessName={copy.loyalty.business}
+          programName={copy.loyalty.program}
+          kind="stamps"
+          balance={6}
+          rewards={[{ title: copy.loyalty.reward, cost: 9 }]}
+          memberName={locale === 'tr' ? 'Ayşe' : 'Alex'}
+          code="KX7M42"
+          locale={locale}
+        />
+      ),
+    },
   ];
 
   return (
@@ -142,7 +180,7 @@ export default function HomeBeyondReviews({ locale }: { locale: 'tr' | 'en' }) {
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
         <SectionHeader id="beyond-reviews-title" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
 
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-2">
+        <div className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-3">
           {cards.map((card) => {
             const Icon = card.icon;
             return (

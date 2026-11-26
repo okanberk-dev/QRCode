@@ -5,6 +5,7 @@ import { renderEyebrow, renderP, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { formatCompactStampInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
+import { normalizeReviewSource, reviewAlertSubject, reviewSourceCopy, type ReviewSource } from '../review-source';
 
 export interface LowRatingAlertParams {
   rating: number;
@@ -29,6 +30,9 @@ export interface LowRatingAlertParams {
   /** Gösterim saat dilimi (IANA). Default `Europe/Istanbul`. Sunucu process
    *  TZ'si UTC olduğu için bu parametre olmadan damga 3 saat geri düşerdi. */
   timeZone?: string | null;
+  /** Google review or Buaze QR feedback (default). Drives the subject and the
+   *  source chip — code-controlled, admin copy cannot hide it. */
+  source?: ReviewSource | null;
 }
 
 export async function renderLowRatingAlert(
@@ -38,19 +42,27 @@ export async function renderLowRatingAlert(
   const isTr = locale !== 'en';
   // Subject deliverability §21.23: emoji çıkarıldı (⚠ spam tetikçi).
   // "★" rating'in görsel sinyalini koruyor.
-  const subject = isTr
-    ? `Düşük puan · ${params.restaurantName}${params.branch ? ' · ' + params.branch : ''} · ${params.rating}★`
-    : `Low rating · ${params.restaurantName}${params.branch ? ' · ' + params.branch : ''} · ${params.rating}★`;
+  const source = normalizeReviewSource(params.source);
+  const sourceCopy = reviewSourceCopy(source, locale);
+  const subject = reviewAlertSubject({
+    source,
+    locale,
+    rating: params.rating,
+    restaurantName: params.restaurantName,
+    branch: params.branch,
+    low: true,
+  });
+  const where = source === 'google' ? (isTr ? "Google'da" : 'on Google') : isTr ? "Buaze QR formunuzda" : 'on your Buaze QR form';
   const preheader = isTr
-    ? `${params.customerName ?? 'Müşteri'} az önce ${params.rating} yıldız bıraktı. ${params.aiDraft ? 'AI yanıt taslağı hazır.' : 'Hızlı aksiyon önerileri içeride.'}`
-    : `${params.customerName ?? 'A customer'} just left ${params.rating} stars. ${params.aiDraft ? 'AI reply draft inside.' : 'Quick actions inside.'}`;
+    ? `${params.customerName ?? 'Bir müşteri'} ${where} ${params.rating} yıldız bıraktı. ${params.aiDraft ? 'AI yanıt taslağı hazır.' : 'Yanıtlamak için panele gidin.'}`
+    : `${params.customerName ?? 'A customer'} left ${params.rating} stars ${where}. ${params.aiDraft ? 'AI reply draft inside.' : 'Open the panel to reply.'}`;
 
   const customerName = params.customerName ? escapeHtml(params.customerName) : (isTr ? 'Anonim' : 'Anonymous');
   const customerInitial = (params.customerName || '?').trim().charAt(0).toUpperCase() || '?';
   const rating = Math.max(0, Math.min(5, Math.round(params.rating)));
   const customerSubtitle = params.customerSubtitle
     ? escapeHtml(params.customerSubtitle)
-    : (params.platformLabel ? escapeHtml(params.platformLabel) : '');
+    : escapeHtml(params.platformLabel || sourceCopy.detail);
 
   const reviewHref = escapeHtml(params.reviewUrl);
   const safeComment = params.comment ? escapeHtml(params.comment).replace(/\n/g, '<br>') : '';
@@ -161,7 +173,8 @@ export async function renderLowRatingAlert(
   // Quick actions — 3-col grid on desktop, stacked cards on phones.
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const localePath = isTr ? 'tr' : 'en';
-  const quickHrefs = [reviewHref, reviewHref, escapeHtml(`${baseAppUrl}/${localePath}/dashboard/feedbacks`)];
+  const inboxPath = source === 'google' ? 'dashboard/google-reviews' : 'dashboard/feedbacks';
+  const quickHrefs = [reviewHref, reviewHref, escapeHtml(`${baseAppUrl}/${localePath}/${inboxPath}`)];
   const quickCards = copy.quickActions.map((a, i) => `
     <td class="stack-col" valign="top" style="width:33.33%;padding:0 ${i === 0 ? '6px 0 0' : i === copy.quickActions.length - 1 ? '0 0 6px' : '6px'};">
       <a href="${quickHrefs[i]}" style="display:block;padding:16px;border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
@@ -178,7 +191,7 @@ export async function renderLowRatingAlert(
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
             <tr>
               <td valign="middle" style="font-family:${FONTS.label};font-size:11px;font-weight:500;line-height:1.45;color:${PULSE.pure};">
-                <span style="display:inline-block;width:6px;height:6px;background:${PULSE.warning};border-radius:50%;vertical-align:middle;margin-right:8px;"></span><span style="vertical-align:middle;">${copy.eyebrowAlert}</span>
+                <span style="display:inline-block;width:8px;height:8px;background:${sourceCopy.dot};border-radius:50%;vertical-align:middle;margin-right:8px;"></span><span style="vertical-align:middle;font-weight:600;">${escapeHtml(sourceCopy.name)}</span><span style="vertical-align:middle;color:${PULSE.n400};"> · ${copy.eyebrowAlert}</span>
               </td>
               <td align="right" valign="middle" style="padding-left:12px;white-space:nowrap;">
                 <span style="font-family:${FONTS.label};font-size:11px;color:${PULSE.n400};white-space:nowrap;">${timestamp}</span>
@@ -255,6 +268,6 @@ export async function renderLowRatingAlert(
     eyebrow: '',
     footer: { locale, unsubText: isTr ? 'Düşük puan uyarılarını ayarlamak için' : 'To adjust low-rating alerts' },
   });
-  const text = `${copyText.title} ${copyText.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${params.reviewUrl}`;
+  const text = `${sourceCopy.name} · ${sourceCopy.detail}\n\n${copyText.title} ${copyText.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${params.reviewUrl}`;
   return { subject, html, text };
 }

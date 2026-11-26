@@ -270,6 +270,8 @@ export async function POST(req: NextRequest) {
             locale: body.locale === 'en' ? 'en' : 'tr',
             // Damga yorumun bırakıldığı an olmalı — mail render anı değil.
             submittedAt: feedback.createdAt,
+            // QR formundan geldi: mail "Buaze yorumu geldi" der.
+            source: 'buaze',
           });
           if (!emailSent) {
             console.error('[FEEDBACK_POST] low-rating alert not delivered', {

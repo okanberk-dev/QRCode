@@ -103,6 +103,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
         { label: 'Pulse AI', href: `${base}/features/pulse-ai` },
         { label: isTr ? 'QR Menü' : 'QR Menu', href: `${base}/features/menu` },
         { label: isTr ? 'Anketler' : 'Surveys', href: `${base}/features/surveys` },
+        { label: isTr ? 'Sadakat kartı' : 'Loyalty card', href: `${base}/features/loyalty` },
         { label: isTr ? 'Denetim Merkezi' : 'Audit Center', href: `${base}/features/audit-center` },
         { label: isTr ? 'Analitik ve raporlar' : 'Analytics and reports', href: `${base}/features/analytics-reports` },
         { label: isTr ? 'Platform bağlantıları' : 'Platform links', href: `${base}/integrations` },

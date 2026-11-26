@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Compass,
   FileQuestion,
+  Gift,
   Globe,
   HelpCircle,
   Inbox,
@@ -267,6 +268,12 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
       label: isTr ? 'Anketler' : 'Surveys',
       sub: isTr ? 'QR ile açılan kısa anketler' : 'Short surveys opened by QR',
       icon: <ClipboardList size={16} />,
+    },
+    {
+      href: `${base}/features/loyalty`,
+      label: isTr ? 'Sadakat kartı' : 'Loyalty card',
+      sub: isTr ? 'Dijital damga ve puan kartı' : 'Digital stamp and points card',
+      icon: <Gift size={16} />,
     },
     {
       href: `${base}/features/audit-center`,

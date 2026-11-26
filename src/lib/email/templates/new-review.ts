@@ -5,6 +5,7 @@ import { renderButton, renderStatusPill, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
 import { formatClock, resolveDisplayTimeZone } from '@/lib/timezone';
+import { normalizeReviewSource, reviewAlertSubject, reviewSourceCopy, type ReviewSource } from '../review-source';
 
 export interface NewReviewParams {
   rating: number;
@@ -24,6 +25,8 @@ export interface NewReviewParams {
   /** Gösterim saat dilimi (IANA). Default `Europe/Istanbul` — sunucu TZ'si
    *  UTC olduğu için parametresiz format saati geri kaydırırdı. */
   timeZone?: string | null;
+  /** Google review or Buaze QR feedback (default) — subject + source chip. */
+  source?: ReviewSource | null;
 }
 
 export async function renderNewReview(
@@ -32,9 +35,16 @@ export async function renderNewReview(
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   // Subject deliverability §21.23: 🎉 emoji çıkarıldı.
-  const subject = isTr
-    ? `Yeni ${params.rating}★ yorum · ${params.customerName ?? 'Müşteri'}`
-    : `New ${params.rating}★ review · ${params.customerName ?? 'a customer'}`;
+  const source = normalizeReviewSource(params.source);
+  const sourceCopy = reviewSourceCopy(source, locale);
+  const subject = reviewAlertSubject({
+    source,
+    locale,
+    rating: params.rating,
+    restaurantName: params.restaurantName,
+    branch: params.branch,
+    low: false,
+  });
   const preheader = params.comment
     ? params.comment.slice(0, 90) + (params.comment.length > 90 ? '…' : '')
     : (isTr ? 'Bu yorumu Google\'da paylaşmak için iyi bir an.' : 'Perfect moment to share this on Google.');
@@ -45,7 +55,7 @@ export async function renderNewReview(
   const safeComment = params.comment ? escapeHtml(params.comment).replace(/\n/g, '<br>') : '';
 
   const subtitleParts = [
-    params.platform ? escapeHtml(params.platform) : '',
+    escapeHtml(sourceCopy.name),
     escapeHtml(params.restaurantName),
     params.branch ? escapeHtml(params.branch) : '',
     params.tableNumber ? `${isTr ? 'Masa' : 'Table'} ${escapeHtml(params.tableNumber)}` : '',
@@ -84,7 +94,8 @@ export async function renderNewReview(
   const submittedClock = params.submittedAt
     ? formatClock(params.submittedAt, locale, resolveDisplayTimeZone(params.timeZone))
     : '';
-  const pillText = submittedClock ? `${copy.eyebrow} · ${submittedClock}` : copy.eyebrow;
+  const pillLead = `${escapeHtml(sourceCopy.name)} · ${copy.eyebrow}`;
+  const pillText = submittedClock ? `${pillLead} · ${submittedClock}` : pillLead;
 
   // Star row — nowrap so a narrow card never splits it 3 + 2.
   const starsHtml = `<span style="font-family:${FONTS.body};font-size:18px;line-height:1;letter-spacing:2px;white-space:nowrap;color:${PULSE.warning};">${'★'.repeat(rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - rating)}</span></span>`;
@@ -101,7 +112,7 @@ export async function renderNewReview(
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
         <td class="bz-pad" style="padding:40px 40px 44px;">
-          ${renderStatusPill({ text: pillText, dotColor: PULSE.success, textColor: PULSE.success })}
+          ${renderStatusPill({ text: pillText, dotColor: source === 'google' ? sourceCopy.dot : PULSE.success, textColor: PULSE.success })}
           ${spacer(14)}
           <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:36px;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:${PULSE.graphite};margin:0;">
             ${copy.title}<br/>
@@ -153,9 +164,9 @@ export async function renderNewReview(
     subject: escapeHtml(subject),
     preheader: escapeHtml(preheader),
     content,
-    eyebrow: isTr ? 'Yeni yorum · Anında' : 'New review · Live',
+    eyebrow: sourceCopy.arrived,
     footer: { locale, unsubText: isTr ? 'Yeni yorum bildirimlerini kapatmak için' : 'To stop new-review alerts' },
   });
-  const text = `${copyText.title} ${copyText.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${copyText.primaryCta} ${params.reviewUrl}`;
+  const text = `${sourceCopy.name} · ${sourceCopy.detail}\n\n${copyText.title} ${copyText.titleSub}\n\n${customerName} · ${params.rating}★\n${safeComment ? '"' + (params.comment || '') + '"\n' : ''}\n${copyText.primaryCta} ${params.reviewUrl}`;
   return { subject, html, text };
 }

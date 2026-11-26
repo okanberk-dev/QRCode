@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
@@ -19,6 +19,7 @@ import {
   showcaseFailureFromError,
 } from '@/lib/google-review-showcase';
 import { clearBusinessApiNotProvisioned } from '@/lib/google-business-availability';
+import { notifyNewGoogleReviews } from '@/lib/google-review-alerts';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -96,6 +97,7 @@ export async function POST(
   if (parsed.data.action === 'refresh') {
     await enqueueGoogleReviewRefresh(id);
     const result = await refreshGoogleReviewCache(id);
+    if (result.ok && result.inserted > 0) after(() => notifyNewGoogleReviews(id).then(() => undefined));
     await writeAdminAuditLog({
       actorId: adminId,
       actorSource: 'admin',

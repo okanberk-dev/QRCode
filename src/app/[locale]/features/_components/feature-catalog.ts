@@ -1,6 +1,7 @@
 import {
   BarChart3,
   ClipboardCheck,
+  Gift,
   Link2,
   ListChecks,
   MessageSquareText,
@@ -27,6 +28,7 @@ export type FeatureId =
   | 'analytics-reports'
   | 'menu'
   | 'surveys'
+  | 'loyalty'
   | 'audit-center'
   | 'platform-links'
   | 'qr-generator';
@@ -143,6 +145,22 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
       en: 'Short surveys that open with a QR code, with a 0–10 recommend question and 8 templates.',
     },
     linkLabel: { tr: 'Anketleri inceleyin', en: 'Explore surveys' },
+  },
+  {
+    id: 'loyalty',
+    path: '/features/loyalty',
+    icon: Gift,
+    group: 'operations',
+    name: { tr: 'Sadakat kartı', en: 'Loyalty card' },
+    summary: {
+      tr: 'Kafe, restoran, berber ve salonlar için dijital damga ya da puan kartı. Müşteri kasadaki QR ile kartını telefonunda açar; siz panelin kasa ekranından ziyaret ekler, ödülü verirsiniz. Seviyeler, doğum günü hediyesi, bakiye süresi ve 6 hazır şablon vardır.',
+      en: 'A digital stamp or points card for cafés, restaurants, barbers and salons. Customers open it on their phone with the QR at the counter; you add visits and give rewards from the counter screen in the panel. Tiers, a birthday gift, balance expiry and 6 ready templates included.',
+    },
+    short: {
+      tr: 'Uygulamasız dijital damga ya da puan kartı; kasada okutup ödülü verirsiniz.',
+      en: 'An app-free digital stamp or points card you scan and reward at the counter.',
+    },
+    linkLabel: { tr: 'Sadakat kartını inceleyin', en: 'Explore the loyalty card' },
   },
   {
     id: 'audit-center',

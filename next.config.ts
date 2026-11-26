@@ -456,6 +456,15 @@ const nextConfig: NextConfig = {
           { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
         ],
       },
+      {
+        // Loyalty join + card pages (CLAUDE.md §60). The card link is the
+        // card's secret: never indexed, never sent on as a referrer.
+        source: '/l/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
       // Long-lived cache for static assets that are content-hashed at the
       // path level (favicon variants, embed wrapper script, manifest).
       // Vercel CDN already serves Next's `/_next/static/*` with immutable

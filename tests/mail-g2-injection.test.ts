@@ -76,9 +76,9 @@ describe('g2 mails keep subject and text part free of HTML entities', () => {
   it('low-rating-alert / new-review: subject is the raw string', async () => {
     const low = await renderLowRatingAlert({ rating: 2, restaurantName: 'Ali & Veli', reviewUrl: REVIEW_URL }, 'tr');
     assert.ok(low.subject.includes('Ali & Veli'));
-    assert.ok(low.html.includes('<title>Düşük puan · Ali &amp; Veli · 2★</title>'));
-    const rev = await renderNewReview({ rating: 5, restaurantName: 'X', customerName: "Ayşe O'Neil", reviewUrl: REVIEW_URL }, 'en');
-    assert.ok(rev.subject.includes("Ayşe O'Neil"));
+    assert.ok(low.html.includes('<title>Buaze yorumu geldi · Düşük puan 2★ · Ali &amp; Veli</title>'));
+    const rev = await renderNewReview({ rating: 5, restaurantName: "O'Neil & Co", customerName: "Ayşe O'Neil", reviewUrl: REVIEW_URL }, 'en');
+    assert.ok(rev.subject.includes("O'Neil & Co"));
   });
 });
 

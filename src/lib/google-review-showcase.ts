@@ -30,6 +30,7 @@ import {
 } from '@/lib/google-business';
 import { googleConnectionState, isGoogleTenantAllowed } from '@/lib/gbp-access';
 import { collectAllReviewPages, persistReviewSync } from '@/lib/google-review-sync';
+import { notifyNewGoogleReviews } from '@/lib/google-review-alerts';
 
 // ─── types ───────────────────────────────────────────────────────────────
 
@@ -240,6 +241,19 @@ export function isQuotaPressure(code: ShowcaseFailureCode): boolean {
   return code === 'GOOGLE_RATE_LIMITED' || code === 'GOOGLE_FORBIDDEN';
 }
 
+/**
+ * Newest page first, then the stored snapshot's reviews that page did not
+ * contain; at most the widget limit. Pure (tested).
+ */
+export function mergeShowcase(
+  fresh: PublicGoogleReview[],
+  stored: PublicGoogleReview[],
+  limit = 100,
+): PublicGoogleReview[] {
+  const seen = new Set(fresh.map((r) => r.reviewId));
+  return [...fresh, ...stored.filter((r) => !seen.has(r.reviewId))].slice(0, limit);
+}
+
 // ─── database-backed ─────────────────────────────────────────────────────
 
 /** The public widget shows at most the newest 100 (§53). */
@@ -247,8 +261,17 @@ const SHOWCASE_LIMIT = 100;
 const LEASE_MS = 5 * 60 * 1000;
 
 export type RefreshResult =
-  | { ok: true; reviews: number }
+  | { ok: true; reviews: number; inserted: number; complete: boolean }
   | { ok: false; code: ShowcaseFailureCode; skipped?: 'busy' | 'missing' };
+
+/**
+ * `full` (queue, manual sync, admin): every page, may delete gone rows.
+ * `recent` (owner opens the Google Reviews page, §54): only the newest page
+ * — new reviews and recent reply changes — unless that page is already the
+ * whole list, in which case it is a full pass. A partial pass never deletes,
+ * never shortens the widget snapshot and keeps the queue's schedule.
+ */
+export type RefreshMode = 'full' | 'recent';
 
 async function recordFailure(
   restaurantId: string,
@@ -285,7 +308,9 @@ export async function enqueueGoogleReviewRefresh(restaurantId: string, now: Date
 export async function refreshGoogleReviewCache(
   restaurantId: string,
   now: Date = new Date(),
+  opts: { mode?: RefreshMode } = {},
 ): Promise<RefreshResult> {
+  const mode: RefreshMode = opts.mode ?? 'full';
   const leaseCutoff = new Date(now.getTime() - LEASE_MS);
   const lease = await prisma.googleReviewCache.updateMany({
     where: {
@@ -303,8 +328,14 @@ export async function refreshGoogleReviewCache(
   }
 
   const [cacheRow, restaurant] = await prisma.$transaction([
-    prisma.googleReviewCache.findUnique({ where: { restaurantId }, select: { failureCount: true } }),
-    prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { userId: true } }),
+    prisma.googleReviewCache.findUnique({
+      where: { restaurantId },
+      select: { failureCount: true, reviews: true },
+    }),
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { userId: true, currentGoogleRating: true },
+    }),
   ]);
   const failures = cacheRow?.failureCount ?? 0;
   if (!restaurant?.userId) return recordFailure(restaurantId, failures, 'GOOGLE_NOT_CONNECTED', now);
@@ -326,13 +357,24 @@ export async function refreshGoogleReviewCache(
   try {
     // §54 — every page (nextPageToken), not only the newest 100: the reply
     // inbox and its statistics read `google_reviews`.
-    const collected = await collectAllReviewPages((pageToken) =>
-      listGoogleReviews(integration, selection, pageToken),
+    const collected = await collectAllReviewPages(
+      (pageToken) => listGoogleReviews(integration, selection, pageToken),
+      mode === 'recent' ? { maxPages: 1 } : {},
     );
-    await persistReviewSync(restaurantId, collected.reviews, { complete: collected.complete, seenAt: now });
+    const persisted = await persistReviewSync(restaurantId, collected.reviews, {
+      complete: collected.complete,
+      seenAt: now,
+    });
 
-    // The widget keeps showing only the newest 100 (normalized snapshot).
-    const reviews = normalizeGoogleReviews(collected.reviews.slice(0, SHOWCASE_LIMIT));
+    // The widget keeps showing only the newest 100 (normalized snapshot). A
+    // partial "recent" pass merges its page into the stored snapshot instead
+    // of cutting it down to one page.
+    const fresh = normalizeGoogleReviews(collected.reviews.slice(0, SHOWCASE_LIMIT));
+    const reviews =
+      mode === 'recent' && !collected.complete
+        ? mergeShowcase(fresh, parseStoredReviews(cacheRow?.reviews ?? null))
+        : fresh;
+    const fullPass = mode === 'full' || collected.complete;
     await prisma.googleReviewCache.update({
       where: { restaurantId },
       data: {
@@ -347,15 +389,30 @@ export async function refreshGoogleReviewCache(
         fetchedAt: now,
         failureCount: 0,
         lastErrorCode: null,
-        nextAttemptAt: new Date(now.getTime() + refreshIntervalMs(restaurantId)),
+        // A page-entry refresh does not move the queue's full sync.
+        ...(fullPass ? { nextAttemptAt: new Date(now.getTime() + refreshIntervalMs(restaurantId)) } : {}),
       },
     });
+    if (
+      typeof collected.averageRating === 'number' &&
+      collected.averageRating !== restaurant.currentGoogleRating
+    ) {
+      await prisma.restaurant.update({
+        where: { id: restaurantId },
+        data: { currentGoogleRating: collected.averageRating },
+      });
+    }
     if (collected.error) {
       // Kept what was read; the rest comes with the next attempt.
       const { code, retryAfterSeconds } = showcaseFailureFromError(collected.error);
       return recordFailure(restaurantId, 0, code, now, retryAfterSeconds);
     }
-    return { ok: true, reviews: collected.reviews.length };
+    return {
+      ok: true,
+      reviews: collected.reviews.length,
+      inserted: persisted.inserted,
+      complete: collected.complete,
+    };
   } catch (err) {
     const { code, retryAfterSeconds } = showcaseFailureFromError(err);
     return recordFailure(restaurantId, failures, code, now, retryAfterSeconds);
@@ -397,6 +454,7 @@ export interface RefreshQueueSummary {
   failed: number;
   skipped: number;
   stoppedForQuota: boolean;
+  alertsSent: number;
 }
 
 /**
@@ -426,6 +484,7 @@ export async function runGoogleReviewRefreshQueue(
     failed: 0,
     skipped: 0,
     stoppedForQuota: false,
+    alertsSent: 0,
   };
 
   for (let i = 0; i < due.length; i++) {
@@ -434,6 +493,15 @@ export async function runGoogleReviewRefreshQueue(
     const result = await refreshGoogleReviewCache(due[i].restaurantId, clock());
     if (result.ok) {
       summary.refreshed++;
+      // New reviews → owner alert mail right away (§54), not an hour later.
+      if (result.inserted > 0) {
+        try {
+          const alerts = await notifyNewGoogleReviews(due[i].restaurantId);
+          summary.alertsSent += alerts.sent;
+        } catch {
+          /* the hourly alert cron retries unhandled rows */
+        }
+      }
     } else if (result.skipped) {
       summary.skipped++;
     } else {

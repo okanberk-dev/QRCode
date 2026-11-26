@@ -88,6 +88,10 @@ export interface NotificationParams {
   feedbackId?: string;
   locale?: 'tr' | 'en';
   platform?: string | null;
+  /** Where the review was left: the business's Buaze QR form (default) or
+   *  Google. Decides the subject ("Google yorumu geldi" / "Buaze yorumu
+   *  geldi"), the source chip and which inbox the link opens. */
+  source?: 'buaze' | 'google';
   /** Yorumun bırakıldığı an (`Feedback.createdAt`). Mail damgası bunu
    *  kullanır; verilmezse render anı damgalanır (cron/retry'da yanıltıcı). */
   submittedAt?: Date | string | null;
@@ -101,8 +105,9 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
 
   const restaurantName = data.restaurantName || 'Restoran';
   const locale = data.locale ?? 'tr';
+  const source = data.source === 'google' ? 'google' : 'buaze';
   const reviewUrl = `${appUrl()}/${locale}/auth/login?redirect=${encodeURIComponent(
-    data.platform === 'google'
+    source === 'google'
       ? `/${locale}/dashboard/google-reviews`
       : `/${locale}/dashboard/feedbacks` + (data.feedbackId ? `?highlight=${data.feedbackId}` : '')
   )}`;
@@ -121,6 +126,7 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
       reviewUrl,
       submittedAt: data.submittedAt ?? null,
       timeZone: data.timeZone ?? null,
+      source,
     }, locale);
   } else {
     rendered = await renderLowRatingAlert({
@@ -133,6 +139,7 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
       reviewUrl,
       submittedAt: data.submittedAt ?? null,
       timeZone: data.timeZone ?? null,
+      source,
     }, locale);
   }
 
@@ -143,7 +150,7 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
-    logMetadata: { rating: data.rating, feedbackId: data.feedbackId },
+    logMetadata: { rating: data.rating, feedbackId: data.feedbackId, source },
   });
   if (!ok) {
     // Phase 8: critical mail. Low-rating alert that doesn't reach the

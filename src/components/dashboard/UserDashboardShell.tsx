@@ -5,7 +5,7 @@ import Link from '@/components/navigation/IntentLink';
 import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, Gift, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -147,6 +147,7 @@ function useTopBar(locale: Locale, pathname: string | null, section?: string | n
   if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'PANEL / QR KODLARI' : 'PANEL / QR CODES', title: isTr ? 'QR kodları' : 'QR codes' };
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/surveys')) return { breadcrumb: isTr ? 'ARAÇLAR / ANKETLER' : 'TOOLS / SURVEYS', title: isTr ? 'Anketler' : 'Surveys' };
+  if (rest.startsWith('/loyalty')) return { breadcrumb: isTr ? 'ARAÇLAR / SADAKAT KARTI' : 'TOOLS / LOYALTY CARD', title: isTr ? 'Sadakat kartı' : 'Loyalty card' };
   if (rest.startsWith('/audits')) return { breadcrumb: isTr ? 'ARAÇLAR / DENETİM MERKEZİ' : 'TOOLS / AUDIT CENTER', title: isTr ? 'Denetim Merkezi' : 'Audit Center' };
   if (MENU_BUILDER_REST_RE.test(rest)) {
     const isAnalytics = /\/menu\/analytics(\/|$)/.test(rest);
@@ -533,6 +534,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       `${base}/customers`,
       `${base}/surveys`,
       `${base}/audits`,
+      `${base}/loyalty`,
       `${base}/qr`,
       `${base}/menu`,
       `${base}/restaurants`,
@@ -643,6 +645,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       // komşusu (her ikisi de structured form-based veri toplama; audit
       // internal team-side, survey customer-side).
       audits: isTr ? 'Denetim Merkezi' : 'Audit Center',
+      // CLAUDE.md §60 — stamp / points card for restaurants, cafés, barbers.
+      loyalty: isTr ? 'Sadakat kartı' : 'Loyalty card',
       groupSetup: isTr ? 'Yapılandırma' : 'Setup',
       groupInsight: isTr ? 'İçgörü' : 'Insight',
       groupInfo: isTr ? 'Bilgi' : 'Info',
@@ -669,6 +673,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
     ...(!isClinicMode
       ? [{ href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu }]
+      : []),
+    ...(!isClinicMode
+      ? [{ href: `/${locale}/dashboard/loyalty`, icon: Gift, label: copy.loyalty }]
       : []),
     ...(showSurveys
       ? [{ href: `/${locale}/dashboard/surveys`, icon: ClipboardList, label: copy.surveys }]
@@ -1635,6 +1642,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/menu`, label: copy.menu, keywords: ['menü', 'menu', 'ürün', 'item'] },
           { href: `/${locale}/dashboard/platforms`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
           { href: `/${locale}/dashboard/customers`, label: copy.customers, keywords: ['müşteri', 'customer', 'crm'] },
+          ...(!isClinicMode
+            ? [{ href: `/${locale}/dashboard/loyalty`, label: copy.loyalty, keywords: ['sadakat', 'damga', 'puan', 'kart', 'ödül', 'loyalty', 'stamp', 'points', 'reward', 'kasa'] }]
+            : []),
           // Stage 98 — Surveys command palette (CLAUDE.md §42).
           ...(showSurveys
             ? [{ href: `/${locale}/dashboard/surveys`, label: copy.surveys, keywords: ['anket', 'survey', 'nps', 'soru', 'question', 'feedback'] }]

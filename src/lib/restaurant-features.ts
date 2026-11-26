@@ -7,6 +7,7 @@ export const RESTAURANT_FEATURE_SELECT = {
   aiAnalyticsEnabled: true,
   externalPlatformsEnabled: true,
   surveysEnabled: true,
+  loyaltyEnabled: true,
   updatedAt: true,
 } as const;
 
@@ -20,6 +21,8 @@ export const RESTAURANT_FEATURE_KEYS = [
   // Admin master switch for the owner Surveys module (2026-10 owner↔admin
   // link). Default true — existing owners keep access.
   'surveysEnabled',
+  // Loyalty card module (CLAUDE.md §60). Default true.
+  'loyaltyEnabled',
 ] as const;
 
 export type RestaurantFeatureKey = (typeof RESTAURANT_FEATURE_KEYS)[number];

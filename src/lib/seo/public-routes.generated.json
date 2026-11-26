@@ -10,6 +10,7 @@
   "features",
   "features/analytics-reports",
   "features/audit-center",
+  "features/loyalty",
   "features/menu",
   "features/pulse-ai",
   "features/review-management",
