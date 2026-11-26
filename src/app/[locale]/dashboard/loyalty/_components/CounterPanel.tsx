@@ -8,6 +8,8 @@ import { AlertBanner, Field, Modal } from '@/components/ui';
 import { formatMemberCode, normalizePhone } from '@/lib/loyalty';
 import MemberActions from './MemberActions';
 import ScanDialog from './ScanDialog';
+import SoundToggle from '@/components/loyalty/SoundToggle';
+import { unlockAudio } from '@/lib/loyalty-sound';
 import NfcDialog from './NfcDialog';
 import { webNfcSupported } from '@/lib/web-nfc';
 import {
@@ -190,7 +192,15 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
             <button type="submit" className="bz-btn-primary min-h-[44px] flex-1 sm:flex-none" disabled={searching || !query.trim()}>
               {searching ? <Loader2 size={15} className="mx-auto animate-spin" /> : tr ? 'Bul' : 'Find'}
             </button>
-            <button type="button" className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5" onClick={() => setScanOpen(true)}>
+            <button
+              type="button"
+              className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5"
+              onClick={() => {
+                // Inside the tap, so the "read" sound may play later.
+                unlockAudio();
+                setScanOpen(true);
+              }}
+            >
               <Camera size={15} /> {tr ? 'Okut' : 'Scan'}
             </button>
             {nfcReady && (
@@ -227,8 +237,8 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
 
         {results && results.length > 1 && !selected && (
           <ul className="mt-4 divide-y divide-[#F0F0F0] rounded-xl border border-[#EDEDED]">
-            {results.map((m) => (
-              <li key={m.id}>
+            {results.map((m, i) => (
+              <li key={m.id} className="bzl-rise" style={{ animationDelay: `${Math.min(i, 6) * 45}ms` }}>
                 <button type="button" onClick={() => pick(m)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#FAFAFA]">
                   <span className="min-w-0">
                     <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz üye' : 'Unnamed')}</span>
@@ -244,7 +254,7 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
         )}
 
         {selected ? (
-          <div className="mt-5 border-t border-[#EDEDED] pt-5">
+          <div key={selected.id} className="bzl-rise mt-5 border-t border-[#EDEDED] pt-5">
             <MemberActions
               locale={locale}
               restaurantId={restaurantId}
@@ -267,7 +277,10 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
       </div>
 
       <aside className="bz-card p-4">
-        <p className="text-[13px] font-semibold text-[#0A0A0A]">{tr ? 'Bu oturumda' : 'This session'}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[13px] font-semibold text-[#0A0A0A]">{tr ? 'Bu oturumda' : 'This session'}</p>
+          <SoundToggle locale={locale} variant="panel" />
+        </div>
         {recent.length === 0 ? (
           <p className="mt-2 text-[12.5px] text-[#737373]">{tr ? 'İşlem yaptığınız kartlar burada görünür.' : 'Cards you serve show up here.'}</p>
         ) : (

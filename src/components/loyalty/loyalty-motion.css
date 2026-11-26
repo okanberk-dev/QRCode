@@ -1,7 +1,11 @@
 /*
- * Motion of the customer's loyalty pages (/l, CLAUDE.md §61). Segment-scoped
- * (§40.11): loaded only by the /l root layout. Everything turns off under
- * prefers-reduced-motion (the global blanket in globals.css also applies).
+ * Motion of the loyalty card (CLAUDE.md §60, §61): the customer's pages
+ * (/l), the counter screen in the panel, the card scanner and the staff
+ * mode of the card page. Loaded by the /l root layout, MemberActions and
+ * ScanDialog, so only the loyalty pages download it (§40.11) — not the
+ * marketing pages that show a static card. Only custom classes here, no
+ * Tailwind utilities. Everything turns off under prefers-reduced-motion
+ * (the global blanket in globals.css also applies).
  */
 @keyframes bzl-ripple {
   from { transform: scale(0.55); opacity: 0.6; }
@@ -49,6 +53,43 @@
 }
 @keyframes bzl-fade { from { opacity: 0; } to { opacity: 1; } }
 
+/* Scanner, counter and staff mode. */
+@keyframes bzl-scan-sweep {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+@keyframes bzl-corners {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.955); opacity: 0.8; }
+}
+@keyframes bzl-lock {
+  0% { transform: scale(1); }
+  65% { transform: scale(0.8); }
+  100% { transform: scale(0.84); }
+}
+@keyframes bzl-flash {
+  0% { opacity: 0; }
+  18% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+@keyframes bzl-draw {
+  from { stroke-dashoffset: 30; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes bzl-bump {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.035); }
+  62% { transform: scale(0.992); }
+  100% { transform: scale(1); }
+}
+@keyframes bzl-ring {
+  from { transform: scale(0.96); opacity: 0.85; }
+  to { transform: scale(1.14); opacity: 0; }
+}
+@keyframes bzl-leave {
+  to { opacity: 0; transform: scale(1.03); visibility: hidden; }
+}
+
 .bzl-ripple { animation: bzl-ripple 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
 .bzl-pop { animation: bzl-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 .bzl-rise { animation: bzl-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
@@ -60,6 +101,15 @@
 .bzl-confetti { animation: bzl-confetti 1.3s cubic-bezier(0.15, 0.7, 0.3, 1) forwards; }
 .bzl-toast { animation: bzl-toast 3.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 .bzl-fade { animation: bzl-fade 0.5s ease both; }
+.bzl-scan-sweep { animation: bzl-scan-sweep 1.9s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+.bzl-corners { animation: bzl-corners 1.9s ease-in-out infinite; }
+.bzl-lock { animation: bzl-lock 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards; }
+.bzl-flash { animation: bzl-flash 0.6s ease-out forwards; }
+.bzl-draw { stroke-dasharray: 30; animation: bzl-draw 0.45s 0.12s cubic-bezier(0.65, 0, 0.35, 1) both; }
+.bzl-bump { animation: bzl-bump 0.55s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.bzl-ring { animation: bzl-ring 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+/* Staff mode arrival: plays once, then fades out on its own. */
+.bzl-staff-arrival { animation: bzl-leave 0.42s 1.05s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
 
 /* Arrival screen: collapses into the point the visitor tapped. */
 .bzl-splash {
@@ -74,8 +124,10 @@
 .bzl-tap { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bzl-splash { display: none !important; }
-  .bzl-ripple, .bzl-pop, .bzl-rise, .bzl-aurora, .bzl-breathe, .bzl-stamp-in, .bzl-float, .bzl-sheen, .bzl-confetti, .bzl-toast, .bzl-fade {
+  .bzl-splash, .bzl-staff-arrival { display: none !important; }
+  .bzl-ripple, .bzl-pop, .bzl-rise, .bzl-aurora, .bzl-breathe, .bzl-stamp-in, .bzl-float, .bzl-sheen, .bzl-confetti, .bzl-toast, .bzl-fade,
+  .bzl-scan-sweep, .bzl-corners, .bzl-lock, .bzl-flash, .bzl-draw, .bzl-bump, .bzl-ring {
     animation: none !important;
   }
+  .bzl-scan-sweep, .bzl-ring, .bzl-flash { display: none !important; }
 }

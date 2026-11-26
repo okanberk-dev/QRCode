@@ -4,6 +4,12 @@
 // the card is the card link itself, so staff can scan it and the customer
 // can reopen it. `?via=qr|nfc` (a scan at the counter) shows the arrival
 // screen; the card can be added to the home screen as a small app.
+//
+// Staff mode: a panel user with access to this business (owner, team,
+// admin) who opens the link — usually by scanning the customer's QR with
+// the phone's own camera — gets the counter screen for this customer
+// (src/lib/loyalty-staff.ts). `?view=customer` shows them the customer's
+// card instead, without saving anything on their phone.
 import { cache } from 'react';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -18,20 +24,39 @@ import LoyaltyPortalFrame from '@/components/loyalty/LoyaltyPortalFrame';
 import PortalRewardsInfo from '@/components/loyalty/PortalRewardsInfo';
 import ArrivalSplash from '@/components/loyalty/ArrivalSplash';
 import SoundToggle from '@/components/loyalty/SoundToggle';
+import { loadStaffCard, pickCardView, staffPanelHref } from '@/lib/loyalty-staff';
 import { pickPublicLocale } from '../../../loyalty-public';
 import CardView from './CardView';
+import StaffCounterView from './StaffCounterLazy';
 
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string; token: string }>;
-  searchParams: Promise<{ lang?: string; new?: string; via?: string }>;
+  searchParams: Promise<{ lang?: string; new?: string; via?: string; view?: string; from?: string }>;
 }
 
 const getCard = cache((token: string) => loadPublicLoyaltyCard(token));
+/** Null for customers (no panel cookie: no work). */
+const getStaff = cache((token: string, slug: string) => loadStaffCard(token, slug));
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+async function staffFor(params: PageProps['params'], searchParams: PageProps['searchParams']) {
+  const [{ slug, token }, sp] = await Promise.all([params, searchParams]);
+  if (sp.view === 'customer') return null;
+  return getStaff(token, slug);
+}
+
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { slug, token } = await params;
+  const staff = await staffFor(params, searchParams);
+  if (staff) {
+    return {
+      title: `Kasa modu — ${staff.restaurantName}`,
+      robots: { index: false, follow: false },
+      referrer: 'no-referrer',
+      formatDetection: { telephone: false },
+    };
+  }
   const card = await getCard(token);
   const name = card && card.program.slug === slug ? card.program.restaurant.name : null;
   return {
@@ -49,8 +74,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export async function generateViewport({ params }: PageProps): Promise<Viewport> {
+export async function generateViewport({ params, searchParams }: PageProps): Promise<Viewport> {
   const { token } = await params;
+  if (await staffFor(params, searchParams)) return { ...ROOT_VIEWPORT, themeColor: '#0A0A0A' };
   const card = await getCard(token);
   if (!card) return ROOT_VIEWPORT;
   const pal = portalPalette(readLoyaltyPortal(card.program.portal).theme, card.program.accentColor);
@@ -60,6 +86,25 @@ export async function generateViewport({ params }: PageProps): Promise<Viewport>
 export default async function LoyaltyCardPage({ params, searchParams }: PageProps) {
   const { slug, token } = await params;
   const sp = await searchParams;
+  const staff = await getStaff(token, slug);
+  if (staff && pickCardView({ staffAccess: true, viewParam: sp.view }) === 'staff') {
+    const staffLocale = pickPublicLocale(sp.lang, (await headers()).get('accept-language'));
+    return (
+      <StaffCounterView
+        locale={staffLocale}
+        restaurantId={staff.restaurantId}
+        restaurantName={staff.restaurantName}
+        moduleEnabled={staff.moduleEnabled}
+        panelHref={staffPanelHref(staff, staffLocale)}
+        customerHref={`/l/${slug}/k/${token}?view=customer${staffLocale === 'en' ? '&lang=en' : ''}`}
+        program={staff.program}
+        member={staff.member}
+        access={staff.access}
+        arrival={sp.from !== 'customer'}
+      />
+    );
+  }
+
   const card = await getCard(token);
   if (!card || card.program.slug !== slug) notFound();
   const account = await getCustomerFromCookies();
@@ -115,6 +160,7 @@ export default async function LoyaltyCardPage({ params, searchParams }: PageProp
           qrDataUrl={qrDataUrl}
           justJoined={sp.new === '1'}
           viewer={{ signedIn: Boolean(account), owns: Boolean(account && card.member.customerAccountId === account.id) }}
+          staffHref={staff ? `/l/${slug}/k/${token}?from=customer${locale === 'en' ? '&lang=en' : ''}` : null}
         />
       </LoyaltyPortalFrame>
     </>

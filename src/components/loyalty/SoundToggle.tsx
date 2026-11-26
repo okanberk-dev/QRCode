@@ -1,13 +1,29 @@
 'use client';
 
-// Sound on/off for the customer's loyalty pages (CLAUDE.md §61). Also
-// unlocks audio on the first tap anywhere on the page, so a stamp added at
-// the counter later can play its sound.
+// Sound on/off for the loyalty pages (CLAUDE.md §61): the customer's card,
+// the staff mode of the card and the panel counter. Also unlocks audio on
+// the first tap anywhere on the page, so a stamp added later can play its
+// sound. One setting per device (`buaze:sound`).
 import { useEffect, useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { isSoundOn, playSound, setSoundOn, soundSupported, unlockAudio } from '@/lib/loyalty-sound';
 
-export default function SoundToggle({ locale }: { locale: 'tr' | 'en' }) {
+const VARIANTS = {
+  /** Over a photo or brand colour (customer panel header). */
+  overlay: 'h-9 w-9 rounded-full bg-black/35 text-white backdrop-blur-md hover:bg-black/50',
+  /** On a dark bar (staff mode header). */
+  dark: 'h-9 w-9 rounded-full bg-white/10 text-white hover:bg-white/20',
+  /** On a white panel card. */
+  panel: 'h-8 w-8 rounded-lg border border-[#EDEDED] bg-white text-[#525252] hover:bg-[#FAFAFA]',
+} as const;
+
+export default function SoundToggle({
+  locale,
+  variant = 'overlay',
+}: {
+  locale: 'tr' | 'en';
+  variant?: keyof typeof VARIANTS;
+}) {
   const tr = locale === 'tr';
   const [ready, setReady] = useState(false);
   const [on, setOn] = useState(true);
@@ -39,10 +55,11 @@ export default function SoundToggle({ locale }: { locale: 'tr' | 'en' }) {
         }
       }}
       aria-pressed={on}
-      aria-label={on ? (tr ? 'Sesi kapat' : 'Turn sound off') : tr ? 'Sesi aç' : 'Turn sound on'}
-      className="bzl-tap inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-md transition hover:bg-black/50"
+      aria-label={tr ? 'Ses' : 'Sound'}
+      title={on ? (tr ? 'Ses açık' : 'Sound on') : tr ? 'Ses kapalı' : 'Sound off'}
+      className={`bzl-tap inline-flex shrink-0 items-center justify-center transition ${VARIANTS[variant]}`}
     >
-      {on ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
+      {on ? <Volume2 size={variant === 'panel' ? 15 : 16} aria-hidden="true" /> : <VolumeX size={variant === 'panel' ? 15 : 16} aria-hidden="true" />}
     </button>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import './loyalty.css';
+import '@/components/loyalty/loyalty-motion.css';
 import RootHtml from '@/components/root/RootHtml';
 import { buildBaseMetadata, ROOT_VIEWPORT } from '@/lib/root-metadata';
 

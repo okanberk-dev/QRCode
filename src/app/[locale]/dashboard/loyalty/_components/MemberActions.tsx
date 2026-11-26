@@ -2,10 +2,18 @@
 
 // One customer's card at the counter (§60): add a visit, give a reward or
 // the birthday gift, correct the balance (managers), show the card QR.
-import { useEffect, useState } from 'react';
+// Used by the panel counter, the members tab and the staff mode of the
+// customer's card page (§61). Each success lands with motion (new stamps
+// stamp in, a ring for a visit, confetti for a reward), a sound when the
+// device's sound is on (`buaze:sound`, unlocked by a tap) and a short
+// vibration on phones.
+import { useEffect, useRef, useState } from 'react';
 import { Cake, Gift, Loader2, Minus, Nfc, Plus, QrCode } from 'lucide-react';
 import { AlertBanner, Badge, Modal } from '@/components/ui';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
+import ConfettiBurst from '@/components/loyalty/ConfettiBurst';
+import '@/components/loyalty/loyalty-motion.css';
+import { haptic, playSound } from '@/lib/loyalty-sound';
 import { webNfcSupported } from '@/lib/web-nfc';
 import NfcDialog from './NfcDialog';
 import {
@@ -81,6 +89,9 @@ export default function MemberActions({
     }
   };
   const [confirmReward, setConfirmReward] = useState<{ id: string; title: string; cost: number } | null>(null);
+  /** The last successful action, replayed as motion on the card. */
+  const [burst, setBurst] = useState<{ id: number; from: number | null; earned: boolean; reward: boolean } | null>(null);
+  const burstId = useRef(0);
   const [adjust, setAdjust] = useState({ delta: '', note: '' });
 
   const kind = program.kind;
@@ -99,6 +110,7 @@ export default function MemberActions({
     setNotice(null);
     setCount(1);
     setSpend('');
+    setBurst(null);
   }, [member.id]);
 
   useEffect(() => {
@@ -116,12 +128,24 @@ export default function MemberActions({
     setBusy(key);
     setError(null);
     setNotice(null);
+    const before = member.balance;
     try {
       const r = await loyaltyFetch<{ member: MemberDto; amount?: number; rewardTitle?: string }>(`${api}/actions`, {
         method: 'POST',
         body: JSON.stringify(body),
       });
       onChange(r.member);
+      const reward = key === 'redeem' || key === 'birthday';
+      burstId.current += 1;
+      setBurst({
+        id: burstId.current,
+        // New stamps land one by one; the points figure pops.
+        from: key === 'earn' ? (kind === 'stamps' ? before : 0) : null,
+        earned: key === 'earn',
+        reward,
+      });
+      playSound(reward ? 'reward' : key === 'earn' ? 'stamp' : 'tap');
+      haptic(reward ? [18, 50, 28] : 16);
       setCooldown(false);
       setNotice(success(r));
       setSpend('');
@@ -187,18 +211,29 @@ export default function MemberActions({
       </div>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,320px)_1fr]">
-        <LoyaltyCardFace
-          businessName={restaurantName}
-          programName={program.name}
-          kind={kind}
-          balance={member.balance}
-          rewards={program.rewards}
-          accentColor={program.accentColor}
-          memberName={member.name?.split(/\s+/)[0] ?? null}
-          code={member.code}
-          tierName={tier?.name ?? null}
-          locale={locale}
-        />
+        <div key={burst?.id ?? 'still'} className={`relative self-start ${burst ? 'bzl-bump' : ''}`}>
+          {burst?.earned && (
+            <span
+              aria-hidden="true"
+              className="bzl-ring pointer-events-none absolute inset-0 rounded-[20px] border-[3px]"
+              style={{ borderColor: '#C6F24E' }}
+            />
+          )}
+          <LoyaltyCardFace
+            businessName={restaurantName}
+            programName={program.name}
+            kind={kind}
+            balance={member.balance}
+            rewards={program.rewards}
+            accentColor={program.accentColor}
+            memberName={member.name?.split(/\s+/)[0] ?? null}
+            code={member.code}
+            tierName={tier?.name ?? null}
+            locale={locale}
+            highlightFrom={burst?.from ?? null}
+          />
+          {burst?.reward && <ConfettiBurst className="left-1/2 top-1/2 z-10" count={28} reach={70} fall={90} />}
+        </div>
 
         <div className="space-y-3">
           {paused && (
@@ -313,13 +348,15 @@ export default function MemberActions({
               {error}
             </AlertBanner>
           )}
-          {notice && (
-            <div aria-live="polite">
-              <AlertBanner kind="success" onDismiss={() => setNotice(null)}>
-                {notice}
-              </AlertBanner>
-            </div>
-          )}
+          <div aria-live="polite">
+            {notice && (
+              <div key={burst?.id ?? 'notice'} className="bzl-rise">
+                <AlertBanner kind="success" onDismiss={() => setNotice(null)}>
+                  {notice}
+                </AlertBanner>
+              </div>
+            )}
+          </div>
 
           {access.manage && (
             <details className="rounded-xl border border-[#EDEDED] p-3">

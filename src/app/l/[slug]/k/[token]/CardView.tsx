@@ -9,8 +9,9 @@
 // became ready gets confetti. The QR opens full screen for the counter.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Cake, Check, Crown, Download, Gift, Loader2, Maximize2, Share, UserCheck, UserPlus, X } from 'lucide-react';
+import { Cake, Check, Crown, Download, Eye, Gift, Loader2, Maximize2, Share, UserCheck, UserPlus, X } from 'lucide-react';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
+import ConfettiBurst from '@/components/loyalty/ConfettiBurst';
 import {
   activeRewards,
   birthdayGiftAvailable,
@@ -39,6 +40,7 @@ export default function CardView({
   qrDataUrl,
   justJoined,
   viewer,
+  staffHref = null,
 }: {
   locale: PublicLocale;
   token: string;
@@ -48,6 +50,11 @@ export default function CardView({
   justJoined: boolean;
   /** Signed-in Buaze customer looking at this card (§61). */
   viewer: { signedIn: boolean; owns: boolean };
+  /**
+   * Set when a panel user opened the customer view from staff mode (§61):
+   * a bar leads back, and nothing is saved on this (staff) phone.
+   */
+  staffHref?: string | null;
 }) {
   const t = PUBLIC_COPY[locale];
   const tr = locale === 'tr';
@@ -145,15 +152,18 @@ export default function CardView({
   );
 
   // Mount: remember this phone, start the clock, celebrate a fresh card.
+  // A staff preview remembers nothing: the staff phone is not the customer's.
   useEffect(() => {
     document.documentElement.lang = locale;
     setNow(new Date());
-    try {
-      window.localStorage.setItem(`${CARD_STORAGE_PREFIX}${slug}`, window.location.pathname);
-    } catch {
-      /* storage blocked */
+    if (!staffHref) {
+      try {
+        window.localStorage.setItem(`${CARD_STORAGE_PREFIX}${slug}`, window.location.pathname);
+      } catch {
+        /* storage blocked */
+      }
     }
-    void refresh(true);
+    void refresh(!staffHref);
     if (justJoined) {
       haptic([16, 40, 20]);
       playSound('stamp');
@@ -273,6 +283,21 @@ export default function CardView({
     <div className="space-y-4">
       {celebration && <CelebrationLayer key={celebration.id} celebration={celebration} />}
 
+      {staffHref && (
+        <a
+          href={staffHref}
+          className="bzl-tap flex items-center justify-between gap-3 rounded-[18px] bg-[#0A0A0A] px-4 py-3 text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.6)]"
+        >
+          <span className="flex min-w-0 items-center gap-2 text-[13.5px]">
+            <Eye size={15} className="shrink-0" aria-hidden="true" />
+            <span className="truncate">{tr ? 'Müşterinin gördüğü kart' : 'What the customer sees'}</span>
+          </span>
+          <span className="shrink-0 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[12.5px] font-semibold text-[#0A0A0A]">
+            {tr ? 'Kasa moduna dön' : 'Back to staff mode'}
+          </span>
+        </a>
+      )}
+
       <div className="bzl-float">
         <LoyaltyCardFace
           key={stampKey}
@@ -309,7 +334,9 @@ export default function CardView({
         <p className="font-mono text-[30px] font-semibold tracking-[0.2em]">{formatMemberCode(member.code)}</p>
       </section>
 
-      <AccountBlock t={t} slug={slug} token={token} locale={locale} signedIn={viewer.signedIn} owns={viewer.owns} hasAccount={card.member.hasAccount} />
+      {!staffHref && (
+        <AccountBlock t={t} slug={slug} token={token} locale={locale} signedIn={viewer.signedIn} owns={viewer.owns} hasAccount={card.member.hasAccount} />
+      )}
 
       {birthday && program.birthdayReward && (
         <p className="flex items-start gap-2 rounded-[20px] border border-[#F5C6D6] bg-[#FFF1F5] px-4 py-3 text-[14px] text-[#831843]">
@@ -363,7 +390,7 @@ export default function CardView({
         </p>
       </section>
 
-      <InstallCard locale={locale} businessName={business.name} />
+      {!staffHref && <InstallCard locale={locale} businessName={business.name} />}
 
       <section className={panel}>
         <h2 className="text-[16px] font-semibold">{t.history}</h2>
@@ -392,48 +419,50 @@ export default function CardView({
         )}
       </section>
 
-      <div className="flex flex-col items-center gap-1 pt-2 text-center">
-        <Link href={`/l/${slug}?new=1${tr ? '' : '&lang=en'}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
-          <UserPlus size={14} aria-hidden="true" /> {tr ? 'Bu telefonda başka biri için kart aç' : 'Open a card for someone else on this phone'}
-        </Link>
-        {!leaveOpen ? (
-          <button type="button" onClick={() => setLeaveOpen(true)} className="min-h-[44px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
-            {t.leave}
-          </button>
-        ) : (
-          <div className="mt-2 w-full rounded-[22px] border border-[#FECACA] bg-[var(--p-surface)] p-4 text-left">
-            <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
-            <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">{t.leaveBody}</p>
-            <input
-              value={last4}
-              onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              inputMode="numeric"
-              autoComplete="off"
-              className="mt-3 w-36 rounded-xl border border-[color:var(--p-border)] bg-[var(--p-bg)] px-3 py-3 text-center font-mono text-[20px] tracking-[0.3em]"
-              aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
-              placeholder="••••"
-            />
-            {leaveError && (
-              <p className="mt-2 text-[13px] text-[#991B1B]" role="alert">
-                {leaveError}
-              </p>
-            )}
-            <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => setLeaveOpen(false)} className="min-h-[46px] flex-1 rounded-xl border border-[color:var(--p-border)] text-[14px]">
-                {t.leaveCancel}
-              </button>
-              <button
-                type="button"
-                disabled={last4.length !== 4 || leaveBusy}
-                onClick={() => void leave()}
-                className="flex min-h-[46px] flex-1 items-center justify-center rounded-xl bg-[#B91C1C] text-[14px] font-semibold text-white disabled:opacity-40"
-              >
-                {leaveBusy ? <Loader2 size={16} className="animate-spin" /> : t.leaveConfirm}
-              </button>
+      {!staffHref && (
+        <div className="flex flex-col items-center gap-1 pt-2 text-center">
+          <Link href={`/l/${slug}?new=1${tr ? '' : '&lang=en'}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
+            <UserPlus size={14} aria-hidden="true" /> {tr ? 'Bu telefonda başka biri için kart aç' : 'Open a card for someone else on this phone'}
+          </Link>
+          {!leaveOpen ? (
+            <button type="button" onClick={() => setLeaveOpen(true)} className="min-h-[44px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
+              {t.leave}
+            </button>
+          ) : (
+            <div className="mt-2 w-full rounded-[22px] border border-[#FECACA] bg-[var(--p-surface)] p-4 text-left">
+              <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
+              <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">{t.leaveBody}</p>
+              <input
+                value={last4}
+                onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                inputMode="numeric"
+                autoComplete="off"
+                className="mt-3 w-36 rounded-xl border border-[color:var(--p-border)] bg-[var(--p-bg)] px-3 py-3 text-center font-mono text-[20px] tracking-[0.3em]"
+                aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
+                placeholder="••••"
+              />
+              {leaveError && (
+                <p className="mt-2 text-[13px] text-[#991B1B]" role="alert">
+                  {leaveError}
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={() => setLeaveOpen(false)} className="min-h-[46px] flex-1 rounded-xl border border-[color:var(--p-border)] text-[14px]">
+                  {t.leaveCancel}
+                </button>
+                <button
+                  type="button"
+                  disabled={last4.length !== 4 || leaveBusy}
+                  onClick={() => void leave()}
+                  className="flex min-h-[46px] flex-1 items-center justify-center rounded-xl bg-[#B91C1C] text-[14px] font-semibold text-white disabled:opacity-40"
+                >
+                  {leaveBusy ? <Loader2 size={16} className="animate-spin" /> : t.leaveConfirm}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {fullQr && (
         <FullScreenQr
@@ -451,24 +480,7 @@ export default function CardView({
 
 // ─── pieces ───────────────────────────────────────────────────────────────
 
-const CONFETTI_COLOURS = ['#C6F24E', '#0A0A0A', '#FFFFFF', '#F59E0B', '#EC4899', '#38BDF8'];
-
 function CelebrationLayer({ celebration }: { celebration: Celebration }) {
-  const pieces = celebration.confetti
-    ? Array.from({ length: 36 }, (_, i) => {
-        const angle = (i / 36) * Math.PI * 2;
-        const dist = 120 + (i % 5) * 34;
-        return {
-          i,
-          dx: `${Math.round(Math.cos(angle) * dist)}px`,
-          dy: `${Math.round(Math.sin(angle) * dist + 160)}px`,
-          rot: `${(i * 47) % 360}deg`,
-          color: CONFETTI_COLOURS[i % CONFETTI_COLOURS.length],
-          delay: `${(i % 6) * 25}ms`,
-          w: i % 3 === 0 ? 10 : 7,
-        };
-      })
-    : [];
   return (
     <div className="pointer-events-none fixed inset-0 z-[80]" aria-live="polite" role="status">
       <div
@@ -480,27 +492,7 @@ function CelebrationLayer({ celebration }: { celebration: Celebration }) {
         </p>
         {celebration.body && <p className="mt-0.5 text-[14px] opacity-85">{celebration.body}</p>}
       </div>
-      {pieces.length > 0 && (
-        <div className="absolute left-1/2 top-[30%]" aria-hidden="true">
-          {pieces.map((p) => (
-            <span
-              key={p.i}
-              className="bzl-confetti absolute block rounded-[2px]"
-              style={
-                {
-                  width: p.w,
-                  height: p.w * 1.6,
-                  background: p.color,
-                  animationDelay: p.delay,
-                  ['--dx' as string]: p.dx,
-                  ['--dy' as string]: p.dy,
-                  ['--rot' as string]: p.rot,
-                } as React.CSSProperties
-              }
-            />
-          ))}
-        </div>
-      )}
+      {celebration.confetti && <ConfettiBurst className="left-1/2 top-[30%]" />}
     </div>
   );
 }
