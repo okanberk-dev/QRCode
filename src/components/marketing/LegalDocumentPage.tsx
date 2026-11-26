@@ -43,7 +43,7 @@ export default function LegalDocumentPage({
   })();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen flex flex-col bg-white">
       <div className="legal-print-hide">
         <MarketingNavbar locale={locale} t={t} />
       </div>
@@ -53,8 +53,8 @@ export default function LegalDocumentPage({
       <main id="main-content" className="flex-1">
       {/* Hero — sade, breadcrumb + eyebrow + title + meta. Eski grid pattern
           kaldırıldı; yerine ince alt-border + N50 yumuşak alt-band kontrast. */}
-      <section className="relative px-5 sm:px-10 pt-10 sm:pt-14 pb-10 border-b border-[#EDEDED] bg-[#FAFAFA]">
-        <div className="relative max-w-[1100px] mx-auto">
+      <section className="rt-sheet rt-sheet--cream">
+        <div className="rt-container rt-page-head">
           <Link
             href={`/${locale}`}
             className="legal-print-hide inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors"
@@ -63,24 +63,24 @@ export default function LegalDocumentPage({
             {isTr ? 'Buaze ana sayfa' : 'Buaze home'}
           </Link>
 
-          <div className="mt-6 max-w-[760px]">
-            <span className="pulse-eyebrow text-[#525252]">{eyebrow}</span>
-            <h1 className="bz-h-tight mt-3 text-[28px] sm:text-[44px] leading-[1.02] tracking-[-0.03em] text-[#0A0A0A]">
+          <div className="rt-page-head__text" style={{ marginTop: 24 }}>
+            <span className="rt-eyebrow">{eyebrow}</span>
+            <h1 className="rt-t-h1">
               {doc.title || fallbackTitle}
             </h1>
             {lastUpdatedLabel && (
-              <div className="mt-4 pulse-eyebrow text-[#737373]">{lastUpdatedLabel}</div>
+              <div className="rt-eyebrow">{lastUpdatedLabel}</div>
             )}
           </div>
         </div>
       </section>
 
-      <div className="px-5 sm:px-10 py-10 sm:py-14">
-        <div className="mx-auto max-w-[1100px] grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-10 lg:gap-14">
+      <div className="py-10 sm:py-16">
+        <div className="rt-container grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-10 lg:gap-14">
           {/* Content column */}
           <div className="min-w-0 max-w-[760px]">
             {doc.description && (
-              <div className="bz-card-soft p-6 sm:p-7 mb-10">
+              <div className="mb-10 rounded-[var(--rt-r-lg)] bg-[var(--rt-cream)] p-6 sm:p-7">
                 <span className="pulse-eyebrow text-[#737373]">
                   {isTr ? 'ÖZET' : 'SUMMARY'}
                 </span>
@@ -90,7 +90,7 @@ export default function LegalDocumentPage({
               </div>
             )}
 
-            <article className="prose-legal">{blocks}</article>
+            <article className="prose-legal rt-prose">{blocks}</article>
 
             {/* Footer band — son güncelleme + iletişim. Stripe / Linear /
                 Vercel pattern'i: minimal closure, ziyaretçi-facing teknik
@@ -118,7 +118,7 @@ export default function LegalDocumentPage({
             <aside className="legal-print-hide hidden lg:block">
               <nav
                 aria-label={isTr ? 'İçindekiler' : 'Table of contents'}
-                className="sticky top-[88px] bz-card p-5"
+                className="sticky top-[96px] rounded-[var(--rt-r-sm)] bg-[var(--rt-cream)] p-5"
               >
                 <span className="pulse-eyebrow text-[#737373]">
                   {isTr ? 'İÇİNDEKİLER' : 'CONTENTS'}

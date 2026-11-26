@@ -142,20 +142,20 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
         <div
           ref={doneRef}
           tabIndex={-1}
-          className="flex items-start gap-3 rounded-2xl border border-[#C6F24E]/30 bg-[#C6F24E]/10 p-4 outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+          className="flex items-start gap-3 rounded-[var(--rt-r-sm)] border border-[var(--rt-line)] bg-[var(--rt-brand-50)] p-4 outline-none"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--rt-brand-500)] text-white">
             <Check size={16} strokeWidth={2.5} aria-hidden />
           </span>
           <div>
-            <p className="text-[15px] font-semibold text-white">{copy.doneTitle}</p>
-            <p className="mt-1 text-[13px] leading-[1.55] text-white/75">{copy.doneBody}</p>
+            <p className="text-[15px] font-semibold text-[var(--rt-ink-900)]">{copy.doneTitle}</p>
+            <p className="mt-1 text-[13px] leading-[1.55] text-[var(--rt-ink-700)]">{copy.doneBody}</p>
           </div>
         </div>
       ) : (
         <form onSubmit={onSubmit} noValidate className="space-y-3">
           <div>
-            <label htmlFor={emailId} className="mb-1.5 block text-[13px] font-medium text-white/80">
+            <label htmlFor={emailId} className="mb-1.5 block font-[family-name:var(--rt-font-ui)] text-[14px] text-[var(--rt-ink-700)]">
               {copy.label}
             </label>
             <div className={`flex flex-col gap-2 ${stacked ? '' : 'sm:flex-row'}`}>
@@ -179,14 +179,14 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
                 maxLength={200}
                 aria-invalid={emailInvalid || undefined}
                 aria-describedby={emailInvalid ? errorId : undefined}
-                className={`min-h-[48px] w-full min-w-0 flex-1 rounded-full border bg-[#141414] px-4 text-[16px] text-white outline-none transition-colors placeholder:text-white/50 focus:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E]/40 ${
+                className={`min-h-[48px] w-full min-w-0 flex-1 rounded-full border bg-white px-5 font-[family-name:var(--rt-font-ui)] text-[16px] text-[var(--rt-ink-900)] outline-none transition-colors placeholder:text-[var(--rt-ink-700)] focus:border-[var(--rt-brand-500)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--rt-brand-500)_25%,transparent)] ${
                   stacked ? '' : 'sm:px-5 sm:text-[15px]'
-                } ${emailInvalid ? 'border-[#FCA5A5]' : 'border-white/15'}`}
+                } ${emailInvalid ? 'border-[var(--rt-danger)]' : 'border-[var(--rt-line-3)]'}`}
               />
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className={`inline-flex min-h-[48px] w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#C6F24E] px-6 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] disabled:cursor-wait disabled:opacity-70 ${
+                className={`rt-btn rt-btn--primary w-full shrink-0 disabled:cursor-wait disabled:opacity-70 ${
                   stacked ? '' : 'sm:w-auto'
                 }`}
               >
@@ -208,15 +208,15 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
               }}
               aria-invalid={consentInvalid || undefined}
               aria-describedby={consentInvalid ? errorId : undefined}
-              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded accent-[#C6F24E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded accent-[var(--rt-brand-600)]"
             />
-            <label htmlFor={consentId} className="cursor-pointer text-[13px] leading-[1.55] text-white/75">
+            <label htmlFor={consentId} className="cursor-pointer text-[12px] leading-[18px] text-[var(--rt-ink-700)]">
               {copy.consentBefore}
               <Link
                 href={`/${locale}/ticari-ileti`}
                 target="_blank"
                 rel="noopener"
-                className="font-medium text-white underline decoration-white/40 underline-offset-2 hover:decoration-[#C6F24E] focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                className="text-[var(--rt-brand-700)] underline underline-offset-2"
               >
                 {copy.consentLink}
                 <span className="sr-only"> {copy.newTab}</span>
@@ -226,7 +226,7 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
                 href={`/${locale}/kvkk`}
                 target="_blank"
                 rel="noopener"
-                className="font-medium text-white underline decoration-white/40 underline-offset-2 hover:decoration-[#C6F24E] focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                className="text-[var(--rt-brand-700)] underline underline-offset-2"
               >
                 {copy.kvkkLink}
                 <span className="sr-only"> {copy.newTab}</span>
@@ -236,13 +236,13 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
           </div>
 
           {error ? (
-            <p id={errorId} role="alert" className="text-[13px] font-medium leading-[1.5] text-[#FCA5A5]">
+            <p id={errorId} role="alert" className="text-[13px] font-medium leading-[1.5] text-[var(--rt-danger)]">
               {copy.errors[error]}
             </p>
           ) : null}
 
           {/* Required because the floating reCAPTCHA badge is hidden site-wide. */}
-          <RecaptchaNotice locale={locale} dark />
+          <RecaptchaNotice locale={locale} />
         </form>
       )}
       <p className="sr-only" role="status" aria-live="polite">

@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import PlatformOrbitStage from '@/components/marketing/three/PlatformOrbitStage';
-import SectionHeader from './SectionHeader';
+import Image from 'next/image';
+import { img } from '../ritim/media';
 
 /**
  * "Platform bağlantıları" — the homepage's first dark section and the only
@@ -49,59 +48,33 @@ const COPY = {
 
 export default function HomePlatforms({ locale }: { locale: 'tr' | 'en' }) {
   const copy = COPY[locale];
-
   return (
-    <section
-      id="platforms"
-      aria-labelledby="platforms-title"
-      className="overflow-hidden bg-[#0A0A0A] py-[60px] text-white sm:py-24"
-    >
-      {/* Phones: header, orbit, list. Tablets: header on top, list and orbit
-          side by side. Desktop: header and list on the left, orbit on the
-          right across both rows. */}
-      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 items-center gap-10 px-5 sm:px-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-x-10 lg:gap-x-16 lg:gap-y-10">
-        <SectionHeader
-          id="platforms-title"
-          tone="dark"
-          eyebrow={copy.eyebrow}
-          title={copy.title}
-          lead={copy.lead}
-          className="md:col-span-2 lg:col-span-1 lg:col-start-1 lg:row-start-1 lg:self-end"
-        />
-
-        {/* The scene's rings sit in the middle of the square box; on phones
-            a small negative margin trims the empty band above and below. */}
-        <div className="-my-4 sm:my-0 md:col-start-2 md:row-start-2 lg:row-span-2 lg:row-start-1">
-          <PlatformOrbitStage
-            locale={locale}
-            theme="dark"
-            id="home-orbit"
-            className="mx-auto max-w-[340px] sm:max-w-[440px] lg:max-w-[520px]"
-          />
-        </div>
-
-        <div className="md:col-start-1 md:row-start-2 md:self-center lg:self-start">
-          <p className="pulse-eyebrow text-white/70">{copy.listLabel}</p>
-          <ul className="mt-4 grid max-w-[420px] grid-cols-2 gap-x-6 gap-y-3">
-            {PLATFORMS.map((platform) => (
-              <li key={platform.name} className="flex items-center gap-2.5 text-[15px] text-white">
-                <span
-                  aria-hidden="true"
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: platform.color }}
-                />
-                {platform.name}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 max-w-[520px] text-[15px] leading-[1.6] text-white/70">{copy.google}</p>
-          <Link
-            href={`/${locale}/integrations`}
-            className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-white underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:text-[#C6F24E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-          >
-            {copy.link}
-            <ArrowRight size={14} aria-hidden="true" />
-          </Link>
+    <section id="platforms" className="rt-section rt-reveal" aria-labelledby="platforms-title">
+      <div className="rt-container">
+        <div className="rt-promo-split">
+          <div className="rt-mini-head" style={{ gap: 20 }}>
+            <p className="rt-script rt-script--md">{copy.eyebrow}</p>
+            <h2 id="platforms-title" className="rt-t-h2">
+              {copy.title}
+            </h2>
+            <p className="rt-t-lead">{copy.lead}</p>
+            <p className="rt-eyebrow">{copy.listLabel}</p>
+            <ul className="rt-chips rt-chips--sm" style={{ justifyContent: 'flex-start', margin: 0 }}>
+              {PLATFORMS.map((platform) => (
+                <li key={platform.name} className="rt-chip">
+                  <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 99, background: platform.color, marginRight: 10 }} />
+                  {platform.name}
+                </li>
+              ))}
+            </ul>
+            <p className="rt-t-muted">{copy.google}</p>
+            <Link className="rt-link-arrow" href={`/${locale}/integrations`}>
+              {copy.link}
+            </Link>
+          </div>
+          <div className="rt-promo-split__media">
+            <Image src={img('misafirler')} alt="" width={723} height={579} sizes="(max-width: 1023px) 100vw, 720px" />
+          </div>
         </div>
       </div>
     </section>

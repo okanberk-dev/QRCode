@@ -1,6 +1,9 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ArrowRight, Info, Plus, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Info, type LucideIcon } from 'lucide-react';
+import { RtFaqList } from '@/components/marketing/ritim/interactive';
+import { img } from '@/components/marketing/ritim/media';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { jsonLdString } from '@/lib/seo/json-ld';
@@ -119,20 +122,14 @@ export interface FeatureSchemaInfo {
 
 /* ─── Shared class strings ─────────────────────────────────────────────── */
 
-export const FEATURE_CONTAINER = 'mx-auto w-full max-w-[1200px] px-5 sm:px-10';
-export const FEATURE_SECTION_Y = 'py-[60px] sm:py-24';
+export const FEATURE_CONTAINER = 'rt-container';
+export const FEATURE_SECTION_Y = 'py-[64px] lg:py-[112px]';
 export const FEATURE_FOCUS =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
 /** Card used across the feature family (spec §4 cards). */
-export const FEATURE_CARD = 'rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8';
+export const FEATURE_CARD = 'rounded-[var(--rt-r-lg)] bg-[var(--rt-cream)] p-6 sm:p-8';
 /** Inline text link with the lime underline used across the marketing site. */
-export const FEATURE_TEXT_LINK = `inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FEATURE_FOCUS}`;
-
-const BTN_CORE =
-  'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors';
-const BTN_BASE = `${BTN_CORE} ${FEATURE_FOCUS}`;
-/** Buttons on the lime band: graphite focus ring, offset matches the lime surface. */
-const BTN_ON_LIME = `${BTN_CORE} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]`;
+export const FEATURE_TEXT_LINK = 'rt-link-arrow min-h-[44px]';
 
 const SHARED = {
   tr: {
@@ -170,7 +167,7 @@ export function FeaturePageShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-[100dvh] overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] lg:pt-[64px]">
+    <div className="min-h-[100dvh] overflow-x-clip bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <MarketingNavbar locale={locale} />
       <main id="main-content">{children}</main>
@@ -179,7 +176,7 @@ export function FeaturePageShell({
   );
 }
 
-/** Eyebrow → H2 → optional lead sentence (spec §4 section header). */
+/** Eyebrow → H2 (64/64, weight 400) → lead ("Ritim" section head). */
 export function FeatureSectionHeading({
   id,
   eyebrow,
@@ -195,22 +192,15 @@ export function FeatureSectionHeading({
 }) {
   const dark = tone === 'dark';
   return (
-    <div className="max-w-[720px]">
-      <p className={`pulse-eyebrow ${dark ? 'text-[#C6F24E]' : 'text-[#737373]'}`}>{eyebrow}</p>
-      <h2
-        id={id}
-        className={`mt-4 text-balance text-[28px] leading-[1.08] sm:text-[40px] lg:text-[48px] ${
-          dark ? 'text-white' : 'text-[#0A0A0A]'
-        }`}
-      >
+    <div className="rt-section-head__text" style={dark ? { color: '#fff' } : undefined}>
+      <p className="rt-eyebrow" style={dark ? { color: 'rgba(255,255,255,.8)' } : undefined}>
+        {eyebrow}
+      </p>
+      <h2 id={id} className="rt-t-h1 text-balance">
         {title}
       </h2>
       {lead ? (
-        <p
-          className={`mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] sm:text-[18px] ${
-            dark ? 'text-white/75' : 'text-[#525252]'
-          }`}
-        >
+        <p className="rt-t-lead text-pretty" style={dark ? { color: 'rgba(255,255,255,.85)' } : undefined}>
           {lead}
         </p>
       ) : null}
@@ -218,7 +208,23 @@ export function FeatureSectionHeading({
   );
 }
 
-/** Hero: copy column first in the HTML, sample screen second. */
+/** Photo behind each feature's sample screen (ritim/media; licensed stock). */
+const HERO_PHOTO: Record<string, string> = {
+  'review-management': 'restoran-masalar',
+  'pulse-ai': 'ai-panel',
+  menu: 'yemek-flatlay',
+  surveys: 'kafe-ic',
+  loyalty: 'kahve',
+  'audit-center': 'mutfak-ekip',
+  'analytics-reports': 'entegrasyon',
+  'qr-generator': 'kafe-sayac',
+};
+
+/**
+ * Hero — "Ritim" split hero: copy on the left (eyebrow, 64 px title, lead,
+ * solid + outline pill buttons), a 5:4 photo with the sample screen floating
+ * over its corner on the right (float chip). Copy first in the HTML.
+ */
 export function FeatureHero({
   locale,
   eyebrow,
@@ -227,6 +233,7 @@ export function FeatureHero({
   secondary,
   mock,
   mockCaption,
+  photo,
 }: {
   locale: FeatureLocale;
   eyebrow: string;
@@ -237,49 +244,36 @@ export function FeatureHero({
   mock: ReactNode;
   /** What the sample screen shows, for screen readers. */
   mockCaption: string;
+  /** Photo file name in public/images/site (without .jpg). */
+  photo?: string;
 }) {
   const shared = SHARED[locale];
   return (
-    <section aria-labelledby="feature-title" className="bg-white pb-[60px] pt-[60px] sm:pb-24 sm:pt-24">
-      <div className={`${FEATURE_CONTAINER} lg:grid lg:grid-cols-[1.12fr_1fr] lg:items-center lg:gap-14`}>
-        <div className="max-w-[640px]">
-          <p className="pulse-eyebrow text-[#737373]">{eyebrow}</p>
-          <h1
-            id="feature-title"
-            className="mt-5 text-balance text-[38px] leading-[1.06] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[52px]"
-          >
+    <section aria-labelledby="feature-title" className="rt-sheet">
+      <div className="rt-container rt-split-hero">
+        <div className="rt-split-hero__text">
+          <p className="rt-eyebrow">{eyebrow}</p>
+          <h1 id="feature-title" className="rt-t-h1 text-balance">
             {title}
           </h1>
-          <p className="mt-6 max-w-[600px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
-            {lead}
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link
-              href={`/${locale}/auth/register`}
-              rel="nofollow"
-              className={`${BTN_BASE} bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]`}
-            >
+          <p className="rt-t-lead text-pretty">{lead}</p>
+          <div className="rt-btn-group">
+            <Link href={`/${locale}/auth/register`} rel="nofollow" className="rt-btn rt-btn--solid">
               {shared.primary}
-              <ArrowRight size={16} aria-hidden="true" />
             </Link>
-            <Link
-              href={secondary.href}
-              className={`${BTN_BASE} border border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]`}
-            >
+            <Link href={secondary.href} className="rt-btn rt-btn--outline">
               {secondary.label}
             </Link>
           </div>
-          <p className="mt-5 text-[14px] leading-[1.5] text-[#737373]">{shared.note}</p>
+          <p className="rt-t-sm rt-t-muted">{shared.note}</p>
         </div>
 
-        <figure className="mx-auto mt-12 w-full max-w-[520px] lg:mt-0">
+        <figure className="rt-split-hero__media rt-feature-media">
           <figcaption className="sr-only">{mockCaption}</figcaption>
-          <div
-            aria-hidden="true"
-            className="rounded-[24px] border border-[#EDEDED] bg-[#FAFAFA] p-3 shadow-[0_24px_60px_-32px_rgba(10,10,10,0.28)] sm:p-4"
-          >
-            <p className="pulse-eyebrow px-2 pb-3 pt-1 text-[#737373]">{shared.sample}</p>
-            <div className="overflow-hidden rounded-[16px] border border-[#EDEDED] bg-white">{mock}</div>
+          <Image src={img(photo ?? 'pos-kasa')} alt="" width={1600} height={1280} priority sizes="(max-width: 1023px) 100vw, 640px" />
+          <div aria-hidden="true" className="rt-float-chip rt-float-mock">
+            <span className="rt-badge rt-badge--brand">{shared.sample}</span>
+            <div className="rt-float-mock__screen">{mock}</div>
           </div>
         </figure>
       </div>
@@ -288,9 +282,9 @@ export function FeatureHero({
 }
 
 /**
- * FAQ in native <details> (keyboard-operable, every answer in the server
- * HTML); pass the same `items` to the FAQPage JSON-LD. Same two-column
- * pattern as the homepage FAQ: heading on the left, questions on the right.
+ * FAQ — "Ritim" accordion: 48 px heading on the left, cream pill rows on the
+ * right, the open row turns dark. Every answer is in the server HTML; pass
+ * the same `items` to the FAQPage JSON-LD.
  */
 export function FeatureFaqSection({
   locale,
@@ -298,7 +292,7 @@ export function FeatureFaqSection({
   title,
   items,
   more,
-  className = 'bg-[#FAFAFA]',
+  className = '',
 }: {
   locale: FeatureLocale;
   eyebrow: string;
@@ -310,99 +304,59 @@ export function FeatureFaqSection({
   const shared = SHARED[locale];
   return (
     <section aria-labelledby="feature-faq-title" className={`${className} ${FEATURE_SECTION_Y}`}>
-      <div
-        className={`${FEATURE_CONTAINER} grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16`}
-      >
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <FeatureSectionHeading id="feature-faq-title" eyebrow={eyebrow} title={title} />
+      <div className="rt-container rt-faq">
+        <div className="rt-mini-head" style={{ alignContent: 'start' }}>
+          <p className="rt-eyebrow">{eyebrow}</p>
+          <h2 id="feature-faq-title" className="rt-t-h2">
+            {title}
+          </h2>
           {more ? (
-            <p className="mt-4">
-              <Link href={more.href} className={FEATURE_TEXT_LINK}>
-                {more.label}
-                <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </p>
+            <Link href={more.href} className="rt-link-arrow">
+              {more.label}
+            </Link>
           ) : null}
-          <div className="mt-8 hidden rounded-[20px] border border-[#EDEDED] bg-white p-6 lg:block">
-            <p className="text-[16px] font-medium text-[#0A0A0A]">{shared.contactTitle}</p>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className={`mt-1 ${FEATURE_TEXT_LINK}`}>
+          <p className="rt-t-sm rt-t-muted" style={{ marginTop: 16 }}>
+            {shared.contactTitle}{' '}
+            <a className="rt-link" href={`mailto:${SUPPORT_EMAIL}`}>
               {SUPPORT_EMAIL}
             </a>
-            <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">{SUPPORT_HOURS[locale]}</p>
-          </div>
+            <br />
+            {SUPPORT_HOURS[locale]}
+          </p>
         </div>
-
-        <div className="divide-y divide-[#EDEDED] rounded-[20px] border border-[#EDEDED] bg-white px-5 sm:px-8">
-          {items.map((item, i) => (
-            <details
-              key={item.q}
-              id={`faq-${i + 1}`}
-              open={i === 0 ? true : undefined}
-              className="group scroll-mt-28 py-5 sm:py-6"
-            >
-              <summary
-                className={`flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 rounded-[8px] [&::-webkit-details-marker]:hidden ${FEATURE_FOCUS}`}
-              >
-                <span className="pt-1.5 text-[17px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[19px]">{item.q}</span>
-                <span
-                  aria-hidden="true"
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#D4D4D4] text-[#0A0A0A] transition-colors group-open:border-[#0A0A0A] group-open:bg-[#0A0A0A] group-open:text-[#C6F24E]"
-                >
-                  <Plus
-                    size={16}
-                    strokeWidth={2}
-                    className="transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none"
-                  />
-                </span>
-              </summary>
-              <p className="mt-3 max-w-[640px] pr-2 text-[15px] leading-[1.7] text-[#525252] sm:pr-12 sm:text-[16px]">
-                {item.a}
-              </p>
-            </details>
-          ))}
-        </div>
+        <RtFaqList items={items} firstOpen />
       </div>
     </section>
   );
 }
 
-/** Closing lime band: one H2, the trial facts and at most two links. */
+/** Closing CTA — "Ritim" centred CTA (`.rt-cta-center`) with a wide photo. */
 export function FeatureCtaSection({ locale, title }: { locale: FeatureLocale; title: string }) {
   const shared = SHARED[locale];
   return (
-    <section aria-labelledby="feature-cta-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
-      <div className="mx-auto w-full max-w-[880px] px-5 text-center sm:px-10">
-        <h2
-          id="feature-cta-title"
-          className="text-balance text-[30px] leading-[1.06] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]"
-        >
+    <section aria-labelledby="feature-cta-title" className="rt-container">
+      <div className="rt-cta-center">
+        <p className="rt-script rt-script--md">{locale === 'tr' ? 'Hadi başlayalım' : "Let's get started"}</p>
+        <h2 id="feature-cta-title" className="rt-t-h1 text-balance" style={{ maxWidth: 900 }}>
           {title}
         </h2>
-        <ul className="mx-auto mt-5 flex max-w-[680px] flex-col items-center justify-center gap-x-3 gap-y-1 text-[16px] leading-[1.6] text-[#1A1A1A] sm:flex-row sm:flex-wrap sm:text-[17px]">
-          {shared.ctaFacts.map((fact, i) => (
-            <li key={fact} className="inline-flex items-center gap-3">
-              {i > 0 ? (
-                <span aria-hidden="true" className="hidden h-1 w-1 rounded-full bg-[#0A0A0A]/50 sm:inline-block" />
-              ) : null}
-              {fact}
+        <ul className="rt-page-head__meta" style={{ justifyContent: 'center' }}>
+          {shared.ctaFacts.map((fact) => (
+            <li key={fact}>
+              <span>{fact}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-          <Link
-            href={`/${locale}/auth/register`}
-            rel="nofollow"
-            className={`${BTN_ON_LIME} bg-[#0A0A0A] px-7 text-white hover:bg-[#1A1A1A]`}
-          >
+        <div className="rt-btn-group">
+          <Link href={`/${locale}/auth/register`} rel="nofollow" className="rt-btn rt-btn--primary">
             {shared.primary}
-            <ArrowRight size={16} aria-hidden="true" />
           </Link>
-          <Link
-            href={`/${locale}/pricing`}
-            className={`${BTN_ON_LIME} border-2 border-[#0A0A0A] px-7 text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white`}
-          >
+          <Link href={`/${locale}/pricing`} className="rt-btn rt-btn--outline">
             {shared.ctaSecondary}
           </Link>
+        </div>
+        <div className="rt-cta-center__media">
+          <Image src={img('restoran-aydinlik')} alt="" fill sizes="(max-width: 1320px) 100vw, 1256px" />
         </div>
       </div>
     </section>
@@ -459,6 +413,7 @@ export default function FeaturePageLayout({
         secondary={copy.secondary}
         mock={mock}
         mockCaption={copy.mockCaption}
+        photo={HERO_PHOTO[slug]}
       />
 
       {/* 2 · Definition */}
@@ -548,7 +503,7 @@ export default function FeaturePageLayout({
                 <p className="flex items-center gap-3">
                   <span
                     aria-hidden="true"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] font-mono text-[14px] font-semibold text-[#C6F24E]"
+                    className="rt-step__num"
                   >
                     {i + 1}
                   </span>
@@ -565,14 +520,14 @@ export default function FeaturePageLayout({
       </section>
 
       {/* 5 · Facts */}
-      <section aria-labelledby="feature-facts-title" className="bg-[#0A0A0A] py-[60px] text-white sm:py-20">
-        <div className={FEATURE_CONTAINER}>
+      <section aria-labelledby="feature-facts-title" className="rt-container">
+        <div className="rt-cta-panel" style={{ display: 'block' }}>
           <FeatureSectionHeading id="feature-facts-title" eyebrow={copy.facts.eyebrow} title={copy.facts.title} tone="dark" />
           <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-12 lg:grid-cols-4">
             {copy.facts.items.map((fact) => (
               <div key={fact.label} className="flex flex-col-reverse justify-end gap-2 border-t border-white/15 pt-5">
                 <dt className="text-[14px] leading-[1.5] text-white/75 sm:text-[15px]">{fact.label}</dt>
-                <dd className="bz-h-tight text-[30px] leading-none text-[#C6F24E] sm:text-[40px]">{fact.value}</dd>
+                <dd className="text-[36px] leading-none text-white sm:text-[48px]">{fact.value}</dd>
               </div>
             ))}
           </dl>

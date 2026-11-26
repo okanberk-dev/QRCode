@@ -24,8 +24,8 @@ export interface ComparisonRow {
 function CellIcon({ kind }: { kind: CellKind }) {
   if (kind === 'yes') {
     return (
-      <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]">
-        <Check size={13} strokeWidth={2.75} className="text-[#0A0A0A]" />
+      <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--rt-brand-50)]">
+        <Check size={13} strokeWidth={2.75} className="text-[var(--rt-brand-700)]" />
       </span>
     );
   }

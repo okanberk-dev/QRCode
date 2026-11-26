@@ -459,7 +459,7 @@ export default async function HowItWorksPage({
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 lg:pt-[64px]">
+    <div className="min-h-screen overflow-x-clip bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <MarketingNavbar locale={locale} />
       <main id="main-content">

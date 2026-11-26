@@ -1,5 +1,8 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { RtCapture } from '../ritim/interactive';
+import { Scribble } from '../ritim/icons';
+import { SITE_VIDEOS, img } from '../ritim/media';
 
 /**
  * Closing lime band. Two CTAs only; facts are verifiable (14-day trial, no
@@ -24,42 +27,38 @@ const COPY = {
 
 export default function HomeFinalCta({ locale }: { locale: 'tr' | 'en' }) {
   const copy = COPY[locale];
-
+  const tr = locale === 'tr';
   return (
-    <section aria-labelledby="final-cta-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
-      <div className="mx-auto w-full max-w-[880px] px-5 text-center sm:px-10">
-        <h2
-          id="final-cta-title"
-          className="text-balance text-[30px] leading-[1.06] text-[#0A0A0A] sm:text-[44px] lg:text-[52px]"
-        >
-          {copy.title}
+    <section className="rt-closing" aria-labelledby="final-cta-title">
+      {SITE_VIDEOS.closing ? (
+        <video autoPlay muted loop playsInline poster={img('restoran-aksam')} aria-hidden="true" className="rt-img-fill" style={{ zIndex: -2 }}>
+          <source src={SITE_VIDEOS.closing} type="video/mp4" />
+        </video>
+      ) : (
+        <Image src={img('restoran-aksam')} alt="" fill sizes="(max-width: 1320px) 100vw, 1320px" />
+      )}
+      <div className="rt-closing__inner">
+        <h2 id="final-cta-title" className="rt-t-display">
+          {tr ? 'Hadi ' : "Let's get "}
+          <Scribble>{tr ? 'başlayalım' : 'started'}</Scribble>
         </h2>
-        <ul className="mx-auto mt-5 flex max-w-[680px] flex-col items-center justify-center gap-x-3 gap-y-1 text-[16px] leading-[1.6] text-[#1A1A1A] sm:flex-row sm:flex-wrap sm:text-[17px]">
-          {copy.facts.map((fact, i) => (
-            <li key={fact} className="inline-flex items-center gap-3">
-              {i > 0 ? (
-                <span aria-hidden="true" className="hidden h-1 w-1 rounded-full bg-[#0A0A0A]/50 sm:inline-block" />
-              ) : null}
-              {fact}
-            </li>
+        <p className="rt-t-lead" style={{ color: '#fff' }}>
+          {copy.title}
+        </p>
+        <ul className="rt-checklist rt-checklist--white">
+          {copy.facts.map((f) => (
+            <li key={f}>{f}</li>
           ))}
         </ul>
-        <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-          <Link
-            href={`/${locale}/auth/register`}
-            rel="nofollow"
-            className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-7 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]"
-          >
-            {copy.primary}
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-          <Link
-            href={`/${locale}/pricing`}
-            className="inline-flex min-h-[48px] items-center justify-center rounded-full border-2 border-[#0A0A0A] px-7 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E]"
-          >
-            {copy.secondary}
-          </Link>
-        </div>
+        <RtCapture
+          locale={locale}
+          button={copy.primary}
+          placeholder={tr ? 'E-posta adresiniz*' : 'Your e-mail*'}
+          label={tr ? 'E-posta adresi' : 'E-mail address'}
+        />
+        <p className="rt-hero__note">
+          <Link href={`/${locale}/pricing`}>{copy.secondary}</Link>
+        </p>
       </div>
     </section>
   );

@@ -363,7 +363,7 @@ export default async function AboutPage({
   ];
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <MarketingNavbar locale={lang} />
       <main id="main-content">

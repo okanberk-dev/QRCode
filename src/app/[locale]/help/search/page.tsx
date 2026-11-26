@@ -67,7 +67,7 @@ export default async function HelpSearchPage({ params }: { params: Promise<{ loc
   const copy = lang === 'tr' ? { h1: 'Yardım merkezinde ara', crumb: 'Arama' } : { h1: 'Search the help center', crumb: 'Search' };
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
+    <div className="min-h-screen bg-white">
       <MarketingNavbar locale={locale} />
       <main id="main-content">
         <header className="border-b border-[#EDEDED] bg-[#FAFAFA]">

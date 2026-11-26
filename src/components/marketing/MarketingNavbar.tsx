@@ -1,3 +1,4 @@
+import './ritim/ritim.css';
 import type { Locale, Translations } from '@/lib/translations';
 import MarketingNavbarClient from './MarketingNavbarClient';
 import { getSiteSettings } from '@/lib/site-settings';

@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import { ArrowRight, Check, Database, MessageSquareText } from 'lucide-react';
-import SectionHeader from './SectionHeader';
 import { DATA_COPY } from '@/lib/legal/subprocessors';
 
 /**
@@ -8,6 +6,7 @@ import { DATA_COPY } from '@/lib/legal/subprocessors';
  * handling. Behaviour only, never a certification (spec D2): no "uyumlu",
  * no seals. The review flow is described with the owner's threshold (D1),
  * and the AI provider is named because data handling is discussed here.
+ * Layout: "Ritim" gradient CTA panel (review flow) + cream panel (data).
  */
 
 const COPY = {
@@ -75,61 +74,55 @@ const COPY = {
 
 export default function HomeTrust({ locale }: { locale: 'tr' | 'en' }) {
   const copy = COPY[locale];
-  const columns = [
-    { key: 'reviews', icon: MessageSquareText, ...copy.reviews },
-    { key: 'data', icon: Database, ...copy.data },
-  ];
-
+  const base = `/${locale}`;
+  const [first, , ...rest] = copy.reviews.items;
   return (
-    <section id="trust" aria-labelledby="trust-title" className="bg-[#FAFAFA] py-[60px] sm:py-24">
-      <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
-        <SectionHeader id="trust-title" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
-
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-2">
-          {columns.map((column) => {
-            const Icon = column.icon;
-            return (
-              <article
-                key={column.key}
-                className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8"
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
-                  >
-                    <Icon size={20} strokeWidth={2} />
-                  </span>
-                  <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A] sm:text-[24px]">{column.title}</h3>
-                </div>
-                <ul className="mt-6 space-y-4">
-                  {column.items.map((item) => (
-                    <li key={item} className="flex gap-3 text-[15px] leading-[1.6] text-[#333333]">
-                      <span
-                        aria-hidden="true"
-                        className="mt-[3px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]"
-                      >
-                        <Check size={11} strokeWidth={3} />
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto flex flex-wrap gap-x-6 pt-5">
-                  {column.links.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={`/${locale}${link.path}`}
-                      className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
-                    >
-                      {link.label}
-                      <ArrowRight size={14} aria-hidden="true" />
-                    </Link>
-                  ))}
-                </div>
-              </article>
-            );
-          })}
+    <section id="trust" className="rt-section rt-reveal" aria-labelledby="trust-title">
+      <div className="rt-container">
+        <div className="rt-cta-panel">
+          <div className="rt-cta-panel__left">
+            <div className="rt-mini-head">
+              <p className="rt-eyebrow" style={{ color: '#fff' }}>
+                {copy.eyebrow}
+              </p>
+              <h2 id="trust-title" className="rt-t-h1">
+                {copy.title}
+              </h2>
+            </div>
+            <p className="rt-t-body-lg">{copy.lead}</p>
+          </div>
+          <div className="rt-cta-panel__right">
+            <ul className="rt-checklist rt-checklist--white">
+              {[first, ...rest].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <div className="rt-btn-group">
+              {copy.reviews.links.map((l) => (
+                <Link key={l.path} className="rt-btn rt-btn--white" href={`${base}${l.path}`}>
+                  {l.label}
+                </Link>
+              ))}
+              <Link className="rt-btn rt-btn--ghost-white" href={`${base}${copy.data.links[0].path}`}>
+                {copy.data.links[0].label}
+              </Link>
+            </div>
+          </div>
+        </div>
+        <div className="rt-surface-cream" style={{ marginTop: 24, padding: 'clamp(24px, 5vw, 48px)' }}>
+          <h3 className="rt-t-h3">{copy.data.title}</h3>
+          <ul className="rt-checklist" style={{ marginTop: 24 }}>
+            {copy.data.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <p style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: '8px 24px' }}>
+            {copy.data.links.map((l) => (
+              <Link key={l.path} className="rt-link-arrow" href={`${base}${l.path}`}>
+                {l.label}
+              </Link>
+            ))}
+          </p>
         </div>
       </div>
     </section>

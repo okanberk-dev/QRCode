@@ -191,7 +191,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
+    <div className="min-h-screen bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <MarketingNavbar locale={locale} />
       <main id="main-content">

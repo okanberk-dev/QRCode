@@ -1,14 +1,12 @@
 import Link from 'next/link';
 import type { ReactElement } from 'react';
-import { Globe } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { getCompanyFacts } from '@/lib/company-facts';
 import { SOCIAL_PROFILES } from '@/lib/site';
 import { RELATED_SOLUTIONS_LIST } from '@/lib/related-solutions';
-import FooterPulseHorizon from './three/FooterPulseHorizon';
 import BuazeLogo from './BuazeLogo';
 import NewsletterSignup from './NewsletterSignup';
-import MobileBottomNav from './MobileBottomNav';
+import { RtIcon } from './ritim/icons';
 import CookiePreferencesButton from './footer/CookiePreferencesButton';
 import LanguageLink from './footer/LanguageLink';
 
@@ -60,26 +58,14 @@ const SOCIAL_NAMES: Record<SocialId, { tr: string; en: string }> = {
 /** Sectors linked from the footer; "Tüm sektörler" covers the rest. */
 const FOOTER_SECTORS = ['restaurants', 'delivery', 'hotels', 'healthcare', 'beauty-salon', 'retail'];
 
-const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]';
 
 /**
- * Site footer — one composition on graphite (#0A0A0A):
- *  1. Pulse horizon band (decorative three.js field, SVG fallback in the
- *     HTML) with the logo lockup in its dark top area.
- *  2. Brand + newsletter row: what Buaze does, two verifiable facts, social
- *     profiles; the monthly Pulse newsletter with an opt-in consent box.
- *  3. Site map: four columns in one <nav> (h3 titles under a hidden h2),
- *     two columns on phones.
- *  4. Bottom rail: company facts in <address> (getCompanyFacts — same source
- *     as the Organization JSON-LD), legal links, cookie preferences, a
- *     trademark note (platform names belong to their owners), a crawlable
- *     language link and the copyright line.
- *
- * Server component with no request-time APIs, so every marketing page stays
- * statically generated. Interactive parts are small client leaves. Also
- * mounts MobileBottomNav; the bottom padding below `lg` is the clearance for
- * that floating bar (it adds no spacer of its own).
+ * Site footer — "Ritim" design (CLAUDE.md §62): brand-gradient background
+ * with a dot pattern, a white 48 px-radius card holding the site map, the
+ * "how can we help" row, language / social / newsletter, footnotes and the
+ * legal rail; under the card an "ask an AI assistant" row and a large white
+ * wordmark. Company facts come from getCompanyFacts (same source as the
+ * Organization JSON-LD). Server component, no request-time APIs (§35.12.3).
  */
 export default async function MarketingFooter({ locale }: MarketingFooterProps) {
   const isTr = locale === 'tr';
@@ -160,197 +146,136 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
       ];
 
   const newTab = isTr ? '(yeni sekmede açılır)' : '(opens in a new tab)';
+  const aiPrompt = encodeURIComponent(
+    isTr
+      ? 'Buaze (buaze.com) QR kodla müşteri geri bildirimi ve Google yorum yönetimi yazılımını işletmem için tarafsız şekilde değerlendir: artıları, eksileri ve alternatifleri.'
+      : 'Give me an unbiased review of Buaze (buaze.com), the QR code customer feedback and Google review management software: pros, cons and alternatives.',
+  );
+  const aiLinks = [
+    { label: 'ChatGPT', href: `https://chatgpt.com/?q=${aiPrompt}`, icon: RtIcon.chat },
+    { label: 'Claude', href: `https://claude.ai/new?q=${aiPrompt}`, icon: RtIcon.sparkle },
+    { label: 'Perplexity', href: `https://www.perplexity.ai/search?q=${aiPrompt}`, icon: RtIcon.search },
+    { label: 'Google AI', href: `https://www.google.com/search?udm=50&q=${aiPrompt}`, icon: RtIcon.orbit },
+  ];
 
   return (
-    <>
-      <footer id="site-footer" className="relative bg-[#0A0A0A] text-white">
-        <FooterPulseHorizon locale={locale} className="h-[180px] sm:h-[220px] lg:h-[260px]">
-          {/* Logo lockup in the dark sky above the field (top third is
-              scrimmed and holds no points), so it stays fully legible. The
-              top padding keeps it clear of the SVG fallback's heartbeat
-              peaks at every width (they rise to ~60px on phones and
-              ~70px on desktop). */}
-          <div className="mx-auto w-full max-w-[1200px] px-5 pt-4 sm:px-10 sm:pt-6 lg:pt-8">
-            <Link
-              href={base}
-              aria-label={isTr ? 'Buaze ana sayfa' : 'Buaze home'}
-              className={`inline-flex items-center gap-3 rounded-xl ${FOCUS_RING}`}
-            >
-              <span aria-hidden="true" className="inline-flex">
-                <BuazeLogo size={36} variant="on-dark" />
-              </span>
-              <span className="bz-h-tight text-[30px] leading-none tracking-[-0.04em] text-white sm:text-[34px]">
-                buaze<span className="text-[#C6F24E]">.</span>
-              </span>
+    <footer id="site-footer" className="rt-site-footer">
+      <div className="rt-footer-card">
+        <nav aria-labelledby="footer-sitemap-title" className="rt-footer-top">
+          <h2 id="footer-sitemap-title" className="sr-only">
+            {isTr ? 'Site haritası' : 'Site map'}
+          </h2>
+          <div className="rt-footer-brand">
+            <Link href={base} aria-label={isTr ? 'Buaze ana sayfa' : 'Buaze home'} className="rt-footer-mark">
+              <BuazeLogo size={64} />
             </Link>
+            <p>
+              {isTr
+                ? 'QR kodla müşteri geri bildirimi toplayın, yorum bağlantılarınızı tek yerden yönetin.'
+                : 'Collect customer feedback with QR codes and manage your review links in one place.'}
+            </p>
           </div>
-        </FooterPulseHorizon>
-
-        <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
-          {/* 2 — Brand + newsletter */}
-          <div className="grid gap-10 pb-14 pt-2 sm:pb-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-16">
-            <div>
-              <p className="bz-h-tight max-w-[560px] text-[22px] leading-[1.3] text-white sm:text-[26px]">
-                {isTr
-                  ? 'QR kodla müşteri geri bildirimi toplayın, yorum bağlantılarınızı tek yerden yönetin'
-                  : 'Collect customer feedback with QR codes and manage your review links in one place'}
-              </p>
-              <p className="mt-4 max-w-[520px] text-[15px] leading-[1.65] text-white/70">
-                {isTr
-                  ? 'Her müşteri herkese açık yorum bağlantısını görür; belirlediğiniz eşiğin altındaki puanlarda önce size yazabilir.'
-                  : 'Every customer sees the public review link; below the threshold you set, they can write to you first.'}
-              </p>
-              <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
-                {[isTr ? '10 yorum platformu' : '10 review platforms', isTr ? '14 gün ücretsiz deneme' : '14-day free trial'].map(
-                  (fact) => (
-                    <li key={fact} className="inline-flex items-center gap-2 text-[14px] font-medium text-white">
-                      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]" />
-                      {fact}
-                    </li>
-                  ),
-                )}
-              </ul>
-              <ul className="mt-8 flex flex-wrap gap-2" aria-label={isTr ? 'Sosyal medya hesapları' : 'Social media'}>
-                {SOCIAL_PROFILES.map((profile) => (
-                  <li key={profile.id}>
-                    <a
-                      href={profile.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${SOCIAL_NAMES[profile.id][isTr ? 'tr' : 'en']} ${newTab}`}
-                      className={`flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white/80 transition-colors hover:border-white/40 hover:text-white ${FOCUS_RING}`}
-                    >
-                      <span className="block h-[18px] w-[18px]">{SOCIAL_ICONS[profile.id]}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <section
-              aria-labelledby="footer-newsletter-title"
-              className="rounded-[20px] border border-white/10 bg-white/[0.03] p-6 sm:p-8"
-            >
-              <p className="pulse-eyebrow text-[#C6F24E]">{isTr ? 'Ayda bir e-posta' : 'One e-mail a month'}</p>
-              <h2
-                id="footer-newsletter-title"
-                className="mt-3 text-[24px] font-medium leading-[1.2] tracking-[-0.02em] text-white"
-              >
-                {isTr ? 'Pulse bülteni' : 'The Pulse newsletter'}
-              </h2>
-              <p className="mt-2 max-w-[440px] text-[15px] leading-[1.6] text-white/70">
-                {isTr
-                  ? 'Yorum yönetimi üzerine yeni yazılarımızdan bir seçki.'
-                  : 'A selection of our latest articles on review management.'}
-              </p>
-              <div className="mt-6">
-                <NewsletterSignup locale={locale} source="footer" />
-              </div>
-            </section>
-          </div>
-
-          {/* 3 — Site map */}
-          <nav aria-labelledby="footer-sitemap-title" className="border-t border-white/10 py-12 sm:py-14">
-            <h2 id="footer-sitemap-title" className="sr-only">
-              {isTr ? 'Site haritası' : 'Site map'}
-            </h2>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-x-10 md:grid-cols-4 md:gap-x-8 lg:gap-x-10">
-              {columns.map((column) => (
-                <div key={column.id} className="min-w-0">
-                  <h3 className="pulse-eyebrow mb-3 text-[#C6F24E] lg:mb-4">{column.title}</h3>
-                  <ul>
-                    {column.links.map((link) => (
-                      <li key={link.href}>
-                        <Link
-                          href={link.href}
-                          prefetch={false}
-                          className={`-mx-1.5 inline-flex min-h-[44px] items-center rounded px-1.5 py-1 text-[15px] leading-[1.35] text-white/75 transition-colors hover:text-white md:text-[14px] lg:min-h-[34px] ${FOCUS_RING}`}
-                        >
-                          {link.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          {columns.map((column) => (
+            <div key={column.id} className="rt-footer-col">
+              <h3>{column.title}</h3>
+              {column.links.map((link) => (
+                <Link key={link.href} href={link.href} prefetch={false}>
+                  {link.label}
+                </Link>
               ))}
             </div>
-          </nav>
+          ))}
+        </nav>
 
-          {/* 4 — Bottom rail. Below `lg` the padding clears the floating
-              MobileBottomNav; on desktop it keeps the last row clear of the
-              contact button in the bottom-right corner. */}
-          <div className="border-t border-white/10 pb-[calc(104px+env(safe-area-inset-bottom,0px))] pt-8 lg:pb-24">
-            <address className="text-[14px] not-italic leading-[1.65] text-white/70">
-              <span className="block font-medium text-white sm:inline">{companyName}</span>
-              <span aria-hidden="true" className="mx-2.5 hidden text-white/35 sm:inline">
-                ·
-              </span>
-              <span className="block sm:inline">{address}</span>
-              <span aria-hidden="true" className="mx-2.5 hidden text-white/35 sm:inline">
-                ·
-              </span>
-              <a
-                href={`mailto:${company.supportEmail}`}
-                className={`-mx-1 inline-flex min-h-[32px] items-center rounded px-1 text-white underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-[#C6F24E] ${FOCUS_RING}`}
-              >
-                {company.supportEmail}
-              </a>
-              {company.registry ? (
-                <span className="mt-1.5 block text-[12.5px] text-white/50">
-                  MERSİS {company.registry.mersisNo}
-                  <span aria-hidden="true" className="mx-2 text-white/30">
-                    ·
-                  </span>
-                  {company.registry.taxOffice} {company.registry.taxNo}
-                </span>
-              ) : null}
-            </address>
-
-            <nav aria-label={isTr ? 'Yasal bilgiler' : 'Legal'} className="mt-5">
-              <ul className="flex flex-wrap gap-x-5 gap-y-1">
-                {legalLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      prefetch={false}
-                      className={`-mx-1.5 inline-flex min-h-[32px] items-center rounded px-1.5 text-[13px] text-white/70 transition-colors hover:text-white ${FOCUS_RING}`}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-                <li>
-                  <CookiePreferencesButton
-                    label={isTr ? 'Çerez tercihleri' : 'Cookie preferences'}
-                    className={`-mx-1.5 inline-flex min-h-[32px] items-center rounded px-1.5 text-[13px] text-white/70 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white ${FOCUS_RING}`}
-                  />
-                </li>
-              </ul>
-            </nav>
-
-            <p className="mt-5 max-w-[760px] text-[12.5px] leading-[1.6] text-white/50">
-              {isTr
-                ? 'Google ve diğer platform adları ve logoları sahiplerinin ticari markalarıdır. Buaze bu şirketlerle bağlantılı değildir ve onlar tarafından onaylanmamıştır.'
-                : 'Google and other platform names and logos are trademarks of their owners. Buaze is not affiliated with or endorsed by these companies.'}
-            </p>
-
-            <div className="mt-6 flex flex-col items-start gap-3 lg:flex-row-reverse lg:items-center lg:justify-between">
-              <LanguageLink
-                locale={locale}
-                icon={<Globe size={15} aria-hidden="true" />}
-                className={`inline-flex min-h-[40px] items-center gap-2 rounded-full border border-white/15 px-4 text-[13px] font-medium text-white/85 transition-colors hover:border-white/40 hover:text-white ${FOCUS_RING}`}
-              />
-              <p className="text-[13px] text-white/70">
-                © {year} {companyName}
-              </p>
-            </div>
+        <div className="rt-footer-help">
+          <h3>
+            {isTr ? 'Nasıl yardımcı olabiliriz?' : 'How can we help?'}
+            <br />
+            {isTr ? 'Bize ulaşın.' : 'Get in touch.'}
+          </h3>
+          <div className="rt-btn-group">
+            <a className="rt-btn rt-btn--outline rt-btn--sm" href={`mailto:${company.supportEmail}`}>
+              {isTr ? 'Destek' : 'Support'}: {company.supportEmail}
+            </a>
+            <Link className="rt-btn rt-btn--outline rt-btn--sm" href={`${base}/contact`} prefetch={false}>
+              {isTr ? 'İletişim formu' : 'Contact form'}
+            </Link>
           </div>
         </div>
-      </footer>
 
-      {/* Floating bottom navigation for phones/tablets (lg:hidden), mounted
-          here so every page with the footer gets it. */}
-      <MobileBottomNav locale={locale} />
-    </>
+        <div className="rt-footer-meta">
+          <LanguageLink locale={locale} icon={RtIcon.globe} className="rt-region" />
+          <ul className="rt-socials" aria-label={isTr ? 'Sosyal medya hesapları' : 'Social media'}>
+            {SOCIAL_PROFILES.map((profile) => (
+              <li key={profile.id}>
+                <a href={profile.url} target="_blank" rel="noopener noreferrer" aria-label={`${SOCIAL_NAMES[profile.id][isTr ? 'tr' : 'en']} ${newTab}`}>
+                  {SOCIAL_ICONS[profile.id]}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <section aria-labelledby="footer-newsletter-title" className="rt-footer-news">
+            <h2 id="footer-newsletter-title" className="rt-t-h5">
+              {isTr ? 'Pulse bülteni' : 'The Pulse newsletter'}
+            </h2>
+            <p className="rt-t-sm rt-t-muted">
+              {isTr ? 'Ayda bir e-posta: yorum yönetimi üzerine yeni yazılarımız.' : 'One e-mail a month: our latest articles on review management.'}
+            </p>
+            <NewsletterSignup locale={locale} source="footer" />
+          </section>
+        </div>
+
+        <div className="rt-footnotes">
+          <address className="rt-footer-address">
+            {companyName} · {address}
+            {company.registry ? (
+              <>
+                {' '}· MERSİS {company.registry.mersisNo} · {company.registry.taxOffice} {company.registry.taxNo}
+              </>
+            ) : null}
+          </address>
+          <p>
+            {isTr
+              ? 'Google ve diğer platform adları ve logoları sahiplerinin ticari markalarıdır. Buaze bu şirketlerle bağlantılı değildir ve onlar tarafından onaylanmamıştır.'
+              : 'Google and other platform names and logos are trademarks of their owners. Buaze is not affiliated with or endorsed by these companies.'}
+          </p>
+          <p>
+            {isTr
+              ? '14 gün ücretsiz deneme yeni hesaplar içindir. Fiyatlara KDV dahil değildir.'
+              : 'The 14-day free trial is for new accounts. Prices exclude VAT.'}
+          </p>
+        </div>
+
+        <div className="rt-footer-legal">
+          <span>
+            © {year} {companyName}
+          </span>
+          <nav aria-label={isTr ? 'Yasal bilgiler' : 'Legal'}>
+            {legalLinks.map((link) => (
+              <Link key={link.href} href={link.href} prefetch={false}>
+                {link.label}
+              </Link>
+            ))}
+            <CookiePreferencesButton label={isTr ? 'Çerez tercihleri' : 'Cookie preferences'} className="hover:text-[var(--rt-brand-700)]" />
+          </nav>
+        </div>
+      </div>
+
+      <div className="rt-footer-ai">
+        <h2>{isTr ? 'Doğru seçim miyiz? Sorun bakalım.' : 'Are we the right fit? Ask around.'}</h2>
+        <p>{isTr ? 'Bir yapay zekâ asistanından Buaze hakkında tarafsız bir görüş alın.' : 'Get an unbiased take on Buaze from an AI assistant.'}</p>
+        <div className="rt-footer-ai__icons">
+          {aiLinks.map((l) => (
+            <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer nofollow" aria-label={`${isTr ? `${l.label}'a sor` : `Ask ${l.label}`} ${newTab}`}>
+              {l.icon}
+            </a>
+          ))}
+        </div>
+        <p className="rt-footer-wordmark rt-footer-wordmark-text" aria-hidden="true">
+          buaze<i>.</i>
+        </p>
+      </div>
+      <div className="rt-footer-bottom-space" />
+    </footer>
   );
 }

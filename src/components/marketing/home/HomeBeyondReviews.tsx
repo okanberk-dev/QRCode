@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, Camera, Check, ClipboardCheck, Gift, MessageCircleQuestionMark } from 'lucide-react';
-import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
-import SectionHeader from './SectionHeader';
+import Image from 'next/image';
+import { img } from '../ritim/media';
 
 /**
  * "Yorumların ötesinde" — Denetim Merkezi, Anketler and Sadakat kartı
@@ -74,146 +73,65 @@ const COPY = {
   },
 } as const;
 
-type Copy = (typeof COPY)[keyof typeof COPY];
-
-function AuditMock({ copy }: { copy: Copy }) {
-  return (
-    <div className="rounded-[12px] border border-[#EDEDED] bg-white p-4">
-      <p className="text-[14px] font-semibold text-[#0A0A0A]">{copy.audit.mockTitle}</p>
-      <ul className="mt-3 space-y-2.5">
-        {copy.audit.items.map((item, i) => (
-          <li key={item} className="flex items-center gap-2.5 text-[13px] text-[#333333]">
-            {i < 2 ? (
-              <span
-                aria-hidden="true"
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] bg-[#0A0A0A] text-[#C6F24E]"
-              >
-                <Check size={12} strokeWidth={3} />
-              </span>
-            ) : (
-              <span
-                aria-hidden="true"
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border border-[#D4D4D4] text-[#525252]"
-              >
-                <Camera size={12} />
-              </span>
-            )}
-            {item}
-          </li>
-        ))}
-      </ul>
-      <p className="mt-4 border-t border-[#EDEDED] pt-3 text-[12px] text-[#525252]">{copy.audit.scoring}</p>
-    </div>
-  );
-}
-
-function SurveyMock({ copy }: { copy: Copy }) {
-  return (
-    <div className="rounded-[12px] border border-[#EDEDED] bg-white p-4">
-      <p className="text-[14px] font-semibold text-[#0A0A0A]">{copy.survey.question}</p>
-      <div className="mt-3 grid grid-cols-11 gap-1" aria-hidden="true">
-        {Array.from({ length: 11 }, (_, n) => (
-          <span
-            key={n}
-            className={`flex aspect-square items-center justify-center rounded-[6px] text-[11px] font-medium ${
-              n === 9 ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'border border-[#EDEDED] bg-[#FAFAFA] text-[#525252]'
-            }`}
-          >
-            {n}
-          </span>
-        ))}
-      </div>
-      <div className="mt-2 flex justify-between text-[11px] text-[#737373]">
-        <span>{copy.survey.low}</span>
-        <span>{copy.survey.high}</span>
-      </div>
-    </div>
-  );
-}
+/** Short card titles for the "Ritim" dark cards (the long bodies stay on the feature pages). */
+const CARD_LINES = {
+  tr: {
+    audit: 'Hijyen, açılış ve vardiya devri için kontrol listeleri; fotoğraflı sorular.',
+    survey: 'QR kodla açılan kısa anketler; 8 hazır şablon, CSV dışa aktarma.',
+    loyalty: 'Damga ya da puan kartı; müşteri uygulama indirmez, şubelerde tek kart.',
+  },
+  en: {
+    audit: 'Checklists for hygiene, opening and shift handover, with photo questions.',
+    survey: 'Short surveys opened by QR code; 8 ready templates, CSV export.',
+    loyalty: 'A stamp or points card; no app for customers, one card for all branches.',
+  },
+} as const;
 
 export default function HomeBeyondReviews({ locale }: { locale: 'tr' | 'en' }) {
   const copy = COPY[locale];
+  const lines = CARD_LINES[locale];
   const base = `/${locale}`;
+  const tr = locale === 'tr';
   const cards = [
-    {
-      key: 'audit',
-      icon: ClipboardCheck,
-      name: copy.audit.name,
-      body: copy.audit.body,
-      href: `${base}/features/audit-center`,
-      link: copy.audit.link,
-      mock: <AuditMock copy={copy} />,
-    },
-    {
-      key: 'survey',
-      icon: MessageCircleQuestionMark,
-      name: copy.survey.name,
-      body: copy.survey.body,
-      href: `${base}/features/surveys`,
-      link: copy.survey.link,
-      mock: <SurveyMock copy={copy} />,
-    },
-    {
-      key: 'loyalty',
-      icon: Gift,
-      name: copy.loyalty.name,
-      body: copy.loyalty.body,
-      href: `${base}/features/loyalty`,
-      link: copy.loyalty.link,
-      mock: (
-        <LoyaltyCardFace
-          businessName={copy.loyalty.business}
-          programName={copy.loyalty.program}
-          kind="stamps"
-          balance={6}
-          rewards={[{ title: copy.loyalty.reward, cost: 9 }]}
-          memberName={locale === 'tr' ? 'Ayşe' : 'Alex'}
-          code="KX7M42"
-          locale={locale}
-        />
-      ),
-    },
+    { name: copy.audit.name, line: lines.audit, href: `${base}/features/audit-center`, img: img('mutfak-pisirme'), isNew: false },
+    { name: copy.survey.name, line: lines.survey, href: `${base}/features/surveys`, img: img('grup-yemek'), isNew: false },
+    { name: copy.loyalty.name, line: lines.loyalty, href: `${base}/features/loyalty`, img: img('kahve-tost'), isNew: true },
   ];
-
   return (
-    <section id="beyond-reviews" aria-labelledby="beyond-reviews-title" className="bg-white py-[60px] sm:py-24">
-      <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
-        <SectionHeader id="beyond-reviews-title" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
-
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:gap-6 lg:grid-cols-3">
-          {cards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <article
-                key={card.key}
-                className="flex flex-col rounded-[20px] border border-[#EDEDED] bg-white p-6 sm:p-8"
-              >
-                <div className="flex min-h-[220px] flex-col rounded-[16px] border border-[#EDEDED] bg-[#FAFAFA] p-4 lg:min-h-[268px]">
-                  <p className="pulse-eyebrow text-[#737373]">{copy.sample}</p>
-                  <div className="flex flex-1 flex-col justify-center pt-3">{card.mock}</div>
-                </div>
-                <div className="mt-7 flex items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#0A0A0A] text-[#C6F24E]"
-                  >
-                    <Icon size={20} strokeWidth={2} />
-                  </span>
-                  <h3 className="text-[22px] leading-[1.2] text-[#0A0A0A] sm:text-[24px]">{card.name}</h3>
-                </div>
-                <p className="mt-4 text-[15px] leading-[1.65] text-[#525252]">{card.body}</p>
-                <div className="mt-auto pt-4">
-                  <Link
-                    href={card.href}
-                    className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
-                  >
-                    {card.link}
-                    <ArrowRight size={14} aria-hidden="true" />
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
+    <section id="beyond-reviews" className="rt-section rt-reveal" aria-labelledby="beyond-reviews-title">
+      <div className="rt-container">
+        <div className="rt-section-head">
+          <div className="rt-section-head__text">
+            <p className="rt-release-tag">
+              <b>2026</b>
+              {copy.eyebrow}
+            </p>
+            <h2 id="beyond-reviews-title" className="rt-t-h1">
+              {copy.title}
+            </h2>
+            <p className="rt-t-lead">{copy.lead}</p>
+          </div>
+          <div className="rt-btn-group" style={{ flexDirection: 'column' }}>
+            <Link className="rt-btn rt-btn--primary" href={`${base}/auth/register`} rel="nofollow">
+              {tr ? 'Ücretsiz Dene' : 'Start free'}
+            </Link>
+            <Link className="rt-btn rt-btn--outline" href={`${base}/features`}>
+              {tr ? 'Tüm özellikler' : 'All features'}
+            </Link>
+          </div>
+        </div>
+        <div className="rt-dark-grid">
+          {cards.map((card) => (
+            <Link key={card.name} className="rt-dark-card" href={card.href}>
+              <Image src={card.img} alt="" fill sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 420px" />
+              <div className="rt-dark-card__top">
+                {card.isNew && <span className="rt-badge rt-badge--sun">{tr ? 'Yeni' : 'New'}</span>}
+                {card.name}
+                <span className="rt-circle-btn" aria-hidden="true" />
+              </div>
+              <h3 className="rt-dark-card__title">{card.line}</h3>
+            </Link>
+          ))}
         </div>
       </div>
     </section>

@@ -1,98 +1,85 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Check } from 'lucide-react';
-import HeroStage from './HeroStage';
+import { RtCapture } from '../ritim/interactive';
+import { Scribble } from '../ritim/icons';
+import { SITE_VIDEOS, img } from '../ritim/media';
 
 /**
- * Homepage hero. Server component: the H1, subtitle and CTAs are plain HTML
- * (no hydration, no reveal animation), so crawlers and no-JS visitors get
- * the full copy. Only the decorative sample stage on the right is a client
- * island (HeroStage, aria-hidden).
- *
- * H1 per spec D11 (keyword-first, no trailing period). The subtitle uses the
- * D1 wording for the review flow: every customer sees the public review
- * link; below the owner's threshold they can write to the business first.
+ * Homepage hero — "Ritim" design (CLAUDE.md §62): 720 px full-width photo
+ * (or the optional background video, ritim/media.ts) with the bottom corners
+ * rounded 48 px, dark radial + linear scrim, white copy on the left: play
+ * pill → 100/80 h1 → 28/39 subline → e-mail capture → note → aside link.
+ * The H1 keeps the keyword-led title (§35.11). Server component; the only
+ * client part is the e-mail capture.
  */
-
 const COPY = {
   tr: {
-    // \n breaks the line from 640 px up; the no-break space keeps "QR kodla"
-    // together when narrow phones wrap the title onto three lines.
-    title: 'Google yorumlarınızı\nQR kodla toplayın',
+    pill: 'Nasıl çalıştığını görün',
+    titleA: 'Google yorumlarınızı QR kodla ',
+    titleB: 'toplayın',
     subtitle:
       'Müşteriniz QR kodu okutup puan verir. Her müşteri herkese açık yorum bağlantınızı görür; belirlediğiniz eşiğin altındaki puanlarda önce size özel geri bildirim yazabilir.',
-    primaryCta: '14 gün ücretsiz deneyin',
-    secondaryCta: 'Nasıl çalışır',
-    facts: ['Kredi kartı gerekmez', '10 yorum platformu', 'Türkçe ve İngilizce'],
+    label: 'E-posta adresi',
+    placeholder: 'E-posta adresiniz*',
+    button: 'Ücretsiz Dene',
+    note: '14 gün ücretsiz · Kredi kartı gerekmez · 10 yorum platformu · Ayrıntılar: ',
+    noteLink: 'KVKK aydınlatma metni',
+    aside: 'Fiyatları önce görmek mi istersiniz?',
+    asideLink: 'Paketleri gör',
+    alt: 'Servis sırasında tabak hazırlayan şef',
   },
   en: {
-    title: 'Collect Google reviews\nwith QR codes',
+    pill: 'See how it works',
+    titleA: 'Collect Google reviews with ',
+    titleB: 'QR codes',
     subtitle:
       'Your customers scan the QR code and give a rating. Every customer sees your public review link; below the threshold you set, they can send you private feedback first.',
-    primaryCta: 'Start your 14-day free trial',
-    secondaryCta: 'See how it works',
-    facts: ['No credit card', '10 review platforms', 'Turkish and English'],
+    label: 'E-mail address',
+    placeholder: 'Your e-mail*',
+    button: 'Start free',
+    note: '14-day free trial · No credit card · 10 review platforms · Details: ',
+    noteLink: 'privacy notice',
+    aside: 'Want to see the prices first?',
+    asideLink: 'See plans',
+    alt: 'A chef plating a dish during service',
   },
 } as const;
 
 export default function HeroCinematic({ locale }: { locale: 'tr' | 'en' }) {
-  const copy = COPY[locale];
-
+  const c = COPY[locale];
   return (
-    <section aria-labelledby="hero-title" className="relative overflow-hidden bg-[#FAFAFA]">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-[200px] -top-[160px] h-[460px] w-[460px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(198,242,78,0.38), transparent 70%)' }}
-      />
-
-      <div className="relative mx-auto grid w-full max-w-[1200px] grid-cols-1 items-center gap-12 px-5 pb-[60px] pt-10 sm:px-10 sm:pb-24 sm:pt-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:pb-28 lg:pt-20 xl:gap-16">
-        <div className="max-w-[640px]">
-          <h1
-            id="hero-title"
-            className="text-balance text-[38px] text-[#0A0A0A] sm:whitespace-pre-line sm:text-[52px] xl:text-[60px]"
-            style={{ lineHeight: 1.02, letterSpacing: '-0.035em' }}
-          >
-            {copy.title}
+    <section className="rt-hero" aria-labelledby="hero-title">
+      <div className="rt-hero__media">
+        {SITE_VIDEOS.hero ? (
+          <video autoPlay muted loop playsInline poster={img('hero-sef')} aria-hidden="true">
+            <source src={SITE_VIDEOS.hero} type="video/mp4" />
+          </video>
+        ) : (
+          <Image src={img('hero-sef')} alt={c.alt} fill priority sizes="100vw" />
+        )}
+      </div>
+      <div className="rt-container">
+        <div className="rt-hero__content">
+          <a className="rt-pill-play" href="#nasil-calisir">
+            <span className="rt-pill-play__icon" aria-hidden="true" />
+            {c.pill}
+          </a>
+          <h1 id="hero-title" className="rt-hero__title">
+            {c.titleA}
+            <Scribble>{c.titleB}</Scribble>
           </h1>
-
-          <p className="mt-6 max-w-[540px] text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
-            {copy.subtitle}
-          </p>
-
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
-              href={`/${locale}/auth/register`}
-              rel="nofollow"
-              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]"
-            >
-              {copy.primaryCta}
-              <ArrowRight size={16} aria-hidden="true" />
+          <p className="rt-hero__sub">{c.subtitle}</p>
+          <RtCapture locale={locale} button={c.button} placeholder={c.placeholder} label={c.label} />
+          <p className="rt-hero__note">
+            {c.note}
+            <Link href={`/${locale}/kvkk`} prefetch={false}>
+              {c.noteLink}
             </Link>
-            <a
-              href="#how-it-works"
-              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#D4D4D4] bg-white px-6 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]"
-            >
-              {copy.secondaryCta}
-            </a>
-          </div>
-
-          <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[14px] text-[#525252]">
-            {copy.facts.map((fact) => (
-              <li key={fact} className="inline-flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#EAF9B8] text-[#3F5408]"
-                >
-                  <Check size={11} strokeWidth={3} />
-                </span>
-                {fact}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mx-auto w-full max-w-[440px] lg:max-w-[480px]">
-          <HeroStage locale={locale} />
+          </p>
+          <p className="rt-hero__aside">
+            {c.aside}{' '}
+            <Link href={`/${locale}/pricing`}>{c.asideLink}</Link>
+          </p>
         </div>
       </div>
     </section>

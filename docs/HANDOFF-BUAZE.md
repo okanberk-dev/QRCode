@@ -1,4 +1,4 @@
-# Buaze handoff (updated 2026-11-21)
+# Buaze handoff (updated 2026-11-26)
 
 Nothing secret is in this file (env vars are named only). Everything below is in `main` unless stated.
 
@@ -12,6 +12,7 @@ Nothing secret is in this file (env vars are named only). Everything below is in
 | Public menu designs + owner design options (`docs/specs/menu-design-final.md`) | Merged. Review re-done and fixed 2026-11-21 (CLAUDE.md §38.263); 12 presets screenshotted at 390 px + 3 at 1440 px. Remaining: see 2.2 |
 | Deploy fix: `PAYNKOLAY_ENV` inferred from an allow-listed `PAYNKOLAY_BASE_URL` | Merged, live (`7d33c76`) |
 | `/api/health?db=1` probe (times 3x `SELECT 1`, shows port + param NAMES only) | Merged, live |
+| Marketing site redesign to the "Ritim" design package (CLAUDE.md §62, `docs/design/MARKETING_DESIGN.md`) | On branch `claude/bold-keller-1vblyz` (2026-11-26), not merged. Video slots empty (`src/components/marketing/ritim/media.ts`); brand ramp = package green (7 lines in `ritim.css`) |
 
 ## 2. Remaining work
 

@@ -133,8 +133,8 @@ export default function PricingPlans({ locale, plans }: Props) {
           : 'mx-auto max-w-[460px]';
 
   const segment = (active: boolean) =>
-    `inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-      active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:text-[#0A0A0A]'
+    `inline-flex min-h-[44px] items-center gap-2 rounded-full px-7 text-[16px] transition-colors ${
+      active ? 'bg-[var(--rt-brand-500)] text-white shadow-[var(--rt-sh-btn-inset)]' : 'text-[var(--rt-ink-700)]'
     }`;
 
   return (
@@ -145,7 +145,7 @@ export default function PricingPlans({ locale, plans }: Props) {
         <div
           role="group"
           aria-label={copy.billingLabel}
-          className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-[#FAFAFA] p-1"
+          className="inline-flex items-center gap-4 rounded-full bg-[var(--rt-cream)] p-2"
         >
           <button
             type="button"
@@ -183,7 +183,9 @@ export default function PricingPlans({ locale, plans }: Props) {
           const price = billing === 'monthly' ? monthly : yearlyMonthlyOf(p);
           // Turkish page: TRY, the currency PayNKolay charges. English: USD.
           const fmt = (v: number) => (p.tryPrices ? formatTry(v, locale) : formatUsd(v));
-          const dark = p.isFeatured;
+          // "Ritim" plan cards: all light; the featured one gets a 2 px brand border + flag.
+          const dark = false;
+          const featured = p.isFeatured;
 
           const trialPrimary = isTrialHref(p.buttonHref);
           const primaryHref = trialPrimary
@@ -207,20 +209,18 @@ export default function PricingPlans({ locale, plans }: Props) {
             <article
               key={p.id}
               aria-labelledby={`plan-${p.id}`}
-              className={`relative flex flex-col rounded-[20px] p-6 sm:p-8 ${
-                dark
-                  ? 'mt-2 bg-[#0A0A0A] pt-9 text-white sm:pt-10 md:mt-0 md:pt-8'
-                  : 'border border-[#EDEDED] bg-white text-[#0A0A0A]'
+              className={`relative flex flex-col rounded-[var(--rt-r-lg)] bg-[image:var(--rt-grad-plan-card)] p-6 text-[var(--rt-ink-900)] sm:p-8 ${
+                featured ? 'mt-3 border-2 border-[var(--rt-brand-500)] md:mt-0' : 'border border-[var(--rt-line)]'
               }`}
             >
-              {dark ? (
-                <span className="pulse-eyebrow absolute -top-3 left-6 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[#0A0A0A] sm:left-8">
+              {featured ? (
+                <span className="rt-badge rt-badge--sky absolute -top-[11px] left-6 sm:left-8">
                   {copy.recommended}
                 </span>
               ) : null}
 
               <div className="flex items-start justify-between gap-3">
-                <h3 id={`plan-${p.id}`} className={`text-[24px] leading-[1.15] ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>
+                <h3 id={`plan-${p.id}`} className="rt-t-h5">
                   {p.name}
                 </h3>
                 {billing === 'monthly' && hasMonthlyDiscount && p.discount.label ? (
@@ -241,7 +241,7 @@ export default function PricingPlans({ locale, plans }: Props) {
               <div className={`mt-6 border-b pb-6 ${dark ? 'border-white/10' : 'border-[#EDEDED]'}`}>
                 <p className="flex items-baseline gap-1.5">
                   <span
-                    className={`bz-h-tight text-[44px] leading-none tabular-nums sm:text-[52px] ${
+                    className={`text-[48px] leading-none tabular-nums ${
                       dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
                     }`}
                   >
@@ -281,7 +281,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                           dark ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
                         }`}
                       >
-                        <Check size={12} className="text-[#0A0A0A]" strokeWidth={2.5} />
+                        <Check size={12} className="text-[var(--rt-brand-700)]" strokeWidth={2.5} />
                       </span>
                       <span className={dark ? 'text-white' : 'text-[#0A0A0A]'}>{feat}</span>
                     </li>
@@ -295,11 +295,7 @@ export default function PricingPlans({ locale, plans }: Props) {
                 <Link
                   href={primaryHref}
                   rel={trialPrimary ? 'nofollow' : undefined}
-                  className={`flex min-h-[48px] w-full items-center justify-center rounded-full px-6 text-[15px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-                    dark
-                      ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E] focus-visible:ring-offset-[#0A0A0A]'
-                      : 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]'
-                  }`}
+                  className={`rt-btn rt-btn--block ${featured ? 'rt-btn--primary' : 'rt-btn--solid'}`}
                 >
                   {primaryLabel}
                 </Link>

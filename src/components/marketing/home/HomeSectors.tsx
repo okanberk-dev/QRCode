@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight, LayoutGrid } from 'lucide-react';
+import { RtStories } from '../ritim/interactive';
+import { img } from '../ritim/media';
 import { RELATED_SOLUTIONS_LIST, SECTOR_COUNT } from '@/lib/related-solutions';
 import { SECTOR_PLATFORMS, type SectorKey } from '@/lib/sector-platforms';
-import SectionHeader from './SectionHeader';
 
 /**
  * Sectors — plain links to the six sector pages plus the full list (replaces
@@ -98,73 +98,103 @@ function platformSummary(sector: SectorKey, locale: 'tr' | 'en'): string {
   return locale === 'tr' ? `${shown} ve ${rest} platform daha` : `${shown} and ${rest} more`;
 }
 
-const CARD =
-  'group relative flex h-full flex-col rounded-[20px] border p-6 transition-colors focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2';
-const STRETCHED_LINK = 'after:absolute after:inset-0 after:rounded-[20px] focus-visible:outline-none';
+/** Photo + handwritten line per sector for the story rail. */
+const SLIDE_ART: Record<string, { img: string; script: { tr: string; en: string } }> = {
+  restaurants: { img: img('restoran-ic'), script: { tr: 'masada, adisyonda', en: 'at the table' } },
+  delivery: { img: img('online-siparis'), script: { tr: 'paketin içinde', en: 'inside the bag' } },
+  hotels: { img: img('restoran-aydinlik'), script: { tr: 'odada, resepsiyonda', en: 'in the room' } },
+  healthcare: { img: img('destek-ekip'), script: { tr: 'bekleme salonunda', en: 'in the waiting room' } },
+  'beauty-salon': { img: img('kafe-ic'), script: { tr: 'ayna önünde', en: 'by the mirror' } },
+  retail: { img: img('market'), script: { tr: 'kasada, fişte', en: 'at the till' } },
+};
+
+/** Business types → the closest sector page (chips with a photo peek). */
+const CHIPS: { tr: string; en: string; slug: string; img: string }[] = [
+  { tr: 'Restoran', en: 'Restaurant', slug: 'restaurants', img: img('fine-dining') },
+  { tr: 'Kafe', en: 'Café', slug: 'restaurants', img: img('kafe') },
+  { tr: 'Pastane', en: 'Bakery', slug: 'restaurants', img: img('kahvalti') },
+  { tr: 'Bar', en: 'Bar', slug: 'restaurants', img: img('bar') },
+  { tr: 'Pizzacı', en: 'Pizzeria', slug: 'restaurants', img: img('pizza') },
+  { tr: 'Burgerci', en: 'Burger joint', slug: 'restaurants', img: img('burger') },
+  { tr: 'Paket servis', en: 'Delivery', slug: 'delivery', img: img('tako') },
+  { tr: 'Otel', en: 'Hotel', slug: 'hotels', img: img('restoran-aydinlik') },
+  { tr: 'Klinik', en: 'Clinic', slug: 'healthcare', img: img('destek-ekip') },
+  { tr: 'Kuaför', en: 'Hair salon', slug: 'beauty-salon', img: img('kafe-ic') },
+  { tr: 'Güzellik salonu', en: 'Beauty salon', slug: 'beauty-salon', img: img('restoran-yesil') },
+  { tr: 'Mağaza', en: 'Shop', slug: 'retail', img: img('market') },
+  { tr: 'Market', en: 'Grocery', slug: 'retail', img: img('kafe-bahce') },
+];
 
 export default function HomeSectors({ locale }: { locale: 'tr' | 'en' }) {
   const copy = COPY[locale];
+  const tr = locale === 'tr';
+  const base = `/${locale}`;
   const existing = new Map(RELATED_SOLUTIONS_LIST.map((entry) => [entry.slug, entry] as const));
 
-  return (
-    <section id="industries" aria-labelledby="industries-title" className="bg-white py-[60px] sm:py-24">
-      <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-10">
-        <SectionHeader id="industries-title" eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} />
+  const slides = FEATURED.filter((f) => existing.has(f.slug)).map((f) => {
+    const entry = existing.get(f.slug)!;
+    const art = SLIDE_ART[f.slug];
+    const name = tr ? entry.tr : entry.en;
+    return {
+      img: art.img,
+      stat: name,
+      statSub: art.script[locale],
+      quote: `${copy.platforms}: ${platformSummary(f.sector, locale)}.`,
+      sign: name,
+      by: `${copy.where} · ${f.where[locale]}`,
+      href: `${base}/solutions/${f.slug}`,
+      linkLabel: tr ? 'Sektör sayfası' : 'Industry page',
+    };
+  });
 
-        <ul className="mt-12 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-          {FEATURED.map((item) => {
-            const entry = existing.get(item.slug);
-            if (!entry) return null;
-            const Icon = entry.Icon;
-            return (
-              <li key={item.slug} className={`${CARD} border-[#EDEDED] bg-white hover:border-[#0A0A0A]`}>
-                <div className="flex items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#FAFAFA] text-[#0A0A0A] ring-1 ring-[#EDEDED]"
-                  >
-                    <Icon size={18} strokeWidth={2} />
-                  </span>
-                  <h3 className="min-w-0 flex-1 text-[18px] leading-[1.25] text-[#0A0A0A]">
-                    <Link href={`/${locale}/solutions/${item.slug}`} className={STRETCHED_LINK}>
-                      {entry[locale]}
-                    </Link>
-                  </h3>
-                  <ArrowRight
-                    size={16}
-                    aria-hidden="true"
-                    className="shrink-0 text-[#A3A3A3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0A0A0A] motion-reduce:transition-none"
-                  />
-                </div>
-                <p className="mt-4 text-pretty text-[14px] leading-[1.55] text-[#525252]">
-                  <span className="font-medium text-[#0A0A0A]">{copy.where}:</span> {item.where[locale]}
-                </p>
-                <p className="mt-1 text-pretty text-[14px] leading-[1.55] text-[#525252]">
-                  <span className="font-medium text-[#0A0A0A]">{copy.platforms}:</span>{' '}
-                  {platformSummary(item.sector, locale)}
-                </p>
-              </li>
-            );
-          })}
-          <li className={`${CARD} border-[#0A0A0A] bg-[#0A0A0A] hover:bg-[#1A1A1A]`}>
-            <div className="flex items-center gap-3">
-              <span
-                aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#C6F24E] text-[#0A0A0A]"
-              >
-                <LayoutGrid size={18} strokeWidth={2} />
-              </span>
-              <h3 className="min-w-0 flex-1 text-[18px] leading-[1.25] text-white">
-                <Link href={`/${locale}/solutions`} className={STRETCHED_LINK}>
-                  {copy.allTitle}
-                </Link>
-              </h3>
-              <ArrowRight size={16} aria-hidden="true" className="shrink-0 text-[#C6F24E]" />
+  return (
+    <>
+      <section id="industries" className="rt-section rt-reveal" aria-labelledby="industries-title">
+        <div className="rt-stories">
+          <div className="rt-container">
+            <div className="rt-section-head">
+              <div className="rt-section-head__text">
+                <p className="rt-eyebrow">{copy.eyebrow}</p>
+                <h2 id="industries-title" className="rt-t-h1">
+                  {copy.title}
+                </h2>
+                <p className="rt-t-lead">{copy.lead}</p>
+              </div>
+              <Link className="rt-btn rt-btn--primary" href={`${base}/solutions`}>
+                {copy.allTitle}
+              </Link>
             </div>
-            <p className="mt-4 text-[14px] leading-[1.55] text-white/75">{copy.allBody}</p>
-          </li>
-        </ul>
-      </div>
-    </section>
+            <RtStories slides={slides} prevLabel={tr ? 'Önceki sektör' : 'Previous industry'} nextLabel={tr ? 'Sonraki sektör' : 'Next industry'} />
+          </div>
+        </div>
+      </section>
+
+      <section className="rt-section rt-reveal" aria-labelledby="business-types-title">
+        <div className="rt-container">
+          <div className="rt-section-head rt-section-head--center">
+            <div className="rt-section-head__text">
+              <h2 id="business-types-title" className="rt-t-h1">
+                {tr ? 'Hangi işletmeyi yönetiyorsanız' : 'Whatever business you run'}
+              </h2>
+              <p className="rt-t-lead">
+                {tr
+                  ? 'QR kodun yeri ve öne çıkan platformlar işletmeye göre değişir. Size en yakın sayfayı seçin.'
+                  : 'Where the QR code goes and which platforms matter depends on the business. Pick the page closest to yours.'}
+              </p>
+            </div>
+          </div>
+          <div className="rt-chips">
+            {CHIPS.map((c) => (
+              <Link key={c.tr} className="rt-chip" href={`${base}/solutions/${c.slug}`} prefetch={false}>
+                {tr ? c.tr : c.en}
+                <span className="rt-chip__peek" aria-hidden="true">
+                  <img src={c.img} alt="" loading="lazy" decoding="async" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

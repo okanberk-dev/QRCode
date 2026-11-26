@@ -1,4 +1,4 @@
-import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
+import { Space_Grotesk, Inter, JetBrains_Mono, Figtree, Source_Sans_3, Caveat } from 'next/font/google';
 import localFont from 'next/font/local';
 
 // Site fonts (CLAUDE.md §11): Clash Display (headings) + Inter (body) +
@@ -56,5 +56,28 @@ const jetBrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
-export const rootFontClassName = `${clashDisplay.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`;
+// Marketing site ("Ritim" design system, CLAUDE.md §62): Figtree (headings +
+// body), Source Sans 3 (menus, form labels, eyebrows), Caveat (handwritten
+// accent). All OFL. Variable fonts, so no weight list. Not preloaded: the
+// variables sit on every root <html>, and the panels never use them.
+const figtree = Figtree({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-figtree',
+});
+const sourceSans = Source_Sans_3({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-source-sans',
+});
+const caveat = Caveat({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-caveat',
+});
+
+export const rootFontClassName = `${clashDisplay.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable} ${figtree.variable} ${sourceSans.variable} ${caveat.variable}`;
 export const rootBodyFontClassName = inter.className;

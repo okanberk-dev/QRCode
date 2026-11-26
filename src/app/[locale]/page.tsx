@@ -7,6 +7,8 @@ import { getTranslations, type Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import HeroCinematic from '@/components/marketing/heroes/HeroCinematic';
+import HomeBusinessStrip from '@/components/marketing/home/HomeBusinessStrip';
+import HomePulseAi from '@/components/marketing/home/HomePulseAi';
 import HomeHowItWorks from '@/components/marketing/home/HomeHowItWorks';
 import HomeFeatures from '@/components/marketing/home/HomeFeatures';
 import HomePlatforms from '@/components/marketing/home/HomePlatforms';
@@ -23,11 +25,12 @@ import { HOME_FAQ } from '@/components/marketing/home/home-faq';
  * inherited from [locale]/layout.tsx, and nothing here reads headers(),
  * cookies() or searchParams (CLAUDE.md §35.12.3).
  *
- * One idea per section, each feature said once (spec 2026-11):
- * hero → how it works → features → platform links (dark, three.js orbit) →
- * Audit Center + Surveys → trust (Google rules + KVKK) → industries →
- * free QR generator → FAQ → final CTA. All copy is server-rendered HTML; the
- * only client islands are the hero's sample stage and the 3D orbit.
+ * "Ritim" home template (CLAUDE.md §62): hero → business-type strip →
+ * product cards → Pulse AI → sticky "how it works" → trust panel → industry
+ * story rail + business chips → platform links → dark "beyond reviews"
+ * cards → free QR banner → FAQ → closing CTA. All copy is server-rendered
+ * HTML; the client islands are the e-mail capture, tabs, sticky slider,
+ * story rail and FAQ accordion.
  */
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -128,19 +131,21 @@ export default async function LandingPage({
   };
 
   return (
-    <div className="min-h-[100dvh] overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] lg:pt-[64px]">
+    <div className="min-h-[100dvh] overflow-x-clip bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
 
       <MarketingNavbar locale={locale} t={t} />
 
       <main id="main-content">
         <HeroCinematic locale={locale} />
-        <HomeHowItWorks locale={locale} />
+        <HomeBusinessStrip locale={locale} />
         <HomeFeatures locale={locale} />
-        <HomePlatforms locale={locale} />
-        <HomeBeyondReviews locale={locale} />
+        <HomePulseAi locale={locale} />
+        <HomeHowItWorks locale={locale} />
         <HomeTrust locale={locale} />
         <HomeSectors locale={locale} />
+        <HomePlatforms locale={locale} />
+        <HomeBeyondReviews locale={locale} />
         <HomeQrTeaser locale={locale} />
         <HomeFaq locale={locale} />
         <HomeFinalCta locale={locale} />

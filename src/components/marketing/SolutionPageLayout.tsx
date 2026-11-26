@@ -1,4 +1,6 @@
+import Image from 'next/image';
 import Link from 'next/link';
+import { img } from '@/components/marketing/ritim/media';
 import type { ReactNode } from 'react';
 import {
   ArrowRight,
@@ -109,14 +111,11 @@ export interface SolutionPageLayoutProps {
   illustration?: ReactNode;
 }
 
-const CONTAINER = 'mx-auto w-full max-w-[1200px] px-5 sm:px-10';
-const SECTION_Y = 'py-[60px] sm:py-24';
+const CONTAINER = 'rt-container';
+const SECTION_Y = 'py-[64px] lg:py-[112px]';
 const FOCUS =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
-const BTN_CORE =
-  'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors';
-const BTN = `${BTN_CORE} ${FOCUS}`;
-const TEXT_LINK = `inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FOCUS}`;
+const TEXT_LINK = 'rt-link-arrow min-h-[44px]';
 
 /** Display names and official brand colours of the review platforms. */
 const PLATFORM_INFO: Record<string, { name: string; color: string }> = {
@@ -288,30 +287,31 @@ function SectionHeading({
   size?: 'md' | 'sm';
 }) {
   const dark = tone === 'dark';
-  const scale = size === 'sm' ? 'text-[24px] sm:text-[30px]' : 'text-[28px] sm:text-[40px] lg:text-[48px]';
   return (
-    <div className="max-w-[720px]">
-      <p className={`pulse-eyebrow ${dark ? 'text-[#C6F24E]' : 'text-[#737373]'}`}>{eyebrow}</p>
-      <h2
-        id={id}
-        className={`mt-4 text-balance leading-[1.08] tracking-[-0.02em] ${scale} ${
-          dark ? 'text-white' : 'text-[#0A0A0A]'
-        }`}
-      >
+    <div className="rt-section-head__text" style={dark ? { color: '#fff' } : undefined}>
+      <p className="rt-eyebrow" style={dark ? { color: 'rgba(255,255,255,.8)' } : undefined}>
+        {eyebrow}
+      </p>
+      <h2 id={id} className={`${size === 'sm' ? 'rt-t-h2' : 'rt-t-h1'} text-balance`}>
         {title}
       </h2>
       {lead ? (
-        <p
-          className={`mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] sm:text-[18px] ${
-            dark ? 'text-white/75' : 'text-[#525252]'
-          }`}
-        >
+        <p className="rt-t-lead text-pretty" style={dark ? { color: 'rgba(255,255,255,.85)' } : undefined}>
           {lead}
         </p>
       ) : null}
     </div>
   );
 }
+
+/** Sector photo for the split hero (licensed stock, ritim/media). Sectors
+ *  without a fitting photo keep their illustration on a cream panel. */
+const SECTOR_PHOTO: Record<string, string> = {
+  restaurants: 'restoran-ic',
+  delivery: 'online-siparis',
+  hotels: 'fine-dining',
+  retail: 'market',
+};
 
 export default function SolutionPageLayout({
   locale,
@@ -354,13 +354,13 @@ export default function SolutionPageLayout({
   const bgAfterDark = (key: string) => (afterDark.indexOf(key) % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]');
 
   return (
-    <div className="min-h-[100dvh] overflow-x-clip bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] lg:pt-[64px]">
+    <div className="min-h-[100dvh] overflow-x-clip bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <MarketingNavbar locale={locale} />
 
       <main id="main-content">
         {/* 1 · Hero */}
-        <section aria-labelledby="solution-title" className="bg-white pb-[60px] pt-10 sm:pb-24 sm:pt-16">
+        <section aria-labelledby="solution-title" className="rt-sheet" style={{ paddingTop: 32 }}>
           <div className={CONTAINER}>
             <nav aria-label={shared.breadcrumb} className="text-[13px] text-[#737373]">
               <ol className="flex flex-wrap items-center gap-1.5">
@@ -391,44 +391,36 @@ export default function SolutionPageLayout({
               </ol>
             </nav>
 
-            <div className="mt-8 lg:mt-10 lg:grid lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-14">
-              <div className="max-w-[680px]">
-                {showEyebrow ? <p className="pulse-eyebrow mb-5 text-[#737373]">{content.eyebrow}</p> : null}
+            <div className="rt-split-hero" style={{ paddingTop: 32 }}>
+              <div className="rt-split-hero__text">
+                {showEyebrow ? <p className="rt-eyebrow">{content.eyebrow}</p> : null}
                 <h1
                   id="solution-title"
-                  className="text-balance text-[38px] leading-[1.06] tracking-[-0.03em] text-[#0A0A0A] sm:text-[52px] md:text-[48px] lg:text-[56px]"
+                  className="rt-t-h1 text-balance"
                 >
                   {content.h1}
                 </h1>
-                <p className="mt-6 max-w-[620px] text-pretty text-[16px] leading-[1.6] text-[#525252] sm:text-[18px]">
+                <p className="rt-t-lead text-pretty">
                   {content.lead}
                 </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <Link
-                    href={registerHref}
-                    rel="nofollow"
-                    className={`${BTN} bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]`}
-                  >
+                <div className="rt-btn-group">
+                  <Link href={registerHref} rel="nofollow" className="rt-btn rt-btn--solid">
                     {shared.primary}
-                    <ArrowRight size={16} aria-hidden="true" />
                   </Link>
-                  <a
-                    href={`#${flowId}`}
-                    className={`${BTN} border border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]`}
-                  >
+                  <a href={`#${flowId}`} className="rt-btn rt-btn--outline">
                     {shared.secondary}
                   </a>
                 </div>
-                <p className="mt-5 text-[14px] leading-[1.5] text-[#737373]">{shared.note}</p>
+                <p className="rt-t-sm rt-t-muted">{shared.note}</p>
               </div>
 
-              {illustration ? (
-                <div
-                  aria-hidden="true"
-                  className="relative mx-auto mt-12 flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] sm:max-w-[360px] lg:mt-0 lg:max-w-[440px]"
-                >
-                  <div className="absolute inset-[12%] rounded-full bg-[#EAF9B8]/60 blur-2xl" />
-                  <div className="relative w-[78%] [&>svg]:h-auto [&>svg]:w-full">{illustration}</div>
+              {SECTOR_PHOTO[slug] ? (
+                <div className="rt-split-hero__media">
+                  <Image src={img(SECTOR_PHOTO[slug])} alt="" width={1600} height={1280} priority sizes="(max-width: 1023px) 100vw, 640px" />
+                </div>
+              ) : illustration ? (
+                <div aria-hidden="true" className="rt-surface-cream relative flex aspect-[5/4] w-full items-center justify-center overflow-hidden">
+                  <div className="relative w-[62%] [&>svg]:h-auto [&>svg]:w-full">{illustration}</div>
                 </div>
               ) : null}
             </div>

@@ -24,22 +24,18 @@ export default function SectionHeader({
   const dark = tone === 'dark';
   const center = align === 'center';
   return (
-    <div className={`max-w-[720px] ${center ? 'mx-auto text-center' : ''} ${className}`}>
-      <p className={`pulse-eyebrow ${dark ? 'text-[#C6F24E]' : 'text-[#737373]'}`}>{eyebrow}</p>
-      <h2
-        id={id}
-        className={`mt-4 text-balance text-[28px] leading-[1.08] sm:text-[40px] lg:text-[48px] ${
-          dark ? 'text-white' : 'text-[#0A0A0A]'
-        }`}
-      >
+    <div
+      className={`rt-section-head__text ${className}`}
+      style={{ ...(center ? { margin: '0 auto', textAlign: 'center' as const } : {}), ...(dark ? { color: '#fff' } : {}) }}
+    >
+      <p className="rt-eyebrow" style={dark ? { color: 'rgba(255,255,255,.8)' } : undefined}>
+        {eyebrow}
+      </p>
+      <h2 id={id} className="rt-t-h1 text-balance">
         {title}
       </h2>
       {lead ? (
-        <p
-          className={`mt-5 max-w-[640px] text-pretty text-[16px] leading-[1.6] sm:text-[18px] ${
-            center ? 'mx-auto' : ''
-          } ${dark ? 'text-white/75' : 'text-[#525252]'}`}
-        >
+        <p className="rt-t-lead text-pretty" style={dark ? { color: 'rgba(255,255,255,.85)' } : undefined}>
           {lead}
         </p>
       ) : null}

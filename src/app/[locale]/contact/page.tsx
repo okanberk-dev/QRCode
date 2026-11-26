@@ -158,7 +158,7 @@ export default async function ContactPage({
     'flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]';
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <MarketingNavbar locale={lang} />
       <main id="main-content">
