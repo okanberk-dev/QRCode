@@ -30,7 +30,7 @@ interface Summary {
   durationMs: number;
 }
 
-export async function runRatingDropAlert(): Promise<Summary> {
+async function runRatingDropAlert(): Promise<Summary> {
   const start = Date.now();
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - SEVEN_DAYS_MS);

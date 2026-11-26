@@ -79,3 +79,15 @@ export function loyaltyErrorResponse(err: unknown): NextResponse {
 export function actorRef(actor: PanelActor): { id: string; source: string } {
   return { id: actor.realAdminId ?? actor.id, source: actor.realAdminId ? 'admin' : actor.source };
 }
+
+/**
+ * A branch of a chain card (§61) runs the counter but never edits the card:
+ * the program, customer page and branches are changed at the home business.
+ */
+export function branchEditRefused(program: { restaurantId: string } | null, restaurantId: string): NextResponse | null {
+  if (!program || program.restaurantId === restaurantId) return null;
+  return NextResponse.json(
+    { error: 'BRANCH_PROGRAM', code: 'BRANCH_PROGRAM', homeRestaurantId: program.restaurantId },
+    { status: 409 },
+  );
+}

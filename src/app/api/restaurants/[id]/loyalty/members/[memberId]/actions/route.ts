@@ -1,6 +1,6 @@
 // Counter actions on a loyalty card (CLAUDE.md §60): add stamps / points,
 // give a reward, give the birthday gift, correct the balance (managers).
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { validateBody } from '@/lib/api/validate';
 import { writePanelAuditLog } from '@/lib/audit-log';
@@ -17,6 +17,7 @@ import {
 } from '@/lib/loyalty-server';
 import { resolveDisplayTimeZone } from '@/lib/timezone';
 import { publishLoyaltyChange } from '@/lib/live-events';
+import { notifyRewardsReady, rewardsBecameReady } from '@/lib/loyalty-push';
 
 const Body = z.discriminatedUnion('type', [
   z
@@ -54,7 +55,8 @@ async function handlePOST(req: NextRequest, { params }: Ctx) {
   if (!program.isActive) {
     return NextResponse.json({ error: 'PROGRAM_PAUSED', code: 'PROGRAM_PAUSED' }, { status: 409 });
   }
-  const actor = actorRef(gate.actor);
+  // Events record which business's counter made the change (home or branch, §61).
+  const actor = { ...actorRef(gate.actor), restaurantId: id };
 
   try {
     switch (action.type) {
@@ -64,6 +66,9 @@ async function handlePOST(req: NextRequest, { params }: Ctx) {
           await writePanelAuditLog(gate.actor, 'owner.loyalty.earn.override', id, { restaurantId: id, memberId, amount: r.amount });
         }
         publishLoyaltyChange(memberId, { type: 'earn', amount: r.amount, balance: r.member.balance });
+        // Card notification (§61) when this visit made a reward reachable.
+        const ready = rewardsBecameReady(r.member.balance - r.amount, r.member.balance, program.rewards);
+        if (ready.length > 0) after(() => notifyRewardsReady(memberId, ready));
         return NextResponse.json({ member: toMemberDto(r.member, { full: gate.access.manage }), amount: r.amount, expired: r.expired });
       }
       case 'redeem': {
@@ -79,6 +84,8 @@ async function handlePOST(req: NextRequest, { params }: Ctx) {
       case 'adjust': {
         const member = await adjustLoyaltyBalance(program, memberId, action.delta, action.note, actor);
         publishLoyaltyChange(memberId, { type: 'adjust', amount: action.delta, balance: member.balance });
+        const ready = rewardsBecameReady(member.balance - action.delta, member.balance, program.rewards);
+        if (ready.length > 0) after(() => notifyRewardsReady(memberId, ready));
         await writePanelAuditLog(gate.actor, 'owner.loyalty.adjust', id, { restaurantId: id, memberId, delta: action.delta });
         return NextResponse.json({ member: toMemberDto(member, { full: gate.access.manage }) });
       }

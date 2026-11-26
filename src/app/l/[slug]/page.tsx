@@ -127,6 +127,7 @@ export default async function LoyaltyJoinPage({ params, searchParams }: PageProp
             birthdayReward={program.birthdayReward}
             tiers={readLoyaltyTiers(program.tiers)}
             terms={program.terms}
+            branchNames={business.branchNames}
           />
         }
       >

@@ -1,7 +1,7 @@
 // "How it works" block of the customer panel (CLAUDE.md §61): earn rule,
 // rewards, birthday gift, tiers, terms. Themed through the --p-* variables
 // set by LoyaltyPortalFrame. No hooks.
-import { Cake, Crown, Gift } from 'lucide-react';
+import { Cake, Crown, Gift, Store } from 'lucide-react';
 import type { LoyaltyTier } from '@/lib/loyalty';
 
 export default function PortalRewardsInfo({
@@ -11,6 +11,7 @@ export default function PortalRewardsInfo({
   birthdayReward,
   tiers,
   terms,
+  branchNames = [],
 }: {
   locale: 'tr' | 'en';
   earnLine: string;
@@ -18,6 +19,8 @@ export default function PortalRewardsInfo({
   birthdayReward: string | null;
   tiers: LoyaltyTier[];
   terms: string | null;
+  /** Chain card (§61): the other businesses where it is valid. */
+  branchNames?: string[];
 }) {
   const tr = locale === 'tr';
   return (
@@ -32,6 +35,15 @@ export default function PortalRewardsInfo({
       <p className="mt-1.5 text-[14px]" style={{ color: 'var(--p-muted)' }}>
         {earnLine}
       </p>
+      {branchNames.length > 0 && (
+        <p className="mt-2 flex items-start gap-2 text-[13.5px]">
+          <Store size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>
+            {tr ? 'Bu kart şu şubelerde de geçerli: ' : 'This card also works at: '}
+            <strong>{branchNames.join(', ')}</strong>
+          </span>
+        </p>
+      )}
       <ul className="mt-3 space-y-2">
         {rewardLines.map((line) => (
           <li key={line} className="flex items-start gap-2.5 text-[14px]">

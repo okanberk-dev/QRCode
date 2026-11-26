@@ -50,18 +50,6 @@ function setCachedBiSnapshot(range: string, data: BiSnapshot): void {
   biCache.set(range, { data, expiresAt: Date.now() + BI_CACHE_TTL_MS });
 }
 
-/**
- * Manuel invalidation — admin cross-workspace destructive aksiyon
- * sonrası (örn. plan tier toplu güncelleme, bulk deactivate) caller bu
- * helper'ı çağırarak fresh fetch'i tetikler. Şu an wired callsite yok;
- * gelecek scope (CLAUDE.md §38.97 Stage A5 admin/restaurants/bulk
- * feature_override + admin/members/bulk send_email gibi yüksek-impact
- * mutation'lar drift uzatabilir).
- */
-export function clearBiSnapshotCache(): void {
-  biCache.clear();
-}
-
 export async function GET(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
   if (!admin) return ApiErrors.unauthorized('Yetkisiz');

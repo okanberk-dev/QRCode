@@ -14,7 +14,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 /** Shared helper (§21.13) — the cron and a future admin trigger call it directly. */
-export async function runGoogleReviewsAlert() {
+async function runGoogleReviewsAlert() {
   const summary = await notifyPendingGoogleReviews();
   return { ok: true, ...summary };
 }

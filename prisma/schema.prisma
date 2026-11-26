@@ -343,6 +343,8 @@ model Restaurant {
   googleReplyJobs          GoogleReplyJob[]
   // Loyalty card (CLAUDE.md §60): one program per business.
   loyaltyProgram           LoyaltyProgram?
+  // Branch of another business's loyalty card (same owner, §61).
+  loyaltyBranchOf          LoyaltyProgramBranch?
 
   // Stage 17 §38.87 — Hot path: getScopedRestaurantIds her dashboard
   // request'inde `prisma.restaurant.findMany({ where: { userId } })`
@@ -2835,13 +2837,36 @@ model LoyaltyProgram {
   // readLoyaltyPortal(); NULL = defaults.
   portal               Json?
   isActive             Boolean         @default(false) @map("is_active") // published
+  // Win-back e-mail (§61): members with e-mail + marketing consent who have
+  // not visited for `winbackDays` get the owner's message, at most once per
+  // 90 days. Off until the owner confirms the İYS / consent responsibility.
+  winbackEnabled       Boolean         @default(false) @map("winback_enabled")
+  winbackDays          Int             @default(30) @map("winback_days")
+  winbackMessage       String?         @map("winback_message")
+  winbackConfirmedAt   DateTime?       @map("winback_confirmed_at")
   createdAt            DateTime        @default(now()) @map("created_at")
   updatedAt            DateTime        @updatedAt @map("updated_at")
   rewards              LoyaltyReward[]
   members              LoyaltyMember[]
   events               LoyaltyEvent[]
+  branches             LoyaltyProgramBranch[]
 
   @@map("loyalty_programs")
+}
+
+// A chain's other businesses where the same card is valid (§61). The
+// program stays with its home business; a branch's counter works on the
+// same members. A business is either a home or a branch, never both.
+model LoyaltyProgramBranch {
+  id           String         @id @default(cuid())
+  programId    String         @map("program_id")
+  program      LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  restaurantId String         @unique @map("restaurant_id")
+  restaurant   Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  @@index([programId])
+  @@map("loyalty_program_branches")
 }
 
 model LoyaltyReward {
@@ -2881,6 +2906,12 @@ model LoyaltyMember {
   birthMonth             Int?           @map("birth_month")
   birthDay               Int?           @map("birth_day")
   marketingConsent       Boolean        @default(false) @map("marketing_consent")
+  // When marketing consent was given / withdrawn (İYS export, §61).
+  marketingConsentAt     DateTime?      @map("marketing_consent_at")
+  marketingOptOutAt      DateTime?      @map("marketing_opt_out_at")
+  // Last win-back e-mail; last year the birthday notification went out.
+  winbackSentAt          DateTime?      @map("winback_sent_at")
+  birthdayNoticeYear     Int?           @map("birthday_notice_year")
   balance                Int            @default(0)
   lifetimeEarned         Int            @default(0) @map("lifetime_earned")
   visits                 Int            @default(0)
@@ -2891,6 +2922,7 @@ model LoyaltyMember {
   createdAt              DateTime       @default(now()) @map("created_at")
   updatedAt              DateTime       @updatedAt @map("updated_at")
   events                 LoyaltyEvent[]
+  pushSubscriptions      LoyaltyPushSubscription[]
 
   @@unique([programId, code])
   @@unique([programId, phone])
@@ -2917,11 +2949,34 @@ model LoyaltyEvent {
   note        String?
   actorId     String?        @map("actor_id")
   actorSource String?        @map("actor_source")
+  // Business (home or branch) whose counter made the change; NULL = home / customer.
+  restaurantId String?       @map("restaurant_id")
   createdAt   DateTime       @default(now()) @map("created_at")
 
   @@index([programId, createdAt])
   @@index([memberId, createdAt])
   @@map("loyalty_events")
+}
+
+// Web Push subscription of a card (§61): the customer turned notifications
+// on from the card page (reward ready, birthday gift). Deleted with the
+// card, when the customer turns them off, or when the push service says
+// the subscription is gone (404 / 410).
+model LoyaltyPushSubscription {
+  id         String        @id @default(cuid())
+  memberId   String        @map("member_id")
+  member     LoyaltyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  // One browser has one subscription for every card under /l/, so the same
+  // endpoint can belong to several cards (two businesses, two people).
+  endpoint   String
+  p256dh     String
+  auth       String
+  createdAt  DateTime      @default(now()) @map("created_at")
+  lastSentAt DateTime?     @map("last_sent_at")
+
+  @@unique([memberId, endpoint])
+  @@index([endpoint])
+  @@map("loyalty_push_subscriptions")
 }
 
 // Buaze customer account (CLAUDE.md §61): the businesses' end customers —

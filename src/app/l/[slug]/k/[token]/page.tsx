@@ -25,6 +25,7 @@ import PortalRewardsInfo from '@/components/loyalty/PortalRewardsInfo';
 import ArrivalSplash from '@/components/loyalty/ArrivalSplash';
 import SoundToggle from '@/components/loyalty/SoundToggle';
 import { loadStaffCard, pickCardView, staffPanelHref } from '@/lib/loyalty-staff';
+import { vapidPublicKey } from '@/lib/web-push';
 import { pickPublicLocale } from '../../../loyalty-public';
 import CardView from './CardView';
 import StaffCounterView from './StaffCounterLazy';
@@ -149,6 +150,7 @@ export default async function LoyaltyCardPage({ params, searchParams }: PageProp
             birthdayReward={dto.program.birthdayReward}
             tiers={dto.program.tiers}
             terms={dto.program.terms}
+            branchNames={dto.business.branchNames}
           />
         }
       >
@@ -161,6 +163,7 @@ export default async function LoyaltyCardPage({ params, searchParams }: PageProp
           justJoined={sp.new === '1'}
           viewer={{ signedIn: Boolean(account), owns: Boolean(account && card.member.customerAccountId === account.id) }}
           staffHref={staff ? `/l/${slug}/k/${token}?from=customer${locale === 'en' ? '&lang=en' : ''}` : null}
+          pushKey={vapidPublicKey()}
         />
       </LoyaltyPortalFrame>
     </>

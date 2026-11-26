@@ -69,15 +69,33 @@ export async function loadStaffCard(token: string, slug: string): Promise<StaffC
 
   const base = await prisma.loyaltyMember.findUnique({
     where: { cardToken: token },
-    select: { id: true, program: { select: { slug: true, restaurantId: true } } },
+    select: { id: true, program: { select: { id: true, slug: true, restaurantId: true } } },
   });
   if (!base || base.program.slug !== slug) return null;
-  const restaurantId = base.program.restaurantId;
+  const homeId = base.program.restaurantId;
 
-  const access = await loyaltyAccess(actor, restaurantId);
+  // A chain card (§61): staff of a branch act from their own business.
+  let restaurantId = homeId;
+  let access = await loyaltyAccess(actor, homeId);
+  if (!access.read) {
+    const branches = await prisma.loyaltyProgramBranch.findMany({
+      where: { programId: base.program.id },
+      orderBy: { createdAt: 'asc' },
+      select: { restaurantId: true },
+    });
+    for (const b of branches) {
+      const a = await loyaltyAccess(actor, b.restaurantId);
+      if (!a.read) continue;
+      if (!access.read || a.operate) {
+        restaurantId = b.restaurantId;
+        access = a;
+      }
+      if (a.operate) break;
+    }
+  }
   if (!access.read) return null;
 
-  const program = await loadLoyaltyProgram(restaurantId);
+  const program = await loadLoyaltyProgram(homeId);
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     select: { name: true, loyaltyEnabled: true },

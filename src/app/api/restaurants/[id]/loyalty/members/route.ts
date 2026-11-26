@@ -98,7 +98,7 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
         marketingConsent: d.marketingConsent,
         joinedVia: 'staff',
       },
-      actorRef(gate.actor),
+      { ...actorRef(gate.actor), restaurantId: id },
     );
     const { cardToken, ...rest } = member;
     return NextResponse.json(

@@ -13,6 +13,8 @@ import CounterPanel from './CounterPanel';
 import MembersPanel from './MembersPanel';
 import SharePanel from './SharePanel';
 import PortalEditor from './PortalEditor';
+import { BranchesCard, JoinChainCard, type ChainDto, type ChainOption } from './ChainPanels';
+import WinbackCard from './WinbackCard';
 import type { PortalBusinessDto } from '@/lib/loyalty-server';
 import { draftFromProgram, loyaltyFetch, loyaltyMessage, type AccessDto, type ProgramDto, type StatsDto } from './loyalty-client';
 
@@ -26,6 +28,10 @@ export interface LoyaltyPageData {
   moduleEnabled: boolean;
   baseUrl: string;
   suggestedTemplate: LoyaltyTemplate['key'];
+  /** Chain card (§61): null without a program. */
+  chain: ChainDto | null;
+  /** The owner's other cards this business can join as a branch (no program yet). */
+  chainOptions: ChainOption[];
 }
 
 type Tab = 'counter' | 'members' | 'program' | 'portal' | 'share';
@@ -49,6 +55,9 @@ export default function LoyaltyClient({
   const [membersKey, setMembersKey] = useState(0);
   const data = activeId ? cache[activeId] ?? null : null;
   const restaurant = restaurants.find((r) => r.id === activeId) ?? null;
+  const isBranch = Boolean(data?.chain?.isBranch);
+  // A branch never edits the card: those tabs live at the home business.
+  const visibleTab: Tab = isBranch && (tab === 'program' || tab === 'portal') ? 'counter' : tab;
 
   useEffect(() => {
     if (!ready || !activeId || cache[activeId]) return;
@@ -156,6 +165,16 @@ export default function LoyaltyClient({
         />
       ) : !data.program ? (
         data.access.manage ? (
+          <>
+          {data.chainOptions.length > 0 && (
+            <JoinChainCard
+              locale={locale}
+              restaurantId={data.restaurantId}
+              restaurantName={restaurant?.name ?? ''}
+              options={data.chainOptions}
+              onJoined={refreshStats}
+            />
+          )}
           <ProgramEditor
             key={`wizard-${activeId}`}
             locale={locale}
@@ -166,6 +185,7 @@ export default function LoyaltyClient({
             canManage
             onSaved={onSaved}
           />
+          </>
         ) : (
           <EmptyState
             icon={<Gift size={22} />}
@@ -175,6 +195,13 @@ export default function LoyaltyClient({
         )
       ) : (
         <>
+          {isBranch && data.chain && (
+            <AlertBanner kind="info">
+              {tr
+                ? `Bu işletme ${data.chain.homeName} sadakat kartının şubesi: kasa ve üyeler ortak. Kart, ödüller ve müşteri paneli ${data.chain.homeName} işletmesinden yönetilir.`
+                : `This business is a branch of ${data.chain.homeName}’s loyalty card: counter and members are shared. The card, rewards and customer page are managed at ${data.chain.homeName}.`}
+            </AlertBanner>
+          )}
           {!data.program.isActive && (
             <AlertBanner kind="warn">
               {tr
@@ -218,18 +245,22 @@ export default function LoyaltyClient({
 
           <Tabs
             ariaLabel={tr ? 'Sadakat kartı bölümleri' : 'Loyalty sections'}
-            active={tab}
+            active={visibleTab}
             onChange={(id) => setTab(id as Tab)}
             items={[
               { id: 'counter', label: tr ? 'Kasa' : 'Counter' },
               { id: 'members', label: tr ? 'Üyeler' : 'Members', count: stats?.members },
-              { id: 'program', label: tr ? 'Program' : 'Programme' },
-              { id: 'portal', label: tr ? 'Müşteri paneli' : 'Customer page' },
+              ...(isBranch
+                ? []
+                : [
+                    { id: 'program', label: tr ? 'Program' : 'Programme' },
+                    { id: 'portal', label: tr ? 'Müşteri paneli' : 'Customer page' },
+                  ]),
               { id: 'share', label: tr ? 'QR ve paylaş' : 'QR & share' },
             ]}
           />
 
-          {tab === 'counter' && (
+          {visibleTab === 'counter' && (
             <CounterPanel
               key={`counter-${activeId}`}
               locale={locale}
@@ -243,7 +274,7 @@ export default function LoyaltyClient({
               }}
             />
           )}
-          {tab === 'members' && (
+          {visibleTab === 'members' && (
             <MembersPanel
               key={`members-${activeId}`}
               locale={locale}
@@ -255,20 +286,31 @@ export default function LoyaltyClient({
               onChanged={refreshStats}
             />
           )}
-          {tab === 'program' && (
-            <ProgramEditor
-              key={`edit-${activeId}`}
-              locale={locale}
-              restaurantId={data.restaurantId}
-              restaurantName={restaurant?.name ?? ''}
-              mode="edit"
-              initialDraft={draftFromProgram(data.program)}
-              kindLocked={(stats?.members ?? 0) > 0}
-              canManage={data.access.manage}
-              onSaved={onSaved}
-            />
+          {visibleTab === 'program' && (
+            <div className="space-y-4">
+              <ProgramEditor
+                key={`edit-${activeId}`}
+                locale={locale}
+                restaurantId={data.restaurantId}
+                restaurantName={restaurant?.name ?? ''}
+                mode="edit"
+                initialDraft={draftFromProgram(data.program)}
+                kindLocked={(stats?.members ?? 0) > 0}
+                canManage={data.access.manage}
+                onSaved={onSaved}
+              />
+              <WinbackCard key={`winback-${activeId}`} locale={locale} restaurantId={data.restaurantId} canManage={data.access.manage} />
+              <BranchesCard
+                key={`branches-${activeId}`}
+                locale={locale}
+                restaurantId={data.restaurantId}
+                homeName={restaurant?.name ?? ''}
+                canManage={data.access.manage}
+                onChanged={(chain) => activeId && setCache((c) => ({ ...c, [activeId]: { ...c[activeId], chain } }))}
+              />
+            </div>
           )}
-          {tab === 'portal' && (
+          {visibleTab === 'portal' && (
             <PortalEditor
               key={`portal-${activeId}`}
               locale={locale}
@@ -280,7 +322,7 @@ export default function LoyaltyClient({
               onSaved={(program) => activeId && setCache((c) => ({ ...c, [activeId]: { ...c[activeId], program } }))}
             />
           )}
-          {tab === 'share' && (
+          {visibleTab === 'share' && (
             <SharePanel
               locale={locale}
               restaurantId={data.restaurantId}

@@ -465,6 +465,7 @@ export default function MemberActions({
         <NfcDialog
           locale={locale}
           mode="write"
+          target="fob"
           url={nfcUrl}
           title={tr ? 'Kartı NFC anahtarlığa yaz' : 'Write the card to an NFC key fob'}
           onClose={() => setNfcOpen(false)}

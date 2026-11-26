@@ -29,7 +29,7 @@ interface SnapshotSummary {
   durationMs: number;
 }
 
-export async function runMonthlyHealthSnapshot(): Promise<SnapshotSummary> {
+async function runMonthlyHealthSnapshot(): Promise<SnapshotSummary> {
   const start = Date.now();
   const now = new Date();
 

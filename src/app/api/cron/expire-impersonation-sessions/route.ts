@@ -23,7 +23,7 @@ interface ExpireResult {
   durationMs: number;
 }
 
-export async function runExpireImpersonationSessions(): Promise<ExpireResult> {
+async function runExpireImpersonationSessions(): Promise<ExpireResult> {
   const started = Date.now();
   const now = new Date();
 

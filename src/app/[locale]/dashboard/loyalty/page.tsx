@@ -13,7 +13,9 @@ import { actorFromUserPayload, getScopedRestaurantIdsForUserPayload } from '@/li
 import { resolveActiveRestaurantId } from '@/lib/active-business';
 import { templateForCategory } from '@/lib/loyalty';
 import {
+  loadLoyaltyChain,
   loadLoyaltyProgram,
+  loyaltyChainHomeOptions,
   loadPortalBusiness,
   loyaltyAccess,
   loyaltyPublicBaseUrl,
@@ -74,6 +76,8 @@ export default async function LoyaltyPage({ params, searchParams }: PageProps) {
         program: program ? toProgramDto(program) : null,
         stats: program ? await loyaltyStats(program) : null,
         business,
+        chain: program ? await loadLoyaltyChain(program, activeId) : null,
+        chainOptions: !program && access.manage ? await loyaltyChainHomeOptions(activeId) : [],
         access,
         moduleEnabled: flags?.loyaltyEnabled ?? true,
         baseUrl: loyaltyPublicBaseUrl(),

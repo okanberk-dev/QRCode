@@ -9,7 +9,7 @@
 // became ready gets confetti. The QR opens full screen for the counter.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Cake, Check, Crown, Download, Eye, Gift, Loader2, Maximize2, Share, UserCheck, UserPlus, X } from 'lucide-react';
+import { Bell, BellOff, Cake, Check, Crown, Download, Eye, Gift, Loader2, Maximize2, Share, UserCheck, UserPlus, X } from 'lucide-react';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import ConfettiBurst from '@/components/loyalty/ConfettiBurst';
 import {
@@ -41,6 +41,7 @@ export default function CardView({
   justJoined,
   viewer,
   staffHref = null,
+  pushKey = null,
 }: {
   locale: PublicLocale;
   token: string;
@@ -55,6 +56,8 @@ export default function CardView({
    * a bar leads back, and nothing is saved on this (staff) phone.
    */
   staffHref?: string | null;
+  /** VAPID public key: card notifications are available (§61). */
+  pushKey?: string | null;
 }) {
   const t = PUBLIC_COPY[locale];
   const tr = locale === 'tr';
@@ -391,6 +394,7 @@ export default function CardView({
       </section>
 
       {!staffHref && <InstallCard locale={locale} businessName={business.name} />}
+      {!staffHref && pushKey && <NotifyCard locale={locale} token={token} pushKey={pushKey} />}
 
       <section className={panel}>
         <h2 className="text-[16px] font-semibold">{t.history}</h2>
@@ -628,6 +632,163 @@ function InstallCard({ locale, businessName }: { locale: PublicLocale; businessN
             <Share size={13} className="inline -translate-y-px" aria-label={tr ? 'Paylaş' : 'Share'} />
             {tr ? ' Paylaş düğmesine, sonra “Ana Ekrana Ekle”ye dokunun.' : ' Share, then “Add to Home Screen”.'}
           </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── notifications (§61) ─────────────────────────────────────────────────
+
+const PUSH_FLAG = 'buaze:push:';
+
+function applicationServerKey(base64url: string): Uint8Array {
+  const pad = '='.repeat((4 - (base64url.length % 4)) % 4);
+  const raw = atob((base64url + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+/**
+ * "Tell me when my reward is ready": Web Push through the /l/ service
+ * worker. Two kinds of message only (reward ready, birthday gift). One
+ * browser subscription serves every card on the phone, so turning it off
+ * here removes only this card.
+ */
+function NotifyCard({ locale, token, pushKey }: { locale: PublicLocale; token: string; pushKey: string }) {
+  const tr = locale === 'tr';
+  const [state, setState] = useState<'hidden' | 'off' | 'on' | 'busy' | 'denied' | 'ios' | 'error'>('hidden');
+  const api = `/api/public/loyalty/card/${token}/push`;
+
+  useEffect(() => {
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    if (!supported) {
+      const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const standalone = (navigator as Navigator & { standalone?: boolean }).standalone === true;
+      if (ios && !standalone) setState('ios');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      setState('denied');
+      return;
+    }
+    navigator.serviceWorker
+      .getRegistration('/l/')
+      .then(async (reg) => {
+        const sub = await reg?.pushManager.getSubscription();
+        let flagged = false;
+        try {
+          flagged = window.localStorage.getItem(`${PUSH_FLAG}${token}`) === '1';
+        } catch {
+          /* storage blocked */
+        }
+        setState(sub && flagged && Notification.permission === 'granted' ? 'on' : 'off');
+      })
+      .catch(() => setState('off'));
+  }, [token]);
+
+  const enable = async () => {
+    setState('busy');
+    try {
+      // First call inside the tap (iOS asks for it this way).
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setState(permission === 'denied' ? 'denied' : 'off');
+        return;
+      }
+      await navigator.serviceWorker.register('/l/sw.js', { scope: '/l/' });
+      const reg = await navigator.serviceWorker.ready;
+      const sub =
+        (await reg.pushManager.getSubscription()) ??
+        (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey(pushKey) as BufferSource }));
+      const json = sub.toJSON();
+      const res = await fetch(api, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: json.endpoint, keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth } }),
+      });
+      if (!res.ok) throw new Error('subscribe');
+      try {
+        window.localStorage.setItem(`${PUSH_FLAG}${token}`, '1');
+      } catch {
+        /* storage blocked */
+      }
+      haptic(12);
+      setState('on');
+    } catch {
+      setState('error');
+    }
+  };
+
+  const disable = async () => {
+    setState('busy');
+    try {
+      const reg = await navigator.serviceWorker.getRegistration('/l/');
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await fetch(api, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+      }
+      try {
+        window.localStorage.removeItem(`${PUSH_FLAG}${token}`);
+      } catch {
+        /* storage blocked */
+      }
+      setState('off');
+    } catch {
+      setState('error');
+    }
+  };
+
+  if (state === 'hidden') return null;
+  const box = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4';
+  const btn =
+    'bzl-tap mt-3 inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] disabled:opacity-50';
+
+  return (
+    <div className={`${box} flex items-start gap-3`}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}>
+        {state === 'denied' ? <BellOff size={18} aria-hidden="true" /> : <Bell size={18} aria-hidden="true" />}
+      </span>
+      <div className="min-w-0 flex-1" aria-live="polite">
+        {state === 'on' ? (
+          <>
+            <p className="text-[14.5px] font-semibold">{tr ? 'Bildirimler açık' : 'Notifications are on'}</p>
+            <p className="mt-0.5 text-[12.5px] text-[color:var(--p-muted)]">
+              {tr ? 'Ödülünüz hazır olunca ve doğum gününüzde haber vereceğiz.' : 'We will tell you when your reward is ready and on your birthday.'}
+            </p>
+            <button type="button" onClick={() => void disable()} className="mt-2 min-h-[40px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
+              {tr ? 'Bildirimleri kapat' : 'Turn off'}
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-[14.5px] font-semibold">{tr ? 'Ödülünüz hazır olunca haber verelim' : 'Get told when your reward is ready'}</p>
+            <p className="mt-0.5 text-[12.5px] leading-relaxed text-[color:var(--p-muted)]">
+              {state === 'ios'
+                ? tr
+                  ? 'iPhone’da bildirim için kartı önce ana ekrana ekleyin, sonra ana ekrandan açıp buradan açın.'
+                  : 'On iPhone, add the card to your home screen first, open it from there and turn notifications on here.'
+                : state === 'denied'
+                  ? tr
+                    ? 'Bildirimler bu tarayıcıda kapalı. Açmak için tarayıcı ya da telefon ayarlarından izin verin.'
+                    : 'Notifications are blocked in this browser. Allow them in the browser or phone settings.'
+                  : tr
+                    ? 'Yalnız iki konuda bildirim gelir: ödülünüz hazır olduğunda ve doğum gününüzde. Reklam göndermeyiz.'
+                    : 'Only two kinds: when your reward is ready and on your birthday. No ads.'}
+            </p>
+            {state === 'error' && (
+              <p className="mt-1 text-[12.5px] text-[#991B1B]" role="alert">
+                {tr ? 'Bildirimler açılamadı. Tekrar deneyin.' : 'Could not turn notifications on. Try again.'}
+              </p>
+            )}
+            {(state === 'off' || state === 'busy' || state === 'error') && (
+              <button type="button" onClick={() => void enable()} disabled={state === 'busy'} className={btn}>
+                {state === 'busy' ? <Loader2 size={15} className="animate-spin" /> : <Bell size={15} aria-hidden="true" />}
+                {tr ? 'Bildirimleri aç' : 'Turn on notifications'}
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

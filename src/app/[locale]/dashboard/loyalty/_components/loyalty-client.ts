@@ -23,6 +23,11 @@ export interface ProgramDto {
   isActive: boolean;
   /** The business's customer panel (§61). */
   portal: LoyaltyPortal;
+  /** Win-back e-mail (§61). */
+  winbackEnabled: boolean;
+  winbackDays: number;
+  winbackMessage: string | null;
+  winbackConfirmedAt: string | null;
   createdAt: string;
   updatedAt: string;
   rewards: Array<{ id: string; title: string; description: string | null; cost: number; isActive: boolean; sortOrder: number }>;
@@ -157,6 +162,11 @@ const MESSAGES: Record<string, { tr: string; en: string }> = {
   IMAGE_UNPROCESSABLE: { tr: 'Görsel okunamadı. JPG, PNG ya da WebP deneyin.', en: 'Could not read the image. Try JPG, PNG or WebP.' },
   NO_FILE: { tr: 'Bir görsel seçin.', en: 'Choose an image.' },
   NO_PROGRAM: { tr: 'Önce programı kaydedin.', en: 'Save the programme first.' },
+  BRANCH_PROGRAM: { tr: 'Bu işletme bir şube: kart ana işletmeden yönetilir.', en: 'This business is a branch: the card is managed at the home business.' },
+  WINBACK_CONFIRM_REQUIRED: {
+    tr: 'Geri çağırma mailini açmak için onay kutusunu işaretleyin.',
+    en: 'Tick the confirmation to turn the win-back e-mail on.',
+  },
 };
 
 export function loyaltyMessage(err: unknown, locale: 'tr' | 'en'): string {

@@ -4,10 +4,12 @@ import { z } from 'zod';
 import { validateBody } from '@/lib/api/validate';
 import { writePanelAuditLog } from '@/lib/audit-log';
 import { withServerTiming } from '@/lib/server-timing';
-import { gateLoyaltyRoute, loyaltyErrorResponse } from '@/lib/loyalty-route';
+import { branchEditRefused, gateLoyaltyRoute, loyaltyErrorResponse } from '@/lib/loyalty-route';
 import { LOYALTY_LIMITS as L, templateForCategory } from '@/lib/loyalty';
 import {
+  loadLoyaltyChain,
   loadLoyaltyProgram,
+  loyaltyChainHomeOptions,
   loadPortalBusiness,
   loyaltyPublicBaseUrl,
   loyaltyStats,
@@ -66,12 +68,19 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
   const gate = await gateLoyaltyRoute(req, id, 'read');
   if (!gate.ok) return gate.response;
   const program = await loadLoyaltyProgram(id);
-  const [stats, business] = await Promise.all([program ? loyaltyStats(program) : null, loadPortalBusiness(id)]);
+  const [stats, business, chain, chainOptions] = await Promise.all([
+    program ? loyaltyStats(program) : null,
+    loadPortalBusiness(id),
+    program ? loadLoyaltyChain(program, id) : null,
+    program || !gate.access.manage ? [] : loyaltyChainHomeOptions(id),
+  ]);
   return NextResponse.json(
     {
       program: program ? toProgramDto(program) : null,
       stats,
       business,
+      chain,
+      chainOptions,
       access: gate.access,
       moduleEnabled: gate.restaurant.loyaltyEnabled,
       baseUrl: loyaltyPublicBaseUrl(),
@@ -115,6 +124,8 @@ async function handlePUT(req: NextRequest, { params }: { params: Promise<{ id: s
 
   try {
     const before = await loadLoyaltyProgram(id);
+    const branch = branchEditRefused(before, id);
+    if (branch) return branch;
     const saved = await saveLoyaltyProgram(id, input);
     await writePanelAuditLog(gate.actor, before ? 'owner.loyalty.program.update' : 'owner.loyalty.program.create', id, {
       restaurantId: id,

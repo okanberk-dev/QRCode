@@ -34,6 +34,13 @@ import {
 
 // ─── access ───────────────────────────────────────────────────────────────
 
+/** Who made a balance change, and at which business's counter (home or branch, §61). */
+export interface LoyaltyActor {
+  id: string;
+  source: string;
+  restaurantId?: string | null;
+}
+
 export interface LoyaltyAccess {
   /** See the program, members and stats. */
   read: boolean;
@@ -79,6 +86,10 @@ export const LOYALTY_PROGRAM_SELECT = {
   template: true,
   portal: true,
   isActive: true,
+  winbackEnabled: true,
+  winbackDays: true,
+  winbackMessage: true,
+  winbackConfirmedAt: true,
   createdAt: true,
   updatedAt: true,
   rewards: {
@@ -108,6 +119,10 @@ export interface LoyaltyProgramDto {
   template: string | null;
   portal: LoyaltyPortal;
   isActive: boolean;
+  winbackEnabled: boolean;
+  winbackDays: number;
+  winbackMessage: string | null;
+  winbackConfirmedAt: string | null;
   createdAt: string;
   updatedAt: string;
   rewards: Array<{ id: string; title: string; description: string | null; cost: number; isActive: boolean; sortOrder: number }>;
@@ -119,13 +134,110 @@ export function toProgramDto(row: LoyaltyProgramRow): LoyaltyProgramDto {
     kind: normalizeKind(row.kind),
     tiers: readLoyaltyTiers(row.tiers),
     portal: readLoyaltyPortal(row.portal),
+    winbackConfirmedAt: row.winbackConfirmedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
 
+/**
+ * The program a business works with: its own, or — for a branch of a chain
+ * (§61) — the home business's program. `program.restaurantId !== id` means
+ * the business is a branch: it runs the counter but does not edit the card.
+ */
 export async function loadLoyaltyProgram(restaurantId: string): Promise<LoyaltyProgramRow | null> {
-  return prisma.loyaltyProgram.findUnique({ where: { restaurantId }, select: LOYALTY_PROGRAM_SELECT });
+  const own = await prisma.loyaltyProgram.findUnique({ where: { restaurantId }, select: LOYALTY_PROGRAM_SELECT });
+  if (own) return own;
+  const link = await prisma.loyaltyProgramBranch.findUnique({
+    where: { restaurantId },
+    select: { program: { select: LOYALTY_PROGRAM_SELECT } },
+  });
+  return link?.program ?? null;
+}
+
+// ─── chain branches (§61) ─────────────────────────────────────────────────
+
+export interface LoyaltyChainDto {
+  homeRestaurantId: string;
+  homeName: string;
+  /** The business being viewed is a branch (counter only). */
+  isBranch: boolean;
+  branches: Array<{ restaurantId: string; name: string }>;
+}
+
+export async function loadLoyaltyChain(program: { id: string; restaurantId: string }, viewedRestaurantId: string): Promise<LoyaltyChainDto> {
+  const [home, branches] = await prisma.$transaction([
+    prisma.restaurant.findUnique({ where: { id: program.restaurantId }, select: { name: true } }),
+    prisma.loyaltyProgramBranch.findMany({
+      where: { programId: program.id },
+      orderBy: { createdAt: 'asc' },
+      select: { restaurantId: true, restaurant: { select: { name: true } } },
+    }),
+  ]);
+  return {
+    homeRestaurantId: program.restaurantId,
+    homeName: home?.name ?? '',
+    isBranch: program.restaurantId !== viewedRestaurantId,
+    branches: branches.map((b) => ({ restaurantId: b.restaurantId, name: b.restaurant.name })),
+  };
+}
+
+/** The same owner's other businesses that can join this card: no card of their own, not a branch elsewhere. */
+export async function loyaltyBranchCandidates(program: { id: string; restaurantId: string }) {
+  const home = await prisma.restaurant.findUnique({ where: { id: program.restaurantId }, select: { userId: true } });
+  if (!home) return [];
+  const rows = await prisma.restaurant.findMany({
+    where: { userId: home.userId, id: { not: program.restaurantId }, loyaltyProgram: null, loyaltyBranchOf: null },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, name: true, isActive: true },
+    take: 100,
+  });
+  return rows.map((r) => ({ restaurantId: r.id, name: r.name, isActive: r.isActive }));
+}
+
+/** Programs of the same owner's other businesses that this business could join as a branch. */
+export async function loyaltyChainHomeOptions(restaurantId: string) {
+  const r = await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { userId: true } });
+  if (!r) return [];
+  const rows = await prisma.loyaltyProgram.findMany({
+    where: { restaurant: { userId: r.userId, id: { not: restaurantId } } },
+    select: { restaurantId: true, name: true, restaurant: { select: { name: true } } },
+    take: 50,
+  });
+  return rows.map((p) => ({ restaurantId: p.restaurantId, programName: p.name, businessName: p.restaurant.name }));
+}
+
+/**
+ * Makes `branchId` a branch of the program. Same owner only; the branch
+ * must have no card of its own and must not be a branch elsewhere (the
+ * unique index on restaurant_id is the final guard).
+ */
+export async function linkLoyaltyBranch(program: { id: string; restaurantId: string }, branchId: string): Promise<void> {
+  if (branchId === program.restaurantId) throw new LoyaltyError('INVALID_BRANCH', 400);
+  const [home, branch] = await prisma.$transaction([
+    prisma.restaurant.findUnique({ where: { id: program.restaurantId }, select: { userId: true } }),
+    prisma.restaurant.findUnique({
+      where: { id: branchId },
+      select: { userId: true, loyaltyProgram: { select: { id: true } }, loyaltyBranchOf: { select: { programId: true } } },
+    }),
+  ]);
+  if (!home || !branch || branch.userId !== home.userId) throw new LoyaltyError('INVALID_BRANCH', 400);
+  if (branch.loyaltyProgram) throw new LoyaltyError('HAS_OWN_PROGRAM', 409);
+  if (branch.loyaltyBranchOf) {
+    if (branch.loyaltyBranchOf.programId === program.id) return;
+    throw new LoyaltyError('BRANCH_ELSEWHERE', 409);
+  }
+  try {
+    await prisma.loyaltyProgramBranch.create({ data: { programId: program.id, restaurantId: branchId } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') throw new LoyaltyError('BRANCH_ELSEWHERE', 409);
+    throw err;
+  }
+}
+
+export async function unlinkLoyaltyBranch(program: { id: string }, branchId: string): Promise<boolean> {
+  const r = await prisma.loyaltyProgramBranch.deleteMany({ where: { programId: program.id, restaurantId: branchId } });
+  return r.count > 0;
 }
 
 export interface ProgramInput {
@@ -331,7 +443,7 @@ export interface NewMemberInput {
 export async function createLoyaltyMember(
   program: { id: string; welcomeBonus: number },
   input: NewMemberInput,
-  actor?: { id: string; source: string } | null,
+  actor?: LoyaltyActor | null,
 ): Promise<LoyaltyMemberRow & { cardToken: string }> {
   const existing = await prisma.loyaltyMember.findUnique({
     where: { programId_phone: { programId: program.id, phone: input.phone } },
@@ -356,6 +468,7 @@ export async function createLoyaltyMember(
             birthMonth: input.birthMonth,
             birthDay: input.birthDay,
             marketingConsent: input.marketingConsent,
+            marketingConsentAt: input.marketingConsent ? new Date() : null,
             balance: program.welcomeBonus,
             lifetimeEarned: program.welcomeBonus,
             joinedVia: input.joinedVia,
@@ -370,6 +483,7 @@ export async function createLoyaltyMember(
             amount: program.welcomeBonus,
             actorId: actor?.id ?? null,
             actorSource: actor?.source ?? null,
+            restaurantId: actor?.restaurantId ?? null,
           },
         });
         return member;
@@ -520,7 +634,7 @@ async function writeOffLapsed(
   program: ProgramRules,
   memberId: string,
   now: Date,
-  actor?: { id: string; source: string } | null,
+  actor?: LoyaltyActor | null,
 ): Promise<number> {
   if (!program.expiryDays) return 0;
   const m = await tx.loyaltyMember.findUnique({
@@ -543,6 +657,7 @@ async function writeOffLapsed(
       amount: -lost,
       actorId: actor?.id ?? null,
       actorSource: actor?.source ?? null,
+      restaurantId: actor?.restaurantId ?? null,
     },
   });
   return lost;
@@ -567,7 +682,7 @@ export async function earnLoyalty(
   program: ProgramRules,
   memberId: string,
   input: { count?: number | null; spend?: number | null; override?: boolean; note?: string | null },
-  actor: { id: string; source: string },
+  actor: LoyaltyActor,
   now = new Date(),
 ): Promise<{ member: LoyaltyMemberRow; amount: number; expired: number }> {
   const amount = computeEarn(program, input);
@@ -610,6 +725,7 @@ export async function earnLoyalty(
         note: input.override ? (input.note ? `override · ${input.note}` : 'override') : input.note ?? null,
         actorId: actor.id,
         actorSource: actor.source,
+        restaurantId: actor.restaurantId ?? null,
       },
     });
     return { member: await finish(tx, memberId), amount, expired };
@@ -621,7 +737,7 @@ export async function redeemLoyaltyReward(
   program: ProgramRules,
   memberId: string,
   rewardId: string,
-  actor: { id: string; source: string },
+  actor: LoyaltyActor,
   now = new Date(),
 ): Promise<{ member: LoyaltyMemberRow; rewardTitle: string }> {
   const reward = await prisma.loyaltyReward.findFirst({
@@ -649,6 +765,7 @@ export async function redeemLoyaltyReward(
         rewardTitle: reward.title,
         actorId: actor.id,
         actorSource: actor.source,
+        restaurantId: actor.restaurantId ?? null,
       },
     });
     return { member: await finish(tx, memberId), rewardTitle: reward.title };
@@ -659,7 +776,7 @@ export async function redeemLoyaltyReward(
 export async function giveBirthdayGift(
   program: ProgramRules,
   memberId: string,
-  actor: { id: string; source: string },
+  actor: LoyaltyActor,
   timeZone?: string | null,
   now = new Date(),
 ): Promise<LoyaltyMemberRow> {
@@ -688,6 +805,7 @@ export async function giveBirthdayGift(
         rewardTitle: program.birthdayReward,
         actorId: actor.id,
         actorSource: actor.source,
+        restaurantId: actor.restaurantId ?? null,
       },
     });
     return finish(tx, memberId);
@@ -700,7 +818,7 @@ export async function adjustLoyaltyBalance(
   memberId: string,
   delta: number,
   note: string,
-  actor: { id: string; source: string },
+  actor: LoyaltyActor,
 ): Promise<LoyaltyMemberRow> {
   if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > LOYALTY_LIMITS.adjustMax) {
     throw new LoyaltyError('INVALID_ADJUST');
@@ -726,6 +844,7 @@ export async function adjustLoyaltyBalance(
         note: note.slice(0, LOYALTY_LIMITS.noteMax),
         actorId: actor.id,
         actorSource: actor.source,
+        restaurantId: actor.restaurantId ?? null,
       },
     });
     return finish(tx, memberId);
@@ -831,6 +950,10 @@ export async function loadPublicLoyaltyProgram(slug: string) {
           whatsappUrl: true,
         },
       },
+      branches: {
+        orderBy: { createdAt: 'asc' },
+        select: { restaurant: { select: { name: true, isActive: true, loyaltyEnabled: true } } },
+      },
     },
   });
   if (!program || !program.isActive || !program.restaurant.isActive || !program.restaurant.loyaltyEnabled) return null;
@@ -932,6 +1055,8 @@ export function publicBusiness(program: PublicLoyaltyProgram) {
     instagramUrl: r.instagramUrl ?? null,
     facebookUrl: r.facebookUrl ?? null,
     whatsappUrl: r.whatsappUrl ?? null,
+    /** A chain card (§61): the other businesses where it is valid. */
+    branchNames: program.branches.filter((b) => b.restaurant.isActive && b.restaurant.loyaltyEnabled).map((b) => b.restaurant.name),
   };
 }
 export type PublicBusiness = ReturnType<typeof publicBusiness>;

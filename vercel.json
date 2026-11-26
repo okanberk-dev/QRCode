@@ -62,6 +62,10 @@
       "schedule": "0 6 * * *"
     },
     {
+      "path": "/api/cron/loyalty-daily",
+      "schedule": "20 7 * * *"
+    },
+    {
       "path": "/api/cron/google-reviews-refresh",
       "schedule": "40 2 * * *"
     }

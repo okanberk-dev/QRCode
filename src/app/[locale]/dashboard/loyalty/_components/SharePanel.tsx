@@ -153,8 +153,8 @@ li { margin: 6px 0; }
           <p className="mt-2 text-[12px] text-[#737373]">
             {nfcReady
               ? tr
-                ? 'NTAG213 / NTAG215 etiket önerilir. Yazdıktan sonra etiketi kilitlemek isterseniz NFC Tools uygulamasını kullanın.'
-                : 'NTAG213 / NTAG215 tags recommended. To lock a tag after writing, use the NFC Tools app.'
+                ? 'NTAG213 / NTAG215 etiket önerilir. Yazarken “Yazdıktan sonra kilitle”yi seçin: kilitli etiketi kimse başka bir adrese yönlendiremez.'
+                : 'NTAG213 / NTAG215 tags recommended. Tick “Lock after writing”: nobody can point a locked tag to another address.'
               : tr
                 ? 'Bu cihazdan yazılamıyor (Web NFC yalnız Android’de Chrome’da çalışır). Paneli Android telefonda Chrome ile açın ya da bağlantıyı NFC Tools uygulamasıyla “URL” kaydı olarak yazın.'
                 : 'This device cannot write tags (Web NFC works in Chrome on Android). Open the panel there, or write the link as a “URL” record with the NFC Tools app.'}

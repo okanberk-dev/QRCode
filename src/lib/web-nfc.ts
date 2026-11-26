@@ -24,12 +24,19 @@ export function webNfcSupported(): boolean {
   return typeof window !== 'undefined' && 'NDEFReader' in window && window.isSecureContext;
 }
 
+/** `makeReadOnly` arrived in Chrome 100; older Android Chrome writes but cannot lock. */
+export function nfcLockSupported(): boolean {
+  if (!webNfcSupported()) return false;
+  const Ctor = (window as unknown as { NDEFReader: NdefReaderCtor }).NDEFReader;
+  return typeof (Ctor.prototype as NdefReaderLike).makeReadOnly === 'function';
+}
+
 function reader(): NdefReaderLike {
   const Ctor = (window as unknown as { NDEFReader: NdefReaderCtor }).NDEFReader;
   return new Ctor();
 }
 
-export type NfcErrorCode = 'unsupported' | 'denied' | 'aborted' | 'write_failed' | 'read_failed' | 'no_url';
+export type NfcErrorCode = 'unsupported' | 'denied' | 'aborted' | 'write_failed' | 'read_failed' | 'no_url' | 'lock_failed';
 
 export class NfcError extends Error {
   code: NfcErrorCode;
@@ -54,6 +61,21 @@ export async function writeUrlToTag(url: string, signal?: AbortSignal): Promise<
     await reader().write({ records: [{ recordType: 'url', data: url }] }, { overwrite: true, signal });
   } catch (err) {
     throw mapError(err, 'write_failed');
+  }
+}
+
+/**
+ * Makes the tag permanently read-only (cannot be undone). The tag usually
+ * still sits on the phone right after writing; otherwise this waits for
+ * the next tap. Stops anyone from rewriting a table sticker to another
+ * address.
+ */
+export async function lockTag(signal?: AbortSignal): Promise<void> {
+  if (!nfcLockSupported()) throw new NfcError('unsupported');
+  try {
+    await reader().makeReadOnly!({ signal });
+  } catch (err) {
+    throw mapError(err, 'lock_failed');
   }
 }
 
@@ -93,6 +115,10 @@ export function nfcErrorMessage(code: NfcErrorCode, locale: 'tr' | 'en'): string
       return tr ? 'İptal edildi.' : 'Cancelled.';
     case 'no_url':
       return tr ? 'Etikette bağlantı bulunamadı.' : 'No link found on the tag.';
+    case 'lock_failed':
+      return tr
+        ? 'Bağlantı yazıldı ama etiket kilitlenemedi (bazı etiketler kilitlenmez). Etiketi telefonda tutup tekrar deneyin ya da NFC Tools ile kilitleyin.'
+        : 'The link was written but the tag could not be locked (some tags cannot). Hold it to the phone and retry, or lock it with NFC Tools.';
     case 'write_failed':
       return tr ? 'Etikete yazılamadı. Etiket kilitli ya da dolu olabilir; başka etiket deneyin.' : 'Could not write the tag. It may be locked or full; try another tag.';
     default:

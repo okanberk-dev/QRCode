@@ -28,7 +28,7 @@ interface FeedbackAutoDraftSummary {
   durationMs: number;
 }
 
-export async function runFeedbackAutoDraft(): Promise<FeedbackAutoDraftSummary> {
+async function runFeedbackAutoDraft(): Promise<FeedbackAutoDraftSummary> {
   const start = Date.now();
   const since = new Date(Date.now() - LOOK_BACK_HOURS * 60 * 60 * 1000);
 

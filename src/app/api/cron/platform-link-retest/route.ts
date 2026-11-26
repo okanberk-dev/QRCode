@@ -50,7 +50,7 @@ interface CronSummary {
  * doğrudan çağırabilir (CLAUDE.md §21.13 self-fetch antipattern → shared
  * helper).
  */
-export async function runPlatformLinkRetest(): Promise<CronSummary> {
+async function runPlatformLinkRetest(): Promise<CronSummary> {
   const start = Date.now();
 
   // Housekeeping first: drop Google Places budget counters older than 7 days

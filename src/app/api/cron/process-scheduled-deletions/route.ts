@@ -40,7 +40,7 @@ interface ProcessSummary {
   durationMs: number;
 }
 
-export async function runScheduledDeletions(): Promise<ProcessSummary> {
+async function runScheduledDeletions(): Promise<ProcessSummary> {
   const start = Date.now();
   const now = new Date();
 

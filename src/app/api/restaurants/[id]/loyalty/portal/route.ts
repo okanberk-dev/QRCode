@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { validateBody } from '@/lib/api/validate';
 import { writePanelAuditLog } from '@/lib/audit-log';
 import { withServerTiming } from '@/lib/server-timing';
-import { gateLoyaltyRoute } from '@/lib/loyalty-route';
+import { branchEditRefused, gateLoyaltyRoute } from '@/lib/loyalty-route';
 import { moderateText } from '@/lib/loyalty-moderation';
 import { isValidEmail } from '@/lib/validations';
 import { loadLoyaltyProgram, toProgramDto } from '@/lib/loyalty-server';
@@ -46,6 +46,8 @@ async function handlePUT(req: NextRequest, { params }: { params: Promise<{ id: s
   if (!gate.ok) return gate.response;
   const program = await loadLoyaltyProgram(id);
   if (!program) return NextResponse.json({ error: 'NO_PROGRAM', code: 'NO_PROGRAM' }, { status: 404 });
+  const branch = branchEditRefused(program, id);
+  if (branch) return branch;
 
   const parsed = validateBody<z.infer<typeof Body>>(Body, await req.json().catch(() => null));
   if (!parsed.ok) return parsed.response;

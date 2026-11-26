@@ -44,6 +44,7 @@ export const LOYALTY_LIMITS = {
   stampsPerVisitMax: 10,
   adjustMax: 100_000,
   noteMax: 200,
+  winbackMessageMax: 400,
   memberNameMax: 60,
 } as const;
 
