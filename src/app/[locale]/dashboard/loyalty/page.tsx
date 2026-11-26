@@ -14,6 +14,7 @@ import { resolveActiveRestaurantId } from '@/lib/active-business';
 import { templateForCategory } from '@/lib/loyalty';
 import {
   loadLoyaltyProgram,
+  loadPortalBusiness,
   loyaltyAccess,
   loyaltyPublicBaseUrl,
   loyaltyStats,
@@ -61,16 +62,18 @@ export default async function LoyaltyPage({ params, searchParams }: PageProps) {
   let initial: LoyaltyPageData | null = null;
   if (activeId) {
     const actor = actorFromUserPayload(tokenPayload);
-    const [access, program, flags] = await Promise.all([
+    const [access, program, flags, business] = await Promise.all([
       loyaltyAccess(actor, activeId),
       loadLoyaltyProgram(activeId),
       prisma.restaurant.findUnique({ where: { id: activeId }, select: { loyaltyEnabled: true, category: true } }),
+      loadPortalBusiness(activeId),
     ]);
     if (access.read) {
       initial = {
         restaurantId: activeId,
         program: program ? toProgramDto(program) : null,
         stats: program ? await loyaltyStats(program) : null,
+        business,
         access,
         moduleEnabled: flags?.loyaltyEnabled ?? true,
         baseUrl: loyaltyPublicBaseUrl(),

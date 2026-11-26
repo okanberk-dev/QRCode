@@ -3,14 +3,17 @@
 // One customer's card at the counter (§60): add a visit, give a reward or
 // the birthday gift, correct the balance (managers), show the card QR.
 import { useEffect, useState } from 'react';
-import { Cake, Gift, Loader2, Minus, Plus, QrCode } from 'lucide-react';
+import { Cake, Gift, Loader2, Minus, Nfc, Plus, QrCode } from 'lucide-react';
 import { AlertBanner, Badge, Modal } from '@/components/ui';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
+import { webNfcSupported } from '@/lib/web-nfc';
+import NfcDialog from './NfcDialog';
 import {
   birthdayGiftAvailable,
   computeEarn,
   expiresAt,
   formatMemberCode,
+  formatPhoneForDisplay,
   maskPhoneForDisplay,
   nextTier,
   redeemableRewards,
@@ -62,6 +65,22 @@ export default function MemberActions({
   const [notice, setNotice] = useState<string | null>(null);
   const [events, setEvents] = useState<EventDto[] | null>(null);
   const [showQr, setShowQr] = useState(false);
+  const [nfcReady, setNfcReady] = useState(false);
+  const [nfcUrl, setNfcUrl] = useState<string | null>(null);
+  const [nfcOpen, setNfcOpen] = useState(false);
+  useEffect(() => setNfcReady(webNfcSupported()), []);
+
+  const openNfc = async () => {
+    setNfcUrl(null);
+    setNfcOpen(true);
+    try {
+      const r = await loyaltyFetch<{ url: string }>(`/api/restaurants/${restaurantId}/loyalty/qr?member=${member.id}&format=url`);
+      setNfcUrl(r.url);
+    } catch (err) {
+      setNfcOpen(false);
+      setError(loyaltyMessage(err, locale));
+    }
+  };
   const [confirmReward, setConfirmReward] = useState<{ id: string; title: string; cost: number } | null>(null);
   const [adjust, setAdjust] = useState({ delta: '', note: '' });
 
@@ -128,12 +147,29 @@ export default function MemberActions({
           <p className="truncate text-[17px] font-semibold text-[#0A0A0A]">{member.name || (tr ? 'İsimsiz üye' : 'Unnamed member')}</p>
           <p className="mt-0.5 text-[12.5px] text-[#737373]">
             <span className="font-mono tracking-[0.1em]">{formatMemberCode(member.code)}</span>
-            {member.phone && <> · {maskPhoneForDisplay(member.phone)}</>}
+            {member.phone && (
+              <>
+                {' · '}
+                {access.manage ? (
+                  <a href={`tel:${member.phone}`} className="tabular-nums underline-offset-2 hover:underline">
+                    {formatPhoneForDisplay(member.phone)}
+                  </a>
+                ) : (
+                  maskPhoneForDisplay(member.phone)
+                )}
+              </>
+            )}
+            {access.manage && member.email && <> · {member.email}</>}
             {' · '}
             {tr ? 'Son ziyaret' : 'Last visit'}: {relativeDay(member.lastVisitAt, locale)}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          {member.hasAccount && (
+            <Badge kind="info" dot={false}>
+              {tr ? 'Buaze hesabı' : 'Buaze account'}
+            </Badge>
+          )}
           {tier && <Badge kind="lime">{tier.name}</Badge>}
           <Badge kind="ghost" dot={false}>
             {member.visits} {tr ? 'ziyaret' : 'visits'}
@@ -141,6 +177,11 @@ export default function MemberActions({
           {access.operate && (
             <button type="button" className="bz-btn-ghost inline-flex items-center gap-1.5" onClick={() => setShowQr(true)}>
               <QrCode size={14} /> {tr ? 'Kartı göster' : 'Show card'}
+            </button>
+          )}
+          {access.operate && nfcReady && (
+            <button type="button" className="bz-btn-ghost inline-flex items-center gap-1.5" onClick={() => void openNfc()}>
+              <Nfc size={14} /> {tr ? 'Anahtarlığa yaz' : 'Write key fob'}
             </button>
           )}
         </div>
@@ -382,6 +423,16 @@ export default function MemberActions({
               : `“${confirmReward.title}” will be given to ${member.name || 'the member'} and ${confirmReward.cost} ${unitLabel(kind, confirmReward.cost, locale)} taken from the balance.`}
           </p>
         </Modal>
+      )}
+
+      {nfcOpen && (
+        <NfcDialog
+          locale={locale}
+          mode="write"
+          url={nfcUrl}
+          title={tr ? 'Kartı NFC anahtarlığa yaz' : 'Write the card to an NFC key fob'}
+          onClose={() => setNfcOpen(false)}
+        />
       )}
 
       {showQr && (

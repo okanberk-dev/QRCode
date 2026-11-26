@@ -2,6 +2,7 @@
 //  - default: the join link (/l/<slug>) — counter poster, PNG or SVG.
 //  - ?member=<id>: that customer's card link, so staff can let a customer
 //    who lost the link scan it from the panel screen (counter staff only).
+//    `&format=url` returns the link as JSON (written to an NFC key fob, §61).
 import { NextRequest, NextResponse } from 'next/server';
 import QRCode from 'qrcode';
 import { prisma } from '@/lib/prisma';
@@ -32,7 +33,12 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
       select: { cardToken: true },
     });
     if (!member) return NextResponse.json({ error: 'MEMBER_NOT_FOUND' }, { status: 404 });
-    const svg = await QRCode.toString(`${base}${loyaltyCardPath(program.slug, member.cardToken)}`, {
+    const cardUrl = `${base}${loyaltyCardPath(program.slug, member.cardToken)}`;
+    // The card link itself, to write on an NFC key fob / sticker (§61).
+    if (sp.get('format') === 'url') {
+      return NextResponse.json({ url: cardUrl }, { headers: { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' } });
+    }
+    const svg = await QRCode.toString(cardUrl, {
       type: 'svg',
       margin: 2,
       width: 320,

@@ -1,7 +1,9 @@
-// Customer joins a loyalty program (CLAUDE.md §60). Public, rate limited,
-// honeypot. A phone already in the program never reveals that card: the
-// link is mailed to the address on file (if any) and the customer is told
-// to ask at the counter otherwise.
+// Customer joins a loyalty program (CLAUDE.md §60, §61). Public, rate
+// limited, honeypot. Two ways in: as a guest (first + last name, phone) or
+// with the signed-in Buaze customer account (`useAccount`), which fills the
+// card from the profile and keeps it in "Kartlarım". A phone already in the
+// program never reveals that card: the link is mailed to the address on
+// file (if any) and the customer is told to ask at the counter otherwise.
 import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { validateBody } from '@/lib/api/validate';
@@ -9,6 +11,8 @@ import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { isValidEmail } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { recordConsentBatch } from '@/lib/legal/consent';
+import { getCustomerFromRequest, type CustomerSessionAccount } from '@/lib/customer-auth';
+import { cleanName } from '@/lib/customer-account';
 import {
   activeRewards,
   isValidBirthday,
@@ -31,8 +35,13 @@ export const dynamic = 'force-dynamic';
 
 const Body = z
   .object({
-    name: z.string().trim().min(1).max(LOYALTY_LIMITS.memberNameMax),
-    phone: z.string().trim().min(7).max(30),
+    firstName: z.string().trim().max(LOYALTY_LIMITS.memberNameMax).optional(),
+    lastName: z.string().trim().max(LOYALTY_LIMITS.memberNameMax).optional(),
+    phone: z.string().trim().max(30).optional().nullable(),
+    /** Join with the signed-in customer account (§61). */
+    useAccount: z.boolean().optional().default(false),
+    /** Where the customer came from: printed QR, NFC sticker or a shared link. */
+    source: z.enum(['qr', 'nfc', 'link']).optional().default('qr'),
     email: z.string().trim().max(160).optional().nullable(),
     birthMonth: z.number().int().min(1).max(12).optional().nullable(),
     birthDay: z.number().int().min(1).max(31).optional().nullable(),
@@ -99,30 +108,58 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const program = await loadPublicLoyaltyProgram(slug);
   if (!program) return NextResponse.json({ error: 'not_found', code: 'NOT_FOUND' }, { status: 404 });
 
-  const phone = normalizePhone(d.phone);
+  let account: CustomerSessionAccount | null = null;
+  if (d.useAccount) {
+    account = await getCustomerFromRequest(req);
+    if (!account) return NextResponse.json({ error: 'SIGNED_OUT', code: 'SIGNED_OUT' }, { status: 401 });
+    // The account already has a card here: open it.
+    const own = await prisma.loyaltyMember.findFirst({
+      where: { programId: program.id, customerAccountId: account.id },
+      select: { cardToken: true },
+    });
+    if (own) return NextResponse.json({ status: 'own', cardPath: loyaltyCardPath(program.slug, own.cardToken) });
+  }
+
+  const firstName = cleanName(d.firstName ?? account?.firstName);
+  const lastName = cleanName(d.lastName ?? account?.lastName);
+  if (!firstName || !lastName) {
+    return NextResponse.json({ error: 'NAME_REQUIRED', code: 'NAME_REQUIRED' }, { status: 400 });
+  }
+  const phone = normalizePhone(d.phone ?? account?.phone ?? '');
   if (!phone) return NextResponse.json({ error: 'INVALID_PHONE', code: 'INVALID_PHONE' }, { status: 400 });
-  const email = d.email ? d.email.toLowerCase() : null;
+  const email = account ? account.email : d.email ? d.email.toLowerCase() : null;
   if (email && !isValidEmail(email)) {
     return NextResponse.json({ error: 'INVALID_EMAIL', code: 'INVALID_EMAIL' }, { status: 400 });
   }
-  const hasBirthday = d.birthMonth != null || d.birthDay != null;
-  if (hasBirthday && !isValidBirthday(d.birthMonth, d.birthDay)) {
+  const birthMonth = account && d.birthMonth == null ? account.birthMonth : d.birthMonth ?? null;
+  const birthDay = account && d.birthDay == null ? account.birthDay : d.birthDay ?? null;
+  const hasBirthday = birthMonth != null || birthDay != null;
+  if (hasBirthday && !isValidBirthday(birthMonth, birthDay)) {
     return NextResponse.json({ error: 'INVALID_BIRTHDAY', code: 'INVALID_BIRTHDAY' }, { status: 400 });
   }
-  if (moderateText(d.name)) {
+  if (moderateText(`${firstName} ${lastName}`)) {
     return NextResponse.json({ error: 'content_blocked', code: 'CONTENT_BLOCKED' }, { status: 422 });
   }
 
   try {
     const member = await createLoyaltyMember(program, {
-      name: d.name,
+      firstName,
+      lastName,
       phone,
       email,
-      birthMonth: hasBirthday ? d.birthMonth ?? null : null,
-      birthDay: hasBirthday ? d.birthDay ?? null : null,
+      birthMonth: hasBirthday ? birthMonth : null,
+      birthDay: hasBirthday ? birthDay : null,
       marketingConsent: d.marketingConsent,
-      joinedVia: 'qr',
+      joinedVia: d.source === 'nfc' ? 'nfc' : account ? 'account' : 'qr',
+      customerAccountId: account?.id ?? null,
     });
+    // A phone given here fills an empty account phone.
+    if (account && !account.phone) {
+      const acc = account;
+      after(() =>
+        prisma.customerAccount.update({ where: { id: acc.id }, data: { phone } }).then(() => undefined, () => undefined),
+      );
+    }
     after(async () => {
       await recordConsentBatch(
         {
@@ -134,22 +171,48 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
           userAgent: req.headers.get('user-agent'),
         },
         [
-          { key: 'kvkk-aydinlatma', granted: true },
+          { key: 'sadakat-uyelik-kosullari', granted: true },
+          { key: 'sadakat-aydinlatma', granted: true },
           { key: 'ticari-ileti', granted: d.marketingConsent },
         ],
       );
-      if (email) await mailCard({ program, to: email, name: d.name, token: member.cardToken, locale: d.locale, resend: false });
+      // Account holders find the card in "Kartlarım"; guests get the link by mail.
+      if (email && !account) {
+        await mailCard({ program, to: email, name: firstName, token: member.cardToken, locale: d.locale, resend: false });
+      }
     });
     return NextResponse.json(
       { status: 'created', cardPath: loyaltyCardPath(program.slug, member.cardToken) },
       { status: 201 },
     );
   } catch (err) {
+    if (err instanceof LoyaltyError && err.code === 'ACCOUNT_HAS_CARD' && account) {
+      const own = await prisma.loyaltyMember.findFirst({
+        where: { programId: program.id, customerAccountId: account.id },
+        select: { cardToken: true },
+      });
+      if (own) return NextResponse.json({ status: 'own', cardPath: loyaltyCardPath(program.slug, own.cardToken) });
+    }
     if (err instanceof LoyaltyError && err.code === 'PHONE_EXISTS') {
       const existing = await prisma.loyaltyMember.findUnique({
         where: { programId_phone: { programId: program.id, phone } },
-        select: { id: true, email: true, name: true, cardToken: true },
+        select: { id: true, email: true, name: true, cardToken: true, customerAccountId: true },
       });
+      // Same verified e-mail as the signed-in account: it is their own old card.
+      if (
+        account &&
+        existing &&
+        !existing.customerAccountId &&
+        account.emailVerifiedAt &&
+        existing.email?.toLowerCase() === account.email
+      ) {
+        const linked = await prisma.loyaltyMember
+          .updateMany({ where: { id: existing.id, customerAccountId: null }, data: { customerAccountId: account.id } })
+          .catch(() => ({ count: 0 }));
+        if (linked.count > 0) {
+          return NextResponse.json({ status: 'own', cardPath: loyaltyCardPath(program.slug, existing.cardToken) });
+        }
+      }
       let emailSent = false;
       if (existing?.email) {
         // One reminder per card per 10 minutes, so the form cannot spam an inbox.

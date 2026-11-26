@@ -44,7 +44,8 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
 
 const EnrolBody = z
   .object({
-    name: z.string().trim().max(LOYALTY_LIMITS.memberNameMax).optional().nullable(),
+    firstName: z.string().trim().max(LOYALTY_LIMITS.memberNameMax).optional().nullable(),
+    lastName: z.string().trim().max(LOYALTY_LIMITS.memberNameMax).optional().nullable(),
     phone: z.string().trim().min(7).max(30),
     email: z.string().trim().max(160).optional().nullable(),
     birthMonth: z.number().int().min(1).max(12).optional().nullable(),
@@ -77,7 +78,9 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
   if (hasBirthday && !isValidBirthday(d.birthMonth, d.birthDay)) {
     return NextResponse.json({ error: 'INVALID_BIRTHDAY', code: 'INVALID_BIRTHDAY' }, { status: 400 });
   }
-  const name = d.name?.trim() || null;
+  const firstName = d.firstName?.replace(/\s+/g, ' ').trim() || null;
+  const lastName = d.lastName?.replace(/\s+/g, ' ').trim() || null;
+  const name = [firstName, lastName].filter(Boolean).join(' ');
   if (name && moderateText(name)) {
     return NextResponse.json({ error: 'content_blocked', code: 'CONTENT_BLOCKED' }, { status: 422 });
   }
@@ -86,7 +89,8 @@ async function handlePOST(req: NextRequest, { params }: { params: Promise<{ id: 
     const member = await createLoyaltyMember(
       program,
       {
-        name,
+        firstName,
+        lastName,
         phone,
         email,
         birthMonth: hasBirthday ? d.birthMonth ?? null : null,

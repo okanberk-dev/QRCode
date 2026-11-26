@@ -81,4 +81,9 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   'iade-iptal-politikasi': { priority: 0.4, changefreq: 'yearly' },
   'veri-ihlali-mudahale': { priority: 0.4, changefreq: 'yearly' },
   'veri-isleyici-sozlesmesi': { priority: 0.4, changefreq: 'yearly' },
+  'sadakat-uyelik-kosullari': { priority: 0.4, changefreq: 'yearly' },
+  'sadakat-aydinlatma': { priority: 0.4, changefreq: 'yearly' },
+  'musteri-hesabi-kosullari': { priority: 0.4, changefreq: 'yearly' },
+  'musteri-hesabi-aydinlatma': { priority: 0.4, changefreq: 'yearly' },
+  'sadakat-isletme-eki': { priority: 0.4, changefreq: 'yearly' },
 };

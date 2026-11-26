@@ -14,6 +14,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import type { PanelActor } from '@/lib/auth';
 import { canAccessRestaurant, canWriteRestaurant, getTeamMemberRole } from '@/lib/panel-access';
+import { joinName, readLoyaltyPortal, type LoyaltyPortal } from '@/lib/loyalty-portal';
 import {
   LOYALTY_LIMITS,
   activeRewards,
@@ -75,6 +76,7 @@ export const LOYALTY_PROGRAM_SELECT = {
   accentColor: true,
   terms: true,
   template: true,
+  portal: true,
   isActive: true,
   createdAt: true,
   updatedAt: true,
@@ -103,6 +105,7 @@ export interface LoyaltyProgramDto {
   accentColor: string | null;
   terms: string | null;
   template: string | null;
+  portal: LoyaltyPortal;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -114,6 +117,7 @@ export function toProgramDto(row: LoyaltyProgramRow): LoyaltyProgramDto {
     ...row,
     kind: normalizeKind(row.kind),
     tiers: readLoyaltyTiers(row.tiers),
+    portal: readLoyaltyPortal(row.portal),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -236,6 +240,9 @@ export const LOYALTY_MEMBER_SELECT = {
   id: true,
   code: true,
   name: true,
+  firstName: true,
+  lastName: true,
+  customerAccountId: true,
   phone: true,
   email: true,
   birthMonth: true,
@@ -254,8 +261,10 @@ export const LOYALTY_MEMBER_SELECT = {
 export type LoyaltyMemberRow = Prisma.LoyaltyMemberGetPayload<{ select: typeof LOYALTY_MEMBER_SELECT }>;
 
 export function toMemberDto(row: LoyaltyMemberRow) {
+  const { customerAccountId, ...rest } = row;
   return {
-    ...row,
+    ...rest,
+    hasAccount: Boolean(customerAccountId),
     lastVisitAt: row.lastVisitAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   };
@@ -292,13 +301,16 @@ export class LoyaltyError extends Error {
 }
 
 export interface NewMemberInput {
-  name: string | null;
+  firstName: string | null;
+  lastName: string | null;
   phone: string;
   email: string | null;
   birthMonth: number | null;
   birthDay: number | null;
   marketingConsent: boolean;
-  joinedVia: 'qr' | 'staff';
+  joinedVia: 'qr' | 'staff' | 'nfc' | 'account';
+  /** Buaze customer account that owns the card (§61). */
+  customerAccountId?: string | null;
 }
 
 /**
@@ -324,7 +336,10 @@ export async function createLoyaltyMember(
             programId: program.id,
             cardToken: newCardToken(),
             code: newCode(),
-            name: input.name,
+            name: joinName(input.firstName, input.lastName),
+            firstName: input.firstName,
+            lastName: input.lastName,
+            customerAccountId: input.customerAccountId ?? null,
             phone: input.phone,
             email: input.email,
             birthMonth: input.birthMonth,
@@ -352,6 +367,9 @@ export async function createLoyaltyMember(
       const e = err as { code?: string; meta?: { target?: unknown } };
       if (e.code !== 'P2002') throw err;
       const target = JSON.stringify(e.meta?.target ?? '');
+      if (target.includes('customer_account') || target.includes('customerAccount')) {
+        throw new LoyaltyError('ACCOUNT_HAS_CARD', 409);
+      }
       if (target.includes('phone')) {
         const again = await prisma.loyaltyMember.findUnique({
           where: { programId_phone: { programId: program.id, phone: input.phone } },
@@ -785,7 +803,23 @@ export async function loadPublicLoyaltyProgram(slug: string) {
     where: { slug },
     select: {
       ...LOYALTY_PROGRAM_SELECT,
-      restaurant: { select: { name: true, isActive: true, loyaltyEnabled: true } },
+      restaurant: {
+        select: {
+          name: true,
+          slug: true,
+          isActive: true,
+          loyaltyEnabled: true,
+          menuEnabled: true,
+          menuPublished: true,
+          address: true,
+          city: true,
+          phone: true,
+          website: true,
+          instagramUrl: true,
+          facebookUrl: true,
+          whatsappUrl: true,
+        },
+      },
     },
   });
   if (!program || !program.isActive || !program.restaurant.isActive || !program.restaurant.loyaltyEnabled) return null;
@@ -811,7 +845,9 @@ export async function loadPublicLoyaltyCard(token: string, now = new Date()) {
         id: true,
         code: true,
         name: true,
+        firstName: true,
         phone: true,
+        customerAccountId: true,
         balance: true,
         visits: true,
         lifetimeEarned: true,
@@ -836,9 +872,10 @@ export type PublicLoyaltyCard = NonNullable<Awaited<ReturnType<typeof loadPublic
 /** JSON-safe card for the page and its polling endpoint. */
 export function toPublicCardDto(card: PublicLoyaltyCard) {
   const { program, member, events } = card;
-  const firstName = member.name?.trim().split(/\s+/)[0] ?? null;
+  const firstName = member.firstName?.trim() || member.name?.trim().split(/\s+/)[0] || null;
   return {
-    business: { name: program.restaurant.name, color: program.accentColor ?? null },
+    business: publicBusiness(program),
+    portal: readLoyaltyPortal(program.portal),
     program: {
       slug: program.slug,
       name: program.name,
@@ -855,6 +892,7 @@ export function toPublicCardDto(card: PublicLoyaltyCard) {
     member: {
       firstName,
       code: member.code,
+      hasAccount: Boolean(member.customerAccountId),
       phoneEnd: member.phone ? member.phone.replace(/\D/g, '').slice(-2) : null,
       balance: member.balance,
       visits: member.visits,
@@ -869,3 +907,52 @@ export function toPublicCardDto(card: PublicLoyaltyCard) {
   };
 }
 export type PublicCardDto = ReturnType<typeof toPublicCardDto>;
+
+/** Business details the customer panel shows (only what the business published). */
+export function publicBusiness(program: PublicLoyaltyProgram) {
+  const r = program.restaurant;
+  return {
+    name: r.name,
+    color: program.accentColor ?? null,
+    menuUrl: r.menuEnabled && r.menuPublished ? `/menu/${r.slug}` : null,
+    address: [r.address, r.city].filter(Boolean).join(', ') || null,
+    phone: r.phone ?? null,
+    website: r.website ?? null,
+    instagramUrl: r.instagramUrl ?? null,
+    facebookUrl: r.facebookUrl ?? null,
+    whatsappUrl: r.whatsappUrl ?? null,
+  };
+}
+export type PublicBusiness = ReturnType<typeof publicBusiness>;
+
+/** Business details for the owner's customer-panel preview (same shape as `publicBusiness`). */
+export async function loadPortalBusiness(restaurantId: string) {
+  const r = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: {
+      name: true,
+      slug: true,
+      menuEnabled: true,
+      menuPublished: true,
+      address: true,
+      city: true,
+      phone: true,
+      website: true,
+      instagramUrl: true,
+      facebookUrl: true,
+      whatsappUrl: true,
+    },
+  });
+  if (!r) return null;
+  return {
+    name: r.name,
+    menuUrl: r.menuEnabled && r.menuPublished ? `/menu/${r.slug}` : null,
+    address: [r.address, r.city].filter(Boolean).join(', ') || null,
+    phone: r.phone ?? null,
+    website: r.website ?? null,
+    instagramUrl: r.instagramUrl ?? null,
+    facebookUrl: r.facebookUrl ?? null,
+    whatsappUrl: r.whatsappUrl ?? null,
+  };
+}
+export type PortalBusinessDto = NonNullable<Awaited<ReturnType<typeof loadPortalBusiness>>>;

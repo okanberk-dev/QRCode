@@ -1,6 +1,8 @@
 // Client-side types, API calls and messages for the loyalty page (§60).
 import type { LoyaltyKind, LoyaltyTier } from '@/lib/loyalty';
 
+import type { LoyaltyPortal } from '@/lib/loyalty-portal';
+
 export interface ProgramDto {
   id: string;
   restaurantId: string;
@@ -19,6 +21,8 @@ export interface ProgramDto {
   terms: string | null;
   template: string | null;
   isActive: boolean;
+  /** The business's customer panel (§61). */
+  portal: LoyaltyPortal;
   createdAt: string;
   updatedAt: string;
   rewards: Array<{ id: string; title: string; description: string | null; cost: number; isActive: boolean; sortOrder: number }>;
@@ -46,6 +50,10 @@ export interface MemberDto {
   id: string;
   code: string;
   name: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  /** Card is kept in a Buaze customer account (§61). */
+  hasAccount: boolean;
   phone: string | null;
   email: string | null;
   birthMonth: number | null;
@@ -140,6 +148,11 @@ const MESSAGES: Record<string, { tr: string; en: string }> = {
   RATE_LIMIT: { tr: 'Çok fazla istek. Biraz bekleyip tekrar deneyin.', en: 'Too many requests. Wait a moment and retry.' },
   INVALID_ADJUST: { tr: 'Düzeltme miktarını kontrol edin.', en: 'Check the correction amount.' },
   validation_error: { tr: 'Alanları kontrol edin.', en: 'Check the fields.' },
+  INVALID_IMAGE: { tr: 'Görsel geçersiz. Tekrar yükleyin.', en: 'Invalid image. Upload it again.' },
+  IMAGE_TOO_LARGE: { tr: 'Görsel çok büyük (en çok 6 MB).', en: 'The image is too large (max 6 MB).' },
+  IMAGE_UNPROCESSABLE: { tr: 'Görsel okunamadı. JPG, PNG ya da WebP deneyin.', en: 'Could not read the image. Try JPG, PNG or WebP.' },
+  NO_FILE: { tr: 'Bir görsel seçin.', en: 'Choose an image.' },
+  NO_PROGRAM: { tr: 'Önce programı kaydedin.', en: 'Save the programme first.' },
 };
 
 export function loyaltyMessage(err: unknown, locale: 'tr' | 'en'): string {

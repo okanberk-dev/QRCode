@@ -1,5 +1,5 @@
 // Loyalty program of one business (CLAUDE.md §60): read with stats, save.
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { validateBody } from '@/lib/api/validate';
 import { writePanelAuditLog } from '@/lib/audit-log';
@@ -8,6 +8,7 @@ import { gateLoyaltyRoute, loyaltyErrorResponse } from '@/lib/loyalty-route';
 import { LOYALTY_LIMITS as L, templateForCategory } from '@/lib/loyalty';
 import {
   loadLoyaltyProgram,
+  loadPortalBusiness,
   loyaltyPublicBaseUrl,
   loyaltyStats,
   programInputProblems,
@@ -15,6 +16,8 @@ import {
   toProgramDto,
 } from '@/lib/loyalty-server';
 import { moderateText } from '@/lib/loyalty-moderation';
+import { recordConsentBatch } from '@/lib/legal/consent';
+import { getClientIp } from '@/lib/rate-limit';
 
 const RewardInput = z
   .object({
@@ -63,11 +66,12 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
   const gate = await gateLoyaltyRoute(req, id, 'read');
   if (!gate.ok) return gate.response;
   const program = await loadLoyaltyProgram(id);
-  const stats = program ? await loyaltyStats(program) : null;
+  const [stats, business] = await Promise.all([program ? loyaltyStats(program) : null, loadPortalBusiness(id)]);
   return NextResponse.json(
     {
       program: program ? toProgramDto(program) : null,
       stats,
+      business,
       access: gate.access,
       moduleEnabled: gate.restaurant.loyaltyEnabled,
       baseUrl: loyaltyPublicBaseUrl(),
@@ -119,6 +123,18 @@ async function handlePUT(req: NextRequest, { params }: { params: Promise<{ id: s
       published: !before?.isActive && saved.isActive,
       rewards: saved.rewards.length,
     });
+    // Publishing accepts the business addendum (§61): the editor says so next to the button.
+    if (!before?.isActive && saved.isActive) {
+      const ip = getClientIp(req.headers);
+      const ua = req.headers.get('user-agent');
+      const subject = gate.actor.realAdminId ? { type: 'admin' as const, id: gate.actor.realAdminId } : { type: gate.actor.source === 'admin' ? ('admin' as const) : ('user' as const), id: gate.actor.id };
+      after(() =>
+        recordConsentBatch(
+          { locale: 'tr', subjectType: subject.type, subjectId: subject.id, source: 'loyalty_owner', ipAddress: ip, userAgent: ua },
+          [{ key: 'sadakat-isletme-eki', granted: true }],
+        ),
+      );
+    }
     const stats = await loyaltyStats(saved);
     return NextResponse.json({ program: toProgramDto(saved), stats });
   } catch (err) {

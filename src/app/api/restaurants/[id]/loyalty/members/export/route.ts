@@ -29,6 +29,9 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
     select: {
       code: true,
       name: true,
+      firstName: true,
+      lastName: true,
+      customerAccountId: true,
       phone: true,
       email: true,
       birthMonth: true,
@@ -45,7 +48,8 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
   });
   const header = [
     'Card code',
-    'Name',
+    'First name',
+    'Last name',
     'Phone',
     'Email',
     'Birthday (MM-DD)',
@@ -56,6 +60,7 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
     'Rewards given',
     'Last visit',
     'Joined via',
+    'Buaze account',
     'Joined at',
   ];
   const lines = [header.join(',')];
@@ -63,7 +68,8 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
     lines.push(
       [
         formatMemberCode(r.code),
-        r.name,
+        r.firstName ?? r.name,
+        r.lastName ?? '',
         r.phone,
         r.email,
         r.birthMonth && r.birthDay ? `${String(r.birthMonth).padStart(2, '0')}-${String(r.birthDay).padStart(2, '0')}` : '',
@@ -74,6 +80,7 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
         r.rewardsRedeemed,
         r.lastVisitAt?.toISOString() ?? '',
         r.joinedVia,
+        r.customerAccountId ? 'yes' : 'no',
         r.createdAt.toISOString(),
       ]
         .map(csvCell)

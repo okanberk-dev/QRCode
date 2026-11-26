@@ -551,6 +551,15 @@ export default function ProgramEditor({
                   ? 'Yayına aldığınızda müşteriler kasadaki QR ile kart açabilir, siz de “Kasa” ekranından damga / puan verirsiniz.'
                   : 'Once published, customers open a card with the QR at the counter and you add stamps / points from the “Counter” screen.'}
               </p>
+              <p className="mt-3 text-[12.5px] text-[#737373]">
+                {tr ? 'Yayına alarak ' : 'By publishing you accept the '}
+                <a href={`/${locale}/sadakat-isletme-eki`} target="_blank" rel="noopener" className="font-medium text-[#0A0A0A] underline underline-offset-2">
+                  {tr ? 'Sadakat programı işletme ekini' : 'loyalty programme business addendum'}
+                </a>
+                {tr
+                  ? ' kabul edersiniz: üye bilgilerinin veri sorumlusu işletmenizdir; yorum ya da puan karşılığı damga verilmez.'
+                  : ': your business is the data controller of member data; no stamps for reviews or ratings.'}
+              </p>
               <div className="mt-4 lg:hidden">{summary}</div>
             </div>
             {error && (

@@ -2,12 +2,14 @@
 
 // "Kasa" — the counter screen (§60): find a card (scan, code, phone, name),
 // then add a visit or give a reward; enrol a customer who has no card yet.
-import { useCallback, useRef, useState } from 'react';
-import { Camera, Loader2, Search, UserPlus } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Camera, Loader2, Nfc, Search, UserPlus } from 'lucide-react';
 import { AlertBanner, Field, Modal } from '@/components/ui';
 import { formatMemberCode, maskPhoneForDisplay, normalizePhone } from '@/lib/loyalty';
 import MemberActions from './MemberActions';
 import ScanDialog from './ScanDialog';
+import NfcDialog from './NfcDialog';
+import { webNfcSupported } from '@/lib/web-nfc';
 import {
   loyaltyFetch,
   loyaltyMessage,
@@ -27,7 +29,7 @@ interface Props {
   onMemberCreated: () => void;
 }
 
-const EMPTY_ENROL = { name: '', phone: '', email: '', birthMonth: '', birthDay: '', marketing: false, notice: false };
+const EMPTY_ENROL = { firstName: '', lastName: '', phone: '', email: '', birthMonth: '', birthDay: '', marketing: false, notice: false };
 
 export default function CounterPanel({ locale, restaurantId, restaurantName, program, access, onMemberCreated }: Props) {
   const tr = locale === 'tr';
@@ -39,6 +41,9 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
   const [recent, setRecent] = useState<MemberDto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
+  const [nfcOpen, setNfcOpen] = useState(false);
+  const [nfcReady, setNfcReady] = useState(false);
+  useEffect(() => setNfcReady(webNfcSupported()), []);
   const [enrolOpen, setEnrolOpen] = useState(false);
   const [enrol, setEnrol] = useState(EMPTY_ENROL);
   const [enrolBusy, setEnrolBusy] = useState(false);
@@ -83,6 +88,14 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
     [search],
   );
 
+  const onNfc = useCallback(
+    (value: string) => {
+      setNfcOpen(false);
+      void search(value);
+    },
+    [search],
+  );
+
   const updateMember = (m: MemberDto) => {
     setSelected(m);
     setRecent((prev) => prev.map((x) => (x.id === m.id ? m : x)));
@@ -91,7 +104,14 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
 
   const openEnrol = () => {
     const digits = query.replace(/\D/g, '');
-    setEnrol({ ...EMPTY_ENROL, phone: digits.length >= 7 ? query.trim() : '', name: digits.length >= 7 ? '' : query.trim() });
+    const typed = digits.length >= 7 ? '' : query.trim();
+    const parts = typed.split(/\s+/).filter(Boolean);
+    setEnrol({
+      ...EMPTY_ENROL,
+      phone: digits.length >= 7 ? query.trim() : '',
+      firstName: parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0] ?? '',
+      lastName: parts.length > 1 ? parts[parts.length - 1] : '',
+    });
     setEnrolError(null);
     setEnrolOpen(true);
   };
@@ -114,7 +134,8 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
       const r = await loyaltyFetch<{ member: MemberDto }>(`${base}/members`, {
         method: 'POST',
         body: JSON.stringify({
-          name: enrol.name.trim() || null,
+          firstName: enrol.firstName.trim() || null,
+          lastName: enrol.lastName.trim() || null,
           phone: enrol.phone,
           email: enrol.email.trim() || null,
           ...(hasBirthday ? { birthMonth: month, birthDay: day } : {}),
@@ -172,6 +193,11 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
             <button type="button" className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5" onClick={() => setScanOpen(true)}>
               <Camera size={15} /> {tr ? 'Okut' : 'Scan'}
             </button>
+            {nfcReady && (
+              <button type="button" className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5" onClick={() => setNfcOpen(true)} aria-label={tr ? 'NFC ile okut' : 'Read by NFC'}>
+                <Nfc size={15} /> <span className="hidden sm:inline">NFC</span>
+              </button>
+            )}
             {access.operate && (
               <button type="button" className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5" onClick={openEnrol}>
                 <UserPlus size={15} /> <span className="hidden sm:inline">{tr ? 'Yeni üye' : 'New member'}</span>
@@ -263,13 +289,14 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
       </aside>
 
       {scanOpen && <ScanDialog locale={locale} onResult={onScan} onClose={() => setScanOpen(false)} />}
+      {nfcOpen && <NfcDialog locale={locale} mode="read" title={tr ? 'Kartı NFC ile okut' : 'Read the card by NFC'} onRead={onNfc} onClose={() => setNfcOpen(false)} />}
 
       {enrolOpen && (
         <Modal
           title={tr ? 'Yeni kart aç' : 'Open a new card'}
           onClose={() => setEnrolOpen(false)}
           size={480}
-          closeGuard={() => Boolean(enrol.name || enrol.phone || enrol.email)}
+          closeGuard={() => Boolean(enrol.firstName || enrol.lastName || enrol.phone || enrol.email)}
           footer={
             <div className="flex justify-end gap-2">
               <button type="button" className="bz-btn-ghost" onClick={() => setEnrolOpen(false)}>
@@ -286,9 +313,14 @@ export default function CounterPanel({ locale, restaurantId, restaurantName, pro
             <Field label={tr ? 'Telefon' : 'Phone'} htmlFor="enrol-phone" required>
               <input id="enrol-phone" value={enrol.phone} onChange={(e) => setEnrol((s) => ({ ...s, phone: e.target.value }))} className="bz-input w-full" inputMode="tel" autoComplete="off" placeholder="05xx xxx xx xx" enterKeyHint="next" />
             </Field>
-            <Field label={tr ? 'Ad (isteğe bağlı)' : 'Name (optional)'} htmlFor="enrol-name">
-              <input id="enrol-name" value={enrol.name} onChange={(e) => setEnrol((s) => ({ ...s, name: e.target.value }))} className="bz-input w-full" autoCapitalize="words" enterKeyHint="next" />
-            </Field>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label={tr ? 'Ad' : 'First name'} htmlFor="enrol-first">
+                <input id="enrol-first" value={enrol.firstName} onChange={(e) => setEnrol((s) => ({ ...s, firstName: e.target.value }))} className="bz-input w-full" autoCapitalize="words" autoComplete="off" enterKeyHint="next" />
+              </Field>
+              <Field label={tr ? 'Soyad' : 'Last name'} htmlFor="enrol-last">
+                <input id="enrol-last" value={enrol.lastName} onChange={(e) => setEnrol((s) => ({ ...s, lastName: e.target.value }))} className="bz-input w-full" autoCapitalize="words" autoComplete="off" enterKeyHint="next" />
+              </Field>
+            </div>
             <Field label={tr ? 'E-posta (kart bağlantısı için, isteğe bağlı)' : 'E-mail (optional)'} htmlFor="enrol-email">
               <input id="enrol-email" type="email" value={enrol.email} onChange={(e) => setEnrol((s) => ({ ...s, email: e.target.value }))} className="bz-input w-full" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
             </Field>

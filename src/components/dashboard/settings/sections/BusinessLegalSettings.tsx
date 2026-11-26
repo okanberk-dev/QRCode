@@ -222,7 +222,8 @@ function linkForKey(key: string, locale: Locale): string {
     case "veri-ihlali-mudahale":
       return `/${locale}/veri-ihlali-mudahale`;
     default:
-      return `/${locale}`;
+      // Loyalty / customer account texts live at /{locale}/{key} (§60, §61).
+      return `/${locale}/${key}`;
   }
 }
 

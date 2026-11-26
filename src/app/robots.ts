@@ -8,6 +8,8 @@ const PRIVATE_PATHS = [
   '/r/',
   // Loyalty join + card pages (CLAUDE.md §60): per-business, card links are secrets.
   '/l/',
+  // Buaze customer account (CLAUDE.md §61).
+  '/hesap',
   '/tr/dashboard/',
   '/en/dashboard/',
   // /tr/auth/ and /en/auth/ are NOT disallowed on purpose: the auth pages

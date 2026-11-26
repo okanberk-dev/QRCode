@@ -465,6 +465,21 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'no-referrer' },
         ],
       },
+      {
+        // Buaze customer account pages (CLAUDE.md §61): private, carry reset tokens.
+        source: '/hesap/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
+      {
+        source: '/hesap',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+        ],
+      },
       // Long-lived cache for static assets that are content-hashed at the
       // path level (favicon variants, embed wrapper script, manifest).
       // Vercel CDN already serves Next's `/_next/static/*` with immutable

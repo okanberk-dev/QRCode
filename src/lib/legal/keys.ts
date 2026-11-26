@@ -24,6 +24,12 @@ export const LEGAL_DOCUMENT_KEYS = [
   'kabul-edilebilir-kullanim',
   'icerik-moderasyon',
   'veri-ihlali-mudahale',
+  // Loyalty card + customer account (CLAUDE.md §60, §61).
+  'sadakat-uyelik-kosullari',
+  'sadakat-aydinlatma',
+  'musteri-hesabi-kosullari',
+  'musteri-hesabi-aydinlatma',
+  'sadakat-isletme-eki',
 ] as const;
 
 export type LegalDocumentKey = (typeof LEGAL_DOCUMENT_KEYS)[number];
@@ -100,6 +106,26 @@ export const LEGAL_DOCUMENT_LABELS: Record<
     tr: 'Veri İhlali Müdahale Politikası',
     en: 'Data Breach Response Policy',
   },
+  'sadakat-uyelik-kosullari': {
+    tr: 'Sadakat Programı Üyelik Koşulları',
+    en: 'Loyalty Programme Membership Terms',
+  },
+  'sadakat-aydinlatma': {
+    tr: 'Sadakat Programı Aydınlatma Metni',
+    en: 'Loyalty Programme Privacy Notice',
+  },
+  'musteri-hesabi-kosullari': {
+    tr: 'Müşteri Hesabı Kullanım Koşulları',
+    en: 'Customer Account Terms',
+  },
+  'musteri-hesabi-aydinlatma': {
+    tr: 'Müşteri Hesabı Aydınlatma Metni',
+    en: 'Customer Account Privacy Notice',
+  },
+  'sadakat-isletme-eki': {
+    tr: 'Sadakat Programı İşletme Eki',
+    en: 'Loyalty Programme Business Addendum',
+  },
 };
 
 /**
@@ -161,6 +187,26 @@ export const LEGAL_DOCUMENT_DESCRIPTIONS: Record<
     tr: '72 saat içinde KVKK Kuruluna bildirim ve etkilenen kişilere haber verme prosedürü.',
     en: '72-hour KVKK Authority notification + data-subject notice procedure.',
   },
+  'sadakat-uyelik-kosullari': {
+    tr: 'Sadakat kartı üyesi ile işletme arasındaki koşullar; her işletmenin sayfasında işletme bilgileriyle gösterilir.',
+    en: 'Terms between a loyalty member and the business; shown with each business’s details.',
+  },
+  'sadakat-aydinlatma': {
+    tr: 'Veri sorumlusu işletme olan sadakat programı aydınlatma metni (KVKK m. 10).',
+    en: 'Loyalty programme privacy notice with the business as controller (KVKK Art. 10).',
+  },
+  'musteri-hesabi-kosullari': {
+    tr: 'Buaze müşteri hesabının (tüm kartlar tek yerde) kullanım koşulları.',
+    en: 'Terms of the Buaze customer account (all cards in one place).',
+  },
+  'musteri-hesabi-aydinlatma': {
+    tr: 'Veri sorumlusu Buaze olan müşteri hesabı aydınlatma metni (KVKK m. 10).',
+    en: 'Customer account privacy notice with Buaze as controller (KVKK Art. 10).',
+  },
+  'sadakat-isletme-eki': {
+    tr: 'Sadakat kartını kullanan işletmenin veri sorumluluğu, ödül ve ticari ileti yükümlülükleri.',
+    en: 'Controllership, reward and marketing obligations of a business using the loyalty card.',
+  },
 };
 
 /**
@@ -175,9 +221,12 @@ export type ConsentSource =
   | 'newsletter'
   | 'contact'
   | 'admin'
-  | 'loyalty_join';
+  | 'loyalty_join'
+  | 'customer_register'
+  | 'customer_google'
+  | 'loyalty_owner';
 
 /**
  * Subject (consenter) type — polymorphic actor.
  */
-export type ConsentSubjectType = 'user' | 'feedback' | 'email' | 'admin' | 'loyalty_member';
+export type ConsentSubjectType = 'user' | 'feedback' | 'email' | 'admin' | 'loyalty_member' | 'customer_account';

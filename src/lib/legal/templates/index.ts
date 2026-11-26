@@ -22,6 +22,18 @@ import {
 } from './kabul-edilebilir-kullanim';
 import { ICERIK_MODERASYON_TR, ICERIK_MODERASYON_EN } from './icerik-moderasyon';
 import { VERI_IHLALI_MUDAHALE_TR, VERI_IHLALI_MUDAHALE_EN } from './veri-ihlali-mudahale';
+import {
+  SADAKAT_UYELIK_TR,
+  SADAKAT_UYELIK_EN,
+  SADAKAT_AYDINLATMA_TR,
+  SADAKAT_AYDINLATMA_EN,
+  MUSTERI_HESABI_KOSULLAR_TR,
+  MUSTERI_HESABI_KOSULLAR_EN,
+  MUSTERI_HESABI_AYDINLATMA_TR,
+  MUSTERI_HESABI_AYDINLATMA_EN,
+  SADAKAT_ISLETME_EKI_TR,
+  SADAKAT_ISLETME_EKI_EN,
+} from './sadakat';
 
 export interface LegalTemplateContent {
   title: string;
@@ -91,6 +103,11 @@ export const LEGAL_TEMPLATE_DEFAULTS: Record<
     tr: VERI_IHLALI_MUDAHALE_TR,
     en: VERI_IHLALI_MUDAHALE_EN,
   },
+  'sadakat-uyelik-kosullari': { tr: SADAKAT_UYELIK_TR, en: SADAKAT_UYELIK_EN },
+  'sadakat-aydinlatma': { tr: SADAKAT_AYDINLATMA_TR, en: SADAKAT_AYDINLATMA_EN },
+  'musteri-hesabi-kosullari': { tr: MUSTERI_HESABI_KOSULLAR_TR, en: MUSTERI_HESABI_KOSULLAR_EN },
+  'musteri-hesabi-aydinlatma': { tr: MUSTERI_HESABI_AYDINLATMA_TR, en: MUSTERI_HESABI_AYDINLATMA_EN },
+  'sadakat-isletme-eki': { tr: SADAKAT_ISLETME_EKI_TR, en: SADAKAT_ISLETME_EKI_EN },
 };
 
 export function getLegalTemplateDefault(

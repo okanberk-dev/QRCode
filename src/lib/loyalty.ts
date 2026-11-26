@@ -284,6 +284,14 @@ export function maskPhoneForDisplay(phone: string | null | undefined): string {
   return `+${d.slice(0, Math.max(1, d.length - 7))} *** ** ${d.slice(-2)}`;
 }
 
+/** "+90 532 123 45 67" — whole number, for the business's own records (§61). */
+export function formatPhoneForDisplay(phone: string | null | undefined): string {
+  if (!phone) return '';
+  const d = phone.replace(/\D/g, '');
+  if (d.startsWith('90') && d.length === 12) return `+90 ${d.slice(2, 5)} ${d.slice(5, 8)} ${d.slice(8, 10)} ${d.slice(10)}`;
+  return `+${d}`;
+}
+
 /** Last four digits — the customer types them to leave the program. */
 export function phoneLast4(phone: string | null | undefined): string {
   return phone ? phone.replace(/\D/g, '').slice(-4) : '';

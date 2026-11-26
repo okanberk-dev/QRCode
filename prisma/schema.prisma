@@ -2831,6 +2831,9 @@ model LoyaltyProgram {
   accentColor          String?         @map("accent_color")
   terms                String?         @db.Text
   template             String?
+  // Customer panel look and content the business edits (§61) — read with
+  // readLoyaltyPortal(); NULL = defaults.
+  portal               Json?
   isActive             Boolean         @default(false) @map("is_active") // published
   createdAt            DateTime        @default(now()) @map("created_at")
   updatedAt            DateTime        @updatedAt @map("updated_at")
@@ -2866,7 +2869,13 @@ model LoyaltyMember {
   program                LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
   cardToken              String         @unique @map("card_token")
   code                   String
+  // Full name ("Ayşe Yılmaz", search + lists) and its parts (§61).
   name                   String?
+  firstName              String?        @map("first_name")
+  lastName               String?        @map("last_name")
+  // Buaze customer account that owns this card (§61); NULL = card only.
+  customerAccountId      String?        @map("customer_account_id")
+  customerAccount        CustomerAccount? @relation(fields: [customerAccountId], references: [id], onDelete: SetNull)
   phone                  String?
   email                  String?
   birthMonth             Int?           @map("birth_month")
@@ -2885,6 +2894,8 @@ model LoyaltyMember {
 
   @@unique([programId, code])
   @@unique([programId, phone])
+  @@unique([programId, customerAccountId])
+  @@index([customerAccountId])
   @@index([programId, lastVisitAt])
   @@index([programId, createdAt])
   @@map("loyalty_members")
@@ -2912,3 +2923,33 @@ model LoyaltyEvent {
   @@index([memberId, createdAt])
   @@map("loyalty_events")
 }
+
+// Buaze customer account (CLAUDE.md §61): the businesses' end customers —
+// one login (e-mail + password or Google) for every loyalty card they hold.
+// Separate from the owner `User`: own table, own cookie (`buaze_customer`),
+// own JWT claim (`kind: customer`). Buaze is the data controller of the
+// account; each business is the controller of its own card (member) data.
+model CustomerAccount {
+  id                String          @id @default(cuid())
+  email             String          @unique
+  passwordHash      String?         @map("password_hash")
+  googleUid         String?         @unique @map("google_uid")
+  firstName         String          @map("first_name")
+  lastName          String          @map("last_name")
+  phone             String?
+  birthMonth        Int?            @map("birth_month")
+  birthDay          Int?            @map("birth_day")
+  marketingConsent  Boolean         @default(false) @map("marketing_consent")
+  locale            String          @default("tr")
+  emailVerifiedAt   DateTime?       @map("email_verified_at")
+  // Bumped on password change, "sign out everywhere" and deletion: older
+  // session tokens stop working.
+  tokenVersion      Int             @default(0) @map("token_version")
+  lastLoginAt       DateTime?       @map("last_login_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  loyaltyMembers    LoyaltyMember[]
+
+  @@map("customer_accounts")
+}
+

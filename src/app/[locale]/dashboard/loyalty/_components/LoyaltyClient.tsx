@@ -12,19 +12,23 @@ import ProgramEditor, { draftFromTemplate } from './ProgramEditor';
 import CounterPanel from './CounterPanel';
 import MembersPanel from './MembersPanel';
 import SharePanel from './SharePanel';
+import PortalEditor from './PortalEditor';
+import type { PortalBusinessDto } from '@/lib/loyalty-server';
 import { draftFromProgram, loyaltyFetch, loyaltyMessage, type AccessDto, type ProgramDto, type StatsDto } from './loyalty-client';
 
 export interface LoyaltyPageData {
   restaurantId: string;
   program: ProgramDto | null;
   stats: StatsDto | null;
+  /** Contact details for the customer-panel preview. */
+  business: PortalBusinessDto | null;
   access: AccessDto;
   moduleEnabled: boolean;
   baseUrl: string;
   suggestedTemplate: LoyaltyTemplate['key'];
 }
 
-type Tab = 'counter' | 'members' | 'program' | 'share';
+type Tab = 'counter' | 'members' | 'program' | 'portal' | 'share';
 
 export default function LoyaltyClient({
   locale,
@@ -220,6 +224,7 @@ export default function LoyaltyClient({
               { id: 'counter', label: tr ? 'Kasa' : 'Counter' },
               { id: 'members', label: tr ? 'Üyeler' : 'Members', count: stats?.members },
               { id: 'program', label: tr ? 'Program' : 'Programme' },
+              { id: 'portal', label: tr ? 'Müşteri paneli' : 'Customer page' },
               { id: 'share', label: tr ? 'QR ve paylaş' : 'QR & share' },
             ]}
           />
@@ -261,6 +266,18 @@ export default function LoyaltyClient({
               kindLocked={(stats?.members ?? 0) > 0}
               canManage={data.access.manage}
               onSaved={onSaved}
+            />
+          )}
+          {tab === 'portal' && (
+            <PortalEditor
+              key={`portal-${activeId}`}
+              locale={locale}
+              restaurantId={data.restaurantId}
+              program={data.program}
+              business={data.business}
+              baseUrl={data.baseUrl}
+              canManage={data.access.manage}
+              onSaved={(program) => activeId && setCache((c) => ({ ...c, [activeId]: { ...c[activeId], program } }))}
             />
           )}
           {tab === 'share' && (

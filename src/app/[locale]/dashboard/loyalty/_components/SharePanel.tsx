@@ -3,11 +3,13 @@
 // Share the loyalty card (§60): the join link, its QR for the counter and a
 // printable A5 poster. The poster tells customers how the card works — and
 // never asks for a review (Google policy).
-import { useState } from 'react';
-import { Check, Copy, Download, ExternalLink, Printer } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, Copy, Download, ExternalLink, Nfc, Printer } from 'lucide-react';
 import { AlertBanner } from '@/components/ui';
 import { activeRewards, earnRuleLine, loyaltyJoinPath, rewardRuleLine } from '@/lib/loyalty';
 import type { ProgramDto } from './loyalty-client';
+import NfcDialog from './NfcDialog';
+import { webNfcSupported } from '@/lib/web-nfc';
 
 function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -28,8 +30,13 @@ export default function SharePanel({
 }) {
   const tr = locale === 'tr';
   const [copied, setCopied] = useState(false);
+  const [nfcOpen, setNfcOpen] = useState(false);
+  const [nfcCopied, setNfcCopied] = useState(false);
+  const [nfcReady, setNfcReady] = useState(false);
+  useEffect(() => setNfcReady(webNfcSupported()), []);
   const joinUrl = `${baseUrl}${loyaltyJoinPath(program.slug)}`;
   const qr = `/api/restaurants/${restaurantId}/loyalty/qr`;
+  const nfcUrl = `${joinUrl}?source=nfc`;
   const rules = activeRewards(program.rewards).map((r) => rewardRuleLine(program.kind, r, locale));
 
   const copy = async () => {
@@ -110,6 +117,50 @@ li { margin: 6px 0; }
           )}
         </div>
         <div className="bz-card p-5">
+          <p className="flex items-center gap-2 text-[14px] font-semibold text-[#0A0A0A]">
+            <Nfc size={16} aria-hidden /> {tr ? 'NFC etiketi (dokun-katıl)' : 'NFC tag (tap to join)'}
+          </p>
+          <p className="mt-1.5 text-[13px] text-[#525252]">
+            {tr
+              ? 'Masaya ya da kasaya yapıştırdığınız NFC etiketine bu bağlantıyı yazın: müşteri telefonunu dokundurunca katılım sayfası açılır (iPhone ve Android). Panelde “NFC ile katılanlar” ayrı görünür.'
+              : 'Write this link on an NFC sticker on the table or counter: a tap opens the join page (iPhone and Android). Members who joined by NFC show separately.'}
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input readOnly value={nfcUrl} className="bz-input min-w-0 flex-1 font-mono text-[12.5px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'NFC bağlantısı' : 'NFC link'} />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="bz-btn-ghost inline-flex items-center gap-1.5"
+                onClick={() =>
+                  void navigator.clipboard.writeText(nfcUrl).then(
+                    () => {
+                      setNfcCopied(true);
+                      window.setTimeout(() => setNfcCopied(false), 2000);
+                    },
+                    () => undefined,
+                  )
+                }
+              >
+                {nfcCopied ? <Check size={14} /> : <Copy size={14} />} {tr ? 'Kopyala' : 'Copy'}
+              </button>
+              {nfcReady && (
+                <button type="button" className="bz-btn-lime inline-flex items-center gap-1.5" onClick={() => setNfcOpen(true)} disabled={!program.isActive}>
+                  <Nfc size={14} /> {tr ? 'Etikete yaz' : 'Write tag'}
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="mt-2 text-[12px] text-[#737373]">
+            {nfcReady
+              ? tr
+                ? 'NTAG213 / NTAG215 etiket önerilir. Yazdıktan sonra etiketi kilitlemek isterseniz NFC Tools uygulamasını kullanın.'
+                : 'NTAG213 / NTAG215 tags recommended. To lock a tag after writing, use the NFC Tools app.'
+              : tr
+                ? 'Bu cihazdan yazılamıyor (Web NFC yalnız Android’de Chrome’da çalışır). Paneli Android telefonda Chrome ile açın ya da bağlantıyı NFC Tools uygulamasıyla “URL” kaydı olarak yazın.'
+                : 'This device cannot write tags (Web NFC works in Chrome on Android). Open the panel there, or write the link as a “URL” record with the NFC Tools app.'}
+          </p>
+        </div>
+        <div className="bz-card p-5">
           <p className="text-[14px] font-semibold text-[#0A0A0A]">{tr ? 'Nereye koymalı?' : 'Where to put it'}</p>
           <ul className="mt-2 space-y-1.5 text-[13.5px] text-[#262626]">
             <li>• {tr ? 'Kasanın yanına, ödeme yapılan yere' : 'Next to the till, where people pay'}</li>
@@ -123,6 +174,9 @@ li { margin: 6px 0; }
           </p>
         </div>
       </div>
+      {nfcOpen && (
+        <NfcDialog locale={locale} mode="write" url={nfcUrl} title={tr ? 'NFC etiketine yaz' : 'Write NFC tag'} onClose={() => setNfcOpen(false)} />
+      )}
     </div>
   );
 }

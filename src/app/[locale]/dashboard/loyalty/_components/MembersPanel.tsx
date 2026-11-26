@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, Loader2, Search, Trash2 } from 'lucide-react';
 import { AlertBanner, Badge, EmptyState, Modal, PulseSelect } from '@/components/ui';
-import { activeRewards, formatMemberCode, maskPhoneForDisplay, tierFor } from '@/lib/loyalty';
+import { activeRewards, formatMemberCode, formatPhoneForDisplay, maskPhoneForDisplay, tierFor } from '@/lib/loyalty';
 import MemberActions from './MemberActions';
 import { loyaltyFetch, loyaltyMessage, relativeDay, type AccessDto, type MemberDto, type ProgramDto } from './loyalty-client';
 
@@ -194,7 +194,9 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                     >
                       <td>
                         <span className="font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz' : 'Unnamed')}</span>
-                        <span className="ml-2 text-[12px] text-[#A3A3A3]">{maskPhoneForDisplay(m.phone)}</span>
+                        <span className="ml-2 text-[12px] tabular-nums text-[#737373]">
+                          {access.manage ? formatPhoneForDisplay(m.phone) : maskPhoneForDisplay(m.phone)}
+                        </span>
                         {tier && (
                           <Badge kind="lime" className="ml-2">
                             {tier.name}
@@ -222,6 +224,7 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                   <span className="min-w-0">
                     <span className="block truncate text-[14px] font-medium text-[#0A0A0A]">{m.name || (tr ? 'İsimsiz' : 'Unnamed')}</span>
                     <span className="text-[12px] text-[#737373]">
+                      {access.manage && m.phone ? `${formatPhoneForDisplay(m.phone)} · ` : ''}
                       {formatMemberCode(m.code)} · {m.visits} {tr ? 'ziyaret' : 'visits'} · {relativeDay(m.lastVisitAt, locale)}
                     </span>
                   </span>
@@ -291,11 +294,18 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
           />
           <p className="mt-4 text-[12px] text-[#A3A3A3]">
             {tr ? 'Katılım' : 'Joined'}: {new Date(open.createdAt).toLocaleDateString(tr ? 'tr-TR' : 'en-GB')} ·{' '}
-            {open.joinedVia === 'staff' ? (tr ? 'kasada açıldı' : 'opened at the counter') : tr ? 'QR ile katıldı' : 'joined by QR'} ·{' '}
+            {joinedViaLabel(open.joinedVia, tr)} ·{' '}
             {open.marketingConsent ? (tr ? 'kampanya izni var' : 'marketing consent: yes') : tr ? 'kampanya izni yok' : 'marketing consent: no'}
           </p>
         </Modal>
       )}
     </div>
   );
+}
+
+function joinedViaLabel(via: string, tr: boolean): string {
+  if (via === 'staff') return tr ? 'kasada açıldı' : 'opened at the counter';
+  if (via === 'nfc') return tr ? 'NFC ile katıldı' : 'joined by NFC';
+  if (via === 'account') return tr ? 'Buaze hesabıyla katıldı' : 'joined with a Buaze account';
+  return tr ? 'QR ile katıldı' : 'joined by QR';
 }

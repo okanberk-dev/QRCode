@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { BarChart3, Cake, Crown, QrCode, ScanLine, ShieldCheck } from 'lucide-react';
+import { BarChart3, Cake, Crown, Nfc, Palette, QrCode, ScanLine, ShieldCheck, UserRound } from 'lucide-react';
 import FeaturePageLayout, { type FeaturePageCopy, type FeatureSchemaInfo } from '@/components/marketing/FeaturePageLayout';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import { buildFeatureMetadata, isFeatureLocale, type FeatureLocale } from '@/lib/seo/feature-schema';
@@ -113,7 +113,22 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: BarChart3,
             title: 'Üyeler ve istatistik',
-            body: 'Üye sayısı, son 30 gündeki ziyaretler, tekrar gelen üye oranı ve verilen ödüller. Üyeleri arayın, ödülü hazır olanları filtreleyin, listeyi CSV olarak indirin.',
+            body: 'Üye sayısı, son 30 gündeki ziyaretler, tekrar gelen üye oranı ve verilen ödüller. Üyelerin ad, soyad ve telefonu sizde; ödülü hazır olanları filtreleyin, listeyi CSV olarak indirin.',
+          },
+          {
+            icon: Palette,
+            title: 'Size özel müşteri sayfası',
+            body: 'Müşterinin açtığı sayfayı siz tasarlarsınız: logo, kapak fotoğrafı, karşılama metni, en çok 4 kampanya, menü, yol tarifi ve sosyal bağlantılar. Panelde telefon önizlemesiyle görürsünüz.',
+          },
+          {
+            icon: UserRound,
+            title: 'Müşteri hesabı ve Google ile giriş',
+            body: 'Müşteri isterse ücretsiz Buaze hesabıyla (Google ya da e-posta) tek dokunuşla katılır; kartları telefon değiştirse de hesabında kalır. Hesapsız katılım da açıktır.',
+          },
+          {
+            icon: Nfc,
+            title: 'NFC etiketi ve anahtarlık',
+            body: 'Masaya yapıştırdığınız NFC etiketine dokunan müşterinin katılım sayfası açılır. Android telefonda Chrome ile etiketi panelden yazar, kasada kartı NFC ile okursunuz.',
           },
         ],
       },
@@ -234,7 +249,22 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: BarChart3,
           title: 'Members and statistics',
-          body: 'Member count, visits in the last 30 days, the share of returning members and rewards given. Search members, filter those with a reward ready and export the list as CSV.',
+          body: 'Member count, visits in the last 30 days, the share of returning members and rewards given. You keep members’ names and phone numbers; filter those with a reward ready and export the list as CSV.',
+        },
+        {
+          icon: Palette,
+          title: 'Your own customer page',
+          body: 'You design the page customers open: logo, cover photo, welcome text, up to 4 offers, menu, directions and social links, with a phone preview in the panel.',
+        },
+        {
+          icon: UserRound,
+          title: 'Customer account and Google sign-in',
+          body: 'Customers can join in one tap with a free Buaze account (Google or e-mail); their cards stay in the account even on a new phone. Joining without an account works too.',
+        },
+        {
+          icon: Nfc,
+          title: 'NFC tags and key fobs',
+          body: 'A tap on an NFC sticker on the table opens the join page. On Android, write the tag from the panel in Chrome and read cards by NFC at the counter.',
         },
       ],
     },
