@@ -5,7 +5,7 @@ import { HOME_FAQ } from './home-faq';
 import SectionHeader from './SectionHeader';
 
 /**
- * Homepage FAQ — five questions from HOME_FAQ (the same array feeds the
+ * Homepage FAQ — six questions from HOME_FAQ (the same array feeds the
  * FAQPage JSON-LD). Native <details>/<summary>: keyboard-operable, no JS,
  * every answer is in the server HTML. The first item starts open.
  *

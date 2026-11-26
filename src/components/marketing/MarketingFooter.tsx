@@ -73,7 +73,8 @@ const FOCUS_RING =
  *     two columns on phones.
  *  4. Bottom rail: company facts in <address> (getCompanyFacts — same source
  *     as the Organization JSON-LD), legal links, cookie preferences, a
- *     crawlable language link and the copyright line.
+ *     trademark note (platform names belong to their owners), a crawlable
+ *     language link and the copyright line.
  *
  * Server component with no request-time APIs, so every marketing page stays
  * statically generated. Interactive parts are small client leaves. Also
@@ -326,6 +327,12 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
                 </li>
               </ul>
             </nav>
+
+            <p className="mt-5 max-w-[760px] text-[12.5px] leading-[1.6] text-white/50">
+              {isTr
+                ? 'Google ve diğer platform adları ve logoları sahiplerinin ticari markalarıdır. Buaze bu şirketlerle bağlantılı değildir ve onlar tarafından onaylanmamıştır.'
+                : 'Google and other platform names and logos are trademarks of their owners. Buaze is not affiliated with or endorsed by these companies.'}
+            </p>
 
             <div className="mt-6 flex flex-col items-start gap-3 lg:flex-row-reverse lg:items-center lg:justify-between">
               <LanguageLink

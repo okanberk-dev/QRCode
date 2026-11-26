@@ -158,7 +158,6 @@ export default async function LocaleLayout({
             },
           }
         : {}),
-      alternateName: ['Buaze (the company)', 'Buaze SaaS'],
       // "buaze" is also the Chichewa name of the Securidaca longipedunculata
       // plant; this tells search engines the two are different entities.
       disambiguatingDescription:

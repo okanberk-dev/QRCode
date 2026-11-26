@@ -10,6 +10,8 @@
  * discussed.
  */
 
+import { DATA_COPY } from '@/lib/legal/subprocessors';
+
 export interface HomeFaqItem {
   q: string;
   a: string;
@@ -26,16 +28,20 @@ export const HOME_FAQ: Record<'tr' | 'en', readonly HomeFaqItem[]> = {
       a: 'Buaze yorum silmez, gizlemez veya değiştirmez; sahte yorum yazmaz ve yorum karşılığında indirim, hediye ya da ödül sunmaz. Herkese açık yorum bağlantısı her puanda gösterilir: eşik ve üzerindeki puanlarda yorum sayfası açılır, eşiğin altında ise bağlantı özel geri bildirim formuyla aynı ekranda yer alır. Eşiği 4 ya da 5 yıldız olarak siz belirlersiniz.',
     },
     {
-      q: 'Kurulum nasıl yapılır?',
+      q: 'Buaze’yi nasıl kurarım?',
       a: 'Hesabınızı açıp işletmenizi ekleyin. Google işletme profilinizi adıyla aratıp seçtiğinizde Buaze, Google yorum bağlantınızı oluşturur; isterseniz diğer platformların bağlantılarını da eklersiniz. Ardından QR kodunuzu PNG olarak indirir ya da PDF olarak yazdırır, masaya, adisyona veya pakete yerleştirirsiniz. Teknik bilgi gerekmez.',
     },
     {
       q: 'Pulse AI yanıtları kendiliğinden gönderir mi?',
-      a: 'Hayır. Pulse AI yalnızca 2–4 cümlelik bir yanıt taslağı hazırlar; sıcak, resmi veya özür dileyen tonu seçersiniz, taslak Türkçe ya da İngilizce olur. Taslağı düzenler, gönderip göndermeyeceğinize siz karar verirsiniz. Taslağı hazırlamak için geri bildirim metni yapay zekâ sağlayıcımıza (OpenAI) iletilir.',
+      a: `Hayır. Pulse AI yalnızca 2–4 cümlelik bir yanıt taslağı hazırlar; sıcak, resmi veya özür dileyen tonu seçersiniz, taslak Türkçe ya da İngilizce olur. Taslağı düzenler, gönderip göndermeyeceğinize siz karar verirsiniz. Taslağı hazırlamak için ${DATA_COPY.aiSent.tr}.`,
+    },
+    {
+      q: 'Sadakat kartı yorumlarla bağlantılı mı?',
+      a: 'Hayır. Sadakat kartı yalnız ziyaret ve alışverişle dolar; yorum ya da puan karşılığında damga, indirim veya ödül verilmez. Müşteri kasadaki QR ya da NFC etiketiyle uygulama indirmeden katılır, personel kartını telefonla okutup damga ekler. Birden çok şubeniz varsa tek kart hepsinde geçerlidir.',
     },
     {
       q: 'Buaze ücretli mi, deneme süresi var mı?',
-      a: '14 gün ücretsiz deneyebilirsiniz; kayıt sırasında kredi kartı istenmez. Deneme bitince aylık abonelikle devam edersiniz; güncel fiyatlar ABD doları cinsinden fiyatlandırma sayfasında yer alır. Aboneliğinizi istediğiniz zaman iptal edebilirsiniz; erişiminiz dönem sonuna kadar sürer.',
+      a: '14 gün ücretsiz deneyebilirsiniz; kayıt sırasında kredi kartı istenmez. Deneme bitince aylık ya da yıllık ödemeyle devam edersiniz; güncel fiyatlar fiyatlandırma sayfasındadır ve kartla ödeme Türk lirası olarak alınır. Otomatik çekim yoktur; her ödeme bir ay ya da bir yıl açar.',
     },
   ],
   en: [
@@ -52,12 +58,16 @@ export const HOME_FAQ: Record<'tr' | 'en', readonly HomeFaqItem[]> = {
       a: 'Create an account and add your business. Search for your Google Business Profile by name and select it, and Buaze builds your Google review link; you can add the links of other platforms too. Then download your QR code as PNG or print it to PDF, and place it on tables, bills or packages. No technical skills are needed.',
     },
     {
-      q: 'Does Pulse AI send replies on its own?',
-      a: 'No. Pulse AI only prepares a 2–4 sentence reply draft; you choose a warm, formal or apologetic tone, and the draft is written in Turkish or English. You edit it and decide whether to send it. To write the draft, the feedback text is sent to our AI provider (OpenAI).',
+      q: 'Does Pulse AI ever send a reply without me?',
+      a: `No. Pulse AI only prepares a 2–4 sentence reply draft; you choose a warm, formal or apologetic tone, and the draft is written in Turkish or English. You edit it and decide whether to send it. To write the draft, ${DATA_COPY.aiSent.en}.`,
+    },
+    {
+      q: 'Is the loyalty card linked to reviews?',
+      a: 'No. The loyalty card fills with visits and purchases only; no stamp, discount or reward is given for a review or a rating. Customers join with the QR or an NFC tag at the counter without an app, and staff scan their card with a phone to add a stamp. With several branches, one card works at all of them.',
     },
     {
       q: 'How much does it cost, and is there a free trial?',
-      a: 'You can try Buaze free for 14 days, with no credit card at sign-up. After the trial you continue on a monthly subscription; current prices, in US dollars, are on the pricing page. You can cancel at any time, and your access lasts until the end of the billing period.',
+      a: 'You can try Buaze free for 14 days, with no credit card at sign-up. After the trial you continue with a monthly or yearly payment; current prices are on the pricing page, and card payments are taken in Turkish lira. Nothing is charged automatically; each payment opens one month or one year.',
     },
   ],
 };

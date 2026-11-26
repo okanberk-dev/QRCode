@@ -60,7 +60,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           'Analitikteki NPS bir anket sonucu değil, puanlardan yapılan bir tahmindir: 5 yıldız destekçi, 4 yıldız pasif, 1–3 yıldız eleştiren sayılır. Müşteriye 0–10 ölçeğinde gerçek bir tavsiye sorusu sormak isterseniz Anketler’i kullanabilirsiniz.',
           'Tekrar gelme oranı yalnızca iletişim bilgisi bırakan ve KVKK onayı veren müşterilerden hesaplanır.',
         ],
-        note: 'Öne çıkan konular ve haftalık özetteki değerlendirme için yorum metinleri yapay zekâ sağlayıcımız OpenAI’a gönderilir. Diğer göstergeler yapay zekâ kullanılmadan hesaplanır.',
+        note: 'Öne çıkan konular ve haftalık özetteki değerlendirme için yorum metinleri yapay zekâ sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir. Diğer göstergeler yapay zekâ kullanılmadan hesaplanır.',
         noteLink: { href: `${base}/veri-isleyici-sozlesmesi`, label: 'Alt işleyicileri görün' },
       },
       capabilities: {
@@ -197,7 +197,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         'The NPS in analytics is not a survey result but an estimate from ratings: 5 stars count as promoters, 4 stars as passives and 1–3 stars as detractors. To ask customers a real 0–10 recommend question, use Surveys.',
         'The return rate is calculated only from customers who left contact details and gave KVKK consent.',
       ],
-      note: 'For recurring topics and the assessment in the weekly summary, comment text is sent to our AI provider, OpenAI. The other metrics are calculated without AI.',
+      note: 'For recurring topics and the assessment in the weekly summary, comment text is sent to our AI provider (Anthropic, with OpenAI as a backup). The other metrics are calculated without AI.',
       noteLink: { href: `${base}/veri-isleyici-sozlesmesi`, label: 'See our sub-processors' },
     },
     capabilities: {

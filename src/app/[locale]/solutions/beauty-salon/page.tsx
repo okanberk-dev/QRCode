@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { MapPin, MessageCircle, Sparkles, UsersRound } from 'lucide-react';
+import { Gift, MapPin, MessageCircle, Sparkles, UsersRound } from 'lucide-react';
 import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
 import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
@@ -97,6 +97,12 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           title: 'Google profilinizin eksiklerini görün',
           body:
             'Google Yorumları sayfasındaki 6 maddelik kontrol listesi telefon, web sitesi, çalışma saatleri, fotoğraflar, işletme durumu ve kategori bilgilerinizden eksik olanları gösterir. Google hesabıyla giriş gerekmez.',
+        },
+        {
+          icon: Gift,
+          title: 'Müdavimlere sadakat kartı',
+          body:
+            'Berber ve salonlar için dijital damga kartı (örneğin 6 tıraşa 1 tıraş) ya da puan ve seviyeler. Müşteri kasadaki QR ile katılır, siz kartını telefonla okutup damga eklersiniz; müşteri isterse ödülü hazır olunca bildirim alır. Kart yalnız ziyaretle dolar, yorumla bağlantısı yoktur.',
         },
       ],
     },
@@ -249,6 +255,12 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           title: 'See what your Google profile is missing',
           body:
             'The 6-item checklist on the Google Reviews page shows which of your phone, website, opening hours, photos, business status and category details are missing. No Google sign-in needed.',
+        },
+        {
+          icon: Gift,
+          title: 'A loyalty card for regulars',
+          body:
+            'A digital stamp card for barbers and salons (for example every 7th cut free) or points with tiers. Customers join with the QR at the counter and you scan their card with your phone to add a stamp; if they choose, they get a notification when a reward is ready. The card fills with visits only and is not linked to reviews.',
         },
       ],
     },

@@ -130,7 +130,7 @@ const COPY = {
         },
         {
           title: 'Veriyi açıkça işleriz',
-          body: "Müşteri formunda KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB'de (Frankfurt) çalışır; bazı alt işleyiciler ABD'dedir ve Veri İşleyici Sözleşmesi'nde listelenir. Pulse AI taslakları için geri bildirim metni yapay zekâ sağlayıcısına (OpenAI) gönderilir.",
+          body: "Müşteri formunda KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB'de (Frankfurt) çalışır; bazı alt işleyiciler ABD'dedir ve Veri İşleyici Sözleşmesi'nde listelenir. Pulse AI taslakları için geri bildirim metni yapay zekâ sağlayıcısına (Anthropic, yedek olarak OpenAI) gönderilir.",
         },
       ],
       links: [
@@ -235,7 +235,7 @@ const COPY = {
         },
         {
           title: 'We are open about data',
-          body: "The customer form asks for consent under KVKK, Turkey's data protection law; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database runs in the EU (Frankfurt); some sub-processors are in the US and are listed in the Data Processing Agreement. For Pulse AI drafts, the feedback text is sent to an AI provider (OpenAI).",
+          body: "The customer form asks for consent under KVKK, Turkey's data protection law; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database runs in the EU (Frankfurt); some sub-processors are in the US and are listed in the Data Processing Agreement. For Pulse AI drafts, the feedback text is sent to an AI provider (Anthropic, with OpenAI as a backup).",
         },
       ],
       links: [

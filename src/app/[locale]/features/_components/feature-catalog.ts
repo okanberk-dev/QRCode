@@ -153,12 +153,12 @@ export const FEATURE_CATALOG: readonly FeatureCatalogEntry[] = [
     group: 'operations',
     name: { tr: 'Sadakat kartı', en: 'Loyalty card' },
     summary: {
-      tr: 'Kafe, restoran, berber ve salonlar için dijital damga ya da puan kartı. Müşteri kasadaki QR ile kartını telefonunda açar; siz panelin kasa ekranından ziyaret ekler, ödülü verirsiniz. Seviyeler, doğum günü hediyesi, bakiye süresi ve 6 hazır şablon vardır.',
-      en: 'A digital stamp or points card for cafés, restaurants, barbers and salons. Customers open it on their phone with the QR at the counter; you add visits and give rewards from the counter screen in the panel. Tiers, a birthday gift, balance expiry and 6 ready templates included.',
+      tr: 'Kafe, restoran, berber ve salonlar için dijital damga ya da puan kartı. Müşteri kasadaki QR ya da NFC etiketiyle kartını telefonunda açar; siz kartını telefonunuzun kamerasıyla okutup ziyaret ekler, ödülü verirsiniz. Şubelerde tek kart, ödül bildirimi, geri çağırma maili, seviyeler ve 6 hazır şablon vardır.',
+      en: 'A digital stamp or points card for cafés, restaurants, barbers and salons. Customers open it on their phone with the QR or an NFC tag at the counter; you scan their card with your phone’s camera to add visits and give rewards. One card for all branches, reward alerts, a win-back e-mail, tiers and 6 ready templates.',
     },
     short: {
-      tr: 'Uygulamasız dijital damga ya da puan kartı; kasada okutup ödülü verirsiniz.',
-      en: 'An app-free digital stamp or points card you scan and reward at the counter.',
+      tr: 'Uygulamasız dijital damga ya da puan kartı; telefonla okutup ödülü verirsiniz, şubelerde tek kart.',
+      en: 'An app-free digital stamp or points card you scan with a phone; one card for all branches.',
     },
     linkLabel: { tr: 'Sadakat kartını inceleyin', en: 'Explore the loyalty card' },
   },

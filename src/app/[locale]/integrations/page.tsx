@@ -246,7 +246,7 @@ const COPY = {
         a: 'No. Buaze does not import or reply to reviews on other platforms; it only keeps the link to your review page. For Google, the panel shows your profile rating, review count and up to 5 reviews that Google returns.',
       },
       {
-        q: 'Can I reply to Google reviews from the panel?',
+        q: 'Can I answer Google reviews without leaving Buaze?',
         a: 'This depends on access approval from Google and is not generally available yet. You keep replying to Google reviews in your Google Business Profile.',
       },
       {

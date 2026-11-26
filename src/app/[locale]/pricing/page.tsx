@@ -255,7 +255,7 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
       },
       {
         q: 'Verileri nasıl koruyorsunuz?',
-        a: 'Müşteri formlarında KVKK aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanımız AB’de (Frankfurt) çalışır; bazı alt işleyicilerimiz ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI taslakları için geri bildirim metni yapay zekâ sağlayıcımız OpenAI’ye gönderilir.',
+        a: 'Müşteri formlarında KVKK aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanımız AB’de (Frankfurt) çalışır; bazı alt işleyicilerimiz ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Pulse AI taslakları için geri bildirim metni yapay zekâ sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir.',
       },
       {
         q: 'Destek nasıl alırım?',
@@ -290,7 +290,7 @@ function buildFaqs(locale: 'tr' | 'en'): FaqEntry[] {
     },
     {
       q: 'How do you protect data?',
-      a: 'Customer forms show a KVKK notice and an explicit consent box; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. Our database runs in the EU (Frankfurt); some of our sub-processors are in the US and are listed in the Data Processing Agreement. For Pulse AI drafts, the feedback text is sent to our AI provider, OpenAI.',
+      a: 'Customer forms show a KVKK notice and an explicit consent box; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. Our database runs in the EU (Frankfurt); some of our sub-processors are in the US and are listed in the Data Processing Agreement. For Pulse AI drafts, the feedback text is sent to our AI provider (Anthropic, with OpenAI as a backup).',
     },
     {
       q: 'How do I get support?',

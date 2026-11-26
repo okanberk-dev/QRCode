@@ -12,6 +12,7 @@ all feedback in one panel, which includes:
   a person before anything is sent)
 - analytics and a customer list
 - QR menus, surveys and checklists (Denetim Merkezi)
+- a digital loyalty card (stamps or points) with no app to install; see below
 
 ## How the review flow works
 1. The customer scans the QR code and gives a rating from 1 to 5.
@@ -29,13 +30,25 @@ all feedback in one panel, which includes:
 - Replying to Google reviews from the Buaze panel depends on Google's access approval and is
   not generally available.
 
+## Loyalty card
+Customers join the business's stamp or points card from a QR code or NFC tag and keep it on
+their phone; there is no app to install. Staff scan the card with their phone at the counter
+to add a visit or give a reward, and the card updates at once. One card can be valid in all
+branches of a chain. Customers can turn on notifications for two things only: a reward is
+ready, and the birthday gift is waiting. Businesses can send a short reminder e-mail to
+members who agreed to receive offers and have not visited for a while; every e-mail has a
+one-click unsubscribe link. The loyalty card is for visits only and is never linked to
+reviews or ratings. Customers can keep all their cards in one free Buaze account.
+→ https://www.buaze.com/en/features/loyalty
+
 ## Review platforms whose links Buaze manages
 Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking.com, Airbnb, Yandex, Yelp,
 Foursquare.
 
 ## Plans
-14-day free trial, no credit card required. Monthly plans are priced in USD. Current plans
-and prices: https://www.buaze.com/en/pricing
+14-day free trial, no credit card required. Plans are billed monthly or yearly. The Turkish
+pricing page shows prices in Turkish lira and the English page in USD. Current plans and
+prices: https://www.buaze.com/en/pricing
 
 ## Languages
 Turkish (primary) and English, for the website, the panel, customer forms, e-mails and AI
@@ -56,6 +69,7 @@ drafts.
 - https://www.buaze.com/tr/features/menu — QR menu builder
 - https://www.buaze.com/tr/features/surveys — QR surveys
 - https://www.buaze.com/tr/features/audit-center — checklists and audits (Denetim Merkezi)
+- https://www.buaze.com/tr/features/loyalty — digital loyalty card (stamps or points)
 - https://www.buaze.com/tr/how-it-works — how the QR review flow works
 - https://www.buaze.com/tr/integrations — review platform links
 - https://www.buaze.com/tr/google-compliance — Google's review rules and how the Buaze flow works
@@ -63,9 +77,7 @@ drafts.
 - https://www.buaze.com/tr/roi — ROI estimate calculator
 - https://www.buaze.com/tr/compare — comparison with static QR codes and spreadsheets
 - https://www.buaze.com/tr/solutions — sector pages (restaurants and cafés, delivery, hotels,
-  boutique hotels, healthcare clinics, dental clinics, aesthetic clinics, beauty salons, gyms,
-  veterinary clinics, law firms, real estate agencies, auto repair shops, schools and courses,
-  retail)
+  healthcare clinics, beauty salons, retail)
 - https://www.buaze.com/tr/solutions/qr-generator — free QR code generator (no account)
 - https://www.buaze.com/tr/faq — frequently asked questions
 - https://www.buaze.com/tr/help — help center
@@ -106,13 +118,13 @@ Yandex, Yelp and Foursquare. It does not import those platforms' reviews.
 - IP addresses are anonymised after 90 days.
 - The database is hosted in the EU (Frankfurt). Some service providers are in the US; they
   are listed in the data processing agreement.
-- Review text is sent to an AI provider (OpenAI) only to create reply drafts and topic
+- Review text is sent to an AI provider (Anthropic, with OpenAI as a backup) only to create reply drafts and topic
   summaries.
 → https://www.buaze.com/en/kvkk
 
 ### What does Buaze cost?
-A 14-day free trial needs no credit card. After the trial, plans are billed monthly in USD;
-current plans and prices are on the pricing page.
+A 14-day free trial needs no credit card. After the trial, plans are billed monthly or
+yearly; current plans and prices are on the pricing page.
 → https://www.buaze.com/en/pricing
 
 ## Contact
@@ -120,4 +132,4 @@ current plans and prices are on the pricing page.
 - E-mail: support@buaze.com
 - Location: Istanbul, Türkiye
 - Support hours: weekdays 09:00–18:00 (Turkey time); replies usually within one business day
-- Last updated: 2026-11-14
+- Last updated: 2026-11-26

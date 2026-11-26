@@ -185,7 +185,7 @@ const COPY = {
         a: 'Hayır. Buaze bağımsız bir yazılımdır; Google’ın iş ortağı değildir ve Google tarafından onaylanmamıştır. Google adı yalnızca hizmeti tanımlamak için kullanılır.',
       },
       {
-        q: 'Müşteri verileri nasıl işleniyor?',
+        q: 'Formu dolduran müşterinin verileri nasıl işleniyor?',
         a: 'Formlarda KVKK aydınlatma metni ve açık rıza onayı bulunur; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. ' + DATA_COPY.hosting.tr,
       },
     ],

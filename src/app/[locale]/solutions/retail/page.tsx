@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { BellRing, Building2, Link2, Mail } from 'lucide-react';
+import { BellRing, Building2, Gift, Link2, Mail } from 'lucide-react';
 import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
 import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
@@ -98,6 +98,12 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           body:
             'Instagram, Facebook ve WhatsApp bağlantınızı bir kez girip diğer mağazalara uygularsınız. Platform bağlantıları sayfasındaki “Tüm işletmeler” görünümü, hangi mağazada yorum bağlantısının eksik ya da sorunlu olduğunu gösterir.',
         },
+        {
+          icon: Gift,
+          title: 'Düzenli müşteriye sadakat kartı',
+          body:
+            'Fırın ve mağazalar için uygulamasız damga kartı (örneğin 10 alışverişe 1 ürün). Müşteri kasadaki QR ile katılır, siz kartını telefonla okutup damga eklersiniz; şubelerinizde tek kart geçerlidir. Kart yalnız alışverişle dolar, yorumla bağlantısı yoktur.',
+        },
       ],
     },
     platforms: {
@@ -153,7 +159,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           a: 'Yorum karşılığında indirim, kupon veya hediye vermeyin; Google yorum karşılığı teşviki yasaklar ve Buaze böyle bir özellik sunmaz. Anketlerde isteğe bağlı bir teşekkür kuponu gösterebilirsiniz; bu kupon herkese açık yorum yazmaya bağlanmamalıdır.',
         },
         {
-          q: 'Düşük puan veren müşteri Google’da yorum yazabilir mi?',
+          q: 'Memnun kalmayan müşteri Google’da yorum yazabilir mi?',
           a: 'Evet. Eşiğin altında puan veren müşteri önce size özel geri bildirim yazabilir; Google yorum bağlantısı aynı ekranda görünür ve müşteri isterse oradan herkese açık yorum yazar. Buaze yorum silmez, gizlemez veya değiştirmez.',
         },
         {
@@ -253,6 +259,12 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           title: 'Manage links across all stores',
           body:
             'Enter your Instagram, Facebook and WhatsApp links once and apply them to your other stores. The “All businesses” view on the Platform links page shows which store has a missing or broken review link.',
+        },
+        {
+          icon: Gift,
+          title: 'A loyalty card for regulars',
+          body:
+            'An app-free stamp card for bakeries and shops (for example every 11th item free). Customers join with the QR at the counter and you scan their card with your phone to add a stamp; one card works across your branches. The card fills with purchases only and is not linked to reviews.',
         },
       ],
     },

@@ -54,7 +54,7 @@ export const SITE_SETTINGS_DEFAULTS: SiteSettings = {
   ],
   keywordsEn: [
     'Digital reputation management',
-    'Increase Google Maps feedback',
+    'Google Maps feedback collection',
     'Feedback operations',
     'QR review system',
     'reputation management',

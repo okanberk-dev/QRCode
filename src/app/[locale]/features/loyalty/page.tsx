@@ -1,19 +1,22 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { BarChart3, Cake, Crown, Nfc, Palette, QrCode, ScanLine, ShieldCheck, UserRound } from 'lucide-react';
+import { BarChart3, Bell, Building2, Cake, Crown, MailOpen, Nfc, Palette, QrCode, ScanLine, ShieldCheck, UserRound } from 'lucide-react';
 import FeaturePageLayout, { type FeaturePageCopy, type FeatureSchemaInfo } from '@/components/marketing/FeaturePageLayout';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import { buildFeatureMetadata, isFeatureLocale, type FeatureLocale } from '@/lib/seo/feature-schema';
 import { relatedFeatureLinks } from '../_components/feature-catalog';
 
-// /features/loyalty — digital loyalty card (CLAUDE.md §60). Facts from
+// /features/loyalty — digital loyalty card (CLAUDE.md §60, §61). Facts from
 // src/lib/loyalty.ts (stamps: up to 30 per reward, 1–10 per visit; points:
 // per visit + per spend step; up to 6 rewards, 3 tiers; 6 templates; visit
 // cooldown; balance expiry 90/180/365/730 days; yearly birthday gift),
 // /api/restaurants/[id]/loyalty/* (counter lookup by QR / code / phone /
-// name, CSV export, join QR PNG/SVG + A5 poster) and the /l pages (no app,
-// card updates within 15 s, customer can delete the card). Never tied to
-// reviews (Google policy). No SMS / push / Apple or Google Wallet passes.
+// name, CSV export, join QR PNG/SVG + A5 poster, branches, win-back
+// settings), staff mode of the card link (src/lib/loyalty-staff.ts), card
+// notifications (reward ready + birthday, opt-in, src/lib/loyalty-push.ts),
+// win-back e-mail (off by default, consent only, 30–90 days, once per 90
+// days) and the /l pages (no app, live card, customer can delete the card).
+// Never tied to reviews (Google policy). No SMS, no Apple / Google Wallet.
 
 const SLUG = 'loyalty';
 
@@ -21,12 +24,12 @@ const META = {
   tr: {
     title: 'Dijital sadakat kartı: kafe, restoran ve berber için damga kartı',
     description:
-      'Uygulamasız dijital damga ya da puan kartı: müşteri QR ile kartını açar, siz kasada ziyaret ekleyip ödülü verirsiniz. Seviyeler, doğum günü hediyesi, 6 hazır şablon.',
+      'Uygulamasız dijital damga ya da puan kartı: müşteri QR ile katılır, siz kartını telefonla okutup damga eklersiniz. Şubelerde tek kart, ödül bildirimi, NFC.',
   },
   en: {
     title: 'Digital loyalty card: stamp cards for cafés, restaurants and barbers',
     description:
-      'An app-free digital stamp or points card: customers open it with a QR, you add visits and give rewards at the counter. Tiers, a birthday gift and 6 templates.',
+      'An app-free digital stamp or points card: customers join with a QR, you scan their card with a phone and add stamps. One card for all branches, reward alerts, NFC.',
   },
 } as const;
 
@@ -92,8 +95,18 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             icon: ScanLine,
-            title: 'Kasa ekranı',
-            body: 'Kartı kamerayla okutun ya da 6 haneli kart kodunu, telefonu veya ismi yazın. Tek dokunuşla damga ekleyin, hazır ödülü verin. Kartı olmayan müşteriye kasada kart açabilirsiniz.',
+            title: 'Telefonla okut, damga ekle',
+            body: 'Panelde giriş yaptığınız telefonla müşterinin kart QR’ını telefonun kendi kamerasıyla okutun: kart doğrudan kasa ekranı olarak açılır, tek dokunuşla damga eklersiniz. Panelin kasa ekranında kart kodu, telefon ya da isimle de bulursunuz; kartı olmayana kasada kart açarsınız.',
+          },
+          {
+            icon: Bell,
+            title: 'Anlık kart ve bildirimler',
+            body: 'Kasada eklenen damga müşterinin açık kartına saniyeler içinde düşer. Müşteri isterse kartında bildirimleri açar: ödülü hazır olduğunda ve doğum gününde haber alır. Reklam bildirimi gönderilmez; iPhone’da kartın ana ekrana eklenmesi gerekir.',
+          },
+          {
+            icon: Building2,
+            title: 'Şubelerde tek kart',
+            body: 'Birden çok işletmeniz varsa şubeleri ana işletmenin kartına bağlayın: müşteri hangi şubeye giderse gitsin aynı kartta biriktirir. Kart ve ödüller tek yerden yönetilir, her damganın hangi şubede verildiği kaydedilir.',
           },
           {
             icon: Crown,
@@ -106,6 +119,11 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
             body: 'Doğum gününü yazan üyeye, doğduğu ay içinde yılda bir kez hediye verilir. Katılanlara ilk günden hoş geldin damgası / puanı ekleyebilirsiniz.',
           },
           {
+            icon: MailOpen,
+            title: 'Geri çağırma maili',
+            body: 'Bir süredir gelmeyen üyelere (30–90 gün, siz seçersiniz) kartlarını hatırlatan kısa bir e-posta. Yalnız e-posta bırakıp kampanya iznini veren üyelere, aynı kişiye en çok 90 günde bir gider; her mailde tek tıkla ayrılma bağlantısı vardır. Varsayılan olarak kapalıdır.',
+          },
+          {
             icon: ShieldCheck,
             title: 'Kötüye kullanıma karşı',
             body: 'Aynı karta belirlediğiniz süre içinde ikinci kez damga eklenmez (kasada onayla geçilebilir); her işlem kimin yaptığıyla kaydedilir. Bakiye, seçtiğiniz süre boyunca ziyaret olmazsa sıfırlanabilir.',
@@ -113,7 +131,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: BarChart3,
             title: 'Üyeler ve istatistik',
-            body: 'Üye sayısı, son 30 gündeki ziyaretler, tekrar gelen üye oranı ve verilen ödüller. Üyelerin ad, soyad ve telefonu sizde; ödülü hazır olanları filtreleyin, listeyi CSV olarak indirin.',
+            body: 'Üye sayısı, son 30 gündeki ziyaretler, tekrar gelen üye oranı ve verilen ödüller. Üyelerin ad, soyad ve telefonu sizde; listeyi kampanya izni tarihleriyle birlikte CSV olarak indirin.',
           },
           {
             icon: Palette,
@@ -128,7 +146,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           {
             icon: Nfc,
             title: 'NFC etiketi ve anahtarlık',
-            body: 'Masaya yapıştırdığınız NFC etiketine dokunan müşterinin katılım sayfası açılır. Android telefonda Chrome ile etiketi panelden yazar, kasada kartı NFC ile okursunuz.',
+            body: 'Masaya yapıştırdığınız NFC etiketine dokunan müşterinin katılım sayfası açılır; müşterinin kartını anahtarlığa da yazabilirsiniz. Android’de Chrome ile etiketi panelden yazar ve kilitlersiniz, böylece kimse başka bir adrese yönlendiremez.',
           },
         ],
       },
@@ -139,7 +157,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           { title: 'Şablon seçin', body: 'Kafe, restoran, berber, güzellik salonu, fırın ya da genel şablondan başlayın.' },
           { title: 'Kuralları ve ödülleri yazın', body: 'Kart türünü, ödülleri, isterseniz seviyeleri, doğum günü hediyesini ve kart rengini belirleyin.' },
           { title: 'QR’ı kasaya koyun', body: 'Katılım QR’ını PNG olarak indirin ya da A5 afişi yazdırın, kasanın yanına koyun.' },
-          { title: 'Kasada okutun', body: 'Müşteri kartını gösterir, siz panelin kasa ekranından damgayı ekler, ödülü verirsiniz.' },
+          { title: 'Kasada okutun', body: 'Müşteri kartını gösterir; siz telefonun kamerasıyla ya da panelin kasa ekranından okutup damgayı ekler, ödülü verirsiniz.' },
         ],
       },
       facts: {
@@ -172,7 +190,15 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           },
           {
             q: 'Damga nasıl eklenir?',
-            a: 'Personel panelde “Kasa” ekranını açar, müşterinin kartındaki QR’ı kamerayla okutur ya da kart kodunu, telefon numarasını yazar ve damga ekler. Kamerayla okutma tarayıcının desteklediği cihazlarda (örneğin Android’de Chrome) çalışır; diğerlerinde kart, kodu ya da telefon numarasıyla bulunur.',
+            a: 'En kolayı: panele giriş yaptığınız telefonla müşterinin kart QR’ını telefonun kendi kamerasıyla okutun; kart kasa ekranı olarak açılır ve damgayı tek dokunuşla eklersiniz (iPhone ve Android). Panelin “Kasa” ekranında kart kodu, telefon numarası ya da isimle de bulabilirsiniz.',
+          },
+          {
+            q: 'Birden çok şubem var; tek kart olur mu?',
+            a: 'Evet. Şubeleri ana işletmenin kartına bağlarsınız; müşteri her şubede aynı kartta biriktirir ve ödülünü istediği şubede alır. Kart, ödüller ve müşteri sayfası ana işletmeden yönetilir.',
+          },
+          {
+            q: 'Müşteriye bildirim ya da e-posta gidiyor mu?',
+            a: 'Yalnız müşteri isterse. Kartında bildirimleri açan müşteriye ödülü hazır olduğunda ve doğum gününde bildirim gider. Geri çağırma maili varsayılan olarak kapalıdır; açarsanız yalnız kampanya iznini veren üyelere gider ve her mailde tek tıkla ayrılma bağlantısı vardır.',
           },
           {
             q: 'Aynı ziyarette iki kez damga eklenirse?',
@@ -183,12 +209,12 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
             a: 'Hayır. Kart yalnız ziyaret ve alışverişle dolar. Google, yorum karşılığında ödül vermeyi yasaklar; Buaze’de yorum akışı ile sadakat kartı birbirine bağlı değildir ve ödül metinlerinde yorum karşılığı ödül çağrışımı engellenir.',
           },
           {
-            q: 'Müşteri verilerini nasıl koruyorsunuz?',
+            q: 'Üye bilgileri kimde ve nasıl korunuyor?',
             a: 'Müşteri katılırken aydınlatma metnini onaylar; kampanya izni ayrı bir kutudur ve varsayılan olarak işaretsizdir. Kart sayfası arama motorlarına kapalıdır. Müşteri kart sayfasından programdan ayrılıp verilerini silebilir; siz de üyeyi panelden silebilirsiniz.',
           },
           {
             q: 'Hangi paketlerde var?',
-            a: 'Büyüme ve Zincir paketlerinde vardır; 14 günlük ücretsiz denemede de kullanabilirsiniz. Birden çok işletmeniz varsa her işletmenin kendi kartı olur.',
+            a: 'Büyüme ve Zincir paketlerinde vardır; 14 günlük ücretsiz denemede de kullanabilirsiniz. Birden çok işletmeniz varsa her biri kendi kartını kurabilir ya da şube olarak tek karta bağlanabilir.',
           },
         ],
         more: { href: `${base}/faq`, label: 'Tüm soruları görün' },
@@ -228,8 +254,18 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           icon: ScanLine,
-          title: 'Counter screen',
-          body: 'Scan the card with the camera or type the 6-character card code, the phone number or a name. Add a stamp in one tap and give a reward that is ready. You can open a card at the counter for a customer who has none.',
+          title: 'Scan with a phone, add a stamp',
+          body: 'On a phone signed in to the panel, scan the customer’s card QR with the phone’s own camera: the card opens as the counter screen and you add a stamp in one tap. On the panel’s counter screen you can also find cards by code, phone or name, and open a card for a customer who has none.',
+        },
+        {
+          icon: Bell,
+          title: 'Live card and notifications',
+          body: 'A stamp added at the counter lands on the customer’s open card within seconds. If they choose, customers turn on notifications on their card and hear when a reward is ready and on their birthday. No promotional notifications; on iPhone the card must be added to the home screen first.',
+        },
+        {
+          icon: Building2,
+          title: 'One card for all branches',
+          body: 'If you run several businesses, link the branches to the home business’s card: customers collect on the same card wherever they visit. The card and rewards are managed in one place, and every stamp records the branch that gave it.',
         },
         {
           icon: Crown,
@@ -242,6 +278,11 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           body: 'Members who give their birthday get a gift once a year in their birth month. You can also give new members a welcome stamp or points.',
         },
         {
+          icon: MailOpen,
+          title: 'Win-back e-mail',
+          body: 'A short e-mail reminding members who have not visited for a while (30–90 days, you choose). It goes only to members who gave an e-mail and agreed to offers, at most once in 90 days per person, with a one-click opt-out in every mail. Off by default.',
+        },
+        {
           icon: ShieldCheck,
           title: 'Built against misuse',
           body: 'A card cannot get a second stamp within the time you set (staff can override with a confirmation), and every action records who did it. A balance can lapse after the period you choose without a visit.',
@@ -249,7 +290,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: BarChart3,
           title: 'Members and statistics',
-          body: 'Member count, visits in the last 30 days, the share of returning members and rewards given. You keep members’ names and phone numbers; filter those with a reward ready and export the list as CSV.',
+          body: 'Member count, visits in the last 30 days, the share of returning members and rewards given. You keep members’ names and phone numbers; export the list as CSV with the consent dates.',
         },
         {
           icon: Palette,
@@ -264,7 +305,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         {
           icon: Nfc,
           title: 'NFC tags and key fobs',
-          body: 'A tap on an NFC sticker on the table opens the join page. On Android, write the tag from the panel in Chrome and read cards by NFC at the counter.',
+          body: 'A tap on an NFC sticker on the table opens the join page, and you can write a customer’s card to a key fob. On Android, write and lock the tag from the panel in Chrome so nobody can point it elsewhere.',
         },
       ],
     },
@@ -275,7 +316,7 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         { title: 'Pick a template', body: 'Start from café, restaurant, barber, beauty salon, bakery or a general template.' },
         { title: 'Write the rules and rewards', body: 'Choose the card type, the rewards and, if you like, tiers, a birthday gift and the card colour.' },
         { title: 'Put the QR at the counter', body: 'Download the join QR as PNG or print the A5 poster and place it next to the till.' },
-        { title: 'Scan at the counter', body: 'The customer shows their card; you add the stamp and give the reward from the counter screen.' },
+        { title: 'Scan at the counter', body: 'The customer shows their card; you scan it with the phone’s camera or on the counter screen, add the stamp and give the reward.' },
       ],
     },
     facts: {
@@ -308,7 +349,15 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
         },
         {
           q: 'How are stamps added?',
-          a: 'Staff open the “Counter” screen in the panel, scan the QR on the customer’s card with the camera or type the card code or phone number, and add a stamp. Camera scanning works where the browser supports it (for example Chrome on Android); elsewhere the card is found by code or phone.',
+          a: 'The easiest way: on a phone signed in to the panel, scan the customer’s card QR with the phone’s own camera; the card opens as the counter screen and you add the stamp in one tap (iPhone and Android). On the panel’s “Counter” screen you can also find a card by code, phone number or name.',
+        },
+        {
+          q: 'I have several branches; can they share one card?',
+          a: 'Yes. Link the branches to the home business’s card; customers collect on the same card at every branch and redeem wherever they like. The card, rewards and customer page are managed at the home business.',
+        },
+        {
+          q: 'Do customers get notifications or e-mails?',
+          a: 'Only if they want them. Customers who turn notifications on in their card hear when a reward is ready and on their birthday. The win-back e-mail is off by default; if you turn it on it goes only to members who agreed to offers, with a one-click opt-out in every mail.',
         },
         {
           q: 'What if a visit gets stamped twice?',
@@ -319,12 +368,12 @@ function getCopy(locale: FeatureLocale): FeaturePageCopy {
           a: 'No. The card fills with visits and purchases only. Google forbids rewards for reviews; in Buaze the review flow and the loyalty card are not connected, and reward texts that hint at a reward for a review are blocked.',
         },
         {
-          q: 'How do you protect customer data?',
+          q: 'Who holds member data, and how is it protected?',
           a: 'Customers accept the privacy notice when they join; marketing consent is a separate box, unticked by default. The card page is closed to search engines. Customers can leave the programme and delete their data from the card page, and you can delete a member in the panel.',
         },
         {
           q: 'Which plans include it?',
-          a: 'It is in the Growth and Scale plans and in the 14-day free trial. If you have several businesses, each has its own card.',
+          a: 'It is in the Growth and Scale plans and in the 14-day free trial. With several businesses, each can set up its own card or join one card as a branch.',
         },
       ],
       more: { href: `${base}/faq`, label: 'See all questions' },

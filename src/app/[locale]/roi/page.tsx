@@ -95,8 +95,8 @@ const COPY = {
         a: 'Hayır. Sonuçlar girdiğiniz değerlere dayanan tahminlerdir. Gerçek tasarruf, aldığınız geri bildirim sayısına ve ekibinizin yanıt alışkanlığına göre değişir.',
       },
       {
-        q: 'Fiyatlar neden USD?',
-        a: 'Buaze planları tüm dillerde USD ile faturalandırılır. Hesaplayıcı, fiyatlandırma sayfasındaki güncel plan fiyatlarını kullanır.',
+        q: 'Hesaplayıcı neden USD kullanıyor?',
+        a: 'Hesaplayıcı, plan fiyatlarının USD liste fiyatıyla çalışır; saatlik maliyeti de USD olarak girersiniz. Türkçe fiyatlandırma sayfası fiyatları Türk lirası olarak gösterir ve kartla ödeme Türk lirası olarak alınır.',
       },
       {
         q: 'Raporu e-postayla alabilir miyim?',
@@ -151,8 +151,8 @@ const COPY = {
         a: 'No. The results are estimates based on the values you enter. The real saving depends on how much feedback you receive and how your team handles replies.',
       },
       {
-        q: 'Why are prices in USD?',
-        a: 'Buaze plans are billed in USD in every language. The calculator uses the current plan prices from the pricing page.',
+        q: 'Why does the calculator use USD?',
+        a: 'The calculator works with the USD list prices of the plans, so you also enter the hourly cost in USD. Card payments are taken in Turkish lira; the Turkish pricing page shows lira prices.',
       },
       {
         q: 'Can I get the report by e-mail?',

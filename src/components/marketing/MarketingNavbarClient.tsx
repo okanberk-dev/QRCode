@@ -272,7 +272,7 @@ export default function MarketingNavbarClient({ locale, logoUrl }: MarketingNavb
     {
       href: `${base}/features/loyalty`,
       label: isTr ? 'Sadakat kartı' : 'Loyalty card',
-      sub: isTr ? 'Dijital damga ve puan kartı' : 'Digital stamp and points card',
+      sub: isTr ? 'Damga kartı, şubelerde tek kart' : 'Stamp card, one card for all branches',
       icon: <Gift size={16} />,
     },
     {

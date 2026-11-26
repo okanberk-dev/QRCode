@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { BarChart3, Mail, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { BarChart3, Gift, Mail, Sparkles, UtensilsCrossed } from 'lucide-react';
 import SolutionPageLayout, { type SolutionPageContent } from '@/components/marketing/SolutionPageLayout';
 import { buildSolutionMetadata } from '@/lib/solution-schema';
 import type { Locale } from '@/lib/translations';
@@ -97,6 +97,12 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           title: 'Yoğun saatleri görün',
           body:
             'Analitik ekranındaki gün ve saat haritası geri bildirimlerin hangi saatlerde yoğunlaştığını gösterir. Ortalama puanı, platformlara göre dağılımı ve puanlardan tahmin edilen NPS’i 7, 30 ya da 90 günlük dönemlerle izlersiniz.',
+        },
+        {
+          icon: Gift,
+          title: 'Düzenli gelenlere sadakat kartı',
+          body:
+            'Kafe ve restoranlar için uygulamasız damga ya da puan kartı. Müşteri masadaki QR ya da NFC etiketiyle katılır; siz kartını telefonunuzun kamerasıyla okutup damga eklersiniz. Birden çok şubeniz varsa tek kart hepsinde geçerlidir. Kart yalnız ziyaretle dolar, yorumla bağlantısı yoktur.',
         },
       ],
     },
@@ -257,6 +263,12 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
           title: 'See your busy hours',
           body:
             'The day-and-hour map on the analytics screen shows when feedback comes in. You follow your average rating, the split across platforms and the NPS estimated from ratings over 7, 30 or 90 days.',
+        },
+        {
+          icon: Gift,
+          title: 'A loyalty card for regulars',
+          body:
+            'An app-free stamp or points card for cafés and restaurants. Customers join with the QR or an NFC tag on the table; you scan their card with your phone’s camera to add a stamp. With several branches, one card works at all of them. The card fills with visits only and is not linked to reviews.',
         },
       ],
     },

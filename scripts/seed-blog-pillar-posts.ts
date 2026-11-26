@@ -47,7 +47,7 @@ const POSTS: PillarPost[] = [
     readTime: '9 dk okuma',
     tags: ['QR geri bildirim', 'müşteri deneyimi', 'rehber'],
     content: `
-<p>Müşterileriniz işletmeniz hakkında her gün bir fikir oluşturuyor; ama bu fikrin büyük kısmı size hiç ulaşmıyor. <strong>QR kod ile müşteri geri bildirimi toplama</strong>, bu sessiz çoğunluğu duyulabilir hale getirmenin en hızlı ve en düşük maliyetli yoludur. Bir kâğıt anket bastırmaya, ayrı bir uygulama indirtmeye veya e-posta listesi kurmaya gerek kalmadan; müşteri telefonuyla bir kareyi okutur ve saniyeler içinde size ulaşır.</p>
+<p>Müşterileriniz işletmeniz hakkında her gün bir fikir oluşturuyor; ama bu fikrin büyük kısmı size hiç ulaşmıyor. <strong>QR kod ile müşteri geri bildirimi toplama</strong>, bu sessiz çoğunluğu duyulabilir hale getirmenin hızlı ve düşük maliyetli bir yoludur. Bir kâğıt anket bastırmaya, ayrı bir uygulama indirtmeye veya e-posta listesi kurmaya gerek kalmadan; müşteri telefonuyla bir kareyi okutur ve saniyeler içinde size ulaşır.</p>
 
 <p>Bu rehberde QR tabanlı bir geri bildirim akışını sıfırdan nasıl kuracağınızı, yanıt oranını neyin yükselttiğini ve toplanan geri bildirimi nasıl gerçek operasyonel iyileştirmeye dönüştüreceğinizi adım adım anlatıyoruz.</p>
 
@@ -81,7 +81,7 @@ const POSTS: PillarPost[] = [
 <li><strong>3. Seçenekler:</strong> Her müşteriye kamuya açık platformda yorum yazma bağlantısı gösterilir; müşteri dilerse işletmeyle özel geri bildirim de paylaşabilir. Burada kritik nokta şudur: bu bir tercih akışıdır, bir engelleme değil.</li>
 </ul>
 
-<p>Buaze'nin yaklaşımında düşük puan veren müşteri istese de istediği platforma gidebilir; sadece kendisine ekiple özel iletişim seçeneği de sunulur. Bu, hem müşteri haklarına saygılı hem de Google'ın kullanıcı katkı politikalarıyla uyumlu bir tasarımdır. Konuyla ilgili ayrıntıyı <a href="/tr/google-compliance">Google uyumluluğu sayfamızda</a> bulabilirsiniz.</p>
+<p>Buaze'de belirlediğiniz eşik ve üzerindeki puanlarda müşteri seçtiğiniz platformun yorum sayfasına geçer; eşiğin altında önce size özel geri bildirim yazabilir ve herkese açık yorum bağlantısı aynı ekranda durur. Her müşteri herkese açık yorum bağlantısını görür; Buaze yorum silmez, gizlemez ve yorum karşılığında ödül sunmaz. Ayrıntıyı <a href="/tr/google-compliance">Google yorum kuralları sayfamızda</a> bulabilirsiniz.</p>
 
 <h2>Adım 3: QR kodu doğru yere koyun</h2>
 
@@ -98,7 +98,7 @@ const POSTS: PillarPost[] = [
 
 <h2>Adım 4: Yanıt oranını artırın</h2>
 
-<p>QR kodu astınız ama kimse okutmuyorsa akış değer üretmez. Yanıt oranını yükselten kanıtlanmış taktikler:</p>
+<p>QR kodu astınız ama kimse okutmuyorsa akış değer üretmez. Yanıt oranını artırmaya yardımcı taktikler:</p>
 
 <ul>
 <li><strong>Zamanlama:</strong> Müşteriye deneyim biter bitmez sunun. Bir hafta sonra gelen anket unutulmuş bir deneyimi ölçer.</li>
@@ -112,12 +112,12 @@ const POSTS: PillarPost[] = [
 <p>Toplanan geri bildirim bir klasörde beklerse hiçbir işe yaramaz. Değer, döngüyü kapatmaktan gelir:</p>
 
 <ul>
-<li><strong>Tek panelde toplayın:</strong> Tüm geri bildirimleri tek gelen kutusunda görün; şube, masa ve tarihe göre filtreleyin.</li>
+<li><strong>Tek gelen kutusunda toplayın:</strong> QR'dan gelen tüm geri bildirimleri tek yerde görün; şube, QR etiketi ve tarihe göre filtreleyin.</li>
 <li><strong>Hızlı yanıt verin:</strong> Özellikle düşük puanlı geri bildirimlere saatler içinde dönmek, kızgın bir müşteriyi sadık bir müşteriye çevirebilir.</li>
 <li><strong>Tekrarlayan temaları yakalayın:</strong> "Servis yavaş" beş kez tekrar ediyorsa bu bir tesadüf değil, bir süreç sorunudur.</li>
 </ul>
 
-<p>Buaze'de geri bildirim geldiği anda tek panele düşer ve Pulse AI, markanızın tonunda bir yanıt taslağı hazırlar; siz metni görüp onaylarsınız. Bu akışı <a href="/tr/features">özellikler sayfamızda</a> ayrıntılı inceleyebilirsiniz.</p>
+<p>Buaze'de QR'dan gelen geri bildirim anında gelen kutusuna düşer, düşük puanlarda e-posta uyarısı gider ve Pulse AI yanıt için bir taslak hazırlar; siz metni görüp onaylamadan hiçbir şey gönderilmez. Bu akışı <a href="/tr/features">özellikler sayfamızda</a> ayrıntılı inceleyebilirsiniz.</p>
 
 <h2>Sık yapılan hatalar</h2>
 
@@ -167,13 +167,13 @@ const POSTS: PillarPost[] = [
 
 <blockquote>İyi yönetilen bir itibar, reklamdan daha güçlüdür: çünkü potansiyel müşteriniz sizin sözünüze değil, başka müşterilerin tanıklığına güvenir.</blockquote>
 
-<p>Bunun ötesinde, Google yerel aramada işletmeleri sıralarken yorum sayısını, yorum tazeliğini ve yanıt davranışını da sinyal olarak kullanır. Yani itibar yönetimi aynı zamanda <strong>yerel SEO</strong>'nun da bir parçasıdır.</p>
+<p>Bunun ötesinde Google, yorum sayısının ve puanının yerel arama sıralamasında etkili olduğunu kendi yardım sayfalarında belirtir ve işletmelere yorumlara yanıt vermelerini önerir. Yani itibar yönetimi aynı zamanda <strong>yerel SEO</strong>'nun da bir parçasıdır.</p>
 
 <h2>Online itibar yönetiminin 5 bileşeni</h2>
 
 <h3>1. İzleme (Monitoring)</h3>
 
-<p>Yönetemediğiniz şeyi ölçemezsiniz. İlk adım, işletmeniz hakkında nerede ne söylendiğini düzenli olarak takip etmektir. Dağınık platformları tek bir panelde toplamak, hiçbir yorumu kaçırmamanızı sağlar.</p>
+<p>Yönetemediğiniz şeyi ölçemezsiniz. İlk adım, işletmeniz hakkında nerede ne söylendiğini düzenli olarak takip etmektir. Yorum aldığınız platformları listeleyin ve her birini düzenli aralıklarla kontrol edin; Google İşletme Profili ve teslimat platformlarının yeni yorum bildirimlerini açık tutun.</p>
 
 <h3>2. Yanıt verme (Responding)</h3>
 
@@ -210,18 +210,18 @@ const POSTS: PillarPost[] = [
 
 <h2>Özet</h2>
 
-<p>Online itibar yönetimi; izleme, yanıt verme, geri bildirim toplama, analiz ve iyileştirme adımlarından oluşan sürekli bir döngüdür. Doğru kurulduğunda yalnızca daha iyi yorumlar değil, daha iyi bir işletme üretir. Buaze, bu döngünün tamamını tek bir panelde yönetmeniz için tasarlanmıştır; <a href="/tr/pricing">planları inceleyebilir</a> veya <a href="/tr/how-it-works">nasıl çalıştığını</a> görebilirsiniz.</p>
+<p>Online itibar yönetimi; izleme, yanıt verme, geri bildirim toplama, analiz ve iyileştirme adımlarından oluşan sürekli bir döngüdür. Doğru kurulduğunda yalnızca daha iyi yorumlar değil, daha iyi bir işletme üretir. Buaze bu döngünün QR ile geri bildirim toplama, düşük puan uyarısı, yanıt taslağı ve analiz adımlarına yardımcı olur; <a href="/tr/pricing">planları inceleyebilir</a> veya <a href="/tr/how-it-works">nasıl çalıştığını</a> görebilirsiniz.</p>
 `,
   },
   {
     slug: 'cok-platformlu-yorum-yonetimi',
     title: 'Çok Platformlu Yorum Yönetimi: Google, Yemeksepeti, Trendyol',
     description:
-      'Google, Yemeksepeti, Getir ve Trendyol yorumlarını dağınık bırakmayın. Çok platformlu yorum yönetimini tek panelde toplamanın, yanıt sürenizi kısaltmanın ve itibarınızı bütünsel yönetmenin yolları.',
+      'Google, Yemeksepeti, Getir ve Trendyol yorumlarını takip etmek için pratik bir plan: platform listesi, yanıt standardı, haftalık analiz ve doğru yorum bağlantıları.',
     readTime: '8 dk okuma',
     tags: ['yorum yönetimi', 'çok platform', 'Google yorumları'],
     content: `
-<p>Bugün bir restoran, kafe veya yerel işletme aynı anda birçok platformda değerlendiriliyor: Google İşletme Profili, Yemeksepeti, Getir, Trendyol Yemek ve sektöre göre Tripadvisor veya Booking. Her platform ayrı bir panel, ayrı bir bildirim, ayrı bir giriş ekranı demek. Bu dağınıklık, yorumların kaçırılmasına ve yanıt sürelerinin uzamasına yol açar. <strong>Çok platformlu yorum yönetimi</strong>, bu karmaşayı tek bir akışta toplamanın disiplinidir.</p>
+<p>Bugün bir restoran, kafe veya yerel işletme aynı anda birçok platformda değerlendiriliyor: Google İşletme Profili, Yemeksepeti, Getir, Trendyol Yemek ve sektöre göre Tripadvisor veya Booking. Her platform ayrı bir panel, ayrı bir bildirim, ayrı bir giriş ekranı demek. Bu dağınıklık, yorumların kaçırılmasına ve yanıt sürelerinin uzamasına yol açar. <strong>Çok platformlu yorum yönetimi</strong>, bu kanalları düzenli ve aynı standartla takip etme disiplinidir.</p>
 
 <h2>Dağınık yorum yönetiminin maliyeti</h2>
 
@@ -233,21 +233,21 @@ const POSTS: PillarPost[] = [
 <li><strong>Bütünsel görüş kaybı:</strong> Her platforma ayrı bakınca "genel olarak nasıl gidiyoruz?" sorusuna cevap veremezsiniz.</li>
 </ul>
 
-<blockquote>İtibarınız tek bir platformda değil, müşterinin sizi bulduğu her yerde oluşur. Onu da tek bir yerden yönetmek gerekir.</blockquote>
+<blockquote>İtibarınız tek bir platformda değil, müşterinin sizi bulduğu her yerde oluşur. Her kanala aynı özenle bakmak gerekir.</blockquote>
 
-<h2>Tek panelde toplamanın faydaları</h2>
+<h2>Düzenli takibin faydaları</h2>
 
 <h3>1. Hiçbir yorumu kaçırmama</h3>
 
-<p>Tüm platformlardaki yorumlar tek gelen kutusuna düştüğünde, her birini görür ve önceliklendirebilirsiniz. Özellikle düşük puanlı yorumları anında yakalamak, krizleri büyümeden çözmenizi sağlar.</p>
+<p>Her platformun yeni yorum bildirimlerini açık tutmak ve gün içinde belirli saatlerde kontrol etmek, hiçbir yorumun haftalarca yanıtsız kalmamasını sağlar. Özellikle düşük puanlı yorumları erken görmek, sorunu müşteriyle konuşarak çözmeniz için zaman kazandırır.</p>
 
 <h3>2. Yanıt süresini kısaltma</h3>
 
-<p>Platform platform dolaşmak yerine tek ekrandan yanıt vermek, ortalama yanıt sürenizi belirgin biçimde düşürür. Buaze'de Pulse AI, her yorum için markanızın tonunda bir taslak hazırlar; siz onaylar, gönderirsiniz. Bu akışın detayını <a href="/tr/features/pulse-ai">Pulse AI sayfamızda</a> bulabilirsiniz.</p>
+<p>Hangi platformu kimin, ne sıklıkla yanıtlayacağını belirlemek ve sık gelen konular için hazır yanıt şablonları yazmak, yanıt sürenizi kısaltır. Buaze, kendi QR akışınızdan gelen geri bildirimler için Pulse AI ile yanıt taslağı hazırlar; siz onaylamadan hiçbir şey gönderilmez. Buaze diğer platformlardaki yorumları içeri aktarmaz. Ayrıntılar <a href="/tr/features/pulse-ai">Pulse AI sayfamızda</a>.</p>
 
 <h3>3. Bütünsel itibar görünümü</h3>
 
-<p>Tüm platformları birlikte görmek; ortalama puanınızı, en sık tekrar eden temaları ve hangi platformda hangi sorunun yoğunlaştığını ortaya çıkarır. Örneğin Google'da puanınız yüksekken bir teslimat platformunda düşükse, bu çoğu zaman bir paketleme veya teslimat sorununa işaret eder.</p>
+<p>Platformları haftalık olarak yan yana değerlendirmek; ortalama puanınızı, en sık tekrar eden temaları ve hangi platformda hangi sorunun yoğunlaştığını ortaya çıkarır. Örneğin Google'da puanınız yüksekken bir teslimat platformunda düşükse, bu çoğu zaman bir paketleme veya teslimat sorununa işaret eder.</p>
 
 <h2>Türkiye'de hangi platformları izlemelisiniz?</h2>
 
@@ -269,7 +269,7 @@ const POSTS: PillarPost[] = [
 
 <ul>
 <li><strong>1. Platformları listeleyin:</strong> İşletmenizin gerçekten değerlendirildiği tüm kanalları yazın.</li>
-<li><strong>2. Tek panelde toplayın:</strong> Tüm yorumları tek gelen kutusunda görünür hale getirin.</li>
+<li><strong>2. Takip düzeni kurun:</strong> Her platformun bildirimlerini açın ve kimin hangi kanala bakacağını belirleyin.</li>
 <li><strong>3. Yanıt standardı belirleyin:</strong> Olumlu, nötr ve olumsuz yorumlar için ton ve süre hedefleri koyun.</li>
 <li><strong>4. Haftalık analiz yapın:</strong> Platformlar arası ortalamayı ve tekrar eden temaları gözden geçirin.</li>
 <li><strong>5. QR ile besleyin:</strong> Fiziksel temas noktalarına geri bildirim akışı yerleştirin.</li>
@@ -277,7 +277,7 @@ const POSTS: PillarPost[] = [
 
 <h2>Özet</h2>
 
-<p>Yorumlarınız dağınık olduğunda itibarınız da dağınık olur. Çok platformlu yorum yönetimi; Google, Yemeksepeti, Getir, Trendyol ve diğer kanalları tek bir akışta toplayarak hiçbir yorumu kaçırmamanızı, daha hızlı yanıt vermenizi ve işletmenizin genel itibarını bütünsel görmenizi sağlar. Buaze tam olarak bunun için kuruldu — <a href="/tr/how-it-works">nasıl çalıştığını</a> görün veya <a href="/tr/pricing">planları inceleyin</a>.</p>
+<p>Yorumlarınız dağınık olduğunda itibarınız da dağınık olur. Çok platformlu yorum yönetimi; Google, Yemeksepeti, Getir, Trendyol ve diğer kanalları düzenli takip ederek hiçbir yorumu kaçırmamanızı, daha hızlı yanıt vermenizi ve işletmenizin genel itibarını bütünsel görmenizi sağlar. Buaze diğer platformlardaki yorumları içeri aktarmaz; QR akışınızdan gelen geri bildirimleri tek gelen kutusunda toplar ve 10 platformdaki yorum bağlantılarınızı yönetir. <a href="/tr/how-it-works">Nasıl çalıştığını</a> görün veya <a href="/tr/pricing">planları inceleyin</a>.</p>
 `,
   },
 ];

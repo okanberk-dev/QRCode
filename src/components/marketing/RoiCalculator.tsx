@@ -93,7 +93,7 @@ const COPY = {
     privacyHref: '/tr/gizlilik',
     facts: ['14 gün ücretsiz deneme', 'Kredi kartı gerekmez', 'İstediğiniz zaman iptal'],
     privacyNote:
-      'Bilgilerinizi satmayız. Raporu e-posta sağlayıcımız Resend ile gönderiyoruz; özeti hazırlamak için işletme adı, türü ve girdiğiniz değerler OpenAI’ye gönderilir, e-posta adresiniz gönderilmez.',
+      'Bilgilerinizi satmayız. Raporu e-posta sağlayıcımız Resend ile gönderiyoruz; özeti hazırlamak için işletme adı, türü ve girdiğiniz değerler yapay zekâ sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir, e-posta adresiniz gönderilmez.',
     submit: 'Raporu gönder',
     sentTitle: 'Raporunuz yolda',
     sentBody: 'Tahmini raporunuz ve PDF’i birkaç dakika içinde e-postanıza gelir. Görmezseniz spam ve promosyonlar klasörüne bakın.',
@@ -166,7 +166,7 @@ const COPY = {
     privacyHref: '/en/privacy',
     facts: ['14-day free trial', 'No credit card required', 'Cancel anytime'],
     privacyNote:
-      'We do not sell your details. The report is sent through our e-mail provider, Resend. To write the summary, your business name, type and the values you entered are sent to OpenAI; your e-mail address is not.',
+      'We do not sell your details. The report is sent through our e-mail provider, Resend. To write the summary, your business name, type and the values you entered are sent to our AI provider (Anthropic, with OpenAI as a backup); your e-mail address is not.',
     submit: 'Send the report',
     sentTitle: 'Your report is on its way',
     sentBody: 'Your estimate and its PDF reach your inbox within a few minutes. If you cannot see it, check your spam and promotions folders.',

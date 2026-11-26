@@ -160,7 +160,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           q: 'Misafir verileri nerede saklanır?',
-          a: 'Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni OpenAI’a gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz. Formda ad ve e-posta isteğe bağlıdır, pazarlama izni ayrı ve varsayılan olarak işaretsizdir; IP adresleri 90 gün sonra anonimleştirilir.',
+          a: 'Veritabanı AB’de (Frankfurt) tutulur; e-posta gönderimi ve yapay zekâ gibi bazı hizmet sağlayıcılar ABD’dedir ve Veri İşleyici Sözleşmesi’nde listelenir. Yapay zekâ özellikleri (Pulse AI taslakları, geri bildirim özetleri, analitikteki öne çıkan konular ve haftalık özet e-postası) için geri bildirim metni yapay zekâ sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir; bu özelliklerin işletmeniz için kapatılmasını destek ekibimizden isteyebilirsiniz. Formda ad ve e-posta isteğe bağlıdır, pazarlama izni ayrı ve varsayılan olarak işaretsizdir; IP adresleri 90 gün sonra anonimleştirilir.',
         },
       ],
     },
@@ -312,7 +312,7 @@ const CONTENT: Record<Locale, SolutionPageContent> = {
         },
         {
           q: 'Where is guest data stored?',
-          a: 'The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to OpenAI; you can ask our support team to switch these features off for your business. Name and e-mail are optional on the form, marketing consent is a separate box that is unticked by default, and IP addresses are anonymised after 90 days.',
+          a: 'The database is kept in the EU (Frankfurt); some service providers, such as e-mail delivery and AI, are in the US and are listed in the data processing agreement. For the AI features (Pulse AI drafts, feedback summaries, the highlighted topics in analytics and the weekly summary e-mail), feedback text is sent to our AI provider (Anthropic, with OpenAI as a backup); you can ask our support team to switch these features off for your business. Name and e-mail are optional on the form, marketing consent is a separate box that is unticked by default, and IP addresses are anonymised after 90 days.',
         },
       ],
     },

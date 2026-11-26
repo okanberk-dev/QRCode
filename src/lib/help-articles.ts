@@ -1697,7 +1697,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Taslak için hangi bilgiler kullanılır?',
-            a: 'İşletmenizin adı ve türü, müşterinin adı, puanı, platform ve yorum metni. Taslağı hazırlamak için bu bilgiler yapay zekâ hizmet sağlayıcımız OpenAI’ye gönderilir; sipariş geçmişi veya konum gibi başka bir bilgi kullanılmaz.',
+            a: 'İşletmenizin adı ve türü, müşterinin adı, puanı, platform ve yorum metni. Taslağı hazırlamak için bu bilgiler yapay zekâ hizmet sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir; sipariş geçmişi veya konum gibi başka bir bilgi kullanılmaz.',
           },
           {
             q: 'Taslaklar hangi dillerde hazırlanır?',
@@ -1751,7 +1751,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'What information is used for a draft?',
-            a: 'Your business name and type, the customer’s name, rating, platform and comment. To prepare the draft, this information is sent to our AI provider, OpenAI; nothing else, such as order history or location, is used.',
+            a: 'Your business name and type, the customer’s name, rating, platform and comment. To prepare the draft, this information is sent to our AI provider (Anthropic, with OpenAI as a backup); nothing else, such as order history or location, is used.',
           },
           {
             q: 'Which languages are drafts written in?',
@@ -3704,7 +3704,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Deneme biterse',
             paragraphs: [
-              `Deneme süresi dolduğunda bir plan alınana kadar panele giriş yapılamaz; verileriniz otomatik olarak silinmez. Bu durumda plan almak için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+              `Deneme süresi dolduğunda panele girdiğinizde fiyatlandırma sayfası açılır; plan alana kadar panel kullanılamaz, verileriniz otomatik olarak silinmez. Planı bu sayfadan kartla alabilir ya da [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazabilirsiniz.`,
             ],
           },
         ],
@@ -3725,7 +3725,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Fiyatlar hangi para biriminde?',
-            a: 'Fiyatlar USD olarak gösterilir ve ödeme USD ile alınır.',
+            a: 'Türkçe fiyatlandırma sayfası fiyatları Türk lirası, İngilizce sayfa ABD doları olarak gösterir. Kartla ödeme her zaman Türk lirası olarak alınır.',
           },
         ],
       },
@@ -3758,7 +3758,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'If the trial ends',
             paragraphs: [
-              `When the trial expires, you cannot sign in to the panel until a plan is bought; your data is not deleted automatically. To buy a plan at that point, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+              `When the trial expires, opening the panel takes you to the pricing page; the panel cannot be used until you buy a plan, and your data is not deleted automatically. You can buy a plan there by card or write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
             ],
           },
         ],
@@ -3779,7 +3779,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           },
           {
             q: 'Which currency are prices in?',
-            a: 'Prices are shown and charged in USD.',
+            a: 'The Turkish pricing page shows prices in Turkish lira and the English page in USD. Card payments are always taken in Turkish lira.',
           },
         ],
       },
@@ -3790,12 +3790,12 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     tr: {
       title: 'Faturalar, kart değişikliği ve abonelik iptali',
       excerpt:
-        'Faturalarınızı panelde görür, aboneliğinizi ve kartınızı müşteri portalından yönetirsiniz. İptal ettiğinizde ödenmiş dönemin sonuna kadar erişiminiz sürer.',
-      tags: ['fatura', 'iptal', 'kart', 'abonelik', 'müşteri portalı'],
+        'Faturalarınızı panelde görürsünüz. Kartla ödenen paketlerde otomatik çekim yoktur; her ödeme bir ay ya da bir yıl açar ve süreyi panelden uzatırsınız.',
+      tags: ['fatura', 'iptal', 'kart', 'abonelik', 'süre uzatma'],
       body: {
         lead: 'Faturalandırmada en önemli şey sürpriz yaşamamaktır. Faturalarınızın nerede olduğunu, kartınızı nasıl değiştireceğinizi ve iptalin nasıl işlediğini bilmek işinizi kolaylaştırır.',
         keyInsight:
-          'Faturalar **Hesabım → Plan ve faturalama** bölümünde listelenir; aboneliği ve kartı **Aboneliği yönet** ile açılan müşteri portalından yönetir, oradan iptal edersiniz.',
+          'Faturalar **Hesabım → Plan ve faturalama** bölümünde listelenir. Süreyi aynı bölümdeki **Süreyi uzat** ile uzatırsınız; otomatik çekim olmadığı için iptal etmeniz gerekmez.',
         sections: [
           {
             title: 'Faturalar',
@@ -3806,7 +3806,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Kartı değiştirme ve iptal',
             paragraphs: [
-              'Kartla ödenen paketlerde otomatik çekim yoktur: ödediğiniz dönem bitince hesabınız ücretsiz plana geçer. Süreyi **Hesabım → Plan ve faturalama → Süreyi uzat** ile, dönem bitmeden uzatabilirsiniz. Kart bilgileriniz PayNKolay’da girilir ve Buaze’de saklanmaz. Faturalandırmayı yalnızca hesap sahibi yönetebilir.',
+              'Kartla ödenen paketlerde otomatik çekim yoktur: ödediğiniz dönem bitince yeni ödeme yapılana kadar panel kullanılamaz, verileriniz silinmez. Süreyi **Hesabım → Plan ve faturalama → Süreyi uzat** ile, dönem bitmeden uzatabilirsiniz. Kart bilgileriniz PayNKolay’da girilir ve Buaze’de saklanmaz. Faturalandırmayı yalnızca hesap sahibi yönetebilir.',
             ],
           },
           {
@@ -3843,12 +3843,12 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     en: {
       title: 'Invoices, changing your card and cancelling',
       excerpt:
-        'See your invoices in the panel and manage your subscription and card in the customer portal. If you cancel, your access continues to the end of the paid period.',
-      tags: ['invoice', 'cancel', 'card', 'subscription', 'customer portal'],
+        'See your invoices in the panel. Plans paid by card are never charged automatically; each payment opens one month or one year, and you extend the period from the panel.',
+      tags: ['invoice', 'cancel', 'card', 'subscription', 'extend period'],
       body: {
         lead: 'In billing, the main thing is avoiding surprises. Knowing where your invoices are, how to change your card and how cancelling works makes things easier.',
         keyInsight:
-          'Invoices are listed under **Account → Plan & billing**; you manage your subscription and card, and cancel, in the customer portal that **Manage subscription** opens.',
+          'Invoices are listed under **Account → Plan & billing**. You extend the period with **Extend period** in the same section; as nothing is charged automatically, there is nothing to cancel.',
         sections: [
           {
             title: 'Invoices',
@@ -3859,7 +3859,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Changing your card and cancelling',
             paragraphs: [
-              'Plans paid by card are never charged automatically: when the paid period ends, the account moves to the free plan. Extend it before it ends under **Account → Plan & billing → Extend period**. Card details are entered on PayNKolay and never stored by Buaze. Only the account owner can manage billing.',
+              'Plans paid by card are never charged automatically: when the paid period ends, the panel cannot be used until a new payment is made, and your data is not deleted. Extend it before it ends under **Account → Plan & billing → Extend period**. Card details are entered on PayNKolay and never stored by Buaze. Only the account owner can manage billing.',
             ],
           },
           {
@@ -3899,23 +3899,23 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     tr: {
       title: 'Aylık ve yıllık ödeme',
       excerpt:
-        'Aylık abonelik panelden kartla başlatılır. Yıllık ödeme seçeneği için bizimle iletişime geçersiniz. Hangi durumda hangisinin uygun olduğuna dair notlar.',
+        'Paketinizi aylık ya da yıllık olarak panelden kartla ödersiniz. Hangi durumda hangisinin uygun olduğuna dair notlar.',
       tags: ['aylık', 'yıllık', 'plan', 'ödeme', 'abonelik'],
       body: {
         lead: 'Ödeme döngüsü seçimi yalnızca fiyat değil, esneklik kararıdır. Aylık ödeme, iş modeli henüz oturmamış işletmeye esneklik sağlar; yıllık ödeme ise uzun süreli kullanımı planlayanlar içindir.',
         keyInsight:
-          `Aylık aboneliği panelden kendiniz başlatırsınız; yıllık ödeme için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın.`,
+          'Aylık ya da yıllık ödemeyi **Hesabım → Plan ve faturalama** bölümünden kendiniz seçersiniz; her ödeme seçtiğiniz süreyi açar, otomatik çekim yoktur.',
         sections: [
           {
             title: 'Aylık abonelik',
             paragraphs: [
-              'Aylık abonelik **Hesabım → Plan ve faturalama** bölümünden kartla başlatılır ve USD olarak alınır. İstediğiniz zaman müşteri portalından iptal edebilirsiniz; erişiminiz ödenmiş dönemin sonuna kadar sürer.',
+              'Aylık ödeme **Hesabım → Plan ve faturalama** bölümünden kartla yapılır ve Türk lirası olarak alınır. Ödeme bir ay açar; devam etmek için dönem bitmeden **Süreyi uzat** ile yeniden ödersiniz.',
             ],
           },
           {
             title: 'Yıllık ödeme',
             paragraphs: [
-              'Fiyatlandırma sayfası yıllık fiyatları da gösterir. Yıllık ödeme şu an panelden kendiliğinden başlatılamaz; bu seçenek için bizimle iletişime geçin.',
+              'Ödeme ekranında yıllık seçeneği de vardır; yıllık ödeme tek seferde bir yıl açar. Güncel yıllık fiyatlar fiyatlandırma sayfasında yer alır.',
             ],
           },
           {
@@ -3929,13 +3929,13 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         ],
         checklist: [
           'Ödeme döngüsü kullanım planına göre seçildi.',
-          'Yenileme tarihi takvimde.',
+          'Dönem bitiş tarihi takvimde.',
           'İade ve iptal koşulları okundu.',
         ],
         faq: [
           {
             q: 'Aylıktan yıllığa geçebilir miyim?',
-            a: `Yıllık ödeme için [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) adresine yazın; geçişi birlikte planlarız.`,
+            a: 'Evet. Bir sonraki ödemenizde yıllık seçeneğini seçmeniz yeterlidir; yeni süre mevcut dönemin sonuna eklenir.',
           },
           {
             q: 'Yıllık planı erken iptal edersem ne olur?',
@@ -3947,23 +3947,23 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
     en: {
       title: 'Monthly and yearly billing',
       excerpt:
-        'You start a monthly subscription from the panel by card. For yearly billing, get in touch with us. Notes on when each option makes the most sense.',
+        'You pay for your plan monthly or yearly by card from the panel. Notes on when each option makes the most sense.',
       tags: ['monthly', 'yearly', 'plan', 'payment', 'subscription'],
       body: {
         lead: 'Choosing a billing cycle is about flexibility as much as price. Monthly billing gives flexibility while your business is still finding its feet; yearly billing is for those who plan to use Buaze for the long term.',
         keyInsight:
-          `You start a monthly subscription yourself from the panel; for yearly billing, write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}).`,
+          'You choose monthly or yearly payment yourself under **Account → Plan & billing**; each payment opens the period you chose, and nothing is charged automatically.',
         sections: [
           {
             title: 'Monthly subscription',
             paragraphs: [
-              'A monthly subscription is started by card under **Account → Plan & billing** and charged in USD. You can cancel it in the customer portal at any time; your access continues to the end of the paid period.',
+              'Monthly payment is made by card under **Account → Plan & billing** and taken in Turkish lira. A payment opens one month; to continue, pay again with **Extend period** before the period ends.',
             ],
           },
           {
             title: 'Yearly billing',
             paragraphs: [
-              'The pricing page shows yearly prices too. Yearly billing cannot be started from the panel yet; get in touch with us for this option.',
+              'The payment screen also offers a yearly option; a yearly payment opens one year at once. Current yearly prices are on the pricing page.',
             ],
           },
           {
@@ -3977,13 +3977,13 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
         ],
         checklist: [
           'The billing cycle matches your plans.',
-          'The renewal date is in your calendar.',
+          'The period end date is in your calendar.',
           'You have read the refund and cancellation terms.',
         ],
         faq: [
           {
             q: 'Can I switch from monthly to yearly?',
-            a: `Write to [${SUPPORT_EMAIL}](mailto:${SUPPORT_EMAIL}) about yearly billing and we will plan the switch with you.`,
+            a: 'Yes. Choose the yearly option at your next payment; the new period is added to the end of your current one.',
           },
           {
             q: 'What if I cancel a yearly plan early?',
@@ -4023,7 +4023,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Veri sorumlusu kimdir?',
             paragraphs: [
-              'Müşterilerinizin bıraktığı veriler için veri sorumlusu işletmenizdir; Buaze bu verileri sizin adınıza işler. Bu ilişki [Veri İşleyici Sözleşmesi](/tr/veri-isleyici-sozlesmesi)’nde düzenlenir; Buaze’nin kendi aydınlatma metni [KVKK sayfasında](/tr/kvkk). Pulse AI yanıt taslakları ve öne çıkan konular için yorum metinleri yapay zekâ hizmet sağlayıcımız OpenAI’ye gönderilir; alt işleyicilerin listesi aynı sözleşmededir.',
+              'Müşterilerinizin bıraktığı veriler için veri sorumlusu işletmenizdir; Buaze bu verileri sizin adınıza işler. Bu ilişki [Veri İşleyici Sözleşmesi](/tr/veri-isleyici-sozlesmesi)’nde düzenlenir; Buaze’nin kendi aydınlatma metni [KVKK sayfasında](/tr/kvkk). Pulse AI yanıt taslakları ve öne çıkan konular için yorum metinleri yapay zekâ hizmet sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir; alt işleyicilerin listesi aynı sözleşmededir.',
             ],
           },
         ],
@@ -4072,7 +4072,7 @@ export const STATIC_HELP_ARTICLES: StaticHelpArticle[] = [
           {
             title: 'Who is the data controller?',
             paragraphs: [
-              'Your business is the data controller for the data your customers leave; Buaze processes it on your behalf. This relationship is set out in the [Data Processing Agreement](/en/veri-isleyici-sozlesmesi); Buaze’s own privacy notice is on the [KVKK page](/en/kvkk). For Pulse AI reply drafts and highlighted topics, comment text is sent to our AI provider, OpenAI; the list of sub-processors is in the same agreement.',
+              'Your business is the data controller for the data your customers leave; Buaze processes it on your behalf. This relationship is set out in the [Data Processing Agreement](/en/veri-isleyici-sozlesmesi); Buaze’s own privacy notice is on the [KVKK page](/en/kvkk). For Pulse AI reply drafts and highlighted topics, comment text is sent to our AI provider (Anthropic, with OpenAI as a backup); the list of sub-processors is in the same agreement.',
             ],
           },
         ],

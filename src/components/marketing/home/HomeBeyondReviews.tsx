@@ -35,7 +35,7 @@ const COPY = {
     },
     loyalty: {
       name: 'Sadakat kartı',
-      body: 'Kafe, restoran, berber ve salonlar için dijital damga ya da puan kartı. Müşteri kasadaki QR ile kartını telefonunda açar, uygulama indirmez; siz kasada ziyaret ekler, ödülü verirsiniz. Seviyeler, doğum günü hediyesi ve 6 hazır şablon vardır.',
+      body: 'Kafe, restoran, berber ve salonlar için dijital damga ya da puan kartı. Müşteri kasadaki QR ya da NFC etiketiyle kartını telefonunda açar, uygulama indirmez; siz kartını telefonunuzun kamerasıyla okutup damga eklersiniz. Şubelerde tek kart, ödül hazır bildirimi, seviyeler ve doğum günü hediyesi vardır.',
       link: 'Sadakat kartını inceleyin',
       business: 'Örnek Kafe',
       program: 'Kahve kartı',
@@ -65,7 +65,7 @@ const COPY = {
     },
     loyalty: {
       name: 'Loyalty card',
-      body: 'A digital stamp or points card for cafés, restaurants, barbers and salons. Customers open it on their phone with the QR at the counter — no app — and you add visits and give rewards at the counter. Tiers, a birthday gift and 6 ready templates included.',
+      body: 'A digital stamp or points card for cafés, restaurants, barbers and salons. Customers open it on their phone with the QR or an NFC tag at the counter — no app — and you scan their card with your phone’s camera to add a stamp. One card for all branches, reward-ready alerts, tiers and a birthday gift.',
       link: 'Explore the loyalty card',
       business: 'Sample Café',
       program: 'Coffee card',

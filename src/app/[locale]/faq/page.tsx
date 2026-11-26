@@ -12,7 +12,7 @@ import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion'
 /**
  * /faq — grouped questions about the product as it works today. Every answer
  * is checked against the code (review flow with the owner's 4★/5★ threshold,
- * link-only platforms, USD plans + 14-day trial, team roles, KVKK). The
+ * link-only platforms, TL card payments + 14-day trial, team roles, KVKK). The
  * FAQPage JSON-LD is built from the same arrays as the visible accordion.
  * Static: no headers()/cookies()/searchParams (CLAUDE.md §35.12.3).
  */
@@ -105,7 +105,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
           },
           {
             q: 'Pulse AI yanıtları kendisi gönderir mi?',
-            a: 'Hayır. Pulse AI her geri bildirim için 2–4 cümlelik bir yanıt taslağı hazırlar; sıcak, resmi veya özür dileyen tonu siz seçersiniz. Taslağı düzenler ve onaylarsınız; hiçbir yanıt siz onaylamadan gönderilmez. Taslak hazırlamak için geri bildirim metni yapay zekâ sağlayıcısına (OpenAI) gönderilir.',
+            a: 'Hayır. Pulse AI her geri bildirim için 2–4 cümlelik bir yanıt taslağı hazırlar; sıcak, resmi veya özür dileyen tonu siz seçersiniz. Taslağı düzenler ve onaylarsınız; hiçbir yanıt siz onaylamadan gönderilmez. Taslak hazırlamak için geri bildirim metni yapay zekâ sağlayıcısına (Anthropic, yedek olarak OpenAI) gönderilir.',
             links: [{ href: p('/features/pulse-ai'), label: 'Pulse AI' }],
           },
           {
@@ -129,7 +129,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
           },
           {
             q: 'Aboneliğimi nasıl iptal ederim?',
-            a: "Aboneliğinizi panelden açılan müşteri portalında yönetir ve iptal edersiniz. İptalden sonra dönem sonuna kadar erişiminiz devam eder ve abonelik yenilenmez. İade koşulları İade ve İptal Politikası'nda yer alır.",
+            a: "Kartla ödenen paketlerde otomatik çekim yoktur; her ödeme bir ay ya da bir yıl açar. Devam etmek istemezseniz yeni ödeme yapmamanız yeterlidir: dönem bitince panel kullanılamaz, verileriniz silinmez. İade koşulları İade ve İptal Politikası'nda yer alır.",
             links: [{ href: p('/iade-iptal-politikasi'), label: 'İade ve İptal Politikası' }],
           },
         ],
@@ -154,7 +154,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
         items: [
           {
             q: 'Müşteri verileri nasıl işleniyor?',
-            a: "Müşteri formunda KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB'de (Frankfurt) çalışır; bazı alt işleyiciler ABD'dedir ve Veri İşleyici Sözleşmesi'nde listelenir. Pulse AI taslakları için geri bildirim metni OpenAI'ye gönderilir.",
+            a: "Müşteri formunda KVKK aydınlatma onayı alınır; pazarlama izni ayrıdır ve varsayılan olarak kapalıdır. IP adresleri 90 gün sonra anonimleştirilir. Veritabanı AB'de (Frankfurt) çalışır; bazı alt işleyiciler ABD'dedir ve Veri İşleyici Sözleşmesi'nde listelenir. Pulse AI taslakları için geri bildirim metni yapay zekâ sağlayıcımıza (Anthropic, yedek olarak OpenAI) gönderilir.",
             links: [
               { href: p('/kvkk'), label: 'KVKK Aydınlatma Metni' },
               { href: p('/veri-isleyici-sozlesmesi'), label: 'Veri İşleyici Sözleşmesi' },
@@ -238,7 +238,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
         },
         {
           q: 'Does Pulse AI send replies on its own?',
-          a: 'No. Pulse AI drafts a 2–4 sentence reply for each piece of feedback, in the warm, formal or apologetic tone you choose. You edit and approve the draft; nothing is sent without your approval. To create a draft, the feedback text is sent to an AI provider (OpenAI).',
+          a: 'No. Pulse AI drafts a 2–4 sentence reply for each piece of feedback, in the warm, formal or apologetic tone you choose. You edit and approve the draft; nothing is sent without your approval. To create a draft, the feedback text is sent to an AI provider (Anthropic, with OpenAI as a backup).',
           links: [{ href: p('/features/pulse-ai'), label: 'Pulse AI' }],
         },
         {
@@ -262,7 +262,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
         },
         {
           q: 'How do I cancel my subscription?',
-          a: 'You manage and cancel your subscription in the customer portal, which you open from the panel. After cancelling, you keep access until the end of the period and the subscription does not renew. Refund terms are in the Refund and Cancellation Policy.',
+          a: 'Plans paid by card are never charged automatically; each payment opens one month or one year. If you do not want to continue, simply do not pay again: when the period ends the panel cannot be used, and your data is not deleted. Refund terms are in the Refund and Cancellation Policy.',
           links: [{ href: p('/iade-iptal-politikasi'), label: 'Refund and Cancellation Policy' }],
         },
       ],
@@ -287,7 +287,7 @@ function buildGroups(lang: Lang): FaqGroup[] {
       items: [
         {
           q: 'How is customer data handled?',
-          a: "The customer form asks for consent under KVKK, Turkey's data protection law; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database runs in the EU (Frankfurt); some sub-processors are in the US and are listed in the Data Processing Agreement. For Pulse AI drafts, the feedback text is sent to OpenAI.",
+          a: "The customer form asks for consent under KVKK, Turkey's data protection law; marketing consent is separate and off by default. IP addresses are anonymised after 90 days. The database runs in the EU (Frankfurt); some sub-processors are in the US and are listed in the Data Processing Agreement. For Pulse AI drafts, the feedback text is sent to our AI provider (Anthropic, with OpenAI as a backup).",
           links: [
             { href: p('/privacy'), label: 'Privacy policy' },
             { href: p('/veri-isleyici-sozlesmesi'), label: 'Data Processing Agreement' },
