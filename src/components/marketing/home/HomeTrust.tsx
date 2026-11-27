@@ -82,7 +82,7 @@ export default function HomeTrust({ locale }: { locale: 'tr' | 'en' }) {
         <div className="rt-cta-panel">
           <div className="rt-cta-panel__left">
             <div className="rt-mini-head">
-              <p className="rt-eyebrow" style={{ color: '#fff' }}>
+              <p className="rt-eyebrow">
                 {copy.eyebrow}
               </p>
               <h2 id="trust-title" className="rt-t-h1">

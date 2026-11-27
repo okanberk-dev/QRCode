@@ -192,15 +192,15 @@ export function FeatureSectionHeading({
 }) {
   const dark = tone === 'dark';
   return (
-    <div className="rt-section-head__text" style={dark ? { color: '#fff' } : undefined}>
-      <p className="rt-eyebrow" style={dark ? { color: 'rgba(255,255,255,.8)' } : undefined}>
+    <div className="rt-section-head__text" style={dark ? { color: 'inherit' } : undefined}>
+      <p className="rt-eyebrow">
         {eyebrow}
       </p>
       <h2 id={id} className="rt-t-h1 text-balance">
         {title}
       </h2>
       {lead ? (
-        <p className="rt-t-lead text-pretty" style={dark ? { color: 'rgba(255,255,255,.85)' } : undefined}>
+        <p className="rt-t-lead text-pretty" style={dark ? { color: 'inherit', opacity: 0.85 } : undefined}>
           {lead}
         </p>
       ) : null}
@@ -525,9 +525,9 @@ export default function FeaturePageLayout({
           <FeatureSectionHeading id="feature-facts-title" eyebrow={copy.facts.eyebrow} title={copy.facts.title} tone="dark" />
           <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-12 lg:grid-cols-4">
             {copy.facts.items.map((fact) => (
-              <div key={fact.label} className="flex flex-col-reverse justify-end gap-2 border-t border-white/15 pt-5">
-                <dt className="text-[14px] leading-[1.5] text-white/75 sm:text-[15px]">{fact.label}</dt>
-                <dd className="text-[36px] leading-none text-white sm:text-[48px]">{fact.value}</dd>
+              <div key={fact.label} className="flex flex-col-reverse justify-end gap-2 border-t border-black/15 pt-5">
+                <dt className="text-[14px] leading-[1.5] opacity-75 sm:text-[15px]">{fact.label}</dt>
+                <dd className="text-[36px] leading-none sm:text-[48px]">{fact.value}</dd>
               </div>
             ))}
           </dl>
