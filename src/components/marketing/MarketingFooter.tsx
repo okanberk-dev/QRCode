@@ -60,11 +60,11 @@ const FOOTER_SECTORS = ['restaurants', 'delivery', 'hotels', 'healthcare', 'beau
 
 
 /**
- * Site footer — "Ritim" design (CLAUDE.md §62): brand-gradient background
- * with a dot pattern, a white 48 px-radius card holding the site map, the
- * "how can we help" row, language / social / newsletter, footnotes and the
- * legal rail; under the card an "ask an AI assistant" row and a large white
- * wordmark. Company facts come from getCompanyFacts (same source as the
+ * Site footer — "Ritim" design (CLAUDE.md §62): a plain deep-green frame
+ * around a white 48 px-radius card holding the site map, the "how can we
+ * help" row, language / social / newsletter, footnotes and the legal rail.
+ * Nothing under the card (no gradient, dot pattern, AI-ask icons or giant
+ * wordmark). Company facts come from getCompanyFacts (same source as the
  * Organization JSON-LD). Server component, no request-time APIs (§35.12.3).
  */
 export default async function MarketingFooter({ locale }: MarketingFooterProps) {
@@ -146,17 +146,6 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
       ];
 
   const newTab = isTr ? '(yeni sekmede açılır)' : '(opens in a new tab)';
-  const aiPrompt = encodeURIComponent(
-    isTr
-      ? 'Buaze (buaze.com) QR kodla müşteri geri bildirimi ve Google yorum yönetimi yazılımını işletmem için tarafsız şekilde değerlendir: artıları, eksileri ve alternatifleri.'
-      : 'Give me an unbiased review of Buaze (buaze.com), the QR code customer feedback and Google review management software: pros, cons and alternatives.',
-  );
-  const aiLinks = [
-    { label: 'ChatGPT', href: `https://chatgpt.com/?q=${aiPrompt}`, icon: RtIcon.chat },
-    { label: 'Claude', href: `https://claude.ai/new?q=${aiPrompt}`, icon: RtIcon.sparkle },
-    { label: 'Perplexity', href: `https://www.perplexity.ai/search?q=${aiPrompt}`, icon: RtIcon.search },
-    { label: 'Google AI', href: `https://www.google.com/search?udm=50&q=${aiPrompt}`, icon: RtIcon.orbit },
-  ];
 
   return (
     <footer id="site-footer" className="rt-site-footer">
@@ -204,16 +193,18 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
         </div>
 
         <div className="rt-footer-meta">
-          <LanguageLink locale={locale} icon={RtIcon.globe} className="rt-region" />
-          <ul className="rt-socials" aria-label={isTr ? 'Sosyal medya hesapları' : 'Social media'}>
-            {SOCIAL_PROFILES.map((profile) => (
-              <li key={profile.id}>
-                <a href={profile.url} target="_blank" rel="noopener noreferrer" aria-label={`${SOCIAL_NAMES[profile.id][isTr ? 'tr' : 'en']} ${newTab}`}>
-                  {SOCIAL_ICONS[profile.id]}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <div className="rt-footer-meta__left">
+            <LanguageLink locale={locale} icon={RtIcon.globe} className="rt-region" />
+            <ul className="rt-socials" aria-label={isTr ? 'Sosyal medya hesapları' : 'Social media'}>
+              {SOCIAL_PROFILES.map((profile) => (
+                <li key={profile.id}>
+                  <a href={profile.url} target="_blank" rel="noopener noreferrer" aria-label={`${SOCIAL_NAMES[profile.id][isTr ? 'tr' : 'en']} ${newTab}`}>
+                    {SOCIAL_ICONS[profile.id]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
           <section aria-labelledby="footer-newsletter-title" className="rt-footer-news">
             <h2 id="footer-newsletter-title" className="rt-t-h5">
               {isTr ? 'Pulse bülteni' : 'The Pulse newsletter'}
@@ -260,22 +251,6 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
           </nav>
         </div>
       </div>
-
-      <div className="rt-footer-ai">
-        <h2>{isTr ? 'Doğru seçim miyiz? Sorun bakalım.' : 'Are we the right fit? Ask around.'}</h2>
-        <p>{isTr ? 'Bir yapay zekâ asistanından Buaze hakkında tarafsız bir görüş alın.' : 'Get an unbiased take on Buaze from an AI assistant.'}</p>
-        <div className="rt-footer-ai__icons">
-          {aiLinks.map((l) => (
-            <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer nofollow" aria-label={`${isTr ? `${l.label}'a sor` : `Ask ${l.label}`} ${newTab}`}>
-              {l.icon}
-            </a>
-          ))}
-        </div>
-        <p className="rt-footer-wordmark rt-footer-wordmark-text" aria-hidden="true">
-          buaze<i>.</i>
-        </p>
-      </div>
-      <div className="rt-footer-bottom-space" />
     </footer>
   );
 }

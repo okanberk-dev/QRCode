@@ -43,8 +43,7 @@
 | `--rt-brand-950` | `#023A28` | Alt bilgi koyu gradyanı |
 | `--rt-brand-50` | `#E7F6EF` | Açık ton, hover, rozet |
 
-> Beyaz metin yalnız `600`+ tonlarda ya da örtülü fotoğrafta. Rampa değişirse
-> `--rt-grad-footer` içindeki `rgba(11,155,109,0)` başlangıcını da yeni 500'e çevir.
+> Beyaz metin yalnız `600`+ tonlarda ya da örtülü fotoğrafta.
 
 ### 2.2 Nötrler
 | Token | Değer | Kullanım |
@@ -69,7 +68,6 @@
 | `--rt-grad-brand` | `130deg, 300 %2.95 → 500 %46.45 → 800 %101.77` | Güven paneli, özellik "bir bakışta" paneli, CTA bandı |
 | `--rt-grad-plan-card` | `0deg, #F9F9F9 → #F8F6F4` | Fiyat kartları, ticari kartlar |
 | `--rt-grad-dark-card` | `#252525 → #413E3D` | Koyu "yorumların ötesinde" kartları |
-| `--rt-grad-footer` | şeffaf → 500 %30.46 + 270deg 950 → koyu → 950 | Alt bilgi zemini (+ nokta deseni) |
 | `--rt-grad-ai` | sarı → turuncu → pembe → mor → lacivert → açık mavi | Pulse AI başlığı ve sohbet çerçevesi |
 
 ---
@@ -173,7 +171,7 @@ tüm hareket kapanır.
 | SSS | `RtFaqList` (buton) · `FaqList` / `.rt-faqd` (`<details>`, çapalı) | Krem hap satır, açık satır koyu |
 | Dikey sekmeler | `RtVTabs` | 590×600 görsel + çizgili sekmeler |
 | Kapanış | `HomeFinalCta` (`.rt-closing`) | 1320 px, üst köşeler 48 px, alt bilgiye 40 px biner, 80 px başlık + halka |
-| Alt bilgi | `MarketingFooter` | Gradyan + nokta deseni; 1260 px beyaz kart (48 px köşe, `64px 90px`); yapay zekâya sor; büyük beyaz "buaze." |
+| Alt bilgi | `MarketingFooter` | Düz `--rt-brand-950` koyu yeşil çerçeve (40 px; mobil 24/12 px) içinde 1260 px beyaz kart (48 px köşe, `64px 90px`). Kartın altında hiçbir şey yok: gradyan, nokta deseni, "yapay zekâya sor" simgeleri ve dev logo 2026-11-27'de kaldırıldı (kullanıcı: yapay zekâ işi gibi duruyor) |
 | Plan kartı | `PricingPlans` | 24 px köşe, `grad-plan-card`; önerilen: 2 px marka çerçeve + `sky` bayrak |
 | Uzun metin | `.rt-prose` | 18/30 (mobil 16/26), h2 32, h3 26 |
 
