@@ -33,7 +33,7 @@ export interface AnalyticsKpiGridProps {
   isTr?: boolean;
 }
 
-const TONE_COLOR: Record<ChangeTone, string> = { good: '#3A8228', bad: '#D92D20', neutral: '#6E6E73' };
+const TONE_COLOR: Record<ChangeTone, string> = { good: '#3A8228', bad: '#D92D20', neutral: '#737373' };
 
 function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
   const change: ChangeText | null =
@@ -47,7 +47,7 @@ function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
       : null);
   return (
     <article className="bz-card flex min-w-0 flex-col gap-3 p-5 sm:p-6">
-      <div className="inline-flex items-center gap-1 text-[14px] text-[#6E6E73]">
+      <div className="inline-flex items-center gap-1 text-[14px] text-[#737373]">
         {kpi.label}
         {kpi.info && <InfoTip text={kpi.info} label={kpi.label} isTr={isTr} />}
       </div>
@@ -67,7 +67,7 @@ function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
           <Sparkline values={kpi.sparkline} w={140} h={28} color={kpi.sparklineColor ?? 'var(--color-pn-ink)'} className="w-full" />
         </div>
       )}
-      {kpi.subtitle && <div className="mt-auto text-[13px] leading-snug text-[#9A9AA0]">{kpi.subtitle}</div>}
+      {kpi.subtitle && <div className="mt-auto text-[13px] leading-snug text-[#9A9A9A]">{kpi.subtitle}</div>}
     </article>
   );
 }

@@ -240,7 +240,7 @@ export function AdminCustomerDrawer() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="admin-customer-drawer-heading"
-        className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[420px] md:w-[480px] bg-white flex flex-col bz-elev-3"
+        className="fixed bottom-0 right-0 top-0 z-[51] flex w-full flex-col overflow-hidden bg-white bz-elev-3 sm:bottom-2 sm:right-2 sm:top-2 sm:w-[420px] sm:rounded-[32px] md:w-[480px]"
         style={{ animation: 'cust-drawer-in 180ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
         <div className="flex items-start justify-between gap-3 border-b border-pn-line p-5">
@@ -370,7 +370,7 @@ export function AdminCustomerDrawer() {
                     <span className="bz-h-tight text-[20px] tabular-nums text-pn-ink">
                       {data.stats.avgRating != null ? data.stats.avgRating.toFixed(1) : '—'}
                     </span>
-                    <Star size={11} className="text-pn-accent" fill="#D7FE03" />
+                    <Star size={11} className="text-pn-accent" fill="#78FC90" />
                   </div>
                 </div>
                                 <div className="bz-card-soft p-3">
@@ -443,7 +443,7 @@ export function AdminCustomerDrawer() {
                                   key={s}
                                   size={11}
                                   className={s <= fb.rating ? 'text-pn-accent' : 'text-pn-line'}
-                                  fill={s <= fb.rating ? '#D7FE03' : '#ECECF0'}
+                                  fill={s <= fb.rating ? '#78FC90' : '#EBEBEB'}
                                 />
                               ))}
                             </span>

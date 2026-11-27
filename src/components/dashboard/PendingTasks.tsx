@@ -55,7 +55,7 @@ export function PendingTasks({
       <header className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h2 className="pn-card-title">{isTr ? 'Bekleyen işler' : 'Pending tasks'}</h2>
-          <p className="mt-1 text-[13px] text-[#9A9AA0]">{totalLabel}</p>
+          <p className="mt-1 text-[13px] text-[#9A9A9A]">{totalLabel}</p>
         </div>
         {tasks.length > 0 && viewAllHref && (
           <Link href={viewAllHref} className="pn-arrow-btn" aria-label={isTr ? 'Tüm bekleyen işler' : 'All pending tasks'}>
@@ -65,7 +65,7 @@ export function PendingTasks({
       </header>
 
       {tasks.length === 0 ? (
-        <p className="text-[14px] leading-[1.55] text-[#6E6E73]">
+        <p className="text-[14px] leading-[1.55] text-[#737373]">
           {isTr
             ? 'Yanıt bekleyen yorum, Google bağlantı sorunu ya da geri dönmeyen müşteri yok.'
             : 'No reviews waiting for a reply, no Google link problem and no customers lost.'}

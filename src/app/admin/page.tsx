@@ -65,10 +65,10 @@ function PulseLine({ className = '' }: { className?: string }) {
     >
       <defs>
         <linearGradient id="adminPulseFade" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#D7FE03" stopOpacity="0" />
-          <stop offset="0.12" stopColor="#D7FE03" stopOpacity="1" />
-          <stop offset="0.88" stopColor="#D7FE03" stopOpacity="1" />
-          <stop offset="1" stopColor="#D7FE03" stopOpacity="0" />
+          <stop offset="0" stopColor="#78FC90" stopOpacity="0" />
+          <stop offset="0.12" stopColor="#78FC90" stopOpacity="1" />
+          <stop offset="0.88" stopColor="#78FC90" stopOpacity="1" />
+          <stop offset="1" stopColor="#78FC90" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path
@@ -268,7 +268,7 @@ function AdminLoginContent() {
         {/* Mobile ambient — soft lime wash behind the header */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[280px] bg-[radial-gradient(120%_80%_at_50%_0%,#EAF9B8_0%,rgba(234,249,184,0.35)_45%,rgba(255,255,255,0)_75%)] lg:hidden"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[280px] bg-[radial-gradient(120%_80%_at_50%_0%,#E6FDEA_0%,rgba(230,253,234,0.35)_45%,rgba(255,255,255,0)_75%)] lg:hidden"
         />
 
         <header className="relative flex items-center justify-between px-5 pt-[calc(16px+env(safe-area-inset-top,0px))] sm:px-8 sm:pt-7 lg:justify-end lg:px-12 lg:pt-9">
@@ -456,7 +456,7 @@ function AdminLoginContent() {
                 <button
                   type="submit"
                   disabled={submitDisabled}
-                  className="bz-btn-lime mt-1 min-h-[54px] w-full text-[15px] shadow-[0_18px_40px_-20px_rgba(215,254,3,0.9)] hover:shadow-[0_18px_40px_-18px_rgba(168,214,46,0.9)] disabled:shadow-none"
+                  className="bz-btn-lime mt-1 min-h-[54px] w-full text-[15px] shadow-[0_18px_40px_-20px_rgba(120, 252, 144,0.9)] hover:shadow-[0_18px_40px_-18px_rgba(168,214,46,0.9)] disabled:shadow-none"
                 >
                   {loading ? (
                     <>

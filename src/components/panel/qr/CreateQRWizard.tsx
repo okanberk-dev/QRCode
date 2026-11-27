@@ -651,9 +651,9 @@ export function CreateQRWizard({
                 <span
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
                   style={{
-                    background: active ? "#C6F24E" : done ? "#EAF9B8" : "#FAFAFA",
+                    background: active ? "#78FC90" : done ? "#E6FDEA" : "#F6F6F6",
                     color: "#0A0A0A",
-                    border: !active && !done ? "1px solid #EDEDED" : "none",
+                    border: !active && !done ? "1px solid #EBEBEB" : "none",
                   }}
                 >
                   {done ? <Check size={11} strokeWidth={2.6} /> : s.icon}
@@ -766,8 +766,8 @@ export function CreateQRWizard({
                           aria-pressed={active}
                           className="flex min-h-[44px] items-center gap-2 px-3 py-2.5 rounded-[14px] text-[13px] font-medium transition-colors text-left"
                           style={{
-                            border: `1px solid ${active ? "#0A0A0A" : "#EDEDED"}`,
-                            background: active ? "#FAFAFA" : "#fff",
+                            border: `1px solid ${active ? "#0A0A0A" : "#EBEBEB"}`,
+                            background: active ? "#F6F6F6" : "#fff",
                           }}
                         >
                           <PlatformChip id={p.chipId} size={20} />
@@ -827,8 +827,8 @@ export function CreateQRWizard({
                         title={isTr ? p.hintTr : p.hintEn}
                         className="group flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
                         style={{
-                          border: `1px solid ${active ? "#0A0A0A" : "#EDEDED"}`,
-                          background: active ? "#FAFAFA" : "#FFFFFF",
+                          border: `1px solid ${active ? "#0A0A0A" : "#EBEBEB"}`,
+                          background: active ? "#F6F6F6" : "#FFFFFF",
                         }}
                       >
                         <span
@@ -837,7 +837,7 @@ export function CreateQRWizard({
                           style={{
                             background: p.light,
                             border:
-                              p.dark === p.light ? "1px solid #EDEDED" : "1px solid transparent",
+                              p.dark === p.light ? "1px solid #EBEBEB" : "1px solid transparent",
                           }}
                         >
                           <span
@@ -867,8 +867,8 @@ export function CreateQRWizard({
                       title={isTr ? "Marka rengini kullan" : "Use brand colour"}
                       className="flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
                       style={{
-                        border: `1px solid ${isBrandPreset ? "#0A0A0A" : "#EDEDED"}`,
-                        background: isBrandPreset ? "#FAFAFA" : "#FFFFFF",
+                        border: `1px solid ${isBrandPreset ? "#0A0A0A" : "#EBEBEB"}`,
+                        background: isBrandPreset ? "#F6F6F6" : "#FFFFFF",
                       }}
                     >
                       <span
@@ -876,7 +876,7 @@ export function CreateQRWizard({
                         className="flex h-7 w-7 items-center justify-center rounded-[10px] p-1"
                         style={{
                           background: "#FFFFFF",
-                          border: "1px solid #EDEDED",
+                          border: "1px solid #EBEBEB",
                         }}
                       >
                         <span className="grid h-full w-full grid-cols-3 grid-rows-3 gap-[1px]">
@@ -903,8 +903,8 @@ export function CreateQRWizard({
                     title={isTr ? "Kendi renklerini gir" : "Pick your own colours"}
                     className="flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
                     style={{
-                      border: `1px solid ${isCustomPalette ? "#0A0A0A" : "#EDEDED"}`,
-                      background: isCustomPalette ? "#FAFAFA" : "#FFFFFF",
+                      border: `1px solid ${isCustomPalette ? "#0A0A0A" : "#EBEBEB"}`,
+                      background: isCustomPalette ? "#F6F6F6" : "#FFFFFF",
                     }}
                   >
                     <span
@@ -913,7 +913,7 @@ export function CreateQRWizard({
                       style={{
                         background:
                           "conic-gradient(from 0deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF, #B47AEA, #FF6B6B)",
-                        border: "1px solid #EDEDED",
+                        border: "1px solid #EBEBEB",
                       }}
                     />
                     <span className="truncate text-[12px] font-medium text-pn-ink">
@@ -1147,7 +1147,7 @@ export function CreateQRWizard({
                       className="inline-block h-3.5 w-3.5 rounded-[8px]"
                       style={{
                         background: normDark ?? "#000",
-                        border: "1px solid #EDEDED",
+                        border: "1px solid #EBEBEB",
                       }}
                     />
                     <span className="tabular-nums text-[12px]">{normDark}</span>
@@ -1157,7 +1157,7 @@ export function CreateQRWizard({
                       className="inline-block h-3.5 w-3.5 rounded-[8px]"
                       style={{
                         background: normLight ?? "#FFF",
-                        border: "1px solid #EDEDED",
+                        border: "1px solid #EBEBEB",
                       }}
                     />
                     <span className="tabular-nums text-[12px]">{normLight}</span>

@@ -340,7 +340,7 @@ export default function QuestionCard({
                       aria-label={isTr ? `Seçenek ${i + 1}` : `Option ${i + 1}`}
                       aria-invalid={dupe ? true : undefined}
                       aria-describedby={dupe ? rowErrorId : undefined}
-                      style={option.locked ? { background: '#F5F5F8', color: '#525252' } : undefined}
+                      style={option.locked ? { background: '#F6F6F6', color: '#525252' } : undefined}
                       onChange={(e) => setOptionText(i, e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {

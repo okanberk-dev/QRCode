@@ -368,7 +368,7 @@ export function BusinessUsersRolesSettings({
         {/* Owner row (kendisi) */}
         <div
           className="flex items-center gap-3 p-3 mb-3"
-          style={{ background: "#F3FDC4", border: "1px solid #A8D62E", borderRadius: 10 }}
+          style={{ background: "#E6FDEA", border: "1px solid #78FC90", borderRadius: 10 }}
         >
           {/* §38.51 — Owner her zaman online (mevcut session sahibi). */}
           <div className="relative">
@@ -396,7 +396,7 @@ export function BusinessUsersRolesSettings({
               <div
                 key={i}
                 className="flex items-center gap-3 p-3"
-                style={{ border: "1px solid #EDEDED", borderRadius: 10 }}
+                style={{ border: "1px solid #EBEBEB", borderRadius: 10 }}
               >
                 <SkBox className="h-9 w-9 shrink-0 rounded-full" />
                 <div className="min-w-0 flex-1 space-y-2">
@@ -421,8 +421,8 @@ export function BusinessUsersRolesSettings({
                   key={m.id}
                   className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap"
                   style={{
-                    background: "#F5F5F8",
-                    border: "1px solid #EDEDED",
+                    background: "#F6F6F6",
+                    border: "1px solid #EBEBEB",
                     borderRadius: 10,
                   }}
                 >

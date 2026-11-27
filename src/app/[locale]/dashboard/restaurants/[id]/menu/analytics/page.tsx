@@ -774,16 +774,16 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
         <MeasuredChart className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
           {({ width, height }) => (
             <BarChart width={width} height={height} data={dataRows} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EDEDED" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" allowDecimals={false} />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#0A0A0A' }} stroke="#EDEDED" width={90} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#EBEBEB" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EBEBEB" allowDecimals={false} />
+              <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#0A0A0A' }} stroke="#EBEBEB" width={90} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #EDEDED', borderRadius: 12, fontSize: 12 }}
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #EBEBEB', borderRadius: 12, fontSize: 12 }}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" formatter={legendLabel} />
               <Bar dataKey="views" fill="#0A0A0A" radius={[0, 6, 6, 0]} name={copy.legendViews} />
-              <Bar dataKey="clicks" fill="#C6F24E" radius={[0, 6, 6, 0]} name={copy.legendClicks} />
+              <Bar dataKey="clicks" fill="#78FC90" radius={[0, 6, 6, 0]} name={copy.legendClicks} />
             </BarChart>
           )}
         </MeasuredChart>
@@ -810,23 +810,23 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
           <AreaChart width={width} height={height} data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#C6F24E" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#C6F24E" stopOpacity={0} />
+                <stop offset="0%" stopColor="#78FC90" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="#78FC90" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradClicks" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#0A0A0A" stopOpacity={0.6} />
                 <stop offset="100%" stopColor="#0A0A0A" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#EDEDED" vertical={false} />
-            <XAxis dataKey="date" tickFormatter={dateFmt} interval={tickInterval} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" />
-            <YAxis width={36} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#EBEBEB" vertical={false} />
+            <XAxis dataKey="date" tickFormatter={dateFmt} interval={tickInterval} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EBEBEB" />
+            <YAxis width={36} tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EBEBEB" allowDecimals={false} />
             <Tooltip
-              contentStyle={{ backgroundColor: '#fff', border: '1px solid #EDEDED', borderRadius: 12, fontSize: 12 }}
+              contentStyle={{ backgroundColor: '#fff', border: '1px solid #EBEBEB', borderRadius: 12, fontSize: 12 }}
               labelFormatter={(label) => dateFmt(label as string)}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" formatter={legendLabel} />
-            <Area type="monotone" dataKey="menuViews" stroke="#C6F24E" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
+            <Area type="monotone" dataKey="menuViews" stroke="#78FC90" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
             <Area type="monotone" dataKey="productClicks" stroke="#0A0A0A" strokeWidth={2} fill="url(#gradClicks)" name={copy.trendTaps} />
           </AreaChart>
         )}

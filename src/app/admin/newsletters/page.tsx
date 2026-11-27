@@ -253,7 +253,7 @@ export default function AdminNewslettersPage() {
       {data && (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
           <StatCard label="Toplam abone" value={data.summary.total.toLocaleString('tr-TR')} icon={<Users size={14} />} />
-          <StatCard label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} icon={<Mail size={14} />} accent="#D7FE03" />
+          <StatCard label="Aktif" value={data.summary.active.toLocaleString('tr-TR')} icon={<Mail size={14} />} accent="#78FC90" />
           <StatCard label="İptal" value={data.summary.cancelled.toLocaleString('tr-TR')} icon={<X size={14} />} />
           <StatCard label="İptal oranı" value={`%${data.summary.cancelRate.toFixed(1)}`} icon={<TrendingDown size={14} />} />
         </div>

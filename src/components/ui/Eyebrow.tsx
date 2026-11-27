@@ -8,7 +8,7 @@ interface EyebrowProps {
   style?: CSSProperties;
 }
 
-export function Eyebrow({ children, color = "#9A9AA0", className = "", style }: EyebrowProps) {
+export function Eyebrow({ children, color = "#9A9A9A", className = "", style }: EyebrowProps) {
   // Pano: sentence-case labels, never ALL CAPS (DASHBOARD_DESIGN.md §3).
   const content = typeof children === "string" ? toSentenceCase(children) : children;
   return (

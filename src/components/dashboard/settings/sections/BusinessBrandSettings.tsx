@@ -315,8 +315,8 @@ export function BusinessBrandSettings({
             style={{
               aspectRatio: "16 / 9",
               borderRadius: 12,
-              background: "#F5F5F8",
-              border: snapshot?.coverImageUrl ? "1px solid #EDEDED" : "1px dashed #D4D4D4",
+              background: "#F6F6F6",
+              border: snapshot?.coverImageUrl ? "1px solid #EBEBEB" : "1px dashed #D4D4D4",
             }}
           >
             {uploadingCover || savingCover ? (

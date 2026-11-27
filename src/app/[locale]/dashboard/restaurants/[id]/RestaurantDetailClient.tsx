@@ -318,7 +318,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span
             className="shrink-0 inline-flex items-center justify-center rounded-full bg-white"
-            style={{ width: 28, height: 28, border: '1px solid #EDEDED', color: '#000000' }}
+            style={{ width: 28, height: 28, border: '1px solid #EBEBEB', color: '#000000' }}
             aria-hidden="true"
           >
             <Sparkles size={13} strokeWidth={2} />

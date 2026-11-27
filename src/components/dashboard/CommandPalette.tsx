@@ -309,17 +309,18 @@ export default function CommandPalette({
       aria-modal="true"
       aria-label={isTr ? 'Komut paleti' : 'Command palette'}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-[12vh] backdrop-blur-sm sm:pt-[14vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 px-3 pt-[10vh] backdrop-blur-sm sm:px-4 sm:pt-[14vh]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       {/* §38.67 — Modal floating tier: heavy shadow-[0_30px_80px] → bz-elev-3
           (0_12px_32px Apple-soft). Floating modal için en heavy tier doğru. */}
-      <div className="w-full max-w-[640px] overflow-hidden rounded-[24px] border border-pn-line bg-white bz-elev-3 animate-slide-in">
+      <div className="w-full max-w-[640px] overflow-hidden rounded-[28px] bg-white bz-elev-3 animate-slide-in">
         {/* Search input */}
-        <div className="flex items-center gap-3 border-b border-pn-line px-4">
-          <SearchIcon size={16} strokeWidth={2} className="shrink-0 text-[#737373]" />
+        <div className="flex items-center gap-2 p-3">
+          <div className="flex h-[52px] min-w-0 flex-1 items-center gap-3 rounded-full bg-pn-canvas px-5">
+          <SearchIcon size={18} className="shrink-0 text-[#737373]" />
           <input
             ref={inputRef}
             type="text"
@@ -333,16 +334,17 @@ export default function CommandPalette({
                 ? 'Yorum, konum, sayfa ara…'
                 : 'Search reviews, locations, pages…'
             }
-            className="flex-1 bg-transparent py-4 text-[15px] text-pn-ink placeholder:text-[#A3A3A3] outline-none"
+            className="min-w-0 flex-1 bg-transparent text-[16px] text-pn-ink placeholder:text-[#9A9A9A] outline-none sm:text-[15px]"
             aria-label={isTr ? 'Arama' : 'Search'}
           />
+          </div>
           <button
             type="button"
             onClick={onClose}
             aria-label={isTr ? 'Kapat' : 'Close'}
-            className="bz-btn-icon"
+            className="pn-icon-btn !h-[52px] !w-[52px] !bg-pn-canvas hover:!bg-[#EBEBEB]"
           >
-            <X size={14} strokeWidth={2} />
+            <X size={18} />
           </button>
         </div>
 
@@ -350,7 +352,7 @@ export default function CommandPalette({
         <div ref={listRef} className="max-h-[60vh] overflow-y-auto py-2">
           {/* Pages */}
           {filteredNavItems.length > 0 && (
-            <Section title={isTr ? 'SAYFALAR' : 'PAGES'}>
+            <Section title={isTr ? 'Sayfalar' : 'Pages'}>
               {filteredNavItems.map((n) => {
                 const i = indexFor();
                 return (
@@ -371,7 +373,7 @@ export default function CommandPalette({
 
           {/* Restaurants */}
           {filteredRestaurants.length > 0 && (
-            <Section title={isTr ? 'İŞLETMELER' : 'LOCATIONS'}>
+            <Section title={isTr ? 'İşletmeler' : 'Locations'}>
               {filteredRestaurants.map((r) => {
                 const i = indexFor();
                 return (
@@ -393,7 +395,7 @@ export default function CommandPalette({
           {/* Feedbacks */}
           {(feedbackLoading || feedbacks.length > 0) && (
             <Section
-              title={isTr ? 'YORUMLAR' : 'REVIEWS'}
+              title={isTr ? 'Yorumlar' : 'Reviews'}
               right={feedbackLoading ? <Loader2 size={11} className="animate-spin text-[#737373]" /> : null}
             >
               {feedbacks.map((f) => {
@@ -433,7 +435,7 @@ export default function CommandPalette({
         </div>
 
         {/* Footer hint bar */}
-        <div className="flex items-center justify-between gap-2 border-t border-pn-line bg-pn-canvas px-4 py-2 text-[12px] text-[#737373]">
+        <div className="hidden items-center justify-between gap-2 border-t border-pn-line px-5 py-3 text-[12px] text-[#737373] sm:flex">
           <span className="inline-flex items-center gap-2">
             <span className="inline-flex items-center gap-1">
               <Kbd>
@@ -504,15 +506,15 @@ function Row({
       data-index={index}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
-      className={`w-full flex items-start gap-2.5 rounded-[20px] px-3 py-2.5 text-left transition-colors ${
-        active ? 'bg-pn-accent-soft' : 'hover:bg-pn-canvas'
+      className={`flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left transition-colors ${
+        active ? 'bg-pn-canvas' : 'hover:bg-pn-canvas'
       }`}
     >
-      <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white border border-pn-line">
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${active ? 'bg-pn-ink text-white [&>svg]:!text-white' : 'bg-pn-canvas'}`}>
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-medium text-pn-ink">{primary}</span>
+        <span className="block truncate text-[14px] font-medium text-pn-ink">{primary}</span>
         {secondary && (
           <span className="block truncate text-[12px] text-[#737373] mt-0.5">{secondary}</span>
         )}
@@ -524,8 +526,7 @@ function Row({
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
     <kbd
-      className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded border border-pn-line bg-white text-[#525252] font-mono text-[12px]"
-      style={{ fontFamily: 'var(--font-mono)' }}
+      className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-pn-canvas px-1.5 text-[12px] font-medium text-[#525252]"
     >
       {children}
     </kbd>

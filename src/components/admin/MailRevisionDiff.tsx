@@ -27,11 +27,11 @@ function EntryRow({ entry }: { entry: DiffEntry }) {
         </div>
         <div className="mt-1.5 space-y-1">
           <div className="rounded border border-red-100 bg-red-50/60 p-1.5 text-[12px] text-red-700">
-            <span className="pulse-eyebrow mr-1">−</span>
+            <span className="mr-1 font-medium">−</span>
             {truncate(entry.before)}
           </div>
           <div className="rounded border border-emerald-100 bg-emerald-50/60 p-1.5 text-[12px] text-emerald-800">
-            <span className="pulse-eyebrow mr-1">+</span>
+            <span className="mr-1 font-medium">+</span>
             {truncate(entry.after)}
           </div>
         </div>

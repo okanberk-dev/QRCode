@@ -151,7 +151,7 @@ export default async function AdminPlansPage() {
           deltaKind="neutral"
           deltaSuffix="tüm müşterilerin"
           icon={<TrendingUp size={14} strokeWidth={2} />}
-          accent={paidOwners > 0 ? '#D7FE03' : undefined}
+          accent={paidOwners > 0 ? '#78FC90' : undefined}
         />
         <StatCard
           label="Aktif denemeler"
@@ -175,7 +175,7 @@ export default async function AdminPlansPage() {
               : undefined
           }
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrrUsd > 0 ? '#D7FE03' : undefined}
+          accent={mrrUsd > 0 ? '#78FC90' : undefined}
         />
       </div>
 
@@ -211,7 +211,7 @@ export default async function AdminPlansPage() {
         </div>
 
         <div className="bz-card overflow-hidden">
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #EDEDED' }}>
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #EBEBEB' }}>
             <Eyebrow>Son katılan ödeyen müşteriler</Eyebrow>
             <Link
               href="/admin/members"
@@ -263,7 +263,7 @@ export default async function AdminPlansPage() {
       {/* Ödeme entegrasyonu notu — sade, operatöre yönelik dil (§38.233). */}
       <div
         className="mt-4 p-4 rounded-[20px] flex gap-3 flex-col sm:flex-row"
-        style={{ background: '#F3FDC4', border: '1px solid #C6F24E' }}
+        style={{ background: '#E6FDEA', border: '1px solid #78FC90' }}
       >
         <CreditCard
           size={18}

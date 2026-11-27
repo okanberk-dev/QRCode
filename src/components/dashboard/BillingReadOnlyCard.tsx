@@ -510,7 +510,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       className="h-full rounded-full"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#83AF3B',
+                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#2FB24C',
                       }}
                     />
                   </div>

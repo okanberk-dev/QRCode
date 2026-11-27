@@ -200,7 +200,7 @@ export function InboxReviewCard({
       aria-label={`${name}, ${rating}/5`}
       className={`group relative border-b border-pn-line px-4 py-4 outline-none transition-[opacity,transform,max-height] duration-300 last:border-b-0 sm:px-5 ${
         leaving ? 'pointer-events-none -translate-x-2 opacity-0' : ''
-      } ${focused ? 'bg-pn-canvas shadow-[inset_3px_0_0_#C6F24E]' : ''} ${flagged ? 'bg-[#FFFBEB]/50' : ''}`}
+      } ${focused ? 'bg-pn-canvas shadow-[inset_3px_0_0_#78FC90]' : ''} ${flagged ? 'bg-[#FFFBEB]/50' : ''}`}
     >
       <div className="flex gap-3">
         {selectMode && (

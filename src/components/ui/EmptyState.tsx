@@ -23,7 +23,7 @@ export function EmptyState({ title, body, action, icon, className = "" }: EmptyS
         </div>
       )}
       <div className="text-[22px] font-normal leading-[1.25] tracking-[-0.005em] text-pn-ink">{title}</div>
-      {body && <div className="mt-2 text-[14px] leading-[1.55] text-[#6E6E73]">{body}</div>}
+      {body && <div className="mt-2 text-[14px] leading-[1.55] text-[#737373]">{body}</div>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );

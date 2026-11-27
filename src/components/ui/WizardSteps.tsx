@@ -53,7 +53,7 @@ export function WizardSteps({
                     ? 'bg-pn-accent text-pn-ink'
                     : complete
                       ? 'bg-pn-ink text-pn-accent'
-                      : 'bg-white text-[#6E6E73]'
+                      : 'bg-white text-[#737373]'
                 }`}
               >
                 {complete ? <Check size={13} strokeWidth={2.5} /> : i + 1}
@@ -70,7 +70,7 @@ export function WizardSteps({
             ? 'bg-pn-ink text-white'
             : complete
               ? 'text-pn-ink'
-              : 'text-[#6E6E73]';
+              : 'text-[#737373]';
           return (
             <li key={i} className="min-w-0" aria-current={active ? 'step' : undefined}>
               {clickable ? (

@@ -51,7 +51,7 @@ export function Field({ label, hint, htmlFor, error, required, children, classNa
         )}
       </span>
       {hint && (
-        <span id={hintId} className="mb-2 block text-[13px] leading-[1.45] text-[#6E6E73]">
+        <span id={hintId} className="mb-2 block text-[13px] leading-[1.45] text-[#737373]">
           {hint}
         </span>
       )}

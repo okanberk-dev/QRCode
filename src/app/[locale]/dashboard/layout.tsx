@@ -116,12 +116,12 @@ export default async function DashboardLayout({
           {/* Admin preview of the owner panel: a dark Pano bar instead of the
               owner navigation (docs/design/DASHBOARD_DESIGN.md §5.1). */}
           <div className="mx-2 mt-2 flex h-14 items-center justify-between gap-3 rounded-[24px] bg-pn-ink px-5 text-white">
-            <p className="text-[14px] text-white/70">
+            <p className="min-w-0 truncate text-[13px] text-white/70 sm:text-[14px]">
               {locale === 'en' ? 'Admin view' : 'Admin görünümü'} · {typeof adminPayload.username === 'string' ? adminPayload.username : 'superadmin'}
             </p>
             <Link
               href="/admin/restaurants"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-pn-accent px-4 text-[14px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover"
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-pn-accent px-4 text-[14px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover"
             >
               {locale === 'en' ? '← Admin panel' : '← Admin paneli'}
             </Link>

@@ -27,7 +27,7 @@ export function SentimentSparkbar({ score }: SentimentSparkbarProps) {
   const tone = isEmpty
     ? '#E5E5E5' /* n-200 muted (data yok) */
     : v >= 70
-      ? '#83AF3B' /* lime-deep */
+      ? '#2FB24C' /* lime-deep */
       : v >= 50
         ? '#A3A3A3' /* n-mute */
         : '#DC2626' /* danger */;

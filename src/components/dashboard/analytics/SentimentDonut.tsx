@@ -8,7 +8,7 @@
 // compute eder). 0 örneklem → graceful fallback (donut subtle gri ring).
 //
 // Pulse §11:
-// - pos: #C6F24E (Pulse signature lime)
+// - pos: #78FC90 (Pano green)
 // - neu: #D4D4D4 (n300 muted, HANDOFF birebir)
 // - neg: #0A0A0A (graphite, HANDOFF birebir — donut'ta en koyu segment
 //   "ağır" his verir; UI'da kırmızı çok agresif olur dengeli sentiment için)
@@ -46,7 +46,7 @@ export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: Sent
   const hasData = pos + neu + neg > 0;
   const GAP = 10; // degrees between segments
   const parts = [
-    { key: 'pos', v: pos, stroke: '#D7FE03', label: isTr ? 'Pozitif' : 'Positive' },
+    { key: 'pos', v: pos, stroke: '#78FC90', label: isTr ? 'Pozitif' : 'Positive' },
     { key: 'neu', v: neu, stroke: '#FFFFFF', label: isTr ? 'Nötr' : 'Neutral' },
     { key: 'neg', v: neg, stroke: 'url(#pn-donut-hatch)', label: isTr ? 'Negatif' : 'Negative' },
   ].filter((p) => p.v > 0);

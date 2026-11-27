@@ -8,7 +8,7 @@
  *   - Once server data is ready, the real page replaces the skeleton —
  *     server-hydrated client components skip their own loading flash
  *     (initialData prop + skipFirstFetchRef pattern).
- *   - These primitives use a flat `#EDEDED` placeholder (Pulse n200 token)
+ *   - These primitives use a flat `#EBEBEB` placeholder (Pulse n200 token)
  *     with no shimmer animation, matching the YouTube/Vercel/Linear feel
  *     the operator chose during Stage 102 follow-up.
  *

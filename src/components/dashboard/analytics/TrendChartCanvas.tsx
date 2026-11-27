@@ -86,11 +86,11 @@ export default function TrendChartCanvas({
     >
       <defs>
         <linearGradient id="mainTrendBuazeQr" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#D7FE03" stopOpacity={0.6} />
-          <stop offset="100%" stopColor="#D7FE03" stopOpacity={0.05} />
+          <stop offset="0%" stopColor="#78FC90" stopOpacity={0.6} />
+          <stop offset="100%" stopColor="#78FC90" stopOpacity={0.05} />
         </linearGradient>
       </defs>
-      <CartesianGrid vertical={false} stroke="#ECECF0" strokeDasharray="0" />
+      <CartesianGrid vertical={false} stroke="#EBEBEB" strokeDasharray="0" />
       <XAxis
         dataKey="date"
         axisLine={false}
@@ -142,7 +142,7 @@ export default function TrendChartCanvas({
         type="monotone"
         dataKey="buazeQr"
         stackId="trend"
-        stroke="#83AF3B"
+        stroke="#2FB24C"
         strokeWidth={1.5}
         fill="url(#mainTrendBuazeQr)"
         fillOpacity={1}

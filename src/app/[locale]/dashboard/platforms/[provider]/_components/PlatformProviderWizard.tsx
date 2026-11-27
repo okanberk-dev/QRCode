@@ -684,7 +684,7 @@ export default function PlatformProviderWizard({
                 // utilities can't override it — mirror its :disabled look inline.
                 style={
                   saveBlocked && !saving
-                    ? { background: '#ECECF0', color: '#525252', cursor: 'not-allowed', transform: 'none' }
+                    ? { background: '#EBEBEB', color: '#525252', cursor: 'not-allowed', transform: 'none' }
                     : undefined
                 }
               >
@@ -866,14 +866,14 @@ export default function PlatformProviderWizard({
                 <span
                   className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium "
                   style={{
-                    background: hasValidUrl ? (reviewEnabled ? '#F3FDC4' : '#F5F5F5') : '#FEF3C7',
+                    background: hasValidUrl ? (reviewEnabled ? '#E6FDEA' : '#F5F5F5') : '#FEF3C7',
                     color: hasValidUrl ? (reviewEnabled ? '#000000' : '#525252') : '#92400E',
                   }}
                 >
                   <span
                     aria-hidden="true"
                     className="inline-block h-1.5 w-1.5 rounded-full"
-                    style={{ background: hasValidUrl ? (reviewEnabled ? '#83AF3B' : '#A3A3A3') : '#F59E0B' }}
+                    style={{ background: hasValidUrl ? (reviewEnabled ? '#2FB24C' : '#A3A3A3') : '#F59E0B' }}
                   />
                   {hasValidUrl
                     ? reviewEnabled

@@ -54,7 +54,7 @@ const TEXT_PREVIEW = 5;
 
 // Pulse status hexes (CLAUDE.md §23.1) for the recommend-score segments.
 const NPS_COLORS = { detractor: '#DC2626', passive: '#D97706', promoter: '#16A34A' } as const;
-const BAR_COLOR = '#83AF3B';
+const BAR_COLOR = '#2FB24C';
 
 function typeLabel(type: DetailQuestionType, isTr: boolean): string {
   switch (type) {

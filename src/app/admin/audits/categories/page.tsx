@@ -260,7 +260,7 @@ export default function AuditCategoriesPage() {
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#D7FE03"
+        eyebrowColor="#78FC90"
         title="Denetim kategorileri"
         description="Şablonları sektör ve konuya göre gruplayan taksonomi. İşletme sahipleri şablon oluştururken bu kategori listesinden seçer."
         actions={
