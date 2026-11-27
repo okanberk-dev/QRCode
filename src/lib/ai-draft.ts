@@ -16,6 +16,19 @@ export type AiDraftLocale = 'tr' | 'en';
 
 const TONE_VALUES: AiDraftTone[] = ['warm', 'formal', 'apologetic'];
 
+/**
+ * Pulse AI drafts are written only when someone asks for one ("Taslak
+ * oluştur", tone change, bulk "AI taslakları", Google "AI ile yanıt"). The
+ * background paths — a draft on every new low rating and the two daily
+ * autodraft crons — spend tokens on reviews nobody opens, so they stay off
+ * unless the operator sets `PULSE_AI_AUTO_DRAFT=on` (2026-11-28, user
+ * decision). The owner toggles (`enableAiDraft`, `googleAiEnabled`) only
+ * matter when this is on.
+ */
+export function autoDraftAllowed(): boolean {
+  return process.env.PULSE_AI_AUTO_DRAFT === 'on';
+}
+
 export function isValidTone(value: unknown): value is AiDraftTone {
   return typeof value === 'string' && (TONE_VALUES as string[]).includes(value);
 }

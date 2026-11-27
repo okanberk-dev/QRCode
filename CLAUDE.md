@@ -702,8 +702,8 @@ Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[loc
 - **Prompt:** Restoran itibar uzmanı, 2-4 cümle, max 80 kelime, ücretsiz ikram önerme, emoji yok. Model `gpt-4o-mini` default (env: `OPENAI_MODEL`).
 - **Maliyet:** ~400 token / öneri ≈ $0.0001. 10K öneri/ay = $1.
 - **Güvenlik:** Anahtar yalnız server-side (`process.env.OPENAI_API_KEY`); `NEXT_PUBLIC_` prefix yok, client bundle'a sızmaz.
-- **Auto-draft toggle kuralı:** `Restaurant.enableAiDraft=false` ise düşük puanlı yorumlarda arka plan draft üretilmez, owner inbox seçiminde `/draft` veya `suggest-reply` otomatik çağrılmaz, `/api/feedback/[id]/draft` `draft:null` döner. Manuel `Yeniden öner` / `suggest-reply` ayrı, açık kullanıcı aksiyonu olarak kalır.
-- **Disable cleanup:** Owner `Pulse AI taslaklarını otomatik hazırla` toggle'ını kapattığında `/api/restaurants/[id]/ai-settings` ilgili restoranın bekleyen `FeedbackAiDraft` kayıtlarını temizler; böylece eski draft badge'leri ve otomatik prefill görünmez.
+- **Taslak yalnız istekle (2026-11-28, kullanıcı kararı):** yanıt taslağı yalnız owner istediğinde yazılır: "Taslak oluştur" / "Yeniden öner" / ton değişimi, toplu "AI taslakları", Google'da "AI ile yanıt". Yorum açmak AI çağırmaz: gelen kutusu yalnız kayıtlı taslağı okur (`GET /api/feedback/[id]/draft`, Pulse AI açıksa her zaman; `enableAiDraft`'a bakmaz). Elle üretilen AI taslağı `FeedbackAiDraft`'a kaydedilir, yoruma dönünce yeniden üretilmez. Arka plan yolları (yeni düşük puanda taslak, `feedback-autodraft` ve `google-reviews-autodraft` cron'ları, `suggest-reply` `autoDraft:true`) `autoDraftAllowed()` = `PULSE_AI_AUTO_DRAFT=on` olmadıkça çalışmaz (cron'lar `{ skipped: 'auto_draft_off' }` döner). Owner ayarlarındaki iki otomatik taslak anahtarı kaldırıldı; `enableAiDraft` / `googleAiEnabled` yalnız operatör bu bayrağı açarsa anlam taşır.
+- **Disable cleanup:** Owner `Pulse AI taslaklarını otomatik hazırla` toggle'ını kapattığında `/api/restaurants/[id]/ai-settings` ilgili restoranın bekleyen `FeedbackAiDraft` kayıtlarını temizler; böylece eski draft badge'leri ve otomatik prefill görünmez. (Anahtar 2026-11-28'de arayüzden kaldırıldı; API davranışı duruyor.)
 
 ### 15.1 AI Quota Guard (3-katmanlı koruma)
 
@@ -1522,8 +1522,8 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 | `/api/cron/anonymize-ips` | `0 3 * * 0` | KVKK IP retention |
 | `/api/cron/process-scheduled-deletions` | `0 3 * * *` | 30 gün dolan hesap silmeleri |
 | `/api/cron/platform-link-retest` | `0 4 * * *` | Platform link sağlık kontrolü (§19.4.4) |
-| `/api/cron/feedback-autodraft` | `0 5 * * *` | Pulse AI taslak güvenlik ağı (§43) |
-| `/api/cron/google-reviews-autodraft` | `0 6 * * *` | Google yorum taslakları (§43) |
+| `/api/cron/feedback-autodraft` | `0 5 * * *` | Pulse AI taslak güvenlik ağı (§43); `PULSE_AI_AUTO_DRAFT=on` değilse atlar (§15) |
+| `/api/cron/google-reviews-autodraft` | `0 6 * * *` | Google yorum taslakları (§43); `PULSE_AI_AUTO_DRAFT=on` değilse atlar (§15) |
 | `/api/cron/google-reviews-alert` | `0 7 * * *` (Coolify saatlik) | Bekleyen Google yorum uyarılarını tekrar dener; Google'a gitmez (§54) |
 | `/api/cron/lifecycle-emails` | `0 8 * * *` | Owner günlük mailleri: lifecycle kuralları (§21.34) + deneme hatırlatması (§21.11) |
 | `/api/cron/weekly-digest` | `0 9 * * 1` | Haftalık rapor (§21.38) + aynı çalışmadan ops özeti |
@@ -5742,7 +5742,7 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
 - `GET /api/restaurants/[id]/reputation/health` — score + breakdown + recommendations (owner-scoped, 5min cache).
 - `GET /api/restaurants/[id]/google/business/reviews` **EXTENDED** — response'a `drafts: Record<reviewName, {body, tone, source, generatedAt}>` eklendi.
 - `<ReputationHealthCard>` — Google Reviews sayfasında üstte mount. Score + delta + 3-pillar breakdown + öneri top 4.
-- `BusinessPulseAiSettings` (Account → Pulse AI) — 2 toggle "AKTİF" badge'i + "saat başı çalışır" açıklama. Cron'la bağlantı transparency.
+- `BusinessPulseAiSettings` (Account → Pulse AI) — yalnız varsayılan ton + "taslak yalnız sen istediğinde" notu (2026-11-28; otomatik taslak anahtarları kaldırıldı, §15).
 
 ### §43.7 Mail template
 

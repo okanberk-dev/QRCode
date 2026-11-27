@@ -7,7 +7,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, resolveOwnerUserId } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
-import { coerceTone, generateReplyDraft, type AiDraftTone } from '@/lib/ai-draft';
+import { autoDraftAllowed, coerceTone, generateReplyDraft, type AiDraftTone } from '@/lib/ai-draft';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 
 export async function POST(
@@ -87,7 +87,9 @@ export async function POST(
     return NextResponse.json({ error: 'pulse_ai_disabled_by_admin' }, { status: 403 });
   }
 
-  if (body.autoDraft === true && feedback.restaurant.enableAiDraft !== true) {
+  // Automatic drafts (an inbox opening a review) need both the owner toggle
+  // and the operator switch; an explicit "Taslak oluştur" never sends autoDraft.
+  if (body.autoDraft === true && (feedback.restaurant.enableAiDraft !== true || !autoDraftAllowed())) {
     return NextResponse.json({ error: 'auto_draft_disabled' }, { status: 409 });
   }
 
@@ -133,6 +135,20 @@ export async function POST(
     tone,
     locale,
   );
+
+  // Keep the AI draft so reopening the review shows it instead of paying
+  // for a new one (§15: drafts are written on request only). Best effort.
+  if (draft.source === 'ai_copilot') {
+    try {
+      await prisma.feedbackAiDraft.upsert({
+        where: { feedbackId: id },
+        create: { feedbackId: id, body: draft.body, tone, source: draft.source, latencyMs: draft.latencyMs },
+        update: { body: draft.body, tone, source: draft.source, latencyMs: draft.latencyMs, generatedAt: new Date() },
+      });
+    } catch (err) {
+      console.error('[suggest-reply] draft save failed (non-fatal)', { feedbackId: id, err });
+    }
+  }
 
   // Wire-format `source` matches the existing UI badge expectation:
   //   ai_copilot       → 'openai'        (LIVE badge)

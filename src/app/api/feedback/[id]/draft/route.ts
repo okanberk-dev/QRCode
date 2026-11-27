@@ -1,6 +1,7 @@
-// Pulse AI auto-draft access. The owner reply form pre-fills from this
-// endpoint when auto-draft is enabled and a pending draft exists. Manual
-// on-demand suggest-reply stays available even when auto-draft is off.
+// Saved Pulse AI draft for one review. The owner reply form pre-fills from
+// this endpoint when a draft exists (written by "Taslak oluştur", the bulk
+// "AI taslakları" or, if the operator enabled them, background drafts).
+// Reading never calls the AI provider.
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
@@ -29,7 +30,7 @@ async function requireFeedbackAccess(req: NextRequest, id: string) {
     select: {
       id: true,
       restaurantId: true,
-      restaurant: { select: { pulseAiEnabled: true, enableAiDraft: true } },
+      restaurant: { select: { pulseAiEnabled: true } },
     },
   });
   if (!feedback) return { error: 'not_found' as const, status: 404 };
@@ -53,13 +54,6 @@ async function handleGET(req: NextRequest, { params }: { params: Promise<{ id: s
   if (access.feedback.restaurant?.pulseAiEnabled !== true) {
     return NextResponse.json(
       { draft: null, pulseAiDisabled: true },
-      { headers: DRAFT_CACHE_HEADERS },
-    );
-  }
-
-  if (access.feedback.restaurant?.enableAiDraft !== true) {
-    return NextResponse.json(
-      { draft: null, autoDraftDisabled: true },
       { headers: DRAFT_CACHE_HEADERS },
     );
   }
