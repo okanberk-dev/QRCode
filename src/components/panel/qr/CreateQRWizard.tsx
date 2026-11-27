@@ -638,7 +638,7 @@ export function CreateQRWizard({
                 aria-current={active ? "step" : undefined}
                 className="group flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-[14px] px-2 py-2 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
                 style={{
-                  background: active ? "#0A0A0A" : "transparent",
+                  background: active ? "#5D3EBC" : "transparent",
                   color: active
                     ? "#FFFFFF"
                     : done
@@ -651,8 +651,8 @@ export function CreateQRWizard({
                 <span
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
                   style={{
-                    background: active ? "#78FC90" : done ? "#E6FDEA" : "#F6F6F6",
-                    color: "#0A0A0A",
+                    background: active ? "#FFFFFF" : done ? "#EFEAFB" : "#F6F6F6",
+                    color: active || done ? "#5D3EBC" : "#0A0A0A",
                     border: !active && !done ? "1px solid #EBEBEB" : "none",
                   }}
                 >
@@ -766,14 +766,14 @@ export function CreateQRWizard({
                           aria-pressed={active}
                           className="flex min-h-[44px] items-center gap-2 px-3 py-2.5 rounded-[14px] text-[13px] font-medium transition-colors text-left"
                           style={{
-                            border: `1px solid ${active ? "#0A0A0A" : "#EBEBEB"}`,
-                            background: active ? "#F6F6F6" : "#fff",
+                            border: `1px solid ${active ? "#5D3EBC" : "#EBEBEB"}`,
+                            background: active ? "#EFEAFB" : "#fff",
                           }}
                         >
                           <PlatformChip id={p.chipId} size={20} />
                           <span className="truncate">{p.label}</span>
                           {active && (
-                            <Check size={13} strokeWidth={2.6} className="ml-auto text-pn-ink" />
+                            <Check size={13} strokeWidth={2.6} className="ml-auto text-pn-accent" />
                           )}
                         </button>
                       );
@@ -827,8 +827,8 @@ export function CreateQRWizard({
                         title={isTr ? p.hintTr : p.hintEn}
                         className="group flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
                         style={{
-                          border: `1px solid ${active ? "#0A0A0A" : "#EBEBEB"}`,
-                          background: active ? "#F6F6F6" : "#FFFFFF",
+                          border: `1px solid ${active ? "#5D3EBC" : "#EBEBEB"}`,
+                          background: active ? "#EFEAFB" : "#FFFFFF",
                         }}
                       >
                         <span
@@ -867,8 +867,8 @@ export function CreateQRWizard({
                       title={isTr ? "Marka rengini kullan" : "Use brand colour"}
                       className="flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
                       style={{
-                        border: `1px solid ${isBrandPreset ? "#0A0A0A" : "#EBEBEB"}`,
-                        background: isBrandPreset ? "#F6F6F6" : "#FFFFFF",
+                        border: `1px solid ${isBrandPreset ? "#5D3EBC" : "#EBEBEB"}`,
+                        background: isBrandPreset ? "#EFEAFB" : "#FFFFFF",
                       }}
                     >
                       <span
@@ -903,8 +903,8 @@ export function CreateQRWizard({
                     title={isTr ? "Kendi renklerini gir" : "Pick your own colours"}
                     className="flex min-h-[64px] flex-col items-center justify-center gap-1.5 rounded-[20px] px-2 py-2.5 transition-colors"
                     style={{
-                      border: `1px solid ${isCustomPalette ? "#0A0A0A" : "#EBEBEB"}`,
-                      background: isCustomPalette ? "#F6F6F6" : "#FFFFFF",
+                      border: `1px solid ${isCustomPalette ? "#5D3EBC" : "#EBEBEB"}`,
+                      background: isCustomPalette ? "#EFEAFB" : "#FFFFFF",
                     }}
                   >
                     <span

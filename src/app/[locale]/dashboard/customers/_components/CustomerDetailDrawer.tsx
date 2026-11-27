@@ -397,7 +397,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                     <span className="bz-h-tight text-[20px] tabular-nums text-pn-ink">
                       {data.stats.avgRating != null ? data.stats.avgRating.toFixed(1) : '—'}
                     </span>
-                    <Star size={11} className="text-pn-accent" fill="#78FC90" />
+                    <Star size={11} className="text-pn-accent" fill="#5D3EBC" />
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">
@@ -501,7 +501,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                                   className={
                                     s <= fb.rating ? 'text-pn-accent' : 'text-pn-line'
                                   }
-                                  fill={s <= fb.rating ? '#78FC90' : '#EBEBEB'}
+                                  fill={s <= fb.rating ? '#5D3EBC' : '#EBEBEB'}
                                 />
                               ))}
                             </span>

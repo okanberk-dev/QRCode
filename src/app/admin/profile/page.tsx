@@ -185,8 +185,8 @@ export default function AdminProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5 lg:gap-7">
         {/* Sidebar info */}
         <aside className="bz-card p-5 sm:p-6 self-start">
-          <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-pn-ink">
-            <ShieldCheck size={26} className="text-pn-accent" strokeWidth={2} />
+          <div className="flex h-14 w-14 items-center justify-center rounded-[24px] bg-pn-accent">
+            <ShieldCheck size={26} className="text-white" strokeWidth={2} />
           </div>
           <div className="mt-4">
             <p className="text-[13px] font-medium text-[#737373]">HESAP</p>

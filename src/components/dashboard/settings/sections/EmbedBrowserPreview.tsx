@@ -59,7 +59,7 @@ export default function EmbedBrowserPreview({
           onClick={() => setDevice('mobile')}
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-full transition-colors ${
             device === 'mobile'
-              ? 'bg-pn-ink text-white'
+              ? 'bg-pn-accent text-white'
               : 'text-[#525252] hover:bg-pn-canvas'
           }`}
           aria-pressed={device === 'mobile'}
@@ -72,7 +72,7 @@ export default function EmbedBrowserPreview({
           onClick={() => setDevice('desktop')}
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-medium rounded-full transition-colors ${
             device === 'desktop'
-              ? 'bg-pn-ink text-white'
+              ? 'bg-pn-accent text-white'
               : 'text-[#525252] hover:bg-pn-canvas'
           }`}
           aria-pressed={device === 'desktop'}

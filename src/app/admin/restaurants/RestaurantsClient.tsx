@@ -8,6 +8,7 @@ import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
 import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, PanelSelectionBar, PulseMenu, PulseMenuDivider, PulseMenuItem, PulseSelect, Tabs, useConfirmDialog } from '@/components/ui';
 import { countChains, groupByOwner, type FranchiseGroup } from '@/lib/admin-franchise';
 import { SECTORS } from '@/lib/sectors';
+import { readableOn } from '@/lib/audits/kind';
 import RestaurantsLoading from './loading';
 
 export interface Restaurant {
@@ -828,7 +829,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
               <div className="rounded-[24px] border border-pn-accent bg-gradient-to-br from-pn-accent-soft/60 via-pn-accent-soft/30 to-white p-4">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent text-pn-ink ">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent text-white ">
                       <MapPin size={16} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
@@ -1041,7 +1042,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                     aria-pressed={featureKey === f.key}
                     className={`flex items-start gap-3 rounded-[20px] border px-3 py-2.5 text-left transition-colors ${
                       featureKey === f.key
-                        ? 'border-pn-ink bg-pn-canvas'
+                        ? 'border-pn-accent bg-pn-accent-soft'
                         : 'border-pn-line hover:border-[#A3A3A3]'
                     }`}
                   >
@@ -1063,7 +1064,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                   aria-pressed={featureValue === true}
                   className={`py-3 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     featureValue
-                      ? 'bg-pn-accent text-pn-ink border-pn-accent-hover'
+                      ? 'bg-pn-accent text-white border-pn-accent-hover'
                       : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >
@@ -1076,7 +1077,7 @@ export default function RestaurantsClient({ initialRows, initialTotal }: Restaur
                   aria-pressed={featureValue === false}
                   className={`py-3 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     !featureValue
-                      ? 'bg-pn-ink text-white border-pn-ink'
+                      ? 'bg-pn-accent text-white border-pn-accent'
                       : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >
@@ -1267,7 +1268,7 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
                   </td>
                   <td className="max-w-[300px]">
                     <div className="flex min-w-0 items-center gap-3">
-                      <Avatar name={r.name} size={32} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
+                      <Avatar name={r.name} size={32} color={r.primaryColor || '#5D3EBC'} fg={readableOn(r.primaryColor || '#5D3EBC')} />
                       <div className="min-w-0">
                         <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-medium text-pn-ink hover:underline underline-offset-2">
                           {r.name}
@@ -1312,7 +1313,7 @@ function BusinessList({ rows, selectedIds, onToggleSelect, onSelectMany, onToggl
               <li key={r.id} className={`bz-card p-4 ${selected ? 'border-pn-accent-hover bg-pn-accent-soft' : ''}`}>
                 <div className="flex items-start gap-3">
                   <APCheckbox size="sm" checked={selected} onChange={(next) => onToggleSelect(r.id, next)} ariaLabel={`${r.name} seç`} className="mt-1.5" />
-                  <Avatar name={r.name} size={36} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
+                  <Avatar name={r.name} size={36} color={r.primaryColor || '#5D3EBC'} fg={readableOn(r.primaryColor || '#5D3EBC')} />
                   <div className="min-w-0 flex-1">
                     <Link href={`/admin/restaurants/${r.id}`} className="block truncate text-[14px] font-medium text-pn-ink">
                       {r.name}

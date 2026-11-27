@@ -394,15 +394,15 @@ export function WhatsAppReviewWizard({
                 aria-selected={active}
                 className="group flex flex-1 min-w-0 items-center justify-center gap-1.5 rounded-[14px] px-2 py-2 text-[12px] font-medium transition-colors disabled:cursor-not-allowed"
                 style={{
-                  background: active ? "#000000" : "transparent",
+                  background: active ? "#5D3EBC" : "transparent",
                   color: active ? "#FFFFFF" : done ? "#000000" : reachable ? "#525252" : "#A3A3A3",
                 }}
               >
                 <span
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
                   style={{
-                    background: active ? "#78FC90" : done ? "#E6FDEA" : "#F6F6F6",
-                    color: "#000000",
+                    background: active ? "#FFFFFF" : done ? "#EFEAFB" : "#F6F6F6",
+                    color: active || done ? "#5D3EBC" : "#000000",
                     border: !active && !done ? "1px solid #EBEBEB" : "none",
                   }}
                 >
@@ -500,9 +500,9 @@ export function WhatsAppReviewWizard({
                       aria-pressed={isActive}
                       className="rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors"
                       style={{
-                        borderColor: isActive ? "#000000" : "#EBEBEB",
-                        background: isActive ? "#F6F6F6" : "#FFFFFF",
-                        color: "#000000",
+                        borderColor: isActive ? "#5D3EBC" : "#EBEBEB",
+                        background: isActive ? "#5D3EBC" : "#FFFFFF",
+                        color: isActive ? "#FFFFFF" : "#000000",
                       }}
                     >
                       {p.label}
@@ -577,8 +577,8 @@ export function WhatsAppReviewWizard({
         {currentStep.id === "preview" && (
           <div className="flex flex-col gap-4">
             {/* Customer-side mock card (matches /r/[slug] thanks step language) */}
-            <div className="rounded-[24px] bg-pn-ink p-5 sm:p-6">
-              <span className="tabular-nums text-[12px] font-medium text-[#A3A3A3]">
+            <div className="rounded-[24px] bg-[#3B1F8F] p-5 sm:p-6">
+              <span className="tabular-nums text-[12px] font-medium text-white/75">
                 {isTr ? "MÜŞTERİYE GÖRÜNECEK" : "CUSTOMER PREVIEW"}
               </span>
               <p className="mt-2 text-[13px] text-white/80">
@@ -591,7 +591,7 @@ export function WhatsAppReviewWizard({
                   type="button"
                   disabled
                   aria-disabled="true"
-                  className="inline-flex w-full max-w-[280px] items-center justify-center gap-2 rounded-[14px] bg-pn-ink px-4 py-3 text-[13px] font-medium text-white border border-white/10"
+                  className="inline-flex w-full max-w-[280px] items-center justify-center gap-2 rounded-[14px] bg-white/10 px-4 py-3 text-[13px] font-medium text-white border border-white/15"
                 >
                   <MessageCircle
                     size={14}

@@ -147,7 +147,7 @@ export default function SiteSettingsPage() {
           <div className="mt-5 flex items-center justify-center gap-2">
             <Link
               href="/admin/dashboard"
-              className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-4 py-2 text-[12px] font-medium text-pn-ink hover:bg-pn-accent-hover"
+              className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-4 py-2 text-[12px] font-medium text-white hover:bg-pn-accent-hover"
             >
               <Home size={13} strokeWidth={2} />
               Dashboard&apos;a dön
@@ -203,7 +203,7 @@ export default function SiteSettingsPage() {
                 aria-pressed={activeLang === l}
                 onClick={() => setActiveLang(l)}
                 className={`px-4 py-1.5 rounded-[14px] text-[12px] font-medium transition-colors ${
-                  activeLang === l ? 'bg-pn-ink text-white' : 'text-pn-ink-2 hover:bg-white'
+                  activeLang === l ? 'bg-pn-accent text-white' : 'text-pn-ink-2 hover:bg-white'
                 }`}
               >
                 <Globe size={12} className="inline mr-1" />

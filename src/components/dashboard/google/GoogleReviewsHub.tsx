@@ -149,20 +149,20 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
                       onClick={() => setSelectedId(restaurant.id)}
                       className={`w-full rounded-[24px] border p-3 text-left transition-all ${
                         active
-                          ? "border-pn-ink bg-pn-ink text-white"
+                          ? "border-pn-accent bg-pn-accent text-white"
                           : "border-pn-line bg-pn-canvas text-pn-ink hover:border-pn-line-strong hover:bg-white"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-[13px] font-medium">{restaurant.name}</p>
-                          <p className={`mt-1 truncate text-[12px] ${active ? "text-white/65" : "text-[#737373]"}`}>
+                          <p className={`mt-1 truncate text-[12px] ${active ? "text-white/80" : "text-[#737373]"}`}>
                             {restaurant.city || restaurant.address || restaurant.slug || restaurant.category}
                           </p>
                         </div>
                         <span
                           className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
-                            enabled ? "bg-pn-accent" : active ? "bg-white/35" : "bg-[#A3A3A3]"
+                            enabled ? (active ? "bg-white" : "bg-pn-accent") : active ? "bg-white/40" : "bg-[#A3A3A3]"
                           }`}
                           aria-hidden
                         />

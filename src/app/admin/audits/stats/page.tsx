@@ -131,7 +131,7 @@ export default function AuditStatsPage() {
     <div className="mx-auto max-w-[1600px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#78FC90"
+        eyebrowColor="#5D3EBC"
         title="İstatistikler"
         description="Sistem genelinde denetim kullanımı: sektör başına şablon + yanıt dağılımı, en popüler şablonlar, en aktif işletmeler."
         actions={
@@ -166,7 +166,7 @@ export default function AuditStatsPage() {
           <StatCard
             label="Yayında"
             value={data.totals.publishedTemplates}
-            accent="#78FC90"
+            accent="#5D3EBC"
           />
           <StatCard
             label="Tamamlanan yanıt"

@@ -178,7 +178,7 @@ export default function QuestionCard({
         <div className="flex min-w-0 items-center gap-2">
           <span
             aria-hidden="true"
-            className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-pn-ink px-2 text-[12px] font-medium text-pn-accent"
+            className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-pn-accent px-2 text-[12px] font-medium text-white"
           >
             {index + 1}
           </span>

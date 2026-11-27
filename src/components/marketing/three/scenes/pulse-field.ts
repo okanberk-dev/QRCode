@@ -78,7 +78,7 @@ const FRAGMENT = /* glsl */ `
     // Straight (non-premultiplied) color: additive blending applies alpha.
     gl_FragColor = vec4(color, alpha);
     // Uniform colors are stored in linear space; convert back to sRGB so the
-    // brand lime renders as #C6F24E (ShaderMaterial skips this otherwise).
+    // brand purple renders as #8C6CF0 (ShaderMaterial skips this otherwise).
     #include <colorspace_fragment>
   }
 `;
@@ -148,7 +148,7 @@ export const createScene: SceneFactory = ({ canvas, gl, width, height, pixelRati
       uPixelRatio: { value: pixelRatio },
       uHalfWidth: { value: halfWidth },
       uBase: { value: new Color('#7d7d7d') },
-      uLime: { value: new Color('#C6F24E') },
+      uLime: { value: new Color('#8C6CF0') },
     },
   });
 

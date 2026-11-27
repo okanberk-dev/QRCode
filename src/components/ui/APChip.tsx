@@ -11,12 +11,12 @@
  *
  * Pulse §11 hex map (HANDOFF tone palette):
  *  - default: rgba(10,10,10,0.06) bg + #0A0A0A fg + dot graphite
- *  - lime: #EAF9B8 (lime-soft) + #3F5408 + dot lime-deep
+ *  - lime: accent-soft bg (lavender in the panels) + ink text + accent dot
  *  - success: rgba(34,197,94,0.12) + #15803D + dot #16A34A
  *  - warn: rgba(234,179,8,0.14) + #854D0E + dot #CA8A04
  *  - danger: rgba(220,38,38,0.10) + #991B1B + dot #DC2626
  *  - info: rgba(59,130,246,0.10) + #1E40AF + dot #3B82F6
- *  - dark: #0A0A0A bg + white + dot lime
+ *  - dark: ink bg + white + lavender dot
  *
  * A11y: removable button explicit aria-label; chip span (informational).
  */
@@ -46,12 +46,12 @@ export interface APChipProps {
 
 const TONE_TOKENS: Record<APChipTone, { bg: string; fg: string; dot: string }> = {
   default: { bg: 'var(--color-pn-canvas)', fg: 'var(--color-pn-ink)', dot: 'var(--color-pn-ink)' },
-  lime: { bg: 'var(--color-pn-accent)', fg: '#000000', dot: '#000000' },
+  lime: { bg: 'var(--color-pn-accent-soft)', fg: 'var(--color-pn-ink)', dot: 'var(--color-pn-accent)' },
   success: { bg: '#ECF7E6', fg: '#3A8228', dot: '#3A8228' },
   warn: { bg: '#FFF6DB', fg: '#8A5A00', dot: '#D99A00' },
   danger: { bg: '#FDECEC', fg: '#B42318', dot: '#E5484D' },
   info: { bg: '#EAF1FD', fg: '#1D4ED8', dot: '#3B82F6' },
-  dark: { bg: 'var(--color-pn-ink)', fg: '#ffffff', dot: 'var(--color-pn-accent)' },
+  dark: { bg: 'var(--color-pn-ink)', fg: '#ffffff', dot: '#DCD3F6' },
 };
 
 export function APChip({

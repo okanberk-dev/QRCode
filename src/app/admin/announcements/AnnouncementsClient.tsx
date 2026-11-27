@@ -466,7 +466,7 @@ export default function AnnouncementsClient({
                         aria-pressed={form.severity === s}
                         onClick={() => setForm(f => ({ ...f, severity: s }))}
                         className={`py-2.5 rounded-[20px] text-[12px] font-medium transition-all ${
-                          form.severity === s ? 'bg-pn-ink text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
+                          form.severity === s ? 'bg-pn-accent text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
                         }`}
                       >
                         {SEVERITY_META[s].label}
@@ -484,7 +484,7 @@ export default function AnnouncementsClient({
                         aria-pressed={form.locale === l}
                         onClick={() => setForm(f => ({ ...f, locale: l }))}
                         className={`py-2.5 rounded-[20px] text-[12px] font-medium transition-all ${
-                          form.locale === l ? 'bg-pn-ink text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
+                          form.locale === l ? 'bg-pn-accent text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
                         }`}
                       >
                         {l === 'all' ? 'TÜMÜ' : l.toUpperCase()}

@@ -595,7 +595,7 @@ export function GoogleReviewsInbox({
       <section className="bz-card overflow-hidden">
         <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-[24px] bg-pn-ink text-white">
+            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-[24px] bg-pn-accent text-white">
               <span className="text-[22px] font-medium leading-none tabular-nums">
                 {summary?.averageRating != null
                   ? summary.averageRating.toLocaleString(isTr ? 'tr-TR' : 'en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -603,7 +603,7 @@ export function GoogleReviewsInbox({
               </span>
               <span className="mt-1 inline-flex gap-px" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} size={8} fill={i <= Math.round(summary?.averageRating ?? 0) ? '#78FC90' : 'transparent'} color="#78FC90" />
+                  <Star key={i} size={8} fill={i <= Math.round(summary?.averageRating ?? 0) ? '#FFFFFF' : 'transparent'} color="#FFFFFF" />
                 ))}
               </span>
             </div>
@@ -709,7 +709,7 @@ export function GoogleReviewsInbox({
             <Inbox size={13} aria-hidden="true" />
             {isTr ? 'Yanıt kutusu' : 'Reply inbox'}
             {summary && summary.unreplied > 0 && (
-              <span className="ml-1 rounded-full bg-pn-accent px-1.5 text-[12px] font-medium tabular-nums text-pn-ink">{fmt(summary.unreplied)}</span>
+              <span className="ml-1 rounded-full bg-pn-accent-soft px-1.5 text-[12px] font-medium tabular-nums text-pn-accent">{fmt(summary.unreplied)}</span>
             )}
           </button>
           <button type="button" role="tab" aria-selected={view === 'analysis'} onClick={() => setView('analysis')} className="bz-tab min-h-11 sm:min-h-0">
@@ -779,7 +779,7 @@ export function GoogleReviewsInbox({
               aria-pressed={filter.stars.includes(n)}
               onClick={() => toggleStar(n)}
               className={`inline-flex min-h-11 items-center gap-1 rounded-full border px-3 text-[13px] sm:min-h-[32px] ${
-                filter.stars.includes(n) ? 'border-pn-ink bg-pn-ink text-white' : 'border-pn-line bg-white text-[#525252] hover:border-pn-line-strong'
+                filter.stars.includes(n) ? 'border-pn-accent bg-pn-accent text-white' : 'border-pn-line bg-white text-[#525252] hover:border-pn-line-strong'
               }`}
             >
               {n}

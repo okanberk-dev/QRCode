@@ -8,7 +8,7 @@ export interface CtaLink {
 }
 
 /**
- * Closing lime band, the same visual language as the homepage's final CTA:
+ * Closing brand band, the same visual language as the homepage's final CTA:
  * one H2, an optional lead or short list of verifiable facts, at most two
  * calls to action. Server component.
  */

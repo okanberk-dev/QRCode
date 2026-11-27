@@ -122,7 +122,7 @@ export default function GoogleReviewsEmbedCard({
                   type="button"
                   onClick={() => setTheme(t)}
                   aria-pressed={theme === t}
-                  className={`min-h-[44px] rounded-[10px] px-2.5 py-1 text-[12px] font-medium sm:min-h-0 ${theme === t ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas'}`}
+                  className={`min-h-[44px] rounded-[10px] px-2.5 py-1 text-[12px] font-medium sm:min-h-0 ${theme === t ? 'bg-pn-accent text-white' : 'text-[#525252] hover:bg-pn-canvas'}`}
                 >
                   {t === 'light' ? (isTr ? 'Açık' : 'Light') : isTr ? 'Koyu' : 'Dark'}
                 </button>

@@ -264,7 +264,7 @@ export default function CardView({
   if (left) {
     return (
       <div className="py-10 text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFEAFB] text-[#5D3EBC]">
           <Check size={22} />
         </span>
         <p className="mt-4 text-[16px] font-medium">{t.leaveDone}</p>
@@ -280,7 +280,8 @@ export default function CardView({
   const expiry = expiresAt(member, program.expiryDays);
   const dateFmt = (iso: string | Date) =>
     new Date(iso).toLocaleDateString(tr ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul' });
-  const panel = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-5 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.5)]';
+  // Borderless 24 px cards on the business's page colour (no shadow).
+  const panel = 'rounded-[24px] bg-[var(--p-surface)] p-5';
 
   return (
     <div className="space-y-4">
@@ -289,13 +290,13 @@ export default function CardView({
       {staffHref && (
         <a
           href={staffHref}
-          className="bzl-tap flex items-center justify-between gap-3 rounded-[18px] bg-[#0A0A0A] px-4 py-3 text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.6)]"
+          className="bzl-tap flex min-h-[52px] items-center justify-between gap-3 rounded-full bg-[#5D3EBC] py-1.5 pl-4 pr-1.5 text-white transition-colors duration-200 hover:bg-[#4C2FA3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2"
         >
-          <span className="flex min-w-0 items-center gap-2 text-[13.5px]">
+          <span className="flex min-w-0 items-center gap-2 text-[14px]">
             <Eye size={15} className="shrink-0" aria-hidden="true" />
             <span className="truncate">{tr ? 'Müşterinin gördüğü kart' : 'What the customer sees'}</span>
           </span>
-          <span className="shrink-0 rounded-full bg-[#C6F24E] px-3 py-1.5 text-[12.5px] font-semibold text-[#0A0A0A]">
+          <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-white px-4 text-[13px] font-semibold text-[#5D3EBC]">
             {tr ? 'Kasa moduna dön' : 'Back to staff mode'}
           </span>
         </a>
@@ -324,17 +325,17 @@ export default function CardView({
         <button
           type="button"
           onClick={() => setFullQr(true)}
-          className="bzl-tap group relative mx-auto mt-3 block rounded-2xl bg-white p-3 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.5)] transition active:scale-[0.98]"
+          className="bzl-tap group relative mx-auto mt-3 block rounded-[24px] bg-white p-3 ring-1 ring-black/5 transition-transform duration-200 active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
           aria-label={tr ? 'QR kodu büyüt' : 'Enlarge the QR code'}
         >
           { }
           <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} width={196} height={196} className="h-[196px] w-[196px]" />
-          <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#0A0A0A] text-white">
+          <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#5D3EBC] text-white">
             <Maximize2 size={15} aria-hidden="true" />
           </span>
         </button>
-        <p className="mt-4 text-[11.5px] uppercase tracking-[0.16em] text-[color:var(--p-muted)]">{t.code}</p>
-        <p className="font-mono text-[30px] font-semibold tracking-[0.2em]">{formatMemberCode(member.code)}</p>
+        <p className="mt-4 text-[13px] font-medium text-[color:var(--p-muted)]">{t.code}</p>
+        <p className="mt-0.5 text-[30px] font-semibold tabular-nums tracking-[0.08em]">{formatMemberCode(member.code)}</p>
       </section>
 
       {!staffHref && (
@@ -342,7 +343,7 @@ export default function CardView({
       )}
 
       {birthday && program.birthdayReward && (
-        <p className="flex items-start gap-2 rounded-[20px] border border-[#F5C6D6] bg-[#FFF1F5] px-4 py-3 text-[14px] text-[#831843]">
+        <p className="flex items-start gap-2 rounded-[24px] bg-[#FFF1F5] px-4 py-3.5 text-[14px] text-[#831843]">
           <Cake size={18} className="mt-0.5 shrink-0" aria-hidden="true" /> {t.birthdayNow(program.birthdayReward)}
         </p>
       )}
@@ -354,18 +355,22 @@ export default function CardView({
             const ready = member.balance >= r.cost;
             const pct = Math.min(100, Math.round((member.balance / r.cost) * 100));
             return (
-              <li key={r.id} className={`overflow-hidden rounded-2xl ${ready ? 'bg-[#F6FCE4] text-[#0A0A0A]' : 'bg-[var(--p-bg)]'}`}>
+              <li key={r.id} className={`overflow-hidden rounded-[20px] ${ready ? 'bg-[#EFEAFB] text-[#111110]' : 'bg-[var(--p-bg)]'}`}>
                 <div className="flex items-center justify-between gap-3 px-3.5 py-3">
                   <span className="flex min-w-0 items-center gap-2 text-[14.5px] font-medium">
                     <Gift size={16} className="shrink-0" aria-hidden="true" />
                     <span className="truncate">{r.title}</span>
                   </span>
-                  <span className={`shrink-0 text-[12.5px] font-semibold ${ready ? 'text-[#3F6212]' : 'text-[color:var(--p-muted)]'}`}>
+                  <span className={`shrink-0 text-[13px] font-semibold ${ready ? 'text-[#5D3EBC]' : 'text-[color:var(--p-muted)]'}`}>
                     {ready ? t.rewardReady : t.rewardLeft(r.cost - member.balance, unitLabel(kind, r.cost - member.balance, locale))}
                   </span>
                 </div>
                 {!ready && (
-                  <div className="h-1 w-full" style={{ background: 'var(--p-border)' }}>
+                  <div
+                    className="h-1.5 w-full"
+                    // Hatched remainder: what is still to collect.
+                    style={{ background: 'repeating-linear-gradient(-45deg, var(--p-border) 0 1.5px, transparent 1.5px 5px)' }}
+                  >
                     <div className="h-full transition-[width] duration-700" style={{ width: `${pct}%`, background: 'var(--p-accent)' }} />
                   </div>
                 )}
@@ -410,7 +415,7 @@ export default function CardView({
                 </span>
                 <span className="flex shrink-0 items-center gap-3">
                   {e.amount !== 0 && (
-                    <span className={`font-semibold tabular-nums ${e.amount > 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
+                    <span className={`font-semibold tabular-nums ${e.amount > 0 ? 'text-[#23863A]' : 'text-[#D92D20]'}`}>
                       {e.amount > 0 ? '+' : ''}
                       {e.amount}
                     </span>
@@ -433,7 +438,7 @@ export default function CardView({
               {t.leave}
             </button>
           ) : (
-            <div className="mt-2 w-full rounded-[22px] border border-[#FECACA] bg-[var(--p-surface)] p-4 text-left">
+            <div className="mt-2 w-full rounded-[24px] bg-[var(--p-surface)] p-5 text-left ring-1 ring-[#FECDCA]">
               <p className="text-[15px] font-semibold">{t.leaveTitle}</p>
               <p className="mt-1 text-[13px] text-[color:var(--p-muted)]">{t.leaveBody}</p>
               <input
@@ -441,24 +446,24 @@ export default function CardView({
                 onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 inputMode="numeric"
                 autoComplete="off"
-                className="mt-3 w-36 rounded-xl border border-[color:var(--p-border)] bg-[var(--p-bg)] px-3 py-3 text-center font-mono text-[20px] tracking-[0.3em]"
+                className="mt-3 h-12 w-40 rounded-full border border-[color:var(--p-border)] bg-[var(--p-bg)] px-4 text-center text-[20px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)]"
                 aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
                 placeholder="••••"
               />
               {leaveError && (
-                <p className="mt-2 text-[13px] text-[#991B1B]" role="alert">
+                <p className="mt-2 text-[13px] text-[#D92D20]" role="alert">
                   {leaveError}
                 </p>
               )}
               <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setLeaveOpen(false)} className="min-h-[46px] flex-1 rounded-xl border border-[color:var(--p-border)] text-[14px]">
+                <button type="button" onClick={() => setLeaveOpen(false)} className="bzl-tap min-h-[48px] flex-1 rounded-full bg-[var(--p-bg)] text-[14px] font-medium transition-transform active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]">
                   {t.leaveCancel}
                 </button>
                 <button
                   type="button"
                   disabled={last4.length !== 4 || leaveBusy}
                   onClick={() => void leave()}
-                  className="flex min-h-[46px] flex-1 items-center justify-center rounded-xl bg-[#B91C1C] text-[14px] font-semibold text-white disabled:opacity-40"
+                  className="bzl-tap flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-[#D92D20] text-[14px] font-semibold text-white transition-[background-color,transform] hover:bg-[#B42318] active:scale-[0.98] disabled:opacity-40 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D92D20] focus-visible:ring-offset-2"
                 >
                   {leaveBusy ? <Loader2 size={16} className="animate-spin" /> : t.leaveConfirm}
                 </button>
@@ -488,7 +493,7 @@ function CelebrationLayer({ celebration }: { celebration: Celebration }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-[80]" aria-live="polite" role="status">
       <div
-        className="bzl-toast absolute left-1/2 w-[min(92vw,420px)] rounded-[22px] px-5 py-4 text-center shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]"
+        className="bzl-toast absolute left-1/2 w-[min(92vw,420px)] rounded-[24px] px-5 py-4 text-center shadow-[0_24px_60px_-24px_rgba(0,0,0,0.5)]"
         style={{ top: 'max(14px, env(safe-area-inset-top))', background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
       >
         <p className="text-[22px] font-semibold leading-tight tracking-[-0.01em]" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -534,22 +539,22 @@ function FullScreenQr({
       role="dialog"
       aria-modal="true"
       aria-label={tr ? 'Kasada gösterilecek QR' : 'QR to show at the counter'}
-      className="bzl-fade fixed inset-0 z-[85] flex flex-col items-center justify-center bg-white px-6 text-[#0A0A0A]"
+      className="bzl-fade fixed inset-0 z-[85] flex flex-col items-center justify-center bg-white px-6 text-[#111110]"
       style={{ paddingTop: 'max(24px, env(safe-area-inset-top))', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
       onClick={onClose}
     >
-      <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#737373]">{businessName}</p>
+      <p className="text-[15px] font-medium text-[#6B6B6B]">{businessName}</p>
       {firstName && <p className="mt-1 text-[20px] font-semibold">{firstName}</p>}
       { }
       <img src={qrDataUrl} alt={tr ? 'Kart QR kodu' : 'Card QR code'} className="mt-6 aspect-square w-[min(82vw,380px)]" />
-      <p className="mt-6 font-mono text-[38px] font-semibold tracking-[0.22em]">{formatMemberCode(code)}</p>
-      <p className="mt-3 max-w-[300px] text-center text-[13.5px] text-[#525252]">
+      <p className="mt-6 text-[38px] font-semibold tabular-nums tracking-[0.08em]">{formatMemberCode(code)}</p>
+      <p className="mt-3 max-w-[300px] text-center text-[14px] leading-relaxed text-[#525252]">
         {tr ? 'Ekran parlaklığını artırın; görevli QR’ı okutur ya da kodu yazar.' : 'Turn the brightness up; staff scan the QR or type the code.'}
       </p>
       <button
         type="button"
         onClick={onClose}
-        className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-[#0A0A0A] px-6 text-[15px] font-semibold text-white"
+        className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-[#5D3EBC] px-6 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[#4C2FA3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2"
       >
         <X size={18} aria-hidden="true" /> {tr ? 'Kapat' : 'Close'}
       </button>
@@ -591,7 +596,7 @@ function InstallCard({ locale, businessName }: { locale: PublicLocale; businessN
   }, []);
 
   if (mode === 'hidden') return null;
-  const box = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4';
+  const box = 'rounded-[24px] bg-[var(--p-surface)] p-4';
   if (mode === 'done') {
     return (
       <p className={`${box} flex items-center gap-2 text-[14px]`}>
@@ -601,7 +606,7 @@ function InstallCard({ locale, businessName }: { locale: PublicLocale; businessN
   }
   return (
     <div className={`${box} flex items-start gap-3`}>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}>
         <Download size={18} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
@@ -613,7 +618,7 @@ function InstallCard({ locale, businessName }: { locale: PublicLocale; businessN
             </p>
             <button
               type="button"
-              className="mt-3 inline-flex h-10 items-center rounded-full px-4 text-[13.5px] font-semibold"
+              className="bzl-tap mt-3 inline-flex h-11 items-center rounded-full px-5 text-[14px] font-semibold transition-transform active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
               style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
               onClick={async () => {
                 const p = promptRef.current;
@@ -741,13 +746,13 @@ function NotifyCard({ locale, token, pushKey }: { locale: PublicLocale; token: s
   };
 
   if (state === 'hidden') return null;
-  const box = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4';
+  const box = 'rounded-[24px] bg-[var(--p-surface)] p-4';
   const btn =
-    'bzl-tap mt-3 inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] disabled:opacity-50';
+    'bzl-tap mt-3 inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] transition-transform active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
 
   return (
     <div className={`${box} flex items-start gap-3`}>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}>
         {state === 'denied' ? <BellOff size={18} aria-hidden="true" /> : <Bell size={18} aria-hidden="true" />}
       </span>
       <div className="min-w-0 flex-1" aria-live="polite">
@@ -757,7 +762,7 @@ function NotifyCard({ locale, token, pushKey }: { locale: PublicLocale; token: s
             <p className="mt-0.5 text-[12.5px] text-[color:var(--p-muted)]">
               {tr ? 'Ödülünüz hazır olunca ve doğum gününüzde haber vereceğiz.' : 'We will tell you when your reward is ready and on your birthday.'}
             </p>
-            <button type="button" onClick={() => void disable()} className="mt-2 min-h-[40px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
+            <button type="button" onClick={() => void disable()} className="mt-1 min-h-[44px] text-[13px] text-[color:var(--p-muted)] underline underline-offset-4">
               {tr ? 'Bildirimleri kapat' : 'Turn off'}
             </button>
           </>
@@ -778,7 +783,7 @@ function NotifyCard({ locale, token, pushKey }: { locale: PublicLocale; token: s
                     : 'Only two kinds: when your reward is ready and on your birthday. No ads.'}
             </p>
             {state === 'error' && (
-              <p className="mt-1 text-[12.5px] text-[#991B1B]" role="alert">
+              <p className="mt-1 text-[12.5px] text-[#D92D20]" role="alert">
                 {tr ? 'Bildirimler açılamadı. Tekrar deneyin.' : 'Could not turn notifications on. Try again.'}
               </p>
             )}
@@ -816,9 +821,9 @@ function AccountBlock({
   const [state, setState] = useState<'idle' | 'busy' | 'verify' | 'done' | 'taken' | 'error'>(owns ? 'done' : 'idle');
   const [digits, setDigits] = useState('');
   const [message, setMessage] = useState<string | null>(null);
-  const box = 'rounded-[24px] border border-[color:var(--p-border)] bg-[var(--p-surface)] p-4';
+  const box = 'rounded-[24px] bg-[var(--p-surface)] p-4';
   const btn =
-    'bzl-tap inline-flex min-h-[46px] items-center justify-center rounded-2xl px-4 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] disabled:opacity-50';
+    'bzl-tap inline-flex min-h-[48px] items-center justify-center rounded-full px-5 text-[14px] font-semibold bg-[var(--p-accent)] text-[color:var(--p-on-accent)] transition-transform active:scale-[0.98] disabled:opacity-50 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]';
 
   const link = async (last4?: string) => {
     setState('busy');
@@ -861,7 +866,7 @@ function AccountBlock({
         <span className="flex items-center gap-2 text-[14px] font-medium">
           <UserCheck size={17} aria-hidden /> {t.inAccount}
         </span>
-        <Link href="/hesap" className="text-[13.5px] font-semibold underline underline-offset-2">
+        <Link href="/hesap" className="inline-flex min-h-[44px] items-center text-[14px] font-semibold underline underline-offset-4">
           {tr ? 'Kartlarım' : 'My cards'}
         </Link>
       </div>
@@ -886,7 +891,7 @@ function AccountBlock({
               onChange={(e) => setDigits(e.target.value.replace(/\D/g, '').slice(0, 4))}
               inputMode="numeric"
               autoComplete="off"
-              className="w-28 rounded-xl border border-[color:var(--p-border)] bg-[var(--p-bg)] px-3 py-2.5 text-center font-mono text-[18px] tracking-[0.3em]"
+              className="h-12 w-32 rounded-full border border-[color:var(--p-border)] bg-[var(--p-bg)] px-4 text-center text-[18px] tabular-nums tracking-[0.3em] outline-none transition-[border-color,box-shadow] focus:border-[color:var(--p-accent)] focus:ring-2 focus:ring-[color:var(--p-accent)]"
               aria-label={tr ? 'Telefonun son 4 hanesi' : 'Last 4 digits of the phone'}
               placeholder="••••"
             />
@@ -895,7 +900,7 @@ function AccountBlock({
             </button>
           </div>
           {message && (
-            <p className="mt-2 text-[12.5px] text-[#B91C1C]" role="alert">
+            <p className="mt-2 text-[12.5px] text-[#D92D20]" role="alert">
               {message}
             </p>
           )}

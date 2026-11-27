@@ -54,7 +54,7 @@ const PLATFORM_META: Record<string, { tone: string; short: string }> = {
 };
 
 /** Segment colours, in order (Pano §5.13: lime, olive, ink, then greys). */
-const SEGMENT_COLORS = ['#78FC90', '#2FB24C', '#1E1E1E', '#C9C9CF', '#E0E0E0'];
+const SEGMENT_COLORS = ['#5D3EBC', '#A68FEB', '#1E1E1E', '#C9C9CF', '#E0E0E0'];
 
 /**
  * Where customers were sent (Pano, docs/design/DASHBOARD_DESIGN.md §5.13): one
@@ -95,7 +95,7 @@ export function ChannelDistribution({ channels, title, googleImpact = null, isTr
             <li key={c.platform} className="flex items-center gap-3.5">
               <span
                 aria-hidden="true"
-                className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-[12px] font-medium text-white"
+                className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-[12px] font-medium text-white"
               >
                 {meta.short}
                 <span

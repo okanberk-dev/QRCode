@@ -475,7 +475,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
         </div>
       ) : (
         /* §38.224 — Tier card grid (marketing /pricing parity).
-           Featured tier dark variant (bg-pn-ink + lime accent), normal tier
+           Featured tier deep purple variant (#3B1F8F + lavender accent), normal tier
            white + EDEDED border. InlinePriceCell'lar hero price'ın altında —
            Stage 139 inline edit pattern korunur, modal full-form ile aynı. */
         <div
@@ -497,14 +497,14 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 key={p.id}
                 className={`relative flex flex-col rounded-[28px] p-6 sm:p-7 ${
                   isDark
-                    ? 'bg-pn-ink text-white shadow-[0_20px_60px_rgba(10,10,10,0.18)]'
+                    ? 'bg-[#3B1F8F] text-white shadow-[0_20px_60px_rgba(59,31,143,0.22)]'
                     : 'border border-pn-line bg-white'
                 } ${!p.isActive ? 'opacity-70' : ''}`}
               >
                 {/* "En popüler" badge — top-center (featured) */}
                 {isDark && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="text-[13px] font-medium whitespace-nowrap rounded-full bg-pn-accent px-4 py-1.5 text-pn-ink">
+                    <span className="text-[13px] font-medium whitespace-nowrap rounded-full bg-pn-accent px-4 py-1.5 text-white">
                       <Crown size={10} className="inline mr-1 -mt-0.5" /> EN POPÜLER
                     </span>
                   </div>
@@ -535,7 +535,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                         {p.nameTr}
                       </h2>
                       <p
-                        className={`text-[12px] mt-0.5 ${isDark ? 'text-white/60' : 'text-[#A3A3A3]'}`}
+                        className={`text-[12px] mt-0.5 ${isDark ? 'text-white/75' : 'text-[#A3A3A3]'}`}
                       >
                         / {p.nameEn}
                       </p>
@@ -561,7 +561,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     >
                       <span
                         className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          isDark ? 'bg-pn-accent' : userCount > 0 ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
+                          isDark ? 'bg-[#DCD3F6]' : userCount > 0 ? 'bg-pn-accent-hover' : 'bg-[#A3A3A3]'
                         }`}
                       />
                       {userCount > 0
@@ -591,7 +591,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       dark={isDark}
                     />
                     <span
-                      className={`text-[13px] font-medium ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
+                      className={`text-[13px] font-medium ${isDark ? 'text-white/75' : 'text-[#737373]'}`}
                     >
                       /ay
                     </span>
@@ -599,13 +599,13 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   {/* Yıllık USD row */}
                   <div
                     className={`mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] ${
-                      isDark ? 'text-white/60' : 'text-[#525252]'
+                      isDark ? 'text-white/75' : 'text-[#525252]'
                     }`}
                   >
                     <div className="flex items-center gap-1.5">
                       <span
                         className={`text-[12px] ${
-                          isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                          isDark ? 'text-white/65' : 'text-[#A3A3A3]'
                         }`}
                       >
                         Yıllık toplam
@@ -626,7 +626,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                         <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
                         <span
                           className={`text-[12px] ${
-                            isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                            isDark ? 'text-white/65' : 'text-[#A3A3A3]'
                           }`}
                           title="Formula fallback: monthly × 12 × 0.8 (≈%20 indirim)"
                         >
@@ -648,7 +648,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                     >
                       <span
                         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                          isDark ? 'bg-pn-accent' : 'bg-pn-accent-soft'
+                          isDark ? 'bg-[#DCD3F6]' : 'bg-pn-accent-soft'
                         }`}
                       >
                         <Crown size={9} className="text-pn-ink" strokeWidth={3} />
@@ -659,7 +659,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   {p.featuresTr.length > 5 && (
                     <li
                       className={`text-[12px] ${
-                        isDark ? 'text-white/50' : 'text-[#737373]'
+                        isDark ? 'text-white/70' : 'text-[#737373]'
                       } pl-6`}
                     >
                       + {p.featuresTr.length - 5} özellik daha
@@ -668,7 +668,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   {p.featuresTr.length === 0 && (
                     <li
                       className={`text-[12px] italic ${
-                        isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                        isDark ? 'text-white/65' : 'text-[#A3A3A3]'
                       }`}
                     >
                       Henüz özellik eklenmemiş — Düzenle ile ekle
@@ -684,7 +684,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                 >
                   <div
                     className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] ${
-                      isDark ? 'text-white/50' : 'text-[#737373]'
+                      isDark ? 'text-white/70' : 'text-[#737373]'
                     }`}
                   >
                     <span>Sıra {p.sortOrder}</span>
@@ -695,7 +695,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                         <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
                         <span
                           className={`font-medium ${
-                            isDark ? 'text-pn-accent' : 'text-pn-ink'
+                            isDark ? 'text-white' : 'text-pn-ink'
                           }`}
                         >
                           PayNKolay
@@ -738,8 +738,8 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium transition-colors ${
                         p.isFeatured
                           ? isDark
-                            ? 'bg-pn-accent text-pn-ink'
-                            : 'bg-pn-ink text-white'
+                            ? 'bg-white text-pn-accent'
+                            : 'bg-pn-accent text-white'
                           : isDark
                             ? 'border border-white/15 text-white/70 hover:bg-white/10'
                             : 'border border-pn-line text-[#525252] hover:border-pn-ink'
@@ -1449,7 +1449,7 @@ function InlinePriceCell({
           title={`${label} — düzenlemek için tıkla`}
           className={`group inline-flex items-baseline rounded-[10px] px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-50 ${
             dark
-              ? 'hover:bg-white/5 focus-visible:bg-white/5 text-pn-accent'
+              ? 'hover:bg-white/10 focus-visible:bg-white/10 text-white'
               : 'hover:bg-pn-canvas focus-visible:bg-pn-canvas text-pn-ink'
           }`}
           style={{
@@ -1487,7 +1487,7 @@ function InlinePriceCell({
         {value != null ? (
           formatDisplay(value)
         ) : (
-          <span className={dark ? 'text-white/40' : 'text-[#A3A3A3]'}>—</span>
+          <span className={dark ? 'text-white/65' : 'text-[#A3A3A3]'}>—</span>
         )}
         <Pencil
           size={9}
@@ -1509,7 +1509,7 @@ function InlinePriceCell({
         }`}
       >
         <span
-          className={`text-[28px] ${dark ? 'text-pn-accent' : 'text-pn-ink'}`}
+          className={`text-[28px] ${dark ? 'text-white' : 'text-pn-ink'}`}
           style={{ fontFamily: 'var(--font-heading)', fontWeight: 500 }}
         >
           {currency === 'TRY' ? '₺' : '$'}
@@ -1534,7 +1534,7 @@ function InlinePriceCell({
           disabled={saving}
           aria-label={label}
           className={`w-24 border-0 bg-transparent p-0 text-[36px] sm:text-[44px] leading-none focus:outline-none disabled:opacity-50 ${
-            dark ? 'text-pn-accent' : 'text-pn-ink'
+            dark ? 'text-white' : 'text-pn-ink'
           }`}
           style={{
             fontFamily: 'var(--font-heading)',
@@ -1545,7 +1545,7 @@ function InlinePriceCell({
         {saving ? (
           <Loader2 size={14} className="animate-spin text-[#737373]" aria-hidden />
         ) : (
-          <span className={`text-[12px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
+          <span className={`text-[12px] ${dark ? 'text-white/65' : 'text-[#A3A3A3]'}`} aria-hidden>
             ↵
           </span>
         )}
@@ -1559,7 +1559,7 @@ function InlinePriceCell({
         dark ? 'bg-white/10' : 'bg-white'
       }`}
     >
-      <span className={`text-[12px] ${dark ? 'text-white/60' : 'text-[#737373]'}`}>
+      <span className={`text-[12px] ${dark ? 'text-white/75' : 'text-[#737373]'}`}>
         {currency === 'TRY' ? '₺' : '$'}
       </span>
       <input
@@ -1589,7 +1589,7 @@ function InlinePriceCell({
       {saving ? (
         <Loader2 size={10} className="animate-spin text-[#737373]" aria-hidden />
       ) : (
-        <span className={`text-[12px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
+        <span className={`text-[12px] ${dark ? 'text-white/65' : 'text-[#A3A3A3]'}`} aria-hidden>
           ↵
         </span>
       )}

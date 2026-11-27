@@ -11,8 +11,9 @@ import {
   type LoyaltyRewardLike,
 } from '@/lib/loyalty';
 
-const DEFAULT_BG = '#0A0A0A';
-const LIME = '#C6F24E';
+// Buaze default when the business picked no card colour; a chosen colour wins.
+const DEFAULT_BG = '#5D3EBC';
+const INK = '#111110';
 
 function isLight(hex: string): boolean {
   const m = /^#([0-9a-f]{6})$/i.exec(hex);
@@ -61,10 +62,12 @@ export function LoyaltyCardFace({
   const tr = locale === 'tr';
   const bg = accentColor && /^#[0-9a-f]{6}$/i.test(accentColor) ? accentColor : DEFAULT_BG;
   const light = isLight(bg);
-  const fg = light ? '#0A0A0A' : '#FFFFFF';
-  const muted = light ? 'rgba(10,10,10,0.6)' : 'rgba(255,255,255,0.65)';
-  const mark = bg === DEFAULT_BG ? LIME : fg;
-  const markFg = bg === DEFAULT_BG ? '#0A0A0A' : bg;
+  const fg = light ? INK : '#FFFFFF';
+  // Opacities keep small text at 4.5:1 on the card colour (white on purple ≈ 5:1).
+  const muted = light ? 'rgba(17,17,16,0.66)' : 'rgba(255,255,255,0.78)';
+  // Filled stamps and badges: the text colour as fill, the card colour as ink.
+  const mark = fg;
+  const markFg = bg;
   const next = nextReward(balance, rewards);
   const ready = rewards.some((r) => r.isActive !== false && r.cost <= balance);
 
@@ -73,7 +76,7 @@ export function LoyaltyCardFace({
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-[20px] p-5 shadow-[0_18px_40px_-18px_rgba(10,10,10,0.45)] ${className}`}
+      className={`relative w-full overflow-hidden rounded-[24px] p-5 shadow-[0_18px_36px_-22px_rgba(17,17,16,0.45)] ${className}`}
       style={{ background: bg, color: fg }}
       role="img"
       aria-label={
@@ -100,7 +103,7 @@ export function LoyaltyCardFace({
       />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: muted }}>
+          <p className="truncate text-[13px] font-medium" style={{ color: muted }}>
             {businessName}
           </p>
           <p className="mt-1 truncate text-[19px] font-semibold leading-tight">{programName}</p>
@@ -132,7 +135,7 @@ export function LoyaltyCardFace({
                 className={`flex aspect-square items-center justify-center rounded-full border text-[11px] font-semibold ${landing ? 'bzl-stamp-in' : ''}`}
                 style={{
                   animationDelay: landing ? `${(i - (highlightFrom ?? 0)) * 120}ms` : undefined,
-                  borderColor: on ? mark : light ? 'rgba(10,10,10,0.25)' : 'rgba(255,255,255,0.28)',
+                  borderColor: on ? mark : light ? 'rgba(17,17,16,0.28)' : 'rgba(255,255,255,0.4)',
                   background: on ? mark : 'transparent',
                   color: on ? markFg : muted,
                 }}
@@ -151,7 +154,13 @@ export function LoyaltyCardFace({
             </span>
           </p>
           {next && (
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full" style={{ background: light ? 'rgba(10,10,10,0.12)' : 'rgba(255,255,255,0.18)' }}>
+            <div
+              className="mt-3 h-2 w-full overflow-hidden rounded-full"
+              style={{
+                // Hatched remainder: what is still to collect.
+                background: `repeating-linear-gradient(-45deg, ${light ? 'rgba(17,17,16,0.22)' : 'rgba(255,255,255,0.34)'} 0 1.5px, transparent 1.5px 5px)`,
+              }}
+            >
               <div
                 className="h-full rounded-full"
                 style={{ width: `${Math.min(100, Math.round((balance / next.reward.cost) * 100))}%`, background: mark }}
@@ -176,7 +185,7 @@ export function LoyaltyCardFace({
         {(memberName || code) && (
           <p className="shrink-0 text-right" style={{ color: muted }}>
             {memberName && <span className="block truncate font-medium" style={{ color: fg }}>{memberName}</span>}
-            {code && <span className="font-mono tracking-[0.12em]">{formatMemberCode(code)}</span>}
+            {code && <span className="font-medium tabular-nums tracking-[0.06em]">{formatMemberCode(code)}</span>}
           </p>
         )}
       </div>

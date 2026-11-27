@@ -60,7 +60,7 @@ const FOOTER_SECTORS = ['restaurants', 'delivery', 'hotels', 'healthcare', 'beau
 
 
 /**
- * Site footer — "Ritim" design (CLAUDE.md §62): a plain deep-green frame
+ * Site footer — "Ritim" design (CLAUDE.md §62): a plain deep-purple frame
  * around a white 48 px-radius card holding the site map, the "how can we
  * help" row, language / social / newsletter, footnotes and the legal rail.
  * Nothing under the card (no gradient, dot pattern, AI-ask icons or giant

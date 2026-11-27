@@ -357,17 +357,17 @@ export default async function AdminDashboardPage() {
       />
 
       {/* Mobile-only "SİSTEM NABZI" hero (mobile-screens-2.jsx MAdminHome line 419-435 1:1) */}
-      <section className="md:hidden rounded-[20px] bg-pn-ink p-[18px] text-white">
-        <span className="text-[13px] font-medium text-pn-accent" style={{ fontSize: 9 }}>SİSTEM NABZI</span>
+      <section className="md:hidden rounded-[20px] bg-pn-accent p-[18px] text-white">
+        <span className="text-[13px] font-medium text-white/80" style={{ fontSize: 9 }}>SİSTEM NABZI</span>
         <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
           {formatUsd(mrr)}
         </div>
-        <div className="text-[12px] text-white/60">
+        <div className="text-[12px] text-white/80">
           Aylık tekrarlayan gelir (tahmini)
           {mrrThirtyDaysAgo > 0 && (
             <>
               {' · '}
-              <span className={mrrDeltaKind === 'up' ? 'text-pn-accent' : mrrDeltaKind === 'down' ? 'text-[#FB7185]' : ''}>
+              <span className={mrrDeltaKind === 'up' ? 'text-[#C8F7D2]' : mrrDeltaKind === 'down' ? 'text-[#FFC4C0]' : ''}>
                 {mrrDeltaPct >= 0 ? '+' : ''}
                 {mrrDeltaPct}%
               </span>
@@ -403,7 +403,7 @@ export default async function AdminDashboardPage() {
           deltaKind={mrrDeltaKind}
           deltaSuffix={mrrDeltaSuffix}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrr > 0 ? '#78FC90' : undefined}
+          accent={mrr > 0 ? '#5D3EBC' : undefined}
         />
         <StatCard
           label="Aktif denemeler"

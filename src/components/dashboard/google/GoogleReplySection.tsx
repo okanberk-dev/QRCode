@@ -738,7 +738,7 @@ export function GoogleReplySection({
                         : ['Every Google review in one list', 'AI drafts in the review language', 'Approved bulk replies for 4–5★']
                       ).map((t) => (
                         <li key={t} className="flex items-start gap-2">
-                          <CheckCircle2 size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-[#65A30D]" />
+                          <CheckCircle2 size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-[#23863A]" />
                           {t}
                         </li>
                       ))}
@@ -918,7 +918,7 @@ export function GoogleReplySection({
             <div className="py-6 px-4 rounded-[24px] bg-pn-accent-soft/40 border border-pn-accent/50">
               <div className="flex items-start gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent ">
-                  <Building2 size={20} strokeWidth={2} className="text-pn-ink" />
+                  <Building2 size={20} strokeWidth={2} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="bz-h-tight text-[15px] text-pn-ink">
@@ -1023,7 +1023,7 @@ export function GoogleReplySection({
             <div className="py-6 px-4 rounded-[24px] bg-pn-accent-soft/40 border border-pn-accent/50">
               <div className="flex items-start gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent ">
-                  <MapPin size={20} strokeWidth={2} className="text-pn-ink" />
+                  <MapPin size={20} strokeWidth={2} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="bz-h-tight text-[15px] text-pn-ink">

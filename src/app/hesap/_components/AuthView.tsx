@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { ACCOUNT_COPY, accountError, accountLegalLinks, customerApi, errorCode, type AccountLocale } from '../account-copy';
+import { BTN_PRIMARY, BTN_SECONDARY, CARD, CHECKBOX, INPUT, LINK, MUTED, NOTICE_ERROR, NOTICE_WARN, SelectBox } from './ui';
 
 type Mode = 'login' | 'register';
 
@@ -208,30 +209,30 @@ export default function AuthView({
   };
 
   const consentBlock = (
-    <div className="space-y-2.5 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3.5 text-[13px] leading-snug text-[#404040]">
+    <div className="space-y-3 rounded-[20px] bg-white p-4 text-[13.5px] leading-snug text-[#404040] sm:bg-[#F6F6F6]">
       <label className="flex cursor-pointer items-start gap-2.5">
-        <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]" checked={form.terms} onChange={(e) => set('terms', e.target.checked)} required />
+        <input type="checkbox" className={CHECKBOX} checked={form.terms} onChange={(e) => set('terms', e.target.checked)} required />
         <span>
           {c.consentTerms}{' '}
-          <a href={legal.terms} target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
+          <a href={legal.terms} target="_blank" rel="noopener" className="font-medium text-[#5D3EBC] underline underline-offset-2">
             {c.terms}
           </a>
         </span>
       </label>
       <label className="flex cursor-pointer items-start gap-2.5">
-        <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]" checked={form.privacy} onChange={(e) => set('privacy', e.target.checked)} required />
+        <input type="checkbox" className={CHECKBOX} checked={form.privacy} onChange={(e) => set('privacy', e.target.checked)} required />
         <span>
           {c.consentPrivacy}{' '}
-          <a href={legal.privacy} target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
+          <a href={legal.privacy} target="_blank" rel="noopener" className="font-medium text-[#5D3EBC] underline underline-offset-2">
             {c.privacy}
           </a>
         </span>
       </label>
       <label className="flex cursor-pointer items-start gap-2.5">
-        <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} />
+        <input type="checkbox" className={CHECKBOX} checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} />
         <span>
           {c.marketing}{' '}
-          <a href={legal.commercial} target="_blank" rel="noopener" className="underline underline-offset-2">
+          <a href={legal.commercial} target="_blank" rel="noopener" className="text-[#5D3EBC] underline underline-offset-2">
             ETK
           </a>
         </span>
@@ -242,10 +243,10 @@ export default function AuthView({
   const nameFields = (
     <div className="grid grid-cols-2 gap-3">
       <Labeled label={c.firstName} id="acc-first">
-        <input id="acc-first" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} className="bz-input w-full" autoComplete="given-name" autoCapitalize="words" enterKeyHint="next" required maxLength={40} />
+        <input id="acc-first" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} className={`${INPUT} w-full`} autoComplete="given-name" autoCapitalize="words" enterKeyHint="next" required maxLength={40} />
       </Labeled>
       <Labeled label={c.lastName} id="acc-last">
-        <input id="acc-last" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} className="bz-input w-full" autoComplete="family-name" autoCapitalize="words" enterKeyHint="next" required maxLength={40} />
+        <input id="acc-last" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} className={`${INPUT} w-full`} autoComplete="family-name" autoCapitalize="words" enterKeyHint="next" required maxLength={40} />
       </Labeled>
     </div>
   );
@@ -253,19 +254,19 @@ export default function AuthView({
   const extraFields = (
     <>
       <Labeled label={c.phone} id="acc-phone" hint={c.phoneHint}>
-        <input id="acc-phone" value={form.phone} onChange={(e) => set('phone', e.target.value)} className="bz-input w-full" inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" enterKeyHint="next" />
+        <input id="acc-phone" value={form.phone} onChange={(e) => set('phone', e.target.value)} className={`${INPUT} w-full`} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" enterKeyHint="next" />
       </Labeled>
       <Labeled label={c.birthday} id="acc-bday" hint={c.birthdayHint}>
         <div className="flex gap-2">
-          <input id="acc-bday" value={form.birthDay} onChange={(e) => set('birthDay', e.target.value.replace(/\D/g, '').slice(0, 2))} className="bz-input w-20" inputMode="numeric" placeholder={c.day} aria-label={c.day} />
-          <select value={form.birthMonth} onChange={(e) => set('birthMonth', e.target.value)} className="bz-input min-w-0 flex-1" aria-label={c.month}>
+          <input id="acc-bday" value={form.birthDay} onChange={(e) => set('birthDay', e.target.value.replace(/\D/g, '').slice(0, 2))} className={`${INPUT} w-20 text-center`} inputMode="numeric" placeholder={c.day} aria-label={c.day} />
+          <SelectBox value={form.birthMonth} onChange={(e) => set('birthMonth', e.target.value)} className="min-w-0 flex-1" aria-label={c.month}>
             <option value="">{c.month}</option>
             {c.months.map((m, i) => (
               <option key={m} value={String(i + 1)}>
                 {m}
               </option>
             ))}
-          </select>
+          </SelectBox>
         </div>
       </Labeled>
     </>
@@ -273,21 +274,21 @@ export default function AuthView({
 
   if (google) {
     return (
-      <section className="rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-[0_20px_60px_-30px_rgba(10,10,10,0.25)] sm:p-7">
-        <h1 className="text-[24px] font-semibold tracking-[-0.02em]">{c.googleConsentTitle}</h1>
-        <p className="mt-1.5 text-[14px] text-[#525252]">{c.googleConsentLead}</p>
+      <section className={CARD}>
+        <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.02em] sm:text-[26px]">{c.googleConsentTitle}</h1>
+        <p className={`mt-1.5 text-[14.5px] leading-relaxed ${MUTED}`}>{c.googleConsentLead}</p>
         <form onSubmit={finishGoogleSignup} className="mt-5 space-y-4">
-          <p className="rounded-xl bg-[#F5F5F5] px-3 py-2 text-[13px] text-[#525252]">{google.profile.email}</p>
+          <p className="truncate rounded-full bg-white px-4 py-3 text-[14px] text-[#525252] sm:bg-[#F6F6F6]">{google.profile.email}</p>
           {nameFields}
           {extraFields}
           {consentBlock}
           {error && <ErrorLine text={error} />}
           <div className="flex gap-2">
-            <button type="button" className="bz-btn-ghost" onClick={() => { setGoogle(null); setError(null); }}>
+            <button type="button" className={BTN_SECONDARY} onClick={() => { setGoogle(null); setError(null); }}>
               {c.back}
             </button>
-            <button type="submit" className="bz-btn-primary flex-1 justify-center" disabled={busy !== null}>
-              {busy === 'form' && <Loader2 size={15} className="mr-1.5 inline animate-spin" />}
+            <button type="submit" className={`${BTN_PRIMARY} min-w-0 flex-1`} disabled={busy !== null}>
+              {busy === 'form' && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
               {c.googleContinue}
             </button>
           </div>
@@ -297,53 +298,53 @@ export default function AuthView({
   }
 
   return (
-    <section className="rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-[0_20px_60px_-30px_rgba(10,10,10,0.25)] sm:p-7">
-      {intro && <p className="mb-3 inline-flex rounded-full bg-[#EAF9B8] px-3 py-1 text-[12.5px] font-medium text-[#3F5A0B]">{intro}</p>}
-      <h1 className="text-[24px] font-semibold tracking-[-0.02em] sm:text-[26px]">{mode === 'login' ? c.loginTitle : c.registerTitle}</h1>
-      <p className="mt-1.5 text-[14px] text-[#525252]">{mode === 'login' ? c.loginLead : c.registerLead}</p>
+    <section className={CARD}>
+      {intro && <p className="mb-4 inline-flex rounded-full bg-[#EFEAFB] px-3 py-1.5 text-[13px] font-medium text-[#5D3EBC]">{intro}</p>}
+      <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] sm:text-[28px]">{mode === 'login' ? c.loginTitle : c.registerTitle}</h1>
+      <p className={`mt-1.5 text-[14.5px] leading-relaxed ${MUTED}`}>{mode === 'login' ? c.loginLead : c.registerLead}</p>
 
       <button
         type="button"
         onClick={() => void startGoogle()}
         disabled={busy !== null}
-        className="mt-5 flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-[#DADADA] bg-white text-[15px] font-medium transition hover:border-[#0A0A0A] disabled:opacity-60"
+        className="mt-6 flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-[#747775] bg-white text-[15px] font-medium text-[#1F1F1F] transition-colors duration-200 hover:bg-[#F8F8F8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2 disabled:opacity-60"
       >
         {busy === 'google' ? <Loader2 size={18} className="animate-spin" /> : <GoogleMark />}
         {busy === 'google' ? c.googleBusy : c.google}
       </button>
-      {notice && <p className="mt-2 text-[13px] text-[#92400E]">{notice}</p>}
+      {notice && <p className={`mt-3 ${NOTICE_WARN}`}>{notice}</p>}
 
-      <div className="my-5 flex items-center gap-3 text-[12px] uppercase tracking-[0.14em] text-[#A3A3A3]">
-        <span className="h-px flex-1 bg-[#EDEDED]" />
+      <div className={`my-6 flex items-center gap-3 text-[13px] ${MUTED}`}>
+        <span className="h-px flex-1 bg-[#E3E3E3]" />
         {c.or}
-        <span className="h-px flex-1 bg-[#EDEDED]" />
+        <span className="h-px flex-1 bg-[#E3E3E3]" />
       </div>
 
       <form onSubmit={submit} className="space-y-4" noValidate={false}>
         {mode === 'register' && nameFields}
         <Labeled label={c.email} id="acc-email">
-          <input id="acc-email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} className="bz-input w-full" autoComplete="email" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} enterKeyHint="next" required />
+          <input id="acc-email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} className={`${INPUT} w-full`} autoComplete="email" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} enterKeyHint="next" required />
         </Labeled>
         <Labeled label={c.password} id="acc-password" hint={mode === 'register' ? c.passwordHint : undefined}>
-          <input id="acc-password" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} className="bz-input w-full" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={mode === 'register' ? 8 : undefined} enterKeyHint={mode === 'login' ? 'go' : 'next'} required />
+          <input id="acc-password" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} className={`${INPUT} w-full`} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={mode === 'register' ? 8 : undefined} enterKeyHint={mode === 'login' ? 'go' : 'next'} required />
         </Labeled>
         {mode === 'register' && extraFields}
         {mode === 'register' && consentBlock}
         {/* Honeypot: hidden from people. */}
         <input type="text" name="website" value={form.website} onChange={(e) => set('website', e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         {error && <ErrorLine text={error} />}
-        <button type="submit" className="bz-btn-primary h-12 w-full justify-center text-[15px]" disabled={busy !== null}>
-          {busy === 'form' && <Loader2 size={15} className="mr-1.5 inline animate-spin" />}
+        <button type="submit" className={`${BTN_PRIMARY} w-full`} disabled={busy !== null}>
+          {busy === 'form' && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
           {busy === 'form' ? c.working : mode === 'login' ? c.login : c.register}
         </button>
       </form>
 
-      <div className="mt-5 flex flex-col gap-2 text-[13.5px] text-[#525252] sm:flex-row sm:items-center sm:justify-between">
+      <div className={`mt-6 flex flex-col gap-3 text-[14px] ${MUTED} sm:flex-row sm:items-center sm:justify-between`}>
         <span>
           {mode === 'login' ? c.toRegister : c.toLogin}{' '}
           <button
             type="button"
-            className="font-semibold text-[#0A0A0A] underline underline-offset-2"
+            className={LINK}
             onClick={() => {
               setMode(mode === 'login' ? 'register' : 'login');
               setError(null);
@@ -353,7 +354,7 @@ export default function AuthView({
           </button>
         </span>
         {mode === 'login' && (
-          <Link href={`/hesap/sifre${locale === 'en' ? '?lang=en' : ''}`} className="text-[#525252] underline underline-offset-2 hover:text-[#0A0A0A]">
+          <Link href={`/hesap/sifre${locale === 'en' ? '?lang=en' : ''}`} className={`${LINK} self-start`}>
             {c.forgot}
           </Link>
         )}
@@ -365,18 +366,18 @@ export default function AuthView({
 export function Labeled({ label, id, hint, children }: { label: string; id: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-[13px] font-medium text-[#262626]">
+      <label htmlFor={id} className="mb-1.5 block px-1 text-[14px] font-medium text-[#111110]">
         {label}
       </label>
       {children}
-      {hint && <p className="mt-1 text-[12px] text-[#737373]">{hint}</p>}
+      {hint && <p className={`mt-1.5 px-1 text-[12.5px] leading-snug ${MUTED}`}>{hint}</p>}
     </div>
   );
 }
 
 export function ErrorLine({ text }: { text: string }) {
   return (
-    <p role="alert" className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[13px] text-[#B91C1C]">
+    <p role="alert" className={NOTICE_ERROR}>
       {text}
     </p>
   );

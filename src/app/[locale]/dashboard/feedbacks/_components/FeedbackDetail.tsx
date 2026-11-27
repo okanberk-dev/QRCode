@@ -268,7 +268,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             </blockquote>
           ) : active.redirected ? (
             <div className="mt-5 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 text-[14px] leading-[1.6] text-[#404040]">
-              <span className="mb-1.5 inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-[#365314]">
+              <span className="mb-1.5 inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-accent">
                 {redirectBadgeLabel(active.platform, isTr)}
               </span>
               <p>

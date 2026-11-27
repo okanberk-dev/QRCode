@@ -174,10 +174,10 @@ function RelativeTime({ iso, locale, full = false }: { iso: string; locale: UiLo
 function StatusBadge({ status, locale }: { status: PlacesProfile['businessStatus']; locale: UiLocale }) {
   const copy = useCopy(locale);
   if (status === 'UNKNOWN') return null;
-  // Light palette on the dark hero — never white text on graphite for status.
+  // Light palette on the deep purple hero — status chips keep their meaning.
   const tone =
     status === 'OPERATIONAL'
-      ? { cls: 'bg-pn-accent text-pn-ink', label: copy.operating }
+      ? { cls: 'bg-[#E7F6EA] text-[#23863A]', label: copy.operating }
       : status === 'CLOSED_TEMPORARILY'
         ? { cls: 'bg-[#FFFBEB] text-[#92400E]', label: copy.tempClosed }
         : { cls: 'bg-[#FEF2F2] text-[#991B1B]', label: copy.permClosed };
@@ -190,7 +190,7 @@ function StatusBadge({ status, locale }: { status: PlacesProfile['businessStatus
 }
 
 const ON_DARK_PILL =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/30 px-4 text-[13px] font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/30 px-4 text-[13px] font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RatingCard (dark hero)
@@ -238,9 +238,9 @@ export function RatingCard({
   return (
     <section
       aria-labelledby={headingId}
-      className={`relative overflow-hidden rounded-[18px] bg-pn-ink p-5 text-white sm:p-6 ${className}`}
+      className={`relative overflow-hidden rounded-[18px] bg-[#3B1F8F] p-5 text-white sm:p-6 ${className}`}
     >
-      <p className="text-[13px] font-medium text-pn-accent">{copy.eyebrow}</p>
+      <p className="text-[13px] font-medium text-white">{copy.eyebrow}</p>
       <h2
         id={headingId}
         ref={headingRef as RefObject<HTMLHeadingElement>}
@@ -265,7 +265,7 @@ export function RatingCard({
         {ratingText !== null && profile.rating !== null ? (
           <>
             <div
-              className="bz-h-tight tabular-nums text-[64px] leading-[0.9] text-pn-accent sm:text-[80px]"
+              className="bz-h-tight tabular-nums text-[64px] leading-[0.9] text-white sm:text-[80px]"
               style={{ letterSpacing: '-0.04em' }}
             >
               {ratingText}
@@ -296,7 +296,7 @@ export function RatingCard({
           <button
             type="button"
             onClick={onChange}
-            className="inline-flex min-h-11 items-center px-2 text-left text-[13px] text-white underline underline-offset-2 hover:text-pn-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
+            className="inline-flex min-h-11 items-center px-2 text-left text-[13px] text-white underline underline-offset-2 hover:decoration-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             {copy.change}
           </button>

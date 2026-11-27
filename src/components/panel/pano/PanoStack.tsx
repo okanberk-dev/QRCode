@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 
 /**
  * Stacked cards (docs/design/DASHBOARD_DESIGN.md §5.4 "Investments"): rows
- * that overlap like a fanned deck — the first black, the second lime, the
- * rest white with a hairline — each with a round icon, a title over a grey
+ * that overlap like a fanned deck — the first deep purple, the second
+ * lavender, the rest white with a hairline — each with a round icon, a title over a grey
  * line and a value on the right. Use for a short ranked list (≤ 4 items).
  */
 
@@ -61,17 +61,17 @@ export function PanoStack({ items, className = '' }: { items: PanoStackItem[]; c
 }
 
 /**
- * Green shortcut tile (§5.4 "Referral program / PRO version"): big round icon
- * on top, a two-line label at the bottom left.
+ * Lavender shortcut tile (§5.4 "Referral program / PRO version"): big purple
+ * icon circle on top, a two-line label at the bottom left.
  */
 export function PanoTile({ href, icon, label, badge }: { href: string; icon: ReactNode; label: ReactNode; badge?: ReactNode }) {
   return (
     <Link href={href} className="pn-tile group">
       <span className="flex items-start justify-between gap-2">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-pn-ink text-pn-accent transition-transform duration-300 group-hover:-rotate-6" aria-hidden="true">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-pn-accent text-white transition-transform duration-300 group-hover:-rotate-6" aria-hidden="true">
           {icon}
         </span>
-        {badge && <span className="rounded-full bg-pn-ink px-2.5 py-1 text-[12px] font-medium text-white">{badge}</span>}
+        {badge && <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-medium text-pn-accent">{badge}</span>}
       </span>
       <span className="pn-tile-label">{label}</span>
     </Link>

@@ -263,7 +263,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
       >
         <div className="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
           <div className="flex items-start gap-3 lg:max-w-[640px]">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-pn-accent">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white">
               <Wand2 size={18} strokeWidth={2.2} />
             </span>
             <div>
@@ -358,7 +358,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
           kısa kurallar. CLAUDE.md §11 Pulse Voice — net + actionable. */}
       <section
         aria-label={isTr ? 'İpuçları' : 'Tips'}
-        className="overflow-hidden rounded-[24px] bg-pn-ink text-white"
+        className="overflow-hidden rounded-[24px] bg-[#3B1F8F] text-white"
       >
         <div className="border-b border-white/10 p-5 sm:p-6">
           <h2 className="bz-h-tight text-[20px] sm:text-[22px]">
@@ -379,7 +379,7 @@ export default function GuidePage({ params }: { params: Promise<{ locale: string
               } ${i % 3 !== 0 ? 'lg:border-l' : 'lg:border-l-0'}`}
             >
               <h3 className="flex items-center gap-1.5 text-[14px] font-medium text-white">
-                <span className="shrink-0 text-pn-accent" aria-hidden="true">
+                <span className="shrink-0 text-white" aria-hidden="true">
                   {tip.icon}
                 </span>
                 {isTr ? tip.titleTr : tip.titleEn}

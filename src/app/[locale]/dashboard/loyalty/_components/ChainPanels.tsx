@@ -88,7 +88,7 @@ export function BranchesCard({
   return (
     <section className="bz-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-ink text-pn-accent">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent text-white">
           <Building2 size={17} aria-hidden="true" />
         </span>
         <div className="min-w-0">
@@ -212,7 +212,7 @@ export function JoinChainCard({
   return (
     <section className="bz-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent-soft text-[#3F4A00]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-pn-accent-soft text-pn-accent">
           <Link2 size={17} aria-hidden="true" />
         </span>
         <div className="min-w-0">

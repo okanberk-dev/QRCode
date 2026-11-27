@@ -161,7 +161,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
                   aria-checked={on}
                   disabled={disabled}
                   onClick={() => set('theme', th.id)}
-                  className={`rounded-[20px] border p-3 text-left transition ${on ? 'border-pn-ink ring-2 ring-pn-accent' : 'border-pn-line hover:border-[#A3A3A3]'}`}
+                  className={`rounded-[20px] border p-3 text-left transition ${on ? 'border-pn-accent ring-2 ring-pn-accent' : 'border-pn-line hover:border-[#A3A3A3]'}`}
                 >
                   <span className="flex h-12 overflow-hidden rounded-[14px] border border-black/5" style={{ background: pal.bg }} aria-hidden>
                     <span className="h-full w-1/3" style={{ background: pal.band }} />

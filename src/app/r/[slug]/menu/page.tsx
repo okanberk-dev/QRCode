@@ -160,9 +160,9 @@ export default function PublicMenuPage() {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#EDEDED] border-t-[#C6F24E]" />
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#EBEBEB] border-t-[#5D3EBC]" />
           <span
-            className="text-[10px] uppercase text-[#A3A3A3]"
+            className="text-[10px] uppercase text-[#737373]"
             style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.18em' }}
           >
             Buaze
@@ -174,11 +174,11 @@ export default function PublicMenuPage() {
 
   if (!data) return notFound();
 
-  const themeColor = data.menuAccentColor || data.primaryColor || '#0A0A0A';
+  const themeColor = data.menuAccentColor || data.primaryColor || '#5D3EBC';
 
   return (
     <div
-      className="flex min-h-screen flex-col bg-white selection:bg-[#EAF9B8]"
+      className="flex min-h-screen flex-col bg-white selection:bg-[#EFEAFB]"
       // Restaurant menu = owner's content: keep Space Grotesk (Clash Display license, §11).
       style={{ '--font-heading': 'var(--font-menu-heading)' } as CSSProperties}
     >
@@ -187,7 +187,7 @@ export default function PublicMenuPage() {
       </a>
 
       {/* ── Sticky Header ── */}
-      <header className="sticky top-0 z-50 border-b border-[#EDEDED] bg-white/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[#EBEBEB] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-xl items-center justify-between px-5">
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -197,7 +197,7 @@ export default function PublicMenuPage() {
             >
               <ArrowLeft size={18} strokeWidth={2} />
             </button>
-            <h1 className="bz-h-tight truncate text-[18px] text-[#0A0A0A]">{data.name}</h1>
+            <h1 className="bz-h-tight truncate text-[18px] text-[#111110]">{data.name}</h1>
           </div>
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-base font-medium text-white shadow-sm"
@@ -221,7 +221,7 @@ export default function PublicMenuPage() {
           <div className="relative">
             <Search
               size={16}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#737373]"
             />
             <input
               type="text"
@@ -260,10 +260,10 @@ export default function PublicMenuPage() {
                       window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
                     }
                   }}
-                  className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-[12px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+                  className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-[12px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-1 ${
                     active
-                      ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                      : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
+                      ? 'border-[#5D3EBC] bg-[#5D3EBC] text-white'
+                      : 'border-[#EBEBEB] bg-white text-[#525252] hover:border-[#5D3EBC] hover:text-[#5D3EBC]'
                   }`}
                 >
                   {cat.name}
@@ -283,7 +283,7 @@ export default function PublicMenuPage() {
         {filteredCategories.length === 0 ? (
           <div className="py-16">
             <EmptyState
-              icon={<Search size={28} className="text-[#A3A3A3]" />}
+              icon={<Search size={28} className="text-[#737373]" />}
               title={locale === 'tr' ? 'Sonuç bulunamadı' : 'No results'}
               body={
                 locale === 'tr'
@@ -306,7 +306,7 @@ export default function PublicMenuPage() {
                   style={{ backgroundColor: themeColor }}
                 />
                 <div className="min-w-0">
-                  <h2 className="bz-h-tight-2 text-[22px] text-[#0A0A0A]">{cat.name}</h2>
+                  <h2 className="bz-h-tight-2 text-[22px] text-[#111110]">{cat.name}</h2>
                   {cat.description && (
                     <p className="mt-0.5 text-[12px] text-[#737373]">{cat.description}</p>
                   )}
@@ -324,11 +324,11 @@ export default function PublicMenuPage() {
                       setSelectedItem(item);
                       analytics.trackProductClick(item.id, cat.id);
                     }}
-                    className="group relative flex w-full gap-4 rounded-3xl border border-[#EDEDED] bg-white p-4 text-left transition-all hover:border-[#0A0A0A] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                    className="group relative flex w-full gap-4 rounded-3xl border border-[#EBEBEB] bg-white p-4 text-left transition-all hover:border-[#5D3EBC] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2"
                   >
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-col gap-1">
-                        <h3 className="bz-h-tight text-[15px] text-[#0A0A0A]">{item.name}</h3>
+                        <h3 className="bz-h-tight text-[15px] text-[#111110]">{item.name}</h3>
                         {item.badges && item.badges.length > 0 && (
                           <div className="flex flex-wrap gap-1">
                             {item.badges.map((badge, idx) => (
@@ -344,7 +344,7 @@ export default function PublicMenuPage() {
                       )}
                       <div className="pt-1">
                         <span
-                          className="text-[15px] text-[#0A0A0A]"
+                          className="text-[15px] text-[#111110]"
                           style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}
                         >
                           {(item.priceCents / 100).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', {
@@ -356,7 +356,7 @@ export default function PublicMenuPage() {
                     </div>
 
                     {item.imageUrl && (
-                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[#EDEDED]">
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[#EBEBEB]">
                         <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
                         {item.isOutOfStock && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/45 backdrop-blur-[1px]">
@@ -380,13 +380,13 @@ export default function PublicMenuPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="mt-auto border-t border-[#EDEDED] px-6 py-8">
+      <footer className="mt-auto border-t border-[#EBEBEB] px-6 py-8">
         <div
-          className="mx-auto flex max-w-xl items-center justify-center gap-2 text-[10px] uppercase text-[#A3A3A3]"
+          className="mx-auto flex max-w-xl items-center justify-center gap-2 text-[10px] uppercase text-[#737373]"
           style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.18em' }}
         >
           <span>Powered by</span>
-          <span className="text-[#0A0A0A]">Buaze</span>
+          <span className="text-[#111110]">Buaze</span>
         </div>
       </footer>
 
@@ -407,7 +407,7 @@ export default function PublicMenuPage() {
               {selectedItem.imageUrl ? (
                 <img src={selectedItem.imageUrl} alt={selectedItem.name} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[#FAFAFA] text-[#D4D4D4]">
+                <div className="flex h-full w-full items-center justify-center bg-[#F6F6F6] text-[#D4D4D4]">
                   <Utensils size={56} strokeWidth={1.5} />
                 </div>
               )}
@@ -415,7 +415,7 @@ export default function PublicMenuPage() {
                 type="button"
                 onClick={() => setSelectedItem(null)}
                 aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
-                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors hover:bg-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors hover:bg-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC]"
               >
                 <X size={18} strokeWidth={2} />
               </button>
@@ -424,7 +424,7 @@ export default function PublicMenuPage() {
             <div className="space-y-5 p-6 sm:p-7">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 id="menu-item-title" className="bz-h-tight-2 text-[24px] text-[#0A0A0A]">
+                  <h2 id="menu-item-title" className="bz-h-tight-2 text-[24px] text-[#111110]">
                     {selectedItem.name}
                   </h2>
                   {selectedItem.isOutOfStock && (
@@ -441,7 +441,7 @@ export default function PublicMenuPage() {
               </div>
 
               {selectedItem.description && (
-                <div className="space-y-1.5 border-t border-[#EDEDED] pt-4">
+                <div className="space-y-1.5 border-t border-[#EBEBEB] pt-4">
                   <span className="pulse-eyebrow text-[#737373]">
                     {locale === 'tr' ? 'Açıklama' : 'Description'}
                   </span>
@@ -451,13 +451,13 @@ export default function PublicMenuPage() {
                 </div>
               )}
 
-              <div className="flex items-end justify-between gap-3 border-t border-[#EDEDED] pt-4">
+              <div className="flex items-end justify-between gap-3 border-t border-[#EBEBEB] pt-4">
                 <div className="space-y-1">
                   <span className="pulse-eyebrow text-[#737373]">
                     {locale === 'tr' ? 'Fiyat' : 'Price'}
                   </span>
                   <p
-                    className="text-[24px] text-[#0A0A0A]"
+                    className="text-[24px] text-[#111110]"
                     style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
                   >
                     {(selectedItem.priceCents / 100).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', {

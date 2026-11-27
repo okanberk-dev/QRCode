@@ -113,7 +113,7 @@ export function BusinessWebsiteSettings({
                   onClick={() => setTheme(t)}
                   className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-[10px] transition-colors sm:min-h-0 ${
                     theme === t
-                      ? 'bg-pn-ink text-white'
+                      ? 'bg-pn-accent text-white'
                       : 'text-[#525252] hover:bg-pn-canvas'
                   }`}
                   aria-pressed={theme === t}
@@ -146,7 +146,7 @@ export function BusinessWebsiteSettings({
                   onClick={() => setVariant(v.id)}
                   className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-[10px] transition-colors sm:min-h-0 ${
                     variant === v.id
-                      ? 'bg-pn-ink text-white'
+                      ? 'bg-pn-accent text-white'
                       : 'text-[#525252] hover:bg-pn-canvas'
                   }`}
                   aria-pressed={variant === v.id}
@@ -173,7 +173,7 @@ export function BusinessWebsiteSettings({
                   onClick={() => setScriptMode(m)}
                   className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-[10px] transition-colors sm:min-h-0 ${
                     scriptMode === m
-                      ? 'bg-pn-ink text-white'
+                      ? 'bg-pn-accent text-white'
                       : 'text-[#525252] hover:bg-pn-canvas'
                   }`}
                   aria-pressed={scriptMode === m}

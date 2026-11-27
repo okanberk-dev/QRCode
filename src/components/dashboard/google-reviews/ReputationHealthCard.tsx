@@ -43,8 +43,8 @@ const SEVERITY_STYLES: Record<RecommendationSeverity, { bg: string; fg: string; 
     label: { tr: 'UYARI', en: 'WARNING' },
   },
   tip: {
-    bg: '#E6FDEA',
-    fg: '#000000',
+    bg: '#EFEAFB',
+    fg: '#5D3EBC',
     label: { tr: 'ÖNERİ', en: 'TIP' },
   },
 };
@@ -52,7 +52,7 @@ const SEVERITY_STYLES: Record<RecommendationSeverity, { bg: string; fg: string; 
 function scoreColor(score: number | null): string {
   if (score == null) return '#A3A3A3';
   if (score >= 85) return '#16A34A';
-  if (score >= 70) return '#78FC90';
+  if (score >= 70) return '#5D3EBC';
   if (score >= 50) return '#F59E0B';
   return '#DC2626';
 }

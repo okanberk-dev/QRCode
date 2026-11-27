@@ -4,7 +4,7 @@
 // `className` inside a relatively positioned parent. Decorative only.
 import type { CSSProperties } from 'react';
 
-const COLOURS = ['#C6F24E', '#0A0A0A', '#FFFFFF', '#F59E0B', '#EC4899', '#38BDF8'];
+const COLOURS = ['#5D3EBC', '#9B87E0', '#DCD3F6', '#F59E0B', '#EC4899', '#38BDF8'];
 
 export default function ConfettiBurst({
   count = 36,

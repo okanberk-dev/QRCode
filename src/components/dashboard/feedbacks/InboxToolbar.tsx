@@ -122,7 +122,7 @@ function CountBadge({ count, label }: { count: number; label: string }) {
   if (count <= 0) return null;
   return (
     <span
-      className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-pn-accent px-1 text-[12px] font-medium leading-none text-pn-ink"
+      className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-pn-accent px-1 text-[12px] font-medium leading-none text-white"
       aria-label={label}
     >
       {count}
@@ -206,7 +206,7 @@ export function InboxToolbar({
               // Explicit classes, not `bz-input`: the bz-* rules are unlayered,
               // so they would beat `pl-9` / `rounded-full` and the text would
               // run under the search icon.
-              className="h-11 w-full rounded-full border border-pn-line bg-white pl-9 pr-3 text-[16px] text-pn-ink outline-none transition-[border-color,box-shadow] placeholder:text-[#A3A3A3] hover:border-pn-line-strong focus:border-pn-ink focus:shadow-[0_0_0_3px_rgba(120, 252, 144,0.35)] sm:text-[13px] md:h-[34px]"
+              className="h-11 w-full rounded-full border border-pn-line bg-white pl-9 pr-3 text-[16px] text-pn-ink outline-none transition-[border-color,box-shadow] placeholder:text-[#A3A3A3] hover:border-pn-line-strong focus:border-pn-ink focus:shadow-[0_0_0_3px_rgba(93,62,188,0.35)] sm:text-[13px] md:h-[34px]"
             />
           </div>
 
@@ -227,7 +227,7 @@ export function InboxToolbar({
             {allFiltersCount > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-pn-accent px-1 text-[12px] font-medium leading-none text-pn-ink"
+                className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-pn-accent px-1 text-[12px] font-medium leading-none text-white"
               >
                 {allFiltersCount}
               </span>

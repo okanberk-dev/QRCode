@@ -94,9 +94,9 @@ const COPY = {
     palette: 'Renk paleti',
     colors: [
       { name: 'Grafit', hex: '#0A0A0A', use: 'Metin ve koyu yüzeyler' },
-      { name: 'Lime', hex: '#C6F24E', use: 'Vurgu rengi ve ana düğmeler' },
-      { name: 'Koyu lime', hex: '#A8D62E', use: 'Üzerine gelme durumu' },
-      { name: 'Açık lime', hex: '#EAF9B8', use: 'Yumuşak arka planlar' },
+      { name: 'Mor', hex: '#5D3EBC', use: 'Vurgu rengi ve ana düğmeler (üzerinde beyaz metin)' },
+      { name: 'Koyu mor', hex: '#4C2FA3', use: 'Üzerine gelme durumu' },
+      { name: 'Açık lavanta', hex: '#EFEAFB', use: 'Yumuşak arka planlar' },
     ],
     profilesTitle: 'Bağımsız profiller',
     profilesLead: "Buaze'nin bağımsız kaynaklardaki kayıtları.",
@@ -160,9 +160,9 @@ const COPY = {
     palette: 'Colour palette',
     colors: [
       { name: 'Graphite', hex: '#0A0A0A', use: 'Text and dark surfaces' },
-      { name: 'Lime', hex: '#C6F24E', use: 'Accent and primary buttons' },
-      { name: 'Lime deep', hex: '#A8D62E', use: 'Hover state' },
-      { name: 'Lime soft', hex: '#EAF9B8', use: 'Soft backgrounds' },
+      { name: 'Purple', hex: '#5D3EBC', use: 'Accent and primary buttons (white text on top)' },
+      { name: 'Purple deep', hex: '#4C2FA3', use: 'Hover state' },
+      { name: 'Lavender soft', hex: '#EFEAFB', use: 'Soft backgrounds' },
     ],
     profilesTitle: 'Independent profiles',
     profilesLead: "Buaze's entries on independent sites.",
@@ -234,7 +234,7 @@ export default async function PressPage({
 
   const mailHref = `mailto:${company.supportEmail}?subject=${encodeURIComponent(copy.mailSubject)}`;
   const linkClass =
-    'font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] rounded-sm';
+    'font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] rounded-sm';
 
   const facts: Array<{ term: string; value: ReactNode }> = [
     { term: copy.facts.brand, value: 'Buaze' },
@@ -376,7 +376,7 @@ export default async function PressPage({
                 <a
                   href="/buaze-logo.svg"
                   download="buaze-logo.svg"
-                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#D4D4D4] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#D4D4D4] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
                 >
                   <Download size={15} aria-hidden="true" />
                   {copy.logoDownload}
@@ -390,7 +390,7 @@ export default async function PressPage({
                 <a
                   href="/favicon.svg"
                   download="buaze-icon.svg"
-                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#D4D4D4] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[#D4D4D4] px-4 text-[14px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
                 >
                   <Download size={15} aria-hidden="true" />
                   {copy.iconDownload}
@@ -436,7 +436,7 @@ export default async function PressPage({
                       href={p.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex items-center justify-between gap-3 rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      className="group flex items-center justify-between gap-3 rounded-[20px] border border-[#EDEDED] bg-white p-6 transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
                     >
                       <span>
                         <span className="block text-[17px] font-semibold text-[#0A0A0A]">{p.label}</span>
@@ -456,23 +456,23 @@ export default async function PressPage({
         ) : null}
 
         {/* Press contact */}
-        <section aria-labelledby="press-contact-title" className="bg-[#C6F24E] py-[60px] sm:py-24">
+        <section aria-labelledby="press-contact-title" className="bg-[#5D3EBC] py-[60px] sm:py-24">
           <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-5 sm:px-10 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-[640px]">
-              <p className="pulse-eyebrow text-[#0A0A0A]">{copy.contactEyebrow}</p>
+              <p className="pulse-eyebrow text-white">{copy.contactEyebrow}</p>
               <h2
                 id="press-contact-title"
-                className="mt-4 text-balance text-[28px] leading-[1.08] text-[#0A0A0A] sm:text-[40px]"
+                className="mt-4 text-balance text-[28px] leading-[1.08] text-white sm:text-[40px]"
               >
                 {copy.contactTitle}
               </h2>
-              <p className="mt-5 text-pretty text-[16px] leading-[1.6] text-[#1A1A1A] sm:text-[18px]">
+              <p className="mt-5 text-pretty text-[16px] leading-[1.6] text-white/90 sm:text-[18px]">
                 {copy.contactBody} {SUPPORT_HOURS[lang]}
               </p>
             </div>
             <a
               href={mailHref}
-              className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[#0A0A0A] px-7 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C6F24E] lg:self-auto"
+              className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-white px-7 text-[15px] font-semibold text-[#5D3EBC] transition-colors hover:bg-[#EFEAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#5D3EBC] lg:self-auto"
             >
               <Mail size={16} aria-hidden="true" />
               {company.supportEmail}

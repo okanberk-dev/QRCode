@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 
-type LogoVariant = 'default' | 'on-dark' | 'on-lime';
+// 'on-lime' is kept as an alias of 'on-brand' for older callers (the brand
+// surface used to be lime; it is now Getir-style purple).
+type LogoVariant = 'default' | 'on-dark' | 'on-brand' | 'on-lime';
 
 interface BuazeLogoProps {
   size?: number;
@@ -11,8 +13,10 @@ interface BuazeLogoProps {
   imageUrl?: string | null;
 }
 
-// Pulse brand symbol — speech bubble with ECG pulse line + lime accent spark.
-// Graphite on pure surfaces, pure on graphite, graphite on lime.
+// Brand symbol — speech bubble with ECG pulse line + purple accent spark.
+// Graphite + purple spark on light surfaces, white + light-purple spark on
+// graphite / deep purple, white + lavender spark on the purple brand fill
+// (purple surfaces always carry white marks).
 // Falls back to SVG when imageUrl is missing, empty, not an absolute URL, or fails to load.
 export default function BuazeLogo({ size = 40, className = '', variant = 'default', imageUrl }: BuazeLogoProps) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -44,8 +48,10 @@ export default function BuazeLogo({ size = 40, className = '', variant = 'defaul
     );
   }
 
-  const fg = variant === 'on-dark' ? '#FFFFFF' : '#0A0A0A';
-  const accent = variant === 'on-lime' ? '#0A0A0A' : '#C6F24E';
+  const onBrand = variant === 'on-brand' || variant === 'on-lime';
+  const fg = variant === 'on-dark' || onBrand ? '#FFFFFF' : '#0A0A0A';
+  // #8C6CF0 keeps >= 4.5:1 on graphite and on the deep-purple footer frame.
+  const accent = onBrand ? '#DCD3F6' : variant === 'on-dark' ? '#8C6CF0' : '#5D3EBC';
   const stroke = 3.2;
 
   return (

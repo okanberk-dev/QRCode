@@ -266,7 +266,7 @@ function ToastBar({
             onDismiss();
           }}
           className={`h-11 shrink-0 rounded-[14px] px-3 text-[13px] font-medium pointer-fine:h-9 ${
-            error ? 'bg-white text-[#991B1B] ring-1 ring-[#FECACA]' : 'bg-pn-accent text-pn-ink'
+            error ? 'bg-white text-[#991B1B] ring-1 ring-[#FECACA]' : 'bg-pn-accent text-white'
           }`}
         >
           {toast.action.label}
@@ -276,7 +276,7 @@ function ToastBar({
         <button
           type="button"
           onClick={() => toast.undoId && onUndo(toast.undoId)}
-          className="h-11 shrink-0 rounded-[14px] bg-pn-accent px-3 pointer-fine:h-9 text-[13px] font-medium text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="h-11 shrink-0 rounded-[14px] bg-pn-accent px-3 pointer-fine:h-9 text-[13px] font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           {toast.undoLabel}
         </button>

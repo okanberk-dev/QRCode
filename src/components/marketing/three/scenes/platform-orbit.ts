@@ -148,17 +148,18 @@ export const createScene: SceneFactory = ({ canvas, gl, width, height, pixelRati
   const world = new Group();
   scene.add(world);
 
-  const lime = new Color('#C6F24E');
+  // Brand purple: lighter tone on dark so the glow stays visible on graphite.
+  const brand = new Color(dark ? '#8C6CF0' : '#5D3EBC');
   const ink = new Color(dark ? '#FFFFFF' : '#0A0A0A');
 
-  // Halo: a soft lime disc sitting just behind the core, outside the
+  // Halo: a soft brand disc sitting just behind the core, outside the
   // rotating group so it always faces the camera from behind the heart.
   const haloGeometry = new BufferGeometry();
   haloGeometry.setAttribute('position', new BufferAttribute(new Float32Array(3), 3));
   haloGeometry.setAttribute('aSize', new BufferAttribute(new Float32Array([HALO_SIZE]), 1));
   const haloAlpha = new Float32Array([dark ? 0.6 : 0.55]);
   haloGeometry.setAttribute('aAlpha', new BufferAttribute(haloAlpha, 1));
-  const haloMaterial = glowMaterial(lime, pointScale(), dark, true);
+  const haloMaterial = glowMaterial(brand, pointScale(), dark, true);
   const halo = new Points(haloGeometry, haloMaterial);
   halo.renderOrder = -1;
   scene.add(halo);
@@ -172,14 +173,14 @@ export const createScene: SceneFactory = ({ canvas, gl, width, height, pixelRati
   // Core: a slowly turning wireframe icosahedron with a solid heart.
   const coreGeometry = new IcosahedronGeometry(0.78, 1);
   const coreMaterial = new MeshBasicMaterial({
-    color: dark ? lime : new Color('#0A0A0A'),
+    color: dark ? brand : new Color('#0A0A0A'),
     wireframe: true,
     transparent: true,
     opacity: dark ? 0.85 : 0.7,
   });
   const coreWire = new Mesh(coreGeometry, coreMaterial);
   const heartGeometry = new SphereGeometry(0.34, 24, 16);
-  const heartMaterial = new MeshBasicMaterial({ color: lime });
+  const heartMaterial = new MeshBasicMaterial({ color: brand });
   const heart = new Mesh(heartGeometry, heartMaterial);
   world.add(coreWire, heart);
 
@@ -231,7 +232,7 @@ export const createScene: SceneFactory = ({ canvas, gl, width, height, pixelRati
   signalGeometry.setAttribute('position', new BufferAttribute(signalPositions, 3));
   signalGeometry.setAttribute('aSize', new BufferAttribute(signalSizes, 1));
   signalGeometry.setAttribute('aAlpha', new BufferAttribute(signalAlphas, 1));
-  const signalMaterial = glowMaterial(lime, pointScale(), dark, false);
+  const signalMaterial = glowMaterial(brand, pointScale(), dark, false);
   world.add(new Points(signalGeometry, signalMaterial));
 
   const pointer = { x: 0, y: 0 };

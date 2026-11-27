@@ -214,7 +214,7 @@ export default function AdminBlogClient({ initialPosts, initialTotal }: AdminBlo
               onClick={() => setFilterLocale(locale)}
               className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
                 filterLocale === locale
-                  ? 'bg-pn-ink text-white'
+                  ? 'bg-pn-accent text-white'
                   : 'border border-pn-line bg-white text-[#525252] hover:border-pn-ink'
               }`}
             >

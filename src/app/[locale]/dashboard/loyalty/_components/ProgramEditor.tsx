@@ -204,10 +204,10 @@ export default function ProgramEditor({
               onClick={() => setDraft({ ...draftFromTemplate(t.key, locale), accentColor: draft.accentColor })}
               aria-pressed={active}
               className={`flex items-start gap-3 rounded-[20px] border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover ${
-                active ? 'border-pn-ink bg-pn-canvas' : 'border-pn-line bg-white hover:border-pn-line-strong'
+                active ? 'border-pn-accent bg-pn-accent-soft' : 'border-pn-line bg-white hover:border-pn-line-strong'
               }`}
             >
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] ${active ? 'bg-pn-accent' : 'bg-pn-canvas'}`}>
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] ${active ? 'bg-pn-accent text-white' : 'bg-pn-canvas'}`}>
                 <Icon size={17} aria-hidden="true" />
               </span>
               <span className="min-w-0">

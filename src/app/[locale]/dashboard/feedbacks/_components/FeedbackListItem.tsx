@@ -92,7 +92,7 @@ export function FeedbackListItem({
           </div>
           <p className="mt-1 line-clamp-2 break-words text-[13px] leading-[1.5] text-[#525252]">
             {r.redirected ? (
-              <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-[#365314]">
+              <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-accent">
                 {redirectBadgeLabel(r.platform, isTr)}
               </span>
             ) : (

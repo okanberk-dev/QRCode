@@ -10,11 +10,11 @@ import { isSoundOn, playSound, setSoundOn, soundSupported, unlockAudio } from '@
 
 const VARIANTS = {
   /** Over a photo or brand colour (customer panel header). */
-  overlay: 'h-9 w-9 rounded-full bg-black/35 text-white backdrop-blur-md hover:bg-black/50',
-  /** On a dark bar (staff mode header). */
-  dark: 'h-9 w-9 rounded-full bg-white/10 text-white hover:bg-white/20',
-  /** On a white panel card. */
-  panel: 'h-8 w-8 rounded-lg border border-pn-line bg-white text-[#525252] hover:bg-pn-canvas',
+  overlay: 'h-11 w-11 rounded-full bg-black/35 text-white backdrop-blur-md hover:bg-black/50 focus-visible:ring-white',
+  /** On a coloured bar (staff mode header, purple). */
+  dark: 'h-10 w-10 rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:ring-white',
+  /** On a panel card: grey circle, no border (Pano icon button). */
+  panel: 'h-10 w-10 rounded-full bg-pn-canvas text-[#525252] hover:bg-pn-line focus-visible:ring-[#5D3EBC]',
 } as const;
 
 export default function SoundToggle({
@@ -57,7 +57,7 @@ export default function SoundToggle({
       aria-pressed={on}
       aria-label={tr ? 'Ses' : 'Sound'}
       title={on ? (tr ? 'Ses açık' : 'Sound on') : tr ? 'Ses kapalı' : 'Sound off'}
-      className={`bzl-tap inline-flex shrink-0 items-center justify-center transition ${VARIANTS[variant]}`}
+      className={`bzl-tap inline-flex shrink-0 items-center justify-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 ${VARIANTS[variant]}`}
     >
       {on ? <Volume2 size={variant === 'panel' ? 15 : 16} aria-hidden="true" /> : <VolumeX size={variant === 'panel' ? 15 : 16} aria-hidden="true" />}
     </button>

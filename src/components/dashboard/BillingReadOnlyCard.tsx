@@ -247,7 +247,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
     return (
       <section id="billing" className="space-y-4 scroll-mt-20" aria-busy="true">
         <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
-          <div className="rounded-[24px] bg-pn-ink p-5 sm:p-6 space-y-3">
+          <div className="rounded-[24px] bg-[#3B1F8F] p-5 sm:p-6 space-y-3">
             <div className="h-3 w-24 rounded bg-white/15" />
             <div className="h-9 w-40 rounded bg-white/15" />
             <div className="h-3 w-32 rounded bg-white/10" />
@@ -319,17 +319,17 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         />
       ) : null}
 
-      {/* ─── Top row: Plan hero (dark) + Payment method ─── */}
+      {/* ─── Top row: Plan hero (deep purple) + Payment method ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
-        {/* Plan hero — graphite bg */}
-        <div className="rounded-[24px] bg-pn-ink p-5 sm:p-6 text-white">
-          <p className="tabular-nums text-[12px] font-medium text-[#A3A3A3]">
+        {/* Plan hero — deep purple bg */}
+        <div className="rounded-[24px] bg-[#3B1F8F] p-5 sm:p-6 text-white">
+          <p className="tabular-nums text-[12px] font-medium text-white/70">
             {isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}
           </p>
           <h3 className="bz-h-tight-2 mt-1.5 text-[36px] sm:text-[40px] text-white">
             {planName}
           </h3>
-          <p className="mt-1.5 text-[13px] text-[#A3A3A3]">
+          <p className="mt-1.5 text-[13px] text-white/70">
             {summary?.status === 'past_due'
               ? isTr ? 'Ödeme bekliyor' : 'Payment past due'
               : summary?.status === 'canceled'
@@ -344,10 +344,10 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
           {summary?.amount != null ? (
             <div className="mt-4">
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="bz-h-tight-2 text-[28px] sm:text-[32px] text-pn-accent">
+                <span className="bz-h-tight-2 text-[28px] sm:text-[32px] text-white">
                   {formatCurrency(summary.amount, summary.currency, isTr ? 'tr' : 'en')}
                 </span>
-                <span className="text-[13px] text-[#A3A3A3]">
+                <span className="text-[13px] text-white/70">
                   {summary.billingCycle === 'yearly'
                     ? isTr ? '/ yıl' : '/ year'
                     : summary.billingCycle === 'monthly'
@@ -356,14 +356,14 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                 </span>
               </div>
               {summary.billingCycle === 'yearly' && summary.yearlyTotal != null ? (
-                <div className="mt-1 text-[12px] text-[#A3A3A3]">
+                <div className="mt-1 text-[12px] text-white/70">
                   {isTr
                     ? `≈ ${formatCurrency(Math.round(summary.yearlyTotal / 12), summary.currency, 'tr')} / ay`
                     : `≈ ${formatCurrency(Math.round(summary.yearlyTotal / 12), summary.currency, 'en')} / mo`}
                 </div>
               ) : null}
               {summary.tier?.name ? (
-                <div className="mt-1 text-[12px] text-[#A3A3A3]">
+                <div className="mt-1 text-[12px] text-white/70">
                   {isTr ? 'Paket' : 'Plan'}:{' '}
                   <span className="text-white font-medium">{summary.tier.name}</span>
                 </div>
@@ -371,7 +371,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
             </div>
           ) : null}
 
-          <p className="mt-4 text-[12px] text-[#A3A3A3]">
+          <p className="mt-4 text-[12px] text-white/70">
             {summary?.trialDaysLeft
               ? isTr
                 ? `${summary.trialDaysLeft} günlük deneme kaldı`
@@ -401,7 +401,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                 {billingText(paidByCard ? 'hero.extend' : 'hero.upgrade', locale)}
               </button>
             )}
-            <span className="text-[12px] text-[#A3A3A3]">
+            <span className="text-[12px] text-white/70">
               {billingText(paidByCard ? 'hero.autoOff' : 'hero.pickPlan', locale)}
             </span>
           </div>
@@ -510,7 +510,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       className="h-full rounded-full"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#2FB24C',
+                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#5D3EBC',
                       }}
                     />
                   </div>
@@ -683,7 +683,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
               }`}
             >
               {billingText(c === 'monthly' ? 'review.monthly' : 'review.yearly', locale)}
-              {c === 'yearly' ? <span className="ml-1.5 text-[12px] text-[#4D5C00]">· {billingText('review.yearlyHint', locale)}</span> : null}
+              {c === 'yearly' ? <span className={`ml-1.5 text-[12px] ${pickerCycle === c ? 'text-white/80' : 'text-pn-accent'}`}>· {billingText('review.yearlyHint', locale)}</span> : null}
             </button>
           ))}
         </div>
@@ -725,14 +725,14 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   key={p.id}
                   className={`flex flex-col rounded-[24px] p-5 ${
                     isDark
-                      ? 'bg-pn-ink text-white'
+                      ? 'bg-pn-accent text-white'
                       : 'border border-pn-line bg-white'
                   }`}
                 >
                   {(isDark || isCurrent) && (
                     <div className="mb-2 flex flex-wrap items-center gap-1.5">
                       {isDark ? (
-                        <span className="text-[13px] font-medium inline-block rounded-full bg-pn-accent px-3 py-1 text-pn-ink">
+                        <span className="text-[13px] font-medium inline-block rounded-full bg-white px-3 py-1 text-pn-accent">
                           {isTr ? 'EN POPÜLER' : 'MOST POPULAR'}
                         </span>
                       ) : null}
@@ -748,7 +748,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   </h3>
                   <p
                     className={`mt-1 text-[12px] leading-snug ${
-                      isDark ? 'text-white/70' : 'text-[#525252]'
+                      isDark ? 'text-white/80' : 'text-[#525252]'
                     }`}
                   >
                     {p.description}
@@ -756,7 +756,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                   <div className="mt-3 flex items-baseline gap-2">
                     <span
                       className={`bz-h-tight text-[28px] font-medium leading-none tracking-[-0.03em] ${
-                        isDark ? 'text-pn-accent' : 'text-pn-ink'
+                        isDark ? 'text-white' : 'text-pn-ink'
                       }`}
                     >
                       {checkoutTry != null && checkoutTry > 0
@@ -767,14 +767,14 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                     </span>
                     {monthlyShown > 0 && (
                       <span
-                        className={`text-[13px] font-medium ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
+                        className={`text-[13px] font-medium ${isDark ? 'text-white/75' : 'text-[#737373]'}`}
                       >
                         {wired && pickerCycle === 'yearly' ? (isTr ? '/ YIL' : '/ YR') : isTr ? '/ AY' : '/ MO'}
                       </span>
                     )}
                   </div>
                   {p.maxBusinesses != null && (
-                    <p className={`mt-2 text-[12px] font-medium ${isDark ? 'text-pn-accent' : 'text-pn-ink'}`}>
+                    <p className={`mt-2 text-[12px] font-medium ${isDark ? 'text-white' : 'text-pn-ink'}`}>
                       {businessCountLabel(p.maxBusinesses, isTr ? 'tr' : 'en')}
                     </p>
                   )}
@@ -790,7 +790,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                           size={11}
                           strokeWidth={2.5}
                           className={`mt-0.5 shrink-0 ${
-                            isDark ? 'text-pn-accent' : 'text-pn-accent-ink'
+                            isDark ? 'text-white' : 'text-pn-accent-ink'
                           }`}
                         />
                         {feat}
@@ -799,7 +799,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                     {p.features.length > 4 && (
                       <li
                         className={`pl-5 text-[12px] ${
-                          isDark ? 'text-white/50' : 'text-[#737373]'
+                          isDark ? 'text-white/75' : 'text-[#737373]'
                         }`}
                       >
                         {isTr
@@ -814,8 +814,8 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       rel="nofollow"
                       className={`block min-h-[40px] w-full rounded-full py-2.5 text-center text-[13px] font-medium transition-colors ${
                         isDark
-                          ? 'bg-pn-accent text-pn-ink hover:bg-pn-accent-hover'
-                          : 'border border-pn-ink text-pn-ink hover:bg-pn-ink hover:text-white'
+                          ? 'bg-white text-pn-accent hover:bg-pn-accent-soft'
+                          : 'border border-pn-accent text-pn-accent hover:bg-pn-accent hover:text-white'
                       }`}
                     >
                       {billingText('picker.continue', locale, {

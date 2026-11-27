@@ -1,18 +1,52 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Search as SearchIcon,
-  X,
-  Loader2,
-  Store,
+  BarChart3,
+  BookOpen,
+  ClipboardCheck,
+  ClipboardList,
+  CreditCard,
+  Gift,
+  History,
+  LayoutDashboard,
   MessageSquareText,
-  CornerDownLeft,
-  ArrowUp,
-  ArrowDown,
+  Plug,
+  Plus,
+  QrCode,
+  Reply,
+  Star,
+  Store,
+  UserCircle,
+  UsersRound,
+  UtensilsCrossed,
+  type LucideIcon,
 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import {
+  GroupAction,
+  Highlight,
+  PaletteAvatar,
+  PaletteEmpty,
+  PaletteFrame,
+  PaletteGroup,
+  PaletteIcon,
+  PaletteOption,
+  PaletteSkeletonRow,
+  PaletteStars,
+} from '@/components/panel/search/PaletteFrame';
+import {
+  OWNER_RECENT_KEY,
+  clearRecent,
+  formatPaletteDate,
+  isPanelHref,
+  matchesQuery,
+  readRecent,
+  rememberRecent,
+  snippetAround,
+  type RecentEntry,
+} from '@/components/panel/search/search-utils';
 
 interface RestaurantHit {
   kind: 'restaurant';
@@ -20,6 +54,8 @@ interface RestaurantHit {
   name: string;
   category?: string | null;
   slug?: string | null;
+  /** Brand colour, when the source carries it. */
+  color?: string | null;
 }
 
 interface FeedbackHit {
@@ -52,28 +88,73 @@ interface CommandPaletteProps {
    * fetch them on open.
    */
   restaurants?: Array<{ id: string; name: string; category?: string | null; slug?: string | null }>;
+  /** Shows the "add a business" quick action (team members cannot). */
+  canAddBusiness?: boolean;
+  /** Adds the active business to quick-action links (shell scoping). */
+  scopeHref?: (href: string) => string;
 }
 
+type Item =
+  | { kind: 'action'; key: string; href: string; label: string; description: string; icon: LucideIcon }
+  | { kind: 'recent'; key: string; entry: RecentEntry }
+  | { kind: 'nav'; key: string; href: string; label: string }
+  | { kind: 'restaurant'; key: string; hit: RestaurantHit }
+  | { kind: 'feedback'; key: string; hit: FeedbackHit };
+
+interface Section {
+  id: string;
+  title: string;
+  items: Item[];
+  count?: number;
+  action?: ReactNode;
+  /** Shows two placeholder rows when the section is still empty. */
+  pending?: boolean;
+}
+
+type Copy = { tr: string; en: string };
+
+/** Icon + one-line description per dashboard page (path after `base`). */
+const PAGE_META: Record<string, { icon: LucideIcon; description: Copy }> = {
+  '': { icon: LayoutDashboard, description: { tr: 'Bugünün özeti ve bekleyen işler', en: "Today's summary and open tasks" } },
+  '/feedbacks': { icon: MessageSquareText, description: { tr: 'Puanlar, geri bildirimler ve yanıtlar', en: 'Ratings, feedback and replies' } },
+  '/google-reviews': { icon: Star, description: { tr: 'Google yorumlarını okuyun ve yanıtlayın', en: 'Read and reply to Google reviews' } },
+  '/qr': { icon: QrCode, description: { tr: 'QR kodlarını oluşturun ve indirin', en: 'Create and download QR codes' } },
+  '/analytics': { icon: BarChart3, description: { tr: 'Puan, hacim ve platform eğilimleri', en: 'Rating, volume and platform trends' } },
+  '/restaurants': { icon: Store, description: { tr: 'Tüm konumları karşılaştırın ve yönetin', en: 'Compare and manage all locations' } },
+  '/restaurants/new': { icon: Plus, description: { tr: 'Yeni bir konum ekleyin', en: 'Add a new location' } },
+  '/menu': { icon: UtensilsCrossed, description: { tr: 'Dijital menüyü düzenleyin', en: 'Edit your digital menu' } },
+  '/platforms': { icon: Plug, description: { tr: 'Google, Yemeksepeti ve diğer yorum bağlantıları', en: 'Google, Yemeksepeti and other review links' } },
+  '/customers': { icon: UsersRound, description: { tr: 'Geri bildirim bırakan müşteriler', en: 'Customers who left feedback' } },
+  '/loyalty': { icon: Gift, description: { tr: 'Damga ya da puan kartı ve kasa ekranı', en: 'Stamp or points card and counter' } },
+  '/surveys': { icon: ClipboardList, description: { tr: 'Anket hazırlayın, yanıtları görün', en: 'Build surveys and see responses' } },
+  '/audits': { icon: ClipboardCheck, description: { tr: 'Denetim listeleri ve sonuçları', en: 'Audit checklists and results' } },
+  '/guide': { icon: BookOpen, description: { tr: 'Kurulum ve kullanım adımları', en: 'Setup and how-to steps' } },
+  '/account': { icon: UserCircle, description: { tr: 'Profil, ekip, güvenlik ve bildirimler', en: 'Profile, team, security and notifications' } },
+  '/account?section=billing': { icon: CreditCard, description: { tr: 'Paket, ödeme ve faturalar', en: 'Plan, payment and invoices' } },
+};
+
+function pageMeta(href: string, base: string): { icon: LucideIcon; description: Copy } | null {
+  if (!isPanelHref(href, base)) return null;
+  const rest = href.slice(base.length);
+  return PAGE_META[rest] ?? PAGE_META[rest.split('?')[0]] ?? null;
+}
+
+const RESTAURANT_PREVIEW = 5;
+const RESTAURANT_LIMIT = 8;
+
 /**
- * Spotlight-style search palette for the owner panel. Replaces the
- * "Yakında: komut paleti" disabled pill that lived in the topbar.
+ * Search palette for the owner panel (⌘K / Ctrl K, or the top-bar field).
  *
  * Sources:
- *  - **Pages** — passed in from the shell (Dashboard / Yorumlar / QR / …).
- *    Filtered client-side by label + keyword match. Always visible
- *    when no query is typed so the palette doubles as a launcher.
- *  - **Restaurants** — single fetch of `/api/restaurants` on first open
- *    (cached for the session). Filtered client-side because the list
- *    is already small (typical owner has 1–5 locations).
- *  - **Feedbacks** — server-side search via `/api/feedback?search=&limit=8`
- *    fired on every debounced keystroke. The endpoint already supports
- *    a `search` param (matches comment + name + email).
+ *  - **Quick actions + recently opened** — shown before typing. Recents are
+ *    the last pages / businesses picked here (localStorage, panel paths only).
+ *  - **Pages** — passed in from the shell, filtered on the client.
+ *  - **Businesses** — from the layout (or one `/api/restaurants` fetch).
+ *  - **Reviews** — `/api/feedback?search=&limit=8` after a 250ms debounce,
+ *    from two characters (matches comment, name and email).
  *
- * Keyboard:
- *  - ↑ / ↓        → move selection (wraps around).
- *  - Enter        → activate selected hit.
- *  - Esc          → close.
- *  - Backdrop     → close.
+ * Keyboard: ↑ ↓ move (wraps), Enter opens, Esc closes. Rendering, focus and
+ * ARIA live in `PaletteFrame`.
  */
 export default function CommandPalette({
   open,
@@ -82,9 +163,12 @@ export default function CommandPalette({
   base,
   navItems,
   restaurants: providedRestaurants,
+  canAddBusiness = false,
+  scopeHref,
 }: CommandPaletteProps) {
   const router = useRouter();
   const isTr = locale === 'tr';
+  const listId = useId();
 
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -106,21 +190,18 @@ export default function CommandPalette({
   const [feedbacks, setFeedbacks] = useState<FeedbackHit[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [recent, setRecent] = useState<RecentEntry[]>([]);
+  const [now, setNow] = useState(() => Date.now());
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
-
-  // Reset query whenever we reopen — feels less surprising than
-  // remembering the previous search across sessions.
+  // Fresh start on every open: empty query, recents re-read from storage.
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setDebounced('');
-      setActiveIndex(0);
-      // Defer focus so the dialog is mounted first.
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }, [open]);
+    if (!open) return;
+    setQuery('');
+    setDebounced('');
+    setActiveIndex(0);
+    setRecent(readRecent(OWNER_RECENT_KEY, base));
+    setNow(Date.now());
+  }, [open, base]);
 
   // Lazy-load restaurants the first time the palette opens (only when the
   // shell did not pass them in).
@@ -135,12 +216,13 @@ export default function CommandPalette({
         const list = Array.isArray(json) ? json : json?.data ?? [];
         if (cancelled) return;
         setRestaurants(
-          list.map((r: { id: string; name: string; category?: string | null; slug?: string | null }) => ({
+          list.map((r: { id: string; name: string; category?: string | null; slug?: string | null; primaryColor?: string | null }) => ({
             kind: 'restaurant' as const,
             id: r.id,
             name: r.name,
             category: r.category ?? null,
             slug: r.slug ?? null,
+            color: r.primaryColor ?? null,
           })),
         );
         setRestaurantsLoaded(true);
@@ -172,9 +254,7 @@ export default function CommandPalette({
     setFeedbackLoading(true);
     (async () => {
       try {
-        const res = await fetch(
-          `/api/feedback?search=${encodeURIComponent(debounced)}&limit=8`,
-        );
+        const res = await fetch(`/api/feedback?search=${encodeURIComponent(debounced)}&limit=8`);
         if (!res.ok) {
           if (!cancelled) setFeedbacks([]);
           return;
@@ -211,324 +291,307 @@ export default function CommandPalette({
     };
   }, [debounced, open]);
 
-  // Filtered nav items — match label OR any keyword.
-  const filteredNavItems = useMemo<NavItem[]>(() => {
-    const q = debounced.toLocaleLowerCase('tr-TR');
-    if (!q) return navItems;
-    return navItems.filter((item) => {
-      const hay = [item.label, ...item.keywords].join(' ').toLocaleLowerCase('tr-TR');
-      return hay.includes(q);
-    });
-  }, [debounced, navItems]);
+  const q = query.trim();
+  const scope = useCallback((href: string) => (scopeHref ? scopeHref(href) : href), [scopeHref]);
 
-  // Filtered restaurants.
-  const filteredRestaurants = useMemo(() => {
-    const q = debounced.toLocaleLowerCase('tr-TR');
-    if (!q) return restaurants.slice(0, 5);
-    return restaurants
-      .filter((r) =>
-        `${r.name} ${r.category ?? ''}`.toLocaleLowerCase('tr-TR').includes(q),
-      )
-      .slice(0, 8);
-  }, [debounced, restaurants]);
+  const actions = useMemo(() => {
+    const list: Array<Extract<Item, { kind: 'action' }> & { keywords: string[] }> = [
+      {
+        kind: 'action',
+        key: 'action-qr',
+        href: scope(`${base}/qr?new=1`),
+        label: isTr ? 'Yeni QR oluştur' : 'Create a QR code',
+        description: isTr ? 'Masa, tezgâh ya da paket için' : 'For a table, counter or delivery bag',
+        icon: QrCode,
+        keywords: ['qr', 'kod', 'code', 'yeni', 'new'],
+      },
+      {
+        kind: 'action',
+        key: 'action-unanswered',
+        href: scope(`${base}/feedbacks?hasReply=pending`),
+        label: isTr ? 'Yanıtsız yorumlar' : 'Unanswered reviews',
+        description: isTr ? 'Yanıt bekleyen geri bildirimler' : 'Feedback waiting for a reply',
+        icon: Reply,
+        keywords: ['yanıt', 'yanıtsız', 'reply', 'unanswered', 'yorum', 'review'],
+      },
+      {
+        kind: 'action',
+        key: 'action-analytics',
+        href: scope(`${base}/analytics`),
+        label: isTr ? 'Analitik raporu' : 'Analytics report',
+        description: isTr ? 'Puan, hacim ve platform eğilimleri' : 'Rating, volume and platform trends',
+        icon: BarChart3,
+        keywords: ['analitik', 'rapor', 'analytics', 'report'],
+      },
+    ];
+    if (canAddBusiness) {
+      list.push({
+        kind: 'action',
+        key: 'action-new-business',
+        href: `${base}/restaurants/new`,
+        label: isTr ? 'İşletme ekle' : 'Add a business',
+        description: isTr ? 'Yeni bir konum oluşturun' : 'Create a new location',
+        icon: Plus,
+        keywords: ['işletme', 'konum', 'şube', 'business', 'location', 'yeni', 'new'],
+      });
+    }
+    return list;
+  }, [base, canAddBusiness, isTr, scope]);
 
-  // Build a flat ordered hit list for keyboard nav (nav → restaurants → feedbacks).
-  type FlatHit =
-    | { kind: 'nav'; href: string; label: string }
-    | RestaurantHit
-    | FeedbackHit;
+  const sections = useMemo<Section[]>(() => {
+    const out: Section[] = [];
+    const pages: Item[] = navItems
+      .filter((n) => matchesQuery([n.label, ...n.keywords], q))
+      .map((n) => ({ kind: 'nav', key: `nav-${n.href}`, href: n.href, label: n.label }));
+    const businesses: Item[] = restaurants
+      .filter((r) => matchesQuery([r.name, r.category], q))
+      .slice(0, q ? RESTAURANT_LIMIT : RESTAURANT_PREVIEW)
+      .map((r) => ({ kind: 'restaurant', key: `rest-${r.id}`, hit: r }));
 
-  const flat: FlatHit[] = useMemo(() => {
-    const arr: FlatHit[] = [];
-    filteredNavItems.forEach((n) => arr.push({ kind: 'nav', href: n.href, label: n.label }));
-    filteredRestaurants.forEach((r) => arr.push(r));
-    feedbacks.forEach((f) => arr.push(f));
-    return arr;
-  }, [filteredNavItems, filteredRestaurants, feedbacks]);
+    if (!q) {
+      out.push({ id: 'actions', title: isTr ? 'Hızlı işlemler' : 'Quick actions', items: actions });
+      if (recent.length > 0) {
+        out.push({
+          id: 'recent',
+          title: isTr ? 'Son açılanlar' : 'Recently opened',
+          items: recent.map((entry) => ({ kind: 'recent', key: `recent-${entry.href}`, entry })),
+          action: (
+            <GroupAction
+              label={isTr ? 'Temizle' : 'Clear'}
+              onClick={() => {
+                clearRecent(OWNER_RECENT_KEY);
+                setRecent([]);
+                setActiveIndex(0);
+              }}
+            />
+          ),
+        });
+      }
+      if (businesses.length > 1) {
+        out.push({ id: 'businesses', title: isTr ? 'İşletmeler' : 'Businesses', items: businesses });
+      }
+      out.push({ id: 'pages', title: isTr ? 'Sayfalar' : 'Pages', items: pages });
+      return out;
+    }
+
+    const matchingActions = actions.filter((a) => matchesQuery([a.label, ...a.keywords], q));
+    if (matchingActions.length > 0) {
+      out.push({ id: 'actions', title: isTr ? 'Hızlı işlemler' : 'Quick actions', items: matchingActions });
+    }
+    if (pages.length > 0) {
+      out.push({ id: 'pages', title: isTr ? 'Sayfalar' : 'Pages', items: pages, count: pages.length });
+    }
+    if (businesses.length > 0) {
+      out.push({ id: 'businesses', title: isTr ? 'İşletmeler' : 'Businesses', items: businesses, count: businesses.length });
+    }
+    const searching = q.length >= 2 && (debounced !== q || feedbackLoading);
+    if (feedbacks.length > 0 || searching) {
+      out.push({
+        id: 'reviews',
+        title: isTr ? 'Yorumlar' : 'Reviews',
+        items: feedbacks.map((f) => ({ kind: 'feedback', key: `fb-${f.id}`, hit: f })),
+        count: feedbacks.length > 0 && !searching ? feedbacks.length : undefined,
+        pending: searching,
+      });
+    }
+    return out;
+  }, [actions, debounced, feedbackLoading, feedbacks, isTr, navItems, q, recent, restaurants]);
+
+  const flat = useMemo(() => sections.flatMap((s) => s.items), [sections]);
 
   // Keep activeIndex in bounds whenever the list changes.
   useEffect(() => {
     if (activeIndex >= flat.length) setActiveIndex(0);
   }, [flat.length, activeIndex]);
 
+  const remember = useCallback(
+    (entry: Omit<RecentEntry, 'at'>) => {
+      rememberRecent(OWNER_RECENT_KEY, base, entry);
+    },
+    [base],
+  );
+
   const navigate = useCallback(
-    (hit: FlatHit) => {
+    (item: Item) => {
       let href = '';
-      if (hit.kind === 'nav') href = hit.href;
-      else if (hit.kind === 'restaurant') href = `${base}/restaurants/${hit.id}`;
-      else if (hit.kind === 'feedback') href = `${base}/feedbacks?focus=${hit.id}`;
+      if (item.kind === 'action') {
+        href = item.href;
+        remember({ href, label: item.label, kind: 'page' });
+      } else if (item.kind === 'recent') {
+        href = item.entry.href;
+        remember({ href, label: item.entry.label, kind: item.entry.kind, sub: item.entry.sub });
+      } else if (item.kind === 'nav') {
+        href = item.href;
+        remember({ href, label: item.label, kind: 'page' });
+      } else if (item.kind === 'restaurant') {
+        href = `${base}/restaurants/${item.hit.id}`;
+        remember({ href, label: item.hit.name, kind: 'business', sub: item.hit.category ?? undefined });
+      } else {
+        // Reviews are not kept in "recently opened" (customer content).
+        href = `${base}/feedbacks?focus=${item.hit.id}`;
+      }
       if (href) {
         router.push(href);
         onClose();
       }
     },
-    [base, router, onClose],
+    [base, onClose, remember, router],
   );
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      onClose();
-      return;
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex((i) => (flat.length === 0 ? 0 : (i + 1) % flat.length));
-      return;
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex((i) => (flat.length === 0 ? 0 : (i - 1 + flat.length) % flat.length));
-      return;
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const hit = flat[activeIndex];
-      if (hit) navigate(hit);
-    }
-  };
-
-  // Scroll active item into view as user navigates.
-  useEffect(() => {
-    if (!listRef.current) return;
-    const el = listRef.current.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`);
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [activeIndex]);
 
   if (!open) return null;
 
-  let runningIndex = -1;
-  const indexFor = () => {
-    runningIndex += 1;
-    return runningIndex;
+  const pending = sections.some((s) => s.pending);
+  const showEmpty = q.length > 0 && flat.length === 0 && !pending;
+  const status = pending
+    ? isTr ? 'Aranıyor' : 'Searching'
+    : showEmpty
+      ? isTr ? 'Sonuç yok' : 'No results'
+      : isTr ? `${flat.length} sonuç` : `${flat.length} results`;
+
+  let running = -1;
+  const renderItem = (item: Item) => {
+    running += 1;
+    const index = running;
+    const common = {
+      listId,
+      index,
+      active: index === activeIndex,
+      onHover: setActiveIndex,
+      onSelect: () => navigate(item),
+    };
+
+    if (item.kind === 'action') {
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={<PaletteIcon icon={item.icon} />}
+          primary={<Highlight text={item.label} query={q} />}
+          secondary={item.description}
+        />
+      );
+    }
+    if (item.kind === 'recent') {
+      const { entry } = item;
+      const meta = entry.kind === 'page' ? pageMeta(entry.href, base) : null;
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={entry.kind === 'business' ? <PaletteAvatar name={entry.label} /> : <PaletteIcon icon={meta?.icon ?? History} />}
+          primary={entry.label}
+          secondary={
+            entry.kind === 'business'
+              ? entry.sub || (isTr ? 'İşletme' : 'Business')
+              : meta?.description[locale] ?? (isTr ? 'Sayfa' : 'Page')
+          }
+          trailing={formatPaletteDate(entry.at, locale, now)}
+        />
+      );
+    }
+    if (item.kind === 'nav') {
+      const meta = pageMeta(item.href, base);
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={<PaletteIcon icon={meta?.icon ?? History} />}
+          primary={<Highlight text={item.label} query={q} />}
+          secondary={meta?.description[locale]}
+        />
+      );
+    }
+    if (item.kind === 'restaurant') {
+      return (
+        <PaletteOption
+          key={item.key}
+          {...common}
+          leading={<PaletteAvatar name={item.hit.name} color={item.hit.color} />}
+          primary={<Highlight text={item.hit.name} query={q} />}
+          secondary={item.hit.category ? <Highlight text={item.hit.category} query={q} /> : isTr ? 'İşletme' : 'Business'}
+        />
+      );
+    }
+    const f = item.hit;
+    const who = f.name?.trim() || (isTr ? 'İsimsiz' : 'Anonymous');
+    const comment = f.comment?.trim();
+    return (
+      <PaletteOption
+        key={item.key}
+        {...common}
+        leading={<PaletteIcon icon={MessageSquareText} />}
+        primary={
+          <span className="flex min-w-0 items-center gap-2">
+            <PaletteStars rating={f.rating} label={isTr ? `5 üzerinden ${f.rating} yıldız` : `${f.rating} of 5 stars`} />
+            <span className="truncate">
+              <Highlight text={who} query={q} />
+              {f.restaurantName && <span className="font-normal text-[#9A9A9A]"> · {f.restaurantName}</span>}
+            </span>
+          </span>
+        }
+        secondary={
+          comment ? (
+            <Highlight text={snippetAround(comment, q)} query={q} />
+          ) : (
+            <span className="text-[#9A9A9A]">{isTr ? 'Yorum yazılmamış' : 'No comment written'}</span>
+          )
+        }
+        trailing={formatPaletteDate(f.createdAt, locale, now)}
+      />
+    );
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={isTr ? 'Komut paleti' : 'Command palette'}
-      onKeyDown={onKeyDown}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 px-3 pt-[10vh] backdrop-blur-sm sm:px-4 sm:pt-[14vh]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+    <PaletteFrame
+      label={isTr ? 'Panelde ara' : 'Search the panel'}
+      listId={listId}
+      query={query}
+      onQueryChange={(value) => {
+        setQuery(value);
+        setActiveIndex(0);
+      }}
+      placeholder={isTr ? 'Yorum, işletme ya da sayfa ara' : 'Search reviews, businesses, pages'}
+      loading={feedbackLoading}
+      count={flat.length}
+      activeIndex={activeIndex}
+      onActiveIndexChange={setActiveIndex}
+      onSubmit={(index) => {
+        const item = flat[index];
+        if (item) navigate(item);
+      }}
+      onClose={onClose}
+      status={status}
+      copy={{
+        clear: isTr ? 'Aramayı temizle' : 'Clear search',
+        close: isTr ? 'Kapat' : 'Close',
+        cancel: isTr ? 'Vazgeç' : 'Cancel',
+        results: isTr ? 'Arama sonuçları' : 'Search results',
+        move: isTr ? 'gez' : 'move',
+        open: isTr ? 'aç' : 'open',
       }}
     >
-      {/* §38.67 — Modal floating tier: heavy shadow-[0_30px_80px] → bz-elev-3
-          (0_12px_32px Apple-soft). Floating modal için en heavy tier doğru. */}
-      <div className="w-full max-w-[640px] overflow-hidden rounded-[28px] bg-white bz-elev-3 animate-slide-in">
-        {/* Search input */}
-        <div className="flex items-center gap-2 p-3">
-          <div className="flex h-[52px] min-w-0 flex-1 items-center gap-3 rounded-full bg-pn-canvas px-5">
-          <SearchIcon size={18} className="shrink-0 text-[#737373]" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActiveIndex(0);
-            }}
-            placeholder={
-              isTr
-                ? 'Yorum, konum, sayfa ara…'
-                : 'Search reviews, locations, pages…'
-            }
-            className="min-w-0 flex-1 bg-transparent text-[16px] text-pn-ink placeholder:text-[#9A9A9A] outline-none sm:text-[15px]"
-            aria-label={isTr ? 'Arama' : 'Search'}
-          />
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={isTr ? 'Kapat' : 'Close'}
-            className="pn-icon-btn !h-[52px] !w-[52px] !bg-pn-canvas hover:!bg-[#EBEBEB]"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Results */}
-        <div ref={listRef} className="max-h-[60vh] overflow-y-auto py-2">
-          {/* Pages */}
-          {filteredNavItems.length > 0 && (
-            <Section title={isTr ? 'Sayfalar' : 'Pages'}>
-              {filteredNavItems.map((n) => {
-                const i = indexFor();
-                return (
-                  <Row
-                    key={`nav-${n.href}`}
-                    index={i}
-                    active={i === activeIndex}
-                    icon={<CornerDownLeft size={14} className="text-pn-ink" />}
-                    primary={n.label}
-                    secondary={n.href}
-                    onMouseEnter={() => setActiveIndex(i)}
-                    onClick={() => navigate({ kind: 'nav', href: n.href, label: n.label })}
-                  />
-                );
-              })}
-            </Section>
-          )}
-
-          {/* Restaurants */}
-          {filteredRestaurants.length > 0 && (
-            <Section title={isTr ? 'İşletmeler' : 'Locations'}>
-              {filteredRestaurants.map((r) => {
-                const i = indexFor();
-                return (
-                  <Row
-                    key={`rest-${r.id}`}
-                    index={i}
-                    active={i === activeIndex}
-                    icon={<Store size={14} className="text-pn-ink" />}
-                    primary={r.name}
-                    secondary={r.category ?? undefined}
-                    onMouseEnter={() => setActiveIndex(i)}
-                    onClick={() => navigate(r)}
-                  />
-                );
-              })}
-            </Section>
-          )}
-
-          {/* Feedbacks */}
-          {(feedbackLoading || feedbacks.length > 0) && (
-            <Section
-              title={isTr ? 'Yorumlar' : 'Reviews'}
-              right={feedbackLoading ? <Loader2 size={11} className="animate-spin text-[#737373]" /> : null}
-            >
-              {feedbacks.map((f) => {
-                const i = indexFor();
-                const stars = '★'.repeat(f.rating) + '☆'.repeat(5 - f.rating);
-                const who = f.name || (isTr ? 'Anonim' : 'Anonymous');
-                const where = f.restaurantName ? ` · ${f.restaurantName}` : '';
-                return (
-                  <Row
-                    key={`fb-${f.id}`}
-                    index={i}
-                    active={i === activeIndex}
-                    icon={<MessageSquareText size={14} className="text-pn-ink" />}
-                    primary={`${stars} · ${who}${where}`}
-                    secondary={f.comment?.trim() || (isTr ? '(yorumsuz)' : '(no comment)')}
-                    onMouseEnter={() => setActiveIndex(i)}
-                    onClick={() => navigate(f)}
-                  />
-                );
-              })}
-            </Section>
-          )}
-
-          {/* Empty state when query is real and nothing matched */}
-          {flat.length === 0 && debounced.length > 0 && !feedbackLoading && (
-            <div className="px-6 py-10 text-center">
-              <p className="text-[14px] font-medium text-pn-ink">
-                {isTr ? 'Sonuç bulunamadı' : 'No results'}
-              </p>
-              <p className="mt-1 text-[12px] text-[#737373]">
-                {isTr
-                  ? 'Farklı bir kelime deneyin veya kısaltın.'
-                  : 'Try a different keyword or shorten the query.'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer hint bar */}
-        <div className="hidden items-center justify-between gap-2 border-t border-pn-line px-5 py-3 text-[12px] text-[#737373] sm:flex">
-          <span className="inline-flex items-center gap-2">
-            <span className="inline-flex items-center gap-1">
-              <Kbd>
-                <ArrowUp size={9} />
-              </Kbd>
-              <Kbd>
-                <ArrowDown size={9} />
-              </Kbd>
-              {isTr ? 'gez' : 'navigate'}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Kbd>
-                <CornerDownLeft size={9} />
-              </Kbd>
-              {isTr ? 'aç' : 'open'}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Kbd>esc</Kbd>
-              {isTr ? 'kapat' : 'close'}
-            </span>
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Section({
-  title,
-  children,
-  right,
-}: {
-  title: string;
-  children: React.ReactNode;
-  right?: React.ReactNode;
-}) {
-  return (
-    <div className="mb-1">
-      <div className="px-4 pb-1 pt-2 flex items-center justify-between">
-        <span className="text-[13px] font-medium text-[#737373]">{title}</span>
-        {right}
-      </div>
-      <div className="px-2">{children}</div>
-    </div>
-  );
-}
-
-function Row({
-  index,
-  active,
-  icon,
-  primary,
-  secondary,
-  onClick,
-  onMouseEnter,
-}: {
-  index: number;
-  active: boolean;
-  icon: React.ReactNode;
-  primary: string;
-  secondary?: string;
-  onClick: () => void;
-  onMouseEnter: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      data-index={index}
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      className={`flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left transition-colors ${
-        active ? 'bg-pn-canvas' : 'hover:bg-pn-canvas'
-      }`}
-    >
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${active ? 'bg-pn-ink text-white [&>svg]:!text-white' : 'bg-pn-canvas'}`}>
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] font-medium text-pn-ink">{primary}</span>
-        {secondary && (
-          <span className="block truncate text-[12px] text-[#737373] mt-0.5">{secondary}</span>
-        )}
-      </span>
-    </button>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd
-      className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-pn-canvas px-1.5 text-[12px] font-medium text-[#525252]"
-    >
-      {children}
-    </kbd>
+      {showEmpty ? (
+        <PaletteEmpty
+          title={isTr ? `“${q}” için sonuç yok` : `No results for “${q}”`}
+          body={
+            isTr
+              ? 'Farklı bir kelime deneyin ya da kısaltın. Yorumlarda yorum metni, müşteri adı ve e-posta aranır.'
+              : 'Try another word or a shorter one. Reviews are searched by comment, customer name and email.'
+          }
+        />
+      ) : (
+        sections.map((section) => (
+          <PaletteGroup key={section.id} title={section.title} count={section.count} action={section.action}>
+            {section.items.map(renderItem)}
+            {section.pending && section.items.length === 0 && (
+              <>
+                <PaletteSkeletonRow />
+                <PaletteSkeletonRow />
+              </>
+            )}
+          </PaletteGroup>
+        ))
+      )}
+    </PaletteFrame>
   );
 }

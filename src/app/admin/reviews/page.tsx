@@ -1152,13 +1152,13 @@ function AdminReviewsContent() {
               : 'bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-4'
           } ${
             toast.tone === 'success'
-              ? 'border-pn-accent-hover bg-pn-ink text-white'
+              ? 'border-pn-accent-hover bg-pn-accent text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
           }`}
         >
           <div className="flex items-start gap-3">
             {toast.tone === 'success' ? (
-              <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-pn-accent" />
+              <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-white" />
             ) : (
               <AlertCircle size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#DC2626]" />
             )}

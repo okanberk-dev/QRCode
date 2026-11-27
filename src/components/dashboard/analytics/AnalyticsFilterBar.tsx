@@ -159,7 +159,7 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
 
   const segmentClass = (active: boolean) =>
     `inline-flex min-h-[44px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:h-[28px] sm:min-h-0 sm:text-[12px] ${
-      active ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas hover:text-pn-ink'
+      active ? 'bg-pn-accent text-white' : 'text-[#525252] hover:bg-pn-canvas hover:text-pn-ink'
     }`;
 
   const showBranches = !!branches && branches.length > 0;

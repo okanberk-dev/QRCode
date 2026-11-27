@@ -75,10 +75,10 @@ function ResetPasswordContent() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-white text-pn-ink selection:bg-pn-accent/40">
+    <main className="min-h-[100dvh] bg-white text-pn-ink">
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#E6FDEA_0%,rgba(230,253,234,0)_62%)]"
+        className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#EFEAFB_0%,rgba(239,234,251,0)_62%)]"
       />
 
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1152px] flex-col px-4 sm:px-7 py-6 sm:py-7">
@@ -101,7 +101,7 @@ function ResetPasswordContent() {
         <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
           <div className="w-full max-w-[460px]">
             <div className="mb-6 sm:mb-7 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[24px] bg-pn-accent text-white">
                 <ShieldCheck size={22} strokeWidth={2} />
               </div>
               <p className="text-[13px] font-medium text-[#737373]">YÖNETİCİ PANELİ</p>
@@ -118,7 +118,7 @@ function ResetPasswordContent() {
               {success ? (
                 <div className="text-center py-2">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-pn-accent">
-                    <Check size={26} strokeWidth={3} className="text-pn-ink" />
+                    <Check size={26} strokeWidth={3} className="text-white" />
                   </div>
                   <h2 className="bz-h-tight" style={{ fontSize: 20 }}>
                     Şifren güncellendi

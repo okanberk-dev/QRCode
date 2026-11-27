@@ -44,7 +44,7 @@ export function AiInsightsCard({
   return (
     <section className="bz-card p-5 sm:p-6" aria-label={title}>
       <h2 className="inline-flex items-center gap-2 text-[15px] font-medium text-pn-ink">
-        <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="text-[#65A30D]" />
+        <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="text-pn-accent" />
         {title}
       </h2>
       <p className="mt-3 flex items-start gap-2 text-[14px] leading-[1.6] text-[#262626]">

@@ -44,7 +44,9 @@ interface Palette {
 
 const TEMPLATES: Record<TemplateKey, Palette> = {
   beyaz: { card: '#FFFFFF', fg: '#0A0A0A', border: '#E5E5E5', eyebrow: 'rgba(10,10,10,0.6)', label: { tr: 'Beyaz', en: 'White' } },
-  lime: { card: '#C6F24E', fg: '#0A0A0A', border: '#A8D62E', eyebrow: 'rgba(10,10,10,0.65)', label: { tr: 'Lime', en: 'Lime' } },
+  // Key stays 'lime' (internal id); the preset is now the Buaze purple card
+  // with white text (white on #5D3EBC ≈ 7.6:1). QR modules stay black on white.
+  lime: { card: '#5D3EBC', fg: '#FFFFFF', border: '#4C2FA3', eyebrow: 'rgba(255,255,255,0.82)', label: { tr: 'Mor', en: 'Purple' } },
   koyu: { card: '#0A0A0A', fg: '#FFFFFF', border: '#0A0A0A', eyebrow: 'rgba(255,255,255,0.7)', label: { tr: 'Koyu', en: 'Dark' } },
   minimal: { card: '#FAFAFA', fg: '#0A0A0A', border: '#EDEDED', eyebrow: 'rgba(10,10,10,0.6)', label: { tr: 'Minimal', en: 'Minimal' } },
 };
@@ -137,9 +139,9 @@ const COPY = {
 const LABEL = 'block text-[14px] font-semibold text-[#0A0A0A]';
 const HINT = 'mt-1 text-[13px] leading-[1.5] text-[#737373]';
 const INPUT =
-  'mt-2 w-full min-h-[48px] rounded-[12px] border bg-white px-4 py-3 text-[16px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1';
+  'mt-2 w-full min-h-[48px] rounded-[12px] border bg-white px-4 py-3 text-[16px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-1';
 const FOCUS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
 
 function escapeHtml(value: string): string {
   return value
@@ -573,7 +575,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
                       className="peer sr-only"
                     />
                     <span
-                      className="flex min-h-[44px] cursor-pointer items-center justify-center rounded-[12px] border border-[#D4D4D4] px-3 text-[14px] font-medium transition-shadow peer-checked:shadow-[0_0_0_2px_#0A0A0A] peer-focus-visible:ring-2 peer-focus-visible:ring-[#C6F24E] peer-focus-visible:ring-offset-2"
+                      className="flex min-h-[44px] cursor-pointer items-center justify-center rounded-[12px] border border-[#D4D4D4] px-3 text-[14px] font-medium transition-shadow peer-checked:shadow-[0_0_0_2px_#0A0A0A] peer-focus-visible:ring-2 peer-focus-visible:ring-[#8C6CF0] peer-focus-visible:ring-offset-2"
                       style={{ backgroundColor: theme.card, color: theme.fg }}
                     >
                       {theme.label[locale]}
@@ -693,7 +695,7 @@ export default function QRGeneratorForm({ locale }: QRGeneratorFormProps) {
             type="button"
             onClick={handleQrDownload}
             disabled={isGenerating || !inSync}
-            className={`mx-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS}`}
+            className={`mx-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-sm text-[15px] font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS}`}
           >
             {copy.downloadQr}
           </button>

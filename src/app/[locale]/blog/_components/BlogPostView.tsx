@@ -79,13 +79,13 @@ export default function BlogPostView({
   const shareText = encodeURIComponent(post.title);
   const shareUrl = encodeURIComponent(postUrl);
   const shareLinkClass =
-    'inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]';
+    'inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0]';
 
   return (
     <>
 
       {/* ─── Hero · lime bg + read time + title + byline ─── */}
-      <section className="relative overflow-hidden bg-[#C6F24E] px-5 sm:px-10 pt-[60px] sm:pt-16 pb-[60px] sm:pb-20">
+      <section className="relative overflow-hidden bg-[#5D3EBC] px-5 sm:px-10 pt-[60px] sm:pt-16 pb-[60px] sm:pb-20">
         <svg
           aria-hidden
           viewBox="0 0 300 200"
@@ -94,13 +94,13 @@ export default function BlogPostView({
           <path
             d="M0 150 L40 120 L80 140 L120 90 L160 100 L200 60 L240 80 L280 40 L300 30"
             fill="none"
-            stroke="#0A0A0A"
+            stroke="#FFFFFF"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <circle cx="200" cy="60" r="12" fill="#0A0A0A" />
-          <circle cx="280" cy="40" r="8" fill="#0A0A0A" />
+          <circle cx="200" cy="60" r="12" fill="#FFFFFF" />
+          <circle cx="280" cy="40" r="8" fill="#FFFFFF" />
         </svg>
 
         {/* Same grid as the content below, so the title lines up with the
@@ -109,17 +109,17 @@ export default function BlogPostView({
           <div className="lg:col-span-2 lg:col-start-2">
             <Link
               href={`${base}/blog`}
-              className="pulse-eyebrow inline-flex min-h-[44px] items-center gap-2 text-[#0A0A0A]/80 hover:text-[#0A0A0A] mb-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] rounded-sm"
+              className="pulse-eyebrow inline-flex min-h-[44px] items-center gap-2 text-white/80 hover:text-white mb-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm"
             >
               <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
               {backLabel}
             </Link>
 
             <div className="max-w-[820px]">
-              <p className="pulse-eyebrow text-[#0A0A0A]">
+              <p className="pulse-eyebrow text-white">
                 Blog · {post.readTime}
               </p>
-              <h1 className="mt-3 sm:mt-4 text-balance text-[32px] sm:text-[44px] lg:text-[52px] leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+              <h1 className="mt-3 sm:mt-4 text-balance text-[32px] sm:text-[44px] lg:text-[52px] leading-[1.05] tracking-[-0.03em] text-white">
                 {post.title}
               </h1>
 
@@ -127,16 +127,16 @@ export default function BlogPostView({
                 <div className="flex items-center gap-2.5">
                   <div
                     aria-hidden="true"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[13px] font-semibold text-[#5D3EBC]"
                   >
                     {authorInitials(author)}
                   </div>
                   <div>
-                    <div className="text-[14px] font-semibold text-[#0A0A0A]">{author}</div>
-                    {authorRole ? <div className="text-[12px] text-[#0A0A0A]/75">{authorRole}</div> : null}
+                    <div className="text-[14px] font-semibold text-white">{author}</div>
+                    {authorRole ? <div className="text-[12px] text-white/75">{authorRole}</div> : null}
                   </div>
                 </div>
-                <div className="text-[13px] text-[#0A0A0A]/80">
+                <div className="text-[13px] text-white/80">
                   {publishedIso ? <time dateTime={publishedIso}>{post.date}</time> : post.date}
                 </div>
               </div>
@@ -161,7 +161,7 @@ export default function BlogPostView({
                       <li key={`${item.id}-${index}`}>
                         <a
                           href={`#${item.id}`}
-                          className="relative -ml-px block border-l-2 border-transparent py-2.5 pl-4 text-[13px] leading-[1.4] text-[#525252] transition-colors hover:border-[#C6F24E] hover:text-[#0A0A0A]"
+                          className="relative -ml-px block border-l-2 border-transparent py-2.5 pl-4 text-[13px] leading-[1.4] text-[#525252] transition-colors hover:border-[#8C6CF0] hover:text-[#0A0A0A]"
                         >
                           <span
                             className="mr-2 text-[10px] tracking-[0.08em] text-[#737373]"
@@ -253,7 +253,7 @@ export default function BlogPostView({
                   prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
                   prose-p:text-[#525252] prose-p:leading-[1.75] prose-p:mb-6 prose-p:text-[16px]
                   prose-strong:font-semibold prose-strong:text-[#0A0A0A]
-                  prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#525252]
+                  prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#5D3EBC] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#525252]
                   prose-li:text-[#525252] prose-li:leading-[1.7]
                   prose-blockquote:not-italic
                   prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
@@ -269,14 +269,14 @@ export default function BlogPostView({
                     className="text-[22px] sm:text-[28px] font-medium leading-[1.25] tracking-[-0.02em] text-[#0A0A0A]"
                     style={{ fontFamily: 'var(--font-heading)' }}
                   >
-                    <span aria-hidden="true" className="mr-1.5 text-[#A8D62E]">&ldquo;</span>
+                    <span aria-hidden="true" className="mr-1.5 text-[#5D3EBC]">&ldquo;</span>
                     {post.pullQuote}
-                    <span aria-hidden="true" className="ml-1 text-[#A8D62E]">&rdquo;</span>
+                    <span aria-hidden="true" className="ml-1 text-[#5D3EBC]">&rdquo;</span>
                   </blockquote>
                   <figcaption className="mt-5 flex items-center gap-3">
                     <div
                       aria-hidden="true"
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E]"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5D3EBC] text-[13px] font-semibold text-white"
                     >
                       {authorInitials(pullQuoteAuthor)}
                     </div>
@@ -303,7 +303,7 @@ export default function BlogPostView({
 
             <section
               aria-labelledby="post-cta-title"
-              className="mt-12 grid grid-cols-1 gap-6 rounded-[20px] bg-[#0A0A0A] p-7 text-white sm:grid-cols-[1fr_auto] sm:items-center sm:gap-8 sm:p-9"
+              className="mt-12 grid grid-cols-1 gap-6 rounded-[20px] bg-[#5D3EBC] p-7 text-white sm:grid-cols-[1fr_auto] sm:items-center sm:gap-8 sm:p-9"
             >
               <div>
                 <h2
@@ -312,12 +312,12 @@ export default function BlogPostView({
                 >
                   {ctaTitle}
                 </h2>
-                <p className="mt-2 text-[14px] leading-[1.6] text-white/75">{ctaSubtitle}</p>
+                <p className="mt-2 text-[14px] leading-[1.6] text-white/85">{ctaSubtitle}</p>
               </div>
               <Link
                 href={`${base}/auth/register`}
                 rel="nofollow"
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 self-start rounded-full bg-[#C6F24E] px-6 text-[15px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] sm:self-auto"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 self-start rounded-full bg-white px-6 text-[15px] font-semibold text-[#5D3EBC] transition-colors hover:bg-[#EFEAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#5D3EBC] sm:self-auto"
               >
                 {ctaButtonLabel}
                 <ArrowRight size={16} aria-hidden="true" />
@@ -335,7 +335,7 @@ export default function BlogPostView({
                 <div className="mt-3.5 flex items-center gap-3">
                   <div
                     aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0A0A0A] text-[14px] font-semibold text-[#C6F24E]"
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#5D3EBC] text-[14px] font-semibold text-white"
                   >
                     {authorInitials(author)}
                   </div>
@@ -347,7 +347,7 @@ export default function BlogPostView({
                 {authorBio ? <p className="mt-3 text-[13px] leading-[1.55] text-[#525252]">{authorBio}</p> : null}
                 <Link
                   href={`${base}/about`}
-                  className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A]"
+                  className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A]"
                 >
                   {isTr ? 'Buaze hakkında' : 'About Buaze'}
                   <ArrowRight size={13} aria-hidden="true" />
@@ -367,7 +367,7 @@ export default function BlogPostView({
                       >
                         <Link href={`${base}/blog/${rp.slug}`} className="group block">
                           <div
-                            className="text-[14px] font-semibold leading-[1.3] tracking-[-0.01em] text-[#0A0A0A] group-hover:underline group-hover:decoration-[#C6F24E] group-hover:decoration-2 group-hover:underline-offset-4"
+                            className="text-[14px] font-semibold leading-[1.3] tracking-[-0.01em] text-[#0A0A0A] group-hover:underline group-hover:decoration-[#5D3EBC] group-hover:decoration-2 group-hover:underline-offset-4"
                             style={{ fontFamily: 'var(--font-heading)' }}
                           >
                             {rp.title}
@@ -383,7 +383,7 @@ export default function BlogPostView({
               )}
 
               <div className="rounded-[16px] bg-[#0A0A0A] p-5 text-white">
-                <div className="pulse-eyebrow text-[#C6F24E]">
+                <div className="pulse-eyebrow text-white">
                   {isTr ? 'Bülten' : 'Newsletter'}
                 </div>
                 <div

@@ -45,7 +45,7 @@ const PULSE_SERIES: Array<{
 }> = [
   { key: 'google', labelTr: 'Google', labelEn: 'Google', color: '#000000' },
   { key: 'tripadvisor', labelTr: 'Tripadvisor', labelEn: 'Tripadvisor', color: '#737373' },
-  { key: 'buazeQr', labelTr: 'Buaze QR', labelEn: 'Buaze QR', color: '#78FC90' },
+  { key: 'buazeQr', labelTr: 'Buaze QR', labelEn: 'Buaze QR', color: '#5D3EBC' },
   { key: 'other', labelTr: 'Diğer', labelEn: 'Other', color: '#A3A3A3' },
 ];
 
@@ -82,7 +82,7 @@ export function PulseRangeToggle({
                 onClick={() => setActive(key)}
                 className={`inline-flex min-h-[32px] items-center justify-center px-3 rounded-full text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 ${
                   isActive
-                    ? 'bg-pn-ink text-white'
+                    ? 'bg-pn-accent text-white'
                     : 'bg-white border border-pn-line text-[#525252] hover:text-pn-ink hover:border-[#A3A3A3]'
                 }`}
               >

@@ -220,7 +220,7 @@ export default async function BlogIndexPage({
               </p>
               <a
                 href={`/${lang}/blog/rss.xml`}
-                className="mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                className="mt-4 inline-flex min-h-[44px] items-center gap-2 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
               >
                 <Rss size={15} aria-hidden="true" />
                 {copy.rss}

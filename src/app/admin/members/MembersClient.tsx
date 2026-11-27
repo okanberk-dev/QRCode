@@ -865,7 +865,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                     onClick={() => setEditPlan(p)}
                     className={`py-3 rounded-[20px] border text-[13px] font-medium transition-all ${
                       editPlan === p
-                        ? 'bg-pn-ink text-white border-pn-ink'
+                        ? 'bg-pn-accent text-white border-pn-accent'
                         : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                     }`}
                   >
@@ -1159,7 +1159,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                       aria-pressed={mailSegment === s.key}
                       className={`flex items-start gap-3 rounded-[20px] border px-3 py-2.5 text-left transition-colors ${
                         mailSegment === s.key
-                          ? 'border-pn-ink bg-pn-canvas'
+                          ? 'border-pn-accent bg-pn-accent-soft'
                           : 'border-pn-line hover:border-[#A3A3A3]'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
@@ -1218,7 +1218,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                   aria-pressed={mailLocale === 'tr'}
                   className={`py-2 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     mailLocale === 'tr'
-                      ? 'bg-pn-ink text-white border-pn-ink'
+                      ? 'bg-pn-accent text-white border-pn-accent'
                       : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >
@@ -1230,7 +1230,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                   aria-pressed={mailLocale === 'en'}
                   className={`py-2 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     mailLocale === 'en'
-                      ? 'bg-pn-ink text-white border-pn-ink'
+                      ? 'bg-pn-accent text-white border-pn-accent'
                       : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >

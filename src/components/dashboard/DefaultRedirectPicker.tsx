@@ -170,17 +170,17 @@ export default function DefaultRedirectPicker({
           aria-pressed={isAutomatic}
           className={CHIP_CLASS}
           style={{
-            border: `1px solid ${isAutomatic ? '#000000' : '#EBEBEB'}`,
-            background: isAutomatic ? '#000000' : '#fff',
+            border: `1px solid ${isAutomatic ? '#5D3EBC' : '#EBEBEB'}`,
+            background: isAutomatic ? '#5D3EBC' : '#fff',
             color: isAutomatic ? '#fff' : '#000000',
           }}
         >
           <Sparkles size={15} strokeWidth={2} aria-hidden="true" />
           {isTr ? 'Otomatik' : 'Automatic'}
           {pendingId === AUTO_KEY && isPending ? (
-            <Loader2 size={12} strokeWidth={2.5} color="#78FC90" className="animate-spin" aria-hidden="true" />
+            <Loader2 size={12} strokeWidth={2.5} color="#FFFFFF" className="animate-spin" aria-hidden="true" />
           ) : isAutomatic ? (
-            <Check size={12} strokeWidth={2.5} color="#78FC90" aria-hidden="true" />
+            <Check size={12} strokeWidth={2.5} color="#FFFFFF" aria-hidden="true" />
           ) : null}
         </button>
         {enabledPlatforms.map((uiKey) => {
@@ -196,17 +196,17 @@ export default function DefaultRedirectPicker({
               aria-pressed={isDefault}
               className={CHIP_CLASS}
               style={{
-                border: `1px solid ${isDefault ? '#000000' : '#EBEBEB'}`,
-                background: isDefault ? '#000000' : '#fff',
+                border: `1px solid ${isDefault ? '#5D3EBC' : '#EBEBEB'}`,
+                background: isDefault ? '#5D3EBC' : '#fff',
                 color: isDefault ? '#fff' : '#000000',
               }}
             >
               <PlatformChip id={uiKey} size={18} />
               {PLATFORMS[uiKey].label}
               {loading ? (
-                <Loader2 size={12} strokeWidth={2.5} color="#78FC90" className="animate-spin" aria-hidden="true" />
+                <Loader2 size={12} strokeWidth={2.5} color="#FFFFFF" className="animate-spin" aria-hidden="true" />
               ) : isDefault ? (
-                <Check size={12} strokeWidth={2.5} color="#78FC90" aria-hidden="true" />
+                <Check size={12} strokeWidth={2.5} color="#FFFFFF" aria-hidden="true" />
               ) : null}
             </button>
           );

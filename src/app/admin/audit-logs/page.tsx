@@ -225,7 +225,7 @@ export default function AdminAuditLogsPage() {
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM KAYITLARI"
-        eyebrowColor="#78FC90"
+        eyebrowColor="#5D3EBC"
         title="Denetim kayıtları"
         description="Paneldeki tüm işlemlerin zaman damgalı kaydı. IP adresi tutulmaz, e-posta ve telefon gizlenir. Filtrele, ayrıntıyı aç, CSV olarak indir."
         actions={
@@ -282,7 +282,7 @@ export default function AdminAuditLogsPage() {
                 onClick={() => setRange(r)}
                 className={`rounded-[14px] px-3 py-1.5 transition-all ${
                   range === r
-                    ? 'bg-pn-ink text-white '
+                    ? 'bg-pn-accent text-white '
                     : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
@@ -543,7 +543,7 @@ export default function AdminAuditLogsPage() {
                         disabled={loading}
                         className={`min-w-[32px] rounded-[14px] px-2 py-1.5 text-[12px] font-medium ${
                           p === page
-                            ? 'bg-pn-ink text-white'
+                            ? 'bg-pn-accent text-white'
                             : 'border border-pn-line bg-white text-pn-ink-2 hover:bg-pn-canvas'
                         }`}
                       >

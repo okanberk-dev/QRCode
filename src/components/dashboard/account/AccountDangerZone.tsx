@@ -163,7 +163,7 @@ export function AccountDangerZone({
               type="button"
               onClick={handleCancel}
               disabled={busy}
-              className="inline-flex items-center gap-2 self-start rounded-full bg-pn-ink px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-pn-ink-2 disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
+              className="inline-flex items-center gap-2 self-start rounded-full bg-pn-accent px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-pn-accent-hover disabled:cursor-not-allowed disabled:opacity-60 sm:self-center"
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Undo2 size={14} />}
               {isTr ? "Silmeyi iptal et" : "Cancel deletion"}

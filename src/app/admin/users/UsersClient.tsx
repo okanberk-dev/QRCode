@@ -345,7 +345,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
-              <tr className="bg-pn-ink text-[13px] font-medium text-white/60">
+              <tr className="bg-[#3B1F8F] text-[13px] font-medium text-white/80">
                 <th className="px-3 py-4 sm:px-6">YÖNETİCİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">ROL / YETKİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">RESTORAN / ŞUBE</th>
@@ -430,7 +430,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       </Link>
                       <button
                         onClick={() => handleEdit(user)}
-                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-pn-ink bg-white border border-pn-line rounded-[20px] hover:bg-pn-accent active:translate-y-1 active:shadow-none transition-all"
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-pn-ink bg-white border border-pn-line rounded-[20px] hover:bg-pn-accent hover:text-white active:translate-y-1 active:shadow-none transition-all"
                         title="Düzenle"
                         aria-label={`${user.username} düzenle`}
                       >
@@ -573,7 +573,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       type="button"
                       disabled={!!editingId}
                       onClick={() => setIsNewRestaurant(false)}
-                      className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${!isNewRestaurant ? 'bg-pn-ink text-white' : 'text-[#6B7280] hover:text-pn-ink disabled:opacity-50'}`}
+                      className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${!isNewRestaurant ? 'bg-pn-accent text-white' : 'text-[#6B7280] hover:text-pn-ink disabled:opacity-50'}`}
                     >
                       MEVCUT İŞLETME
                     </button>
@@ -581,7 +581,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       <button
                         type="button"
                         onClick={() => setIsNewRestaurant(true)}
-                        className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${isNewRestaurant ? 'bg-pn-ink text-white' : 'text-[#6B7280] hover:text-pn-ink'}`}
+                        className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${isNewRestaurant ? 'bg-pn-accent text-white' : 'text-[#6B7280] hover:text-pn-ink'}`}
                       >
                         YENİ OLUŞTUR
                       </button>

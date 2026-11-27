@@ -92,7 +92,7 @@ export default function ArrivalSplash({
   // Tile and button stand out from the band: the band's own text colour as
   // background, the band colour as ink (white on dark brands, graphite on light).
   const chipBg = coverUrl ? '#FFFFFF' : onBand;
-  const chipInk = coverUrl ? '#0A0A0A' : band;
+  const chipInk = coverUrl ? '#111110' : band;
   const title =
     mode === 'card'
       ? firstName
@@ -225,8 +225,8 @@ export default function ArrivalSplash({
                 setSoundOn(next);
               }
             }}
-            className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium opacity-80"
-            style={{ background: 'rgba(255,255,255,0.14)' }}
+            className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full px-4 text-[13px] font-medium opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            style={{ background: 'rgba(255,255,255,0.16)' }}
           >
             {sound ? <Volume2 size={14} aria-hidden="true" /> : <VolumeX size={14} aria-hidden="true" />}
             {sound ? (tr ? 'Sesli karşılama açık' : 'Sound on') : tr ? 'Ses kapalı' : 'Sound off'}

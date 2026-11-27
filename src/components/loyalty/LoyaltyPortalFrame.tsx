@@ -160,7 +160,7 @@ export default function LoyaltyPortalFrame({
             <div>{headerStart}</div>
             <a
               href={link(accountHref)}
-              className="bzl-tap inline-flex h-9 items-center gap-1.5 rounded-full bg-black/35 px-3 text-[13px] font-medium text-white backdrop-blur-md transition hover:bg-black/50"
+              className="bzl-tap inline-flex h-11 items-center gap-1.5 rounded-full bg-black/35 px-4 text-[14px] font-medium text-white backdrop-blur-md transition-colors duration-200 hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <UserRound size={15} aria-hidden />
               {account ? account.firstName : c.signIn}
@@ -171,7 +171,7 @@ export default function LoyaltyPortalFrame({
         <div className="px-4">
           <div className="-mt-11 flex items-end gap-3">
             <div
-              className="bzl-pop relative flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] text-[34px] font-semibold shadow-[0_10px_30px_-12px_rgba(0,0,0,0.45)] ring-4"
+              className="bzl-pop relative flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[24px] text-[34px] font-semibold shadow-[0_12px_28px_-14px_rgba(0,0,0,0.4)] ring-4"
               style={{ background: portal.logoUrl ? '#FFFFFF' : 'var(--p-accent)', color: 'var(--p-on-accent)', ['--tw-ring-color' as string]: 'var(--p-bg)' }}
             >
               {portal.logoUrl ? (
@@ -202,8 +202,8 @@ export default function LoyaltyPortalFrame({
                 {portal.offers.map((o) => (
                   <li
                     key={o.id}
-                    className="w-[78%] shrink-0 snap-start rounded-[20px] border p-4"
-                    style={{ background: 'var(--p-surface)', borderColor: 'var(--p-border)' }}
+                    className="w-[78%] shrink-0 snap-start rounded-[24px] p-5"
+                    style={{ background: 'var(--p-surface)' }}
                   >
                     {o.badge && (
                       <span
@@ -236,7 +236,7 @@ export default function LoyaltyPortalFrame({
                 {menu && (
                   <a
                     href={link(menu)}
-                    className="col-span-2 flex min-h-[48px] items-center justify-center gap-2 rounded-2xl text-[15px] font-semibold"
+                    className="bzl-tap col-span-2 flex min-h-[52px] items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-[opacity,transform] duration-200 hover:opacity-95 active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
                     style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
                   >
                     <UtensilsCrossed size={17} aria-hidden /> {c.menu}
@@ -259,13 +259,13 @@ export default function LoyaltyPortalFrame({
             </section>
           )}
 
-          <footer className="mt-8 space-y-1.5 text-center text-[12px]" style={{ color: 'var(--p-muted)' }}>
+          <footer className="mt-8 space-y-1.5 text-center text-[12.5px]" style={{ color: 'var(--p-muted)' }}>
             <p>{c.noReview}</p>
             <p className="flex flex-wrap justify-center gap-x-3 gap-y-1">
-              <a href={link(`/l/${slug}/kosullar${q}`)} className="underline underline-offset-2">
+              <a href={link(`/l/${slug}/kosullar${q}`)} className="inline-flex min-h-[40px] items-center underline underline-offset-2">
                 {c.terms}
               </a>
-              <a href={link(`/l/${slug}/aydinlatma${q}`)} className="underline underline-offset-2">
+              <a href={link(`/l/${slug}/aydinlatma${q}`)} className="inline-flex min-h-[40px] items-center underline underline-offset-2">
                 {c.privacy}
               </a>
             </p>
@@ -283,8 +283,8 @@ function ContactButton({ href, icon, label, external }: { href?: string; icon: R
       href={href}
       target={external && href ? '_blank' : undefined}
       rel={external && href ? 'noopener noreferrer' : undefined}
-      className="flex min-h-[46px] items-center justify-center gap-2 rounded-2xl border text-[14px] font-medium transition hover:opacity-90"
-      style={{ background: 'var(--p-surface)', borderColor: 'var(--p-border)', color: 'var(--p-text)' }}
+      className="bzl-tap flex min-h-[48px] items-center justify-center gap-2 rounded-full text-[14px] font-medium transition-[opacity,transform] duration-200 hover:opacity-90 active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--p-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--p-bg)]"
+      style={{ background: 'var(--p-surface)', color: 'var(--p-text)' }}
     >
       {icon}
       {label}

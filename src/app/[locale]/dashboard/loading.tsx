@@ -29,7 +29,7 @@ export default function Loading() {
       </div>
 
       {/* Mobile summary card (graphite). */}
-      <div className="h-[190px] rounded-[18px] bg-pn-ink sm:hidden" />
+      <div className="h-[190px] rounded-[18px] bg-pn-accent sm:hidden" />
 
       {/* Setup checklist: progress on the left (lg), remaining step(s) right. */}
       <div className="bz-card p-5 sm:p-6">

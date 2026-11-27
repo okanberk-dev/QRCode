@@ -1120,7 +1120,7 @@ async function renderDashboardPage({
                       ) : (
                         <div className="h-1.5 overflow-hidden rounded-full bg-[#F0F0F0]">
                           <div
-                            className="h-full rounded-full bg-pn-ink"
+                            className="h-full rounded-full bg-pn-accent"
                             style={{ width: `${Math.max(8, (t.count / (dashboardThemes.themes[0]?.count ?? 1)) * 100)}%` }}
                           />
                         </div>

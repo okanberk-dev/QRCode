@@ -74,7 +74,7 @@ export function AIInsightBanner({
       // Calm light strip (CLAUDE.md §58): two-line summary + "Detay".
       className="flex items-start gap-3 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 sm:px-5"
     >
-      <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#65A30D]" />
+      <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-pn-accent" />
       <p className="min-w-0 flex-1 text-[14px] leading-[1.55] text-[#262626] line-clamp-2">
         <span className="font-medium text-pn-ink">{isTr ? 'AI özeti: ' : 'AI summary: '}</span>
         {insight}

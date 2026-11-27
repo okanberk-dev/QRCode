@@ -75,7 +75,7 @@ function PresetCard({
       disabled={disabled}
       aria-pressed={selected}
       className={`group relative flex min-h-[44px] w-full flex-col items-start gap-2 rounded-[20px] border bg-white p-3.5 text-left transition-[border-color,box-shadow] duration-[120ms] hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-60 ${
-        selected ? 'border-pn-ink shadow-[0_0_0_1px_#0A0A0A]' : 'border-pn-line-strong'
+        selected ? 'border-pn-accent shadow-[0_0_0_1px_#5D3EBC]' : 'border-pn-line-strong'
       }`}
     >
       <span className="flex w-full items-center justify-between gap-2">
@@ -84,7 +84,7 @@ function PresetCard({
           <span className="truncate text-[14px] font-medium text-pn-ink">{localized.label}</span>
         </span>
         {selected ? (
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pn-accent text-pn-ink" aria-hidden="true">
+          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white" aria-hidden="true">
             <Check size={12} strokeWidth={3} />
           </span>
         ) : (
@@ -394,7 +394,7 @@ export function SetupWizard({
                 disabled={locked}
                 aria-pressed={choice === 'custom'}
                 className={`flex min-h-[56px] w-full items-center gap-3 rounded-[20px] border border-dashed bg-white p-3.5 text-left transition-colors hover:border-pn-ink disabled:opacity-60 ${
-                  choice === 'custom' ? 'border-pn-ink shadow-[0_0_0_1px_#0A0A0A]' : 'border-pn-line-strong'
+                  choice === 'custom' ? 'border-pn-accent shadow-[0_0_0_1px_#5D3EBC]' : 'border-pn-line-strong'
                 }`}
               >
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pn-canvas text-[#525252]" aria-hidden="true">
@@ -592,7 +592,7 @@ export function SetupWizard({
               value={creating.done}
               max={Math.max(1, creating.total)}
               ariaLabel={f.creating(creating.done, creating.total)}
-              color="#0A0A0A"
+              color="#5D3EBC"
               height={4}
             />
           )}

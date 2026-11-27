@@ -37,7 +37,7 @@ export default async function VerifyEmailPage({
             className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            buaze<span className="text-[#C6F24E]">.</span>
+            buaze<span className="text-[#5D3EBC]">.</span>
           </span>
         </Link>
 

@@ -10,8 +10,10 @@
 > Kod: `src/components/marketing/ritim/` — `ritim.css` (token + bileşen),
 > `interactive.tsx` (istemci adaları), `icons.tsx`, `media.ts`.
 > Kapsam: yalnız pazarlama sayfaları (üst menüsü `.rt-header` olan sayfalar).
-> Owner/admin panelleri, `/r`, `/menu`, `/l`, `/hesap`, auth Pulse tasarımında
-> kalır (CLAUDE.md §11, §49).
+> Owner/admin panelleri (Pano, §63), `/r`, `/menu`, `/l`, `/hesap` bu sistemin
+> dışındadır. Auth (giriş, kayıt, şifre) ve onboarding sayfaları ritim.css
+> yüklemez ama aynı mor + beyaz aileyi doğrudan sınıflarla kullanır: mor birincil
+> buton + beyaz metin, beyaz kart, mor marka paneli.
 
 ---
 
@@ -32,18 +34,26 @@
 
 ## 2. Renkler (`--rt-*`, `ritim.css` en üstte)
 
-### 2.1 Marka rampası — değiştirmek için yalnız bu 7 satır
+### 2.1 Marka rampası (Getir moru + beyaz, 2026-11-27) — değiştirmek için yalnız bu satırlar
 | Token | Değer | Kullanım |
 |---|---|---|
-| `--rt-brand-300` | `#3CC99A` | Gradyan başlangıcı, koyu zeminde vurgu, sektör kartı başlığı |
-| `--rt-brand-500` | `#0B9B6D` | Parlak dolgu, ikon, aktif segment, onay işareti |
-| `--rt-brand-600` | `#08875E` | **Birincil buton** (beyaz metin 4.53:1) |
-| `--rt-brand-700` | `#067A55` | Link, çerçeveli buton, ürün kartı zemini |
-| `--rt-brand-800` | `#045C40` | Gradyan bitişi |
-| `--rt-brand-950` | `#023A28` | Alt bilgi koyu gradyanı |
-| `--rt-brand-50` | `#E7F6EF` | Açık ton, hover, rozet |
+| `--rt-brand-50` | `#F3F0FC` | Açık ton, hover, rozet zemini |
+| `--rt-brand-300` | `#8C6CF0` | Odak halkası (beyaz, krem ve koyu zeminde ≥3:1), dekoratif vurgu |
+| `--rt-brand-500` | `#6C4BD1` | Parlak dolgu, ikon, aktif segment, onay işareti, gradyan başlangıcı |
+| `--rt-brand-600` | `#5D3EBC` | **Birincil buton** (beyaz metin ≈ 7,6:1) |
+| `--rt-brand-700` | `#4C2FA3` | Link, çerçeveli buton, hover |
+| `--rt-brand-800` | `#3B1F8F` | Gradyan bitişi, koyu mor yüzey |
+| `--rt-brand-950` | `#1E0F4D` | Alt bilgi koyu çerçevesi |
+| `--rt-brand-on-dark` | `#FFFFFF` | Koyu (grafit / koyu mor) zeminde vurgu metni: her zaman beyaz |
 
-> Beyaz metin yalnız `600`+ tonlarda ya da örtülü fotoğrafta.
+Kontrast kuralları:
+- Mor dolgunun (her tonu) üstünde metin ve ikon **her zaman beyaz**; mor zemin üstünde düğme beyaz dolgu + mor metin.
+- Mor metin yalnız açık zeminde (beyaz, krem, `#F3F0FC` / `#EFEAFB`). Koyu ya da mor zeminde mor ve lavanta metin yok; metin ve ikon beyaz.
+- `--rt-grad-brand` beyaz metin taşıdığı için 500 tonundan başlar (`300` gradyanda kullanılmaz).
+- Platform çipleri (Google mavisi, Yemeksepeti kırmızısı, Getir platform çipi, Trendyol turuncusu) resmi renklerinde kalır. Getir'in logosu, adı ya da metni kullanılmaz; yalnız renk ailesi.
+- Müşterinin seçtiği renkler (işletme marka rengi, menü vurgusu, sadakat kartı, QR, anket vurgusu) veridir, değişmez.
+
+Ek palet (sınıf olarak kullanılan sabitler): yumuşak lavanta zemin `#EFEAFB`, lavanta çerçeve `#DCD3F6`.
 
 ### 2.2 Nötrler
 | Token | Değer | Kullanım |
@@ -62,10 +72,10 @@
 ### 2.3 Destek renkleri ve gradyanlar
 | Token | Değer | Nerede |
 |---|---|---|
-| `--rt-lime` | `#AFE26C` | Varsayılan rozet ("ÜCRETSİZ ARAÇ") |
+| `--rt-lime` | `#DCD3F6` | Varsayılan rozet ("ÜCRETSİZ ARAÇ"); ad tarihsel, değer lavanta |
 | `--rt-sky` | `#9FC5F0` | "ÖNE ÇIKAN" rozeti, önerilen paket bayrağı |
 | `--rt-sun` | `#FED850` | "Yeni" rozeti (koyu kartlar) |
-| `--rt-grad-brand` | `130deg, 300 %2.95 → 500 %46.45 → 800 %101.77` | Güven paneli, özellik "bir bakışta" paneli, CTA bandı |
+| `--rt-grad-brand` | `130deg, 500 %2.95 → 600 %46.45 → 800 %101.77` | Güven paneli, özellik "bir bakışta" paneli, CTA bandı |
 | `--rt-grad-plan-card` | `0deg, #F9F9F9 → #F8F6F4` | Fiyat kartları, ticari kartlar |
 | `--rt-grad-dark-card` | `#252525 → #413E3D` | Koyu "yorumların ötesinde" kartları |
 | `--rt-grad-ai` | sarı → turuncu → pembe → mor → lacivert → açık mavi | Pulse AI başlığı ve sohbet çerçevesi |
@@ -171,7 +181,7 @@ tüm hareket kapanır.
 | SSS | `RtFaqList` (buton) · `FaqList` / `.rt-faqd` (`<details>`, çapalı) | Krem hap satır, açık satır koyu |
 | Dikey sekmeler | `RtVTabs` | 590×600 görsel + çizgili sekmeler |
 | Kapanış | `HomeFinalCta` (`.rt-closing`) | 1320 px, üst köşeler 48 px, alt bilgiye 40 px biner, 80 px başlık + halka |
-| Alt bilgi | `MarketingFooter` | Düz `--rt-brand-950` koyu yeşil çerçeve (40 px; mobil 24/12 px) içinde 1260 px beyaz kart (48 px köşe, `64px 90px`). Kartın altında hiçbir şey yok: gradyan, nokta deseni, "yapay zekâya sor" simgeleri ve dev logo 2026-11-27'de kaldırıldı (kullanıcı: yapay zekâ işi gibi duruyor) |
+| Alt bilgi | `MarketingFooter` | Düz `--rt-brand-950` koyu mor çerçeve (40 px; mobil 24/12 px) içinde 1260 px beyaz kart (48 px köşe, `64px 90px`). Kartın altında hiçbir şey yok: gradyan, nokta deseni, "yapay zekâya sor" simgeleri ve dev logo 2026-11-27'de kaldırıldı (kullanıcı: yapay zekâ işi gibi duruyor) |
 | Plan kartı | `PricingPlans` | 24 px köşe, `grad-plan-card`; önerilen: 2 px marka çerçeve + `sky` bayrak |
 | Uzun metin | `.rt-prose` | 18/30 (mobil 16/26), h2 32, h3 26 |
 
@@ -211,10 +221,10 @@ ve "7/24 destek" gibi iddialar **Buaze'ye taşınmadı**.
 
 ## 10. Erişilebilirlik
 
-- Odak halkası 2 px marka rengi, 3 px ofset; "İçeriğe geç" linki.
+- Odak halkası 2 px `--rt-brand-300` (#8C6CF0; açık ve koyu zeminde ≥3:1), 3 px ofset; "İçeriğe geç" linki.
 - Mega menü `aria-expanded`/`aria-controls`, Esc ve dışarı tıklama kapatır; kapalı paneller `inert`.
 - SSS ve sekmeler `aria-expanded` / `aria-selected`; tüm yanıtlar sunucu HTML'inde.
-- Beyaz metin yalnız ≥4.5:1 marka tonlarında ya da örtülü fotoğrafta.
+- Beyaz metin yalnız ≥4.5:1 marka tonlarında (`500`+) ya da örtülü fotoğrafta; mor zeminde metin hep beyaz.
 
 ## 11. Yeni sayfa / bölüm kontrol listesi
 

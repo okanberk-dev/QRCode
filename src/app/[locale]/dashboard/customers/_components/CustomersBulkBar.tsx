@@ -295,7 +295,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
           aria-live="polite"
           className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-32px)] rounded-[24px] px-4 py-2 text-center text-[12px] font-medium shadow-md lg:bottom-20 ${
             notice.tone === 'success'
-              ? 'bg-pn-ink text-white'
+              ? 'bg-pn-accent text-white'
               : 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]'
           }`}
         >
@@ -356,7 +356,7 @@ function SegmentPickerModal({
               aria-pressed={picked === opt.key}
               className={`min-h-[44px] rounded-[14px] border px-3 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:min-h-[36px] ${
                 picked === opt.key
-                  ? 'border-pn-ink bg-pn-ink text-white'
+                  ? 'border-pn-accent bg-pn-accent text-white'
                   : 'border-pn-line bg-white text-[#525252] hover:border-[#A3A3A3]'
               }`}
             >

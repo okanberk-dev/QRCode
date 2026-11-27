@@ -753,7 +753,7 @@ export default function RestaurantDetailPage() {
                     disabled={themeSaving}
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all disabled:opacity-50 ${
                       active
-                        ? 'border-pn-ink bg-pn-ink text-white '
+                        ? 'border-pn-accent bg-pn-accent text-white '
                         : 'border-pn-line bg-white text-[#525252] hover:border-pn-ink hover:text-pn-ink'
                     }`}
                   >
@@ -977,7 +977,7 @@ export default function RestaurantDetailPage() {
         {/* Basic Info */}
         <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent text-white">
               <Building2 size={18} strokeWidth={2} />
             </div>
             <div>
@@ -1091,7 +1091,7 @@ export default function RestaurantDetailPage() {
         {/* Contact Info */}
         <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent text-white">
               <MapPin size={18} strokeWidth={2} />
             </div>
             <div>
@@ -1137,7 +1137,7 @@ export default function RestaurantDetailPage() {
         {/* Notification & Google */}
         <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent text-white">
               <Mail size={18} strokeWidth={2} />
             </div>
             <div>
@@ -1188,7 +1188,7 @@ export default function RestaurantDetailPage() {
         {showDeliverySection && (
         <section className="overflow-hidden bz-card">
           <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent text-white">
               <Globe size={18} strokeWidth={2} />
             </div>
             <div>
@@ -1379,14 +1379,14 @@ function FeatureToggleCard({
   return (
     <div
       className={`rounded-[24px] border p-4 transition-colors ${
-        checked ? 'border-[#D9EE7A] bg-pn-accent-soft/35' : 'border-pn-line bg-white'
+        checked ? 'border-[#DCD3F6] bg-pn-accent-soft/60' : 'border-pn-line bg-white'
       } ${disabled ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 gap-3">
           <div
             className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-              checked ? 'bg-pn-ink text-pn-accent' : 'bg-pn-canvas text-[#737373]'
+              checked ? 'bg-pn-accent text-white' : 'bg-pn-canvas text-[#737373]'
             }`}
           >
             {icon}
@@ -1431,7 +1431,7 @@ function OwnerModulesCard({
   return (
     <section className="overflow-hidden bz-card">
       <div className="flex items-start gap-3 border-b border-pn-line px-6 py-5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent text-white">
           <ClipboardCheck size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0">

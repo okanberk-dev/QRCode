@@ -439,7 +439,7 @@ export default function AuditResultsClient({
                     data={histogram}
                     maxValue={Math.max(...histogram.map((h) => h.value), 1)}
                     height={120}
-                    accent="#C6F24E"
+                    accent="#5D3EBC"
                     showValues
                   />
                 </div>

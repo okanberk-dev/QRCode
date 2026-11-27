@@ -333,7 +333,7 @@ export default function MenuAnalyticsPage() {
                 onClick={() => setRange(opt.key)}
                 aria-pressed={active}
                 className={`inline-flex min-h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:h-[28px] sm:min-h-0 sm:flex-none sm:text-[12px] ${
-                  active ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas hover:text-pn-ink'
+                  active ? 'bg-pn-accent text-white' : 'text-[#525252] hover:bg-pn-canvas hover:text-pn-ink'
                 }`}
               >
                 <span className="sm:hidden">{opt.short}</span>
@@ -666,7 +666,7 @@ function TodoSection({
                 const productId = insight.kind === 'low_ctr_product' ? insight.relatedIds?.[0] : undefined;
                 return (
                   <div key={`${insight.kind}-${idx}`} className="flex min-w-0 gap-3 rounded-[24px] border border-pn-line bg-white p-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent-soft text-[#4D5C00]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent-soft text-pn-accent">
                       <Lightbulb size={16} strokeWidth={2.2} />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -783,7 +783,7 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
               />
               <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" formatter={legendLabel} />
               <Bar dataKey="views" fill="#0A0A0A" radius={[0, 6, 6, 0]} name={copy.legendViews} />
-              <Bar dataKey="clicks" fill="#78FC90" radius={[0, 6, 6, 0]} name={copy.legendClicks} />
+              <Bar dataKey="clicks" fill="#5D3EBC" radius={[0, 6, 6, 0]} name={copy.legendClicks} />
             </BarChart>
           )}
         </MeasuredChart>
@@ -810,8 +810,8 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
           <AreaChart width={width} height={height} data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#78FC90" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#78FC90" stopOpacity={0} />
+                <stop offset="0%" stopColor="#5D3EBC" stopOpacity={0.6} />
+                <stop offset="100%" stopColor="#5D3EBC" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradClicks" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#0A0A0A" stopOpacity={0.6} />
@@ -826,7 +826,7 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
               labelFormatter={(label) => dateFmt(label as string)}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" formatter={legendLabel} />
-            <Area type="monotone" dataKey="menuViews" stroke="#78FC90" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
+            <Area type="monotone" dataKey="menuViews" stroke="#5D3EBC" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
             <Area type="monotone" dataKey="productClicks" stroke="#0A0A0A" strokeWidth={2} fill="url(#gradClicks)" name={copy.trendTaps} />
           </AreaChart>
         )}

@@ -50,7 +50,7 @@ function CheckEmailInner({ locale }: { locale: Locale }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0A0A0A] text-[#C6F24E]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#5D3EBC] text-white">
           <Mail size={18} />
         </div>
         <div className="min-w-0">
@@ -71,7 +71,7 @@ function CheckEmailInner({ locale }: { locale: Locale }) {
       )}
 
       {resent ? (
-        <div className="flex items-start gap-3 rounded-2xl border border-[#EAF9B8] bg-[#EAF9B8]/40 p-4">
+        <div className="flex items-start gap-3 rounded-2xl border border-[#DCD3F6] bg-[#EFEAFB]/40 p-4">
           <CheckCircle2 size={18} className="shrink-0 text-[#0A0A0A] mt-0.5" />
           <p className="text-[13px] text-[#0A0A0A]">
             {isTr ? 'Yeni mail kutuna gönderildi.' : 'A new email has been sent.'}

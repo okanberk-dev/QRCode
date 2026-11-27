@@ -5,9 +5,9 @@ import { PanoNumber } from '@/components/panel/pano/PanoNumber';
 import { InfoTip } from '@/components/ui/InfoTip';
 
 /**
- * Dark hero card for the panel home (docs/design/DASHBOARD_DESIGN.md §5.4):
- * the page's most important number on black with the lime glow, four round
- * shortcuts and a progress bar whose unfilled part is hatched.
+ * Purple hero card for the panel home (docs/design/DASHBOARD_DESIGN.md §5.4):
+ * the page's most important number in white on purple with a lighter glow,
+ * four round shortcuts and a white progress bar whose unfilled part is hatched.
  */
 
 export interface HeroRow {
@@ -38,7 +38,7 @@ interface PanoHeroCardProps {
   openLabel: string;
   actions: HeroAction[];
   progress?: { label: string; percent: number | null; caption: string };
-  /** Dark rows under the progress bar (reference: currency rows). */
+  /** Translucent rows under the progress bar (reference: currency rows). */
   rows?: HeroRow[];
   isTr: boolean;
   className?: string;
@@ -80,7 +80,7 @@ export function PanoHeroCard({
         {change && (
           <span
             className="mb-1 inline-flex items-center gap-0.5 text-[13px] font-medium"
-            style={{ color: change.tone === 'bad' ? '#FF8A80' : change.tone === 'good' ? '#78FC90' : 'rgba(255,255,255,.62)' }}
+            style={{ color: change.tone === 'bad' ? '#FFC4C0' : change.tone === 'good' ? '#C8F7D2' : 'rgba(255,255,255,.78)' }}
           >
             {change.tone === 'good' && <ArrowUpRight size={15} aria-hidden="true" />}
             {change.tone === 'bad' && <ArrowDownRight size={15} aria-hidden="true" />}
@@ -118,7 +118,7 @@ export function PanoHeroCard({
             {pct !== null && (
               <>
                 <span
-                  className="absolute inset-y-0 left-0 rounded-full bg-pn-accent transition-[width] duration-700"
+                  className="absolute inset-y-0 left-0 rounded-full bg-white transition-[width] duration-700"
                   style={{ width: `${Math.max(pct, 8)}%` }}
                 />
                 <span className="pn-knob" style={{ left: `${Math.max(pct, 8)}%` }} aria-hidden="true">

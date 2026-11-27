@@ -1,9 +1,10 @@
 /**
  * Guard for the Pano panel design (CLAUDE.md §63, docs/design/DASHBOARD_DESIGN.md):
- * panel code uses the pn-* tokens, not the old Pulse lime / lumin lime hex
- * values, and no `pulse-eyebrow` labels. Customer-facing data defaults (a
- * business's brand colour, menu accent, survey accent, loyalty card swatches)
- * may still name those hex values; they are listed below on purpose.
+ * panel code uses the pn-* tokens, not the old Pulse lime / lumin lime /
+ * Fintora green hex values, and no `pulse-eyebrow` labels. Customer-facing
+ * data defaults (a business's brand colour, menu accent, survey accent,
+ * loyalty card swatches) may still name those hex values; they are listed
+ * below on purpose.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,9 +34,13 @@ const DATA_DEFAULTS = new Set([
   'src/app/admin/restaurants/[id]/menu/page.tsx',
   'src/app/admin/restaurants/[id]/page.tsx',
   'src/components/dashboard/BrandIdentityCard.tsx',
+  // Compares a stored business colour with the old default brand colour.
+  'src/components/panel/search/search-utils.ts',
 ]);
 
-const BANNED = /#(?:C6F24E|A8D62E|EAF9B8|D7FE03)\b|pulse-eyebrow/i;
+// Pulse lime, lumin lime and the Fintora green that Pano used before the
+// purple palette (#78FC90 accent, #5CF07A hover).
+const BANNED = /#(?:C6F24E|A8D62E|EAF9B8|D7FE03|78FC90|5CF07A)\b|pulse-eyebrow/i;
 
 function walk(dir: string, out: string[]): void {
   for (const name of readdirSync(dir)) {
@@ -45,7 +50,7 @@ function walk(dir: string, out: string[]): void {
   }
 }
 
-test('panel files use Pano tokens, not Pulse / lumin lime or pulse-eyebrow', () => {
+test('panel files use Pano tokens, not Pulse / lumin lime, the old green or pulse-eyebrow', () => {
   const files: string[] = [];
   for (const dir of PANEL_DIRS) walk(join(ROOT, dir), files);
   const offenders: string[] = [];

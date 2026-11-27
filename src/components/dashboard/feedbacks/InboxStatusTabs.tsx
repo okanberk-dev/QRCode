@@ -102,7 +102,7 @@ export function InboxStatusTabs({
             onKeyDown={(e) => onKeyDown(e, index)}
             className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 sm:h-9 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 ${
               selected
-                ? 'border-pn-ink bg-pn-ink text-white'
+                ? 'border-pn-accent bg-pn-accent text-white'
                 : 'border-pn-line bg-white text-[#525252] hover:border-pn-line-strong hover:text-pn-ink'
             }`}
           >

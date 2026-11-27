@@ -241,12 +241,12 @@ export function FeedbackList({
           after the rows so `sticky bottom` pins it above the bottom nav while
           the list scrolls. */}
       {!loading && aiReadyCount > 0 && activeTab !== 'ai_ready' && (
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 mx-3 mb-3 mt-3 flex items-center gap-3 rounded-[24px] bg-pn-ink px-4 py-3 text-white lg:hidden">
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 mx-3 mb-3 mt-3 flex items-center gap-3 rounded-[24px] bg-[#3B1F8F] px-4 py-3 text-white lg:hidden">
           <span
             aria-hidden="true"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-pn-accent/30 bg-pn-accent/15"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15"
           >
-            <Sparkles size={13} className="text-pn-accent" strokeWidth={2.2} />
+            <Sparkles size={13} className="text-white" strokeWidth={2.2} />
           </span>
           <span className="min-w-0 flex-1 text-[13px] leading-[1.45]">
             <strong className="font-medium">{aiReadyCount}</strong>{' '}
@@ -255,7 +255,7 @@ export function FeedbackList({
           <button
             type="button"
             onClick={() => setActiveTab('ai_ready')}
-            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-pn-accent px-4 text-[12px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pn-ink"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-white px-4 text-[12px] font-medium text-pn-accent transition-colors hover:bg-pn-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#3B1F8F]"
           >
             {isTr ? 'Aç' : 'Open'}
           </button>

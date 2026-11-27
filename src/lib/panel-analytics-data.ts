@@ -313,7 +313,7 @@ export async function buildPanelAnalyticsData({
       deltaKind: avgRatingNow >= resolvedTargetRating ? 'up' : 'down',
       subtitle: isTr ? `hedef ${resolvedTargetRating.toFixed(1)}` : `target ${resolvedTargetRating.toFixed(1)}`,
       sparkline: sparkReviews,
-      sparklineColor: '#A8D62E',
+      sparklineColor: '#5D3EBC',
     },
     {
       label: isTr ? 'YANIT SÜRESİ' : 'REPLY TIME',
@@ -329,7 +329,7 @@ export async function buildPanelAnalyticsData({
             ? 'henüz yanıt yok'
             : 'no replies yet',
       sparkline: sparkReviews,
-      sparklineColor: '#A8D62E',
+      sparklineColor: '#5D3EBC',
     },
     {
       label: 'NPS',
@@ -346,7 +346,7 @@ export async function buildPanelAnalyticsData({
             ? 'yeterli veri yok'
             : 'not enough data',
       sparkline: sparkReviews,
-      sparklineColor: '#A8D62E',
+      sparklineColor: '#5D3EBC',
     },
     {
       label: isTr ? 'TEKRAR GELME' : 'RETURN RATE',

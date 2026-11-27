@@ -6,7 +6,7 @@ import Link from '@/components/navigation/IntentLink';
 import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, Headset, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, Headset, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -14,6 +14,7 @@ import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import BusinessSwitcher from './BusinessSwitcher';
 import ViewportMount from '@/components/ui/ViewportMount';
+import { SearchTrigger } from '@/components/panel/search/SearchTrigger';
 import { PanelTopNav, type PanoNavEntry } from '@/components/panel/pano/PanelTopNav';
 import { PanelMobileNav } from '@/components/panel/pano/PanelMobileNav';
 import { PanelRail, RailLink } from '@/components/panel/pano/PanelRail';
@@ -572,15 +573,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         <Plus size={18} aria-hidden="true" />
         {isTr ? 'QR oluştur' : 'Create QR'}
       </Link>
-      <button
-        type="button"
-        onClick={() => setPaletteOpen(true)}
-        className="pn-icon-btn"
-        aria-label={isTr ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-        title={isTr ? 'Ara (⌘K)' : 'Search (⌘K)'}
-      >
-        <Search size={19} aria-hidden="true" />
-      </button>
+      {/* Search field from xl (from 1600px when the business switcher also
+          sits here); the round button below that. */}
+      <SearchTrigger
+        locale={locale}
+        variant={workspaceRestaurants.length > 1 ? 'pill-1600' : 'pill-xl'}
+        onOpen={() => setPaletteOpen(true)}
+      />
       <ViewportMount query="(min-width: 1024px)" fallback={<span aria-hidden className="inline-flex h-[46px] w-[46px] shrink-0" />}>
         <NotificationBell
           locale={locale}
@@ -666,16 +665,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           dialog: isTr ? 'Panel menüsü' : 'Panel menu',
         }}
         actions={
-          <ViewportMount query="(max-width: 1023.98px)" fallback={<span aria-hidden className="inline-flex h-11 w-11 shrink-0" />}>
-            <NotificationBell
-              locale={locale}
-              announcements={announcements}
-              panelBase={`/${locale}/dashboard`}
-              reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
-              notificationsSettingsHref={`/${locale}/dashboard/notifications`}
-              restaurantId={activeRestaurantId}
-            />
-          </ViewportMount>
+          <>
+            <SearchTrigger locale={locale} variant="icon" onOpen={() => setPaletteOpen(true)} />
+            <ViewportMount query="(max-width: 1023.98px)" fallback={<span aria-hidden className="inline-flex h-11 w-11 shrink-0" />}>
+              <NotificationBell
+                locale={locale}
+                announcements={announcements}
+                panelBase={`/${locale}/dashboard`}
+                reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
+                notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+                restaurantId={activeRestaurantId}
+              />
+            </ViewportMount>
+          </>
         }
         drawerTop={
           workspaceRestaurants.length > 0 ? (
@@ -760,6 +762,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           locale={locale}
           base={`/${locale}/dashboard`}
           restaurants={paletteRestaurants}
+          canAddBusiness={canAddBusiness}
+          scopeHref={hrefWithActiveRestaurant}
           navItems={[
           { href: `/${locale}/dashboard`, label: copy.dashboard, keywords: ['panel', 'dashboard', 'genel'] },
           { href: `/${locale}/dashboard/feedbacks`, label: copy.feedbacks, keywords: ['yorum', 'review', 'feedback', 'inbox'] },

@@ -106,7 +106,7 @@ export function PlatformBusinessContext({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
           aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-pn-ink text-[14px] font-medium text-pn-accent"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-pn-accent text-[14px] font-medium text-white"
         >
           {initial}
         </span>

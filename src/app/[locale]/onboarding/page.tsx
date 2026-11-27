@@ -192,7 +192,7 @@ export default function OnboardingPage({ params }: Props) {
               className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
-              buaze<span className="text-[#C6F24E]">.</span>
+              buaze<span className="text-[#5D3EBC]">.</span>
             </span>
           </Link>
           <button
@@ -252,9 +252,9 @@ export default function OnboardingPage({ params }: Props) {
                       <div
                         className={`flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold transition-all ${
                           done
-                            ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                            ? 'bg-[#5D3EBC] text-white'
                             : active
-                              ? 'bg-[#0A0A0A] text-[#C6F24E] ring-[6px] ring-[#C6F24E]/25'
+                              ? 'bg-[#5D3EBC] text-white ring-[6px] ring-[#5D3EBC]/20'
                               : 'border-2 border-[#EDEDED] bg-[#F5F5F5] text-[#A3A3A3]'
                         }`}
                         style={{ fontFamily: 'var(--font-heading)' }}
@@ -266,7 +266,7 @@ export default function OnboardingPage({ params }: Props) {
                       </span>
                     </div>
                     {i < steps.length - 1 && (
-                      <div className={`mt-[18px] h-0.5 flex-1 ${done ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'}`} />
+                      <div className={`mt-[18px] h-0.5 flex-1 ${done ? 'bg-[#5D3EBC]' : 'bg-[#EDEDED]'}`} />
                     )}
                   </div>
                 );
@@ -380,7 +380,7 @@ function SectorStep({
               onClick={() => update('sector', s.id)}
               className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-all ${
                 selected
-                  ? 'border-[#0A0A0A] bg-[#EAF9B8]'
+                  ? 'border-[#0A0A0A] bg-[#EFEAFB]'
                   : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'
               }`}
             >
@@ -394,7 +394,7 @@ function SectorStep({
                 <p className="mt-0.5 text-[12px] text-[#737373]">{s.sub[isTr ? 'tr' : 'en']}</p>
               </div>
               {selected && (
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#5D3EBC] text-white">
                   <Check size={12} strokeWidth={3} />
                 </span>
               )}
@@ -513,7 +513,7 @@ function PlatformStep({
               onClick={() => toggle(p.id)}
               className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
                 on
-                  ? 'border-[#0A0A0A] bg-[#EAF9B8]'
+                  ? 'border-[#0A0A0A] bg-[#EFEAFB]'
                   : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'
               }`}
             >
@@ -526,7 +526,7 @@ function PlatformStep({
               </div>
               <span
                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                  on ? 'border-[#0A0A0A] bg-[#0A0A0A] text-[#C6F24E]' : 'border-[#EDEDED] bg-white'
+                  on ? 'border-[#5D3EBC] bg-[#5D3EBC] text-white' : 'border-[#EDEDED] bg-white'
                 }`}
               >
                 {on && <Check size={11} strokeWidth={3} />}
@@ -550,7 +550,7 @@ function QrStep({
   update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 }) {
   const templates = [
-    { id: 'lime' as const, bg: '#C6F24E', fg: '#0A0A0A', label: 'Lime', bordered: false },
+    { id: 'lime' as const, bg: '#5D3EBC', fg: '#FFFFFF', label: isTr ? 'Mor' : 'Purple', bordered: false },
     { id: 'dark' as const, bg: '#0A0A0A', fg: '#FFFFFF', label: isTr ? 'Koyu' : 'Dark', bordered: false },
     { id: 'white' as const, bg: '#FFFFFF', fg: '#0A0A0A', label: isTr ? 'Beyaz' : 'White', bordered: true },
     { id: 'minimal' as const, bg: '#F5F5F5', fg: '#0A0A0A', label: 'Minimal', bordered: true },
@@ -641,7 +641,7 @@ function FinishButton({ isTr, onFinish, saving }: { isTr: boolean; onFinish: () 
       <button
         onClick={onClick}
         disabled={saving || popping}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-6 py-3 text-[14px] font-semibold text-white hover:bg-[#1A1A1A] disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 rounded-full bg-[#5D3EBC] px-6 py-3 text-[14px] font-semibold text-white hover:bg-[#4C2FA3] disabled:opacity-60"
       >
         {(saving || popping) ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
         {isTr ? 'Yayınla & paneli aç' : 'Publish & open panel'}
@@ -678,7 +678,7 @@ function ConfettiBurst() {
     );
   }, []);
 
-  const colors = ['#C6F24E', '#0A0A0A', '#A8D62E', '#EAF9B8', '#FFFFFF'];
+  const colors = ['#5D3EBC', '#8C6CF0', '#3B1F8F', '#DCD3F6', '#0A0A0A'];
   const reduced =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

@@ -1299,7 +1299,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               )}
               {isTr ? 'AI taslakları' : 'AI drafts'}
               {!loading && bulkEligibleCount > 0 && (
-                <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-pn-accent px-1.5 text-[12px] font-medium leading-[18px] text-pn-ink tabular-nums">
+                <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-white px-1.5 text-[12px] font-medium leading-[18px] text-pn-accent tabular-nums">
                   {bulkEligibleCount}
                 </span>
               )}
@@ -1459,7 +1459,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           aria-live="polite"
           className={`fixed inset-x-4 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 max-w-[560px] rounded-[24px] border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 lg:bottom-4 ${
             bulkNotice.tone === 'success'
-              ? 'border-pn-accent-hover bg-pn-ink text-white'
+              ? 'border-pn-accent-hover bg-pn-accent text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
           }`}
         >
@@ -1469,7 +1469,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               strokeWidth={2}
               aria-hidden="true"
               className={`mt-0.5 shrink-0 ${
-                bulkNotice.tone === 'success' ? 'text-pn-accent' : 'text-[#DC2626]'
+                bulkNotice.tone === 'success' ? 'text-white' : 'text-[#DC2626]'
               }`}
             />
             <p className="flex-1 text-[13px] leading-snug">{bulkNotice.msg}</p>

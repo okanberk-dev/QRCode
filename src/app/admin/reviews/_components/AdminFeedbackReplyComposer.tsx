@@ -38,15 +38,15 @@ export function AdminPulseAiCard({
   const hasDraft = aiSource !== null;
 
   return (
-    <div className="mt-5 rounded-[24px] bg-pn-ink p-4 text-white sm:p-5">
+    <div className="mt-5 rounded-[24px] bg-[#3B1F8F] p-4 text-white sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <span
           aria-hidden="true"
-          className="flex h-6 w-6 items-center justify-center rounded-[10px] bg-pn-accent text-pn-ink"
+          className="flex h-6 w-6 items-center justify-center rounded-[10px] bg-white text-pn-accent"
         >
           <Sparkles size={13} strokeWidth={2.2} />
         </span>
-        <span className="text-[13px] font-medium text-pn-accent">
+        <span className="text-[13px] font-medium text-white">
           {isTr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
         </span>
         {suggesting ? (
@@ -55,7 +55,7 @@ export function AdminPulseAiCard({
             {isTr ? 'Hazırlanıyor' : 'Working'}
           </span>
         ) : aiSource === 'openai' ? (
-          <span className="rounded-full bg-pn-accent px-2 py-0.5 text-[12px] font-medium text-pn-ink">
+          <span className="rounded-full bg-white px-2 py-0.5 text-[12px] font-medium text-pn-accent">
             AI
           </span>
         ) : isTemplate ? (

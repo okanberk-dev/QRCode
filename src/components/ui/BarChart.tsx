@@ -26,7 +26,7 @@ interface BarChartProps {
 export function BarChart({
   data,
   maxValue,
-  accent = "var(--color-pn-ink)",
+  accent = "var(--color-pn-accent)",
   height = 120,
   className = "",
   showValues = false,

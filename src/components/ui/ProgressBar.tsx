@@ -10,7 +10,7 @@ interface ProgressBarProps {
 export function ProgressBar({
   value,
   max = 100,
-  color = "var(--color-pn-ink)",
+  color = "var(--color-pn-accent)",
   height = 6,
   className = "",
   ariaLabel,

@@ -84,7 +84,7 @@ export default function AdminAnalyticsExtras({ isTr }: { isTr: boolean }) {
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-pn-ink px-2 py-1 text-[12px] font-medium text-pn-accent">
+            <span className="rounded-full bg-pn-accent px-2 py-1 text-[12px] font-medium text-white">
               {isTr ? 'SADECE SÜPERADMIN' : 'SUPERADMIN ONLY'}
             </span>
           </div>

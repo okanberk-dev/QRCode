@@ -56,7 +56,7 @@ export function CategoryOrderSheet({ categories, onClose }: { categories: Catego
     >
       {notice && (
         <p role="status" className="mb-3 flex items-center gap-2 rounded-[14px] bg-pn-accent-soft px-3 py-2 text-[13px] text-pn-ink">
-          <Check size={14} strokeWidth={2.25} className="shrink-0 text-[#4D5C00]" aria-hidden="true" />
+          <Check size={14} strokeWidth={2.25} className="shrink-0 text-pn-accent" aria-hidden="true" />
           <span className="flex-1">{notice === 'saved' ? copy.toast.orderSaved : copy.toast.undone}</span>
           {notice === 'saved' && (
             <button

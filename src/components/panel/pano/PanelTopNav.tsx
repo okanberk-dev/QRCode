@@ -68,7 +68,7 @@ export function MenuLinks({ items, newLabel }: { items: PanoNavChild[]; newLabel
               {Icon && <Icon size={17} aria-hidden="true" />}
               <span className="flex-1 truncate">{child.label}</span>
               {child.isNew && newLabel && (
-                <span className="rounded-full bg-pn-accent px-2 py-0.5 text-[12px] font-medium text-pn-ink">
+                <span className="rounded-full bg-pn-accent px-2 py-0.5 text-[12px] font-medium text-white">
                   {newLabel}
                 </span>
               )}

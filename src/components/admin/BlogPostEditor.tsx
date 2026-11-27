@@ -786,7 +786,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                           })
                         }
                         aria-pressed={form.locale === locale}
-                        className={`rounded-[20px] py-2.5 text-xs font-medium transition-colors ${form.locale === locale ? 'bg-pn-ink text-white' : 'text-[#737373] hover:bg-pn-canvas'}`}
+                        className={`rounded-[20px] py-2.5 text-xs font-medium transition-colors ${form.locale === locale ? 'bg-pn-accent text-white' : 'text-[#737373] hover:bg-pn-canvas'}`}
                       >
                         {locale.toUpperCase()}
                       </button>
@@ -992,7 +992,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
               </div>
             </div>
 
-            <div className="rounded-[28px] bg-pn-accent p-5 text-pn-ink">
+            <div className="rounded-[28px] bg-pn-accent p-5 text-white">
               <div className="flex items-center gap-2 text-[12px] font-medium ">
                 <Sparkles size={15} />
                 İÇERİK DURUMU

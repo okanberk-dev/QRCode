@@ -49,8 +49,8 @@ const TYPE_META: Record<
   { icon: typeof MessageSquare; tint: string; bg: string }
 > = {
   feedback: { icon: MessageSquare, tint: '#000000', bg: '#F6F6F6' },
-  reply: { icon: Reply, tint: '#000000', bg: '#E6FDEA' },
-  ai_draft: { icon: Sparkles, tint: '#2FB24C', bg: '#000000' },
+  reply: { icon: Reply, tint: '#5D3EBC', bg: '#EFEAFB' },
+  ai_draft: { icon: Sparkles, tint: '#FFFFFF', bg: '#5D3EBC' },
   system: { icon: Settings, tint: '#737373', bg: '#F5F5F5' },
 };
 
@@ -360,7 +360,7 @@ export function ActivityFeed({
                   <>
                     <span
                       aria-hidden="true"
-                      className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-white"
+                      className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
                     >
                       <Icon size={17} />
                       <span

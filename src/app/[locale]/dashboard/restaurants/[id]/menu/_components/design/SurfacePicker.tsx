@@ -67,7 +67,7 @@ export function SurfacePicker({
               </span>
               <span className="absolute bottom-1.5 left-2 right-2 h-px" style={{ backgroundColor: s.rule }} />
               {on && (
-                <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-pn-ink shadow-[0_0_0_2px_#FFFFFF]">
+                <span className="absolute -right-1.5 -top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-pn-accent shadow-[0_0_0_2px_#FFFFFF]">
                   <Check size={10} strokeWidth={3} className="text-white" />
                 </span>
               )}

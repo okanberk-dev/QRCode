@@ -3,10 +3,11 @@
 import { usePathname } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { LogOut, Search as SearchIcon, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import Link from '@/components/navigation/IntentLink';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import ViewportMount from '@/components/ui/ViewportMount';
+import { SearchTrigger } from '@/components/panel/search/SearchTrigger';
 import { PanelTopNav, type PanoNavEntry } from '@/components/panel/pano/PanelTopNav';
 import { PanelMobileNav } from '@/components/panel/pano/PanelMobileNav';
 import { PanelRail, RailLink } from '@/components/panel/pano/PanelRail';
@@ -127,17 +128,6 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
     </Link>
   );
 
-  const searchButton = (
-    <button
-      type="button"
-      onClick={openSearch}
-      className="pn-icon-btn"
-      aria-label={isEn ? 'Search (Cmd+K)' : 'Ara (Cmd+K)'}
-      title={isEn ? 'Search (⌘K)' : 'Ara (⌘K)'}
-    >
-      <SearchIcon size={19} aria-hidden="true" />
-    </button>
-  );
 
   return (
     <>
@@ -156,7 +146,7 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
         moreLabel={isEn ? 'More' : 'Diğer'}
         actions={
           <>
-            {searchButton}
+            <SearchTrigger locale={navLocale} variant="pill" onOpen={openSearch} />
             <ViewportMount query="(min-width: 1024px)" fallback={<span aria-hidden className="inline-flex h-[46px] w-[46px] shrink-0" />}>
               <NotificationBell locale={navLocale} announcements={announcements} panelBase="/admin" notificationsSettingsHref={null} />
             </ViewportMount>
@@ -200,7 +190,7 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
         }}
         actions={
           <>
-            {searchButton}
+            <SearchTrigger locale={navLocale} variant="icon" onOpen={openSearch} />
             <ViewportMount query="(max-width: 1023.98px)" fallback={<span aria-hidden className="inline-flex h-11 w-11 shrink-0" />}>
               <NotificationBell locale={navLocale} announcements={announcements} panelBase="/admin" notificationsSettingsHref={null} />
             </ViewportMount>

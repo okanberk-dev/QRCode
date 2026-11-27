@@ -1,6 +1,6 @@
 ---
 name: panel-design
-description: Buaze owner ve admin panellerinde (src/app/admin, src/app/[locale]/dashboard, src/components/{dashboard,admin,panel,ui}) yeni ekran, kart, buton, tablo, grafik ya da form yazarken veya mevcut bir panel ekranını düzenlerken kullan. "Pano" tasarım sisteminin (Fintora + lumin harmanı) renk tokenlarını, buton ailesini, kart yapısını, gezinme düzenini, hareket kurallarını ve yasaklarını verir.
+description: Buaze owner ve admin panellerinde (src/app/admin, src/app/[locale]/dashboard, src/components/{dashboard,admin,panel,ui}) yeni ekran, kart, buton, tablo, grafik ya da form yazarken veya mevcut bir panel ekranını düzenlerken kullan. "Pano" tasarım sisteminin (Fintora + lumin harmanı, mor + beyaz palet) renk tokenlarını, buton ailesini, kart yapısını, gezinme düzenini, hareket kurallarını ve yasaklarını verir.
 ---
 
 # Panel tasarımı — Pano
@@ -19,37 +19,45 @@ Bu dosya yazarken bakılacak kısa kural listesidir.
 |---|---|
 | `bg-pn-canvas` | Gri tuval `#F6F6F6` / kart içi gri yüzey |
 | `bg-white` | Kart |
-| `bg-pn-ink` / `text-pn-ink` | Siyah `#111110` |
-| `bg-pn-accent` | Yeşil `#78FC90` (yalnız siyah yazıyla) |
-| `bg-pn-accent-soft` + `text-pn-accent-ink` | Açık yeşil zemin + yeşil yazı (artış rozeti) |
-| `bg-pn-olive` | İkinci yeşil seri |
+| `text-pn-ink` | Metin `#111110` (siyah dolgu yalnız ipucu / bildirim / cihaz çerçevesi) |
+| `bg-pn-accent text-white` | Mor `#5D3EBC`: ana buton, aktif hap/sekme, ikon dairesi — üstündeki yazı ve ikon **her zaman beyaz** |
+| `hover:bg-pn-accent-hover` | Mor hover / basılı `#4C2FA3` |
+| `bg-pn-accent-soft` + `text-pn-accent` | Lavanta `#EFEAFB` zemin + mor yazı (seçili satır, yumuşak rozet) |
+| `bg-[#3B1F8F]` + `text-white` | Koyu mor yüzey (AI kartı, seçim çubuğu, özet); üstündeki metin ve ikon her zaman beyaz |
+| `bg-pn-olive` | İkinci veri serisi `#A68FEB` |
 | `border-pn-line` | Ayraç / input çerçevesi |
 | `text-[#737373]` / `text-[#9A9A9A]` | İkincil / soluk metin |
 
-`#C6F24E`, `#A8D62E`, `#EAF9B8`, `#D7FE03`, `pulse-eyebrow` yazma — `tests/pano-guard.test.ts` kırılır.
-Recharts'a hex gerekirse: yeşil `#78FC90`, ikinci yeşil `#2FB24C`, siyah `#111110`.
+`#C6F24E`, `#A8D62E`, `#EAF9B8`, `#D7FE03`, `#78FC90`, `#5CF07A`, `pulse-eyebrow` yazma — `tests/pano-guard.test.ts` kırılır.
+Recharts'a hex gerekirse: mor `#5D3EBC`, ikinci seri `#A68FEB`, lavanta `#DCD3F6`, koyu mor `#3B1F8F`.
+Durum renkleri anlamını korur: olumlu `#23863A`, olumsuz `#D92D20`; mor yüzeyde artış `#C8F7D2`, azalış `#FFC4C0`.
+Mor zemine siyah yazı yok; siyah ya da koyu mor zemine mor yazı yok (lavanta ya da beyaz kullan).
+Müşterinin seçtiği renkler (işletme rengi, menü vurgusu, sadakat kartı, QR, anket vurgusu) veridir, değiştirme.
 
 ## Buton seçimi
-- Ana eylem → `bz-btn-primary` (siyah hap). Sayfada en çok bir tane.
-- Vurgu / koyu kart üstünde → `bz-btn-lime` (yeşil hap).
+- Ana eylem → `bz-btn-primary` (mor hap, beyaz yazı). Sayfada en çok bir tane.
+- `bz-btn-lime` tarihî ad; panelde aynı mor hap. Mor / koyu mor yüzey üstünde birincil eylem beyaz hap + mor yazı (`bg-white text-pn-accent hover:bg-pn-accent-soft`).
 - İkincil → `bz-btn` (tuvalde beyaz, kartta otomatik gri; çerçeve yok).
 - Yalnız ikon, kart içinde → `bz-btn-icon` (40 px, kartta gri).
 - Yalnız ikon, sayfa başlığında → `pn-icon-btn` (46 px beyaz daire).
 - "Ayrıntıya git" → `pn-arrow-btn` (44 px gri daire, ↗ hover'da döner).
-- Koyu kart içinde ikon → `pn-dark-icon-btn`.
+- Mor kart içinde ikon → `pn-dark-icon-btn` (yarı saydam beyaz, hover beyaz + mor ikon).
 - Köşeli buton yazma; `rounded-lg` / `rounded-md` butonlarda yok.
 
 ## Kart seçimi
 - İçerik bloğu → `bz-card p-5 sm:p-6` (çerçevesiz, 24 px köşe).
-- Sayfanın en önemli verisi → `pn-card-dark` / `PanoHeroCard`, sayfada en çok bir.
-- Kısayol → `PanoTile` (yeşil kutu). Kısa sıralı liste → `PanoStack`.
+- Sayfanın en önemli verisi → `pn-card-dark` / `PanoHeroCard` (mor kart, beyaz yazı, ilerleme dolgusu beyaz), sayfada en çok bir.
+- Kısayol → `PanoTile` (lavanta kutu, mor ikon dairesi). Kısa sıralı liste → `PanoStack`.
 - Liste satırı → `pn-row` (gri, 16 px köşe) ya da tablo.
+- Seçim kartı (tema, şablon, durum) → beyaz kart; seçili olan `border-pn-accent` (ya da `shadow-[0_0_0_2px_#5D3EBC]`) + `bg-pn-accent-soft`. Siyah seçim çerçevesi yok.
+- İlerleme → `ProgressBar` (varsayılan mor dolgu); mor kartta beyaz dolgu + `pn-hatch-dark`.
 - Kart başlığı: `<h2 className="pn-card-title">` (20 px / 500) + altında gri tarih, sağda ↗ ya da tarih hapı.
 
 ## Tipografi
 - Plus Jakarta Sans. Başlık ve büyük sayı `font-medium` (500); gövde 400.
 - Büyük sayı: `<PanoNumber value="37.201,00" />`; kesir otomatik gri.
 - Etiketler cümle düzeninde; `uppercase`, `tracking-[0.18em]`, `bz-mono` yok.
+- Mor yüzeyde soluk metin en az `text-white/75` (AA).
 
 ## Hareket
 - Basılabilir her öğe `active:scale-[.97]` (bz-* butonlar zaten yapar).
