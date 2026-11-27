@@ -45,7 +45,7 @@ const PULSE_SERIES: Array<{
 }> = [
   { key: 'google', labelTr: 'Google', labelEn: 'Google', color: '#000000' },
   { key: 'tripadvisor', labelTr: 'Tripadvisor', labelEn: 'Tripadvisor', color: '#737373' },
-  { key: 'buazeQr', labelTr: 'Buaze QR', labelEn: 'Buaze QR', color: '#5D3EBC' },
+  { key: 'buazeQr', labelTr: 'Buaze QR', labelEn: 'Buaze QR', color: '#111110' },
   { key: 'other', labelTr: 'Diğer', labelEn: 'Other', color: '#A3A3A3' },
 ];
 

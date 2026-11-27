@@ -125,10 +125,10 @@ export interface FeatureSchemaInfo {
 export const FEATURE_CONTAINER = 'rt-container';
 export const FEATURE_SECTION_Y = 'py-[64px] lg:py-[112px]';
 export const FEATURE_FOCUS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2';
 /** Card used across the feature family (spec §4 cards). */
 export const FEATURE_CARD = 'rounded-[var(--rt-r-lg)] bg-[var(--rt-cream)] p-6 sm:p-8';
-/** Inline text link with the brand underline used across the marketing site. */
+/** Inline text link with the lime underline used across the marketing site. */
 export const FEATURE_TEXT_LINK = 'rt-link-arrow min-h-[44px]';
 
 const SHARED = {
@@ -438,7 +438,7 @@ export default function FeaturePageLayout({
                       {' '}
                       <Link
                         href={copy.definition.noteLink.href}
-                        className={`rounded-sm font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FEATURE_FOCUS}`}
+                        className={`rounded-sm font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:decoration-[#0A0A0A] ${FEATURE_FOCUS}`}
                       >
                         {copy.definition.noteLink.label}
                       </Link>
@@ -467,7 +467,7 @@ export default function FeaturePageLayout({
                 <li key={item.title} className={FEATURE_CARD}>
                   <span
                     aria-hidden="true"
-                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EFEAFB] text-[#0A0A0A]"
+                    className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#EAF9B8] text-[#0A0A0A]"
                   >
                     <Icon size={20} strokeWidth={2} />
                   </span>
@@ -615,13 +615,13 @@ export default function FeaturePageLayout({
                   >
                     <span
                       aria-hidden="true"
-                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#5D3EBC] text-white"
+                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#0A0A0A] text-[#C6F24E]"
                     >
                       <Icon size={20} strokeWidth={2} />
                     </span>
                     <span className="bz-h-tight mt-5 block text-[21px] leading-[1.25] text-[#0A0A0A]">{item.title}</span>
                     <span className="mt-3 block text-[15px] leading-[1.6] text-[#525252]">{item.body}</span>
-                    <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 group-hover:decoration-[#0A0A0A]">
+                    <span className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[14px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 group-hover:decoration-[#0A0A0A]">
                       {item.label}
                       <ArrowRight size={14} aria-hidden="true" />
                     </span>

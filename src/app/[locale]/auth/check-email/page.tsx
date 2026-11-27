@@ -37,7 +37,7 @@ export default async function CheckEmailPage({
             className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            buaze<span className="text-[#5D3EBC]">.</span>
+            buaze<span className="text-[#C6F24E]">.</span>
           </span>
         </Link>
 
@@ -67,7 +67,7 @@ export default async function CheckEmailPage({
         </p>
 
         <div className="mt-7 pt-5 border-t border-[#EDEDED] text-[13px] text-[#525252]">
-          <Link href={`/${locale}/auth/login`} className="font-semibold text-[#0A0A0A] hover:text-[#5D3EBC] transition-colors">
+          <Link href={`/${locale}/auth/login`} className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors">
             {isTr ? '← Giriş sayfasına dön' : '← Back to sign in'}
           </Link>
         </div>

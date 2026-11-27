@@ -53,14 +53,14 @@ const PLATFORM_META: Record<string, { tone: string; short: string }> = {
   zomato: { tone: '#E23744', short: 'Z' },
 };
 
-/** Segment colours, in order (Pano §5.13: lime, olive, ink, then greys). */
-const SEGMENT_COLORS = ['#5D3EBC', '#A68FEB', '#1E1E1E', '#C9C9CF', '#E0E0E0'];
+/** Segment colours, in order (Fintora breakdown: black, light green, ink, greys). */
+const SEGMENT_COLORS = ['#78FC90', '#111110', '#111110', '#C9C9CF', '#E0E0E0'];
 
 /**
- * Where customers were sent (Pano, docs/design/DASHBOARD_DESIGN.md §5.13): one
- * card with a segmented pill bar — each platform's share of the redirects —
- * and a list underneath: platform circle, name, redirect count, average
- * rating with a grey fraction.
+ * Where customers were sent (Pano, docs/design/DASHBOARD_DESIGN.md §5.4,
+ * Fintora "Portfolio Breakdown"): a slim segmented bar — each platform's
+ * share of the redirects — over grey rows: platform circle, name over a
+ * grey count/share line, average rating with a grey fraction on the right.
  */
 export function ChannelDistribution({ channels, title, googleImpact = null, isTr = true }: ChannelDistributionProps) {
   if (channels.length === 0) return null;
@@ -70,33 +70,40 @@ export function ChannelDistribution({ channels, title, googleImpact = null, isTr
   const fmtRating = (n: number) => (isTr ? n.toFixed(1).replace('.', ',') : n.toFixed(1));
 
   return (
-    <div className="bz-card p-5 sm:p-7">
-      {title && <h2 className="pn-card-title mb-5">{title}</h2>}
+    <div className="bz-card p-5 sm:p-6">
+      {title && (
+        <div className="mb-4">
+          <h2 className="pn-card-title text-pn-ink">{title}</h2>
+          {total > 0 && (
+            <p className="mt-1 text-[13px] text-[#9A9A9A]">
+              {fmt(total)} {isTr ? 'yönlendirme' : total === 1 ? 'redirect' : 'redirects'}
+            </p>
+          )}
+        </div>
+      )}
       {total > 0 && (
-        <div className="mb-6 flex h-6 gap-1.5" aria-hidden="true">
+        <div className="mb-4 flex h-2.5 gap-1" aria-hidden="true">
           {shown
             .filter((c) => c.count > 0)
             .map((c, i) => (
               <span
                 key={c.platform}
-                className="h-full min-w-[10px] rounded-full transition-[flex-grow] duration-700"
+                className="h-full min-w-[8px] rounded-full transition-[flex-grow] duration-700"
                 style={{ flexGrow: c.count, background: SEGMENT_COLORS[i] ?? SEGMENT_COLORS[SEGMENT_COLORS.length - 1] }}
               />
             ))}
         </div>
       )}
-      <ul className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-2">
         {shown.map((c, i) => {
           const meta = PLATFORM_META[c.platform] ?? { tone: '#000', short: c.label.charAt(0).toUpperCase() };
           const fullLabel = (PLATFORMS as Record<string, { label: string }>)[c.platform]?.label ?? c.label;
           const share = total > 0 ? Math.round((c.count / total) * 100) : 0;
           const impact = c.platform === 'google' && googleImpact && Math.abs(googleImpact.diff) >= 0.05 ? googleImpact : null;
+          const delta = c.delta !== null && c.delta !== undefined && Math.abs(c.delta) >= 0.05 ? c.delta : null;
           return (
-            <li key={c.platform} className="flex items-center gap-3.5">
-              <span
-                aria-hidden="true"
-                className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-[12px] font-medium text-white"
-              >
+            <li key={c.platform} className="pn-row min-h-[64px]">
+              <span aria-hidden="true" className="pn-row-icon relative">
                 {meta.short}
                 <span
                   className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white"
@@ -105,24 +112,26 @@ export function ChannelDistribution({ channels, title, googleImpact = null, isTr
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-medium text-pn-ink">{fullLabel}</span>
-                <span className="block text-[13px] text-[#9A9A9A]">
+                <span className="block truncate text-[13px] text-[#9A9A9A]">
                   {fmt(c.count)} {isTr ? 'yönlendirme' : c.count === 1 ? 'redirect' : 'redirects'}
-                  {total > 0 ? ` · %${share}` : ''}
-                  {impact
-                    ? isTr
-                      ? ` · Google ${fmtRating(impact.initial)} → ${fmtRating(impact.current)}`
-                      : ` · Google ${fmtRating(impact.initial)} → ${fmtRating(impact.current)}`
-                    : ''}
+                  {total > 0 ? (isTr ? ` · %${share}` : ` · ${share}%`) : ''}
+                  {impact ? ` · Google ${fmtRating(impact.initial)} → ${fmtRating(impact.current)}` : ''}
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1.5 text-[18px] text-pn-ink">
+              <span className="flex shrink-0 flex-col items-end">
                 {c.avgRating > 0 ? (
-                  <>
-                    <Star size={15} className="text-pn-ink" fill="currentColor" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-1 text-[17px] text-pn-ink">
+                    <Star size={14} className="text-pn-accent" fill="currentColor" aria-hidden="true" />
                     <PanoNumber value={fmtRating(c.avgRating)} locale={isTr ? 'tr' : 'en'} />
-                  </>
+                  </span>
                 ) : (
                   <span className="text-[14px] text-[#9A9A9A]">—</span>
+                )}
+                {delta !== null && (
+                  <span className={`text-[12px] tabular-nums ${delta > 0 ? 'text-[#23863A]' : 'text-[#D92D20]'}`}>
+                    {delta > 0 ? '+' : ''}
+                    {fmtRating(delta)}★
+                  </span>
                 )}
               </span>
             </li>

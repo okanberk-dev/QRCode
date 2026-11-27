@@ -92,8 +92,8 @@ export function FeedbackStatusChips({
           key={c.key}
           kind={c.kind}
           dot={false}
-          // Fintora soft pills: the AI chip is lavender with purple text, not a
-          // filled purple pill (the filled one is reserved for actions).
+          // Fintora soft pills: the AI chip is light green with black text, not a
+          // filled black pill (the filled one is reserved for actions).
           className={`gap-1 ${c.key === 'ai' ? 'bg-pn-accent-soft text-pn-accent' : ''}`}
         >
           {c.icon}

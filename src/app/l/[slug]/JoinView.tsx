@@ -154,7 +154,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
   const consentBoxes = (
     <div className="space-y-3 pt-1">
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
-        <input type="checkbox" checked={form.consent} onChange={(e) => set('consent', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#5D3EBC]" />
+        <input type="checkbox" checked={form.consent} onChange={(e) => set('consent', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]" />
         <span>
           {t.consentAll}{' '}
           <a href={`/l/${slug}/kosullar${legalQ}`} target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
@@ -167,7 +167,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
         </span>
       </label>
       <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
-        <input type="checkbox" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#5D3EBC]" />
+        <input type="checkbox" checked={form.marketing} onChange={(e) => set('marketing', e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110]" />
         <span>{t.marketing}</span>
       </label>
     </div>
@@ -219,9 +219,9 @@ export default function JoinView({ locale, slug, businessName, source, account, 
       )}
 
       {saved && (
-        <a href={saved} className="bzl-tap flex min-h-[56px] items-center justify-between gap-3 rounded-full bg-[#EFEAFB] py-2 pl-5 pr-2 text-[#111110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2">
+        <a href={saved} className="bzl-tap flex min-h-[56px] items-center justify-between gap-3 rounded-full bg-[#F1FDF3] py-2 pl-5 pr-2 text-[#111110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2">
           <span className="text-[14px]">{t.savedOnDevice}</span>
-          <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-[#5D3EBC] px-4 text-[14px] font-semibold text-white">{t.openMyCard} →</span>
+          <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-[#111110] px-4 text-[14px] font-semibold text-white">{t.openMyCard} →</span>
         </a>
       )}
 
@@ -235,7 +235,7 @@ export default function JoinView({ locale, slug, businessName, source, account, 
             }}
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#5D3EBC] text-[18px] font-semibold text-white">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#111110] text-[18px] font-semibold text-white">
                 {account.firstName.charAt(0)}
               </span>
               <div className="min-w-0">

@@ -37,11 +37,11 @@ export default function HelpTopicGrid({
           <li key={topic.slug}>
             <Link
               href={`/${locale}/help/category/${topic.slug}`}
-              className="group flex min-h-[56px] items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+              className="group flex min-h-[56px] items-center gap-3 rounded-[14px] border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:border-[#D4D4D4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
             >
               <span
                 aria-hidden="true"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--rt-cream)] text-[var(--rt-ink-900)] transition-colors group-hover:bg-[#5D3EBC] group-hover:text-white"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#F5F5F5] text-[#0A0A0A] transition-colors group-hover:bg-[#C6F24E]"
               >
                 <HelpCategoryIcon icon={topic.icon} size={18} />
               </span>

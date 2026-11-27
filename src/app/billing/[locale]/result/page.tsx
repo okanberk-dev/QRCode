@@ -34,7 +34,7 @@ export async function generateMetadata({
  */
 
 const ICON = {
-  success: { wrap: 'bg-[#E7F4EA]', Icon: Check, color: '#23863A' },
+  success: { wrap: 'bg-[#EAF9B8]', Icon: Check, color: '#4D5C00' },
   failed: { wrap: 'bg-[#FEF2F2]', Icon: X, color: '#991B1B' },
   pending: { wrap: 'bg-[#F5F5F5]', Icon: Loader2, color: '#525252' },
   review: { wrap: 'bg-[#FFF7ED]', Icon: AlertTriangle, color: '#9A3412' },
@@ -79,7 +79,7 @@ export default async function BillingResultPage({
     : [];
 
   return (
-    <main className="min-h-dvh bg-[#F6F6F6] text-[#111110]">
+    <main className="min-h-dvh bg-[#FAFAFA] text-[#0A0A0A]">
       <ResultPoller active={model.status === 'pending'} />
       <div className="mx-auto w-full max-w-[480px] px-4 py-16">
         <div className="bz-card p-6 text-center sm:p-8">
@@ -99,7 +99,7 @@ export default async function BillingResultPage({
           {model.card ? (
             <p
               className={`mx-auto mt-4 max-w-[380px] rounded-xl px-4 py-3 text-[13px] leading-[1.55] ${
-                model.card.state === 'saved' ? 'bg-[#E7F4EA] text-[#1B6B2E]' : model.card.state === 'pending' ? 'bg-[#F5F5F5] text-[#525252]' : 'bg-[#FFFBEB] text-[#92400E]'
+                model.card.state === 'saved' ? 'bg-[#EAF9B8] text-[#4D5C00]' : model.card.state === 'pending' ? 'bg-[#F5F5F5] text-[#525252]' : 'bg-[#FFFBEB] text-[#92400E]'
               }`}
             >
               {model.card.state === 'saved'
@@ -117,14 +117,14 @@ export default async function BillingResultPage({
               {rows.map((row) => (
                 <div key={row.label} className="flex items-baseline justify-between gap-4 px-4 py-3">
                   <dt className="text-[#737373]">{row.label}</dt>
-                  <dd className="text-right font-medium tabular-nums text-[#0A0A0A]">{row.value}</dd>
+                  <dd className="bz-mono text-right font-medium text-[#0A0A0A]">{row.value}</dd>
                 </div>
               ))}
             </dl>
           ) : null}
 
           <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <a href={dashboardUrl} className="bz-btn-primary bg-[#5D3EBC] hover:bg-[#4C2FA3] inline-flex min-h-[44px] items-center justify-center">
+            <a href={dashboardUrl} className="bz-btn-primary inline-flex min-h-[44px] items-center justify-center">
               {t('result.back')}
             </a>
             {model.retryPath ? (

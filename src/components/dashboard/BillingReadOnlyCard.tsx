@@ -247,7 +247,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
     return (
       <section id="billing" className="space-y-4 scroll-mt-20" aria-busy="true">
         <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
-          <div className="rounded-[24px] bg-[#3B1F8F] p-5 sm:p-6 space-y-3">
+          <div className="rounded-[24px] bg-[#000000] p-5 sm:p-6 space-y-3">
             <div className="h-3 w-24 rounded bg-white/15" />
             <div className="h-9 w-40 rounded bg-white/15" />
             <div className="h-3 w-32 rounded bg-white/10" />
@@ -319,10 +319,10 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
         />
       ) : null}
 
-      {/* ─── Top row: Plan hero (deep purple) + Payment method ─── */}
+      {/* ─── Top row: Plan hero (black) + Payment method ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
-        {/* Plan hero — deep purple bg */}
-        <div className="rounded-[24px] bg-[#3B1F8F] p-5 sm:p-6 text-white">
+        {/* Plan hero — black bg */}
+        <div className="rounded-[24px] bg-[#000000] p-5 sm:p-6 text-white">
           <p className="tabular-nums text-[12px] font-medium text-white/70">
             {isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}
           </p>
@@ -510,7 +510,7 @@ export default function BillingReadOnlyCard({ isTr, usage }: BillingReadOnlyCard
                       className="h-full rounded-full"
                       style={{
                         width: `${pct}%`,
-                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#5D3EBC',
+                        background: pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#111110',
                       }}
                     />
                   </div>

@@ -131,9 +131,9 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 rounded-[20px] border border-pn-line bg-pn-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-[24px] bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 max-sm:bg-[#F6F6F6]">
           <div className="min-w-0">
             <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Müşterilerinizin gördüğü sayfa' : 'The page your customers see'}</p>
             <p className="truncate text-[13px] text-[#737373]">{portalUrl}</p>
@@ -255,7 +255,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
               : 'Short notes: a new product, this week’s menu, happy hour. Never offer anything for a review or rating (Google rules).'}
           </p>
           {draft.offers.map((o, i) => (
-            <div key={o.id} className="space-y-2 rounded-[20px] border border-pn-line p-3">
+            <div key={o.id} className="space-y-2 rounded-[16px] bg-pn-canvas p-3">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px]">
                 <input
                   value={o.title}
@@ -377,18 +377,18 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
           </AlertBanner>
         )}
         {canManage && (
-          <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,0px)+12px)] z-20 flex flex-col gap-2 rounded-[20px] border border-pn-line bg-white/95 p-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between lg:bottom-3">
+          <div className="sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-20 flex flex-col gap-2 rounded-[24px] bg-white p-2 pl-4 shadow-[0_14px_36px_-16px_rgba(17,17,16,0.28)] sm:flex-row sm:items-center sm:justify-between sm:rounded-[28px] lg:bottom-3">
             <span className="text-[13px] text-[#525252]">
               {notice ?? (dirty ? (tr ? 'Kaydedilmemiş değişiklikler var.' : 'You have unsaved changes.') : tr ? 'Değişiklik yok.' : 'No changes.')}
             </span>
             <div className="flex gap-2">
               {dirty && (
-                <button type="button" className="bz-btn-ghost" onClick={() => setDraft(saved)} disabled={busy}>
+                <button type="button" className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full bg-[#F6F6F6] px-5 text-[14px] font-medium text-pn-ink transition-colors hover:bg-[#EBEBEB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-50 sm:flex-none" onClick={() => setDraft(saved)} disabled={busy}>
                   {tr ? 'Vazgeç' : 'Discard'}
                 </button>
               )}
-              <button type="button" className="bz-btn-lime" onClick={() => void save()} disabled={busy || !dirty || uploading !== null}>
-                {busy && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
+              <button type="button" className="bz-btn-primary inline-flex min-h-[44px] flex-1 items-center justify-center sm:flex-none" onClick={() => void save()} disabled={busy || !dirty || uploading !== null}>
+                {busy && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
                 {tr ? 'Kaydet' : 'Save'}
               </button>
             </div>
@@ -397,7 +397,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
       </div>
 
       <aside className="lg:sticky lg:top-4 lg:self-start" aria-label={tr ? 'Önizleme' : 'Preview'}>
-        <p className="mb-2 text-center text-[12px] font-medium text-[#737373]">{tr ? 'Canlı önizleme' : 'Live preview'}</p>
+        <p className="mb-2 text-center text-[14px] font-medium text-pn-ink">{tr ? 'Canlı önizleme' : 'Live preview'}</p>
         <div className="mx-auto h-[720px] w-full max-w-[360px] overflow-hidden rounded-[40px] border-[10px] border-pn-ink bg-pn-ink shadow-[0_30px_60px_-30px_rgba(10,10,10,0.6)]">
           <div className="h-full overflow-y-auto overscroll-contain rounded-[30px] [scrollbar-width:none]">
             <LoyaltyPortalFrame

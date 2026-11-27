@@ -16,6 +16,7 @@ import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
 import {
   ArrowRight,
+  ArrowUpRight,
   BarChart3,
   ExternalLink,
   Inbox,
@@ -28,7 +29,6 @@ import {
   Star,
 } from 'lucide-react';
 import PanoHeroCard from '@/components/dashboard/PanoHeroCard';
-import { PanoTile } from '@/components/panel/pano/PanoStack';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import { computeActivation } from '@/lib/activation';
@@ -875,28 +875,59 @@ async function renderDashboardPage({
   const planBadge =
     user.plan === 'trial' ? (isTr ? 'Deneme' : 'Trial') : user.plan === 'free' ? (isTr ? 'Ücretsiz' : 'Free') : isTr ? 'Aktif' : 'Active';
   const homeTiles = [
-    { href: scopedHref(`/${locale}/dashboard/qr`), icon: <Printer size={22} aria-hidden="true" />, label: isTr ? 'QR kartını yazdır' : 'Print your QR card' },
-    { href: `/${locale}/dashboard/account?section=billing`, icon: <Crown size={22} aria-hidden="true" />, label: isTr ? 'Paket ve fatura' : 'Plan and billing', badge: planBadge },
-    { href: scopedHref(`/${locale}/dashboard/feedbacks`), icon: <Sparkles size={22} aria-hidden="true" />, label: isTr ? 'Pulse AI yanıt taslakları' : 'Pulse AI reply drafts' },
+    { href: scopedHref(`/${locale}/dashboard/qr`), icon: <Printer size={18} aria-hidden="true" />, label: isTr ? 'QR kartını yazdır' : 'Print your QR card' },
+    { href: `/${locale}/dashboard/account?section=billing`, icon: <Crown size={18} aria-hidden="true" />, label: isTr ? 'Paket ve fatura' : 'Plan and billing', badge: planBadge },
+    { href: scopedHref(`/${locale}/dashboard/feedbacks`), icon: <Sparkles size={18} aria-hidden="true" />, label: isTr ? 'Pulse AI yanıt taslakları' : 'Pulse AI reply drafts' },
   ];
 
+  // The left column of the lower block holds channels + topics; with
+  // neither, recent activity moves there so the column is not left empty.
+  const hasLeftColumn = showChannels || dashboardThemes.themes.length > 0;
+  const activityFeed = (
+    <ActivityFeed
+      key={restIds.join(',')}
+      className="order-5 lg:order-none"
+      events={activityEvents}
+      restaurantIds={restIds}
+      isTr={isTr}
+      viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks`)}
+    />
+  );
+
+  // Hero trend: the running average over the KPI window, from the same
+  // daily volume series the chart uses (no extra query). The line ends at
+  // the window average shown as the headline number.
+  const heroTrendSource =
+    scope === 'tw7d' ? volume30.slice(-7) : scope === 'tw30d' ? volume30 : scope === 'tw90d' ? volume90 : volumeYtd;
+  const heroTrend: number[] = [];
+  {
+    let sum = 0;
+    let n = 0;
+    for (const p of heroTrendSource) {
+      if (p.avgRating !== null && p.total > 0) {
+        sum += p.avgRating * p.total;
+        n += p.total;
+      }
+      if (n > 0) heroTrend.push(Math.round((sum / n) * 100) / 100);
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-[1280px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1280px] space-y-3 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         crumb={isTr ? 'Genel bakış' : 'Overview'}
-        titleClassName="hidden sm:block"
         title={
           <>
             {greeting}, {userFirstName}.{' '}
             {pendingCount > 0 ? (
               <Link
                 href={pendingHref}
-                className="underline decoration-pn-accent decoration-2 underline-offset-4 hover:decoration-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover rounded"
+                className="text-[#737373] underline decoration-pn-accent decoration-2 underline-offset-4 hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover rounded"
               >
                 {pendingHook}
               </Link>
             ) : (
-              pendingHook
+              <span className="text-[#737373]">{pendingHook}</span>
             )}
           </>
         }
@@ -912,9 +943,9 @@ async function renderDashboardPage({
             {hasRestaurant && (
               <Link
                 href={scopedHref(`/${locale}/dashboard/qr?new=1`)}
-                className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
+                className="bz-btn-primary inline-flex items-center gap-1.5"
               >
-                <Plus size={13} strokeWidth={2} aria-hidden="true" />
+                <Plus size={16} aria-hidden="true" />
                 {isTr ? 'Yorum iste' : 'Request review'}
               </Link>
             )}
@@ -947,37 +978,15 @@ async function renderDashboardPage({
         />
       )}
 
-      {/* Lime shortcut tiles (reference "Referral / PRO / Cashback"): a
-          swipeable row on phones and tablets, the right column on desktop. */}
-      {hasRestaurant && (
-        <div className="-mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 no-scrollbar lg:hidden">
-          {homeTiles.map((tile) => (
-            <div key={tile.href} className="w-[46%] min-w-[150px] shrink-0 snap-start sm:w-[31%]">
-              <PanoTile href={tile.href} icon={tile.icon} label={tile.label} badge={tile.badge} />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Pano KPI block (docs/design/DASHBOARD_DESIGN.md §5.4): the average
-          rating on the dark hero card with shortcuts and the low-rating reply
-          rate as a hatched progress bar; the other KPIs on white cards
-          (§58 definitions behind ⓘ). */}
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)]">
+      {/* Fintora home (docs/design/DASHBOARD_DESIGN.md §5.4): the average
+          rating on the white headline card (change pill, shortcut pills,
+          trend, low-rating reply meter, platform rows) in the first column;
+          four KPI cards in a 2×2 block and the rating volume chart under
+          them (§58 definitions behind ⓘ). Phones: headline card, then the
+          KPIs two by two; the chart starts at sm. */}
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <PanoHeroCard
-          className="sm:col-span-2 lg:col-span-1 lg:row-span-2"
-          greeting={`${greeting}, ${userFirstName}`}
-          rows={channelStats.slice(0, 2).map((c) => ({
-            id: c.platform,
-            href: scopedHref(`/${locale}/dashboard/platforms`),
-            icon: c.platform === 'google' ? 'G' : c.label.slice(0, 2),
-            value: fmtNum(c.count),
-            label: isTr ? `${c.label} · yönlendirme` : `${c.label} · redirects`,
-            change:
-              c.delta !== null && Math.abs(c.delta) >= 0.05
-                ? { text: `${c.delta > 0 ? '+' : ''}${fmtRating(c.delta)}★`, up: c.delta > 0 }
-                : null,
-          }))}
+          className="col-span-2 lg:col-span-1 lg:row-span-3"
           label={`${metricLabel('avgRating', isTr)} · ${scopeLabel}`}
           info={metricInfo('avgRating', isTr)}
           value={last7AvgRating > 0 ? fmtRating(last7AvgRating) : '—'}
@@ -987,11 +996,13 @@ async function renderDashboardPage({
           openLabel={isTr ? 'Analitiği aç' : 'Open analytics'}
           isTr={isTr}
           actions={[
-            { href: scopedHref(`/${locale}/dashboard/qr?new=1`), label: isTr ? 'QR oluştur' : 'Create QR', icon: <QrCode size={20} aria-hidden="true" /> },
-            { href: scopedHref(`/${locale}/dashboard/feedbacks`), label: isTr ? 'Yorumlar' : 'Reviews', icon: <Inbox size={20} aria-hidden="true" /> },
-            { href: scopedHref(`/${locale}/dashboard/google-reviews`), label: isTr ? 'Google yorumları' : 'Google reviews', icon: <Star size={20} aria-hidden="true" /> },
-            { href: scopedHref(`/${locale}/dashboard/analytics`), label: isTr ? 'Analitik' : 'Analytics', icon: <BarChart3 size={20} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/qr?new=1`), label: isTr ? 'QR oluştur' : 'Create QR', icon: <QrCode size={18} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/feedbacks`), label: isTr ? 'Yorumlar' : 'Reviews', icon: <Inbox size={18} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/google-reviews`), label: isTr ? 'Google yorumları' : 'Google reviews', icon: <Star size={18} aria-hidden="true" /> },
+            { href: scopedHref(`/${locale}/dashboard/analytics`), label: isTr ? 'Analitik' : 'Analytics', icon: <BarChart3 size={18} aria-hidden="true" /> },
           ]}
+          trend={heroTrend}
+          trendCaption={isTr ? `Ortalamanın seyri · ${scopeLabel}` : `Average over time · ${scopeLabel}`}
           progress={{
             label: metricLabel('lowReplyRate', isTr),
             percent: responseRate,
@@ -1001,9 +1012,29 @@ async function renderDashboardPage({
                   ? '1–3★ geri bildirim yok'
                   : 'No 1–3★ feedback'
                 : isTr
-                  ? `${lowRated30dRepliedCount}/${lowRated30dCount} düşük puana yanıt verildi · %${responseRate}`
-                  : `${lowRated30dRepliedCount}/${lowRated30dCount} low ratings answered · ${responseRate}%`,
+                  ? `${lowRated30dRepliedCount}/${lowRated30dCount} düşük puana yanıt verildi`
+                  : `${lowRated30dRepliedCount}/${lowRated30dCount} low ratings answered`,
           }}
+          rowsTitle={isTr ? 'Yönlendirilen platformlar' : 'Where customers were sent'}
+          rows={channelStats.slice(0, 2).map((c) => ({
+            id: c.platform,
+            href: scopedHref(`/${locale}/dashboard/platforms`),
+            icon: c.platform === 'google' ? 'G' : c.label.slice(0, 2),
+            title: c.label,
+            sub:
+              c.avgRating > 0
+                ? isTr
+                  ? `Yönlendirme · ort. ${fmtRating(c.avgRating)}★`
+                  : `Redirects · avg ${fmtRating(c.avgRating)}★`
+                : isTr
+                  ? 'Yönlendirme'
+                  : 'Redirects',
+            value: fmtNum(c.count),
+            change:
+              c.delta !== null && Math.abs(c.delta) >= 0.05
+                ? { text: `${c.delta > 0 ? '+' : ''}${fmtRating(c.delta)}★`, up: c.delta > 0 }
+                : null,
+          }))}
         />
         <StatCard
           label={metricLabel('ratings', isTr)}
@@ -1013,7 +1044,7 @@ async function renderDashboardPage({
           delta={ratingsChange.text}
           deltaKind={toKind(ratingsChange.tone)}
           deltaSuffix={scopeLabel}
-          icon={<Inbox size={17} />}
+          icon={<Inbox size={18} />}
         />
         <StatCard
           label={metricLabel('redirects', isTr)}
@@ -1023,51 +1054,50 @@ async function renderDashboardPage({
           delta={redirectChange.text}
           deltaKind={toKind(redirectChange.tone)}
           deltaSuffix={redirectChange.arrow ? vsPrev : scopeLabel}
-          icon={<ExternalLink size={17} />}
+          icon={<ExternalLink size={18} />}
         />
         <StatCard
           label={isTr ? 'Geri bildirim' : 'Feedback'}
           isTr={isTr}
           value={fmtNum(scopeFeedback)}
-          deltaSuffix={scopeLabel}
-          icon={<MessageSquareReply size={17} />}
+          caption={scopeLabel}
+          icon={<MessageSquareReply size={18} />}
         />
         <StatCard
           label={isTr ? 'Yanıt bekleyen' : 'Awaiting reply'}
           isTr={isTr}
           value={fmtNum(pendingCount)}
-          deltaSuffix={isTr ? '1–3★ geri bildirim' : '1–3★ feedback'}
-          icon={<MessageSquareReply size={17} />}
+          caption={isTr ? '1–3★ geri bildirim' : '1–3★ feedback'}
+          icon={<MessageSquareReply size={18} />}
         />
+        <div className="col-span-2 hidden min-w-0 sm:block">
+          <VolumeChart
+            title={isTr ? 'Puan hacmi' : 'Rating volume'}
+            subtitle={isTr ? 'Yönlendirme ve geri bildirim' : 'Redirects and feedback'}
+            ranges={[
+              { key: '30', label: isTr ? '30 gün' : '30 days', points: volume30 },
+              { key: '90', label: isTr ? '90 gün' : '90 days', points: volume90 },
+              { key: 'ytd', label: isTr ? 'Bu yıl' : 'This year', points: volumeYtd },
+            ]}
+            isTr={isTr}
+            footer={
+              <Link
+                href={scopedHref(`/${locale}/dashboard/analytics`)}
+                className="inline-flex min-h-[32px] items-center gap-1 rounded-full text-[13px] font-medium text-[#404040] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover"
+              >
+                {isTr ? 'Analitik' : 'Analytics'}
+                <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+              </Link>
+            }
+          />
+        </div>
       </div>
 
       {/* lg: two independent columns; below lg the wrappers are
-          `display: contents` and `order-*` keeps one column: chart,
-          pending, channels, topics, activity. */}
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
-        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
-          <div className="hidden sm:block order-1 lg:order-none">
-            <VolumeChart
-              title={isTr ? 'Puan hacmi' : 'Rating volume'}
-              subtitle={isTr ? 'Yönlendirme ve geri bildirim' : 'Redirects and feedback'}
-              ranges={[
-                { key: '30', label: isTr ? '30 gün' : '30 days', points: volume30 },
-                { key: '90', label: isTr ? '90 gün' : '90 days', points: volume90 },
-                { key: 'ytd', label: isTr ? 'Bu yıl' : 'This year', points: volumeYtd },
-              ]}
-              isTr={isTr}
-              footer={
-                <Link
-                  href={scopedHref(`/${locale}/dashboard/analytics`)}
-                  className="inline-flex min-h-[32px] items-center gap-1 rounded-full text-[13px] font-medium text-[#404040] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover"
-                >
-                  {isTr ? 'Analitik' : 'Analytics'}
-                  <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
-                </Link>
-              }
-            />
-          </div>
-
+          `display: contents` and `order-*` keeps one column: pending,
+          shortcuts, channels, topics, activity. */}
+      <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-2.5">
           {showChannels && (
             <section className="order-3 lg:order-none" aria-label={isTr ? 'Platformlar' : 'Platforms'}>
               <ChannelDistribution
@@ -1081,13 +1111,22 @@ async function renderDashboardPage({
 
           {dashboardThemes.themes.length > 0 && (
             <section className="bz-card p-5 sm:p-6 hidden sm:block order-4 lg:order-none">
-              <header className="mb-4 flex items-baseline justify-between gap-3">
-                <h2 className="text-[15px] font-medium text-pn-ink">
-                  {isTr ? 'Sık bahsedilen konular' : 'Frequent topics'}
-                </h2>
-                <span className="shrink-0 text-[13px] text-[#737373]">{isTr ? 'Son 30 gün' : 'Last 30 days'}</span>
+              <header className="mb-5 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="pn-card-title text-pn-ink">
+                    {isTr ? 'Sık bahsedilen konular' : 'Frequent topics'}
+                  </h2>
+                  <p className="mt-1 text-[13px] text-[#9A9A9A]">{isTr ? 'Son 30 gün' : 'Last 30 days'}</p>
+                </div>
+                <Link
+                  href={scopedHref(`/${locale}/dashboard/analytics`)}
+                  className="pn-arrow-btn"
+                  aria-label={isTr ? 'Analitikte konuları aç' : 'Open topics in analytics'}
+                >
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </Link>
               </header>
-              <ul className="space-y-4">
+              <ul className="flex flex-col gap-2">
                 {dashboardThemes.themes.slice(0, 5).map((t) => {
                   const hasSentiment = typeof t.sentimentPositivePct === 'number';
                   const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
@@ -1096,10 +1135,10 @@ async function renderDashboardPage({
                   // 1–2 mentions: too little data to read a share from.
                   const thin = t.count < TOPIC_MIN_MENTIONS;
                   return (
-                    <li key={t.theme} className={thin ? 'opacity-60' : undefined}>
-                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[14px]">
+                    <li key={t.theme} className={`pn-row flex-col items-stretch gap-2 px-4 py-3 ${thin ? 'opacity-60' : ''}`}>
+                      <div className="flex items-center justify-between gap-2 text-[14px]">
                         <span className="truncate font-medium text-pn-ink">{t.theme}</span>
-                        <span className="shrink-0 text-[13px] tabular-nums text-[#737373]">
+                        <span className="shrink-0 text-[13px] tabular-nums text-[#9A9A9A]">
                           {t.count} {isTr ? 'bahsedilme' : t.count === 1 ? 'mention' : 'mentions'}
                           {thin ? (isTr ? ' · az veri' : ' · little data') : ''}
                         </span>
@@ -1107,18 +1146,18 @@ async function renderDashboardPage({
                       {hasSentiment ? (
                         <>
                           <div
-                            className="flex h-1.5 overflow-hidden rounded-full bg-[#F0F0F0]"
+                            className="flex h-2 gap-0.5 overflow-hidden rounded-full"
                             role="img"
                             aria-label={topicSentimentText(pos, neg, isTr)}
                           >
-                            <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
-                            <div className="h-full" style={{ width: `${neu}%`, background: '#D4D4D4' }} />
-                            <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
+                            {pos > 0 && <div className="h-full rounded-full bg-pn-accent" style={{ width: `${pos}%` }} />}
+                            {neu > 0 && <div className="h-full rounded-full bg-[#CDEFD6]" style={{ width: `${neu}%` }} />}
+                            {neg > 0 && <div className="h-full rounded-full bg-[#D92D20]" style={{ width: `${neg}%` }} />}
                           </div>
-                          <p className="mt-1 text-[12px] text-[#525252]">{topicSentimentText(pos, neg, isTr)}</p>
+                          <p className="text-[12px] text-[#737373]">{topicSentimentText(pos, neg, isTr)}</p>
                         </>
                       ) : (
-                        <div className="h-1.5 overflow-hidden rounded-full bg-[#F0F0F0]">
+                        <div className="pn-hatch h-2 overflow-hidden rounded-full">
                           <div
                             className="h-full rounded-full bg-pn-accent"
                             style={{ width: `${Math.max(8, (t.count / (dashboardThemes.themes[0]?.count ?? 1)) * 100)}%` }}
@@ -1131,25 +1170,37 @@ async function renderDashboardPage({
               </ul>
             </section>
           )}
+          {!hasLeftColumn && activityFeed}
         </div>
 
-        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6">
-          {hasRestaurant && (
-            <div className="hidden grid-cols-3 gap-2.5 lg:grid">
-              {homeTiles.map((tile) => (
-                <PanoTile key={tile.href} href={tile.href} icon={tile.icon} label={tile.label} badge={tile.badge} />
-              ))}
-            </div>
-          )}
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-2.5">
           <PendingTasks className="order-2 lg:order-none" tasks={pendingTaskItems} isTr={isTr} />
-          <ActivityFeed
-            key={restIds.join(',')}
-            className="order-5 lg:order-none"
-            events={activityEvents}
-            restaurantIds={restIds}
-            isTr={isTr}
-            viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks`)}
-          />
+          {hasRestaurant && (
+            <section className="bz-card order-2 p-5 sm:p-6 lg:order-none" aria-label={isTr ? 'Kısayollar' : 'Shortcuts'}>
+              <h2 className="pn-card-title mb-4 text-pn-ink">{isTr ? 'Kısayollar' : 'Shortcuts'}</h2>
+              <ul className="flex flex-col gap-2">
+                {homeTiles.map((tile) => (
+                  <li key={tile.href}>
+                    <Link href={tile.href} className="pn-row group min-h-[60px]">
+                      <span className="pn-row-icon" aria-hidden="true">{tile.icon}</span>
+                      <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-pn-ink">{tile.label}</span>
+                      {tile.badge && (
+                        <span className="shrink-0 rounded-full bg-pn-accent-soft px-2.5 py-1 text-[12px] font-medium text-pn-accent">
+                          {tile.badge}
+                        </span>
+                      )}
+                      <ArrowUpRight
+                        size={16}
+                        className="shrink-0 text-[#9A9A9A] transition-transform duration-200 group-hover:rotate-45 group-hover:text-pn-ink"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {hasLeftColumn && activityFeed}
         </div>
       </div>
     </div>

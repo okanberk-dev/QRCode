@@ -60,9 +60,9 @@ export default function AccountView({
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[24px] bg-[#3B1F8F] px-5 py-6 text-white sm:px-8 sm:py-9">
-        <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#5D3EBC] opacity-80 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-10 h-56 w-56 rounded-full bg-[#DCD3F6] opacity-20 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[24px] bg-[#000000] px-5 py-6 text-white sm:px-8 sm:py-9">
+        <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#111110] opacity-80 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-10 h-56 w-56 rounded-full bg-[#CDEFD6] opacity-20 blur-3xl" />
         <p className="relative text-[14px] font-medium text-white/75">{c.brand}</p>
         <h1 className="relative mt-1.5 text-[28px] font-semibold leading-tight tracking-[-0.02em] sm:text-[36px]">{c.hello(account.firstName)}</h1>
         <p className="relative mt-1 text-[14.5px] text-white/75">{c.memberSince(since)}</p>
@@ -71,7 +71,7 @@ export default function AccountView({
             {cards.length} {locale === 'tr' ? 'kart' : cards.length === 1 ? 'card' : 'cards'}
           </span>
           {account.emailVerified && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 font-semibold text-[#3B1F8F]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 font-semibold text-[#000000]">
               <ShieldCheck size={15} aria-hidden="true" /> {locale === 'tr' ? 'E-posta onaylı' : 'E-mail confirmed'}
             </span>
           )}
@@ -89,7 +89,7 @@ export default function AccountView({
         </div>
         {cards.length === 0 ? (
           <div className="rounded-[24px] bg-[#F6F6F6] px-6 py-8 text-center sm:bg-white">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFEAFB] text-[#5D3EBC]">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F1FDF3] text-[#111110]">
               <Gift size={26} aria-hidden />
             </span>
             <p className="mt-3 text-[16px] font-semibold">{c.cardsEmpty}</p>
@@ -123,7 +123,7 @@ function CardTile({ card, locale }: { card: CustomerCard; locale: AccountLocale 
   const ready = activeRewards(card.program.rewards).some((r) => r.cost <= card.balance);
   return (
     <article className="group rounded-[24px] bg-[#F6F6F6] p-3 transition-transform duration-300 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:bg-white">
-      <a href={card.cardPath} className="block rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2" aria-label={`${card.businessName} — ${c.openCard}`}>
+      <a href={card.cardPath} className="block rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2" aria-label={`${card.businessName} — ${c.openCard}`}>
         <LoyaltyCardFace
           businessName={card.businessName}
           programName={card.program.name}
@@ -140,7 +140,7 @@ function CardTile({ card, locale }: { card: CustomerCard; locale: AccountLocale 
           {!card.available ? (
             <span className="text-[#92400E]">{c.unavailable}</span>
           ) : ready ? (
-            <span className="font-semibold text-[#5D3EBC]">{c.rewardReady}</span>
+            <span className="font-semibold text-[#111110]">{c.rewardReady}</span>
           ) : next ? (
             <span>{c.rewardLeft(next.remaining, unitLabel(kind, next.remaining, locale))}</span>
           ) : (

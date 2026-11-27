@@ -291,7 +291,7 @@ export default function AdminCustomersPage() {
             label="Ortalama puan"
             value={data.summary.avgRating !== null ? data.summary.avgRating.toFixed(2) : '—'}
             icon={<Star size={14} />}
-            accent="#5D3EBC"
+            accent="#111110"
           />
         </div>
       )}
@@ -515,7 +515,7 @@ export default function AdminCustomersPage() {
                         <td className="px-5 py-3 text-right">
                           {r.lastRating !== null ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-pn-accent-soft px-2 py-0.5 font-medium text-pn-ink">
-                              <Star size={11} fill="#5D3EBC" strokeWidth={0} />
+                              <Star size={11} fill="#111110" strokeWidth={0} />
                               {r.lastRating}
                             </span>
                           ) : (
@@ -591,7 +591,7 @@ export default function AdminCustomersPage() {
                       </div>
                       {r.lastRating !== null && (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-ink">
-                          <Star size={11} fill="#5D3EBC" strokeWidth={0} />
+                          <Star size={11} fill="#111110" strokeWidth={0} />
                           {r.lastRating}
                         </span>
                       )}

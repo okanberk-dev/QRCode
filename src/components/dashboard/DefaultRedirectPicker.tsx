@@ -59,7 +59,7 @@ interface DefaultRedirectPickerProps {
 const AUTO_KEY = 'auto' as const;
 
 // Fintora choice pills: borderless, grey when idle (white on the grey phone
-// cards — the canvas token flips there), purple with white text when picked.
+// cards — the canvas token flips there), black with white text when picked.
 const CHIP_CLASS =
   'inline-flex min-h-[44px] items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 aria-disabled:cursor-wait';
 const CHIP_IDLE = 'bg-pn-canvas text-pn-ink hover:bg-[#EDEDED]';

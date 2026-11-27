@@ -8,7 +8,7 @@ export const SERIES_META: Array<{
   key: keyof Pick<PlatformDailyPoint, 'google' | 'tripadvisor' | 'buazeQr' | 'other'>;
   labelTr: string;
   labelEn: string;
-  /** Stack rendering color (Pulse §11 palette). */
+  /** Stack rendering colour (Pano: ink, grey, black, light green). */
   fill: string;
   /** Legend chip color. */
   swatch: string;
@@ -19,32 +19,32 @@ export const SERIES_META: Array<{
     key: 'google',
     labelTr: 'Google',
     labelEn: 'Google',
-    fill: '#000000',
-    swatch: '#000000',
-    fillOpacity: 0.85,
+    fill: '#111110',
+    swatch: '#111110',
+    fillOpacity: 0.12,
   },
   {
     key: 'tripadvisor',
     labelTr: 'Tripadvisor',
     labelEn: 'Tripadvisor',
-    fill: '#737373',
-    swatch: '#737373',
-    fillOpacity: 0.7,
+    fill: '#9A9A9A',
+    swatch: '#9A9A9A',
+    fillOpacity: 0.16,
   },
   {
     key: 'buazeQr',
     labelTr: 'Buaze QR',
     labelEn: 'Buaze QR',
-    fill: '#5D3EBC',
-    swatch: '#5D3EBC',
-    fillOpacity: 0.9,
+    fill: '#78FC90',
+    swatch: '#78FC90',
+    fillOpacity: 0.22,
   },
   {
     key: 'other',
     labelTr: 'Diğer',
     labelEn: 'Other',
-    fill: '#E5E5E5',
-    swatch: '#A3A3A3',
-    fillOpacity: 0.85,
+    fill: '#111110',
+    swatch: '#111110',
+    fillOpacity: 0.2,
   },
 ];

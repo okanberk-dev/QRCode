@@ -77,24 +77,24 @@ export const INTERSTITIAL_STYLE = [
   'font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;padding:24px 16px}',
   'main{width:100%;max-width:440px;text-align:center}',
   '.mark{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:18px;letter-spacing:-0.02em}',
-  '.eyebrow{margin:20px 0 0;font-size:13px;font-weight:500;color:#737373}',
+  '.eyebrow{margin:20px 0 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;color:#737373;text-transform:uppercase}',
   'h1{margin:10px 0 0;font-size:22px;line-height:1.25;font-weight:600;letter-spacing:-0.02em}',
   '.lead{margin:10px auto 0;max-width:360px;font-size:14px;line-height:1.55;color:#525252}',
   '.card{margin:24px 0 0;background:#FFFFFF;border:1px solid #EDEDED;border-radius:14px;padding:16px 18px;text-align:left}',
   '.row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}',
   '.plan{font-size:14px;font-weight:600}',
-  '.amount{font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;white-space:nowrap}',
+  '.amount{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:15px;font-weight:600;white-space:nowrap}',
   '.tick{position:relative;margin:10px 0 0;padding-left:26px;font-size:13px;line-height:1.45;color:#404040}',
-  '.tick:before{content:"";position:absolute;left:0;top:1px;width:16px;height:16px;border-radius:50%;background:#5D3EBC}',
-  '.tick:after{content:"";position:absolute;left:6px;top:4px;width:4px;height:8px;border:solid #FFFFFF;border-width:0 2px 2px 0;transform:rotate(45deg)}',
+  '.tick:before{content:"";position:absolute;left:0;top:1px;width:16px;height:16px;border-radius:50%;background:#C6F24E}',
+  '.tick:after{content:"";position:absolute;left:6px;top:4px;width:4px;height:8px;border:solid #0A0A0A;border-width:0 2px 2px 0;transform:rotate(45deg)}',
   '.track{margin:24px auto 0;height:3px;width:100%;max-width:280px;border-radius:3px;background:#EDEDED;overflow:hidden}',
-  '.bar{height:100%;width:100%;background:#5D3EBC;transform-origin:left;transform:scaleX(1)}',
+  '.bar{height:100%;width:100%;background:#C6F24E;transform-origin:left;transform:scaleX(1)}',
   '.bar.run{transform:scaleX(0);animation:fill .9s ease-out forwards}',
   '@keyframes fill{to{transform:scaleX(1)}}',
-  'button{margin:20px auto 0;display:block;width:100%;max-width:320px;min-height:48px;border:0;border-radius:999px;background:#5D3EBC;color:#FFFFFF;',
+  'button{margin:20px auto 0;display:block;width:100%;max-width:320px;min-height:48px;border:0;border-radius:999px;background:#0A0A0A;color:#FFFFFF;',
   'font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s ease}',
-  'button:hover{background:#4C2FA3}',
-  'button:focus-visible,a:focus-visible{outline:2px solid #5D3EBC;outline-offset:3px}',
+  'button:hover{background:#262626}',
+  'button:focus-visible,a:focus-visible{outline:2px solid #C6F24E;outline-offset:3px}',
   'button[disabled]{opacity:.75;cursor:progress}',
   '.cancel{display:inline-block;margin:14px 0 0;padding:8px 12px;font-size:14px;color:#525252;text-decoration:underline;text-underline-offset:3px}',
   '.trust{margin:20px 0 0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#737373}',
@@ -134,12 +134,12 @@ export function interstitialHeaders(): Record<string, string> {
   };
 }
 
-// Graphite speech bubble with the ECG line and the purple spark (BuazeLogo's mark).
+// Graphite speech bubble with the ECG line and the lime spark (BuazeLogo's mark).
 const MARK_SVG =
   '<svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true" focusable="false">' +
   '<path d="M10 14 Q10 8 16 8 L48 8 Q54 8 54 14 L54 36 Q54 42 48 42 L30 42 L22 52 L22 42 L16 42 Q10 42 10 36 Z" fill="#0A0A0A"/>' +
   '<path d="M15 26 L22 26 L25 18 L30 34 L34 22 L38 28 L49 28" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>' +
-  '<circle cx="54" cy="10" r="5" fill="#5D3EBC"/></svg>';
+  '<circle cx="54" cy="10" r="5" fill="#C6F24E"/></svg>';
 
 const LOCK_SVG =
   '<svg class="lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +

@@ -19,19 +19,19 @@ type WidgetState = 'fab' | 'open';
  * ContactFloat — sticky lead-capture widget on the marketing site.
  *
  * Stage 57 §38.138 — HANDOFF premium chat bubble redesign.
- * Visual yapı (graphite header + purple halo + avatar + chat-style
+ * Visual yapı (graphite header + lime halo + avatar + chat-style
  * message bubble + quick reply chips + HTTPS note) + Buaze backend async
  * form-based — **live chat YOK**. Stage 172: no faux italic, no presence
  * dots, the FAB pulses once instead of forever, small text ≥ 4.5:1.
  *
  * Three render states intact:
- *  - **fab**           Purple FAB (HANDOFF ChatLauncher: one purple halo
+ *  - **fab**           Lime FAB (HANDOFF ChatLauncher: one lime halo
  *                      pulse + ring when it appears + "?" help badge).
  *                      After ~6s ilk ziyarette opsiyonel bubble teaser
  *                      slide-in; per-session dismiss.
  *  - **bubble teaser** Avatar + greeting card (mevcut Pulse §11 intact).
  *                      Tıklayınca form'a geçer.
- *  - **open**          HANDOFF ChatBubble visual (purple header + white
+ *  - **open**          HANDOFF ChatBubble visual (graphite header + lime
  *                      halo + Buaze avatar + initial message + 3 quick
  *                      reply chips + Name/Email/Message form + KVKK
  *                      consent + reCAPTCHA + honeypot + /api/contact
@@ -48,7 +48,7 @@ type WidgetState = 'fab' | 'open';
  * - Quick reply chips actionable: tıklayınca `setMessage()` ile message
  *   field'a auto-fill (form-based, send manuel — live chat değil).
  *
- * Pulse design (CLAUDE.md §11): Getir purple (#5D3EBC) + white, white text on purple. No new
+ * Pulse design (CLAUDE.md §11): graphite + lime + pure white. No new
  * dependencies — reCAPTCHA + honeypot + dwell-time bot guards reuse the
  * existing client helpers.
  *
@@ -274,7 +274,7 @@ export function ContactFloat({ locale }: { locale: string }) {
             >
               <span
                 aria-hidden
-                className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5D3EBC] text-white"
+                className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]"
               >
                 {/* Speech-bubble icon — minimal Pulse mark */}
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
@@ -304,26 +304,26 @@ export function ContactFloat({ locale }: { locale: string }) {
           </div>
         )}
 
-        {/* Stage 57 §38.138 — HANDOFF ChatLauncher visual: purple halo
+        {/* Stage 57 §38.138 — HANDOFF ChatLauncher visual: lime halo
             pulse + concentric ring expansion + notification "?" badge.
             Mevcut openForm onClick intact. The pulse runs once when the
             button appears and then rests (WCAG 2.2.2: no endless motion
             on every page without a pause control). */}
         <div className="relative inline-block">
-          {/* Purple halo blur — 8px inset, 14px blur, one 2.6s pulse */}
+          {/* Lime halo blur — 8px inset, 14px blur, one 2.6s pulse */}
           <span
             aria-hidden
             className="pointer-events-none absolute"
             style={{
               inset: -8,
               borderRadius: '50%',
-              background: '#8C6CF0',
-              opacity: 0.22,
+              background: '#C6F24E',
+              opacity: 0.18,
               filter: 'blur(14px)',
               animation: 'scbPulse 2.6s ease-in-out 1',
             }}
           />
-          {/* Concentric ring — 4px inset, 1.5px purple border, one 2.6s
+          {/* Concentric ring — 4px inset, 1.5px lime border, one 2.6s
               expansion that fades out and stays hidden */}
           <span
             aria-hidden
@@ -331,7 +331,7 @@ export function ContactFloat({ locale }: { locale: string }) {
             style={{
               inset: -4,
               borderRadius: '50%',
-              border: '1.5px solid #8C6CF0',
+              border: '1.5px solid #C6F24E',
               opacity: 0,
               animation: 'scbRing 2.6s ease-out 1',
             }}
@@ -341,20 +341,20 @@ export function ContactFloat({ locale }: { locale: string }) {
             type="button"
             onClick={openForm}
             aria-label={isTr ? 'Bizimle iletişime geçin' : 'Contact us'}
-            className="relative z-[1] flex h-16 w-16 items-center justify-center rounded-full transition-transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8C6CF0]/50"
+            className="relative z-[1] flex h-16 w-16 items-center justify-center rounded-full transition-transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#C6F24E]/50"
             style={{
-              background: '#5D3EBC',
-              border: '2px solid #FFFFFF',
+              background: '#C6F24E',
+              border: '2px solid #0A0A0A',
               boxShadow:
-                '0 18px 44px -12px rgba(93,62,188,0.6), 0 4px 12px rgba(10,10,10,0.18)',
+                '0 18px 44px -12px rgba(198,242,78,0.6), 0 4px 12px rgba(10,10,10,0.18)',
             }}
           >
             {/* Stage 61 §38.142 — HANDOFF ChatLauncher BuazeMark icon
                 paterni (kullanıcı talebi: "logonun ikonu olsun ve
                 estetik şekildeydi"). Önceden speech-bubble svg vardı;
-                BuazeLogo (`variant="on-brand"`: white mark on the purple
-                FAB; purple fills always carry white marks). */}
-            <BuazeLogo size={28} variant="on-brand" />
+                BuazeLogo (`variant="on-lime"` graphite stroke + accent)
+                lime FAB üstünde brand-aligned. CLAUDE.md §11 paterni. */}
+            <BuazeLogo size={28} variant="on-lime" />
           </button>
 
           {/* Notification badge — HANDOFF "1" sayı yerine "?" yardım
@@ -364,9 +364,9 @@ export function ContactFloat({ locale }: { locale: string }) {
             aria-hidden
             className="pointer-events-none absolute -right-0.5 -top-0.5 z-[2] flex h-[18px] w-[18px] items-center justify-center rounded-full font-bold"
             style={{
-              background: '#3B1F8F',
-              color: '#FFFFFF',
-              border: '2px solid #FFFFFF',
+              background: '#0A0A0A',
+              color: '#C6F24E',
+              border: '2px solid #C6F24E',
               fontFamily: 'var(--font-mono)',
               fontSize: 9.5,
               letterSpacing: 0,
@@ -383,7 +383,7 @@ export function ContactFloat({ locale }: { locale: string }) {
   // HANDOFF ChatBubble visual + Buaze form akışı (mevcut backend kontrat).
 
   const inputClass =
-    'min-h-[44px] w-full rounded-xl border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#5D3EBC] focus:shadow-[0_0_0_3px_rgba(93,62,188,0.25)]';
+    'min-h-[44px] w-full rounded-xl border border-[#EDEDED] bg-white px-3.5 py-2.5 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:shadow-[0_0_0_3px_rgba(198,242,78,0.25)]';
 
   const quickReplies = isTr
     ? [
@@ -418,13 +418,13 @@ export function ContactFloat({ locale }: { locale: string }) {
           '0 28px 64px -18px rgba(10,10,10,0.32), 0 4px 12px rgba(10,10,10,0.06)',
       }}
     >
-      {/* HEADER — graphite + purple halo + Buaze avatar + status mono.
+      {/* HEADER — graphite + lime halo + Buaze avatar + status mono.
           Stage 79 §38.157 — shrink-0 (flex column root içinde body
           flex-1 olarak shrinkable kalır). */}
       <div
-        className="relative shrink-0 overflow-hidden bg-[#5D3EBC] px-5 pb-4 pt-5 text-white"
+        className="relative shrink-0 overflow-hidden bg-[#0A0A0A] px-5 pb-4 pt-5 text-white"
       >
-        {/* Purple halo radial — top-right corner, 160×160, decorative */}
+        {/* Lime halo radial — top-right corner, 160×160, decorative */}
         <span
           aria-hidden
           className="pointer-events-none absolute"
@@ -434,7 +434,7 @@ export function ContactFloat({ locale }: { locale: string }) {
             width: 160,
             height: 160,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.16), transparent 65%)',
+            background: 'radial-gradient(circle, rgba(198,242,78,0.32), transparent 65%)',
           }}
         />
 
@@ -447,11 +447,11 @@ export function ContactFloat({ locale }: { locale: string }) {
             <div
               className="flex h-11 w-11 items-center justify-center rounded-full"
               style={{
-                background: '#FFFFFF',
+                background: 'linear-gradient(135deg, #C6F24E, #A8D62E)',
                 fontFamily: 'var(--font-heading)',
                 fontWeight: 600,
                 fontSize: 22,
-                color: '#5D3EBC',
+                color: '#0A0A0A',
               }}
               aria-hidden
             >
@@ -474,7 +474,7 @@ export function ContactFloat({ locale }: { locale: string }) {
             <div className="mt-1 flex items-center gap-1.5">
               {/* "ŞU AN ÇEVRİMİÇİ" SİLİNDİ → "BUAZE EKİBİ" jenerik
                   (live chat illusion YOK, async semantik). */}
-              <span className="pulse-eyebrow" style={{ color: 'rgba(255,255,255,0.85)', fontSize: 10.5, letterSpacing: '0.14em' }}>
+              <span className="pulse-eyebrow" style={{ color: '#C6F24E', fontSize: 10.5, letterSpacing: '0.14em' }}>
                 {isTr ? 'Buaze ekibi' : 'Buaze team'}
               </span>
             </div>
@@ -499,7 +499,7 @@ export function ContactFloat({ locale }: { locale: string }) {
 
         {/* Async messaging hint — "Genelde 1 iş günü içinde dönüş"
             (Stage 51 §38.132 paterni reuse, Buaze patterned). */}
-        <p className="relative mt-2 text-[12px] leading-[1.45] text-white/85">
+        <p className="relative mt-2 text-[12px] leading-[1.45] text-white/70">
           {isTr ? SUPPORT_HOURS.tr : SUPPORT_HOURS.en}
         </p>
       </div>
@@ -514,7 +514,7 @@ export function ContactFloat({ locale }: { locale: string }) {
           <div className="px-5 py-6 text-center">
             <div
               aria-hidden
-              className="mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#EFEAFB] text-[#0A0A0A]"
+              className="mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                 <path
@@ -572,14 +572,14 @@ export function ContactFloat({ locale }: { locale: string }) {
                     key={q.label}
                     type="button"
                     onClick={() => applyQuickReply(q.autofill)}
-                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#EFEAFB]"
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#EAF9B8]"
                     style={{
-                      background: i === 0 ? '#F3F0FC' : '#FFFFFF',
-                      borderColor: i === 0 ? '#8C6CF0' : '#EDEDED',
+                      background: i === 0 ? '#F7FAEF' : '#FFFFFF',
+                      borderColor: i === 0 ? '#C6F24E' : '#EDEDED',
                     }}
                   >
                     {i === 0 && (
-                      <span style={{ color: '#5D3EBC', fontWeight: 700 }} aria-hidden>
+                      <span style={{ color: '#A8D62E', fontWeight: 700 }} aria-hidden>
                         ↓
                       </span>
                     )}
@@ -607,7 +607,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                   htmlFor="cf-name"
                   className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]"
                 >
-                  {isTr ? 'İsim' : 'Name'} <span className="text-[#5D3EBC]">*</span>
+                  {isTr ? 'İsim' : 'Name'} <span className="text-[#A8D62E]">*</span>
                 </label>
                 <input
                   ref={firstFieldRef}
@@ -628,7 +628,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                   htmlFor="cf-email"
                   className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]"
                 >
-                  {isTr ? 'E-posta' : 'E-mail'} <span className="text-[#5D3EBC]">*</span>
+                  {isTr ? 'E-posta' : 'E-mail'} <span className="text-[#A8D62E]">*</span>
                 </label>
                 <input
                   id="cf-email"
@@ -649,7 +649,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                   htmlFor="cf-message"
                   className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]"
                 >
-                  {isTr ? 'Mesaj' : 'Message'} <span className="text-[#5D3EBC]">*</span>
+                  {isTr ? 'Mesaj' : 'Message'} <span className="text-[#A8D62E]">*</span>
                 </label>
                 <textarea
                   id="cf-message"
@@ -668,7 +668,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                   type="checkbox"
                   checked={kvkk}
                   onChange={(e) => setKvkk(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#5D3EBC]"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#C6F24E]"
                   required
                 />
                 <span>
@@ -676,7 +676,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                     <>
                       <Link
                         href={`/${locale}/kvkk`}
-                        className="text-[var(--rt-ink-900)] underline underline-offset-2 hover:text-[#5D3EBC]"
+                        className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
                         target="_blank"
                       >
                         KVKK Aydınlatma Metni
@@ -688,7 +688,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                       I have read the{' '}
                       <Link
                         href={locale === 'tr' ? '/tr/gizlilik' : '/en/privacy'}
-                        className="text-[var(--rt-ink-900)] underline underline-offset-2 hover:text-[#5D3EBC]"
+                        className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
                         target="_blank"
                       >
                         privacy notice
@@ -711,7 +711,7 @@ export function ContactFloat({ locale }: { locale: string }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#5D3EBC] px-4 text-[13px] font-semibold text-white transition-all hover:bg-[#4C2FA3] focus:outline-none focus:ring-3 focus:ring-[#8C6CF0]/50 disabled:cursor-not-allowed disabled:bg-[#525252]"
+                className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-4 text-[13px] font-semibold text-white transition-all hover:bg-[#1A1A1A] focus:outline-none focus:ring-3 focus:ring-[#C6F24E]/50 disabled:cursor-not-allowed disabled:bg-[#525252]"
               >
                 {loading ? (
                   <>
@@ -746,7 +746,7 @@ export function ContactFloat({ locale }: { locale: string }) {
                       className="h-4 w-4"
                       aria-hidden
                     >
-                      <path d="M2 14l13-6L2 2v5l9 1-9 1z" fill="currentColor" />
+                      <path d="M2 14l13-6L2 2v5l9 1-9 1z" fill="#C6F24E" />
                     </svg>
                     {isTr ? 'Gönder' : 'Send'}
                   </>

@@ -680,7 +680,7 @@ function ReviewContent() {
             <div>
               <StepProgress current={1} locale={locale} />
 
-              <p className="mt-6 text-[14px] font-semibold text-[#5D3EBC]">
+              <p className="mt-6 text-[14px] font-semibold text-[#111110]">
                 {locale === 'tr' ? 'Merhaba!' : 'Hello!'}
               </p>
               <h2
@@ -722,8 +722,8 @@ function ReviewContent() {
                           size={40}
                           strokeWidth={1.5}
                           strokeLinejoin="round"
-                          fill={active ? '#5D3EBC' : '#D6D6D6'}
-                          stroke={active ? '#5D3EBC' : '#D6D6D6'}
+                          fill={active ? '#111110' : '#D6D6D6'}
+                          stroke={active ? '#111110' : '#D6D6D6'}
                           aria-hidden
                         />
                       </button>
@@ -766,8 +766,8 @@ function ReviewContent() {
 
               {/* Acknowledgement card. Generic "management" signature, no
                   owner name exposed. */}
-              <div className="mt-5 rounded-[24px] bg-[#EFEAFB] px-5 py-4">
-                <p className="text-[13px] font-semibold text-[#5D3EBC]">
+              <div className="mt-5 rounded-[24px] bg-[#F1FDF3] px-5 py-4">
+                <p className="text-[13px] font-semibold text-[#111110]">
                   {locale === 'tr' ? 'Üzgünüz · İşletme yönetimi' : "We're sorry · Management"}
                 </p>
                 <p
@@ -816,8 +816,8 @@ function ReviewContent() {
                         aria-pressed={selected}
                         className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium transition-colors duration-200 active:scale-95 ${FOCUS_RING} ${
                           selected
-                            ? 'bg-[#5D3EBC] text-white hover:bg-[#4C2FA3]'
-                            : 'bg-[#F6F6F6] text-[#111110] hover:bg-[#EFEAFB]'
+                            ? 'bg-[#111110] text-white hover:bg-[#2B2B2A]'
+                            : 'bg-[#F6F6F6] text-[#111110] hover:bg-[#F1FDF3]'
                         }`}
                       >
                         {selected && <Check size={15} strokeWidth={2.6} aria-hidden />}
@@ -845,7 +845,7 @@ function ReviewContent() {
                 <div className="relative">
                   <textarea
                     id="review-comment"
-                    className="block w-full resize-none rounded-[20px] border border-[#EBEBEB] bg-[#F6F6F6] px-4 pb-9 pt-3.5 text-[16px] leading-[1.5] text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-[#737373] focus:border-[#5D3EBC] focus:bg-white focus:shadow-[0_0_0_4px_rgba(93,62,188,0.14)]"
+                    className="block w-full resize-none rounded-[20px] border border-[#EBEBEB] bg-[#F6F6F6] px-4 pb-9 pt-3.5 text-[16px] leading-[1.5] text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-[#737373] focus:border-[#111110] focus:bg-white focus:shadow-[0_0_0_4px_rgba(17,17,16,0.14)]"
                     placeholder={
                       locale === 'tr'
                         ? 'Yaşadığın durumu birkaç cümleyle anlat — yönetim seninle ilgilenecek.'
@@ -887,7 +887,7 @@ function ReviewContent() {
                       key={preset}
                       type="button"
                       onClick={() => appendPresetToComment(preset)}
-                      className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-full border border-[#DCD3F6] bg-white px-3.5 text-[13px] font-medium text-[#5D3EBC] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5D3EBC]"
+                      className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-full border border-[#CDEFD6] bg-white px-3.5 text-[13px] font-medium text-[#111110] transition-colors duration-200 hover:bg-[#F1FDF3] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#111110]"
                       style={{ scrollSnapAlign: 'start' }}
                     >
                       <span aria-hidden>+</span>
@@ -1031,8 +1031,8 @@ function ReviewContent() {
                   onClick={handleLowSubmit}
                   disabled={submitting || !kvkk}
                   aria-busy={submitting || undefined}
-                  className={`mt-4 inline-flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#5D3EBC] px-6 text-[16px] font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-[#4C2FA3] active:scale-[0.98] disabled:cursor-not-allowed ${
-                    kvkk ? 'disabled:hover:bg-[#5D3EBC]' : 'disabled:bg-[#EBEBEB] disabled:text-[#737373]'
+                  className={`mt-4 inline-flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#111110] px-6 text-[16px] font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-[#2B2B2A] active:scale-[0.98] disabled:cursor-not-allowed ${
+                    kvkk ? 'disabled:hover:bg-[#111110]' : 'disabled:bg-[#EBEBEB] disabled:text-[#737373]'
                   } ${FOCUS_RING}`}
                 >
                   {submitting ? (
@@ -1069,7 +1069,7 @@ function ReviewContent() {
                       href={targetPlatformUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-3 text-[14px] font-semibold text-[#5D3EBC] underline decoration-[#DCD3F6] decoration-2 underline-offset-4 transition-colors duration-200 hover:decoration-[#5D3EBC] ${FOCUS_RING}`}
+                      className={`mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-3 text-[14px] font-semibold text-[#111110] underline decoration-[#CDEFD6] decoration-2 underline-offset-4 transition-colors duration-200 hover:decoration-[#111110] ${FOCUS_RING}`}
                     >
                       {locale === 'tr'
                         ? `${PLATFORMS[fallbackPlatformId]?.label ?? 'Google'} üzerinde yorum yaz`
@@ -1097,21 +1097,21 @@ function ReviewContent() {
                   className="pointer-events-none absolute rounded-full"
                   style={{
                     inset: -22,
-                    background: 'radial-gradient(circle, rgba(93,62,188,0.18) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(17,17,16,0.18) 0%, transparent 70%)',
                   }}
                   aria-hidden
                 />
                 <span
-                  className="absolute inset-0 rounded-full bg-[#DCD3F6]"
+                  className="absolute inset-0 rounded-full bg-[#CDEFD6]"
                   style={{ animation: 'bz-done-ring-pulse 1.6s ease-out infinite', transformOrigin: 'center' }}
                   aria-hidden
                 />
                 <span
-                  className="absolute inset-2 rounded-full bg-[#DCD3F6]"
+                  className="absolute inset-2 rounded-full bg-[#CDEFD6]"
                   style={{ animation: 'bz-done-ring-pulse 1.6s ease-out 0.4s infinite', transformOrigin: 'center' }}
                   aria-hidden
                 />
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[#5D3EBC]">
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[#111110]">
                   <Check
                     size={40}
                     strokeWidth={3}
@@ -1154,7 +1154,7 @@ function ReviewContent() {
                     <button
                       type="button"
                       onClick={copyReferenceNumber}
-                      className={`inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-95 ${FOCUS_RING_ON_CANVAS}`}
+                      className={`inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#F1FDF3] active:scale-95 ${FOCUS_RING_ON_CANVAS}`}
                       aria-live="polite"
                       aria-label={
                         refCopied
@@ -1187,7 +1187,7 @@ function ReviewContent() {
                         className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white"
                         aria-hidden
                       >
-                        <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#5D3EBC" strokeWidth="1.5">
+                        <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#111110" strokeWidth="1.5">
                           <circle cx="6" cy="6" r="4.5" />
                           <path d="M6 4v2.5l1.5 1" />
                         </svg>
@@ -1300,7 +1300,7 @@ function ReviewContent() {
                           ? 'WhatsApp ile iletişime geç'
                           : 'Message us on WhatsApp'
                       }
-                      className={`inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-[#F6F6F6] px-5 text-[14px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-[0.98] ${FOCUS_RING}`}
+                      className={`inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-[#F6F6F6] px-5 text-[14px] font-semibold text-[#111110] transition-colors duration-200 hover:bg-[#F1FDF3] active:scale-[0.98] ${FOCUS_RING}`}
                     >
                       <MessageCircle
                         size={16}
@@ -1323,7 +1323,7 @@ function ReviewContent() {
                 {restaurant.menuEnabled && restaurant.menuPublished ? (
                   <a
                     href={`/menu/${slug}`}
-                    className={`inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#F6F6F6] px-3 py-2 text-center text-[14px] font-semibold leading-tight text-[#111110] transition-colors duration-200 hover:bg-[#EFEAFB] active:scale-[0.98] ${FOCUS_RING}`}
+                    className={`inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#F6F6F6] px-3 py-2 text-center text-[14px] font-semibold leading-tight text-[#111110] transition-colors duration-200 hover:bg-[#F1FDF3] active:scale-[0.98] ${FOCUS_RING}`}
                   >
                     <Utensils size={15} strokeWidth={1.8} className="shrink-0" aria-hidden />
                     {locale === 'tr' ? 'Menüye geri dön' : 'Back to menu'}
@@ -1334,7 +1334,7 @@ function ReviewContent() {
                 <button
                   type="button"
                   onClick={shareReview}
-                  className={`inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#5D3EBC] px-3 py-2 text-center text-[14px] font-semibold leading-tight text-white transition-colors duration-200 hover:bg-[#4C2FA3] active:scale-[0.98] ${FOCUS_RING}`}
+                  className={`inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-[#111110] px-3 py-2 text-center text-[14px] font-semibold leading-tight text-white transition-colors duration-200 hover:bg-[#2B2B2A] active:scale-[0.98] ${FOCUS_RING}`}
                   style={
                     !restaurant.menuEnabled || !restaurant.menuPublished
                       ? { gridColumn: '1 / -1' }
@@ -1371,27 +1371,27 @@ const HEADING_STYLE: React.CSSProperties = {
 
 // Keyboard focus — purple ring offset from white (sheet) or #F6F6F6 (cards).
 const FOCUS_RING =
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
 const FOCUS_RING_ON_CANVAS =
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5D3EBC] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F6F6F6]';
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#111110] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F6F6F6]';
 
 // 16 px text so iOS Safari never zooms on focus.
 const FIELD_CLASS =
-  'block h-[52px] w-full rounded-2xl border border-[#EBEBEB] bg-[#F6F6F6] px-4 text-[16px] font-medium text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:font-normal placeholder:text-[#737373] focus:border-[#5D3EBC] focus:bg-white focus:shadow-[0_0_0_4px_rgba(93,62,188,0.14)]';
+  'block h-[52px] w-full rounded-2xl border border-[#EBEBEB] bg-[#F6F6F6] px-4 text-[16px] font-medium text-[#111110] outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:font-normal placeholder:text-[#737373] focus:border-[#111110] focus:bg-white focus:shadow-[0_0_0_4px_rgba(17,17,16,0.14)]';
 
 const CHECKBOX_CLASS =
-  'mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#5D3EBC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5D3EBC]';
+  'mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[#111110] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111110]';
 
 const LEGAL_LINK_CLASS =
-  'font-medium text-[#5D3EBC] underline underline-offset-2 hover:text-[#4C2FA3]';
+  'font-medium text-[#111110] underline underline-offset-2 hover:text-[#2B2B2A]';
 
 const CONFETTI_DOTS: { top: number; left: number; size: number; color: string }[] = [
-  { top: -8, left: -4, size: 6, color: '#5D3EBC' },
-  { top: 4, left: 92, size: 4, color: '#3B1F8F' },
-  { top: 78, left: -10, size: 8, color: '#DCD3F6' },
-  { top: 86, left: 96, size: 5, color: '#5D3EBC' },
-  { top: 48, left: 106, size: 4, color: '#DCD3F6' },
-  { top: 28, left: -16, size: 5, color: '#3B1F8F' },
+  { top: -8, left: -4, size: 6, color: '#111110' },
+  { top: 4, left: 92, size: 4, color: '#000000' },
+  { top: 78, left: -10, size: 8, color: '#CDEFD6' },
+  { top: 86, left: 96, size: 5, color: '#111110' },
+  { top: 48, left: 106, size: 4, color: '#CDEFD6' },
+  { top: 28, left: -16, size: 5, color: '#000000' },
 ];
 
 function StepProgress({ current, locale }: { current: 1 | 2 | 3; locale: Locale }) {
@@ -1405,7 +1405,7 @@ function StepProgress({ current, locale }: { current: 1 | 2 | 3; locale: Locale 
           <span
             key={i}
             className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-              i <= current ? 'bg-[#5D3EBC]' : 'bg-[#EBEBEB]'
+              i <= current ? 'bg-[#111110]' : 'bg-[#EBEBEB]'
             }`}
           />
         ))}
@@ -1427,12 +1427,12 @@ function ReviewHeader({
 }) {
   return (
     <header
-      className="shrink-0 bg-[#5D3EBC] text-white"
+      className="shrink-0 bg-[#111110] text-white"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="mx-auto flex w-full max-w-[440px] items-center gap-3 px-5 pb-12 pt-5 sm:px-7 sm:pt-8">
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[20px] font-bold text-[#5D3EBC]"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[20px] font-bold text-[#111110]"
           aria-hidden
         >
           {initial}
@@ -1479,7 +1479,7 @@ function ReviewLoader({
   return (
     <main className="flex min-h-[100dvh] flex-col bg-[#F6F6F6]" aria-busy="true">
       <header
-        className="shrink-0 bg-[#5D3EBC]"
+        className="shrink-0 bg-[#111110]"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div
@@ -1495,9 +1495,9 @@ function ReviewLoader({
       </header>
       <ReviewSheet className="items-center justify-center py-16 text-center">
         <div className="relative h-14 w-14" aria-hidden>
-          <div className="absolute inset-0 rounded-full border-[3px] border-[#EFEAFB]" />
+          <div className="absolute inset-0 rounded-full border-[3px] border-[#F1FDF3]" />
           <div
-            className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#5D3EBC]"
+            className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#111110]"
             style={{ animation: 'bz-rr-spin 0.9s linear infinite' }}
           />
         </div>
@@ -1526,7 +1526,7 @@ function RedirectingOverlay({
   // thanks card (no owner name; the customer filled no form, so no name).
   const initial = restaurantName.charAt(0).toUpperCase();
   return (
-    <div className="bz-fade-in fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden bg-[#5D3EBC] px-6 text-center text-white">
+    <div className="bz-fade-in fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden bg-[#111110] px-6 text-center text-white">
       {/* Soft light behind the hand-off cards — decorative */}
       <span
         className="pointer-events-none absolute h-[320px] w-[320px] rounded-full"
@@ -1541,7 +1541,7 @@ function RedirectingOverlay({
 
       <div className="relative mb-10 flex items-center gap-4" aria-hidden>
         <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white">
-          <span className="text-[32px] font-bold text-[#5D3EBC]">{initial}</span>
+          <span className="text-[32px] font-bold text-[#111110]">{initial}</span>
         </div>
         <div className="flex items-center gap-1.5">
           {[0, 1, 2].map((i) => (
@@ -1592,7 +1592,7 @@ function RedirectingOverlay({
         style={{ bottom: 'max(32px, calc(env(safe-area-inset-bottom, 0px) + 20px))' }}
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white" aria-hidden>
-          <span className="text-[15px] font-bold text-[#5D3EBC]">{initial}</span>
+          <span className="text-[15px] font-bold text-[#111110]">{initial}</span>
         </div>
         <div className="min-w-0 flex-1 text-left">
           <div className="text-[13px] font-semibold text-white">

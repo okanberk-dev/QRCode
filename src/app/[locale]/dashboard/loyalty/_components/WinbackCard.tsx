@@ -143,7 +143,7 @@ export default function WinbackCard({ locale, restaurantId, canManage }: { local
           )}
 
           {needsConfirm && (
-            <label className="flex cursor-pointer items-start gap-2.5 rounded-[20px] border border-[#FDE68A] bg-[#FFFBEB] p-3">
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-[18px] bg-[#FFF6DB] p-3">
               <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
               <span className="text-[13px] leading-relaxed text-[#713F12]">
                 {tr

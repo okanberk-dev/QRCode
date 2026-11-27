@@ -225,7 +225,7 @@ export default function AdminAuditLogsPage() {
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM KAYITLARI"
-        eyebrowColor="#5D3EBC"
+        eyebrowColor="#111110"
         title="Denetim kayıtları"
         description="Paneldeki tüm işlemlerin zaman damgalı kaydı. IP adresi tutulmaz, e-posta ve telefon gizlenir. Filtrele, ayrıntıyı aç, CSV olarak indir."
         actions={

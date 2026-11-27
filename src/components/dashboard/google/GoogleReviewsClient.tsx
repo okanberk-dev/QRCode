@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Building2, RefreshCw } from 'lucide-react';
 import { AlertBanner, Badge, EmptyState, PageHeader } from '@/components/ui';
+import { ReviewSourceSwitch } from '@/components/dashboard/feedbacks/ReviewSourceSwitch';
 import type { Locale } from '@/lib/translations';
 import type { InboxPage } from '@/components/dashboard/google/inbox/inbox-client';
 import { useActiveBusinessSelection } from '@/components/audits/useActiveBusinessSelection';
@@ -237,14 +238,19 @@ export function GoogleReviewsClient({
       {/* §38 audit Fix #1 — connect button returnTo bu sayfa, callback
           ?google=connected|state-*|token-* status'lerini yakalar. */}
       <GoogleConnectFlashBanner locale={locale} />
-      <PageHeader
-        title={isTr ? 'Google Yorumları' : 'Google Reviews'}
-        description={
-          isTr
-            ? 'Google puanını, yorumlarını ve profil eksiklerini tek yerde gör.'
-            : 'See your Google rating, reviews and profile gaps in one place.'
-        }
-      />
+      <div>
+        <PageHeader
+          className="!mb-4"
+          crumb={isTr ? 'Yorumlar' : 'Reviews'}
+          title={isTr ? 'Yorumlar' : 'Reviews'}
+          description={
+            isTr
+              ? 'Google puanını, yorumlarını ve profil eksiklerini tek yerde gör.'
+              : 'See your Google rating, reviews and profile gaps in one place.'
+          }
+        />
+        <ReviewSourceSwitch locale={isTr ? 'tr' : 'en'} active="google" restaurantId={activeRestaurantId} />
+      </div>
 
       {workspaceError ? (
         // §38.B Stage 122 — `/api/restaurants?limit=50` fail. Previously

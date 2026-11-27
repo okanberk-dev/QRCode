@@ -6,7 +6,7 @@ import Link from '@/components/navigation/IntentLink';
 import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, Headset, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, Headset, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -434,7 +434,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const navItems: Nav[] = [
     { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { type: 'item', href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
-    { type: 'item', href: `/${locale}/dashboard/google-reviews`, icon: Star, label: copy.googleReviews },
     { type: 'item', href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
     { type: 'item', href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { type: 'item', href: `/${locale}/dashboard/platforms`, icon: Plug, label: copy.integrations },
@@ -469,16 +468,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const locationCount = workspace?.locationCount ?? 0;
 
   const isTr = locale === 'tr';
+  // Google reviews are a tab of the Yorumlar page (ReviewSourceSwitch), so
+  // the Yorumlar entry stays active there too.
   const navLink = (href: string) => ({
     href: hrefWithActiveRestaurant(href),
-    active: isPathActive(href),
+    active:
+      isPathActive(href) ||
+      (href.endsWith('/dashboard/feedbacks') && isPathActive(`/${locale}/dashboard/google-reviews`)),
   });
   // Pano navigation (docs/design/DASHBOARD_DESIGN.md §5.1): the core pages
   // are pill tabs in the top row, the tools are round buttons in the left
   // rail; the mobile drawer lists everything.
   const panoEntries: PanoNavEntry[] = navItems.map((item) => {
     if (item.type === 'item') {
-      const isGoogle = item.href.endsWith('/google-reviews');
       const isPlatforms = item.href.endsWith('/platforms');
       const isBusinesses = item.href.endsWith('/restaurants');
       return {
@@ -486,7 +488,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         ...navLink(item.href),
         label: item.label,
         icon: item.icon,
-        shortLabel: isGoogle ? 'Google' : isPlatforms ? (isTr ? 'Platformlar' : 'Platforms') : undefined,
+        shortLabel: isPlatforms ? (isTr ? 'Platformlar' : 'Platforms') : undefined,
         secondary: isPlatforms || isBusinesses,
       };
     }

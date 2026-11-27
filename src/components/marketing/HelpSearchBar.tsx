@@ -45,7 +45,7 @@ export default function HelpSearchBar({ locale, initial = '', size = 'hero' }: P
       action={`/${locale}/help/search`}
       method="get"
       onSubmit={submit}
-      className={`${wrapper} transition-colors focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#8C6CF0] focus-within:ring-offset-2`}
+      className={`${wrapper} transition-colors focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] focus-within:ring-offset-2`}
     >
       <label htmlFor={inputId} className="sr-only">
         {copy.label}
@@ -66,7 +66,7 @@ export default function HelpSearchBar({ locale, initial = '', size = 'hero' }: P
       />
       <button
         type="submit"
-        className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-[#0A0A0A] px-5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+        className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-[#0A0A0A] px-5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
       >
         {copy.button}
       </button>

@@ -45,18 +45,18 @@ const POLARITY_META: Record<
 > = {
   positive: {
     arrow: '↑',
-    arrowColor: '#22C55E',
-    barColor: '#5D3EBC',
+    arrowColor: '#23863A',
+    barColor: '#78FC90',
   },
   negative: {
     arrow: '↓',
-    arrowColor: '#EF4444',
-    barColor: '#EF4444',
+    arrowColor: '#D92D20',
+    barColor: '#D92D20',
   },
   neutral: {
     arrow: '·',
-    arrowColor: '#A3A3A3',
-    barColor: '#D4D4D4',
+    arrowColor: '#9A9A9A',
+    barColor: '#C4C4C8',
   },
 };
 
@@ -71,25 +71,23 @@ export function TopMentionsPolarity({
 
   return (
     <section className="bz-card flex h-full flex-col p-5 sm:p-6">
-      <header className="mb-3">
-        <span className="text-[13px] font-medium text-[#525252]">
-          {isTr ? 'En çok bahsedilenler' : 'Top mentions'}
-        </span>
-        <div className="bz-h-tight mt-1 text-[16px] sm:text-[18px]">
-          {isTr ? 'Konu trendi · pozitif/negatif' : 'Topic trend · positive/negative'}
-        </div>
+      <header className="mb-4">
+        <h2 className="pn-card-title text-pn-ink">{isTr ? 'En çok bahsedilenler' : 'Top mentions'}</h2>
+        <p className="mt-1 text-[13px] text-[#9A9A9A]">
+          {isTr ? 'Konular ve yönleri · pozitif / negatif' : 'Topics and their direction · positive / negative'}
+        </p>
       </header>
 
       {hasData ? (
-        <ul className="flex flex-1 flex-col gap-2.5">
+        <ul className="flex flex-1 flex-col gap-3.5">
           {items.map((t) => {
             const polarity = derivePolarity(t.sentimentPositivePct);
             const meta = POLARITY_META[polarity];
             const widthPct = maxCount > 0 ? (t.count / maxCount) * 100 : 0;
             return (
               <li key={t.theme}>
-                <div className="mb-1 flex items-baseline justify-between gap-2">
-                  <span className="text-[13px] font-medium text-pn-ink">
+                <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                  <span className="text-[14px] font-medium text-pn-ink">
                     <span
                       aria-hidden="true"
                       className="mr-1.5 font-medium"
@@ -99,12 +97,12 @@ export function TopMentionsPolarity({
                     </span>
                     {t.theme}
                   </span>
-                  <span className="tabular-nums text-[12px] tabular-nums font-medium text-[#737373]">
+                  <span className="text-[13px] font-medium tabular-nums text-[#9A9A9A]">
                     {t.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
                   </span>
                 </div>
                 <div
-                  className="h-[5px] overflow-hidden rounded-full bg-pn-canvas"
+                  className="h-2 overflow-hidden rounded-full bg-pn-canvas"
                   role="img"
                   aria-label={
                     isTr
@@ -131,7 +129,7 @@ export function TopMentionsPolarity({
           })}
         </ul>
       ) : (
-        <p className="text-[12px] text-[#737373]">
+        <p className="rounded-[16px] bg-pn-canvas px-4 py-6 text-[14px] leading-[1.55] text-[#737373]">
           {isTr
             ? 'Henüz yeterli yorum yok ya da AI servisi pasif. En az 4 metinli yoruma ulaşınca konu trendi burada görünür.'
             : 'Not enough comments yet, or AI service is paused. Topic trends appear once at least 4 text comments are collected.'}

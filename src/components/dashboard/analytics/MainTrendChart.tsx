@@ -14,7 +14,7 @@ import { SERIES_META } from './trend-series';
 // before it has a size (the server HTML never contained the chart).
 const TrendChartCanvas = dynamic(() => import('./TrendChartCanvas'), {
   ssr: false,
-  loading: () => <div className="h-full w-full rounded-[20px] bg-pn-canvas" aria-hidden="true" />,
+  loading: () => <div className="h-full w-full rounded-[18px] bg-pn-canvas" aria-hidden="true" />,
 });
 
 // Stage 66 §38.147 — HANDOFF AnalyticsDesktop main chart 30-day stacked
@@ -49,7 +49,7 @@ export function PlatformTrendChartBody({
   points,
   isTr = true,
   heightClassName = 'h-[280px] w-full min-w-[520px] sm:h-[320px]',
-  emptyClassName = 'mt-5 rounded-[14px] border border-dashed border-pn-line bg-pn-canvas px-5 py-10 text-center',
+  emptyClassName = 'mt-5 rounded-[18px] bg-pn-canvas px-5 py-10 text-center',
 }: PlatformTrendChartBodyProps) {
   const totals = useMemo(() => aggregatePlatformTotals(points), [points]);
   const hasData = totals.total > 0;
@@ -61,10 +61,10 @@ export function PlatformTrendChartBody({
   if (!hasData) {
     return (
       <div className={emptyClassName}>
-        <div className="text-[13px] font-medium text-[12px] text-[#737373]">
-          {isTr ? 'VERİ BEKLENİYOR' : 'WAITING FOR DATA'}
+        <div className="text-[14px] font-medium text-pn-ink">
+          {isTr ? 'Veri bekleniyor' : 'Waiting for data'}
         </div>
-        <p className="mx-auto mt-2 max-w-[440px] text-[13px] leading-6 text-[#525252]">
+        <p className="mx-auto mt-2 max-w-[440px] text-[13px] leading-6 text-[#737373]">
           {isTr
             ? 'Bu pencerede yorum yok. Yeni yorumlar geldikçe günlük platform dağılımı burada oluşur.'
             : 'No reviews in this window. Daily platform breakdown appears as new reviews arrive.'}
@@ -104,36 +104,23 @@ export function MainTrendChart({ points, isTr = true }: MainTrendChartProps) {
     >
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-[13px] font-medium text-[12px] text-[#737373]">
-            {isTr ? 'YORUM HACMİ TRENDİ' : 'REVIEW VOLUME TREND'}
-          </h3>
-          <div className="bz-h-tight mt-1 text-[18px]">
-            {isTr ? `${points.length} günlük platform dağılımı` : `${points.length}-day platform breakdown`}
-          </div>
-          <div className="tabular-nums mt-1 text-[12px] text-[#737373] tabular-nums">
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Yorum hacmi' : 'Review volume'}</h2>
+          <p className="mt-1 text-[13px] tabular-nums text-[#9A9A9A]">
             {isTr
-              ? `Toplam ${totals.total.toLocaleString('tr-TR')} yorum`
-              : `${totals.total.toLocaleString('en-US')} reviews total`}
-          </div>
+              ? `${points.length} günlük platform dağılımı · toplam ${totals.total.toLocaleString('tr-TR')} yorum`
+              : `${points.length}-day platform breakdown · ${totals.total.toLocaleString('en-US')} reviews total`}
+          </p>
         </div>
-        {/* Legend — sağda chip-style with platform totals */}
-        <div className="inline-flex flex-wrap items-center gap-3">
+        {/* Dot legend with each platform's total. */}
+        <div className="inline-flex flex-wrap items-center gap-x-4 gap-y-1.5">
           {SERIES_META.map((s) => {
             const total = totals[s.key];
             if (total === 0) return null;
             return (
-              <div key={s.key} className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden="true"
-                  className="h-2 w-2 rounded-[8px]"
-                  style={{ background: s.swatch, boxShadow: s.key === 'buazeQr' ? '0 0 6px rgba(93, 62, 188, 0.6)' : 'none' }}
-                />
-                <span className="text-[12px] text-[#525252] font-medium">
-                  {isTr ? s.labelTr : s.labelEn}
-                </span>
-                <span className="tabular-nums tabular-nums text-[12px] text-pn-ink font-medium">
-                  {total}
-                </span>
+              <div key={s.key} className="inline-flex items-center gap-1.5 text-[13px]">
+                <span aria-hidden="true" className="pn-legend-dot" style={{ background: s.swatch }} />
+                <span className="text-[#737373]">{isTr ? s.labelTr : s.labelEn}</span>
+                <span className="font-medium tabular-nums text-pn-ink">{total}</span>
               </div>
             );
           })}

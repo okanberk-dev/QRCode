@@ -654,6 +654,8 @@ export function GoogleReplySection({
               )}
             {setupStep !== null && (
               <WizardSteps
+                surface="card"
+                locale={isTr ? 'tr' : 'en'}
                 className="mb-1"
                 ariaLabel={isTr ? 'Google yanıt kurulumu' : 'Google reply setup'}
                 current={setupStep}

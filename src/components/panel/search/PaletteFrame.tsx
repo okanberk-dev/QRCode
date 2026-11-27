@@ -340,7 +340,7 @@ export function PaletteOption({
   );
 }
 
-/** Round icon that turns purple with a white glyph on the active row. */
+/** Round icon that turns black with a white glyph on the active row. */
 export function PaletteIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-canvas text-pn-ink transition-colors duration-200 group-aria-selected:bg-pn-accent group-aria-selected:text-white">
@@ -369,21 +369,21 @@ export function PaletteAvatar({ name, color }: { name: string | null | undefined
   return (
     <span
       aria-hidden="true"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EFEAFB] text-[15px] font-medium text-pn-ink transition-colors duration-200 group-aria-selected:bg-pn-accent group-aria-selected:text-white"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1FDF3] text-[15px] font-medium text-pn-ink transition-colors duration-200 group-aria-selected:bg-pn-accent group-aria-selected:text-white"
     >
       {initialOf(name)}
     </span>
   );
 }
 
-/** Text with the matched part marked in a soft lavender. */
+/** Text with the matched part marked in a soft light green. */
 export function Highlight({ text, query }: { text: string; query: string }) {
   const match = findMatch(text, query);
   if (!match) return <>{text}</>;
   return (
     <>
       {text.slice(0, match[0])}
-      <mark className="rounded-[4px] bg-[#EFEAFB] text-inherit shadow-[0_0_0_1.5px_#EFEAFB] group-aria-selected:bg-[#DCD3F6] group-aria-selected:shadow-[0_0_0_1.5px_#DCD3F6]">
+      <mark className="rounded-[4px] bg-[#F1FDF3] text-inherit shadow-[0_0_0_1.5px_#F1FDF3] group-aria-selected:bg-[#CDEFD6] group-aria-selected:shadow-[0_0_0_1.5px_#CDEFD6]">
         {text.slice(match[0], match[1])}
       </mark>
       {text.slice(match[1])}
@@ -399,7 +399,7 @@ export function PaletteStars({ rating, label }: { rating: number; label: string 
         <svg key={n} viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
           <path
             d="M6 .9l1.55 3.2 3.5.48-2.55 2.43.63 3.48L6 8.83 2.87 10.5l.63-3.48L.95 4.58l3.5-.48z"
-            fill={n <= value ? 'var(--color-pn-accent)' : '#DCD3F6'}
+            fill={n <= value ? 'var(--color-pn-accent)' : '#CDEFD6'}
           />
         </svg>
       ))}
@@ -422,7 +422,7 @@ export function PaletteSkeletonRow() {
 export function PaletteEmpty({ title, body }: { title: string; body: string }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#EFEAFB] text-pn-accent">
+      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#F1FDF3] text-pn-accent">
         <SearchX size={20} strokeWidth={1.75} aria-hidden="true" />
       </span>
       <p className="text-[15px] font-medium text-pn-ink">{title}</p>

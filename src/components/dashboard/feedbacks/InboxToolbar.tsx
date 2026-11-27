@@ -28,7 +28,7 @@ import { INBOX_PLATFORM_FILTER_IDS, platformLabel } from './inbox-format';
  *
  * Fintora layout: the toolbar sits on the grey canvas — white pills
  * (status tabs, search, icon buttons; grey on phones where the page is
- * white), the active tab purple with white text. No borders.
+ * white), the active tab black with white text. No borders.
  *
  * Mobile: sticky under the 72px shell bar. lg+: static (the panes below
  * scroll internally).
@@ -76,6 +76,15 @@ export interface InboxToolbarProps {
 
   /** Right-aligned slot on md+ (admin: restaurant deep-link chip). */
   rightSlot?: ReactNode;
+  /**
+   * `inline` (default): md+ shows the selects and toggles in the toolbar.
+   * `button`: every width shows one "Filtreler" button with a count that
+   * opens the filter sheet (`onOpenAllFilters`) — the toolbar stays two
+   * rows: [leading · search · Filtreler] then the status tabs.
+   */
+  filtersMode?: 'inline' | 'button';
+  /** `button` mode: left of the search row (owner: review source switch). */
+  leading?: ReactNode;
   /** Extra classes for the wrapper (e.g. `hidden lg:block` on mobile detail). */
   className?: string;
 }
@@ -157,10 +166,87 @@ export function InboxToolbar({
   showClear,
   onClear,
   rightSlot,
+  filtersMode = 'inline',
+  leading,
   className = '',
 }: InboxToolbarProps) {
   const activeLabel = (n: number) =>
     isTr ? `${n} aktif filtre` : `${n} active ${n === 1 ? 'filter' : 'filters'}`;
+
+  if (filtersMode === 'button') {
+    return (
+      <div
+        className={`sticky top-[72px] z-20 bg-pn-canvas/95 px-4 py-3 backdrop-blur max-sm:bg-white/95 sm:px-6 lg:static lg:bg-transparent lg:px-4 lg:pb-3 lg:pt-1 lg:backdrop-blur-none ${className}`}
+      >
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          {leading && <div className="flex min-w-0 items-center">{leading}</div>}
+          <div className="flex min-w-0 items-center gap-2 md:ml-auto md:w-[min(460px,52%)]">
+            <div className="relative min-w-0 flex-1">
+              <Search
+                size={16}
+                strokeWidth={2}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => onSearchChange(e.target.value)}
+                enterKeyHint="search"
+                autoComplete="off"
+                aria-label={isTr ? 'Yorum veya müşteri ara' : 'Search reviews or customers'}
+                placeholder={isTr ? 'Yorum veya müşteri ara…' : 'Search reviews or customers…'}
+                className="h-11 w-full rounded-full border-0 bg-white pl-11 pr-4 text-[16px] text-pn-ink outline-none transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:shadow-[0_0_0_2px_#111110] max-sm:bg-[#F6F6F6] sm:text-[14px] md:h-12"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={onOpenAllFilters}
+              className="relative inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-white px-3 text-[14px] font-medium text-pn-ink transition-colors duration-200 hover:bg-[#EDEDED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink active:scale-[.97] max-sm:w-11 max-sm:bg-[#F6F6F6] max-sm:px-0 md:h-12 md:px-4"
+              aria-label={
+                allFiltersCount > 0
+                  ? `${isTr ? 'Filtreler' : 'Filters'} · ${activeLabel(allFiltersCount)}`
+                  : isTr
+                    ? 'Filtreler'
+                    : 'Filters'
+              }
+            >
+              <SlidersHorizontal size={16} strokeWidth={2} aria-hidden="true" />
+              <span className="max-sm:hidden">{isTr ? 'Filtreler' : 'Filters'}</span>
+              {allFiltersCount > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pn-ink px-1.5 text-[12px] font-medium leading-none text-white max-sm:absolute max-sm:-right-0.5 max-sm:-top-0.5 max-sm:ring-2 max-sm:ring-white"
+                >
+                  {allFiltersCount}
+                </span>
+              )}
+            </button>
+            {showClear && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#525252] transition-colors duration-200 hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink active:scale-[.97] max-sm:bg-[#F6F6F6] md:h-12 md:w-12"
+                aria-label={isTr ? 'Filtreleri temizle' : 'Clear filters'}
+                title={isTr ? 'Filtreleri temizle' : 'Clear filters'}
+              >
+                <RotateCcw size={15} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </div>
+        <InboxStatusTabs
+          tabs={tabs}
+          active={activeTab}
+          onChange={onTabChange}
+          ariaLabel={isTr ? 'Yorum durumu' : 'Review status'}
+          controlsId={listId}
+          variant="soft"
+          className="mt-2"
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -210,7 +296,7 @@ export function InboxToolbar({
               // Explicit classes, not `bz-input`: the bz-* rules are unlayered,
               // so they would beat `pl-9` / `rounded-full` and the text would
               // run under the search icon.
-              className="h-11 w-full rounded-full border-0 bg-white pl-11 pr-4 text-[16px] text-pn-ink outline-none transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:shadow-[0_0_0_2px_#5D3EBC] max-sm:bg-[#F6F6F6] sm:text-[14px] md:h-[46px]"
+              className="h-11 w-full rounded-full border-0 bg-white pl-11 pr-4 text-[16px] text-pn-ink outline-none transition-shadow duration-200 placeholder:text-[#9A9A9A] focus:shadow-[0_0_0_2px_#111110] max-sm:bg-[#F6F6F6] sm:text-[14px] md:h-[46px]"
             />
           </div>
 

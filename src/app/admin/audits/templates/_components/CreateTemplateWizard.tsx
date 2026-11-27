@@ -11,8 +11,29 @@
 // Adım göstergesi owner sihirbazı ve menü kurulumu ile ortak (`WizardSteps`).
 
 import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, ClipboardCheck, ListChecks, Loader2, Save, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { AlertBanner, Field, Modal, PulseSelect, WizardSteps } from '@/components/ui';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ClipboardCheck,
+  Gauge,
+  Globe,
+  ListChecks,
+  Loader2,
+  Percent,
+  Save,
+  Scale,
+  SlidersHorizontal,
+  Target,
+} from 'lucide-react';
+import { AlertBanner, Field, Modal, PulseSelect } from '@/components/ui';
+import {
+  WIZARD_BACK_CLASS,
+  WIZARD_NEXT_CLASS,
+  WizardChoice,
+  WizardFooter,
+  WizardSteps,
+  WizardSummaryRow,
+} from '@/components/ui/WizardSteps';
 import {
   AUDIT_SCORING_MODES,
   AUDIT_SECTORS,
@@ -82,6 +103,13 @@ const SCORING_HINT: Record<AuditScoringMode, string> = {
     'Soru başına ağırlık (1-10) ile çarpılır. Kritik adımları öne çıkarmak için iyi seçim.',
   pass_fail:
     'Tek geçme eşiği. Doğru yanıt veren her soru tam puan, yanlış 0. Hızlı temel kontrol.',
+};
+
+// Icon circle on each scoring choice (visual only).
+const SCORING_ICON: Record<AuditScoringMode, React.ReactNode> = {
+  percentage: <Percent size={17} strokeWidth={1.8} />,
+  weighted: <Scale size={17} strokeWidth={1.8} />,
+  pass_fail: <Gauge size={17} strokeWidth={1.8} />,
 };
 
 const STEPS = [
@@ -249,6 +277,8 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
           canSelect={(i) => i <= reached}
           onSelect={(i) => goTo(i as Step)}
           ariaLabel="Şablon adımları"
+          locale="tr"
+          surface="card"
         />
 
         {error && (
@@ -268,7 +298,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
 
             <Field label="Başlık" required hint="İşletme sahibi şablon listesinde bu metni görür">
               <input
-                className="bz-input"
+                className="bz-input text-[16px] sm:text-[14px]"
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 onKeyDown={(e) => {
@@ -364,36 +394,21 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             />
 
             <Field label="Puanlama modu">
-              <div role="radiogroup" aria-label="Puanlama modu" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div role="radiogroup" aria-label="Puanlama modu" className="grid grid-cols-1 gap-2">
                 {AUDIT_SCORING_MODES.map((mode) => {
                   const active = form.scoringMode === mode;
                   return (
-                    <button
+                    <WizardChoice
                       key={mode}
-                      type="button"
                       role="radio"
                       aria-checked={active}
+                      selected={active}
+                      tone="plain"
                       onClick={() => setForm((f) => ({ ...f, scoringMode: mode }))}
-                      className={`flex items-start gap-3 rounded-[24px] border p-3.5 text-left transition-all ${
-                        active
-                          ? 'border-pn-accent bg-pn-accent-soft'
-                          : 'border-pn-line bg-white hover:border-pn-ink/40'
-                      }`}
-                    >
-                      <span
-                        className={`mt-0.5 h-3 w-3 shrink-0 rounded-full ${
-                          active ? 'bg-pn-accent ring-2 ring-pn-accent-soft' : 'bg-[#E5E5E5]'
-                        }`}
-                      />
-                      <span className="min-w-0">
-                        <span className="block text-[13px] font-medium text-pn-ink">
-                          {SCORING_LABEL[mode]}
-                        </span>
-                        <span className="mt-1 block text-[12px] leading-[1.45] text-[#737373]">
-                          {SCORING_HINT[mode]}
-                        </span>
-                      </span>
-                    </button>
+                      icon={SCORING_ICON[mode]}
+                      title={SCORING_LABEL[mode]}
+                      description={SCORING_HINT[mode]}
+                    />
                   );
                 })}
               </div>
@@ -406,7 +421,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                 hint="Boşsa yalnız skor görünür."
               >
                 <input
-                  className="bz-input"
+                  className="bz-input text-[16px] tabular-nums sm:text-[14px]"
                   type="text"
                   inputMode="numeric"
                   value={form.passingScore}
@@ -418,7 +433,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
               </Field>
               <Field label="Açıklama (opsiyonel)" hint="İşletme sahibi şablon seçim ekranında görür.">
                 <textarea
-                  className="bz-input min-h-[80px]"
+                  className="bz-input min-h-[92px] text-[16px] sm:text-[14px]"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   maxLength={400}
@@ -427,45 +442,44 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
               </Field>
             </div>
 
-            <div className="rounded-[24px] bg-[#3B1F8F] p-5 text-white">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[13px] font-medium text-white/75">ŞABLON ÖZETİ</span>
-                <Sparkles size={15} className="text-white" />
-              </div>
-              <p className="mt-3 break-words text-[18px] font-medium leading-tight">
-                {form.title || 'Başlıksız şablon'}
-              </p>
-              <p className="mt-1 text-[12px] text-white/55">
-                {SECTOR_LABEL[form.sector]} · {form.locale === 'tr' ? 'Türkçe' : 'English'}
-                {form.categoryId
-                  ? ` · ${filteredCategories.find((c) => c.id === form.categoryId)?.labelTr ?? ''}`
-                  : ''}
-              </p>
-              <div className="mt-4 grid grid-cols-3 gap-3 rounded-[24px] bg-white/8 p-3">
-                <div>
-                  <span className="text-[13px] font-medium text-white/55">Sorular</span>
-                  <p className="mt-1 text-[13px] font-medium text-white">
-                    {filledQuestions > 0 ? `${kindLabel(kind, 'tr')} · ${itemsCount(filledQuestions, 'tr')}` : '—'}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[13px] font-medium text-white/55">Mod</span>
-                  <p className="mt-1 text-[13px] font-medium text-white">{SCORING_LABEL[form.scoringMode]}</p>
-                </div>
-                <div>
-                  <span className="text-[13px] font-medium text-white/55">Geçme</span>
-                  <p className="mt-1 text-[13px] font-medium text-white">
-                    {form.passingScore ? `≥ ${form.passingScore}` : '—'}
-                  </p>
-                </div>
+            {/* Özet — oluşturulacak şablonun dökümü */}
+            <div className="space-y-2">
+              <p className="text-[14px] font-medium text-pn-ink">Oluşturulacak şablon</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <WizardSummaryRow
+                  tone="plain"
+                  icon={<ClipboardCheck size={16} />}
+                  label="Başlık"
+                  value={form.title || 'Başlıksız şablon'}
+                />
+                <WizardSummaryRow
+                  tone="plain"
+                  icon={<Globe size={16} />}
+                  label="Sektör ve dil"
+                  value={`${SECTOR_LABEL[form.sector]} · ${form.locale === 'tr' ? 'Türkçe' : 'English'}${
+                    form.categoryId
+                      ? ` · ${filteredCategories.find((c) => c.id === form.categoryId)?.labelTr ?? ''}`
+                      : ''
+                  }`}
+                />
+                <WizardSummaryRow
+                  tone="plain"
+                  icon={<ListChecks size={16} />}
+                  label="Sorular"
+                  value={filledQuestions > 0 ? `${kindLabel(kind, 'tr')} · ${itemsCount(filledQuestions, 'tr')}` : '—'}
+                />
+                <WizardSummaryRow
+                  tone="plain"
+                  icon={<Target size={16} />}
+                  label="Mod ve geçme"
+                  value={`${SCORING_LABEL[form.scoringMode]} · ${form.passingScore ? `≥ ${form.passingScore}` : '—'}`}
+                />
               </div>
             </div>
 
             <p
-              className={`rounded-[24px] border p-3.5 text-[13px] leading-[1.55] ${
-                filledQuestions > 0
-                  ? 'border-pn-line bg-pn-canvas text-[#525252]'
-                  : 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]'
+              className={`rounded-[18px] px-4 py-3.5 text-[13px] leading-[1.55] ${
+                filledQuestions > 0 ? 'bg-pn-accent-soft text-pn-ink' : 'bg-[#FFF6DB] text-[#7A4F00]'
               }`}
             >
               {filledQuestions > 0 ? (
@@ -483,60 +497,58 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
           </div>
         )}
 
-        {/* Sticky bottom action bar */}
-        <div className="sticky bottom-0 -mx-6 flex flex-col gap-2 border-t border-pn-line bg-white/95 px-6 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        {/* Eylem çubuğu — pencerenin altında sabit */}
+        <WizardFooter variant="modal">
           <button
             type="button"
             onClick={handleClose}
-            className="bz-btn-ghost order-2 sm:order-1"
+            className={`${WIZARD_BACK_CLASS} sm:mr-auto`}
             disabled={submitting}
           >
             Vazgeç
           </button>
-          <div className="order-1 flex gap-2 sm:order-2">
-            {step > 0 && (
-              <button
-                type="button"
-                onClick={() => goTo((step - 1) as Step)}
-                className="bz-btn-ghost flex-1 sm:flex-none"
-                disabled={submitting}
-              >
-                <ArrowLeft size={14} strokeWidth={2} />
-                Geri
-              </button>
-            )}
-            {step < 2 ? (
-              <button
-                type="button"
-                onClick={() => goTo((step + 1) as Step)}
-                className="bz-btn-primary flex-1 sm:flex-none"
-              >
-                {step === 1 && questions.length === 0 ? 'Sorusuz devam et' : 'Devam'}
-                <ArrowRight size={14} strokeWidth={2} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleCreate}
-                className="bz-btn-primary flex-1 disabled:opacity-60 sm:flex-none"
-                disabled={submitting || !canContinueIdentity || !canContinueScoring}
-                aria-busy={submitting}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    Oluşturuluyor…
-                  </>
-                ) : (
-                  <>
-                    <Save size={14} strokeWidth={2} />
-                    Taslak olarak oluştur
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
+          {step > 0 && (
+            <button
+              type="button"
+              onClick={() => goTo((step - 1) as Step)}
+              className={WIZARD_BACK_CLASS}
+              disabled={submitting}
+            >
+              <ArrowLeft size={15} strokeWidth={2} />
+              Geri
+            </button>
+          )}
+          {step < 2 ? (
+            <button
+              type="button"
+              onClick={() => goTo((step + 1) as Step)}
+              className={`${WIZARD_NEXT_CLASS} max-sm:order-first max-sm:basis-full`}
+            >
+              {step === 1 && questions.length === 0 ? 'Sorusuz devam et' : 'Devam'}
+              <ArrowRight size={15} strokeWidth={2} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleCreate}
+              className={`${WIZARD_NEXT_CLASS} max-sm:order-first max-sm:basis-full`}
+              disabled={submitting || !canContinueIdentity || !canContinueScoring}
+              aria-busy={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Oluşturuluyor…
+                </>
+              ) : (
+                <>
+                  <Save size={15} strokeWidth={2} />
+                  Taslak olarak oluştur
+                </>
+              )}
+            </button>
+          )}
+        </WizardFooter>
       </div>
     </Modal>
   );
@@ -544,15 +556,16 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
 
 function StepIntro({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] bg-pn-accent text-white">
-          {icon}
-        </div>
-        <div>
-          <p className="text-[15px] font-medium text-pn-ink">{title}</p>
-          <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">{body}</p>
-        </div>
+    <div className="flex items-start gap-3">
+      <span
+        aria-hidden="true"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+      >
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-[20px] font-medium leading-[26px] tracking-[-0.015em] text-pn-ink">{title}</p>
+        <p className="mt-1 text-[14px] leading-[1.5] text-[#737373]">{body}</p>
       </div>
     </div>
   );

@@ -550,7 +550,7 @@ export default function SurveysClient({
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: row.accentColor || '#5D3EBC' }}
+                        style={{ backgroundColor: row.accentColor || '#111110' }}
                         aria-hidden="true"
                       />
                       {/* The title link is stretched over the whole card; the

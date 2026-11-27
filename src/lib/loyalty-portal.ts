@@ -131,11 +131,12 @@ export function readLoyaltyPortal(value: unknown): LoyaltyPortal {
 
 // ─── colours ──────────────────────────────────────────────────────────────
 
-// Buaze defaults when the business picked no card colour: purple + white.
-// A colour the business chose always wins (it is the business's data).
+// Buaze defaults when the business picked no card colour: Fintora green
+// (black text on it) with a black band in the dark theme. A colour the
+// business chose always wins (it is the business's data).
 const INK = '#111110';
-const PURPLE = '#5D3EBC';
-const DEEP_PURPLE = '#3B1F8F';
+const BUAZE_GREEN = '#78FC90';
+const DEEP_BAND = '#111110';
 
 function hexToRgb(hex: string): [number, number, number] | null {
   const m = /^#([0-9a-f]{6})$/i.exec(hex);
@@ -189,14 +190,14 @@ export interface PortalPalette {
 /** Readable colours for the three themes from the card colour. */
 export function portalPalette(theme: PortalTheme, accentColor: string | null | undefined): PortalPalette {
   const accent = accentColor && hexToRgb(accentColor) ? accentColor : null;
-  const brand = accent ?? PURPLE;
+  const brand = accent ?? BUAZE_GREEN;
   const brandLight = readableOn(brand) === INK;
-  const button = accent ?? PURPLE;
+  const button = accent ?? BUAZE_GREEN;
   if (theme === 'dark') {
-    // Dark brand colours (and the default purple) are lifted a little so the
-    // button stands out from the near-black page; white text stays on it.
+    // Dark brand colours are lifted a little so the button stands out from
+    // the near-black page; the text colour follows the button.
     const btn = brandLight ? brand : mix(brand, '#FFFFFF', 0.15);
-    const band = accent ?? DEEP_PURPLE;
+    const band = accent ?? DEEP_BAND;
     return {
       bg: '#0B0B0C',
       surface: '#161618',

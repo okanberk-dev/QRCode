@@ -316,7 +316,7 @@ export function WhatsAppReviewWizard({
       onClose={onClose}
       size={620}
       footer={
-        // Fintora footer bar: grey "Geri" pill + purple "Devam" pill. The
+        // Fintora footer bar: grey "Geri" pill + black "Devam" pill. The
         // modal keeps it pinned under the scrolling body (bottom sheet on
         // phones, above the safe area).
         <div className="flex w-full items-center gap-2">
@@ -376,8 +376,8 @@ export function WhatsAppReviewWizard({
       }
     >
       <div ref={headerRef} className="flex flex-col gap-5">
-        {/* Stepper — Fintora step pills: the current step is a purple pill
-            with its label, finished steps a purple check circle, the rest
+        {/* Stepper — Fintora step pills: the current step is a black pill
+            with its label, finished steps a black check circle, the rest
             grey. On phones only the current step shows its label. */}
         <div className="flex gap-2" role="tablist">
           {STEPS.map((s, idx) => {
@@ -587,7 +587,7 @@ export function WhatsAppReviewWizard({
         {currentStep.id === "preview" && (
           <div className="flex flex-col gap-4">
             {/* Customer-side mock card (matches /r/[slug] thanks step language) */}
-            <div className="rounded-[24px] bg-[#3B1F8F] p-5 sm:p-6">
+            <div className="rounded-[24px] bg-[#000000] p-5 sm:p-6">
               <span className="text-[13px] font-medium text-white/75">
                 {isTr ? "Müşteriye görünecek" : "Customer preview"}
               </span>

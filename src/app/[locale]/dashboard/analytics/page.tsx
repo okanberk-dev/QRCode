@@ -608,7 +608,7 @@ async function renderAnalyticsPage({
   }
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-3">
       <PageHeader
         /* §38.66 — Analytics 5-col KPI + chart + heatmap + topic grid yoğun
            dashboard; hero h1 ezici hissedilir. titleScale="compact".
@@ -621,10 +621,10 @@ async function renderAnalyticsPage({
           <a
             href={exportHref}
             download
-            className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-0"
+            className="bz-btn-ghost inline-flex min-h-[44px] items-center gap-1.5"
             aria-label={isTr ? 'Rapor indir (CSV)' : 'Export report (CSV)'}
           >
-            <Download size={14} strokeWidth={2} aria-hidden="true" />
+            <Download size={16} aria-hidden="true" />
             {isTr ? 'Rapor indir' : 'Export report'}
           </a>
         }
@@ -655,7 +655,7 @@ async function renderAnalyticsPage({
               ? `hedef ${resolvedTargetRating.toFixed(1).replace('.', ',')}`
               : `target ${resolvedTargetRating.toFixed(1)}`,
             sparkline: sparkAvgRating,
-            sparklineColor: '#5D3EBC',
+            sparklineColor: '#111110',
           },
           {
             label: metricLabel('replyTime', isTr),
@@ -744,7 +744,7 @@ async function renderAnalyticsPage({
           platform filter it is hidden, but sentiment + top mentions stay
           (they used to disappear with it). */}
       <div
-        className={`grid gap-6 ${
+        className={`grid gap-2.5 ${
           showPlatformShare ? 'lg:grid-cols-[1.4fr_1fr_1fr]' : 'lg:grid-cols-2'
         }`}
       >
@@ -779,22 +779,21 @@ async function renderAnalyticsPage({
       </div>
 
       {/* 2-col 1fr/1fr: Günlük dağılım + Saat-bazlı dağılım */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-2.5 lg:grid-cols-2">
         <section className="bz-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-medium text-pn-ink">{isTr ? 'Günlere göre' : 'By weekday'}</h2>
-          <p className="mt-0.5 mb-4 text-[13px] text-[#525252]">
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Günlere göre' : 'By weekday'}</h2>
+          <p className="mb-5 mt-1 text-[13px] text-[#9A9A9A]">
             {isTr ? 'Hangi günler daha çok puan geliyor?' : 'Which days bring the most ratings?'}
           </p>
-          <BarChart data={dayData} height={160} showValues />
+          <BarChart data={dayData} height={168} showValues />
         </section>
 
         <section className="bz-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-medium text-pn-ink">{isTr ? 'Saatlere göre' : 'By hour'}</h2>
-          <p className="mt-0.5 mb-4 text-[13px] text-[#525252]">
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Saatlere göre' : 'By hour'}</h2>
+          <p className="mb-5 mt-1 text-[13px] text-[#9A9A9A]">
             {isTr ? 'Yoğun saatler hangileri?' : 'Which hours are busiest?'}
           </p>
-          <BarChart data={hourData} height={160} />
-
+          <BarChart data={hourData} height={168} />
         </section>
       </div>
 

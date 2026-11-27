@@ -86,7 +86,7 @@ export default function MemberRestaurantsPanel({ userId }: Props) {
         <div key={r.id} className="p-4 sm:p-5 flex items-center gap-3 flex-wrap">
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] text-[14px] font-medium"
-            style={{ background: r.primaryColor || '#5D3EBC', color: readableOn(r.primaryColor || '#5D3EBC') }}
+            style={{ background: r.primaryColor || '#111110', color: readableOn(r.primaryColor || '#111110') }}
           >
             {r.name.charAt(0).toUpperCase()}
           </div>

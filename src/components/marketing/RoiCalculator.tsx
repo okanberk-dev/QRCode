@@ -374,20 +374,20 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
       <div className="sticky top-0 z-30 -mx-5 border-b border-[#EDEDED] bg-white/95 px-5 py-2.5 backdrop-blur-md lg:hidden">
         <a
           href="#roi-result"
-          className="flex min-h-[48px] items-center justify-between gap-3 rounded-full bg-[#5D3EBC] px-4 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+          className="flex min-h-[48px] items-center justify-between gap-3 rounded-full bg-[#0A0A0A] px-4 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
         >
           <span className="min-w-0">
-            <span className="block text-[11px] text-white/85">{copy.sticky}</span>
-            <span className="block truncate text-[16px] font-semibold tabular-nums text-white">
+            <span className="block text-[11px] text-white/70">{copy.sticky}</span>
+            <span className="block truncate text-[16px] font-semibold tabular-nums text-[#C6F24E]">
               {copy.hoursPerMonth(hoursSaved)}
               {monthlyDiff ? (
-                <span className="ml-2 text-[12px] font-normal text-white/85">
+                <span className="ml-2 text-[12px] font-normal text-white/75">
                   {copy.stickyDiff} {monthlyDiff} {copy.perMonth}
                 </span>
               ) : null}
             </span>
           </span>
-          <span aria-hidden="true" className="shrink-0 text-[12px] text-white/85">
+          <span aria-hidden="true" className="shrink-0 text-[12px] text-white/75">
             {copy.stickyLink} ↓
           </span>
         </a>
@@ -447,8 +447,8 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
                   return (
                     <label
                       key={plan.id}
-                      className={`flex min-h-[52px] cursor-pointer items-center justify-between gap-3 rounded-[12px] border px-4 py-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#8C6CF0] has-[:focus-visible]:ring-offset-2 ${
-                        active ? 'border-[#5D3EBC] bg-[#5D3EBC] text-white' : 'border-[var(--rt-line)] bg-white text-[var(--rt-ink-900)] hover:border-[#5D3EBC]'
+                      className={`flex min-h-[52px] cursor-pointer items-center justify-between gap-3 rounded-[12px] border px-4 py-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#C6F24E] has-[:focus-visible]:ring-offset-2 ${
+                        active ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#D4D4D4] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]'
                       }`}
                     >
                       <input
@@ -460,14 +460,14 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
                         className="sr-only"
                       />
                       <span className="text-[15px] font-medium">{plan.name}</span>
-                      <span className={`font-mono text-[13px] tabular-nums ${active ? 'text-white/85' : 'text-[#525252]'}`}>
+                      <span className={`font-mono text-[13px] tabular-nums ${active ? 'text-[#C6F24E]' : 'text-[#525252]'}`}>
                         {formatUsd(plan.priceMonthly)} {copy.perMonth}
                       </span>
                     </label>
                   );
                 })}
                 <label
-                  className={`flex min-h-[52px] cursor-pointer items-center rounded-[12px] border px-4 py-3 text-[15px] transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#8C6CF0] has-[:focus-visible]:ring-offset-2 ${
+                  className={`flex min-h-[52px] cursor-pointer items-center rounded-[12px] border px-4 py-3 text-[15px] transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#C6F24E] has-[:focus-visible]:ring-offset-2 ${
                     planId === '' ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#D4D4D4] bg-white text-[#525252] hover:border-[#0A0A0A]'
                   }`}
                 >
@@ -567,9 +567,9 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
           id="roi-result"
           className="scroll-mt-24 rounded-[20px] bg-[#0A0A0A] p-5 text-white sm:p-8 lg:sticky lg:top-28"
         >
-          <p className="pulse-eyebrow text-white">{copy.resultEyebrow}</p>
+          <p className="pulse-eyebrow text-[#C6F24E]">{copy.resultEyebrow}</p>
           <h2 className="mt-2 text-[20px] leading-[1.25] text-white sm:text-[22px]">{copy.resultTitle}</h2>
-          <p className="bz-h-tight mt-3 text-[40px] leading-none tabular-nums text-white sm:text-[56px]">
+          <p className="bz-h-tight mt-3 text-[40px] leading-none tabular-nums text-[#C6F24E] sm:text-[56px]">
             {copy.hoursPerMonth(hoursSaved)}
           </p>
 
@@ -592,7 +592,7 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
                   <dt className="text-white/75">{copy.monthlyDiff}</dt>
                   <dd
                     className={`font-semibold tabular-nums ${
-                      (result.monthlyDifferenceUsd ?? 0) >= 0 ? 'text-[#C8F7D2]' : 'text-white'
+                      (result.monthlyDifferenceUsd ?? 0) >= 0 ? 'text-[#C6F24E]' : 'text-white'
                     }`}
                   >
                     {monthlyDiff}
@@ -622,9 +622,9 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
             ))}
           </dl>
 
-          <div className="mt-6 rounded-[14px] border border-[#DCD3F6]/30 bg-[#8C6CF0]/10 p-4">
+          <div className="mt-6 rounded-[14px] border border-[#C6F24E]/30 bg-[#C6F24E]/10 p-4">
             <p className="text-[13px] leading-[1.5] text-white/80">{copy.coverage}</p>
-            <p className="bz-h-tight mt-1.5 text-[22px] tabular-nums text-white">
+            <p className="bz-h-tight mt-1.5 text-[22px] tabular-nums text-[#C6F24E]">
               {pct(result.coverageNowPct)} → {pct(result.coverageSameTimePct)}
             </p>
           </div>
@@ -636,8 +636,8 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
       <div className="rounded-[20px] border border-[#EDEDED] bg-white p-5 sm:p-8">
         {leadStatus === 'sent' ? (
           <div className="py-2 text-center" role="status">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#5D3EBC]">
-              <MailCheck size={26} strokeWidth={2} className="text-white" aria-hidden="true" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F24E]">
+              <MailCheck size={26} strokeWidth={2} className="text-[#0A0A0A]" aria-hidden="true" />
             </div>
             <h2 className="text-[24px] leading-[1.2] text-[#0A0A0A]">{copy.sentTitle}</h2>
             <p className="mx-auto mt-3 max-w-[480px] text-[15px] leading-[1.6] text-[#525252]">{copy.sentBody}</p>
@@ -740,7 +740,7 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
                 {copy.consentA}
                 <Link
                   href={copy.privacyHref}
-                  className="font-medium text-[#0A0A0A] underline underline-offset-2 hover:decoration-[#4C2FA3]"
+                  className="font-medium text-[#0A0A0A] underline underline-offset-2 hover:decoration-[#A8D62E]"
                 >
                   {copy.consentLink}
                 </Link>
@@ -758,7 +758,7 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
                 <li key={fact} className="inline-flex items-center gap-2">
                   <span
                     aria-hidden="true"
-                    className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EFEAFB] text-[#0A0A0A]"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]"
                   >
                     <Check size={12} strokeWidth={2.75} />
                   </span>
@@ -775,7 +775,7 @@ export default function RoiCalculator({ locale, plans }: RoiCalculatorProps) {
               <button
                 type="submit"
                 disabled={leadStatus === 'sending'}
-                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-7 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-7 text-[15px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 {leadStatus === 'sending' ? (
                   <Loader2 className="animate-spin" size={18} aria-hidden="true" />

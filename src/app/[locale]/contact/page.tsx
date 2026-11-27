@@ -155,7 +155,7 @@ export default async function ContactPage({
   };
 
   const iconBox =
-    'flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EFEAFB] text-[#0A0A0A]';
+    'flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#EAF9B8] text-[#0A0A0A]';
 
   return (
     <div className="min-h-screen bg-white">
@@ -215,7 +215,7 @@ export default async function ContactPage({
                     <dd className="mt-1">
                       <a
                         href={`mailto:${company.supportEmail}`}
-                        className="inline-flex min-h-[44px] items-center break-words text-[17px] font-semibold text-[#0A0A0A] underline decoration-[#5D3EBC] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+                        className="inline-flex min-h-[44px] items-center break-words text-[17px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                       >
                         {company.supportEmail}
                       </a>
@@ -270,7 +270,7 @@ export default async function ContactPage({
                     <li key={link.path} className="border-b border-[#EDEDED] last:border-b-0">
                       <Link
                         href={`/${lang}${link.path}`}
-                        className="group flex min-h-[48px] items-center justify-between gap-3 rounded-sm text-[15px] font-medium text-[#0A0A0A] transition-colors hover:text-[#525252] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+                        className="group flex min-h-[48px] items-center justify-between gap-3 rounded-sm text-[15px] font-medium text-[#0A0A0A] transition-colors hover:text-[#525252] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                       >
                         {link.label}
                         <ArrowRight

@@ -38,7 +38,7 @@ export default function StaffArrival({
 
   return (
     <div
-      className="bzl-staff-arrival bzl-tap fixed inset-0 z-[90] flex flex-col items-center justify-center bg-[#3B1F8F] px-6 text-center text-white"
+      className="bzl-staff-arrival bzl-tap fixed inset-0 z-[90] flex flex-col items-center justify-center bg-[#000000] px-6 text-center text-white"
       onPointerUp={() => {
         unlockAudio();
         setShow(false);
@@ -57,7 +57,7 @@ export default function StaffArrival({
         <span className="bzl-fade absolute inset-[6px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(220,211,246,0.4) 0%, rgba(220,211,246,0) 68%)' }} />
         <span className="bzl-pop absolute inset-[34px] flex items-center justify-center rounded-full bg-white">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-            <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#5D3EBC" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#111110" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
       </div>

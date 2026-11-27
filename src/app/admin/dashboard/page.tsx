@@ -10,11 +10,10 @@ import { hasPermission } from '@/lib/rbac';
 import { adminLandingPath } from '@/lib/admin-landing';
 import {
   BarChart,
-  Eyebrow,
   PageHeader,
-  ProgressBar,
   StatCard,
 } from '@/components/ui';
+import { PanoNumber } from '@/components/panel/pano/PanoNumber';
 import AdminOverviewWidgets, {
   type AttentionRow,
   type RecentMember,
@@ -348,53 +347,25 @@ export default async function AdminDashboardPage() {
     },
   ];
 
+  const publishRate = menusEnabledCount > 0 ? Math.round((menusPublishedCount / menusEnabledCount) * 100) : 0;
+
   return (
-    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3">
       <PageHeader
-        eyebrow="SİSTEM YÖNETİMİ"
         crumb="Genel bakış"
         title="Panel"
       />
 
-      {/* Mobile-only "SİSTEM NABZI" hero (mobile-screens-2.jsx MAdminHome line 419-435 1:1) */}
-      <section className="md:hidden rounded-[20px] bg-pn-accent p-[18px] text-white">
-        <span className="text-[13px] font-medium text-white/80" style={{ fontSize: 9 }}>SİSTEM NABZI</span>
-        <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
-          {formatUsd(mrr)}
-        </div>
-        <div className="text-[12px] text-white/80">
-          Aylık tekrarlayan gelir (tahmini)
-          {mrrThirtyDaysAgo > 0 && (
-            <>
-              {' · '}
-              <span className={mrrDeltaKind === 'up' ? 'text-[#C8F7D2]' : mrrDeltaKind === 'down' ? 'text-[#FFC4C0]' : ''}>
-                {mrrDeltaPct >= 0 ? '+' : ''}
-                {mrrDeltaPct}%
-              </span>
-            </>
-          )}
-        </div>
-        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-          <div className="rounded-[10px] bg-white/[0.04] p-3">
-            <div className="text-[13px] font-medium text-[12px] text-white/45">İŞLETME</div>
-            <div className="bz-h-tight mt-1 text-[18px]">{totalBusinesses}</div>
-          </div>
-          <div className="rounded-[10px] bg-white/[0.04] p-3">
-            <div className="text-[13px] font-medium text-[12px] text-white/45">AKTİF DENEMELER</div>
-            <div className="bz-h-tight mt-1 text-[18px]">{activeTrials}</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Desktop-only 4-stat KPI grid — each delta suffix names its own window */}
-      <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* Fintora KPI row — every size (two by two on phones); each change
+          pill names its own window. */}
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <StatCard
           label="Toplam işletme"
           value={totalBusinesses}
           delta={`+${newBusinesses24h}`}
           deltaKind={newBusinesses24h > 0 ? 'up' : 'neutral'}
           deltaSuffix="son 24 saatte"
-          icon={<Store size={14} strokeWidth={2} />}
+          icon={<Store size={18} />}
         />
         <StatCard
           label="Aylık MRR (tahmini)"
@@ -402,15 +373,14 @@ export default async function AdminDashboardPage() {
           delta={mrrDelta}
           deltaKind={mrrDeltaKind}
           deltaSuffix={mrrDeltaSuffix}
-          icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrr > 0 ? '#5D3EBC' : undefined}
+          icon={<CreditCard size={18} />}
         />
         <StatCard
           label="Aktif denemeler"
           value={activeTrials}
           delta={avgTrialDaysLeft != null ? `ort. ${avgTrialDaysLeft} gün kaldı` : undefined}
           deltaKind="neutral"
-          icon={<Crown size={14} strokeWidth={2} />}
+          icon={<Crown size={18} />}
         />
         <StatCard
           label="Aylık yorum"
@@ -424,30 +394,25 @@ export default async function AdminDashboardPage() {
           }
           deltaKind={reviewsDeltaKind}
           deltaSuffix={prev30Reviews === 0 ? 'önceki 30 günde yorum yoktu' : 'önceki 30 güne göre'}
-          icon={<MessageSquare size={14} strokeWidth={2} />}
+          icon={<MessageSquare size={18} />}
         />
       </div>
 
-      {/* Stage 109 §A1 — Menu yayın akışı strip. Desktop ve mobile'da görünür.
-          Operator'a "kaç işletmenin menüsü canlı?" sinyalini KPI grid altında
-          tek satırda verir. Publish rate = published/enabled (0-100). Detail
-          link: /admin/restaurants?menuStatus=draft → operator çıkışı.
-          Card chrome bz-card, lime accent (Pulse §11). */}
+      {/* Stage 109 §A1 — Menu publish card: how many businesses with the menu
+          feature have it live. Fintora meter: black fill, hatched remainder.
+          Detail link: /admin/restaurants?menuStatus=draft. */}
       <div className="bz-card p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <Eyebrow>MENÜ YAYIN AKIŞI</Eyebrow>
-            <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
-              {menusPublishedCount} / {menusEnabledCount} canlı
-            </div>
-            <p className="mt-1 text-[12px] text-[#737373]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="pn-card-title text-pn-ink">Menü yayını</h2>
+            <p className="mt-1 text-[13px] text-[#9A9A9A]">
               Menü özelliği açık {menusEnabledCount} işletmenin {menusPublishedCount}&apos;si yayında.
               {menusEnabledCount > menusPublishedCount && (
                 <>
                   {' '}
                   <Link
                     href="/admin/restaurants?menuStatus=draft"
-                    className="font-medium text-pn-ink underline-offset-2 hover:underline"
+                    className="font-medium text-pn-ink underline decoration-pn-accent decoration-2 underline-offset-4 hover:text-pn-accent"
                   >
                     Taslakta bekleyen {menusEnabledCount - menusPublishedCount}
                   </Link>
@@ -456,65 +421,70 @@ export default async function AdminDashboardPage() {
               )}
             </p>
           </div>
-          <div className="flex flex-col items-end shrink-0">
-            <div
-              className="bz-h-tight tabular-nums"
-              style={{ fontSize: 28, color: '#000000' }}
-            >
-              {menusEnabledCount > 0
-                ? Math.round((menusPublishedCount / menusEnabledCount) * 100)
-                : 0}
-              <span className="text-[14px] text-[#737373]">%</span>
-            </div>
-            <div className="text-[13px] font-medium text-[#737373]">YAYIN ORANI</div>
+          <div className="flex shrink-0 flex-col items-end">
+            <span className="text-[32px] leading-none text-pn-ink">
+              <PanoNumber value={`%${publishRate}`} />
+            </span>
+            <span className="mt-1.5 text-[13px] text-[#9A9A9A]">Yayın oranı · {menusPublishedCount} / {menusEnabledCount}</span>
           </div>
         </div>
         {menusEnabledCount > 0 && (
-          <div className="mt-4">
-            <ProgressBar
-              value={menusPublishedCount}
-              max={menusEnabledCount}
-              ariaLabel={`${menusPublishedCount} / ${menusEnabledCount} menü yayında`}
-            />
+          <div
+            className="pn-hatch mt-5 h-2.5 overflow-hidden rounded-full"
+            role="progressbar"
+            aria-valuenow={publishRate}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${menusPublishedCount} / ${menusEnabledCount} menü yayında`}
+          >
+            {publishRate > 0 && (
+              <div className="h-full rounded-full bg-pn-accent" style={{ width: `${Math.max(publishRate, 4)}%` }} />
+            )}
           </div>
         )}
       </div>
 
-      {/* Desktop-only: Business growth + Plan distribution (1:1 design 2fr 1fr split) */}
-      <div className="hidden md:grid gap-3.5 lg:grid-cols-[2fr_1fr]">
+      {/* Business growth + plan distribution (2fr 1fr on lg, stacked below). */}
+      <div className="grid gap-2.5 lg:grid-cols-[2fr_1fr]">
         <div className="bz-card p-5 sm:p-6">
-          <Eyebrow>İŞLETME BÜYÜMESİ</Eyebrow>
-          <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
-            Son 12 hafta
-          </div>
-          <BarChart data={businessGrowthData} height={160} showValues />
+          <h2 className="pn-card-title text-pn-ink">İşletme büyümesi</h2>
+          <p className="mb-5 mt-1 text-[13px] text-[#9A9A9A]">Son 12 hafta · haftalık yeni işletme</p>
+          <BarChart data={businessGrowthData} height={168} showValues />
         </div>
         <div className="bz-card p-5 sm:p-6">
-          <Eyebrow>PLAN DAĞILIMI</Eyebrow>
-          <div className="bz-h-tight mt-1 mb-3.5" style={{ fontSize: 18 }}>
-            {totalOwners} işletme sahibi
-          </div>
-          <div className="flex flex-col gap-2.5">
+          <h2 className="pn-card-title text-pn-ink">Plan dağılımı</h2>
+          <p className="mb-4 mt-1 text-[13px] text-[#9A9A9A]">{totalOwners} işletme sahibi</p>
+          <ul className="flex flex-col gap-2">
             {planBuckets.map((b) => {
               const pct = totalOwners ? (b.count / totalOwners) * 100 : 0;
               return (
-                <div key={b.key}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span style={{ fontWeight: 500 }}>{b.label}</span>
-                    <span className="bz-mono" style={{ color: '#525252' }}>
+                <li key={b.key} className="pn-row flex-col items-stretch gap-2 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex min-w-0 items-center gap-2 text-[14px] font-medium text-pn-ink">
+                      <span aria-hidden="true" className="pn-legend-dot" style={{ background: b.color }} />
+                      <span className="truncate">{b.label}</span>
+                    </span>
+                    <span className="shrink-0 text-[14px] font-medium tabular-nums text-pn-ink">
                       {b.count}
+                      <span className="ml-1.5 text-[13px] font-normal text-[#9A9A9A]">%{Math.round(pct)}</span>
                     </span>
                   </div>
-                  <ProgressBar
-                    value={pct}
-                    max={100}
-                    color={b.color}
-                    ariaLabel={`${b.label} plan ${b.count}`}
-                  />
-                </div>
+                  <div
+                    className="pn-hatch h-2 overflow-hidden rounded-full"
+                    role="progressbar"
+                    aria-valuenow={Math.round(pct)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${b.label} plan ${b.count}`}
+                  >
+                    {pct > 0 && (
+                      <div className="h-full rounded-full" style={{ width: `${Math.max(pct, 3)}%`, background: b.color }} />
+                    )}
+                  </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
       </div>
 

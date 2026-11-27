@@ -3,9 +3,10 @@
  * Spec: docs/design/DASHBOARD_DESIGN.md. Layout, palette and type follow the
  * Behance "Fintora" CRM concept (icon rail, pill tabs on a #F6F6F6 canvas,
  * white cards, Plus Jakarta Sans); the sliding tab pill, hero card and
- * hatched progress come from the earlier "lumin" concept. Colour: a purple
- * and white palette (#5D3EBC primary, #3B1F8F deep, #EFEAFB lavender); text
- * and icons on any purple are always white. Buaze's own content and logo.
+ * grey fraction digits come from the earlier "lumin" concept. Colour: the
+ * Fintora palette — black #111110 for primary/active fills (white text),
+ * green #78FC90 for highlights (black text), #F6F6F6 canvas, white cards.
+ * Buaze's own content and logo.
  *
  * Every rule is scoped to `:root:has(.bz-panel)` — the panel shell root —
  * so portaled menus, selects and modals rendered into <body> get it too, and
@@ -19,11 +20,11 @@
 
 /* ── 1. Tokens (unlayered: beats the Pulse defaults in @layer theme) ────── */
 :root:has(.bz-panel) {
-  --color-pn-accent: #5D3EBC;
-  --color-pn-accent-hover: #4C2FA3;
-  --color-pn-accent-soft: #EFEAFB;
-  --color-pn-accent-ink: #5D3EBC;
-  --color-pn-olive: #A68FEB;
+  --color-pn-accent: #111110;
+  --color-pn-accent-hover: #2B2B2A;
+  --color-pn-accent-soft: #F1FDF3;
+  --color-pn-accent-ink: #111110;
+  --color-pn-olive: #78FC90;
   --color-pn-canvas: #F6F6F6;
   --color-pn-line: #EBEBEB;
   --color-pn-line-strong: #E0E0E0;
@@ -35,14 +36,11 @@
   --pn-text-3: #9A9A9A;
   --pn-positive: #23863A;
   --pn-negative: #D92D20;
-  /* Purple surfaces: deep purple for dark blocks, lavender for soft ones. */
-  --pn-deep: #3B1F8F;
-  --pn-lavender: #DCD3F6;
-  /* Lighter purple light rising from the bottom of the purple hero card.
-     Kept soft so the 0.78-white captions stay above 4.5:1 over it. */
-  --pn-glow: radial-gradient(62% 75% at 32% 118%, rgba(140, 108, 240, 0.45) 0%, rgba(140, 108, 240, 0.13) 45%, rgba(140, 108, 240, 0) 72%);
+  /* Deep black for dark blocks; soft green for highlights on dark. */
+  --pn-deep: #000000;
+  --pn-lavender: #78FC90;
+  --pn-green: #78FC90;
   --pn-hatch: repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.07) 0 3px, transparent 3px 9px);
-  --pn-hatch-dark: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.16) 0 3px, transparent 3px 8px);
 
   --pn-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --pn-ease-slide: cubic-bezier(0.32, 0.72, 0, 1);
@@ -146,13 +144,13 @@
   :root:has(.bz-panel) .bz-btn-primary:focus-visible { box-shadow: 0 0 0 3px var(--color-pn-canvas), 0 0 0 5px var(--color-pn-accent); }
   :root:has(.bz-panel) .bz-btn-primary:disabled { background: #EDEDF0; color: #A0A0A6; }
 
-  /* "lime" is the historical class name; in Pano it is the same purple pill. */
+  /* "lime" is the historical class name; in Pano it is the green highlight pill (black text). */
   :root:has(.bz-panel) .bz-btn-lime {
-    background: var(--color-pn-accent);
-    color: #FFF;
+    background: var(--pn-green);
+    color: var(--color-pn-ink);
     border: 0;
   }
-  :root:has(.bz-panel) .bz-btn-lime:hover { background: var(--color-pn-accent-hover); }
+  :root:has(.bz-panel) .bz-btn-lime:hover { background: #5CF07A; }
   :root:has(.bz-panel) .bz-btn-lime:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px var(--color-pn-accent); }
   :root:has(.bz-panel) .bz-btn-lime:disabled { background: #EDEDF0; color: #A0A0A6; }
 
@@ -173,7 +171,7 @@
   :root:has(.bz-panel) .bz-btn-danger:hover:not(:disabled) { background: #FEF3F2; border-color: #F1A9A3; color: #B42318; }
   :root:has(.bz-panel) .bz-btn-warn { background: #FFFAEB; color: #93370D; border: 1px solid #FEDF89; }
 
-  /* On a dark or purple surface: translucent white pill. */
+  /* On a dark surface: translucent white pill. */
   :root:has(.bz-panel) .bz-btn-on-dark {
     background: rgba(255, 255, 255, 0.14);
     color: #FFF;
@@ -309,11 +307,11 @@
   :root:has(.bz-panel) .bz-table tbody tr:hover td,
   :root:has(.bz-panel) .bz-tr-hover:hover { background: var(--color-pn-canvas); }
 
-  /* Avatar — purple circle, white initial. */
+  /* Avatar — black circle, green initial. */
   :root:has(.bz-panel) .bz-avatar {
     border-radius: 999px;
-    background: var(--color-pn-accent);
-    color: #FFF;
+    background: var(--color-pn-ink);
+    color: var(--pn-green);
     font-family: var(--font-body);
     font-weight: 500;
   }
@@ -406,7 +404,7 @@
     box-shadow: 0 0 0 2px #FFF;
   }
 
-  /* ↗ "open" circle — grey on a white card; fills purple and turns 45° on hover. */
+  /* ↗ "open" circle — grey on a white card; fills black and turns 45° on hover. */
   .pn-arrow-btn {
     display: inline-flex;
     align-items: center;
@@ -432,68 +430,7 @@
   .pn-arrow-btn:focus-visible > svg,
   a:hover > .pn-arrow-btn > svg { transform: rotate(45deg); }
   .pn-arrow-btn:active { transform: scale(0.94); }
-  .pn-arrow-btn--dark { background: rgba(255, 255, 255, 0.14); color: #FFF; }
-  .pn-arrow-btn--dark:hover,
-  .pn-arrow-btn--dark:focus-visible,
-  a:hover > .pn-arrow-btn--dark { background: #FFF; color: var(--color-pn-accent); }
 
-  /* 52px translucent circle — actions inside the purple hero card. */
-  .pn-dark-icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    color: #FFF;
-    border: 0;
-    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
-    outline: none;
-  }
-  .pn-dark-icon-btn:hover,
-  .pn-dark-icon-btn:focus-visible { background: #FFF; color: var(--color-pn-accent); }
-  .pn-dark-icon-btn:focus-visible { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.45); }
-  .pn-dark-icon-btn:active { transform: scale(0.94); }
-
-  /* Purple hero card ("dark" is the historical name) with a lighter purple
-     glow rising from the bottom. Everything on it is white. */
-  .pn-card-dark {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    border-radius: 28px;
-    background: var(--color-pn-accent);
-    color: #FFF;
-  }
-  .pn-card-dark::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: var(--pn-glow);
-    pointer-events: none;
-  }
-  .pn-card-dark .pn-muted { color: rgba(255, 255, 255, 0.78); }
-
-  /* Lavender tile — short shortcut / highlight (purple icon circle). */
-  .pn-tile {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 150px;
-    padding: 18px;
-    border-radius: 22px;
-    background: var(--color-pn-accent-soft);
-    color: var(--color-pn-ink);
-    transition: background-color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
-  }
-  a.pn-tile:hover, button.pn-tile:hover { background: #E4DCF8; }
-  a.pn-tile:focus-visible, button.pn-tile:focus-visible { outline: none; box-shadow: 0 0 0 3px #FFF, 0 0 0 5px var(--color-pn-accent); }
-  a.pn-tile:active, button.pn-tile:active { transform: scale(0.98); }
-  .pn-tile-label { font-size: 15px; font-weight: 500; line-height: 1.25; }
 
   /* List row inside a card — grey fill, 16px corners (reference breakdown rows). */
   .pn-row {
@@ -542,12 +479,70 @@
   .pn-num-affix { color: var(--pn-text-3); }
   .pn-num-frac { font-size: 1em; }
   .pn-num-affix { font-size: 0.7em; }
-  .pn-card-dark .pn-num-frac,
-  .pn-card-dark .pn-num-affix { color: rgba(255, 255, 255, 0.6); }
 
   /* Hatched remainder for progress / gauges. */
   .pn-hatch { background: var(--pn-hatch), #EFEFEF; }
-  .pn-hatch-dark { background: var(--pn-hatch-dark), rgba(0, 0, 0, 0.16); }
+  /* Green fill with dark diagonal stripes — the selected bar / filled
+     part of a meter (Fintora "Transaction Volume" active bar). */
+  .pn-hatch-accent {
+    background: repeating-linear-gradient(-45deg, rgba(17, 17, 16, 0.12) 0 4px, transparent 4px 11px), var(--pn-green);
+  }
+
+  /* Soft change pill (Fintora "+7.5%" / "-2.1%"). */
+  .pn-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 24px;
+    padding: 0 9px 0 6px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .pn-change--up { background: #E6F7EA; color: var(--pn-positive); }
+  .pn-change--down { background: #FDECEC; color: var(--pn-negative); }
+  .pn-change--flat { background: var(--color-pn-canvas); color: var(--pn-text-2); padding: 0 9px; }
+
+  /* Equal grey action pills under a headline number (Fintora "Send /
+     Receive / Swap / Buy"): icon only, black on hover. */
+  .pn-action-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    min-width: 0;
+    border-radius: 999px;
+    background: var(--color-pn-canvas);
+    color: var(--color-pn-ink);
+    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
+    outline: none;
+  }
+  .pn-action-pill:hover,
+  .pn-action-pill:focus-visible { background: var(--color-pn-accent); color: #FFF; }
+  .pn-action-pill:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px var(--color-pn-accent); }
+  .pn-action-pill:active { transform: scale(0.96); }
+
+  /* Black chart tooltip (Fintora): 12px corners, white text, coloured dots. */
+  .pn-chart-tip {
+    min-width: 168px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--color-pn-ink);
+    color: #FFF;
+    font-size: 12px;
+    line-height: 1.45;
+    box-shadow: 0 14px 32px -10px rgba(0, 0, 0, 0.4);
+  }
+  .pn-chart-tip-muted { color: rgba(255, 255, 255, 0.62); }
+
+  /* Small round legend / series dot. */
+  .pn-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; }
+
+  /* Unread / new marker on a list row. */
+  .pn-new-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: var(--color-pn-accent); flex-shrink: 0; }
 
   /* ── Top row (PanelTopNav) — white pill tabs on the canvas ────────── */
   .pn-topbar {
@@ -558,7 +553,7 @@
     gap: 16px;
     flex-shrink: 0;
     height: 80px;
-    padding: 0 20px 0 0;
+    padding: 0 20px 0 16px;
   }
   .pn-brand {
     display: inline-flex;
@@ -634,7 +629,7 @@
   .pn-nav-item:focus-visible { box-shadow: 0 0 0 3px var(--color-pn-accent-soft), inset 0 0 0 1px var(--color-pn-ink); }
   .pn-nav-item[data-active="true"] { color: #FFF; }
   /* Before the pill is measured (SSR / no JS) the active item carries the
-     purple fill itself. */
+     black fill itself. */
   .pn-nav:not([data-pill="on"]) .pn-nav-item[data-active="true"]::before { background: var(--color-pn-accent); }
   .pn-nav-pill {
     position: absolute;
@@ -663,38 +658,51 @@
     flex-shrink: 0;
   }
 
-  /* ── Sidebar (PanelRail) — open: icon + name; folded: 92px icon rail ── */
+  /* ── Sidebar (PanelRail) — a floating white panel on the canvas.
+     Open: icon + name (256px); folded: 84px icon column. ───────────── */
   .pn-side {
     position: relative;
     z-index: 35;
     flex-direction: column;
     flex-shrink: 0;
+    align-self: stretch;
     width: 256px;
-    padding: 0 12px 14px 16px;
+    margin: 10px 0 10px 10px;
+    padding: 0 10px 12px;
+    border-radius: 28px;
+    background: #FFF;
     transition: width 320ms var(--pn-ease-slide), padding 320ms var(--pn-ease-slide);
   }
   .pn-side-brand {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    height: 80px;
-    padding-left: 6px;
+    height: 68px;
+    padding-left: 10px;
   }
   .pn-side-brand .pn-brand { gap: 10px; }
-  .pn-side-top { flex-shrink: 0; padding-bottom: 14px; }
+  .pn-side-brand .pn-brand-word { font-size: 22px; }
+  .pn-side-top { flex-shrink: 0; padding-bottom: 12px; }
+  /* The business switcher sits as a grey block inside the white panel. */
+  .pn-side-top button[aria-haspopup="listbox"] {
+    border-color: transparent;
+    border-radius: 18px;
+    background: var(--color-pn-canvas);
+  }
+  .pn-side-top button[aria-haspopup="listbox"]:hover { background: #EDEDED; }
   .pn-side-scroll {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
     min-height: 0;
-    margin-right: -6px;
-    padding: 2px 6px 8px 0;
+    margin-right: -4px;
+    padding: 2px 4px 8px 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
-    scrollbar-color: #D6D6D6 transparent;
+    scrollbar-color: #E0E0E0 transparent;
   }
   .pn-side-heading {
     padding: 0 12px 6px;
@@ -708,21 +716,21 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
-    min-height: 48px;
-    padding: 4px 14px 4px 4px;
+    min-height: 44px;
+    padding: 4px 12px 4px 6px;
     border: 0;
-    border-radius: 999px;
+    border-radius: 14px;
     background: transparent;
-    color: var(--color-pn-ink);
+    color: #3A3A39;
     font-family: var(--font-body);
     font-size: 14px;
     font-weight: 500;
     text-align: left;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
+    transition: background-color 180ms var(--pn-ease), color 180ms var(--pn-ease), transform 120ms var(--pn-ease);
     outline: none;
   }
   .pn-side-icon {
@@ -730,63 +738,63 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 999px;
-    background: #FFF;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    color: #525252;
     font-size: 14px;
-    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease);
+    transition: background-color 180ms var(--pn-ease), color 180ms var(--pn-ease);
   }
   .pn-side-label { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
   .pn-side-new {
     flex-shrink: 0;
     border-radius: 999px;
     padding: 2px 8px;
-    background: var(--color-pn-accent-soft);
-    color: var(--color-pn-accent);
+    background: var(--pn-green);
+    color: var(--color-pn-ink);
     font-size: 12px;
   }
-  .pn-side-item:hover:not([data-active="true"]) { background: #FFF; }
-  .pn-side-item:hover:not([data-active="true"]) .pn-side-icon { background: var(--color-pn-canvas); }
+  .pn-side-item:hover:not([data-active="true"]) { background: var(--color-pn-canvas); color: var(--color-pn-ink); }
+  .pn-side-item:hover:not([data-active="true"]) .pn-side-icon { color: var(--color-pn-ink); }
   .pn-side-item:active { transform: scale(0.98); }
-  .pn-side-item:focus-visible { box-shadow: inset 0 0 0 2px var(--color-pn-accent); }
-  .pn-side-item[data-active="true"] { background: var(--color-pn-accent); color: #FFF; }
-  .pn-side-item[data-active="true"] .pn-side-icon { background: rgba(255, 255, 255, 0.16); color: #FFF; }
+  .pn-side-item:focus-visible { box-shadow: inset 0 0 0 2px var(--color-pn-ink); }
+  .pn-side-item[data-active="true"] { background: var(--color-pn-ink); color: #FFF; }
+  .pn-side-item[data-active="true"] .pn-side-icon { color: var(--pn-green); }
   .pn-side-foot {
     display: flex;
     flex-direction: column;
     gap: 2px;
     flex-shrink: 0;
-    margin-top: 8px;
-    padding-top: 10px;
+    margin-top: 6px;
+    padding-top: 8px;
     border-top: 1px solid var(--color-pn-line);
   }
   .pn-side-folded-only { display: none; }
 
   /* Folded: an explicit choice, or the default below 1440px. */
-  .pn-side[data-collapsed="true"] { width: 92px; padding: 0 22px 14px; }
+  .pn-side[data-collapsed="true"] { width: 76px; padding: 0 10px 12px; }
   .pn-side[data-collapsed="true"] .pn-side-brand { justify-content: center; padding-left: 0; }
   .pn-side[data-collapsed="true"] :is(.pn-side-label, .pn-side-new, .pn-side-open-only) { display: none; }
   .pn-side[data-collapsed="true"] .pn-side-folded-only { display: revert; }
   .pn-side[data-collapsed="true"] .pn-side-folded-only.pn-side-list { display: flex; }
-  .pn-side[data-collapsed="true"] .pn-side-heading { height: 1px; margin: 0 8px 10px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
-  .pn-side[data-collapsed="true"] .pn-side-scroll { margin-right: 0; padding-right: 0; }
-  .pn-side[data-collapsed="true"] .pn-side-item { width: 48px; padding: 4px; justify-content: center; }
+  .pn-side[data-collapsed="true"] .pn-side-heading { height: 1px; margin: 0 10px 8px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
+  .pn-side[data-collapsed="true"] .pn-side-scroll { margin-right: 0; padding-right: 0; align-items: center; }
+  .pn-side[data-collapsed="true"] .pn-side-item { width: 48px; padding: 7px; justify-content: center; }
   @media (max-width: 1439.98px) {
-    .pn-side[data-collapsed="auto"] { width: 92px; padding: 0 22px 14px; }
+    .pn-side[data-collapsed="auto"] { width: 76px; padding: 0 10px 12px; }
     .pn-side[data-collapsed="auto"] .pn-side-brand { justify-content: center; padding-left: 0; }
     .pn-side[data-collapsed="auto"] :is(.pn-side-label, .pn-side-new, .pn-side-open-only) { display: none; }
     .pn-side[data-collapsed="auto"] .pn-side-folded-only { display: revert; }
     .pn-side[data-collapsed="auto"] .pn-side-folded-only.pn-side-list { display: flex; }
-    .pn-side[data-collapsed="auto"] .pn-side-heading { height: 1px; margin: 0 8px 10px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
-    .pn-side[data-collapsed="auto"] .pn-side-scroll { margin-right: 0; padding-right: 0; }
-    .pn-side[data-collapsed="auto"] .pn-side-item { width: 48px; padding: 4px; justify-content: center; }
+    .pn-side[data-collapsed="auto"] .pn-side-heading { height: 1px; margin: 0 10px 8px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
+    .pn-side[data-collapsed="auto"] .pn-side-scroll { margin-right: 0; padding-right: 0; align-items: center; }
+    .pn-side[data-collapsed="auto"] .pn-side-item { width: 48px; padding: 7px; justify-content: center; }
   }
   /* Folded tooltips: the name appears to the right of the button. */
   .pn-side-item::after {
     content: attr(data-label);
     position: absolute;
-    left: calc(100% + 12px);
+    left: calc(100% + 14px);
     top: 50%;
     display: none;
     padding: 7px 12px;
@@ -805,8 +813,8 @@
   @media (max-width: 1439.98px) {
     .pn-side[data-collapsed="auto"] .pn-side-item:is(:hover, :focus-visible):not([data-state="open"])::after { display: block; }
   }
-  /* The folded switcher keeps its own round button. */
-  .pn-side-top .pn-side-folded-only { display: none; }
+  /* The folded switcher keeps its own round button (grey in the white panel). */
+  .pn-side .pn-icon-btn { background: var(--color-pn-canvas); }
   .pn-side[data-collapsed="true"] .pn-side-top.pn-side-folded-only { display: flex; justify-content: center; }
   @media (max-width: 1439.98px) {
     .pn-side[data-collapsed="auto"] .pn-side-top.pn-side-folded-only { display: flex; justify-content: center; }
@@ -841,7 +849,7 @@
     height: 46px;
     border-radius: 999px;
     background: var(--color-pn-accent);
-    color: #FFF;
+    color: var(--pn-green);
     font-family: var(--font-body);
     font-size: 16px;
     font-weight: 600;
@@ -954,7 +962,7 @@
 
 /* ── Safety net for markup written before Pano (unlayered on purpose) ─────
  * Segmented controls built inline — a canvas track with the active button
- * painted `bg-white shadow-sm` — become Pano pills: purple active pill, round
+ * painted `bg-white shadow-sm` — become Pano pills: black active pill, round
  * track. Card titles written as small semibold h2 take the 20px / 400 card
  * title; semibold headings drop to medium (§3: hierarchy by size). */
 :root:has(.bz-panel) .bg-pn-canvas:has(> button[aria-pressed], > button[role="tab"], > [role="radio"]) {
@@ -968,9 +976,10 @@
 }
 /* Only items sitting directly in a track (canvas strip, tablist, group or
    radiogroup that is not a card grid): white choice cards that mark their
-   selection with a purple ring (theme / typeface / status cards) keep their
-   card look instead of turning into a purple stadium. */
-:root:has(.bz-panel) :is(.bg-pn-canvas, [role="tablist"], [role="group"], [role="radiogroup"]):not(.grid) > :is(button[aria-pressed="true"], [role="tab"][aria-selected="true"], [role="radio"][aria-checked="true"]):is(.bg-white, .shadow-sm) {
+   selection with a black ring (theme / typeface / status cards) keep their
+   card look instead of turning into a black stadium. `data-tone="soft"`
+   opts a quiet white tab out (owner inbox status tabs). */
+:root:has(.bz-panel) :is(.bg-pn-canvas, [role="tablist"], [role="group"], [role="radiogroup"]):not(.grid) > :is(button[aria-pressed="true"], [role="tab"][aria-selected="true"], [role="radio"][aria-checked="true"]):is(.bg-white, .shadow-sm):not([data-tone="soft"]) {
   background: var(--color-pn-accent) !important;
   color: #FFF !important;
   box-shadow: none !important;
@@ -1023,8 +1032,8 @@
 
 /* Tight grid (§4.1): 10px between cards wherever cards sit side by side or
    stack, whatever gap / space-y the page wrote. */
-:root:has(.bz-panel) :is(.grid, .flex):has(> .bz-card, > .pn-card-dark) { gap: 10px; }
-:root:has(.bz-panel) [class*="space-y-"] > :is(.bz-card, .pn-card-dark):not(:last-child) { margin-block-end: 10px; }
+:root:has(.bz-panel) :is(.grid, .flex):has(> .bz-card) { gap: 10px; }
+:root:has(.bz-panel) [class*="space-y-"] > .bz-card:not(:last-child) { margin-block-end: 10px; }
 
 /* Eyebrows become plain small text (no caps, no mono, no tracking). The
    global .pulse-eyebrow rule is unlayered, so this one is too. */
@@ -1055,7 +1064,7 @@
 :root:has(.bz-panel) .pn-alert[data-kind="lime"] { background: var(--color-pn-accent) !important; color: #FFF !important; }
 :root:has(.bz-panel) .pn-alert .pn-alert-dot { animation: none; background: currentColor !important; }
 
-/* Checkbox in the panels: purple box with a white tick. */
+/* Checkbox in the panels: black box with a white tick. */
 :root:has(.bz-panel) .ap-check-box { border-radius: 7px; border-color: #D6D6D6; }
 :root:has(.bz-panel) .ap-check-box:is([data-state="on"], [data-state="mixed"]) {
   background: var(--color-pn-accent);
@@ -1120,109 +1129,26 @@
 :root:has(.bz-panel) .recharts-default-tooltip .recharts-tooltip-label { color: rgba(255, 255, 255, 0.6) !important; font-size: 12px; }
 :root:has(.bz-panel) .recharts-default-tooltip .recharts-tooltip-item { color: #FFF !important; font-size: 13px; }
 
-/* ── Stacked cards (PanoStack, §5.4 "Investments") ─────────────────────── */
-.pn-stack { display: flex; flex-direction: column; }
-.pn-stack-item { position: relative; transition: transform 320ms var(--pn-ease); }
-.pn-stack-item + .pn-stack-item { margin-top: -26px; }
-.pn-stack-item:hover { transform: translateY(-5px); }
-.pn-stack-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px 20px 44px;
-  border-radius: 28px;
-  outline: none;
-  transition: background-color 200ms var(--pn-ease);
-}
-.pn-stack-item:last-child .pn-stack-row { padding-bottom: 18px; }
-.pn-stack-row:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px var(--color-pn-accent); }
-.pn-stack-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-}
-.pn-stack-row--dark .pn-stack-row { background: var(--pn-deep); color: #FFF; }
-.pn-stack-row--dark .pn-stack-icon { background: #FFF; color: var(--pn-deep); }
-.pn-stack-row--dark .pn-stack-sub { color: rgba(255, 255, 255, 0.72); }
-.pn-stack-row--dark .pn-stack-value { color: #FFF; }
-.pn-stack-row--lime .pn-stack-row { background: var(--color-pn-accent-soft); color: var(--color-pn-ink); }
-.pn-stack-row--lime .pn-stack-icon { background: var(--color-pn-accent); color: #FFF; }
-.pn-stack-row--lime .pn-stack-sub { color: rgba(17, 17, 16, 0.62); }
-.pn-stack-row--light .pn-stack-row { background: #FFF; color: var(--color-pn-ink); box-shadow: inset 0 0 0 1px var(--color-pn-line); }
-.pn-stack-row--light .pn-stack-icon { background: var(--color-pn-accent); color: #FFF; }
-.pn-stack-row--light .pn-stack-sub { color: var(--pn-text-3); }
-a.pn-stack-row:hover { filter: brightness(0.97); }
-
-/* ── Slider knob on a progress bar (§5.11 "Spending in June") ──────────── */
-.pn-knob {
-  position: absolute;
-  top: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  margin-left: -20px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: rgba(59, 31, 143, 0.78);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #FFF;
-  box-shadow: 0 0 26px rgba(93, 62, 188, 0.5);
-  transition: left 700ms var(--pn-ease);
-}
-
-/* ── Row inside the purple card (§5.4 currency rows) ───────────────────── */
-.pn-dark-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 16px 10px 10px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #FFF;
-  transition: background-color 200ms var(--pn-ease);
-}
-a.pn-dark-row:hover { background: rgba(255, 255, 255, 0.16); }
-a.pn-dark-row:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.45); }
-.pn-dark-row-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  font-size: 13px;
-  font-weight: 500;
-}
-/* Change colours on purple: light green up, light red down. */
-.pn-up { color: #C8F7D2; }
-.pn-down { color: #FFC4C0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .pn-stack-item, .pn-knob { transition: none !important; }
-  .pn-stack-item:hover { transform: none; }
+  .pn-action-pill { transition: none !important; }
 }
 
 /* ── Phones (<640px): the reference's mobile screens ──────────────────────
- * White page, light-grey cards; the purple card and lavender tiles stay. Everything
+ * White page, light-grey cards. Everything
  * that sat on the canvas grey (tracks, inner soft boxes, inputs) turns white
  * so it still reads on a grey card. Menus and dialogs open as bottom sheets
  * with a grab handle. */
 @media (max-width: 639.98px) {
   :root:has(.bz-panel) { --color-pn-canvas: #FFFFFF; }
   :root:has(.bz-panel) .bz-card { background: #F6F6F6; border-radius: 24px; }
+  /* White sheets (menus, dialogs) keep grey secondary buttons; grey cards
+     get white ones; a white card nested in a grey card goes back to grey. */
+  :root:has(.bz-panel) :is(.bz-menu, [role="dialog"]) :is(.pn-arrow-btn, .bz-btn-icon, .bz-btn, .bz-btn-ghost, .bz-tab) { background: #F6F6F6; }
   :root:has(.bz-panel) .bz-card .bz-card { background: #FFFFFF; }
   :root:has(.bz-panel) .bz-card .pn-row { background: #FFFFFF; }
   :root:has(.bz-panel) .bz-card :is(.pn-arrow-btn, .bz-btn-icon, .bz-btn, .bz-btn-ghost) { background: #FFFFFF; }
+  :root:has(.bz-panel) .bz-card .bz-card :is(.pn-arrow-btn, .bz-btn-icon, .bz-btn, .bz-btn-ghost, .pn-row) { background: #F6F6F6; }
   :root:has(.bz-panel) .bz-table tbody tr:hover td { background: transparent; }
   .pn-mobilebar-wrap { -webkit-backdrop-filter: none; backdrop-filter: none; }
   .pn-mobilebar { padding: 0 2px 0 10px; }
@@ -1238,5 +1164,4 @@ a.pn-dark-row:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255, 255
     border-radius: 999px;
     background: #D6D6D6;
   }
-  .pn-tile { min-height: 168px; }
 }

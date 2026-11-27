@@ -340,7 +340,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             value={form[f.key]}
             onChange={(e) => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
             placeholder={f.placeholder}
-            className="min-h-[46px] w-full px-3.5 py-3 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
+            className="min-h-[46px] w-full px-3.5 py-3 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3]"
           />
         </div>
       ))}
@@ -359,7 +359,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             enterKeyHint="send"
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
-            className="min-h-[46px] w-full px-3.5 py-3 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#5D3EBC] focus:shadow-[0_0_0_4px_rgba(93,62,188,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
+            className="min-h-[46px] w-full px-3.5 py-3 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"
             placeholder="••••••••••"
           />
           <button
@@ -403,7 +403,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             required
             checked={consentTerms}
             onChange={(e) => setConsentTerms(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#5D3EBC] accent-[#5D3EBC] focus:ring-2 focus:ring-[#8C6CF0] focus:ring-offset-1"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
           />
           <span>
             {locale === 'tr' ? (
@@ -432,7 +432,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             required
             checked={consentPrivacy}
             onChange={(e) => setConsentPrivacy(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#5D3EBC] accent-[#5D3EBC] focus:ring-2 focus:ring-[#8C6CF0] focus:ring-offset-1"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
           />
           <span>
             {locale === 'tr' ? (
@@ -461,7 +461,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             required
             checked={consentKvkk}
             onChange={(e) => setConsentKvkk(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#5D3EBC] accent-[#5D3EBC] focus:ring-2 focus:ring-[#8C6CF0] focus:ring-offset-1"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
           />
           <span>
             {locale === 'tr' ? (
@@ -490,7 +490,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             required
             checked={consentContentResponsibility}
             onChange={(e) => setConsentContentResponsibility(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#5D3EBC] accent-[#5D3EBC] focus:ring-2 focus:ring-[#8C6CF0] focus:ring-offset-1"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
           />
           <span>
             {locale === 'tr' ? (
@@ -523,7 +523,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             type="checkbox"
             checked={consentMarketing}
             onChange={(e) => setConsentMarketing(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#5D3EBC] accent-[#5D3EBC] focus:ring-2 focus:ring-[#8C6CF0] focus:ring-offset-1"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
           />
           <span>
             {locale === 'tr' ? (
@@ -551,7 +551,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         type="submit"
         id="register-submit-btn"
         disabled={loading || !allRequiredConsentsGiven}
-        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#5D3EBC] text-white font-medium py-3.5 rounded-full hover:bg-[#4C2FA3] transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+        className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
       >
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}
         {loading
@@ -564,7 +564,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
 
       <p className="text-center text-[13px] text-[#737373] mt-1">
         {locale === 'tr' ? 'Hesabın var mı?' : 'Already have an account?'}{' '}
-        <Link href={`/${locale}/auth/login`} className="text-[#0A0A0A] font-semibold hover:text-[#5D3EBC] transition-colors">
+        <Link href={`/${locale}/auth/login`} className="text-[#0A0A0A] font-semibold hover:text-[#A8D62E] transition-colors">
           {locale === 'tr' ? 'Giriş yap' : 'Sign in'}
         </Link>
       </p>

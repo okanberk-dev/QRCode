@@ -25,8 +25,8 @@ export const BTN_OUTLINE = 'rt-btn rt-btn--outline';
 /** Outline button on a graphite background. */
 export const BTN_OUTLINE_ON_DARK = 'rt-btn rt-btn--ghost-white';
 
-/** White button on a graphite or purple background (ring offset matches the surface). */
+/** Lime button on a graphite background (ring offset matches the surface). */
 export const BTN_LIME_ON_DARK = 'rt-btn rt-btn--white';
 
-/** Inline text link with the brand underline used across the marketing site. */
+/** Inline text link with the lime underline used across the marketing site. */
 export const TEXT_LINK = 'rt-link';

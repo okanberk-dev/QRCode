@@ -464,7 +464,7 @@ export default function RestaurantsClient({
       <span
         aria-hidden="true"
         className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px] text-[12px] font-medium"
-        style={{ background: restaurant.primaryColor || '#5D3EBC', color: readableOn(restaurant.primaryColor || '#5D3EBC') }}
+        style={{ background: restaurant.primaryColor || '#111110', color: readableOn(restaurant.primaryColor || '#111110') }}
       >
         {restaurant.name.trim().charAt(0).toLocaleUpperCase(collatorLocale)}
       </span>

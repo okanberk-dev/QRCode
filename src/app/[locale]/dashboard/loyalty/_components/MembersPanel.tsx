@@ -109,7 +109,7 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
             type="button"
             aria-pressed={ready}
             onClick={() => setReady((v) => !v)}
-            className={`min-h-[36px] rounded-[14px] border px-3 text-[13px] font-medium ${ready ? 'border-pn-accent-hover bg-pn-accent-soft text-pn-ink' : 'border-pn-line text-[#525252]'}`}
+            className={`min-h-[40px] rounded-full px-4 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${ready ? 'bg-pn-accent text-white' : 'bg-pn-canvas text-pn-ink hover:bg-[#EDEDED]'}`}
           >
             {tr ? 'Ödülü hazır' : 'Reward ready'}
           </button>
@@ -203,7 +203,7 @@ export default function MembersPanel({ locale, restaurantId, restaurantName, pro
                           </Badge>
                         )}
                       </td>
-                      <td className="font-mono text-[13px] ">{formatMemberCode(m.code)}</td>
+                      <td className="text-[13px] tabular-nums">{formatMemberCode(m.code)}</td>
                       <td className="text-right tabular-nums">
                         {m.balance}
                         {m.balance >= minCost && <span className="ml-1.5 text-[12px] font-medium text-[#23863A]">{tr ? 'hazır' : 'ready'}</span>}

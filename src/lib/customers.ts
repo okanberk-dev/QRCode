@@ -26,7 +26,7 @@ export const SEGMENT_COLOR_MAP: Record<
   { bg: string; fg: string; iconName: 'crown' | 'check' | 'sparkles' | 'alert' | 'archive' }
 > = {
   vip: { bg: '#0A0A0A', fg: '#FFFFFF', iconName: 'crown' },
-  loyal: { bg: '#EFEAFB', fg: '#3B1F8F', iconName: 'check' },
+  loyal: { bg: '#E9FBEC', fg: '#000000', iconName: 'check' },
   new: { bg: '#DBEAFE', fg: '#1E40AF', iconName: 'sparkles' },
   risk: { bg: '#FEE2E2', fg: '#991B1B', iconName: 'alert' },
   churned: { bg: '#F5F5F5', fg: '#737373', iconName: 'archive' },

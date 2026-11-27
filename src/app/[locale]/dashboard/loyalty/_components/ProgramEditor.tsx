@@ -2,8 +2,16 @@
 
 // Loyalty program setup (wizard, 3 steps) and editing (one page) — §60.
 import { useMemo, useState } from 'react';
-import { Coffee, Loader2, Plus, Scissors, Sparkles, Stamp, Store, Trash2, UtensilsCrossed, Croissant, Coins } from 'lucide-react';
-import { AlertBanner, APSwitch, Field, PulseSelect, WizardSteps } from '@/components/ui';
+import { ArrowLeft, ArrowRight, Check, Coffee, Loader2, Plus, Scissors, Send, Sparkles, Stamp, Store, Trash2, UtensilsCrossed, Croissant, Coins } from 'lucide-react';
+import { AlertBanner, APSwitch, Field, PulseSelect } from '@/components/ui';
+import {
+  WIZARD_BACK_CLASS,
+  WIZARD_NEXT_CLASS,
+  WizardChoice,
+  WizardFooter,
+  WizardPanel,
+  WizardSteps,
+} from '@/components/ui/WizardSteps';
 import LoyaltyCardFace from '@/components/loyalty/LoyaltyCardFace';
 import {
   earnRuleLine,
@@ -187,47 +195,34 @@ export default function ProgramEditor({
   // ── sections ──────────────────────────────────────────────────────────
 
   const templatePicker = (
-    <div>
-      <p className="text-[13px] text-[#525252]">
-        {tr
-          ? 'İşinize en yakın kartı seçin; her şeyi sonraki adımda değiştirebilirsiniz.'
-          : 'Pick the card closest to your business; you can change everything in the next step.'}
-      </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {LOYALTY_TEMPLATES.map((t) => {
-          const Icon = TEMPLATE_ICON[t.key];
-          const active = draft.template === t.key;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setDraft({ ...draftFromTemplate(t.key, locale), accentColor: draft.accentColor })}
-              aria-pressed={active}
-              className={`flex items-start gap-3 rounded-[20px] border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover ${
-                active ? 'border-pn-accent bg-pn-accent-soft' : 'border-pn-line bg-white hover:border-pn-line-strong'
-              }`}
-            >
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] ${active ? 'bg-pn-accent text-white' : 'bg-pn-canvas'}`}>
-                <Icon size={17} aria-hidden="true" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[14px] font-medium text-pn-ink">{t.label[locale]}</span>
-                <span className="mt-0.5 block text-[13px] text-[#737373]">{t.hint[locale]}</span>
-                <span className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-[#525252]">
-                  {t.kind === 'stamps' ? <Stamp size={12} aria-hidden="true" /> : <Coins size={12} aria-hidden="true" />}
-                  {t.kind === 'stamps' ? (tr ? 'Damga kartı' : 'Stamp card') : tr ? 'Puan kartı' : 'Points card'}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      {LOYALTY_TEMPLATES.map((t) => {
+        const Icon = TEMPLATE_ICON[t.key];
+        const active = draft.template === t.key;
+        return (
+          <WizardChoice
+            key={t.key}
+            onClick={() => setDraft({ ...draftFromTemplate(t.key, locale), accentColor: draft.accentColor })}
+            aria-pressed={active}
+            selected={active}
+            layout="row-start"
+            icon={<Icon size={17} strokeWidth={1.8} />}
+            title={t.label[locale]}
+            description={t.hint[locale]}
+          >
+            <span className="mt-2 inline-flex h-6 items-center gap-1 rounded-full bg-white px-2.5 text-[12px] font-medium text-[#525252] max-sm:bg-[#F6F6F6]">
+              {t.kind === 'stamps' ? <Stamp size={12} aria-hidden="true" /> : <Coins size={12} aria-hidden="true" />}
+              {t.kind === 'stamps' ? (tr ? 'Damga kartı' : 'Stamp card') : tr ? 'Puan kartı' : 'Points card'}
+            </span>
+          </WizardChoice>
+        );
+      })}
     </div>
   );
 
   const kindSwitch = (
     <Field label={tr ? 'Kart türü' : 'Card type'} hint={kindLocked ? (tr ? 'Üyeler olduğu için kart türü değiştirilemez.' : 'The type is fixed once the card has members.') : undefined}>
-      <div className="inline-flex rounded-[14px] border border-pn-line bg-pn-canvas p-1" role="radiogroup" aria-label={tr ? 'Kart türü' : 'Card type'}>
+      <div className="inline-flex max-w-full gap-1 rounded-full bg-pn-canvas p-1" role="radiogroup" aria-label={tr ? 'Kart türü' : 'Card type'}>
         {(['stamps', 'points'] as LoyaltyKind[]).map((k) => (
           <button
             key={k}
@@ -244,8 +239,8 @@ export default function ProgramEditor({
                 welcomeBonus: k === 'stamps' ? Math.min(d.welcomeBonus, L.welcomeBonusMaxStamps) : d.welcomeBonus,
               }))
             }
-            className={`min-h-[36px] rounded-[10px] px-3 text-[13px] font-medium disabled:opacity-40 ${
-              draft.kind === k ? 'bg-white text-pn-ink ' : 'text-[#525252]'
+            className={`min-h-[40px] rounded-full px-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-40 ${
+              draft.kind === k ? 'bg-pn-accent text-white' : 'text-pn-ink hover:bg-[#EDEDED]'
             }`}
           >
             {k === 'stamps' ? (tr ? 'Damga kartı' : 'Stamp card') : tr ? 'Puan kartı' : 'Points card'}
@@ -272,8 +267,8 @@ export default function ProgramEditor({
       </div>
 
       {draft.kind === 'points' && (
-        <div className="rounded-[20px] border border-pn-line p-4">
-          <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Puan nasıl kazanılır?' : 'How points are earned'}</p>
+        <div className="rounded-[18px] bg-pn-canvas p-4">
+          <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Puan nasıl kazanılır?' : 'How points are earned'}</p>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Field label={tr ? 'Her ziyarette' : 'Every visit'}>
               <NumberInput value={draft.pointsPerVisit} min={0} max={L.pointsPerVisitMax} onChange={(n) => set('pointsPerVisit', n)} suffix={tr ? 'puan' : 'points'} ariaLabel={tr ? 'Ziyaret başına puan' : 'Points per visit'} />
@@ -293,7 +288,7 @@ export default function ProgramEditor({
 
       <div>
         <div className="flex items-center justify-between">
-          <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Ödüller' : 'Rewards'}</p>
+          <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Ödüller' : 'Rewards'}</p>
           <span className="text-[12px] text-[#737373]">
             {draft.kind === 'stamps'
               ? tr
@@ -306,7 +301,7 @@ export default function ProgramEditor({
         </div>
         <ul className="mt-2 space-y-2">
           {draft.rewards.map((r, i) => (
-            <li key={r.id ?? `new-${i}`} className="flex flex-col gap-2 rounded-[20px] border border-pn-line p-3 sm:flex-row sm:items-center">
+            <li key={r.id ?? `new-${i}`} className="flex flex-col gap-2 rounded-[16px] bg-pn-canvas p-2.5 sm:flex-row sm:items-center">
               <input
                 value={r.title}
                 maxLength={L.rewardTitleMax}
@@ -347,9 +342,9 @@ export default function ProgramEditor({
           <button
             type="button"
             onClick={() => set('rewards', [...draft.rewards, { title: '', description: '', cost: stampMax ? 10 : 200, isActive: true }])}
-            className="bz-btn-ghost mt-2 inline-flex items-center gap-1.5"
+            className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-dashed border-pn-line-strong px-5 text-[14px] font-medium text-pn-ink transition-colors hover:border-pn-accent hover:bg-pn-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
           >
-            <Plus size={14} /> {tr ? 'Ödül ekle' : 'Add reward'}
+            <Plus size={15} /> {tr ? 'Ödül ekle' : 'Add reward'}
           </button>
         )}
       </div>
@@ -394,8 +389,8 @@ export default function ProgramEditor({
         </Field>
       </div>
 
-      <details className="group rounded-[20px] border border-pn-line p-4">
-        <summary className="cursor-pointer list-none text-[13px] font-medium text-pn-ink">
+      <details className="group rounded-[18px] bg-pn-canvas p-4">
+        <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center text-[14px] font-medium text-pn-ink">
           {tr ? 'Gelişmiş: seviyeler, doğum günü, süre, görünüm' : 'Advanced: tiers, birthday, expiry, look'}
           <span className="ml-2 font-normal text-[#737373] group-open:hidden">{tr ? '(isteğe bağlı)' : '(optional)'}</span>
         </summary>
@@ -424,13 +419,13 @@ export default function ProgramEditor({
           </div>
 
           <div>
-            <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Seviyeler (en çok 3)' : 'Tiers (up to 3)'}</p>
+            <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Seviyeler (en çok 3)' : 'Tiers (up to 3)'}</p>
             <p className="mt-0.5 text-[13px] text-[#737373]">
               {tr ? 'Ziyaret sayısına göre; ayrıcalığı kasada siz uygularsınız.' : 'By visit count; staff applies the perk.'}
             </p>
             <ul className="mt-2 space-y-2">
               {draft.tiers.map((t, i) => (
-                <li key={i} className="grid gap-2 rounded-[20px] border border-pn-line p-3 sm:grid-cols-[1fr_auto_2fr_auto] sm:items-center">
+                <li key={i} className="grid gap-2 rounded-[16px] bg-white p-2.5 max-sm:bg-[#F6F6F6] sm:grid-cols-[1fr_auto_2fr_auto] sm:items-center">
                   <input value={t.name} maxLength={L.tierNameMax} onChange={(e) => set('tiers', draft.tiers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="bz-input" placeholder={tr ? 'Gümüş' : 'Silver'} aria-label={tr ? 'Seviye adı' : 'Tier name'} />
                   <NumberInput value={t.minVisits} min={1} max={L.tierMinVisitsMax} onChange={(n) => set('tiers', draft.tiers.map((x, j) => (j === i ? { ...x, minVisits: n } : x)))} suffix={tr ? 'ziyaret' : 'visits'} ariaLabel={tr ? 'Gereken ziyaret' : 'Visits needed'} />
                   <input value={t.perk} maxLength={L.tierPerkMax} onChange={(e) => set('tiers', draft.tiers.map((x, j) => (j === i ? { ...x, perk: e.target.value } : x)))} className="bz-input" placeholder={tr ? 'Her ziyarette ücretsiz içecek' : 'A free drink every visit'} aria-label={tr ? 'Ayrıcalık' : 'Perk'} />
@@ -444,9 +439,9 @@ export default function ProgramEditor({
               <button
                 type="button"
                 onClick={() => set('tiers', [...draft.tiers, { name: '', minVisits: (draft.tiers.at(-1)?.minVisits ?? 5) + 5, perk: '' }])}
-                className="bz-btn-ghost mt-2 inline-flex items-center gap-1.5"
+                className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-dashed border-pn-line-strong px-5 text-[14px] font-medium text-pn-ink transition-colors hover:border-pn-accent hover:bg-pn-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
               >
-                <Plus size={14} /> {tr ? 'Seviye ekle' : 'Add tier'}
+                <Plus size={15} /> {tr ? 'Seviye ekle' : 'Add tier'}
               </button>
             )}
           </div>
@@ -492,29 +487,44 @@ export default function ProgramEditor({
     </div>
   );
 
+  const summaryLines = [
+    earnRuleLine(draft, locale),
+    ...draft.rewards.filter((r) => r.isActive && r.title.trim()).map((r) => rewardRuleLine(draft.kind, r, locale)),
+    ...(draft.welcomeBonus > 0
+      ? [tr ? `Katılınca ${draft.welcomeBonus} ${draft.kind === 'stamps' ? 'damga' : 'puan'} hediye` : `Welcome bonus: ${draft.welcomeBonus}`]
+      : []),
+    ...(draft.birthdayReward.trim() ? [tr ? `Doğum günü: ${draft.birthdayReward}` : `Birthday: ${draft.birthdayReward}`] : []),
+    ...draft.tiers
+      .filter((t) => t.name.trim())
+      .map((t) =>
+        tr
+          ? `${t.name}: ${t.minVisits}. ziyaretten sonra${t.perk ? ` — ${t.perk}` : ''}`
+          : `${t.name}: from visit ${t.minVisits}${t.perk ? ` — ${t.perk}` : ''}`,
+      ),
+  ];
   const summary = (
-    <ul className="space-y-1.5 text-[14px] text-[#262626]">
-      <li>{earnRuleLine(draft, locale)}</li>
-      {draft.rewards
-        .filter((r) => r.isActive && r.title.trim())
-        .map((r, i) => (
-          <li key={i}>• {rewardRuleLine(draft.kind, r, locale)}</li>
-        ))}
-      {draft.welcomeBonus > 0 && (
-        <li>• {tr ? `Katılınca ${draft.welcomeBonus} ${draft.kind === 'stamps' ? 'damga' : 'puan'} hediye` : `Welcome bonus: ${draft.welcomeBonus}`}</li>
-      )}
-      {draft.birthdayReward.trim() && <li>• {tr ? `Doğum günü: ${draft.birthdayReward}` : `Birthday: ${draft.birthdayReward}`}</li>}
-      {draft.tiers.filter((t) => t.name.trim()).map((t, i) => (
-        <li key={`t${i}`}>• {tr ? `${t.name}: ${t.minVisits}. ziyaretten sonra${t.perk ? ` — ${t.perk}` : ''}` : `${t.name}: from visit ${t.minVisits}${t.perk ? ` — ${t.perk}` : ''}`}</li>
+    <ul className="space-y-2">
+      {summaryLines.map((line, i) => (
+        <li key={i} className="flex items-start gap-2.5 text-[14px] leading-5 text-pn-ink">
+          <span aria-hidden="true" className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white">
+            <Check size={12} strokeWidth={2.6} />
+          </span>
+          <span className="min-w-0">{line}</span>
+        </li>
       ))}
     </ul>
   );
 
   const previewColumn = (
-    <aside className="space-y-3 lg:sticky lg:top-4">
-      <p className="text-[12px] font-medium text-[#737373]">{tr ? 'Müşterinin göreceği kart' : 'What the customer sees'}</p>
-      {preview}
-      <div className="rounded-[20px] border border-pn-line bg-pn-canvas p-4">{summary}</div>
+    <aside className="space-y-2.5 lg:sticky lg:top-4">
+      <div className="bz-card p-5">
+        <p className="mb-3 text-[14px] font-medium text-pn-ink">{tr ? 'Müşterinin göreceği kart' : 'What the customer sees'}</p>
+        {preview}
+      </div>
+      <div className="bz-card p-5">
+        <p className="mb-3 text-[14px] font-medium text-pn-ink">{tr ? 'Kartın kuralları' : 'Card rules'}</p>
+        {summary}
+      </div>
     </aside>
   );
 
@@ -532,35 +542,54 @@ export default function ProgramEditor({
       { label: tr ? 'Kurallar ve ödüller' : 'Rules and rewards', short: tr ? 'Kurallar' : 'Rules' },
       { label: tr ? 'Önizle ve yayınla' : 'Preview and publish', short: tr ? 'Yayınla' : 'Publish' },
     ];
+    const panelCopy = [
+      {
+        title: tr ? 'Kart türünü seçin' : 'Pick the card type',
+        description: tr
+          ? 'İşinize en yakın kartı seçin; her şeyi sonraki adımda değiştirebilirsiniz.'
+          : 'Pick the card closest to your business; you can change everything in the next step.',
+      },
+      {
+        title: tr ? 'Kurallar ve ödüller' : 'Rules and rewards',
+        description: tr ? 'Kartın adı, ödüller ve kazanma kuralı.' : 'The card name, the rewards and how they are earned.',
+      },
+      {
+        title: tr ? 'Önizle ve yayınla' : 'Preview and publish',
+        description: tr
+          ? 'Yayına aldığınızda müşteriler kasadaki QR ile kart açabilir.'
+          : 'Once published, customers open a card with the QR at the counter.',
+      },
+    ][step];
     return (
-      <div className="bz-card p-4 sm:p-6">
+      <div className="space-y-4 sm:space-y-5">
         <WizardSteps
           steps={steps}
           current={step}
           canSelect={(i) => i < step || (i === step + 1 && !stepProblem(step))}
           onSelect={(i) => setStep(i)}
           ariaLabel={tr ? 'Kurulum adımları' : 'Setup steps'}
+          locale={tr ? 'tr' : 'en'}
         />
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
-          <div className="min-w-0">
+        <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+          <WizardPanel title={panelCopy.title} description={panelCopy.description} className="min-w-0">
             <div hidden={step !== 0}>{templatePicker}</div>
             <div hidden={step !== 1}>{rulesSection}</div>
-            <div hidden={step !== 2}>
-              <p className="text-[14px] text-[#262626]">
+            <div hidden={step !== 2} className="space-y-4">
+              <p className="text-[14px] leading-[1.55] text-pn-ink">
                 {tr
                   ? 'Yayına aldığınızda müşteriler kasadaki QR ile kart açabilir, siz de “Kasa” ekranından damga / puan verirsiniz.'
                   : 'Once published, customers open a card with the QR at the counter and you add stamps / points from the “Counter” screen.'}
               </p>
-              <p className="mt-3 text-[13px] text-[#737373]">
+              <div className="rounded-[18px] bg-pn-canvas p-4 lg:hidden">{summary}</div>
+              <p className="rounded-[18px] bg-pn-accent-soft px-4 py-3.5 text-[13px] leading-[1.55] text-pn-ink">
                 {tr ? 'Yayına alarak ' : 'By publishing you accept the '}
-                <a href={`/${locale}/sadakat-isletme-eki`} target="_blank" rel="noopener" className="font-medium text-pn-ink underline underline-offset-2">
+                <a href={`/${locale}/sadakat-isletme-eki`} target="_blank" rel="noopener" className="font-medium text-pn-accent underline underline-offset-2">
                   {tr ? 'Sadakat programı işletme ekini' : 'loyalty programme business addendum'}
                 </a>
                 {tr
                   ? ' kabul edersiniz: üye bilgilerinin veri sorumlusu işletmenizdir; yorum ya da puan karşılığı damga verilmez.'
                   : ': your business is the data controller of member data; no stamps for reviews or ratings.'}
               </p>
-              <div className="mt-4 lg:hidden">{summary}</div>
             </div>
             {error && (
               <div className="mt-4">
@@ -569,53 +598,74 @@ export default function ProgramEditor({
                 </AlertBanner>
               </div>
             )}
-            <div className="mt-6 flex flex-col-reverse gap-2 border-t border-pn-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" className="bz-btn-ghost" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
-                {tr ? 'Geri' : 'Back'}
-              </button>
-              {step < 2 ? (
-                <button
-                  type="button"
-                  className="bz-btn-primary"
-                  onClick={() => {
-                    const p = stepProblem(step);
-                    if (p) setError(p);
-                    else {
-                      setError(null);
-                      setStep((s) => s + 1);
-                    }
-                  }}
-                >
-                  {tr ? 'İleri' : 'Next'}
-                </button>
-              ) : (
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button type="button" className="bz-btn-ghost" disabled={saving !== null} onClick={() => void save('draft')}>
-                    {saving === 'draft' && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
-                    {tr ? 'Taslak olarak kaydet' : 'Save as draft'}
-                  </button>
-                  <button type="button" className="bz-btn-lime" disabled={saving !== null} onClick={() => void save('publish')}>
-                    {saving === 'publish' && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
-                    {tr ? 'Kartı yayına al' : 'Publish the card'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          </WizardPanel>
           <div className="hidden lg:block">{previewColumn}</div>
-          {step > 0 && <div className="lg:hidden">{preview}</div>}
+          {step > 0 && (
+            <div className="bz-card p-5 lg:hidden">
+              <p className="mb-3 text-[14px] font-medium text-pn-ink">{tr ? 'Müşterinin göreceği kart' : 'What the customer sees'}</p>
+              {preview}
+            </div>
+          )}
         </div>
+        <WizardFooter>
+          <button
+            type="button"
+            className={`${WIZARD_BACK_CLASS} sm:mr-auto`}
+            disabled={step === 0}
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
+          >
+            <ArrowLeft size={15} aria-hidden="true" />
+            {tr ? 'Geri' : 'Back'}
+          </button>
+          {step < 2 ? (
+            <button
+              type="button"
+              className={WIZARD_NEXT_CLASS}
+              onClick={() => {
+                const p = stepProblem(step);
+                if (p) setError(p);
+                else {
+                  setError(null);
+                  setStep((s) => s + 1);
+                }
+              }}
+            >
+              {tr ? 'İleri' : 'Next'}
+              <ArrowRight size={15} aria-hidden="true" />
+            </button>
+          ) : (
+            <>
+              <button type="button" className={WIZARD_BACK_CLASS} disabled={saving !== null} onClick={() => void save('draft')}>
+                {saving === 'draft' && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+                {tr ? 'Taslak olarak kaydet' : 'Save as draft'}
+              </button>
+              <button
+                type="button"
+                className={`${WIZARD_NEXT_CLASS} max-sm:basis-full`}
+                disabled={saving !== null}
+                onClick={() => void save('publish')}
+              >
+                {saving === 'publish' ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send size={15} aria-hidden="true" />
+                )}
+                {tr ? 'Kartı yayına al' : 'Publish the card'}
+              </button>
+            </>
+          )}
+        </WizardFooter>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <div className="bz-card min-w-0 p-4 sm:p-6">
-        <div className="mb-5 flex flex-col gap-3 border-b border-pn-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div className="bz-card min-w-0 p-5 sm:p-7">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[15px] font-medium text-pn-ink">{tr ? 'Program ayarları' : 'Programme settings'}</p>
-            <p className="text-[13px] text-[#737373]">
+            <h2 className="text-[20px] font-medium leading-[26px] tracking-[-0.015em] text-pn-ink">{tr ? 'Program ayarları' : 'Programme settings'}</h2>
+            <p className="mt-1 text-[14px] text-[#737373]">
               {tr ? 'Değişiklikler kaydedince müşterinin kartında hemen görünür.' : 'Changes show on customer cards as soon as you save.'}
             </p>
           </div>
@@ -642,8 +692,8 @@ export default function ProgramEditor({
           </div>
         )}
         <div className="mt-6 flex justify-end border-t border-pn-line pt-4">
-          <button type="button" className="bz-btn-primary" disabled={saving !== null} onClick={() => void save('save')}>
-            {saving === 'save' && <Loader2 size={14} className="mr-1.5 inline animate-spin" />}
+          <button type="button" className={`${WIZARD_NEXT_CLASS} max-sm:w-full`} disabled={saving !== null} onClick={() => void save('save')}>
+            {saving === 'save' && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
             {tr ? 'Kaydet' : 'Save'}
           </button>
         </div>

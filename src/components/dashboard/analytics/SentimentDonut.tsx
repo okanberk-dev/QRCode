@@ -7,11 +7,10 @@
 // page.tsx feedback rating distribution'dan veya extractThemes aggregate'ten
 // compute eder). 0 örneklem → graceful fallback (donut subtle gri ring).
 //
-// Pano colours on the purple card (everything on purple is white):
-// - pos: solid white
-// - neu: translucent white
-// - neg: hatched (white stripes on a darker purple) — red would read as an
-//   alarm for a balanced mix
+// Fintora breakdown colours on a white card:
+// - pos: black
+// - neu: light green
+// - neg: hatched grey — red would read as an alarm for a balanced mix
 
 export interface SentimentDonutProps {
   /** 0-100 percentage values. pos + neu + neg = 100 olmalı (caller normalize). */
@@ -35,16 +34,17 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 }
 
 /**
- * Rating mix on the purple Pano card (docs/design/DASHBOARD_DESIGN.md §5.4,
- * §5.11): a thick ring — positive white, neutral translucent, negative hatched —
- * with the positive share in the middle.
+ * Rating mix on a white Pano card (docs/design/DASHBOARD_DESIGN.md §5.9,
+ * Fintora breakdown): a thick ring — positive black, neutral light green,
+ * negative hatched grey — with the positive share in the middle, and grey
+ * breakdown rows beside it.
  */
 export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: SentimentDonutProps) {
   const hasData = pos + neu + neg > 0;
   const GAP = 10; // degrees between segments
   const parts = [
-    { key: 'pos', v: pos, stroke: '#FFFFFF', label: isTr ? 'Pozitif' : 'Positive' },
-    { key: 'neu', v: neu, stroke: 'rgba(255,255,255,0.42)', label: isTr ? 'Nötr' : 'Neutral' },
+    { key: 'pos', v: pos, stroke: '#78FC90', label: isTr ? 'Pozitif' : 'Positive' },
+    { key: 'neu', v: neu, stroke: '#CDEFD6', label: isTr ? 'Nötr' : 'Neutral' },
     { key: 'neg', v: neg, stroke: 'url(#pn-donut-hatch)', label: isTr ? 'Negatif' : 'Negative' },
   ].filter((p) => p.v > 0);
   const usable = 360 - GAP * parts.length;
@@ -57,49 +57,49 @@ export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: Sent
   });
 
   return (
-    <section className="pn-card-dark flex h-full flex-col p-6 sm:p-7" aria-label={isTr ? 'Puan dağılımı' : 'Rating mix'}>
+    <section className="bz-card flex h-full flex-col p-5 sm:p-6" aria-label={isTr ? 'Puan dağılımı' : 'Rating mix'}>
       <header className="mb-4">
-        <h2 className="pn-card-title text-white">{isTr ? 'Puan dağılımı' : 'Rating mix'}</h2>
-        <p className="pn-muted mt-1 text-[13px]">{isTr ? 'Pozitif, nötr ve negatif puanlar' : 'Positive, neutral and negative ratings'}</p>
+        <h2 className="pn-card-title text-pn-ink">{isTr ? 'Puan dağılımı' : 'Rating mix'}</h2>
+        <p className="mt-1 text-[13px] text-[#9A9A9A]">{isTr ? 'Pozitif, nötr ve negatif puanlar' : 'Positive, neutral and negative ratings'}</p>
       </header>
 
       {hasData ? (
         <div className="flex flex-1 flex-col items-center gap-5 sm:flex-row sm:items-center">
-          <svg viewBox="0 0 120 120" className="h-[168px] w-[168px] shrink-0" role="img" aria-label={`${Math.round(pos)}% ${isTr ? 'pozitif' : 'positive'}`}>
+          <svg viewBox="0 0 120 120" className="h-[160px] w-[160px] shrink-0" role="img" aria-label={`${Math.round(pos)}% ${isTr ? 'pozitif' : 'positive'}`}>
             <defs>
               <pattern id="pn-donut-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <rect width="5" height="5" fill="rgba(0,0,0,0.22)" />
-                <line x1="0" y1="0" x2="0" y2="5" stroke="rgba(255,255,255,0.34)" strokeWidth="2.4" />
+                <rect width="5" height="5" fill="#E3E3E6" />
+                <line x1="0" y1="0" x2="0" y2="5" stroke="#B8B8BE" strokeWidth="2" />
               </pattern>
             </defs>
             {arcs.map((arc) => (
               <path key={arc.key} d={arc.d} fill="none" stroke={arc.stroke} strokeWidth="15" strokeLinecap="round" />
             ))}
-            <text x="60" y="66" textAnchor="middle" fontSize="20" fontWeight="300" fill="#FFFFFF" fontFamily="var(--font-heading)">
+            <text x="60" y="66" textAnchor="middle" fontSize="20" fontWeight="500" fill="#111110" fontFamily="var(--font-heading)">
               {Math.round(pos)}
-              <tspan fill="rgba(255,255,255,.65)" fontSize="13">%</tspan>
+              <tspan fill="#9A9A9A" fontSize="13">%</tspan>
             </text>
           </svg>
 
-          <ul className="flex w-full flex-1 flex-col gap-3">
+          <ul className="flex w-full flex-1 flex-col gap-2">
             {[
-              { label: isTr ? 'Pozitif' : 'Positive', v: pos, swatch: 'bg-white' },
-              { label: isTr ? 'Nötr' : 'Neutral', v: neu, swatch: 'bg-white/40' },
-              { label: isTr ? 'Negatif' : 'Negative', v: neg, swatch: 'pn-hatch-dark' },
+              { label: isTr ? 'Pozitif' : 'Positive', v: pos, swatch: 'bg-pn-accent' },
+              { label: isTr ? 'Nötr' : 'Neutral', v: neu, swatch: 'bg-[#CDEFD6]' },
+              { label: isTr ? 'Negatif' : 'Negative', v: neg, swatch: 'pn-hatch' },
             ].map((row) => (
-              <li key={row.label} className="flex items-center gap-3">
+              <li key={row.label} className="pn-row min-h-[48px] py-2.5">
                 <span aria-hidden="true" className={`h-3 w-6 shrink-0 rounded-full ${row.swatch}`} />
-                <span className="flex-1 text-[14px] text-white/85">{row.label}</span>
-                <span className="text-[15px] tabular-nums text-white">
+                <span className="flex-1 text-[14px] text-pn-ink">{row.label}</span>
+                <span className="text-[15px] font-medium tabular-nums text-pn-ink">
                   {Math.round(row.v)}
-                  <span className="text-white/65">%</span>
+                  <span className="text-[#9A9A9A]">%</span>
                 </span>
               </li>
             ))}
           </ul>
         </div>
       ) : (
-        <p className="pn-muted text-[14px]">
+        <p className="rounded-[16px] bg-pn-canvas px-4 py-6 text-[14px] text-[#737373]">
           {isTr
             ? 'Bu dönemde puan yok. Puanlar geldikçe dağılım burada görünür.'
             : 'No ratings in this period. The breakdown appears as ratings come in.'}
@@ -107,7 +107,7 @@ export function SentimentDonut({ pos, neu, neg, isTr = true, totalSample }: Sent
       )}
 
       {hasData && totalSample !== undefined && totalSample > 0 && (
-        <p className="pn-muted mt-auto pt-5 text-[13px] tabular-nums">
+        <p className="mt-auto pt-5 text-[13px] tabular-nums text-[#9A9A9A]">
           {isTr ? `${totalSample.toLocaleString('tr-TR')} puan üzerinden` : `Across ${totalSample.toLocaleString('en-US')} ratings`}
         </p>
       )}

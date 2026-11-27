@@ -14,7 +14,7 @@ const VARIANTS = {
   /** On a coloured bar (staff mode header, purple). */
   dark: 'h-10 w-10 rounded-full bg-white/15 text-white hover:bg-white/25 focus-visible:ring-white',
   /** On a panel card: grey circle, no border (Pano icon button). */
-  panel: 'h-10 w-10 rounded-full bg-pn-canvas text-[#525252] hover:bg-pn-line focus-visible:ring-[#5D3EBC]',
+  panel: 'h-10 w-10 rounded-full bg-pn-canvas text-[#525252] hover:bg-pn-line focus-visible:ring-[#111110]',
 } as const;
 
 export default function SoundToggle({

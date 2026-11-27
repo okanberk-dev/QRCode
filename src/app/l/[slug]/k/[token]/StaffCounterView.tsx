@@ -56,10 +56,10 @@ export default function StaffCounterView({
     <div className="bz-panel min-h-dvh bg-[#F6F6F6]">
       {arrival && <StaffArrival locale={locale} customerName={initialMember.firstName ?? initialMember.name} code={formatMemberCode(initialMember.code)} />}
 
-      <header className="sticky top-0 z-30 bg-[#5D3EBC] text-white" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <header className="sticky top-0 z-30 bg-[#111110] text-white" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="mx-auto flex h-16 max-w-[760px] items-center gap-2.5 px-4">
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-[#5D3EBC]">
-            <span className="pulse-heartbeat h-1.5 w-1.5 rounded-full bg-[#5D3EBC]" aria-hidden="true" />
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-[#111110]">
+            <span className="pulse-heartbeat h-1.5 w-1.5 rounded-full bg-[#111110]" aria-hidden="true" />
             {tr ? 'Kasa modu' : 'Staff mode'}
           </span>
           <p className="min-w-0 flex-1 truncate text-[14.5px] font-medium text-white/90">{restaurantName}</p>

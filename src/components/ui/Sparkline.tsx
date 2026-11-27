@@ -2,7 +2,13 @@ interface SparklineProps {
   values: number[];
   w?: number;
   h?: number;
+  /** Line colour (default: Pano black). */
   color?: string;
+  /** Area colour under the line (default: the line colour, faint). */
+  fill?: string;
+  /** Area opacity (default 1 with `fill`, 0.08 without). */
+  fillOpacity?: number;
+  strokeWidth?: number;
   className?: string;
 }
 
@@ -50,7 +56,16 @@ export function monotonePath(pts: Array<[number, number]>): string {
   return d;
 }
 
-export function Sparkline({ values, w = 80, h = 24, color = "var(--color-pn-ink)", className = "" }: SparklineProps) {
+export function Sparkline({
+  values,
+  w = 80,
+  h = 24,
+  color = "var(--color-pn-accent)",
+  fill,
+  fillOpacity,
+  strokeWidth = 1.5,
+  className = "",
+}: SparklineProps) {
   if (!values?.length) return null;
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -70,12 +85,12 @@ export function Sparkline({ values, w = 80, h = 24, color = "var(--color-pn-ink)
       style={{ display: "block" }}
       aria-hidden="true"
     >
-      <path d={area} fill={color} opacity="0.08" />
+      <path d={area} fill={fill ?? color} opacity={fillOpacity ?? (fill ? 1 : 0.08)} />
       <path
         d={line}
         fill="none"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth={strokeWidth}
         strokeLinejoin="round"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Store } from "lucide-react";
 import type { Locale } from "@/lib/translations";
 
 export interface OnboardingStep {
@@ -38,80 +38,63 @@ export default function OnboardingNudge({
   if (steps.length > 0 && completed === steps.length) return null;
   const single = steps.length === 1 ? steps[0] : null;
 
+  // Fintora welcome card: white, black icon circle, title over grey copy,
+  // one black call to action; several steps become grey rows.
   return (
-    <section
-      className={`rounded-[24px] p-5 sm:p-6 text-white ${className}`}
-      style={{ background: "linear-gradient(135deg, #5D3EBC 0%, #3B1F8F 100%)" }}
-      aria-label={isTr ? "Başlangıç" : "Getting started"}
-    >
+    <section className={`bz-card p-5 sm:p-6 ${className}`} aria-label={isTr ? "Başlangıç" : "Getting started"}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
-        <div className="min-w-0 flex-1">
-          <h2 className="bz-h-tight text-[17px]">
-            {isTr ? "Buaze'ye hoş geldin" : "Welcome to Buaze"}
-          </h2>
-          {description && (
-            <p className="mt-1 max-w-[560px] text-[13px] leading-[1.55] text-white/85">
-              {description}
-            </p>
-          )}
-          {steps.length > 1 && (
-            <p className="mt-1 text-[12px] text-white/80">
-              {completed} / {steps.length} {isTr ? "tamamlandı" : "completed"}
-            </p>
-          )}
+        <div className="flex min-w-0 flex-1 items-start gap-3.5">
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
+          >
+            <Store size={18} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="pn-card-title text-pn-ink">
+              {isTr ? "Buaze'ye hoş geldin" : "Welcome to Buaze"}
+            </h2>
+            {description && (
+              <p className="mt-1 max-w-[560px] text-[14px] leading-[1.55] text-[#737373]">
+                {description}
+              </p>
+            )}
+            {steps.length > 1 && (
+              <p className="mt-1 text-[13px] text-[#9A9A9A]">
+                {completed} / {steps.length} {isTr ? "tamamlandı" : "completed"}
+              </p>
+            )}
+          </div>
         </div>
 
         {single && (
           <Link
             href={single.href}
-            className="bz-btn-lime inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 self-start bg-white text-[13px] text-pn-accent hover:bg-pn-accent-soft sm:min-h-[36px] lg:self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#3B1F8F]"
+            className="bz-btn-primary inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 self-stretch sm:self-start lg:self-center"
           >
             {single.label}
-            <ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
+            <ArrowRight size={15} aria-hidden="true" />
           </Link>
         )}
 
         {steps.length > 1 && (
-          <ol className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <ol className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {steps.map((s) => (
               <li key={s.id}>
-                <Link
-                  href={s.href}
-                  className="flex min-h-[44px] flex-col gap-1.5 rounded-[10px] p-2.5 text-left bz-motion-spring active:scale-[0.97] sm:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  style={{
-                    background: s.done ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)",
-                    border: `1px solid ${s.done ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.12)"}`,
-                  }}
-                >
-                  <span className="flex items-center justify-between">
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full"
-                      style={{
-                        background: s.done ? "#FFFFFF" : "rgba(255,255,255,0.14)",
-                        color: s.done ? "#5D3EBC" : "rgba(255,255,255,0.75)",
-                      }}
-                    >
-                      {s.done ? (
-                        <Check size={11} strokeWidth={2.5} />
-                      ) : (
-                        <span className="text-[12px] font-medium">{s.id}</span>
-                      )}
-                    </span>
-                    {!s.done && (
-                      <ArrowRight size={11} color="rgba(255,255,255,0.75)" strokeWidth={2} aria-hidden="true" />
-                    )}
-                  </span>
+                <Link href={s.href} className="pn-row min-h-[56px]">
                   <span
-                    className="text-[12px] leading-[1.3]"
-                    style={{
-                      color: s.done ? "rgba(255,255,255,0.8)" : "#fff",
-                      fontWeight: s.done ? 400 : 500,
-                    }}
+                    aria-hidden="true"
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-medium ${
+                      s.done ? "bg-pn-accent text-white" : "bg-pn-accent-soft text-pn-accent"
+                    }`}
                   >
+                    {s.done ? <Check size={15} strokeWidth={2.4} /> : s.id}
+                  </span>
+                  <span className={`min-w-0 flex-1 text-[14px] ${s.done ? "text-[#9A9A9A]" : "font-medium text-pn-ink"}`}>
                     {s.done && <span className="sr-only">{isTr ? "Tamamlandı: " : "Done: "}</span>}
                     {s.label}
                   </span>
+                  {!s.done && <ArrowRight size={14} className="shrink-0 text-[#9A9A9A]" aria-hidden="true" />}
                 </Link>
               </li>
             ))}

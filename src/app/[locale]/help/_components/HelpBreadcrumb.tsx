@@ -20,7 +20,7 @@ export default function HelpBreadcrumb({ items, label }: { items: HelpCrumb[]; l
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="inline-flex min-h-[44px] items-center rounded-sm transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C6CF0] focus-visible:ring-offset-2"
+                  className="inline-flex min-h-[44px] items-center rounded-sm transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
                 >
                   {item.label}
                 </Link>

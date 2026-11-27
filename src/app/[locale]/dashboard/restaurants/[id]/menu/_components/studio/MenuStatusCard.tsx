@@ -190,14 +190,14 @@ export function MenuStatusCard({
 
   if (justPublished && live) {
     return (
-      <section aria-labelledby="menu-status-title" className="bz-card min-h-[164px] border-[#DCD3F6] bg-[#F6F3FD] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
+      <section aria-labelledby="menu-status-title" className="bz-card min-h-[164px] border-[#CDEFD6] bg-[#F6F3FD] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white">
             <Rocket size={16} strokeWidth={2} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
             {title(copy.status.liveTitle)}
-            <p aria-live="polite" className="mt-1 text-[13px] leading-relaxed text-[#3B1F8F]">
+            <p aria-live="polite" className="mt-1 text-[13px] leading-relaxed text-[#000000]">
               {copy.status.justPublished}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">

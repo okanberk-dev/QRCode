@@ -169,7 +169,7 @@ export default function MemberActions({
         <div className="min-w-0">
           <p className="truncate text-[17px] font-medium text-pn-ink">{member.name || (tr ? 'İsimsiz üye' : 'Unnamed member')}</p>
           <p className="mt-0.5 text-[13px] text-[#737373]">
-            <span className="font-mono ">{formatMemberCode(member.code)}</span>
+            <span className="tabular-nums">{formatMemberCode(member.code)}</span>
             {(member.phone || member.phoneMasked) && (
               <>
                 {' · '}
@@ -216,7 +216,7 @@ export default function MemberActions({
             <span
               aria-hidden="true"
               className="bzl-ring pointer-events-none absolute inset-0 rounded-[20px] border-[3px]"
-              style={{ borderColor: '#5D3EBC' }}
+              style={{ borderColor: '#111110' }}
             />
           )}
           <LoyaltyCardFace
@@ -246,7 +246,7 @@ export default function MemberActions({
           )}
 
           {access.operate && !paused && (
-            <div className="rounded-[20px] border border-pn-line p-3">
+            <div className="rounded-[18px] bg-pn-canvas p-3">
               {kind === 'stamps' ? (
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="inline-flex items-center rounded-full border border-pn-line" aria-label={tr ? 'Damga adedi' : 'Stamp count'}>
@@ -359,7 +359,7 @@ export default function MemberActions({
           </div>
 
           {access.manage && (
-            <details className="rounded-[20px] border border-pn-line p-3">
+            <details className="rounded-[18px] bg-pn-canvas p-3">
               <summary className="cursor-pointer text-[13px] font-medium text-[#525252]">{tr ? 'Bakiyeyi düzelt' : 'Correct the balance'}</summary>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <input

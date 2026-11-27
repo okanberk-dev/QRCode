@@ -5,15 +5,15 @@
 
 /* ─── ROI calculator slider polish ─────────────────────────────────────────
    Native input[type=range] thumb default ~14px — mobilde dokunma için yetersiz.
-   Marka moru (#5D3EBC) kullanılır, mobilde 28px (40px touch alan), desktop'ta
-   18px. Track 6px mor dolgu + beyaz çerçeveli mor thumb (modern look). */
+   Pulse §11 lime accent kullanılır, mobilde 28px (40px touch alan), desktop'ta
+   18px. Track 6px lime gradient + soft graphite border (modern look). */
 .roi-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 6px;
   border-radius: 999px;
-  background: linear-gradient(to right, #5D3EBC 0%, #5D3EBC var(--roi-fill, 50%), #EDEDED var(--roi-fill, 50%), #EDEDED 100%);
+  background: linear-gradient(to right, #C6F24E 0%, #C6F24E var(--roi-fill, 50%), #EDEDED var(--roi-fill, 50%), #EDEDED 100%);
   outline: none;
   transition: background-position 0.12s ease;
   cursor: pointer;
@@ -24,8 +24,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #5D3EBC;
-  border: 4px solid #FFFFFF;
+  background: #0A0A0A;
+  border: 4px solid #C6F24E;
   box-shadow: 0 4px 12px rgba(10, 10, 10, 0.18);
   cursor: pointer;
   transition: transform 0.12s ease;
@@ -37,17 +37,17 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #5D3EBC;
-  border: 4px solid #FFFFFF;
+  background: #0A0A0A;
+  border: 4px solid #C6F24E;
   box-shadow: 0 4px 12px rgba(10, 10, 10, 0.18);
   cursor: pointer;
 }
 .roi-slider:focus-visible::-webkit-slider-thumb {
-  outline: 3px solid #8C6CF0;
+  outline: 3px solid #C6F24E;
   outline-offset: 2px;
 }
 .roi-slider:focus-visible::-moz-range-thumb {
-  outline: 3px solid #8C6CF0;
+  outline: 3px solid #C6F24E;
   outline-offset: 2px;
 }
 @media (min-width: 640px) {

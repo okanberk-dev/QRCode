@@ -41,7 +41,7 @@ export function ThemeCard({
       onKeyDown={onKeyDown}
       className={`group relative flex min-w-0 flex-col items-stretch gap-2 rounded-[20px] bg-white p-1.5 text-left transition-[box-shadow,transform] duration-[160ms] ease-[cubic-bezier(.2,.8,.2,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
         checked
-          ? 'shadow-[0_0_0_2px_#5D3EBC]'
+          ? 'shadow-[0_0_0_2px_#111110]'
           : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3,0_6px_16px_-10px_rgba(10,10,10,0.35)]'
       }`}
     >

@@ -11,12 +11,12 @@
  *
  * Pulse §11 hex map (HANDOFF tone palette):
  *  - default: rgba(10,10,10,0.06) bg + #0A0A0A fg + dot graphite
- *  - lime: accent-soft bg (lavender in the panels) + ink text + accent dot
+ *  - lime: accent-soft bg (light green in the panels) + ink text + accent dot
  *  - success: rgba(34,197,94,0.12) + #15803D + dot #16A34A
  *  - warn: rgba(234,179,8,0.14) + #854D0E + dot #CA8A04
  *  - danger: rgba(220,38,38,0.10) + #991B1B + dot #DC2626
  *  - info: rgba(59,130,246,0.10) + #1E40AF + dot #3B82F6
- *  - dark: ink bg + white + lavender dot
+ *  - dark: ink bg + white + light green dot
  *
  * A11y: removable button explicit aria-label; chip span (informational).
  */
@@ -51,7 +51,7 @@ const TONE_TOKENS: Record<APChipTone, { bg: string; fg: string; dot: string }> =
   warn: { bg: '#FFF6DB', fg: '#8A5A00', dot: '#D99A00' },
   danger: { bg: '#FDECEC', fg: '#B42318', dot: '#E5484D' },
   info: { bg: '#EAF1FD', fg: '#1D4ED8', dot: '#3B82F6' },
-  dark: { bg: 'var(--color-pn-ink)', fg: '#ffffff', dot: '#DCD3F6' },
+  dark: { bg: 'var(--color-pn-ink)', fg: '#ffffff', dot: '#CDEFD6' },
 };
 
 export function APChip({

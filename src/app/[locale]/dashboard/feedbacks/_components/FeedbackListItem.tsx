@@ -22,8 +22,8 @@ interface FeedbackListItemProps {
 /**
  * Review row (Fintora notification list): a 16px-radius row with a 40px
  * rating circle on the left, name + age, a two-line comment and platform /
- * business / status chips. Unread rows keep the grey fill and a small purple
- * dot; read rows are white; the open review is lavender.
+ * business / status chips. Unread rows keep the grey fill and a small black
+ * dot; read rows are white; the open review is light green.
  */
 export function FeedbackListItem({
   feedback: r,

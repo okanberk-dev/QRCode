@@ -19,7 +19,7 @@ export default function MenuError({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] font-sans px-6 py-12">
       <div className="w-full max-w-[420px] bg-white border border-[#EDEDED] rounded-[20px] p-8 text-center">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#EFEAFB] text-[#5D3EBC]">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
           <AlertTriangle size={24} strokeWidth={2} />
         </div>
         <h1

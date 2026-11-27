@@ -13,17 +13,13 @@
 
 :root {
   
-  /* ---------- MARKA (Getir moru + beyaz) ----------
-     Mor dolgunun üstünde metin ve ikon her zaman beyazdır (#5D3EBC / beyaz ≈ 7,6:1).
-     Mor metin yalnız açık zeminde; koyu zeminde vurgu metni #DCD3F6 (lavanta). */
-  --rt-brand-300: #8C6CF0;   /* odak halkası, dekoratif vurgu; beyaz metin taşımaz (ref: #FF8438) */
-  --rt-brand-500: #6C4BD1;   /* parlak dolgu, ikon, vurgu, gradyan başlangıcı (ref: #FF4C00) */
-  --rt-brand-600: #5D3EBC;   /* birincil buton zemini     (ref: #DE3700) */
-  --rt-brand-700: #4C2FA3;   /* link, çerçeveli buton, kart zemini (ref: #D4340B) */
-  --rt-brand-800: #3B1F8F;   /* gradyan bitişi            (ref: #C12700) */
-  --rt-brand-950: #1E0F4D;   /* footer koyu çerçevesi     (ref: #7E0D01) */
-  --rt-brand-50:  #F3F0FC;   /* açık ton / rozet zemini   (ref: #FFF1EB) */
-  --rt-brand-on-dark: #FFFFFF; /* koyu / mor zeminde vurgu metni: her zaman beyaz */
+  --rt-brand-300: #3cc99a;   /* gradyan başlangıcı      (ref: #FF8438) */
+  --rt-brand-500: #0b9b6d;   /* parlak dolgu, ikon, vurgu (ref: #FF4C00) */
+  --rt-brand-600: #08875e;   /* birincil buton zemini     (ref: #DE3700) */
+  --rt-brand-700: #067a55;   /* link, çerçeveli buton, kart zemini (ref: #D4340B) */
+  --rt-brand-800: #045c40;   /* gradyan bitişi            (ref: #C12700) */
+  --rt-brand-950: #023a28;   /* footer koyu gradyanı      (ref: #7E0D01) */
+  --rt-brand-50:  #e7f6ef;   /* açık ton / rozet zemini   (ref: #FFF1EB) */
 
   /* ---------- NÖTRLER (sıcak gri / krem) ---------- */
   --rt-ink-900: #252525;     /* ana metin, koyu başlık */
@@ -40,15 +36,14 @@
   --rt-black:   #000000;
 
   /* ---------- DESTEK RENKLERİ ---------- */
-  --rt-lime:   #DCD3F6;      /* varsayılan rozet ("YENİ"); ad tarihsel, değer lavanta (mor marka ile uyum) */
+  --rt-lime:   #afe26c;      /* "YENİ" rozeti */
   --rt-sky:    #9fc5f0;      /* "ÖNE ÇIKAN" rozeti */
   --rt-sun:    #fed850;      /* vurgu sarısı */
   --rt-success:#38a169;
   --rt-danger: #e53e3e;
 
   /* ---------- GRADYANLAR ---------- */
-  /* Beyaz metin taşıdığı için gradyan 500 tonundan başlar (beyaz/#6C4BD1 ≈ 5,9:1). */
-  --rt-grad-brand: linear-gradient(130deg, var(--rt-brand-500) 2.95%, var(--rt-brand-600) 46.45%, var(--rt-brand-800) 101.77%);
+  --rt-grad-brand: linear-gradient(130deg, var(--rt-brand-300) 2.95%, var(--rt-brand-500) 46.45%, var(--rt-brand-800) 101.77%);
   --rt-grad-brand-btn: linear-gradient(90deg, var(--rt-brand-500) 0%, var(--rt-brand-800) 100%);
   --rt-grad-dark-card: linear-gradient(180deg, #252525 0%, #413e3d 100%);
   --rt-grad-plan-card: linear-gradient(0deg, #f9f9f9 -10.4%, #f8f6f4 98.48%);
@@ -166,7 +161,7 @@
 :root:has(.rt-header) :where(h1, h2, h3, h4, h5, h6) { font-family: inherit; font-weight: 400; letter-spacing: normal; }
 :root:has(.rt-header) ::selection { background: color-mix(in srgb, var(--rt-brand-300) 35%, transparent); color: var(--rt-ink-900); }
 @layer base {
-  :root:has(.rt-header) :focus-visible { outline: 2px solid var(--rt-brand-300); outline-offset: 3px; border-radius: 4px; }
+  :root:has(.rt-header) :focus-visible { outline: 2px solid var(--rt-brand-500); outline-offset: 3px; border-radius: 4px; }
   :root:has(.rt-header) sup { font-size: .5em; line-height: 0; }
 }
 
@@ -458,7 +453,7 @@
 .rt-story-main { position: relative; flex: 1 1 auto; max-width: 958px; border-radius: var(--rt-r-lg); border: 2px solid var(--rt-brand-500); overflow: hidden; color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 32px; isolation: isolate; }
 .rt-story-main img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
 .rt-story-main::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--rt-scrim-bottom), var(--rt-scrim-left); }
-.rt-story-main__stat { font-size: 88px; line-height: 80px; font-weight: 700; color: var(--rt-brand-on-dark); letter-spacing: -.02em; }
+.rt-story-main__stat { font-size: 88px; line-height: 80px; font-weight: 700; color: var(--rt-brand-300); letter-spacing: -.02em; }
 .rt-story-main__stat .rt-script { color: #fff; font-size: 56px; font-weight: 500; margin-top: 4px; transform: none; }
 .rt-story-strip { flex: 0 0 52px; border-radius: var(--rt-r-lg); overflow: hidden; position: relative; cursor: pointer; transition: flex-basis .5s var(--rt-ease); }
 .rt-story-strip img { width: 100%; height: 100%; object-fit: cover; }
@@ -861,8 +856,7 @@
 :root:has(.rt-header) :is(.text-\[\#0A0A0A\], .text-\[\#1A1A1A\], .text-\[\#262626\], .group:hover .group-hover\:text-\[\#0A0A0A\], .hover\:text-\[\#0A0A0A\]:hover) { color: var(--rt-ink-900); }
 :root:has(.rt-header) :is(.text-\[\#525252\], .text-\[\#737373\], .text-\[\#404040\], .text-\[\#333333\], .hover\:text-\[\#525252\]:hover) { color: var(--rt-ink-700); }
 :root:has(.rt-header) .text-\[\#A3A3A3\] { color: var(--rt-ink-500); }
-:root:has(.rt-header) :is(.text-\[\#C6F24E\], .hover\:text-\[\#C6F24E\]:hover) { color: var(--rt-brand-on-dark); }
-:root:has(.rt-header) :is(.text-\[\#A8D62E\], .hover\:text-\[\#A8D62E\]:hover) { color: var(--rt-brand-700); }
+:root:has(.rt-header) :is(.text-\[\#C6F24E\], .text-\[\#A8D62E\], .hover\:text-\[\#C6F24E\]:hover, .hover\:text-\[\#A8D62E\]:hover) { color: var(--rt-brand-300); }
 :root:has(.rt-header) .text-\[\#3F5408\] { color: var(--rt-brand-700); }
 :root:has(.rt-header) :is(.border-\[\#EDEDED\], .border-\[\#E5E5E5\], .border-\[\#F2F2F2\], .border-\[\#F5F5F5\], .border-\[\#D4D4D4\], .hover\:border-\[\#D4D4D4\]:hover) { border-color: var(--rt-line); }
 :root:has(.rt-header) :is(.border-\[\#0A0A0A\], .hover\:border-\[\#0A0A0A\]:hover) { border-color: var(--rt-ink-900); }
@@ -872,14 +866,10 @@
 :root:has(.rt-header) :is(.bg-\[\#C6F24E\], .group:hover .group-hover\:bg-\[\#C6F24E\]) { background-color: var(--rt-brand-600); color: #fff; }
 :root:has(.rt-header) :is(.bg-\[\#A8D62E\], .hover\:bg-\[\#A8D62E\]:hover, .group:hover .group-hover\:bg-\[\#A8D62E\]) { background-color: var(--rt-brand-700); color: #fff; }
 :root:has(.rt-header) :is(.bg-\[\#EAF9B8\], .hover\:bg-\[\#EAF9B8\]:hover) { background-color: var(--rt-brand-50); }
-:root:has(.rt-header) :is(.ring-\[\#C6F24E\], .focus-visible\:ring-\[\#C6F24E\]:focus-visible) { --tw-ring-color: var(--rt-brand-300); }
+:root:has(.rt-header) :is(.ring-\[\#C6F24E\], .focus-visible\:ring-\[\#C6F24E\]:focus-visible) { --tw-ring-color: var(--rt-brand-500); }
 :root:has(.rt-header) :is(.decoration-\[\#C6F24E\], .decoration-\[\#A8D62E\]) { text-decoration-color: var(--rt-brand-500); }
 :root:has(.rt-header) .fill-\[\#C6F24E\] { fill: var(--rt-brand-500); }
 :root:has(.rt-header) .pulse-eyebrow { font-family: var(--rt-font-ui); font-size: 12px; line-height: 14.4px; letter-spacing: 1.2px; font-weight: 600; text-transform: uppercase; color: var(--rt-ink-700); }
-/* Mor ya da koyu zemindeki eyebrow etiketleri kendi açık rengini korur */
-:root:has(.rt-header) .pulse-eyebrow.text-white { color: #fff; }
-:root:has(.rt-header) .pulse-eyebrow:is(.text-white\/80, .text-white\/85, .text-white\/90) { color: rgb(255 255 255 / .85); }
-:root:has(.rt-header) .pulse-eyebrow.text-\[\#DCD3F6\] { color: var(--rt-brand-on-dark); }
 :root:has(.rt-header) .bz-card { border-radius: var(--rt-r-lg); border-color: var(--rt-line); }
 :root:has(.rt-header) .bz-input { border-radius: var(--rt-r-input); border-color: var(--rt-line-2); font-family: var(--rt-font-ui); }
 @layer components {
@@ -933,7 +923,7 @@
 :root:has(.rt-header) :is(.prose-legal, .pulse-blog-content) code { background: var(--rt-cream); }
 /* Eski 1200 px konteynerler paketin 1320 px konteynerine genişler */
 :root:has(.rt-header) main :is(.max-w-\[1200px\], .max-w-\[1100px\]).mx-auto { max-width: var(--rt-container); }
-/* Eski koyu / lime hap düğmeler → paketin birincil (mor, beyaz yazı) ve çerçeveli hap düğmeleri */
+/* Eski koyu / lime hap düğmeler → paketin birincil (yeşil) ve çerçeveli hap düğmeleri */
 :root:has(.rt-header) main :is(.bg-\[\#0A0A0A\], .bg-\[\#C6F24E\]).rounded-full:is(a, button):not(.rt-btn) { background-color: var(--rt-brand-600); color: #fff; box-shadow: var(--rt-sh-btn-inset); }
 :root:has(.rt-header) main :is(.bg-\[\#0A0A0A\], .bg-\[\#C6F24E\]).rounded-full:is(a, button):not(.rt-btn):hover { background-color: var(--rt-brand-700); }
 :root:has(.rt-header) main :is(.border-\[\#D4D4D4\], .border-\[\#0A0A0A\]).rounded-full:is(a, button):not(.rt-btn) { border-color: var(--rt-brand-700); color: var(--rt-brand-700); background-color: #fff; }

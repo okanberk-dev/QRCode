@@ -98,7 +98,7 @@ li { margin: 6px 0; }
         <div className="bz-card p-5">
           <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Katılım bağlantısı' : 'Join link'}</p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-            <input readOnly value={joinUrl} className="bz-input min-w-0 flex-1 font-mono text-[13px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'Katılım bağlantısı' : 'Join link'} />
+            <input readOnly value={joinUrl} className="bz-input min-w-0 flex-1 text-[13px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'Katılım bağlantısı' : 'Join link'} />
             <div className="flex gap-2">
               <button type="button" className="bz-btn-ghost inline-flex items-center gap-1.5" onClick={() => void copy()}>
                 {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? (tr ? 'Kopyalandı' : 'Copied') : tr ? 'Kopyala' : 'Copy'}
@@ -126,7 +126,7 @@ li { margin: 6px 0; }
               : 'Write this link on an NFC sticker on the table or counter: a tap opens the join page (iPhone and Android). Members who joined by NFC show separately.'}
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <input readOnly value={nfcUrl} className="bz-input min-w-0 flex-1 font-mono text-[13px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'NFC bağlantısı' : 'NFC link'} />
+            <input readOnly value={nfcUrl} className="bz-input min-w-0 flex-1 text-[13px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'NFC bağlantısı' : 'NFC link'} />
             <div className="flex gap-2">
               <button
                 type="button"

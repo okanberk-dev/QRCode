@@ -67,19 +67,19 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
 
   return (
     <div>
-      <header className="mb-3 flex items-baseline justify-between gap-4">
+      <header className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <span className="text-[13px] font-medium text-[#525252]">{isTr ? 'Gün ve saate göre puan' : 'Ratings by day and hour'}</span>
-          <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
-            {isTr ? 'Gün × Saat' : 'Day × Hour'}
-          </div>
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Gün ve saate göre puan' : 'Ratings by day and hour'}</h2>
+          <p className="mt-1 text-[13px] text-[#9A9A9A]">
+            {isTr ? 'Puanların geldiği gün ve saatler' : 'When ratings come in'}
+          </p>
         </div>
-        <div className="hidden sm:flex items-center gap-1.5">
-          <span className="tabular-nums text-[12px] text-[#737373]">{isTr ? 'az' : 'low'}</span>
-          {['#DCD3F6', '#A68FEB', '#5D3EBC'].map((c) => (
-            <div key={c} className="rounded-full" style={{ width: 12, height: 12, background: c }} />
+        <div className="hidden items-center gap-1.5 rounded-full bg-pn-canvas px-3 py-1.5 sm:flex">
+          <span className="text-[12px] text-[#737373]">{isTr ? 'Az' : 'Low'}</span>
+          {['#CDEFD6', '#111110', '#78FC90'].map((c) => (
+            <span key={c} aria-hidden="true" className="pn-legend-dot h-2.5 w-2.5" style={{ background: c }} />
           ))}
-          <span className="tabular-nums text-[12px] text-[#737373]">{isTr ? 'çok' : 'high'}</span>
+          <span className="text-[12px] text-[#737373]">{isTr ? 'Çok' : 'High'}</span>
         </div>
       </header>
 
@@ -111,9 +111,9 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
                     {Array.from({ length: 24 }, (_, hi) => {
                       const v = matrix[di][hi];
                       const ratio = max > 0 ? v / max : 0;
-                      // Pano: empty → canvas grey; low → lavender; mid → light purple; peak → purple.
+                      // Pano: empty → canvas grey; low → light green; mid → mid green; peak → black.
                       const fill =
-                        v === 0 ? '#F6F6F6' : ratio < 0.34 ? '#DCD3F6' : ratio < 0.67 ? '#A68FEB' : '#5D3EBC';
+                        v === 0 ? 'var(--color-pn-canvas)' : ratio < 0.34 ? '#CDEFD6' : ratio < 0.67 ? '#111110' : '#78FC90';
                       return (
                         <div
                           key={`c-${di}-${hi}`}
@@ -132,7 +132,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
                 {HOUR_TICKS.map((h) => (
                   <span
                     key={`hx-${h}`}
-                    className="tabular-nums whitespace-nowrap text-[12px] leading-none text-[#A3A3A3]"
+                    className="tabular-nums whitespace-nowrap text-[12px] leading-none text-[#9A9A9A]"
                     style={{ gridColumn: h + 2, gridRow: 1, justifySelf: h === 23 ? 'end' : 'center' }}
                   >
                     {String(h).padStart(2, '0')}:00
@@ -142,14 +142,14 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
             </div>
           </div>
 
-          <p className="tabular-nums mt-2 text-[12px] text-[#737373]">
+          <p className="mt-3 text-[13px] tabular-nums text-[#9A9A9A]">
             {isTr
               ? `Pik · ${dayLabels[peakDay]} ${String(peakHour).padStart(2, '0')}:00 · ${peakCount} yorum/saat`
               : `Peak · ${dayLabels[peakDay]} ${String(peakHour).padStart(2, '0')}:00 · ${peakCount} reviews/hour`}
           </p>
         </>
       ) : (
-        <p className="text-[12px] text-[#737373]">
+        <p className="rounded-[16px] bg-pn-canvas px-4 py-6 text-[14px] text-[#737373]">
           {isTr
             ? 'Bu pencere için yeterli yorum yok.'
             : 'Not enough reviews for this window.'}

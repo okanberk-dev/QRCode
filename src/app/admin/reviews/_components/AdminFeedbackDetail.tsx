@@ -354,7 +354,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
               onSuggest={props.onSuggest}
             />
           ) : isHigh ? (
-            <div role="alert" className="mt-6 flex items-start gap-3 rounded-[20px] bg-pn-accent-soft p-4">
+            <div role="note" className="mt-6 flex items-start gap-3 rounded-[20px] bg-pn-accent-soft p-4">
               <span
                 aria-hidden="true"
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-accent text-white"
@@ -367,11 +367,11 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                 </strong>
                 {active.platform
                   ? isTr
-                    ? `Bu ${pLabel} yorumu yüksek puanlı; müşteri paylaşımını platformda yaptı. Takip etmek isterseniz yorumu işaretleyebilir veya atayabilirsiniz.`
-                    : `This ${pLabel} review is high-rated and the customer already posted it on the platform. You can still flag or assign it to follow up.`
+                    ? `Yüksek puanlı geri bildirim; müşteriye ${pLabel} yorum sayfası açıldı. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.`
+                    : `High-rated feedback; the customer was shown the ${pLabel} review page. You can still flag or assign it to follow up.`
                   : isTr
-                    ? 'Yüksek puanlı bir Buaze QR yorumu. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.'
-                    : 'This is a high-rated Buaze QR review. You can still flag or assign it to follow up.'}
+                    ? 'Yüksek puanlı bir QR geri bildirimi. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.'
+                    : 'This is high-rated QR feedback. You can still flag or assign it to follow up.'}
               </p>
             </div>
           ) : lastReplyFailed ? null : (

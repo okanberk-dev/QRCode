@@ -1201,7 +1201,7 @@ export default function RestaurantDetailPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[13px] font-medium text-[#737373] inline-flex items-center gap-2">
-                    <span className="inline-block h-2 w-2 rounded-full bg-[#5D3EBC]" aria-hidden />
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#111110]" aria-hidden />
                     Getir Yemek URL
                   </label>
                   <PlatformUrlHelp platform="getir" />
@@ -1211,7 +1211,7 @@ export default function RestaurantDetailPage() {
                   value={formData.getirYemekUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, getirYemekUrl: e.target.value }))}
                   placeholder="https://getir.com/yemek/..."
-                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC]/30"
+                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#111110] focus:ring-2 focus:ring-[#111110]/30"
                 />
               </div>
             )}
@@ -1379,7 +1379,7 @@ function FeatureToggleCard({
   return (
     <div
       className={`rounded-[24px] border p-4 transition-colors ${
-        checked ? 'border-[#DCD3F6] bg-pn-accent-soft/60' : 'border-pn-line bg-white'
+        checked ? 'border-[#CDEFD6] bg-pn-accent-soft/60' : 'border-pn-line bg-white'
       } ${disabled ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start justify-between gap-4">

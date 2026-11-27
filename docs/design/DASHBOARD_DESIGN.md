@@ -5,11 +5,11 @@
 > düzen, renk, yazı tipi, kart ve grafik dili — 18 görsel 3840 px
 > genişlikte incelendi (`#111110`, `#F6F6F6`, `#FFFFFF`; Plus Jakarta Sans; 1440 px tuval, 20 px kenar,
 > 16 px oluk). **lumin** ("Online Bank / Finance SaaS", Mikalai Haluza,
-> 2024): kayan sekme hapı, ışımalı kahraman kart, taralı ilerleme
-> çubuğu, gri kesirli sayılar.
-> **Renk (2026-11-27):** Fintora'nın yeşili yerine mor + beyaz palet
-> (`#5D3EBC` ana mor, `#3B1F8F` koyu mor, `#EFEAFB` lavanta). Yalnız renk
-> ailesi alındı; başka bir markanın logosu, adı ya da metni kullanılmaz.
+> 2024): yalnız kayan sekme hapı ve gri kesirli sayılar kaldı; koyu/ışımalı
+> kahraman kart, üst üste binen kartlar ve kısayol kutuları 2026-11-28'de kaldırıldı.
+> **Renk (2026-11-28):** Fintora'nın kendi paleti: siyah `#111110` dolgu,
+> yeşil `#78FC90` vurgu, beyaz kart, `#F6F6F6` tuval. 2026-11-27'de denenen
+> mor + beyaz palet kullanıcı isteğiyle geri alındı.
 > İçerik, logo ve marka Buaze'nindir. Referansların logosu, adı ("Greyola",
 > "lumin"), avatar fotoğrafları, illüstrasyonları ve metinleri kullanılmaz.
 >
@@ -24,13 +24,15 @@
 
 1. **Gri tuval, beyaz kartlar.** Zemin `#F6F6F6`; her içerik bloğu
    çerçevesiz beyaz, 24 px köşeli karttır. Gölge yok.
-2. **Solda ikon şeridi, üstte hap sekmeler.** Ana sayfalar üstte beyaz
-   haplar; araçlar ve sayfa grupları solda 48 px yuvarlak ikonlar.
-   Aktif olan her yerde mor dolar, yazısı beyaz.
-3. **Mor ve beyaz.** Mor `#5D3EBC`, koyu mor `#3B1F8F`, lavanta `#EFEAFB`,
-   beyaz, tuval `#F6F6F6`, metin `#111110`. Morun (her tonunun) üstündeki
-   yazı ve ikon **her zaman beyazdır**. Beyaz üstünde mor yazı serbest;
-   mor zemine siyah yazı, siyah ya da koyu mor zemine mor yazı yok.
+2. **Solda etiketli menü, üstte hap sekmeler.** Günlük 4 sayfa üstte beyaz
+   haplar; yönetim, araçlar, hesap ve admin sayfa grupları solda ikon +
+   isimle (daraltılınca ikon + ipucu). Aktif olan her yerde siyah dolar,
+   yazısı beyaz; aktif menü satırının ikonu yeşil.
+3. **Siyah, yeşil, beyaz.** Siyah `#111110` (ana buton, aktif hap, ikon
+   dairesi), yeşil `#78FC90` (vurgu: siyah üstünde ikon/nokta, yeşil zemin
+   üstünde siyah yazı), açık yeşil `#F1FDF3` (seçili satır, sakin not),
+   beyaz kart, tuval `#F6F6F6`. Siyah zeminde yazı beyaz, yeşil zeminde
+   yazı siyah; beyaz zeminde yeşil yazı yok (okunmaz).
 4. **Hap ve daire.** Metinli her buton hap; ikonlu her buton dairedir.
    Tuvalde beyaz, beyaz kart içinde gri (`#F6F6F6`). Çerçeve yok.
 5. **Plus Jakarta Sans, orta kalınlık.** Başlıklar ve büyük sayılar 500;
@@ -38,12 +40,13 @@
 6. **Sayının kesri gri.** `37.201,00` → `37.201` siyah, `,00` gri.
 7. **Klasörlü yol göstergesi.** Sayfa başlığının üstünde
    "📁 Panel → 📁 Yorumlar"; geri butonu yok.
-8. **Mor kahraman kart.** Sayfanın en önemli verisi mor kartta, beyaz
-   yazıyla; alttan daha açık bir mor ışıma yükselir (lumin).
+8. **Fintora ana kartı.** Sayfanın en önemli verisi beyaz kartta: gri
+   etiket + ↗, büyük sayı, yumuşak değişim hapı, 4 gri eylem hapı, siyah
+   trend çizgisi ve gri döküm satırları. Koyu dolgulu kahraman kart yok.
 9. **Taralı grafik.** Çubuk ve ilerleme göstergelerinde dolmayan / seçili
-   olmayan kısım 45° çizgili gridir; seçili çubuk mor, ipucu siyah hap.
+   olmayan kısım 45° çizgili gridir; seçili çubuk yeşil + taralı, ipucu siyah hap.
 10. **Sakin hareket.** Aktif sekme hapı sekmeler arasında kayar (420 ms);
-    ok butonu hover'da mor dolup 45° döner; basınca her buton %3 küçülür.
+    ok butonu hover'da siyah dolup 45° döner; basınca her buton %3 küçülür.
 
 ---
 
@@ -56,24 +59,23 @@ bileşenler iki yüzeyde de doğru rengi alır.
 
 | Token | Panel | Kullanım |
 |---|---|---|
-| `pn-accent` | `#5D3EBC` | Mor: ana buton, aktif sekme/hap, ikon dairesi, grafik ana seri, kahraman kart |
-| `pn-accent-hover` | `#4C2FA3` | Mor buton hover / basılı |
-| `pn-accent-soft` | `#EFEAFB` | Lavanta: kısayol kutusu, seçili satır, odak halkası |
-| `pn-accent-ink` | `#5D3EBC` | Beyaz üstünde mor metin / ikon |
-| `pn-olive` | `#A68FEB` | İkinci veri serisi (açık mor) |
+| `pn-accent` | `#111110` | Siyah: ana buton, aktif sekme/hap, ikon dairesi, grafik ana seri |
+| `pn-accent-hover` | `#2B2B2A` | Siyah buton hover / basılı |
+| `pn-accent-soft` | `#F1FDF3` | Açık yeşil: seçili liste satırı, sakin not kutusu |
+| `pn-accent-ink` | `#111110` | Beyaz üstünde vurgu metni / ikon |
+| `pn-olive` | `#78FC90` | Yeşil: ikinci veri serisi, seçili çubuk, siyah üstünde ikon |
 | `pn-canvas` | `#F6F6F6` | Tuval, kart içi gri yüzey ve butonlar |
 | `pn-line` / `pn-line-strong` | `#EBEBEB` / `#E0E0E0` | Ayraç, input çerçevesi |
 | `pn-ink` | `#111110` | Metin; ipucu (tooltip), bildirim (toast), telefon çerçevesi |
 | `pn-ink-2` / `pn-ink-3` | `#1C1C1B` / `#2B2B2A` | Nötr koyu katmanlar |
 
-Koyu mor `#3B1F8F` (`--pn-deep`) koyu yüzeylerdir: AI öneri kartı,
-seçim çubuğu, özet kartları, deneme bandı. Üstünde vurgu metni lavanta
-`#DCD3F6` (`--pn-lavender`), birincil buton beyaz hap + mor yazı.
-İkincil metin `#737373`, soluk metin `#9A9A9A`, olumsuz `#D92D20`
-(rozet `#D92D20` / `#FDECEC`). Durum renkleri anlamını korur: olumlu
-`#23863A` (açık zeminde), olumsuz `#D92D20`; mor yüzeyde artış `#C8F7D2`,
-azalış `#FFC4C0`. Grafik kütüphanesine hex gerekirse: mor `#5D3EBC`,
-ikinci seri `#A68FEB`, lavanta `#DCD3F6`, koyu mor `#3B1F8F`.
+Siyah `#000000` (`--pn-deep`) koyu yüzeylerdir: seçim çubuğu, deneme
+bandı, bildirim. Üstünde vurgu yeşil `#78FC90` (`--pn-green`), birincil
+buton yeşil hap + siyah yazı (`bz-btn-lime`). İkincil metin `#737373`,
+soluk metin `#9A9A9A`, olumsuz `#D92D20` (rozet `#D92D20` / `#FDECEC`).
+Durum renkleri anlamını korur: olumlu `#23863A` (açık zeminde), olumsuz
+`#D92D20`. Grafik kütüphanesine hex gerekirse: siyah `#111110`, yeşil
+`#78FC90`, açık gri `#E0E0E0`.
 Müşterinin seçtiği renkler (işletme rengi, menü vurgusu, sadakat kartı,
 QR, anket vurgusu) veridir; panel paletine çevrilmez.
 
@@ -98,7 +100,7 @@ QR, anket vurgusu) veridir; panel paletine çevrilmez.
 
 | Öğe | Değer |
 |---|---|
-| İkon şeridi genişliği | 92 px; düğme 48 px, aralık 10 px |
+| Sol menü genişliği | 256 px açık, 92 px daraltılmış; satır 48 px, ikon dairesi 40 px |
 | Üst satır yüksekliği | 80 px; sekme hapı 44 px, aralık 8 px |
 | Üst satır daire butonları / avatar | 46 px |
 | Kartlar arası | 10 px |
@@ -128,45 +130,49 @@ QR, anket vurgusu) veridir; panel paletine çevrilmez.
 │ (🎧) │                                                              │
 └──────┴──────────────────────────────────────────────────────────────┘
 ```
-- **İkon şeridi** (`PanelRail`): üstte logo, ortada düğmeler, altta yardım
-  (owner) / profil (admin). Owner: Araçlar (Müşteriler, Menü, Sadakat,
-  Anketler, Denetim, Kılavuz). Admin: sayfa grupları, her biri sağa açılan
-  menü. Düğmenin adı hover/odakta sağda siyah ipucunda görünür.
-- **Üst satır** (`PanelTopNav`): tuvalin üstünde beyaz haplar; aktif sekme
-  tek bir mor hap (beyaz yazı), sekmeler arasında kayar. 1440 px altında "Platformlar"
-  ve "İşletmeler" "Diğer" menüsüne iner. Sağda işletme seçici hapı,
-  "+ QR oluştur" beyaz hap (≥1280), arama, bildirim, avatar.
+- **Sol menü** (`PanelRail`): üstte logo + "buaze", altında işletme seçici
+  (owner), sonra başlıklı bölümler — owner: Yönetim (Platform bağlantıları,
+  İşletmeler), Araçlar (Müşteriler, Menü, Sadakat, Anketler, Denetim,
+  Kılavuz), Hesap (Hesabım, Faturalama); admin: her sayfa grubu bir bölüm.
+  Beyaz, 28 px köşeli yüzen panel (tuvalden 10 px içeride). Satır = 34 px
+  ikon kutusu + isim; hover gri, aktif satır siyah + beyaz yazı + yeşil ikon.
+  Altta Yardım merkezi (owner) / Profilim (admin) ve "Menüyü daralt".
+  1440 px altında varsayılan daraltılmış (76 px, ikon + ipucu; admin
+  grupları sağa açılan menü); seçim `localStorage` `buaze:panel:sidebar`.
+  Bölüm listesi kendi içinde kayar, hiçbir şey kesilmez.
+- **Üst satır** (`PanelTopNav`): tuvalin üstünde 4 beyaz hap (Panel,
+  Yorumlar, QR, Analitik; Google yorumları Yorumlar'ın içinde); aktif sekme tek bir siyah hap, sekmeler
+  arasında kayar. Sağda "+ QR oluştur" beyaz hap (≥1280), arama alanı
+  (`SearchTrigger`, ≥1280 hap, altında daire), bildirim, avatar.
 - Sayfa, sekme satırının altında kendi sütununda kayar (§42.5.1).
 
 ### 5.2 Sayfa başlığı (`PageHeader`)
 Klasörlü yol göstergesi (`PanelBreadcrumb`: "Panel → sayfa adı", ilk adım
 panel ana sayfasına bağlantı; `crumb` prop'u son adımı değiştirir,
 `crumb={false}` gizler), altında H1, sağda aynı hizada eylemler (daire
-butonlar, tarih hapı, mor ana eylem). Mobilde yol göstergesi gizli.
+butonlar, tarih hapı, siyah ana eylem). Mobilde yol göstergesi gizli.
 
 ### 5.3 Butonlar
 | Sınıf | Görünüm |
 |---|---|
-| `bz-btn-primary` | Mor hap, beyaz yazı (sayfada en çok bir) |
-| `bz-btn-lime` | Tarihî ad; panelde aynı mor hap, beyaz yazı |
+| `bz-btn-primary` | Siyah hap, beyaz yazı (sayfada en çok bir) |
+| `bz-btn-lime` | Yeşil hap, siyah yazı (siyah yüzey üstünde ya da basılı filtre) |
 | `bz-btn` / `bz-btn-ghost` | Tuvalde beyaz hap, kart/menü/pencere içinde gri hap; çerçeve yok |
 | `bz-btn-danger` | Beyaz hap, kırmızı yazı |
 | `bz-btn-icon` | 40 px daire; tuvalde beyaz, kartta gri |
 | `pn-icon-btn` | 46 px beyaz daire (üst satır, sayfa başlığı) |
-| `pn-arrow-btn` | 44 px gri daire, ↗; hover mor + 45° döner (`--dark`: mor kartta yarı saydam beyaz, hover beyaz + mor ikon) |
-| `pn-dark-icon-btn` | 52 px yarı saydam beyaz daire (mor kart içinde); hover beyaz + mor ikon |
-| `pn-rail-btn` | 48 px beyaz daire, aktif mor + beyaz ikon (ikon şeridi) |
+| `pn-arrow-btn` | 44 px gri daire, ↗; hover siyah + 45° döner |
+| `pn-action-pill` | Ana kartta eşit genişlikte gri ikon hapı (40 px) |
+| `pn-side-item` | Sol menü satırı: 34 px ikon kutusu + isim, aktif siyah + yeşil ikon |
 
 ### 5.4 Kartlar
 - `bz-card`: beyaz, 24 px. Başlık `pn-card-title` + gri tarih satırı,
   sağda ↗ ya da tarih hapı.
-- `pn-card-dark` (`PanoHeroCard`; ad tarihî): mor `#5D3EBC` kart, alttan
-  açık mor ışıma, tüm yazı beyaz (soluk metin %78 beyaz), 52 px yarı saydam
-  eylem daireleri, beyaz dolan taralı ilerleme + koyu mor topuz (`pn-knob`),
-  yarı saydam satırlar (`pn-dark-row`, değişim `pn-up` `#C8F7D2` /
-  `pn-down` `#FFC4C0`).
-- `pn-tile` (`PanoTile`): lavanta kısayol kutusu, mor ikon dairesi + beyaz ikon.
-- `PanoStack`: üst üste binen kısa sıralı liste (koyu mor / lavanta / beyaz).
+- `PanoHeroCard`: Fintora "Total Portfolio Value" kartı — beyaz; gri etiket
+  + ⓘ + ↗; büyük sayı (gri kesir); `pn-change` yumuşak değişim hapı; 4 gri
+  `pn-action-pill`; siyah trend çizgisi + açık dolgu + siyah değer çipi
+  (`pn-chart-tip`); ince siyah ilerleme + taralı gri kalan; gri döküm satırları.
+- Kısayollar: gri satırlar (ikon dairesi + isim + ↗), kutu/fanned kart yok.
 - `pn-row`: gri liste satırı (Fintora "Portfolio Breakdown").
 
 ### 5.5 Sayı (`PanoNumber`)
@@ -174,26 +180,53 @@ Tam kısım siyah, ondalık ve önek/sonek gri. `StatCard` ve analitik KPI'ları
 
 ### 5.6 Rozet (`bz-badge`)
 24 px hap. `ok` yeşil yazı açık yeşil zemin, `danger` kırmızı yazı açık
-kırmızı zemin, `lime` mor zemin beyaz yazı, `dark` koyu mor zemin beyaz yazı.
+kırmızı zemin, `lime` yeşil zemin siyah yazı, `dark` siyah zemin beyaz yazı.
 
 ### 5.7 Sekmeler / segment
-Beyaz haplar arası 8 px, aktif mor hap (beyaz yazı). Kart/menü içinde pasif sekmenin
+Beyaz haplar arası 8 px, aktif siyah hap (beyaz yazı). Kart/menü içinde pasif sekmenin
 zemini yok (Fintora "All / Unread"). Seçim kartları (tema, yazı tipi, durum,
-şablon kartı) beyaz kalır; seçili olan mor çerçeve / 2 px mor halka ve
-lavanta zeminle işaretlenir, siyah çerçeve kullanılmaz. İlerleme çubuğunun
-dolgusu mor (`ProgressBar` varsayılanı), mor kartta beyaz.
+şablon kartı) beyaz kalır; seçili olan 2 px siyah halka ve açık yeşil
+zeminle işaretlenir. İlerleme çubuğunun dolgusu siyah (`ProgressBar`
+varsayılanı), siyah yüzeyde yeşil.
+
+**Yorumlar kaynak seçici** (`ReviewSourceSwitch`): Yorumlar sayfasının QR
+geri bildirimleri ile Google yorumları aynı sayfanın iki bölümüdür. Beyaz
+kapsül içinde iki bölüm; aktif bölüm siyah hap + yeşil ikon dairesi + sayı.
+Owner gelen kutusunda araç çubuğu iki satırdır: [kaynak seçici · arama ·
+"Filtreler" (sayılı, tarih/puan/platform/durum penceresini açar)] ve altında
+sakin durum sekmeleri (`InboxStatusTabs variant="soft"`: pasif gri metin,
+aktif beyaz hap).
 
 ### 5.8 Menü, popover, komut paleti
 Beyaz, çerçevesiz, 24 px köşe, yumuşak gölge; madde 44 px, 12 px köşe,
 hover ve seçili gri. Komut paleti: 52 px gri arama hapı + gri kapat dairesi,
-satırlar 16 px köşe, aktif satırda ikon dairesi mor.
+satırlar 16 px köşe, aktif satırda ikon dairesi siyah.
 
 ### 5.9 Grafik
-Çubuklar yuvarlak; ana seri mor, ikinci seri açık mor ya da siyah; pasif çubuklar
-taralı gri; ipucu siyah yuvarlak kutu (değer önünde mor nokta);
+Çubuklar yuvarlak; ana seri siyah, ikinci seri yeşil; seçili çubuk yeşil +
+taralı, pasif çubuklar açık gri; ipucu siyah yuvarlak kutu (değer önünde yeşil nokta);
 ızgara kesikli `pn-line`; eksen çizgisi yok.
 
-### 5.10 Yan panel (çekmece)
+### 5.10 Sihirbazlar (`WizardSteps` kiti)
+Masaüstünde adım hapları (28 px numara dairesi; aktif siyah + beyaz, biten
+beyaz + siyah tik, sıradaki beyaz + gri); telefonda "Adım 2 / 3 · Maddeler"
+satırı + ince siyah ilerleme. `surface="card"` beyaz kart/pencere içinde
+pasif hapları gri yapar, `locale` telefon metnini seçer. Adım gövdesi tek
+beyaz kart (20 px başlık + tek satır gri yardım); seçim satırları gri, seçili
+olan açık yeşil + 1,5 px siyah halka + siyah tik; özet adımı döküm satırları.
+Alt çubuk: gri "Geri" + siyah ana hap; telefonda tam genişlik, alta yapışık,
+güvenli alan boşluklu.
+
+### 5.11 Arama (`SearchTrigger` + palet)
+Üst satırda beyaz arama hapı (ipucu metni + ⌘K / Ctrl K çipi). Palet:
+masaüstünde ortada 640 px beyaz pencere, telefonda tam ekran. Boş sorguda
+"Hızlı işlemler" ve "Son açılanlar" (`buaze:palette:recent:owner|admin`,
+yalnız panel yolları, yorum metni saklanmaz); yazınca Sayfalar (kendi ikonu
++ tek satır açıklama, ham yol yok), İşletmeler (işletme renkli kısaltma),
+Yorumlar (5 küçük yıldız, isim, göreli tarih, eşleşme vurgulu kesit).
+Grup başlıkları cümle düzeninde + sayı. Kod `src/components/panel/search/`.
+
+### 5.12 Yan panel (çekmece)
 Masaüstünde ekran kenarından 8 px içeride, 32 px köşeli beyaz panel;
 mobilde tam ekran.
 
@@ -206,8 +239,8 @@ mobilde tam ekran.
 | Sekme hapı | 420 ms `cubic-bezier(.32,.72,0,1)` | aktif sekmeye kayar |
 | Hover | 200 ms | zemin rengi |
 | Basma | 120 ms | `scale(.97)` |
-| Ok butonu | 260 ms | mor dolar, ↗ 45° döner |
-| İkon şeridi ipucu | 160 ms | 4 px kayarak belirir |
+| Ok butonu | 260 ms | siyah dolar, ↗ 45° döner |
+| Sol menü daralt/aç | 320 ms | genişlik kayar; daraltılmışta isim ipucunda |
 | Menü açılışı | 200 ms | ölçek .96→1 + saydamlık |
 | Sayfa girişi | 360 ms | içerik 8 px aşağıdan, rota değişiminde bir kez |
 
@@ -217,7 +250,7 @@ mobilde tam ekran.
 
 ## 7. Mobil (<1024)
 
-- İkon şeridi ve sekme satırı yok; beyaz bar (logo + bildirim + mor menü
+- Sol menü ve sekme satırı yok; beyaz bar (logo + bildirim + siyah menü
   dairesi) ve tam ekran çekmece. Çekmece işletme seçici, tüm sayfalar
   (araçlar dahil), "QR oluştur" ve hesap bağlantılarını listeler.
 - Telefonda (<640) tuval beyaz, kartlar gri `#F6F6F6`; kart içindeki
@@ -231,16 +264,17 @@ mobilde tam ekran.
 | Dosya | İçerik |
 |---|---|
 | `src/components/panel/pano/pano.css` | Panel kapsamı: tokenlar, yazı tipi, `bz-*` yeniden tanımı, `pn-*` parçalar, hareket, güvenlik ağı |
-| `src/components/panel/pano/PanelRail.tsx` | Sol ikon şeridi (`RailLink`, grup menüleri) |
+| `src/components/panel/pano/PanelRail.tsx` | Etiketli, daraltılabilir sol menü (`RailSection`) |
 | `src/components/panel/pano/PanelTopNav.tsx` | Kayan haplı sekme satırı, `MenuLinks` |
 | `src/components/panel/pano/PanelMobileNav.tsx` | Mobil bar + tam ekran çekmece |
 | `src/components/panel/pano/PanelBreadcrumb.tsx` | Klasörlü yol göstergesi |
 | `src/components/panel/pano/PanoNumber.tsx` | Kesri gri sayı |
-| `src/components/panel/pano/PanoStack.tsx` | `PanoStack`, `PanoTile` |
+| `src/components/panel/search/` | `SearchTrigger`, `PaletteFrame`, `search-utils.ts` |
+| `src/components/ui/WizardSteps.tsx` | Sihirbaz kiti (adım hapları, adım kartı, seçim satırı, alt çubuk) |
 | `src/components/panel/pano/sentence-case.ts` | Büyük harf etiketleri cümle düzenine çevirir |
 | `src/components/dashboard/UserDashboardShell.tsx` | Owner kabuğu |
 | `src/components/admin/AdminPanoChrome.tsx` | Admin kabuğu (admin-nav.ts'ten) |
-| `src/components/dashboard/PanoHeroCard.tsx` | Ana sayfadaki mor kahraman kart |
+| `src/components/dashboard/PanoHeroCard.tsx` | Ana sayfadaki Fintora ana kartı |
 | `src/components/root/fonts.ts` | `--font-jakarta` |
 | `.claude/skills/panel-design/SKILL.md` | Yeni panel ekranı yazarken kurallar |
 | `tests/pano-design.test.ts`, `tests/pano-guard.test.ts` | Sayı / cümle düzeni; panel dosyalarında eski renk yasağı |
@@ -248,7 +282,7 @@ mobilde tam ekran.
 **Güvenlik ağı** (`pano.css` sonu) yalnız eski işaretleme içindir: satır
 içi segment kontrolleri (bir izin içindeki — `bg-pn-canvas`, `tablist`,
 `group` ya da ızgara olmayan `radiogroup` — doğrudan çocuk, `bg-white` /
-`shadow-sm` aktif öğe) mor hap olur; kart ızgarasındaki seçim kartlarına
+`shadow-sm` aktif öğe) siyah hap olur (`data-tone="soft"` hariç); kart ızgarasındaki seçim kartlarına
 dokunmaz, küçük kart başlıkları 20 px olur,
 `.uppercase` ve `.pulse-eyebrow` büyük harf yazmaz, büyük tabular sayılar
 500 olur, kart ızgarası 10 px aralık alır. Yeni kod buna güvenmez.
@@ -257,14 +291,14 @@ dokunmaz, küçük kart başlıkları 20 px olur,
 
 ## 9. Yapma
 
-- Panelde Pulse ya da eski lime / yeşil hex'i (`#C6F24E`, `#A8D62E`,
-  `#EAF9B8`, `#D7FE03`, `#78FC90`, `#5CF07A`) ya da `pulse-eyebrow` yazma (koruma testi kırılır); `pn-*`
-  tokenlarını kullan. Müşterinin marka/menü renk varsayılanları istisnadır
+- Panelde Pulse lime hex'i (`#C6F24E`, `#A8D62E`, `#EAF9B8`, `#D7FE03`)
+  ya da `pulse-eyebrow` yazma (koruma testi kırılır); `pn-*` tokenlarını
+  kullan. Müşterinin marka/menü renk varsayılanları istisnadır
   (testteki listeye eklenir).
-- Kenar çubuğuna metinli menü, geri butonu, köşeli buton, büyük harf
-  etiket, kart gölgesi ya da dış çerçeve ekleme.
-- Mor (her tonu) zemine beyazdan başka renkte yazı ya da ikon koyma; siyah
-  ya da koyu mor zemine mor yazı yazma; her mor zeminde metin ve ikon beyazdır (lavanta metin de yok).
-- Aktif / birincil dolguyu siyah yapma; aktif hap, sekme, anahtar ve ana
-  buton mordur. Siyah yalnız metin, ipucu, bildirim ve cihaz çerçevesidir.
+- Geri butonu, köşeli buton, büyük harf etiket, kart gölgesi ya da dış
+  çerçeve ekleme.
+- Beyaz zemine yeşil yazı yazma (okunmaz); yeşil zeminde yazı siyah,
+  siyah zeminde yazı beyaz ya da yeşil.
+- Mor ya da başka bir marka rengini panel vurgusu yapma; vurgu siyah +
+  yeşildir. Müşterinin seçtiği renkler veridir, değişmez.
 - Referansların logosunu, adını, fotoğraflarını ya da metnini kullanma.

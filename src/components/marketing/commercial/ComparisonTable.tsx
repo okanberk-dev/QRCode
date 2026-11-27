@@ -93,7 +93,7 @@ export default function ComparisonTable({
                   key={col.key}
                   scope="col"
                   className={`px-4 py-4 text-[14px] font-semibold sm:px-5 ${
-                    col.highlight ? 'bg-[#EFEAFB] text-[#0A0A0A]' : 'text-[#0A0A0A]'
+                    col.highlight ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'text-[#0A0A0A]'
                   }`}
                 >
                   {col.label}
@@ -127,7 +127,7 @@ export default function ComparisonTable({
                       <td
                         key={col.key}
                         className={`px-4 align-top sm:px-5 sm:py-4 ${stack ? 'pb-4 pt-2' : 'py-4'} ${
-                          col.highlight ? 'bg-[#EFEAFB]/40' : ''
+                          col.highlight ? 'bg-[#EAF9B8]/40' : ''
                         }`}
                       >
                         {cell ? (

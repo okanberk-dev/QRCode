@@ -1,5 +1,7 @@
 'use client';
 
+import { ReviewSourceSwitch } from '@/components/dashboard/feedbacks/ReviewSourceSwitch';
+import { PanelBreadcrumb } from '@/components/panel/pano/PanelBreadcrumb';
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode } from 'react';
 import { replyErrorMessage } from '@/components/reply/reply-errors';
 import { useSearchParams, usePathname } from 'next/navigation';
@@ -1250,16 +1252,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     <div className="flex min-h-full w-full min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       {/* Header — hidden on the mobile detail view (the back bar is there). */}
       <div
-        className={`px-4 pb-2 pt-5 sm:px-6 lg:px-4 lg:pb-3 lg:pt-3 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
+        className={`px-4 pb-2 pt-5 sm:px-6 lg:px-4 lg:pb-3 lg:pt-4 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
       >
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        {/* Fintora page header: folder breadcrumb, title, actions on the
+            same line. The review source switch leads the toolbar below. */}
+        <div className="hidden sm:block">
+          <PanelBreadcrumb current={isTr ? 'Yorumlar' : 'Reviews'} />
+        </div>
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            {/* Desktop shows the title in the shell topbar; keep the h1 in the
-                accessibility tree there (sr-only) so the page always has one. */}
-            <h1 className="bz-h-tight text-[28px] font-medium text-pn-ink lg:sr-only">
+            <h1 className="text-[28px] font-medium leading-[1.15] tracking-[-0.02em] text-pn-ink sm:text-[32px]">
               {isTr ? 'Yorumlar' : 'Reviews'}
             </h1>
-            <div className="mt-1 flex min-h-[22px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373] lg:mt-0">
+            <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#737373]">
               {summary}
             </div>
           </div>
@@ -1325,6 +1330,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         onDaysChange={(v) => writeFilters({ days: v })}
         ratingOptions={ratingOptions}
         toggles={stateToggles}
+        filtersMode="button"
+        leading={
+          <ReviewSourceSwitch
+            locale={locale === 'en' ? 'en' : 'tr'}
+            active="buaze"
+            restaurantId={scopedRestaurantId}
+            feedbackCount={loading || listError ? null : total}
+          />
+        }
         allFiltersCount={allFiltersCount}
         onOpenAllFilters={() => setFiltersOpen(true)}
         showClear={hasActiveFilter}
@@ -1449,6 +1463,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         setHasReplyFilter={(v) => setUnrepliedOnly(v === 'pending')}
         flaggedOnly={flagged}
         setFlaggedOnly={(v) => writeFilters({ flagged: v })}
+        redirectsOnly={redirects}
+        setRedirectsOnly={(v) => writeFilters({ redirects: v })}
         hasActiveFilter={allFiltersCount > 0}
         onResetFilters={onResetFilters}
       />

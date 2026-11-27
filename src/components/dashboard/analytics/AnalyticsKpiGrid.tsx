@@ -1,3 +1,4 @@
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { InfoTip, Sparkline } from '@/components/ui';
 import { PanoNumber } from '@/components/panel/pano/PanoNumber';
 import type { ChangeText, ChangeTone } from '@/lib/feedback-metrics';
@@ -33,7 +34,8 @@ export interface AnalyticsKpiGridProps {
   isTr?: boolean;
 }
 
-const TONE_COLOR: Record<ChangeTone, string> = { good: '#3A8228', bad: '#D92D20', neutral: '#737373' };
+/** Soft change pills (Fintora "+7.5%"): green, red, grey. */
+const TONE_PILL: Record<ChangeTone, string> = { good: 'pn-change--up', bad: 'pn-change--down', neutral: 'pn-change--flat' };
 
 function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
   const change: ChangeText | null =
@@ -45,29 +47,42 @@ function KpiCard({ kpi, isTr }: { kpi: KpiSpec; isTr: boolean }) {
           tone: kpi.deltaKind === 'up' ? 'good' : kpi.deltaKind === 'down' ? 'bad' : 'neutral',
         }
       : null);
+  const accentLine = !kpi.sparklineColor || kpi.sparklineColor.toUpperCase() === '#78FC90';
+  // Fintora KPI card: grey label + ⓘ, medium number with a grey fraction,
+  // a soft change pill, a black trend over a light green area, grey caption.
   return (
-    <article className="bz-card flex min-w-0 flex-col gap-3 p-5 sm:p-6">
-      <div className="inline-flex items-center gap-1 text-[14px] text-[#737373]">
+    <article className="bz-card flex min-w-0 flex-col p-5 sm:p-6">
+      <div className="inline-flex min-h-[24px] items-center gap-1 text-[14px] text-[#737373]">
         {kpi.label}
         {kpi.info && <InfoTip text={kpi.info} label={kpi.label} isTr={isTr} />}
       </div>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-        <span className="text-[30px] leading-none text-pn-ink sm:text-[34px]">
-          <PanoNumber value={kpi.value} locale={isTr ? 'tr' : 'en'} />
+      <span className="mt-3 text-[30px] leading-none text-pn-ink sm:text-[34px]">
+        <PanoNumber value={kpi.value} locale={isTr ? 'tr' : 'en'} />
+      </span>
+      {change && (
+        <span className={`pn-change mt-3 self-start ${TONE_PILL[change.tone]}`}>
+          {/* Direction from the arrow, colour from the tone (a shorter reply
+              time is down and good). */}
+          {change.arrow === '↑' && <ArrowUpRight size={14} aria-hidden="true" />}
+          {change.arrow === '↓' && <ArrowDownRight size={14} aria-hidden="true" />}
+          <span className="sr-only">{change.arrow === '↑' ? (isTr ? 'Artış: ' : 'Up: ') : change.arrow === '↓' ? (isTr ? 'Düşüş: ' : 'Down: ') : ''}</span>
+          {change.text}
         </span>
-        {change && (
-          <span className="text-[12px] font-medium tabular-nums" style={{ color: TONE_COLOR[change.tone] }}>
-            {change.arrow ? `${change.arrow} ` : ''}
-            {change.text}
-          </span>
-        )}
-      </div>
+      )}
       {kpi.sparkline && kpi.sparkline.length >= 2 && (
-        <div className="h-7">
-          <Sparkline values={kpi.sparkline} w={140} h={28} color={kpi.sparklineColor ?? 'var(--color-pn-ink)'} className="w-full" />
+        <div className="mt-3 h-8">
+          <Sparkline
+            values={kpi.sparkline}
+            w={140}
+            h={32}
+            color={kpi.sparklineColor ?? 'var(--color-pn-accent)'}
+            fill={accentLine ? 'var(--color-pn-accent-soft)' : undefined}
+            strokeWidth={1.75}
+            className="w-full"
+          />
         </div>
       )}
-      {kpi.subtitle && <div className="mt-auto text-[13px] leading-snug text-[#9A9A9A]">{kpi.subtitle}</div>}
+      {kpi.subtitle && <div className="mt-auto pt-3 text-[13px] leading-snug text-[#9A9A9A]">{kpi.subtitle}</div>}
     </article>
   );
 }

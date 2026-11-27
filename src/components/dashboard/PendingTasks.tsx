@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, MessageSquareText, RefreshCw, Users } from 'lucide-react';
-import { PanoStack } from '@/components/panel/pano/PanoStack';
+import { ArrowUpRight, MessageSquareText, RefreshCw, Users } from 'lucide-react';
 import type { DashboardTask, TaskSeverity, TaskType } from '@/lib/dashboard-tasks';
 import type { BadgeKind } from '@/components/ui/Badge';
 
@@ -16,6 +15,13 @@ const SEVERITY_LABEL: Record<TaskSeverity, { tr: string; en: string; kind: Badge
   high: { tr: 'Acil', en: 'Urgent', kind: 'danger' },
   medium: { tr: 'Orta', en: 'Medium', kind: 'warn' },
   low: { tr: 'Düşük', en: 'Low', kind: 'ghost' },
+};
+
+/** Soft severity pills (Fintora): red, amber, grey. */
+const SEVERITY_PILL: Record<TaskSeverity, string> = {
+  high: 'pn-change--down',
+  medium: 'bg-[#FFF4D6] text-[#8A5A00]',
+  low: 'pn-change--flat',
 };
 
 const TASK_ICON: Record<TaskType, typeof MessageSquareText> = {
@@ -48,47 +54,64 @@ export function PendingTasks({
         ? `${tasks.length} görev`
         : `${tasks.length} task${tasks.length === 1 ? '' : 's'}`;
 
-  // Pano "Investments" stack (DASHBOARD_DESIGN.md §5.4): the most urgent task
-  // on black, the next on lime, the rest white, overlapping like a deck.
+  // Fintora notification rows (DASHBOARD_DESIGN.md §5.4): grey 16px rows,
+  // a 40px icon circle (black for urgent work, grey otherwise), title over
+  // a grey line, a soft severity pill and a black dot on urgent rows.
   return (
-    <section className={`bz-card p-5 sm:p-7 ${className}`}>
-      <header className="mb-5 flex items-start justify-between gap-3">
+    <section className={`bz-card p-5 sm:p-6 ${className}`}>
+      <header className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="pn-card-title">{isTr ? 'Bekleyen işler' : 'Pending tasks'}</h2>
+          <h2 className="pn-card-title text-pn-ink">{isTr ? 'Bekleyen işler' : 'Pending tasks'}</h2>
           <p className="mt-1 text-[13px] text-[#9A9A9A]">{totalLabel}</p>
         </div>
         {tasks.length > 0 && viewAllHref && (
           <Link href={viewAllHref} className="pn-arrow-btn" aria-label={isTr ? 'Tüm bekleyen işler' : 'All pending tasks'}>
-            <ArrowRight size={17} className="-rotate-45" aria-hidden="true" />
+            <ArrowUpRight size={18} aria-hidden="true" />
           </Link>
         )}
       </header>
 
       {tasks.length === 0 ? (
-        <p className="text-[14px] leading-[1.55] text-[#737373]">
+        <p className="rounded-[16px] bg-pn-canvas px-4 py-4 text-[14px] leading-[1.55] text-[#737373]">
           {isTr
             ? 'Yanıt bekleyen yorum, Google bağlantı sorunu ya da geri dönmeyen müşteri yok.'
             : 'No reviews waiting for a reply, no Google link problem and no customers lost.'}
         </p>
       ) : (
-        <PanoStack
-          items={tasks.map((task) => {
+        <ul className="flex flex-col gap-2">
+          {tasks.map((task) => {
             const Icon = TASK_ICON[task.type];
             const sev = SEVERITY_LABEL[task.severity];
             const sevLabel = isTr ? sev.tr : sev.en;
             const sevPrefix = `${sevLabel} · `;
             const meta = task.meta?.startsWith(sevPrefix) ? task.meta.slice(sevPrefix.length) : task.meta;
-            return {
-              id: task.id,
-              href: task.href,
-              icon: <Icon size={19} />,
-              title: task.title,
-              sub: meta,
-              value: sevLabel,
-              label: `${task.title} — ${sevLabel}`,
-            };
+            const urgent = task.severity === 'high';
+            return (
+              <li key={task.id}>
+                <Link
+                  href={task.href}
+                  className="pn-row group min-h-[64px]"
+                  aria-label={`${task.title} — ${sevLabel}`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pn-row-icon ${urgent ? '' : 'bg-pn-accent-soft text-pn-accent'}`}
+                  >
+                    <Icon size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="truncate text-[15px] font-medium text-pn-ink">{task.title}</span>
+                      {urgent && <span className="pn-new-dot" aria-hidden="true" />}
+                    </span>
+                    {meta && <span className="mt-0.5 block truncate text-[13px] text-[#9A9A9A]">{meta}</span>}
+                  </span>
+                  <span className={`pn-change shrink-0 ${SEVERITY_PILL[task.severity]}`}>{sevLabel}</span>
+                </Link>
+              </li>
+            );
           })}
-        />
+        </ul>
       )}
     </section>
   );

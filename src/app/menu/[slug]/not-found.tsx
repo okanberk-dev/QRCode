@@ -10,8 +10,8 @@ export default function MenuNotFound() {
       style={{ '--font-heading': 'var(--font-menu-heading)' } as CSSProperties}
     >
       <div className="mx-auto max-w-md rounded-[24px] border border-[#EDEDED] bg-white p-10 text-center shadow-sm">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5D3EBC]">
-          <UtensilsCrossed size={28} strokeWidth={2} className="text-white" />
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C6F24E]">
+          <UtensilsCrossed size={28} strokeWidth={2} className="text-[#0A0A0A]" />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-[#0A0A0A]">Menü bulunamadı</h1>
         <p className="mt-2 text-sm font-medium text-[#525252]">
