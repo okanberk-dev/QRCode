@@ -42,14 +42,14 @@ export default function TrialBanner({
         bg: '#FEF2F2',
         border: '#FECACA',
         text: '#991B1B',
-        cta: '#0A0A0A',
+        cta: '#000000',
         ctaText: '#FFFFFF',
       }
     : {
         bg: '#FFFBEB',
         border: '#FDE68A',
         text: '#92400E',
-        cta: '#0A0A0A',
+        cta: '#000000',
         ctaText: '#FFFFFF',
       };
 
@@ -72,36 +72,39 @@ export default function TrialBanner({
   };
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="legal-print-hide flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b text-[13px] font-medium"
-      style={{ background: palette.bg, borderColor: palette.border, color: palette.text }}
-    >
-      <Crown size={14} strokeWidth={2.2} className="shrink-0" />
-      {/* Wraps instead of truncating: on a phone the ellipsis cut off the
-          number of days, the one thing the banner is for. */}
-      <span className="min-w-0 flex-1 leading-snug">
-        {message}{' '}
-        <span className="hidden sm:inline opacity-80">
-          {isTr ? 'Aboneliğe geç, kesintisiz devam et.' : 'Upgrade to keep going.'}
+    <div className="legal-print-hide mx-auto w-full max-w-[1440px] px-4 pt-4 sm:px-7">
+      {/* Pano: a black pill with a lime call to action (DASHBOARD_DESIGN.md §5.4). */}
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex items-center gap-3 rounded-[28px] bg-pn-ink py-2 pl-5 pr-2 text-[14px] text-white sm:rounded-full"
+      >
+        <Crown size={18} className="shrink-0 text-pn-accent" aria-hidden="true" />
+        {/* Wraps instead of truncating: on a phone the ellipsis cut off the
+            number of days, the one thing the banner is for. */}
+        <span className="min-w-0 flex-1 leading-snug">
+          <span className="font-medium" style={{ color: palette.text === '#991B1B' ? '#FF8A80' : undefined }}>
+            {message}
+          </span>{' '}
+          <span className="hidden text-white/60 sm:inline">
+            {isTr ? 'Aboneliğe geç, kesintisiz devam et.' : 'Upgrade to keep going.'}
+          </span>
         </span>
-      </span>
-      <Link
-        href={`/${locale}/pricing`}
-        className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
-        style={{ background: palette.cta, color: palette.ctaText }}
-      >
-        {isTr ? 'Yükselt' : 'Upgrade'}
-      </Link>
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label={isTr ? 'Uyarıyı kapat' : 'Dismiss notice'}
-        className="bz-btn-icon shrink-0"
-      >
-        <X size={14} strokeWidth={2} />
-      </button>
+        <Link
+          href={`/${locale}/pricing`}
+          className="inline-flex h-10 shrink-0 items-center rounded-full bg-pn-accent px-5 text-[14px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          {isTr ? 'Yükselt' : 'Upgrade'}
+        </Link>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label={isTr ? 'Uyarıyı kapat' : 'Dismiss notice'}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
+        >
+          <X size={16} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 }

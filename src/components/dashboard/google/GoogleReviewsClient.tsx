@@ -290,8 +290,8 @@ export function GoogleReviewsClient({
               several businesses one line says which business is on screen,
               its Google state and how many are matched overall. */}
           {restaurants.length > 1 && activeRestaurant && activeState && (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12.5px] leading-[1.5] text-[#525252]">
-              <span className="min-w-0 break-words font-medium text-[#0A0A0A]">{activeRestaurant.name}</span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] leading-[1.5] text-[#525252]">
+              <span className="min-w-0 break-words font-medium text-pn-ink">{activeRestaurant.name}</span>
               <Badge kind={STATE_BADGE[activeState]}>{placesOptionStateLabel(activeState, locale)}</Badge>
               {showMatchSummary && (
                 <>

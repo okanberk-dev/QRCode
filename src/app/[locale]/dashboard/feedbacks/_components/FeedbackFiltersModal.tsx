@@ -109,7 +109,7 @@ export function FeedbackFiltersModal({
       <div className="space-y-4">
         {fields.map((f) => (
           <div key={f.id} className="flex flex-col gap-1.5">
-            <span id={f.id} className="text-[12px] font-semibold text-[#525252]">
+            <span id={f.id} className="text-[12px] font-medium text-[#525252]">
               {f.label}
             </span>
             <PulseSelect
@@ -124,7 +124,7 @@ export function FeedbackFiltersModal({
 
         {/* State — reply + flag toggles (server-side filters). */}
         <div className="space-y-1.5">
-          <span className="block text-[12px] font-semibold text-[#525252]">
+          <span className="block text-[12px] font-medium text-[#525252]">
             {isTr ? 'Durum' : 'State'}
           </span>
           <div className="flex flex-wrap gap-2">

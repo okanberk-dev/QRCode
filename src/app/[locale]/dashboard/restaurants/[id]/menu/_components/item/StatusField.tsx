@@ -39,7 +39,7 @@ export function StatusField({
 
   return (
     <div>
-      <p id="item-status-legend" className="mb-1.5 text-[12px] font-semibold text-[#0A0A0A]">
+      <p id="item-status-legend" className="mb-1.5 text-[12px] font-medium text-pn-ink">
         {copy.item.statusLegend}
       </p>
       <div role="radiogroup" aria-labelledby="item-status-legend" className="grid gap-2 @min-[420px]:grid-cols-3">
@@ -58,11 +58,11 @@ export function StatusField({
               disabled={disabled}
               onClick={() => onChange(status)}
               onKeyDown={(e) => onKeyDown(e, index)}
-              className={`relative flex min-h-[56px] flex-col items-start rounded-xl border bg-white px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:opacity-60 ${
-                on ? 'border-[#0A0A0A] shadow-[0_0_0_1px_#0A0A0A]' : 'border-[#E5E5E5] hover:border-[#A3A3A3]'
+              className={`relative flex min-h-[56px] flex-col items-start rounded-[20px] border bg-white px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-60 ${
+                on ? 'border-pn-ink shadow-[0_0_0_1px_#0A0A0A]' : 'border-pn-line-strong hover:border-[#A3A3A3]'
               }`}
             >
-              <span className="flex items-center gap-1.5 text-[13.5px] font-semibold text-[#0A0A0A]">
+              <span className="flex items-center gap-1.5 text-[14px] font-medium text-pn-ink">
                 <span className={`h-2 w-2 rounded-full ${meta[status].dot}`} aria-hidden="true" />
                 {meta[status].title}
               </span>
@@ -73,11 +73,11 @@ export function StatusField({
         })}
       </div>
       {!categoryVisible && (
-        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-[#525252]">
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[#525252]">
           <EyeOff size={12} strokeWidth={2} aria-hidden="true" />
           {copy.item.categoryHiddenNote}
           {onShowCategory && (
-            <button type="button" onClick={onShowCategory} className="font-semibold text-[#0A0A0A] underline underline-offset-2">
+            <button type="button" onClick={onShowCategory} className="font-medium text-pn-ink underline underline-offset-2">
               {copy.item.showCategory}
             </button>
           )}

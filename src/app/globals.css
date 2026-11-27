@@ -28,6 +28,22 @@
   --color-text-muted: #525252;
   --color-text-light: #737373;
 
+  /* Pano panel tokens (docs/design/DASHBOARD_DESIGN.md §2). These are the
+   * Pulse values used outside the panels; `pano.css` swaps them for the Pano
+   * values under `:root:has(.bz-panel)`, so shared components (ui, audits,
+   * reply, loyalty) get the right colour on both surfaces. */
+  --color-pn-accent: #C6F24E;
+  --color-pn-accent-hover: #A8D62E;
+  --color-pn-accent-soft: #EAF9B8;
+  --color-pn-accent-ink: #A8D62E;
+  --color-pn-olive: #A8D62E;
+  --color-pn-canvas: #FAFAFA;
+  --color-pn-line: #EDEDED;
+  --color-pn-line-strong: #D4D4D4;
+  --color-pn-ink: #0A0A0A;
+  --color-pn-ink-2: #1A1A1A;
+  --color-pn-ink-3: #262626;
+
   /* CSS Performance §38.60 — silinmiş semantic + legacy alias'lar (0 callsite):
    *   --color-primary-50/100/500/600/700, --color-accent-400/500
    *   --color-success, --color-error
@@ -105,6 +121,9 @@ body {
   visibility: hidden;
 }
 
+/* In the base layer so Tailwind utilities on a heading (`font-semibold`,
+ * `tracking-tight`) win, as authors expect. */
+@layer base {
 :where(h1, h2, h3, h4, h5, h6) {
   font-family: var(--font-heading);
   letter-spacing: -0.025em;
@@ -113,6 +132,7 @@ body {
      The previous explicit `color: var(--color-text-main)` lived in an
      unlayered rule, which beats Tailwind v4's layered `text-white` utility
      even at zero :where() specificity. */
+}
 }
 
 /* Pulse eyebrow / mono label pattern — JetBrains Mono, uppercase, tracked */
@@ -435,11 +455,6 @@ body {
   to   { transform: translateX(0); }
 }
 
-/* §38.68 — Mobile drawer (UserDashboardShell hamburger) soldan slide-in */
-@keyframes bz-mob-drawer-in {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
-}
 
 /* §38.69 — Mobile bottom sheet (UserDashboardShell "More") aşağıdan slide-in */
 @keyframes bz-mob-sheet-in {
@@ -552,7 +567,6 @@ body {
     stroke-dashoffset: 0 !important;
   }
   [style*='cust-drawer-in'],
-  [style*='bz-mob-drawer-in'],
   [style*='bz-mob-sheet-in'],
   [style*='buaze-splash-fill'],
   [style*='bzProgress'],
@@ -632,13 +646,6 @@ input::-webkit-inner-spin-button {
 .bz-h-tight { font-family: var(--font-heading); letter-spacing: -0.02em; font-weight: 500; }
 .bz-h-tight-2 { font-family: var(--font-heading); letter-spacing: -0.03em; font-weight: 500; }
 .bz-mono { font-family: var(--font-mono); }
-.bz-wordmark {
-  font-family: var(--font-heading);
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-.bz-wordmark .dot { color: #C6F24E; }
 
 /* ── Cards ── */
 .bz-card {
@@ -660,9 +667,6 @@ input::-webkit-inner-spin-button {
    `translate-y-[-1px]` lift effect. Pulse lime accent + graphite
    palette sabit; sadece "design dili" polish. */
 
-.bz-elev-1 {
-  box-shadow: 0 2px 8px rgba(10, 10, 10, 0.04);
-}
 .bz-elev-2 {
   box-shadow: 0 4px 16px rgba(10, 10, 10, 0.06);
 }
@@ -678,15 +682,6 @@ input::-webkit-inner-spin-button {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Lift hover — Apple HIG subtle interaction signal. Pair with
-   `bz-motion-spring`. `prefers-reduced-motion: reduce` blanket
-   transform'u zaten sıfırlar (CLAUDE.md §38.61 universal `*` reset). */
-.bz-lift:hover {
-  transform: translateY(-1px);
-}
-.bz-lift:active {
-  transform: translateY(0);
-}
 
 /* Stage 80 §38.160 + Stage 81 §38.161 — Mobile foundation utility'leri.
    Owner + admin panel mobile uplift (CLAUDE.md §25.5 + §38.74 + §38.77
@@ -1200,135 +1195,12 @@ select.bz-input option:checked {
   outline-offset: 2px;
 }
 
-/* ─── Pulse 2026 sidebar utilities (Phase 1 foundation, CLAUDE.md §23.7 Phase 12) ─── */
+/* Panel sidebars were replaced by the Pano top bar (docs/design/
+ * DASHBOARD_DESIGN.md); `.bz-side-cta`, `.bz-user-menu*`, `.bz-progress`,
+ * `.bz-wordmark`, `.bz-lift`, `.bz-elev-1` and the drawer keyframe went with
+ * them. */
 
-/* §38.232 — `.bz-brand-mark` + `.bz-side-section` + `.bz-side-item` (ve §38.60
- * `--mini` varyantları, §38.101 `-active`) tümü silindi (0 callsite — sidebar
- * brand / nav / active state inline Tailwind paterniyle uygulanır:
- * UserDashboardShell + AdminSidebar). `.bz-side-cta` hâlâ aktif, korundu. */
 
-/* Sidebar primary CTA (Yeni Yorum İste / Request review). */
-.bz-side-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: #EAF9B8;
-  border: 1px solid #C6F24E;
-  color: #0A0A0A;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 120ms ease, transform 120ms ease;
-}
-.bz-side-cta:hover { background: #C6F24E; }
-.bz-side-cta:active { transform: scale(0.98); }
-.bz-side-cta:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(198, 242, 78, 0.5);
-}
-.bz-side-cta--mini {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  margin: 0 auto;
-}
-.bz-side-cta--mini span { display: none; }
-
-/* User menu dropdown (sidebar bottom). Opens UPWARD (`bottom: calc(100% + 8px)`)
- * so the same Pulse aesthetic as `.bz-menu` but with bottom-anchored
- * transform-origin and a reveal that grows from the trigger downward.
- *
- * Parity with `.bz-menu`: scroll guards (`max-height`, `overflow-y`,
- * `overscroll-behavior`, `-webkit-overflow-scrolling`) protect against a
- * tall list overflowing past the viewport top edge when the trigger is
- * docked at the sidebar bottom on a short viewport.
- *
- * Default horizontal inset is 6px on each side so the menu visually breathes
- * inside the sidebar without callsites needing inline `style={{ left, right }}`
- * overrides; widen via the parent rail (sidebar width is the constraint). */
-.bz-user-menu {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 6px;
-  right: 6px;
-  background: #FFFFFF;
-  border: 1px solid #EDEDED;
-  border-radius: 14px;
-  padding: 6px;
-  max-height: min(420px, 70vh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  z-index: 50;
-  box-shadow:
-    0 1px 2px rgba(10, 10, 10, 0.04),
-    0 12px 32px -8px rgba(10, 10, 10, 0.18);
-  transform-origin: bottom left;
-  animation: bz-user-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-@keyframes bz-user-menu-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
-}
-/* Mobile bottom-sheet variant — mirrors `.bz-menu--sheet` so a sidebar
- * user-menu opened on a phone docks at the bottom of the viewport with
- * generous touch targets instead of squeezing upward from a 248px rail
- * (which would otherwise misalign with the mobile drawer chrome). Combine
- * the callsite with `.bz-menu-backdrop` for a tap-to-dismiss overlay. */
-@media (max-width: 639px) {
-  .bz-user-menu {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    top: auto;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    max-height: min(70vh, 480px);
-    border-radius: 18px;
-    padding: 10px;
-    transform-origin: bottom center;
-    box-shadow:
-      0 1px 2px rgba(10, 10, 10, 0.04),
-      0 -8px 32px -8px rgba(10, 10, 10, 0.24);
-  }
-  .bz-user-menu-item {
-    min-height: 44px;
-    padding: 12px 12px;
-    font-size: 14px;
-  }
-  .bz-user-menu-divider { margin: 6px 4px; }
-}
-.bz-user-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 11px;
-  border-radius: 10px;
-  font-size: 13px;
-  color: #1A1A1A;
-  cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
-  -webkit-tap-highlight-color: transparent;
-}
-.bz-user-menu-item:hover { background: #FAFAFA; }
-.bz-user-menu-item:focus-visible {
-  outline: none;
-  background: #FAFAFA;
-  box-shadow: inset 0 0 0 2px rgba(198, 242, 78, 0.55);
-}
-.bz-user-menu-item.danger { color: #B91C1C; }
-.bz-user-menu-item.danger:hover,
-.bz-user-menu-item.danger:focus-visible {
-  background: #FEF2F2;
-  color: #991B1B;
-}
-.bz-user-menu-divider {
-  height: 1px;
-  background: #EDEDED;
-  margin: 5px 4px;
-}
 
 /* ── Generic dropdown menu primitive (panel scope) ──
  * Used by native action menus, workspace switcher, PulseSelect listbox,
@@ -1490,148 +1362,11 @@ select.bz-input option:checked {
   .bz-menu-backdrop { display: none; }
 }
 
-/* Progress bar — used in sidebar plan card + activation checklist. */
-.bz-progress {
-  height: 6px;
-  border-radius: 999px;
-  background: #EDEDED;
-  overflow: hidden;
-}
-.bz-progress > i {
-  display: block;
-  height: 100%;
-  background: #0A0A0A;
-  border-radius: inherit;
-  transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-.bz-progress.lime > i { background: #C6F24E; }
 
-/* ─────────────────────────────────────────────────────────────
- * §49 Panel theme — shadcn dashboard type + density, Pulse colors.
- * Active only where a panel shell (`.bz-panel`, owner dashboard + admin)
- * is on the page. `:root:has(...)` (not a `.bz-panel` ancestor selector)
- * so portaled menus, selects and modals rendered into <body> get it too.
- * Marketing, auth and the public /r /menu /s pages keep the §11 look even
- * though they reuse a few bz-* classes.
- * Fonts: the panels use the site pair (Clash Display + Inter, §11) — the
- * root --font-* stacks apply unchanged, so this block sets no font vars.
- * ───────────────────────────────────────────────────────────── */
-:root:has(.bz-panel) {
-  --bz-shadow-xs: 0 1px 2px rgba(10, 10, 10, 0.05);
-}
-/* Panel titles / numbers read best in Clash Display Semibold (§49). */
-:root:has(.bz-panel) :is(.bz-h-tight, .bz-h-tight-2, .bz-wordmark) {
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-:root:has(.bz-panel) .pulse-eyebrow { letter-spacing: 0.1em; }
-
-/* Cards: 12px radius + hairline shadow (shadcn card). */
-:root:has(.bz-panel) :is(.bz-card, .bz-card-soft) {
-  border-radius: 12px;
-  border-color: #E8E8E8;
-}
-:root:has(.bz-panel) .bz-card { box-shadow: var(--bz-shadow-xs); }
-
-/* Buttons: 8px rounded rectangles, medium weight (shadcn button). The
- * mobile 44px touch-target floor above is untouched (no min-height here). */
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-primary, .bz-btn-lime, .bz-btn-ghost, .bz-btn-danger, .bz-btn-warn, .bz-btn-on-dark) {
-  border-radius: 8px;
-  font-weight: 500;
-  font-family: var(--font-body);
-}
-:root:has(.bz-panel) .bz-btn-primary:hover { transform: none; }
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost) {
-  background: #FFFFFF;
-  border-color: #E5E5E5;
-  box-shadow: var(--bz-shadow-xs);
-}
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):hover { background: #F5F5F5; border-color: #E5E5E5; }
-:root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198, 242, 78, 0.45); }
-:root:has(.bz-panel) .bz-btn-icon { border-radius: 8px; }
-:root:has(.bz-panel) .bz-side-cta { border-radius: 8px; font-weight: 500; }
-
-/* Badges: shadcn badge (medium weight, 6px). */
-:root:has(.bz-panel) .bz-badge { font-weight: 500; border-radius: 6px; }
-
-/* Inputs: 8px + hairline shadow; lime focus ring stays (brand). */
-:root:has(.bz-panel) .bz-input {
-  border-radius: 8px;
-  border-color: #E5E5E5;
-  box-shadow: var(--bz-shadow-xs);
-}
-:root:has(.bz-panel) .bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198, 242, 78, 0.35); }
-
-/* Tabs: segmented control (shadcn TabsList) instead of an underline. */
-:root:has(.bz-panel) .bz-tabs {
-  display: inline-flex;
-  width: auto;
-  max-width: 100%;
-  gap: 2px;
-  padding: 3px;
-  border: 0;
-  border-radius: 10px;
-  background: #F2F2F2;
-}
-:root:has(.bz-panel) .bz-tab {
-  padding: 6px 12px;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #525252;
-  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
-}
-:root:has(.bz-panel) .bz-tab:hover { color: #0A0A0A; }
-:root:has(.bz-panel) .bz-tab:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(198, 242, 78, 0.7); }
-:root:has(.bz-panel) .bz-tab[aria-selected="true"] {
-  background: #FFFFFF;
-  color: #0A0A0A;
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(10, 10, 10, 0.08), 0 0 0 1px rgba(10, 10, 10, 0.04);
-}
-:root:has(.bz-panel) .bz-tab[aria-selected="true"]::after { content: none; }
-:root:has(.bz-panel) .bz-tab-vertical { border-radius: 8px; font-weight: 500; padding: 8px 12px; }
-:root:has(.bz-panel) .bz-tab-vertical[aria-selected="true"] { font-weight: 500; }
-
-/* Tables: plain sentence-case header (shadcn table). */
-:root:has(.bz-panel) .bz-table th {
-  background: transparent;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #737373;
-  height: 40px;
-  padding: 8px 14px;
-}
-:root:has(.bz-panel) .bz-table td { padding: 12px 14px; }
-:root:has(.bz-panel) .bz-table tbody tr:hover td { background: #FAFAFA; }
-
-/* Menus: 10px popover, 6px items (shadcn dropdown). */
-:root:has(.bz-panel) .bz-menu { border-radius: 10px; padding: 4px; border-color: #E8E8E8; }
-:root:has(.bz-panel) .bz-menu-item { border-radius: 6px; padding: 8px 10px; }
-:root:has(.bz-panel) .bz-menu-item:hover { background: #F5F5F5; }
-/* Phones: 44px rows so every panel menu meets the touch-target rule. */
-@media (max-width: 639px) {
-  :root:has(.bz-panel) .bz-menu-item { min-height: 44px; }
-}
-:root:has(.bz-panel) .bz-menu-label {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-  color: #737373;
-}
-:root:has(.bz-panel) .bz-avatar { border-radius: 8px; font-family: var(--font-body); }
+/* Panel look (owner + admin) lives in src/components/panel/pano/pano.css
+ * ("Pano", docs/design/DASHBOARD_DESIGN.md). The old §49 shadcn override
+ * block was removed with it. */
 } /* @layer components */
-
-/* §49 — headings are styled by an unlayered rule (`:where(h1…h6)` above),
- * so the panel weight override has to be unlayered too. */
-:root:has(.bz-panel) :where(h1, h2, h3, h4, h5, h6) {
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
 
 /* iOS Safari zooms into any focused field under 16px. Inside the layer a
  * `text-[13px]` utility next to `bz-input` would now win on phones, so the
@@ -1663,7 +1398,6 @@ select.bz-input option:checked {
   .bz-menu,
   .bz-menu--sheet,
   .bz-menu-backdrop,
-  .bz-user-menu,
   .pulse-heartbeat,
   .animate-slide-in,
   .animate-spin,

@@ -1,0 +1,1075 @@
+/* ─────────────────────────────────────────────────────────────────────────
+ * Pano — owner + admin panel design system.
+ * Spec: docs/design/DASHBOARD_DESIGN.md (measured from the Behance "lumin"
+ * Finance SaaS concept; Buaze's own content, logo and brand).
+ *
+ * Every rule is scoped to `:root:has(.bz-panel)` — the panel shell root —
+ * so portaled menus, selects and modals rendered into <body> get it too, and
+ * marketing / auth / public pages that reuse a few `bz-*` classes keep their
+ * own look.
+ *
+ * Layer order is declared again here so this file is safe whatever order the
+ * bundler emits it in (re-declaring the same order is a no-op).
+ * ───────────────────────────────────────────────────────────────────────── */
+@layer theme, base, components, utilities;
+
+/* ── 1. Tokens (unlayered: beats the Pulse defaults in @layer theme) ────── */
+:root:has(.bz-panel) {
+  --color-pn-accent: #D7FE03;
+  --color-pn-accent-hover: #C6EB00;
+  --color-pn-accent-soft: #F3FDC4;
+  --color-pn-accent-ink: #4F7A18;
+  --color-pn-olive: #83AF3B;
+  --color-pn-canvas: #F5F5F8;
+  --color-pn-line: #ECECF0;
+  --color-pn-line-strong: #E2E2E7;
+  --color-pn-ink: #000000;
+  --color-pn-ink-2: #1E1E1E;
+  --color-pn-ink-3: #2A2A2A;
+
+  --pn-text-2: #6E6E73;
+  --pn-text-3: #9A9AA0;
+  --pn-positive: #3A8228;
+  --pn-negative: #E5484D;
+  --pn-glow: radial-gradient(60% 75% at 32% 112%, rgba(215, 254, 3, 0.55) 0%, rgba(215, 254, 3, 0.16) 45%, rgba(215, 254, 3, 0) 72%);
+  --pn-hatch: repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 7px);
+  --pn-hatch-dark: repeating-linear-gradient(-45deg, #262626 0 3px, transparent 3px 8px);
+
+  --pn-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --pn-ease-slide: cubic-bezier(0.32, 0.72, 0, 1);
+  --pn-ease-pop: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --font-body: var(--font-urbanist), system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-urbanist), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* No monospace in the panels: small labels and numbers are Urbanist too. */
+  --font-mono: var(--font-urbanist), system-ui, sans-serif;
+
+  /* No bottom tab bar in Pano (§7): fixed overlays only clear the safe area. */
+  --dash-bottom-nav-h: env(safe-area-inset-bottom, 0px);
+
+  background-color: var(--color-pn-canvas);
+  color: var(--color-pn-ink);
+}
+
+/* ── 2. Base ────────────────────────────────────────────────────────────── */
+@layer base {
+  :root:has(.bz-panel) body,
+  .bz-panel {
+    font-family: var(--font-body);
+    background-color: var(--color-pn-canvas);
+    color: var(--color-pn-ink);
+    font-feature-settings: 'ss01' off;
+  }
+  :root:has(.bz-panel) :where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  /* Thin line icons (lucide default 2 → 1.6), like the reference. */
+  :root:has(.bz-panel) svg.lucide {
+    stroke-width: 1.6;
+  }
+  :root:has(.bz-panel) ::selection {
+    background: var(--color-pn-accent);
+    color: #000;
+  }
+}
+
+/* ── 3. Components ─────────────────────────────────────────────────────── */
+@layer components {
+  /* Type helpers */
+  :root:has(.bz-panel) :is(.bz-h-tight, .bz-h-tight-2) {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  :root:has(.bz-panel) .bz-mono {
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Cards — borderless white, 28px corners, no shadow. */
+  :root:has(.bz-panel) .bz-card {
+    background: #FFFFFF;
+    border: 0;
+    border-radius: 28px;
+    box-shadow: none;
+  }
+  :root:has(.bz-panel) .bz-card-soft {
+    background: var(--color-pn-canvas);
+    border: 0;
+    border-radius: 24px;
+  }
+  :root:has(.bz-panel) .bz-elev-2 { box-shadow: none; }
+  :root:has(.bz-panel) .bz-elev-3 { box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.18); }
+
+  /* Buttons — pills. Shared shape first, variants after. */
+  :root:has(.bz-panel) :is(.bz-btn, .bz-btn-primary, .bz-btn-lime, .bz-btn-ghost, .bz-btn-danger, .bz-btn-warn, .bz-btn-on-dark) {
+    min-height: 44px;
+    padding: 0 22px;
+    border-radius: 999px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+    gap: 8px;
+    transition:
+      background-color 200ms var(--pn-ease),
+      border-color 200ms var(--pn-ease),
+      color 200ms var(--pn-ease),
+      box-shadow 200ms var(--pn-ease),
+      transform 120ms var(--pn-ease);
+  }
+  :root:has(.bz-panel) :is(.bz-btn, .bz-btn-primary, .bz-btn-lime, .bz-btn-ghost, .bz-btn-danger, .bz-btn-warn, .bz-btn-on-dark):active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  :root:has(.bz-panel) .bz-btn-sm {
+    min-height: 36px;
+    padding: 0 16px;
+    font-size: 13px;
+  }
+
+  :root:has(.bz-panel) .bz-btn-primary {
+    background: #000;
+    color: #FFF;
+    border: 0;
+  }
+  :root:has(.bz-panel) .bz-btn-primary:hover { background: #1F1F1F; transform: none; }
+  :root:has(.bz-panel) .bz-btn-primary:focus-visible { box-shadow: 0 0 0 3px var(--color-pn-canvas), 0 0 0 5px var(--color-pn-accent); }
+  :root:has(.bz-panel) .bz-btn-primary:disabled { background: #EDEDF0; color: #A0A0A6; }
+
+  :root:has(.bz-panel) .bz-btn-lime {
+    background: var(--color-pn-accent);
+    color: #000;
+    border: 0;
+  }
+  :root:has(.bz-panel) .bz-btn-lime:hover { background: var(--color-pn-accent-hover); }
+  :root:has(.bz-panel) .bz-btn-lime:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px #000; }
+  :root:has(.bz-panel) .bz-btn-lime:disabled { background: #EDEDF0; color: #A0A0A6; }
+
+  :root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost) {
+    background: #FFF;
+    color: #000;
+    border: 1px solid var(--color-pn-line-strong);
+    box-shadow: none;
+  }
+  :root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):hover:not(:disabled) {
+    background: var(--color-pn-canvas);
+    border-color: #D2D2D8;
+  }
+  :root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):focus-visible { border-color: #000; box-shadow: 0 0 0 3px var(--color-pn-accent-soft); }
+  :root:has(.bz-panel) :is(.bz-btn, .bz-btn-ghost):disabled { background: #F5F5F7; color: #A0A0A6; }
+
+  :root:has(.bz-panel) .bz-btn-danger { background: #FFF; color: #D92D20; border: 1px solid #F6CFCC; }
+  :root:has(.bz-panel) .bz-btn-danger:hover:not(:disabled) { background: #FEF3F2; border-color: #F1A9A3; color: #B42318; }
+  :root:has(.bz-panel) .bz-btn-warn { background: #FFFAEB; color: #93370D; border: 1px solid #FEDF89; }
+
+  :root:has(.bz-panel) .bz-btn-on-dark {
+    background: var(--color-pn-ink-3);
+    color: #FFF;
+    border: 0;
+  }
+  :root:has(.bz-panel) .bz-btn-on-dark:hover:not(:disabled) { background: #3A3A3A; }
+
+  /* Icon buttons — circles with a hairline border. */
+  :root:has(.bz-panel) :is(.bz-btn-icon, .bz-btn-icon-lg) {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: #FFF;
+    color: #000;
+    border: 1px solid var(--color-pn-line);
+    transition:
+      background-color 200ms var(--pn-ease),
+      border-color 200ms var(--pn-ease),
+      color 200ms var(--pn-ease),
+      transform 120ms var(--pn-ease);
+  }
+  :root:has(.bz-panel) .bz-btn-icon-lg { width: 44px; height: 44px; }
+  :root:has(.bz-panel) :is(.bz-btn-icon, .bz-btn-icon-lg):hover { background: var(--color-pn-canvas); color: #000; border-color: var(--color-pn-line-strong); }
+  :root:has(.bz-panel) :is(.bz-btn-icon, .bz-btn-icon-lg):active { transform: scale(0.94); }
+  :root:has(.bz-panel) :is(.bz-btn-icon, .bz-btn-icon-lg):focus-visible { box-shadow: 0 0 0 3px var(--color-pn-accent-soft); border-color: #000; }
+  :root:has(.bz-panel) .bz-btn-icon-on-dark {
+    background: var(--color-pn-ink-3);
+    border-color: transparent;
+    color: rgba(255, 255, 255, 0.85);
+  }
+  :root:has(.bz-panel) .bz-btn-icon-on-dark:hover { background: #3A3A3A; color: #FFF; }
+
+
+  /* Badges — 24px pills. */
+  :root:has(.bz-panel) .bz-badge {
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-body);
+  }
+  :root:has(.bz-panel) .bz-badge--off,
+  :root:has(.bz-panel) .bz-badge--ghost { background: var(--color-pn-canvas); color: var(--pn-text-2); border-color: transparent; }
+  :root:has(.bz-panel) .bz-badge--lime { background: var(--color-pn-accent); color: #000; border-color: transparent; }
+  :root:has(.bz-panel) .bz-badge--lime .dot { background: #000; }
+  :root:has(.bz-panel) .bz-badge--dark { background: #000; color: var(--color-pn-accent); border-color: #000; }
+  :root:has(.bz-panel) .bz-badge--dark .dot { background: var(--color-pn-accent); }
+
+  /* Inputs — 46px, pill single-line fields, 16px textareas. */
+  :root:has(.bz-panel) .bz-input {
+    min-height: 46px;
+    padding: 11px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--color-pn-line-strong);
+    background: #FFF;
+    color: #000;
+    font-family: var(--font-body);
+    box-shadow: none;
+    transition: border-color 200ms var(--pn-ease), box-shadow 200ms var(--pn-ease), background-color 200ms var(--pn-ease);
+  }
+  :root:has(.bz-panel) textarea.bz-input { border-radius: 18px; min-height: 92px; padding: 14px 18px; }
+  :root:has(.bz-panel) .bz-input::placeholder { color: var(--pn-text-3); }
+  :root:has(.bz-panel) .bz-input:hover:not(:disabled):not(:focus) { border-color: #D2D2D8; }
+  :root:has(.bz-panel) .bz-input:focus { border-color: #000; box-shadow: 0 0 0 4px var(--color-pn-accent-soft); }
+  :root:has(.bz-panel) .bz-input:disabled { background: var(--color-pn-canvas); color: var(--pn-text-2); }
+  :root:has(.bz-panel) select.bz-input { padding-right: 42px; background-position: right 18px center; }
+  :root:has(.bz-panel) select.bz-input:hover:not(:disabled) { background-color: #FFF; box-shadow: none; }
+
+  /* Tabs — the same pill segments as the top navigation. */
+  :root:has(.bz-panel) .bz-tabs {
+    display: inline-flex;
+    width: auto;
+    max-width: 100%;
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  :root:has(.bz-panel) .bz-tab {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: #000;
+    background: transparent;
+    transition: background-color 260ms var(--pn-ease), color 260ms var(--pn-ease);
+  }
+  :root:has(.bz-panel) .bz-tab:hover:not([aria-selected="true"]) { background: rgba(0, 0, 0, 0.05); }
+  :root:has(.bz-panel) .bz-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-pn-accent-soft), inset 0 0 0 1px #000; }
+  :root:has(.bz-panel) .bz-tab[aria-selected="true"] { background: #000; color: #FFF; font-weight: 500; box-shadow: none; }
+  :root:has(.bz-panel) .bz-tab[aria-selected="true"]::after { content: none; }
+  :root:has(.bz-panel) .bz-tab-vertical {
+    min-height: 44px;
+    border-radius: 999px;
+    padding: 0 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #000;
+  }
+  :root:has(.bz-panel) .bz-tab-vertical:hover { background: rgba(0, 0, 0, 0.05); color: #000; }
+  :root:has(.bz-panel) .bz-tab-vertical[aria-selected="true"] { background: #000; color: #FFF; font-weight: 500; }
+  :root:has(.bz-panel) .bz-tab-vertical[aria-selected="true"]::before { content: none; }
+
+  /* Tables — sentence-case header, 64px rows, hairline dividers. */
+  :root:has(.bz-panel) .bz-table { font-size: 14px; }
+  :root:has(.bz-panel) .bz-table th {
+    background: transparent;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--pn-text-2);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-pn-line);
+  }
+  :root:has(.bz-panel) .bz-table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-pn-line);
+    color: #000;
+  }
+  :root:has(.bz-panel) .bz-table tbody tr:hover td,
+  :root:has(.bz-panel) .bz-tr-hover:hover { background: var(--color-pn-canvas); }
+
+  /* Avatar — black circle, lime initial. */
+  :root:has(.bz-panel) .bz-avatar {
+    border-radius: 999px;
+    background: #000;
+    color: var(--color-pn-accent);
+    font-family: var(--font-body);
+    font-weight: 500;
+  }
+
+  /* Skeleton — soft pulse on the canvas grey. */
+  :root:has(.bz-panel) .bz-skeleton {
+    background: var(--color-pn-canvas);
+    border-radius: 14px;
+    animation: pn-skeleton 1.4s ease-in-out infinite;
+  }
+
+  :root:has(.bz-panel) .bz-pulse-dot { background: var(--color-pn-accent-ink); }
+
+  /* Menus / popovers — 20px panel, 44px rows. */
+  :root:has(.bz-panel) .bz-menu {
+    border-radius: 20px;
+    padding: 8px;
+    border: 1px solid var(--color-pn-line);
+    background: #FFF;
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.04);
+    animation-duration: 200ms;
+    animation-timing-function: var(--pn-ease-pop);
+  }
+  :root:has(.bz-panel) .bz-menu-item {
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: #000;
+  }
+  :root:has(.bz-panel) .bz-menu-item > svg { color: #000; }
+  :root:has(.bz-panel) .bz-menu-item:hover,
+  :root:has(.bz-panel) .bz-menu-item:focus-visible {
+    background: var(--color-pn-canvas);
+    box-shadow: none;
+  }
+  :root:has(.bz-panel) .bz-menu-item:is([aria-selected="true"], .is-selected) { background: var(--color-pn-accent-soft); font-weight: 500; }
+  :root:has(.bz-panel) .bz-menu-item:is([data-active="true"], .is-active) { background: var(--color-pn-accent-soft); }
+  :root:has(.bz-panel) .bz-menu-item[data-highlighted] { background: var(--color-pn-canvas); }
+  :root:has(.bz-panel) .bz-menu-divider { background: var(--color-pn-line); margin: 6px 6px; }
+  :root:has(.bz-panel) .bz-menu-label {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--pn-text-3);
+    padding: 8px 14px 4px;
+  }
+  :root:has(.bz-panel) .bz-menu-backdrop { background: rgba(10, 10, 14, 0.32); }
+
+
+  :root:has(.bz-panel) .bz-skip-link { background: #000; color: var(--color-pn-accent); border-radius: 999px; }
+
+  /* ── Pano-only pieces (pn-*) ─────────────────────────────────────────── */
+
+  /* 46px outlined circle — top bar and page header. */
+  .pn-icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    background: #FFF;
+    color: #000;
+    border: 1px solid var(--color-pn-line);
+    cursor: pointer;
+    transition:
+      background-color 200ms var(--pn-ease),
+      border-color 200ms var(--pn-ease),
+      transform 120ms var(--pn-ease);
+    outline: none;
+  }
+  .pn-icon-btn:hover { background: var(--color-pn-canvas); border-color: var(--color-pn-line-strong); }
+  .pn-icon-btn:active { transform: scale(0.94); }
+  .pn-icon-btn:focus-visible { border-color: #000; box-shadow: 0 0 0 3px var(--color-pn-accent-soft); }
+  /* On the canvas (page header) the circle is transparent. */
+  .pn-icon-btn--ghost { background: transparent; border-color: var(--color-pn-line-strong); }
+  .pn-icon-btn--ghost:hover { background: #FFF; }
+  .pn-icon-btn--dark { background: #000; color: var(--color-pn-accent); border-color: #000; }
+  .pn-icon-btn--dark:hover { background: #1F1F1F; border-color: #1F1F1F; }
+  /* Notification dot, top-right. */
+  .pn-dot {
+    position: absolute;
+    top: 11px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #DD312E;
+    box-shadow: 0 0 0 2px #FFF;
+  }
+
+  /* ↗ "open" circle — fills black and turns 45° on hover. */
+  .pn-arrow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: #FFF;
+    color: #000;
+    border: 1px solid var(--color-pn-line);
+    transition:
+      background-color 260ms var(--pn-ease),
+      border-color 260ms var(--pn-ease),
+      color 260ms var(--pn-ease),
+      transform 120ms var(--pn-ease);
+    outline: none;
+  }
+  .pn-arrow-btn > svg { transition: transform 260ms var(--pn-ease); }
+  .pn-arrow-btn:hover,
+  .pn-arrow-btn:focus-visible,
+  a:hover > .pn-arrow-btn,
+  .pn-card-link:hover .pn-arrow-btn { background: #000; border-color: #000; color: #FFF; }
+  .pn-arrow-btn:hover > svg,
+  .pn-arrow-btn:focus-visible > svg,
+  a:hover > .pn-arrow-btn > svg,
+  .pn-card-link:hover .pn-arrow-btn > svg { transform: rotate(45deg); }
+  .pn-arrow-btn:active { transform: scale(0.94); }
+  .pn-arrow-btn--dark { background: transparent; color: #FFF; border-color: rgba(255, 255, 255, 0.22); }
+  .pn-arrow-btn--dark:hover { background: var(--color-pn-accent); border-color: var(--color-pn-accent); color: #000; }
+
+  /* 52px dark circle — actions inside a dark hero card. */
+  .pn-dark-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: var(--color-pn-ink-2);
+    color: #FFF;
+    border: 0;
+    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
+  }
+  .pn-dark-icon-btn:hover { background: var(--color-pn-accent); color: #000; }
+  .pn-dark-icon-btn:active { transform: scale(0.94); }
+
+  /* Dark hero card with the lime glow rising from the bottom. */
+  .pn-card-dark {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 32px;
+    background: #000;
+    color: #FFF;
+  }
+  .pn-card-dark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--pn-glow);
+    pointer-events: none;
+  }
+  .pn-card-dark .pn-muted { color: rgba(255, 255, 255, 0.62); }
+
+  /* Lime tile — short shortcut / highlight. */
+  .pn-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 150px;
+    padding: 18px;
+    border-radius: 22px;
+    background: var(--color-pn-accent);
+    color: #000;
+    transition: background-color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
+  }
+  a.pn-tile:hover, button.pn-tile:hover { background: var(--color-pn-accent-hover); }
+  a.pn-tile:active, button.pn-tile:active { transform: scale(0.98); }
+  .pn-tile-label { font-size: 15px; font-weight: 500; line-height: 1.25; }
+
+  /* Outlined list row inside a card. */
+  .pn-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 24px;
+    border: 1px solid var(--color-pn-line);
+    background: #FFF;
+    transition: background-color 200ms var(--pn-ease), border-color 200ms var(--pn-ease);
+  }
+  a.pn-row:hover, button.pn-row:hover { background: var(--color-pn-canvas); }
+  .pn-row-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: #000;
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Pill chip with a leading black circle. */
+  .pn-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 18px 7px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--color-pn-line);
+    background: #FFF;
+  }
+
+  /* Card title (22px / 400) and section header row. */
+  .pn-card-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    color: inherit;
+  }
+
+  /* Number with a grey fraction (PanoNumber). */
+  .pn-num {
+    font-family: var(--font-heading);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .pn-num-frac,
+  .pn-num-affix { color: var(--pn-text-3); }
+  .pn-num-frac { font-size: 0.88em; }
+  .pn-num-affix { font-size: 0.7em; }
+  .pn-card-dark .pn-num-frac,
+  .pn-card-dark .pn-num-affix { color: rgba(255, 255, 255, 0.45); }
+
+  /* Hatched remainder for progress / gauges. */
+  .pn-hatch { background: var(--pn-hatch), #F0F0F3; }
+  .pn-hatch-dark { background: var(--pn-hatch-dark), #111; }
+
+  /* ── Top navigation (PanelTopNav) ───────────────────────────────────── */
+  .pn-topbar {
+    position: relative;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    height: 78px;
+    margin: 8px 8px 0;
+    padding: 0 16px 0 24px;
+    border-radius: 24px;
+    background: #FFF;
+  }
+  .pn-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    min-width: 0;
+    border-radius: 999px;
+    outline: none;
+  }
+  .pn-brand:focus-visible { box-shadow: 0 0 0 3px var(--color-pn-accent-soft); }
+  .pn-brand-word {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    color: #000;
+  }
+  .pn-nav {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .pn-nav-track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .pn-nav-item {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 42px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: #000;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 300ms var(--pn-ease-slide), background-color 200ms var(--pn-ease);
+    outline: none;
+  }
+  @media (min-width: 1280px) {
+    .pn-nav-item { padding: 0 18px; }
+  }
+  .pn-nav-item > svg { transition: transform 200ms var(--pn-ease); }
+  .pn-nav-item[data-state="open"] > svg { transform: rotate(180deg); }
+  .pn-nav-item:hover:not([data-active="true"]) { background: var(--color-pn-canvas); }
+  .pn-nav-item:focus-visible { box-shadow: 0 0 0 3px var(--color-pn-accent-soft), inset 0 0 0 1px #000; }
+  .pn-nav-item[data-active="true"] { color: #FFF; }
+  /* Before the pill is measured (SSR / no JS) the active item carries the
+     black fill itself. */
+  .pn-nav:not([data-pill="on"]) .pn-nav-item[data-active="true"] { background: #000; }
+  .pn-nav-pill {
+    position: absolute;
+    z-index: 0;
+    top: 50%;
+    left: 0;
+    height: 42px;
+    margin-top: -21px;
+    border-radius: 999px;
+    background: #000;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(var(--pn-pill-x, 0px));
+    width: var(--pn-pill-w, 0px);
+    transition:
+      transform 420ms var(--pn-ease-slide),
+      width 420ms var(--pn-ease-slide),
+      opacity 200ms var(--pn-ease);
+  }
+  .pn-nav[data-pill="on"] .pn-nav-pill { opacity: 1; }
+  .pn-nav[data-pill-instant="true"] .pn-nav-pill { transition: none; }
+  .pn-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .pn-avatar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    background: #000;
+    color: var(--color-pn-accent);
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 500;
+    border: 0;
+    cursor: pointer;
+    transition: transform 120ms var(--pn-ease), box-shadow 200ms var(--pn-ease);
+    outline: none;
+  }
+  .pn-avatar-btn:hover { box-shadow: 0 0 0 4px var(--color-pn-accent-soft); }
+  .pn-avatar-btn:active { transform: scale(0.94); }
+  .pn-avatar-btn:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px #000; }
+
+  /* Selector pill (business switcher, date range) — 46px outlined pill. */
+  .pn-select-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 46px;
+    min-width: 0;
+    padding: 0 16px 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--color-pn-line);
+    background: #FFF;
+    color: #000;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 200ms var(--pn-ease), border-color 200ms var(--pn-ease);
+    outline: none;
+  }
+  .pn-select-pill:hover { background: var(--color-pn-canvas); border-color: var(--color-pn-line-strong); }
+  .pn-select-pill:focus-visible { border-color: #000; box-shadow: 0 0 0 3px var(--color-pn-accent-soft); }
+
+  /* ── Mobile bar + drawer ────────────────────────────────────────────── */
+  .pn-mobilebar-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    padding: 8px 8px 8px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    background: color-mix(in srgb, var(--color-pn-canvas) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .pn-mobilebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: 56px;
+    padding: 0 6px 0 16px;
+    border-radius: 20px;
+    background: #FFF;
+  }
+  .pn-mobilebar .pn-brand-word { font-size: 22px; }
+  .pn-mobilebar .pn-icon-btn,
+  .pn-mobilebar .pn-avatar-btn { width: 44px; height: 44px; }
+
+  .pn-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    background: #FFF;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(16px, env(safe-area-inset-bottom));
+    animation: pn-drawer-in 320ms var(--pn-ease-pop) both;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .pn-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 6px 0 16px;
+  }
+  .pn-drawer-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #000;
+    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease);
+    outline: none;
+  }
+  .pn-drawer-link:hover { background: var(--color-pn-canvas); }
+  .pn-drawer-link:focus-visible { box-shadow: inset 0 0 0 2px #000; }
+  .pn-drawer-link[aria-current="page"] { background: #000; color: #FFF; }
+  .pn-drawer-section {
+    padding: 18px 18px 6px;
+    font-size: 13px;
+    color: var(--pn-text-3);
+  }
+  .pn-drawer > * { animation: pn-rise 360ms var(--pn-ease) both; }
+  .pn-drawer > *:nth-child(2) { animation-delay: 40ms; }
+  .pn-drawer > *:nth-child(3) { animation-delay: 80ms; }
+  .pn-drawer > *:nth-child(n+4) { animation-delay: 120ms; }
+
+  /* ── Page entrance — one orchestrated moment per route ──────────────── */
+  .pn-page-enter { animation: pn-rise 360ms var(--pn-ease) both; }
+}
+
+/* next/font puts Inter on <body> with an unlayered class; portaled menus,
+   dialogs and toasts live in <body>, so the panel font must be unlayered too. */
+:root:has(.bz-panel) body { font-family: var(--font-body); }
+
+/* ── Safety net for markup written before Pano (unlayered on purpose) ─────
+ * Segmented controls built inline — a canvas track with the active button
+ * painted `bg-white shadow-sm` — become Pano pills: black active pill, round
+ * track. Card titles written as small semibold h2 take the 20px / 400 card
+ * title; semibold headings drop to medium (§3: hierarchy by size). */
+:root:has(.bz-panel) .bg-pn-canvas:has(> button[aria-pressed], > button[role="tab"], > [role="radio"]) {
+  border-radius: 999px;
+  padding: 4px;
+  gap: 2px;
+}
+:root:has(.bz-panel) .bg-pn-canvas:has(> button[aria-pressed], > button[role="tab"], > [role="radio"]) > :is(button, [role="radio"]) {
+  border-radius: 999px;
+  transition: background-color 260ms var(--pn-ease), color 260ms var(--pn-ease);
+}
+:root:has(.bz-panel) :is(button[aria-pressed="true"], [role="tab"][aria-selected="true"], [role="radio"][aria-checked="true"]):is(.bg-white, .shadow-sm) {
+  background: #000 !important;
+  color: #FFF !important;
+  box-shadow: none !important;
+  border-radius: 999px;
+}
+:root:has(.bz-panel) h2:is(.text-\[15px\], .text-\[16px\], .text-\[13\.5px\]) {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+:root:has(.bz-panel) :is(h1, h2, h3, h4):is(.font-semibold, .font-bold) { font-weight: 500; }
+
+/* Page header back circle sits on the canvas. */
+:root:has(.bz-panel) .pn-back-btn { background: transparent; border-color: var(--color-pn-line-strong); }
+:root:has(.bz-panel) .pn-back-btn:hover { background: #FFF; }
+
+@keyframes pn-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pn-drawer-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pn-skeleton {
+  0%, 100% { background-color: #F0F0F3; }
+  50% { background-color: #E7E7EC; }
+}
+
+/* iOS zooms into any focused field under 16px. */
+@media (max-width: 639.98px) {
+  :root:has(.bz-panel) :is(input, textarea, select).bz-input { font-size: 16px; }
+  :root:has(.bz-panel) .bz-card { border-radius: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pn-page-enter,
+  .pn-drawer,
+  .pn-drawer > *,
+  :root:has(.bz-panel) .bz-skeleton { animation: none !important; }
+  .pn-nav-pill { transition: none !important; }
+}
+
+@media print {
+  .pn-topbar, .pn-mobilebar-wrap { display: none !important; }
+}
+
+/* Large numbers written inline with a semibold weight read light in Pano
+   (§3: 300). Matches any big tabular number in the panels. */
+:root:has(.bz-panel) .tabular-nums:is(.text-\[22px\], .text-\[24px\], .text-\[26px\], .text-\[28px\], .text-\[30px\], .text-\[32px\], .text-\[34px\], .text-\[36px\], .text-\[40px\], .text-\[44px\], .text-\[48px\]) {
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+/* Tight grid (§4.1): 10px between cards wherever cards sit side by side or
+   stack, whatever gap / space-y the page wrote. */
+:root:has(.bz-panel) :is(.grid, .flex):has(> .bz-card, > .pn-card-dark) { gap: 10px; }
+:root:has(.bz-panel) [class*="space-y-"] > :is(.bz-card, .pn-card-dark):not(:last-child) { margin-block-end: 10px; }
+
+/* Eyebrows become plain small text (no caps, no mono, no tracking). The
+   global .pulse-eyebrow rule is unlayered, so this one is too. */
+:root:has(.bz-panel) .pulse-eyebrow {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* No ALL CAPS labels in Pano (§3). */
+:root:has(.bz-panel) .uppercase { text-transform: none; letter-spacing: normal; }
+
+/* AlertBanner in the panels: soft tinted 20px box, no border, 14px text, a
+   static dot (the inline palette stays for public pages). */
+:root:has(.bz-panel) .pn-alert {
+  border: 0 !important;
+  border-radius: 20px;
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 400;
+}
+:root:has(.bz-panel) .pn-alert[data-kind="info"] { background: #EEF3FD !important; color: #1D4ED8 !important; }
+:root:has(.bz-panel) .pn-alert[data-kind="success"] { background: #ECF7E6 !important; color: #2F6B20 !important; }
+:root:has(.bz-panel) .pn-alert[data-kind="warn"] { background: #FFF6DB !important; color: #7A4F00 !important; }
+:root:has(.bz-panel) .pn-alert[data-kind="danger"] { background: #FDECEC !important; color: #B42318 !important; }
+:root:has(.bz-panel) .pn-alert[data-kind="lime"] { background: var(--color-pn-accent) !important; color: #000 !important; }
+:root:has(.bz-panel) .pn-alert .pn-alert-dot { animation: none; background: currentColor !important; }
+
+/* Checkbox in the panels: black box with a lime tick. */
+:root:has(.bz-panel) .ap-check-box { border-radius: 7px; border-color: #D2D2D8; }
+:root:has(.bz-panel) .ap-check-box:is([data-state="on"], [data-state="mixed"]) {
+  background: #000;
+  border-color: #000;
+  color: var(--color-pn-accent);
+}
+
+/* Switch (APSwitch). */
+.pn-switch {
+  position: relative;
+  flex-shrink: 0;
+  border: 0;
+  padding: 0;
+  border-radius: 999px;
+  background: #E5E5EA;
+  transition: background-color 260ms var(--pn-ease);
+}
+.pn-switch.is-on { background: #000; }
+.pn-switch:focus-visible { outline: none; box-shadow: 0 0 0 3px #FFF, 0 0 0 5px #000; }
+.pn-switch-knob {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #FFF;
+  color: #000;
+  transition: transform 260ms var(--pn-ease), background-color 260ms var(--pn-ease);
+}
+.pn-switch.is-on .pn-switch-knob { background: var(--color-pn-accent); }
+
+/* Count inside a tab pill. */
+.pn-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.07);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+[aria-selected="true"] > .pn-tab-count { background: rgba(255, 255, 255, 0.2); }
+
+/* Charts (recharts) in the panels — §5.13: grey 12px ticks, dashed hairline
+   grid, axis lines off. */
+:root:has(.bz-panel) .recharts-cartesian-axis-tick-value { fill: #9A9AA0; font-size: 12px; font-family: var(--font-body); }
+:root:has(.bz-panel) .recharts-cartesian-axis-line { display: none; }
+:root:has(.bz-panel) .recharts-cartesian-grid line { stroke: #ECECF0; stroke-dasharray: 3 5; }
+:root:has(.bz-panel) .recharts-default-tooltip {
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: #000 !important;
+  color: #FFF !important;
+  padding: 8px 14px !important;
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+}
+:root:has(.bz-panel) .recharts-default-tooltip .recharts-tooltip-label { color: rgba(255, 255, 255, 0.6) !important; font-size: 12px; }
+:root:has(.bz-panel) .recharts-default-tooltip .recharts-tooltip-item { color: #FFF !important; font-size: 13px; }
+
+/* ── Stacked cards (PanoStack, §5.4 "Investments") ─────────────────────── */
+.pn-stack { display: flex; flex-direction: column; }
+.pn-stack-item { position: relative; transition: transform 320ms var(--pn-ease); }
+.pn-stack-item + .pn-stack-item { margin-top: -26px; }
+.pn-stack-item:hover { transform: translateY(-5px); }
+.pn-stack-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px 44px;
+  border-radius: 28px;
+  outline: none;
+  transition: background-color 200ms var(--pn-ease);
+}
+.pn-stack-item:last-child .pn-stack-row { padding-bottom: 18px; }
+.pn-stack-row:focus-visible { box-shadow: 0 0 0 3px #FFF, 0 0 0 5px #000; }
+.pn-stack-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+}
+.pn-stack-row--dark .pn-stack-row { background: #000; color: #FFF; }
+.pn-stack-row--dark .pn-stack-icon { background: #FFF; color: #000; }
+.pn-stack-row--dark .pn-stack-sub { color: rgba(255, 255, 255, 0.55); }
+.pn-stack-row--dark .pn-stack-value { color: var(--color-pn-accent); }
+.pn-stack-row--lime .pn-stack-row { background: var(--color-pn-accent); color: #000; }
+.pn-stack-row--lime .pn-stack-icon { background: #000; color: #FFF; }
+.pn-stack-row--lime .pn-stack-sub { color: rgba(0, 0, 0, 0.55); }
+.pn-stack-row--light .pn-stack-row { background: #FFF; color: #000; box-shadow: inset 0 0 0 1px var(--color-pn-line); }
+.pn-stack-row--light .pn-stack-icon { background: #000; color: #FFF; }
+.pn-stack-row--light .pn-stack-sub { color: var(--pn-text-3); }
+a.pn-stack-row:hover { filter: brightness(0.97); }
+
+/* ── Overlapping logos (PanoAvatarStack) ───────────────────────────────── */
+.pn-avatar-stack { display: inline-flex; align-items: center; }
+.pn-avatar-stack-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 3px solid #FFF;
+  margin-left: -12px;
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  transition: transform 260ms var(--pn-ease);
+}
+.pn-avatar-stack-item:first-child { margin-left: 0; }
+.pn-avatar-stack:hover .pn-avatar-stack-item { transform: translateX(calc(var(--pn-i, 0) * 4px)); }
+
+/* ── Slider knob on a progress bar (§5.11 "Spending in June") ──────────── */
+.pn-knob {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(46, 46, 46, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFF;
+  box-shadow: 0 0 26px rgba(215, 254, 3, 0.45);
+  transition: left 700ms var(--pn-ease);
+}
+
+/* ── Row inside a dark card (§5.4 currency rows) ───────────────────────── */
+.pn-dark-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px 10px 10px;
+  border-radius: 24px;
+  background: #1A1A1A;
+  color: #FFF;
+  transition: background-color 200ms var(--pn-ease);
+}
+a.pn-dark-row:hover { background: #242424; }
+.pn-dark-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #2A2A2A;
+  font-size: 13px;
+  font-weight: 500;
+}
+.pn-up { color: #8BD95B; }
+.pn-down { color: #FF8A80; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pn-stack-item, .pn-avatar-stack-item, .pn-knob { transition: none !important; }
+  .pn-stack-item:hover { transform: none; }
+}
+
+/* ── Phones (<640px): the reference's mobile screens ──────────────────────
+ * White page, light-grey cards; dark cards and lime tiles stay. Everything
+ * that sat on the canvas grey (tracks, inner soft boxes, inputs) turns white
+ * so it still reads on a grey card. Menus and dialogs open as bottom sheets
+ * with a grab handle. */
+@media (max-width: 639.98px) {
+  :root:has(.bz-panel) { --color-pn-canvas: #FFFFFF; }
+  :root:has(.bz-panel) .bz-card { background: #F5F5F8; border-radius: 28px; }
+  :root:has(.bz-panel) .bz-card .bz-card { background: #FFFFFF; }
+  :root:has(.bz-panel) .bz-card .pn-row,
+  :root:has(.bz-panel) .bz-card .pn-chip { border-color: transparent; }
+  :root:has(.bz-panel) .bz-card :is(.pn-arrow-btn, .bz-btn-icon) { border-color: transparent; }
+  :root:has(.bz-panel) .bz-table tbody tr:hover td { background: transparent; }
+  .pn-mobilebar-wrap { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .pn-mobilebar { padding: 0 2px 0 10px; }
+  :root:has(.bz-panel) .bz-menu--sheet { border-radius: 28px; padding: 22px 10px 10px; }
+  :root:has(.bz-panel) .bz-menu--sheet::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: 999px;
+    background: #D9D9DE;
+  }
+  .pn-tile { min-height: 168px; }
+}

@@ -81,7 +81,7 @@ interface QuestionCardProps {
 }
 
 const ICON_BTN =
-  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
+  'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#525252] transition-colors hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
 export default function QuestionCard({
   ref,
@@ -178,14 +178,14 @@ export default function QuestionCard({
         <div className="flex min-w-0 items-center gap-2">
           <span
             aria-hidden="true"
-            className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] px-2 text-[12px] font-semibold text-[#C6F24E]"
+            className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full bg-pn-ink px-2 text-[12px] font-medium text-pn-accent"
           >
             {index + 1}
           </span>
 
           {typeLocked ? (
             <span
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 text-[13px] font-medium text-[#525252]"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-pn-line bg-pn-canvas px-3 text-[13px] font-medium text-[#525252]"
               title={
                 isTr
                   ? 'Bu sorunun yanıtları olduğu için tipi değiştirilemez.'
@@ -208,7 +208,7 @@ export default function QuestionCard({
               trigger={
                 <button
                   type="button"
-                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-pn-line bg-white px-3 text-[13px] font-medium text-pn-ink transition-colors hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
                   aria-label={`${isTr ? 'Soru tipi' : 'Question type'}: ${typeLabel}`}
                 >
                   <TypeIcon size={15} aria-hidden="true" />
@@ -290,12 +290,12 @@ export default function QuestionCard({
         <div className="mt-1 flex items-start justify-between gap-3">
           <div id={textHintId} className="min-w-0 flex-1 space-y-1">
             {textErr && (
-              <p role="alert" className="text-[11.5px] leading-[1.45] text-[#DC2626]">
+              <p role="alert" className="text-[12px] leading-[1.45] text-[#DC2626]">
                 {textErr}
               </p>
             )}
             {answeredTextChanged && (
-              <p className="text-[11.5px] leading-[1.45] text-[#92400E]">
+              <p className="text-[12px] leading-[1.45] text-[#92400E]">
                 {isTr
                   ? `Bu sorunun ${question.answerCount} yanıtı var; metni değiştirirsen eski yanıtlar yeni metinle görünür.`
                   : `This question has ${question.answerCount} responses; if you change the text, old answers will appear under the new wording.`}
@@ -303,7 +303,7 @@ export default function QuestionCard({
             )}
           </div>
           {textLength >= 240 && (
-            <span className="shrink-0 text-[11px] tabular-nums text-[#737373]" aria-hidden="true">
+            <span className="shrink-0 text-[12px] tabular-nums text-[#737373]" aria-hidden="true">
               {textLength}/{QUESTION_TEXT_MAX}
             </span>
           )}
@@ -313,7 +313,7 @@ export default function QuestionCard({
       {/* Choice rows */}
       {isChoice && (
         <div className="space-y-2">
-          <p className="text-[12px] font-semibold text-[#0A0A0A]">
+          <p className="text-[12px] font-medium text-pn-ink">
             {isTr ? 'Seçenekler' : 'Options'}{' '}
             <span className="font-normal text-[#737373]">
               ({OPTIONS_MIN}–{OPTIONS_MAX})
@@ -340,7 +340,7 @@ export default function QuestionCard({
                       aria-label={isTr ? `Seçenek ${i + 1}` : `Option ${i + 1}`}
                       aria-invalid={dupe ? true : undefined}
                       aria-describedby={dupe ? rowErrorId : undefined}
-                      style={option.locked ? { background: '#FAFAFA', color: '#525252' } : undefined}
+                      style={option.locked ? { background: '#F5F5F8', color: '#525252' } : undefined}
                       onChange={(e) => setOptionText(i, e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -379,7 +379,7 @@ export default function QuestionCard({
                     )}
                   </div>
                   {dupe && (
-                    <p id={rowErrorId} role="alert" className="mt-1 text-[11.5px] leading-[1.45] text-[#DC2626]">
+                    <p id={rowErrorId} role="alert" className="mt-1 text-[12px] leading-[1.45] text-[#DC2626]">
                       {isTr ? 'Aynı seçeneği iki kez yazmışsın.' : 'You entered the same option twice.'}
                     </p>
                   )}
@@ -389,12 +389,12 @@ export default function QuestionCard({
           </ul>
 
           {errors?.options && (
-            <p role="alert" className="text-[11.5px] leading-[1.45] text-[#DC2626]">
+            <p role="alert" className="text-[12px] leading-[1.45] text-[#DC2626]">
               {errors.options}
             </p>
           )}
           {hasLockedOption && (
-            <p className="flex items-center gap-1.5 text-[11.5px] leading-[1.45] text-[#737373]">
+            <p className="flex items-center gap-1.5 text-[12px] leading-[1.45] text-[#737373]">
               <Lock size={12} aria-hidden="true" />
               {isTr
                 ? 'Kilitli seçenekler yanıt aldığı için değiştirilemez.'
@@ -403,7 +403,7 @@ export default function QuestionCard({
           )}
           <button
             type="button"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-pn-ink hover:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             disabled={question.options.length >= OPTIONS_MAX}
             onClick={() => addOption()}
           >
@@ -414,7 +414,7 @@ export default function QuestionCard({
       )}
 
       {/* Required switch row — the 44 px target is the whole label row */}
-      <div className="border-t border-[#EDEDED] pt-1">
+      <div className="border-t border-pn-line pt-1">
         <APSwitch
           className="min-h-[44px] w-full"
           size="md"

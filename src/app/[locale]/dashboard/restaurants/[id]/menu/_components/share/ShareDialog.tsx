@@ -162,7 +162,7 @@ export function ShareDialog({
             type="button"
             onClick={() => void download('svg')}
             disabled={notReady}
-            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-[#525252] underline-offset-2 hover:text-[#0A0A0A] hover:underline disabled:opacity-50"
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-[#525252] underline-offset-2 hover:text-pn-ink hover:underline disabled:opacity-50"
           >
             {downloading === 'svg' && <Loader2 size={13} className="animate-spin" aria-hidden="true" />}
             {downloaded === 'svg' ? copy.share.downloaded : copy.share.downloadPrint}
@@ -191,15 +191,15 @@ export function ShareDialog({
                   {copy.share.publish}
                 </button>
               )}
-              {canPublish && !hasPublishableItems && <span className="mt-1.5 block font-semibold">{copy.status.publishNeedsItem}</span>}
+              {canPublish && !hasPublishableItems && <span className="mt-1.5 block font-medium">{copy.status.publishNeedsItem}</span>}
             </AlertBanner>
           )}
           <div>
-            <label htmlFor="menu-share-link" className="mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]">
+            <label htmlFor="menu-share-link" className="mb-1.5 block text-[12px] font-medium text-pn-ink">
               {copy.share.menuLink}
             </label>
             {preview.state === 'loading' ? (
-              <div className="h-11 rounded-lg bg-[#EDEDED]" aria-hidden="true" />
+              <div className="h-11 rounded-[14px] bg-pn-line" aria-hidden="true" />
             ) : (
               <input
                 id="menu-share-link"
@@ -227,21 +227,21 @@ export function ShareDialog({
             </p>
           </div>
           {preview.state === 'ready' && preview.adjusted && (
-            <p className="text-[12.5px] leading-relaxed text-[#525252]">{copy.share.qrAdjusted}</p>
+            <p className="text-[13px] leading-relaxed text-[#525252]">{copy.share.qrAdjusted}</p>
           )}
           {downloadError && (
             <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />} onDismiss={() => setDownloadError(null)}>
               {downloadError}
             </AlertBanner>
           )}
-          <p className="text-[12.5px] leading-relaxed text-[#737373]">
+          <p className="text-[13px] leading-relaxed text-[#737373]">
             {copy.share.shareTip}{' '}
-            <Link href={analyticsHref} className="font-semibold text-[#0A0A0A] underline underline-offset-2">
+            <Link href={analyticsHref} className="font-medium text-pn-ink underline underline-offset-2">
               {copy.share.openAnalytics} →
             </Link>
           </p>
         </div>
-        <div className="flex items-center justify-center rounded-2xl bg-gradient-to-br from-[#FAFAFA] to-[#F5F5F5] p-5 ring-1 ring-[#EDEDED] sm:self-start">
+        <div className="flex items-center justify-center rounded-[24px] bg-gradient-to-br from-pn-canvas to-pn-canvas p-5 ring-1 ring-pn-line sm:self-start">
           {preview.state === 'ready' ? (
             <img src={preview.imageUrl} alt={copy.share.qrAlt} width={200} height={200} className="h-[200px] w-[200px]" />
           ) : preview.state === 'error' ? (

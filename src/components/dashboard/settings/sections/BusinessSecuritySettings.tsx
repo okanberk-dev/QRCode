@@ -151,19 +151,19 @@ export function BusinessSecuritySettings({
             locked={suspended}
             ariaLabel={t.switchAria}
           />
-          <span className="text-[13px] font-medium text-[#0A0A0A]">
+          <span className="text-[13px] font-medium text-pn-ink">
             {form.isActive ? t.stateActive : t.stateDisabled}
           </span>
         </div>
         {/* "Geçici kapalı" is a different control in another tab; point to
             it so an owner closing for a holiday does not disable the page. */}
-        <p className="mt-4 border-t border-[#EDEDED] pt-3 text-[12.5px] leading-[1.55] text-[#525252]">
+        <p className="mt-4 border-t border-pn-line pt-3 text-[13px] leading-[1.55] text-[#525252]">
           {t.closedHint}{" "}
           {onOpenHours ? (
             <button
               type="button"
               onClick={onOpenHours}
-              className="inline-flex min-h-[44px] items-center font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-2 hover:decoration-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] rounded sm:min-h-0"
+              className="inline-flex min-h-[44px] items-center font-medium text-pn-ink underline decoration-pn-accent decoration-2 underline-offset-2 hover:decoration-pn-accent-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent rounded sm:min-h-0"
             >
               {t.closedHintLink}
             </button>

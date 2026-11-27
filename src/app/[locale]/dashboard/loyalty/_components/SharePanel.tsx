@@ -59,7 +59,7 @@ export default function SharePanel({
 * { box-sizing: border-box; }
 body { font-family: Inter, -apple-system, 'Segoe UI', Arial, sans-serif; color: #0A0A0A; margin: 0; }
 .wrap { border: 2px solid #0A0A0A; border-radius: 18px; padding: 28px; text-align: center; }
-.eyebrow { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: #525252; }
+.eyebrow { font-size: 12px; letter-spacing: .16em; text-transform: ; color: #525252; }
 h1 { font-size: 30px; margin: 8px 0 4px; }
 .lead { font-size: 15px; color: #262626; margin: 0 0 18px; }
 img { width: 62%; max-width: 260px; }
@@ -96,9 +96,9 @@ li { margin: 6px 0; }
       </div>
       <div className="space-y-4">
         <div className="bz-card p-5">
-          <p className="text-[14px] font-semibold text-[#0A0A0A]">{tr ? 'Katılım bağlantısı' : 'Join link'}</p>
+          <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Katılım bağlantısı' : 'Join link'}</p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-            <input readOnly value={joinUrl} className="bz-input min-w-0 flex-1 font-mono text-[12.5px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'Katılım bağlantısı' : 'Join link'} />
+            <input readOnly value={joinUrl} className="bz-input min-w-0 flex-1 font-mono text-[13px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'Katılım bağlantısı' : 'Join link'} />
             <div className="flex gap-2">
               <button type="button" className="bz-btn-ghost inline-flex items-center gap-1.5" onClick={() => void copy()}>
                 {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? (tr ? 'Kopyalandı' : 'Copied') : tr ? 'Kopyala' : 'Copy'}
@@ -117,7 +117,7 @@ li { margin: 6px 0; }
           )}
         </div>
         <div className="bz-card p-5">
-          <p className="flex items-center gap-2 text-[14px] font-semibold text-[#0A0A0A]">
+          <p className="flex items-center gap-2 text-[14px] font-medium text-pn-ink">
             <Nfc size={16} aria-hidden /> {tr ? 'NFC etiketi (dokun-katıl)' : 'NFC tag (tap to join)'}
           </p>
           <p className="mt-1.5 text-[13px] text-[#525252]">
@@ -126,7 +126,7 @@ li { margin: 6px 0; }
               : 'Write this link on an NFC sticker on the table or counter: a tap opens the join page (iPhone and Android). Members who joined by NFC show separately.'}
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <input readOnly value={nfcUrl} className="bz-input min-w-0 flex-1 font-mono text-[12.5px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'NFC bağlantısı' : 'NFC link'} />
+            <input readOnly value={nfcUrl} className="bz-input min-w-0 flex-1 font-mono text-[13px]" onFocus={(e) => e.currentTarget.select()} aria-label={tr ? 'NFC bağlantısı' : 'NFC link'} />
             <div className="flex gap-2">
               <button
                 type="button"
@@ -161,13 +161,13 @@ li { margin: 6px 0; }
           </p>
         </div>
         <div className="bz-card p-5">
-          <p className="text-[14px] font-semibold text-[#0A0A0A]">{tr ? 'Nereye koymalı?' : 'Where to put it'}</p>
-          <ul className="mt-2 space-y-1.5 text-[13.5px] text-[#262626]">
+          <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Nereye koymalı?' : 'Where to put it'}</p>
+          <ul className="mt-2 space-y-1.5 text-[14px] text-[#262626]">
             <li>• {tr ? 'Kasanın yanına, ödeme yapılan yere' : 'Next to the till, where people pay'}</li>
             <li>• {tr ? 'Paket servis poşetine ve fişin altına' : 'On takeaway bags and receipts'}</li>
             <li>• {tr ? 'Instagram profil bağlantısına ve WhatsApp durumuna' : 'In your Instagram bio link and WhatsApp status'}</li>
           </ul>
-          <p className="mt-3 text-[12.5px] text-[#737373]">
+          <p className="mt-3 text-[13px] text-[#737373]">
             {tr
               ? 'Yorum QR’ınızla aynı karta koymayın ve yorum karşılığı damga vermeyin: Google, yorum karşılığında ödüle izin vermez.'
               : 'Keep it apart from your review QR and never stamp for a review: Google does not allow rewards for reviews.'}

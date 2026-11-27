@@ -655,7 +655,7 @@ async function renderAnalyticsPage({
               ? `hedef ${resolvedTargetRating.toFixed(1).replace('.', ',')}`
               : `target ${resolvedTargetRating.toFixed(1)}`,
             sparkline: sparkAvgRating,
-            sparklineColor: '#A8D62E',
+            sparklineColor: '#83AF3B',
           },
           {
             label: metricLabel('replyTime', isTr),
@@ -781,7 +781,7 @@ async function renderAnalyticsPage({
       {/* 2-col 1fr/1fr: Günlük dağılım + Saat-bazlı dağılım */}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="bz-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Günlere göre' : 'By weekday'}</h2>
+          <h2 className="text-[15px] font-medium text-pn-ink">{isTr ? 'Günlere göre' : 'By weekday'}</h2>
           <p className="mt-0.5 mb-4 text-[13px] text-[#525252]">
             {isTr ? 'Hangi günler daha çok puan geliyor?' : 'Which days bring the most ratings?'}
           </p>
@@ -789,7 +789,7 @@ async function renderAnalyticsPage({
         </section>
 
         <section className="bz-card p-5 sm:p-6">
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Saatlere göre' : 'By hour'}</h2>
+          <h2 className="text-[15px] font-medium text-pn-ink">{isTr ? 'Saatlere göre' : 'By hour'}</h2>
           <p className="mt-0.5 mb-4 text-[13px] text-[#525252]">
             {isTr ? 'Yoğun saatler hangileri?' : 'Which hours are busiest?'}
           </p>

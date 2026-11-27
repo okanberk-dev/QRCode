@@ -595,24 +595,24 @@ export function GoogleReviewsInbox({
       <section className="bz-card overflow-hidden">
         <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#0A0A0A] text-white">
-              <span className="text-[22px] font-semibold leading-none tabular-nums">
+            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-[24px] bg-pn-ink text-white">
+              <span className="text-[22px] font-medium leading-none tabular-nums">
                 {summary?.averageRating != null
                   ? summary.averageRating.toLocaleString(isTr ? 'tr-TR' : 'en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
                   : '–'}
               </span>
               <span className="mt-1 inline-flex gap-px" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} size={8} fill={i <= Math.round(summary?.averageRating ?? 0) ? '#C6F24E' : 'transparent'} color="#C6F24E" />
+                  <Star key={i} size={8} fill={i <= Math.round(summary?.averageRating ?? 0) ? '#D7FE03' : 'transparent'} color="#D7FE03" />
                 ))}
               </span>
             </div>
             {/* One line (§58): connected location · last sync · sync now. */}
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-semibold text-[#0A0A0A]">
+              <p className="truncate text-[15px] font-medium text-pn-ink">
                 {locationLabel ?? (isTr ? 'Google puanı' : 'Google rating')}
               </p>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[12.5px] text-[#737373]">
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-[#737373]">
                 {syncState === 'running' || summary?.syncing ? (
                   <span className="inline-flex items-center gap-1">
                     <Loader2 size={11} className="animate-spin" aria-hidden="true" />
@@ -627,7 +627,7 @@ export function GoogleReviewsInbox({
                         <button
                           type="button"
                           onClick={() => void syncNow(true)}
-                          className="-my-2 inline-flex min-h-[44px] items-center font-medium text-[#0A0A0A] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] rounded sm:min-h-0 sm:my-0"
+                          className="-my-2 inline-flex min-h-[44px] items-center font-medium text-pn-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover rounded sm:min-h-0 sm:my-0"
                         >
                           {isTr ? 'Şimdi senkronla' : 'Sync now'}
                         </button>
@@ -652,9 +652,9 @@ export function GoogleReviewsInbox({
                 tone: '',
               },
             ].map((t) => (
-              <div key={t.label} className="rounded-xl bg-[#FAFAFA] px-4 py-3">
-                <dt className="text-[12.5px] text-[#525252]">{t.label}</dt>
-                <dd className={`mt-1 text-[20px] font-semibold tabular-nums text-[#0A0A0A] ${t.tone}`}>{t.value}</dd>
+              <div key={t.label} className="rounded-[20px] bg-pn-canvas px-4 py-3">
+                <dt className="text-[13px] text-[#525252]">{t.label}</dt>
+                <dd className={`mt-1 text-[20px] font-medium tabular-nums text-pn-ink ${t.tone}`}>{t.value}</dd>
               </div>
             ))}
           </dl>
@@ -669,19 +669,19 @@ export function GoogleReviewsInbox({
                   setSelectNotice(null);
                 }}
                 aria-pressed={selectMode}
-                className={`${selectMode ? 'bz-btn-primary' : 'bz-btn-ghost'} min-h-11 text-[12.5px] sm:min-h-[36px]`}
+                className={`${selectMode ? 'bz-btn-primary' : 'bz-btn-ghost'} min-h-11 text-[13px] sm:min-h-[36px]`}
               >
                 <CheckSquare size={14} aria-hidden="true" />
                 {isTr ? 'Toplu yanıt' : 'Bulk reply'}
               </button>
             )}
-            <button type="button" onClick={() => setSettingsOpen(true)} className="bz-btn-ghost min-h-11 text-[12.5px] sm:min-h-[36px]">
+            <button type="button" onClick={() => setSettingsOpen(true)} className="bz-btn-ghost min-h-11 text-[13px] sm:min-h-[36px]">
               <Settings2 size={14} aria-hidden="true" />
               {isTr ? 'Yanıt ayarları' : 'Reply settings'}
             </button>
             <PulseMenu
               trigger={
-                <button type="button" className="bz-btn-ghost min-h-11 min-w-11 text-[12.5px] sm:min-h-[36px]" aria-label={isTr ? 'Diğer işlemler' : 'More actions'}>
+                <button type="button" className="bz-btn-ghost min-h-11 min-w-11 text-[13px] sm:min-h-[36px]" aria-label={isTr ? 'Diğer işlemler' : 'More actions'}>
                   <MoreHorizontal size={14} aria-hidden="true" />
                 </button>
               }
@@ -709,7 +709,7 @@ export function GoogleReviewsInbox({
             <Inbox size={13} aria-hidden="true" />
             {isTr ? 'Yanıt kutusu' : 'Reply inbox'}
             {summary && summary.unreplied > 0 && (
-              <span className="ml-1 rounded-full bg-[#C6F24E] px-1.5 text-[11px] font-semibold tabular-nums text-[#0A0A0A]">{fmt(summary.unreplied)}</span>
+              <span className="ml-1 rounded-full bg-pn-accent px-1.5 text-[12px] font-medium tabular-nums text-pn-ink">{fmt(summary.unreplied)}</span>
             )}
           </button>
           <button type="button" role="tab" aria-selected={view === 'analysis'} onClick={() => setView('analysis')} className="bz-tab min-h-11 sm:min-h-0">
@@ -726,7 +726,7 @@ export function GoogleReviewsInbox({
       )}
 
       {resumeJobId && !bulkIds && (
-        <div className="flex flex-col gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[13px] text-[#525252]">{isTr ? 'Toplu yanıt gönderimi sürüyor.' : 'A bulk reply is being sent.'}</p>
           <button type="button" onClick={() => setBulkIds([])} className="bz-btn min-h-11 sm:min-h-9">
             {isTr ? 'İlerlemeyi gör' : 'View progress'}
@@ -778,8 +778,8 @@ export function GoogleReviewsInbox({
               type="button"
               aria-pressed={filter.stars.includes(n)}
               onClick={() => toggleStar(n)}
-              className={`inline-flex min-h-11 items-center gap-1 rounded-full border px-3 text-[12.5px] sm:min-h-[32px] ${
-                filter.stars.includes(n) ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#D4D4D4]'
+              className={`inline-flex min-h-11 items-center gap-1 rounded-full border px-3 text-[13px] sm:min-h-[32px] ${
+                filter.stars.includes(n) ? 'border-pn-ink bg-pn-ink text-white' : 'border-pn-line bg-white text-[#525252] hover:border-pn-line-strong'
               }`}
             >
               {n}
@@ -802,7 +802,7 @@ export function GoogleReviewsInbox({
             <input
               id={`gr-from-${restaurantId}`}
               type="date"
-              className="bz-input h-11 w-[150px] text-[16px] sm:h-[32px] sm:text-[12.5px]"
+              className="bz-input h-11 w-[150px] text-[16px] sm:h-[32px] sm:text-[13px]"
               value={filter.from}
               max={filter.to || undefined}
               onChange={(e) => setFilter((f) => ({ ...f, from: e.target.value }))}
@@ -812,14 +812,14 @@ export function GoogleReviewsInbox({
             <input
               id={`gr-to-${restaurantId}`}
               type="date"
-              className="bz-input h-11 w-[150px] text-[16px] sm:h-[32px] sm:text-[12.5px]"
+              className="bz-input h-11 w-[150px] text-[16px] sm:h-[32px] sm:text-[13px]"
               value={filter.to}
               min={filter.from || undefined}
               onChange={(e) => setFilter((f) => ({ ...f, to: e.target.value }))}
             />
           </span>
           {isFilterActive(filter) && (
-            <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center gap-1 px-2 text-[12.5px] font-medium text-[#525252] underline-offset-2 hover:underline sm:min-h-0">
+            <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-[#525252] underline-offset-2 hover:underline sm:min-h-0">
               <X size={12} aria-hidden="true" />
               {isTr ? 'Filtreleri temizle' : 'Clear filters'}
             </button>
@@ -828,16 +828,16 @@ export function GoogleReviewsInbox({
       </div>
 
       {selectMode && (
-        <div className="flex flex-col gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <p className="text-[12.5px] text-[#525252] sm:flex-1">
+        <div className="flex flex-col gap-2 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <p className="text-[13px] text-[#525252] sm:flex-1">
             {isTr
               ? 'Toplu yanıt yalnız yanıtsız 4-5 yıldızlı yorumlar için. 1-3 yıldızlı yorumları tek tek yanıtla.'
               : 'Bulk replies are for unanswered 4–5 star reviews only. Answer 1–3 star reviews one by one.'}
           </p>
-          <button type="button" onClick={() => void suggestBulk()} className="bz-btn-lime min-h-11 text-[12.5px] sm:min-h-9">
+          <button type="button" onClick={() => void suggestBulk()} className="bz-btn-lime min-h-11 text-[13px] sm:min-h-9">
             {isTr ? 'Önerilen: yanıtsız 4-5★' : 'Suggested: unanswered 4–5★'}
           </button>
-          <button type="button" onClick={() => void selectAllInFilter()} className="bz-btn min-h-11 text-[12.5px] sm:min-h-9">
+          <button type="button" onClick={() => void selectAllInFilter()} className="bz-btn min-h-11 text-[13px] sm:min-h-9">
             {isTr ? 'Tümünü seç (filtredekiler)' : 'Select all (in filter)'}
           </button>
           {selectNotice && <p className="w-full text-[12px] text-[#92400E]">{selectNotice}</p>}
@@ -858,11 +858,11 @@ export function GoogleReviewsInbox({
           <div className="space-y-4 p-5" aria-hidden="true">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex gap-3">
-                <div className="h-10 w-10 shrink-0 rounded-full bg-[#EDEDED]" />
+                <div className="h-10 w-10 shrink-0 rounded-full bg-pn-line" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 w-40 rounded bg-[#EDEDED]" />
-                  <div className="h-3 w-full rounded bg-[#F5F5F5]" />
-                  <div className="h-3 w-2/3 rounded bg-[#F5F5F5]" />
+                  <div className="h-3 w-40 rounded bg-pn-line" />
+                  <div className="h-3 w-full rounded bg-pn-canvas" />
+                  <div className="h-3 w-2/3 rounded bg-pn-canvas" />
                 </div>
               </div>
             ))}
@@ -888,7 +888,7 @@ export function GoogleReviewsInbox({
           </div>
         ) : (
           <>
-            <p className="border-b border-[#EDEDED] px-4 py-2 text-[12px] text-[#737373] sm:px-5">
+            <p className="border-b border-pn-line px-4 py-2 text-[12px] text-[#737373] sm:px-5">
               {isTr ? `${fmt(list?.matching ?? items.length)} yorum` : `${fmt(list?.matching ?? items.length)} reviews`}
               {loading && <Loader2 size={11} className="ml-2 inline animate-spin" aria-hidden="true" />}
             </p>
@@ -922,7 +922,7 @@ export function GoogleReviewsInbox({
               />
             ))}
             {nextCursor && (
-              <div ref={sentinelRef} className="flex justify-center border-t border-[#EDEDED] p-3">
+              <div ref={sentinelRef} className="flex justify-center border-t border-pn-line p-3">
                 <button type="button" onClick={() => void load({ cursor: nextCursor })} disabled={loadingMore} className="bz-btn min-h-11 sm:min-h-9">
                   {loadingMore && <Loader2 size={13} className="animate-spin" aria-hidden="true" />}
                   {isTr ? 'Daha fazla yükle' : 'Load more'}
@@ -935,7 +935,7 @@ export function GoogleReviewsInbox({
 
       </div>
 
-      <p className={view === 'inbox' ? 'hidden text-[11.5px] text-[#A3A3A3] lg:block' : 'hidden'}>
+      <p className={view === 'inbox' ? 'hidden text-[12px] text-[#A3A3A3] lg:block' : 'hidden'}>
         {isTr
           ? 'Kısayollar: J / K yorumlar arasında gez · R yanıtla · / ara · ⌘/Ctrl + Enter gönder · ⌘/Ctrl + Shift + Enter gönder ve sonrakine geç'
           : 'Shortcuts: J / K move · R reply · / search · ⌘/Ctrl + Enter send · ⌘/Ctrl + Shift + Enter send & next'}

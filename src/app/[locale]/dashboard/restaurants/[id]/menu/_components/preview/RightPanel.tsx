@@ -46,17 +46,17 @@ export function RightPanel({
         aria-labelledby="right-panel-title"
         className={`bz-card sticky hidden flex-col self-start overflow-hidden p-0 lg:flex ${
           stickyTop === 'page'
-            ? 'top-[72px] max-h-[calc(100dvh-88px)]'
-            : 'top-[184px] max-h-[calc(100dvh-200px)] min-[1600px]:top-[128px] min-[1600px]:max-h-[calc(100dvh-144px)]'
+            ? 'top-[16px] max-h-[calc(100dvh-118px)]'
+            : 'top-[128px] max-h-[calc(100dvh-230px)] min-[1600px]:top-[72px] min-[1600px]:max-h-[calc(100dvh-174px)]'
         }`}
       >
-        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[#EDEDED] px-3">
+        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-pn-line px-3">
           {itemOpen ? (
             <>
               <h2 id="right-panel-title" className="sr-only">
                 {copy.preview.title}
               </h2>
-              <div role="tablist" aria-label={copy.view.label} className="inline-flex gap-0.5 rounded-[10px] bg-[#F2F2F2] p-[3px]">
+              <div role="tablist" aria-label={copy.view.label} className="inline-flex gap-0.5 rounded-[10px] bg-pn-canvas p-[3px]">
                 {(['preview', 'item'] as const).map((t) => (
                   <button
                     key={t}
@@ -64,8 +64,8 @@ export function RightPanel({
                     role="tab"
                     aria-selected={tab === t}
                     onClick={() => onTab(t)}
-                    className={`h-11 rounded-[7px] px-3 text-[12.5px] font-medium pointer-fine:h-7 ${
-                      tab === t ? 'bg-white text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]' : 'text-[#525252] hover:text-[#0A0A0A]'
+                    className={`h-11 rounded-[7px] px-3 text-[13px] font-medium pointer-fine:h-7 ${
+                      tab === t ? 'bg-white text-pn-ink shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]' : 'text-[#525252] hover:text-pn-ink'
                     }`}
                   >
                     {t === 'preview' ? copy.preview.tabPreview : copy.preview.tabItem}
@@ -82,7 +82,7 @@ export function RightPanel({
             <>
               <Smartphone size={14} strokeWidth={2} className="shrink-0 text-[#525252]" aria-hidden="true" />
               <h2 id="right-panel-title" className="min-w-0 flex-1 truncate">
-                <span className="font-body text-[13px] font-semibold tracking-normal text-[#0A0A0A]">{copy.preview.title}</span>
+                <span className="font-body text-[13px] font-medium tracking-normal text-pn-ink">{copy.preview.title}</span>
               </h2>
               {openLink.external ? (
                 <a href={openLink.href} target="_blank" rel="noopener noreferrer" aria-label={copy.preview.openLiveAria} className="bz-btn bz-btn-sm shrink-0">

@@ -21,7 +21,6 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
-  ChevronRight,
   MessageSquare,
   Reply,
   Settings,
@@ -49,9 +48,9 @@ const TYPE_META: Record<
   ActivityType,
   { icon: typeof MessageSquare; tint: string; bg: string }
 > = {
-  feedback: { icon: MessageSquare, tint: '#0A0A0A', bg: '#FAFAFA' },
-  reply: { icon: Reply, tint: '#0A0A0A', bg: '#EAF9B8' },
-  ai_draft: { icon: Sparkles, tint: '#A8D62E', bg: '#0A0A0A' },
+  feedback: { icon: MessageSquare, tint: '#000000', bg: '#F5F5F8' },
+  reply: { icon: Reply, tint: '#000000', bg: '#F3FDC4' },
+  ai_draft: { icon: Sparkles, tint: '#83AF3B', bg: '#000000' },
   system: { icon: Settings, tint: '#737373', bg: '#F5F5F5' },
 };
 
@@ -178,7 +177,7 @@ function ConnectionBadge({ status, isTr }: { status: RealtimeStatus; isTr: boole
       role="status"
       aria-live="polite"
       aria-label={style.ariaLabel}
-      className="inline-flex items-center gap-1.5 text-[10.5px] font-medium tracking-wider uppercase text-[#525252]"
+      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#525252]"
     >
       {isLive ? (
         <span aria-hidden="true" className="bz-pulse-dot" />
@@ -211,7 +210,7 @@ function NewEventsToast({
     <div
       role="status"
       aria-live="polite"
-      className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1.5 text-[12px] text-[#0A0A0A]"
+      className="mb-3 inline-flex items-center gap-2 rounded-full border border-pn-accent-hover bg-pn-accent-soft px-3 py-1.5 text-[12px] text-pn-ink"
     >
       <Sparkles size={12} aria-hidden="true" />
       <span>
@@ -264,15 +263,15 @@ export function ActivityFeed({
 
   if (events.length === 0) {
     return (
-      <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
+      <section className={`bz-card p-5 sm:p-7 ${className}`} aria-busy={status === 'connecting'}>
         <header className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
+          <h2 className="pn-card-title">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
           <ConnectionBadge status={status} isTr={isTr} />
         </header>
         <div className="flex flex-col items-center gap-2.5 py-6 text-center">
           <span
             aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FAFAFA]"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-pn-canvas"
           >
             <Sparkles size={16} strokeWidth={1.6} className="text-[#A3A3A3]" />
           </span>
@@ -287,10 +286,10 @@ export function ActivityFeed({
   }
 
   return (
-    <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
+    <section className={`bz-card p-5 sm:p-7 ${className}`} aria-busy={status === 'connecting'}>
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-[15px] font-semibold text-[#0A0A0A]">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
+          <h2 className="pn-card-title">{isTr ? 'Son aktivite' : 'Recent activity'}</h2>
           <ConnectionBadge status={status} isTr={isTr} />
         </div>
         {/*
@@ -306,7 +305,7 @@ export function ActivityFeed({
         */}
         <Link
           href={viewAllHref}
-          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 -my-3 sm:m-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
+          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-pn-ink bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 -my-3 sm:m-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:rounded-none hover:bg-pn-canvas sm:hover:bg-transparent"
         >
           {isTr ? 'Tümü' : 'All'}
           <ArrowRight size={11} strokeWidth={2} />
@@ -325,11 +324,11 @@ export function ActivityFeed({
       <div className="flex flex-col gap-3">
         {groupedEvents.map((group) => (
           <section key={group.label} aria-label={group.label}>
-            <h3 className="mb-1 text-[12px] font-medium text-[#737373]">
+            <h3 className="mb-1 text-[13px] font-normal text-[#9A9AA0]">
               {group.label}
             </h3>
             <ol className="flex flex-col">
-              {group.events.map((event, idx) => {
+              {group.events.map((event) => {
                 const dotColor = SENTIMENT_DOT[event.sentiment];
                 const meta = TYPE_META[event.type];
                 const Icon = meta.icon;
@@ -355,73 +354,45 @@ export function ActivityFeed({
                   ? event.target?.replace(/^★+\s*[—-]?\s*/, '').trim() ?? ''
                   : event.target;
 
+                // Pano "History" row (DASHBOARD_DESIGN.md §5.4): black icon
+                // circle, name over a grey action line, the clock on the right.
                 const inner = (
                   <>
-                    {/* One line per event (§58): clock only, relative time
-                        in the tooltip. */}
-                    <span
-                      className="w-[42px] shrink-0 text-[12px] tabular-nums text-[#737373]"
-                      title={fullTime}
-                    >
-                      <span className="sr-only" suppressHydrationWarning>{relativeTime} · </span>
-                      {clockTime}
-                    </span>
                     <span
                       aria-hidden="true"
-                      className="relative shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-md"
-                      style={{ background: meta.bg, color: meta.tint }}
+                      className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pn-ink text-white"
                     >
-                      <Icon size={11} strokeWidth={2.2} />
+                      <Icon size={17} />
                       <span
-                        className="absolute -bottom-0.5 -right-0.5 inline-block h-1.5 w-1.5 rounded-full ring-2 ring-white"
+                        className="absolute -bottom-0.5 -right-0.5 inline-block h-3 w-3 rounded-full ring-2 ring-white"
                         style={{ background: dotColor }}
                       />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-[#525252]">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-medium text-pn-ink">{event.actor}</span>
+                      <span className="block truncate text-[13px] text-[#9A9AA0]">
+                        {event.action}
+                        {targetWithoutStars ? ` · ${targetWithoutStars}` : ''}
+                      </span>
+                    </span>
+                    <span className="flex shrink-0 flex-col items-end gap-0.5">
                       {inlineRating !== null && (
                         <span
-                          className="mr-1.5 inline-flex items-center align-middle gap-0.5"
+                          className="inline-flex items-center gap-1 text-[15px] text-pn-ink"
                           aria-label={`${inlineRating} ${isTr ? 'yıldız' : 'stars'}`}
                         >
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star
-                              key={s}
-                              size={9}
-                              className={s <= inlineRating ? 'text-[#0A0A0A]' : 'text-[#EDEDED]'}
-                              fill={s <= inlineRating ? '#0A0A0A' : 'transparent'}
-                              strokeWidth={1.5}
-                            />
-                          ))}
+                          <Star size={13} fill="currentColor" aria-hidden="true" />
+                          {inlineRating}
                         </span>
                       )}
-                      <strong className="font-semibold text-[#0A0A0A]">{event.actor}</strong>{' '}
-                      {event.action}
-                      {targetWithoutStars && (
-                        <>
-                          {' '}
-                          {/* Short label (platform or customer first name):
-                              keep "— Buaze QR" on one line. */}
-                          <span className="text-[#737373]">· {targetWithoutStars}</span>
-                        </>
-                      )}
+                      <span className="text-[12px] tabular-nums text-[#9A9AA0]" title={fullTime}>
+                        <span className="sr-only" suppressHydrationWarning>{relativeTime} · </span>
+                        {clockTime}
+                      </span>
                     </span>
-                    {event.href && (
-                      <ChevronRight
-                        size={12}
-                        strokeWidth={2}
-                        className="shrink-0 self-center text-[#A3A3A3] opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-hidden="true"
-                      />
-                    )}
                   </>
                 );
-                // Same vertical padding on every row. The old `first:pt-0
-                // last:pb-0` matched the row element itself (the only child
-                // of its <li>), so every row lost its padding and links
-                // were ~38px tall on mobile. Rows are ≥44px tall there now.
-                const baseClass =
-                  'group flex min-h-[44px] items-center gap-2 py-2 ' +
-                  (idx < group.events.length - 1 ? 'border-b border-[#F2F2F2]' : '');
+                const baseClass = 'group flex min-h-[56px] items-center gap-3.5 py-2';
                 const slideStyle = isNew
                   ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }
                   : undefined;
@@ -430,7 +401,7 @@ export function ActivityFeed({
                     {event.href ? (
                       <Link
                         href={event.href}
-                        className={`${baseClass} hover:bg-[#FAFAFA] -mx-2 px-2 rounded-md bz-motion-spring active:scale-[0.97] sm:active:scale-100`}
+                        className={`${baseClass} -mx-3 rounded-[20px] px-3 transition-colors duration-200 hover:bg-pn-canvas`}
                       >
                         {inner}
                       </Link>

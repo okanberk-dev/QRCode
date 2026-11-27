@@ -14,7 +14,7 @@ export default function Loading() {
     <SkPageShell max={1440} space={5}>
       <SkBox className="h-3 w-32" />
       <SkPageHeader withActions titleWidth="w-56" />
-      <SkBox className="h-16 w-full rounded-xl" />
+      <SkBox className="h-16 w-full rounded-[20px]" />
       <VariableGroupsSkeleton />
     </SkPageShell>
   );

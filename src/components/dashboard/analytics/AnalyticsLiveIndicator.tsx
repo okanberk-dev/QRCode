@@ -45,7 +45,7 @@ export function AnalyticsLiveIndicator({ isTr = true }: AnalyticsLiveIndicatorPr
         />
       </span>
       <span
-        className="pulse-eyebrow text-[10px]"
+        className="text-[13px] font-medium text-[12px]"
         style={{ color: '#22C55E', letterSpacing: '0.18em' }}
       >
         {isTr ? 'GÜNCEL · BU SAYFA' : 'LIVE · THIS PAGE'}

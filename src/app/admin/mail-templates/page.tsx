@@ -109,10 +109,10 @@ export default function MailTemplatesIndexPage() {
             <Link
               key={`${cell.key}-${cell.locale}`}
               href={`/admin/mail-templates/${cell.key}/${cell.locale}`}
-              className="group bz-card p-5 hover:border-[#C6F24E] transition-colors block"
+              className="group bz-card p-5 hover:border-pn-accent transition-colors block"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-[#0A0A0A] truncate">
+                <p className="text-sm font-medium text-pn-ink truncate">
                   {MAIL_TEMPLATE_LABELS[cell.key] ?? cell.key}
                 </p>
                 <Badge kind="ghost">{cell.locale.toUpperCase()}</Badge>
@@ -122,7 +122,7 @@ export default function MailTemplatesIndexPage() {
               </p>
               <div className="mt-4 flex items-center justify-between gap-2">
                 {cell.seeded ? (
-                  <span className="text-[11px] text-[#525252] truncate">
+                  <span className="text-[12px] text-[#525252] truncate">
                     Son güncelleme:{' '}
                     {cell.updatedAt ? formatStampInTimeZone(cell.updatedAt, 'tr') : '—'}
                   </span>
@@ -131,7 +131,7 @@ export default function MailTemplatesIndexPage() {
                 )}
                 <ArrowRight
                   size={14}
-                  className="shrink-0 text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors"
+                  className="shrink-0 text-[#A3A3A3] group-hover:text-pn-ink transition-colors"
                 />
               </div>
             </Link>

@@ -69,7 +69,7 @@ export default function MemberRestaurantsPanel({ userId }: Props) {
     {/* §49 franchise — manage all of this owner's businesses together
         (bulk pause / feature toggle) in the admin businesses table. */}
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <p className="text-[12.5px] text-[#525252]">
+      <p className="text-[13px] text-[#525252]">
         {data.length} işletme{data.length > 1 ? ' · zincir' : ''}
       </p>
       <Link
@@ -80,12 +80,12 @@ export default function MemberRestaurantsPanel({ userId }: Props) {
         İşletmeler tablosunda yönet
       </Link>
     </div>
-    <div className="bz-card divide-y divide-[#EDEDED] overflow-hidden">
+    <div className="bz-card divide-y divide-pn-line overflow-hidden">
       {data.map((r) => (
         <div key={r.id} className="p-4 sm:p-5 flex items-center gap-3 flex-wrap">
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[14px] font-semibold text-white"
-            style={{ background: r.primaryColor || '#0A0A0A' }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[20px] text-[14px] font-medium text-white"
+            style={{ background: r.primaryColor || '#000000' }}
           >
             {r.name.charAt(0).toUpperCase()}
           </div>
@@ -93,7 +93,7 @@ export default function MemberRestaurantsPanel({ userId }: Props) {
             <div className="flex items-center gap-2 flex-wrap">
               <Link
                 href={`/admin/restaurants/${r.id}`}
-                className="text-[14px] font-semibold text-[#0A0A0A] hover:underline"
+                className="text-[14px] font-medium text-pn-ink hover:underline"
               >
                 {r.name}
               </Link>

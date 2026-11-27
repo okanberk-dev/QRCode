@@ -127,7 +127,7 @@ export function InlinePrice({
         />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute right-2.5 top-0 flex h-9 items-center text-[12.5px] text-[#737373] pointer-coarse:h-11"
+          className="pointer-events-none absolute right-2.5 top-0 flex h-9 items-center text-[13px] text-[#737373] pointer-coarse:h-11"
         >
           {currencySymbol(currency)}
         </span>
@@ -135,7 +135,7 @@ export function InlinePrice({
           <p
             id={msgId}
             role={error ? 'alert' : undefined}
-            className={`absolute right-0 top-full mt-1 whitespace-nowrap rounded-md bg-white px-1.5 py-0.5 text-[11.5px] shadow-sm ring-1 ring-[#EDEDED] ${
+            className={`absolute right-0 top-full mt-1 whitespace-nowrap rounded-[10px] bg-white px-1.5 py-0.5 text-[12px] ring-1 ring-pn-line ${
               error ? 'text-[#DC2626]' : 'text-[#525252]'
             }`}
           >
@@ -148,8 +148,8 @@ export function InlinePrice({
 
   const text = (
     <span
-      className={`inline-flex items-center gap-1.5 text-[14px] font-semibold tabular-nums pointer-coarse:text-[16px] ${
-        zero ? 'text-[#92400E]' : 'text-[#0A0A0A]'
+      className={`inline-flex items-center gap-1.5 text-[14px] font-medium tabular-nums pointer-coarse:text-[16px] ${
+        zero ? 'text-[#92400E]' : 'text-pn-ink'
       }`}
     >
       {zero && <span className="h-1.5 w-1.5 rounded-full bg-[#D97706]" aria-hidden="true" />}
@@ -167,7 +167,7 @@ export function InlinePrice({
           data-price-cell=""
           onClick={open}
           aria-label={`${copy.item.priceAria(name)}: ${shown}`}
-          className="-mx-1.5 inline-flex min-h-11 items-center rounded-md px-1.5 hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] pointer-fine:min-h-0 pointer-fine:py-1"
+          className="-mx-1.5 inline-flex min-h-11 items-center rounded-full px-1.5 hover:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent pointer-fine:min-h-0 pointer-fine:py-1"
         >
           {text}
         </button>

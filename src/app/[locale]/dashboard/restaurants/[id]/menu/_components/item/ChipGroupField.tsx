@@ -24,7 +24,7 @@ export function ChipGroupField<K extends string>({
   const toggle = (key: string) => onChange(selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key]);
   return (
     <fieldset disabled={disabled} className="min-w-0">
-      <legend className="mb-1.5 text-[12px] font-semibold text-[#0A0A0A]">
+      <legend className="mb-1.5 text-[12px] font-medium text-pn-ink">
         {legend}
         {countLabel && <span className="ml-1.5 font-normal text-[#737373]">· {countLabel}</span>}
       </legend>
@@ -44,12 +44,12 @@ export function ChipGroupField<K extends string>({
                     aria-pressed={on}
                     onClick={() => toggle(key)}
                     style={on && tint ? { background: tint.bg, color: tint.fg, borderColor: tint.border ?? tint.bg } : undefined}
-                    className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium transition-colors disabled:opacity-50 pointer-fine:h-8 ${
+                    className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors disabled:opacity-50 pointer-fine:h-8 ${
                       on
                         ? tint
-                          ? 'shadow-sm'
-                          : 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                        : 'border-[#E5E5E5] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
+                          ? ''
+                          : 'border-pn-ink bg-pn-ink text-white'
+                        : 'border-pn-line-strong bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink'
                     }`}
                   >
                     {on && <Check size={12} strokeWidth={2.5} aria-hidden="true" />}
@@ -65,7 +65,7 @@ export function ChipGroupField<K extends string>({
         <button
           type="button"
           onClick={() => onChange([])}
-          className="mt-2 min-h-11 text-[12.5px] font-medium text-[#525252] underline-offset-2 hover:underline pointer-fine:min-h-8"
+          className="mt-2 min-h-11 text-[13px] font-medium text-[#525252] underline-offset-2 hover:underline pointer-fine:min-h-8"
         >
           {clearLabel}
         </button>

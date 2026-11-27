@@ -591,7 +591,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
           {pausedText}{' '}
           <Link
             href={`/${locale}/dashboard/restaurants`}
-            className="font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            className="font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
           >
             {isTr ? 'İşletmelere git' : 'Go to businesses'}
           </Link>
@@ -606,7 +606,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
           <button
             type="button"
             onClick={retryFailed}
-            className="font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            className="font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
           >
             {isTr ? 'Tekrar dene' : 'Try again'}
           </button>
@@ -661,7 +661,7 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
             <div
               role="group"
               aria-label={isTr ? 'Görünüm' : 'View'}
-              className="order-2 ml-auto inline-flex gap-0.5 rounded-[10px] bg-[#F2F2F2] p-[3px] sm:order-4 sm:ml-0"
+              className="order-2 ml-auto inline-flex gap-0.5 rounded-[10px] bg-pn-canvas p-[3px] sm:order-4 sm:ml-0"
             >
               {(
                 [
@@ -677,10 +677,10 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
                     aria-pressed={selected}
                     aria-label={opt.label}
                     onClick={() => setView(opt.id)}
-                    className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-[7px] px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:min-h-[30px] sm:min-w-0 ${
+                    className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-[7px] px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:min-h-[30px] sm:min-w-0 ${
                       selected
-                        ? 'bg-white text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]'
-                        : 'text-[#525252] hover:text-[#0A0A0A]'
+                        ? 'bg-white text-pn-ink shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]'
+                        : 'text-[#525252] hover:text-pn-ink'
                     }`}
                   >
                     {opt.icon}
@@ -787,14 +787,14 @@ export default function QrClient({ initialRestaurants, initialHistories }: QrCli
       {/* List view — §23.6: table on desktop, compact list below lg. */}
       {filteredItems.length > 0 && view === 'list' && (
         <>
-          <ul className="bz-card divide-y divide-[#EDEDED] lg:hidden">
+          <ul className="bz-card divide-y divide-pn-line lg:hidden">
             {filteredItems.map((it) => {
               const label = targetLabel(it);
               const branch = restaurantById.get(it.restaurantId)?.name;
               return (
                 <li key={it.id} className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">{label}</p>
+                    <p className="truncate text-[13px] font-medium text-pn-ink">{label}</p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12px] text-[#737373]">
                       {it.platform && PLATFORM_TO_CHIP[it.platform] ? (
                         <span className="inline-flex items-center gap-1">

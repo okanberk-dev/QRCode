@@ -439,7 +439,7 @@ export function PlacesProfileSection({
         {matched.next && onSwitchBusiness && (
           <button
             type="button"
-            className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2"
+            className="inline-flex min-h-11 items-center font-medium underline underline-offset-2"
             onClick={() => {
               const id = matched.next!.id;
               setMatched(null);
@@ -458,7 +458,7 @@ export function PlacesProfileSection({
       href={mapsHref}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2"
+      className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-pn-ink underline underline-offset-2"
     >
       {copy.openOnGoogle}
       <ExternalLink size={13} aria-hidden="true" />

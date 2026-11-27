@@ -118,12 +118,12 @@ export default async function OwnerAnnouncementsPage({
                   owners only ever see announcements meant for them. */}
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
                 <Badge kind={severityKind(a.severity)}>{severityLabel(a.severity)}</Badge>
-                <span className="text-[11.5px] text-[#737373]">
+                <span className="text-[12px] text-[#737373]">
                   {/* §46 — sunucu UTC'de render ediyor; işletme saat dilimine sabitle. */}
                   {formatFullDateTimeInTimeZone(a.createdAt, isTr ? 'tr' : 'en')}
                 </span>
               </div>
-              <h2 className="bz-h-tight mb-1.5 text-[16px] text-[#0A0A0A]">{a.title}</h2>
+              <h2 className="bz-h-tight mb-1.5 text-[16px] text-pn-ink">{a.title}</h2>
               <p className="text-[13px] leading-[1.55] text-[#525252]">{a.message}</p>
             </article>
           ))}

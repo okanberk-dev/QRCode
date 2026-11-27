@@ -21,9 +21,9 @@ import { platformWizardHref } from './PlatformLinkRow';
 const CELL_TONE: Record<string, string> = {
   connected: 'text-[#16A34A] bg-[#F0FDF4] hover:bg-[#DCFCE7]',
   issue: 'text-[#B91C1C] bg-[#FEF2F2] hover:bg-[#FEE2E2]',
-  missing: 'text-[#737373] bg-[#F5F5F5] hover:bg-[#EDEDED]',
-  off: 'text-[#A3A3A3] bg-[#FAFAFA] hover:bg-[#F2F2F2]',
-  locked: 'text-[#A3A3A3] bg-[#FAFAFA]',
+  missing: 'text-[#737373] bg-pn-canvas hover:bg-pn-line',
+  off: 'text-[#A3A3A3] bg-pn-canvas hover:bg-pn-canvas',
+  locked: 'text-[#A3A3A3] bg-pn-canvas',
 };
 
 interface RetestResult {
@@ -128,14 +128,14 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
             type="button"
             onClick={checkAll}
             aria-busy={running || undefined}
-            className="bz-btn-ghost inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[12.5px] sm:w-auto sm:min-h-[36px]"
+            className="bz-btn-ghost inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[13px] sm:w-auto sm:min-h-[36px]"
           >
             {running ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={14} aria-hidden="true" />}
             {running ? (isTr ? 'Kontrol ediliyor…' : 'Checking…') : isTr ? 'Tüm işletmeleri kontrol et' : 'Check all businesses'}
           </button>
         </div>
       </div>
-      <p className="text-[12.5px] leading-[1.55] text-[#525252]">
+      <p className="text-[13px] leading-[1.55] text-[#525252]">
         {needsWork > 0
           ? isTr
             ? `${matrix.rows.length} işletmeden ${needsWork} tanesinde düzeltilecek link var. Bir hücreye basınca o işletmenin linki açılır.`
@@ -164,7 +164,7 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
               </th>
               {matrix.columns.map((platform) => (
                 <th key={platform.slug} scope="col" className="!px-1.5 text-center align-bottom">
-                  <span className="mx-auto flex w-[64px] flex-col items-center gap-1 text-[11px] leading-tight [overflow-wrap:anywhere]">
+                  <span className="mx-auto flex w-[64px] flex-col items-center gap-1 text-[12px] leading-tight [overflow-wrap:anywhere]">
                     <PlatformLogo platform={platform} size={18} />
                     {platform.name}
                   </span>
@@ -178,7 +178,7 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={matrix.columns.length + 2} className="py-8 text-center text-[12.5px] text-[#737373]">
+                <td colSpan={matrix.columns.length + 2} className="py-8 text-center text-[13px] text-[#737373]">
                   {isTr ? 'Düzeltilecek link yok.' : 'Nothing to fix.'}
                 </td>
               </tr>
@@ -186,8 +186,8 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
               rows.map((row) => (
                 <tr key={row.id}>
                   <th scope="row" className="sticky left-0 z-[1] max-w-[220px] bg-white text-left font-normal">
-                    <span className="block truncate text-[13px] font-medium text-[#0A0A0A]">{row.name}</span>
-                    <span className="text-[11.5px] text-[#737373]">
+                    <span className="block truncate text-[13px] font-medium text-pn-ink">{row.name}</span>
+                    <span className="text-[12px] text-[#737373]">
                       {isTr
                         ? `${row.summary.connected} bağlı${row.summary.issue ? ` · ${row.summary.issue} sorunlu` : ''}${row.summary.missing ? ` · ${row.summary.missing} eksik` : ''}`
                         : `${row.summary.connected} connected${row.summary.issue ? ` · ${row.summary.issue} issue` : ''}${row.summary.missing ? ` · ${row.summary.missing} missing` : ''}`}
@@ -209,7 +209,7 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
                           <span
                             title={label}
                             aria-label={label}
-                            className={`inline-flex h-8 w-8 items-center justify-center rounded-md ${CELL_TONE.locked}`}
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${CELL_TONE.locked}`}
                           >
                             <PlatformStateIcon state={cell.state} size={14} />
                           </span>
@@ -218,7 +218,7 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
                             href={platformWizardHref(locale, platform.slug, row.id)}
                             title={label}
                             aria-label={label}
-                            className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] ${CELL_TONE[cell.state]}`}
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink ${CELL_TONE[cell.state]}`}
                           >
                             <PlatformStateIcon state={cell.state} size={14} />
                           </Link>
@@ -242,7 +242,7 @@ export function PlatformsPortfolio<T extends PlatformLinkRow & { id: string; nam
           </tbody>
         </table>
       </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-[#525252]" aria-label={isTr ? 'Simgeler' : 'Legend'}>
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-[#525252]" aria-label={isTr ? 'Simgeler' : 'Legend'}>
         {(['connected', 'issue', 'missing', 'off'] as const).map((state) => (
           <li key={state} className="inline-flex items-center gap-1.5">
             <span className={`inline-flex h-5 w-5 items-center justify-center rounded ${CELL_TONE[state]}`}>

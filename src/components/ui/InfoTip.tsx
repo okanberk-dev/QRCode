@@ -22,7 +22,7 @@ export function InfoTip({ text, label, isTr = true }: InfoTipProps) {
         <button
           type="button"
           aria-label={isTr ? `${label}: tanım` : `${label}: definition`}
-          className="-m-3 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#737373] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E]"
+          className="-m-3 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#737373] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover"
         >
           <Info size={13} strokeWidth={2} aria-hidden="true" />
         </button>
@@ -33,10 +33,10 @@ export function InfoTip({ text, label, isTr = true }: InfoTipProps) {
           align="start"
           sideOffset={4}
           collisionPadding={12}
-          className="z-[80] max-w-[280px] rounded-[10px] border border-[#EDEDED] bg-white px-3 py-2.5 text-[12.5px] leading-[1.5] text-[#262626] shadow-[0_12px_32px_rgba(10,10,10,0.12)]"
+          className="z-[80] max-w-[280px] rounded-[18px] bg-pn-ink px-4 py-3 text-[13px] leading-[1.5] text-white shadow-[0_16px_36px_-10px_rgba(0,0,0,0.4)]"
         >
           {text}
-          <Popover.Arrow className="fill-white" />
+          <Popover.Arrow className="fill-pn-ink" />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

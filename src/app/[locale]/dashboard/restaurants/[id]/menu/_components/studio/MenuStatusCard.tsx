@@ -79,7 +79,7 @@ export function MenuStatusCard({
   const shell = (badge: ReactNode, body: ReactNode, tone: 'plain' | 'muted' = 'plain') => (
     <section
       aria-labelledby="menu-status-title"
-      className={`bz-card min-h-[164px] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px] ${tone === 'muted' ? 'bg-[#FAFAFA]' : ''}`}
+      className={`bz-card min-h-[164px] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px] ${tone === 'muted' ? 'bg-pn-canvas' : ''}`}
     >
       <div className="mb-2">{badge}</div>
       {body}
@@ -87,7 +87,7 @@ export function MenuStatusCard({
   );
   const title = (text: string) => (
     <h2 id="menu-status-title" className="min-w-0">
-      <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A]">{text}</span>
+      <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-pn-ink">{text}</span>
     </h2>
   );
 
@@ -114,7 +114,7 @@ export function MenuStatusCard({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${copy.status.openMenu}: ${SITE_HOST}${path}`}
-      className="inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-1.5 rounded-lg bg-[#FAFAFA] px-2.5 font-mono max-sm:flex-1 text-[12.5px] text-[#525252] ring-1 ring-[#EDEDED] hover:text-[#0A0A0A] lg:min-h-[36px]"
+      className="inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-1.5 rounded-full bg-pn-canvas px-2.5 font-mono max-sm:flex-1 text-[13px] text-[#525252] ring-1 ring-pn-line hover:text-pn-ink lg:min-h-[36px]"
     >
       <span className="min-w-0 truncate">{SITE_HOST}{path}</span>
       <ExternalLink size={12} strokeWidth={2} className="shrink-0" aria-hidden="true" />
@@ -130,13 +130,13 @@ export function MenuStatusCard({
     if (nudges.noDescription > 0) list.push({ filter: 'noDescription', text: copy.fmt.nudgeNoDescription(nudges.noDescription) });
     if (list.length === 0) return null;
     return (
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[#EDEDED] pt-3 lg:hidden" aria-label={copy.status.nudgesLabel} role="group">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-pn-line pt-3 lg:hidden" aria-label={copy.status.nudgesLabel} role="group">
         {list.slice(0, 2).map((n) => (
           <span key={n.filter} className="inline-flex items-center gap-2">
             <button
               type="button"
               onClick={() => onNudge(n.filter)}
-              className="min-h-11 text-[13px] font-medium text-[#0A0A0A] underline decoration-[#D4D4D4] underline-offset-4 hover:decoration-[#0A0A0A] pointer-fine:min-h-8"
+              className="min-h-11 text-[13px] font-medium text-pn-ink underline decoration-[#D4D4D4] underline-offset-4 hover:decoration-pn-ink pointer-fine:min-h-8"
             >
               {n.text} ›
             </button>
@@ -192,7 +192,7 @@ export function MenuStatusCard({
     return (
       <section aria-labelledby="menu-status-title" className="bz-card min-h-[164px] border-[#D9EE7A] bg-[#F7FCE6] p-4 sm:min-h-[128px] sm:p-5 lg:min-h-[112px]">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] text-[#0A0A0A]">
+          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pn-accent text-pn-ink">
             <Rocket size={16} strokeWidth={2} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
@@ -240,7 +240,7 @@ export function MenuStatusCard({
                     safeLocalSet(STORAGE_KEYS.liveHint, '1');
                     setLiveHintSeen(true);
                   }}
-                  className="inline-flex min-h-11 items-center font-semibold text-[#0A0A0A] underline decoration-[#D4D4D4] underline-offset-4 hover:decoration-[#0A0A0A] pointer-fine:min-h-0"
+                  className="inline-flex min-h-11 items-center font-medium text-pn-ink underline decoration-[#D4D4D4] underline-offset-4 hover:decoration-pn-ink pointer-fine:min-h-0"
                 >
                   {copy.status.liveHintOk}
                 </button>
@@ -259,7 +259,7 @@ export function MenuStatusCard({
                 type="button"
                 onClick={onUnpublish}
                 disabled={publishBusy}
-                className="inline-flex min-h-11 items-center gap-1.5 px-2 text-[12.5px] font-medium text-[#737373] underline-offset-2 hover:text-[#B91C1C] hover:underline pointer-fine:min-h-8"
+                className="inline-flex min-h-11 items-center gap-1.5 px-2 text-[13px] font-medium text-[#737373] underline-offset-2 hover:text-[#B91C1C] hover:underline pointer-fine:min-h-8"
               >
                 {publishBusy ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <EyeOff size={13} strokeWidth={2} aria-hidden="true" />}
                 {publishBusy ? copy.status.unpublishing : copy.status.unpublish}
@@ -310,20 +310,20 @@ export function MenuStatusCard({
               const current = readiness.nextStep === step.id;
               const clickable = canEdit && !step.done && (step.id !== 'publish' || readiness.canPublish);
               const marker = step.done ? (
-                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]">
+                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-pn-accent text-pn-ink">
                   <Check size={10} strokeWidth={3} aria-hidden="true" />
                 </span>
               ) : (
                 <span
-                  className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-                    current ? 'bg-[#0A0A0A] text-white' : 'bg-[#EDEDED] text-[#525252]'
+                  className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[12px] font-medium ${
+                    current ? 'bg-pn-ink text-white' : 'bg-pn-line text-[#525252]'
                   }`}
                 >
                   {idx + 1}
                 </span>
               );
               const cls = `inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border px-2 text-[13px] font-medium sm:h-9 sm:w-auto sm:justify-start sm:px-3.5 ${
-                current ? 'border-[#C6F24E] bg-[#EAF9B8]/60 text-[#0A0A0A]' : step.done ? 'border-[#EDEDED] bg-white text-[#0A0A0A]' : 'border-[#EDEDED] bg-[#FAFAFA] text-[#737373]'
+                current ? 'border-pn-accent bg-pn-accent-soft/60 text-pn-ink' : step.done ? 'border-pn-line bg-white text-pn-ink' : 'border-pn-line bg-pn-canvas text-[#737373]'
               }`;
               const label = (
                 <>
@@ -334,7 +334,7 @@ export function MenuStatusCard({
               return (
                 <li key={step.id} className="min-w-0">
                   {clickable ? (
-                    <button type="button" onClick={() => onStep(step.id)} className={`${cls} hover:bg-[#EAF9B8]`}>
+                    <button type="button" onClick={() => onStep(step.id)} className={`${cls} hover:bg-pn-accent-soft`}>
                       {marker}
                       {label}
                     </button>

@@ -21,30 +21,30 @@ export function SetupStart({ onPick }: { onPick: (choice: SetupStartChoice) => v
   return (
     <section aria-labelledby="menu-setup-title" className="bz-card @container p-6 sm:p-8">
       <h2 id="menu-setup-title">
-        <span className="bz-h-tight [word-spacing:0.1em] text-[24px] text-[#0A0A0A]">{copy.setup.startTitle}</span>
+        <span className="bz-h-tight [word-spacing:0.1em] text-[24px] text-pn-ink">{copy.setup.startTitle}</span>
       </h2>
-      <p className="mt-2 max-w-[560px] text-[13.5px] leading-relaxed text-[#525252]">{copy.setup.startBody}</p>
+      <p className="mt-2 max-w-[560px] text-[14px] leading-relaxed text-[#525252]">{copy.setup.startBody}</p>
       <div className="mt-6 grid gap-3 @min-[640px]:grid-cols-3">
         {options.map((option) => (
           <button
             key={option.id}
             type="button"
             onClick={() => onPick(option.id)}
-            className="group flex min-h-[132px] flex-col items-start gap-3 rounded-xl border border-[#E5E5E5] bg-white p-4 text-left transition-[border-color,box-shadow] duration-[120ms] hover:border-[#0A0A0A] hover:shadow-[0_1px_2px_rgba(10,10,10,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            className="group flex min-h-[132px] flex-col items-start gap-3 rounded-[20px] border border-pn-line-strong bg-white p-4 text-left transition-[border-color,box-shadow] duration-[120ms] hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
           >
             <span className="flex w-full items-center justify-between">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]" aria-hidden="true">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink" aria-hidden="true">
                 {option.icon}
               </span>
               <ChevronRight
                 size={16}
                 strokeWidth={2}
-                className="text-[#A3A3A3] transition-transform duration-[120ms] group-hover:text-[#0A0A0A] motion-safe:group-hover:translate-x-0.5"
+                className="text-[#A3A3A3] transition-transform duration-[120ms] group-hover:text-pn-ink motion-safe:group-hover:translate-x-0.5"
                 aria-hidden="true"
               />
             </span>
             <span>
-              <span className="block text-[15px] font-semibold text-[#0A0A0A]">{option.title}</span>
+              <span className="block text-[15px] font-medium text-pn-ink">{option.title}</span>
               <span className="mt-1 block text-[13px] leading-snug text-[#737373]">{option.body}</span>
             </span>
           </button>

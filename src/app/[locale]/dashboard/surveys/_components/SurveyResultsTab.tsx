@@ -54,7 +54,7 @@ const TEXT_PREVIEW = 5;
 
 // Pulse status hexes (CLAUDE.md §23.1) for the recommend-score segments.
 const NPS_COLORS = { detractor: '#DC2626', passive: '#D97706', promoter: '#16A34A' } as const;
-const BAR_COLOR = '#A8D62E';
+const BAR_COLOR = '#83AF3B';
 
 function typeLabel(type: DetailQuestionType, isTr: boolean): string {
   switch (type) {
@@ -134,10 +134,10 @@ export default function SurveyResultsTab({ locale, survey, publicUrl }: Props) {
                 aria-pressed={range === r}
                 onClick={() => setRange(r)}
                 className={[
-                  'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 sm:min-h-8 sm:min-w-0',
+                  'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 sm:min-h-8 sm:min-w-0',
                   range === r
-                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]',
+                    ? 'border-pn-ink bg-pn-ink text-white'
+                    : 'border-pn-line bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink',
                 ].join(' ')}
               >
                 {rangeLabel(r)}
@@ -397,10 +397,10 @@ function BarRow({
       >
         {label}
       </span>
-      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#F5F5F5]">
+      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-pn-canvas">
         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
       </div>
-      <span className="bz-mono w-20 shrink-0 text-right text-[#525252]">
+      <span className="tabular-nums w-20 shrink-0 text-right text-[#525252]">
         {value} ({pct}%)
       </span>
     </li>
@@ -495,7 +495,7 @@ function NpsBlock({ pq, isTr }: { pq: QuestionStats; isTr: boolean }) {
         aria-label={segments
           .map((s) => `${s.label}: ${s.count} (${s.pct}%)`)
           .join(', ')}
-        className="flex h-3 w-full overflow-hidden rounded-full bg-[#F5F5F5]"
+        className="flex h-3 w-full overflow-hidden rounded-full bg-pn-canvas"
       >
         {segments
           .filter((s) => s.pct > 0)
@@ -512,7 +512,7 @@ function NpsBlock({ pq, isTr }: { pq: QuestionStats; isTr: boolean }) {
               style={{ background: s.color }}
             />
             <span className="text-[#525252]">{s.label}</span>
-            <span className="bz-mono ml-auto text-[#0A0A0A] sm:ml-1">
+            <span className="tabular-nums ml-auto text-pn-ink sm:ml-1">
               {s.count} ({s.pct}%)
             </span>
           </li>
@@ -561,10 +561,10 @@ function TextBlock({
         {visible.map((item, i) => (
           <li
             key={`${item.at}-${i}`}
-            className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-2.5"
+            className="rounded-[20px] border border-pn-line bg-pn-canvas px-3.5 py-2.5"
           >
-            <p className="text-[13px] leading-relaxed text-[#0A0A0A]">&ldquo;{item.text}&rdquo;</p>
-            <p className="mt-1 text-[11px] text-[#737373]">
+            <p className="text-[13px] leading-relaxed text-pn-ink">&ldquo;{item.text}&rdquo;</p>
+            <p className="mt-1 text-[12px] text-[#737373]">
               {formatStampInTimeZone(item.at, locale)}
             </p>
           </li>
@@ -575,7 +575,7 @@ function TextBlock({
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          className="mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-[#525252] underline underline-offset-4 hover:text-[#0A0A0A]"
+          className="mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium text-[#525252] underline underline-offset-4 hover:text-pn-ink"
         >
           {expanded
             ? isTr

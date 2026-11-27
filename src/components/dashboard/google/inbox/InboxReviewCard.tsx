@@ -58,8 +58,8 @@ function Stars({ value, label }: { value: number; label: string }) {
           key={i}
           size={12}
           aria-hidden="true"
-          fill={i <= value ? (value <= 2 ? '#DC2626' : value === 3 ? '#D97706' : '#0A0A0A') : 'transparent'}
-          color={i <= value ? (value <= 2 ? '#DC2626' : value === 3 ? '#D97706' : '#0A0A0A') : '#D4D4D4'}
+          fill={i <= value ? (value <= 2 ? '#DC2626' : value === 3 ? '#D97706' : '#000000') : 'transparent'}
+          color={i <= value ? (value <= 2 ? '#DC2626' : value === 3 ? '#D97706' : '#000000') : '#D4D4D4'}
         />
       ))}
     </span>
@@ -198,16 +198,16 @@ export function InboxReviewCard({
       data-review-id={review.reviewId}
       onFocus={onFocus}
       aria-label={`${name}, ${rating}/5`}
-      className={`group relative border-b border-[#EDEDED] px-4 py-4 outline-none transition-[opacity,transform,max-height] duration-300 last:border-b-0 sm:px-5 ${
+      className={`group relative border-b border-pn-line px-4 py-4 outline-none transition-[opacity,transform,max-height] duration-300 last:border-b-0 sm:px-5 ${
         leaving ? 'pointer-events-none -translate-x-2 opacity-0' : ''
-      } ${focused ? 'bg-[#FAFAFA] shadow-[inset_3px_0_0_#C6F24E]' : ''} ${flagged ? 'bg-[#FFFBEB]/50' : ''}`}
+      } ${focused ? 'bg-pn-canvas shadow-[inset_3px_0_0_#C6F24E]' : ''} ${flagged ? 'bg-[#FFFBEB]/50' : ''}`}
     >
       <div className="flex gap-3">
         {selectMode && (
           <label className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-start justify-center pt-1 sm:min-h-0 sm:min-w-0">
             <input
               type="checkbox"
-              className="h-4 w-4 accent-[#0A0A0A]"
+              className="h-4 w-4 accent-pn-ink"
               checked={selected}
               disabled={!eligible}
               onChange={onToggleSelect}
@@ -237,8 +237,8 @@ export function InboxReviewCard({
         ) : (
           <span
             aria-hidden="true"
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold ${
-              low ? 'bg-[#FEF2F2] text-[#991B1B]' : 'bg-[#EAF9B8] text-[#0A0A0A]'
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[13px] font-medium ${
+              low ? 'bg-[#FEF2F2] text-[#991B1B]' : 'bg-pn-accent-soft text-pn-ink'
             }`}
           >
             {avatarInitials || 'G'}
@@ -247,30 +247,30 @@ export function InboxReviewCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="min-w-0 break-words text-[13.5px] font-semibold text-[#0A0A0A]">{name}</span>
+            <span className="min-w-0 break-words text-[14px] font-medium text-pn-ink">{name}</span>
             {rating > 0 && <Stars value={rating} label={isTr ? `5 üzerinden ${rating} yıldız` : `${rating} out of 5 stars`} />}
             <span className="text-[12px] text-[#737373]" title={created}>
               {relative(review.createTime, locale)}
             </span>
             {lang && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#525252]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] text-[#525252]">
                 <Languages size={11} aria-hidden="true" />
                 {lang}
               </span>
             )}
             {review.hasReply ? (
-              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#F0FDF4] px-2 py-0.5 text-[11px] text-[#166534]">
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#F0FDF4] px-2 py-0.5 text-[12px] text-[#166534]">
                 <CheckCircle2 size={11} aria-hidden="true" />
                 {isTr ? 'Yanıtlandı' : 'Replied'}
               </span>
             ) : low ? (
-              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[11px] text-[#991B1B]">
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[12px] text-[#991B1B]">
                 {isTr ? 'Düşük puan' : 'Low rating'}
               </span>
             ) : null}
           </div>
 
-          <p className="mt-2 whitespace-pre-wrap break-words text-[13.5px] leading-[1.6] text-[#262626]">
+          <p className="mt-2 whitespace-pre-wrap break-words text-[14px] leading-[1.6] text-[#262626]">
             {review.originalText ?? (
               <span className="text-[#737373]">{isTr ? 'Yalnız puan verdi, yorum yazmadı.' : 'Left a rating without text.'}</span>
             )}
@@ -282,7 +282,7 @@ export function InboxReviewCard({
                 type="button"
                 onClick={() => setShowTranslation((v) => !v)}
                 aria-expanded={showTranslation}
-                className="min-h-11 text-[11.5px] font-medium text-[#525252] underline-offset-2 hover:underline sm:min-h-0"
+                className="min-h-11 text-[12px] font-medium text-[#525252] underline-offset-2 hover:underline sm:min-h-0"
               >
                 {showTranslation
                   ? isTr ? 'Çeviriyi gizle' : 'Hide translation'
@@ -297,11 +297,11 @@ export function InboxReviewCard({
           )}
 
           {review.hasReply && !open && (
-            <div className="mt-3 rounded-r-[10px] border-l-[3px] border-[#C6F24E] bg-[#FAFAFA] px-3.5 py-2.5">
+            <div className="mt-3 rounded-r-[10px] border-l-[3px] border-pn-accent bg-pn-canvas px-3.5 py-2.5">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-[11.5px] font-semibold text-[#0A0A0A]">{isTr ? 'İşletme yanıtı' : 'Business reply'}</span>
+                <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'İşletme yanıtı' : 'Business reply'}</span>
                 {review.replyUpdateTime && (
-                  <span className="text-[11px] text-[#737373]">{formatStampInTimeZone(review.replyUpdateTime, locale, tz)}</span>
+                  <span className="text-[12px] text-[#737373]">{formatStampInTimeZone(review.replyUpdateTime, locale, tz)}</span>
                 )}
                 {canWrite && (
                   <span className="ml-auto flex items-center gap-1">
@@ -337,7 +337,7 @@ export function InboxReviewCard({
                   </span>
                 )}
               </div>
-              <p className="mt-1 whitespace-pre-wrap break-words text-[12.5px] leading-[1.55] text-[#262626]">
+              <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-[1.55] text-[#262626]">
                 {review.replyComment}
               </p>
             </div>
@@ -383,9 +383,9 @@ export function InboxReviewCard({
           )}
 
           {open && (
-            <div className="mt-3 rounded-[10px] border border-[#EDEDED] bg-white p-3">
+            <div className="mt-3 rounded-[10px] border border-pn-line bg-white p-3">
               {low && (
-                <p className="mb-2 text-[11.5px] leading-[1.5] text-[#92400E]">
+                <p className="mb-2 text-[12px] leading-[1.5] text-[#92400E]">
                   {isTr
                     ? 'Düşük puanlı yorum: özür ve somut bir çözüm yaz. Bu yanıt yalnız sen gönderince yayınlanır.'
                     : 'Low rating: apologise and name a concrete fix. Published only when you send it.'}
@@ -413,12 +413,12 @@ export function InboxReviewCard({
                 enterKeyHint="enter"
               />
               <ReplyRiskNotice risk={risk} locale={locale} className="mt-2" />
-              <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-[11.5px] leading-relaxed text-[#525252]">
+              <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-[#525252]">
                 <input
                   type="checkbox"
                   checked={confirmed}
                   onChange={(e) => setConfirmed(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
                 />
                 <span>
                   {isTr
@@ -428,7 +428,7 @@ export function InboxReviewCard({
                     href={`/${locale}/kabul-edilebilir-kullanim`}
                     target="_blank"
                     rel="noopener"
-                    className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                    className="font-medium text-pn-ink underline-offset-2 hover:underline"
                   >
                     {isTr ? 'Kabul Edilebilir Kullanım Politikası' : 'Acceptable Use Policy'}
                   </Link>
@@ -437,10 +437,10 @@ export function InboxReviewCard({
               </label>
 
               {error && (
-                <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+                <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-[14px] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
                   <span className="min-w-0 flex-1">{error}</span>
                   {lastAction && (lastAction === 'send' || lastAction === 'next') && (
-                    <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-1 font-semibold underline sm:min-h-0">
+                    <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-1 font-medium underline sm:min-h-0">
                       <RotateCcw size={12} aria-hidden="true" />
                       {isTr ? 'Tekrar dene' : 'Try again'}
                     </button>
@@ -488,10 +488,10 @@ export function InboxReviewCard({
           )}
 
           {error && !open && (
-            <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
+            <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-[14px] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
               <span className="min-w-0 flex-1">{error}</span>
               {lastAction === 'delete' && (
-                <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-1 font-semibold underline sm:min-h-0">
+                <button type="button" onClick={retry} className="inline-flex min-h-11 items-center gap-1 font-medium underline sm:min-h-0">
                   <RotateCcw size={12} aria-hidden="true" />
                   {isTr ? 'Tekrar dene' : 'Try again'}
                 </button>

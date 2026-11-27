@@ -494,7 +494,7 @@ export default function SurveysClient({
             <span>{loadError} </span>
             <button
               type="button"
-              className="min-h-[44px] font-semibold underline"
+              className="min-h-[44px] font-medium underline"
               onClick={() => {
                 setLoadError(null);
                 setRetryTick((n) => n + 1);
@@ -544,20 +544,20 @@ export default function SurveysClient({
               return (
                 <li
                   key={row.id}
-                  className="bz-card relative flex flex-col gap-3 p-4 transition-shadow hover:shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
+                  className="bz-card relative flex flex-col gap-3 p-4 transition-shadow sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: row.accentColor || '#C6F24E' }}
+                        style={{ backgroundColor: row.accentColor || '#D7FE03' }}
                         aria-hidden="true"
                       />
                       {/* The title link is stretched over the whole card; the
                           action buttons sit above it (relative z-10). */}
                       <Link
                         href={detailHref(row.id)}
-                        className="bz-h-tight inline-flex min-h-[44px] max-w-full items-center truncate text-[16px] after:absolute after:inset-0 after:rounded-xl after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[#0A0A0A]"
+                        className="bz-h-tight inline-flex min-h-[44px] max-w-full items-center truncate text-[16px] after:absolute after:inset-0 after:rounded-full after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-pn-ink"
                       >
                         {row.title}
                       </Link>
@@ -624,7 +624,7 @@ export default function SurveysClient({
                               ? `${row.title} için diğer işlemler`
                               : `More actions for ${row.title}`
                           }
-                          className="bz-btn-icon h-11 w-11 border border-[#EDEDED] sm:h-9 sm:w-9"
+                          className="bz-btn-icon h-11 w-11 border border-pn-line sm:h-9 sm:w-9"
                         >
                           <MoreHorizontal size={18} aria-hidden="true" />
                         </button>
@@ -776,7 +776,7 @@ function EmptyStart({
             : 'Pick a ready-made template, tweak the questions if you like, then download the QR code and place it where customers will see it.'}
         </p>
         {sectorLabel && (
-          <p className="mt-3 inline-flex items-center rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1 text-xs font-medium text-[#525252]">
+          <p className="mt-3 inline-flex items-center rounded-full border border-pn-line bg-pn-canvas px-3 py-1 text-xs font-medium text-[#525252]">
             {isTr ? 'Senin için önerilenler' : 'Recommended for you'} · {sectorLabel}
           </p>
         )}
@@ -790,11 +790,11 @@ function EmptyStart({
             <li key={template.id}>
               <Link
                 href={withTemplate(template.id)}
-                className="group flex h-full min-h-[44px] flex-col gap-2 rounded-xl border border-[#EDEDED] bg-white p-4 transition-colors hover:border-[#0A0A0A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A]"
+                className="group flex h-full min-h-[44px] flex-col gap-2 rounded-[20px] border border-pn-line bg-white p-4 transition-colors hover:border-pn-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-ink"
               >
                 <span
                   aria-hidden="true"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink"
                 >
                   <Icon size={18} />
                 </span>
@@ -817,7 +817,7 @@ function EmptyStart({
             every template. */}
         <Link
           href={withTemplate('blank')}
-          className="inline-flex min-h-[44px] items-center text-sm font-medium text-[#525252] underline underline-offset-4 hover:text-[#0A0A0A]"
+          className="inline-flex min-h-[44px] items-center text-sm font-medium text-[#525252] underline underline-offset-4 hover:text-pn-ink"
         >
           {isTr ? 'Boş anketle başla' : 'Start from blank'}
         </Link>

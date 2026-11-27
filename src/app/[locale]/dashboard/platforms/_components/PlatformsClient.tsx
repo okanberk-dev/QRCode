@@ -79,7 +79,7 @@ interface RetestResult {
 }
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2';
 
 function readStoredRestaurantId(): string | null {
   try {
@@ -350,10 +350,10 @@ export default function PlatformsClient({
         <div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
-              <h2 id="pl-review-title" className="bz-h-tight text-[18px] text-[#0A0A0A]">
+              <h2 id="pl-review-title" className="bz-h-tight text-[18px] text-pn-ink">
                 {isTr ? 'Yorum platformları' : 'Review platforms'}
               </h2>
-              <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+              <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
                 {isTr
                   ? 'Puanı eşiği geçen müşteriye bu platformlardan biri önerilir.'
                   : 'Customers above your rating threshold are offered one of these.'}
@@ -374,7 +374,7 @@ export default function PlatformsClient({
                     : 'No active links to check.'
                   : undefined
               }
-              className={`bz-btn-ghost inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[38px] sm:w-auto ${FOCUS_RING}`}
+              className={`bz-btn-ghost inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[38px] sm:w-auto ${FOCUS_RING}`}
             >
               {retesting ? (
                 <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -401,7 +401,7 @@ export default function PlatformsClient({
           </AlertBanner>
         )}
 
-        <ul role="list" className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0">
+        <ul role="list" className="bz-card divide-y divide-pn-line overflow-hidden p-0">
           {reviewVisible.map((status) => (
             <PlatformLinkRow
               key={status.platform.slug}
@@ -416,7 +416,7 @@ export default function PlatformsClient({
         {reviewOther.length > 0 && (
           <details className="group">
             <summary
-              className={`flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 rounded-lg px-1 text-[13px] font-medium text-[#0A0A0A] [&::-webkit-details-marker]:hidden ${FOCUS_RING}`}
+              className={`flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 rounded-[14px] px-1 text-[13px] font-medium text-pn-ink [&::-webkit-details-marker]:hidden ${FOCUS_RING}`}
             >
               <ChevronRight
                 size={14}
@@ -430,7 +430,7 @@ export default function PlatformsClient({
                 ? 'Bu platformlar sektörünüz için tipik değil; yine de link ekleyebilirsiniz.'
                 : 'These are not typical for your sector, but you can still add a link.'}
             </p>
-            <ul role="list" className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0">
+            <ul role="list" className="bz-card divide-y divide-pn-line overflow-hidden p-0">
               {reviewOther.map((status) => (
                 <PlatformLinkRow
                   key={status.platform.slug}
@@ -444,7 +444,7 @@ export default function PlatformsClient({
           </details>
         )}
 
-        <p className="text-[11.5px] leading-[1.55] text-[#525252]">
+        <p className="text-[12px] leading-[1.55] text-[#525252]">
           {isTr
             ? 'Bazı platformlar otomatik kontrolü engelleyebilir; "Sorunlu" görünen bir link tarayıcıda yine de açılabilir.'
             : 'Some platforms block automated checks; a link marked "Needs attention" may still open in a browser.'}
@@ -454,10 +454,10 @@ export default function PlatformsClient({
       {/* ── Customer routing (business-level) ────────────────────────── */}
       <section id="yonlendirme" aria-labelledby="pl-routing-title" className="scroll-mt-24 space-y-3">
         <div>
-          <h2 id="pl-routing-title" className="bz-h-tight text-[18px] text-[#0A0A0A]">
+          <h2 id="pl-routing-title" className="bz-h-tight text-[18px] text-pn-ink">
             {isTr ? 'Müşteri yönlendirme' : 'Customer routing'}
           </h2>
-          <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+          <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
             {isTr
               ? 'Bu ayarlar işletmenin tüm yorum platformları için geçerlidir.'
               : 'These settings apply to all review platforms of this business.'}
@@ -466,7 +466,7 @@ export default function PlatformsClient({
         <SettingsCard>
           <div className="space-y-6 pt-4 sm:pt-5">
             <div className="space-y-3">
-              <h3 id="pl-threshold-label" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+              <h3 id="pl-threshold-label" className="text-[14px] font-medium text-pn-ink">
                 {isTr ? 'Hangi puandan itibaren platform önerilsin?' : 'From which rating should a platform be suggested?'}
               </h3>
               <RedirectThresholdPicker
@@ -478,8 +478,8 @@ export default function PlatformsClient({
                 onSaved={(next) => updateRow(restaurant.id, { redirectMinRating: next })}
               />
             </div>
-            <div className="space-y-3 border-t border-[#EDEDED] pt-5">
-              <h3 id="pl-default-label" className="text-[13.5px] font-semibold text-[#0A0A0A]">
+            <div className="space-y-3 border-t border-pn-line pt-5">
+              <h3 id="pl-default-label" className="text-[14px] font-medium text-pn-ink">
                 {isTr ? 'Varsayılan platform' : 'Default platform'}
               </h3>
               <DefaultRedirectPicker
@@ -499,16 +499,16 @@ export default function PlatformsClient({
       {/* ── Contact channels ─────────────────────────────────────────── */}
       <section aria-labelledby="pl-contact-title" className="space-y-3">
         <div>
-          <h2 id="pl-contact-title" className="bz-h-tight text-[18px] text-[#0A0A0A]">
+          <h2 id="pl-contact-title" className="bz-h-tight text-[18px] text-pn-ink">
             {isTr ? 'İletişim kanalları' : 'Contact channels'}
           </h2>
-          <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+          <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
             {isTr
               ? 'Müşteri sayfanızda gösterilen sosyal medya ve mesaj linkleri.'
               : 'Social and messaging links shown on your customer page.'}
           </p>
         </div>
-        <ul role="list" className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0">
+        <ul role="list" className="bz-card divide-y divide-pn-line overflow-hidden p-0">
           {contactStatuses.map((status) => (
             <PlatformLinkRow
               key={status.platform.slug}
@@ -525,7 +525,7 @@ export default function PlatformsClient({
         <a
           href={exportHref}
           download
-          className={`inline-flex min-h-[44px] items-center gap-1.5 rounded text-[12.5px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline sm:min-h-[32px] ${FOCUS_RING}`}
+          className={`inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-pn-ink underline-offset-2 hover:underline sm:min-h-[32px] ${FOCUS_RING}`}
         >
           <Download size={13} aria-hidden="true" />
           {isTr ? 'Kontrol geçmişini indir (CSV)' : 'Download check history (CSV)'}

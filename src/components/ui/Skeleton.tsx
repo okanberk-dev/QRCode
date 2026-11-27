@@ -37,7 +37,7 @@ export function TableSkeleton({ rows = 6, cols = 5, className = "" }: TableSkele
     <div className={`bz-card overflow-hidden ${className}`}>
       <div
         className="flex gap-3"
-        style={{ padding: "10px 14px", background: "#FAFAFA", borderBottom: "1px solid #EDEDED" }}
+        style={{ padding: "10px 14px", background: "var(--color-pn-canvas)", borderBottom: "1px solid var(--color-pn-line)" }}
       >
         {Array.from({ length: cols }).map((_, i) => (
           <Skeleton key={i} height={11} className="flex-1" />
@@ -47,7 +47,7 @@ export function TableSkeleton({ rows = 6, cols = 5, className = "" }: TableSkele
         <div
           key={r}
           className="flex items-center gap-3"
-          style={{ padding: "14px", borderBottom: "1px solid #EDEDED" }}
+          style={{ padding: "14px", borderBottom: "1px solid var(--color-pn-line)" }}
         >
           {Array.from({ length: cols }).map((_, c) => (
             <Skeleton key={c} height={14} className="flex-1" />

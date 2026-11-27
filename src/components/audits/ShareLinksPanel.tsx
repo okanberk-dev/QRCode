@@ -235,7 +235,7 @@ export default function ShareLinksPanel({
             (addItemHref ? (
               <Link
                 href={addItemHref}
-                className="inline-flex min-h-11 items-center text-[12.5px] font-semibold text-[#0A0A0A] underline underline-offset-2 sm:min-h-0"
+                className="inline-flex min-h-11 items-center text-[13px] font-medium text-pn-ink underline underline-offset-2 sm:min-h-0"
               >
                 {isTr ? 'Önce madde ekle' : 'Add an item first'}
               </Link>
@@ -292,7 +292,7 @@ export default function ShareLinksPanel({
           </p>
         </div>
       ) : (
-        <div className="space-y-3 rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4">
+        <div className="space-y-3 rounded-[10px] border border-pn-line bg-pn-canvas p-3 sm:p-4">
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               ref={inputRef}
@@ -382,10 +382,10 @@ export default function ShareLinksPanel({
                 return (
                   <li
                     key={a.id}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[#EDEDED] bg-white p-3"
+                    className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[20px] border border-pn-line bg-white p-3"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium text-[#0A0A0A]">
+                      <p className="truncate text-[13px] font-medium text-pn-ink">
                         {shareLinkLabel(a, locale)}
                       </p>
                       <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-[#737373]">
@@ -436,7 +436,7 @@ export default function ShareLinksPanel({
 
       {/* Yeni link oluştur */}
       {(defaultLink || others.length > 0) && (
-        <div className="border-t border-[#EDEDED] pt-1">
+        <div className="border-t border-pn-line pt-1">
           <Disclosure open={newOpen} onToggle={() => setNewOpen((v) => !v)} controls={newId}>
             <Plus size={14} aria-hidden="true" /> {isTr ? 'Yeni link oluştur' : 'Create a new link'}
           </Disclosure>

@@ -21,7 +21,7 @@ interface MeasuredChartProps {
 export function MeasuredChart({
   className,
   children,
-  fallbackClassName = 'rounded-xl bg-[#FAFAFA]',
+  fallbackClassName = 'rounded-[20px] bg-pn-canvas',
 }: MeasuredChartProps) {
   const frameRef = useRef<number | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);

@@ -1,24 +1,12 @@
 'use client';
 
 /**
- * Stage 65 §38.146 — HANDOFF JSX prototip APSwitch (~75 satır).
+ * Panel switch (Pano, docs/design/DASHBOARD_DESIGN.md §5.3): a pill track —
+ * black with a lime knob when on, light grey with a white knob when off. The
+ * knob slides 260ms. Canonical switch of the panels (owner + admin).
  *
- * iOS-style switch (sm/md/lg) + locked state + opsiyonel label/sublabel.
- * **Buaze paneli için kanonik switch primitive** — eski `<Toggle>` (Stage
- * 97 §38.177'de silindi, 0 callsite). Notification settings sayfasındaki
- * görsel referans (HANDOFF tasarım): #C6F24E lime track + 240ms Apple
- * easing + white knob with drop-shadow.
- *
- * HANDOFF spec birebir:
- *  - dims: sm 36×22 / md 46×28 / lg 56×32; knob = h - 6 (3px pad)
- *  - bg: lime #C6F24E (on) / rgba(10,10,10,0.14) (off)
- *  - knob: white + box-shadow (drop)
- *  - transition: 240ms cubic-bezier(0.2,0.8,0.2,1) (Apple ease)
- *  - locked: lock icon overlay + cursor-not-allowed
- *  - label/sublabel: flex row + 12px gap (sublabel muted 11px)
- *
- * A11y: role="switch" + aria-checked + aria-label, focus-visible lime
- * ring, native button (keyboard space/enter activate).
+ * A11y: native button with role="switch" + aria-checked; Space / Enter
+ * toggle; visible focus ring.
  */
 
 import { Loader2, Lock } from 'lucide-react';
@@ -34,17 +22,16 @@ export interface APSwitchProps {
   sublabel?: ReactNode;
   disabled?: boolean;
   locked?: boolean;
-  /** Stage 72 — async operation feedback. Knob içinde Loader2 spin + aria-busy. */
+  /** Async operation in flight: spinner in the knob + aria-busy. */
   loading?: boolean;
   ariaLabel?: string;
-  /** Stage 72 — outer wrapper className passthrough (legacy Toggle paterni). */
   className?: string;
 }
 
 const SIZE_TOKENS: Record<APSwitchSize, { w: number; h: number; knob: number; pad: number }> = {
-  sm: { w: 36, h: 22, knob: 16, pad: 3 },
-  md: { w: 46, h: 28, knob: 22, pad: 3 },
-  lg: { w: 56, h: 32, knob: 26, pad: 3 },
+  sm: { w: 40, h: 24, knob: 18, pad: 3 },
+  md: { w: 50, h: 30, knob: 24, pad: 3 },
+  lg: { w: 60, h: 34, knob: 28, pad: 3 },
 };
 
 export function APSwitch({
@@ -61,7 +48,7 @@ export function APSwitch({
 }: APSwitchProps) {
   const { w, h, knob, pad } = SIZE_TOKENS[size];
   const isInactive = disabled || locked || loading;
-  const left = checked ? w - knob - pad : pad;
+  const travel = w - knob - pad * 2;
 
   const button = (
     <button
@@ -73,38 +60,24 @@ export function APSwitch({
       aria-disabled={isInactive || undefined}
       onClick={() => !isInactive && onChange && onChange(!checked)}
       disabled={isInactive}
-      className={`relative shrink-0 border-none p-0 transition-colors duration-[220ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-        isInactive ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-      }`}
-      style={{
-        width: w,
-        height: h,
-        borderRadius: h / 2,
-        background: checked ? '#C6F24E' : 'rgba(10,10,10,0.14)',
-        boxShadow: checked
-          ? 'inset 0 0 0 1px rgba(10,10,10,0.1)'
-          : 'inset 0 0 0 1px rgba(10,10,10,0.05)',
-        transitionTimingFunction: 'cubic-bezier(0.2,0.8,0.2,1)',
-      }}
+      className={`pn-switch ${checked ? 'is-on' : ''} ${isInactive ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+      style={{ width: w, height: h }}
     >
       <span
         aria-hidden="true"
-        className="absolute flex items-center justify-center"
+        className="pn-switch-knob"
         style={{
           top: pad,
-          left,
+          left: pad,
           width: knob,
           height: knob,
-          borderRadius: knob / 2,
-          background: '#fff',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1)',
-          transition: 'left 240ms cubic-bezier(0.2,0.8,0.2,1)',
+          transform: `translateX(${checked ? travel : 0}px)`,
         }}
       >
         {loading ? (
-          <Loader2 size={knob * 0.55} color="#0A0A0A" strokeWidth={2.4} className="animate-spin" />
+          <Loader2 size={knob * 0.55} className="animate-spin" />
         ) : locked ? (
-          <Lock size={knob * 0.5} color="#0A0A0A" strokeWidth={2.4} />
+          <Lock size={knob * 0.5} />
         ) : null}
       </span>
     </button>
@@ -115,18 +88,14 @@ export function APSwitch({
   }
 
   return (
-    <label
-      className={`inline-flex items-center gap-3 ${isInactive ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}
-    >
+    <label className={`inline-flex items-center gap-3 ${isInactive ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}>
       {button}
       <span className="block">
-        <span className="block text-[13px] font-semibold text-[#0A0A0A] leading-[1.3]">
-          {label}
-        </span>
-        {sublabel ? (
-          <span className="mt-0.5 block text-[11px] text-[#737373]">{sublabel}</span>
-        ) : null}
+        <span className="block text-[14px] font-medium leading-[1.3] text-pn-ink">{label}</span>
+        {sublabel ? <span className="mt-0.5 block text-[13px] text-[#9A9AA0]">{sublabel}</span> : null}
       </span>
     </label>
   );
 }
+
+export default APSwitch;

@@ -124,7 +124,7 @@ export function ReplySettingsDialog({
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-[12.5px] leading-[1.6] text-[#525252]">
+          <p className="text-[13px] leading-[1.6] text-[#525252]">
             {isTr
               ? 'AI taslakları bu ayarlarla yazılır ve her zaman yorumun dilinde olur (Rusça yoruma Rusça). Taslaklar sen göndermeden yayınlanmaz.'
               : "AI drafts follow these settings and always use the review's language (Russian review → Russian reply). Nothing is published until you send it."}
@@ -133,7 +133,7 @@ export function ReplySettingsDialog({
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <label className="block space-y-1">
-              <span className="text-[12px] font-medium text-[#0A0A0A]">{isTr ? 'Ton' : 'Tone'}</span>
+              <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Ton' : 'Tone'}</span>
               <PulseSelect
                 value={settings.tone}
                 onChange={(v) => update('tone', v as GoogleReplySettings['tone'])}
@@ -146,7 +146,7 @@ export function ReplySettingsDialog({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[12px] font-medium text-[#0A0A0A]">{isTr ? 'Uzunluk' : 'Length'}</span>
+              <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Uzunluk' : 'Length'}</span>
               <PulseSelect
                 value={settings.length}
                 onChange={(v) => update('length', v as GoogleReplySettings['length'])}
@@ -160,7 +160,7 @@ export function ReplySettingsDialog({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[12px] font-medium text-[#0A0A0A]">{isTr ? 'Hitap (Türkçe)' : 'Address (Turkish)'}</span>
+              <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Hitap (Türkçe)' : 'Address (Turkish)'}</span>
               <PulseSelect
                 value={settings.addressForm}
                 onChange={(v) => update('addressForm', v as GoogleReplySettings['addressForm'])}
@@ -183,7 +183,7 @@ export function ReplySettingsDialog({
           />
 
           <label className="block space-y-1">
-            <span className="text-[12px] font-medium text-[#0A0A0A]">{isTr ? 'İmza' : 'Signature'}</span>
+            <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'İmza' : 'Signature'}</span>
             <input
               className="bz-input text-[16px] sm:text-[13px]"
               value={settings.signature}
@@ -195,7 +195,7 @@ export function ReplySettingsDialog({
           </label>
 
           <label className="block space-y-1">
-            <span className="text-[12px] font-medium text-[#0A0A0A]">{isTr ? 'Yasaklı ifadeler' : 'Banned phrases'}</span>
+            <span className="text-[12px] font-medium text-pn-ink">{isTr ? 'Yasaklı ifadeler' : 'Banned phrases'}</span>
             <textarea
               className="bz-input min-h-[88px] text-[16px] sm:text-[13px]"
               value={banned}
@@ -206,14 +206,14 @@ export function ReplySettingsDialog({
               placeholder={isTr ? 'Her satıra bir ifade (ör. indirim, ücretsiz)' : 'One phrase per line (e.g. discount, free)'}
               disabled={!canWrite}
             />
-            <span className="block text-[11.5px] text-[#737373]">
+            <span className="block text-[12px] text-[#737373]">
               {isTr
                 ? `En çok ${MAX_BANNED_PHRASES} ifade. Bu ifadeleri içeren yanıt gönderilmez; AI da kullanmaz.`
                 : `Up to ${MAX_BANNED_PHRASES} phrases. A reply containing them cannot be sent; the AI avoids them too.`}
             </span>
           </label>
 
-          <p className="rounded-lg bg-[#FAFAFA] px-3 py-2 text-[12px] leading-[1.55] text-[#525252]">
+          <p className="rounded-[14px] bg-pn-canvas px-3 py-2 text-[12px] leading-[1.55] text-[#525252]">
             {isTr
               ? 'Kayıtlı şablonlarda {ad} ve {işletme} kullanabilirsin; şablon seçilince müşterinin adı ve işletme adı yerleşir, metni göndermeden önce düzenleyebilirsin.'
               : 'Saved templates can use {ad} (first name) and {işletme} (business name); they are filled in when you pick a template and you can edit before sending.'}

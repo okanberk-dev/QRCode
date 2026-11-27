@@ -589,7 +589,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse sm:min-w-[600px]">
               <thead>
-                <tr className="border-b border-[#EDEDED] text-[12.5px] font-medium text-[#737373]">
+                <tr className="border-b border-pn-line text-[13px] font-medium text-[#737373]">
                   <th className="px-3 py-3 sm:pl-5 sm:pr-2 w-10">
                     {/* Stage A5 §38.97 — bulk select-all (with indeterminate).
                         Stage 47 §38.128 — APCheckbox primitive entegre
@@ -625,7 +625,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                   <th className="px-3 py-3 sm:px-5 text-right"><span className="sr-only">İşlemler</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EDEDED]">
+              <tbody className="divide-y divide-pn-line">
                 {members.map((m) => {
                   const dl = daysLeft(m.trialEndsAt);
                   const trialExpired = m.plan === 'trial' && dl !== null && dl <= 0;
@@ -652,7 +652,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                         e.preventDefault();
                         router.push(memberHref);
                       }}
-                      className={`cursor-pointer hover:bg-[#FAFAFA] transition-all focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${m.isActive ? '' : 'opacity-60'} ${isSelected ? 'bg-[#EAF9B8]/40' : ''}`}
+                      className={`cursor-pointer hover:bg-pn-canvas transition-all focus-visible:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-inset ${m.isActive ? '' : 'opacity-60'} ${isSelected ? 'bg-pn-accent-soft/40' : ''}`}
                     >
                       <td className="px-3 py-4 sm:pl-5 sm:pr-2 w-10">
                         <input
@@ -668,7 +668,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                             });
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+                          className="h-3.5 w-3.5 accent-pn-ink cursor-pointer"
                         />
                       </td>
                       <td className="px-3 py-4 sm:px-5">
@@ -679,11 +679,11 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                           <div className="min-w-0 flex-1">
                             <Link
                               href={`/admin/members/${m.id}`}
-                              className="text-[13px] font-semibold text-[#0A0A0A] truncate hover:underline block"
+                              className="text-[13px] font-medium text-pn-ink truncate hover:underline block"
                             >
                               {m.name || '—'}
                             </Link>
-                            <p className="text-[11px] text-[#737373] truncate">{m.email}</p>
+                            <p className="text-[12px] text-[#737373] truncate">{m.email}</p>
                             <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
                               <Badge kind={planMeta.kind}>{planMeta.label}</Badge>
                               <Badge kind={m.isActive ? 'ok' : 'danger'}>
@@ -737,12 +737,12 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                         {m._count.restaurants > 0 ? (
                           <Link
                             href={`/admin/restaurants?owner=${encodeURIComponent(m.id)}&status=all`}
-                            className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs font-medium text-[#0A0A0A] hover:bg-[#F2F2F2]"
+                            className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-1 text-xs font-medium text-pn-ink hover:bg-pn-canvas"
                             title="Bu sahibin işletmelerini göster"
                           >
                             <Store size={13} strokeWidth={2} />
                             {m._count.restaurants}
-                            {m._count.restaurants > 1 && <Badge kind="dark" dot={false} className="!h-[18px] !px-1.5 !text-[10px]">Zincir</Badge>}
+                            {m._count.restaurants > 1 && <Badge kind="dark" dot={false} className="!h-[18px] !px-1.5 !text-[12px]">Zincir</Badge>}
                           </Link>
                         ) : (
                           <span className="text-xs text-[#A3A3A3]">0</span>
@@ -843,8 +843,8 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
           onClose={() => setEditingMember(null)}
           title={
             <div>
-              <p className="pulse-eyebrow text-[#737373]">Düzenle</p>
-              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+              <p className="text-[13px] font-medium text-[#737373]">Düzenle</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
                 İşletme sahibini düzenle
               </h2>
               <p className="mt-1 text-[12px] text-[#525252]">{editingMember.email}</p>
@@ -856,17 +856,17 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
 
             {/* Plan */}
             <div className="space-y-2">
-              <label className="pulse-eyebrow text-[#737373]">Plan</label>
+              <label className="text-[13px] font-medium text-[#737373]">Plan</label>
               <div className="grid grid-cols-2 gap-2">
                 {(['trial', 'monthly', 'yearly', 'free'] as const).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => setEditPlan(p)}
-                    className={`py-3 rounded-xl border pulse-eyebrow transition-all ${
+                    className={`py-3 rounded-[20px] border text-[13px] font-medium transition-all ${
                       editPlan === p
-                        ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                        : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                        ? 'bg-pn-ink text-white border-pn-ink'
+                        : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                     }`}
                   >
                     {PLAN_BADGE[p]?.label.toUpperCase() || p.toUpperCase()}
@@ -878,7 +878,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
             {/* Trial End Date */}
             {editPlan === 'trial' && (
               <div className="space-y-2">
-                <label className="pulse-eyebrow text-[#737373]">Deneme bitiş tarihi</label>
+                <label className="text-[13px] font-medium text-[#737373]">Deneme bitiş tarihi</label>
                 <input
                   type="date"
                   value={editTrialEndsAt}
@@ -889,10 +889,10 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
             )}
 
             {/* Active toggle */}
-            <div className="flex items-center justify-between p-4 bg-[#FAFAFA] rounded-2xl border border-[#EDEDED]">
+            <div className="flex items-center justify-between p-4 bg-pn-canvas rounded-[24px] border border-pn-line">
               <div>
-                <p className="text-[13px] font-medium text-[#0A0A0A]">Hesap durumu</p>
-                <p className="text-[11px] text-[#737373] mt-0.5">
+                <p className="text-[13px] font-medium text-pn-ink">Hesap durumu</p>
+                <p className="text-[12px] text-[#737373] mt-0.5">
                   {editIsActive
                     ? 'Kullanıcı sisteme girebilir.'
                     : 'Kullanıcı erişimi engellendi.'}
@@ -905,8 +905,8 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                 aria-label={editIsActive ? 'Aktif' : 'Silinmiş'}
                 className={`transition-all duration-200 active:scale-95 ${
                   editIsActive
-                    ? 'text-[#A8D62E] hover:text-[#0A0A0A]'
-                    : 'text-[#737373] hover:text-[#0A0A0A]'
+                    ? 'text-pn-accent-ink hover:text-pn-ink'
+                    : 'text-[#737373] hover:text-pn-ink'
                 }`}
               >
                 {editIsActive ? (
@@ -976,7 +976,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                       Kalıcı sil (geri alınamaz)
                     </button>
                     {!eligible && (
-                      <p className="text-[11px] text-[#737373]">
+                      <p className="text-[12px] text-[#737373]">
                         Pasifleştirme üzerinden {elapsedDays} gün geçti. Kalıcı silme {HARD_DELETE_GRACE_DAYS} gün sonra ({remaining} gün kaldı) açılır — KVKK gözden geçirme süresi.
                       </p>
                     )}
@@ -1010,7 +1010,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
             <p className="text-sm text-[#525252]">
               Onaylamak için kullanıcının e-postasını birebir yazın:
             </p>
-            <p className="rounded-lg bg-[#FAFAFA] border border-[#EDEDED] px-3 py-2 text-sm font-mono text-[#0A0A0A]">
+            <p className="rounded-[14px] bg-pn-canvas border border-pn-line px-3 py-2 text-sm font-mono text-pn-ink">
               {editingMember.email}
             </p>
             <input
@@ -1132,8 +1132,8 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
           }}
           title={
             <div>
-              <p className="pulse-eyebrow text-[#737373]">Toplu mail</p>
-              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+              <p className="text-[13px] font-medium text-[#737373]">Toplu mail</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
                 İşletme sahiplerine mesaj gönder
               </h2>
               <p className="mt-1 text-[12px] text-[#525252]">
@@ -1146,7 +1146,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
             {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
             <div className="space-y-2">
-              <label className="pulse-eyebrow text-[#737373]">Hedef segmenti</label>
+              <label className="text-[13px] font-medium text-[#737373]">Hedef segmenti</label>
               <div className="grid gap-1.5">
                 {SEGMENT_OPTIONS.map((s) => {
                   const disabled = s.key === 'custom' && selectedIds.size === 0;
@@ -1157,15 +1157,15 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                       onClick={() => !disabled && setMailSegment(s.key)}
                       disabled={disabled}
                       aria-pressed={mailSegment === s.key}
-                      className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      className={`flex items-start gap-3 rounded-[20px] border px-3 py-2.5 text-left transition-colors ${
                         mailSegment === s.key
-                          ? 'border-[#0A0A0A] bg-[#FAFAFA]'
-                          : 'border-[#EDEDED] hover:border-[#A3A3A3]'
+                          ? 'border-pn-ink bg-pn-canvas'
+                          : 'border-pn-line hover:border-[#A3A3A3]'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-[#0A0A0A]">{s.label}</div>
-                        <div className="mt-0.5 text-[11px] text-[#737373]">{s.hint}</div>
+                        <div className="text-[13px] font-medium text-pn-ink">{s.label}</div>
+                        <div className="mt-0.5 text-[12px] text-[#737373]">{s.hint}</div>
                       </div>
                       {s.key === 'custom' && selectedIds.size > 0 && (
                         <Badge kind="lime">{selectedIds.size}</Badge>
@@ -1175,14 +1175,14 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                 })}
               </div>
               {mailSegment !== 'custom' && selectedIds.size > 0 && (
-                <p className="text-[11px] text-[#737373] mt-1">
+                <p className="text-[12px] text-[#737373] mt-1">
                   💡 Manuel seçimin (<strong>{selectedIds.size}</strong> kişi) preset filter ile kesişeceği için kapsam daralabilir. Sadece preset için seçimi temizle.
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="pulse-eyebrow text-[#737373]">Konu</label>
+              <label className="text-[13px] font-medium text-[#737373]">Konu</label>
               <input
                 type="text"
                 value={mailSubject}
@@ -1192,11 +1192,11 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                 className="bz-input w-full"
                 disabled={mailSending}
               />
-              <p className="text-[10px] text-[#A3A3A3] tabular-nums text-right">{mailSubject.length}/200</p>
+              <p className="text-[12px] text-[#A3A3A3] tabular-nums text-right">{mailSubject.length}/200</p>
             </div>
 
             <div className="space-y-2">
-              <label className="pulse-eyebrow text-[#737373]">Mesaj</label>
+              <label className="text-[13px] font-medium text-[#737373]">Mesaj</label>
               <textarea
                 value={mailBody}
                 onChange={(e) => setMailBody(e.target.value)}
@@ -1206,20 +1206,20 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                 className="bz-input w-full resize-y"
                 disabled={mailSending}
               />
-              <p className="text-[10px] text-[#A3A3A3] tabular-nums text-right">{mailBody.length}/8000</p>
+              <p className="text-[12px] text-[#A3A3A3] tabular-nums text-right">{mailBody.length}/8000</p>
             </div>
 
             <div className="space-y-2">
-              <label className="pulse-eyebrow text-[#737373]">Şablon dili</label>
+              <label className="text-[13px] font-medium text-[#737373]">Şablon dili</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setMailLocale('tr')}
                   aria-pressed={mailLocale === 'tr'}
-                  className={`py-2 rounded-xl border pulse-eyebrow transition-colors ${
+                  className={`py-2 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     mailLocale === 'tr'
-                      ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                      ? 'bg-pn-ink text-white border-pn-ink'
+                      : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >
                   TR
@@ -1228,16 +1228,16 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                   type="button"
                   onClick={() => setMailLocale('en')}
                   aria-pressed={mailLocale === 'en'}
-                  className={`py-2 rounded-xl border pulse-eyebrow transition-colors ${
+                  className={`py-2 rounded-[20px] border text-[13px] font-medium transition-colors ${
                     mailLocale === 'en'
-                      ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                      ? 'bg-pn-ink text-white border-pn-ink'
+                      : 'bg-white text-[#525252] border-pn-line hover:border-pn-ink'
                   }`}
                 >
                   EN
                 </button>
               </div>
-              <p className="text-[10px] text-[#A3A3A3]">
+              <p className="text-[12px] text-[#A3A3A3]">
                 Owner&apos;ın User.locale tercihi varsa o öncelikli; bu sadece template chrome (greeting + CTA).
               </p>
             </div>
@@ -1249,7 +1249,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
               </span>
             </AlertBanner>
 
-            <div className="flex flex-col-reverse justify-end gap-2 border-t border-[#EDEDED] pt-4 sm:flex-row">
+            <div className="flex flex-col-reverse justify-end gap-2 border-t border-pn-line pt-4 sm:flex-row">
               <button
                 type="button"
                 onClick={() => setShowMailModal(false)}
@@ -1278,7 +1278,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg lg:bottom-20"
+          className="fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full bg-pn-ink text-white px-4 py-2 text-[12px] font-medium shadow-lg lg:bottom-20"
         >
           {mailNotice}
         </div>

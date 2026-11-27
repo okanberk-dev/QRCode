@@ -213,7 +213,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   <Skeleton className="h-3 w-24 mb-2" />
                   <div className="grid gap-2.5 sm:grid-cols-3">
                     {[0, 1, 2].map((i) => (
-                      <Skeleton key={i} className="h-[88px] rounded-xl" />
+                      <Skeleton key={i} className="h-[88px] rounded-[20px]" />
                     ))}
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                         <button
                           type="button"
                           onClick={() => void retryLoad(r.id)}
-                          className="font-semibold underline underline-offset-2"
+                          className="font-medium underline underline-offset-2"
                         >
                           {isTr ? "Tekrar dene" : "Retry"}
                         </button>
@@ -256,9 +256,9 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"
                     }
                   />
-                  <div className="text-[14px] text-[#0A0A0A] flex-1">
+                  <div className="text-[14px] text-pn-ink flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">
+                      <span className="font-medium">
                         {isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"}
                       </span>
                     </div>
@@ -270,7 +270,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-start gap-3 border-t border-[#EDEDED] pt-4">
+                <div className="mt-4 flex items-start gap-3 border-t border-pn-line pt-4">
                   <APSwitch
                     checked={Boolean(s?.googleAiEnabled)}
                     onChange={(next) => update(r.id, { googleAiEnabled: next })}
@@ -279,9 +279,9 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"
                     }
                   />
-                  <div className="text-[14px] text-[#0A0A0A] flex-1">
+                  <div className="text-[14px] text-pn-ink flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">
+                      <span className="font-medium">
                         {isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"}
                       </span>
                     </div>
@@ -294,7 +294,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                 </div>
 
                 <div className="mt-5">
-                  <p className="mb-2 text-[13px] font-medium text-[#0A0A0A]">
+                  <p className="mb-2 text-[13px] font-medium text-pn-ink">
                     {isTr ? "Varsayılan ton" : "Default tone"}
                   </p>
                   <div role="radiogroup" aria-label={isTr ? "Varsayılan ton" : "Default tone"} className="grid gap-2.5 sm:grid-cols-3">
@@ -317,7 +317,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   </div>
                 )}
                 {s?.saving && (
-                  <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-[#737373]">
+                  <p className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-[#737373]">
                     <Loader2 size={11} className="animate-spin" />
                     {isTr ? "Kaydediliyor…" : "Saving…"}
                   </p>

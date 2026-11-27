@@ -177,7 +177,7 @@ function StatusBadge({ status, locale }: { status: PlacesProfile['businessStatus
   // Light palette on the dark hero — never white text on graphite for status.
   const tone =
     status === 'OPERATIONAL'
-      ? { cls: 'bg-[#C6F24E] text-[#0A0A0A]', label: copy.operating }
+      ? { cls: 'bg-pn-accent text-pn-ink', label: copy.operating }
       : status === 'CLOSED_TEMPORARILY'
         ? { cls: 'bg-[#FFFBEB] text-[#92400E]', label: copy.tempClosed }
         : { cls: 'bg-[#FEF2F2] text-[#991B1B]', label: copy.permClosed };
@@ -190,7 +190,7 @@ function StatusBadge({ status, locale }: { status: PlacesProfile['businessStatus
 }
 
 const ON_DARK_PILL =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/30 px-4 text-[13px] font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/30 px-4 text-[13px] font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RatingCard (dark hero)
@@ -238,9 +238,9 @@ export function RatingCard({
   return (
     <section
       aria-labelledby={headingId}
-      className={`relative overflow-hidden rounded-[18px] bg-[#0A0A0A] p-5 text-white sm:p-6 ${className}`}
+      className={`relative overflow-hidden rounded-[18px] bg-pn-ink p-5 text-white sm:p-6 ${className}`}
     >
-      <p className="pulse-eyebrow text-[#C6F24E]">{copy.eyebrow}</p>
+      <p className="text-[13px] font-medium text-pn-accent">{copy.eyebrow}</p>
       <h2
         id={headingId}
         ref={headingRef as RefObject<HTMLHeadingElement>}
@@ -265,7 +265,7 @@ export function RatingCard({
         {ratingText !== null && profile.rating !== null ? (
           <>
             <div
-              className="bz-h-tight tabular-nums text-[64px] leading-[0.9] text-[#C6F24E] sm:text-[80px]"
+              className="bz-h-tight tabular-nums text-[64px] leading-[0.9] text-pn-accent sm:text-[80px]"
               style={{ letterSpacing: '-0.04em' }}
             >
               {ratingText}
@@ -296,7 +296,7 @@ export function RatingCard({
           <button
             type="button"
             onClick={onChange}
-            className="inline-flex min-h-11 items-center px-2 text-left text-[13px] text-white underline underline-offset-2 hover:text-[#C6F24E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+            className="inline-flex min-h-11 items-center px-2 text-left text-[13px] text-white underline underline-offset-2 hover:text-pn-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
           >
             {copy.change}
           </button>
@@ -368,13 +368,13 @@ export function RatingStrip({
       aria-label={copy.profileLabel}
       className={`bz-card flex flex-col gap-1 px-4 py-2 outline-none sm:flex-row sm:items-center sm:justify-between ${className}`}
     >
-      <p className="text-[13.5px] leading-[1.6] text-[#0A0A0A]">
+      <p className="text-[14px] leading-[1.6] text-pn-ink">
         {`${copy.compactPrefix}: ${rating}${count} · ${copy.source}: ${copy.sourceName}`}
       </p>
       <ExtLink
         href={mapsHref}
         locale={locale}
-        className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2"
+        className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-pn-ink underline underline-offset-2"
       >
         {copy.openOnGoogle}
         <ExternalLink size={13} aria-hidden="true" />
@@ -393,7 +393,7 @@ function ChecklistRow({ item, locale }: { item: PlacesChecklistItem; locale: UiL
   // badge; a done item is the check icon plus a screen-reader-only "Tamam".
   const tone =
     item.state === 'done'
-      ? { icon: <Check size={14} strokeWidth={3} />, cls: 'bg-[#EAF9B8] text-[#3F5200]', word: copy.stateDone }
+      ? { icon: <Check size={14} strokeWidth={3} />, cls: 'bg-pn-accent-soft text-[#3F5200]', word: copy.stateDone }
       : item.state === 'todo'
         ? { icon: <AlertCircle size={14} strokeWidth={2.5} />, cls: 'bg-[#FFFBEB] text-[#92400E]', word: copy.stateTodo }
         : { icon: <X size={14} strokeWidth={3} />, cls: 'bg-[#FEF2F2] text-[#991B1B]', word: copy.stateCritical };
@@ -408,7 +408,7 @@ function ChecklistRow({ item, locale }: { item: PlacesChecklistItem; locale: UiL
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-medium text-[#0A0A0A]">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] font-medium text-pn-ink">
             {item.state === 'done' && <span className="sr-only">{tone.word}: </span>}
             {item.label}
             {item.state !== 'done' && (
@@ -422,7 +422,7 @@ function ChecklistRow({ item, locale }: { item: PlacesChecklistItem; locale: UiL
               <ExtLink
                 href={item.href}
                 locale={locale}
-                className="-my-3 inline-block break-all py-3 text-[13px] text-[#0A0A0A] underline underline-offset-2"
+                className="-my-3 inline-block break-all py-3 text-[13px] text-pn-ink underline underline-offset-2"
               >
                 {item.value}
               </ExtLink>
@@ -432,7 +432,7 @@ function ChecklistRow({ item, locale }: { item: PlacesChecklistItem; locale: UiL
         </div>
         {item.help && (
           <p
-            className={`mt-1 text-[12.5px] leading-[1.55] ${item.state === 'critical' ? 'text-[#991B1B]' : 'text-[#525252]'}`}
+            className={`mt-1 text-[13px] leading-[1.55] ${item.state === 'critical' ? 'text-[#991B1B]' : 'text-[#525252]'}`}
           >
             {item.help}
           </p>
@@ -463,33 +463,33 @@ export function ProfileChecklist({
   return (
     <section aria-labelledby={headingId} className={`bz-card p-5 ${className}`}>
       <div className="flex items-center justify-between gap-3">
-        <h2 id={headingId} className="pulse-eyebrow text-[#0A0A0A]">
+        <h2 id={headingId} className="text-[13px] font-medium text-pn-ink">
           {copy.checklistEyebrow}
         </h2>
         {/* A plain count of six items — not a score, no percentage anywhere. */}
-        <p className="text-[13px] font-medium text-[#0A0A0A]">{copy.checklistCount(checklist.done, checklist.total)}</p>
+        <p className="text-[13px] font-medium text-pn-ink">{copy.checklistCount(checklist.done, checklist.total)}</p>
       </div>
       <div aria-hidden="true" className="mt-3 flex gap-1">
         {checklist.items.map((item) => (
           <span
             key={item.id}
-            className={`h-1.5 flex-1 rounded-full ${item.state === 'done' ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'}`}
+            className={`h-1.5 flex-1 rounded-full ${item.state === 'done' ? 'bg-pn-accent' : 'bg-pn-line'}`}
           />
         ))}
       </div>
 
-      <ul className={`mt-3 divide-y divide-[#EDEDED] ${wide ? 'sm:grid sm:grid-cols-2 sm:gap-x-8 sm:divide-y-0' : ''}`}>
+      <ul className={`mt-3 divide-y divide-pn-line ${wide ? 'sm:grid sm:grid-cols-2 sm:gap-x-8 sm:divide-y-0' : ''}`}>
         {checklist.items.map((item) => (
           <ChecklistRow key={item.id} item={item} locale={locale} />
         ))}
       </ul>
 
       {checklist.tips.map((tip) => (
-        <div key={tip.id} className="mt-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3.5">
-          <p className="text-[12.5px] leading-[1.6] text-[#525252]">{tip.text}</p>
+        <div key={tip.id} className="mt-3 rounded-[20px] border border-pn-line bg-pn-canvas p-3.5">
+          <p className="text-[13px] leading-[1.6] text-[#525252]">{tip.text}</p>
           <Link
             href={tip.ctaHref}
-            className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2"
+            className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-pn-ink underline underline-offset-2"
           >
             {tip.ctaLabel}
             <ArrowRight size={13} aria-hidden="true" />
@@ -497,7 +497,7 @@ export function ProfileChecklist({
         </div>
       ))}
 
-      <div className="mt-4 space-y-3 border-t border-[#EDEDED] pt-4">
+      <div className="mt-4 space-y-3 border-t border-pn-line pt-4">
         {hasGaps && (
           <ExtLink
             href="https://business.google.com/locations"
@@ -508,12 +508,12 @@ export function ProfileChecklist({
             <ExternalLink size={14} aria-hidden="true" />
           </ExtLink>
         )}
-        <p className="text-[12.5px] leading-[1.6] text-[#525252]">{copy.ownerNote}</p>
+        <p className="text-[13px] leading-[1.6] text-[#525252]">{copy.ownerNote}</p>
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <ExtLink
             href={mapsHref}
             locale={locale}
-            className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2"
+            className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-pn-ink underline underline-offset-2"
           >
             {copy.openProfile}
             <ExternalLink size={13} aria-hidden="true" />
@@ -538,7 +538,7 @@ function ReviewAvatar({ src, name }: { src: string | null; name: string }) {
     return (
       <span
         aria-hidden="true"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EAF9B8] text-[12px] font-semibold text-[#3F5200]"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft text-[12px] font-medium text-[#3F5200]"
       >
         {initial}
       </span>
@@ -556,7 +556,7 @@ function ReviewAvatar({ src, name }: { src: string | null; name: string }) {
       loading="lazy"
       decoding="async"
       onError={() => setBroken(true)}
-      className="h-7 w-7 shrink-0 rounded-full bg-[#EDEDED] object-cover"
+      className="h-7 w-7 shrink-0 rounded-full bg-pn-line object-cover"
     />
   );
 }
@@ -585,7 +585,7 @@ function ClampedText({ text, locale }: { text: string; locale: UiLocale }) {
       <p
         ref={ref}
         id={textId}
-        className={`whitespace-pre-wrap break-words text-[13.5px] leading-[1.6] text-[#262626] ${expanded ? '' : 'line-clamp-4'}`}
+        className={`whitespace-pre-wrap break-words text-[14px] leading-[1.6] text-[#262626] ${expanded ? '' : 'line-clamp-4'}`}
       >
         {text}
       </p>
@@ -595,7 +595,7 @@ function ClampedText({ text, locale }: { text: string; locale: UiLocale }) {
           aria-expanded={expanded}
           aria-controls={textId}
           onClick={() => setExpanded((v) => !v)}
-          className="-mt-1 inline-flex min-h-11 items-center text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2"
+          className="-mt-1 inline-flex min-h-11 items-center text-[13px] font-medium text-pn-ink underline underline-offset-2"
         >
           {expanded ? copy.showLess : copy.showMore}
         </button>
@@ -615,12 +615,12 @@ function ReviewRow({ review, locale }: { review: PlacesReview; locale: UiLocale 
           <ExtLink
             href={review.authorUri}
             locale={locale}
-            className="inline-flex min-h-11 items-center text-[13.5px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline sm:min-h-0"
+            className="inline-flex min-h-11 items-center text-[14px] font-medium text-pn-ink underline-offset-2 hover:underline sm:min-h-0"
           >
             {author}
           </ExtLink>
         ) : (
-          <span className="text-[13.5px] font-medium text-[#0A0A0A]">{author}</span>
+          <span className="text-[14px] font-medium text-pn-ink">{author}</span>
         )}
         {review.publishedAt && (
           <span className="text-[12px] text-[#525252]">
@@ -631,7 +631,7 @@ function ReviewRow({ review, locale }: { review: PlacesReview; locale: UiLocale 
           <StarRow
             value={review.rating}
             size={13}
-            color="#0A0A0A"
+            color="#000000"
             ariaLabel={copy.stars(String(review.rating))}
           />
         )}
@@ -646,7 +646,7 @@ function ReviewRow({ review, locale }: { review: PlacesReview; locale: UiLocale 
         <ExtLink
           href={review.mapsUri}
           locale={locale}
-          className="inline-flex min-h-11 items-center gap-1.5 text-[12.5px] font-medium text-[#0A0A0A] underline underline-offset-2"
+          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-pn-ink underline underline-offset-2"
         >
           {copy.viewOnGoogle}
           <ExternalLink size={12} aria-hidden="true" />
@@ -673,7 +673,7 @@ export function SampleReviews({
   const mapsHref = profile.mapsUri ?? placeMapsUrl(profile.placeId);
   return (
     <section aria-labelledby={headingId} className={`bz-card ${className}`}>
-      <div className="border-b border-[#EDEDED] p-4 sm:p-5">
+      <div className="border-b border-pn-line p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 id={headingId} className="bz-h-tight text-[16px]">
             {copy.reviewsTitle}
@@ -682,22 +682,22 @@ export function SampleReviews({
             {profile.reviews.length}
           </Badge>
         </div>
-        <p className="mt-1.5 text-[12.5px] leading-[1.55] text-[#525252]">{copy.reviewsNote}</p>
+        <p className="mt-1.5 text-[13px] leading-[1.55] text-[#525252]">{copy.reviewsNote}</p>
       </div>
       {profile.reviews.length === 0 ? (
         <p className="p-4 text-[13px] leading-[1.6] text-[#525252] sm:p-5">{copy.reviewsEmpty}</p>
       ) : (
-        <ul className="divide-y divide-[#EDEDED]">
+        <ul className="divide-y divide-pn-line">
           {profile.reviews.map((review, index) => (
             <ReviewRow key={`${review.publishedAt ?? 'r'}-${index}`} review={review} locale={locale} />
           ))}
         </ul>
       )}
-      <div className="flex flex-col gap-1 border-t border-[#EDEDED] p-4 sm:p-5">
+      <div className="flex flex-col gap-1 border-t border-pn-line p-4 sm:p-5">
         <ExtLink
           href={mapsHref}
           locale={locale}
-          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] underline underline-offset-2"
+          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-pn-ink underline underline-offset-2"
         >
           {copy.allReviews}
           <ExternalLink size={13} aria-hidden="true" />
@@ -705,7 +705,7 @@ export function SampleReviews({
         {replyAnchorId && (
           <a
             href={`#${replyAnchorId}`}
-            className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-[#0A0A0A] underline underline-offset-2"
+            className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-pn-ink underline underline-offset-2"
           >
             {copy.replyLink}
             <ArrowRight size={13} aria-hidden="true" />

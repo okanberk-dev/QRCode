@@ -139,7 +139,7 @@ export function QuickAddRow({ categoryId, categoryName, disabled = false }: { ca
         type="button"
         onClick={openForm}
         disabled={disabled}
-        className="flex min-h-[48px] w-full items-center gap-2 px-4 text-left text-[13.5px] font-medium text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[#525252]"
+        className="flex min-h-[48px] w-full items-center gap-2 px-4 text-left text-[14px] font-medium text-[#525252] hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[#525252]"
       >
         <Plus size={15} strokeWidth={2.25} aria-hidden="true" />
         {copy.outline.addItem}
@@ -197,7 +197,7 @@ export function QuickAddRow({ categoryId, categoryName, disabled = false }: { ca
             autoComplete="off"
             className="bz-input h-11 pr-7 text-right tabular-nums pointer-fine:h-9"
           />
-          <span aria-hidden="true" className="pointer-events-none absolute right-2.5 top-0 flex h-11 items-center text-[12.5px] text-[#737373] pointer-fine:h-9">
+          <span aria-hidden="true" className="pointer-events-none absolute right-2.5 top-0 flex h-11 items-center text-[13px] text-[#737373] pointer-fine:h-9">
             {currencySymbol('TRY')}
           </span>
           {priceError && <p role="alert" className="mt-1 text-[12px] text-[#DC2626]">{priceError}</p>}

@@ -2,9 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import RootHtml from '@/components/root/RootHtml';
 import { buildBaseMetadata, ROOT_VIEWPORT } from '@/lib/root-metadata';
-import AdminSidebar from '@/components/admin/AdminSidebar';
-import AdminMobileNav from '@/components/admin/AdminMobileNav';
-import AdminTopbar from '@/components/admin/AdminTopbar';
+import AdminPanoChrome from '@/components/admin/AdminPanoChrome';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import ImpersonationBanner from '@/components/dashboard/ImpersonationBanner';
 import { verifyJwt, type PanelActor } from '@/lib/auth';
@@ -15,6 +13,7 @@ import {
   loadAdminPanelProfile,
   type AdminPanelProfile,
 } from '@/lib/admin-profile';
+import '@/components/panel/pano/pano.css';
 
 // Root layout for the admin panel (one root layout per top-level segment,
 // see src/components/root/RootHtml.tsx). It already reads cookies, so the
@@ -141,52 +140,40 @@ export default async function AdminLayout({
   return (
     <RootHtml lang={adminLocale}>
       <AdminTranslationProvider initialLocale={adminLocale}>
-        <div className="bz-panel flex flex-col lg:flex-row min-h-[100dvh] lg:h-screen bg-[#FFFFFF] lg:overflow-hidden selection:bg-[#C6F24E]/30 relative">
+        {/* Pano shell (docs/design/DASHBOARD_DESIGN.md): floating top bar, canvas
+            background, no sidebar. From lg up the page scrolls in its own
+            column under the bar — vertical only, horizontal clipped, stable
+            gutter (CLAUDE.md §42.5.1). */}
+        <div className="bz-panel relative flex min-h-[100dvh] flex-col bg-pn-canvas lg:h-screen lg:overflow-hidden">
+          {impersonationActive && <ImpersonationBanner />}
           {showSidebar && (
             <a href="#panel-main-content" className="bz-skip-link">
               {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
             </a>
           )}
-          {showSidebar && <AdminSidebar announcements={announcements} initialProfile={adminProfile} />}
-          <main
-            id="panel-main-content"
-            tabIndex={-1}
-            /* §42 — `lg:overflow-auto` made this scroll container scrollable on
-               BOTH axes, so any wide child (table, chart) let the whole panel
-               slide left under the sidebar on a trackpad swipe ("panel kayması").
-               Scroll vertically only, clip horizontal overflow, and reserve the
-               scrollbar gutter so content width never jumps (owner shell parity,
-               CLAUDE.md §42.5).
-               `[&>*]:w-full` (sidebar layout only): page wrappers are
-               `mx-auto max-w-[N]` flex items; auto margins disable stretch, so
-               without a width they shrank to their content (CSV button cut off
-               at 1440, sideways overflow at 390). */
-            className={`flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable] flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA] [&>*]:w-full'}`}
-          >
-            {impersonationActive && <ImpersonationBanner />}
-            {showSidebar && (
-              <AdminTopbar
-                announcements={announcements}
-                displayName={adminProfile?.name || adminProfile?.username || null}
-                role={adminProfile?.role || actor?.role || 'manager'}
-                permissions={adminProfile?.permissions ?? []}
-              />
-            )}
-            {/* §42 canonical panel layout — admin shell only renders chrome
-                (topbar + announcement banner). Page wrappers handle their own
-                `mx-auto max-w-[1100|1200|1400] px-4 sm:px-7 py-6 lg:py-8`. Owner
-                shell parity (UserDashboardShell): no double-wrap, no extra pt. */}
-            {showSidebar && announcements.length > 0 && (
-              <AnnouncementBanner announcements={announcements} locale={adminLocale} />
-            )}
-            {children}
-          </main>
           {showSidebar && (
-            <AdminMobileNav
+            <AdminPanoChrome
+              announcements={announcements}
+              profile={adminProfile}
               role={adminProfile?.role || actor?.role || 'manager'}
               permissions={adminProfile?.permissions ?? []}
             />
           )}
+          <div className="flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]">
+            <main
+              id="panel-main-content"
+              tabIndex={-1}
+              /* `[&>*]:w-full`: page wrappers are `mx-auto max-w-[N]` flex
+                 items; auto margins disable stretch, so without a width they
+                 shrank to their content (§42.1). */
+              className={`flex min-h-0 min-w-0 flex-1 flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[env(safe-area-inset-bottom,0px)] lg:pt-2 [&>*]:w-full'}`}
+            >
+              {showSidebar && announcements.length > 0 && (
+                <AnnouncementBanner announcements={announcements} locale={adminLocale} />
+              )}
+              {children}
+            </main>
+          </div>
         </div>
       </AdminTranslationProvider>
     </RootHtml>

@@ -42,34 +42,22 @@ export function Field({ label, hint, htmlFor, error, required, children, classNa
 
   return (
     <label htmlFor={inputId} className={`block ${className}`}>
-      <span
-        className="block mb-1.5"
-        style={{ fontSize: 12, fontWeight: 600, color: "#0A0A0A" }}
-      >
+      <span className="mb-2 block text-[14px] font-medium leading-[1.3] text-pn-ink">
         {label}
         {required && (
-          <span style={{ color: "#DC2626", marginLeft: 4 }} aria-hidden="true">
+          <span className="ml-1 text-[#E5484D]" aria-hidden="true">
             *
           </span>
         )}
       </span>
       {hint && (
-        <span
-          id={hintId}
-          className="block mb-2"
-          style={{ fontSize: 11.5, color: "#737373", lineHeight: 1.45 }}
-        >
+        <span id={hintId} className="mb-2 block text-[13px] leading-[1.45] text-[#6E6E73]">
           {hint}
         </span>
       )}
       {enhancedChildren}
       {error && (
-        <span
-          id={errorId}
-          role="alert"
-          className="block mt-1.5"
-          style={{ fontSize: 11.5, color: "#DC2626", lineHeight: 1.45 }}
-        >
+        <span id={errorId} role="alert" className="mt-2 block text-[13px] leading-[1.45] text-[#D92D20]">
           {error}
         </span>
       )}

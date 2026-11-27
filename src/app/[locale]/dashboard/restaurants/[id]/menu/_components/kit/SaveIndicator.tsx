@@ -94,7 +94,7 @@ export function SaveIndicator({
       <p
         role="status"
         aria-live="polite"
-        className={`inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[12.5px] font-medium ${tone}`}
+        className={`inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-medium ${tone}`}
       >
         {icon}
         <span className={hideText ? 'sr-only' : 'truncate'}>{text}</span>
@@ -103,7 +103,7 @@ export function SaveIndicator({
         <button
           type="button"
           onClick={onJumpToError}
-          className="min-h-11 text-[12.5px] font-semibold text-[#991B1B] underline underline-offset-2 pointer-fine:min-h-8"
+          className="min-h-11 text-[13px] font-medium text-[#991B1B] underline underline-offset-2 pointer-fine:min-h-8"
         >
           {copy.save.showError}
         </button>
@@ -112,7 +112,7 @@ export function SaveIndicator({
         <button
           type="button"
           onClick={() => onUndo(lastSilentUndo.id)}
-          className="min-h-11 text-[12.5px] font-semibold text-[#0A0A0A] underline underline-offset-2 pointer-fine:min-h-8"
+          className="min-h-11 text-[13px] font-medium text-pn-ink underline underline-offset-2 pointer-fine:min-h-8"
         >
           {copy.save.undo}
         </button>

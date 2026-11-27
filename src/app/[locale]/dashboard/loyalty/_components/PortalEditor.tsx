@@ -133,10 +133,10 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-[20px] border border-pn-line bg-pn-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[14px] font-semibold text-[#0A0A0A]">{tr ? 'Müşterilerinizin gördüğü sayfa' : 'The page your customers see'}</p>
-            <p className="truncate text-[12.5px] text-[#737373]">{portalUrl}</p>
+            <p className="text-[14px] font-medium text-pn-ink">{tr ? 'Müşterilerinizin gördüğü sayfa' : 'The page your customers see'}</p>
+            <p className="truncate text-[13px] text-[#737373]">{portalUrl}</p>
           </div>
           <a href={`/l/${program.slug}`} target="_blank" rel="noopener" className="bz-btn-ghost shrink-0">
             <ExternalLink size={14} className="mr-1.5 inline" aria-hidden /> {tr ? 'Sayfayı aç' : 'Open page'}
@@ -148,7 +148,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
         )}
 
         <section className={card}>
-          <h3 className="text-[15px] font-semibold">{tr ? 'Görünüm' : 'Look'}</h3>
+          <h3 className="text-[15px] font-medium">{tr ? 'Görünüm' : 'Look'}</h3>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label={tr ? 'Tema' : 'Theme'}>
             {THEMES.map((th) => {
               const pal = portalPalette(th.id, program.accentColor);
@@ -161,14 +161,14 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
                   aria-checked={on}
                   disabled={disabled}
                   onClick={() => set('theme', th.id)}
-                  className={`rounded-xl border p-3 text-left transition ${on ? 'border-[#0A0A0A] ring-2 ring-[#C6F24E]' : 'border-[#EDEDED] hover:border-[#A3A3A3]'}`}
+                  className={`rounded-[20px] border p-3 text-left transition ${on ? 'border-pn-ink ring-2 ring-pn-accent' : 'border-pn-line hover:border-[#A3A3A3]'}`}
                 >
-                  <span className="flex h-12 overflow-hidden rounded-lg border border-black/5" style={{ background: pal.bg }} aria-hidden>
+                  <span className="flex h-12 overflow-hidden rounded-[14px] border border-black/5" style={{ background: pal.bg }} aria-hidden>
                     <span className="h-full w-1/3" style={{ background: pal.band }} />
-                    <span className="m-2 flex-1 rounded-md" style={{ background: pal.surface, border: `1px solid ${pal.border}` }} />
+                    <span className="m-2 flex-1 rounded-[10px]" style={{ background: pal.surface, border: `1px solid ${pal.border}` }} />
                     <span className="my-3 mr-2 w-6 rounded-full" style={{ background: pal.accent }} />
                   </span>
-                  <span className="mt-2 block text-[13.5px] font-medium">{tr ? th.tr : th.en}</span>
+                  <span className="mt-2 block text-[14px] font-medium">{tr ? th.tr : th.en}</span>
                   <span className="block text-[12px] text-[#737373]">{tr ? th.hintTr : th.hintEn}</span>
                 </button>
               );
@@ -206,7 +206,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
         </section>
 
         <section className={card}>
-          <h3 className="text-[15px] font-semibold">{tr ? 'Karşılama' : 'Welcome'}</h3>
+          <h3 className="text-[15px] font-medium">{tr ? 'Karşılama' : 'Welcome'}</h3>
           <div>
             <label htmlFor="portal-headline" className={label}>
               {tr ? 'Başlık' : 'Headline'}
@@ -244,7 +244,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
 
         <section className={card}>
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-[15px] font-semibold">{tr ? 'Kampanyalar ve haberler' : 'Offers and news'}</h3>
+            <h3 className="text-[15px] font-medium">{tr ? 'Kampanyalar ve haberler' : 'Offers and news'}</h3>
             <span className="text-[12px] text-[#737373]">
               {draft.offers.length}/{P.offersMax}
             </span>
@@ -255,7 +255,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
               : 'Short notes: a new product, this week’s menu, happy hour. Never offer anything for a review or rating (Google rules).'}
           </p>
           {draft.offers.map((o, i) => (
-            <div key={o.id} className="space-y-2 rounded-xl border border-[#EDEDED] p-3">
+            <div key={o.id} className="space-y-2 rounded-[20px] border border-pn-line p-3">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px]">
                 <input
                   value={o.title}
@@ -307,7 +307,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
         </section>
 
         <section className={card}>
-          <h3 className="text-[15px] font-semibold">{tr ? 'Gösterilecek bloklar' : 'Blocks to show'}</h3>
+          <h3 className="text-[15px] font-medium">{tr ? 'Gösterilecek bloklar' : 'Blocks to show'}</h3>
           <APSwitch
             checked={draft.showMenu}
             onChange={(v) => set('showMenu', v)}
@@ -332,7 +332,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
         </section>
 
         <section className={card}>
-          <h3 className="text-[15px] font-semibold">{tr ? 'Yasal bilgiler (veri sorumlusu)' : 'Legal details (data controller)'}</h3>
+          <h3 className="text-[15px] font-medium">{tr ? 'Yasal bilgiler (veri sorumlusu)' : 'Legal details (data controller)'}</h3>
           <p className={hint}>
             {tr
               ? 'Üye bilgilerinin (ad, soyad, telefon) veri sorumlusu işletmenizdir. Bu bilgiler üyelik koşullarında ve aydınlatma metninde görünür. Boş alanlar işletme adı ve adresinizle dolar.'
@@ -358,7 +358,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
             </label>
             <input id="portal-legal-address" value={draft.legalAddress ?? ''} maxLength={P.legalAddressMax} disabled={disabled} onChange={(e) => set('legalAddress', e.target.value)} className="bz-input w-full" placeholder={business?.address ?? ''} />
           </div>
-          <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+          <p className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
             <a href={`/l/${program.slug}/kosullar`} target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
               {tr ? 'Üyelik koşullarınız' : 'Your membership terms'}
             </a>
@@ -377,7 +377,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
           </AlertBanner>
         )}
         {canManage && (
-          <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,0px)+12px)] z-20 flex flex-col gap-2 rounded-xl border border-[#EDEDED] bg-white/95 p-3 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between lg:bottom-3">
+          <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,0px)+12px)] z-20 flex flex-col gap-2 rounded-[20px] border border-pn-line bg-white/95 p-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between lg:bottom-3">
             <span className="text-[13px] text-[#525252]">
               {notice ?? (dirty ? (tr ? 'Kaydedilmemiş değişiklikler var.' : 'You have unsaved changes.') : tr ? 'Değişiklik yok.' : 'No changes.')}
             </span>
@@ -397,8 +397,8 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
       </div>
 
       <aside className="lg:sticky lg:top-4 lg:self-start" aria-label={tr ? 'Önizleme' : 'Preview'}>
-        <p className="mb-2 text-center text-[12px] font-medium uppercase tracking-[0.14em] text-[#737373]">{tr ? 'Canlı önizleme' : 'Live preview'}</p>
-        <div className="mx-auto h-[720px] w-full max-w-[360px] overflow-hidden rounded-[40px] border-[10px] border-[#0A0A0A] bg-[#0A0A0A] shadow-[0_30px_60px_-30px_rgba(10,10,10,0.6)]">
+        <p className="mb-2 text-center text-[12px] font-medium text-[#737373]">{tr ? 'Canlı önizleme' : 'Live preview'}</p>
+        <div className="mx-auto h-[720px] w-full max-w-[360px] overflow-hidden rounded-[40px] border-[10px] border-pn-ink bg-pn-ink shadow-[0_30px_60px_-30px_rgba(10,10,10,0.6)]">
           <div className="h-full overflow-y-auto overscroll-contain rounded-[30px] [scrollbar-width:none]">
             <LoyaltyPortalFrame
               locale={locale}
@@ -420,7 +420,7 @@ export default function PortalEditor({ locale, restaurantId, program, business, 
                   locale={locale}
                 />
                 <div
-                  className="flex min-h-[50px] items-center justify-center rounded-2xl text-[15px] font-semibold"
+                  className="flex min-h-[50px] items-center justify-center rounded-[24px] text-[15px] font-medium"
                   style={{ background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
                 >
                   {tr ? 'Kartımı aç' : 'Open my card'}
@@ -469,7 +469,7 @@ function ImageField({
       <p className="mb-1.5 text-[13px] font-medium text-[#262626]">{title}</p>
       <div className="flex items-center gap-3">
         <div
-          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-[#D4D4D4] bg-[#FAFAFA] ${square ? 'h-16 w-16' : 'h-16 w-28'}`}
+          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-dashed border-pn-line-strong bg-pn-canvas ${square ? 'h-16 w-16' : 'h-16 w-28'}`}
         >
           {url ? (
             <img src={url} alt="" className={`h-full w-full ${square ? 'object-contain' : 'object-cover'}`} />

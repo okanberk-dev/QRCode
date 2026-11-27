@@ -276,7 +276,7 @@ export default function MemberDetailClient({
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <Link
         href="/admin/members"
-        className="text-[12px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1.5"
+        className="text-[12px] text-[#737373] hover:text-pn-ink inline-flex items-center gap-1.5"
       >
         <ArrowLeft size={12} strokeWidth={2} />
         Listeye dön
@@ -392,7 +392,7 @@ export default function MemberDetailClient({
           label="Plan"
           value={planMeta.label}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={user.plan === 'yearly' ? '#A8D62E' : undefined}
+          accent={user.plan === 'yearly' ? '#83AF3B' : undefined}
         />
         <StatCard
           label={subscription?.renewsAt ? 'Yenileme' : 'Deneme bitiş'}
@@ -411,8 +411,8 @@ export default function MemberDetailClient({
         <>
         <section className="bz-card mb-4 p-5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Destek özeti</h3>
-            <p className="text-[11px] text-[#737373]">Girişler, e-posta, platform linkleri, Google ve ödemeler</p>
+            <h3 className="text-[15px] font-medium text-pn-ink">Destek özeti</h3>
+            <p className="text-[12px] text-[#737373]">Girişler, e-posta, platform linkleri, Google ve ödemeler</p>
           </div>
           <MemberSupportPanel userId={id} />
         </section>
@@ -422,15 +422,15 @@ export default function MemberDetailClient({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4">
           <section className="bz-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
-              <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Aktivasyon kontrol listesi</h3>
-              <p className="text-[11px] text-[#737373]">Her işletme için 5 adımlık kurulum durumu</p>
+              <h3 className="text-[15px] font-medium text-pn-ink">Aktivasyon kontrol listesi</h3>
+              <p className="text-[12px] text-[#737373]">Her işletme için 5 adımlık kurulum durumu</p>
             </div>
             <MemberActivationPanel userId={id} />
           </section>
           <section className="bz-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
-              <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Son yorumlar</h3>
-              <p className="text-[11px] text-[#737373]">Tüm restoranlardan son 10 yorum</p>
+              <h3 className="text-[15px] font-medium text-pn-ink">Son yorumlar</h3>
+              <p className="text-[12px] text-[#737373]">Tüm restoranlardan son 10 yorum</p>
             </div>
             <MemberRecentFeedbacksPanel userId={id} />
           </section>
@@ -438,7 +438,7 @@ export default function MemberDetailClient({
 
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4">
           <section className="bz-card p-5 sm:p-6">
-            <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Hesap bilgileri</h3>
+            <h3 className="text-[15px] font-medium text-pn-ink mb-4">Hesap bilgileri</h3>
             <dl className="space-y-3 text-[13px]">
               <Row label="Email" value={user.email} mono />
               <Row label="İsim" value={user.name || '—'} />
@@ -481,7 +481,7 @@ export default function MemberDetailClient({
               <Row label="Son güncelleme" value={dateLabel(user.updatedAt)} />
               <Row label="Son davet" value={dateLabel(user.lastInvitedAt)} />
             </dl>
-            <div className="mt-5 pt-4 border-t border-[#EDEDED]">
+            <div className="mt-5 pt-4 border-t border-pn-line">
               <button
                 type="button"
                 onClick={() => setShowBillingModal(true)}
@@ -494,13 +494,13 @@ export default function MemberDetailClient({
           </section>
 
           <section className="bz-card p-5 sm:p-6">
-            <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Son işlemler</h3>
+            <h3 className="text-[15px] font-medium text-pn-ink mb-4">Son işlemler</h3>
             <MemberAuditTimeline userId={id} max={5} />
             {counts.invoices === 0 ? null : (
               <button
                 type="button"
                 onClick={() => setActiveTab('audit')}
-                className="mt-4 text-[12px] text-[#737373] hover:text-[#0A0A0A] underline"
+                className="mt-4 text-[12px] text-[#737373] hover:text-pn-ink underline"
               >
                 Tüm işlem kaydını gör
               </button>
@@ -601,9 +601,9 @@ function Row({
 }) {
   return (
     <div className="flex items-start justify-between gap-3 flex-wrap">
-      <dt className="pulse-eyebrow text-[#737373] shrink-0">{label}</dt>
+      <dt className="text-[13px] font-medium text-[#737373] shrink-0">{label}</dt>
       <dd
-        className={`text-[#0A0A0A] text-right ${mono ? 'font-mono text-[12px]' : 'text-[13px] font-medium'}`}
+        className={`text-pn-ink text-right ${mono ? 'font-mono text-[12px]' : 'text-[13px] font-medium'}`}
       >
         {valueNode ?? value}
       </dd>

@@ -147,10 +147,10 @@ export default function BlogTranslationLink({
   const otherLabel = otherLocale === 'tr' ? 'Türkçe' : 'İngilizce';
 
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-5">
+    <div className="rounded-[24px] border border-pn-line bg-white p-5">
       <div className="mb-3 flex items-center gap-2">
         <Languages size={14} className="text-[#737373]" />
-        <p className="pulse-eyebrow text-[#737373]">DİL EŞLEŞMESİ</p>
+        <p className="text-[13px] font-medium text-[#737373]">DİL EŞLEŞMESİ</p>
       </div>
       <p className="mb-4 text-[12px] leading-[1.55] text-[#737373]">
         Bu yazının {otherLabel.toLowerCase()} karşılığını seçin. Public sayfada
@@ -171,16 +171,16 @@ export default function BlogTranslationLink({
           <Loader2 size={12} className="animate-spin" /> Adaylar yükleniyor…
         </div>
       ) : counterpart ? (
-        <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+        <div className="rounded-[20px] border border-pn-line bg-pn-canvas p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="pulse-eyebrow text-[#737373]">
+              <p className="text-[13px] font-medium text-[#737373]">
                 {otherLabel.toUpperCase()} HALİ
               </p>
-              <p className="mt-1 truncate text-[13px] font-semibold text-[#0A0A0A]">
+              <p className="mt-1 truncate text-[13px] font-medium text-pn-ink">
                 {counterpart.title}
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-[#737373]">
+              <p className="mt-0.5 truncate text-[12px] text-[#737373]">
                 /{counterpart.locale}/blog/{counterpart.slug}
                 {!counterpart.isActive && ' · Taslak'}
               </p>

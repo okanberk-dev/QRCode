@@ -141,7 +141,7 @@ export default function MemberAuditTimeline({ userId, max }: Props) {
       {/* Vertical guide line */}
       <span
         aria-hidden
-        className="absolute left-[15px] top-2 bottom-2 w-px bg-[#EDEDED] -z-0"
+        className="absolute left-[15px] top-2 bottom-2 w-px bg-pn-line -z-0"
       />
       {visible.map((e) => {
         const isOpen = expanded.has(e.id);
@@ -151,15 +151,15 @@ export default function MemberAuditTimeline({ userId, max }: Props) {
           <li key={e.id} className="relative pl-10">
             <span
               aria-hidden
-              className="absolute left-[10px] top-2 flex h-3 w-3 items-center justify-center rounded-full bg-white border-2 border-[#0A0A0A] z-10"
+              className="absolute left-[10px] top-2 flex h-3 w-3 items-center justify-center rounded-full bg-white border-2 border-pn-ink z-10"
             />
-            <div className="rounded-xl border border-[#EDEDED] bg-white p-3.5">
+            <div className="rounded-[20px] border border-pn-line bg-white p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-[#0A0A0A] [overflow-wrap:anywhere]">
+                  <p className="text-[13px] font-medium text-pn-ink [overflow-wrap:anywhere]">
                     {actionLabel(e.action)}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-[#737373] [overflow-wrap:anywhere]">
+                  <p className="mt-0.5 text-[12px] text-[#737373] [overflow-wrap:anywhere]">
                     {actorName}
                     <span className="mx-1.5 text-[#A3A3A3]">·</span>
                     {timeAgo(e.createdAt)}
@@ -169,7 +169,7 @@ export default function MemberAuditTimeline({ userId, max }: Props) {
                   <button
                     type="button"
                     onClick={() => toggle(e.id)}
-                    className="shrink-0 text-[11px] text-[#737373] hover:text-[#0A0A0A] flex items-center gap-1"
+                    className="shrink-0 text-[12px] text-[#737373] hover:text-pn-ink flex items-center gap-1"
                   >
                     {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                     {isOpen ? 'Gizle' : 'Detay'}
@@ -178,7 +178,7 @@ export default function MemberAuditTimeline({ userId, max }: Props) {
               </div>
               {isOpen && e.payload != null && (
                 <pre
-                  className="mt-2 overflow-x-auto rounded-lg bg-[#FAFAFA] p-2.5 text-[11px] text-[#525252] border border-[#EDEDED]"
+                  className="mt-2 overflow-x-auto rounded-[14px] bg-pn-canvas p-2.5 text-[12px] text-[#525252] border border-pn-line"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {JSON.stringify(e.payload, null, 2)}

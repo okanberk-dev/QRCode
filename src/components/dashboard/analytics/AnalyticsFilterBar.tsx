@@ -158,8 +158,8 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
       : 'Custom';
 
   const segmentClass = (active: boolean) =>
-    `inline-flex min-h-[44px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:h-[28px] sm:min-h-0 sm:text-[12px] ${
-      active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-[#F5F5F5] hover:text-[#0A0A0A]'
+    `inline-flex min-h-[44px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent sm:h-[28px] sm:min-h-0 sm:text-[12px] ${
+      active ? 'bg-pn-ink text-white' : 'text-[#525252] hover:bg-pn-canvas hover:text-pn-ink'
     }`;
 
   const showBranches = !!branches && branches.length > 0;
@@ -173,7 +173,7 @@ export default function AnalyticsFilterBar({ isTr, branches }: Props) {
     >
       {/* Period — presets + custom range in one segmented control. */}
       <div
-        className="flex w-full flex-wrap items-center gap-0.5 rounded-lg border border-[#EDEDED] bg-white p-0.5 sm:inline-flex sm:w-auto sm:flex-nowrap"
+        className="flex w-full flex-wrap items-center gap-0.5 rounded-full border border-pn-line bg-white p-0.5 sm:inline-flex sm:w-auto sm:flex-nowrap"
         role="group"
         aria-label={isTr ? 'Dönem' : 'Period'}
       >

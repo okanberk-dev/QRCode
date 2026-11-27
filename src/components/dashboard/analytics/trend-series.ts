@@ -19,8 +19,8 @@ export const SERIES_META: Array<{
     key: 'google',
     labelTr: 'Google',
     labelEn: 'Google',
-    fill: '#0A0A0A',
-    swatch: '#0A0A0A',
+    fill: '#000000',
+    swatch: '#000000',
     fillOpacity: 0.85,
   },
   {
@@ -35,8 +35,8 @@ export const SERIES_META: Array<{
     key: 'buazeQr',
     labelTr: 'Buaze QR',
     labelEn: 'Buaze QR',
-    fill: '#C6F24E',
-    swatch: '#C6F24E',
+    fill: '#D7FE03',
+    swatch: '#D7FE03',
     fillOpacity: 0.9,
   },
   {

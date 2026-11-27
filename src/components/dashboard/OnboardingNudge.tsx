@@ -40,7 +40,7 @@ export default function OnboardingNudge({
 
   return (
     <section
-      className={`rounded-2xl p-5 sm:p-6 text-white ${className}`}
+      className={`rounded-[24px] p-5 sm:p-6 text-white ${className}`}
       style={{ background: "linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%)" }}
       aria-label={isTr ? "Başlangıç" : "Getting started"}
     >
@@ -64,7 +64,7 @@ export default function OnboardingNudge({
         {single && (
           <Link
             href={single.href}
-            className="bz-btn-lime inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 self-start text-[13px] sm:min-h-[36px] lg:self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+            className="bz-btn-lime inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 self-start text-[13px] sm:min-h-[36px] lg:self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pn-ink"
           >
             {single.label}
             <ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
@@ -77,10 +77,10 @@ export default function OnboardingNudge({
               <li key={s.id}>
                 <Link
                   href={s.href}
-                  className="flex min-h-[44px] flex-col gap-1.5 rounded-[10px] p-2.5 text-left bz-motion-spring active:scale-[0.97] sm:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                  className="flex min-h-[44px] flex-col gap-1.5 rounded-[10px] p-2.5 text-left bz-motion-spring active:scale-[0.97] sm:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
                   style={{
-                    background: s.done ? "rgba(198,242,78,0.12)" : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${s.done ? "rgba(198,242,78,0.3)" : "rgba(255,255,255,0.1)"}`,
+                    background: s.done ? "rgba(215,254,3,0.12)" : "rgba(255,255,255,0.05)",
+                    border: `1px solid ${s.done ? "rgba(215,254,3,0.3)" : "rgba(255,255,255,0.1)"}`,
                   }}
                 >
                   <span className="flex items-center justify-between">
@@ -88,14 +88,14 @@ export default function OnboardingNudge({
                       aria-hidden="true"
                       className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full"
                       style={{
-                        background: s.done ? "#C6F24E" : "rgba(255,255,255,0.1)",
-                        color: s.done ? "#0A0A0A" : "rgba(255,255,255,0.6)",
+                        background: s.done ? "#D7FE03" : "rgba(255,255,255,0.1)",
+                        color: s.done ? "#000000" : "rgba(255,255,255,0.6)",
                       }}
                     >
                       {s.done ? (
                         <Check size={11} strokeWidth={2.5} />
                       ) : (
-                        <span className="text-[10px] font-semibold">{s.id}</span>
+                        <span className="text-[12px] font-medium">{s.id}</span>
                       )}
                     </span>
                     {!s.done && (
@@ -103,7 +103,7 @@ export default function OnboardingNudge({
                     )}
                   </span>
                   <span
-                    className="text-[11px] leading-[1.3]"
+                    className="text-[12px] leading-[1.3]"
                     style={{
                       color: s.done ? "rgba(255,255,255,0.8)" : "#fff",
                       fontWeight: s.done ? 400 : 500,

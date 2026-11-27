@@ -36,9 +36,9 @@ export const ServiceRow = memo(function ServiceRow({
           data-row-focus=""
           onClick={() => openItem(item.id)}
           aria-label={copy.item.openAria(item.name)}
-          className="min-w-0 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+          className="min-w-0 rounded-[10px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
         >
-          <span className="font-body text-[15px] font-semibold leading-5 text-[#0A0A0A] line-clamp-2 break-words">{item.name}</span>
+          <span className="font-body text-[15px] font-medium leading-5 text-pn-ink line-clamp-2 break-words">{item.name}</span>
         </button>
         <div className="mt-0.5 flex flex-wrap items-center gap-2">
           <span className="text-[13px] tabular-nums text-[#737373]">

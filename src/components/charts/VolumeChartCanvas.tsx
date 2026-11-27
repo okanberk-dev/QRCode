@@ -7,7 +7,7 @@
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import type { VolumePoint } from '@/lib/volume-series';
 
-export const VOLUME_COLORS = { feedback: '#0A0A0A', redirects: '#C6F24E' } as const;
+export const VOLUME_COLORS = { feedback: '#000000', redirects: '#D7FE03' } as const;
 
 interface TipProps {
   active?: boolean;
@@ -19,29 +19,29 @@ function VolumeTooltip({ active, payload, isTr }: TipProps) {
   const p = active ? payload?.find((x) => x.payload)?.payload : undefined;
   if (!p) return null;
   return (
-    <div className="rounded-[10px] border border-[#EDEDED] bg-white px-3 py-2.5 text-[12px] text-[#404040] shadow-[0_12px_32px_rgba(10,10,10,0.12)]">
-      <div className="font-semibold text-[#0A0A0A]">{p.longLabel}</div>
+    <div className="rounded-[10px] border border-pn-line bg-white px-3 py-2.5 text-[12px] text-[#404040] shadow-[0_12px_32px_rgba(10,10,10,0.12)]">
+      <div className="font-medium text-pn-ink">{p.longLabel}</div>
       <div className="mt-1.5 grid min-w-[170px] gap-1">
         <div className="flex justify-between gap-4">
           <span>{isTr ? 'Puan' : 'Ratings'}</span>
-          <span className="tabular-nums font-semibold text-[#0A0A0A]">{p.total}</span>
+          <span className="tabular-nums font-medium text-pn-ink">{p.total}</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="h-2 w-2 rounded-sm" style={{ background: VOLUME_COLORS.redirects }} />
+            <span aria-hidden="true" className="h-2 w-2 rounded-[8px]" style={{ background: VOLUME_COLORS.redirects }} />
             {isTr ? 'Platforma yönlendirme' : 'Sent to a platform'}
           </span>
           <span className="tabular-nums">{p.redirects}</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="h-2 w-2 rounded-sm" style={{ background: VOLUME_COLORS.feedback }} />
+            <span aria-hidden="true" className="h-2 w-2 rounded-[8px]" style={{ background: VOLUME_COLORS.feedback }} />
             {isTr ? 'Geri bildirim' : 'Feedback'}
           </span>
           <span className="tabular-nums">{p.feedback}</span>
         </div>
         {p.avgRating !== null && (
-          <div className="flex justify-between gap-4 border-t border-[#F5F5F5] pt-1">
+          <div className="flex justify-between gap-4 border-t border-pn-line pt-1">
             <span>{isTr ? 'Ortalama puan' : 'Average rating'}</span>
             <span className="tabular-nums">{p.avgRating.toLocaleString(isTr ? 'tr-TR' : 'en-US')}</span>
           </div>
@@ -79,8 +79,8 @@ export default function VolumeChartCanvas({
       <Tooltip cursor={{ fill: 'rgba(10,10,10,0.04)' }} content={({ active, payload }) => (
         <VolumeTooltip active={active} payload={payload as unknown as TipProps['payload']} isTr={isTr} />
       )} />
-      <Bar dataKey="feedback" stackId="v" fill={VOLUME_COLORS.feedback} barSize={barSize} isAnimationActive={false} />
-      <Bar dataKey="redirects" stackId="v" fill={VOLUME_COLORS.redirects} barSize={barSize} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+      <Bar dataKey="feedback" stackId="v" fill={VOLUME_COLORS.feedback} barSize={barSize} radius={[999, 999, 999, 999]} isAnimationActive={false} />
+      <Bar dataKey="redirects" stackId="v" fill={VOLUME_COLORS.redirects} barSize={barSize} radius={[999, 999, 999, 999]} isAnimationActive={false} />
     </BarChart>
   );
 }

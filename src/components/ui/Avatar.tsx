@@ -6,7 +6,7 @@ interface AvatarProps {
   className?: string;
 }
 
-export function Avatar({ name, size = 32, color = "#0A0A0A", fg = "#C6F24E", className = "" }: AvatarProps) {
+export function Avatar({ name, size = 32, color = "var(--color-pn-ink)", fg = "var(--color-pn-accent)", className = "" }: AvatarProps) {
   const initial = (name || "?").trim().charAt(0).toUpperCase();
   return (
     <div

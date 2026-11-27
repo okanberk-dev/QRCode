@@ -214,8 +214,8 @@ export default function AdminBlogClient({ initialPosts, initialTotal }: AdminBlo
               onClick={() => setFilterLocale(locale)}
               className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
                 filterLocale === locale
-                  ? 'bg-[#0A0A0A] text-white'
-                  : 'border border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
+                  ? 'bg-pn-ink text-white'
+                  : 'border border-pn-line bg-white text-[#525252] hover:border-pn-ink'
               }`}
             >
               {locale === 'all' ? 'Tümü' : locale.toUpperCase()}
@@ -289,12 +289,12 @@ export default function AdminBlogClient({ initialPosts, initialTotal }: AdminBlo
                   <tr key={post.id}>
                     <td style={{ maxWidth: 420 }}>
                       <Link href={`/admin/blog/${post.id}`} className="block">
-                        <div className="font-semibold text-[#0A0A0A] truncate" title={post.title}>
+                        <div className="font-medium text-pn-ink truncate" title={post.title}>
                           {post.title}
                         </div>
                         <div className="mt-0.5 flex items-center gap-2">
                           <Badge kind="ghost">{post.locale.toUpperCase()}</Badge>
-                          <span className="text-[11px] text-[#737373] truncate">{post.description}</span>
+                          <span className="text-[12px] text-[#737373] truncate">{post.description}</span>
                         </div>
                       </Link>
                     </td>
@@ -356,7 +356,7 @@ export default function AdminBlogClient({ initialPosts, initialTotal }: AdminBlo
           </div>
 
           {/* Mobile: card list */}
-          <div className="divide-y divide-[#EDEDED] lg:hidden">
+          <div className="divide-y divide-pn-line lg:hidden">
             {filtered.map(post => (
               <article key={post.id} className="p-4 space-y-2.5">
                 <div className="flex items-center gap-1.5">
@@ -364,10 +364,10 @@ export default function AdminBlogClient({ initialPosts, initialTotal }: AdminBlo
                   {post.isActive ? <Badge kind="ok">Yayında</Badge> : <Badge kind="ghost">Taslak</Badge>}
                 </div>
                 <Link href={`/admin/blog/${post.id}`} className="block">
-                  <h3 className="text-[15px] font-medium text-[#0A0A0A] tracking-[-0.015em]">{post.title}</h3>
+                  <h3 className="text-[15px] font-medium text-pn-ink tracking-[-0.015em]">{post.title}</h3>
                   <p className="mt-0.5 line-clamp-2 text-[12px] text-[#737373]">{post.description}</p>
                 </Link>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#A3A3A3]">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#A3A3A3]">
                   <span>{post.author}</span>
                   {post.date && <span>{post.date}</span>}
                   {post.readTime && <span>{post.readTime}</span>}

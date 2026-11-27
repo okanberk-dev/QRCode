@@ -245,14 +245,14 @@ function ToastBar({
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
       style={inset > 0 ? { bottom: inset + 12 } : undefined}
-      className={`fixed inset-x-4 bottom-[calc(var(--dash-bottom-nav-h,0px)+var(--menu-stack,0px)+12px)] z-[65] mx-auto flex max-w-[560px] items-center gap-3 rounded-2xl border px-4 py-3 shadow-lg bz-toast-in sm:inset-x-auto sm:left-1/2 sm:w-[min(560px,calc(100vw-56px))] sm:-translate-x-1/2 lg:bottom-[calc(var(--menu-stack,0px)+24px)] ${
-        error ? 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]' : 'border-[#1A1A1A] bg-[#0A0A0A] text-white'
+      className={`fixed inset-x-4 bottom-[calc(var(--dash-bottom-nav-h,0px)+var(--menu-stack,0px)+12px)] z-[65] mx-auto flex max-w-[560px] items-center gap-3 rounded-[24px] border px-4 py-3 shadow-lg bz-toast-in sm:inset-x-auto sm:left-1/2 sm:w-[min(560px,calc(100vw-56px))] sm:-translate-x-1/2 lg:bottom-[calc(var(--menu-stack,0px)+24px)] ${
+        error ? 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]' : 'border-pn-ink-2 bg-pn-ink text-white'
       }`}
     >
       {toast.busy ? (
         <Loader2 size={14} className="shrink-0 animate-spin" aria-hidden="true" />
       ) : live ? (
-        <span className="h-2 w-2 shrink-0 rounded-full bg-[#C6F24E]" aria-hidden="true" />
+        <span className="h-2 w-2 shrink-0 rounded-full bg-pn-accent" aria-hidden="true" />
       ) : null}
       <p role={error ? 'alert' : undefined} className="min-w-0 flex-1 text-[13px] font-medium leading-snug">
         {toast.message}
@@ -265,8 +265,8 @@ function ToastBar({
             toast.action?.run();
             onDismiss();
           }}
-          className={`h-11 shrink-0 rounded-lg px-3 text-[13px] font-semibold pointer-fine:h-9 ${
-            error ? 'bg-white text-[#991B1B] ring-1 ring-[#FECACA]' : 'bg-[#C6F24E] text-[#0A0A0A]'
+          className={`h-11 shrink-0 rounded-[14px] px-3 text-[13px] font-medium pointer-fine:h-9 ${
+            error ? 'bg-white text-[#991B1B] ring-1 ring-[#FECACA]' : 'bg-pn-accent text-pn-ink'
           }`}
         >
           {toast.action.label}
@@ -276,7 +276,7 @@ function ToastBar({
         <button
           type="button"
           onClick={() => toast.undoId && onUndo(toast.undoId)}
-          className="h-11 shrink-0 rounded-lg bg-[#C6F24E] px-3 pointer-fine:h-9 text-[13px] font-semibold text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="h-11 shrink-0 rounded-[14px] bg-pn-accent px-3 pointer-fine:h-9 text-[13px] font-medium text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           {toast.undoLabel}
         </button>

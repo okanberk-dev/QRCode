@@ -43,7 +43,7 @@ export default function Loading() {
         ))}
       </div>
 
-      <div className="h-[340px] rounded-2xl bg-[#EDEDED]" aria-hidden="true" />
+      <div className="h-[340px] rounded-[24px] bg-pn-line" aria-hidden="true" />
 
       <div className="bz-card-soft space-y-3 p-5 sm:p-6">
         <SkBox className="h-4 w-48" />

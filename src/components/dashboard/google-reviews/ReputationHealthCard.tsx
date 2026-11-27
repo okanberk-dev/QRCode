@@ -43,8 +43,8 @@ const SEVERITY_STYLES: Record<RecommendationSeverity, { bg: string; fg: string; 
     label: { tr: 'UYARI', en: 'WARNING' },
   },
   tip: {
-    bg: '#EAF9B8',
-    fg: '#0A0A0A',
+    bg: '#F3FDC4',
+    fg: '#000000',
     label: { tr: 'ÖNERİ', en: 'TIP' },
   },
 };
@@ -52,7 +52,7 @@ const SEVERITY_STYLES: Record<RecommendationSeverity, { bg: string; fg: string; 
 function scoreColor(score: number | null): string {
   if (score == null) return '#A3A3A3';
   if (score >= 85) return '#16A34A';
-  if (score >= 70) return '#C6F24E';
+  if (score >= 70) return '#D7FE03';
   if (score >= 50) return '#F59E0B';
   return '#DC2626';
 }
@@ -109,7 +109,7 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
     // henüz snapshot almadıysa "ilk rapor 1 ay sonra" mesajı uygun.
     return (
       <div className="bz-card p-5 sm:p-6">
-        <p className="text-[12.5px] font-medium text-[#525252]">
+        <p className="text-[13px] font-medium text-[#525252]">
           {isTr ? 'Sağlık skoru' : 'Health score'}
         </p>
         <p className="bz-h-tight text-[16px] mt-1">
@@ -147,7 +147,7 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
       {/* Hero */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-[12.5px] font-medium text-[#525252]">
+          <p className="text-[13px] font-medium text-[#525252]">
             {isTr ? 'Sağlık skoru' : 'Health score'}
           </p>
           <div className="flex items-baseline gap-2 mt-1">
@@ -157,9 +157,9 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
             >
               {data.score}
             </span>
-            <span className="text-[#A3A3A3] text-[16px] bz-mono">/100</span>
+            <span className="text-[#A3A3A3] text-[16px] tabular-nums">/100</span>
             {data.scoreLabel && (
-              <span className="ml-1 text-[12.5px] font-medium text-[#525252]">{data.scoreLabel}</span>
+              <span className="ml-1 text-[13px] font-medium text-[#525252]">{data.scoreLabel}</span>
             )}
           </div>
         </div>
@@ -201,8 +201,8 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
 
       {/* Recommendations */}
       {data.recommendations.length > 0 && (
-        <div className="border-t border-[#EDEDED] pt-4">
-          <p className="text-[12.5px] font-medium text-[#525252] mb-2">
+        <div className="border-t border-pn-line pt-4">
+          <p className="text-[13px] font-medium text-[#525252] mb-2">
             <Sparkles size={11} className="inline -mt-0.5 mr-1" />
             {isTr ? 'Bu ay önerilenler' : 'Suggested this month'}
           </p>
@@ -210,23 +210,23 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
             {data.recommendations.slice(0, 4).map((r) => {
               const sev = SEVERITY_STYLES[r.severity];
               return (
-                <li key={r.id} className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3 sm:p-3.5">
+                <li key={r.id} className="rounded-[20px] bg-pn-canvas border border-pn-line p-3 sm:p-3.5">
                   <div className="flex items-start gap-2.5">
                     <span
-                      className="bz-mono text-[9px] tracking-[0.16em] px-1.5 py-0.5 rounded shrink-0 mt-0.5"
+                      className="tabular-nums text-[12px] px-1.5 py-0.5 rounded shrink-0 mt-0.5"
                       style={{ background: sev.bg, color: sev.fg }}
                     >
                       {sev.label[isTr ? 'tr' : 'en']}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="bz-h-tight text-[13.5px] text-[#0A0A0A]">{r.title}</p>
-                      <p className="text-[12.5px] text-[#525252] mt-1 leading-relaxed">{r.body}</p>
+                      <p className="bz-h-tight text-[14px] text-pn-ink">{r.title}</p>
+                      <p className="text-[13px] text-[#525252] mt-1 leading-relaxed">{r.body}</p>
                       {r.ctaHref && r.ctaLabel && (
                         <a
                           href={r.ctaHref}
                           target={r.ctaHref.startsWith('http') ? '_blank' : undefined}
                           rel={r.ctaHref.startsWith('http') ? 'noopener noreferrer' : undefined}
-                          className="inline-flex items-center gap-1 mt-2 text-[12px] text-[#0A0A0A] font-medium hover:underline"
+                          className="inline-flex items-center gap-1 mt-2 text-[12px] text-pn-ink font-medium hover:underline"
                         >
                           {r.ctaLabel}
                           {r.ctaHref.startsWith('http') && <ExternalLink size={10} />}
@@ -242,7 +242,7 @@ export function ReputationHealthCard({ restaurantId, locale }: Props) {
       )}
 
       {data.baseline?.score != null && (
-        <p className="text-[11px] text-[#A3A3A3] bz-mono">
+        <p className="text-[12px] text-[#A3A3A3] tabular-nums">
           {isTr ? 'BAŞLANGIÇ' : 'BASELINE'}: {data.baseline.score}/100 (
           {new Date(data.baseline.capturedAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
             month: 'short',
@@ -263,7 +263,7 @@ function DeltaBadge({ label, value }: { label: string; value: number }) {
   const bg = isUp ? '#DCFCE7' : isDown ? '#FEE2E2' : '#F2F2F2';
   return (
     <div
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium"
       style={{ background: bg, color }}
     >
       {isUp ? <TrendingUp size={11} /> : isDown ? <TrendingDown size={11} /> : null}
@@ -278,12 +278,12 @@ function DeltaBadge({ label, value }: { label: string; value: number }) {
 
 function BreakdownBar({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-[#FAFAFA] border border-[#EDEDED] rounded-xl p-3">
+    <div className="bg-pn-canvas border border-pn-line rounded-[20px] p-3">
       <div className="flex items-center justify-between mb-1">
         <span className="text-[12px] text-[#737373]">{label}</span>
-        <span className="bz-mono text-[12px] text-[#0A0A0A]">{value}</span>
+        <span className="tabular-nums text-[12px] text-pn-ink">{value}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-[#EDEDED] overflow-hidden">
+      <div className="h-1.5 rounded-full bg-pn-line overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${Math.max(2, value)}%`, background: scoreColor(value) }}

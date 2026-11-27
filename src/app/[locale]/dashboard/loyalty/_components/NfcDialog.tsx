@@ -139,21 +139,21 @@ export default function NfcDialog({
     >
       <div className="flex flex-col items-center py-4 text-center">
         <span
-          className={`flex h-20 w-20 items-center justify-center rounded-full ${phase === 'done' ? 'bg-[#EAF9B8] text-[#3F6212]' : 'bg-[#0A0A0A] text-[#C6F24E]'} ${phase === 'waiting' || phase === 'locking' ? 'pulse-heartbeat' : ''}`}
+          className={`flex h-20 w-20 items-center justify-center rounded-full ${phase === 'done' ? 'bg-pn-accent-soft text-[#3F6212]' : 'bg-pn-ink text-pn-accent'} ${phase === 'waiting' || phase === 'locking' ? 'pulse-heartbeat' : ''}`}
         >
           {phase === 'done' ? locked ? <Lock size={32} /> : <Check size={34} /> : phase === 'locking' ? <Lock size={32} /> : <Nfc size={34} />}
         </span>
-        <p className="mt-4 text-[15px] font-medium text-[#0A0A0A]" role="status" aria-live="polite">
+        <p className="mt-4 text-[15px] font-medium text-pn-ink" role="status" aria-live="polite">
           {message}
         </p>
         {mode === 'write' && url && phase === 'waiting' && (
-          <p className="mt-2 max-w-full break-all font-mono text-[11.5px] text-[#737373]">{url}</p>
+          <p className="mt-2 max-w-full break-all font-mono text-[12px] text-[#737373]">{url}</p>
         )}
         {canLock && phase === 'waiting' && (
-          <label className="mt-4 flex w-full cursor-pointer items-start gap-2.5 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 text-left">
-            <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]" checked={lock} onChange={(e) => setLock(e.target.checked)} />
+          <label className="mt-4 flex w-full cursor-pointer items-start gap-2.5 rounded-[20px] border border-pn-line bg-pn-canvas p-3 text-left">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink" checked={lock} onChange={(e) => setLock(e.target.checked)} />
             <span className="text-[13px] leading-relaxed text-[#404040]">
-              <strong className="text-[#0A0A0A]">{tr ? 'Yazdıktan sonra kilitle' : 'Lock after writing'}</strong>{' '}
+              <strong className="text-pn-ink">{tr ? 'Yazdıktan sonra kilitle' : 'Lock after writing'}</strong>{' '}
               {target === 'tag'
                 ? tr
                   ? '(önerilir): masadaki etiketi kimse başka bir adrese yönlendiremez. Geri alınamaz.'

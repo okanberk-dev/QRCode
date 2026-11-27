@@ -135,7 +135,7 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
       {data.map((f) => (
         <li
           key={f.id}
-          className="rounded-xl border border-[#EDEDED] bg-white p-3.5 sm:p-4"
+          className="rounded-[20px] border border-pn-line bg-white p-3.5 sm:p-4"
         >
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0 flex-1">
@@ -147,7 +147,7 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
                 {f.restaurantName && (
                   <Link
                     href={`/admin/restaurants/${f.restaurantId}`}
-                    className="inline-flex items-center gap-1 text-[#0A0A0A] hover:underline font-medium"
+                    className="inline-flex items-center gap-1 text-pn-ink hover:underline font-medium"
                   >
                     <Store size={11} strokeWidth={2} />
                     {f.restaurantName}
@@ -155,7 +155,7 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
                   </Link>
                 )}
                 {f.branch && (
-                  <span className="text-[11px] text-[#737373]">· {f.branch}</span>
+                  <span className="text-[12px] text-[#737373]">· {f.branch}</span>
                 )}
                 {f.platform && (
                   <Badge kind="ghost">
@@ -164,7 +164,7 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
                 )}
               </div>
               {f.comment ? (
-                <p className="mt-2 text-[12.5px] leading-[1.55] text-[#262626] whitespace-pre-wrap line-clamp-3">
+                <p className="mt-2 text-[13px] leading-[1.55] text-[#262626] whitespace-pre-wrap line-clamp-3">
                   {f.comment}
                 </p>
               ) : (
@@ -172,7 +172,7 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
                   (Yorum metni yok)
                 </p>
               )}
-              <p className="mt-1.5 text-[11px] text-[#737373]">
+              <p className="mt-1.5 text-[12px] text-[#737373]">
                 {f.customerName || 'Anonim'} ·{' '}
                 <span title={fullStamp(f.createdAt)} className="tabular-nums">
                   {timeAgo(f.createdAt)} · {clockStamp(f.createdAt)}

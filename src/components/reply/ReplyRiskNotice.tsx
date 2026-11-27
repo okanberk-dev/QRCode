@@ -64,13 +64,13 @@ export function ReplyRiskNotice({
     return (
       <div
         role="alert"
-        className={`rounded-xl border px-3 py-2.5 text-[12.5px] leading-[1.5] ${
+        className={`rounded-[20px] border px-3 py-2.5 text-[13px] leading-[1.5] ${
           tone === 'dark'
             ? 'border-[#F87171]/40 bg-[#7F1D1D]/40 text-[#FECACA]'
             : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
         } ${className}`}
       >
-        <p className="flex items-center gap-1.5 font-semibold">
+        <p className="flex items-center gap-1.5 font-medium">
           <ShieldAlert size={14} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
           {isTr ? 'Bu yanıt gönderilemez' : "This reply can't be sent"}
         </p>
@@ -91,7 +91,7 @@ export function ReplyRiskNotice({
     return (
       <p
         role="status"
-        className={`flex items-start gap-1.5 rounded-xl border px-3 py-2 text-[12px] leading-[1.5] ${
+        className={`flex items-start gap-1.5 rounded-[20px] border px-3 py-2 text-[12px] leading-[1.5] ${
           tone === 'dark'
             ? 'border-[#FDE68A]/40 bg-[#78350F]/30 text-[#FDE68A]'
             : 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]'

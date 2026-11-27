@@ -74,8 +74,8 @@ export function DangerZone({ restaurant, locale = "tr" }: DangerZoneProps) {
         style={dangerCardStyle}
       >
         <div className="min-w-0">
-          <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{t.deleteTitle}</h3>
-          <p className="text-[12.5px] text-[#525252] mt-1">{t.deleteBody}</p>
+          <h3 className="bz-h-tight text-[16px] text-pn-ink">{t.deleteTitle}</h3>
+          <p className="text-[13px] text-[#525252] mt-1">{t.deleteBody}</p>
         </div>
         <button
           type="button"

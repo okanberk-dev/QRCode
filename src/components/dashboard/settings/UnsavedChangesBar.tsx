@@ -124,7 +124,7 @@ export function UnsavedChangesBar({
       {visible && (
         <div
           style={{
-            background: "#FAFAFA",
+            background: "#F5F5F8",
             border: "1px solid #EDEDED",
             borderRadius: 16,
             boxShadow: "0 12px 32px -8px rgba(10,10,10,0.18)",
@@ -141,10 +141,10 @@ export function UnsavedChangesBar({
                   width: 8,
                   height: 8,
                   borderRadius: 999,
-                  background: error ? "#DC2626" : dirty ? "#C6F24E" : "#16A34A",
+                  background: error ? "#DC2626" : dirty ? "#D7FE03" : "#16A34A",
                 }}
               />
-              <span className="bz-mono text-[12px] text-[#0A0A0A] sm:truncate">
+              <span className="tabular-nums text-[12px] text-pn-ink sm:truncate">
                 {error ? error : dirty ? (dirtyLabel ?? copy.dirty) : success}
               </span>
             </div>

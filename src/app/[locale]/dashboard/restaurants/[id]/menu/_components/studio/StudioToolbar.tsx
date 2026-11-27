@@ -97,12 +97,12 @@ export function StudioToolbar({
           type="button"
           onClick={() => onQuery('')}
           aria-label={copy.outline.clearSearch}
-          className="absolute right-1 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[#737373] hover:text-[#0A0A0A]"
+          className="absolute right-1 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#737373] hover:text-pn-ink"
         >
           <X size={14} strokeWidth={2} />
         </button>
       ) : (
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md border border-[#E5E5E5] bg-[#FAFAFA] px-1.5 font-mono text-[12px] text-[#737373] pointer-fine:inline" aria-hidden="true">
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-[10px] border border-pn-line-strong bg-pn-canvas px-1.5 font-mono text-[12px] text-[#737373] pointer-fine:inline" aria-hidden="true">
           /
         </kbd>
       )}
@@ -171,7 +171,7 @@ export function StudioToolbar({
       <div ref={sentinel} className="hidden h-px lg:block" aria-hidden="true" />
       <div
         data-stuck={stuck}
-        className="-mx-4 hidden bg-[#FAFAFA]/95 px-4 backdrop-blur data-[stuck=true]:border-b data-[stuck=true]:border-[#EDEDED] sm:-mx-7 sm:px-7 lg:sticky lg:top-14 lg:z-20 lg:!mt-0 lg:block"
+        className="-mx-4 hidden bg-pn-canvas/95 px-4 backdrop-blur data-[stuck=true]:border-b data-[stuck=true]:border-pn-line sm:-mx-7 sm:px-7 lg:sticky lg:top-0 lg:z-20 lg:!mt-0 lg:block"
       >
         <div className="flex h-14 items-center gap-2">
           {search('menu-search', 'w-[240px] shrink-0 xl:w-[300px]', 'h-9')}

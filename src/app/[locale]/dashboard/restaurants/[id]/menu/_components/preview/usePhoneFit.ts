@@ -27,7 +27,7 @@ export function usePhoneFit(
   variant: 'framed' | 'bare',
   opts: { topOffset?: number; height?: number } = {},
 ): PhoneFit {
-  const { topOffset = 184, height } = opts;
+  const { topOffset = 214, height } = opts;
   const [fit, setFit] = useState<PhoneFit>({ zoom: variant === 'framed' ? 0.78 : 1, height: 660, tooShort: false });
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function usePhoneFit(
         } else {
           const zoom = Math.min(1, width / PHONE_WIDTH);
           const nav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dash-bottom-nav-h')) || 0;
-          const budget = height ?? vh - 61 - nav - 52 - 48 - 24;
+          const budget = height ?? vh - 72 - nav - 52 - 48 - 24;
           setFit({ zoom, height: Math.round(Math.max(480, budget / zoom)), tooShort: false });
         }
       });

@@ -258,7 +258,7 @@ export default function LegalDocumentEditorPage({
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <Link
         href="/admin/legal-documents"
-        className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] text-[#737373] hover:text-[#0A0A0A]"
+        className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-[#737373] hover:text-pn-ink"
       >
         <ArrowLeft size={14} />
         Tüm metinler
@@ -372,7 +372,7 @@ export default function LegalDocumentEditorPage({
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="bz-input min-h-[480px] w-full resize-y font-mono text-[12.5px] leading-[1.6]"
+                  className="bz-input min-h-[480px] w-full resize-y font-mono text-[13px] leading-[1.6]"
                 />
               </Field>
             </div>
@@ -381,10 +381,10 @@ export default function LegalDocumentEditorPage({
           <aside className="space-y-4">
             <div className="bz-card p-5">
               <h3 className="bz-h-tight text-[14px] tracking-[-0.02em]">Yayın ayarları</h3>
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-[#EDEDED] bg-white px-3 py-2.5">
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-[14px] border border-pn-line bg-white px-3 py-2.5">
                 <div>
-                  <div className="text-[13px] font-medium text-[#0A0A0A]">Aktif</div>
-                  <div className="text-[11.5px] text-[#737373]">
+                  <div className="text-[13px] font-medium text-pn-ink">Aktif</div>
+                  <div className="text-[12px] text-[#737373]">
                     Pasifleştirilirse public surface&apos;lerde gizlenir.
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export default function LegalDocumentEditorPage({
             <div className="bz-card p-5">
               <h3 className="bz-h-tight text-[14px] tracking-[-0.02em]">Versiyon bilgisi</h3>
               {doc ? (
-                <dl className="mt-3 space-y-2 text-[12.5px]">
+                <dl className="mt-3 space-y-2 text-[13px]">
                   <div className="flex items-center justify-between">
                     <dt className="text-[#737373]">Mevcut sürüm</dt>
                     <dd>
@@ -419,26 +419,26 @@ export default function LegalDocumentEditorPage({
                   </div>
                   <div className="flex items-center justify-between">
                     <dt className="text-[#737373]">Son güncelleme</dt>
-                    <dd className="text-[#0A0A0A]">
+                    <dd className="text-pn-ink">
                       {new Date(doc.updatedAt).toLocaleString('tr-TR')}
                     </dd>
                   </div>
                 </dl>
               ) : (
-                <p className="mt-2 text-[12.5px] text-[#737373]">
+                <p className="mt-2 text-[13px] text-[#737373]">
                   Henüz kayıt yok. İlk kaydet → v1 oluşturulur.
                 </p>
               )}
             </div>
             <div className="bz-card p-5">
               <h3 className="bz-h-tight text-[14px] tracking-[-0.02em]">Değişkenler</h3>
-              <p className="mt-1 text-[11.5px] leading-[1.55] text-[#737373]">
-                İçerikte <code className="rounded bg-[#FAFAFA] px-1 py-0.5 text-[10px]">{'{{COMPANY_NAME}}'}</code> gibi
+              <p className="mt-1 text-[12px] leading-[1.55] text-[#737373]">
+                İçerikte <code className="rounded bg-pn-canvas px-1 py-0.5 text-[12px]">{'{{COMPANY_NAME}}'}</code> gibi
                 placeholder&apos;lar yazıldığında, public sayfa render edilirken otomatik gerçek değerle değiştirilir.
               </p>
               <Link
                 href="/admin/legal-documents/variables"
-                className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#0A0A0A] underline decoration-[#A8D62E] decoration-2 underline-offset-4 hover:text-[#A8D62E]"
+                className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-pn-ink underline decoration-pn-accent-ink decoration-2 underline-offset-4 hover:text-pn-accent-ink"
               >
                 Değişkenleri yönet →
               </Link>
@@ -455,7 +455,7 @@ export default function LegalDocumentEditorPage({
 
       {showPreview && (
         <Modal onClose={() => setShowPreview(false)} size="lg">
-          <div className="flex items-center justify-between border-b border-[#EDEDED] px-5 py-3">
+          <div className="flex items-center justify-between border-b border-pn-line px-5 py-3">
             <h3 className="bz-h-tight text-[15px]">Ön izleme — {title}</h3>
             <button
               type="button"
@@ -474,7 +474,7 @@ export default function LegalDocumentEditorPage({
 
       {showHistory && (
         <Modal onClose={() => setShowHistory(false)} size="lg">
-          <div className="flex items-center justify-between border-b border-[#EDEDED] px-5 py-3">
+          <div className="flex items-center justify-between border-b border-pn-line px-5 py-3">
             <h3 className="bz-h-tight text-[15px]">Versiyon geçmişi</h3>
             <button
               type="button"
@@ -494,7 +494,7 @@ export default function LegalDocumentEditorPage({
             ) : !revisions || revisions.length === 0 ? (
               <p className="text-[13px] text-[#737373]">Henüz geçmiş yok.</p>
             ) : (
-              <ul className="divide-y divide-[#EDEDED]">
+              <ul className="divide-y divide-pn-line">
                 {revisions.map((r) => (
                   <li key={r.id} className="flex items-center justify-between gap-3 py-3">
                     <div className="min-w-0 flex-1">
@@ -504,8 +504,8 @@ export default function LegalDocumentEditorPage({
                           {EDIT_TYPE_LABEL[r.editType] ?? r.editType}
                         </Badge>
                       </div>
-                      <div className="mt-1 truncate text-[13px] text-[#0A0A0A]">{r.title}</div>
-                      <div className="mt-0.5 text-[11.5px] text-[#737373]">
+                      <div className="mt-1 truncate text-[13px] text-pn-ink">{r.title}</div>
+                      <div className="mt-0.5 text-[12px] text-[#737373]">
                         {new Date(r.createdAt).toLocaleString('tr-TR')}
                         {r.editor && ` · ${r.editor.username}`}
                       </div>

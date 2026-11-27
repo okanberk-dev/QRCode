@@ -60,10 +60,10 @@ export default function Loading() {
       </div>
       <div className="hidden lg:block">
         <div className="bz-card overflow-hidden">
-          <div className="border-b border-[#EDEDED] px-4 py-3">
+          <div className="border-b border-pn-line px-4 py-3">
             <SkBox className="h-3 w-full" />
           </div>
-          <div className="divide-y divide-[#EDEDED]">
+          <div className="divide-y divide-pn-line">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="px-4 py-4">
                 <SkBox className="h-4 w-full" />

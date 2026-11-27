@@ -310,7 +310,7 @@ export default function BrandIdentityCard({
                   {isTr ? 'Logoyu kaldır' : 'Remove logo'}
                 </button>
               )}
-              <p className="text-[11px] text-[#A3A3A3] leading-[1.55]">
+              <p className="text-[12px] text-[#A3A3A3] leading-[1.55]">
                 {isTr ? 'PNG / JPG / SVG · max 5 MB' : 'PNG / JPG / SVG · max 5 MB'}
               </p>
             </div>
@@ -377,7 +377,7 @@ export default function BrandIdentityCard({
                   {isTr ? 'Faviconu kaldır' : 'Remove favicon'}
                 </button>
               )}
-              <p className="text-[11px] text-[#A3A3A3] leading-[1.55]">
+              <p className="text-[12px] text-[#A3A3A3] leading-[1.55]">
                 {isTr ? 'Tarayıcı sekmesinde görünür · 256×256' : 'Browser tab icon · 256×256'}
               </p>
             </div>
@@ -457,7 +457,7 @@ export default function BrandIdentityCard({
             maxLength={SLOGAN_MAX}
             className="bz-input"
           />
-          <div className="mt-1 flex justify-between text-[11px] text-[#A3A3A3]">
+          <div className="mt-1 flex justify-between text-[12px] text-[#A3A3A3]">
             <span>
               {isTr
                 ? 'QR kartında ve müşteri ekranlarında işletme adının altında görünür.'
@@ -529,7 +529,7 @@ export default function BrandIdentityCard({
             {isTr ? 'Deneyimini paylaş' : 'Share your experience'}
           </div>
         </div>
-        <p className="mt-2 text-[11px] text-[#A3A3A3] leading-[1.55] flex items-start gap-1.5">
+        <p className="mt-2 text-[12px] text-[#A3A3A3] leading-[1.55] flex items-start gap-1.5">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" strokeWidth={2} />
           {isTr
             ? 'Önizleme renklerin ve fontun gerçek müşteri akışındaki yansımasını gösterir; tam tasarım menü/QR sayfalarında uygulanır.'

@@ -106,15 +106,15 @@ export function PlatformBusinessContext({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
           aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#0A0A0A] text-[14px] font-semibold text-[#C6F24E]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-pn-ink text-[14px] font-medium text-pn-accent"
         >
           {initial}
         </span>
         <div className="min-w-0">
-          <h2 id="pb-ctx" className="bz-h-tight truncate text-[16px] text-[#0A0A0A]">
+          <h2 id="pb-ctx" className="bz-h-tight truncate text-[16px] text-pn-ink">
             {restaurant.name}
           </h2>
-          <p className="mt-0.5 text-[12.5px] text-[#525252]">
+          <p className="mt-0.5 text-[13px] text-[#525252]">
             <PlatformSummaryLine
               summary={summary}
               locale={locale}
@@ -125,7 +125,7 @@ export function PlatformBusinessContext({
       </div>
       <Link
         href={settingsPlatformsHref(locale, restaurant.id)}
-        className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:min-h-[38px]"
+        className="bz-btn-ghost inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2 sm:min-h-[38px]"
       >
         <Settings size={14} aria-hidden="true" />
         {isTr ? 'İşletme ayarları' : 'Business settings'}

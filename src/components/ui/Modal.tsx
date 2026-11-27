@@ -206,7 +206,7 @@ export function Modal({
         ref={dialogRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="bz-fade-in relative bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[16px] sm:rounded-[14px]"
+        className="bz-fade-in relative bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[28px] sm:rounded-[32px]"
         style={{
           width: computedWidth,
           maxWidth: "92vw",
@@ -218,13 +218,12 @@ export function Modal({
           boxShadow: "0 24px 80px -20px rgba(0,0,0,0.4)",
         }}
       >
+        {/* Bottom-sheet grab handle on phones (Pano §7). */}
+        <span aria-hidden="true" className="mx-auto mt-2.5 block h-1 w-10 shrink-0 rounded-full bg-[#D9D9DE] sm:hidden" />
         {(title || !hideCloseButton) && (
-          <div
-            className="flex justify-between items-center shrink-0"
-            style={{ padding: "20px 24px", borderBottom: "1px solid #EDEDED" }}
-          >
+          <div className="flex shrink-0 items-center justify-between gap-3 px-6 pb-2 pt-4 sm:px-7 sm:pt-6">
             {title && (
-              <div className="bz-h-tight pr-3 truncate" style={{ fontSize: 17 }}>
+              <div className="truncate pr-3 text-[22px] font-normal leading-tight tracking-[-0.005em] text-pn-ink">
                 {title}
               </div>
             )}
@@ -240,14 +239,11 @@ export function Modal({
             )}
           </div>
         )}
-        <div className="p-6 flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 sm:px-7">
           {children}
         </div>
         {footer && (
-          <div
-            className="flex justify-end gap-2 px-6 py-4 shrink-0"
-            style={{ borderTop: "1px solid #EDEDED" }}
-          >
+          <div className="flex shrink-0 justify-end gap-2 px-6 pb-6 pt-2 sm:px-7">
             {footer}
           </div>
         )}
@@ -256,7 +252,7 @@ export function Modal({
             body (only shown when closeGuard signals dirty input). */}
         {confirmingClose && (
           <div
-            className="absolute inset-0 z-10 flex items-center justify-center rounded-t-[16px] sm:rounded-[14px] bg-white/95 p-6 backdrop-blur-sm"
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-t-[28px] sm:rounded-[32px] bg-white/95 p-6 backdrop-blur-sm"
             role="alertdialog"
             aria-label={confirmCopy.title}
           >

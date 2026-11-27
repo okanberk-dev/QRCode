@@ -43,11 +43,11 @@ export function AiInsightsCard({
 
   return (
     <section className="bz-card p-5 sm:p-6" aria-label={title}>
-      <h2 className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#0A0A0A]">
+      <h2 className="inline-flex items-center gap-2 text-[15px] font-medium text-pn-ink">
         <Sparkles size={15} strokeWidth={2} aria-hidden="true" className="text-[#65A30D]" />
         {title}
       </h2>
-      <p className="mt-3 flex items-start gap-2 text-[13.5px] leading-[1.6] text-[#262626]">
+      <p className="mt-3 flex items-start gap-2 text-[14px] leading-[1.6] text-[#262626]">
         <FirstIcon size={14} strokeWidth={2} aria-hidden="true" className="mt-1 shrink-0" style={{ color: first.color }} />
         <span>
           <span className="font-medium" style={{ color: first.color }}>{first.label}: </span>
@@ -56,7 +56,7 @@ export function AiInsightsCard({
       </p>
       {rest.length > 0 && (
         <details className="group mt-2">
-          <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center text-[13px] font-medium text-[#0A0A0A] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E] rounded sm:min-h-[32px]">
+          <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center text-[13px] font-medium text-pn-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent-hover rounded sm:min-h-[32px]">
             <span className="group-open:hidden">{isTr ? 'Detay' : 'Details'}</span>
             <span className="hidden group-open:inline">{isTr ? 'Gizle' : 'Hide'}</span>
           </summary>
@@ -64,7 +64,7 @@ export function AiInsightsCard({
             {rest.map((r) => {
               const Icon = r.icon;
               return (
-                <li key={r.key} className="flex items-start gap-2 text-[13.5px] leading-[1.6] text-[#262626]">
+                <li key={r.key} className="flex items-start gap-2 text-[14px] leading-[1.6] text-[#262626]">
                   <Icon size={14} strokeWidth={2} aria-hidden="true" className="mt-1 shrink-0" style={{ color: r.color }} />
                   <span>
                     <span className="font-medium" style={{ color: r.color }}>{r.label}: </span>

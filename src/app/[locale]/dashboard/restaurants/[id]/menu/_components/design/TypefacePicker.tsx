@@ -54,21 +54,21 @@ export function TypefacePicker({
             disabled={disabled}
             onClick={() => onChange(key)}
             onKeyDown={(e) => onKeyDown(e, index)}
-            className={`relative flex min-w-0 items-center gap-3.5 rounded-xl bg-white p-3 text-left transition-shadow duration-[160ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`relative flex min-w-0 items-center gap-3.5 rounded-[20px] bg-white p-3 text-left transition-shadow duration-[160ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
               on ? 'shadow-[0_0_0_2px_#0A0A0A]' : 'shadow-[0_0_0_1px_#E5E5E5] hover:shadow-[0_0_0_1px_#A3A3A3]'
             }`}
             style={{ fontSynthesis: 'none' }}
           >
             <span
               aria-hidden="true"
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#F7F6F3] text-[28px] leading-none text-[#0A0A0A]"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[#F7F6F3] text-[28px] leading-none text-pn-ink"
               style={{ fontFamily: tf.display, fontWeight: tf.displaySize.weight }}
             >
               Aa
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
-                <span className="truncate text-[13.5px] font-semibold text-[#0A0A0A]">{names[key]}</span>
+                <span className="truncate text-[14px] font-medium text-pn-ink">{names[key]}</span>
                 {isDefault && <DefaultDot on={false} />}
                 <span className="truncate text-[12px] text-[#737373]">{tf.family}</span>
               </span>
@@ -86,7 +86,7 @@ export function TypefacePicker({
               </span>
             </span>
             {on && (
-              <span className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#0A0A0A]" aria-hidden="true">
+              <span className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-pn-ink" aria-hidden="true">
                 <Check size={10} strokeWidth={3} className="text-white" />
               </span>
             )}

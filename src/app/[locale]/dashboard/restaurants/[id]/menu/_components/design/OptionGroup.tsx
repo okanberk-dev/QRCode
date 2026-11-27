@@ -54,10 +54,10 @@ export function OptionGroup<V extends string>({
 
   return (
     <div className="min-w-0">
-      <p id={labelId} className="mb-2 text-[13px] font-semibold text-[#0A0A0A]">
+      <p id={labelId} className="mb-2 text-[13px] font-medium text-pn-ink">
         {label}
       </p>
-      <div role="radiogroup" aria-labelledby={labelId} className="flex w-full gap-1 rounded-xl bg-[#F4F4F4] p-1">
+      <div role="radiogroup" aria-labelledby={labelId} className="flex w-full gap-1 rounded-[20px] bg-[#F4F4F4] p-1">
         {options.map((o, index) => {
           const on = index === selected;
           const isDefault = o.value === defaultValue;
@@ -75,10 +75,10 @@ export function OptionGroup<V extends string>({
               disabled={disabled}
               onClick={() => onChange(o.value)}
               onKeyDown={(e) => onKeyDown(e, index)}
-              className={`inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-medium transition-colors duration-[160ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-60 pointer-fine:h-9 ${
+              className={`inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-medium transition-colors duration-[160ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-60 pointer-fine:h-9 ${
                 on
-                  ? 'bg-[#0A0A0A] text-white shadow-[0_1px_2px_rgba(10,10,10,0.2)]'
-                  : 'text-[#525252] hover:bg-white hover:text-[#0A0A0A]'
+                  ? 'bg-pn-ink text-white shadow-[0_1px_2px_rgba(10,10,10,0.2)]'
+                  : 'text-[#525252] hover:bg-white hover:text-pn-ink'
               }`}
             >
               <span className="truncate">{o.label}</span>

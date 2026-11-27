@@ -125,7 +125,7 @@ export function SelectionBar({
     <div ref={wrapRef}>
       <PanelSelectionBar
         count={selection.size}
-        countClassName="text-[13px] font-semibold text-[#C6F24E]"
+        countClassName="text-[13px] font-medium text-pn-accent"
         label={copy.selection.selectedLabel}
         ariaLabel={copy.selection.barAria}
         actions={barActions}
@@ -142,8 +142,8 @@ export function SelectionBar({
                 type="button"
                 onClick={a.onClick}
                 disabled={a.disabled}
-                className={`flex min-h-[48px] items-center gap-3 rounded-xl border px-4 text-left text-[14px] font-medium disabled:opacity-40 ${
-                  a.variant === 'danger' ? 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]' : 'border-[#E5E5E5] bg-white text-[#0A0A0A]'
+                className={`flex min-h-[48px] items-center gap-3 rounded-[20px] border px-4 text-left text-[14px] font-medium disabled:opacity-40 ${
+                  a.variant === 'danger' ? 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]' : 'border-pn-line-strong bg-white text-pn-ink'
                 }`}
               >
                 {a.icon}

@@ -11,7 +11,7 @@ import { FeedbackDetailSkeleton } from './_components/FeedbackDetail';
  */
 export default function Loading() {
   return (
-    <div className="flex min-h-full w-full min-w-0 flex-col bg-white lg:min-h-0 lg:flex-1">
+    <div className="flex min-h-full w-full min-w-0 flex-col bg-white lg:min-h-0 lg:flex-1 lg:mx-2 lg:mb-2 lg:!w-[calc(100%-16px)] lg:overflow-hidden lg:rounded-[28px]">
       {/* Header */}
       <div className="px-4 pb-3 pt-5 sm:px-7 lg:pb-4 lg:pt-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -31,7 +31,7 @@ export default function Loading() {
       </div>
 
       {/* Toolbar */}
-      <div className="border-y border-[#EDEDED] bg-white px-4 py-3 sm:px-7">
+      <div className="border-y border-pn-line bg-white px-4 py-3 sm:px-7">
         <div className="flex gap-1.5 overflow-hidden">
           {['w-20', 'w-28', 'w-28', 'w-28', 'w-28'].map((w, i) => (
             <SkBox key={i} className={`h-11 shrink-0 rounded-full sm:h-9 ${w}`} />
@@ -55,7 +55,7 @@ export default function Loading() {
 
       {/* Split — same tracks as the page. */}
       <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
-        <div className="min-h-0 lg:overflow-hidden lg:border-r lg:border-[#EDEDED]">
+        <div className="min-h-0 lg:overflow-hidden lg:border-r lg:border-pn-line">
           {Array.from({ length: 6 }).map((_, i) => (
             <FeedbackListSkeletonRow key={i} />
           ))}

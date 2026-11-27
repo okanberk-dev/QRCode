@@ -1189,11 +1189,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   } else if (serverFiltered) {
     summary = isTr ? (
       <>
-        Filtreye uyan <strong className="font-semibold text-[#0A0A0A]">{total ?? feedbacks.length} yorum</strong>
+        Filtreye uyan <strong className="font-medium text-pn-ink">{total ?? feedbacks.length} yorum</strong>
       </>
     ) : (
       <>
-        <strong className="font-semibold text-[#0A0A0A]">{total ?? feedbacks.length} reviews</strong> match the filters
+        <strong className="font-medium text-pn-ink">{total ?? feedbacks.length} reviews</strong> match the filters
       </>
     );
   } else if (weekStats.count === 0) {
@@ -1201,18 +1201,18 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   } else if (!weekStats.exact) {
     summary = isTr ? (
       <>
-        Bu hafta <strong className="font-semibold text-[#0A0A0A]">{weekStats.count}+ yorum</strong>
+        Bu hafta <strong className="font-medium text-pn-ink">{weekStats.count}+ yorum</strong>
       </>
     ) : (
       <>
-        This week <strong className="font-semibold text-[#0A0A0A]">{weekStats.count}+ reviews</strong>
+        This week <strong className="font-medium text-pn-ink">{weekStats.count}+ reviews</strong>
       </>
     );
   } else {
     const showDelta = weekStats.delta !== null && Math.abs(weekStats.delta) >= 0.05;
     const deltaChip = showDelta ? (
       <span
-        className={`rounded-full px-1.5 text-[11px] font-semibold ${
+        className={`rounded-full px-1.5 text-[12px] font-medium ${
           (weekStats.delta ?? 0) > 0 ? 'bg-[#F0FDF4] text-[#166534]' : 'bg-[#FEF2F2] text-[#991B1B]'
         }`}
         title={isTr ? 'Önceki 7 güne göre' : 'Compared with the previous 7 days'}
@@ -1222,16 +1222,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     ) : null;
     summary = isTr ? (
       <>
-        Bu hafta <strong className="font-semibold text-[#0A0A0A]">{weekStats.count} yorum</strong>
+        Bu hafta <strong className="font-medium text-pn-ink">{weekStats.count} yorum</strong>
         <span aria-hidden="true">·</span>
-        ortalama <strong className="font-semibold text-[#0A0A0A]">{fmtAvg(weekStats.avg)} ★</strong>
+        ortalama <strong className="font-medium text-pn-ink">{fmtAvg(weekStats.avg)} ★</strong>
         {deltaChip}
       </>
     ) : (
       <>
-        This week <strong className="font-semibold text-[#0A0A0A]">{weekStats.count} reviews</strong>
+        This week <strong className="font-medium text-pn-ink">{weekStats.count} reviews</strong>
         <span aria-hidden="true">·</span>
-        <strong className="font-semibold text-[#0A0A0A]">{fmtAvg(weekStats.avg)} ★</strong> average
+        <strong className="font-medium text-pn-ink">{fmtAvg(weekStats.avg)} ★</strong> average
         {deltaChip}
       </>
     );
@@ -1247,7 +1247,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     // §38.62 — full-bleed inbox (no outer max-width wrapper): header and
     // toolbar carry their own padding, the split panes run edge to edge and
     // scroll internally on lg.
-    <div className="flex min-h-full w-full min-w-0 flex-col bg-white lg:min-h-0 lg:flex-1">
+    <div className="flex min-h-full w-full min-w-0 flex-col bg-white lg:min-h-0 lg:flex-1 lg:mx-2 lg:mb-2 lg:!w-[calc(100%-16px)] lg:overflow-hidden lg:rounded-[28px]">
       {/* Header — hidden on the mobile detail view (the back bar is there). */}
       <div
         className={`px-4 pb-3 pt-5 sm:px-7 lg:pb-4 lg:pt-6 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
@@ -1256,7 +1256,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           <div className="min-w-0">
             {/* Desktop shows the title in the shell topbar; keep the h1 in the
                 accessibility tree there (sr-only) so the page always has one. */}
-            <h1 className="bz-h-tight text-[24px] text-[#0A0A0A] lg:sr-only">
+            <h1 className="bz-h-tight text-[24px] text-pn-ink lg:sr-only">
               {isTr ? 'Yorumlar' : 'Reviews'}
             </h1>
             <div className="mt-0.5 flex min-h-[20px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
@@ -1299,7 +1299,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               )}
               {isTr ? 'AI taslakları' : 'AI drafts'}
               {!loading && bulkEligibleCount > 0 && (
-                <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-[#C6F24E] px-1.5 text-[11px] font-semibold leading-[18px] text-[#0A0A0A] tabular-nums">
+                <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-pn-accent px-1.5 text-[12px] font-medium leading-[18px] text-pn-ink tabular-nums">
                   {bulkEligibleCount}
                 </span>
               )}
@@ -1335,7 +1335,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           the viewport (360 → 420 → 480) and the detail takes the rest. */}
       <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
         <aside
-          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-[#EDEDED] ${
+          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-pn-line ${
             isMobileDetailView ? 'hidden lg:block' : ''
           }`}
         >
@@ -1457,9 +1457,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed inset-x-4 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 max-w-[560px] rounded-2xl border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 lg:bottom-4 ${
+          className={`fixed inset-x-4 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 max-w-[560px] rounded-[24px] border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 lg:bottom-4 ${
             bulkNotice.tone === 'success'
-              ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
+              ? 'border-pn-accent-hover bg-pn-ink text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
           }`}
         >
@@ -1469,7 +1469,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               strokeWidth={2}
               aria-hidden="true"
               className={`mt-0.5 shrink-0 ${
-                bulkNotice.tone === 'success' ? 'text-[#C6F24E]' : 'text-[#DC2626]'
+                bulkNotice.tone === 'success' ? 'text-pn-accent' : 'text-[#DC2626]'
               }`}
             />
             <p className="flex-1 text-[13px] leading-snug">{bulkNotice.msg}</p>

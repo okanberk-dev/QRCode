@@ -291,18 +291,18 @@ export default function AdminCustomersPage() {
             label="Ortalama puan"
             value={data.summary.avgRating !== null ? data.summary.avgRating.toFixed(2) : '—'}
             icon={<Star size={14} />}
-            accent="#C6F24E"
+            accent="#D7FE03"
           />
         </div>
       )}
 
       {/* Filters */}
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
+      <div className="rounded-[24px] border border-pn-line bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
           {/* Range segmented control — full-width on mobile (each label gets its
               natural width) so labels never wrap; plain 12px label (no mono
               eyebrow tracking). */}
-          <div className="flex w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 sm:inline-flex sm:w-auto">
+          <div className="flex w-full rounded-[20px] border border-pn-line bg-[#FFFFFF] p-1 sm:inline-flex sm:w-auto">
             {([
               { key: '7d', label: 'Son 7 gün' },
               { key: '30d', label: 'Son 30 gün' },
@@ -313,8 +313,8 @@ export default function AdminCustomersPage() {
                 key={opt.key}
                 onClick={() => setRange(opt.key)}
                 aria-pressed={range === opt.key}
-                className={`flex-auto whitespace-nowrap rounded-lg px-2 py-1.5 text-[12px] font-medium transition-all sm:flex-none sm:px-3 ${
-                  range === opt.key ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
+                className={`flex-auto whitespace-nowrap rounded-[14px] px-2 py-1.5 text-[12px] font-medium transition-all sm:flex-none sm:px-3 ${
+                  range === opt.key ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {opt.label}
@@ -342,7 +342,7 @@ export default function AdminCustomersPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="İsim, e-posta, telefon veya yorumda ara…"
               aria-label="Müşteri ara"
-              className="w-full rounded-xl border border-[#EDEDED] bg-white py-2 pl-9 pr-3 text-[16px] font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] sm:text-xs"
+              className="w-full rounded-[20px] border border-pn-line bg-white py-2 pl-9 pr-3 text-[16px] font-medium text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent sm:text-xs"
             />
           </div>
 
@@ -383,17 +383,17 @@ export default function AdminCustomersPage() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setSegmentFilter(pill.key)}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${
                   active
-                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
+                    ? 'border-pn-ink bg-pn-ink text-white'
+                    : 'border-pn-line bg-white text-[#525252] hover:border-[#A3A3A3]'
                 }`}
               >
                 {pill.tr}
                 {count !== null && (
                   <span
-                    className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
-                      active ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
+                    className={`tabular-nums tabular-nums text-[12px] rounded-full px-1.5 py-0.5 ${
+                      active ? 'bg-white/15 text-white' : 'bg-pn-canvas text-[#737373]'
                     }`}
                   >
                     {count.toLocaleString('tr-TR')}
@@ -413,17 +413,17 @@ export default function AdminCustomersPage() {
 
       {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
-      <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
+      <div className="overflow-hidden rounded-[24px] border border-pn-line bg-white ">
         {loading && !data ? (
           <div className="flex items-center justify-center p-16">
-            <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
+            <Loader2 size={22} className="animate-spin text-pn-ink" />
           </div>
         ) : rows.length === 0 ? (
           <div className="p-12 text-center">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#FFFFFF] text-[#6B7280]">
               <Users size={22} strokeWidth={2} />
             </div>
-            <p className="text-sm font-semibold text-[#0A0A0A]">Kriterlere uyan müşteri yok</p>
+            <p className="text-sm font-medium text-pn-ink">Kriterlere uyan müşteri yok</p>
             <p className="mt-1 text-xs font-medium text-[#6B7280]">Filtreleri değiştirerek veya temizleyerek tekrar deneyin.</p>
           </div>
         ) : (
@@ -435,7 +435,7 @@ export default function AdminCustomersPage() {
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[1280px] text-left text-xs">
                 <thead className="bg-[#FFFFFF]">
-                  <tr className="pulse-eyebrow text-[#737373]">
+                  <tr className="text-[13px] font-medium text-[#737373]">
                     <th className="px-5 py-3">Müşteri</th>
                     <th className="px-5 py-3">İletişim</th>
                     <th className="px-5 py-3">İşletme</th>
@@ -449,7 +449,7 @@ export default function AdminCustomersPage() {
                     <th className="px-5 py-3">Son Tarih</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#EDEDED]">
+                <tbody className="divide-y divide-pn-line">
                   {rows.map((r) => {
                     return (
                       <tr
@@ -473,10 +473,10 @@ export default function AdminCustomersPage() {
                             openDrawer(r.key);
                           }
                         }}
-                        className="hover:bg-[#FFFFFF]/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E]"
+                        className="hover:bg-[#FFFFFF]/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent"
                       >
-                        <td className="px-5 py-3 font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</td>
-                        <td className="px-5 py-3 text-[#1A1A1A]">
+                        <td className="px-5 py-3 font-medium text-pn-ink">{r.name || 'İsimsiz'}</td>
+                        <td className="px-5 py-3 text-pn-ink-2">
                           <div className="flex flex-col gap-0.5">
                             {r.email && (
                               <span className="inline-flex items-center gap-1.5 truncate">
@@ -492,17 +492,17 @@ export default function AdminCustomersPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-[#1A1A1A]">
+                        <td className="px-5 py-3 text-pn-ink-2">
                           {/* §38.48 — Platform inline label kaldırıldı; ayrı "Kanal"
                               kolonu eklendi (computeLastChannel helper-derive,
                               drift sıfır). */}
                           <div className="flex flex-col gap-0.5">
-                            <span className="inline-flex items-center gap-1.5 font-bold text-[#0A0A0A]">
+                            <span className="inline-flex items-center gap-1.5 font-medium text-pn-ink">
                               <Store size={11} strokeWidth={2} />
                               {r.restaurantName || '—'}
                             </span>
                             {r.branch && (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                              <span className="inline-flex items-center gap-1.5 text-[12px] text-[#6B7280]">
                                 <MapPin size={10} strokeWidth={2} />
                                 {r.branch}
                               </span>
@@ -514,15 +514,15 @@ export default function AdminCustomersPage() {
                         </td>
                         <td className="px-5 py-3 text-right">
                           {r.lastRating !== null ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 font-semibold text-[#0A0A0A]">
-                              <Star size={11} fill="#C6F24E" strokeWidth={0} />
+                            <span className="inline-flex items-center gap-1 rounded-full bg-pn-accent/15 px-2 py-0.5 font-medium text-pn-ink">
+                              <Star size={11} fill="#D7FE03" strokeWidth={0} />
                               {r.lastRating}
                             </span>
                           ) : (
                             <span className="text-[#6B7280]">—</span>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-right font-bold tabular-nums text-[#0A0A0A]">{r.feedbackCount}</td>
+                        <td className="px-5 py-3 text-right font-medium tabular-nums text-pn-ink">{r.feedbackCount}</td>
                         {/* §38.48 — Son konu + Kanal (helper-derive, owner paterni reuse) */}
                         <td className="px-5 py-3 text-[#525252]">
                           {computeLastTopic(
@@ -536,14 +536,14 @@ export default function AdminCustomersPage() {
                           )}
                         </td>
                         <td className="px-5 py-3">
-                          <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#525252] whitespace-nowrap">
+                          <span className="tabular-nums inline-flex items-center rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] text-[#525252] whitespace-nowrap">
                             {computeLastChannel(r.platform, 'tr')}
                           </span>
                         </td>
                         <td className="px-5 py-3">
                           <SentimentBadge sentiment={r.sentiment} locale="tr" />
                         </td>
-                        <td className="px-5 py-3 text-[#1A1A1A]">{new Date(r.lastAt).toLocaleDateString('tr-TR')}</td>
+                        <td className="px-5 py-3 text-pn-ink-2">{new Date(r.lastAt).toLocaleDateString('tr-TR')}</td>
                       </tr>
                     );
                   })}
@@ -555,7 +555,7 @@ export default function AdminCustomersPage() {
                 (CLAUDE.md §38.19, audit drawer-centric paterni — LTV mobile'da
                 gizli, admin paneli desktop-first kullanıma yönelik). §38.93
                 drawer paterniyle row click → drawer açar (owner mobile parite). */}
-            <div className="divide-y divide-[#EDEDED] lg:hidden">
+            <div className="divide-y divide-pn-line lg:hidden">
               {rows.map((r) => {
                 return (
                   <div
@@ -579,19 +579,19 @@ export default function AdminCustomersPage() {
                     }}
                     data-row-trigger
                     aria-label={`Müşteri detayı: ${r.name || 'İsimsiz'}`}
-                    className="p-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E]"
+                    className="p-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</p>
-                        <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] font-bold text-[#1A1A1A]">
+                        <p className="truncate text-sm font-medium text-pn-ink">{r.name || 'İsimsiz'}</p>
+                        <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-medium text-pn-ink-2">
                           <Store size={11} strokeWidth={2} />
                           {r.restaurantName || '—'}
                         </p>
                       </div>
                       {r.lastRating !== null && (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
-                          <Star size={11} fill="#C6F24E" strokeWidth={0} />
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-pn-accent/15 px-2 py-0.5 text-[12px] font-medium text-pn-ink">
+                          <Star size={11} fill="#D7FE03" strokeWidth={0} />
                           {r.lastRating}
                         </span>
                       )}
@@ -602,8 +602,8 @@ export default function AdminCustomersPage() {
                       <SentimentBadge sentiment={r.sentiment} locale="tr" />
                     </div>
                     {/* §38.48 — Kanal pill + Son konu metni (owner mobile paterni reuse) */}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#737373]">
-                      <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-[#737373]">
+                      <span className="tabular-nums inline-flex items-center rounded-full bg-pn-canvas px-2 py-0.5 text-[#525252]">
                         {computeLastChannel(r.platform, 'tr')}
                       </span>
                       <span className="text-[#525252]">
@@ -618,12 +618,12 @@ export default function AdminCustomersPage() {
                         )}
                       </span>
                     </div>
-                    <div className="mt-2 space-y-0.5 text-[11px] text-[#1A1A1A]">
+                    <div className="mt-2 space-y-0.5 text-[12px] text-pn-ink-2">
                       {r.email && <p className="truncate"><Mail size={10} className="mr-1 inline" strokeWidth={2} />{r.email}</p>}
                       {r.phone && <p><Phone size={10} className="mr-1 inline" strokeWidth={2} />{r.phone}</p>}
                       {r.branch && <p><MapPin size={10} className="mr-1 inline" strokeWidth={2} />{r.branch}</p>}
                     </div>
-                    <div className="mt-2 flex items-center justify-between pulse-eyebrow text-[#6B7280]">
+                    <div className="mt-2 flex items-center justify-between text-[13px] font-medium text-[#6B7280]">
                       <span>{r.feedbackCount} geri bildirim</span>
                       <span>{new Date(r.lastAt).toLocaleDateString('tr-TR')}</span>
                     </div>
@@ -634,9 +634,9 @@ export default function AdminCustomersPage() {
 
             {totalPages > 1 && (
               <div
-                className="flex items-center justify-between gap-3 border-t border-[#EDEDED] bg-[#FFFFFF] px-5 py-3"
+                className="flex items-center justify-between gap-3 border-t border-pn-line bg-[#FFFFFF] px-5 py-3"
               >
-                <p className="pulse-eyebrow text-[#6B7280]">
+                <p className="text-[13px] font-medium text-[#6B7280]">
                   Sayfa {data?.meta.page} / {totalPages} · Toplam {data?.meta.total}
                 </p>
                 {/* §38.77 — Pagination 44px mobile touch target (Stage 4
@@ -645,14 +645,14 @@ export default function AdminCustomersPage() {
                   <button
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page <= 1 || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 min-h-[44px] sm:min-h-[32px] pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
+                    className="rounded-[14px] border border-pn-line bg-white px-3 min-h-[44px] sm:min-h-[32px] text-[13px] font-medium text-pn-ink hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >
                     Önceki
                   </button>
                   <button
                     onClick={() => setPage(Math.min(totalPages, page + 1))}
                     disabled={page >= totalPages || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 min-h-[44px] sm:min-h-[32px] pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
+                    className="rounded-[14px] border border-pn-line bg-white px-3 min-h-[44px] sm:min-h-[32px] text-[13px] font-medium text-pn-ink hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >
                     Sonraki
                   </button>

@@ -9,7 +9,7 @@ import { PlatformLogo } from './PlatformLogo';
 import { PlatformStatusPill } from './PlatformStatusPill';
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2';
 
 const ACTIONS: Record<
   PlatformLinkState,
@@ -63,7 +63,7 @@ export function PlatformLinkRow({
         <PlatformLogo platform={platform} size={40} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="bz-h-tight text-[14px] text-[#0A0A0A]">{platform.name}</h3>
+            <h3 className="bz-h-tight text-[14px] text-pn-ink">{platform.name}</h3>
             <PlatformStatusPill state={status.state} locale={locale} />
             {status.isDefault && (
               <Badge kind="lime" dot={false}>
@@ -71,14 +71,14 @@ export function PlatformLinkRow({
               </Badge>
             )}
           </div>
-          <p className="mt-1 break-words text-[12.5px] leading-[1.5] text-[#525252]">{reason}</p>
+          <p className="mt-1 break-words text-[13px] leading-[1.5] text-[#525252]">{reason}</p>
         </div>
       </div>
       {action && actionLabel && (
         <Link
           href={platformWizardHref(locale, platform.slug, restaurantId)}
           aria-label={`${platform.name} — ${actionLabel}`}
-          className={`${action.className} inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[12.5px] sm:min-h-[38px] sm:w-auto sm:min-w-[96px] ${FOCUS_RING}`}
+          className={`${action.className} inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[13px] sm:min-h-[38px] sm:w-auto sm:min-w-[96px] ${FOCUS_RING}`}
         >
           {actionLabel}
         </Link>

@@ -24,13 +24,13 @@ export default function DashboardMenuError({
 
   return (
     <div className="mx-auto max-w-[640px] px-4 sm:px-7 py-12 lg:py-16">
-      <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-6 sm:p-8">
+      <div className="rounded-[24px] border border-[#FECACA] bg-[#FEF2F2] p-6 sm:p-8">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-[#DC2626]/10 p-2">
             <AlertTriangle size={20} className="text-[#DC2626]" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="bz-h-tight text-[20px] sm:text-[22px] text-[#0A0A0A]">
+            <h1 className="bz-h-tight text-[20px] sm:text-[22px] text-pn-ink">
               {isTr ? 'Menü yüklenemedi' : 'Menu could not load'}
             </h1>
             <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">
@@ -39,7 +39,7 @@ export default function DashboardMenuError({
                 : 'Something went wrong. Try again or go back to your locations.'}
             </p>
             {error.digest && (
-              <p className="mt-2 text-[11px] text-[#737373] font-mono">
+              <p className="mt-2 text-[12px] text-[#737373] font-mono">
                 ref: {error.digest}
               </p>
             )}
@@ -57,7 +57,7 @@ export default function DashboardMenuError({
           </button>
           <Link
             href={`/${locale}/dashboard/restaurants`}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
+            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-pn-line bg-white px-5 py-2.5 text-[13px] font-medium text-pn-ink transition-colors hover:border-pn-ink"
           >
             <ArrowLeft size={14} strokeWidth={2} />
             {isTr ? 'İşletmelere dön' : 'Back to locations'}

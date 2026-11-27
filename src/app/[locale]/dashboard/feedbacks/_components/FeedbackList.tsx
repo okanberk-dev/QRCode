@@ -36,8 +36,8 @@ interface FeedbackListProps {
 /** Skeleton row — same anatomy as FeedbackListItem (badge · name/time · comment). */
 export function FeedbackListSkeletonRow() {
   return (
-    <div className="flex items-start gap-3 border-b border-[#F5F5F5] px-4 py-3.5 sm:px-5" aria-hidden="true">
-      <SkBox className="h-10 w-10 shrink-0 rounded-xl" />
+    <div className="flex items-start gap-3 border-b border-pn-line px-4 py-3.5 sm:px-5" aria-hidden="true">
+      <SkBox className="h-10 w-10 shrink-0 rounded-[20px]" />
       <div className="min-w-0 flex-1 space-y-2 pt-0.5">
         <div className="flex items-center justify-between gap-3">
           <SkBox className="h-4 w-32" />
@@ -209,7 +209,7 @@ export function FeedbackList({
           {/* "Daha fazla göster" — backend paginate eder; ilk 20 yorum first
               paint için yüklenir, kullanıcı talep ettikçe +20. */}
           {hasMore && (
-            <div className="flex flex-col items-center gap-2 border-t border-[#F5F5F5] px-3 py-4">
+            <div className="flex flex-col items-center gap-2 border-t border-pn-line px-3 py-4">
               <button
                 type="button"
                 onClick={onLoadMore}
@@ -241,21 +241,21 @@ export function FeedbackList({
           after the rows so `sticky bottom` pins it above the bottom nav while
           the list scrolls. */}
       {!loading && aiReadyCount > 0 && activeTab !== 'ai_ready' && (
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 mx-3 mb-3 mt-3 flex items-center gap-3 rounded-2xl bg-[#0A0A0A] px-4 py-3 text-white bz-elev-2 lg:hidden">
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 mx-3 mb-3 mt-3 flex items-center gap-3 rounded-[24px] bg-pn-ink px-4 py-3 text-white lg:hidden">
           <span
             aria-hidden="true"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/15"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-pn-accent/30 bg-pn-accent/15"
           >
-            <Sparkles size={13} className="text-[#C6F24E]" strokeWidth={2.2} />
+            <Sparkles size={13} className="text-pn-accent" strokeWidth={2.2} />
           </span>
           <span className="min-w-0 flex-1 text-[13px] leading-[1.45]">
-            <strong className="font-semibold">{aiReadyCount}</strong>{' '}
+            <strong className="font-medium">{aiReadyCount}</strong>{' '}
             {isTr ? 'yoruma AI yanıt hazır' : 'reviews have AI replies ready'}
           </span>
           <button
             type="button"
             onClick={() => setActiveTab('ai_ready')}
-            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-[#C6F24E] px-4 text-[12px] font-semibold text-[#0A0A0A] transition-colors hover:bg-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-pn-accent px-4 text-[12px] font-medium text-pn-ink transition-colors hover:bg-pn-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 focus-visible:ring-offset-pn-ink"
           >
             {isTr ? 'Aç' : 'Open'}
           </button>

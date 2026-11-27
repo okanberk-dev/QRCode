@@ -1,4 +1,5 @@
 import { CSSProperties, ReactNode } from "react";
+import { toSentenceCase } from "@/components/panel/pano/sentence-case";
 
 interface EyebrowProps {
   children: ReactNode;
@@ -7,10 +8,12 @@ interface EyebrowProps {
   style?: CSSProperties;
 }
 
-export function Eyebrow({ children, color = "#737373", className = "", style }: EyebrowProps) {
+export function Eyebrow({ children, color = "#9A9AA0", className = "", style }: EyebrowProps) {
+  // Pano: sentence-case labels, never ALL CAPS (DASHBOARD_DESIGN.md §3).
+  const content = typeof children === "string" ? toSentenceCase(children) : children;
   return (
     <span className={`pulse-eyebrow ${className}`} style={{ color, ...style }}>
-      {children}
+      {content}
     </span>
   );
 }

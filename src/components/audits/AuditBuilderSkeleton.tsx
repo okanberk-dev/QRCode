@@ -145,7 +145,7 @@ export default function AuditBuilderSkeleton({ withKindPicker = false, step = 0 
       </div>
 
       {/* Adım göstergesi (WizardSteps) */}
-      <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-[#F5F5F5] p-1.5">
+      <div className="grid grid-cols-3 gap-1.5 rounded-[24px] bg-pn-canvas p-1.5">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="flex min-h-[44px] items-center justify-center sm:min-h-[40px]">
             <SkBox className="h-4 w-16 sm:w-20" />
@@ -156,7 +156,7 @@ export default function AuditBuilderSkeleton({ withKindPicker = false, step = 0 
       {step === 1 ? <ItemsStep /> : <StartStep withKindPicker={withKindPicker} />}
 
       {/* Eylem çubuğu */}
-      <div className="-mx-4 border-t border-[#EDEDED] px-4 py-3 sm:-mx-7 sm:px-7">
+      <div className="-mx-4 border-t border-pn-line px-4 py-3 sm:-mx-7 sm:px-7">
         {step === 1 ? (
           <div className="flex items-center gap-2 sm:justify-end">
             <SkBox className="h-11 w-24 sm:mr-auto sm:h-10" />

@@ -354,7 +354,7 @@ export default function ReadyTemplatesTab({
         <div className="space-y-6">
           {filter.groups.map((g) => (
             <section key={g.sector} aria-labelledby={`audit-ready-g-${g.sector}`}>
-              <h2 id={`audit-ready-g-${g.sector}`} className="mb-2 text-[13px] font-semibold text-[#525252]">
+              <h2 id={`audit-ready-g-${g.sector}`} className="mb-2 text-[13px] font-medium text-[#525252]">
                 {t[`audits_sector_${g.sector}` as 'audits_sector_food']}
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{g.rows.map(card)}</div>

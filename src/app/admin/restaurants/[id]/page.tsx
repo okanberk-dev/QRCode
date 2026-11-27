@@ -525,7 +525,7 @@ export default function RestaurantDetailPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/admin/restaurants"
-              className="pulse-eyebrow inline-flex w-fit items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
+              className="text-[13px] font-medium inline-flex w-fit items-center gap-1.5 text-[#737373] transition-colors hover:text-pn-ink"
             >
               <ArrowLeft size={12} strokeWidth={2.25} />
               Tüm İşletmeler
@@ -549,13 +549,13 @@ export default function RestaurantDetailPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               <div
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-[22px] font-semibold text-white shadow-sm ring-1 ring-black/5"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[24px] text-[22px] font-medium text-white ring-1 ring-black/5"
                 style={{ backgroundColor: formData.primaryColor }}
               >
                 {(formData.name || '?').charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <h1 className="truncate text-[24px] font-medium tracking-[-0.02em] text-[#0A0A0A] sm:text-[28px]">
+                <h1 className="truncate text-[24px] font-medium tracking-[-0.02em] text-pn-ink sm:text-[28px]">
                   {formData.name || 'İşletme Düzenle'}
                 </h1>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#737373]">
@@ -564,24 +564,24 @@ export default function RestaurantDetailPage() {
                     <span className="font-medium">{formData.isActive ? 'Aktif' : 'Pasif'}</span>
                   </span>
                   {temporarilyClosed && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[11px] font-medium text-[#92400E]">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[12px] font-medium text-[#92400E]">
                       Sahibi geçici olarak kapattı
                     </span>
                   )}
                   {suspendedByAdmin && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[11px] font-medium text-[#991B1B]">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[12px] font-medium text-[#991B1B]">
                       <PauseCircle size={11} strokeWidth={2.25} />
                       Admin tarafından duraklatıldı
                     </span>
                   )}
-                  <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
+                  <span className="h-1 w-1 rounded-full bg-pn-line" aria-hidden />
                   <span className={`inline-flex items-center gap-1.5 ${menuStateTone.text}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${menuStateTone.dot}`} aria-hidden />
                     <span className="font-medium">{menuStateLabel}</span>
                   </span>
                   {formData.slug && (
                     <>
-                      <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
+                      <span className="h-1 w-1 rounded-full bg-pn-line" aria-hidden />
                       <span className="font-mono" style={{ fontFamily: 'var(--font-mono)' }}>/r/{formData.slug}</span>
                     </>
                   )}
@@ -612,12 +612,12 @@ export default function RestaurantDetailPage() {
       <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
         <section className="bz-card p-5 sm:p-6">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent-soft text-pn-ink">
               <Link2 size={18} strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="pulse-eyebrow text-[#737373]">Detay URL&apos;leri</p>
-              <h2 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Müşteri ve yönetim bağlantıları</h2>
+              <p className="text-[13px] font-medium text-[#737373]">Detay URL&apos;leri</p>
+              <h2 className="mt-0.5 text-[16px] font-medium text-pn-ink">Müşteri ve yönetim bağlantıları</h2>
             </div>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -628,7 +628,7 @@ export default function RestaurantDetailPage() {
         </section>
 
         <section className="bz-card p-5 sm:p-6">
-          <p className="pulse-eyebrow text-[#737373]">İşletme özeti</p>
+          <p className="text-[13px] font-medium text-[#737373]">İşletme özeti</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Metric icon={<MessageSquare size={15} />} label="Yorum" value={String(meta?._count.feedbacks ?? 0)} />
             <Metric icon={<QrCode size={15} />} label="QR" value={String(meta?._count.qrGenerations ?? 0)} />
@@ -639,24 +639,24 @@ export default function RestaurantDetailPage() {
               `/admin/members/[ownerId]` link sahibi profile'a götürür; admin
               "kim sahip → diğer işletmeleri ne?" akışı tek-tıkla. Owner Stage
               2 §38.72 cross-link paterni admin'e port. */}
-          <div className="mt-4 rounded-2xl bg-[#FAFAFA] p-3">
-            <p className="pulse-eyebrow text-[#737373]">İşletme Sahibi</p>
+          <div className="mt-4 rounded-[24px] bg-pn-canvas p-3">
+            <p className="text-[13px] font-medium text-[#737373]">İşletme Sahibi</p>
             {meta?.user?.id ? (
               <Link
                 href={`/admin/members/${meta.user.id}`}
-                className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] hover:underline underline-offset-2"
+                className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-pn-ink hover:underline underline-offset-2"
               >
                 <span className="truncate">{ownerLabel}</span>
                 <ExternalLink size={11} strokeWidth={2} className="shrink-0 text-[#737373]" />
               </Link>
             ) : (
-              <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]">{ownerLabel}</p>
+              <p className="mt-1 truncate text-[13px] font-medium text-pn-ink">{ownerLabel}</p>
             )}
-            {meta?.user?.email && <p className="truncate text-[11px] text-[#737373]">{meta.user.email}</p>}
+            {meta?.user?.email && <p className="truncate text-[12px] text-[#737373]">{meta.user.email}</p>}
             {meta?.user?.id && siblings.length > 1 && (
               <Link
                 href={`/admin/restaurants?owner=${encodeURIComponent(meta.user.id)}&status=all&view=franchise`}
-                className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+                className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-pn-ink underline-offset-2 hover:underline"
               >
                 Zincirin tüm şubeleri ({siblings.length})
               </Link>
@@ -700,14 +700,14 @@ export default function RestaurantDetailPage() {
           burası support/operations override için. Logo upload owner'a özel;
           admin sadece clear edebilir. */}
       <section className="overflow-hidden bz-card">
-        <div className="flex flex-col gap-4 border-b border-[#EDEDED] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-pn-line px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent-soft text-pn-ink">
               <UtensilsCrossed size={18} strokeWidth={2} />
             </div>
             <div>
-              <p className="pulse-eyebrow text-[#737373]">Menü Görünümü</p>
-              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Tema, renk ve logo</h3>
+              <p className="text-[13px] font-medium text-[#737373]">Menü Görünümü</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">Tema, renk ve logo</h3>
               <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">
                 Süperadmin override. Owner panelinden de düzenlenebilir; burada yapılan değişiklik anında müşteriye yansır.
               </p>
@@ -741,7 +741,7 @@ export default function RestaurantDetailPage() {
           {/* Theme selector — 7 chip horizontal scroll (compact, admin doesn't
               need thumbnails — owner panel has those). */}
           <div>
-            <p className="pulse-eyebrow mb-2 text-[#737373]">Tema</p>
+            <p className="text-[13px] font-medium mb-2 text-[#737373]">Tema</p>
             <div className="flex flex-wrap gap-2">
               {MENU_THEMES.map((t) => {
                 const active = menuTheme === t;
@@ -753,8 +753,8 @@ export default function RestaurantDetailPage() {
                     disabled={themeSaving}
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all disabled:opacity-50 ${
                       active
-                        ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-sm'
-                        : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
+                        ? 'border-pn-ink bg-pn-ink text-white '
+                        : 'border-pn-line bg-white text-[#525252] hover:border-pn-ink hover:text-pn-ink'
                     }`}
                   >
                     {THEME_LABELS[t]}
@@ -763,8 +763,8 @@ export default function RestaurantDetailPage() {
               })}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <p className="text-[12.5px] text-[#525252]">
-                Stil: <span className="font-semibold text-[#0A0A0A]">{MENU_PRESET_LABELS[designPreset].tr}</span>
+              <p className="text-[13px] text-[#525252]">
+                Stil: <span className="font-medium text-pn-ink">{MENU_PRESET_LABELS[designPreset].tr}</span>
                 {' · '}
                 {designOverrides > 0 ? `${designOverrides} özelleştirme` : 'özelleştirme yok'}
               </p>
@@ -773,7 +773,7 @@ export default function RestaurantDetailPage() {
                   type="button"
                   onClick={resetMenuDesign}
                   disabled={themeSaving}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-pn-line bg-white px-3 py-1.5 text-[12px] font-medium text-[#525252] transition-all hover:border-pn-ink hover:text-pn-ink disabled:opacity-50"
                 >
                   Tasarımı sıfırla
                 </button>
@@ -785,14 +785,14 @@ export default function RestaurantDetailPage() {
               to restaurant.primaryColor at render time). */}
           <div>
             <div className="mb-2 flex items-baseline justify-between">
-              <p className="pulse-eyebrow text-[#737373]">Vurgu rengi</p>
-              <span className="bz-mono text-[11px] text-[#A3A3A3]">
+              <p className="text-[13px] font-medium text-[#737373]">Vurgu rengi</p>
+              <span className="tabular-nums text-[12px] text-[#A3A3A3]">
                 {(menuAccentColor ?? formData.primaryColor ?? '#C6F24E').toUpperCase()}
                 {!menuAccentColor && ' (varsayılan)'}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="relative inline-flex h-9 cursor-pointer items-center gap-2 overflow-hidden rounded-full border border-[#EDEDED] bg-white px-3 text-[12px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]">
+              <label className="relative inline-flex h-9 cursor-pointer items-center gap-2 overflow-hidden rounded-full border border-pn-line bg-white px-3 text-[12px] font-medium text-[#525252] transition-colors hover:border-pn-ink hover:text-pn-ink">
                 <input
                   type="color"
                   value={menuAccentColor ?? formData.primaryColor ?? '#C6F24E'}
@@ -811,7 +811,7 @@ export default function RestaurantDetailPage() {
                   type="button"
                   onClick={() => saveMenuTheme({ menuAccentColor: null })}
                   disabled={themeSaving}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-pn-line bg-white px-3 py-1.5 text-[12px] font-medium text-[#525252] transition-all hover:border-pn-ink hover:text-pn-ink disabled:opacity-50"
                 >
                   Sıfırla (marka rengini kullan)
                 </button>
@@ -823,9 +823,9 @@ export default function RestaurantDetailPage() {
               panel'e bırakılır (base64 sıkıştırma + sharp resize). Admin
               sadece bozuk/yanlış logo'yu temizleyebilir. */}
           <div>
-            <p className="pulse-eyebrow mb-2 text-[#737373]">Logo</p>
-            <div className="flex items-start gap-3 rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED]">
+            <p className="text-[13px] font-medium mb-2 text-[#737373]">Logo</p>
+            <div className="flex items-start gap-3 rounded-[24px] border border-dashed border-pn-line bg-pn-canvas p-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[20px] bg-white ring-1 ring-pn-line">
                 {menuLogoUrl ? (
                   <img src={menuLogoUrl} alt="logo" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 ) : (
@@ -845,7 +845,7 @@ export default function RestaurantDetailPage() {
                     type="button"
                     onClick={() => saveMenuTheme({ menuLogoUrl: null })}
                     disabled={themeSaving}
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-50"
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-pn-line bg-white px-3 py-1.5 text-[12px] font-medium text-[#525252] transition-all hover:border-pn-ink hover:text-pn-ink disabled:opacity-50"
                   >
                     Logoyu temizle
                   </button>
@@ -865,14 +865,14 @@ export default function RestaurantDetailPage() {
 
       {/* Feature entitlements — package-ready master switches */}
       <section className="overflow-hidden bz-card">
-        <div className="flex flex-col gap-4 border-b border-[#EDEDED] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-pn-line px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-accent-soft text-pn-ink">
               <Sparkles size={18} strokeWidth={2} />
             </div>
             <div>
-              <p className="pulse-eyebrow text-[#737373]">Paket Özellikleri</p>
-              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Gelişmiş özellik yönetimi</h3>
+              <p className="text-[13px] font-medium text-[#737373]">Paket Özellikleri</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">Gelişmiş özellik yönetimi</h3>
               <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">
                 Bu şalterler ileride abonelik paketlerine bağlanacak işletme bazlı yetkileri yönetir.
               </p>
@@ -976,31 +976,31 @@ export default function RestaurantDetailPage() {
       <form onSubmit={handleSave} className="space-y-5">
         {/* Basic Info */}
         <section className="overflow-hidden bz-card">
-          <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+          <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
               <Building2 size={18} strokeWidth={2} />
             </div>
             <div>
-              <p className="pulse-eyebrow text-[#737373]">01 / Kimlik</p>
-              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Temel Bilgiler</h3>
+              <p className="text-[13px] font-medium text-[#737373]">01 / Kimlik</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">Temel Bilgiler</h3>
             </div>
           </div>
           <div className="space-y-4 p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="pulse-eyebrow text-[#737373]">İşletme Adı</label>
+                <label className="text-[13px] font-medium text-[#737373]">İşletme Adı</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="pulse-eyebrow text-[#737373]">URL Slug</label>
-                <div className="flex items-center overflow-hidden rounded-2xl border border-[#EDEDED] bg-white transition-all focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E]/40">
-                  <span className="select-none whitespace-nowrap border-r border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-3 font-mono text-[12px] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
+                <label className="text-[13px] font-medium text-[#737373]">URL Slug</label>
+                <div className="flex items-center overflow-hidden rounded-[24px] border border-pn-line bg-white transition-all focus-within:border-pn-ink focus-within:ring-2 focus-within:ring-pn-accent/40">
+                  <span className="select-none whitespace-nowrap border-r border-pn-line bg-pn-canvas px-3.5 py-3 font-mono text-[12px] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
                     buaze.com/r/
                   </span>
                   <input
@@ -1008,7 +1008,7 @@ export default function RestaurantDetailPage() {
                     required
                     value={formData.slug}
                     onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                    className="min-w-0 flex-1 bg-transparent px-3.5 py-3 font-mono text-[14px] text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+                    className="min-w-0 flex-1 bg-transparent px-3.5 py-3 font-mono text-[14px] text-pn-ink outline-none placeholder:text-[#A3A3A3]"
                     style={{ fontFamily: 'var(--font-mono)' }}
                   />
                 </div>
@@ -1018,11 +1018,11 @@ export default function RestaurantDetailPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {owners.length > 0 && (
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="pulse-eyebrow text-[#737373]">İşletme Sahibi</label>
+                  <label className="text-[13px] font-medium text-[#737373]">İşletme Sahibi</label>
                   <select
                     value={formData.userId}
                     onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
-                    className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
+                    className="bz-input w-full cursor-pointer rounded-[24px] py-3 text-[14px]"
                   >
                     <option value="">Sahip atanmamış</option>
                     {owners.map((owner) => (
@@ -1037,11 +1037,11 @@ export default function RestaurantDetailPage() {
                 </div>
               )}
               <div className="space-y-1.5">
-                <label className="pulse-eyebrow text-[#737373]">Kategori</label>
+                <label className="text-[13px] font-medium text-[#737373]">Kategori</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
+                  className="bz-input w-full cursor-pointer rounded-[24px] py-3 text-[14px]"
                 >
                   {/* Same list as the owner forms (src/lib/sectors.ts); a legacy
                       value outside it stays selectable so saving keeps it. */}
@@ -1056,13 +1056,13 @@ export default function RestaurantDetailPage() {
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="pulse-eyebrow text-[#737373]">Tema Rengi</label>
-                <div className="flex items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white px-3 py-2">
+                <label className="text-[13px] font-medium text-[#737373]">Tema Rengi</label>
+                <div className="flex items-center gap-3 rounded-[24px] border border-pn-line bg-white px-3 py-2">
                   <input
                     type="color"
                     value={formData.primaryColor}
                     onChange={(e) => setFormData(prev => ({ ...prev, primaryColor: e.target.value }))}
-                    className="h-9 w-9 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-2 [&::-webkit-color-swatch]:border-white [&::-webkit-color-swatch]:shadow-sm"
+                    className="h-9 w-9 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-2 [&::-webkit-color-swatch]:border-white [&::-webkit-color-swatch]:"
                   />
                   <span className="font-mono text-[13px] tabular-nums text-[#525252]" style={{ fontFamily: 'var(--font-mono)' }}>
                     {formData.primaryColor.toUpperCase()}
@@ -1071,9 +1071,9 @@ export default function RestaurantDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3">
+            <div className="flex items-center justify-between gap-4 rounded-[24px] border border-pn-line bg-white px-4 py-3">
               <div className="min-w-0">
-                <p className="text-[14px] font-medium text-[#0A0A0A]">İşletme Aktif</p>
+                <p className="text-[14px] font-medium text-pn-ink">İşletme Aktif</p>
                 <p className="mt-0.5 text-[12px] text-[#737373]">
                   Pasifleştirildiğinde yeni QR taramaları cevap vermez. Buradan duraklatılan
                   işletmeyi owner kendi panelinden yeniden açamaz.
@@ -1090,45 +1090,45 @@ export default function RestaurantDetailPage() {
 
         {/* Contact Info */}
         <section className="overflow-hidden bz-card">
-          <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+          <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
               <MapPin size={18} strokeWidth={2} />
             </div>
             <div>
-              <p className="pulse-eyebrow text-[#737373]">02 / İletişim</p>
-              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Adres ve Telefon</h3>
+              <p className="text-[13px] font-medium text-[#737373]">02 / İletişim</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">Adres ve Telefon</h3>
             </div>
           </div>
           <div className="space-y-4 p-6">
             <div className="space-y-1.5">
-              <label className="pulse-eyebrow text-[#737373]">Adres</label>
+              <label className="text-[13px] font-medium text-[#737373]">Adres</label>
               <input
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                 placeholder="Mahall Ankara, Çankaya/Ankara"
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="pulse-eyebrow text-[#737373]">Şehir</label>
+              <label className="text-[13px] font-medium text-[#737373]">Şehir</label>
               <input
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                 maxLength={80}
                 placeholder="İstanbul"
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="pulse-eyebrow text-[#737373]">Telefon</label>
+              <label className="text-[13px] font-medium text-[#737373]">Telefon</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="0312 123 45 67"
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
               />
             </div>
           </div>
@@ -1136,24 +1136,24 @@ export default function RestaurantDetailPage() {
 
         {/* Notification & Google */}
         <section className="overflow-hidden bz-card">
-          <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+          <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
               <Mail size={18} strokeWidth={2} />
             </div>
             <div>
-              <p className="pulse-eyebrow text-[#737373]">03 / Bildirim & Yönlendirme</p>
-              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">E-posta ve Google Bağlantısı</h3>
+              <p className="text-[13px] font-medium text-[#737373]">03 / Bildirim & Yönlendirme</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">E-posta ve Google Bağlantısı</h3>
             </div>
           </div>
           <div className="space-y-4 p-6">
             <div className="space-y-1.5">
-              <label className="pulse-eyebrow text-[#737373]">Bildirim E-postası</label>
+              <label className="text-[13px] font-medium text-[#737373]">Bildirim E-postası</label>
               <input
                 type="email"
                 value={formData.notificationEmail}
                 onChange={(e) => setFormData(prev => ({ ...prev, notificationEmail: e.target.value }))}
                 placeholder="isletme@email.com"
-                className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[14px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
               />
               <p className="text-[12px] leading-relaxed text-[#737373]">
                 1-2-3 yıldız puanlarında bu e-posta adresine bildirim gönderilir.
@@ -1164,7 +1164,7 @@ export default function RestaurantDetailPage() {
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="pulse-eyebrow text-[#737373]">Google Place ID veya Harita Linki</label>
+                    <label className="text-[13px] font-medium text-[#737373]">Google Place ID veya Harita Linki</label>
                     <PlatformUrlHelp platform="google" />
                   </div>
                   <input
@@ -1172,7 +1172,7 @@ export default function RestaurantDetailPage() {
                     value={formData.googlePlaceId}
                     onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
                     placeholder="ChIJ... veya https://maps.app.goo.gl/..."
-                    className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 font-mono text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 font-mono text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
                     style={{ fontFamily: 'var(--font-mono)' }}
                   />
                   <p className="text-[12px] leading-relaxed text-[#737373]">
@@ -1187,20 +1187,20 @@ export default function RestaurantDetailPage() {
         {/* Delivery Platforms */}
         {showDeliverySection && (
         <section className="overflow-hidden bz-card">
-          <div className="flex items-center gap-3 border-b border-[#EDEDED] px-6 py-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+          <div className="flex items-center gap-3 border-b border-pn-line px-6 py-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
               <Globe size={18} strokeWidth={2} />
             </div>
             <div>
-              <p className="pulse-eyebrow text-[#737373]">04 / Paket Servis</p>
-              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Teslimat Platformları</h3>
+              <p className="text-[13px] font-medium text-[#737373]">04 / Paket Servis</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">Teslimat Platformları</h3>
             </div>
           </div>
           <div className="space-y-4 p-6">
             {allowedPlatforms.has('getir') && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <label className="text-[13px] font-medium text-[#737373] inline-flex items-center gap-2">
                     <span className="inline-block h-2 w-2 rounded-full bg-[#5D3EBC]" aria-hidden />
                     Getir Yemek URL
                   </label>
@@ -1211,7 +1211,7 @@ export default function RestaurantDetailPage() {
                   value={formData.getirYemekUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, getirYemekUrl: e.target.value }))}
                   placeholder="https://getir.com/yemek/..."
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC]/30"
+                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#5D3EBC] focus:ring-2 focus:ring-[#5D3EBC]/30"
                 />
               </div>
             )}
@@ -1219,7 +1219,7 @@ export default function RestaurantDetailPage() {
             {allowedPlatforms.has('yemeksepeti') && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <label className="text-[13px] font-medium text-[#737373] inline-flex items-center gap-2">
                     <span className="inline-block h-2 w-2 rounded-full bg-[#FA0050]" aria-hidden />
                     Yemek Sepeti URL
                   </label>
@@ -1230,7 +1230,7 @@ export default function RestaurantDetailPage() {
                   value={formData.yemekSepetiUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, yemekSepetiUrl: e.target.value }))}
                   placeholder="https://www.yemeksepeti.com/..."
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050]/30"
+                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#FA0050] focus:ring-2 focus:ring-[#FA0050]/30"
                 />
               </div>
             )}
@@ -1238,7 +1238,7 @@ export default function RestaurantDetailPage() {
             {allowedPlatforms.has('trendyol') && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                  <label className="text-[13px] font-medium text-[#737373] inline-flex items-center gap-2">
                     <span className="inline-block h-2 w-2 rounded-full bg-[#F27A1A]" aria-hidden />
                     Trendyol Yemek URL
                   </label>
@@ -1249,7 +1249,7 @@ export default function RestaurantDetailPage() {
                   value={formData.trendyolYemekUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, trendyolYemekUrl: e.target.value }))}
                   placeholder="https://www.trendyol.com/..."
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A]/30"
+                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#F27A1A] focus:ring-2 focus:ring-[#F27A1A]/30"
                 />
               </div>
             )}
@@ -1258,15 +1258,15 @@ export default function RestaurantDetailPage() {
         )}
 
         {OTHER_PLATFORMS.some((p) => allowedPlatforms.has(p.id)) && (
-        <section className="overflow-hidden rounded-xl border border-[#E8E8E8] bg-white shadow-sm">
-          <div className="border-b border-[#EDEDED] px-6 py-4">
-            <p className="pulse-eyebrow text-[#737373]">Yorum platformları</p>
-            <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Diğer platform bağlantıları</h3>
+        <section className="overflow-hidden rounded-[20px] border border-pn-line-strong bg-white ">
+          <div className="border-b border-pn-line px-6 py-4">
+            <p className="text-[13px] font-medium text-[#737373]">Yorum platformları</p>
+            <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">Diğer platform bağlantıları</h3>
           </div>
           <div className="space-y-4 p-6">
             {OTHER_PLATFORMS.filter((p) => allowedPlatforms.has(p.id)).map((p) => (
               <div key={p.field} className="space-y-1.5">
-                <label htmlFor={`admin-${p.field}`} className="pulse-eyebrow text-[#737373] inline-flex items-center gap-2">
+                <label htmlFor={`admin-${p.field}`} className="text-[13px] font-medium text-[#737373] inline-flex items-center gap-2">
                   <span className="inline-block h-2 w-2 rounded-full" style={{ background: p.color }} aria-hidden />
                   {p.label} URL
                 </label>
@@ -1276,7 +1276,7 @@ export default function RestaurantDetailPage() {
                   value={formData[p.field]}
                   onChange={(e) => setFormData(prev => ({ ...prev, [p.field]: e.target.value }))}
                   placeholder={p.placeholder}
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                  className="w-full rounded-[24px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-ink focus:ring-2 focus:ring-pn-accent/40"
                 />
               </div>
             ))}
@@ -1285,7 +1285,7 @@ export default function RestaurantDetailPage() {
         )}
 
         {/* Sticky save bar */}
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-10 flex flex-col gap-3 rounded-xl border border-[#E8E8E8] bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between lg:bottom-4">
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-10 flex flex-col gap-3 rounded-[20px] border border-pn-line-strong bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between lg:bottom-4">
           <button
             type="button"
             onClick={handleDelete}
@@ -1323,18 +1323,18 @@ export default function RestaurantDetailPage() {
 
 function UrlTile({ label, url, href }: { label: string; url: string; href: string }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+    <div className="min-w-0 rounded-[24px] border border-pn-line bg-pn-canvas p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="pulse-eyebrow text-[#737373]">{label}</p>
+        <p className="text-[13px] font-medium text-[#737373]">{label}</p>
         <CopyUrlButton url={url} className="h-7 w-7" />
       </div>
-      <p className="mt-2 truncate font-mono text-[12px] text-[#0A0A0A]" style={{ fontFamily: 'var(--font-mono)' }}>
+      <p className="mt-2 truncate font-mono text-[12px] text-pn-ink" style={{ fontFamily: 'var(--font-mono)' }}>
         {url}
       </p>
       <Link
         href={href}
         target={href.startsWith('/admin') ? undefined : '_blank'}
-        className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+        className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-pn-ink underline-offset-2 hover:underline"
       >
         Aç
         <ExternalLink size={12} strokeWidth={2} />
@@ -1345,12 +1345,12 @@ function UrlTile({ label, url, href }: { label: string; url: string; href: strin
 
 function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[#EDEDED] bg-white p-3">
+    <div className="rounded-[24px] border border-pn-line bg-white p-3">
       <div className="flex items-center gap-2 text-[#737373]">
         {icon}
         <p className="pulse-eyebrow">{label}</p>
       </div>
-      <p className="mt-2 font-heading text-[22px] font-medium text-[#0A0A0A]">
+      <p className="mt-2 font-heading text-[22px] font-medium text-pn-ink">
         {value}
       </p>
     </div>
@@ -1378,22 +1378,22 @@ function FeatureToggleCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 transition-colors ${
-        checked ? 'border-[#D9EE7A] bg-[#EAF9B8]/35' : 'border-[#EDEDED] bg-white'
+      className={`rounded-[24px] border p-4 transition-colors ${
+        checked ? 'border-[#D9EE7A] bg-pn-accent-soft/35' : 'border-pn-line bg-white'
       } ${disabled ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 gap-3">
           <div
             className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-              checked ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'bg-[#F5F5F5] text-[#737373]'
+              checked ? 'bg-pn-ink text-pn-accent' : 'bg-pn-canvas text-[#737373]'
             }`}
           >
             {icon}
           </div>
           <div className="min-w-0">
-            <p className="pulse-eyebrow text-[#737373]">{eyebrow}</p>
-            <p className="mt-1 text-[14px] font-medium text-[#0A0A0A]">{title}</p>
+            <p className="text-[13px] font-medium text-[#737373]">{eyebrow}</p>
+            <p className="mt-1 text-[14px] font-medium text-pn-ink">{title}</p>
             <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">{description}</p>
           </div>
         </div>
@@ -1430,13 +1430,13 @@ function OwnerModulesCard({
 
   return (
     <section className="overflow-hidden bz-card">
-      <div className="flex items-start gap-3 border-b border-[#EDEDED] px-6 py-5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+      <div className="flex items-start gap-3 border-b border-pn-line px-6 py-5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
           <ClipboardCheck size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0">
-          <p className="pulse-eyebrow text-[#737373]">Owner Modülleri</p>
-          <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">İşletme sahibinin panelde kullandıkları</h3>
+          <p className="text-[13px] font-medium text-[#737373]">Owner Modülleri</p>
+          <h3 className="mt-0.5 text-[16px] font-medium text-pn-ink">İşletme sahibinin panelde kullandıkları</h3>
           <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">
             Anket, denetim, ekip ve Google bağlantısı — owner gibi görmeden özet.
           </p>
@@ -1452,7 +1452,7 @@ function OwnerModulesCard({
       {!failed && !overview && (
         <div className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-[92px] rounded-2xl bg-[#F5F5F5]" />
+            <div key={i} className="h-[92px] rounded-[24px] bg-pn-canvas" />
           ))}
         </div>
       )}
@@ -1543,14 +1543,14 @@ function OwnerModulesCard({
           </div>
 
           {overview.surveys.items.length > 0 && (
-            <div className="rounded-2xl border border-[#EDEDED]">
-              <p className="pulse-eyebrow border-b border-[#EDEDED] px-4 py-2.5 text-[#737373]">Son anketler</p>
-              <ul className="divide-y divide-[#EDEDED]">
+            <div className="rounded-[24px] border border-pn-line">
+              <p className="text-[13px] font-medium border-b border-pn-line px-4 py-2.5 text-[#737373]">Son anketler</p>
+              <ul className="divide-y divide-pn-line">
                 {overview.surveys.items.slice(0, 5).map((s) => (
                   <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-[#0A0A0A]">{s.title}</p>
-                      <p className="text-[11px] text-[#737373]">
+                      <p className="truncate text-[13px] font-medium text-pn-ink">{s.title}</p>
+                      <p className="text-[12px] text-[#737373]">
                         {s.responseCount} yanıt · {s.isActive && s.isPublished ? 'Yayında' : s.isPublished ? 'Pasif' : 'Taslak'}
                       </p>
                     </div>
@@ -1558,7 +1558,7 @@ function OwnerModulesCard({
                       <Link
                         href={`/s/${s.slug}`}
                         target="_blank"
-                        className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-[#0A0A0A] hover:underline underline-offset-2"
+                        className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-pn-ink hover:underline underline-offset-2"
                       >
                         Aç <ExternalLink size={11} strokeWidth={2} />
                       </Link>
@@ -1608,15 +1608,15 @@ function ModuleTile({
     tone === 'attention'
       ? 'border-[#FDE68A] bg-[#FFFBEB]'
       : tone === 'muted'
-        ? 'border-[#EDEDED] bg-[#FAFAFA]'
-        : 'border-[#EDEDED] bg-white';
+        ? 'border-pn-line bg-pn-canvas'
+        : 'border-pn-line bg-white';
   const body = (
     <>
       <div className="flex items-center gap-2 text-[#737373]">
         {icon}
         <p className="pulse-eyebrow">{label}</p>
       </div>
-      <p className="mt-2 truncate text-[20px] font-medium text-[#0A0A0A]">{value}</p>
+      <p className="mt-2 truncate text-[20px] font-medium text-pn-ink">{value}</p>
       <p className="mt-0.5 truncate text-[12px] text-[#737373]" title={hint}>
         {hint}
       </p>
@@ -1624,10 +1624,10 @@ function ModuleTile({
   );
   if (href) {
     return (
-      <Link href={href} className={`block min-w-0 rounded-2xl border p-3 transition-colors hover:border-[#0A0A0A] ${toneClass}`}>
+      <Link href={href} className={`block min-w-0 rounded-[24px] border p-3 transition-colors hover:border-pn-ink ${toneClass}`}>
         {body}
       </Link>
     );
   }
-  return <div className={`min-w-0 rounded-2xl border p-3 ${toneClass}`}>{body}</div>;
+  return <div className={`min-w-0 rounded-[24px] border p-3 ${toneClass}`}>{body}</div>;
 }

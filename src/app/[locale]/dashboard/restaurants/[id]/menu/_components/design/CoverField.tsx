@@ -76,11 +76,11 @@ export function CoverField({
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
       onPaste={onPaste}
-      className={`flex flex-col gap-3.5 rounded-xl border border-dashed bg-[#FAFAFA] p-3.5 transition-colors @min-[440px]:flex-row @min-[440px]:items-start ${
-        over ? 'border-[#C6F24E] ring-2 ring-[#C6F24E]' : 'border-[#E5E5E5]'
+      className={`flex flex-col gap-3.5 rounded-[20px] border border-dashed bg-pn-canvas p-3.5 transition-colors @min-[440px]:flex-row @min-[440px]:items-start ${
+        over ? 'border-pn-accent ring-2 ring-pn-accent' : 'border-pn-line-strong'
       }`}
     >
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED] @min-[440px]:w-[176px]">
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-[20px] bg-white ring-1 ring-pn-line @min-[440px]:w-[176px]">
         {shown ? (
           <img src={shown} alt="" decoding="async" className="h-full w-full object-cover" />
         ) : (
@@ -90,7 +90,7 @@ export function CoverField({
         )}
         {uploading && (
           <span className="absolute inset-0 flex items-center justify-center bg-white/75" aria-hidden="true">
-            <Loader2 size={18} className="animate-spin text-[#0A0A0A]" />
+            <Loader2 size={18} className="animate-spin text-pn-ink" />
           </span>
         )}
       </div>
@@ -114,13 +114,13 @@ export function CoverField({
             </button>
           )}
         </div>
-        <p className="text-[12.5px] leading-relaxed text-[#737373]">{copy.design.coverHint}</p>
+        <p className="text-[13px] leading-relaxed text-[#737373]">{copy.design.coverHint}</p>
         {value && !uploading && onShowInHeader && (
           <button
             type="button"
             onClick={onShowInHeader}
             disabled={disabled}
-            className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:opacity-60 pointer-fine:min-h-9"
+            className="inline-flex min-h-11 w-fit items-center gap-1.5 rounded-full bg-pn-ink px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-pn-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-60 pointer-fine:min-h-9"
           >
             <PanelTop size={14} strokeWidth={2} aria-hidden="true" />
             {copy.design.showCoverInHeader}

@@ -83,21 +83,21 @@ export default function TemplatePreviewModal({
         </div>
 
         <section aria-label={itemsHeading(template.kind, locale)}>
-          <h4 className="pulse-eyebrow mb-2 text-[#737373]">
+          <h4 className="text-[13px] font-medium mb-2 text-[#737373]">
             {itemsHeading(template.kind, locale)}
           </h4>
           <ol className="space-y-1.5">
             {template.questions.map((q, i) => (
               <li
                 key={`${q.sortOrder}-${i}`}
-                className="flex items-start gap-2.5 rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5"
+                className="flex items-start gap-2.5 rounded-[20px] border border-pn-line bg-white px-3 py-2.5"
               >
-                <span className="bz-mono mt-0.5 w-5 shrink-0 text-right text-[12px] text-[#737373]">
+                <span className="tabular-nums mt-0.5 w-5 shrink-0 text-right text-[12px] text-[#737373]">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="break-words text-[13.5px] leading-snug text-[#0A0A0A]">{q.prompt}</p>
-                  <p className="mt-1 text-[11.5px] text-[#737373]">
+                  <p className="break-words text-[14px] leading-snug text-pn-ink">{q.prompt}</p>
+                  <p className="mt-1 text-[12px] text-[#737373]">
                     {humanQuestionType(q.type, locale)}
                     {!q.isRequired && (isTr ? ' · zorunlu değil' : ' · not required')}
                   </p>

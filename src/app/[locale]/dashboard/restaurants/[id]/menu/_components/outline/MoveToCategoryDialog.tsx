@@ -58,7 +58,7 @@ export function MoveToCategoryDialog({ itemIds, onClose, onMoved }: {
         </div>
       }
     >
-      <div role="radiogroup" aria-label={title} className="divide-y divide-[#EDEDED] overflow-hidden rounded-xl border border-[#EDEDED]">
+      <div role="radiogroup" aria-label={title} className="divide-y divide-pn-line overflow-hidden rounded-[20px] border border-pn-line">
         {categories.map((c) => {
           const current = c.id === shared;
           const checked = target === c.id;
@@ -66,8 +66,8 @@ export function MoveToCategoryDialog({ itemIds, onClose, onMoved }: {
             <label
               key={c.id}
               className={`flex min-h-[48px] items-center gap-3 px-3 ${
-                current ? 'cursor-not-allowed bg-[#FAFAFA] text-[#A3A3A3]' : 'cursor-pointer hover:bg-[#FAFAFA]'
-              } ${checked ? 'bg-[#F7FAEF]' : ''}`}
+                current ? 'cursor-not-allowed bg-pn-canvas text-[#A3A3A3]' : 'cursor-pointer hover:bg-pn-canvas'
+              } ${checked ? 'bg-pn-accent-soft' : ''}`}
             >
               <input
                 type="radio"
@@ -76,9 +76,9 @@ export function MoveToCategoryDialog({ itemIds, onClose, onMoved }: {
                 checked={checked}
                 disabled={current}
                 onChange={() => setTarget(c.id)}
-                className="h-4 w-4 accent-[#0A0A0A]"
+                className="h-4 w-4 accent-pn-ink"
               />
-              <span className={`min-w-0 flex-1 truncate font-body text-[14px] font-medium ${current ? '' : 'text-[#0A0A0A]'}`}>
+              <span className={`min-w-0 flex-1 truncate font-body text-[14px] font-medium ${current ? '' : 'text-pn-ink'}`}>
                 {c.name}
               </span>
               {!c.isVisible && (
@@ -92,7 +92,7 @@ export function MoveToCategoryDialog({ itemIds, onClose, onMoved }: {
           );
         })}
       </div>
-      <p className="mt-3 text-[12.5px] text-[#737373]">{copy.move.endHint}</p>
+      <p className="mt-3 text-[13px] text-[#737373]">{copy.move.endHint}</p>
     </Modal>
   );
 }

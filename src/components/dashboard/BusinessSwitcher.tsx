@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Building2, Check, ChevronsUpDown, Plus, Search, Store } from 'lucide-react';
+import { Building2, Check, ChevronDown, ChevronsUpDown, Plus, Search, Store } from 'lucide-react';
 import {
   groupSwitcherBusinesses,
   parseRecentBusinesses,
@@ -87,8 +87,8 @@ function BusinessChip({
   return (
     <span
       aria-hidden="true"
-      className="flex shrink-0 items-center justify-center rounded-md text-[12px] font-semibold text-[#0A0A0A]"
-      style={{ width: size, height: size, background: business?.primaryColor || '#C6F24E' }}
+      className="flex shrink-0 items-center justify-center rounded-full text-[12px] font-medium text-pn-ink"
+      style={{ width: size, height: size, background: business?.primaryColor || '#D7FE03' }}
     >
       {business ? initialOf(business.name, locale) : <Building2 size={14} strokeWidth={2} />}
     </span>
@@ -245,7 +245,7 @@ export function BusinessSwitcher({
         aria-expanded={open}
         aria-label={`${label}: ${activeName}`}
         title={activeName}
-        className={`mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-[#E8E8E8] bg-white transition-colors hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${className}`}
+        className={`pn-icon-btn mx-auto ${className}`}
       >
         <BusinessChip business={active} size={26} locale={locale} />
       </button>
@@ -259,14 +259,14 @@ export function BusinessSwitcher({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`${label}: ${activeName}`}
-        className={`flex w-full items-center gap-2.5 rounded-lg border border-[#E8E8E8] bg-white px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(10,10,10,0.05)] transition-colors hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${className}`}
+        className={`flex w-full items-center gap-3 rounded-[24px] border border-pn-line bg-white py-2.5 pl-2.5 pr-4 text-left transition-colors hover:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink ${className}`}
       >
-        <BusinessChip business={active} locale={locale} />
+        <BusinessChip business={active} size={40} locale={locale} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-semibold leading-tight text-[#0A0A0A]">{activeName}</span>
-          {caption && <span className="mt-0.5 block truncate text-[11.5px] text-[#737373]">{caption}</span>}
+          <span className="block truncate text-[15px] font-medium leading-tight text-pn-ink">{activeName}</span>
+          {caption && <span className="mt-0.5 block truncate text-[13px] text-[#9A9AA0]">{caption}</span>}
         </span>
-        <ChevronsUpDown size={14} strokeWidth={2} className="shrink-0 text-[#737373]" aria-hidden="true" />
+        <ChevronsUpDown size={16} className="shrink-0 text-[#6E6E73]" aria-hidden="true" />
       </button>
     );
   } else {
@@ -278,13 +278,13 @@ export function BusinessSwitcher({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`${label}: ${activeName}`}
-        className={`inline-flex h-9 min-w-0 items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white pl-1.5 pr-2 text-[13px] font-medium text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.05)] transition-colors hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
-          variant === 'mobile' ? 'max-w-[150px]' : 'max-w-[240px]'
+        className={`pn-select-pill !pl-2 ${
+          variant === 'mobile' ? 'max-w-[150px]' : 'max-w-[150px] xl:max-w-[240px]'
         } ${className}`}
       >
-        <BusinessChip business={active} size={24} locale={locale} />
+        <BusinessChip business={active} size={30} locale={locale} />
         <span className="min-w-0 truncate">{activeName}</span>
-        <ChevronsUpDown size={13} strokeWidth={2} className="shrink-0 text-[#737373]" aria-hidden="true" />
+        <ChevronDown size={16} className="shrink-0 text-[#6E6E73]" aria-hidden="true" />
       </button>
     );
   }
@@ -308,19 +308,19 @@ export function BusinessSwitcher({
         aria-selected={selected}
         onPointerMove={() => setHighlight(index)}
         onClick={() => choose(business.id)}
-        className={`bz-menu-item cursor-pointer ${selected ? 'is-selected' : ''} ${highlighted ? 'bg-[#F5F5F5]' : ''}`}
+        className={`bz-menu-item cursor-pointer ${selected ? 'is-selected' : ''} ${highlighted ? 'bg-pn-canvas' : ''}`}
       >
         <BusinessChip business={business} locale={locale} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-medium text-[#0A0A0A]">{business.name}</span>
-          <span className="mt-0.5 block truncate text-[11.5px] text-[#737373]">{meta}</span>
+          <span className="block truncate text-[13px] font-medium text-pn-ink">{business.name}</span>
+          <span className="mt-0.5 block truncate text-[12px] text-[#737373]">{meta}</span>
         </span>
         {business.isActive === false && (
-          <span className="shrink-0 rounded-md bg-[#FEF2F2] px-1.5 py-0.5 text-[10.5px] font-medium text-[#991B1B]">
+          <span className="shrink-0 rounded-[10px] bg-[#FEF2F2] px-1.5 py-0.5 text-[12px] font-medium text-[#991B1B]">
             {isTr ? 'Duraklatıldı' : 'Paused'}
           </span>
         )}
-        {selected && <Check size={14} strokeWidth={2.4} className="shrink-0 !text-[#0A0A0A]" aria-hidden="true" />}
+        {selected && <Check size={14} strokeWidth={2.4} className="shrink-0 !text-pn-ink" aria-hidden="true" />}
       </div>
     );
   };
@@ -335,7 +335,7 @@ export function BusinessSwitcher({
         onKeyDown={onKeyDown}
       >
         {showSearch && (
-          <div className="flex items-center gap-2 border-b border-[#EDEDED] px-3 py-2">
+          <div className="flex items-center gap-2 border-b border-pn-line px-3 py-2">
             <Search size={14} className="shrink-0 text-[#737373]" aria-hidden="true" />
             <input
               ref={searchRef}
@@ -353,9 +353,9 @@ export function BusinessSwitcher({
               autoCorrect="off"
               spellCheck={false}
               enterKeyHint="go"
-              className="h-8 min-w-0 flex-1 bg-transparent text-[16px] text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3] sm:text-[13px]"
+              className="h-8 min-w-0 flex-1 bg-transparent text-[16px] text-pn-ink outline-none placeholder:text-[#A3A3A3] sm:text-[13px]"
             />
-            <span className="shrink-0 rounded border border-[#E5E5E5] px-1.5 py-px text-[10.5px] text-[#737373]">
+            <span className="shrink-0 rounded border border-pn-line-strong px-1.5 py-px text-[12px] text-[#737373]">
               {businesses.length}
             </span>
           </div>
@@ -371,7 +371,7 @@ export function BusinessSwitcher({
           style={{ maxHeight: 'min(360px, 60vh)' }}
         >
           {flat.length === 0 ? (
-            <p className="px-3 py-6 text-center text-[12.5px] text-[#737373]">
+            <p className="px-3 py-6 text-center text-[13px] text-[#737373]">
               {isTr ? 'Bu aramayla eşleşen işletme yok.' : 'No business matches this search.'}
             </p>
           ) : (
@@ -395,7 +395,7 @@ export function BusinessSwitcher({
             </>
           )}
         </div>
-        <div className="border-t border-[#EDEDED] p-1">
+        <div className="border-t border-pn-line p-1">
           <Link
             href={manageHref}
             onClick={() => {

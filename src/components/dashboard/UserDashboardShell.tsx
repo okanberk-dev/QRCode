@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import Link from '@/components/navigation/IntentLink';
 import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, Gift, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -13,9 +14,10 @@ import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import BusinessSwitcher from './BusinessSwitcher';
 import ViewportMount from '@/components/ui/ViewportMount';
+import { PanelTopNav, type PanoNavEntry } from '@/components/panel/pano/PanelTopNav';
+import { PanelMobileNav } from '@/components/panel/pano/PanelMobileNav';
 import { detectSector } from '@/lib/sector-platforms';
 import { getSectorByLabel } from '@/lib/sectors';
-import { getManagedPlatform } from '@/lib/platform-management';
 import {
   ACTIVE_BUSINESS_STORAGE_KEY,
   resolveActiveRestaurantId,
@@ -107,20 +109,6 @@ function getDaysLeft(trialEndsAt: string | null) {
   return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-const TOP_BAR_MAP: Record<string, { breadcrumb: string; title: string } | undefined> = undefined as never;
-
-// §38.72 — Account section deeplink subtitles (?section=billing →
-// "PANEL / HESABIM > FATURALAMA"). matchHref helper section query'yi tüketir;
-// breadcrumb da aynı param'ı okuyarak alt-section konteksti gösterir.
-const ACCOUNT_SECTION_SUFFIX: Record<string, { tr: string; en: string }> = {
-  billing: { tr: 'FATURALAMA', en: 'BILLING' },
-  notifications: { tr: 'BİLDİRİMLER', en: 'NOTIFICATIONS' },
-  profile: { tr: 'PROFİL', en: 'PROFILE' },
-  security: { tr: 'GÜVENLİK', en: 'SECURITY' },
-  team: { tr: 'EKİP', en: 'TEAM' },
-  ai: { tr: 'PULSE AI', en: 'PULSE AI' },
-  legal: { tr: 'KVKK & YASAL', en: 'PRIVACY & LEGAL' },
-};
 
 // The menu builder lives under the business it edits
 // (`/restaurants/<id>/menu[/analytics]`), but in the navigation it belongs to
@@ -137,98 +125,7 @@ export function getOwnerShellActiveRestaurantId(): string | null | undefined {
   return ownerShellActiveRestaurantId;
 }
 
-function useTopBar(locale: Locale, pathname: string | null, section?: string | null) {
-  const isTr = locale === 'tr';
-  if (!pathname) return null;
-  const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
-  if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
-  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorumlar' : 'Reviews' };
-  if (rest.startsWith('/google-reviews')) return { breadcrumb: isTr ? 'PANEL / GOOGLE YORUMLARI' : 'PANEL / GOOGLE REVIEWS', title: isTr ? 'Google Yorumları' : 'Google Reviews' };
-  if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'PANEL / QR KODLARI' : 'PANEL / QR CODES', title: isTr ? 'QR kodları' : 'QR codes' };
-  if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
-  if (rest.startsWith('/surveys')) return { breadcrumb: isTr ? 'ARAÇLAR / ANKETLER' : 'TOOLS / SURVEYS', title: isTr ? 'Anketler' : 'Surveys' };
-  if (rest.startsWith('/loyalty')) return { breadcrumb: isTr ? 'ARAÇLAR / SADAKAT KARTI' : 'TOOLS / LOYALTY CARD', title: isTr ? 'Sadakat kartı' : 'Loyalty card' };
-  if (rest.startsWith('/audits')) return { breadcrumb: isTr ? 'ARAÇLAR / DENETİM MERKEZİ' : 'TOOLS / AUDIT CENTER', title: isTr ? 'Denetim Merkezi' : 'Audit Center' };
-  if (MENU_BUILDER_REST_RE.test(rest)) {
-    const isAnalytics = /\/menu\/analytics(\/|$)/.test(rest);
-    return {
-      breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU',
-      title: isAnalytics ? (isTr ? 'Menü analitiği' : 'Menu analytics') : (isTr ? 'Menü' : 'Menu'),
-    };
-  }
-  if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / İŞLETMELER' : 'PANEL / BUSINESSES', title: isTr ? 'İşletmeler' : 'Businesses' };
-  if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
-  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
-  if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'ARAÇLAR / MÜŞTERİLER' : 'TOOLS / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
-  if (rest.startsWith('/platforms/')) {
-    // Provider page: "PLATFORM BAĞLANTILARI / YEMEKSEPETI" + platform name.
-    const platformName = getManagedPlatform(rest.slice('/platforms/'.length).split('/')[0])?.name;
-    if (platformName) {
-      return {
-        breadcrumb: `${isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'} / ${platformName.toLocaleUpperCase(isTr ? 'tr-TR' : 'en-US')}`,
-        title: platformName,
-      };
-    }
-  }
-  if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
-  if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
-  if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
-  if (rest.startsWith('/account')) {
-    // §38.72 — section=X aktifken breadcrumb'a > ALT BAŞLIK ekle.
-    const suffix = section ? ACCOUNT_SECTION_SUFFIX[section] : undefined;
-    const baseCrumb = isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT';
-    return {
-      breadcrumb: suffix ? `${baseCrumb} > ${isTr ? suffix.tr : suffix.en}` : baseCrumb,
-      title: isTr ? 'Hesabım' : 'Account',
-    };
-  }
-  // /profile redirects to /account; breadcrumb retained for the brief hop.
-  if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT', title: isTr ? 'Hesabım' : 'Account' };
-  return null;
-}
-
-const SIDEBAR_GROUP_STATE_KEY = 'buaze.owner.sidebarGroups';
-const SIDEBAR_SCROLL_KEY = 'buaze.owner.sidebarScroll';
-
-function loadGroupState(): Record<string, boolean> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(SIDEBAR_GROUP_STATE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-function saveGroupState(state: Record<string, boolean>) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(SIDEBAR_GROUP_STATE_KEY, JSON.stringify(state));
-  } catch {
-    /* swallow */
-  }
-}
-function loadSidebarScroll(): number {
-  if (typeof window === 'undefined') return 0;
-  try {
-    const raw = window.sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
-    return raw ? parseInt(raw, 10) || 0 : 0;
-  } catch {
-    return 0;
-  }
-}
-function saveSidebarScroll(scrollTop: number) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(scrollTop));
-  } catch {
-    /* swallow */
-  }
-}
-
 export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, canAddBusiness = true, isImpersonating = false, paletteRestaurants, tools, children }: UserDashboardShellProps) {
-  void TOP_BAR_MAP;
   const pathname = usePathname();
   const router = useRouter();
   // §38.58 — Faturalama nav item href'i `?section=billing` query taşır
@@ -284,110 +181,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
-  const matchHref = (href: string): boolean => {
-    if (!pathname) return false;
-    const [hrefPath, hrefQuery] = href.split('?');
-    if (!hrefQuery) {
-      return isPathActive(hrefPath);
-    }
-    if (pathname !== hrefPath) return false;
-    const expected = new URLSearchParams(hrefQuery);
-    for (const [key, value] of expected.entries()) {
-      if (searchParams.get(key) !== value) return false;
-    }
-    return true;
-  };
-  // Account base item için: query param'sız Account href'i match etsin AMA
-  // section=billing / notifications aktifken active OLMASIN (o alt öğe lime).
-  const matchAccountBase = (href: string): boolean => {
-    if (!pathname) return false;
-    if (!(pathname === href || pathname.startsWith(`${href}/`))) return false;
-    const section = searchParams.get('section') ?? '';
-    return section !== 'billing' && section !== 'notifications';
-  };
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  // §38.158 — Mobile drawer + More sheet açıkken body scroll lock.
-  // Önceki davranış: drawer açılınca arka planda main hâlâ scroll
-  // edebiliyordu (overlap UX bozulması — kullanıcı drawer ile etkileşim
-  // beklerken main scroll olunca kafa karıştırıcı). Modal-tier overlay
-  // pattern: `<Modal>` primitive (CLAUDE.md §11.1) zaten body scroll lock
-  // uygular; aynı disipline drawer + More sheet için manuel lock.
-  // CommandPalette Radix Portal kendi lock'unu yapıyor, gerek yok.
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const isModalOpen = drawerOpen || moreOpen;
-    if (!isModalOpen) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = original;
-    };
-  }, [drawerOpen, moreOpen]);
-  // Drawer state broadcast (CLAUDE.md §40.D Custom Event paterni).
-  // Marketing MarketingNavbarClient + admin AdminSidebar ile aynı event
-  // ismi (`buaze:mobile-drawer`). Owner panel'in bottom nav'ı aynı
-  // component'te olduğu için doğrudan local `drawerOpen` okuyabilir; bu
-  // broadcast harici listener'lar (örn. sticky CTA, marketing ribbon
-  // overlay) için single channel disiplinini korur.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(
-      new CustomEvent('buaze:mobile-drawer', { detail: { open: drawerOpen } }),
-    );
-  }, [drawerOpen]);
 
-  // ESC key closes the mobile drawer + "more" sheet — a11y baseline
-  // (CLAUDE.md §23.7 Phase 11.1). Workspace + user dropdown menus zaten
-  // kendi ESC handler'larına sahip (line ~330, ~349). Drawer + more
-  // sheet için ayrı listener — open state degiştiginde mount/unmount.
-  useEffect(() => {
-    if (!drawerOpen && !moreOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (drawerOpen) setDrawerOpen(false);
-      if (moreOpen) setMoreOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [drawerOpen, moreOpen]);
-  // Stage 60 §38.141 — Mobile bottom nav Yorumlar tab badge.
-  // NotificationBell `buaze:notification-count` custom event'i ile
-  // sync; tek source-of-truth NotificationBell internal poll. Mobile
-  // nav ek fetch yapmaz; aynı /api/notifications poll'u reuse eder.
-  const [notifUnreadCount, setNotifUnreadCount] = useState(0);
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const expectedBase = `/${locale}/dashboard`;
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ base: string; count: number }>).detail;
-      if (detail?.base === expectedBase) {
-        setNotifUnreadCount(detail.count);
-      }
-    };
-    window.addEventListener('buaze:notification-count', handler);
-    return () => window.removeEventListener('buaze:notification-count', handler);
-  }, [locale]);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
-  // Collapsible group state — persists across navigations via localStorage.
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  useEffect(() => {
-    // Phase 12 — yeni grup ID'leri (general/crm/business/settings) default
-    // expanded. Mevcut localStorage stale eski ID'leri ('feedback'/'growth')
-    // taşıyabilir; merge ile yeniler de dahil edilir, kullanıcı manuel
-    // toggle yaptığında localStorage update olur.
-    const loaded = loadGroupState();
-    setExpandedGroups({
-      tools: loaded.tools ?? false,
-      ...loaded,
-    });
-    const collapsed = window.localStorage.getItem('buaze.owner.sidebarCollapsed') === 'true';
-    setIsCollapsed(collapsed);
-  }, []);
 
   // Active business resolution: path id (`/restaurants/<id>/…`) → ?restaurantId
   // → remembered business → first business. Runs as a layout effect so the
@@ -473,56 +268,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   }, [workspaceRestaurants, queryRestaurantId, pathRestaurantId]);
 
 
-  // User menu dropdown — outside click + ESC kapatır.
-  useEffect(() => {
-    if (!userMenuOpen) return;
-    const onPointer = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setUserMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onPointer);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onPointer);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [userMenuOpen]);
-
-  const toggleSidebar = () => {
-    setIsCollapsed((prev) => {
-      const next = !prev;
-      window.localStorage.setItem('buaze.owner.sidebarCollapsed', String(next));
-      return next;
-    });
-  };
-  const toggleGroup = (groupId: string) => {
-    setExpandedGroups((prev) => {
-      const next = { ...prev, [groupId]: !prev[groupId] };
-      saveGroupState(next);
-      return next;
-    });
-  };
-  // Sidebar scroll persistence (sessionStorage; per-tab, survives Next.js
-  // navigation). Without this, navigating between groups would let the
-  // hydration race reset scrollTop to 0 and bump the active item out of
-  // view.
-  const navRef = useRef<HTMLElement | null>(null);
-  useLayoutEffect(() => {
-    const el = navRef.current;
-    if (!el) return;
-    const target = loadSidebarScroll();
-    if (target > 0) el.scrollTop = target;
-  }, [pathname]);
-  const handleNavClick = () => {
-    const el = navRef.current;
-    if (el) saveSidebarScroll(el.scrollTop);
-    setDrawerOpen(false);
-  };
-
   const isBusinessScopedHref = (href: string) => {
     const [hrefPath] = href.split('?');
     const base = `/${locale}/dashboard`;
@@ -592,9 +337,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   };
 
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
-  // §38.72 — Search param-aware breadcrumb (?section=billing → "> FATURALAMA").
-  const activeSection = searchParams.get('section');
-  const topBar = useTopBar(locale, pathname, activeSection);
 
   // /dashboard/guide her zaman görünür. Eski "ilk 30 gün" mantığı
   // `user.createdAt` prop'una bağlıydı; layout.tsx kullanıcı tarafından
@@ -704,21 +446,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     },
   ];
 
-  // Mobile bottom nav: 4 primary tabs + "More" sheet for the rest.
-  const bottomNavItems = [
-    { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
-    { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
-    { href: `/${locale}/dashboard/google-reviews`, icon: Star, label: copy.googleReviews },
-    { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-  ];
-  const moreSheetItems = [
-    { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-    { href: `/${locale}/dashboard/platforms`, icon: Plug, label: copy.integrations },
-    { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
-    ...toolItems,
-    { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
-  ];
-  const moreActive = moreSheetItems.some((i) => isPathActive(i.href));
 
   // Business category label. `Restaurant.category` holds the Turkish label
   // ("Restoran"); English pages show the sector's English name.
@@ -739,603 +466,244 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
   const locationCount = workspace?.locationCount ?? 0;
 
-  // SidebarContent was previously declared as an inner function component
-  // (`const SidebarContent = ({ navRef }) => …`). Every parent re-render
-  // produced a fresh function reference, so React treated `<SidebarContent />`
-  // as a new component type, *unmounted* the entire <nav>, and remounted it.
-  // The remount reset scrollTop to 0 — the user perceived it as "the sidebar
-  // jumps every time I click a link." Switching to a render helper that
-  // returns JSX (not a component) keeps reconciliation in place: only the
-  // active-state classes are diffed and patched.
-  const renderSidebar = (forwardedNavRef?: React.MutableRefObject<HTMLElement | null>) => (
-    // `w-full min-w-0`: as a flex item of the <aside> row this column would
-    // otherwise grow to its min-content width (e.g. a long business name) and
-    // paint past the 248px sidebar over the main column.
-    <div className="flex h-full w-full min-w-0 flex-col bg-white text-[#0A0A0A]">
-      {/* Logo */}
-      <div className="px-4 pt-5 pb-3">
-        <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="flex items-center gap-2.5">
-          <BuazeLogo size={32} variant="default" imageUrl={logoUrl} className="shrink-0" />
-          {!isCollapsed && (
-            <span
-              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] leading-none bz-h-tight animate-in fade-in slide-in-from-left-2 duration-300"
-            >
-              buaze<span className="text-[#C6F24E]">.</span>
-            </span>
-          )}
-        </Link>
-      </div>
+  const isTr = locale === 'tr';
+  const navLink = (href: string) => ({
+    href: hrefWithActiveRestaurant(href),
+    active: isPathActive(href),
+  });
+  // Pano top navigation (docs/design/DASHBOARD_DESIGN.md §5.1): the same
+  // entries feed the desktop bar and the mobile drawer.
+  const panoEntries: PanoNavEntry[] = navItems.map((item) => {
+    if (item.type === 'item') {
+      const isGoogle = item.href.endsWith('/google-reviews');
+      const isPlatforms = item.href.endsWith('/platforms');
+      const isBusinesses = item.href.endsWith('/restaurants');
+      return {
+        type: 'link' as const,
+        ...navLink(item.href),
+        label: item.label,
+        icon: item.icon,
+        shortLabel: isGoogle ? 'Google' : isPlatforms ? (isTr ? 'Platformlar' : 'Platforms') : undefined,
+        secondary: isPlatforms || isBusinesses,
+      };
+    }
+    return {
+      type: 'group' as const,
+      id: item.id,
+      label: item.label,
+      icon: item.icon,
+      children: item.children.map((child) => ({
+        ...navLink(child.href),
+        label: child.label,
+        icon: child.icon,
+        isNew: child.isNew,
+      })),
+    };
+  });
 
-      {/* Business (franchise) switcher — search, recents, manage / add
-          (BusinessSwitcher). Collapsed sidebar opens the same panel. */}
-      <div className="px-3 pb-3">
+  const accountLinks = [
+    { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
+    { href: `/${locale}/dashboard/account?section=billing`, icon: CreditCard, label: isTr ? 'Faturalama' : 'Billing' },
+    { href: `/${locale}/dashboard/account?section=notifications`, icon: Bell, label: copy.notifications },
+    { href: `/${locale}/help`, icon: BookOpen, label: isTr ? 'Yardım merkezi' : 'Help center' },
+  ];
+  const createQrHref = hrefWithActiveRestaurant(`/${locale}/dashboard/qr?new=1`);
+  const brand = (
+    <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="pn-brand" aria-label="Buaze">
+      <BuazeLogo size={34} variant="default" imageUrl={logoUrl} className="shrink-0" />
+      <span className="pn-brand-word">buaze</span>
+    </Link>
+  );
+  const switcherCaption = activeRestaurant
+    ? detectSector(activeRestaurant.category) === 'clinic'
+      ? isTr ? 'Klinik modu' : 'Clinic mode'
+      : categoryLabel(activeRestaurant.category)
+    : `${locationCount} ${isTr ? 'konum' : 'locations'}`;
+
+  // One orchestrated moment per route (§6): the page rises 8px into place.
+  // Web Animations on <main> instead of a keyed wrapper, so nested layouts
+  // and page state are never remounted.
+  const mainRef = useRef<HTMLElement | null>(null);
+  const firstRouteRef = useRef(true);
+  useEffect(() => {
+    if (firstRouteRef.current) {
+      firstRouteRef.current = false;
+      return;
+    }
+    const el = mainRef.current;
+    if (!el || typeof el.animate !== 'function') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    el.animate(
+      [
+        { opacity: 0, transform: 'translateY(8px)' },
+        { opacity: 1, transform: 'none' },
+      ],
+      { duration: 360, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' },
+    );
+  }, [pathname]);
+
+  const desktopActions = (
+    <>
+      {workspaceRestaurants.length > 1 && (
         <BusinessSwitcher
           locale={locale}
-          variant={isCollapsed ? 'collapsed' : 'sidebar'}
+          variant="topbar"
           businesses={workspaceRestaurants}
           activeId={activeRestaurantId}
           onSelect={selectRestaurantScope}
-          caption={
-            activeRestaurant
-              ? detectSector(activeRestaurant.category) === 'clinic'
-                ? locale === 'tr' ? 'Klinik modu' : 'Clinic mode'
-                : categoryLabel(activeRestaurant.category)
-              : `${locationCount} ${locale === 'tr' ? 'konum' : 'locations'}`
-          }
           categoryLabel={categoryLabel}
           manageHref={`/${locale}/dashboard/restaurants`}
           newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
-          onNavigate={handleNavClick}
         />
-      </div>
-
-      {/* §38.59 — Sidebar search button kaldırıldı (kullanıcı kararı). Cmd+K
-          palette hâlâ topbar'da + global keyboard shortcut ile erişilebilir;
-          sidebar görsel sadeleşti. Eski search button kapsamı: paletteOpen
-          state intact, sadece sidebar tetikleyicisi UI'dan çıkarıldı. */}
-
-      {/* Primary CTA — "QR oluştur" (kullanıcı talebi, eski "Yorum İste"
-          §38.39'dan rename). href intact (/dashboard/qr?new=1) — yeni
-          wizard'ı doğrudan açmak için query flag taşır. .bz-side-cta +
-          --mini Phase 1'den. */}
-      <div className="px-3 pb-3">
-        <Link
-          href={hrefWithActiveRestaurant(`/${locale}/dashboard/qr?new=1`)}
-          className={`bz-side-cta ${isCollapsed ? 'bz-side-cta--mini' : ''}`}
-          title={isCollapsed ? (locale === 'tr' ? 'QR oluştur' : 'Create QR') : undefined}
-          onClick={handleNavClick}
-        >
-          <Plus size={14} strokeWidth={2.2} />
-          <span>{locale === 'tr' ? 'QR oluştur' : 'Create QR'}</span>
-        </Link>
-      </div>
-
-      {/* Nav */}
-      <nav
-        ref={forwardedNavRef as React.RefObject<HTMLElement>}
-        className="flex-1 space-y-0.5 overflow-y-auto px-3 py-1"
-        aria-label={copy.dashboard}
-      >
-        {navItems.map((item, idx) => {
-          // Subtle divider between flat items and the first group (visual
-          // boundary between daily-core and grouped sections).
-          const showDividerBefore =
-            idx > 0 && item.type === 'group' && navItems[idx - 1]?.type === 'item';
-
-          if (item.type === 'item') {
-            const Icon = item.icon;
-            const isActive = isPathActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={hrefWithActiveRestaurant(item.href)}
-                onClick={handleNavClick}
-                aria-current={isActive ? 'page' : undefined}
-                /* §38.65 — Apple HIG sidebar item polish: bz-motion-spring
-                   200ms cubic-bezier easing + transform-friendly transition.
-                   Önceki `transition-colors` only → renk değişimi sade ama
-                   subtle motion yok. Now: hover'da bg + color + (active hariç)
-                   text shift smooth animate olur. Lift `bz-lift` kasıtlı
-                   eklenmedi — sidebar item'lar nav-link, lift hareket distract
-                   eder; CTA + kartlar için saklı. */
-                /* §49 — shadcn sidebar density: 8px items, active graphite
-                   with a lime icon (the outside lime stripe is gone). */
-                className={`relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium bz-motion-spring ${
-                  isActive
-                    ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
-                    : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
-                }`}
-              >
-                <Icon size={16} strokeWidth={2} className="shrink-0" />
-                {!isCollapsed && <span className="flex-1 truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
-                {item.badge !== undefined && item.badge !== 0 && (
-                  <span
-                    className="text-[10px] font-semibold rounded-full px-2 py-0.5 bz-mono tabular-nums"
-                    style={{
-                      background: isActive ? 'rgba(198,242,78,0.22)' : '#F2F2F2',
-                      color: isActive ? '#C6F24E' : '#737373',
-                    }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          }
-
-          // Group: collapsible parent with auto-expand when active route
-          // lives in one of its children.
-          // §38.59 — childActive mantığı matchHref ile genişledi:
-          //   eski `pathname.startsWith(c.href)` Faturalama gibi query-string
-          //   taşıyan child'ları (?section=billing) match edemiyordu →
-          //   group expansion broken. matchHref helper Faturalama deeplink'i
-          //   ve Account base ayrımını doğru handle eder.
-          const Icon = item.icon;
-          const childActive = item.children.some((c) => {
-            const cHasQuery = c.href.includes('?');
-            const cIsAccountBase = c.href.endsWith('/dashboard/account');
-            if (cHasQuery) return matchHref(c.href);
-            if (cIsAccountBase) return matchAccountBase(c.href);
-            return isPathActive(c.href);
-          });
-          const isExpanded = childActive || expandedGroups[item.id] === true;
-          return (
-            <div key={item.id}>
-              {showDividerBefore && (
-                <div aria-hidden className="my-2 mx-3 h-px bg-[#EDEDED]" />
-              )}
-              <button
-                type="button"
-                onClick={() => toggleGroup(item.id)}
-                // §38.59 — Parent group button active highlight kaldırıldı:
-                //   eski `childActive ? bg-[#F2F2F2]` → child item siyah zeminli
-                //   ve parent group da gri — kullanıcı 2 menü "seçili" hissi
-                //   yaşadı. Şimdi parent group sadece chevron rotate + child
-                //   reveal animation; tek "active" görünüm child item'da.
-                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A]"
-                aria-expanded={isExpanded}
-              >
-                <Icon size={16} strokeWidth={2} className="shrink-0" />
-                {!isCollapsed && (
-                  <>
-                    <span className="flex-1 truncate text-left text-[12px] font-medium text-[#737373] animate-in fade-in slide-in-from-left-2 duration-300">
-                      {item.label}
-                    </span>
-                    <ChevronRight
-                      size={14}
-                      strokeWidth={2}
-                      className={`text-[#737373] transition-transform duration-200 ${
-                        isExpanded ? 'rotate-90' : ''
-                      }`}
-                    />
-                  </>
-                )}
-              </button>
-              {/* Smooth expand/collapse — grid-template-rows trick lets us
-                  animate `0fr → 1fr` even though the inner content has no
-                  fixed height. Falls back to instant render on browsers
-                  without grid-fr animation support (rare in 2026). */}
-              <div
-                className="grid transition-[grid-template-rows,opacity] duration-200 ease-out"
-                style={{
-                  gridTemplateRows: (!isCollapsed && isExpanded) ? '1fr' : '0fr',
-                  opacity: (!isCollapsed && isExpanded) ? 1 : 0,
-                }}
-                aria-hidden={isCollapsed || !isExpanded}
-              >
-                <div className="overflow-hidden">
-                  <div className="mt-1 ml-5 space-y-0.5 border-l border-[#EDEDED] pl-3 pb-1">
-                    {item.children.map((child) => {
-                      const ChildIcon = child.icon;
-                      // §38.58 — Faturalama (Account#billing) deeplink ayrı
-                      // active state'e ihtiyaç duyar; Account base item'ı
-                      // section=billing aktifken kendisi active olmasın.
-                      const hasQuery = child.href.includes('?');
-                      const isAccountBase = child.href.endsWith('/dashboard/account');
-                      const isActive = hasQuery
-                        ? matchHref(child.href)
-                        : isAccountBase
-                          ? matchAccountBase(child.href)
-                          : isPathActive(child.href);
-                      return (
-                        <Link
-                          key={child.href}
-                          href={hrefWithActiveRestaurant(child.href)}
-                          onClick={handleNavClick}
-                          aria-current={isActive ? 'page' : undefined}
-                          tabIndex={isExpanded ? 0 : -1}
-                          className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium transition-colors ${
-                            isActive
-                              ? 'bg-[#0A0A0A] text-white [&>svg]:text-[#C6F24E]'
-                              : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
-                          }`}
-                        >
-                          <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
-                          {!isCollapsed && (
-                            <>
-                              <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                                {child.label}
-                              </span>
-                              {child.isNew && (
-                                <span
-                                  className="ml-auto inline-flex shrink-0 items-center rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[#0A0A0A]"
-                                  aria-label={locale === 'tr' ? 'Yeni' : 'New'}
-                                >
-                                  {locale === 'tr' ? 'Yeni' : 'New'}
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* Plan progress card — sadece trial user + sidebar açık (collapsed durumda
-          gizli, alan yetersiz). Tasarım .design-pulse-2026 shell.jsx paterni:
-          PRO PLAN eyebrow + gün countdown + lime progress bar + Yükselt link. */}
-      {!isCollapsed && user.plan === 'trial' && trialDaysLeft !== null && (
-        <div className="px-3 pb-3 animate-in fade-in slide-in-from-left-2 duration-300">
-          <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="pulse-eyebrow text-[#0A0A0A]">
-                {locale === 'tr' ? 'DENEME PLANI' : 'TRIAL PLAN'}
-              </span>
-              <span className="bz-mono text-[10.5px] text-[#525252] tabular-nums">
-                {trialDaysLeft}
-                {locale === 'tr' ? 'g' : 'd'}
-              </span>
-            </div>
-            <div className="bz-progress lime">
-              <i style={{ width: `${Math.max(8, Math.min(100, (trialDaysLeft / 14) * 100))}%` }} />
-            </div>
-            <Link
-              href={`/${locale}/dashboard/account?section=billing`}
-              className="block text-[11.5px] text-[#525252] leading-[1.4]"
-              onClick={handleNavClick}
-            >
-              {trialDaysLeft <= 5
-                ? locale === 'tr'
-                  ? 'Az kaldı — '
-                  : 'Almost over — '
-                : ''}
-              <span className="font-semibold text-[#0A0A0A] hover:underline underline-offset-2">
-                {locale === 'tr' ? 'Plana yükselt' : 'Upgrade plan'}
-              </span>
-            </Link>
-          </div>
-        </div>
       )}
-
-      {/* User pill + dropdown menu — tasarım a/shell.jsx UserMenu paterni
-          (Profil/Ayarlar/Yardım/Çıkış). Sidebar tek beyaz alan, user pill
-          sadece border-top ile ayrılır (mevcut wrapper bg-[#FAFAFA] kaldırıldı,
-          tasarım birebir). bz-user-menu CSS class'ları kullanır. */}
-      <div className="relative border-t border-[#EDEDED] p-3" ref={userMenuRef}>
-        <button
-          type="button"
-          onClick={() => setUserMenuOpen((v) => !v)}
-          aria-expanded={userMenuOpen}
-          aria-haspopup="menu"
-          aria-label={locale === 'tr' ? 'Hesap menüsü' : 'Account menu'}
-          className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 transition-colors hover:bg-[#F2F2F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
-            isCollapsed ? 'justify-center' : ''
-          }`}
-          title={isCollapsed ? displayName : undefined}
-        >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-[#EDEDED] bz-h-tight">
+      <Link
+        href={createQrHref}
+        className="pn-icon-btn hidden xl:inline-flex"
+        aria-label={isTr ? 'QR oluştur' : 'Create QR'}
+        title={isTr ? 'QR oluştur' : 'Create QR'}
+      >
+        <Plus size={20} aria-hidden="true" />
+      </Link>
+      <button
+        type="button"
+        onClick={() => setPaletteOpen(true)}
+        className="pn-icon-btn"
+        aria-label={isTr ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
+        title={isTr ? 'Ara (⌘K)' : 'Search (⌘K)'}
+      >
+        <Search size={19} aria-hidden="true" />
+      </button>
+      <ViewportMount query="(min-width: 1024px)" fallback={<span aria-hidden className="inline-flex h-[46px] w-[46px] shrink-0" />}>
+        <NotificationBell
+          locale={locale}
+          announcements={announcements}
+          panelBase={`/${locale}/dashboard`}
+          reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
+          notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+          restaurantId={activeRestaurantId}
+        />
+      </ViewportMount>
+      <DropdownMenu.Root modal={false}>
+        <DropdownMenu.Trigger asChild>
+          <button type="button" className="pn-avatar-btn" aria-label={`${displayName} — ${isTr ? 'hesap menüsü' : 'account menu'}`}>
             {initial}
-          </div>
-          {!isCollapsed && (
-            <>
-              <div className="min-w-0 flex-1 text-left animate-in fade-in slide-in-from-left-2 duration-300">
-                <p className="truncate text-[12px] font-medium text-[#0A0A0A]">{displayName}</p>
-                <p className="truncate text-[10px] text-[#525252]">{user.email}</p>
-              </div>
-              <ChevronDown
-                size={14}
-                strokeWidth={2}
-                className={`text-[#737373] shrink-0 transition-transform duration-200 ${
-                  userMenuOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </>
-          )}
-        </button>
-
-        {userMenuOpen && (
-          <div
-            className="bz-user-menu"
-            role="menu"
-          >
-            {!isCollapsed && (
-              <div className="px-2.5 py-2">
-                <p className="truncate text-[12px] font-semibold text-[#0A0A0A]">{displayName}</p>
-                <p className="truncate text-[10px] text-[#525252] mt-0.5">{user.email}</p>
-              </div>
-            )}
-            {!isCollapsed && <div className="bz-user-menu-divider" />}
-            <Link
-              href={`/${locale}/dashboard/account`}
-              className="bz-user-menu-item"
-              role="menuitem"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              <UserCircle size={14} strokeWidth={2} />
-              {locale === 'tr' ? 'Hesabım' : 'My Account'}
-            </Link>
-            <div className="bz-user-menu-divider" />
-            <Link
-              href={`/${locale}/help`}
-              className="bz-user-menu-item"
-              role="menuitem"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              <BookOpen size={14} strokeWidth={2} />
-              {locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'}
-            </Link>
-            <div className="bz-user-menu-divider" />
-            <button
-              type="button"
-              onClick={() => {
-                setUserMenuOpen(false);
-                handleLogout();
-              }}
-              className="bz-user-menu-item danger w-full"
-              role="menuitem"
-            >
-              <LogOut size={14} strokeWidth={2} />
-              {copy.logout}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content align="end" sideOffset={14} collisionPadding={12} className="bz-menu z-[70] min-w-[260px] focus:outline-none">
+            <div className="px-3.5 pb-2 pt-2.5">
+              <p className="truncate text-[15px] font-medium text-pn-ink">{displayName}</p>
+              <p className="truncate text-[13px] text-[#9A9AA0]">{user.email}</p>
+            </div>
+            <DropdownMenu.Separator className="bz-menu-divider" />
+            {accountLinks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <DropdownMenu.Item key={item.href} asChild>
+                  <Link href={item.href} className="bz-menu-item">
+                    <Icon size={17} aria-hidden="true" />
+                    <span className="flex-1 truncate">{item.label}</span>
+                  </Link>
+                </DropdownMenu.Item>
+              );
+            })}
+            <DropdownMenu.Separator className="bz-menu-divider" />
+            <DropdownMenu.Item className="bz-menu-item danger" onSelect={() => void handleLogout()}>
+              <LogOut size={17} aria-hidden="true" />
+              <span className="flex-1">{copy.logout}</span>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </>
   );
 
   return (
-    /* §38.158 — Shell yapısı `flex flex-col` + inner `lg:flex` çift katman:
-       Önceki tek-katman `lg:flex lg:h-screen lg:overflow-hidden` impersonation
-       banner aktifken kırılıyordu — sticky banner `width:100%` + flex row
-       parent → sidebar + main flex item'ları cross-axis'te overflow yapıyordu.
-       Yeni yapı: outer column flex (banner sticky-friendly) + inner
-       `lg:flex-1 lg:min-h-0 lg:overflow-hidden` (sidebar + main row layout
-       intact). Banner null durumda görsel etki sıfır (column ile single
-       flex child = sadece inner). */
-    <div className="bz-panel min-h-dvh bg-[#FFFFFF] flex flex-col lg:h-screen lg:overflow-hidden relative">
-      {/* Stage A4 §38.96 — sticky impersonation banner. Server-side actor.realAdminId
-          set ise üstte kırmızı banner + 30dk countdown + "Çıkış" CTA.
-          §38.158 — banner artık outer column flex'in birinci child'ı
-          (eski lg:flex parent'ında flex item olarak layout'u bozuyordu);
-          banner null durumda inner container tüm yüksekliği alır. */}
+    // Pano shell: floating top bar, canvas background, no sidebar. From lg up
+    // the page scrolls in its own column under the bar, so full-height pages
+    // (feedback inbox, menu studio) keep their viewport-sized layout (§42.5.1:
+    // vertical scroll only, horizontal clipped, stable gutter).
+    <div className="bz-panel relative flex min-h-dvh flex-col bg-pn-canvas lg:h-screen lg:overflow-hidden">
       {isImpersonating && <ImpersonationBanner />}
       <a href="#panel-main-content" className="bz-skip-link">
-        {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
+        {isTr ? 'İçeriğe atla' : 'Skip to content'}
       </a>
-      {/* `flex flex-col` below lg too: as a plain block this row never
-          stretched, so on short pages the grey <main> stopped mid-screen and
-          the white shell showed underneath. */}
-      <div className="flex flex-1 flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden">
-      {/* Desktop sidebar */}
-      <aside className={`relative hidden h-full shrink-0 border-r border-[#EDEDED] lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}>
-        {renderSidebar(navRef)}
-        {/* Floating toggle button */}
-        <button
-          onClick={toggleSidebar}
-          aria-label={isCollapsed ? (locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu') : (locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu')}
-          className="bz-btn-icon absolute -right-3 top-7 z-50 h-6 w-6 rounded-full bg-white shadow-sm"
-        >
-          {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
-        </button>
-      </aside>
 
-      {/* §42 — panel scroll column. `lg:overflow-y-auto` alone leaves CSS to
-          compute `overflow-x: auto` (a box can't be visible on one axis +
-          scrollable on the other), which made the column horizontally
-          scrollable whenever the sticky topbar tipped past the column width
-          (e.g. when a vertical scrollbar shaves ~15px off clientWidth). A
-          trackpad swipe or programmatic focus scroll then slid the topbar +
-          page content left under the sidebar — the "panel kayması" report.
-          `lg:overflow-x-hidden` makes horizontal scroll impossible; any
-          residual topbar overflow is clipped on the right instead of shifting
-          everything left. `lg:[scrollbar-gutter:stable]` reserves the vertical
-          scrollbar lane up-front so the content width never jumps when the
-          scrollbar appears (CLAUDE.md §42.5 applied to the real scroll
-          container, not just <html>). */}
-      <div className="flex min-w-0 flex-1 flex-col bg-[#FAFAFA] lg:h-full lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]">
-        {/* Mobile top bar — §38.65 backdrop-blur-xl Apple "frosted glass" tier upgrade
-            (kullanıcı kararı: sticky header only). Önceki `backdrop-blur` (8px) →
-            `backdrop-blur-xl` (24px) Liquid Glass referansı; sadece header katmanında. */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur-xl lg:hidden">
-          <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="flex items-center gap-2">
-            <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
-            <span
-              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] bz-h-tight"
-            >
-              buaze<span className="text-[#C6F24E]">.</span>
-            </span>
-          </Link>
+      <PanelTopNav
+        brand={brand}
+        entries={panoEntries}
+        actions={desktopActions}
+        ariaLabel={isTr ? 'Panel menüsü' : 'Panel menu'}
+        moreLabel={isTr ? 'Diğer' : 'More'}
+        newLabel={isTr ? 'Yeni' : 'New'}
+      />
 
-          <div className="flex items-center gap-2">
-            {workspaceRestaurants.length > 1 && (
-              <BusinessSwitcher
-                locale={locale}
-                variant="mobile"
-                businesses={workspaceRestaurants}
-                activeId={activeRestaurantId}
-                onSelect={selectRestaurantScope}
-                categoryLabel={categoryLabel}
-                manageHref={`/${locale}/dashboard/restaurants`}
-                newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
-              />
-            )}
-            {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
-              <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] px-3 py-1 pulse-eyebrow text-[#0A0A0A]">
-                <Crown size={10} /> {trialDaysLeft}{' '}
-                {locale === 'tr' ? 'gün' : trialDaysLeft === 1 ? 'day' : 'days'}
-              </span>
-            )}
-            <ViewportMount
-              query="(max-width: 1023.98px)"
-              fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
-            >
-              <NotificationBell
-                locale={locale}
-                announcements={announcements}
-                panelBase={`/${locale}/dashboard`}
-                reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
-                notificationsSettingsHref={`/${locale}/dashboard/notifications`}
-                restaurantId={activeRestaurantId}
-              />
-            </ViewportMount>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen((v) => !v)}
-              aria-expanded={drawerOpen}
-              aria-label={
-                drawerOpen
-                  ? locale === 'tr' ? 'Menüyü kapat' : 'Close menu'
-                  : locale === 'tr' ? 'Menüyü aç' : 'Open menu'
-              }
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E] bz-h-tight"
-            >
-              {drawerOpen ? <X size={18} strokeWidth={2} /> : <span>{initial}</span>}
+      <PanelMobileNav
+        brand={brand}
+        entries={panoEntries}
+        labels={{
+          open: isTr ? 'Menüyü aç' : 'Open menu',
+          close: isTr ? 'Menüyü kapat' : 'Close menu',
+          dialog: isTr ? 'Panel menüsü' : 'Panel menu',
+        }}
+        actions={
+          <ViewportMount query="(max-width: 1023.98px)" fallback={<span aria-hidden className="inline-flex h-11 w-11 shrink-0" />}>
+            <NotificationBell
+              locale={locale}
+              announcements={announcements}
+              panelBase={`/${locale}/dashboard`}
+              reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
+              notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+              restaurantId={activeRestaurantId}
+            />
+          </ViewportMount>
+        }
+        drawerTop={
+          workspaceRestaurants.length > 0 ? (
+            <BusinessSwitcher
+              locale={locale}
+              variant="sidebar"
+              businesses={workspaceRestaurants}
+              activeId={activeRestaurantId}
+              onSelect={selectRestaurantScope}
+              caption={switcherCaption}
+              categoryLabel={categoryLabel}
+              manageHref={`/${locale}/dashboard/restaurants`}
+              newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
+            />
+          ) : null
+        }
+        drawerFooter={
+          <div className="flex flex-col gap-1 border-t border-pn-line pt-4">
+            <Link href={createQrHref} className="bz-btn-lime mb-3 w-full">
+              <Plus size={18} aria-hidden="true" />
+              {isTr ? 'QR oluştur' : 'Create QR'}
+            </Link>
+            {accountLinks.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href} className="pn-drawer-link">
+                  <Icon size={20} aria-hidden="true" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            <button type="button" onClick={() => void handleLogout()} className="pn-drawer-link text-[#D92D20]">
+              <LogOut size={20} aria-hidden="true" />
+              {copy.logout}
             </button>
           </div>
-        </div>
+        }
+      />
 
-        {/* Desktop top bar — always render (Pulse 2026-04 shell.jsx 1:1
-            design); breadcrumb + title slot opsiyonel, search/bell/avatar
-            sabit chrome. Page-level <PageHeader> primitive zaten her sayfada
-            başlık taşır; topBar slot SSR breadcrumb için.
-
-            §38.158 — `lg:sticky lg:top-0 lg:z-30` eklendi: kullanıcı raporu
-            "yeni kayıt olduktan sonra side bar panelin üstüne geliyor".
-            Önceki davranış: topbar scroll ile birlikte yukarı kayıyor (main
-            container `lg:overflow-y-auto`); sidebar h-screen olduğu için
-            sabit kalıyor → kullanıcı sidebar'ı dominant algılayıp "sidebar
-            panelin üstüne geliyor" şeklinde rapor etti. Sticky topbar +
-            backdrop-blur: scroll sırasında breadcrumb + arama + bell + avatar
-            görünür kalır, mobile sticky pattern (z-40) ile uyumlu z-30
-            (sidebar collapse toggle z-50'nin altında). bg-white/95 +
-            backdrop-blur Apple "frosted glass" tier (CLAUDE.md §38.65). */}
-        <div className="hidden lg:sticky lg:top-0 lg:z-30 lg:flex h-14 shrink-0 items-center justify-between gap-4 border-b border-[#EDEDED] bg-white/95 backdrop-blur-xl px-6">
-          {/* §49 — shadcn header: one-line breadcrumb ("Panel › Yorumlar").
-              Every page renders its own <PageHeader> h1 below. */}
-          <nav aria-label={locale === 'tr' ? 'Sayfa konumu' : 'Breadcrumb'} className="flex min-w-0 items-center gap-1.5 text-[13px]">
-            <Link
-              href={hrefWithActiveRestaurant(`/${locale}/dashboard`)}
-              className="shrink-0 rounded text-[#737373] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-            >
-              Panel
-            </Link>
-            {topBar && (
-              <>
-                <ChevronRight size={13} strokeWidth={2} className="shrink-0 text-[#A3A3A3]" aria-hidden="true" />
-                <span aria-current="page" className="truncate font-medium text-[#0A0A0A]">
-                  {topBar.title}
-                </span>
-              </>
-            )}
-          </nav>
-          <div className="flex items-center gap-2.5 shrink-0">
-            {/* The expanded sidebar already shows the switcher; the topbar
-                copy only appears when the sidebar is collapsed to icons. */}
-            {workspaceRestaurants.length > 1 && isCollapsed && (
-              <BusinessSwitcher
-                locale={locale}
-                variant="topbar"
-                businesses={workspaceRestaurants}
-                activeId={activeRestaurantId}
-                onSelect={selectRestaurantScope}
-                categoryLabel={categoryLabel}
-                manageHref={`/${locale}/dashboard/restaurants`}
-                newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
-                className="hidden xl:inline-flex"
-              />
-            )}
-            <button
-              type="button"
-              onClick={() => setPaletteOpen(true)}
-              aria-label={locale === 'tr' ? 'Arama paletini aç' : 'Open search palette'}
-              title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-              className="hidden xl:flex h-9 w-[260px] items-center gap-2 rounded-lg border border-[#E5E5E5] bg-white px-3 text-[13px] text-[#737373] shadow-[0_1px_2px_rgba(10,10,10,0.05)] hover:bg-[#F5F5F5] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
-            >
-              <Search size={13} strokeWidth={2.25} />
-              <span className="flex-1 truncate text-left">{locale === 'tr' ? 'Ara…' : 'Search…'}</span>
-              <span className="rounded border border-[#E5E5E5] bg-[#FAFAFA] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono">
-                ⌘K
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaletteOpen(true)}
-              aria-label={locale === 'tr' ? 'Aramayı aç' : 'Open search'}
-              title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-              className="bz-btn-icon xl:hidden"
-            >
-              <Search size={15} strokeWidth={2.25} />
-            </button>
-            <ViewportMount
-              query="(min-width: 1024px)"
-              fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
-            >
-              <NotificationBell
-                locale={locale}
-                announcements={announcements}
-                panelBase={`/${locale}/dashboard`}
-                reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
-                notificationsSettingsHref={`/${locale}/dashboard/notifications`}
-                restaurantId={activeRestaurantId}
-              />
-            </ViewportMount>
-            <Link
-              href={`/${locale}/dashboard/account?section=profile`}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors bz-h-tight"
-              aria-label={displayName}
-            >
-              {initial}
-            </Link>
-          </div>
-        </div>
-
+      <div className="flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]">
         <main
+          ref={mainRef}
           id="panel-main-content"
           tabIndex={-1}
-          // Stage 60 §38.141 — Floating pill mobile bottom nav 72px height
-          // + 12px bottom-margin + safe-area inset. Toplam ~120px content
-          // overlap önleme. lg+ desktop'ta nav görünmez (pb-0).
-          // §38.238 — `overflow-x-hidden` REMOVED from <main>.
-          //
-          // Per the CSS Overflow spec an element with `overflow-x: hidden`
-          // is a scroll container (it simply cannot be scrolled by the user),
-          // and its `overflow-y` resolves to `auto` rather than `visible`.
-          // That made <main> the nearest scrollport for everything inside it,
-          // so every `position: sticky` descendant in the owner panel anchored
-          // to a container that never scrolls — i.e. silently stopped sticking.
-          // Affected the menu builder live preview (`sticky top-4`), the
-          // feedbacks list filter bar and mobile detail header, the menu
-          // builder toolbar, the campaign drawer header and the create-business
-          // footer CTA.
-          //
-          // The guard is redundant anyway: `body { overflow-x: hidden }`
-          // (globals.css §42.5) covers below-lg, and from lg up the parent
-          // scroll column already carries `lg:overflow-x-hidden`
-          // (§42.5.1, line ~1115). Dropping it here restores sticky without
-          // reopening horizontal scroll.
-          //
-          // `[&>*]:w-full` — page wrappers are `mx-auto max-w-[N]`. As items of
-          // this flex column, auto side margins switch off stretch, so without
-          // an explicit width each page shrank to its content: narrow strips on
-          // desktop, sideways overflow on mobile (customers 565px at 390). Full
-          // width + max-w + mx-auto centres them as intended (§42.3).
-          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 [&>*]:w-full"
+          // `[&>*]:w-full` — page wrappers are `mx-auto max-w-[N]` flex items;
+          // without an explicit width they shrank to their content (§42.1).
+          className="flex min-h-0 min-w-0 flex-1 flex-col pb-[env(safe-area-inset-bottom,0px)] lg:pt-2 [&>*]:w-full"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />
@@ -1344,283 +712,22 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             <div
               role="status"
               aria-live="polite"
-              className="flex items-center gap-2 border-b border-[#FDE68A] bg-[#FFFBEB] px-4 py-2 text-[12px] text-[#92400E] sm:px-7"
+              className="mx-2 mt-2 flex items-center gap-2 rounded-full bg-[#FFFAEB] px-5 py-2.5 text-[13px] text-[#93370D] lg:mx-2"
             >
               <span aria-hidden className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#D97706]" />
-              <span className="font-medium">
-                {locale === 'tr' ? 'Sadece okuma yetkin var.' : 'Read-only access.'}
-              </span>
-              <span className="text-[#92400E]/80">
-                {locale === 'tr'
-                  ? 'Yanıt yazma, atama ve düzenleme aksiyonları işletme sahibi tarafından kapatıldı.'
+              <span className="font-medium">{isTr ? 'Sadece okuma yetkin var.' : 'Read-only access.'}</span>
+              <span className="text-[#93370D]/80">
+                {isTr
+                  ? 'Yanıt yazma, atama ve düzenleme işletme sahibi tarafından kapatıldı.'
                   : 'Reply, assign and edit actions are disabled by the workspace owner.'}
               </span>
             </div>
           )}
-          {announcements.length > 0 && (
-            <AnnouncementBanner announcements={announcements} locale={locale} />
-          )}
+          {announcements.length > 0 && <AnnouncementBanner announcements={announcements} locale={locale} />}
           {children}
         </main>
       </div>
-      </div>{/* §38.158 — close new wrapper (`flex flex-1 flex-col lg:flex-row`) */}
 
-      {/* Mobile drawer — §38.63 Admin paneli (AdminSidebar.tsx:577) paterniyle
-          uyumlu hale getirildi: role="dialog" aria-modal aria-label + safe-area
-          inset top/bottom + bg-white border-r. Önceki implementation a11y
-          attribute'ları ve safe-area paddings eksikti. Tasarım kaynağı
-          .design-owner-2026/page-mobile-v2.jsx MobileDrawer (line 3-72) +
-          shell.jsx PanelShell `mobile drawer` paterniyle uyumlu. */}
-      {drawerOpen && (
-        <div
-          className="fixed inset-0 z-50 flex lg:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label={locale === 'tr' ? 'Panel menüsü' : 'Panel menu'}
-        >
-          <div
-            className="h-full w-[280px] max-w-[85vw] bg-white border-r border-[#EDEDED] bz-elev-3 flex flex-col text-[#0A0A0A] overflow-y-auto"
-            style={{
-              animation: 'bz-mob-drawer-in 180ms cubic-bezier(0.4, 0, 0.2, 1)',
-              paddingTop: 'env(safe-area-inset-top)',
-              paddingBottom: 'env(safe-area-inset-bottom)',
-            }}
-          >
-            {renderSidebar()}
-          </div>
-          <button
-            type="button"
-            className="flex-1 bg-black/60 backdrop-blur-sm"
-            onClick={() => setDrawerOpen(false)}
-            aria-label={locale === 'tr' ? 'Menüyü kapat' : 'Close menu'}
-          />
-        </div>
-      )}
-
-      {/* Mobile bottom nav — Stage 60 §38.141 HANDOFF floating pill paterni.
-          Floating: 12px lateral margin + safe-area + 28px borderRadius.
-          Glassmorphism: backdrop-blur(20px) saturate(180%) + translucent
-          surface. 72px height. 4 primary tab + More + Yorumlar tab'ında
-          NotificationBell unread count badge (custom event listener).
-
-          Drawer açıkken bottom nav fade-out (admin paterni ile parity —
-          AdminMobileNav `buaze:mobile-drawer` event listener'ı). Owner
-          shell drawer + bottom nav aynı component'te olduğu için event
-          broadcast yerine doğrudan local state okunur. `aria-hidden` +
-          `pointer-events-none` a11y intact. More sheet (`moreOpen`) açıkken
-          bottom nav görünür kalır — kullanıcı oradan navigate edebilsin
-          (kasıtlı UX). */}
-      <nav
-        aria-label={copy.dashboard}
-        aria-hidden={drawerOpen ? 'true' : undefined}
-        // §38.238 — bottom-anchored padding instead of `bottom: calc(N + env())`
-        // (CLAUDE.md §38.169). iOS Safari re-evaluates env(safe-area-inset-bottom)
-        // while the toolbar collapses/expands; animating `bottom` made the pill
-        // reflow and jitter mid-scroll. Anchoring the wrapper at bottom-0 and
-        // moving the offset into padding keeps the visual gap identical while the
-        // element itself never moves. Mirrors marketing/MobileBottomNav.
-        // §49 — full-width band in the page colour behind the pill (admin
-        // parity): scrolled content fades out instead of peeking around the
-        // pill. Only the pill takes taps.
-        className={`fixed inset-x-0 bottom-0 z-40 px-3 pt-3 pointer-events-none lg:hidden transition-[opacity,transform] duration-200 ease-out ${
-          drawerOpen
-            ? 'translate-y-full opacity-0'
-            : 'translate-y-0 opacity-100'
-        }`}
-        style={{
-          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-          background: 'linear-gradient(to top, #FAFAFA 0%, #FAFAFA 60%, rgba(250,250,250,0) 100%)',
-          willChange: 'transform, opacity',
-          backfaceVisibility: 'hidden',
-        }}
-      >
-        <div
-          className={`mx-auto max-w-[520px] rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)] ${drawerOpen ? 'pointer-events-none' : 'pointer-events-auto'}`}
-          style={{
-            // §49 — solid surface. The translucent "glass" pill let the
-            // page text behind it show through the nav labels (reported as
-            // overlapping text on phones).
-            background: '#FFFFFF',
-          }}
-        >
-          <ul className="flex h-[72px] items-stretch px-2">
-            {bottomNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = isPathActive(item.href);
-              const isFeedbacks = item.href === `/${locale}/dashboard/feedbacks`;
-              return (
-                <li key={item.href} className="min-w-0 flex-1">
-                  <Link
-                    href={hrefWithActiveRestaurant(item.href)}
-                    aria-label={item.label}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`relative flex h-full flex-col items-center justify-center gap-1 rounded-md px-1 transition-all duration-150 active:scale-95 ${
-                      isActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
-                    }`}
-                  >
-                    <span className="relative">
-                      <Icon
-                        size={20}
-                        strokeWidth={isActive ? 2 : 1.6}
-                        className={`transition-colors duration-150 ${
-                          isActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
-                        }`}
-                      />
-                      {/* Stage 60 §38.141 — Yorumlar badge (NotificationBell
-                          unreadCount custom event). 14×14 lime pill, 2-digit
-                          + "99+" overflow. Visible only when count > 0. */}
-                      {isFeedbacks && notifUnreadCount > 0 && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute -right-2 -top-1 inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-[7px] border-2 border-white bg-[#C6F24E] px-[3px] font-mono text-[8px] font-bold text-[#0A0A0A]"
-                          style={{
-                            background: '#C6F24E',
-                          }}
-                        >
-                          {notifUnreadCount > 99 ? '99+' : notifUnreadCount}
-                        </span>
-                      )}
-                    </span>
-                    <span
-                      className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
-                        isActive ? 'font-bold text-[#0A0A0A]' : 'font-medium text-[rgba(10,10,10,0.42)]'
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    {/* Stage 60 §38.141 — Active dot indicator (4×4 lime, top
-                        translateY -100%). Subtle modern accent. */}
-                    <span
-                      aria-hidden="true"
-                      className={`pointer-events-none absolute top-1 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-full rounded-full bg-[#C6F24E] transition-opacity duration-200 ${
-                        isActive ? 'opacity-100' : 'opacity-0'
-                      }`}
-                      style={{
-                        boxShadow: isActive ? '0 0 8px rgba(198,242,78,0.8)' : 'none',
-                      }}
-                    />
-                  </Link>
-                </li>
-              );
-            })}
-            <li className="min-w-0 flex-1">
-              <button
-                type="button"
-                onClick={() => setMoreOpen(true)}
-                aria-label={copy.more}
-                aria-expanded={moreOpen}
-                aria-haspopup="dialog"
-                className={`relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-md px-1 transition-all duration-150 active:scale-95 ${
-                  moreActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
-                }`}
-              >
-                <MoreHorizontal
-                  size={20}
-                  strokeWidth={moreActive ? 2 : 1.6}
-                  className={`transition-colors duration-150 ${
-                    moreActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
-                  }`}
-                />
-                <span
-                  className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
-                    moreActive ? 'font-bold text-[#0A0A0A]' : 'font-medium text-[rgba(10,10,10,0.42)]'
-                  }`}
-                >
-                  {copy.more}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute top-1 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-full rounded-full bg-[#C6F24E] transition-opacity duration-200 ${
-                    moreActive ? 'opacity-100' : 'opacity-0'
-                  }`}
-                  style={{
-                    boxShadow: moreActive ? '0 0 8px rgba(198,242,78,0.8)' : 'none',
-                  }}
-                />
-              </button>
-            </li>
-          </ul>
-        </div>
-      </nav>
-
-      {/* Mobile "More" bottom sheet */}
-      {moreOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={copy.more}>
-          <button
-            type="button"
-            aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
-            className="absolute inset-0 bg-[#000000]/60 backdrop-blur-sm"
-            onClick={() => setMoreOpen(false)}
-          />
-          <div
-            /* §38.69 — Mobile More sheet white theme tutarlılık (mobile drawer
-               §38.68 bg-white paterni reuse). Eski bg-[#0A0A0A] + text-[#0A0A0A]
-               leftover dark ile graphite text invisible bug'ına neden oluyordu;
-               internals (eyebrow #525252, hover #FAFAFA, items #1A1A1A, logout
-               #FEF2F2) zaten white sheet için tasarlanmış. Drag handle n300
-               (bg-[#D4D4D4]) visible on white. shadow-2xl → bz-elev-3 mobile
-               modal-tier (Apple-soft heavy tier, §38.65 NotificationBell + §38.68
-               drawer paterni). Apple HIG bottom sheet bz-mob-drawer-in slide-in
-               variant (mobile drawer ile aynı 220ms cubic-bezier easing). */
-            // §38.238 — max-height + scroll guard: with enough nav entries (or a short
-              // landscape viewport) the sheet grew past the screen and its last rows became
-              // unreachable. overscroll-contain stops the scroll chaining to the page.
-              className="absolute bottom-0 left-0 right-0 max-h-[85dvh] overflow-y-auto overscroll-contain bg-white rounded-t-3xl border-t border-[#EDEDED] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] bz-elev-3"
-            style={{
-              animation: 'bz-mob-sheet-in 200ms cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-          >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#D4D4D4]" />
-            <div className="mb-3 flex items-center justify-between px-2">
-              <p className="pulse-eyebrow text-[#525252]">{copy.more}</p>
-              <button
-                type="button"
-                onClick={() => setMoreOpen(false)}
-                aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
-                className="bz-btn-icon"
-              >
-                <X size={18} strokeWidth={2} />
-              </button>
-            </div>
-            <ul className="space-y-0.5">
-              {moreSheetItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = isPathActive(item.href);
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={hrefWithActiveRestaurant(item.href)}
-                      onClick={() => setMoreOpen(false)}
-                      aria-current={isActive ? 'page' : undefined}
-                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] bz-motion-spring ${
-                        isActive
-                          ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
-                          : 'text-[#1A1A1A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] font-medium'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={2} />
-                      <span>{item.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-              <li className="pt-2 mt-2 border-t border-[#EDEDED]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMoreOpen(false);
-                    handleLogout();
-                  }}
-                  className="bz-btn-danger w-full justify-start"
-                >
-                  <LogOut size={16} strokeWidth={2} />
-                  <span>{copy.logout}</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-      )}
 
       {/* Cmd/Ctrl+K command palette — searchable launcher across pages,
           locations, and reviews. The list of `navItems` here mirrors the

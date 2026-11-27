@@ -72,8 +72,8 @@ export function AccentPicker({
               <button
                 key={choice.key}
                 {...common}
-                className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:opacity-60 pointer-fine:h-9 ${
-                  on ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white' : 'border-[#E5E5E5] bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-[#0A0A0A]'
+                className={`inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:opacity-60 pointer-fine:h-9 ${
+                  on ? 'border-pn-ink bg-pn-ink text-white' : 'border-pn-line-strong bg-white text-[#525252] hover:border-[#A3A3A3] hover:text-pn-ink'
                 }`}
               >
                 <span className="h-3.5 w-3.5 rounded-full ring-1 ring-black/10" style={{ backgroundColor: fallback }} aria-hidden="true" />
@@ -88,8 +88,8 @@ export function AccentPicker({
               key={choice.key}
               {...common}
               style={{ backgroundColor: choice.hex }}
-              className={`relative h-11 w-11 rounded-full transition-transform duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 disabled:opacity-60 pointer-fine:h-9 pointer-fine:w-9 ${
-                on ? 'ring-2 ring-[#0A0A0A] ring-offset-2' : 'ring-1 ring-black/10 motion-safe:hover:scale-105'
+              className={`relative h-11 w-11 rounded-full transition-transform duration-[120ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 disabled:opacity-60 pointer-fine:h-9 pointer-fine:w-9 ${
+                on ? 'ring-2 ring-pn-ink ring-offset-2' : 'ring-1 ring-black/10 motion-safe:hover:scale-105'
               }`}
             >
               {on && (
@@ -103,7 +103,7 @@ export function AccentPicker({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <label
-          className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-full border border-dashed border-[#A3A3A3] px-3.5 text-[13px] font-medium text-[#525252] transition-colors focus-within:border-[#0A0A0A] focus-within:ring-2 focus-within:ring-[#C6F24E] hover:border-[#0A0A0A] hover:text-[#0A0A0A] pointer-fine:min-h-9 ${
+          className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-full border border-dashed border-[#A3A3A3] px-3.5 text-[13px] font-medium text-[#525252] transition-colors focus-within:border-pn-ink focus-within:ring-2 focus-within:ring-pn-accent hover:border-pn-ink hover:text-pn-ink pointer-fine:min-h-9 ${
             disabled ? 'pointer-events-none opacity-60' : ''
           }`}
         >
@@ -120,7 +120,7 @@ export function AccentPicker({
         </label>
         <span className="font-mono text-[12px] text-[#737373]">{effective.toUpperCase()}</span>
       </div>
-      <p className="text-[12.5px] leading-relaxed text-[#737373]">{copy.design.accentHint}</p>
+      <p className="text-[13px] leading-relaxed text-[#737373]">{copy.design.accentHint}</p>
     </div>
   );
 }

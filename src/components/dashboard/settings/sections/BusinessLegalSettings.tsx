@@ -98,25 +98,25 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
               href={d.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center justify-between gap-3 rounded-[10px] border border-[#EDEDED] bg-white px-3.5 py-3 transition-colors hover:border-[#0A0A0A]"
+              className="group flex items-center justify-between gap-3 rounded-[10px] border border-pn-line bg-white px-3.5 py-3 transition-colors hover:border-pn-ink"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <div className="truncate text-[13px] font-semibold text-[#0A0A0A]">
+                  <div className="truncate text-[13px] font-medium text-pn-ink">
                     {d.label}
                   </div>
                   {d.version > 0 && (
-                    <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3]">
+                    <span className="text-[12px] text-[#A3A3A3]">
                       v{d.version}
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-[11.5px] text-[#737373]">
+                <div className="mt-0.5 flex items-center gap-2 text-[12px] text-[#737373]">
                   {loading ? (
                     // Badge-sized placeholder until the document status loads.
                     <span
                       aria-hidden="true"
-                      className="inline-block h-[18px] w-14 rounded-full bg-[#EDEDED]"
+                      className="inline-block h-[18px] w-14 rounded-full bg-pn-line"
                     />
                   ) : d.active ? (
                     <Badge kind="ok">{isTr ? "Aktif" : "Active"}</Badge>
@@ -132,7 +132,7 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
               </div>
               <ExternalLink
                 size={14}
-                className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
+                className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-pn-ink"
               />
             </a>
           ))}
@@ -176,13 +176,13 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
         </ul>
       </SettingsCard>
 
-      <p className="px-1 text-[11.5px] leading-[1.55] text-[#737373]">
+      <p className="px-1 text-[12px] leading-[1.55] text-[#737373]">
         {isTr
           ? "Metinler Buaze ekibi tarafından sürdürülür ve hukuk danışmanı onayıyla yayına alınır. Yasal güncelleme talepleri için "
           : "Documents are maintained by the Buaze team and published after legal review. For legal update requests, contact us at "}
         <a
           href={`mailto:${SUPPORT_EMAIL}`}
-          className="inline-flex items-center gap-1 text-[#0A0A0A] underline"
+          className="inline-flex items-center gap-1 text-pn-ink underline"
         >
           {SUPPORT_EMAIL}
           <ExternalLink size={11} strokeWidth={2} />

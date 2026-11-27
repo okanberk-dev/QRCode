@@ -13,7 +13,7 @@ export default function Loading() {
   return (
     <SkPageShell max={1440}>
       <SkPageHeader withActions titleWidth="w-44" />
-      <div className="flex gap-2 border-b border-[#EDEDED] pb-3">
+      <div className="flex gap-2 border-b border-pn-line pb-3">
         <SkBox className="h-8 w-24" />
         <SkBox className="h-8 w-28" />
         <SkBox className="h-8 w-32" />

@@ -249,9 +249,9 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
       )}
 
       {showForm && (
-        <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 space-y-3">
+        <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-[14px] font-semibold text-[#0A0A0A]">
+            <h4 className="text-[14px] font-medium text-pn-ink">
               {editingId ? 'Faturayı düzenle' : 'Yeni fatura'}
             </h4>
             <button
@@ -391,11 +391,11 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
           Yükleniyor…
         </div>
       ) : invoices.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#EDEDED] py-8 text-center text-[13px] text-[#737373]">
+        <div className="rounded-[24px] border border-dashed border-pn-line py-8 text-center text-[13px] text-[#737373]">
           Henüz fatura yok. Müşteri tahsilat yaptığında manuel olarak ekleyebilirsin.
         </div>
       ) : (
-        <div className="rounded-2xl border border-[#EDEDED] divide-y divide-[#EDEDED] overflow-hidden">
+        <div className="rounded-[24px] border border-pn-line divide-y divide-pn-line overflow-hidden">
           {invoices.map((inv) => {
             const isDeleting = deletingId === inv.id;
             return (
@@ -404,7 +404,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className="text-[13px] font-semibold text-[#0A0A0A]"
+                        className="text-[13px] font-medium text-pn-ink"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       >
                         {inv.invoiceNumber || inv.id.slice(0, 10).toUpperCase()}
@@ -414,7 +414,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                       </Badge>
                     </div>
                     <div className="mt-1 text-[12px] text-[#525252]">
-                      <span className="font-medium text-[#0A0A0A]">
+                      <span className="font-medium text-pn-ink">
                         {fmt(inv.amount, inv.currency)}
                       </span>
                       <span className="mx-2 text-[#A3A3A3]">·</span>
@@ -424,7 +424,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                       <p className="mt-1 text-[12px] text-[#737373]">{inv.description}</p>
                     )}
                     {inv.adminNotes && (
-                      <p className="mt-1 text-[11px] text-[#A3A3A3] italic">
+                      <p className="mt-1 text-[12px] text-[#A3A3A3] italic">
                         Admin notu: {inv.adminNotes}
                       </p>
                     )}
@@ -464,7 +464,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                 </div>
 
                 {isDeleting && (
-                  <div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3 text-[12px]">
+                  <div className="mt-3 rounded-[14px] bg-red-50 border border-red-200 p-3 text-[12px]">
                     <p className="text-[#7F1D1D]">
                       Bu faturayı silmek istediğine emin misin? Geri alınamaz.
                     </p>
@@ -512,9 +512,9 @@ function Field({
 }) {
   return (
     <div className="space-y-1">
-      <label className="pulse-eyebrow text-[#737373] block">{label}</label>
+      <label className="text-[13px] font-medium text-[#737373] block">{label}</label>
       {children}
-      {hint && <p className="text-[10px] text-[#A3A3A3] leading-[1.55]">{hint}</p>}
+      {hint && <p className="text-[12px] text-[#A3A3A3] leading-[1.55]">{hint}</p>}
     </div>
   );
 }

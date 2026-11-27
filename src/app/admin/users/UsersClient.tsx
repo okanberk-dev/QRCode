@@ -341,40 +341,40 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
         />
       </div>
 
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden">
+      <div className="bg-white rounded-[20px] sm:rounded-[24px] border border-pn-line overflow-hidden">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse sm:min-w-[600px]">
             <thead>
-              <tr className="bg-[#0A0A0A] pulse-eyebrow text-white/60">
+              <tr className="bg-pn-ink text-[13px] font-medium text-white/60">
                 <th className="px-3 py-4 sm:px-6">YÖNETİCİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">ROL / YETKİ</th>
                 <th className="hidden md:table-cell px-3 py-4 sm:px-6">RESTORAN / ŞUBE</th>
                 <th className="px-3 py-4 sm:px-6 text-right">EYLEMLER</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#EDEDED] text-sm">
+            <tbody className="divide-y divide-pn-line text-sm">
               {visibleUsers.map(user => (
-                <tr key={user.id} className="hover:bg-[#EAF9B8]/30 transition-all border-b border-[#EDEDED] group">
+                <tr key={user.id} className="hover:bg-pn-accent-soft/30 transition-all border-b border-pn-line group">
                   <td className="px-3 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 shrink-0 rounded-xl bg-[#FFFFFF] border border-[#EDEDED] flex items-center justify-center text-[#525252] group-hover:text-[#0A0A0A] group-hover:bg-[#EAF9B8] transition-colors">
+                      <div className="w-10 h-10 shrink-0 rounded-[20px] bg-[#FFFFFF] border border-pn-line flex items-center justify-center text-[#525252] group-hover:text-pn-ink group-hover:bg-pn-accent-soft transition-colors">
                         <User size={18} strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <Link
                           href={`/admin/users/${user.id}`}
-                          className="font-bold text-[#0A0A0A] text-[14px] truncate block hover:underline"
+                          className="font-medium text-pn-ink text-[14px] truncate block hover:underline"
                         >
                           {user.username}
                         </Link>
                         {user.email ? (
-                          <span className="text-[11px] text-[#737373] truncate flex items-center gap-1 mt-0.5">
+                          <span className="text-[12px] text-[#737373] truncate flex items-center gap-1 mt-0.5">
                             <Mail size={10} strokeWidth={2} />
                             {user.email}
                           </span>
                         ) : (
                           <span
-                            className="text-[11px] text-[#D97706] truncate flex items-center gap-1 mt-0.5"
+                            className="text-[12px] text-[#D97706] truncate flex items-center gap-1 mt-0.5"
                             title="Kurtarma e-postası yoksa şifremi unuttum akışı çalışmaz"
                           >
                             <AlertTriangle size={10} strokeWidth={2} />
@@ -400,9 +400,9 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                     </Badge>
                   </td>
                   <td className="hidden md:table-cell px-4 py-4 sm:px-8 sm:py-6">
-                    <div className="flex items-center gap-2 font-bold text-[#1A1A1A] text-[13px] sm:text-sm">
+                    <div className="flex items-center gap-2 font-medium text-pn-ink-2 text-[13px] sm:text-sm">
                       {user.restaurant ? (
-                        <span className="text-[#0A0A0A] font-semibold line-clamp-1">{user.restaurant.name.toUpperCase()}</span>
+                        <span className="text-pn-ink font-medium line-clamp-1">{user.restaurant.name.toUpperCase()}</span>
                       ) : (
                         <span className="text-[#6B7280] italic">SİSTEM GENELİ</span>
                       )}
@@ -413,7 +413,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       {user.role !== 'superadmin' && (
                         <Link
                           href={`/admin/users/${user.id}/permissions`}
-                          className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#EAF9B8] active:translate-y-1 active:shadow-none transition-all"
+                          className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-pn-ink bg-white border border-pn-line rounded-[20px] hover:bg-pn-accent-soft active:translate-y-1 active:shadow-none transition-all"
                           title="Yetkileri yönet"
                           aria-label={`${user.username} yetkileri yönet`}
                         >
@@ -422,7 +422,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       )}
                       <Link
                         href={`/admin/users/${user.id}`}
-                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#FAFAFA] active:translate-y-1 active:shadow-none transition-all"
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-pn-ink bg-white border border-pn-line rounded-[20px] hover:bg-pn-canvas active:translate-y-1 active:shadow-none transition-all"
                         title="Detay"
                         aria-label={`${user.username} detayını aç`}
                       >
@@ -430,7 +430,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       </Link>
                       <button
                         onClick={() => handleEdit(user)}
-                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#C6F24E] active:translate-y-1 active:shadow-none transition-all"
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-pn-ink bg-white border border-pn-line rounded-[20px] hover:bg-pn-accent active:translate-y-1 active:shadow-none transition-all"
                         title="Düzenle"
                         aria-label={`${user.username} düzenle`}
                       >
@@ -438,7 +438,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
-                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#991B1B] border border-[#EDEDED] rounded-xl hover:bg-[#7F1D1D] active:translate-y-1 active:shadow-none transition-all"
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#991B1B] border border-pn-line rounded-[20px] hover:bg-[#7F1D1D] active:translate-y-1 active:shadow-none transition-all"
                         title="Sil"
                         aria-label={`${user.username} sil`}
                       >
@@ -483,8 +483,8 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
           onClose={() => { setShowModal(false); setEditingId(null); setError(''); }}
           title={
             <div>
-              <p className="pulse-eyebrow text-[#737373]">{editingId ? 'Düzenle' : 'Yeni kayıt'}</p>
-              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+              <p className="text-[13px] font-medium text-[#737373]">{editingId ? 'Düzenle' : 'Yeni kayıt'}</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
                 {editingId ? 'Yöneticiyi düzenle' : 'Yeni yönetici ekle'}
               </h2>
               <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
@@ -500,18 +500,18 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Kullanıcı Adı</label>
+                  <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Kullanıcı Adı</label>
                   <input
                     type="text"
                     required
                     disabled={!!editingId} // Kullanıcı adı değiştirilemez (Prisma unique constrain)
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value.toLowerCase()})}
-                    className={`w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold transition-all ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
+                    className={`w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-[20px] border border-pn-line bg-[#FFFFFF] focus:ring-2 focus:ring-pn-accent outline-none text-[15px] font-medium transition-all ${editingId ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">
+                  <label className="text-[12px] font-medium text-[#6B7280]  ml-1">
                     {editingId ? 'Şifre (Değiştirmek için)' : 'Yeni Şifre'}
                   </label>
                   <input
@@ -520,16 +520,16 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     placeholder={editingId ? 'Değişmeyecekse boş bırakın' : '••••••••'}
-                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold transition-all placeholder:text-[13px] placeholder:font-medium"
+                    className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-[20px] border border-pn-line bg-[#FFFFFF] focus:ring-2 focus:ring-pn-accent outline-none text-[15px] font-medium transition-all placeholder:text-[13px] placeholder:font-medium"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280] ml-1 flex items-center gap-1.5">
+                <label className="text-[12px] font-medium text-[#6B7280] ml-1 flex items-center gap-1.5">
                   <Mail size={11} strokeWidth={2} />
                   Kurtarma e-postası
-                  <span className="text-[10px] font-normal text-[#A3A3A3] normal-case">
+                  <span className="text-[12px] font-normal text-[#A3A3A3] normal-case">
                     (şifremi unuttum için zorunlu)
                   </span>
                 </label>
@@ -538,42 +538,42 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value.trim()})}
                   placeholder="ornek@buaze.com"
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-[15px] font-bold transition-all placeholder:text-[13px] placeholder:font-medium"
+                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-[20px] border border-pn-line bg-[#FFFFFF] focus:ring-2 focus:ring-pn-accent outline-none text-[15px] font-medium transition-all placeholder:text-[13px] placeholder:font-medium"
                 />
-                <p className="text-[11px] text-[#737373] ml-1 leading-[1.55]">
+                <p className="text-[12px] text-[#737373] ml-1 leading-[1.55]">
                   Bu hesabın şifresini unuttuğunda kurtarma kodu bu adrese gider. Boş
                   bırakılırsa kullanıcı kendi profilinden ekleyebilir.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Sistem Yetki Seviyesi</label>
+                <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Sistem Yetki Seviyesi</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value, restaurantId: ''})}
-                  className="bz-input w-full cursor-pointer rounded-xl py-3.5 text-sm font-semibold shadow-sm sm:py-4"
+                  className="bz-input w-full cursor-pointer rounded-[20px] py-3.5 text-sm font-medium sm:py-4"
                 >
                   <option value="manager">RESTORAN YÖNETİCİSİ</option>
                   <option value="staff">GÖREVLİ (BUAZE — KISITLI)</option>
                   <option value="superadmin">BUAZE YÖNETİCİSİ (SİSTEM GENELİ)</option>
                 </select>
                 {formData.role === 'staff' && (
-                  <p className="text-[11px] text-[#737373] ml-1 leading-[1.55]">
+                  <p className="text-[12px] text-[#737373] ml-1 leading-[1.55]">
                     Görevli hesabı varsayılan olarak sadece Dashboard + Profil görür.
-                    Kaydettikten sonra <span className="font-semibold text-[#0A0A0A]">Yetkileri yönet</span>
+                    Kaydettikten sonra <span className="font-medium text-pn-ink">Yetkileri yönet</span>
                     {' '}ile hangi bölümleri görüp düzenleyebileceğini tek tek seçin.
                   </p>
                 )}
               </div>
 
               {formData.role === 'manager' && (
-                <div className="bg-[#FFFFFF] rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-[#EDEDED] space-y-4 sm:space-y-6 md:space-y-8">
-                  <div className="flex gap-4 p-2 bg-white border border-[#EDEDED] rounded-xl">
+                <div className="bg-[#FFFFFF] rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 border border-pn-line space-y-4 sm:space-y-6 md:space-y-8">
+                  <div className="flex gap-4 p-2 bg-white border border-pn-line rounded-[20px]">
                     <button
                       type="button"
                       disabled={!!editingId}
                       onClick={() => setIsNewRestaurant(false)}
-                      className={`flex-1 py-3 pulse-eyebrow rounded-xl transition-all ${!isNewRestaurant ? 'bg-[#0A0A0A] text-white' : 'text-[#6B7280] hover:text-[#0A0A0A] disabled:opacity-50'}`}
+                      className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${!isNewRestaurant ? 'bg-pn-ink text-white' : 'text-[#6B7280] hover:text-pn-ink disabled:opacity-50'}`}
                     >
                       MEVCUT İŞLETME
                     </button>
@@ -581,7 +581,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                       <button
                         type="button"
                         onClick={() => setIsNewRestaurant(true)}
-                        className={`flex-1 py-3 pulse-eyebrow rounded-xl transition-all ${isNewRestaurant ? 'bg-[#0A0A0A] text-white' : 'text-[#6B7280] hover:text-[#0A0A0A]'}`}
+                        className={`flex-1 py-3 text-[13px] font-medium rounded-[20px] transition-all ${isNewRestaurant ? 'bg-pn-ink text-white' : 'text-[#6B7280] hover:text-pn-ink'}`}
                       >
                         YENİ OLUŞTUR
                       </button>
@@ -590,12 +590,12 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
 
                   {!isNewRestaurant ? (
                     <div className="space-y-2">
-                      <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Bağlı Olduğu İşletme</label>
+                      <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Bağlı Olduğu İşletme</label>
                       <select
                         required={!isNewRestaurant}
                         value={formData.restaurantId}
                         onChange={(e) => setFormData({...formData, restaurantId: e.target.value})}
-                        className="bz-input w-full cursor-pointer rounded-xl py-4 text-sm font-semibold"
+                        className="bz-input w-full cursor-pointer rounded-[20px] py-4 text-sm font-medium"
                       >
                         <option value="">İŞLETME SEÇİN...</option>
                         {restaurants.map(r => (
@@ -606,20 +606,20 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                   ) : (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Yeni İşletme Adı *</label>
+                        <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Yeni İşletme Adı *</label>
                         <input
                           type="text"
                           required={isNewRestaurant}
                           value={restaurantData.name}
                           onChange={(e) => handleNameChange(e.target.value)}
                           placeholder="Örn: Gourmet Eats Ankara"
-                          className="w-full px-5 py-4 rounded-xl border border-[#EDEDED] focus:ring-2 focus:ring-[#C6F24E] bg-white outline-none text-sm font-bold"
+                          className="w-full px-5 py-4 rounded-[20px] border border-pn-line focus:ring-2 focus:ring-pn-accent bg-white outline-none text-sm font-medium"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[11px] font-semibold text-[#6B7280]  ml-1">Sistem URL&apos;i (Otomatik) *</label>
+                        <label className="text-[12px] font-medium text-[#6B7280]  ml-1">Sistem URL&apos;i (Otomatik) *</label>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-semibold text-[#6B7280]">buaze.com/r/</span>
+                          <span className="text-xs font-medium text-[#6B7280]">buaze.com/r/</span>
                           <input
                             type="text"
                             required={isNewRestaurant}
@@ -629,7 +629,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                               setIsManualSlug(true);
                             }}
                             placeholder="gourmet-eats"
-                            className="flex-1 px-5 py-4 rounded-xl border border-[#EDEDED] focus:ring-2 focus:ring-[#C6F24E] bg-white outline-none text-sm font-bold tracking-tight"
+                            className="flex-1 px-5 py-4 rounded-[20px] border border-pn-line focus:ring-2 focus:ring-pn-accent bg-white outline-none text-sm font-medium tracking-tight"
                           />
                         </div>
                       </div>
@@ -638,7 +638,7 @@ export default function UsersClient({ initialUsers, initialRestaurants, initialT
                 </div>
               )}
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 mt-2 border-t border-[#EDEDED]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 mt-2 border-t border-pn-line">
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setEditingId(null); setError(''); }}

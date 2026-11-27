@@ -167,9 +167,9 @@ export default function MemberActions({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[17px] font-semibold text-[#0A0A0A]">{member.name || (tr ? 'İsimsiz üye' : 'Unnamed member')}</p>
-          <p className="mt-0.5 text-[12.5px] text-[#737373]">
-            <span className="font-mono tracking-[0.1em]">{formatMemberCode(member.code)}</span>
+          <p className="truncate text-[17px] font-medium text-pn-ink">{member.name || (tr ? 'İsimsiz üye' : 'Unnamed member')}</p>
+          <p className="mt-0.5 text-[13px] text-[#737373]">
+            <span className="font-mono ">{formatMemberCode(member.code)}</span>
             {(member.phone || member.phoneMasked) && (
               <>
                 {' · '}
@@ -216,7 +216,7 @@ export default function MemberActions({
             <span
               aria-hidden="true"
               className="bzl-ring pointer-events-none absolute inset-0 rounded-[20px] border-[3px]"
-              style={{ borderColor: '#C6F24E' }}
+              style={{ borderColor: '#D7FE03' }}
             />
           )}
           <LoyaltyCardFace
@@ -240,20 +240,20 @@ export default function MemberActions({
             <AlertBanner kind="warn">{tr ? 'Program duraklatılmış: kasa işlemleri kapalı.' : 'Programme paused: counter actions are off.'}</AlertBanner>
           )}
           {tier?.perk && (
-            <p className="rounded-lg bg-[#EAF9B8] px-3 py-2 text-[13px] text-[#3F4A00]">
+            <p className="rounded-[14px] bg-pn-accent-soft px-3 py-2 text-[13px] text-[#3F4A00]">
               <strong>{tier.name}:</strong> {tier.perk}
             </p>
           )}
 
           {access.operate && !paused && (
-            <div className="rounded-xl border border-[#EDEDED] p-3">
+            <div className="rounded-[20px] border border-pn-line p-3">
               {kind === 'stamps' ? (
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="inline-flex items-center rounded-lg border border-[#EDEDED]" aria-label={tr ? 'Damga adedi' : 'Stamp count'}>
+                  <div className="inline-flex items-center rounded-full border border-pn-line" aria-label={tr ? 'Damga adedi' : 'Stamp count'}>
                     <button type="button" className="flex h-11 w-11 items-center justify-center disabled:opacity-30" disabled={count <= 1} onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label={tr ? 'Azalt' : 'Less'}>
                       <Minus size={16} />
                     </button>
-                    <span className="w-8 text-center text-[16px] font-semibold tabular-nums" aria-live="polite">{count}</span>
+                    <span className="w-8 text-center text-[16px] font-medium tabular-nums" aria-live="polite">{count}</span>
                     <button type="button" className="flex h-11 w-11 items-center justify-center disabled:opacity-30" disabled={count >= LOYALTY_LIMITS.stampsPerVisitMax} onClick={() => setCount((c) => Math.min(LOYALTY_LIMITS.stampsPerVisitMax, c + 1))} aria-label={tr ? 'Artır' : 'More'}>
                       <Plus size={16} />
                     </button>
@@ -302,12 +302,12 @@ export default function MemberActions({
                   type="button"
                   disabled={busy !== null}
                   onClick={() => setConfirmReward({ id: r.id, title: r.title, cost: r.cost })}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#A8D62E] bg-[#F6FCE4] px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-pn-accent-hover bg-[#F6FCE4] px-4 py-3 text-left"
                 >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold text-[#0A0A0A]">
+                  <span className="flex items-center gap-2 text-[14px] font-medium text-pn-ink">
                     <Gift size={16} aria-hidden="true" /> {r.title}
                   </span>
-                  <span className="text-[12.5px] text-[#525252]">
+                  <span className="text-[13px] text-[#525252]">
                     {tr ? 'Ödülü ver' : 'Give reward'} · −{r.cost} {unitLabel(kind, r.cost, locale)}
                   </span>
                 </button>
@@ -317,18 +317,18 @@ export default function MemberActions({
                   type="button"
                   disabled={busy !== null}
                   onClick={() => void act('birthday', { type: 'birthday' }, () => (tr ? 'Doğum günü hediyesi kaydedildi.' : 'Birthday gift recorded.'))}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#F5C6D6] bg-[#FFF1F5] px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between gap-3 rounded-[20px] border border-[#F5C6D6] bg-[#FFF1F5] px-4 py-3 text-left"
                 >
-                  <span className="flex items-center gap-2 text-[14px] font-semibold text-[#0A0A0A]">
+                  <span className="flex items-center gap-2 text-[14px] font-medium text-pn-ink">
                     <Cake size={16} aria-hidden="true" /> {program.birthdayReward}
                   </span>
-                  <span className="text-[12.5px] text-[#525252]">{tr ? 'Doğum günü ayı' : 'Birthday month'}</span>
+                  <span className="text-[13px] text-[#525252]">{tr ? 'Doğum günü ayı' : 'Birthday month'}</span>
                 </button>
               )}
             </div>
           )}
 
-          <p className="text-[12.5px] text-[#737373]">
+          <p className="text-[13px] text-[#737373]">
             {upcoming
               ? tr
                 ? `${upcoming.visitsLeft} ziyaret sonra ${upcoming.tier.name} seviyesi.`
@@ -359,7 +359,7 @@ export default function MemberActions({
           </div>
 
           {access.manage && (
-            <details className="rounded-xl border border-[#EDEDED] p-3">
+            <details className="rounded-[20px] border border-pn-line p-3">
               <summary className="cursor-pointer text-[13px] font-medium text-[#525252]">{tr ? 'Bakiyeyi düzelt' : 'Correct the balance'}</summary>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <input
@@ -400,13 +400,13 @@ export default function MemberActions({
 
       {withHistory && (
         <div>
-          <p className="text-[13px] font-semibold text-[#0A0A0A]">{tr ? 'Hareketler' : 'History'}</p>
+          <p className="text-[13px] font-medium text-pn-ink">{tr ? 'Hareketler' : 'History'}</p>
           {events === null ? (
             <p className="mt-2 text-[13px] text-[#737373]">{tr ? 'Yükleniyor…' : 'Loading…'}</p>
           ) : events.length === 0 ? (
             <p className="mt-2 text-[13px] text-[#737373]">{tr ? 'Henüz hareket yok.' : 'No activity yet.'}</p>
           ) : (
-            <ul className="mt-2 divide-y divide-[#F0F0F0] rounded-xl border border-[#EDEDED]">
+            <ul className="mt-2 divide-y divide-[#F0F0F0] rounded-[20px] border border-pn-line">
               {events.map((e) => (
                 <li key={e.id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-[13px]">
                   <span className="min-w-0 truncate text-[#262626]">{eventLabel(e, unitLabel(kind, Math.abs(e.amount), locale), locale)}</span>

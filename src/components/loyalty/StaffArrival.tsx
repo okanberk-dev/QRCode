@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import { unlockAudio } from '@/lib/loyalty-sound';
 
 const SHOW_MS = 1500;
-const CORNER = 'absolute h-9 w-9 border-[#C6F24E]';
+const CORNER = 'absolute h-9 w-9 border-pn-accent';
 
 export default function StaffArrival({
   locale,
@@ -38,7 +38,7 @@ export default function StaffArrival({
 
   return (
     <div
-      className="bzl-staff-arrival bzl-tap fixed inset-0 z-[90] flex flex-col items-center justify-center bg-[#0A0A0A] px-6 text-center text-white"
+      className="bzl-staff-arrival bzl-tap fixed inset-0 z-[90] flex flex-col items-center justify-center bg-pn-ink px-6 text-center text-white"
       onPointerUp={() => {
         unlockAudio();
         setShow(false);
@@ -55,13 +55,13 @@ export default function StaffArrival({
         </div>
         {/* Glow as its own soft layer: a box-shadow on the scaling disc smears into a square on some GPUs. */}
         <span className="bzl-fade absolute inset-[6px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(198,242,78,0.34) 0%, rgba(198,242,78,0) 68%)' }} />
-        <span className="bzl-pop absolute inset-[34px] flex items-center justify-center rounded-full bg-[#C6F24E]">
+        <span className="bzl-pop absolute inset-[34px] flex items-center justify-center rounded-full bg-pn-accent">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
             <path className="bzl-draw" d="M5 12.5l4.2 4.2L19 7" stroke="#0A0A0A" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
       </div>
-      <p className="bzl-rise mt-9 text-[12px] font-semibold uppercase tracking-[0.2em] text-[#C6F24E]" style={{ animationDelay: '120ms' }}>
+      <p className="bzl-rise mt-9 text-[12px] font-semibold uppercase tracking-[0.2em] text-pn-accent" style={{ animationDelay: '120ms' }}>
         {tr ? 'Kasa modu' : 'Staff mode'}
       </p>
       <p

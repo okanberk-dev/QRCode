@@ -118,7 +118,7 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
         </div>
       ) : restaurants.length === 0 ? (
         <div className="bz-card p-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#0A0A0A]">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[24px] bg-pn-canvas text-pn-ink">
             <Store size={20} />
           </div>
           <h2 className="bz-h-tight mt-4 text-[18px]">{emptyTitle}</h2>
@@ -131,10 +131,10 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
       ) : (
         <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-3">
-            <div className="rounded-[24px] border border-[#EDEDED] bg-white p-3 shadow-sm">
+            <div className="rounded-[24px] border border-pn-line bg-white p-3 ">
               <div className="mb-2 flex items-center gap-2 px-1">
-                <Star size={14} className="text-[#0A0A0A]" />
-                <p className="pulse-eyebrow text-[#737373]">
+                <Star size={14} className="text-pn-ink" />
+                <p className="text-[13px] font-medium text-[#737373]">
                   {isTr ? "İşletme seç" : "Select business"}
                 </p>
               </div>
@@ -147,22 +147,22 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
                       type="button"
                       key={restaurant.id}
                       onClick={() => setSelectedId(restaurant.id)}
-                      className={`w-full rounded-2xl border p-3 text-left transition-all ${
+                      className={`w-full rounded-[24px] border p-3 text-left transition-all ${
                         active
-                          ? "border-[#0A0A0A] bg-[#0A0A0A] text-white"
-                          : "border-[#EDEDED] bg-[#FAFAFA] text-[#0A0A0A] hover:border-[#D4D4D4] hover:bg-white"
+                          ? "border-pn-ink bg-pn-ink text-white"
+                          : "border-pn-line bg-pn-canvas text-pn-ink hover:border-pn-line-strong hover:bg-white"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="truncate text-[13px] font-semibold">{restaurant.name}</p>
-                          <p className={`mt-1 truncate text-[11px] ${active ? "text-white/65" : "text-[#737373]"}`}>
+                          <p className="truncate text-[13px] font-medium">{restaurant.name}</p>
+                          <p className={`mt-1 truncate text-[12px] ${active ? "text-white/65" : "text-[#737373]"}`}>
                             {restaurant.city || restaurant.address || restaurant.slug || restaurant.category}
                           </p>
                         </div>
                         <span
                           className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
-                            enabled ? "bg-[#C6F24E]" : active ? "bg-white/35" : "bg-[#A3A3A3]"
+                            enabled ? "bg-pn-accent" : active ? "bg-white/35" : "bg-[#A3A3A3]"
                           }`}
                           aria-hidden
                         />
@@ -174,8 +174,8 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
             </div>
 
             {selected ? (
-              <div className="rounded-[24px] border border-[#EDEDED] bg-[#FAFAFA] p-4">
-                <p className="pulse-eyebrow text-[#737373]">{isTr ? "Durum" : "Status"}</p>
+              <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
+                <p className="text-[13px] font-medium text-[#737373]">{isTr ? "Durum" : "Status"}</p>
                 <p className="mt-1 text-[13px] leading-relaxed text-[#525252]">
                   {selected.googleReviewManagementEnabled
                     ? isTr
@@ -190,7 +190,7 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
                     href={selected.googleReviewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] underline-offset-4"
+                    className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-pn-ink underline decoration-pn-accent underline-offset-4"
                   >
                     <ExternalLink size={12} />
                     {isTr ? "Yorum linkini aç" : "Open review link"}

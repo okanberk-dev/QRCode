@@ -46,11 +46,11 @@ export function AnalyticsSkeleton() {
           segments when they fit and wrap to their own line when they do not —
           the same flex rules as page.tsx, so the break happens at the same width. */}
       <div className="flex flex-wrap items-center gap-2">
-        <SkBox className="h-[50px] w-full rounded-lg sm:h-[34px] sm:w-[378px]" />
+        <SkBox className="h-[50px] w-full rounded-[14px] sm:h-[34px] sm:w-[378px]" />
         <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:flex-auto">
-          <SkBox className="h-11 flex-1 rounded-lg sm:h-[34px] sm:w-[170px] sm:flex-none" />
-          <SkBox className="h-11 flex-1 rounded-lg sm:h-[34px] sm:w-[160px] sm:flex-none" />
-          <SkBox className="h-11 w-11 shrink-0 rounded-lg sm:ml-auto sm:h-[35px] sm:w-[83px]" />
+          <SkBox className="h-11 flex-1 rounded-[14px] sm:h-[34px] sm:w-[170px] sm:flex-none" />
+          <SkBox className="h-11 flex-1 rounded-[14px] sm:h-[34px] sm:w-[160px] sm:flex-none" />
+          <SkBox className="h-11 w-11 shrink-0 rounded-[14px] sm:ml-auto sm:h-[35px] sm:w-[83px]" />
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export function AnalyticsSkeleton() {
         <SkBox className="h-4 w-32" />
         <SkBox className="h-3 w-72 max-w-full" />
         {Array.from({ length: 3 }).map((_, i) => (
-          <SkBox key={i} className="h-14 w-full rounded-2xl" />
+          <SkBox key={i} className="h-14 w-full rounded-[24px]" />
         ))}
       </div>
 

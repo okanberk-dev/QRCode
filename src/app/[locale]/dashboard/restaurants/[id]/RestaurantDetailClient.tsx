@@ -130,7 +130,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
   const backLink = (
     <Link
       href={`/${locale}/dashboard/restaurants`}
-      className="mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] sm:min-h-[32px]"
+      className="mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink sm:min-h-[32px]"
     >
       <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
       {isTr ? 'İşletmelere dön' : 'Back to businesses'}
@@ -235,11 +235,11 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
         title={<span className="break-words [overflow-wrap:anywhere]">{data.name}</span>}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[#525252]">
-            <span className="bz-mono text-[12px] text-[#0A0A0A]">/{data.slug}</span>
+            <span className="tabular-nums text-[12px] text-pn-ink">/{data.slug}</span>
             <span aria-hidden="true" className="text-[#A3A3A3]">·</span>
             {/* Same label as the business switcher: the stored (Turkish)
                 category, or the sector's English name on /en. */}
-            <span className="text-[12.5px]">
+            <span className="text-[13px]">
               {isTr ? data.category : getSectorByLabel(data.category)?.display.en ?? data.category}
             </span>
             <span aria-hidden="true" className="text-[#A3A3A3]">·</span>
@@ -285,28 +285,28 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
             <Link
               key={section.id}
               href={section.href}
-              className="bz-card group flex min-h-[64px] items-center gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 sm:p-5"
+              className="bz-card group flex min-h-[64px] items-center gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2 sm:p-5"
             >
               <span
                 aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[#EDEDED] bg-[#FAFAFA] text-[#0A0A0A]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-pn-line bg-pn-canvas text-pn-ink"
               >
                 <Icon size={16} strokeWidth={2} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-semibold text-[#0A0A0A]">{section.label}</span>
+                <span className="block text-[14px] font-medium text-pn-ink">{section.label}</span>
                 {/* Wraps instead of truncating: on tablet / desktop-with-sidebar
                     the cut-off part was the one that says what the count is. */}
                 <span className="mt-0.5 block text-[12px] leading-snug text-[#525252]">{section.description}</span>
               </span>
-              <span className="bz-h-tight shrink-0 text-[22px] leading-none tabular-nums text-[#0A0A0A]">
+              <span className="bz-h-tight shrink-0 text-[22px] leading-none tabular-nums text-pn-ink">
                 {numberFmt.format(section.count)}
               </span>
               <ChevronRight
                 size={14}
                 strokeWidth={2}
                 aria-hidden="true"
-                className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-[#0A0A0A]"
+                className="shrink-0 text-[#A3A3A3] transition-colors group-hover:text-pn-ink"
               />
             </Link>
           );
@@ -317,8 +317,8 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
       <div className="mt-3 bz-card-soft flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-4">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span
-            className="shrink-0 inline-flex items-center justify-center rounded-lg bg-white"
-            style={{ width: 28, height: 28, border: '1px solid #EDEDED', color: '#0A0A0A' }}
+            className="shrink-0 inline-flex items-center justify-center rounded-full bg-white"
+            style={{ width: 28, height: 28, border: '1px solid #EDEDED', color: '#000000' }}
             aria-hidden="true"
           >
             <Sparkles size={13} strokeWidth={2} />
@@ -331,7 +331,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
               href={publicUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="bz-mono text-[12.5px] text-[#0A0A0A] hover:underline truncate block max-w-full"
+              className="tabular-nums text-[13px] text-pn-ink hover:underline truncate block max-w-full"
               title={publicUrl}
             >
               {publicUrl}
@@ -339,7 +339,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 sm:ml-auto">
-          <span className="text-[11px] text-[#737373] whitespace-nowrap">
+          <span className="text-[12px] text-[#737373] whitespace-nowrap">
             {isTr ? 'Son güncelleme' : 'Updated'} {dateFmt.format(new Date(data.updatedAt))}
           </span>
           <CopyUrlButton url={publicUrl} locale={locale} className="h-11 w-11 sm:h-8 sm:w-8" />
@@ -361,20 +361,20 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           disabled business opens the place to reactivate it). */}
       <Link
         href={platformLinksHref}
-        className="bz-card mt-3 flex min-h-[56px] items-center gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+        className="bz-card mt-3 flex min-h-[56px] items-center gap-3 p-4 transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-2"
       >
         <span
           aria-hidden="true"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#EDEDED] bg-[#FAFAFA] text-[#0A0A0A]"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[14px] border border-pn-line bg-pn-canvas text-pn-ink"
         >
           <Plug size={14} strokeWidth={2} />
         </span>
-        <span className="min-w-0 flex-1 text-[12.5px] text-[#525252]">
+        <span className="min-w-0 flex-1 text-[13px] text-[#525252]">
           <PlatformSummaryLine
             summary={data.platformLinks}
             locale={locale}
             lead={
-              <span className="bz-h-tight text-[14px] text-[#0A0A0A]">
+              <span className="bz-h-tight text-[14px] text-pn-ink">
                 {isTr ? PLATFORM_LINKS_LABEL.tr : PLATFORM_LINKS_LABEL.en}
               </span>
             }

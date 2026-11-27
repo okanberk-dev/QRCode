@@ -316,9 +316,9 @@ export default function CommandPalette({
     >
       {/* §38.67 — Modal floating tier: heavy shadow-[0_30px_80px] → bz-elev-3
           (0_12px_32px Apple-soft). Floating modal için en heavy tier doğru. */}
-      <div className="w-full max-w-[640px] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white bz-elev-3 animate-slide-in">
+      <div className="w-full max-w-[640px] overflow-hidden rounded-[24px] border border-pn-line bg-white bz-elev-3 animate-slide-in">
         {/* Search input */}
-        <div className="flex items-center gap-3 border-b border-[#EDEDED] px-4">
+        <div className="flex items-center gap-3 border-b border-pn-line px-4">
           <SearchIcon size={16} strokeWidth={2} className="shrink-0 text-[#737373]" />
           <input
             ref={inputRef}
@@ -333,7 +333,7 @@ export default function CommandPalette({
                 ? 'Yorum, konum, sayfa ara…'
                 : 'Search reviews, locations, pages…'
             }
-            className="flex-1 bg-transparent py-4 text-[15px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none"
+            className="flex-1 bg-transparent py-4 text-[15px] text-pn-ink placeholder:text-[#A3A3A3] outline-none"
             aria-label={isTr ? 'Arama' : 'Search'}
           />
           <button
@@ -358,7 +358,7 @@ export default function CommandPalette({
                     key={`nav-${n.href}`}
                     index={i}
                     active={i === activeIndex}
-                    icon={<CornerDownLeft size={14} className="text-[#0A0A0A]" />}
+                    icon={<CornerDownLeft size={14} className="text-pn-ink" />}
                     primary={n.label}
                     secondary={n.href}
                     onMouseEnter={() => setActiveIndex(i)}
@@ -379,7 +379,7 @@ export default function CommandPalette({
                     key={`rest-${r.id}`}
                     index={i}
                     active={i === activeIndex}
-                    icon={<Store size={14} className="text-[#0A0A0A]" />}
+                    icon={<Store size={14} className="text-pn-ink" />}
                     primary={r.name}
                     secondary={r.category ?? undefined}
                     onMouseEnter={() => setActiveIndex(i)}
@@ -406,7 +406,7 @@ export default function CommandPalette({
                     key={`fb-${f.id}`}
                     index={i}
                     active={i === activeIndex}
-                    icon={<MessageSquareText size={14} className="text-[#0A0A0A]" />}
+                    icon={<MessageSquareText size={14} className="text-pn-ink" />}
                     primary={`${stars} · ${who}${where}`}
                     secondary={f.comment?.trim() || (isTr ? '(yorumsuz)' : '(no comment)')}
                     onMouseEnter={() => setActiveIndex(i)}
@@ -420,7 +420,7 @@ export default function CommandPalette({
           {/* Empty state when query is real and nothing matched */}
           {flat.length === 0 && debounced.length > 0 && !feedbackLoading && (
             <div className="px-6 py-10 text-center">
-              <p className="text-[14px] font-medium text-[#0A0A0A]">
+              <p className="text-[14px] font-medium text-pn-ink">
                 {isTr ? 'Sonuç bulunamadı' : 'No results'}
               </p>
               <p className="mt-1 text-[12px] text-[#737373]">
@@ -433,7 +433,7 @@ export default function CommandPalette({
         </div>
 
         {/* Footer hint bar */}
-        <div className="flex items-center justify-between gap-2 border-t border-[#EDEDED] bg-[#FAFAFA] px-4 py-2 text-[11px] text-[#737373]">
+        <div className="flex items-center justify-between gap-2 border-t border-pn-line bg-pn-canvas px-4 py-2 text-[12px] text-[#737373]">
           <span className="inline-flex items-center gap-2">
             <span className="inline-flex items-center gap-1">
               <Kbd>
@@ -473,7 +473,7 @@ function Section({
   return (
     <div className="mb-1">
       <div className="px-4 pb-1 pt-2 flex items-center justify-between">
-        <span className="pulse-eyebrow text-[#737373]">{title}</span>
+        <span className="text-[13px] font-medium text-[#737373]">{title}</span>
         {right}
       </div>
       <div className="px-2">{children}</div>
@@ -504,17 +504,17 @@ function Row({
       data-index={index}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
-      className={`w-full flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors ${
-        active ? 'bg-[#EAF9B8]' : 'hover:bg-[#FAFAFA]'
+      className={`w-full flex items-start gap-2.5 rounded-[20px] px-3 py-2.5 text-left transition-colors ${
+        active ? 'bg-pn-accent-soft' : 'hover:bg-pn-canvas'
       }`}
     >
-      <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white border border-[#EDEDED]">
+      <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white border border-pn-line">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-medium text-[#0A0A0A]">{primary}</span>
+        <span className="block truncate text-[13px] font-medium text-pn-ink">{primary}</span>
         {secondary && (
-          <span className="block truncate text-[11px] text-[#737373] mt-0.5">{secondary}</span>
+          <span className="block truncate text-[12px] text-[#737373] mt-0.5">{secondary}</span>
         )}
       </span>
     </button>
@@ -524,7 +524,7 @@ function Row({
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
     <kbd
-      className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded border border-[#EDEDED] bg-white text-[#525252] font-mono text-[10px]"
+      className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded border border-pn-line bg-white text-[#525252] font-mono text-[12px]"
       style={{ fontFamily: 'var(--font-mono)' }}
     >
       {children}

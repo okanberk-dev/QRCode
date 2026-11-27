@@ -25,7 +25,7 @@ export default function Disclosure({
       onClick={onToggle}
       aria-expanded={open}
       aria-controls={controls}
-      className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-1 text-left text-[13px] font-semibold text-[#0A0A0A] hover:text-[#525252] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E] sm:min-h-9"
+      className="flex min-h-11 w-full items-center justify-between gap-2 rounded-[20px] px-1 text-left text-[13px] font-medium text-pn-ink hover:text-[#525252] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-accent sm:min-h-9"
     >
       <span className="flex items-center gap-2">{children}</span>
       <ChevronDown

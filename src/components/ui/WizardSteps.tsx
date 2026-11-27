@@ -37,7 +37,7 @@ export function WizardSteps({
   return (
     <nav aria-label={ariaLabel} className={className}>
       <ol
-        className="grid gap-1.5 rounded-2xl bg-[#F5F5F5] p-1.5"
+        className="grid gap-1 rounded-full bg-pn-canvas p-1"
         style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
       >
         {steps.map((step, i) => {
@@ -48,15 +48,15 @@ export function WizardSteps({
             <>
               <span
                 aria-hidden="true"
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10.5px] font-semibold tabular-nums ${
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-medium tabular-nums ${
                   active
-                    ? 'bg-[#0A0A0A] text-white'
+                    ? 'bg-pn-accent text-pn-ink'
                     : complete
-                      ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                      : 'bg-white text-[#737373]'
+                      ? 'bg-pn-ink text-pn-accent'
+                      : 'bg-white text-[#6E6E73]'
                 }`}
               >
-                {complete ? <Check size={11} strokeWidth={3} /> : i + 1}
+                {complete ? <Check size={13} strokeWidth={2.5} /> : i + 1}
               </span>
               <span className="min-w-0 truncate">
                 <span className="sm:hidden">{step.short ?? step.label}</span>
@@ -65,19 +65,19 @@ export function WizardSteps({
             </>
           );
           const base =
-            'flex min-h-[44px] w-full min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 text-[12px] font-semibold transition-colors sm:min-h-[40px] sm:gap-2 sm:px-2.5 sm:text-[12.5px]';
+            'flex min-h-[44px] w-full min-w-0 items-center justify-center gap-2 rounded-full px-2 text-[13px] font-medium transition-colors duration-200 sm:px-3 sm:text-[14px]';
           const tone = active
-            ? 'bg-white text-[#0A0A0A] shadow-sm'
+            ? 'bg-pn-ink text-white'
             : complete
-              ? 'text-[#0A0A0A]'
-              : 'text-[#737373]';
+              ? 'text-pn-ink'
+              : 'text-[#6E6E73]';
           return (
             <li key={i} className="min-w-0" aria-current={active ? 'step' : undefined}>
               {clickable ? (
                 <button
                   type="button"
                   onClick={() => onSelect?.(i)}
-                  className={`${base} ${tone} hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C6F24E]`}
+                  className={`${base} ${tone} hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-pn-accent`}
                 >
                   {body}
                 </button>

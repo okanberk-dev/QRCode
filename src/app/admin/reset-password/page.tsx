@@ -75,7 +75,7 @@ function ResetPasswordContent() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40">
+    <main className="min-h-[100dvh] bg-white text-pn-ink selection:bg-pn-accent/40">
       <div
         aria-hidden
         className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_62%)]"
@@ -85,13 +85,13 @@ function ResetPasswordContent() {
         <header className="flex items-center justify-between">
           <Link href="/admin" className="inline-flex items-center gap-2 sm:gap-2.5">
             <BuazeLogo size={32} />
-            <span className="text-lg sm:text-xl font-semibold tracking-tight">
-              buaze<span className="text-[#A8D62E]">.</span>
+            <span className="text-lg sm:text-xl font-medium tracking-tight">
+              buaze<span className="text-pn-accent-ink">.</span>
             </span>
           </Link>
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[12px] font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors"
+            className="inline-flex items-center gap-1 rounded-full border border-pn-line px-3 py-1.5 text-[12px] font-medium text-[#525252] hover:border-pn-ink hover:text-pn-ink transition-colors"
           >
             <ArrowLeft size={12} strokeWidth={2} />
             Girişe dön
@@ -101,12 +101,12 @@ function ResetPasswordContent() {
         <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
           <div className="w-full max-w-[460px]">
             <div className="mb-6 sm:mb-7 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[24px] bg-pn-ink text-pn-accent">
                 <ShieldCheck size={22} strokeWidth={2} />
               </div>
-              <p className="pulse-eyebrow text-[#737373]">YÖNETİCİ PANELİ</p>
+              <p className="text-[13px] font-medium text-[#737373]">YÖNETİCİ PANELİ</p>
               {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
-              <h1 className="mt-2 text-[28px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A]">
+              <h1 className="mt-2 text-[28px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.04em] text-pn-ink">
                 Yeni şifre belirle
               </h1>
               <p className="mt-2.5 text-[13px] sm:text-sm text-[#737373] leading-[1.55] max-w-[360px] mx-auto">
@@ -114,11 +114,11 @@ function ResetPasswordContent() {
               </p>
             </div>
 
-            <div className="rounded-3xl sm:rounded-[28px] border border-[#EDEDED] bg-white p-5 sm:p-7 shadow-[0_24px_70px_-42px_rgba(10,10,10,0.45)]">
+            <div className="rounded-[28px] sm:rounded-[28px] border border-pn-line bg-white p-5 sm:p-7 shadow-[0_24px_70px_-42px_rgba(10,10,10,0.45)]">
               {success ? (
                 <div className="text-center py-2">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#C6F24E]">
-                    <Check size={26} strokeWidth={3} className="text-[#0A0A0A]" />
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-pn-accent">
+                    <Check size={26} strokeWidth={3} className="text-pn-ink" />
                   </div>
                   <h2 className="bz-h-tight" style={{ fontSize: 20 }}>
                     Şifren güncellendi
@@ -128,7 +128,7 @@ function ResetPasswordContent() {
                   </p>
                   <Link
                     href="/admin"
-                    className="bz-btn-primary mt-5 min-h-[48px] w-full rounded-2xl text-[14px]"
+                    className="bz-btn-primary mt-5 min-h-[48px] w-full rounded-[24px] text-[14px]"
                   >
                     Girişe git
                     <ArrowRight size={16} strokeWidth={2} />
@@ -140,7 +140,7 @@ function ResetPasswordContent() {
 
                   {/* Username */}
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                    <label className="text-[12px] font-medium text-[#737373]">
                       Kullanıcı adı
                     </label>
                     <div className="relative">
@@ -155,7 +155,7 @@ function ResetPasswordContent() {
                         autoComplete="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[14px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white"
+                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-4 text-[14px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-accent focus:bg-white"
                         placeholder="admin"
                       />
                     </div>
@@ -163,7 +163,7 @@ function ResetPasswordContent() {
 
                   {/* 6-digit code */}
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                    <label className="text-[12px] font-medium text-[#737373]">
                       Doğrulama kodu
                     </label>
                     <div className="relative">
@@ -181,19 +181,19 @@ function ResetPasswordContent() {
                         pattern="\d{6}"
                         value={code}
                         onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                        className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[16px] font-semibold tracking-[0.4em] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] placeholder:tracking-normal placeholder:font-medium focus:border-[#C6F24E] focus:bg-white"
+                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-4 text-[16px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] placeholder:tracking-normal placeholder:font-medium focus:border-pn-accent focus:bg-white"
                         placeholder="000000"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       />
                     </div>
-                    <p className="text-[11px] text-[#737373]">
+                    <p className="text-[12px] text-[#737373]">
                       Kod 15 dakika geçerli. 5+ yanlış denemede 1 saat kilitlenir.
                     </p>
                   </div>
 
                   {/* New password */}
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                    <label className="text-[12px] font-medium text-[#737373]">
                       Yeni şifre
                     </label>
                     <div className="relative">
@@ -209,7 +209,7 @@ function ResetPasswordContent() {
                         minLength={8}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-12 text-[14px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white"
+                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-12 text-[14px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-accent focus:bg-white"
                         placeholder="Min 8 karakter"
                       />
                       <button
@@ -225,7 +225,7 @@ function ResetPasswordContent() {
 
                   {/* Confirm */}
                   <div className="space-y-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                    <label className="text-[12px] font-medium text-[#737373]">
                       Şifreyi tekrarla
                     </label>
                     <div className="relative">
@@ -241,7 +241,7 @@ function ResetPasswordContent() {
                         minLength={8}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[14px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white"
+                        className="w-full min-h-[48px] rounded-[24px] border border-pn-line bg-pn-canvas py-3.5 pl-11 pr-4 text-[14px] font-medium text-pn-ink outline-none transition-all placeholder:text-[#A3A3A3] focus:border-pn-accent focus:bg-white"
                         placeholder="Tekrar gir"
                       />
                     </div>
@@ -250,7 +250,7 @@ function ResetPasswordContent() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bz-btn-primary min-h-[48px] w-full rounded-2xl text-[14px] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="bz-btn-primary min-h-[48px] w-full rounded-[24px] text-[14px] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {loading ? (
                       <Loader2 className="animate-spin" size={18} />
@@ -279,7 +279,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <main className="flex min-h-[100dvh] items-center justify-center bg-white">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
+          <Loader2 className="h-8 w-8 animate-spin text-pn-ink" />
         </main>
       }
     >

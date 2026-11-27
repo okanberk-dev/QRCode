@@ -79,7 +79,7 @@ export function SettingsLayout({
           {/* md horizontal tab strip pinned under the topbar while scrolling.
               Negative margins mirror the page gutter (`px-4 sm:px-7`, §42.4)
               so the strip runs edge to edge. */}
-          <div className="lg:hidden -mx-4 px-4 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar md:bg-white/95 md:backdrop-blur md:border-b md:border-[#EDEDED] md:py-2">
+          <div className="lg:hidden -mx-4 px-4 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar md:bg-white/95 md:backdrop-blur md:border-b md:border-pn-line md:py-2">
             <Tabs
               items={tabItems}
               active={active}

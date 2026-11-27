@@ -91,7 +91,7 @@ export default function MemberTeamPanel({ userId }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-[#EDEDED] divide-y divide-[#EDEDED] overflow-hidden bg-white">
+    <div className="rounded-[24px] border border-pn-line divide-y divide-pn-line overflow-hidden bg-white">
       {data.map((m) => {
         const locCount = Array.isArray(m.locations) ? m.locations.length : 0;
         return (
@@ -101,7 +101,7 @@ export default function MemberTeamPanel({ userId }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[13px] font-semibold text-[#0A0A0A]">
+                <span className="text-[13px] font-medium text-pn-ink">
                   {m.name || '—'}
                 </span>
                 <Badge kind="ghost">{ROLE_LABEL[m.role] || m.role}</Badge>
@@ -115,7 +115,7 @@ export default function MemberTeamPanel({ userId }: Props) {
               <span>
                 {locCount > 0 ? `${locCount} konum` : 'Tüm konumlar'}
               </span>
-              <span className="text-[11px] text-[#A3A3A3]">
+              <span className="text-[12px] text-[#A3A3A3]">
                 Son giriş: {dateLabel(m.lastSeenAt)}
               </span>
             </div>

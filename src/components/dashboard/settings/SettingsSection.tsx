@@ -111,7 +111,7 @@ export function SettingsSection({
       ref={sectionRef}
       id={`section-${id}`}
       aria-labelledby={titleId}
-      className={`scroll-mt-20 max-md:rounded-2xl max-md:border max-md:border-[#EDEDED] max-md:bg-white ${
+      className={`scroll-mt-20 max-md:rounded-[24px] max-md:border max-md:border-pn-line max-md:bg-white ${
         active ? "" : "md:hidden"
       }`}
     >
@@ -124,7 +124,7 @@ export function SettingsSection({
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((v) => !v)}
-            className="flex w-full min-h-[56px] items-center justify-between gap-3 rounded-2xl px-5 py-4 text-left active:bg-[#FAFAFA] bz-motion-spring"
+            className="flex w-full min-h-[56px] items-center justify-between gap-3 rounded-[24px] px-5 py-4 text-left active:bg-pn-canvas bz-motion-spring"
           >
             <span className="min-w-0">
               {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}

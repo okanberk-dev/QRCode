@@ -335,7 +335,7 @@ export default function RestaurantsClient({
     return (
       <Link
         href={href}
-        className="inline-flex items-center gap-2.5 rounded-md px-1 py-0.5 text-[12.5px] text-[#525252] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+        className="inline-flex items-center gap-2.5 rounded-full px-1 py-0.5 text-[13px] text-[#525252] transition-colors hover:bg-pn-canvas hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
         aria-label={
           isTr
             ? `${row.name} platform linkleri: ${connected} bağlı, ${issue} sorunlu, ${missing} eksik`
@@ -379,7 +379,7 @@ export default function RestaurantsClient({
     return (
       <span className="mt-1 flex flex-wrap gap-1">
         {reasons.map((reason) => (
-          <Badge key={reason} kind={REASON_COPY[reason].kind} dot={false} className="!h-5 !px-1.5 !text-[10.5px]">
+          <Badge key={reason} kind={REASON_COPY[reason].kind} dot={false} className="!h-5 !px-1.5 !text-[12px]">
             {isTr ? REASON_COPY[reason].tr : REASON_COPY[reason].en}
           </Badge>
         ))}
@@ -449,7 +449,7 @@ export default function RestaurantsClient({
         <button
           type="button"
           onClick={() => toggleSort(key)}
-          className={`-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${activeSort ? 'text-[#0A0A0A]' : ''}`}
+          className={`-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${activeSort ? 'text-pn-ink' : ''}`}
         >
           {label}
           <Icon size={12} aria-hidden="true" className={activeSort ? '' : 'opacity-50'} />
@@ -462,22 +462,22 @@ export default function RestaurantsClient({
     <div className="flex min-w-0 items-start gap-3">
       <span
         aria-hidden="true"
-        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold text-[#0A0A0A]"
-        style={{ background: restaurant.primaryColor || '#C6F24E' }}
+        className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px] text-[12px] font-medium text-pn-ink"
+        style={{ background: restaurant.primaryColor || '#D7FE03' }}
       >
         {restaurant.name.trim().charAt(0).toLocaleUpperCase(collatorLocale)}
       </span>
       <div className="min-w-0">
         <Link
           href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-          className="block truncate text-[13.5px] font-semibold text-[#0A0A0A] hover:underline underline-offset-2"
+          className="block truncate text-[14px] font-medium text-pn-ink hover:underline underline-offset-2"
         >
           {restaurant.name}
         </Link>
         <span className="flex min-w-0 items-center gap-1 text-[12px] text-[#737373]">
           <span className="truncate">{categoryLabel(restaurant.category)}</span>
           <span aria-hidden="true">·</span>
-          <span className="truncate bz-mono text-[11px]">/r/{restaurant.slug}</span>
+          <span className="truncate tabular-nums text-[12px]">/r/{restaurant.slug}</span>
           <CopyUrlButton url={`${publicBase}/r/${restaurant.slug}`} locale={locale} className="!h-6 !w-6 shrink-0" />
         </span>
         {reasonsLine(row)}
@@ -615,8 +615,8 @@ export default function RestaurantsClient({
                       <td className="max-w-[340px]">{nameCell(restaurant, row)}</td>
                       <td>{statusBadge(restaurant)}</td>
                       <td className="text-right tabular-nums">
-                        <span className="font-medium text-[#0A0A0A]">{number(row.reviews30d)}</span>
-                        <span className="block text-[11px] text-[#A3A3A3]">
+                        <span className="font-medium text-pn-ink">{number(row.reviews30d)}</span>
+                        <span className="block text-[12px] text-[#A3A3A3]">
                           {isTr ? `toplam ${number(row.reviewsTotal)}` : `${number(row.reviewsTotal)} total`}
                         </span>
                       </td>
@@ -634,7 +634,7 @@ export default function RestaurantsClient({
                         )}
                       </td>
                       <td>{platformCell(row)}</td>
-                      <td className="whitespace-nowrap text-[12.5px] text-[#525252]">
+                      <td className="whitespace-nowrap text-[13px] text-[#525252]">
                         {row.lastFeedbackAt ? formatRelativeTime(row.lastFeedbackAt, locale, nowMs) : '—'}
                       </td>
                       <td className="text-right">
@@ -669,18 +669,18 @@ export default function RestaurantsClient({
                     {nameCell(restaurant, row)}
                     {rowMenu(restaurant)}
                   </div>
-                  <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-[#EDEDED] pt-3 text-[12px]">
+                  <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-pn-line pt-3 text-[12px]">
                     <div>
                       <dt className="text-[#737373]">{isTr ? 'Yorum (30g)' : 'Reviews (30d)'}</dt>
-                      <dd className="mt-0.5 font-semibold tabular-nums text-[#0A0A0A]">{number(row.reviews30d)}</dd>
+                      <dd className="mt-0.5 font-medium tabular-nums text-pn-ink">{number(row.reviews30d)}</dd>
                     </div>
                     <div>
                       <dt className="text-[#737373]">{isTr ? 'Puan' : 'Rating'}</dt>
-                      <dd className="mt-0.5 font-semibold text-[#0A0A0A]">{rating(row.avgRating30d)}</dd>
+                      <dd className="mt-0.5 font-medium text-pn-ink">{rating(row.avgRating30d)}</dd>
                     </div>
                     <div>
                       <dt className="text-[#737373]">{isTr ? 'Bekleyen' : 'Waiting'}</dt>
-                      <dd className={`mt-0.5 font-semibold tabular-nums ${row.unread > 0 ? 'text-[#B45309]' : 'text-[#0A0A0A]'}`}>
+                      <dd className={`mt-0.5 font-medium tabular-nums ${row.unread > 0 ? 'text-[#B45309]' : 'text-pn-ink'}`}>
                         {number(row.unread)}
                       </dd>
                     </div>

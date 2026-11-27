@@ -116,7 +116,7 @@ export function ApplyLinkToBusinesses({
     >
       <div className="space-y-3 pt-1">
         {candidates.length === 0 ? (
-          <p className="text-[12.5px] text-[#525252]">
+          <p className="text-[13px] text-[#525252]">
             {isTr ? 'Tüm işletmelerinizde bu link zaten kayıtlı.' : 'All your businesses already use this link.'}
           </p>
         ) : (
@@ -133,7 +133,7 @@ export function ApplyLinkToBusinesses({
                 {isTr ? `${selected.size} seçili` : `${selected.size} selected`}
               </span>
             </div>
-            <ul className="divide-y divide-[#EDEDED] rounded-lg border border-[#E8E8E8]" role="list">
+            <ul className="divide-y divide-pn-line rounded-[14px] border border-pn-line-strong" role="list">
               {others.map((business) => {
                 const same = (business.url ?? '').trim() === url.trim();
                 const result = results[business.id];
@@ -146,8 +146,8 @@ export function ApplyLinkToBusinesses({
                       ariaLabel={business.name}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium text-[#0A0A0A]">{business.name}</p>
-                      <p className="truncate bz-mono text-[11px] text-[#737373]">
+                      <p className="truncate text-[13px] font-medium text-pn-ink">{business.name}</p>
+                      <p className="truncate tabular-nums text-[12px] text-[#737373]">
                         {same
                           ? isTr
                             ? 'Aynı link kayıtlı'
@@ -157,7 +157,7 @@ export function ApplyLinkToBusinesses({
                     </div>
                     {result?.ok && <CheckCircle2 size={15} className="shrink-0 text-[#16A34A]" aria-label={isTr ? 'Kaydedildi' : 'Saved'} />}
                     {result && !result.ok && (
-                      <span className="flex shrink-0 items-center gap-1 text-[11.5px] text-[#B91C1C]" title={result.message}>
+                      <span className="flex shrink-0 items-center gap-1 text-[12px] text-[#B91C1C]" title={result.message}>
                         <XCircle size={14} aria-hidden="true" />
                         {isTr ? 'Hata' : 'Failed'}
                       </span>

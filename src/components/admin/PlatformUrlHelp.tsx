@@ -109,21 +109,21 @@ export default function PlatformUrlHelp({ platform }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={`${guide.title} nasıl kopyalanır?`}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#6B7280] hover:text-[#0A0A0A] hover:border-[#C9D0DB] transition-colors"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-pn-line bg-white text-[#6B7280] hover:text-pn-ink hover:border-[#C9D0DB] transition-colors"
       >
         <Info size={12} strokeWidth={2} />
       </button>
       {open && (
-        <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-[#EDEDED] bg-white p-4 text-[12px] font-medium text-[#0A0A0A] shadow-xl">
-          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-[#EDEDED]">
+        <div className="absolute left-0 top-7 z-50 w-72 rounded-[24px] border border-pn-line bg-white p-4 text-[12px] font-medium text-pn-ink shadow-xl">
+          <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-pn-line">
             {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily → bz-h-tight (Pulse §11). */}
-            <p className="bz-h-tight text-[13px] font-semibold text-[#0A0A0A] tracking-[-0.01em]">
+            <p className="bz-h-tight text-[13px] font-medium text-pn-ink tracking-[-0.01em]">
               {guide.title}
             </p>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-[#6B7280] hover:text-[#0A0A0A]"
+              className="text-[#6B7280] hover:text-pn-ink"
             >
               <X size={14} strokeWidth={2} />
             </button>
@@ -134,7 +134,7 @@ export default function PlatformUrlHelp({ platform }: Props) {
             ))}
           </ol>
           {guide.hint && (
-            <p className="mt-2 text-[11px] text-[#6B7280] leading-relaxed">{guide.hint}</p>
+            <p className="mt-2 text-[12px] text-[#6B7280] leading-relaxed">{guide.hint}</p>
           )}
         </div>
       )}

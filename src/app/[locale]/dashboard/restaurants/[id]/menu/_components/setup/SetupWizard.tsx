@@ -48,7 +48,7 @@ function PresetGlyph({ id }: { id: StarterPreset['id'] }) {
     : Wine;
   const { bg, fg } = PRESET_PALETTE[id];
   return (
-    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: bg, color: fg }} aria-hidden="true">
+    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: bg, color: fg }} aria-hidden="true">
       <Icon size={15} strokeWidth={2} />
     </span>
   );
@@ -74,32 +74,32 @@ function PresetCard({
       onClick={onPick}
       disabled={disabled}
       aria-pressed={selected}
-      className={`group relative flex min-h-[44px] w-full flex-col items-start gap-2 rounded-xl border bg-white p-3.5 text-left transition-[border-color,box-shadow] duration-[120ms] hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-60 ${
-        selected ? 'border-[#0A0A0A] shadow-[0_0_0_1px_#0A0A0A]' : 'border-[#E5E5E5]'
+      className={`group relative flex min-h-[44px] w-full flex-col items-start gap-2 rounded-[20px] border bg-white p-3.5 text-left transition-[border-color,box-shadow] duration-[120ms] hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent disabled:cursor-not-allowed disabled:opacity-60 ${
+        selected ? 'border-pn-ink shadow-[0_0_0_1px_#0A0A0A]' : 'border-pn-line-strong'
       }`}
     >
       <span className="flex w-full items-center justify-between gap-2">
         <span className="inline-flex min-w-0 items-center gap-2">
           <PresetGlyph id={preset.id} />
-          <span className="truncate text-[14px] font-semibold text-[#0A0A0A]">{localized.label}</span>
+          <span className="truncate text-[14px] font-medium text-pn-ink">{localized.label}</span>
         </span>
         {selected ? (
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]" aria-hidden="true">
+          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pn-accent text-pn-ink" aria-hidden="true">
             <Check size={12} strokeWidth={3} />
           </span>
         ) : (
-          <ChevronRight size={14} strokeWidth={2} className="shrink-0 text-[#A3A3A3] group-hover:text-[#0A0A0A]" aria-hidden="true" />
+          <ChevronRight size={14} strokeWidth={2} className="shrink-0 text-[#A3A3A3] group-hover:text-pn-ink" aria-hidden="true" />
         )}
       </span>
-      <span className="text-[12.5px] text-[#737373]">{localized.hint}</span>
+      <span className="text-[13px] text-[#737373]">{localized.hint}</span>
       <span className="flex flex-wrap gap-1">
         {localized.categories.slice(0, CARD_CHIPS).map((c) => (
-          <span key={c} className="inline-flex items-center rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-2 py-0.5 text-[11.5px] font-medium text-[#525252]">
+          <span key={c} className="inline-flex items-center rounded-full border border-pn-line bg-pn-canvas px-2 py-0.5 text-[12px] font-medium text-[#525252]">
             {c}
           </span>
         ))}
         {extra > 0 && (
-          <span className="inline-flex items-center rounded-full border border-dashed border-[#E5E5E5] px-2 py-0.5 text-[11.5px] font-medium text-[#737373]">
+          <span className="inline-flex items-center rounded-full border border-dashed border-pn-line-strong px-2 py-0.5 text-[12px] font-medium text-[#737373]">
             +{extra}
           </span>
         )}
@@ -308,7 +308,7 @@ export function SetupWizard({
         className="outline-none"
       >
         <span className="sr-only">{f.stepOf(index + 1)}: </span>
-        <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A] sm:text-[20px]">{title}</span>
+        <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-pn-ink sm:text-[20px]">{title}</span>
       </h3>
       <p className="text-[13px] leading-[1.55] text-[#525252]">{body}</p>
     </div>
@@ -333,14 +333,14 @@ export function SetupWizard({
     <section
       ref={topRef}
       aria-labelledby="menu-setup-wizard-title"
-      className="@container scroll-mt-[124px] sm:rounded-xl sm:border sm:border-[#E8E8E8] sm:bg-white sm:px-6 sm:py-6 sm:shadow-[0_1px_2px_rgba(10,10,10,0.05)] lg:scroll-mt-[72px] lg:px-8 lg:py-8"
+      className="@container scroll-mt-[124px] sm:rounded-xl sm:border sm:border-pn-line-strong sm:bg-white sm:px-6 sm:py-6 sm:shadow-[0_1px_2px_rgba(10,10,10,0.05)] lg:scroll-mt-[72px] lg:px-8 lg:py-8"
     >
       <div className="space-y-5">
         {restored && (
           <AlertBanner kind="info">
             <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span>{s.draftRestored}</span>
-              <button type="button" onClick={onStartOver} className="font-semibold underline underline-offset-2">
+              <button type="button" onClick={onStartOver} className="font-medium underline underline-offset-2">
                 {s.startOver}
               </button>
             </span>
@@ -348,12 +348,12 @@ export function SetupWizard({
         )}
 
         <div className="flex items-start gap-3.5">
-          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A] sm:inline-flex" aria-hidden="true">
+          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink sm:inline-flex" aria-hidden="true">
             <UtensilsCrossed size={18} strokeWidth={2} />
           </span>
           <div className="min-w-0">
             <h2 id="menu-setup-wizard-title">
-              <span className="bz-h-tight [word-spacing:0.1em] text-[20px] text-[#0A0A0A] sm:text-[22px]">{s.title}</span>
+              <span className="bz-h-tight [word-spacing:0.1em] text-[20px] text-pn-ink sm:text-[22px]">{s.title}</span>
             </h2>
             <p className="mt-1 max-w-[560px] text-[13px] leading-relaxed text-[#525252]">{s.body}</p>
           </div>
@@ -382,7 +382,7 @@ export function SetupWizard({
                   type="button"
                   onClick={() => setShowMore((v) => !v)}
                   aria-expanded={showMore}
-                  className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-[#0A0A0A]"
+                  className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-[#525252] hover:text-pn-ink"
                 >
                   <ChevronDown size={14} strokeWidth={2} className={showMore ? 'rotate-180' : ''} aria-hidden="true" />
                   {showMore ? s.lessTemplates : `${s.moreTemplates} (${others.length})`}
@@ -393,16 +393,16 @@ export function SetupWizard({
                 onClick={() => pick('custom')}
                 disabled={locked}
                 aria-pressed={choice === 'custom'}
-                className={`flex min-h-[56px] w-full items-center gap-3 rounded-xl border border-dashed bg-white p-3.5 text-left transition-colors hover:border-[#0A0A0A] disabled:opacity-60 ${
-                  choice === 'custom' ? 'border-[#0A0A0A] shadow-[0_0_0_1px_#0A0A0A]' : 'border-[#D4D4D4]'
+                className={`flex min-h-[56px] w-full items-center gap-3 rounded-[20px] border border-dashed bg-white p-3.5 text-left transition-colors hover:border-pn-ink disabled:opacity-60 ${
+                  choice === 'custom' ? 'border-pn-ink shadow-[0_0_0_1px_#0A0A0A]' : 'border-pn-line-strong'
                 }`}
               >
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F5F5F5] text-[#525252]" aria-hidden="true">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pn-canvas text-[#525252]" aria-hidden="true">
                   <PencilLine size={15} strokeWidth={2} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-semibold text-[#0A0A0A]">{s.custom}</span>
-                  <span className="block text-[12.5px] text-[#737373]">{s.customHint}</span>
+                  <span className="block text-[14px] font-medium text-pn-ink">{s.custom}</span>
+                  <span className="block text-[13px] text-[#737373]">{s.customHint}</span>
                 </span>
                 <ChevronRight size={14} strokeWidth={2} className="shrink-0 text-[#A3A3A3]" aria-hidden="true" />
               </button>
@@ -415,14 +415,14 @@ export function SetupWizard({
               </label>
               <textarea
                 id="menu-setup-paste"
-                className="bz-input min-h-[200px] font-mono text-[16px] sm:text-[13.5px]"
+                className="bz-input min-h-[200px] font-mono text-[16px] sm:text-[14px]"
                 rows={10}
                 value={pasteText}
                 placeholder={s.pastePlaceholder}
                 disabled={locked}
                 onChange={(e) => setPasteText(e.target.value)}
               />
-              <p role="status" className="text-[12.5px] text-[#525252]">
+              <p role="status" className="text-[13px] text-[#525252]">
                 {pasteText.trim() ? f.pasteFound(pasteTotals.categories, pasteTotals.items) : ''}
               </p>
             </>
@@ -433,12 +433,12 @@ export function SetupWizard({
         <div hidden={step !== 1} className="space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-2">
             {heading(1, s.s1Title, s.s1Body)}
-            <span className="rounded-full bg-[#F5F5F5] px-2.5 py-1 text-[12px] font-semibold text-[#525252]">
+            <span className="rounded-full bg-pn-canvas px-2.5 py-1 text-[12px] font-medium text-[#525252]">
               {copy.fmt.categoryCount(totals.categories)}
             </span>
           </div>
           {attempted && (validation.noCategories || validation.tooMany) && (
-            <p role="alert" className="text-[12.5px] font-medium text-[#B91C1C]">
+            <p role="alert" className="text-[13px] font-medium text-[#B91C1C]">
               {validation.noCategories ? s.noCategories : s.tooMany}
             </p>
           )}
@@ -447,7 +447,7 @@ export function SetupWizard({
               const err = attempted ? validation.errors[c.key] : undefined;
               const errId = `setup-cat-err-${c.key}`;
               return (
-                <li key={c.key} className="rounded-xl border border-[#EDEDED] bg-white p-2.5 sm:p-3">
+                <li key={c.key} className="rounded-[20px] border border-pn-line bg-white p-2.5 sm:p-3">
                   <div className="flex items-center gap-1.5">
                     <div className="flex shrink-0 items-center">
                       <button
@@ -535,23 +535,23 @@ export function SetupWizard({
                 const open = openKey === c.key;
                 const panelId = `setup-items-${c.key}`;
                 return (
-                  <li key={c.key} className="overflow-hidden rounded-xl border border-[#EDEDED] bg-white">
+                  <li key={c.key} className="overflow-hidden rounded-[20px] border border-pn-line bg-white">
                     <button
                       type="button"
                       onClick={() => setOpenKey(open ? null : c.key)}
                       aria-expanded={open}
                       aria-controls={panelId}
-                      className="flex min-h-[52px] w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left hover:bg-[#FAFAFA]"
+                      className="flex min-h-[52px] w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left hover:bg-pn-canvas"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-body text-[14px] font-semibold text-[#0A0A0A]">{c.name.trim()}</span>
+                        <span className="block truncate font-body text-[14px] font-medium text-pn-ink">{c.name.trim()}</span>
                         <span className={`block text-[12px] ${preview.items.length > 0 ? 'text-[#166534]' : 'text-[#737373]'}`}>
                           {preview.items.length > 0 ? f.willAdd(Math.min(preview.items.length, MENU_BULK_MAX_ITEMS)) : s.noItemsYet}
                         </span>
                       </span>
                       <ChevronDown size={16} strokeWidth={2} className={`shrink-0 text-[#737373] ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
                     </button>
-                    <div id={panelId} hidden={!open} className="space-y-2 border-t border-[#EDEDED] px-3.5 py-3">
+                    <div id={panelId} hidden={!open} className="space-y-2 border-t border-pn-line px-3.5 py-3">
                       <label className="sr-only" htmlFor={`${panelId}-text`}>
                         {f.itemsFor(c.name.trim())}
                       </label>
@@ -568,7 +568,7 @@ export function SetupWizard({
                           {preview.items.slice(0, MENU_BULK_MAX_ITEMS).map((it, idx) => (
                             <li
                               key={`${it.name}-${idx}`}
-                              className="inline-flex items-center gap-1 rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[12px] font-medium text-[#0A0A0A]"
+                              className="inline-flex items-center gap-1 rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-ink"
                             >
                               {it.name}
                               <span className="text-[#525252]">· {money(it.priceCents)}</span>
@@ -586,7 +586,7 @@ export function SetupWizard({
         </div>
 
         {/* ── Actions — above the floating bottom nav on phones ── */}
-        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 space-y-2.5 rounded-xl border border-[#EDEDED] bg-white/95 px-3 py-3 shadow-[0_1px_2px_rgba(10,10,10,0.05)] backdrop-blur sm:px-4 lg:bottom-4">
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 space-y-2.5 rounded-[20px] border border-pn-line bg-white/95 px-3 py-3 backdrop-blur sm:px-4 lg:bottom-4">
           {creating && (
             <ProgressBar
               value={creating.done}

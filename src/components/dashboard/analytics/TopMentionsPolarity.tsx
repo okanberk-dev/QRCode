@@ -46,7 +46,7 @@ const POLARITY_META: Record<
   positive: {
     arrow: '↑',
     arrowColor: '#22C55E',
-    barColor: '#C6F24E',
+    barColor: '#D7FE03',
   },
   negative: {
     arrow: '↓',
@@ -72,7 +72,7 @@ export function TopMentionsPolarity({
   return (
     <section className="bz-card flex h-full flex-col p-5 sm:p-6">
       <header className="mb-3">
-        <span className="text-[12.5px] font-medium text-[#525252]">
+        <span className="text-[13px] font-medium text-[#525252]">
           {isTr ? 'En çok bahsedilenler' : 'Top mentions'}
         </span>
         <div className="bz-h-tight mt-1 text-[16px] sm:text-[18px]">
@@ -89,22 +89,22 @@ export function TopMentionsPolarity({
             return (
               <li key={t.theme}>
                 <div className="mb-1 flex items-baseline justify-between gap-2">
-                  <span className="text-[12.5px] font-medium text-[#0A0A0A]">
+                  <span className="text-[13px] font-medium text-pn-ink">
                     <span
                       aria-hidden="true"
-                      className="mr-1.5 font-bold"
+                      className="mr-1.5 font-medium"
                       style={{ color: meta.arrowColor }}
                     >
                       {meta.arrow}
                     </span>
                     {t.theme}
                   </span>
-                  <span className="bz-mono text-[10.5px] tabular-nums font-semibold text-[#737373]">
+                  <span className="tabular-nums text-[12px] tabular-nums font-medium text-[#737373]">
                     {t.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
                   </span>
                 </div>
                 <div
-                  className="h-[5px] overflow-hidden rounded-full bg-[#F5F5F5]"
+                  className="h-[5px] overflow-hidden rounded-full bg-pn-canvas"
                   role="img"
                   aria-label={
                     isTr

@@ -1,4 +1,4 @@
-import { Space_Grotesk, Inter, JetBrains_Mono, Figtree, Source_Sans_3, Caveat } from 'next/font/google';
+import { Space_Grotesk, Inter, JetBrains_Mono, Figtree, Source_Sans_3, Caveat, Urbanist } from 'next/font/google';
 import localFont from 'next/font/local';
 
 // Site fonts (CLAUDE.md §11): Clash Display (headings) + Inter (body) +
@@ -79,5 +79,16 @@ const caveat = Caveat({
   variable: '--font-caveat',
 });
 
-export const rootFontClassName = `${clashDisplay.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable} ${figtree.variable} ${sourceSans.variable} ${caveat.variable}`;
+// Owner + admin panels ("Pano" design system, docs/design/DASHBOARD_DESIGN.md):
+// Urbanist (OFL), variable 100–900. The panel scope (`pano.css`) points
+// --font-body / --font-heading at it; no other surface uses it, so it is not
+// preloaded.
+const urbanist = Urbanist({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-urbanist',
+});
+
+export const rootFontClassName = `${clashDisplay.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable} ${figtree.variable} ${sourceSans.variable} ${caveat.variable} ${urbanist.variable}`;
 export const rootBodyFontClassName = inter.className;

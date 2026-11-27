@@ -29,8 +29,8 @@ export default function ChipRadioGroup<T extends string>({
 }) {
   const checkedCls =
     tone === 'lime'
-      ? 'peer-checked:border-[#A8D62E] peer-checked:bg-[#C6F24E] peer-checked:text-[#0A0A0A]'
-      : 'peer-checked:border-[#0A0A0A] peer-checked:bg-[#0A0A0A] peer-checked:text-white';
+      ? 'peer-checked:border-pn-accent-hover peer-checked:bg-pn-accent peer-checked:text-pn-ink'
+      : 'peer-checked:border-pn-ink peer-checked:bg-pn-ink peer-checked:text-white';
   return (
     <div
       role="radiogroup"
@@ -52,10 +52,10 @@ export default function ChipRadioGroup<T extends string>({
           <span
             className={[
               'inline-flex min-h-11 cursor-pointer select-none items-center rounded-full border px-3',
-              'text-[12.5px] font-medium transition-colors sm:min-h-8',
-              'border-[#EDEDED] bg-white text-[#525252] hover:bg-[#FAFAFA]',
+              'text-[13px] font-medium transition-colors sm:min-h-8',
+              'border-pn-line bg-white text-[#525252] hover:bg-pn-canvas',
               checkedCls,
-              'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#C6F24E]',
+              'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pn-accent',
               'peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
             ].join(' ')}
           >

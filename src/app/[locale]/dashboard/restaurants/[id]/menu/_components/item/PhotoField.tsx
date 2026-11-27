@@ -76,7 +76,7 @@ export function PhotoField({
 
   return (
     <div data-dropzone="">
-      <p className="mb-1.5 text-[12px] font-semibold text-[#0A0A0A]">{copy.photo.label}</p>
+      <p className="mb-1.5 text-[12px] font-medium text-pn-ink">{copy.photo.label}</p>
       <div className="flex flex-wrap items-start gap-3">
         <button
           ref={buttonRef}
@@ -103,38 +103,38 @@ export function PhotoField({
             void pick(file);
           }}
           aria-label={shown ? copy.photo.change : copy.photo.add}
-          className={`relative aspect-[4/3] w-full max-w-[240px] overflow-hidden rounded-xl border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
-            shown ? 'border-transparent bg-[#F5F5F5]' : 'border-dashed border-[#D4D4D4] bg-[#FAFAFA] text-[#525252] hover:border-[#0A0A0A]'
-          } ${over ? 'ring-2 ring-[#C6F24E]' : ''}`}
+          className={`relative aspect-[4/3] w-full max-w-[240px] overflow-hidden rounded-[20px] border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent ${
+            shown ? 'border-transparent bg-pn-canvas' : 'border-dashed border-pn-line-strong bg-pn-canvas text-[#525252] hover:border-pn-ink'
+          } ${over ? 'ring-2 ring-pn-accent' : ''}`}
         >
           {shown ? (
             <img src={shown} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full flex-col items-center justify-center gap-1.5 px-3 text-center text-[12.5px] font-medium">
+            <span className="flex h-full flex-col items-center justify-center gap-1.5 px-3 text-center text-[13px] font-medium">
               <ImagePlus size={22} strokeWidth={1.75} aria-hidden="true" />
               {copy.photo.add}
             </span>
           )}
           {uploading && (
-            <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-white/75 text-[12.5px] font-medium text-[#0A0A0A]">
+            <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-white/75 text-[13px] font-medium text-pn-ink">
               <Loader2 size={20} className="animate-spin" aria-hidden="true" />
               {copy.photo.preparing}
             </span>
           )}
           {over && (
-            <span className="absolute inset-0 flex items-center justify-center bg-[#EAF9B8]/90 text-[13px] font-semibold text-[#0A0A0A]">
+            <span className="absolute inset-0 flex items-center justify-center bg-pn-accent-soft/90 text-[13px] font-medium text-pn-ink">
               {copy.photo.dropHere}
             </span>
           )}
         </button>
         <div className="min-w-[160px] flex-1 space-y-2">
           {error ? (
-            <p role="alert" className="flex items-start gap-1.5 text-[12.5px] font-medium text-[#991B1B]">
+            <p role="alert" className="flex items-start gap-1.5 text-[13px] font-medium text-[#991B1B]">
               <AlertTriangle size={13} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
               {error}
             </p>
           ) : !shown ? (
-            <p className="text-[12.5px] leading-snug text-[#737373]">{copy.photo.help}</p>
+            <p className="text-[13px] leading-snug text-[#737373]">{copy.photo.help}</p>
           ) : null}
           {!readOnly && (
             <div className="flex flex-wrap gap-2">
@@ -161,7 +161,7 @@ export function PhotoField({
       </div>
       {linkOpen && !readOnly && (
         <label className="mt-3 block">
-          <span className="mb-1.5 block text-[12px] font-semibold text-[#0A0A0A]">{copy.photo.link}</span>
+          <span className="mb-1.5 block text-[12px] font-medium text-pn-ink">{copy.photo.link}</span>
           <input
             type="url"
             inputMode="url"

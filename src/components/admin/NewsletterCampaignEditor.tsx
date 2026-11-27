@@ -227,7 +227,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
     <div className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <Link
         href="/admin/newsletters/campaigns"
-        className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors"
+        className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-pn-ink transition-colors"
       >
         <ArrowLeft size={12} strokeWidth={2} />
         Kampanyalara dön
@@ -250,14 +250,14 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
       {info && <AlertBanner kind="lime">{info}</AlertBanner>}
 
       {isImmutable && (
-        <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 text-xs text-[#525252]">
+        <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4 text-xs text-[#525252]">
           Bu kampanya {initial?.status === 'sent' ? 'gönderildi' : 'gönderiliyor'} — düzenlenemez. Yeni bir kampanya oluştur.
         </div>
       )}
 
-      <div className="space-y-5 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
+      <div className="space-y-5 rounded-[24px] border border-pn-line bg-white p-5 sm:p-7">
         <div>
-          <label className="pulse-eyebrow text-[#737373]">Başlık</label>
+          <label className="text-[13px] font-medium text-[#737373]">Başlık</label>
           {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
           <input
             type="text"
@@ -271,13 +271,13 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
             autoCorrect="on"
             spellCheck={true}
             enterKeyHint="next"
-            className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-[16px] sm:text-[15px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] disabled:opacity-60"
+            className="mt-1.5 w-full rounded-[20px] border border-pn-line bg-white px-4 py-2.5 text-[16px] sm:text-[15px] text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent disabled:opacity-60"
           />
-          <p className="mt-1 text-[11px] text-[#9CA3AF]">{value.title.length} / 200</p>
+          <p className="mt-1 text-[12px] text-[#9CA3AF]">{value.title.length} / 200</p>
         </div>
 
         <div>
-          <label className="pulse-eyebrow text-[#737373]">Intro</label>
+          <label className="text-[13px] font-medium text-[#737373]">Intro</label>
           {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
           <textarea
             value={value.intro}
@@ -291,22 +291,22 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
             autoCorrect="on"
             spellCheck={true}
             enterKeyHint="next"
-            className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] disabled:opacity-60"
+            className="mt-1.5 w-full rounded-[20px] border border-pn-line bg-white px-4 py-2.5 text-[16px] sm:text-[14px] text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent disabled:opacity-60"
           />
-          <p className="mt-1 text-[11px] text-[#9CA3AF]">{value.intro.length} / 2000</p>
+          <p className="mt-1 text-[12px] text-[#9CA3AF]">{value.intro.length} / 2000</p>
         </div>
 
         <div>
-          <label className="pulse-eyebrow text-[#737373]">Hedef dil</label>
-          <div className="mt-1.5 inline-flex rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1">
+          <label className="text-[13px] font-medium text-[#737373]">Hedef dil</label>
+          <div className="mt-1.5 inline-flex rounded-[20px] border border-pn-line bg-pn-canvas p-1">
             {(['tr', 'en', 'both'] as const).map((opt) => (
               <button
                 key={opt}
                 type="button"
                 disabled={isImmutable}
                 onClick={() => setValue((v) => ({ ...v, locale: opt, postIds: opt === 'both' ? v.postIds : v.postIds.filter((id) => posts.find((p) => p.id === id)?.locale === opt) }))}
-                className={`rounded-lg px-3 py-1.5 pulse-eyebrow transition-all disabled:opacity-60 ${
-                  value.locale === opt ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
+                className={`rounded-[14px] px-3 py-1.5 text-[13px] font-medium transition-all disabled:opacity-60 ${
+                  value.locale === opt ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {opt === 'tr' ? 'Türkçe' : opt === 'en' ? 'English' : 'İkisi'}
@@ -317,8 +317,8 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
 
         <div>
           <div className="flex items-baseline justify-between">
-            <label className="pulse-eyebrow text-[#737373]">Blog yazıları (en fazla {MAX_POSTS})</label>
-            <span className="text-[11px] text-[#9CA3AF]">{value.postIds.length} / {MAX_POSTS}</span>
+            <label className="text-[13px] font-medium text-[#737373]">Blog yazıları (en fazla {MAX_POSTS})</label>
+            <span className="text-[12px] text-[#9CA3AF]">{value.postIds.length} / {MAX_POSTS}</span>
           </div>
           {postsLoading ? (
             <div className="mt-3 flex items-center gap-2 text-xs text-[#737373]">
@@ -334,8 +334,8 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
                 return (
                   <label
                     key={p.id}
-                    className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors ${
-                      checked ? 'border-[#C6F24E] bg-[#EAF9B8]/40' : 'border-[#EDEDED] bg-white hover:bg-[#FAFAFA]'
+                    className={`flex cursor-pointer items-start gap-3 rounded-[20px] border px-4 py-3 transition-colors ${
+                      checked ? 'border-pn-accent bg-pn-accent-soft/40' : 'border-pn-line bg-white hover:bg-pn-canvas'
                     } ${disabled || isImmutable ? 'cursor-not-allowed opacity-50' : ''}`}
                   >
                     <input
@@ -343,11 +343,11 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
                       checked={checked}
                       disabled={disabled || isImmutable}
                       onChange={() => togglePost(p.id)}
-                      className="mt-1 h-4 w-4 rounded border-[#EDEDED] text-[#0A0A0A] focus:ring-[#C6F24E]"
+                      className="mt-1 h-4 w-4 rounded border-pn-line text-pn-ink focus:ring-pn-accent"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[#0A0A0A]">{p.title}</p>
-                      <p className="pulse-eyebrow mt-0.5 text-[#737373]">{p.locale.toUpperCase()} · {p.slug}</p>
+                      <p className="truncate text-sm font-medium text-pn-ink">{p.title}</p>
+                      <p className="text-[13px] font-medium mt-0.5 text-[#737373]">{p.locale.toUpperCase()} · {p.slug}</p>
                     </div>
                   </label>
                 );
@@ -357,7 +357,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
         </div>
 
         <div>
-          <label className="pulse-eyebrow text-[#737373]">Gönderim modu</label>
+          <label className="text-[13px] font-medium text-[#737373]">Gönderim modu</label>
           <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
             {([
               { v: 'draft' as const, l: 'Taslak', d: 'Sadece kaydet, gönderme' },
@@ -369,20 +369,20 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
                 type="button"
                 disabled={isImmutable}
                 onClick={() => setMode(opt.v)}
-                className={`rounded-xl border p-3 text-left transition-all disabled:opacity-60 ${
+                className={`rounded-[20px] border p-3 text-left transition-all disabled:opacity-60 ${
                   mode === opt.v
-                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                    : 'border-[#EDEDED] bg-white text-[#0A0A0A] hover:bg-[#FAFAFA]'
+                    ? 'border-pn-ink bg-pn-ink text-white'
+                    : 'border-pn-line bg-white text-pn-ink hover:bg-pn-canvas'
                 }`}
               >
-                <p className="text-sm font-semibold">{opt.l}</p>
-                <p className={`mt-0.5 text-[11px] ${mode === opt.v ? 'text-white/80' : 'text-[#737373]'}`}>{opt.d}</p>
+                <p className="text-sm font-medium">{opt.l}</p>
+                <p className={`mt-0.5 text-[12px] ${mode === opt.v ? 'text-white/80' : 'text-[#737373]'}`}>{opt.d}</p>
               </button>
             ))}
           </div>
           {mode === 'scheduled' && (
             <div className="mt-3">
-              <label className="pulse-eyebrow text-[#737373]">Tarih</label>
+              <label className="text-[13px] font-medium text-[#737373]">Tarih</label>
               <div className="relative mt-1.5">
                 <Calendar size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
                 <input
@@ -390,7 +390,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
                   value={value.scheduledAt ?? ''}
                   onChange={(e) => setValue((v) => ({ ...v, scheduledAt: e.target.value || null }))}
                   disabled={isImmutable}
-                  className="w-full rounded-xl border border-[#EDEDED] bg-white py-2 pl-9 pr-3 text-xs font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+                  className="w-full rounded-[20px] border border-pn-line bg-white py-2 pl-9 pr-3 text-xs font-medium text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent"
                 />
               </div>
             </div>
@@ -398,7 +398,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-pn-line bg-white p-4 sm:p-5">
         <div className="flex flex-wrap gap-2">
           <button
             type="button"

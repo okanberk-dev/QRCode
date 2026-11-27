@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui';
 
 const AdminBiSection = dynamic(() => import('@/components/admin/AdminBiSection'), {
   ssr: false,
-  loading: () => <Skeleton className="h-[400px] w-full rounded-2xl" />,
+  loading: () => <Skeleton className="h-[400px] w-full rounded-[24px]" />,
 });
 
 interface GoogleIntegrationRestaurant {
@@ -67,14 +67,14 @@ export default function AdminAnalyticsExtras({ isTr }: { isTr: boolean }) {
   return (
     <>
       {googleData && googleData.integrations.length > 0 && (
-        <section className="min-w-0 rounded-xl border border-[#EDEDED] bg-white p-5">
+        <section className="min-w-0 rounded-[20px] border border-pn-line bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink">
                 <Globe2 size={14} />
               </span>
               <div>
-                <h2 className="pulse-eyebrow text-[#737373]">
+                <h2 className="text-[13px] font-medium text-[#737373]">
                   {isTr ? 'GOOGLE BUSINESS BAĞLANTILARI' : 'GOOGLE BUSINESS CONNECTIONS'}
                 </h2>
                 <p className="text-[12px] text-[#525252]">
@@ -84,7 +84,7 @@ export default function AdminAnalyticsExtras({ isTr }: { isTr: boolean }) {
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-[#0A0A0A] px-2 py-1 text-[10px] font-semibold text-[#C6F24E]">
+            <span className="rounded-full bg-pn-ink px-2 py-1 text-[12px] font-medium text-pn-accent">
               {isTr ? 'SADECE SÜPERADMIN' : 'SUPERADMIN ONLY'}
             </span>
           </div>
@@ -92,7 +92,7 @@ export default function AdminAnalyticsExtras({ isTr }: { isTr: boolean }) {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-[12px]">
               <thead>
-                <tr className="border-b border-[#EDEDED] text-[10px] uppercase tracking-wider text-[#737373]">
+                <tr className="border-b border-pn-line text-[12px] text-[#737373]">
                   <th className="py-2 pr-3 font-medium">{isTr ? 'Bağlantı sahibi' : 'Connected by'}</th>
                   <th className="py-2 pr-3 font-medium">{isTr ? 'Token durumu' : 'Token status'}</th>
                   <th className="py-2 pr-3 font-medium">{isTr ? 'Restoran' : 'Restaurant'}</th>
@@ -121,24 +121,24 @@ export default function AdminAnalyticsExtras({ isTr }: { isTr: boolean }) {
                     ? row.restaurants
                     : [{ restaurantId: `${row.integrationId}-empty`, restaurantName: '—', ownerEmail: null, selectedLocation: null }];
                   return restaurants.map((restaurant, index) => (
-                    <tr key={`${row.integrationId}-${restaurant.restaurantId}`} className="border-b border-[#F5F5F5]">
+                    <tr key={`${row.integrationId}-${restaurant.restaurantId}`} className="border-b border-pn-line">
                       {index === 0 ? (
                         <>
                           <td className="py-3 pr-3" rowSpan={restaurants.length}>
                             <div className="flex flex-col">
-                              <span className="font-medium text-[#0A0A0A]">{row.ownerEmail ?? row.integrationOwner}</span>
-                              {row.ownerEmail ? <span className="text-[10px] text-[#737373]">{row.integrationOwner}</span> : null}
+                              <span className="font-medium text-pn-ink">{row.ownerEmail ?? row.integrationOwner}</span>
+                              {row.ownerEmail ? <span className="text-[12px] text-[#737373]">{row.integrationOwner}</span> : null}
                             </div>
                           </td>
                           <td className="py-3 pr-3" rowSpan={restaurants.length}>
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tokenTone}`}>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium ${tokenTone}`}>
                               {tokenIcon}
                               {tokenLabel}
                             </span>
                           </td>
                         </>
                       ) : null}
-                      <td className="py-3 pr-3 font-medium text-[#0A0A0A]">{restaurant.restaurantName}</td>
+                      <td className="py-3 pr-3 font-medium text-pn-ink">{restaurant.restaurantName}</td>
                       <td className="py-3 pr-3 text-[#525252]">{restaurant.selectedLocation?.title ?? '—'}</td>
                       <td className="py-3 pr-3 text-[#737373] tabular-nums">
                         {row.syncedAt
@@ -161,14 +161,14 @@ export default function AdminAnalyticsExtras({ isTr }: { isTr: boolean }) {
       )}
 
       {googleLoading && !googleData && (
-        <section className="flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white p-5 text-[12px] text-[#737373]">
+        <section className="flex items-center gap-2 rounded-[20px] border border-pn-line bg-white p-5 text-[12px] text-[#737373]">
           <Loader2 size={14} className="animate-spin" />
           {isTr ? 'Google Business bağlantıları yükleniyor…' : 'Loading Google Business connections…'}
         </section>
       )}
 
       {googleError && (
-        <section className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-[12px] text-[#991B1B]">
+        <section className="rounded-[20px] border border-[#FECACA] bg-[#FEF2F2] p-4 text-[12px] text-[#991B1B]">
           {isTr
             ? `Google Business bağlantıları alınamadı (${googleError})`
             : `Could not load Google Business connections (${googleError})`}

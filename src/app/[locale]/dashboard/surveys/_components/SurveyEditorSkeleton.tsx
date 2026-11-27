@@ -53,12 +53,12 @@ export default function SurveyEditorSkeleton() {
                   <SkBox className="h-11 w-11 rounded-full" />
                 </div>
                 <SkBox className="h-[68px] w-full" />
-                <div className="border-t border-[#EDEDED] pt-1">
+                <div className="border-t border-pn-line pt-1">
                   <SkBox className="my-2 h-7 w-56" />
                 </div>
               </div>
             ))}
-            <SkBox className="h-[92px] w-full rounded-xl" />
+            <SkBox className="h-[92px] w-full rounded-[20px]" />
           </div>
 
           {/* Settings card */}
@@ -76,7 +76,7 @@ export default function SurveyEditorSkeleton() {
           <div className="mb-2 flex justify-center">
             <SkBox className="h-3 w-44" />
           </div>
-          <div className="mx-auto aspect-[9/16] w-full max-w-[360px] rounded-[32px] bg-[#EDEDED]" aria-hidden="true" />
+          <div className="mx-auto aspect-[9/16] w-full max-w-[360px] rounded-[32px] bg-pn-line" aria-hidden="true" />
         </div>
       </div>
     </SkPageShell>

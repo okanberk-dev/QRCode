@@ -75,15 +75,15 @@ export default function MailPreviewIndex() {
         title="Mail önizleme"
         description="13 e-posta şablonu örnek verilerle oluşturulur. Yeni sekmede görüntüle ya da kendi e-posta adresine test gönder."
         actions={
-          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow">
+          <div className="inline-flex rounded-[20px] border border-pn-line bg-pn-canvas p-1 text-[13px] font-medium">
             {(['tr', 'en'] as const).map((opt) => (
               <button
                 key={opt}
                 type="button"
                 aria-pressed={locale === opt}
                 onClick={() => setLocale(opt)}
-                className={`rounded-lg px-3 py-1.5 transition-all ${
-                  locale === opt ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
+                className={`rounded-[14px] px-3 py-1.5 transition-all ${
+                  locale === opt ? 'bg-pn-ink text-white ' : 'text-pn-ink-2 hover:text-pn-ink'
                 }`}
               >
                 {opt === 'tr' ? 'Türkçe' : 'English'}
@@ -98,16 +98,16 @@ export default function MailPreviewIndex() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {TEMPLATES.map((t) => (
-          <div key={t.key} className="rounded-2xl border border-[#EDEDED] bg-white p-5 hover:border-[#C6F24E] transition-colors">
-            <p className="text-sm font-semibold text-[#0A0A0A]">{t.label}</p>
+          <div key={t.key} className="rounded-[24px] border border-pn-line bg-white p-5 hover:border-pn-accent transition-colors">
+            <p className="text-sm font-medium text-pn-ink">{t.label}</p>
             <p className="mt-1 text-[12px] text-[#737373] min-h-[32px]">{t.desc}</p>
-            <p className="pulse-eyebrow mt-2 text-[#9CA3AF]">{t.key}</p>
+            <p className="text-[13px] font-medium mt-2 text-[#9CA3AF]">{t.key}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <a
                 href={previewUrl(t.key)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-full border border-pn-line bg-white px-3 py-1.5 text-[12px] font-medium text-pn-ink hover:bg-pn-canvas active:scale-95"
               >
                 <Eye size={12} /> Önizle
               </a>
@@ -115,7 +115,7 @@ export default function MailPreviewIndex() {
                 type="button"
                 onClick={() => sendTest(t.key)}
                 disabled={sending === t.key}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-3 py-1.5 text-[11px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-3 py-1.5 text-[12px] font-medium text-pn-ink hover:bg-pn-accent-hover active:scale-95 disabled:opacity-50"
               >
                 {sending === t.key ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                 Test mail

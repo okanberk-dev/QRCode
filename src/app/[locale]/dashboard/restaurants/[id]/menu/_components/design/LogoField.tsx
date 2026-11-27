@@ -72,11 +72,11 @@ export function LogoField({
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
       onPaste={onPaste}
-      className={`flex items-start gap-4 rounded-xl border border-dashed bg-[#FAFAFA] p-3.5 transition-colors ${
-        over ? 'border-[#C6F24E] ring-2 ring-[#C6F24E]' : 'border-[#E5E5E5]'
+      className={`flex items-start gap-4 rounded-[20px] border border-dashed bg-pn-canvas p-3.5 transition-colors ${
+        over ? 'border-pn-accent ring-2 ring-pn-accent' : 'border-pn-line-strong'
       }`}
     >
-      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED]">
+      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[20px] bg-white ring-1 ring-pn-line">
         {shown ? (
           <img src={shown} alt="" decoding="async" className="h-full w-full object-cover" />
         ) : (
@@ -86,7 +86,7 @@ export function LogoField({
         )}
         {uploading && (
           <span className="absolute inset-0 flex items-center justify-center bg-white/75" aria-hidden="true">
-            <Loader2 size={18} className="animate-spin text-[#0A0A0A]" />
+            <Loader2 size={18} className="animate-spin text-pn-ink" />
           </span>
         )}
       </div>
@@ -109,7 +109,7 @@ export function LogoField({
             </button>
           )}
         </div>
-        <p className="text-[12.5px] leading-relaxed text-[#737373]">{copy.design.logoHint}</p>
+        <p className="text-[13px] leading-relaxed text-[#737373]">{copy.design.logoHint}</p>
         <input
           ref={fileRef}
           type="file"

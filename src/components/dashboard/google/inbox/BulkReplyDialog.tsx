@@ -46,13 +46,13 @@ function ItemEditor({
   const isTr = locale === 'tr';
   const risk = useReplyRisk(item.body);
   return (
-    <li className="space-y-2 border-b border-[#EDEDED] py-3 last:border-b-0">
+    <li className="space-y-2 border-b border-pn-line py-3 last:border-b-0">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] font-semibold text-[#0A0A0A]">{item.reviewerName || (isTr ? 'Google kullanıcısı' : 'Google user')}</span>
+            <span className="text-[13px] font-medium text-pn-ink">{item.reviewerName || (isTr ? 'Google kullanıcısı' : 'Google user')}</span>
             <span className="inline-flex items-center gap-0.5 text-[12px] text-[#525252]">
-              <Star size={11} aria-hidden="true" fill="#0A0A0A" /> {item.rating ?? '–'}
+              <Star size={11} aria-hidden="true" fill="#000000" /> {item.rating ?? '–'}
             </span>
           </div>
           <p className="mt-1 line-clamp-2 break-words text-[12px] leading-[1.5] text-[#737373]">
@@ -276,13 +276,13 @@ export function BulkReplyDialog({
                 type="checkbox"
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-pn-ink"
               />
               <span>
                 {isTr
                   ? `Listedeki ${sendable} yanıtın her birini okudum; içeriklerinden bizzat sorumlu olduğumu ve tehdit, hakaret, iftira ya da yasa dışı ifade içermediklerini onaylıyorum (`
                   : `I have read each of the ${sendable} replies; I am solely responsible for them and they contain no threat, insult, defamation or unlawful statement (`}
-                <Link href={`/${locale}/kabul-edilebilir-kullanim`} target="_blank" rel="noopener" className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline">
+                <Link href={`/${locale}/kabul-edilebilir-kullanim`} target="_blank" rel="noopener" className="font-medium text-pn-ink underline-offset-2 hover:underline">
                   {isTr ? 'Kabul Edilebilir Kullanım Politikası' : 'Acceptable Use Policy'}
                 </Link>
                 ).
@@ -329,7 +329,7 @@ export function BulkReplyDialog({
 
         {(phase === 'drafting' || phase === 'sending' || phase === 'submitting' || phase === 'done') && (
           <div>
-            <div className="flex items-center justify-between text-[12.5px] text-[#525252]">
+            <div className="flex items-center justify-between text-[13px] text-[#525252]">
               <span>
                 {phase === 'drafting'
                   ? isTr ? `Taslaklar hazırlanıyor… ${drafted}/${reviewIds.length}` : `Preparing drafts… ${drafted}/${reviewIds.length}`
@@ -344,13 +344,13 @@ export function BulkReplyDialog({
               <span className="tabular-nums">%{percent}</span>
             </div>
             <div
-              className="mt-1.5 h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
+              className="mt-1.5 h-2 overflow-hidden rounded-full bg-pn-canvas"
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={percent}
             >
-              <div className="h-full rounded-full bg-[#C6F24E] transition-[width] duration-300" style={{ width: `${percent}%` }} />
+              <div className="h-full rounded-full bg-pn-accent transition-[width] duration-300" style={{ width: `${percent}%` }} />
             </div>
             {phase === 'sending' && (
               <p className="mt-2 text-[12px] text-[#737373]">
@@ -387,7 +387,7 @@ export function BulkReplyDialog({
 
         {(phase === 'review' || phase === 'drafting') && items.length > 0 && (
           <>
-            <p className="text-[12.5px] text-[#525252]">
+            <p className="text-[13px] text-[#525252]">
               {isTr
                 ? 'Her taslağı oku, gerekirse düzenle ya da listeden çıkar. 1-3 yıldızlı yorumlar burada yer almaz; onları tek tek yanıtla.'
                 : 'Read each draft, edit or remove it. 1–3 star reviews are not included; answer those one by one.'}

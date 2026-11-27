@@ -534,7 +534,7 @@ export default function AuditListClient({
               <span>{loadError} </span>
               <button
                 type="button"
-                className="font-semibold underline"
+                className="font-medium underline"
                 onClick={() => {
                   setLoadError(null);
                   setRetryTick((n) => n + 1);
@@ -628,7 +628,7 @@ export default function AuditListClient({
           )}
 
           {!loadingRows && archived.length > 0 && (
-            <section className="border-t border-[#EDEDED] pt-1">
+            <section className="border-t border-pn-line pt-1">
               <Disclosure
                 open={archivedOpen}
                 onToggle={() => setArchivedOpen((v) => !v)}
@@ -643,7 +643,7 @@ export default function AuditListClient({
                       <div className="min-w-0 flex-1">
                         <Link
                           href={detailHref(row.id)}
-                          className="block truncate text-[14px] font-medium text-[#0A0A0A] hover:underline"
+                          className="block truncate text-[14px] font-medium text-pn-ink hover:underline"
                         >
                           {row.title}
                         </Link>
@@ -771,7 +771,7 @@ function AuditCard({
           {/* Tüm kart bu bağlantıya tıklar (uzatılmış bağlantı); eylemler z-10 ile üstte. */}
           <Link
             href={detailHref}
-            className="break-words after:absolute after:inset-0 after:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]"
+            className="break-words after:absolute after:inset-0 after:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pn-accent"
           >
             {row.title}
           </Link>
@@ -807,7 +807,7 @@ function AuditCard({
             {isTr ? 'Sonuçlar' : 'Results'}
           </Link>
         )}
-        {primary?.hint && <span className="text-[11.5px] text-[#737373]">{primary.hint}</span>}
+        {primary?.hint && <span className="text-[12px] text-[#737373]">{primary.hint}</span>}
 
         {canWrite && (
           <span className="ml-auto">

@@ -26,12 +26,12 @@ interface SiteSettings {
 }
 
 // §38.75 — Pulse `bz-card` primitive reuse (CLAUDE.md §11 + §38.67). Inline
-// `rounded-2xl border border-[#EDEDED]` permütasyonu yerine globals.css
+// `rounded-[24px] border border-pn-line` permütasyonu yerine globals.css
 // `bz-card` token (border + radius + bg + soft shadow).
 const CARD = 'bz-card p-6 sm:p-8';
-const LABEL = 'block text-[12px] font-semibold text-[#1A1A1A] uppercase tracking-wider mb-2';
+const LABEL = 'block text-[12px] font-medium text-pn-ink-2 mb-2';
 const INPUT = 'bz-input';
-const HINT = 'text-[11px] font-medium text-[#6B7280] mt-1';
+const HINT = 'text-[12px] font-medium text-[#6B7280] mt-1';
 
 export default function SiteSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -133,10 +133,10 @@ export default function SiteSettingsPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4 py-10">
         <div className="bz-card w-full max-w-md p-6 sm:p-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-pn-accent-soft text-pn-ink">
             <ShieldCheck size={20} strokeWidth={2} />
           </div>
-          <h2 className="bz-h-tight mt-4 text-[20px] text-[#0A0A0A]">
+          <h2 className="bz-h-tight mt-4 text-[20px] text-pn-ink">
             {isPermissionError ? 'Sadece Superadmin' : 'Ayarlar yüklenemedi'}
           </h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[#525252]">
@@ -147,7 +147,7 @@ export default function SiteSettingsPage() {
           <div className="mt-5 flex items-center justify-center gap-2">
             <Link
               href="/admin/dashboard"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-pn-accent px-4 py-2 text-[12px] font-medium text-pn-ink hover:bg-pn-accent-hover"
             >
               <Home size={13} strokeWidth={2} />
               Dashboard&apos;a dön
@@ -192,18 +192,18 @@ export default function SiteSettingsPage() {
       <div className={CARD}>
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">SEO bilgileri</h2>
+            <h2 className="text-[20px] font-medium text-pn-ink tracking-tight">SEO bilgileri</h2>
             <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">Başlık, açıklama ve anahtar kelimeler — dil başına.</p>
           </div>
-          <div className="flex gap-1 bg-[#FFFFFF] p-1 rounded-xl border border-[#EDEDED]" role="group" aria-label="Düzenlenen dil">
+          <div className="flex gap-1 bg-[#FFFFFF] p-1 rounded-[20px] border border-pn-line" role="group" aria-label="Düzenlenen dil">
             {(['tr', 'en'] as Lang[]).map((l) => (
               <button
                 key={l}
                 type="button"
                 aria-pressed={activeLang === l}
                 onClick={() => setActiveLang(l)}
-                className={`px-4 py-1.5 rounded-lg text-[12px] font-semibold uppercase tracking-wider transition-colors ${
-                  activeLang === l ? 'bg-[#0A0A0A] text-white' : 'text-[#1A1A1A] hover:bg-white'
+                className={`px-4 py-1.5 rounded-[14px] text-[12px] font-medium transition-colors ${
+                  activeLang === l ? 'bg-pn-ink text-white' : 'text-pn-ink-2 hover:bg-white'
                 }`}
               >
                 <Globe size={12} className="inline mr-1" />
@@ -242,7 +242,7 @@ export default function SiteSettingsPage() {
               placeholder="%s | Buaze"
             />
             <p className={HINT}>
-              <code className="bg-[#FFFFFF] px-1.5 py-0.5 rounded text-[11px]">%s</code> yerine sayfa başlığı gelir. Her iki dilde ortak.
+              <code className="bg-[#FFFFFF] px-1.5 py-0.5 rounded text-[12px]">%s</code> yerine sayfa başlığı gelir. Her iki dilde ortak.
             </p>
           </div>
 
@@ -285,7 +285,7 @@ export default function SiteSettingsPage() {
       {/* ─── Kart 2: Branding ─── */}
       <div className={CARD}>
         <div className="mb-6">
-          <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">Marka Kimliği</h2>
+          <h2 className="text-[20px] font-medium text-pn-ink tracking-tight">Marka Kimliği</h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
             Site genelinde (navbar, footer, auth sayfaları) görünen logo ve tarayıcı favicon&apos;u.
           </p>
@@ -300,7 +300,7 @@ export default function SiteSettingsPage() {
             onUpload={(f) => handleUpload(f, 'logo')}
             onRemove={() => handleRemove('logo')}
             uploading={uploading === 'logo'}
-            previewClass="aspect-square w-full max-w-[200px] bg-[#0A0A0A] rounded-xl p-4"
+            previewClass="aspect-square w-full max-w-[200px] bg-pn-ink rounded-[20px] p-4"
           />
           <AssetUploader
             url={settings.faviconUrl}
@@ -310,7 +310,7 @@ export default function SiteSettingsPage() {
             onUpload={(f) => handleUpload(f, 'favicon')}
             onRemove={() => handleRemove('favicon')}
             uploading={uploading === 'favicon'}
-            previewClass="aspect-square w-full max-w-[128px] bg-[#FFFFFF] rounded-xl p-3 border border-[#EDEDED]"
+            previewClass="aspect-square w-full max-w-[128px] bg-[#FFFFFF] rounded-[20px] p-3 border border-pn-line"
           />
         </div>
       </div>
@@ -318,7 +318,7 @@ export default function SiteSettingsPage() {
       {/* ─── Kart 3: Entity Profile URLs ─── */}
       <div className={CARD}>
         <div className="mb-6">
-          <h2 className="text-[20px] font-semibold text-[#0A0A0A] tracking-tight">
+          <h2 className="text-[20px] font-medium text-pn-ink tracking-tight">
             Varlık Profili URL&apos;leri
           </h2>
           <p className="text-[12px] text-[#6B7280] font-medium mt-0.5">
@@ -386,7 +386,7 @@ export default function SiteSettingsPage() {
           fixed bar sat under the floating bottom nav (Save was not
           clickable), and on desktop its hard-coded 256px offset ignored the
           248px / collapsed sidebar. Below lg it parks above the nav pill. */}
-      <div className="sticky bottom-[calc(96px+env(safe-area-inset-bottom,0px))] z-20 rounded-2xl border border-[#EDEDED] bg-white/95 p-4 shadow-lg backdrop-blur lg:bottom-4">
+      <div className="sticky bottom-[calc(96px+env(safe-area-inset-bottom,0px))] z-20 rounded-[24px] border border-pn-line bg-white/95 p-4 shadow-lg backdrop-blur lg:bottom-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-[12px] text-[#6B7280] font-medium hidden sm:block">
             Değişiklikler tüm site genelinde yansır.
@@ -430,7 +430,7 @@ const AssetUploader = ({ url, label, accept, aspect, onUpload, onRemove, uploadi
             <img src={url} alt={label} loading="lazy" decoding="async" className="max-w-full max-h-full object-contain" />
           </div>
         ) : (
-          <div className={`${previewClass} bg-[#FFFFFF] border-2 border-dashed border-[#EDEDED] flex items-center justify-center`}>
+          <div className={`${previewClass} bg-[#FFFFFF] border-2 border-dashed border-pn-line flex items-center justify-center`}>
             <ImageIcon size={32} className="text-[#6B7280]/40" />
           </div>
         )}
@@ -464,7 +464,7 @@ const AssetUploader = ({ url, label, accept, aspect, onUpload, onRemove, uploadi
             </button>
           )}
         </div>
-        <p className="text-[11px] font-medium text-[#6B7280]">{aspect}</p>
+        <p className="text-[12px] font-medium text-[#6B7280]">{aspect}</p>
       </div>
     </div>
   );

@@ -7,9 +7,9 @@ import { ariaKeysFor } from '../menu-keys';
 export type StudioView = 'edit' | 'service' | 'preview';
 
 const SEGMENT =
-  'inline-flex items-center justify-center gap-1.5 rounded-[7px] px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]';
-const ON = 'bg-white text-[#0A0A0A] shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]';
-const OFF = 'text-[#525252] hover:text-[#0A0A0A]';
+  'inline-flex items-center justify-center gap-1.5 rounded-[7px] px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent';
+const ON = 'bg-white text-pn-ink shadow-[0_1px_2px_rgba(10,10,10,0.08),0_0_0_1px_rgba(10,10,10,0.04)]';
+const OFF = 'text-[#525252] hover:text-pn-ink';
 
 /** Below 1024 px: Düzenle | Servis | Önizle (spec §7.6). */
 export function ViewSwitch({ value, onChange }: { value: StudioView; onChange: (v: StudioView) => void }) {
@@ -20,7 +20,7 @@ export function ViewSwitch({ value, onChange }: { value: StudioView; onChange: (
     { id: 'preview', label: copy.view.preview, icon: <Smartphone size={14} strokeWidth={2} aria-hidden="true" /> },
   ];
   return (
-    <div role="group" aria-label={copy.view.label} className="inline-flex w-full gap-0.5 rounded-[10px] bg-[#F2F2F2] p-[3px] sm:w-auto lg:hidden">
+    <div role="group" aria-label={copy.view.label} className="inline-flex w-full gap-0.5 rounded-[10px] bg-pn-canvas p-[3px] sm:w-auto lg:hidden">
       {items.map((item) => (
         <button
           key={item.id}
@@ -42,7 +42,7 @@ export function ViewSwitch({ value, onChange }: { value: StudioView; onChange: (
 export function ModeSwitch({ value, onChange }: { value: 'edit' | 'service'; onChange: (v: 'edit' | 'service') => void }) {
   const copy = useMenuCopy();
   return (
-    <div role="group" aria-label={copy.view.label} className="inline-flex h-9 shrink-0 gap-0.5 rounded-[10px] bg-[#F2F2F2] p-[3px]">
+    <div role="group" aria-label={copy.view.label} className="inline-flex h-9 shrink-0 gap-0.5 rounded-[10px] bg-pn-canvas p-[3px]">
       {(['edit', 'service'] as const).map((m) => (
         <button key={m} type="button" aria-pressed={value === m} onClick={() => onChange(m)} className={`${SEGMENT} px-3 ${value === m ? ON : OFF}`}>
           {m === 'edit' ? copy.view.edit : copy.view.service}

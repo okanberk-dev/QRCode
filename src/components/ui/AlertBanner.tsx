@@ -16,7 +16,7 @@ const KIND_PALETTE: Record<AlertKind, { bg: string; border: string; text: string
   success: { bg: "#F0FDF4", border: "#BBF7D0", text: "#166534", dot: "#16A34A" },
   warn: { bg: "#FFFBEB", border: "#FDE68A", text: "#92400E", dot: "#D97706" },
   danger: { bg: "#FEF2F2", border: "#FECACA", text: "#991B1B", dot: "#DC2626" },
-  lime: { bg: "#EAF9B8", border: "#D9EE7A", text: "#4D5C00", dot: "#A8D62E" },
+  lime: { bg: "var(--color-pn-accent-soft)", border: "#D9EE7A", text: "#4D5C00", dot: "var(--color-pn-accent-hover)" },
 };
 
 export function AlertBanner({
@@ -30,7 +30,8 @@ export function AlertBanner({
   return (
     <div
       role="alert"
-      className={`flex items-start justify-between gap-3 px-4 py-3 rounded-xl text-xs font-medium ${className}`}
+      data-kind={kind}
+      className={`pn-alert flex items-start justify-between gap-3 px-4 py-3 rounded-xl text-xs font-medium ${className}`}
       style={{
         background: palette.bg,
         border: `1px solid ${palette.border}`,
@@ -41,7 +42,7 @@ export function AlertBanner({
         {icon ?? (
           <span
             aria-hidden="true"
-            className="shrink-0 mt-1.5 inline-block w-2 h-2 rounded-full animate-pulse"
+            className="pn-alert-dot shrink-0 mt-1.5 inline-block w-2 h-2 rounded-full animate-pulse"
             style={{ background: palette.dot }}
           />
         )}

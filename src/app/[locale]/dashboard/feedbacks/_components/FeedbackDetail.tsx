@@ -70,15 +70,15 @@ export function FeedbackDetailSkeleton() {
   return (
     <div className="px-5 py-5 sm:px-8 sm:py-6" aria-hidden="true">
       <div className="flex items-start gap-4">
-        <SkBox className="h-12 w-12 shrink-0 rounded-2xl" />
+        <SkBox className="h-12 w-12 shrink-0 rounded-[24px]" />
         <div className="min-w-0 flex-1 space-y-2 pt-1">
           <SkBox className="h-6 w-48 max-w-full" />
           <SkBox className="h-4 w-64 max-w-full" />
           <SkBox className="h-3 w-36" />
         </div>
       </div>
-      <SkBox className="mt-5 h-24 w-full rounded-2xl" />
-      <SkBox className="mt-5 h-32 w-full rounded-2xl" />
+      <SkBox className="mt-5 h-24 w-full rounded-[24px]" />
+      <SkBox className="mt-5 h-32 w-full rounded-[24px]" />
     </div>
   );
 }
@@ -139,7 +139,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
     >
       {/* Mobile sticky back bar — under the 61px shell topbar. */}
       {showBackButton && (
-        <div className="sticky top-[61px] z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
+        <div className="sticky top-[72px] z-10 flex items-center justify-between gap-2 border-b border-pn-line bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
           <button
             type="button"
             onClick={onBack}
@@ -194,7 +194,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                 <h2
                   id={titleId}
                   tabIndex={-1}
-                  className="bz-h-tight break-words text-[20px] text-[#0A0A0A] outline-none sm:text-[22px]"
+                  className="bz-h-tight break-words text-[20px] text-pn-ink outline-none sm:text-[22px]"
                 >
                   {active.customerName || (isTr ? 'İsimsiz' : 'Unnamed')}
                 </h2>
@@ -263,12 +263,12 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
 
           {/* Comment */}
           {active.comment ? (
-            <blockquote className="mt-5 whitespace-pre-line break-words rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-[15px] leading-[1.7] text-[#0A0A0A]">
+            <blockquote className="mt-5 whitespace-pre-line break-words rounded-[24px] border border-pn-line bg-pn-canvas px-5 py-4 text-[15px] leading-[1.7] text-pn-ink">
               {active.comment}
             </blockquote>
           ) : active.redirected ? (
-            <div className="mt-5 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[14px] leading-[1.6] text-[#404040]">
-              <span className="mb-1.5 inline-flex items-center rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[12px] font-medium text-[#365314]">
+            <div className="mt-5 rounded-[20px] border border-pn-line bg-pn-canvas px-4 py-3 text-[14px] leading-[1.6] text-[#404040]">
+              <span className="mb-1.5 inline-flex items-center rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-[#365314]">
                 {redirectBadgeLabel(active.platform, isTr)}
               </span>
               <p>
@@ -303,7 +303,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               {aspects.map((a) => (
                 <li
                   key={a.key}
-                  className="rounded-full bg-[#F5F5F5] px-2.5 py-1 text-[12px] text-[#0A0A0A]"
+                  className="rounded-full bg-pn-canvas px-2.5 py-1 text-[12px] text-pn-ink"
                 >
                   {a.label} {a.value}/5
                 </li>
@@ -316,7 +316,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <div className="mt-6">
               <div className="mb-2 flex items-center gap-2">
                 <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} aria-hidden="true" />
-                <span className="text-[12px] font-semibold text-[#525252]">
+                <span className="text-[12px] font-medium text-[#525252]">
                   {isTr
                     ? `Gönderilen yanıtlar (${sentReplies.length})`
                     : `Sent replies (${sentReplies.length})`}
@@ -335,9 +335,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                   const tone =
                     rep.status === 'failed'
                       ? 'border-[#FCA5A5] bg-[#FFFBFB]'
-                      : 'border-[#EDEDED] bg-white';
+                      : 'border-pn-line bg-white';
                   return (
-                    <li key={rep.id} className={`rounded-xl border ${tone} p-3.5`}>
+                    <li key={rep.id} className={`rounded-[20px] border ${tone} p-3.5`}>
                       <div className="mb-1.5 flex items-center justify-between gap-2 text-[12px]">
                         <span className="inline-flex items-center gap-1.5 font-medium text-[#525252]">
                           {rep.channel === 'email' && <Mail size={11} strokeWidth={2.2} aria-hidden="true" />}
@@ -354,11 +354,11 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                           {formatStamp(rep.createdAt, locale)}
                         </time>
                       </div>
-                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-[#0A0A0A]">
+                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-pn-ink">
                         {rep.body}
                       </p>
                       {rep.status === 'failed' && (
-                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
+                        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-[14px] border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-[12px] text-[#991B1B]">
                           <span>
                             {isTr
                               ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
@@ -415,10 +415,10 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <div className="mt-6">
               <AlertBanner
                 kind="lime"
-                icon={<Sparkles size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2} />}
+                icon={<Sparkles size={14} className="mt-1 text-pn-ink" strokeWidth={2} />}
               >
                 <span className="block text-[#525252]">
-                  <strong className="font-semibold text-[#0A0A0A]">
+                  <strong className="font-medium text-pn-ink">
                     {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
                   </strong>{' '}
                   {active.platform
@@ -438,10 +438,10 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <div className="mt-6">
               <AlertBanner
                 kind={props.replyNotice?.tone === 'success' ? 'success' : 'info'}
-                icon={<Check size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2.2} />}
+                icon={<Check size={14} className="mt-1 text-pn-ink" strokeWidth={2.2} />}
               >
                 <span className="block text-[#525252]">
-                  <strong className="font-semibold text-[#0A0A0A]">
+                  <strong className="font-medium text-pn-ink">
                     {props.replyNotice?.tone === 'success'
                       ? props.replyNotice.msg + '.'
                       : isTr
@@ -472,7 +472,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           so a long draft scrolls inside the textarea and Send never drops
           out of view; the dock itself only scrolls as a last resort. */}
       {canReply && (
-        <div className="border-t border-[#EDEDED] bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
+        <div className="border-t border-pn-line bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
           <ReplyComposerCard
             feedback={active}
             locale={locale}

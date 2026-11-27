@@ -83,13 +83,13 @@ export function BusinessWebsiteSettings({
           only the how-to line + BETA badge stay here. */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[12.5px] text-[#525252]">
+          <p className="text-[13px] text-[#525252]">
             {isTr
               ? 'Aşağıdaki kodu sitene yapıştır; ziyaretçilerin son yorumları ve ortalama puanını görür, yorum bırakabilir.'
               : 'Paste this code into your site — visitors see recent reviews, average rating, and can leave a review.'}
           </p>
         </div>
-        <span className="pulse-eyebrow shrink-0 rounded-full bg-[#EAF9B8] px-2 py-1 text-[#0A0A0A]">
+        <span className="text-[13px] font-medium shrink-0 rounded-full bg-pn-accent-soft px-2 py-1 text-pn-ink">
           BETA
         </span>
       </div>
@@ -98,11 +98,11 @@ export function BusinessWebsiteSettings({
       <div className="bz-card p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <div className="flex items-center gap-2">
-            <span className="pulse-eyebrow text-[#737373]">
+            <span className="text-[13px] font-medium text-[#737373]">
               {isTr ? 'TEMA' : 'THEME'}
             </span>
             <div
-              className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1"
+              className="inline-flex items-center gap-1 rounded-full border border-pn-line p-1"
               role="group"
               aria-label={isTr ? 'Tema seçimi' : 'Theme'}
             >
@@ -111,10 +111,10 @@ export function BusinessWebsiteSettings({
                   key={t}
                   type="button"
                   onClick={() => setTheme(t)}
-                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors sm:min-h-0 ${
+                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-[10px] transition-colors sm:min-h-0 ${
                     theme === t
-                      ? 'bg-[#0A0A0A] text-white'
-                      : 'text-[#525252] hover:bg-[#F5F5F5]'
+                      ? 'bg-pn-ink text-white'
+                      : 'text-[#525252] hover:bg-pn-canvas'
                   }`}
                   aria-pressed={theme === t}
                 >
@@ -125,11 +125,11 @@ export function BusinessWebsiteSettings({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="pulse-eyebrow text-[#737373]">
+            <span className="text-[13px] font-medium text-[#737373]">
               {isTr ? 'STİL' : 'STYLE'}
             </span>
             <div
-              className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1"
+              className="inline-flex items-center gap-1 rounded-full border border-pn-line p-1"
               role="group"
               aria-label={isTr ? 'Stil seçimi' : 'Style'}
             >
@@ -144,10 +144,10 @@ export function BusinessWebsiteSettings({
                   key={v.id}
                   type="button"
                   onClick={() => setVariant(v.id)}
-                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors sm:min-h-0 ${
+                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-[10px] transition-colors sm:min-h-0 ${
                     variant === v.id
-                      ? 'bg-[#0A0A0A] text-white'
-                      : 'text-[#525252] hover:bg-[#F5F5F5]'
+                      ? 'bg-pn-ink text-white'
+                      : 'text-[#525252] hover:bg-pn-canvas'
                   }`}
                   aria-pressed={variant === v.id}
                 >
@@ -158,11 +158,11 @@ export function BusinessWebsiteSettings({
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
-            <span className="pulse-eyebrow text-[#737373]">
+            <span className="text-[13px] font-medium text-[#737373]">
               {isTr ? 'KOD TÜRÜ' : 'CODE TYPE'}
             </span>
             <div
-              className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1"
+              className="inline-flex items-center gap-1 rounded-full border border-pn-line p-1"
               role="group"
               aria-label={isTr ? 'Kod türü' : 'Code type'}
             >
@@ -171,10 +171,10 @@ export function BusinessWebsiteSettings({
                   key={m}
                   type="button"
                   onClick={() => setScriptMode(m)}
-                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors sm:min-h-0 ${
+                  className={`min-h-[44px] px-2.5 py-1 text-[12px] font-medium rounded-[10px] transition-colors sm:min-h-0 ${
                     scriptMode === m
-                      ? 'bg-[#0A0A0A] text-white'
-                      : 'text-[#525252] hover:bg-[#F5F5F5]'
+                      ? 'bg-pn-ink text-white'
+                      : 'text-[#525252] hover:bg-pn-canvas'
                   }`}
                   aria-pressed={scriptMode === m}
                 >
@@ -187,9 +187,9 @@ export function BusinessWebsiteSettings({
 
         {/* Code block — the copy button sits in its own header row so it
             never covers the first line of the snippet. */}
-        <div className="mt-4 overflow-hidden rounded-lg border border-[#EDEDED] bg-[#FAFAFA]">
-          <div className="flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white px-3 py-2">
-            <span className="pulse-eyebrow text-[#737373]">
+        <div className="mt-4 overflow-hidden rounded-[14px] border border-pn-line bg-pn-canvas">
+          <div className="flex items-center justify-between gap-2 border-b border-pn-line bg-white px-3 py-2">
+            <span className="text-[13px] font-medium text-[#737373]">
               {isTr ? 'YERLEŞTİRME KODU' : 'EMBED CODE'}
             </span>
             <button
@@ -211,7 +211,7 @@ export function BusinessWebsiteSettings({
             </button>
           </div>
           <pre
-            className="overflow-x-auto whitespace-pre-wrap break-all p-3 text-[12px] leading-[1.55] text-[#0A0A0A]"
+            className="overflow-x-auto whitespace-pre-wrap break-all p-3 text-[12px] leading-[1.55] text-pn-ink"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
             {embedSnippet}
@@ -229,7 +229,7 @@ export function BusinessWebsiteSettings({
       {/* Browser-frame önizleme */}
       <section className="bz-card p-4 sm:p-5">
         <header className="mb-3 flex items-center gap-2">
-          <Sparkles size={14} className="text-[#0A0A0A]" />
+          <Sparkles size={14} className="text-pn-ink" />
           <Eyebrow>{isTr ? 'SİTENDE NASIL GÖRÜNECEK' : 'HOW IT LOOKS ON YOUR SITE'}</Eyebrow>
         </header>
         <EmbedBrowserPreview

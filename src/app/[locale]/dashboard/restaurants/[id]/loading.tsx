@@ -44,7 +44,7 @@ export default function Loading() {
       {/* Customer page row */}
       <div className="bz-card-soft flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <SkBox className="h-7 w-7 shrink-0 rounded-lg" />
+          <SkBox className="h-7 w-7 shrink-0 rounded-[14px]" />
           <div className="min-w-0 flex-1 space-y-1.5">
             <SkBox className="h-3 w-24" />
             <SkBox className="h-4 w-72 max-w-full" />
@@ -58,7 +58,7 @@ export default function Loading() {
       </div>
 
       {/* Platform links strip */}
-      <SkBox className="h-14 w-full rounded-xl" />
+      <SkBox className="h-14 w-full rounded-[20px]" />
     </SkPageShell>
   );
 }

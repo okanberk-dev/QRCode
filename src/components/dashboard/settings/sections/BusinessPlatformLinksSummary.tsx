@@ -27,7 +27,7 @@ import {
 } from '@/lib/platform-link-status';
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2';
 
 // "Kapalı" covers owner-off and admin-locked rows (summarizePlatformLinks).
 // WCAG 2.4.11 (focus not obscured): keyboard-focused controls keep clear of
@@ -121,20 +121,20 @@ export function BusinessPlatformLinksSummary({
           return (
             <li
               key={state}
-              className="inline-flex min-h-[32px] items-center gap-2 rounded-full border border-[#EDEDED] bg-white py-1 pl-1 pr-3"
+              className="inline-flex min-h-[32px] items-center gap-2 rounded-full border border-pn-line bg-white py-1 pl-1 pr-3"
             >
               {count > 0 ? (
                 <PlatformStatusPill state={state} locale={locale} />
               ) : (
                 // Zero counts stay neutral — a red "Sorunlu 0" reads as an alarm.
-                <span className="inline-flex items-center gap-1 px-1.5 text-[11px] font-medium text-[#525252]">
+                <span className="inline-flex items-center gap-1 px-1.5 text-[12px] font-medium text-[#525252]">
                   <PlatformStateIcon state={state} size={12} />
                   <span className="sr-only">{isTr ? 'Durum: ' : 'Status: '}</span>
                   {platformStateLabel(state, locale)}
                 </span>
               )}
               <span
-                className={`bz-mono text-[13px] font-semibold ${count > 0 ? 'text-[#0A0A0A]' : 'text-[#525252]'}`}
+                className={`tabular-nums text-[13px] font-medium ${count > 0 ? 'text-pn-ink' : 'text-[#525252]'}`}
               >
                 {count}
               </span>
@@ -152,13 +152,13 @@ export function BusinessPlatformLinksSummary({
       )}
 
       <section aria-labelledby="bpls-review-title" className="space-y-2.5">
-        <h3 id="bpls-review-title" className="bz-h-tight text-[15px] text-[#0A0A0A]">
+        <h3 id="bpls-review-title" className="bz-h-tight text-[15px] text-pn-ink">
           {isTr ? 'Yorum platformları' : 'Review platforms'}
         </h3>
         <ul
           role="list"
           aria-busy={loadingChecks || undefined}
-          className="divide-y divide-[#EDEDED] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white"
+          className="divide-y divide-pn-line overflow-hidden rounded-[24px] border border-pn-line bg-white"
         >
           {visible.map((status) => {
             const actionLabel = platformRowActionLabel(status.state, locale);
@@ -168,7 +168,7 @@ export function BusinessPlatformLinksSummary({
                 <PlatformLogo platform={status.platform} size={28} />
                 <div className="min-w-0 flex-1 py-1">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <h4 className="bz-h-tight text-[13.5px] text-[#0A0A0A]">{status.platform.name}</h4>
+                    <h4 className="bz-h-tight text-[14px] text-pn-ink">{status.platform.name}</h4>
                     <PlatformStatusPill state={status.state} locale={locale} />
                   </div>
                   <p
@@ -182,8 +182,8 @@ export function BusinessPlatformLinksSummary({
                   <Link
                     href={platformWizardHref(locale, status.platform.slug, restaurant.id)}
                     aria-label={`${status.platform.name} — ${actionLabel}`}
-                    className={`inline-flex min-h-[44px] shrink-0 items-center rounded px-3 text-[13px] font-semibold underline-offset-2 hover:underline ${
-                      status.state === 'issue' ? 'text-[#991B1B]' : 'text-[#0A0A0A]'
+                    className={`inline-flex min-h-[44px] shrink-0 items-center rounded px-3 text-[13px] font-medium underline-offset-2 hover:underline ${
+                      status.state === 'issue' ? 'text-[#991B1B]' : 'text-pn-ink'
                     } ${FOCUS_RING}`}
                   >
                     {actionLabel}
@@ -197,27 +197,27 @@ export function BusinessPlatformLinksSummary({
 
       <section
         aria-labelledby="bpls-routing-title"
-        className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-4"
+        className="rounded-[24px] border border-pn-line bg-pn-canvas px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-4"
       >
         <div className="min-w-0">
-          <h3 id="bpls-routing-title" className="bz-h-tight text-[13.5px] text-[#0A0A0A]">
+          <h3 id="bpls-routing-title" className="bz-h-tight text-[14px] text-pn-ink">
             {isTr ? 'Müşteri yönlendirme' : 'Customer routing'}
           </h3>
-          <p className="mt-1 text-[12.5px] leading-[1.6] text-[#525252]">
+          <p className="mt-1 text-[13px] leading-[1.6] text-[#525252]">
             {isTr ? 'Platform önerilen puan: ' : 'Suggested from: '}
-            <strong className="font-semibold text-[#0A0A0A]">
+            <strong className="font-medium text-pn-ink">
               {redirectThresholdLabel(restaurant.redirectMinRating, locale)}
             </strong>
             <span aria-hidden="true"> · </span>
             <span className="sr-only">, </span>
             {isTr ? 'Varsayılan platform: ' : 'Default platform: '}
-            <strong className="font-semibold text-[#0A0A0A]">{defaultName}</strong>
+            <strong className="font-medium text-pn-ink">{defaultName}</strong>
           </p>
         </div>
         <Link
           href={`${overviewHref}#yonlendirme`}
           aria-label={isTr ? 'Müşteri yönlendirmesini değiştir' : 'Change customer routing'}
-          className={`-ml-1 mt-1 inline-flex min-h-[44px] shrink-0 items-center rounded px-1 text-[13px] font-semibold text-[#0A0A0A] underline underline-offset-2 sm:mt-0 sm:min-h-[38px] ${FOCUS_RING}`}
+          className={`-ml-1 mt-1 inline-flex min-h-[44px] shrink-0 items-center rounded px-1 text-[13px] font-medium text-pn-ink underline underline-offset-2 sm:mt-0 sm:min-h-[38px] ${FOCUS_RING}`}
         >
           {isTr ? 'Değiştir' : 'Change'}
         </Link>

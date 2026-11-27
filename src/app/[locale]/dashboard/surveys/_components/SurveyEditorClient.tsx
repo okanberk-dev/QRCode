@@ -600,7 +600,7 @@ export default function SurveyEditorClient({
         <div id={`${uid}-top`} className="flex min-h-11 items-center">
           <Link
             href={listHref}
-            className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#525252] hover:text-[#0A0A0A]"
+            className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#525252] hover:text-pn-ink"
           >
             <ArrowLeft size={14} aria-hidden="true" />
             {isTr ? 'Anketler' : 'Surveys'}
@@ -620,12 +620,12 @@ export default function SurveyEditorClient({
   }
 
   const stickyBar = (
-    <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur sm:-mx-7 sm:px-7 lg:bottom-0">
+    <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 -mx-4 border-t border-pn-line bg-white/95 px-4 py-3 backdrop-blur sm:-mx-7 sm:px-7 lg:bottom-0">
       {missingMessage && (
         <p
           role="status"
           aria-live="polite"
-          className="mb-2 text-[12.5px] font-medium text-[#B91C1C] sm:text-right"
+          className="mb-2 text-[13px] font-medium text-[#B91C1C] sm:text-right"
         >
           {missingMessage}
         </p>
@@ -751,7 +751,7 @@ export default function SurveyEditorClient({
       <div id={`${uid}-top`} className="flex min-h-11 scroll-mt-24 items-center justify-between gap-3">
         <Link
           href={listHref}
-          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#525252] hover:text-[#0A0A0A]"
+          className="inline-flex min-h-11 items-center gap-1 text-[13px] text-[#525252] hover:text-pn-ink"
         >
           <ArrowLeft size={14} aria-hidden="true" />
           {isTr ? 'Anketler' : 'Surveys'}
@@ -759,7 +759,7 @@ export default function SurveyEditorClient({
         {!isEdit && phase === 'edit' && (
           <button
             type="button"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-[#525252] underline-offset-2 hover:text-[#0A0A0A] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+            className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-[#525252] underline-offset-2 hover:text-pn-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
             onClick={backToTemplates}
           >
             {isTr ? 'Şablonu değiştir' : 'Change template'}
@@ -856,7 +856,7 @@ export default function SurveyEditorClient({
                     onChange={(e) => patch({ title: e.target.value })}
                   />
                   {form.title.length >= 100 && (
-                    <span aria-hidden="true" className="mt-1 block text-right text-[11px] tabular-nums text-[#737373]">
+                    <span aria-hidden="true" className="mt-1 block text-right text-[12px] tabular-nums text-[#737373]">
                       {form.title.length}/{TITLE_MAX}
                     </span>
                   )}
@@ -878,7 +878,7 @@ export default function SurveyEditorClient({
                 ) : (
                   <button
                     type="button"
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 -ml-3 text-[13px] font-medium text-[#0A0A0A] hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 -ml-3 text-[13px] font-medium text-pn-ink hover:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1"
                     onClick={() => {
                       setDescriptionOpen(true);
                       window.requestAnimationFrame(() => document.getElementById(ids.description)?.focus());
@@ -896,7 +896,7 @@ export default function SurveyEditorClient({
                   <h2 id={`${uid}-questions-h`} className="bz-h-tight text-[16px]">
                     {isTr ? 'Sorular' : 'Questions'}
                   </h2>
-                  <p className="text-[12.5px] text-[#525252]" data-testid="survey-summary">
+                  <p className="text-[13px] text-[#525252]" data-testid="survey-summary">
                     {isTr
                       ? `${questionCount} soru · tahmini ${duration}`
                       : `${questionCount} ${questionCount === 1 ? 'question' : 'questions'} · about ${duration.replace('~', '')}`}
@@ -908,7 +908,7 @@ export default function SurveyEditorClient({
                     : '3–5 questions work best; long surveys get abandoned.'}
                 </p>
                 {attempted && validation.questionsError && (
-                  <p role="alert" className="text-[12.5px] font-medium text-[#B91C1C]">
+                  <p role="alert" className="text-[13px] font-medium text-[#B91C1C]">
                     {validation.questionsError}
                   </p>
                 )}
@@ -936,7 +936,7 @@ export default function SurveyEditorClient({
                 </ol>
 
                 <div className="bz-card-soft space-y-2 p-4">
-                  <p id={ids.addLabel} className="text-[12px] font-semibold text-[#0A0A0A]">
+                  <p id={ids.addLabel} className="text-[12px] font-medium text-pn-ink">
                     {isTr ? 'Soru ekle' : 'Add a question'}
                     {maxReached && (
                       <span className="ml-2 font-normal text-[#737373]">
@@ -954,7 +954,7 @@ export default function SurveyEditorClient({
                           key={type}
                           id={i === 0 ? `${uid}-add-first` : undefined}
                           type="button"
-                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3.5 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[#EDEDED]"
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-pn-line bg-white px-3.5 text-[13px] font-medium text-pn-ink transition-colors hover:border-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-pn-line"
                           disabled={maxReached}
                           onClick={() => addQuestion(type)}
                         >
@@ -982,7 +982,7 @@ export default function SurveyEditorClient({
               <section className="bz-card overflow-hidden">
                 <button
                   type="button"
-                  className="flex min-h-[64px] w-full items-center justify-between gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E] sm:px-5"
+                  className="flex min-h-[64px] w-full items-center justify-between gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pn-accent sm:px-5"
                   aria-expanded={settingsOpen}
                   aria-controls={ids.settings}
                   onClick={() => setSettingsOpen((v) => !v)}
@@ -1005,7 +1005,7 @@ export default function SurveyEditorClient({
                 </button>
 
                 {settingsOpen && (
-                  <div id={ids.settings} className="space-y-5 border-t border-[#EDEDED] p-4 sm:p-5">
+                  <div id={ids.settings} className="space-y-5 border-t border-pn-line p-4 sm:p-5">
                     <AccentPicker
                       locale={locale}
                       value={form.accentColor}
@@ -1040,11 +1040,11 @@ export default function SurveyEditorClient({
                       }
                     />
 
-                    <fieldset className="space-y-3 rounded-xl border border-[#EDEDED] p-4">
-                      <legend className="px-1 text-[12px] font-semibold text-[#0A0A0A]">
+                    <fieldset className="space-y-3 rounded-[20px] border border-pn-line p-4">
+                      <legend className="px-1 text-[12px] font-medium text-pn-ink">
                         {isTr ? 'Teşekkür kuponu (isteğe bağlı)' : 'Thank-you coupon (optional)'}
                       </legend>
-                      <p className="text-[11.5px] leading-[1.45] text-[#737373]">
+                      <p className="text-[12px] leading-[1.45] text-[#737373]">
                         {isTr
                           ? 'Kod, teşekkür ekranında kopyalanabilir kart olarak görünür. Koşulları açıklamaya yaz (örn. geçerlilik).'
                           : 'The code appears as a copyable card on the thank-you screen. Put the terms in the description (e.g. validity).'}
@@ -1089,7 +1089,7 @@ export default function SurveyEditorClient({
               className="hidden self-start [@media(min-width:1024px)_and_(min-height:740px)]:sticky [@media(min-width:1024px)_and_(min-height:740px)]:top-[88px] [@media(min-width:1024px)_and_(min-height:740px)]:block"
               aria-label={isTr ? 'Müşterinin göreceği ekran' : 'What customers will see'}
             >
-              <p className="mb-2 text-center text-[12px] font-semibold text-[#525252]">
+              <p className="mb-2 text-center text-[12px] font-medium text-[#525252]">
                 {isTr ? 'Müşterinin göreceği ekran' : 'What customers will see'}
               </p>
               {isDesktop && previewBusiness && (
@@ -1135,7 +1135,7 @@ function BusinessLine({
     <span className="mt-1 flex flex-wrap items-baseline gap-x-1.5 text-[13px] leading-[1.5] text-[#525252]">
       <span>
         {locale === 'tr' ? 'İşletme: ' : 'Business: '}
-        <strong className="font-semibold text-[#0A0A0A]">{name}</strong>
+        <strong className="font-medium text-pn-ink">{name}</strong>
       </span>
       {/* Own flex item: moves to the next line as one piece on narrow screens. */}
       {hint && <span className="text-[#737373]">{hint}</span>}
@@ -1163,11 +1163,11 @@ function AccentPicker({
   const custom = !isPresetAccent(value, brandColor);
 
   const ring =
-    'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-1';
+    'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-1';
 
   return (
     <div>
-      <p id={groupId} className="mb-1.5 text-[12px] font-semibold text-[#0A0A0A]">
+      <p id={groupId} className="mb-1.5 text-[12px] font-medium text-pn-ink">
         {isTr ? 'Vurgu rengi' : 'Accent colour'}
       </p>
       <div role="radiogroup" aria-labelledby={groupId} className="flex flex-wrap items-center gap-x-0.5 gap-y-1">
@@ -1186,10 +1186,10 @@ function AccentPicker({
             >
               <span
                 aria-hidden="true"
-                className={`flex h-7 w-7 items-center justify-center rounded-full border border-black/10 ${selected ? 'ring-2 ring-[#0A0A0A] ring-offset-2' : ''}`}
+                className={`flex h-7 w-7 items-center justify-center rounded-full border border-black/10 ${selected ? 'ring-2 ring-pn-ink ring-offset-2' : ''}`}
                 style={{ background: s.hex }}
               >
-                {selected && <Check size={14} className="text-[#0A0A0A] mix-blend-multiply" strokeWidth={3} />}
+                {selected && <Check size={14} className="text-pn-ink mix-blend-multiply" strokeWidth={3} />}
               </span>
             </button>
           );
@@ -1200,7 +1200,7 @@ function AccentPicker({
             type="button"
             role="radio"
             aria-checked={current === brand}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-1 ${current === brand ? 'border-[#0A0A0A] bg-[#FAFAFA]' : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'}`}
+            className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-offset-1 ${current === brand ? 'border-pn-ink bg-pn-canvas' : 'border-pn-line bg-white hover:border-pn-ink'}`}
             onClick={() => onChange(brand)}
           >
             <span aria-hidden="true" className="h-5 w-5 rounded-full border border-black/10" style={{ background: brand }} />
@@ -1209,7 +1209,7 @@ function AccentPicker({
         )}
 
         <label
-          className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-within:ring-2 focus-within:ring-[#0A0A0A] focus-within:ring-offset-1 ${custom ? 'border-[#0A0A0A] bg-[#FAFAFA]' : 'border-[#EDEDED] bg-white hover:border-[#0A0A0A]'}`}
+          className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-[13px] font-medium focus-within:ring-2 focus-within:ring-pn-ink focus-within:ring-offset-1 ${custom ? 'border-pn-ink bg-pn-canvas' : 'border-pn-line bg-white hover:border-pn-ink'}`}
         >
           <span
             aria-hidden="true"

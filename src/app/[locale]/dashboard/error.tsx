@@ -27,11 +27,11 @@ export default function DashboardError({
     <div className="mx-auto max-w-[640px] px-4 sm:px-7 py-6 lg:py-8">
       <div className="bz-card p-6 sm:p-8">
         <div className="flex items-start gap-3">
-          <div className="shrink-0 rounded-full bg-[#FAFAFA] p-2 text-[#0A0A0A]">
+          <div className="shrink-0 rounded-full bg-pn-canvas p-2 text-pn-ink">
             {transient ? <Loader2 size={20} className="animate-spin" /> : <AlertTriangle size={20} />}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="bz-h-tight text-[20px] sm:text-[22px] text-[#0A0A0A]">
+            <h1 className="bz-h-tight text-[20px] sm:text-[22px] text-pn-ink">
               {transient
                 ? isTr
                   ? 'Bağlantı yenileniyor'
@@ -50,7 +50,7 @@ export default function DashboardError({
                   : 'A temporary error happened while loading this page. Try again or return to the dashboard.'}
             </p>
             {error.digest && (
-              <p className="pulse-eyebrow mt-3 text-[#A3A3A3]">REFERANS · {error.digest}</p>
+              <p className="text-[13px] font-medium mt-3 text-[#A3A3A3]">REFERANS · {error.digest}</p>
             )}
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function DashboardError({
           </button>
           <Link
             href={`/${locale}/dashboard`}
-            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-pn-line bg-white px-5 py-2.5 text-[13px] font-medium text-pn-ink transition-colors hover:border-pn-ink"
           >
             <Home size={14} strokeWidth={2} />
             {isTr ? 'Panele dön' : 'Back to dashboard'}

@@ -177,7 +177,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
 
   if (loading) {
     return (
-      <div className="bz-card divide-y divide-[#EDEDED] p-0" aria-busy="true">
+      <div className="bz-card divide-y divide-pn-line p-0" aria-busy="true">
         {rows.map((row) => (
           <div key={row.key} className="flex items-center justify-between gap-4 p-4 sm:p-5">
             <div className="min-w-0 flex-1 space-y-2">
@@ -205,7 +205,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                 setLoading(true);
                 setReloadTick((n) => n + 1);
               }}
-              className="font-semibold underline underline-offset-2"
+              className="font-medium underline underline-offset-2"
             >
               {isTr ? 'Tekrar dene' : 'Retry'}
             </button>
@@ -224,7 +224,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
 
       {/* One card, one row per email. The switch is the state — the old
           "Aktif / Pasif" pill next to each label repeated it. */}
-      <div className="bz-card divide-y divide-[#EDEDED] p-0">
+      <div className="bz-card divide-y divide-pn-line p-0">
         {rows.map((row) => {
           // Unknown state after a failed load — render neutral, not "on".
           const on = !loadFailed && Boolean(prefs[row.key]);
@@ -236,8 +236,8 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
               className="flex items-start justify-between gap-4 p-4 sm:items-center sm:p-5"
             >
               <div className="min-w-0">
-                <p className="text-[14px] font-medium text-[#0A0A0A]">{label}</p>
-                <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+                <p className="text-[14px] font-medium text-pn-ink">{label}</p>
+                <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
                   {row.desc[isTr ? 'tr' : 'en']}
                 </p>
               </div>
@@ -254,13 +254,13 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         })}
       </div>
 
-      <p className="text-[11.5px] leading-[1.55] text-[#737373]">
+      <p className="text-[12px] leading-[1.55] text-[#737373]">
         {isTr
           ? 'Bildirim e-posta adresini değiştirmek için '
           : 'To change the recipient email, open '}
         <Link
           href={`/${locale}/dashboard/restaurants`}
-          className="font-medium text-[#0A0A0A] underline underline-offset-2"
+          className="font-medium text-pn-ink underline underline-offset-2"
         >
           {isTr ? 'İşletmeler' : 'Locations'}
         </Link>

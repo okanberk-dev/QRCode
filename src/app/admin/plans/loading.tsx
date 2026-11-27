@@ -33,7 +33,7 @@ export default function Loading() {
           </div>
         </div>
         <div className="bz-card overflow-hidden">
-          <div className="flex items-center justify-between border-b border-[#EDEDED] px-5 py-4">
+          <div className="flex items-center justify-between border-b border-pn-line px-5 py-4">
             <SkBox className="h-3 w-44" />
             <SkBox className="h-3 w-10" />
           </div>
@@ -60,7 +60,7 @@ export default function Loading() {
         </div>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-3xl border border-[#EDEDED] bg-white p-6 sm:p-7 space-y-3">
+            <div key={i} className="rounded-[28px] border border-pn-line bg-white p-6 sm:p-7 space-y-3">
               <SkBox className="h-4 w-24" />
               <SkBox className="h-10 w-32" />
               <SkBox className="h-3 w-full" />
@@ -75,7 +75,7 @@ export default function Loading() {
         </div>
       </div>
 
-      <SkBox className="h-16 w-full rounded-xl" />
+      <SkBox className="h-16 w-full rounded-[20px]" />
     </SkPageShell>
   );
 }

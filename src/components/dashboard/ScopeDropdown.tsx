@@ -61,7 +61,7 @@ export function ScopeDropdown({ current, isTr = true }: ScopeDropdownProps) {
       trigger={
         <button
           type="button"
-          className={`bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+          className={`bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 ${
             pending ? 'opacity-70' : ''
           }`}
           // Accessible name keeps the visible text (WCAG 2.5.3 label-in-name).

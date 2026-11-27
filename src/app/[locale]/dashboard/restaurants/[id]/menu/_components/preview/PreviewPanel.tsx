@@ -23,16 +23,16 @@ export function PreviewPanel({ badge, ...phone }: PhoneProps & { badge?: string 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={stageRef} className="min-h-0 flex-1 overflow-hidden bg-gradient-to-b from-[#FAFAFA] to-[#F0F0F0] px-4 py-4">
+      <div ref={stageRef} className="min-h-0 flex-1 overflow-hidden bg-gradient-to-b from-pn-canvas to-[#F0F0F0] px-4 py-4">
         {badge && (
           <p className="mb-2 text-center">
-            <span className="inline-flex items-center rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[12px] font-medium text-[#4D5C00]">{badge}</span>
+            <span className="inline-flex items-center rounded-full bg-pn-accent-soft px-2.5 py-1 text-[12px] font-medium text-[#4D5C00]">{badge}</span>
           </p>
         )}
         {!fit.tooShort && <PhonePreview {...phone} variant="framed" />}
       </div>
       {fit.tooShort ? (
-        <div className="border-t border-[#EDEDED] px-4 py-3">
+        <div className="border-t border-pn-line px-4 py-3">
           <button type="button" onClick={() => setSheetOpen(true)} className="bz-btn w-full">
             <Smartphone size={14} strokeWidth={2} aria-hidden="true" />
             {copy.preview.open}
@@ -44,7 +44,7 @@ export function PreviewPanel({ badge, ...phone }: PhoneProps & { badge?: string 
           )}
         </div>
       ) : (
-        <p className="border-t border-[#EDEDED] px-4 py-3 text-[12px] leading-snug text-[#737373]">{copy.preview.footer}</p>
+        <p className="border-t border-pn-line px-4 py-3 text-[12px] leading-snug text-[#737373]">{copy.preview.footer}</p>
       )}
     </div>
   );

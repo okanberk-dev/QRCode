@@ -53,9 +53,9 @@ export function PasteSheet({
       title={copy.paste.title}
       overlay={
         confirmClose ? (
-          <div className="absolute inset-0 z-10 flex items-end justify-center bg-[#0A0A0A]/30 p-4 sm:items-center">
-            <div role="alertdialog" aria-label={copy.paste.discardTitle} className="w-full max-w-[400px] space-y-2 rounded-2xl bg-white p-4 bz-elev-3">
-              <p className="text-[15px] font-semibold text-[#0A0A0A]">{copy.paste.discardTitle}</p>
+          <div className="absolute inset-0 z-10 flex items-end justify-center bg-pn-ink/30 p-4 sm:items-center">
+            <div role="alertdialog" aria-label={copy.paste.discardTitle} className="w-full max-w-[400px] space-y-2 rounded-[24px] bg-white p-4 bz-elev-3">
+              <p className="text-[15px] font-medium text-pn-ink">{copy.paste.discardTitle}</p>
               <p className="text-[13px] text-[#525252]">{copy.paste.discardBody}</p>
               <div className="flex flex-wrap justify-end gap-2 pt-1">
                 <button type="button" autoFocus onClick={() => setConfirmClose(false)} className="bz-btn-ghost min-h-[44px] sm:min-h-[36px]">

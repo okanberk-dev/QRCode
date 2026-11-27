@@ -97,7 +97,7 @@ type ProviderChecks = Record<string, LatestCheckLite>;
 const NO_CHECKS: ProviderChecks = {};
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-pn-ink focus-visible:ring-offset-2';
 
 const BUTTON_ROW_ITEM = `inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[13px] sm:min-h-[38px] sm:w-auto ${FOCUS_RING}`;
 
@@ -122,7 +122,7 @@ function CheckResultLine({
   const relative = formatRelativeTime(check.checkedAt, locale, nowMs);
   if (check.ok) {
     return (
-      <div className="flex items-center gap-2 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[12.5px] text-[#166534]">
+      <div className="flex items-center gap-2 rounded-[14px] bg-[#F0FDF4] px-3 py-2 text-[13px] text-[#166534]">
         <CheckCircle2 size={14} className="shrink-0" aria-hidden="true" />
         <span>
           <strong>{isTr ? 'Link çalışıyor' : 'Link works'}</strong>
@@ -132,7 +132,7 @@ function CheckResultLine({
     );
   }
   return (
-    <div className="flex items-start gap-2 rounded-lg bg-[#FEF2F2] px-3 py-2 text-[12.5px] text-[#991B1B]">
+    <div className="flex items-start gap-2 rounded-[14px] bg-[#FEF2F2] px-3 py-2 text-[13px] text-[#991B1B]">
       <XCircle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <div>
@@ -140,7 +140,7 @@ function CheckResultLine({
           <span className="ml-1">· {relative}</span>
         </div>
         {check.error && <div className="mt-0.5 break-words text-[12px] text-[#7F1D1D]">{localizeCheckError(check.error, locale)}</div>}
-        <div className="mt-1 text-[11.5px] text-[#7F1D1D]">
+        <div className="mt-1 text-[12px] text-[#7F1D1D]">
           {isTr
             ? 'Bazı platformlar otomatik kontrolü engelleyebilir; link tarayıcıda yine de açılabilir.'
             : 'Some platforms block automated checks; the link may still open in a browser.'}
@@ -536,7 +536,7 @@ export default function PlatformProviderWizard({
         <Link
           href={overviewHref}
           onClick={guardLeave}
-          className={`mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-[#0A0A0A] sm:min-h-[32px] ${FOCUS_RING}`}
+          className={`mb-3 inline-flex min-h-[44px] items-center gap-1.5 rounded text-[13px] font-medium text-[#737373] transition-colors hover:text-pn-ink sm:min-h-[32px] ${FOCUS_RING}`}
         >
           <ArrowLeft size={15} strokeWidth={2} aria-hidden="true" />
           {linksLabel}
@@ -607,7 +607,7 @@ export default function PlatformProviderWizard({
               ref={inputRef}
               id={fieldId}
               aria-describedby={warning ? warningId : undefined}
-              className="bz-input bz-mono w-full text-[16px] sm:text-[13px]"
+              className="bz-input tabular-nums w-full text-[16px] sm:text-[13px]"
               type="url"
               inputMode="url"
               autoComplete="off"
@@ -634,7 +634,7 @@ export default function PlatformProviderWizard({
           {warning && (
             <div
               id={warningId}
-              className="flex items-start gap-2 rounded-lg bg-[#FFFBEB] px-3 py-2 text-[12px] leading-snug text-[#92400E]"
+              className="flex items-start gap-2 rounded-[14px] bg-[#FFFBEB] px-3 py-2 text-[12px] leading-snug text-[#92400E]"
             >
               <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" aria-hidden="true" />
               <span>{warning}</span>
@@ -642,7 +642,7 @@ export default function PlatformProviderWizard({
           )}
 
           {platform.enabledField && (
-            <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-2 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#0A0A0A] has-[:focus-visible]:ring-offset-2">
+            <div className="rounded-[24px] border border-pn-line bg-pn-canvas px-3.5 py-2 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-pn-ink has-[:focus-visible]:ring-offset-2">
               <APSwitch
                 size="lg"
                 className="min-h-[44px] w-full"
@@ -684,7 +684,7 @@ export default function PlatformProviderWizard({
                 // utilities can't override it — mirror its :disabled look inline.
                 style={
                   saveBlocked && !saving
-                    ? { background: '#EDEDED', color: '#525252', cursor: 'not-allowed', transform: 'none' }
+                    ? { background: '#ECECF0', color: '#525252', cursor: 'not-allowed', transform: 'none' }
                     : undefined
                 }
               >
@@ -783,7 +783,7 @@ export default function PlatformProviderWizard({
               owner just ran. Always mounted so changes are announced. */}
           <div role="status" aria-live="polite" aria-atomic="true" className="space-y-2">
             {success && !dirty && (
-              <div className="flex items-center gap-2 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[12.5px] font-medium text-[#166534]">
+              <div className="flex items-center gap-2 rounded-[14px] bg-[#F0FDF4] px-3 py-2 text-[13px] font-medium text-[#166534]">
                 <CheckCircle2 size={14} className="shrink-0" aria-hidden="true" />
                 {success}
               </div>
@@ -864,16 +864,16 @@ export default function PlatformProviderWizard({
               }
               actions={
                 <span
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.06em]"
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium "
                   style={{
-                    background: hasValidUrl ? (reviewEnabled ? '#EAF9B8' : '#F5F5F5') : '#FEF3C7',
-                    color: hasValidUrl ? (reviewEnabled ? '#0A0A0A' : '#525252') : '#92400E',
+                    background: hasValidUrl ? (reviewEnabled ? '#F3FDC4' : '#F5F5F5') : '#FEF3C7',
+                    color: hasValidUrl ? (reviewEnabled ? '#000000' : '#525252') : '#92400E',
                   }}
                 >
                   <span
                     aria-hidden="true"
                     className="inline-block h-1.5 w-1.5 rounded-full"
-                    style={{ background: hasValidUrl ? (reviewEnabled ? '#A8D62E' : '#A3A3A3') : '#F59E0B' }}
+                    style={{ background: hasValidUrl ? (reviewEnabled ? '#83AF3B' : '#A3A3A3') : '#F59E0B' }}
                   />
                   {hasValidUrl
                     ? reviewEnabled
@@ -890,7 +890,7 @@ export default function PlatformProviderWizard({
               }
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-[12.5px] leading-[1.55] text-[#525252]">
+                <p className="text-[13px] leading-[1.55] text-[#525252]">
                   {hasValidUrl
                     ? reviewEnabled
                       ? isTr
@@ -908,7 +908,7 @@ export default function PlatformProviderWizard({
                   onClick={() => setWhatsappWizardOpen(true)}
                   disabled={wizardDisabled}
                   title={wizardDisabledReason}
-                  className={`bz-btn-primary inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[38px] sm:w-auto ${FOCUS_RING}`}
+                  className={`bz-btn-primary inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[38px] sm:w-auto ${FOCUS_RING}`}
                 >
                   <Wand2 size={13} strokeWidth={2.2} aria-hidden="true" />
                   {isTr ? 'Sihirbazı aç' : 'Open wizard'}
@@ -924,13 +924,13 @@ export default function PlatformProviderWizard({
         <SettingsCard title={isTr ? 'Müşteri yönlendirme' : 'Customer routing'}>
           <p className="text-[13px] leading-[1.6] text-[#525252]">
             {isTr ? 'Platform önerilen puan: ' : 'Suggested from: '}
-            <strong className="font-semibold text-[#0A0A0A]">
+            <strong className="font-medium text-pn-ink">
               {redirectThresholdLabel(selectedRestaurant.redirectMinRating, locale)}
             </strong>
             <span aria-hidden="true"> · </span>
             <span className="sr-only">, </span>
             {isTr ? 'Varsayılan platform: ' : 'Default platform: '}
-            <strong className="font-semibold text-[#0A0A0A]">{defaultName}</strong>
+            <strong className="font-medium text-pn-ink">{defaultName}</strong>
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             {canMakeDefault && (
@@ -953,7 +953,7 @@ export default function PlatformProviderWizard({
               ref={changeLinkRef}
               href={`${overviewHref}#yonlendirme`}
               onClick={guardLeave}
-              className={`inline-flex min-h-[44px] items-center justify-center rounded px-1 text-[13px] font-semibold text-[#0A0A0A] underline underline-offset-2 sm:min-h-[38px] sm:justify-start ${FOCUS_RING}`}
+              className={`inline-flex min-h-[44px] items-center justify-center rounded px-1 text-[13px] font-medium text-pn-ink underline underline-offset-2 sm:min-h-[38px] sm:justify-start ${FOCUS_RING}`}
             >
               {isTr ? 'Değiştir' : 'Change'}
             </Link>
@@ -962,7 +962,7 @@ export default function PlatformProviderWizard({
           <p
             role="status"
             aria-live="polite"
-            className={`text-[12.5px] [&:not(:empty)]:mt-2 ${routingError ? 'text-[#991B1B]' : 'text-[#166534]'}`}
+            className={`text-[13px] [&:not(:empty)]:mt-2 ${routingError ? 'text-[#991B1B]' : 'text-[#166534]'}`}
           >
             {routingMessage}
           </p>

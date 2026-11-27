@@ -139,7 +139,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <Link
         href={`/admin/restaurants/${restaurant.id}`}
-        className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1"
+        className="tabular-nums text-[12px] text-[#737373] hover:text-pn-ink inline-flex items-center gap-1"
       >
         <ArrowLeft size={12} />
         İşletme detayına dön
@@ -175,22 +175,22 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
       <div className="bz-card p-5">
         <div className="flex flex-wrap items-center gap-4">
           <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[24px]"
             style={{ background: accent + '40', color: '#0A0A0A' }}
           >
             <UtensilsCrossed size={20} strokeWidth={2} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="pulse-eyebrow text-[#737373]">TEMA & RENK</p>
-            <p className="mt-0.5 text-[14px] font-medium text-[#0A0A0A]">
+            <p className="text-[13px] font-medium text-[#737373]">TEMA & RENK</p>
+            <p className="mt-0.5 text-[14px] font-medium text-pn-ink">
               {themeLabel}
               <span className="ml-2 inline-flex items-center gap-1.5 align-middle">
                 <span
-                  className="h-3 w-3 rounded-full ring-1 ring-[#EDEDED]"
+                  className="h-3 w-3 rounded-full ring-1 ring-pn-line"
                   style={{ background: accent }}
                   aria-hidden="true"
                 />
-                <span className="text-[12px] text-[#525252] bz-mono">{accent}</span>
+                <span className="text-[12px] text-[#525252] tabular-nums">{accent}</span>
               </span>
             </p>
           </div>
@@ -201,7 +201,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
             <Badge kind={restaurant.menuPublished ? 'lime' : 'ghost'}>
               {restaurant.menuPublished ? 'Yayında' : 'Taslak'}
             </Badge>
-            <span className="bz-mono text-[11px] text-[#737373]">
+            <span className="tabular-nums text-[12px] text-[#737373]">
               {categories.length} kategori · {totalItems} ürün
             </span>
           </div>
@@ -219,10 +219,10 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
         <div className="space-y-4">
           {categories.map((cat) => (
             <section key={cat.id} className="bz-card overflow-hidden">
-              <header className="flex items-start justify-between gap-3 border-b border-[#EDEDED] px-5 py-4">
+              <header className="flex items-start justify-between gap-3 border-b border-pn-line px-5 py-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h2 className="bz-h-tight text-[16px] text-[#0A0A0A] truncate">{cat.name}</h2>
+                    <h2 className="bz-h-tight text-[16px] text-pn-ink truncate">{cat.name}</h2>
                     {!cat.isVisible && (
                       <Badge kind="ghost">
                         <EyeOff size={10} strokeWidth={2.2} className="mr-1 inline" />
@@ -231,12 +231,12 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
                     )}
                   </div>
                   {cat.description && (
-                    <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+                    <p className="mt-1 text-[13px] leading-[1.55] text-[#525252]">
                       {cat.description}
                     </p>
                   )}
                 </div>
-                <span className="bz-mono shrink-0 text-[11px] text-[#737373]">
+                <span className="tabular-nums shrink-0 text-[12px] text-[#737373]">
                   {cat.items.length} ürün
                 </span>
               </header>
@@ -246,7 +246,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
                   Bu kategoride henüz ürün yok.
                 </div>
               ) : (
-                <ul className="divide-y divide-[#F5F5F5]">
+                <ul className="divide-y divide-pn-line">
                   {cat.items.map((item) => (
                     <li key={item.id} className="flex items-start gap-3 px-5 py-3.5">
                       {/* Görsel */}
@@ -256,11 +256,11 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
                           <img
                             src={item.imageUrl}
                             alt={item.name}
-                            className="h-14 w-14 rounded-lg object-cover ring-1 ring-[#EDEDED]"
+                            className="h-14 w-14 rounded-[14px] object-cover ring-1 ring-pn-line"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-[#FAFAFA] text-[#A3A3A3]">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-[14px] bg-pn-canvas text-[#A3A3A3]">
                             <ImageIcon size={18} strokeWidth={1.5} />
                           </div>
                         )}
@@ -271,7 +271,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <p className="text-[13.5px] font-semibold text-[#0A0A0A] truncate">
+                              <p className="text-[14px] font-medium text-pn-ink truncate">
                                 {item.name}
                               </p>
                               {item.isOutOfStock && <Badge kind="danger">Tükendi</Badge>}
@@ -296,7 +296,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
                                 {item.badges.map((b) => (
                                   <span
                                     key={`b-${b}`}
-                                    className="rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[10px] font-medium text-[#0A0A0A]"
+                                    className="rounded-full bg-pn-accent-soft px-2 py-0.5 text-[12px] font-medium text-pn-ink"
                                   >
                                     {b}
                                   </span>
@@ -304,7 +304,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
                                 {item.allergens.map((a) => (
                                   <span
                                     key={`a-${a}`}
-                                    className="rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-2 py-0.5 text-[10px] font-medium text-[#92400E]"
+                                    className="rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-2 py-0.5 text-[12px] font-medium text-[#92400E]"
                                   >
                                     {a}
                                   </span>
@@ -313,11 +313,11 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
                             )}
                           </div>
                           <div className="shrink-0 text-right">
-                            <p className="bz-mono text-[13px] font-semibold text-[#0A0A0A]">
+                            <p className="tabular-nums text-[13px] font-medium text-pn-ink">
                               {formatPrice(item.priceCents, item.currency)}
                             </p>
                             {item.isAvailable && !item.isOutOfStock && (
-                              <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-[#16A34A]">
+                              <span className="mt-0.5 inline-flex items-center gap-1 text-[12px] text-[#16A34A]">
                                 <Eye size={10} strokeWidth={2.2} />
                                 Aktif
                               </span>
@@ -336,12 +336,12 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
 
       {/* Footer summary */}
       {categories.length > 0 && (
-        <div className="rounded-xl bg-[#FAFAFA] p-4 text-center">
+        <div className="rounded-[20px] bg-pn-canvas p-4 text-center">
           <p className="text-[12px] text-[#525252]">
             {visibleCategories} / {categories.length} kategori müşteriye görünür · {totalItems} ürün
           </p>
           {!restaurant.menuPublished && (
-            <p className="mt-1 text-[11.5px] text-[#737373]">
+            <p className="mt-1 text-[12px] text-[#737373]">
               Menü taslak modunda — müşteri görünümü için yayınlama yapılmalı.
             </p>
           )}

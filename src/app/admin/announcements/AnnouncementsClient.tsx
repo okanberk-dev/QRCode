@@ -346,7 +346,7 @@ export default function AnnouncementsClient({
                     <p style={{ margin: 0, fontSize: 13, color: '#525252', lineHeight: 1.55 }}>
                       {a.message}
                     </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#A3A3A3]">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-[#A3A3A3]">
                       <span>
                         {new Date(a.createdAt).toLocaleDateString('tr-TR', {
                           day: 'numeric',
@@ -409,14 +409,14 @@ export default function AnnouncementsClient({
           onClose={() => setShowForm(false)}
           title={
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 shrink-0 bg-[#EAF9B8] rounded-xl flex items-center justify-center">
-                {editing ? <Pencil size={18} className="text-[#0A0A0A]" strokeWidth={2} /> : <Plus size={18} className="text-[#0A0A0A]" strokeWidth={2} />}
+              <div className="w-10 h-10 shrink-0 bg-pn-accent-soft rounded-[20px] flex items-center justify-center">
+                {editing ? <Pencil size={18} className="text-pn-ink" strokeWidth={2} /> : <Plus size={18} className="text-pn-ink" strokeWidth={2} />}
               </div>
               <div className="min-w-0">
-                <h2 className="text-[18px] font-medium tracking-[-0.015em] text-[#0A0A0A] truncate">
+                <h2 className="text-[18px] font-medium tracking-[-0.015em] text-pn-ink truncate">
                   {editing ? 'Duyuruyu düzenle' : 'Yeni duyuru'}
                 </h2>
-                <p className="pulse-eyebrow text-[#737373] mt-0.5">
+                <p className="text-[13px] font-medium text-[#737373] mt-0.5">
                   İşletme panellerinde gösterilecek
                 </p>
               </div>
@@ -426,7 +426,7 @@ export default function AnnouncementsClient({
             <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               {/* Title */}
               <div>
-                <label htmlFor={`${fid}-title`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLIK</label>
+                <label htmlFor={`${fid}-title`} className="block text-[12px] font-medium text-[#6B7280] mb-3">BAŞLIK</label>
                 <input
                   id={`${fid}-title`}
                   type="text"
@@ -435,13 +435,13 @@ export default function AnnouncementsClient({
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Örn: Yeni QR tasarımları yayında!"
-                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                  className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
                 />
               </div>
 
               {/* Message */}
               <div>
-                <label htmlFor={`${fid}-message`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">MESAJ</label>
+                <label htmlFor={`${fid}-message`} className="block text-[12px] font-medium text-[#6B7280] mb-3">MESAJ</label>
                 <textarea
                   id={`${fid}-message`}
                   required
@@ -450,14 +450,14 @@ export default function AnnouncementsClient({
                   value={form.message}
                   onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                   placeholder="Detayları buraya yazın..."
-                  className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all resize-none"
+                  className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all resize-none"
                 />
               </div>
 
               {/* Severity & Locale */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p id={`${fid}-severity`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">ÖNEM DERECESİ</p>
+                  <p id={`${fid}-severity`} className="block text-[12px] font-medium text-[#6B7280] mb-3">ÖNEM DERECESİ</p>
                   <div role="group" aria-labelledby={`${fid}-severity`} className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
                     {(Object.keys(SEVERITY_META) as Severity[]).map(s => (
                       <button
@@ -465,8 +465,8 @@ export default function AnnouncementsClient({
                         type="button"
                         aria-pressed={form.severity === s}
                         onClick={() => setForm(f => ({ ...f, severity: s }))}
-                        className={`py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all ${
-                          form.severity === s ? 'bg-[#0A0A0A] text-white shadow-lg' : 'text-[#6B7280] hover:text-[#0A0A0A]'
+                        className={`py-2.5 rounded-[20px] text-[12px] font-medium transition-all ${
+                          form.severity === s ? 'bg-pn-ink text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
                         }`}
                       >
                         {SEVERITY_META[s].label}
@@ -475,7 +475,7 @@ export default function AnnouncementsClient({
                   </div>
                 </div>
                 <div>
-                  <p id={`${fid}-locale`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">DİL</p>
+                  <p id={`${fid}-locale`} className="block text-[12px] font-medium text-[#6B7280] mb-3">DİL</p>
                   <div role="group" aria-labelledby={`${fid}-locale`} className="grid grid-cols-3 gap-2 p-1.5 bg-[#FFFFFF] rounded-[18px]">
                     {(['all', 'tr', 'en'] as Locale[]).map(l => (
                       <button
@@ -483,8 +483,8 @@ export default function AnnouncementsClient({
                         type="button"
                         aria-pressed={form.locale === l}
                         onClick={() => setForm(f => ({ ...f, locale: l }))}
-                        className={`py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all ${
-                          form.locale === l ? 'bg-[#0A0A0A] text-white shadow-lg' : 'text-[#6B7280] hover:text-[#0A0A0A]'
+                        className={`py-2.5 rounded-[20px] text-[12px] font-medium transition-all ${
+                          form.locale === l ? 'bg-pn-ink text-white shadow-lg' : 'text-[#6B7280] hover:text-pn-ink'
                         }`}
                       >
                         {l === 'all' ? 'TÜMÜ' : l.toUpperCase()}
@@ -497,33 +497,33 @@ export default function AnnouncementsClient({
               {/* Dates & Priority */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label htmlFor={`${fid}-start`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BAŞLANGIÇ</label>
+                  <label htmlFor={`${fid}-start`} className="block text-[12px] font-medium text-[#6B7280] mb-3">BAŞLANGIÇ</label>
                   <input
                     id={`${fid}-start`}
                     type="datetime-local"
                     value={form.startDate}
                     onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
                   />
                 </div>
                 <div>
-                  <label htmlFor={`${fid}-end`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">BİTİŞ</label>
+                  <label htmlFor={`${fid}-end`} className="block text-[12px] font-medium text-[#6B7280] mb-3">BİTİŞ</label>
                   <input
                     id={`${fid}-end`}
                     type="datetime-local"
                     value={form.endDate}
                     onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
                   />
                 </div>
                 <div>
-                  <label htmlFor={`${fid}-priority`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">ÖNCELİK</label>
+                  <label htmlFor={`${fid}-priority`} className="block text-[12px] font-medium text-[#6B7280] mb-3">ÖNCELİK</label>
                   <input
                     id={`${fid}-priority`}
                     type="number"
                     value={form.priority}
                     onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))}
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
                   />
                 </div>
               </div>
@@ -531,7 +531,7 @@ export default function AnnouncementsClient({
               {/* CTA */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor={`${fid}-ctatext`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">CTA METNİ (OPSİYONEL)</label>
+                  <label htmlFor={`${fid}-ctatext`} className="block text-[12px] font-medium text-[#6B7280] mb-3">CTA METNİ (OPSİYONEL)</label>
                   <input
                     id={`${fid}-ctatext`}
                     type="text"
@@ -539,28 +539,28 @@ export default function AnnouncementsClient({
                     value={form.ctaText}
                     onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))}
                     placeholder="Detayları gör"
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
                   />
                 </div>
                 <div>
-                  <label htmlFor={`${fid}-ctalink`} className="block text-[10px] font-semibold text-[#6B7280] uppercase tracking-[0.2em] mb-3">CTA BAĞLANTISI</label>
+                  <label htmlFor={`${fid}-ctalink`} className="block text-[12px] font-medium text-[#6B7280] mb-3">CTA BAĞLANTISI</label>
                   <input
                     id={`${fid}-ctalink`}
                     type="url"
                     value={form.ctaLink}
                     onChange={e => setForm(f => ({ ...f, ctaLink: e.target.value }))}
                     placeholder="https://..."
-                    className="w-full bg-[#FFFFFF] border border-[#EDEDED] rounded-xl px-5 py-3.5 text-[#0A0A0A] text-sm font-bold placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:bg-white transition-all shadow-sm"
+                    className="w-full bg-[#FFFFFF] border border-pn-line rounded-[20px] px-5 py-3.5 text-pn-ink text-sm font-medium placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-pn-accent focus:bg-white transition-all "
                   />
                 </div>
               </div>
 
               {/* Dismissible + status */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-xl border border-[#EDEDED]">
+                <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-[20px] border border-pn-line">
                   <div className="space-y-0.5">
-                    <p className="text-[#0A0A0A] text-[13px] font-semibold uppercase tracking-tight">{form.isDismissible ? 'KAPATILABİLİR' : 'HER ZAMAN GÖRÜNÜR'}</p>
-                    <p className="text-[#6B7280] text-[11px] font-bold">{form.isDismissible ? 'Kullanıcı banner\u2019ı kapatabilir.' : 'Banner kapatılamaz.'}</p>
+                    <p className="text-pn-ink text-[13px] font-medium tracking-tight">{form.isDismissible ? 'KAPATILABİLİR' : 'HER ZAMAN GÖRÜNÜR'}</p>
+                    <p className="text-[#6B7280] text-[12px] font-medium">{form.isDismissible ? 'Kullanıcı banner\u2019ı kapatabilir.' : 'Banner kapatılamaz.'}</p>
                   </div>
                   <button
                     type="button"
@@ -568,16 +568,16 @@ export default function AnnouncementsClient({
                     aria-checked={form.isDismissible}
                     aria-label="Kullanıcı duyuruyu kapatabilsin"
                     onClick={() => setForm(f => ({ ...f, isDismissible: !f.isDismissible }))}
-                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isDismissible ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
+                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.isDismissible ? 'bg-pn-accent' : 'bg-[#C9D0DB]'}`}
                   >
                     <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.isDismissible ? 'translate-x-5.5' : ''}`} />
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-xl border border-[#EDEDED]">
+                <div className="flex items-center justify-between p-5 bg-[#FFFFFF] rounded-[20px] border border-pn-line">
                   <div className="space-y-0.5">
-                    <p className="text-[#0A0A0A] text-[13px] font-semibold uppercase tracking-tight">{form.status === 'published' ? 'YAYINDA' : 'TASLAK'}</p>
-                    <p className="text-[#6B7280] text-[11px] font-bold">{form.status === 'published' ? 'Tüm işletme panellerinde görünür.' : 'Sadece admin panelinde.'}</p>
+                    <p className="text-pn-ink text-[13px] font-medium tracking-tight">{form.status === 'published' ? 'YAYINDA' : 'TASLAK'}</p>
+                    <p className="text-[#6B7280] text-[12px] font-medium">{form.status === 'published' ? 'Tüm işletme panellerinde görünür.' : 'Sadece admin panelinde.'}</p>
                   </div>
                   <button
                     type="button"
@@ -585,7 +585,7 @@ export default function AnnouncementsClient({
                     aria-checked={form.status === 'published'}
                     aria-label="Duyuruyu yayınla"
                     onClick={() => setForm(f => ({ ...f, status: f.status === 'published' ? 'draft' : 'published' }))}
-                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-[#C6F24E]' : 'bg-[#C9D0DB]'}`}
+                    className={`relative w-12 h-6.5 rounded-full transition-all duration-300 ${form.status === 'published' ? 'bg-pn-accent' : 'bg-[#C9D0DB]'}`}
                   >
                     <span className={`absolute top-1 left-1 w-4.5 h-4.5 bg-white rounded-full transition-all duration-300 ${form.status === 'published' ? 'translate-x-5.5' : ''}`} />
                   </button>
@@ -599,7 +599,7 @@ export default function AnnouncementsClient({
               )}
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-2 pt-5 border-t border-[#EDEDED]">
+              <div className="flex items-center justify-end gap-2 pt-5 border-t border-pn-line">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}

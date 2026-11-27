@@ -74,7 +74,7 @@ function SectionTitle({ id, children, aside }: { id: string; children: ReactNode
   return (
     <div className="mb-3 flex items-baseline justify-between gap-3">
       <h3 id={id}>
-        <span className="text-[14px] font-semibold text-[#0A0A0A]">{children}</span>
+        <span className="text-[14px] font-medium text-pn-ink">{children}</span>
       </h3>
       {aside}
     </div>
@@ -251,9 +251,9 @@ export function DesignPanel({
   const styleTab = (
     <div className="space-y-4">
       {refreshNote && (
-        <div role="note" className="flex items-start gap-2.5 rounded-xl bg-[#F4FBDF] p-3 ring-1 ring-[#DDEFA6]">
+        <div role="note" className="flex items-start gap-2.5 rounded-[20px] bg-[#F4FBDF] p-3 ring-1 ring-[#DDEFA6]">
           <Sparkles size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-[#3F4A00]" aria-hidden="true" />
-          <p className="min-w-0 flex-1 text-[12.5px] leading-relaxed text-[#2F3600]">{copy.design.refreshNote}</p>
+          <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[#2F3600]">{copy.design.refreshNote}</p>
           <button type="button" onClick={dismissRefresh} className="bz-btn-ghost min-h-11 shrink-0 px-3 pointer-fine:min-h-8">
             {copy.design.refreshDismiss}
           </button>
@@ -288,8 +288,8 @@ export function DesignPanel({
         </div>
       </section>
       {droppedFor === presetId && (
-        <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-[#FAFAFA] px-3 py-2 ring-1 ring-[#EDEDED]">
-          <p className="min-w-0 flex-1 text-[12.5px] text-[#404040]">{copy.design.knobsReset}</p>
+        <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[20px] bg-pn-canvas px-3 py-2 ring-1 ring-pn-line">
+          <p className="min-w-0 flex-1 text-[13px] text-[#404040]">{copy.design.knobsReset}</p>
           <button type="button" onClick={restorePreset} disabled={locked} className="bz-btn-ghost min-h-11 px-3 pointer-fine:min-h-8">
             <RotateCcw size={13} strokeWidth={2} aria-hidden="true" />
             {copy.design.restoreKnobs}
@@ -297,9 +297,9 @@ export function DesignPanel({
         </div>
       )}
       {showSuggested && suggested && suggestedSwatch && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl px-3 py-2 ring-1 ring-[#EDEDED]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[20px] px-3 py-2 ring-1 ring-pn-line">
           <span className="h-4 w-4 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: suggested }} aria-hidden="true" />
-          <p className="min-w-0 flex-1 text-[12.5px] text-[#404040]">
+          <p className="min-w-0 flex-1 text-[13px] text-[#404040]">
             {copy.design.suggestedAccent(isTr ? suggestedSwatch.tr : suggestedSwatch.en)}
           </p>
           <button
@@ -377,9 +377,9 @@ export function DesignPanel({
             onChange={(v) => setKnob(key, v as MenuKnobs[typeof key])}
           >
             {key === 'header' && resolved.knobs.header === 'cover' && !hasCover && (
-              <div role="note" className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-[#FAFAFA] px-3 py-2 ring-1 ring-[#EDEDED]">
+              <div role="note" className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[20px] bg-pn-canvas px-3 py-2 ring-1 ring-pn-line">
                 <Info size={14} strokeWidth={2} className="shrink-0 text-[#525252]" aria-hidden="true" />
-                <p className="min-w-0 flex-1 text-[12.5px] text-[#404040]">{copy.design.coverNeeded}</p>
+                <p className="min-w-0 flex-1 text-[13px] text-[#404040]">{copy.design.coverNeeded}</p>
                 <button type="button" onClick={goToCover} disabled={locked} className="bz-btn min-h-11 px-3 pointer-fine:min-h-8">
                   <ImagePlus size={13} strokeWidth={2} aria-hidden="true" />
                   {copy.design.addCover}
@@ -430,12 +430,12 @@ export function DesignPanel({
     <TabsPrimitive.Root value={tab} onValueChange={(v) => setTab(v as TabId)} className={MENU_FONT_VARIABLES}>
       <div
         className={`sticky z-10 -mx-4 bg-white px-4 pb-3 pt-1 sm:-mx-5 sm:px-5 ${
-          presentation === 'docked' ? 'top-[56px]' : 'top-[-16px] pt-4'
+          presentation === 'docked' ? 'top-0' : 'top-[-16px] pt-4'
         }`}
       >
         <TabsPrimitive.List
           aria-label={copy.design.title}
-          className="flex gap-1 overflow-x-auto rounded-xl bg-[#F4F4F4] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex gap-1 overflow-x-auto rounded-[20px] bg-[#F4F4F4] p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {TABS.map((id) => {
             const name = copy.design.tabs[id];
@@ -445,7 +445,7 @@ export function DesignPanel({
                 key={id}
                 value={id}
                 aria-label={isDirty ? copy.design.tabDirty(name) : name}
-                className="relative inline-flex h-11 min-w-fit flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[9px] px-2.5 text-[13px] font-medium text-[#525252] transition-colors duration-[160ms] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] data-[state=active]:bg-white data-[state=active]:text-[#0A0A0A] data-[state=active]:shadow-[0_1px_3px_rgba(10,10,10,0.12)] pointer-fine:h-9"
+                className="relative inline-flex h-11 min-w-fit flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[9px] px-2.5 text-[13px] font-medium text-[#525252] transition-colors duration-[160ms] hover:text-pn-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent data-[state=active]:bg-white data-[state=active]:text-pn-ink data-[state=active]:shadow-[0_1px_3px_rgba(10,10,10,0.12)] pointer-fine:h-9"
               >
                 {name}
                 {isDirty && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#65A30D]" aria-hidden="true" />}
@@ -471,7 +471,7 @@ export function DesignPanel({
       )}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="min-w-0 flex-1">
-          <p role="status" className="text-[13px] font-semibold text-[#0A0A0A]">
+          <p role="status" className="text-[13px] font-medium text-pn-ink">
             {dirty ? copy.design.dirty : copy.design.clean}
           </p>
           {dirty && isPublished && (
@@ -515,7 +515,7 @@ export function DesignPanel({
         className="absolute inset-0 z-20 flex items-center justify-center bg-white/95 p-6 backdrop-blur-sm"
       >
         <div className="w-full max-w-[320px] text-center">
-          <p id="design-leave-title" className="bz-h-tight [word-spacing:0.1em] text-[16px] text-[#0A0A0A]">
+          <p id="design-leave-title" className="bz-h-tight [word-spacing:0.1em] text-[16px] text-pn-ink">
             {copy.design.closeDirtyTitle}
           </p>
           <p id="design-leave-body" className="mt-2 text-[13px] leading-relaxed text-[#525252]">
@@ -545,7 +545,7 @@ export function DesignPanel({
       >
         <div className="sm:grid sm:grid-cols-[minmax(0,1fr)_280px] sm:items-start sm:gap-5">
           {preview && (
-            <div className="mb-5 h-[38dvh] overflow-y-auto overscroll-contain rounded-xl sm:sticky sm:top-0 sm:order-2 sm:mb-0 sm:h-auto sm:max-h-[64dvh]">
+            <div className="mb-5 h-[38dvh] overflow-y-auto overscroll-contain rounded-[20px] sm:sticky sm:top-0 sm:order-2 sm:mb-0 sm:h-auto sm:max-h-[64dvh]">
               {preview}
             </div>
           )}
@@ -559,17 +559,17 @@ export function DesignPanel({
 
   return (
     <section ref={sectionRef} role="region" aria-labelledby="design-panel-title" className="bz-card relative scroll-mt-[72px] p-0">
-      <div className="flex items-center gap-2 border-b border-[#EDEDED] px-4 py-3 sm:px-5">
+      <div className="flex items-center gap-2 border-b border-pn-line px-4 py-3 sm:px-5">
         <Palette size={16} strokeWidth={2} className="shrink-0 text-[#525252]" aria-hidden="true" />
         <h2 id="design-panel-title" ref={titleRef} tabIndex={-1} className="min-w-0 flex-1 outline-none">
-          <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A]">{copy.design.title}</span>
+          <span className="bz-h-tight [word-spacing:0.1em] text-[18px] text-pn-ink">{copy.design.title}</span>
         </h2>
         <button type="button" onClick={onRequestClose} aria-label={copy.design.close} className="bz-btn-icon h-8 w-8 shrink-0">
           <X size={15} strokeWidth={2} />
         </button>
       </div>
       <div className="@container px-4 pb-6 pt-3 sm:px-5">{settings}</div>
-      <div className="sticky bottom-0 z-10 rounded-b-xl border-t border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur sm:px-5">
+      <div className="sticky bottom-0 z-10 rounded-b-xl border-t border-pn-line bg-white/95 px-4 py-3 backdrop-blur sm:px-5">
         {applyBar}
       </div>
     </section>

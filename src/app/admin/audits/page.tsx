@@ -46,7 +46,7 @@ export default function AdminAuditsHubPage() {
     <div className="mx-auto max-w-[1440px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#C6F24E"
+        eyebrowColor="#D7FE03"
         title="Denetim Merkezi"
         description="Hazır şablon kataloğu, kategori taksonomisi ve sistem genelinde kullanım istatistikleri. İşletme sahipleri bu şablonları kopyalayıp kendi denetimlerine uyarlar."
       />
@@ -58,22 +58,22 @@ export default function AdminAuditsHubPage() {
             <Link
               key={s.href}
               href={s.href}
-              className="bz-card p-5 flex flex-col gap-3 hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+              className="bz-card p-5 flex flex-col gap-3 hover:shadow-md hover:-translate-y-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2"
             >
               <div className="flex items-center justify-between gap-2">
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF9B8]"
+                  className="flex h-10 w-10 items-center justify-center rounded-[20px] bg-pn-accent-soft"
                   aria-hidden="true"
                 >
-                  <Icon size={18} strokeWidth={2.25} className="text-[#0A0A0A]" />
+                  <Icon size={18} strokeWidth={2.25} className="text-pn-ink" />
                 </div>
-                <span className="pulse-eyebrow text-[#525252]">{s.badge}</span>
+                <span className="text-[13px] font-medium text-[#525252]">{s.badge}</span>
               </div>
               <div className="space-y-1">
                 <h2 className="bz-h-tight text-[18px]">{s.title}</h2>
                 <p className="text-[13px] text-[#525252] leading-relaxed">{s.description}</p>
               </div>
-              <span className="flex items-center gap-1 text-[12px] text-[#0A0A0A] font-medium mt-auto pt-2">
+              <span className="flex items-center gap-1 text-[12px] text-pn-ink font-medium mt-auto pt-2">
                 Aç <ArrowRight size={12} />
               </span>
             </Link>
@@ -83,8 +83,8 @@ export default function AdminAuditsHubPage() {
 
       <div className="bz-card-soft p-4 text-[13px] text-[#525252] leading-relaxed">
         <p>
-          <strong className="text-[#0A0A0A]">Hızlı başlangıç:</strong> Sistemde henüz şablon yoksa{' '}
-          <Link href="/admin/audits/templates" className="text-[#0A0A0A] underline">
+          <strong className="text-pn-ink">Hızlı başlangıç:</strong> Sistemde henüz şablon yoksa{' '}
+          <Link href="/admin/audits/templates" className="text-pn-ink underline">
             Şablonlar sayfasındaki
           </Link>{' '}
           <em>“Varsayılan içeriği yükle”</em> butonuyla 6 sektör için hazır 18 kategori + 24 şablon

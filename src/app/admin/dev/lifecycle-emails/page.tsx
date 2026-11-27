@@ -175,9 +175,9 @@ export default function LifecycleEmailsAdmin() {
         )}
 
         {triggerResult && (
-          <div className="mt-4 rounded-xl border border-[#A8D62E] bg-[#EAF9B8]/40 p-4">
+          <div className="mt-4 rounded-[20px] border border-pn-accent-hover bg-pn-accent-soft/40 p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Send size={14} className="text-[#0A0A0A]" />
+              <Send size={14} className="text-pn-ink" />
               <span className="bz-h-tight text-[14px]">Çalışma sonucu</span>
               <Badge kind="lime">{`${(triggerResult.durationMs / 1000).toFixed(1)} sn`}</Badge>
             </div>
@@ -201,11 +201,11 @@ export default function LifecycleEmailsAdmin() {
                 </div>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[12px]">
               {Object.entries(triggerResult.sent).map(([k, v]) => (
-                <div key={k} className="rounded-lg bg-white border border-[#EDEDED] px-2 py-1.5">
+                <div key={k} className="rounded-[14px] bg-white border border-pn-line px-2 py-1.5">
                   <div className="text-[#737373]">{typeLabel(k)}</div>
-                  <div className="bz-h-tight text-[12.5px]">{v}</div>
+                  <div className="bz-h-tight text-[13px]">{v}</div>
                 </div>
               ))}
             </div>
@@ -230,9 +230,9 @@ export default function LifecycleEmailsAdmin() {
           value={data?.stats.total?.toLocaleString('tr-TR') ?? '—'}
           icon={<Send size={14} />}
         />
-        <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
+        <div className="rounded-[24px] border border-pn-line bg-pn-canvas p-4">
           <Eyebrow className="mb-2">SON 30 GÜN — TÜR DAĞILIMI</Eyebrow>
-          <div className="space-y-1 text-[11.5px]">
+          <div className="space-y-1 text-[12px]">
             {/* The four cron types always show; the other types only when
                 they were sent in the window, so the card keeps its height. */}
             {Object.keys(ALL_TYPE_LABEL)
@@ -240,7 +240,7 @@ export default function LifecycleEmailsAdmin() {
               .map((t) => (
                 <div key={t} className="flex justify-between">
                   <span className="text-[#525252]">{typeLabel(t)}</span>
-                  <span className="bz-mono text-[#0A0A0A]">{data?.stats.byType[t] ?? 0}</span>
+                  <span className="tabular-nums text-pn-ink">{data?.stats.byType[t] ?? 0}</span>
                 </div>
               ))}
           </div>
@@ -293,12 +293,12 @@ export default function LifecycleEmailsAdmin() {
         {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
         {!data || data.logs.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-6 text-center text-[13px] text-[#737373]">
+          <div className="rounded-[24px] border border-dashed border-pn-line bg-pn-canvas p-6 text-center text-[13px] text-[#737373]">
             {loading ? 'Yükleniyor…' : 'Bu aralıkta gönderim yok.'}
           </div>
         ) : (
           <div className="overflow-x-auto -mx-5 sm:mx-0">
-            <table className="bz-table w-full text-[12.5px]">
+            <table className="bz-table w-full text-[13px]">
               <thead>
                 <tr>
                   <th className="text-left">Tür</th>
@@ -318,7 +318,7 @@ export default function LifecycleEmailsAdmin() {
                         {log.user ? (
                           <div className="flex flex-col">
                             <span className="bz-h-tight">{log.user.name ?? log.user.email.split('@')[0]}</span>
-                            <span className="text-[11px] text-[#737373] truncate max-w-[220px]">
+                            <span className="text-[12px] text-[#737373] truncate max-w-[220px]">
                               {log.user.email}
                             </span>
                           </div>
@@ -328,7 +328,7 @@ export default function LifecycleEmailsAdmin() {
                       </td>
                       <td>
                         {log.restaurant ? (
-                          <span className="text-[#0A0A0A]">{log.restaurant.name}</span>
+                          <span className="text-pn-ink">{log.restaurant.name}</span>
                         ) : (
                           <span className="text-[#737373]">—</span>
                         )}

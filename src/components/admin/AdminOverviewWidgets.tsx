@@ -157,7 +157,7 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
           <Link
             href="/admin/members"
             className="inline-flex items-center gap-1 text-[12px] font-medium hover:opacity-70"
-            style={{ color: '#0A0A0A' }}
+            style={{ color: '#000000' }}
           >
             {isTr ? 'Tümü' : 'All'}
             <ArrowRight size={12} strokeWidth={2} />
@@ -253,7 +253,7 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
                 <Link
                   key={i}
                   href={row.href}
-                  className="flex justify-between items-center px-5 py-3.5 last:border-b-0 transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-inset"
+                  className="flex justify-between items-center px-5 py-3.5 last:border-b-0 transition-colors hover:bg-pn-canvas focus-visible:bg-pn-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-ink focus-visible:ring-inset"
                   style={{ borderBottom: '1px solid #F5F5F5' }}
                   aria-label={`${row.k} (${row.n})`}
                 >

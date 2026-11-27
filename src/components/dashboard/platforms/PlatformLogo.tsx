@@ -43,7 +43,7 @@ export function PlatformLogo({
         decoding="async"
         // The SVGs are full-bleed app icons (own rounded background); the
         // hairline border keeps the white Google tile visible on white cards.
-        className={`shrink-0 border border-[#EDEDED] bg-white object-cover ${className}`}
+        className={`shrink-0 border border-pn-line bg-white object-cover ${className}`}
         style={{ width: size, height: size, borderRadius: radius }}
       />
     );
@@ -51,7 +51,7 @@ export function PlatformLogo({
   return (
     <span
       aria-hidden="true"
-      className={`bz-h-tight flex shrink-0 items-center justify-center border font-semibold ${className}`}
+      className={`bz-h-tight flex shrink-0 items-center justify-center border font-medium ${className}`}
       style={{
         width: size,
         height: size,

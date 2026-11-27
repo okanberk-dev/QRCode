@@ -8,42 +8,23 @@ interface EmptyStateProps {
   className?: string;
 }
 
+/**
+ * Empty screen (Pano, docs/design/DASHBOARD_DESIGN.md §5.4): a soft card with
+ * the icon in a round tile, a 22px light title and the next step.
+ */
 export function EmptyState({ title, body, action, icon, className = "" }: EmptyStateProps) {
   return (
     <div
-      className={`mx-auto text-center ${className}`}
-      style={{
-        padding: "52px 28px",
-        borderRadius: 16,
-        border: "1px dashed #E5E5E5",
-        background: "#FAFAFA",
-        maxWidth: 480,
-      }}
+      className={`mx-auto flex max-w-[480px] flex-col items-center rounded-[28px] bg-pn-canvas px-7 py-12 text-center ${className}`}
     >
       {icon && (
-        <div
-          className="inline-flex items-center justify-center mb-4"
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 12,
-            background: "#fff",
-            border: "1px solid #EDEDED",
-            color: "#525252",
-          }}
-        >
+        <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-white text-pn-ink">
           {icon}
         </div>
       )}
-      <div className="bz-h-tight mb-1.5" style={{ fontSize: 18 }}>
-        {title}
-      </div>
-      {body && (
-        <div className="mb-4" style={{ fontSize: 13, color: "#737373", lineHeight: 1.55 }}>
-          {body}
-        </div>
-      )}
-      {action}
+      <div className="text-[22px] font-normal leading-[1.25] tracking-[-0.005em] text-pn-ink">{title}</div>
+      {body && <div className="mt-2 text-[14px] leading-[1.55] text-[#6E6E73]">{body}</div>}
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }

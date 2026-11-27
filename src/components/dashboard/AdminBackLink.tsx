@@ -67,7 +67,7 @@ export default function AdminBackLink({ className = '' }: Props) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FAFAFA] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-pn-ink bg-white px-3 py-1.5 text-[13px] font-medium text-pn-ink hover:bg-pn-canvas transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-2 ${className}`}
       title="Admin oturumundasın — admin paneline geri dön"
     >
       <ShieldCheck size={11} strokeWidth={2.5} />

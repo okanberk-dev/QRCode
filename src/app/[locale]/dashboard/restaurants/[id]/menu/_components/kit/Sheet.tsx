@@ -54,7 +54,7 @@ export function Sheet({
   return (
     <Dialog.Root open={open} onOpenChange={(next) => !next && onRequestClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-[#0A0A0A]/30 backdrop-blur-[2px] bz-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-pn-ink/30 backdrop-blur-[2px] bz-fade-in" />
         <Dialog.Content
           aria-describedby={undefined}
           onEscapeKeyDown={(e) => {
@@ -76,7 +76,7 @@ export function Sheet({
           className={
             bottom
               ? 'fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl bg-white pb-safe bz-elev-3 focus:outline-none'
-              : `fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-[#E8E8E8] bg-white bz-elev-3 focus:outline-none ${widthClass}`
+              : `fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-pn-line-strong bg-white bz-elev-3 focus:outline-none ${widthClass}`
           }
           style={
             bottom
@@ -93,15 +93,15 @@ export function Sheet({
               <span className="h-1 w-9 rounded-full bg-[#D4D4D4]" />
             </div>
           )}
-          <div className="flex shrink-0 items-center gap-2 border-b border-[#EDEDED] px-4 py-2.5 sm:px-6">
-            <Dialog.Title className="min-w-0 flex-1 truncate bz-h-tight [word-spacing:0.1em] text-[18px] text-[#0A0A0A]">{title}</Dialog.Title>
+          <div className="flex shrink-0 items-center gap-2 border-b border-pn-line px-4 py-2.5 sm:px-6">
+            <Dialog.Title className="min-w-0 flex-1 truncate bz-h-tight [word-spacing:0.1em] text-[18px] text-pn-ink">{title}</Dialog.Title>
             {headerExtra}
             <button type="button" onClick={onRequestClose} aria-label={copy.item.close} className="bz-btn-icon-lg shrink-0">
               <X size={16} strokeWidth={2} />
             </button>
           </div>
           <div className={bodyClassName}>{children}</div>
-          {footer && <div className="shrink-0 border-t border-[#EDEDED] px-4 py-3 sm:px-6">{footer}</div>}
+          {footer && <div className="shrink-0 border-t border-pn-line px-4 py-3 sm:px-6">{footer}</div>}
           {overlay}
         </Dialog.Content>
       </Dialog.Portal>

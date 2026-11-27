@@ -45,9 +45,9 @@ const STEP_LABELS: Record<string, string> = {
 };
 
 function progressColor(pct: number): string {
-  if (pct >= 80) return '#A8D62E'; // lime-deep
+  if (pct >= 80) return '#83AF3B'; // lime-deep
   if (pct >= 40) return '#D97706'; // warn (Pulse warn token)
-  return '#0A0A0A'; // graphite
+  return '#000000'; // graphite
 }
 
 export default function MemberActivationPanel({ userId }: Props) {
@@ -98,14 +98,14 @@ export default function MemberActivationPanel({ userId }: Props) {
         return (
           <article
             key={r.restaurantId}
-            className="rounded-xl border border-[#EDEDED] bg-white p-4 sm:p-5"
+            className="rounded-[20px] border border-pn-line bg-white p-4 sm:p-5"
           >
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link
                     href={`/admin/restaurants/${r.restaurantId}`}
-                    className="text-[14px] font-semibold text-[#0A0A0A] hover:underline inline-flex items-center gap-1.5"
+                    className="text-[14px] font-medium text-pn-ink hover:underline inline-flex items-center gap-1.5"
                   >
                     <Store size={12} strokeWidth={2} />
                     {r.restaurantName}
@@ -118,12 +118,12 @@ export default function MemberActivationPanel({ userId }: Props) {
                     <Badge kind="ghost">Owner kapattı</Badge>
                   )}
                 </div>
-                <p className="mt-1 text-[11px] text-[#737373]">
+                <p className="mt-1 text-[12px] text-[#737373]">
                   /{r.slug} · {r.completedCount}/{r.totalCount} adım tamamlandı
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="bz-mono tabular-nums text-[13px] font-semibold text-[#0A0A0A]">
+                <span className="tabular-nums tabular-nums text-[13px] font-medium text-pn-ink">
                   %{r.percentage}
                 </span>
                 <Link
@@ -146,14 +146,14 @@ export default function MemberActivationPanel({ userId }: Props) {
               />
             </div>
 
-            <ol className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <ol className="mt-3 flex flex-wrap gap-2 text-[12px]">
               {r.steps.map((s) => (
                 <li
                   key={s.step}
                   className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${
                     s.done
-                      ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]'
-                      : 'border-[#EDEDED] bg-[#FAFAFA] text-[#737373]'
+                      ? 'border-pn-accent-hover bg-pn-accent-soft text-pn-ink'
+                      : 'border-pn-line bg-pn-canvas text-[#737373]'
                   }`}
                 >
                   {s.done && <Check size={10} strokeWidth={2.5} />}

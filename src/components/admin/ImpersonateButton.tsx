@@ -115,8 +115,8 @@ export default function ImpersonateButton({
             // The Modal title slot truncates to one line; this header is a
             // multi-line block, so let it wrap.
             <div className="whitespace-normal">
-              <p className="pulse-eyebrow text-[#737373]">DESTEK OTURUMU</p>
-              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+              <p className="text-[13px] font-medium text-[#737373]">DESTEK OTURUMU</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-pn-ink">
                 {targetName || targetEmail} olarak görüntüle
               </h2>
               <p className="mt-1 text-[12px] leading-relaxed text-[#525252]">
@@ -136,7 +136,7 @@ export default function ImpersonateButton({
             {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
             {/* KVKK disclosure — plain-language summary of what happens */}
-            <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E]">
+            <div className="rounded-[20px] border border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E]">
               <div className="flex items-start gap-2">
                 <ShieldAlert size={14} strokeWidth={2} className="shrink-0 mt-0.5" />
                 <div className="space-y-1">
@@ -154,7 +154,7 @@ export default function ImpersonateButton({
             <div className="space-y-1.5">
               <label
                 htmlFor="impersonate-reason"
-                className="text-[11px] font-semibold text-[#6B7280] ml-1"
+                className="text-[12px] font-medium text-[#6B7280] ml-1"
               >
                 Sebep (en az 20 karakter, işlem kaydına yazılır) *
               </label>
@@ -166,19 +166,19 @@ export default function ImpersonateButton({
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Örn: Destek talebi #4521 — işletme sahibi QR kodunu indirirken hata aldığını bildirdi, kontrol etmek için."
                 maxLength={500}
-                className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3 text-[13px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] resize-none"
+                className="w-full rounded-[20px] border border-pn-line bg-white px-4 py-3 text-[13px] text-pn-ink outline-none focus:ring-2 focus:ring-pn-accent resize-none"
               />
-              <p className="text-[10.5px] text-[#737373] tabular-nums">
+              <p className="text-[12px] text-[#737373] tabular-nums">
                 {reason.trim().length}/500 karakter (minimum 20)
               </p>
             </div>
 
-            <label className="flex items-start gap-2 text-[12px] text-[#0A0A0A] cursor-pointer">
+            <label className="flex items-start gap-2 text-[12px] text-pn-ink cursor-pointer">
               <input
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-[#EDEDED] text-[#0A0A0A] focus:ring-[#C6F24E]"
+                className="mt-0.5 h-4 w-4 rounded border-pn-line text-pn-ink focus:ring-pn-accent"
               />
               <span>
                 Bu oturumun KVKK kapsamında müşteriye mail ile bildirileceğini ve işlem
@@ -186,7 +186,7 @@ export default function ImpersonateButton({
               </span>
             </label>
 
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-[#EDEDED]">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-pn-line">
               <button
                 type="button"
                 onClick={handleClose}
