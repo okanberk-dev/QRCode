@@ -663,90 +663,153 @@
     flex-shrink: 0;
   }
 
-  /* ── Icon rail (PanelRail) — left column of round buttons ─────────── */
-  .pn-rail {
+  /* ── Sidebar (PanelRail) — open: icon + name; folded: 92px icon rail ── */
+  .pn-side {
     position: relative;
     z-index: 35;
     flex-direction: column;
-    align-items: center;
     flex-shrink: 0;
-    width: 92px;
-    padding-bottom: 20px;
+    width: 256px;
+    padding: 0 12px 14px 16px;
+    transition: width 320ms var(--pn-ease-slide), padding 320ms var(--pn-ease-slide);
   }
-  .pn-rail-brand {
+  .pn-side-brand {
     display: flex;
     align-items: center;
-    justify-content: center;
     flex-shrink: 0;
     height: 80px;
+    padding-left: 6px;
   }
-  .pn-rail-nav {
+  .pn-side-brand .pn-brand { gap: 10px; }
+  .pn-side-top { flex-shrink: 0; padding-bottom: 14px; }
+  .pn-side-scroll {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+    gap: 18px;
     min-height: 0;
+    margin-right: -6px;
+    padding: 2px 6px 8px 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #D6D6D6 transparent;
   }
-  .pn-rail-foot {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+  .pn-side-heading {
+    padding: 0 12px 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--pn-text-3);
+    white-space: nowrap;
   }
-  .pn-rail-btn {
+  .pn-side-list { display: flex; flex-direction: column; gap: 2px; }
+  .pn-side-item {
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 48px;
+    padding: 4px 14px 4px 4px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-pn-ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease), transform 120ms var(--pn-ease);
+    outline: none;
+  }
+  .pn-side-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     border-radius: 999px;
-    border: 0;
     background: #FFF;
-    color: var(--color-pn-ink);
-    cursor: pointer;
-    transition: background-color 220ms var(--pn-ease), color 220ms var(--pn-ease), transform 120ms var(--pn-ease);
-    outline: none;
+    font-size: 14px;
+    transition: background-color 200ms var(--pn-ease), color 200ms var(--pn-ease);
   }
-  .pn-rail-btn:hover:not([data-active="true"]) { background: #EDEDED; }
-  .pn-rail-btn:active { transform: scale(0.94); }
-  .pn-rail-btn:focus-visible { box-shadow: 0 0 0 3px var(--color-pn-canvas), 0 0 0 5px var(--color-pn-ink); }
-  .pn-rail-btn[data-active="true"] { background: var(--color-pn-accent); color: #FFF; }
-  /* Label tooltip to the right (the rail has icons only). */
-  .pn-rail-btn::after {
+  .pn-side-label { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+  .pn-side-new {
+    flex-shrink: 0;
+    border-radius: 999px;
+    padding: 2px 8px;
+    background: var(--color-pn-accent-soft);
+    color: var(--color-pn-accent);
+    font-size: 12px;
+  }
+  .pn-side-item:hover:not([data-active="true"]) { background: #FFF; }
+  .pn-side-item:hover:not([data-active="true"]) .pn-side-icon { background: var(--color-pn-canvas); }
+  .pn-side-item:active { transform: scale(0.98); }
+  .pn-side-item:focus-visible { box-shadow: inset 0 0 0 2px var(--color-pn-accent); }
+  .pn-side-item[data-active="true"] { background: var(--color-pn-accent); color: #FFF; }
+  .pn-side-item[data-active="true"] .pn-side-icon { background: rgba(255, 255, 255, 0.16); color: #FFF; }
+  .pn-side-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-pn-line);
+  }
+  .pn-side-folded-only { display: none; }
+
+  /* Folded: an explicit choice, or the default below 1440px. */
+  .pn-side[data-collapsed="true"] { width: 92px; padding: 0 22px 14px; }
+  .pn-side[data-collapsed="true"] .pn-side-brand { justify-content: center; padding-left: 0; }
+  .pn-side[data-collapsed="true"] :is(.pn-side-label, .pn-side-new, .pn-side-open-only) { display: none; }
+  .pn-side[data-collapsed="true"] .pn-side-folded-only { display: revert; }
+  .pn-side[data-collapsed="true"] .pn-side-folded-only.pn-side-list { display: flex; }
+  .pn-side[data-collapsed="true"] .pn-side-heading { height: 1px; margin: 0 8px 10px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
+  .pn-side[data-collapsed="true"] .pn-side-scroll { margin-right: 0; padding-right: 0; }
+  .pn-side[data-collapsed="true"] .pn-side-item { width: 48px; padding: 4px; justify-content: center; }
+  @media (max-width: 1439.98px) {
+    .pn-side[data-collapsed="auto"] { width: 92px; padding: 0 22px 14px; }
+    .pn-side[data-collapsed="auto"] .pn-side-brand { justify-content: center; padding-left: 0; }
+    .pn-side[data-collapsed="auto"] :is(.pn-side-label, .pn-side-new, .pn-side-open-only) { display: none; }
+    .pn-side[data-collapsed="auto"] .pn-side-folded-only { display: revert; }
+    .pn-side[data-collapsed="auto"] .pn-side-folded-only.pn-side-list { display: flex; }
+    .pn-side[data-collapsed="auto"] .pn-side-heading { height: 1px; margin: 0 8px 10px; padding: 0; overflow: hidden; color: transparent; background: var(--color-pn-line); }
+    .pn-side[data-collapsed="auto"] .pn-side-scroll { margin-right: 0; padding-right: 0; }
+    .pn-side[data-collapsed="auto"] .pn-side-item { width: 48px; padding: 4px; justify-content: center; }
+  }
+  /* Folded tooltips: the name appears to the right of the button. */
+  .pn-side-item::after {
     content: attr(data-label);
     position: absolute;
     left: calc(100% + 12px);
     top: 50%;
+    display: none;
     padding: 7px 12px;
     border-radius: 12px;
     background: var(--color-pn-ink);
     color: #FFF;
-    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 500;
     line-height: 1.2;
     white-space: nowrap;
-    opacity: 0;
     pointer-events: none;
-    transform: translate(-4px, -50%);
-    transition: opacity 160ms var(--pn-ease), transform 160ms var(--pn-ease);
+    transform: translateY(-50%);
+    z-index: 5;
   }
-  .pn-rail-btn:hover::after,
-  .pn-rail-btn:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
-  .pn-rail-btn[data-state="open"]::after { opacity: 0; }
-  .pn-rail-dot {
-    position: absolute;
-    top: 9px;
-    right: 9px;
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: var(--color-pn-accent);
-    box-shadow: 0 0 0 2px #FFF;
+  .pn-side[data-collapsed="true"] .pn-side-item:is(:hover, :focus-visible):not([data-state="open"])::after { display: block; }
+  @media (max-width: 1439.98px) {
+    .pn-side[data-collapsed="auto"] .pn-side-item:is(:hover, :focus-visible):not([data-state="open"])::after { display: block; }
+  }
+  /* The folded switcher keeps its own round button. */
+  .pn-side-top .pn-side-folded-only { display: none; }
+  .pn-side[data-collapsed="true"] .pn-side-top.pn-side-folded-only { display: flex; justify-content: center; }
+  @media (max-width: 1439.98px) {
+    .pn-side[data-collapsed="auto"] .pn-side-top.pn-side-folded-only { display: flex; justify-content: center; }
   }
 
   /* ── Breadcrumb over the page title (reference "Home Page → Dashboard") */
@@ -944,11 +1007,11 @@
   .pn-drawer > *,
   :root:has(.bz-panel) .bz-skeleton { animation: none !important; }
   .pn-nav-pill { transition: none !important; }
-  .pn-rail-btn::after { transition: none !important; }
+  .pn-side { transition: none !important; }
 }
 
 @media print {
-  .pn-topbar, .pn-rail, .pn-mobilebar-wrap { display: none !important; }
+  .pn-topbar, .pn-side, .pn-mobilebar-wrap { display: none !important; }
 }
 
 /* Large numbers written inline read medium in Pano (§3: 500), whatever

@@ -10,7 +10,7 @@ import ViewportMount from '@/components/ui/ViewportMount';
 import { SearchTrigger } from '@/components/panel/search/SearchTrigger';
 import { PanelTopNav, type PanoNavEntry } from '@/components/panel/pano/PanelTopNav';
 import { PanelMobileNav } from '@/components/panel/pano/PanelMobileNav';
-import { PanelRail, RailLink } from '@/components/panel/pano/PanelRail';
+import { PanelRail, type RailSection } from '@/components/panel/pano/PanelRail';
 import type { ReactNode } from 'react';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { AdminPanelProfile } from '@/lib/admin-profile';
@@ -114,11 +114,18 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
   const openSearch = () => window.dispatchEvent(new CustomEvent('buaze:admin-search-open'));
 
   const topEntries = entries.filter((entry) => entry.type === 'link');
-  const railEntries = entries.filter((entry) => entry.type === 'group');
+  // Sidebar: every page group with its pages visible (folded, each group is
+  // one button that opens its pages).
+  const railSections: RailSection[] = entries.flatMap((entry) =>
+    entry.type === 'group'
+      ? [{ id: entry.id, label: entry.label, icon: entry.icon, collapse: 'menu' as const, items: entry.children }]
+      : [],
+  );
   const profileLabel = isEn ? 'Profile' : 'Profilim';
   const railBrand = (
     <Link href="/admin/dashboard" className="pn-brand" aria-label="Buaze" title="Buaze">
-      <BuazeLogo size={42} variant="default" imageUrl={profile?.logoUrl} className="shrink-0" />
+      <BuazeLogo size={40} variant="default" imageUrl={profile?.logoUrl} className="shrink-0" />
+      <span className="pn-brand-word pn-side-label">buaze</span>
     </Link>
   );
   const brand = (
@@ -135,9 +142,10 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
       <div className="flex min-h-0 flex-1">
       <PanelRail
         brand={railBrand}
-        entries={railEntries}
+        sections={railSections}
         ariaLabel={isEn ? 'Admin sections' : 'Yönetim bölümleri'}
-        footer={<RailLink entry={{ href: PROFILE_HREF, label: profileLabel, icon: User, active: pathname === PROFILE_HREF }} />}
+        footer={[{ href: PROFILE_HREF, label: profileLabel, icon: User, active: pathname === PROFILE_HREF }]}
+        labels={{ fold: isEn ? 'Collapse menu' : 'Menüyü daralt', unfold: isEn ? 'Expand menu' : 'Menüyü genişlet' }}
       />
       <div className="flex min-w-0 flex-1 flex-col lg:min-h-0">
       <PanelTopNav
