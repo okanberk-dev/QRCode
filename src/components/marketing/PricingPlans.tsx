@@ -134,7 +134,7 @@ export default function PricingPlans({ locale, plans }: Props) {
 
   const segment = (active: boolean) =>
     `inline-flex min-h-[44px] items-center gap-2 rounded-full px-7 text-[16px] transition-colors ${
-      active ? 'bg-[var(--rt-brand-500)] text-[var(--rt-on-brand)] shadow-[var(--rt-sh-btn-inset)]' : 'text-[var(--rt-ink-700)]'
+      active ? 'bg-[var(--rt-brand-500)] text-white shadow-[var(--rt-sh-btn-inset)]' : 'text-[var(--rt-ink-700)]'
     }`;
 
   return (

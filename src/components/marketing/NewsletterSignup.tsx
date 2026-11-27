@@ -144,7 +144,7 @@ export default function NewsletterSignup({ locale, source = 'footer', stacked = 
           tabIndex={-1}
           className="flex items-start gap-3 rounded-[var(--rt-r-sm)] border border-[var(--rt-line)] bg-[var(--rt-brand-50)] p-4 outline-none"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--rt-brand-500)] text-[var(--rt-on-brand)]">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--rt-brand-500)] text-white">
             <Check size={16} strokeWidth={2.5} aria-hidden />
           </span>
           <div>

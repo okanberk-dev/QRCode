@@ -32,24 +32,19 @@
 
 ## 2. Renkler (`--rt-*`, `ritim.css` en üstte)
 
-### 2.1 Marka rampası — lime (2026-11-27, Buaze Pulse rengi)
+### 2.1 Marka rampası — değiştirmek için yalnız bu 7 satır
 | Token | Değer | Kullanım |
 |---|---|---|
-| `--rt-brand-300` | `#DCF78F` | Açık lime: gradyan başlangıcı, koyu zeminde vurgu, sektör kartı başlığı |
-| `--rt-brand-500` | `#C6F24E` | Lime: dolgu, aktif segment, çizgi, karalama, odak halkası |
-| `--rt-brand-600` | `#C6F24E` | **Birincil buton** (yazı `--rt-on-brand`) |
-| `--rt-brand-hover` | `#A8D62E` | Lime dolgu hover, gradyan panel bitişi |
-| `--rt-on-brand` | `#0A0A0A` | Lime dolgu üstündeki yazı ve ikon (≈ 14:1) |
-| `--rt-brand-700` | `#3F5408` | Zeytin: link, çerçeveli buton, açık zeminde ikon/onay; beyaz yazılı koyu dolgu (ürün kartı) |
-| `--rt-brand-800` | `#1F2908` | Koyu zeytin: fotoğraf üstü karartma |
-| `--rt-brand-950` | `#0A0A0A` | Grafit: alt bilgi gradyanının sonu |
-| `--rt-brand-50` | `#EAF9B8` | Lime soft: rozet, hover |
+| `--rt-brand-300` | `#3CC99A` | Gradyan başlangıcı, koyu zeminde vurgu, sektör kartı başlığı |
+| `--rt-brand-500` | `#0B9B6D` | Parlak dolgu, ikon, aktif segment, onay işareti |
+| `--rt-brand-600` | `#08875E` | **Birincil buton** (beyaz metin 4.53:1) |
+| `--rt-brand-700` | `#067A55` | Link, çerçeveli buton, ürün kartı zemini |
+| `--rt-brand-800` | `#045C40` | Gradyan bitişi |
+| `--rt-brand-950` | `#023A28` | Alt bilgi koyu gradyanı |
+| `--rt-brand-50` | `#E7F6EF` | Açık ton, hover, rozet |
 
-> Lime açık bir renktir: beyaz zeminde yazı ya da ikon olarak kullanılmaz
-> (≈ 1,3:1). Lime dolgunun üstünde yazı `--rt-on-brand`, beyaz zeminde
-> vurgu yazısı `--rt-brand-700`. Gradyan paneller (`.rt-cta-panel`) lime
-> olduğu için içindeki onay işaretleri, "ghost" düğme ve eyebrow
-> `--rt-on-brand`'a çevrilir (`ritim.css`).
+> Beyaz metin yalnız `600`+ tonlarda ya da örtülü fotoğrafta. Rampa değişirse
+> `--rt-grad-footer` içindeki `rgba(11,155,109,0)` başlangıcını da yeni 500'e çevir.
 
 ### 2.2 Nötrler
 | Token | Değer | Kullanım |
@@ -71,10 +66,10 @@
 | `--rt-lime` | `#AFE26C` | Varsayılan rozet ("ÜCRETSİZ ARAÇ") |
 | `--rt-sky` | `#9FC5F0` | "ÖNE ÇIKAN" rozeti, önerilen paket bayrağı |
 | `--rt-sun` | `#FED850` | "Yeni" rozeti (koyu kartlar) |
-| `--rt-grad-brand` | `130deg, 300 %2.95 → 500 %46.45 → hover %101.77` (lime, yazı grafit) | Güven paneli, özellik "bir bakışta" paneli, CTA bandı |
+| `--rt-grad-brand` | `130deg, 300 %2.95 → 500 %46.45 → 800 %101.77` | Güven paneli, özellik "bir bakışta" paneli, CTA bandı |
 | `--rt-grad-plan-card` | `0deg, #F9F9F9 → #F8F6F4` | Fiyat kartları, ticari kartlar |
 | `--rt-grad-dark-card` | `#252525 → #413E3D` | Koyu "yorumların ötesinde" kartları |
-| `--rt-grad-footer` | 180deg lime 500 → 800 %38 → grafit 950 %70 | Alt bilgi zemini (+ nokta deseni): üstte lime, altta grafit; yazılar beyaz |
+| `--rt-grad-footer` | şeffaf → 500 %30.46 + 270deg 950 → koyu → 950 | Alt bilgi zemini (+ nokta deseni) |
 | `--rt-grad-ai` | sarı → turuncu → pembe → mor → lacivert → açık mavi | Pulse AI başlığı ve sohbet çerçevesi |
 
 ---
