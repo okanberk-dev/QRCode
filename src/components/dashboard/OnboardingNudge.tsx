@@ -79,8 +79,8 @@ export default function OnboardingNudge({
                   href={s.href}
                   className="flex min-h-[44px] flex-col gap-1.5 rounded-[10px] p-2.5 text-left bz-motion-spring active:scale-[0.97] sm:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent"
                   style={{
-                    background: s.done ? "rgba(215,254,3,0.12)" : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${s.done ? "rgba(215,254,3,0.3)" : "rgba(255,255,255,0.1)"}`,
+                    background: s.done ? "rgba(120, 252, 144,0.12)" : "rgba(255,255,255,0.05)",
+                    border: `1px solid ${s.done ? "rgba(120, 252, 144,0.3)" : "rgba(255,255,255,0.1)"}`,
                   }}
                 >
                   <span className="flex items-center justify-between">
@@ -88,7 +88,7 @@ export default function OnboardingNudge({
                       aria-hidden="true"
                       className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full"
                       style={{
-                        background: s.done ? "#D7FE03" : "rgba(255,255,255,0.1)",
+                        background: s.done ? "#78FC90" : "rgba(255,255,255,0.1)",
                         color: s.done ? "#000000" : "rgba(255,255,255,0.6)",
                       }}
                     >

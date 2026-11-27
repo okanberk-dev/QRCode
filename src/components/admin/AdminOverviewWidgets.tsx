@@ -151,7 +151,7 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
       <div className="bz-card overflow-hidden">
         <div
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid #EDEDED' }}
+          style={{ borderBottom: '1px solid #EBEBEB' }}
         >
           <Eyebrow>{isTr ? 'SON KATILAN İŞLETMELER' : 'RECENTLY JOINED'}</Eyebrow>
           <Link
@@ -215,7 +215,7 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
       <div className="bz-card overflow-hidden">
         <div
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid #EDEDED' }}
+          style={{ borderBottom: '1px solid #EBEBEB' }}
         >
           <Eyebrow color="#DC2626">{isTr ? 'DİKKAT GEREKTİREN' : 'NEEDS ATTENTION'}</Eyebrow>
           <span style={{ fontSize: 11, color: '#737373' }}>

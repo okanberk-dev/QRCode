@@ -92,7 +92,7 @@ export function APSwitch({
       {button}
       <span className="block">
         <span className="block text-[14px] font-medium leading-[1.3] text-pn-ink">{label}</span>
-        {sublabel ? <span className="mt-0.5 block text-[13px] text-[#9A9AA0]">{sublabel}</span> : null}
+        {sublabel ? <span className="mt-0.5 block text-[13px] text-[#9A9A9A]">{sublabel}</span> : null}
       </span>
     </label>
   );

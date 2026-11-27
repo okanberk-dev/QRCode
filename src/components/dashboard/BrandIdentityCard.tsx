@@ -271,8 +271,8 @@ export default function BrandIdentityCard({
                 width: 96,
                 height: 96,
                 borderRadius: 16,
-                background: '#FAFAFA',
-                border: form.logoUrl ? '1px solid #EDEDED' : '1px dashed #D4D4D4',
+                background: '#F6F6F6',
+                border: form.logoUrl ? '1px solid #EBEBEB' : '1px dashed #D4D4D4',
               }}
             >
               {uploadingLogo ? (
@@ -338,8 +338,8 @@ export default function BrandIdentityCard({
                 width: 48,
                 height: 48,
                 borderRadius: 10,
-                background: '#FAFAFA',
-                border: form.faviconUrl ? '1px solid #EDEDED' : '1px dashed #D4D4D4',
+                background: '#F6F6F6',
+                border: form.faviconUrl ? '1px solid #EBEBEB' : '1px dashed #D4D4D4',
               }}
             >
               {uploadingFavicon ? (
@@ -478,7 +478,7 @@ export default function BrandIdentityCard({
           style={{
             background: form.accentColor || '#C6F24E',
             color: form.primaryColor || '#0A0A0A',
-            border: `1px solid ${form.secondaryColor || '#EDEDED'}`,
+            border: `1px solid ${form.secondaryColor || '#EBEBEB'}`,
           }}
         >
           <div

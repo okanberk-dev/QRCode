@@ -88,7 +88,7 @@ function BusinessChip({
     <span
       aria-hidden="true"
       className="flex shrink-0 items-center justify-center rounded-full text-[12px] font-medium text-pn-ink"
-      style={{ width: size, height: size, background: business?.primaryColor || '#D7FE03' }}
+      style={{ width: size, height: size, background: business?.primaryColor || '#78FC90' }}
     >
       {business ? initialOf(business.name, locale) : <Building2 size={14} strokeWidth={2} />}
     </span>
@@ -264,9 +264,9 @@ export function BusinessSwitcher({
         <BusinessChip business={active} size={40} locale={locale} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] font-medium leading-tight text-pn-ink">{activeName}</span>
-          {caption && <span className="mt-0.5 block truncate text-[13px] text-[#9A9AA0]">{caption}</span>}
+          {caption && <span className="mt-0.5 block truncate text-[13px] text-[#9A9A9A]">{caption}</span>}
         </span>
-        <ChevronsUpDown size={16} className="shrink-0 text-[#6E6E73]" aria-hidden="true" />
+        <ChevronsUpDown size={16} className="shrink-0 text-[#737373]" aria-hidden="true" />
       </button>
     );
   } else {
@@ -284,7 +284,7 @@ export function BusinessSwitcher({
       >
         <BusinessChip business={active} size={30} locale={locale} />
         <span className="min-w-0 truncate">{activeName}</span>
-        <ChevronDown size={16} className="shrink-0 text-[#6E6E73]" aria-hidden="true" />
+        <ChevronDown size={16} className="shrink-0 text-[#737373]" aria-hidden="true" />
       </button>
     );
   }

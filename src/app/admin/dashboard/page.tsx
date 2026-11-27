@@ -352,6 +352,7 @@ export default async function AdminDashboardPage() {
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
         eyebrow="SİSTEM YÖNETİMİ"
+        crumb="Genel bakış"
         title="Panel"
       />
 
@@ -402,7 +403,7 @@ export default async function AdminDashboardPage() {
           deltaKind={mrrDeltaKind}
           deltaSuffix={mrrDeltaSuffix}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrr > 0 ? '#D7FE03' : undefined}
+          accent={mrr > 0 ? '#78FC90' : undefined}
         />
         <StatCard
           label="Aktif denemeler"

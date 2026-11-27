@@ -262,7 +262,7 @@ export default function AuditTemplatesPage() {
     <div className="mx-auto max-w-[1600px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
-        eyebrowColor="#D7FE03"
+        eyebrowColor="#78FC90"
         title="Şablon kataloğu"
         description="Sektör başına yayınlanan hazır denetim şablonlarını yönet. İşletme sahipleri bu kataloğu kopyalayıp kendi denetimlerine uyarlar."
         actions={

@@ -181,7 +181,7 @@ export const ItemRow = memo(function ItemRow({
         pickPhoto.current?.(file);
       }}
       aria-current={open ? 'true' : undefined}
-      className={`group/row relative ${open ? 'bg-[#F7FCE8] shadow-[inset_3px_0_0_#C6F24E]' : selected ? 'bg-[#F7FCE8]' : 'bg-white'} ${ROW_BASE} ${
+      className={`group/row relative ${open ? 'bg-[#F1FEF3] shadow-[inset_3px_0_0_#78FC90]' : selected ? 'bg-[#F1FEF3]' : 'bg-white'} ${ROW_BASE} ${
         selecting ? ROW_NARROW_SELECTING : ROW_NARROW
       } ${ROW_MEDIUM} ${ROW_FULL} ${temp ? '' : `cursor-pointer ${selected || open ? '' : 'hover:bg-[#FCFCFC]'}`} ${
         pending?.status === 'saving' ? 'opacity-60' : ''

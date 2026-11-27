@@ -76,7 +76,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
         </div>
         <div className="hidden sm:flex items-center gap-1.5">
           <span className="tabular-nums text-[12px] text-[#737373]">{isTr ? 'az' : 'low'}</span>
-          {['rgba(215,254,3,0.35)', '#D7FE03', '#000000'].map((c) => (
+          {['rgba(120, 252, 144,0.35)', '#78FC90', '#000000'].map((c) => (
             <div key={c} className="rounded-full" style={{ width: 12, height: 12, background: c }} />
           ))}
           <span className="tabular-nums text-[12px] text-[#737373]">{isTr ? 'çok' : 'high'}</span>
@@ -113,7 +113,7 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
                       const ratio = max > 0 ? v / max : 0;
                       // Pano: empty → canvas grey; low → pale lime; mid → lime; peak → black.
                       const fill =
-                        v === 0 ? '#F5F5F8' : ratio < 0.34 ? 'rgba(215,254,3,0.35)' : ratio < 0.67 ? '#D7FE03' : '#000000';
+                        v === 0 ? '#F6F6F6' : ratio < 0.34 ? 'rgba(120, 252, 144,0.35)' : ratio < 0.67 ? '#78FC90' : '#000000';
                       return (
                         <div
                           key={`c-${di}-${hi}`}

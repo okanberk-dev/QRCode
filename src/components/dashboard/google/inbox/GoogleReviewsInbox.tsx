@@ -603,7 +603,7 @@ export function GoogleReviewsInbox({
               </span>
               <span className="mt-1 inline-flex gap-px" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} size={8} fill={i <= Math.round(summary?.averageRating ?? 0) ? '#D7FE03' : 'transparent'} color="#D7FE03" />
+                  <Star key={i} size={8} fill={i <= Math.round(summary?.averageRating ?? 0) ? '#78FC90' : 'transparent'} color="#78FC90" />
                 ))}
               </span>
             </div>

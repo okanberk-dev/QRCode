@@ -137,28 +137,7 @@ export default async function AdminLayout({
     announcements = await fetchActiveAnnouncements(adminLocale);
   }
 
-  return (
-    <RootHtml lang={adminLocale}>
-      <AdminTranslationProvider initialLocale={adminLocale}>
-        {/* Pano shell (docs/design/DASHBOARD_DESIGN.md): floating top bar, canvas
-            background, no sidebar. From lg up the page scrolls in its own
-            column under the bar — vertical only, horizontal clipped, stable
-            gutter (CLAUDE.md §42.5.1). */}
-        <div className="bz-panel relative flex min-h-[100dvh] flex-col bg-pn-canvas lg:h-screen lg:overflow-hidden">
-          {impersonationActive && <ImpersonationBanner />}
-          {showSidebar && (
-            <a href="#panel-main-content" className="bz-skip-link">
-              {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
-            </a>
-          )}
-          {showSidebar && (
-            <AdminPanoChrome
-              announcements={announcements}
-              profile={adminProfile}
-              role={adminProfile?.role || actor?.role || 'manager'}
-              permissions={adminProfile?.permissions ?? []}
-            />
-          )}
+  const pageColumn = (
           <div className="flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]">
             <main
               id="panel-main-content"
@@ -174,6 +153,34 @@ export default async function AdminLayout({
               {children}
             </main>
           </div>
+  );
+
+  return (
+    <RootHtml lang={adminLocale}>
+      <AdminTranslationProvider initialLocale={adminLocale}>
+        {/* Pano shell (docs/design/DASHBOARD_DESIGN.md): icon rail on the
+            left, pill tabs on top, canvas background. From lg up the page
+            scrolls in its own column under the tabs — vertical only,
+            horizontal clipped, stable gutter (CLAUDE.md §42.5.1). */}
+        <div className="bz-panel relative flex min-h-[100dvh] flex-col bg-pn-canvas lg:h-screen lg:overflow-hidden">
+          {impersonationActive && <ImpersonationBanner />}
+          {showSidebar && (
+            <a href="#panel-main-content" className="bz-skip-link">
+              {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
+            </a>
+          )}
+          {showSidebar ? (
+            <AdminPanoChrome
+              announcements={announcements}
+              profile={adminProfile}
+              role={adminProfile?.role || actor?.role || 'manager'}
+              permissions={adminProfile?.permissions ?? []}
+            >
+              {pageColumn}
+            </AdminPanoChrome>
+          ) : (
+            pageColumn
+          )}
         </div>
       </AdminTranslationProvider>
     </RootHtml>

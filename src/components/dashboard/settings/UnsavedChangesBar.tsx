@@ -124,8 +124,8 @@ export function UnsavedChangesBar({
       {visible && (
         <div
           style={{
-            background: "#F5F5F8",
-            border: "1px solid #EDEDED",
+            background: "#F6F6F6",
+            border: "1px solid #EBEBEB",
             borderRadius: 16,
             boxShadow: "0 12px 32px -8px rgba(10,10,10,0.18)",
           }}
@@ -141,7 +141,7 @@ export function UnsavedChangesBar({
                   width: 8,
                   height: 8,
                   borderRadius: 999,
-                  background: error ? "#DC2626" : dirty ? "#D7FE03" : "#16A34A",
+                  background: error ? "#DC2626" : dirty ? "#78FC90" : "#16A34A",
                 }}
               />
               <span className="tabular-nums text-[12px] text-pn-ink sm:truncate">

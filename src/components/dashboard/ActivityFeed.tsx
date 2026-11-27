@@ -48,9 +48,9 @@ const TYPE_META: Record<
   ActivityType,
   { icon: typeof MessageSquare; tint: string; bg: string }
 > = {
-  feedback: { icon: MessageSquare, tint: '#000000', bg: '#F5F5F8' },
-  reply: { icon: Reply, tint: '#000000', bg: '#F3FDC4' },
-  ai_draft: { icon: Sparkles, tint: '#83AF3B', bg: '#000000' },
+  feedback: { icon: MessageSquare, tint: '#000000', bg: '#F6F6F6' },
+  reply: { icon: Reply, tint: '#000000', bg: '#E6FDEA' },
+  ai_draft: { icon: Sparkles, tint: '#2FB24C', bg: '#000000' },
   system: { icon: Settings, tint: '#737373', bg: '#F5F5F5' },
 };
 
@@ -324,7 +324,7 @@ export function ActivityFeed({
       <div className="flex flex-col gap-3">
         {groupedEvents.map((group) => (
           <section key={group.label} aria-label={group.label}>
-            <h3 className="mb-1 text-[13px] font-normal text-[#9A9AA0]">
+            <h3 className="mb-1 text-[13px] font-normal text-[#9A9A9A]">
               {group.label}
             </h3>
             <ol className="flex flex-col">
@@ -370,7 +370,7 @@ export function ActivityFeed({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-medium text-pn-ink">{event.actor}</span>
-                      <span className="block truncate text-[13px] text-[#9A9AA0]">
+                      <span className="block truncate text-[13px] text-[#9A9A9A]">
                         {event.action}
                         {targetWithoutStars ? ` · ${targetWithoutStars}` : ''}
                       </span>
@@ -385,7 +385,7 @@ export function ActivityFeed({
                           {inlineRating}
                         </span>
                       )}
-                      <span className="text-[12px] tabular-nums text-[#9A9AA0]" title={fullTime}>
+                      <span className="text-[12px] tabular-nums text-[#9A9A9A]" title={fullTime}>
                         <span className="sr-only" suppressHydrationWarning>{relativeTime} · </span>
                         {clockTime}
                       </span>

@@ -29,7 +29,7 @@ export function RadioCard({ active, onClick, title, body, icon, disabled, classN
       <span
         aria-hidden="true"
         className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.5px] ${
-          active ? "border-pn-accent" : "border-[#D2D2D8]"
+          active ? "border-pn-accent" : "border-[#D6D6D6]"
         }`}
       >
         {active && <span className="h-2.5 w-2.5 rounded-full bg-pn-accent" />}
@@ -40,7 +40,7 @@ export function RadioCard({ active, onClick, title, body, icon, disabled, classN
           <span className="text-[15px] font-medium">{title}</span>
         </span>
         {body && (
-          <span className={`mt-1 block text-[13px] leading-[1.5] ${active ? "text-white/65" : "text-[#6E6E73]"}`}>
+          <span className={`mt-1 block text-[13px] leading-[1.5] ${active ? "text-white/65" : "text-[#737373]"}`}>
             {body}
           </span>
         )}

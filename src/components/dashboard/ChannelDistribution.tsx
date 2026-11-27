@@ -54,7 +54,7 @@ const PLATFORM_META: Record<string, { tone: string; short: string }> = {
 };
 
 /** Segment colours, in order (Pano §5.13: lime, olive, ink, then greys). */
-const SEGMENT_COLORS = ['#D7FE03', '#83AF3B', '#1E1E1E', '#C9C9CF', '#E2E2E7'];
+const SEGMENT_COLORS = ['#78FC90', '#2FB24C', '#1E1E1E', '#C9C9CF', '#E0E0E0'];
 
 /**
  * Where customers were sent (Pano, docs/design/DASHBOARD_DESIGN.md §5.13): one
@@ -100,12 +100,12 @@ export function ChannelDistribution({ channels, title, googleImpact = null, isTr
                 {meta.short}
                 <span
                   className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white"
-                  style={{ background: SEGMENT_COLORS[i] ?? '#E2E2E7' }}
+                  style={{ background: SEGMENT_COLORS[i] ?? '#E0E0E0' }}
                 />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-medium text-pn-ink">{fullLabel}</span>
-                <span className="block text-[13px] text-[#9A9AA0]">
+                <span className="block text-[13px] text-[#9A9A9A]">
                   {fmt(c.count)} {isTr ? 'yönlendirme' : c.count === 1 ? 'redirect' : 'redirects'}
                   {total > 0 ? ` · %${share}` : ''}
                   {impact
@@ -122,7 +122,7 @@ export function ChannelDistribution({ channels, title, googleImpact = null, isTr
                     <PanoNumber value={fmtRating(c.avgRating)} locale={isTr ? 'tr' : 'en'} />
                   </>
                 ) : (
-                  <span className="text-[14px] text-[#9A9AA0]">—</span>
+                  <span className="text-[14px] text-[#9A9A9A]">—</span>
                 )}
               </span>
             </li>

@@ -362,10 +362,10 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-[560px] overflow-hidden rounded-[24px] border border-pn-line bg-white shadow-[0_24px_60px_-20px_rgba(10,10,10,0.35)]"
+        className="w-full max-w-[600px] overflow-hidden rounded-[28px] bg-white shadow-[0_24px_60px_-20px_rgba(17,17,16,0.35)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 border-b border-pn-line px-4 py-3">
+        <div className="m-3 flex h-[52px] items-center gap-3 rounded-full bg-pn-canvas px-5">
           {loading ? (
             <Loader2 size={16} className="animate-spin text-[#737373]" aria-hidden />
           ) : (
@@ -387,14 +387,14 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#737373] hover:bg-pn-canvas hover:text-pn-ink"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-pn-ink hover:bg-[#EBEBEB]"
             aria-label={copy.close}
           >
             <X size={14} aria-hidden />
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-2">
+        <div className="max-h-[60vh] overflow-y-auto px-2 pb-2">
           {hits.length === 0 ? (
             <p className="px-3 py-6 text-center text-[13px] text-[#737373]" aria-live="polite">
               {loading ? copy.loading : copy.empty}
@@ -411,7 +411,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-pn-line bg-pn-canvas px-3 py-2 text-[12px] text-[#737373]">
+        <div className="hidden items-center justify-between border-t border-pn-line px-5 py-3 text-[12px] text-[#737373] sm:flex">
           <span className="inline-flex items-center gap-1">
             <KeyHint icon={<ArrowUp size={9} aria-hidden />} />
             <KeyHint icon={<ArrowDown size={9} aria-hidden />} />
@@ -422,7 +422,7 @@ export default function AdminCommandPalette({ role, permissions = NO_PERMISSIONS
             <span>{copy.open}</span>
           </span>
           <span className="inline-flex items-center gap-1">
-            <kbd className="rounded border border-pn-line bg-white px-1.5 py-0.5 font-mono text-[12px] ">
+            <kbd className="rounded-full bg-pn-canvas px-2 py-0.5 text-[12px] font-medium">
               Esc
             </kbd>
             <span>{copy.close}</span>
@@ -461,13 +461,13 @@ function PaletteList({
             aria-selected={active}
             onMouseEnter={() => onHover(i)}
             onClick={() => onClick(hit)}
-            className={`flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2 text-left transition-colors ${
-              active ? 'bg-pn-accent-soft/50' : 'hover:bg-pn-canvas'
+            className={`flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left transition-colors ${
+              active ? 'bg-pn-canvas' : 'hover:bg-pn-canvas'
             }`}
           >
             <span
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] ${
-                hit.kind === 'restaurant' ? 'bg-pn-accent-soft text-pn-ink' : 'bg-pn-canvas text-[#525252]'
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                active ? 'bg-pn-ink text-white' : hit.kind === 'restaurant' ? 'bg-pn-accent text-pn-ink' : 'bg-pn-canvas text-[#525252]'
               }`}
               aria-hidden
             >
@@ -480,7 +480,7 @@ function PaletteList({
               )}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium text-pn-ink">
+              <span className="block truncate text-[14px] font-medium text-pn-ink">
                 {hit.kind === 'nav'
                   ? hit.label
                   : hit.kind === 'restaurant'
@@ -504,7 +504,7 @@ function PaletteList({
 
 function KeyHint({ icon }: { icon: React.ReactNode }) {
   return (
-    <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-pn-line bg-white">
+    <kbd className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-pn-canvas">
       {icon}
     </kbd>
   );

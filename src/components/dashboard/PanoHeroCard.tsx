@@ -80,7 +80,7 @@ export function PanoHeroCard({
         {change && (
           <span
             className="mb-1 inline-flex items-center gap-0.5 text-[13px] font-medium"
-            style={{ color: change.tone === 'bad' ? '#FF8A80' : change.tone === 'good' ? '#D7FE03' : 'rgba(255,255,255,.62)' }}
+            style={{ color: change.tone === 'bad' ? '#FF8A80' : change.tone === 'good' ? '#78FC90' : 'rgba(255,255,255,.62)' }}
           >
             {change.tone === 'good' && <ArrowUpRight size={15} aria-hidden="true" />}
             {change.tone === 'bad' && <ArrowDownRight size={15} aria-hidden="true" />}

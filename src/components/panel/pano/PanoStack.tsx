@@ -61,44 +61,7 @@ export function PanoStack({ items, className = '' }: { items: PanoStackItem[]; c
 }
 
 /**
- * Overlapping round logos with a "+N" circle (§5.4 "Cashback and bonuses").
- */
-export function PanoAvatarStack({
-  items,
-  max = 4,
-  size = 44,
-  label,
-}: {
-  items: Array<{ id: string; content: ReactNode; title?: string; background?: string; color?: string }>;
-  max?: number;
-  size?: number;
-  label?: string;
-}) {
-  const shown = items.slice(0, max);
-  const rest = items.length - shown.length;
-  return (
-    <div className="pn-avatar-stack" role="img" aria-label={label}>
-      {shown.map((item) => (
-        <span
-          key={item.id}
-          title={item.title}
-          className="pn-avatar-stack-item"
-          style={{ width: size, height: size, background: item.background ?? '#000', color: item.color ?? '#FFF' }}
-        >
-          {item.content}
-        </span>
-      ))}
-      {rest > 0 && (
-        <span className="pn-avatar-stack-item" style={{ width: size, height: size, background: '#000', color: '#FFF' }}>
-          +{rest}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/**
- * Lime shortcut tile (§5.4 "Referral program / PRO version"): big round icon
+ * Green shortcut tile (§5.4 "Referral program / PRO version"): big round icon
  * on top, a two-line label at the bottom left.
  */
 export function PanoTile({ href, icon, label, badge }: { href: string; icon: ReactNode; label: ReactNode; badge?: ReactNode }) {

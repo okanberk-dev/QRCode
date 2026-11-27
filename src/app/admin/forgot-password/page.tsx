@@ -61,7 +61,7 @@ function ForgotPasswordContent() {
       {/* Soft top accent */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_65%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,#E6FDEA_0%,rgba(230,253,234,0)_65%)]"
       />
       <div
         aria-hidden

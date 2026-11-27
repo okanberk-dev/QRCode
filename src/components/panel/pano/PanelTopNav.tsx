@@ -6,11 +6,12 @@ import { ChevronDown, type LucideIcon } from 'lucide-react';
 import Link from '@/components/navigation/IntentLink';
 
 /**
- * Pano top navigation (docs/design/DASHBOARD_DESIGN.md §5.1): a floating white
- * bar with the brand on the left, text tabs in the middle and round actions on
- * the right. The active tab is one black pill that slides to the selected tab
- * (420ms, §6). Shared by the owner shell and the admin layout; each passes its
- * own entries with `active` already resolved.
+ * Pano top row (docs/design/DASHBOARD_DESIGN.md §5.1): white pill tabs on the
+ * canvas, round actions on the right. The active tab is one black pill that
+ * slides to the selected tab (420ms, §6). The brand sits in the icon rail
+ * (PanelRail); pass `brand` only when there is no rail. Shared by the owner
+ * shell and the admin layout; each passes its own entries with `active`
+ * already resolved.
  */
 
 export interface PanoNavChild {
@@ -44,7 +45,7 @@ export function groupIsActive(group: PanoNavGroup): boolean {
 }
 
 interface PanelTopNavProps {
-  brand: ReactNode;
+  brand?: ReactNode;
   entries: PanoNavEntry[];
   actions: ReactNode;
   ariaLabel: string;
@@ -52,7 +53,7 @@ interface PanelTopNavProps {
   newLabel?: string;
 }
 
-function MenuLinks({ items, newLabel }: { items: PanoNavChild[]; newLabel?: string }) {
+export function MenuLinks({ items, newLabel }: { items: PanoNavChild[]; newLabel?: string }) {
   return (
     <>
       {items.map((child) => {
@@ -94,7 +95,7 @@ function NavMenu({
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>
         <button type="button" className={`pn-nav-item ${className}`} data-active={active ? 'true' : undefined}>
-          {label}
+          <span className="pn-nav-label">{label}</span>
           <ChevronDown size={15} aria-hidden="true" />
         </button>
       </DropdownMenu.Trigger>
@@ -179,7 +180,7 @@ export function PanelTopNav({ brand, entries, actions, ariaLabel, moreLabel, new
                   data-active={entry.active ? 'true' : undefined}
                   className={`pn-nav-item ${entry.secondary ? 'hidden min-[1440px]:inline-flex' : ''}`}
                 >
-                  {entry.shortLabel ?? entry.label}
+                  <span className="pn-nav-label">{entry.shortLabel ?? entry.label}</span>
                 </Link>
               );
             }

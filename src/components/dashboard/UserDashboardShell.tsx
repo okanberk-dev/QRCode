@@ -6,7 +6,7 @@ import Link from '@/components/navigation/IntentLink';
 import { useIdlePrefetch } from '@/components/navigation/useIdlePrefetch';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ClipboardCheck, ClipboardList, CreditCard, Gift, Headset, LayoutDashboard, LogOut, MessageSquareText, Plug, Plus, QrCode, Search, Star, Store, UserCircle, UtensilsCrossed, Wrench, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -16,6 +16,7 @@ import BusinessSwitcher from './BusinessSwitcher';
 import ViewportMount from '@/components/ui/ViewportMount';
 import { PanelTopNav, type PanoNavEntry } from '@/components/panel/pano/PanelTopNav';
 import { PanelMobileNav } from '@/components/panel/pano/PanelMobileNav';
+import { PanelRail, RailLink } from '@/components/panel/pano/PanelRail';
 import { detectSector } from '@/lib/sector-platforms';
 import { getSectorByLabel } from '@/lib/sectors';
 import {
@@ -471,8 +472,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     href: hrefWithActiveRestaurant(href),
     active: isPathActive(href),
   });
-  // Pano top navigation (docs/design/DASHBOARD_DESIGN.md §5.1): the same
-  // entries feed the desktop bar and the mobile drawer.
+  // Pano navigation (docs/design/DASHBOARD_DESIGN.md §5.1): the core pages
+  // are pill tabs in the top row, the tools are round buttons in the left
+  // rail; the mobile drawer lists everything.
   const panoEntries: PanoNavEntry[] = navItems.map((item) => {
     if (item.type === 'item') {
       const isGoogle = item.href.endsWith('/google-reviews');
@@ -507,7 +509,17 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/account?section=notifications`, icon: Bell, label: copy.notifications },
     { href: `/${locale}/help`, icon: BookOpen, label: isTr ? 'Yardım merkezi' : 'Help center' },
   ];
+  const topEntries = panoEntries.filter((entry) => entry.type === 'link');
+  const railEntries: PanoNavEntry[] = panoEntries.flatMap((entry) =>
+    entry.type === 'group' ? entry.children.map((child) => ({ type: 'link' as const, ...child })) : [],
+  );
+  const helpLabel = isTr ? 'Yardım merkezi' : 'Help center';
   const createQrHref = hrefWithActiveRestaurant(`/${locale}/dashboard/qr?new=1`);
+  const railBrand = (
+    <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="pn-brand" aria-label="Buaze" title="Buaze">
+      <BuazeLogo size={42} variant="default" imageUrl={logoUrl} className="shrink-0" />
+    </Link>
+  );
   const brand = (
     <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="pn-brand" aria-label="Buaze">
       <BuazeLogo size={34} variant="default" imageUrl={logoUrl} className="shrink-0" />
@@ -556,13 +568,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           newHref={canAddBusiness ? `/${locale}/dashboard/restaurants/new` : null}
         />
       )}
-      <Link
-        href={createQrHref}
-        className="pn-icon-btn hidden xl:inline-flex"
-        aria-label={isTr ? 'QR oluştur' : 'Create QR'}
-        title={isTr ? 'QR oluştur' : 'Create QR'}
-      >
-        <Plus size={20} aria-hidden="true" />
+      <Link href={createQrHref} className="bz-btn hidden min-h-[46px] xl:inline-flex">
+        <Plus size={18} aria-hidden="true" />
+        {isTr ? 'QR oluştur' : 'Create QR'}
       </Link>
       <button
         type="button"
@@ -593,7 +601,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <DropdownMenu.Content align="end" sideOffset={14} collisionPadding={12} className="bz-menu z-[70] min-w-[260px] focus:outline-none">
             <div className="px-3.5 pb-2 pt-2.5">
               <p className="truncate text-[15px] font-medium text-pn-ink">{displayName}</p>
-              <p className="truncate text-[13px] text-[#9A9AA0]">{user.email}</p>
+              <p className="truncate text-[13px] text-[#9A9A9A]">{user.email}</p>
             </div>
             <DropdownMenu.Separator className="bz-menu-divider" />
             {accountLinks.map((item) => {
@@ -619,19 +627,30 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   );
 
   return (
-    // Pano shell: floating top bar, canvas background, no sidebar. From lg up
-    // the page scrolls in its own column under the bar, so full-height pages
-    // (feedback inbox, menu studio) keep their viewport-sized layout (§42.5.1:
-    // vertical scroll only, horizontal clipped, stable gutter).
+    // Pano shell: icon rail on the left, pill tabs on top, canvas background.
+    // From lg up the page scrolls in its own column under the tabs, so
+    // full-height pages (feedback inbox, menu studio) keep their
+    // viewport-sized layout (§42.5.1: vertical scroll only, horizontal
+    // clipped, stable gutter).
     <div className="bz-panel relative flex min-h-dvh flex-col bg-pn-canvas lg:h-screen lg:overflow-hidden">
       {isImpersonating && <ImpersonationBanner />}
       <a href="#panel-main-content" className="bz-skip-link">
         {isTr ? 'İçeriğe atla' : 'Skip to content'}
       </a>
 
+      <div className="flex min-h-0 flex-1">
+      <PanelRail
+        brand={railBrand}
+        entries={railEntries}
+        ariaLabel={isTr ? 'Araçlar' : 'Tools'}
+        newLabel={isTr ? 'Yeni' : 'New'}
+        footer={
+          <RailLink entry={{ href: `/${locale}/help`, label: helpLabel, icon: Headset, active: false }} />
+        }
+      />
+      <div className="flex min-w-0 flex-1 flex-col lg:min-h-0">
       <PanelTopNav
-        brand={brand}
-        entries={panoEntries}
+        entries={topEntries}
         actions={desktopActions}
         ariaLabel={isTr ? 'Panel menüsü' : 'Panel menu'}
         moreLabel={isTr ? 'Diğer' : 'More'}
@@ -726,6 +745,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           {announcements.length > 0 && <AnnouncementBanner announcements={announcements} locale={locale} />}
           {children}
         </main>
+      </div>
+      </div>
       </div>
 
 

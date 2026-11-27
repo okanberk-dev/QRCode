@@ -90,10 +90,10 @@ const RANGE_LABELS: Record<Range, string> = {
 
 // Tier palette — stacked area order follows the snapshot keys (tier sort
 // order from the server), `other` = paid subscriptions without a tier link.
-const TIER_AREA_COLORS = ['#000000', '#525252', '#A3A3A3', '#D7FE03', '#737373', '#D4D4D4'];
+const TIER_AREA_COLORS = ['#000000', '#525252', '#A3A3A3', '#78FC90', '#737373', '#D4D4D4'];
 
 const NPS_PIE_COLORS = {
-  promoters: '#83AF3B',
+  promoters: '#2FB24C',
   passives: '#A3A3A3',
   detractors: '#FB7185',
 };
@@ -250,7 +250,7 @@ export function AdminBiSection() {
                     <XAxis
                       dataKey="month"
                       tick={{ fontSize: 10, fill: '#737373' }}
-                      axisLine={{ stroke: '#ECECF0' }}
+                      axisLine={{ stroke: '#EBEBEB' }}
                       tickLine={false}
                     />
                     <YAxis
@@ -261,7 +261,7 @@ export function AdminBiSection() {
                       tickFormatter={(v) => `$${Number(v ?? 0).toLocaleString('en-US')}`}
                     />
                     <Tooltip
-                      contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
+                      contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EBEBEB' }}
                       formatter={(v, name) => [formatUsd(Number(v ?? 0)), mrrPlanLabel(String(name ?? ''))]}
                     />
                     {mrrKeys.map((key, i) => (
@@ -304,7 +304,7 @@ export function AdminBiSection() {
                   <XAxis
                     dataKey="month"
                     tick={{ fontSize: 10, fill: '#737373' }}
-                    axisLine={{ stroke: '#ECECF0' }}
+                    axisLine={{ stroke: '#EBEBEB' }}
                     tickLine={false}
                   />
                   <YAxis
@@ -314,7 +314,7 @@ export function AdminBiSection() {
                     width={32}
                   />
                   <Tooltip
-                    contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
+                    contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EBEBEB' }}
                     formatter={(v, name) => {
                       const numericV = typeof v === 'number' ? v : Number(v ?? 0);
                       const labelName = String(name ?? '');
@@ -365,7 +365,7 @@ export function AdminBiSection() {
                       <Cell fill={NPS_PIE_COLORS.detractors} />
                     </Pie>
                     <Tooltip
-                      contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
+                      contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EBEBEB' }}
                     />
                     <Legend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
                   </PieChart>
@@ -391,7 +391,7 @@ export function AdminBiSection() {
                   <XAxis
                     dataKey="cohortMonth"
                     tick={{ fontSize: 10, fill: '#737373' }}
-                    axisLine={{ stroke: '#ECECF0' }}
+                    axisLine={{ stroke: '#EBEBEB' }}
                     tickLine={false}
                   />
                   <YAxis
@@ -401,10 +401,10 @@ export function AdminBiSection() {
                     width={28}
                   />
                   <Tooltip
-                    contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EDEDED' }}
+                    contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #EBEBEB' }}
                   />
                   <Bar dataKey="retainedActive" stackId="a" fill="#000000" name="Aktif" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="retainedTrial" stackId="a" fill="#D7FE03" name="Deneme" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="retainedTrial" stackId="a" fill="#78FC90" name="Deneme" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

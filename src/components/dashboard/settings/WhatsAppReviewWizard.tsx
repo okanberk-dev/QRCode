@@ -401,9 +401,9 @@ export function WhatsAppReviewWizard({
                 <span
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium"
                   style={{
-                    background: active ? "#D7FE03" : done ? "#F3FDC4" : "#F5F5F8",
+                    background: active ? "#78FC90" : done ? "#E6FDEA" : "#F6F6F6",
                     color: "#000000",
-                    border: !active && !done ? "1px solid #EDEDED" : "none",
+                    border: !active && !done ? "1px solid #EBEBEB" : "none",
                   }}
                 >
                   {done ? <Check size={11} strokeWidth={2.6} /> : s.icon}
@@ -500,8 +500,8 @@ export function WhatsAppReviewWizard({
                       aria-pressed={isActive}
                       className="rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors"
                       style={{
-                        borderColor: isActive ? "#000000" : "#ECECF0",
-                        background: isActive ? "#F5F5F8" : "#FFFFFF",
+                        borderColor: isActive ? "#000000" : "#EBEBEB",
+                        background: isActive ? "#F6F6F6" : "#FFFFFF",
                         color: "#000000",
                       }}
                     >

@@ -7,7 +7,7 @@
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import type { VolumePoint } from '@/lib/volume-series';
 
-export const VOLUME_COLORS = { feedback: '#000000', redirects: '#D7FE03' } as const;
+export const VOLUME_COLORS = { feedback: '#000000', redirects: '#78FC90' } as const;
 
 interface TipProps {
   active?: boolean;

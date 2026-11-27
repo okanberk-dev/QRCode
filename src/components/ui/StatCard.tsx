@@ -43,7 +43,7 @@ export function StatCard({
   isTr = true,
 }: StatCardProps) {
   const deltaColor =
-    deltaKind === "up" ? "#3A8228" : deltaKind === "down" ? "#D92D20" : "#6E6E73";
+    deltaKind === "up" ? "#3A8228" : deltaKind === "down" ? "#D92D20" : "#737373";
   const showSparkline = sparkline !== undefined && sparkline.length >= 2;
 
   // Pano KPI card (docs/design/DASHBOARD_DESIGN.md §5.4–5.5): borderless white
@@ -51,7 +51,7 @@ export function StatCard({
   return (
     <div className={`bz-card relative min-w-0 p-5 sm:p-6 ${className}`}>
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="inline-flex min-w-0 items-center gap-1 text-[14px] leading-[1.3] text-[#6E6E73] [overflow-wrap:anywhere]">
+        <span className="inline-flex min-w-0 items-center gap-1 text-[14px] leading-[1.3] text-[#737373] [overflow-wrap:anywhere]">
           {label}
           {info && typeof label === "string" && <InfoTip text={info} label={label} isTr={isTr} />}
         </span>
@@ -75,7 +75,7 @@ export function StatCard({
             {delta}
           </span>
           {deltaSuffix && (
-            <span className="min-w-0 text-[13px] leading-snug text-[#9A9AA0] [overflow-wrap:anywhere]">
+            <span className="min-w-0 text-[13px] leading-snug text-[#9A9A9A] [overflow-wrap:anywhere]">
               {deltaSuffix}
             </span>
           )}

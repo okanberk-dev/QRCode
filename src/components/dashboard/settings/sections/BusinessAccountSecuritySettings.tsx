@@ -383,7 +383,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
                         </span>
                         {s.isCurrent && (
                           <span className="text-[13px] font-medium inline-flex items-center gap-1 rounded-full border border-pn-accent bg-pn-accent-soft px-1.5 py-0.5 text-[12px] text-pn-ink">
-                            <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#83AF3B' }} />
+                            <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#2FB24C' }} />
                             {isTr ? 'Bu cihaz' : 'This device'}
                           </span>
                         )}

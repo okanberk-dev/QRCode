@@ -444,7 +444,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM ŞABLONU"
-        eyebrowColor="#D7FE03"
+        eyebrowColor="#78FC90"
         title={data.title || 'Adsız şablon'}
         description={
           isRestaurantScoped

@@ -89,7 +89,7 @@ function RailRow({
       ref={setNodeRef}
       style={transform ? { transform: CSS.Translate.toString(transform), transition } : undefined}
       className={`group/rail relative flex h-10 items-center gap-1 rounded-[14px] ${
-        active ? 'bg-pn-accent-soft shadow-[inset_2px_0_0_#C6F24E]' : 'hover:bg-pn-canvas'
+        active ? 'bg-pn-accent-soft shadow-[inset_2px_0_0_#78FC90]' : 'hover:bg-pn-canvas'
       } ${isDragging ? 'z-10 bg-white bz-elev-3' : ''}`}
     >
       {draggable ? (

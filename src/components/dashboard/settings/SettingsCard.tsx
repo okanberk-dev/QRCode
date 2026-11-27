@@ -42,8 +42,8 @@ export function SettingsCard({
                 width: 36,
                 height: 36,
                 borderRadius: 10,
-                background: "#F5F5F8",
-                border: "1px solid #EDEDED",
+                background: "#F6F6F6",
+                border: "1px solid #EBEBEB",
               }}
             >
               {icon}
@@ -68,7 +68,7 @@ export function SettingsCard({
       {footer && (
         <footer
           className="px-5 sm:px-6 py-4"
-          style={{ borderTop: "1px solid #EDEDED" }}
+          style={{ borderTop: "1px solid #EBEBEB" }}
         >
           {footer}
         </footer>

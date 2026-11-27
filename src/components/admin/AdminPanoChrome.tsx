@@ -9,6 +9,8 @@ import BuazeLogo from '@/components/marketing/BuazeLogo';
 import ViewportMount from '@/components/ui/ViewportMount';
 import { PanelTopNav, type PanoNavEntry } from '@/components/panel/pano/PanelTopNav';
 import { PanelMobileNav } from '@/components/panel/pano/PanelMobileNav';
+import { PanelRail, RailLink } from '@/components/panel/pano/PanelRail';
+import type { ReactNode } from 'react';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { AdminPanelProfile } from '@/lib/admin-profile';
 import { useAdminTranslation } from './AdminTranslationProvider';
@@ -32,15 +34,18 @@ interface AdminPanoChromeProps {
   profile: AdminPanelProfile | null;
   role: string;
   permissions: string[];
+  /** The page column (scroll container + main) that sits right of the rail. */
+  children: ReactNode;
 }
 
 /**
  * Admin panel chrome in the Pano design (docs/design/DASHBOARD_DESIGN.md §5.1,
- * §7): the shared floating top bar on desktop, the white bar + full-screen
- * drawer below 1024px. Navigation comes from `admin-nav.ts` (role + staff
- * grants already applied); the profile page lives in the avatar menu.
+ * §7): single pages as pill tabs on top, page groups as round buttons in the
+ * left rail (each opens its menu), the white bar + full-screen drawer below
+ * 1024px. Navigation comes from `admin-nav.ts` (role + staff grants already
+ * applied); the profile page lives in the avatar menu and the rail footer.
  */
-export default function AdminPanoChrome({ announcements = [], profile, role, permissions }: AdminPanoChromeProps) {
+export default function AdminPanoChrome({ announcements = [], profile, role, permissions, children }: AdminPanoChromeProps) {
   const pathname = usePathname();
   const { t, locale } = useAdminTranslation();
   const navLocale = locale === 'en' ? 'en' : 'tr';
@@ -107,6 +112,14 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
   };
   const openSearch = () => window.dispatchEvent(new CustomEvent('buaze:admin-search-open'));
 
+  const topEntries = entries.filter((entry) => entry.type === 'link');
+  const railEntries = entries.filter((entry) => entry.type === 'group');
+  const profileLabel = isEn ? 'Profile' : 'Profilim';
+  const railBrand = (
+    <Link href="/admin/dashboard" className="pn-brand" aria-label="Buaze" title="Buaze">
+      <BuazeLogo size={42} variant="default" imageUrl={profile?.logoUrl} className="shrink-0" />
+    </Link>
+  );
   const brand = (
     <Link href="/admin/dashboard" className="pn-brand" aria-label="Buaze">
       <BuazeLogo size={34} variant="default" imageUrl={profile?.logoUrl} className="shrink-0" />
@@ -129,9 +142,16 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
   return (
     <>
       <AdminCommandPalette role={role} permissions={permissions} />
+      <div className="flex min-h-0 flex-1">
+      <PanelRail
+        brand={railBrand}
+        entries={railEntries}
+        ariaLabel={isEn ? 'Admin sections' : 'Yönetim bölümleri'}
+        footer={<RailLink entry={{ href: PROFILE_HREF, label: profileLabel, icon: User, active: pathname === PROFILE_HREF }} />}
+      />
+      <div className="flex min-w-0 flex-1 flex-col lg:min-h-0">
       <PanelTopNav
-        brand={brand}
-        entries={entries}
+        entries={topEntries}
         ariaLabel={isEn ? 'Admin menu' : 'Yönetim menüsü'}
         moreLabel={isEn ? 'More' : 'Diğer'}
         actions={
@@ -150,7 +170,7 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
                 <DropdownMenu.Content align="end" sideOffset={14} collisionPadding={12} className="bz-menu z-[70] min-w-[240px] focus:outline-none">
                   <div className="px-3.5 pb-2 pt-2.5">
                     <p className="truncate text-[15px] font-medium text-pn-ink">{displayName}</p>
-                    <p className="truncate text-[13px] text-[#9A9AA0]">{roleLabel}</p>
+                    <p className="truncate text-[13px] text-[#9A9A9A]">{roleLabel}</p>
                   </div>
                   <DropdownMenu.Separator className="bz-menu-divider" />
                   <DropdownMenu.Item asChild>
@@ -192,7 +212,7 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
               <span className="pn-avatar-btn !h-11 !w-11" aria-hidden="true">{initial}</span>
               <span className="min-w-0">
                 <span className="block truncate text-[15px] font-medium text-pn-ink">{displayName}</span>
-                <span className="block truncate text-[13px] text-[#9A9AA0]">{roleLabel}</span>
+                <span className="block truncate text-[13px] text-[#9A9A9A]">{roleLabel}</span>
               </span>
             </div>
             <Link href={PROFILE_HREF} aria-current={pathname === PROFILE_HREF ? 'page' : undefined} className="pn-drawer-link">
@@ -206,6 +226,9 @@ export default function AdminPanoChrome({ announcements = [], profile, role, per
           </div>
         }
       />
+      {children}
+      </div>
+      </div>
     </>
   );
 }

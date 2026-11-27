@@ -216,7 +216,7 @@ export default function MemberActions({
             <span
               aria-hidden="true"
               className="bzl-ring pointer-events-none absolute inset-0 rounded-[20px] border-[3px]"
-              style={{ borderColor: '#D7FE03' }}
+              style={{ borderColor: '#78FC90' }}
             />
           )}
           <LoyaltyCardFace

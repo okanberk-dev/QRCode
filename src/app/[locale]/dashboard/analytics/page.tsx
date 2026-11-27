@@ -655,7 +655,7 @@ async function renderAnalyticsPage({
               ? `hedef ${resolvedTargetRating.toFixed(1).replace('.', ',')}`
               : `target ${resolvedTargetRating.toFixed(1)}`,
             sparkline: sparkAvgRating,
-            sparklineColor: '#83AF3B',
+            sparklineColor: '#2FB24C',
           },
           {
             label: metricLabel('replyTime', isTr),

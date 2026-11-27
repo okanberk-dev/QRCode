@@ -1,286 +1,212 @@
 # Buaze panelleri — "Pano" tasarım sistemi
 
-> Kaynak: Behance "lumin — Online Bank / Finance SaaS UX UI Design" (Mikalai
-> Haluza, 2024). 22 görsel 3840 px genişlikte indirildi; düz çekilmiş "Cards"
-> ekranı (1440 px tuval, 1 CSS px = 2,217 görsel px) üzerinden piksel ölçüldü,
-> renkler görselden örneklendi. Bu ölçüler Buaze'nin owner ve admin
-> panellerine birebir uyarlandı; **içerik, logo ve marka Buaze'nin**.
-> Referansın logosu, "lumin" adı, illüstrasyonları (megafon, el fotoğrafları),
-> avatarları, kart görselleri ve metinleri kullanılmaz.
+> Kaynak: iki Behance konsepti harmanlandı.
+> **Fintora** ("Modern Fintech CRM & SaaS Dashboard", Sriraj Mohan, 2026):
+> düzen, renk, yazı tipi, kart ve grafik dili — 18 görsel 3840 px
+> genişlikte incelendi, renkler görselden örneklendi (`#78FC90`, `#111110`,
+> `#F6F6F6`, `#FFFFFF`; Plus Jakarta Sans; 1440 px tuval, 20 px kenar,
+> 16 px oluk). **lumin** ("Online Bank / Finance SaaS", Mikalai Haluza,
+> 2024): kayan siyah sekme hapı, ışımalı koyu kahraman kart, taralı
+> ilerleme çubuğu, gri kesirli sayılar.
+> İçerik, logo ve marka Buaze'nindir. Referansların logosu, adı ("Greyola",
+> "lumin"), avatar fotoğrafları, illüstrasyonları ve metinleri kullanılmaz.
 >
-> Kod: `src/components/panel/pano/` — `pano.css` (token + bileşen),
-> `PanelTopNav.tsx` (üst menü), `PanoNumber.tsx` (kesirli sayı).
-> Kapsam: `.bz-panel` kökünün olduğu sayfalar (owner `/[locale]/dashboard/*`,
-> admin `/admin/*`). Pazarlama "Ritim" (`docs/design/MARKETING_DESIGN.md`),
-> `/r`, `/menu`, `/l`, `/hesap`, auth ve e-postalar bu sistemi kullanmaz.
+> Kod: `src/components/panel/pano/`. Kapsam: `.bz-panel` kökünün olduğu
+> sayfalar (owner `/[locale]/dashboard/*`, admin `/admin/*`). Pazarlama
+> "Ritim" (`MARKETING_DESIGN.md`), `/r`, `/menu`, `/l`, `/hesap`, auth ve
+> e-postalar bu sistemi kullanmaz.
 
 ---
 
 ## 1. Tasarım dili — 10 kural
 
-1. **Gri tuval, beyaz kartlar.** Sayfa zemini `#F5F5F8`; her içerik bloğu
-   çerçevesiz beyaz, 28 px köşeli bir karttır. Gölge yok.
-2. **Sıkı ızgara.** Kartlar arası boşluk 10 px. Boşluk kartın *içinde* (28 px),
-   kartların arasında değil.
-3. **Üç renk.** Siyah `#000`, beyaz, lime `#D7FE03`. Zeytin `#83AF3B` yalnız
-   ikinci veri serisi ve olumlu metin içindir.
-4. **Hap ve daire.** Metinli her buton hap (`border-radius: 999px`); ikonlu her
-   buton 40–46 px dairedir. Köşeli buton yoktur.
-5. **İnce, açık yazı.** Urbanist; başlıklar `400`, büyük sayılar `300`.
-   Hiyerarşi boyutla kurulur, kalınlıkla değil.
-6. **Sayının kesri gri.** `6.010,29` → `6.010` siyah, `,29` gri. Yüzde ve
-   para birimi işareti de gri ve küçük.
-7. **Yüzen üst menü.** Kenar çubuğu yok. Masaüstünde beyaz, 24 px köşeli,
-   78 px yüksek bir bar; ortada metin sekmeleri, aktif sekme siyah hap.
-8. **Koyu kahraman kart.** Sayfanın en önemli verisi siyah kartta durur;
-   alt köşeden lime ışıma (radyal gradyan) yükselir.
-9. **Taranmış kalan pay.** İlerleme ve halka grafiklerde dolmayan kısım
-   45° çizgili (hatch) desenle gösterilir, düz gri değil.
-10. **Sakin, yumuşak hareket.** Aktif sekme hapı sekmeler arasında kayar;
-    ok butonu hover'da 45° döner; basınca her buton %3 küçülür.
+1. **Gri tuval, beyaz kartlar.** Zemin `#F6F6F6`; her içerik bloğu
+   çerçevesiz beyaz, 24 px köşeli karttır. Gölge yok.
+2. **Solda ikon şeridi, üstte hap sekmeler.** Ana sayfalar üstte beyaz
+   haplar; araçlar ve sayfa grupları solda 48 px yuvarlak ikonlar.
+   Aktif olan her yerde siyah dolar.
+3. **Dört renk.** Siyah `#111110`, beyaz, tuval `#F6F6F6`, yeşil `#78FC90`.
+   Yeşil yalnız siyah yazıyla ya da siyah zeminde kullanılır.
+4. **Hap ve daire.** Metinli her buton hap; ikonlu her buton dairedir.
+   Tuvalde beyaz, beyaz kart içinde gri (`#F6F6F6`). Çerçeve yok.
+5. **Plus Jakarta Sans, orta kalınlık.** Başlıklar ve büyük sayılar 500;
+   gövde 400. Büyük harf etiket yok.
+6. **Sayının kesri gri.** `37.201,00` → `37.201` siyah, `,00` gri.
+7. **Klasörlü yol göstergesi.** Sayfa başlığının üstünde
+   "📁 Panel → 📁 Yorumlar"; geri butonu yok.
+8. **Koyu kahraman kart.** Sayfanın en önemli verisi siyah kartta; alttan
+   yeşil ışıma yükselir (lumin).
+9. **Taralı grafik.** Çubuk ve ilerleme göstergelerinde dolmayan / seçili
+   olmayan kısım 45° çizgili gridir; seçili çubuk yeşil, ipucu siyah hap.
+10. **Sakin hareket.** Aktif sekme hapı sekmeler arasında kayar (420 ms);
+    ok butonu hover'da siyah dolup 45° döner; basınca her buton %3 küçülür.
 
 ---
 
 ## 2. Renkler
 
-Tokenlar `globals.css` `@theme` bloğunda `--color-pn-*` olarak tanımlıdır
-(Tailwind: `bg-pn-accent`, `text-pn-ink`, `border-pn-line`…). Değerler
-**kapsama göre değişir**: panel dışında Pulse değerleri (§11), panelde
-(`:root:has(.bz-panel)`) Pano değerleri. Böylece paylaşılan bileşenler
-(`src/components/ui`, `audits`, `reply`, `loyalty`) her iki yüzeyde de doğru
-rengi alır.
+Tokenlar `globals.css` `@theme` bloğunda `--color-pn-*` (Tailwind
+`bg-pn-accent`, `text-pn-ink`, `border-pn-line`…). Panel dışında Pulse
+değerleri, panelde (`:root:has(.bz-panel)`) aşağıdakiler; paylaşılan
+bileşenler iki yüzeyde de doğru rengi alır.
 
-| Token | Panel (Pano) | Panel dışı (Pulse) | Kullanım |
-|---|---|---|---|
-| `pn-accent` | `#D7FE03` | `#C6F24E` | Lime: aktif vurgu, CTA, tile, grafik ana seri |
-| `pn-accent-hover` | `#C6EB00` | `#A8D62E` | Lime buton hover |
-| `pn-accent-soft` | `#F3FDC4` | `#EAF9B8` | Açık lime zemin (rozet, seçili satır) |
-| `pn-accent-ink` | `#4F7A18` | `#A8D62E` | Beyaz üstünde yeşil metin / ikon |
-| `pn-olive` | `#83AF3B` | `#A8D62E` | İkinci seri, segment çubuğunun 2. parçası |
-| `pn-canvas` | `#F5F5F8` | `#FAFAFA` | Sayfa zemini, kart içi gri yüzey |
-| `pn-line` | `#ECECF0` | `#EDEDED` | Kart içi çerçeve, ayraç |
-| `pn-line-strong` | `#E2E2E7` | `#D4D4D4` | Tuval üstündeki buton çerçevesi, hover |
-| `pn-ink` | `#000000` | `#0A0A0A` | Metin, siyah buton, koyu kart |
-| `pn-ink-2` | `#1E1E1E` | `#1A1A1A` | Koyu kart içindeki ikinci katman |
-| `pn-ink-3` | `#2A2A2A` | `#262626` | Koyu üstünde buton/çerçeve |
-
-Sabit (kapsamdan bağımsız):
-
-| Ad | Değer | Kullanım |
+| Token | Panel | Kullanım |
 |---|---|---|
-| Metin ikincil | `#6E6E73` | Açıklama, alt metin (beyaz üstünde 5,0:1) |
-| Metin soluk | `#9A9AA0` | Tarih, ipucu, pasif |
-| Olumlu | `#3A8228` | "+%4" gibi artış metni (beyazda 4,8:1) |
-| Olumsuz | `#E5484D` | Düşüş metni, hata, bildirim noktası `#DD312E` |
-| Koyu kart metni | `rgba(255,255,255,.62)` | Siyah kart üstünde ikincil metin |
+| `pn-accent` | `#78FC90` | Yeşil: vurgu, ikon dairesi, grafik ana seri, kısayol kutusu |
+| `pn-accent-hover` | `#5CF07A` | Yeşil buton hover |
+| `pn-accent-soft` | `#E6FDEA` | "+7,5%" rozeti zemini, seçili satır |
+| `pn-accent-ink` | `#23863A` | Beyaz üstünde yeşil metin |
+| `pn-olive` | `#2FB24C` | İkinci yeşil seri |
+| `pn-canvas` | `#F6F6F6` | Tuval, kart içi gri yüzey ve butonlar |
+| `pn-line` / `pn-line-strong` | `#EBEBEB` / `#E0E0E0` | Ayraç, input çerçevesi |
+| `pn-ink` | `#111110` | Metin, siyah buton ve hap, koyu kart |
+| `pn-ink-2` / `pn-ink-3` | `#1C1C1B` / `#2B2B2A` | Koyu kart içi katmanlar |
 
-> Lime üstüne yalnız siyah yazılır. Beyaz üstüne lime metin yazılmaz
-> (1,1:1); yeşil metin için `pn-accent-ink` ya da olumlu rengi kullan.
+İkincil metin `#737373`, soluk metin `#9A9A9A`, olumsuz `#E5484D`
+(rozet `#D92D20` / `#FDECEC`). Grafik kütüphanesine hex gerekirse:
+yeşil `#78FC90`, ikinci yeşil `#2FB24C`, siyah `#111110`.
 
 ---
 
-## 3. Tipografi
+## 3. Tipografi — Plus Jakarta Sans
 
-Yazı tipi: **Urbanist** (OFL, Google Fonts, değişken 100–900, `latin` +
-`latin-ext` — Türkçe ğ/ş/İ). `next/font` değişkeni `--font-urbanist`;
-panel kapsamında `--font-body` ve `--font-heading` Urbanist'e döner. Mono
-yazı (JetBrains Mono) panelde kullanılmaz; küçük etiketler Urbanist.
-
-| Rol | Boyut / satır | Ağırlık | İzleme | Örnek |
-|---|---|---|---|---|
-| H1 sayfa başlığı | 46 / 52 (mobil 32 / 38) | 400 | -0,01em | "Yorumlar" |
-| H1 kompakt | 36 / 42 (mobil 28 / 34) | 400 | -0,01em | yoğun sayfalar |
-| Kart başlığı (H2) | 22 / 28 | 400 | -0,005em | "Son yorumlar" |
-| Koyu kart başlığı | 28 / 34 | 400 | -0,01em | kahraman kart |
-| Büyük sayı | 40 / 44 | 300 | -0,02em | `6.010,29` |
-| KPI sayı | 32 / 36 | 300 | -0,02em | `4,6` |
-| Liste başlığı | 16 / 22 | 500 | 0 | satır adı |
-| Gövde | 14 / 20 | 400 | 0 | açıklama |
-| Buton / sekme | 14 / 20 | 500 | 0 | "Kaydet" |
-| Küçük | 13 / 18 | 400 | 0 | tarih, alt metin |
-| Mikro | 12 / 16 | 500 | 0 | rozet, çip |
-
-Kurallar: büyük harf (ALL CAPS) etiket yok; başlıkların üstünde eyebrow
-yok (eski `pulse-eyebrow` panelde normal küçük metne döner); sayılarda
-`font-variant-numeric: tabular-nums`.
+| Rol | Boyut | Ağırlık |
+|---|---|---|
+| H1 sayfa başlığı | 34 px (mobil 28) | 500, -0,02em |
+| H1 kompakt | 30 px (mobil 24) | 500 |
+| Kart başlığı (`pn-card-title`) | 20 / 26 | 500 |
+| Büyük sayı (`pn-num`, StatCard) | 36–48 px | 500, -0,025em, kesir gri |
+| Gövde | 14 / 20 | 400 |
+| Buton / sekme | 14 / 20 | 500 |
+| Küçük / tarih | 13 px | 400, `#9A9A9A` |
+| Rozet | 12 px | 500 |
 
 ---
 
 ## 4. Ölçüler
 
-### 4.1 Boşluk
-| Ölçü | Değer |
+| Öğe | Değer |
 |---|---|
-| Sayfa yatay iç boşluğu | 24 px (mobil 16) |
-| Üst menü dış boşluğu | 8 px (ekran kenarından) |
-| Üst menü ↔ sayfa başlığı | 40 px |
-| Sayfa başlığı ↔ ilk kart | 28 px |
+| İkon şeridi genişliği | 92 px; düğme 48 px, aralık 10 px |
+| Üst satır yüksekliği | 80 px; sekme hapı 44 px, aralık 8 px |
+| Üst satır daire butonları / avatar | 46 px |
 | Kartlar arası | 10 px |
-| Kart iç boşluğu | 28 px (mobil 20) |
-| Kart başlığı ↔ içerik | 20 px |
-| Liste satırları arası | 10 px |
-| Yan yana daire butonlar | 6 px |
-
-### 4.2 Köşe
-| Öğe | Köşe |
-|---|---|
-| Üst menü | 24 px |
-| Kart | 28 px |
-| Koyu kahraman kart | 32 px |
-| Lime tile | 22 px |
-| Liste satırı (çerçeveli) | 24 px |
-| Koyu kart içi kutu | 20 px |
-| Input / textarea | 16 px (tek satır input hap: 999) |
-| Menü / popover | 20 px; madde 12 px |
-| Modal | 32 px |
-| Buton, çip, sekme | 999 px |
-
-### 4.3 Yükseklik
-| Öğe | Yükseklik |
-|---|---|
-| Üst menü | 78 px |
-| Sekme hapı | 42 px |
-| Üst menü daire butonu / avatar | 46 px |
-| Sayfa başlığı daire butonu (geri, ara, filtre) | 46 px |
-| Kart içi daire buton (↗, ayar) | 40 px |
-| Buton (normal) | 44 px |
-| Buton (küçük) | 36 px |
-| Input | 46 px |
-| Liste ikon dairesi | 40 px |
-| Çip / rozet | 28 px / 24 px |
+| Kart iç boşluğu | 20–28 px (mobil 20) |
+| Kart köşesi | 24 px; koyu kart 28 px; kart içi gri kutu 18 px |
+| Liste satırı (`pn-row`) | gri, 16 px köşe, 40 px ikon dairesi |
+| Kart içi daire buton (↗) | 44 px gri |
+| Buton | 44 px (küçük 36 px) |
+| Input | 46 px hap, `1px pn-line` |
+| Menü / popover | 24 px köşe, madde 44 px |
+| Modal | 28–32 px köşe |
 
 ---
 
 ## 5. Bileşenler
 
-### 5.1 Üst menü (`PanelTopNav`, masaüstü ≥1024)
+### 5.1 Kabuk (masaüstü ≥1024)
 ```
-┌───────────────────────────────────────────────────────────────────────┐ 8px
-│ [◆ buaze]      Panel  [Yorumlar]  Google  QR  Analitik  Diğer ▾    (⌕)(🔔)(●) │ 78px
-└───────────────────────────────────────────────────────────────────────┘ r24
+┌──────┬──────────────────────────────────────────────────────────────┐
+│ ◆    │ [Panel] (Yorumlar) (Google) (QR) (Analitik)  [İşletme⌄][+ QR][⌕][🔔][●] │ 80px
+│      │                                                              │
+│ (👥) │  📁 Panel → 📁 Yorumlar                                       │
+│ (🍴) │  Yorumlar                               (⌕)(⚙)[📅 Son 7 gün ⌄]│
+│ (🎁) │  ┌────────┐┌────────┐┌────────┐                              │
+│ (📖) │  │  kart  ││  kart  ││  kart  │                              │
+│      │                                                              │
+│ (🎧) │                                                              │
+└──────┴──────────────────────────────────────────────────────────────┘
 ```
-- Beyaz bar, `margin: 8px 8px 0`, köşe 24 px, gölge yok, `position: sticky; top: 8px`.
-- Logo solda; sekmeler ortada; sağda daire butonlar + avatar.
-- Sekme: 14 px / 500, `padding: 0 18px`, 42 px yükseklik, siyah metin.
-  Aktif sekme: siyah hap, beyaz metin. Hap tek bir öğedir ve aktif sekmenin
-  altına **kayar** (§6). Hover: metin altında `pn-canvas` hap.
-- Grup (Araçlar, Hesaplar…): metin + küçük chevron, tıklayınca menü (§5.10).
-  Grubun bir alt sayfası açıksa grup sekmesi aktif hap alır.
-- 1024–1279 px'de öncelikli olmayan sekmeler "Diğer" menüsüne iner.
-- Sağ daire butonlar 46 px, beyaz zemin, `1px pn-line` çerçeve; bildirim
-  noktası 8 px `#DD312E`, sağ üstte.
+- **İkon şeridi** (`PanelRail`): üstte logo, ortada düğmeler, altta yardım
+  (owner) / profil (admin). Owner: Araçlar (Müşteriler, Menü, Sadakat,
+  Anketler, Denetim, Kılavuz). Admin: sayfa grupları, her biri sağa açılan
+  menü. Düğmenin adı hover/odakta sağda siyah ipucunda görünür.
+- **Üst satır** (`PanelTopNav`): tuvalin üstünde beyaz haplar; aktif sekme
+  tek bir siyah hap, sekmeler arasında kayar. 1440 px altında "Platformlar"
+  ve "İşletmeler" "Diğer" menüsüne iner. Sağda işletme seçici hapı,
+  "+ QR oluştur" beyaz hap (≥1280), arama, bildirim, avatar.
+- Sayfa, sekme satırının altında kendi sütununda kayar (§42.5.1).
 
 ### 5.2 Sayfa başlığı (`PageHeader`)
-```
-(←)  Yorumlar                                   (⌕) (⚙) [ 📅 27 Oca – 27 Şub ⌄ ]
-```
-- Solda 46 px geri dairesi (çerçeveli, tuvalde şeffaf zemin), 20 px sonra H1.
-  Panel ana sayfasında geri dairesi yok.
-- Açıklama H1'in altında, 14 px ikincil metin, en çok 640 px.
-- Sağda eylemler: daire butonlar ve hap butonlar 46 px.
+Klasörlü yol göstergesi (`PanelBreadcrumb`: "Panel → sayfa adı", ilk adım
+panel ana sayfasına bağlantı; `crumb` prop'u son adımı değiştirir,
+`crumb={false}` gizler), altında H1, sağda aynı hizada eylemler (daire
+butonlar, tarih hapı, siyah ana eylem). Mobilde yol göstergesi gizli.
 
 ### 5.3 Butonlar
-| Sınıf | Görünüm | Kullanım |
-|---|---|---|
-| `bz-btn-primary` | Siyah hap, beyaz yazı, 44 px, `padding 0 24px` | Ana eylem (Kaydet, Sipariş ver) |
-| `bz-btn-lime` | Lime hap, siyah yazı | Vurgulu ikincil eylem, kahraman kartta |
-| `bz-btn` / `bz-btn-ghost` | Beyaz hap, `1px pn-line-strong`, siyah yazı | İkincil eylem |
-| `bz-btn-danger` | Beyaz hap, kırmızı yazı, açık kırmızı çerçeve | Silme |
-| `bz-btn-on-dark` | `#2A2A2A` hap, beyaz yazı | Koyu kart içinde |
-| `bz-btn-icon` | 40 px daire, çerçeveli | Kart başlığı eylemleri |
-| `pn-icon-btn` | 46 px daire, çerçeveli | Üst menü, sayfa başlığı |
-| `pn-arrow-btn` | 40 px daire, içinde ↗ | Kartı/ayrıntıyı aç |
-| `pn-dark-icon-btn` | 52 px `#1E1E1E` daire, beyaz ikon | Koyu kart eylemleri |
-
-Durumlar: hover → siyah `#1F1F1F`, lime `pn-accent-hover`, çerçeveli
-`pn-canvas` zemin + `pn-line-strong` çerçeve; basma `scale(.97)`; odak
-`0 0 0 3px` lime halka (siyah butonda) / siyah halka (lime butonda);
-devre dışı `#EDEDF0` zemin, `#A0A0A6` yazı.
+| Sınıf | Görünüm |
+|---|---|
+| `bz-btn-primary` | Siyah hap, beyaz yazı (sayfada en çok bir) |
+| `bz-btn-lime` | Yeşil hap, siyah yazı |
+| `bz-btn` / `bz-btn-ghost` | Tuvalde beyaz hap, kart/menü/pencere içinde gri hap; çerçeve yok |
+| `bz-btn-danger` | Beyaz hap, kırmızı yazı |
+| `bz-btn-icon` | 40 px daire; tuvalde beyaz, kartta gri |
+| `pn-icon-btn` | 46 px beyaz daire (üst satır, sayfa başlığı) |
+| `pn-arrow-btn` | 44 px gri daire, ↗; hover siyah + 45° döner |
+| `pn-dark-icon-btn` | 52 px koyu daire (koyu kart içinde) |
+| `pn-rail-btn` | 48 px beyaz daire, aktif siyah (ikon şeridi) |
 
 ### 5.4 Kartlar
-- **Beyaz kart** (`bz-card`): beyaz, çerçevesiz, 28 px köşe, 28 px iç boşluk
-  (sayfalar kendi `p-*` sınıflarını verir). Kart başlığı 22 px / 400, sağında
-  40 px daire eylemler (filtre, ↗).
-- **Yumuşak kart** (`bz-card-soft`): `pn-canvas` zemin, 24 px köşe (kart içinde).
-- **Koyu kahraman** (`pn-card-dark`): siyah, 32 px köşe, beyaz metin,
-  alt-orta radyal lime ışıma `radial-gradient(60% 70% at 30% 110%, rgba(215,254,3,.55), transparent 70%)`.
-- **Lime tile** (`pn-tile`): lime zemin, 22 px köşe, alt solda 14 px / 500
-  siyah etiket, üstte siyah hap ya da ikon.
-- **Çerçeveli satır** (`pn-row`): beyaz, `1px pn-line`, 24 px köşe,
-  `padding 16px 20px`, solda 40 px siyah ikon dairesi.
-- **Hap çip** (`pn-chip`): `1px pn-line` çerçeveli hap, solda 40 px siyah
-  daire, sağında iki satır (16 px / 14 px ikincil).
+- `bz-card`: beyaz, 24 px. Başlık `pn-card-title` + gri tarih satırı,
+  sağda ↗ ya da tarih hapı.
+- `pn-card-dark` (`PanoHeroCard`): siyah, yeşil ışıma, 52 px eylem
+  daireleri, taralı ilerleme + kaydırma topuzu (`pn-knob`), koyu satırlar
+  (`pn-dark-row`, değişim `pn-up` yeşil / `pn-down` kırmızı).
+- `pn-tile` (`PanoTile`): yeşil kısayol kutusu, siyah ikon dairesi.
+- `PanoStack`: üst üste binen kısa sıralı liste (siyah / yeşil / beyaz).
+- `pn-row`: gri liste satırı (Fintora "Portfolio Breakdown").
 
 ### 5.5 Sayı (`PanoNumber`)
-`<PanoNumber value="6.010,29" />` → tam kısım ink, ondalık ayırıcı + kesir
-`#9A9AA0` ve %88 boyut. Önek/sonek (`₺`, `%`, `★`) aynı gri ve %70 boyut.
-`StatCard` değerleri bu bileşenle çizilir.
+Tam kısım siyah, ondalık ve önek/sonek gri. `StatCard` ve analitik KPI'ları.
 
-### 5.6 Input
-Beyaz, `1px pn-line-strong`, 46 px, tek satır input köşesi 999 px,
-textarea 16 px; odak: siyah çerçeve + `0 0 0 4px` açık lime halka.
-Placeholder `#9A9AA0`. Select aynı (`PulseSelect`), chevron 12 px.
+### 5.6 Rozet (`bz-badge`)
+24 px hap. `ok` yeşil yazı açık yeşil zemin, `danger` kırmızı yazı açık
+kırmızı zemin, `lime` yeşil zemin siyah yazı, `dark` siyah zemin yeşil yazı.
 
-### 5.7 Sekmeler (`bz-tabs`)
-Hap segment: kapsayıcı yok (şeffaf), sekme 40 px hap, pasif siyah metin,
-aktif siyah hap + beyaz metin; hover `pn-canvas`. Üst menü sekmeleriyle aynı.
+### 5.7 Sekmeler / segment
+Beyaz haplar arası 8 px, aktif siyah hap. Kart/menü içinde pasif sekmenin
+zemini yok (Fintora "All / Unread").
 
-### 5.8 Tablo
-Başlık 13 px / 500 `#6E6E73`, büyük harf yok, zemin yok; satır 64 px,
-ayraç `1px pn-line`; hover satır `pn-canvas`; ilk sütun 16 px / 500.
+### 5.8 Menü, popover, komut paleti
+Beyaz, çerçevesiz, 24 px köşe, yumuşak gölge; madde 44 px, 12 px köşe,
+hover ve seçili gri. Komut paleti: 52 px gri arama hapı + gri kapat dairesi,
+satırlar 16 px köşe, aktif satırda ikon dairesi siyah.
 
-### 5.9 Rozet (`bz-badge`)
-24 px hap, 12 px / 500. Renkli rozetler açık zemin + koyu metin; `lime`
-rozeti lime zemin + siyah metin; `dark` siyah + lime metin.
+### 5.9 Grafik
+Çubuklar yuvarlak; ana seri yeşil, ikinci seri siyah; pasif çubuklar
+taralı gri; ipucu siyah yuvarlak kutu (değer önünde yeşil nokta);
+ızgara kesikli `pn-line`; eksen çizgisi yok.
 
-### 5.10 Menü / popover (`bz-menu`)
-Beyaz, 20 px köşe, `padding 8px`, gölge `0 24px 48px -12px rgba(0,0,0,.18)`,
-`1px pn-line`. Madde 44 px, 12 px köşe, hover `pn-canvas`, seçili madde
-lime zemin. Açılış: 200 ms ölçek .96→1 + saydamlık.
-
-### 5.11 İlerleme (`bz-progress`, `pn-hatch`)
-12 px hap; dolu kısım lime (koyu kartta) / siyah (beyaz kartta); kalan
-kısım `pn-hatch`: `repeating-linear-gradient(-45deg, …)` 6 px çizgi.
-
-### 5.12 Modal
-Beyaz, 32 px köşe, 32 px iç boşluk, arka plan `rgba(10,10,14,.32)` +
-4 px blur. Kapat butonu 40 px çerçeveli daire.
-
-### 5.13 Grafik
-Ana seri siyah ince çizgi (1,5 px) ya da lime dolgu; ikinci seri zeytin;
-üçüncü `#1E1E1E`; ızgara çizgisi yok ya da `pn-line` kesikli; tooltip:
-siyah hap içinde beyaz metin, vurgulu değer lime hap. Ay etiketleri küçük
-çerçeveli haplar, seçili ay siyah hap.
+### 5.10 Yan panel (çekmece)
+Masaüstünde ekran kenarından 8 px içeride, 32 px köşeli beyaz panel;
+mobilde tam ekran.
 
 ---
 
 ## 6. Hareket
 
-| Ne | Süre | Eğri | Davranış |
-|---|---|---|---|
-| Sekme hapı | 420 ms | `cubic-bezier(.32,.72,0,1)` | `transform` + `width` ile aktif sekmeye kayar |
-| Buton hover | 200 ms | `cubic-bezier(.2,.8,.2,1)` | zemin + çerçeve rengi |
-| Buton basma | 120 ms | aynı | `scale(.97)` |
-| Ok butonu | 260 ms | aynı | hover: siyah dolar, ikon beyaz, ↗ 45° döner (→) |
-| Menü açılışı | 200 ms | `cubic-bezier(.16,1,.3,1)` | ölçek .96→1 + saydamlık, kaynak tetikleyici |
-| Sayfa girişi | 360 ms | `cubic-bezier(.2,.8,.2,1)` | içerik 8 px aşağıdan, bir kez, her rota değişiminde |
-| Kart hover (tıklanabilir) | 200 ms | aynı | yalnız ok butonu tepki verir, kart sabit |
-| İlerleme dolumu | 700 ms | aynı | genişlik 0'dan değere |
-| Skeleton | 1,4 s | `ease-in-out` | `pn-canvas` ↔ `#EDEDF1` nabız |
+| Ne | Süre | Davranış |
+|---|---|---|
+| Sekme hapı | 420 ms `cubic-bezier(.32,.72,0,1)` | aktif sekmeye kayar |
+| Hover | 200 ms | zemin rengi |
+| Basma | 120 ms | `scale(.97)` |
+| Ok butonu | 260 ms | siyah dolar, ↗ 45° döner |
+| İkon şeridi ipucu | 160 ms | 4 px kayarak belirir |
+| Menü açılışı | 200 ms | ölçek .96→1 + saydamlık |
+| Sayfa girişi | 360 ms | içerik 8 px aşağıdan, rota değişiminde bir kez |
 
-`prefers-reduced-motion: reduce` → tümü kapalı; sekme hapı anında yer
-değiştirir (globals.css blanket'ı süreleri sıfırlar).
+`prefers-reduced-motion: reduce` → hepsi kapalı.
 
 ---
 
 ## 7. Mobil (<1024)
 
-- Üst menü yerine aynı stilde beyaz bar (`margin 8px`, 64 px, 20 px köşe):
-  solda logo, sağda bildirim + 44 px siyah menü dairesi (iki çizgi ikon).
-- Menü dairesi tam ekran beyaz çekmeceyi açar: sekmeler 52 px haplar,
-  aktif siyah; altta hesap ve çıkış.
-- Alt sekme çubuğu yoktur. `--dash-bottom-nav-h` yalnız güvenli alanı tutar.
-- Kartlar tek sütun, 10 px aralık; kart iç boşluğu 20 px; H1 32 px.
+- İkon şeridi ve sekme satırı yok; beyaz bar (logo + bildirim + siyah menü
+  dairesi) ve tam ekran çekmece. Çekmece işletme seçici, tüm sayfalar
+  (araçlar dahil), "QR oluştur" ve hesap bağlantılarını listeler.
+- Telefonda (<640) tuval beyaz, kartlar gri `#F6F6F6`; kart içindeki
+  butonlar ve satırlar beyaz. Menüler alttan açılır, üstte tutamaç.
+- Alt sekme çubuğu yok; `--dash-bottom-nav-h` yalnız güvenli alan.
 
 ---
 
@@ -288,31 +214,35 @@ değiştirir (globals.css blanket'ı süreleri sıfırlar).
 
 | Dosya | İçerik |
 |---|---|
-| `src/app/globals.css` `@theme` | `--color-pn-*` panel dışı (Pulse) değerleri |
-| `src/components/panel/pano/pano.css` | Panel kapsamı: token değerleri, Urbanist, `bz-*` yeniden tanımı, `pn-*` bileşenler, hareket |
-| `src/components/panel/pano/PanelTopNav.tsx` | Kayan haplı üst menü (owner + admin) |
-| `src/components/panel/pano/PanelMobileNav.tsx` | Mobil beyaz bar + tam ekran çekmece |
-| `src/components/panel/pano/PageBackButton.tsx` | Sayfa başlığındaki geri dairesi |
+| `src/components/panel/pano/pano.css` | Panel kapsamı: tokenlar, yazı tipi, `bz-*` yeniden tanımı, `pn-*` parçalar, hareket, güvenlik ağı |
+| `src/components/panel/pano/PanelRail.tsx` | Sol ikon şeridi (`RailLink`, grup menüleri) |
+| `src/components/panel/pano/PanelTopNav.tsx` | Kayan haplı sekme satırı, `MenuLinks` |
+| `src/components/panel/pano/PanelMobileNav.tsx` | Mobil bar + tam ekran çekmece |
+| `src/components/panel/pano/PanelBreadcrumb.tsx` | Klasörlü yol göstergesi |
 | `src/components/panel/pano/PanoNumber.tsx` | Kesri gri sayı |
-| `src/components/panel/pano/sentence-case.ts` | Büyük harf etiketleri Türkçe cümle düzenine çevirir |
-| `src/components/admin/AdminPanoChrome.tsx` | Admin üst menü + çekmece (admin-nav.ts'ten) |
-| `src/components/dashboard/PanoHeroCard.tsx` | Panel ana sayfasındaki siyah kahraman kart |
-| `src/components/root/fonts.ts` | `--font-urbanist` |
-| `.claude/skills/panel-design/SKILL.md` | Yeni panel ekranı yazarken izlenecek kurallar |
-| `tests/pano-design.test.ts` | Kesirli sayı ve cümle düzeni testleri |
+| `src/components/panel/pano/PanoStack.tsx` | `PanoStack`, `PanoTile` |
+| `src/components/panel/pano/sentence-case.ts` | Büyük harf etiketleri cümle düzenine çevirir |
+| `src/components/dashboard/UserDashboardShell.tsx` | Owner kabuğu |
+| `src/components/admin/AdminPanoChrome.tsx` | Admin kabuğu (admin-nav.ts'ten) |
+| `src/components/dashboard/PanoHeroCard.tsx` | Ana sayfadaki koyu kahraman kart |
+| `src/components/root/fonts.ts` | `--font-jakarta` |
+| `.claude/skills/panel-design/SKILL.md` | Yeni panel ekranı yazarken kurallar |
+| `tests/pano-design.test.ts`, `tests/pano-guard.test.ts` | Sayı / cümle düzeni; panel dosyalarında eski renk yasağı |
 
-### 8.1 Eski koddan geçiş
-- Renkler: iki dönüştürücü panel dosyalarındaki Pulse hex sınıflarını `pn-*` tokenlarına, `font-semibold/bold`'u `font-medium`'a, 9–11,5 px puntoları 12 px'e, köşeleri Pano ölçeğine (inline-flex + items-center → hap; lg 14, xl 20, 2xl 24, 3xl 28 px) çevirdi; `uppercase`, `tracking-[…em]`, `pulse-eyebrow`, `bz-mono`, küçük gölgeler silindi.
-- `pano.css`'in sonundaki **güvenlik ağı** yalnız eski işaretleme içindir (satır içi segment kontrolleri, küçük yarı kalın kart başlıkları, kart ızgarası boşluğu). Yeni kod buna güvenmez.
+**Güvenlik ağı** (`pano.css` sonu) yalnız eski işaretleme içindir: satır
+içi segment kontrolleri siyah hap olur, küçük kart başlıkları 20 px olur,
+`.uppercase` ve `.pulse-eyebrow` büyük harf yazmaz, büyük tabular sayılar
+500 olur, kart ızgarası 10 px aralık alır. Yeni kod buna güvenmez.
 
 ---
 
 ## 9. Yapma
 
-- Panelde `#C6F24E`, `#A8D62E`, `#EAF9B8`, `#FAFAFA` gibi Pulse hex'i yazma;
-  `pn-*` token sınıflarını kullan (`bg-pn-accent`, `text-pn-ink`…).
-- Köşeli (8 px) buton, kenar çubuğu, büyük harf etiket, eyebrow ekleme.
-- Kartlara gölge ya da `1px` dış çerçeve ekleme (çerçeve yalnız kart *içindeki* satırlarda).
-- Beyaz zemine lime metin yazma.
-- Referansın logosunu, adını, illüstrasyonlarını, avatar fotoğraflarını ya
-  da metnini kopyalama.
+- Panelde Pulse ya da eski lime hex'i (`#C6F24E`, `#A8D62E`, `#EAF9B8`,
+  `#D7FE03`) ya da `pulse-eyebrow` yazma (koruma testi kırılır); `pn-*`
+  tokenlarını kullan. Müşterinin marka/menü renk varsayılanları istisnadır
+  (testteki listeye eklenir).
+- Kenar çubuğuna metinli menü, geri butonu, köşeli buton, büyük harf
+  etiket, kart gölgesi ya da dış çerçeve ekleme.
+- Beyaz zemine yeşil metin yazma (yeşil metin için `pn-accent-ink`).
+- Referansların logosunu, adını, fotoğraflarını ya da metnini kullanma.

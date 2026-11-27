@@ -883,6 +883,7 @@ async function renderDashboardPage({
   return (
     <div className="mx-auto max-w-[1280px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
+        crumb={isTr ? 'Genel bakış' : 'Overview'}
         titleClassName="hidden sm:block"
         title={
           <>

@@ -78,7 +78,7 @@ function ResetPasswordContent() {
     <main className="min-h-[100dvh] bg-white text-pn-ink selection:bg-pn-accent/40">
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_62%)]"
+        className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#E6FDEA_0%,rgba(230,253,234,0)_62%)]"
       />
 
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1152px] flex-col px-4 sm:px-7 py-6 sm:py-7">

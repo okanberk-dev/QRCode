@@ -130,7 +130,7 @@ export default function ScanDialog({
                     className="bzl-scan-sweep absolute inset-x-0 top-0 h-full"
                     style={{
                       background:
-                        'linear-gradient(180deg, rgba(215,254,3,0) 0%, rgba(215,254,3,0) 62%, rgba(215,254,3,0.28) 94%, #C6F24E 100%)',
+                        'linear-gradient(180deg, rgba(120, 252, 144,0) 0%, rgba(120, 252, 144,0) 62%, rgba(120, 252, 144,0.28) 94%, #78FC90 100%)',
                     }}
                   />
                 </span>
