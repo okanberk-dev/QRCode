@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCronGuard } from '@/lib/cron-guard';
 import { prisma } from '@/lib/prisma';
-import { generateAiDraftBackground, type AiDraftTone } from '@/lib/ai-draft';
+import { autoDraftAllowed, generateAiDraftBackground, type AiDraftTone } from '@/lib/ai-draft';
 import * as Sentry from '@sentry/nextjs';
 
 export const dynamic = 'force-dynamic';
@@ -84,6 +84,10 @@ async function handleCron(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // Drafts are written on request only unless PULSE_AI_AUTO_DRAFT=on.
+  if (!autoDraftAllowed()) {
+    return NextResponse.json({ ok: true, skipped: 'auto_draft_off' });
   }
   try {
     const summary = await runFeedbackAutoDraft();

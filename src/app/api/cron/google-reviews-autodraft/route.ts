@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCronGuard } from '@/lib/cron-guard';
 import { runGoogleReviewsAutoDraft } from '@/lib/reputation/google-draft';
+import { autoDraftAllowed } from '@/lib/ai-draft';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,6 +20,10 @@ async function handleCron(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // Drafts are written on request only unless PULSE_AI_AUTO_DRAFT=on.
+  if (!autoDraftAllowed()) {
+    return NextResponse.json({ ok: true, skipped: 'auto_draft_off' });
   }
   try {
     const summary = await runGoogleReviewsAutoDraft();

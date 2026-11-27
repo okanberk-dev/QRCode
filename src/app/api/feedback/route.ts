@@ -10,7 +10,7 @@ import { ApiErrors } from '@/lib/api-errors';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { hasOpenAIKey } from '@/lib/openai';
-import { coerceTone, generateAiDraftBackground } from '@/lib/ai-draft';
+import { autoDraftAllowed, coerceTone, generateAiDraftBackground } from '@/lib/ai-draft';
 import { getNotificationPrefsForRestaurant } from '@/lib/notification-preferences';
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
@@ -291,11 +291,11 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Pulse AI auto-draft — fire-and-forget when owner has opted in and
-      // the OpenAI key is set. Generation latency must not block the
-      // customer's 201 response. Errors are swallowed; the inbox simply
-      // shows no draft and the operator can manually trigger suggest-reply.
-      if (aiDraftEnabled && hasOpenAIKey()) {
+      // Pulse AI auto-draft — off unless the operator enabled background
+      // drafts (`autoDraftAllowed`); by default the owner writes a draft with
+      // "Taslak oluştur", so no tokens go to reviews nobody opens. When on:
+      // fire-and-forget, never blocks the customer's 201 response.
+      if (aiDraftEnabled && autoDraftAllowed() && hasOpenAIKey()) {
         void generateAiDraftBackground(
           feedback.id,
           coerceTone(aiDraftTone, 'warm'),
@@ -648,7 +648,11 @@ async function handleGET(req: NextRequest) {
         restaurant?: { name?: string; slug?: string | null; pulseAiEnabled?: boolean | null; enableAiDraft?: boolean | null } | null;
       };
       const draft = f.id ? aiDraftMap.get(f.id) : undefined;
-      const aiAutoDraftEnabled = f.restaurant?.pulseAiEnabled === true && f.restaurant?.enableAiDraft === true;
+      // Saved drafts (bulk "AI taslakları", an earlier "Taslak oluştur", or a
+      // background draft when the operator turned those on) show whenever
+      // Pulse AI is on for the business. The field name is kept for the
+      // inbox contract; it no longer depends on the auto-draft toggle.
+      const aiAutoDraftEnabled = f.restaurant?.pulseAiEnabled === true;
       // The list query uses `include`, so every Feedback column reached the
       // panel — including the reviewer's IP address and user agent, shown to
       // owners and read-only team viewers alike. Neither is used by the UI;

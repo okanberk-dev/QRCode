@@ -777,7 +777,7 @@ export function CreateQRWizard({
                     </p>
                     <Link
                       href={`${panelBase}/restaurants/${activeRestaurant.id}`}
-                      className="mt-2.5 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-pn-accent-soft px-3.5 text-[13px] font-medium text-pn-accent transition-colors hover:bg-[#E4DCF8]"
+                      className="mt-2.5 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-pn-accent-soft px-3.5 text-[13px] font-medium text-pn-accent transition-colors hover:bg-[#E2F9E6]"
                     >
                       <Link2 size={12} />
                       {isTr ? "Platform URL'lerini düzenle" : "Edit platform URLs"}

@@ -9,7 +9,6 @@ import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
-import { buildReplyTemplate } from '@/lib/reply-template';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { getOwnerShellActiveRestaurantId } from '@/components/dashboard/UserDashboardShell';
 import {
@@ -434,7 +433,6 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   const activeFeedbackId = active?.id ?? null;
   const activeCustomerEmail = active?.customerEmail ?? null;
-  const activeCustomerName = active?.customerName ?? null;
   const activeRating = active?.rating ?? null;
   const activeIsReplied = active?.isReplied === true;
   const activeAutoDraftEnabled = active?.aiAutoDraftEnabled === true;
@@ -572,9 +570,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   }, [activeFeedbackId]);
 
   // ============================================================
-  // AI draft fetch (background draft → fallback on-demand). Only for low
-  // (rating < 4), not-yet-replied reviews with auto-draft enabled; manual
-  // "Taslak oluştur / Yeniden öner" stays an explicit owner action.
+  // AI draft: show a draft that was already saved (no AI call). A new draft
+  // is written only on request ("Taslak oluştur / Yeniden öner"), so opening
+  // a review never spends tokens. Low (rating < 4), unreplied reviews only.
   // ============================================================
   useEffect(() => {
     if (!activeFeedbackId || activeRating === null) {
@@ -630,55 +628,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           }
         }
       } catch {
-        /* fall through */
+        /* no saved draft: the owner writes one with "Taslak oluştur" */
       }
-      try {
-        const res = await fetch(`/api/feedback/${activeFeedbackId}/suggest-reply`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ locale, autoDraft: true }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (cancelled) return;
-          if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
-          if (typeof data?.source === 'string') setAiSource(data.source);
-          if (data?.tone === 'warm' || data?.tone === 'formal' || data?.tone === 'apologetic') {
-            setAiTone(data.tone);
-          }
-        } else {
-          if (cancelled) return;
-          if (await isPulseAiDisabledResponse(res)) {
-            if (!cancelled) setAiDisabledByAdmin(true);
-            return;
-          }
-          setAiSuggestion(
-            buildReplyTemplate({ name: activeCustomerName, rating: activeRating, locale }),
-          );
-          setAiSource('template-fallback');
-        }
-      } catch {
-        if (cancelled) return;
-        setAiSuggestion(
-          buildReplyTemplate({ name: activeCustomerName, rating: activeRating, locale }),
-        );
-        setAiSource('template-fallback');
-      } finally {
-        if (!cancelled) setAiLoading(false);
-      }
+      // No automatic suggest-reply here: a new draft costs AI tokens, so it is
+      // written only when the owner asks (composer "Taslak oluştur").
+      if (!cancelled) setAiLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [
-    activeAutoDraftEnabled,
-    activeCustomerEmail,
-    activeCustomerName,
-    activeFeedbackId,
-    activeIsReplied,
-    activeRating,
-    locale,
-  ]);
+  }, [activeAutoDraftEnabled, activeCustomerEmail, activeFeedbackId, activeIsReplied, activeRating]);
 
   // ============================================================
   // Action handlers

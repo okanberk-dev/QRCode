@@ -943,7 +943,7 @@ function AdminReviewsContent() {
     <button
       type="button"
       onClick={() => writeFilters({ restaurantId: '' })}
-      className="inline-flex h-11 max-w-full items-center gap-1.5 rounded-full bg-pn-accent-soft px-4 text-[13px] font-medium text-pn-accent transition-colors duration-200 hover:bg-[#E4DCF8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 active:scale-[.97] md:h-[46px]"
+      className="inline-flex h-11 max-w-full items-center gap-1.5 rounded-full bg-pn-accent-soft px-4 text-[13px] font-medium text-pn-accent transition-colors duration-200 hover:bg-[#E2F9E6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pn-accent focus-visible:ring-offset-1 active:scale-[.97] md:h-[46px]"
       title={isTr ? 'İşletme filtresini kaldır' : 'Remove the business filter'}
     >
       <span className="truncate">
@@ -998,7 +998,8 @@ function AdminReviewsContent() {
         onOpenAllFilters={() => setFiltersModal('all')}
         showClear={hasActiveFilter}
         onClear={onResetFilters}
-        rightSlot={restaurantChip}
+        filtersMode="button"
+        leading={restaurantChip}
       />
 
       {/* Split view: list | detail. */}
